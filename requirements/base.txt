@@ -50,3 +50,8 @@ redis>=2.10.5
 # NOTE: Commented out for flynn workaround
 # django-auth-ldap==1.2.8
 # -e git://github.com/holtgrewe/pyldap.git@fce3b934e9b2d7d1a538fc37d7c4ed4cfe18fae1#egg=pyldap
+
+# Django-plugins (with self-made Django 1.10 support)
+# NOTE: Commented out for flynn workaround
+# -e git://github.com/mikkonie/django-plugins.git@ce439b6281e40c6cc64660cfd2fc98349447dc7f#egg=django-plugins
+

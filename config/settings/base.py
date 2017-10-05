@@ -9,6 +9,21 @@ https://docs.djangoproject.com/en/dev/ref/settings/
 """
 import environ
 
+# FOR FLYNN ISSUE #3932 WORKAROUNDS
+import imp
+import pip
+
+
+# FLYNN WORKAROUND for django-plugins
+try:
+    imp.find_module('djangoplugins')
+
+except ImportError:
+    pip.main([
+        'install',
+        'git+git://github.com/mikkonie/django-plugins.git@ce439b6281e40c6cc64660cfd2fc98349447dc7f#egg=django-plugins'])
+
+
 ROOT_DIR = environ.Path(__file__) - 3  # (omics_data_mgmt/config/settings/base.py - 3 = omics_data_mgmt/)
 APPS_DIR = ROOT_DIR.path('omics_data_mgmt')
 
@@ -56,6 +71,7 @@ THIRD_PARTY_APPS = [
     'allauth',  # registration
     'allauth.account',  # registration
     'allauth.socialaccount',  # registration
+    'djangoplugins'
 ]
 
 # Apps specific for this project go here.
@@ -288,8 +304,6 @@ if env.str('AUTH_LDAP_SERVER_URI', None):
     import itertools
 
     # FLYNN WORKAROUND
-    import pip
-
     try:
         import ldap
 
