@@ -1,0 +1,52 @@
+{% if up %}
+  <div class="btn-group dropup pull-right" id="pr_role_list_buttons_up" style="margin-bottom: 12px;">
+{% else %}
+  <div class="btn-group pull-right" id="pr_role_list_buttons" style="margin-bottom: 12px;">
+{% endif %}
+  <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+    Role Actions
+  </button>
+  <div class="dropdown-menu dropdown-menu-right">
+
+    {# View Roles #}
+    {% if can_update_members and request.resolver_match.url_name != 'project_roles' %}
+      <a class="dropdown-item" href="{% url 'project_roles' pk=object.pk %}"
+         title="View Invites"
+         id="pr_role_list_buttons_roles">
+        <i class="fa fa-users" aria-hidden="true"></i>
+          View Roles
+      </a>
+    {% endif %}
+
+    {# View Invites #}
+    {% if can_invite and request.resolver_match.url_name != 'role_invites' %}
+      <a class="dropdown-item" href="{% url 'role_invites' project=object.pk %}"
+         title="View Invites"
+         id="pr_role_list_buttons_invites">
+        <i class="fa fa-envelope" aria-hidden="true"></i>
+          View Invites
+      </a>
+    {% endif %}
+
+    {# Send Invite #}
+    {% if can_invite %}
+      <a class="dropdown-item" href="{% url 'role_invite_create' project=object.pk %}"
+         title="Send Invite"
+         id="pr_role_list_buttons_invite">
+        <i class="fa fa-send" aria-hidden="true"></i>
+          Send Invite
+      </a>
+    {% endif %}
+
+    {# Add Role #}
+    {% if can_update_members %}
+      <a class="dropdown-item" href="{% url 'role_create' project=object.pk %}"
+         title="Add Role"
+         id="pr_role_list_buttons_create">
+        <i class="fa fa-user-plus" aria-hidden="true"></i>
+          Add Role
+      </a>
+    {% endif %}
+
+  </div>
+</div>

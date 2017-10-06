@@ -1,0 +1,17 @@
+<div class="btn-group pr_invite_buttons" id="pr_invite_buttons_{{ invite_id }}">
+  <button class="btn btn-secondary btn-sm dropdown-toggle"
+      type="button" data-toggle="dropdown"
+      aria-haspopup="true" aria-expanded="false">
+    <i class="fa fa-cog" aria-hidden="true"></i>
+  </button>
+  <div class="dropdown-menu dropdown-menu-right">
+    <a class="dropdown-item" href="{% url 'role_invite_resend' project=project.pk pk=invite_id %}">
+      <i class="fa fa-send" aria-hidden="true"></i>
+        Resend Invite
+      </a>
+    <a class="dropdown-item" href="{% url 'role_invite_revoke' project=project.pk pk=invite_id %}">
+      <i class="fa fa-close" aria-hidden="true"></i>
+      Revoke Invite
+    </a>
+  </div>
+</div>

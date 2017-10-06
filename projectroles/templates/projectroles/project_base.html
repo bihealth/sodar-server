@@ -1,0 +1,26 @@
+{% extends 'projectroles/base.html' %}
+{% load rules %}
+{% load projectroles_tags %}
+
+{% block title %}Project "{{ project.title }}"{% endblock %}
+
+{% block projectroles %}
+
+{% has_perm 'projectroles.view_project' request.user project as can_view_project %}
+
+{% omics_constant 'PROJECT_TYPE_CATEGORY' as PROJECT_TYPE_CATEGORY %}
+
+{% if can_view_project %}
+  {% include 'projectroles/_project_header.html' %}
+
+  {% block projectroles_extend %}
+    {# Content from an app extending projectroles will go here #}
+  {% endblock %}
+
+{% else %}
+  <div class="alert alert-danger" role="alert">
+    Insufficient permissions for viewing project!
+  </div>
+{% endif %}
+
+{% endblock %}

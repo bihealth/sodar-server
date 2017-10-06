@@ -56,12 +56,6 @@ Initialize the database:
 
     $ ./manage.py migrate
 
-Populate the Role table with initial data:
-
-.. code-block:: shell
-
-    $ ./manage.py loaddata roles
-
 Run tests
 
 .. code-block:: shell

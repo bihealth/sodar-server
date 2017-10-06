@@ -1,0 +1,35 @@
+{% extends 'projectroles/project_base.html' %}
+{% load rules %}
+
+{% block title %}
+  Confirm Invite Revocation
+{% endblock %}
+
+{% block projectroles_extend %}
+
+<div class="row">
+  <h3>Confirm Invite Revocation</h3>
+
+  <div class="alert alert-warning" role="alert">
+    <p><strong>Warning:</strong> Are you sure you want to permanently revoke
+        the invite sent to {{ invite.email }}?
+    </p>
+  </div>
+
+  <form method="post" action="{% url 'role_invite_revoke' project=project.pk pk=invite.pk %}">
+    {% csrf_token %}
+
+    <div class="btn-group pull-right">
+      <a role="button" class="btn btn-secondary" href="{{ request.META.HTTP_REFERER }}">
+        <i class="fa fa-arrow-circle-left" aria-hidden="true"></i>
+        Cancel
+      </a>
+      <button type="submit" class="btn btn-danger">
+        <i class="fa fa-close" aria-hidden="true"></i>
+          Revoke
+      </button>
+    </div>
+  </form>
+</div>
+
+{% endblock %}

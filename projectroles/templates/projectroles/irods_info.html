@@ -1,0 +1,124 @@
+{% extends 'projectroles/base.html' %}
+{% load projectroles_tags %}
+{% load rules %}
+
+{% block css %}
+  {{ block.super }}
+  <style type="text/css">
+    .table th {
+      border-top: none !important;
+    }
+
+    .card-title {
+      margin-bottom: 12px;
+    }
+
+  </style>
+{% endblock %}
+
+{% block title %}Omics Data Access Prototype: Projects Overview{% endblock %}
+
+
+{% block projectroles %}
+
+<div class="row">
+  {% comment %}
+    {% include 'projectroles/_project_list_dropdown.html' %}
+  {% endcomment %}
+  <h2>iRODS Information</h2>
+</div>
+
+<div class="row" style="padding-top: 8px; padding-bottom: 16px;">
+  <hr />
+</div>
+
+<div class="row">
+
+    <div class="card">
+      <div class="card-header">
+        <h4 style="margin-bottom: 0"><i class="fa fa-database" aria-hidden="true"></i> iRODS Server</h4>
+      </div>
+      <div class="card-block" style="padding-bottom: 0">
+        {% if server_info %}
+          <dl class="row">
+            <dt class="col-sm-1">Status</dt>
+            <dd class="col-lg-11">
+              {% if server_info.server_status == 'available' %}
+                <span class="text-success">Available</span>
+              {% else %}
+                <span class="text-danger">Unavailable</span>
+              {% endif %}
+            </dd>
+            {% if server_info.server_status == 'available' %}
+              <dt class="col-sm-1">Host</dt>
+              <dd class="col-lg-11">{{ server_info.server_host }}</dd>
+              <dt class="col-sm-1">Port</dt>
+              <dd class="col-lg-11">{{ server_info.server_port }}</dd>
+              <dt class="col-sm-1">Zone</dt>
+              <dd class="col-lg-11">{{ server_info.server_zone }}</dd>
+              <dt class="col-sm-1">Version</dt>
+              <dd class="col-lg-11">{{ server_info.server_version }}</dd>
+            {% endif %}
+          </dl>
+        {% else %}
+           <p class="text-danger">Unable to query iRODS server information!</p>
+        {% endif %}
+      </div>
+    </div>
+
+    {# Enabled Backend Plugins #}
+
+    <div class="card">
+      <div class="card-header">
+        <h4 style="margin-bottom: 0"><i class="fa fa-book" aria-hidden="true"></i> Connecting Guide</h4>
+      </div>
+      <div class="card-block" style="padding-bottom: 0">
+        <h4 class="card-title">Accessing Data in iRODS</h4>
+          <p>
+            Use your Charité account to login to iRODS. The server can be accessed
+            after access to at least one project has been granted to you. For
+            sample data in <code>bio_samples</code>, read-only access is provided
+            to users. For uploading and editing data, you must create a landing
+            zone under <code>landing_zones</code> using the respective app on
+            the Omics Data Access site.
+          </p>
+
+        <h4 class="card-title">iCommands</h4>
+          <p>
+            For command line access to iRODS, you need to have iCommands installed.
+            Follow the instructions on the <a href="https://irods.org" target="_blank">iRODS website</a>.
+          </p>
+          {% comment %}
+          <p>
+            TODO: Configuration information, provide a sample configuration file?
+          </p>
+          {% endcomment %}
+          <p>
+            See <a class="card-link" href="https://docs.irods.org/master/icommands/user/" target="_blank">iRODS documentation</a> for iCommands reference.
+          </p>
+        <h4 class="card-title">WebDAV</h4>
+          {% comment %}
+          <p>
+            TODO: Mounting of WebDAV in Ubuntu
+          </p>
+          {% endcomment %}
+          <p>
+            Collections can be accessed for reading through WebDAV using a
+            web browser. The Omics Data Access system provides WebDAV links for
+            sample sheets and landing zones denoted with the following icon:
+            <i class="fa fa-desktop"></i>
+          </p>
+        <h4 class="card-title">Python Client</h4>
+          <p>
+            Install the iRODS Python client: <code>pip install python-irodsclient==0.6.0</code>
+          </p>
+          <p>
+            For documentation and examples, see the <a class="card-link" href="https://github.com/irods/python-irodsclient" target="_blank">Python client GitHub project</a>.
+          </p>
+
+      </div>
+    </div>
+
+</div>
+
+{% endblock %}

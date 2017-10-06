@@ -1,0 +1,44 @@
+{% load rules %}
+
+<div class="btn-group pull-left" id="pr_buttons_project_menu" style="padding-right: 10px;">
+      <button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenuButton-{{ location }}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        <i class="fa fa-bars" aria-hidden="true"></i>
+      </button>
+
+<div class="dropdown-menu">
+ <a class="dropdown-item" href="{% url 'home' %}"><i class="fa fa-globe" aria-hidden="true"></i> Projects Overview</a>
+ {% has_perm 'projectroles.create_project' request.user as can_create_project %}
+  {% if can_create_project %}
+    <a class="dropdown-item" href="{% url 'project_create' %}" id="pr_list_buttons_create"><i class="fa fa-plus" aria-hidden="true"></i> Create Category or Project</a>
+  {% endif %}
+  <a class="dropdown-item" href="{% url 'irods_info' %}" id="pr_list_buttons_irods_info"><i class="fa fa-book" aria-hidden="true"></i> iRODS Information</a>
+  {% for project in project_list %}
+   <div class="dropdown-divider"></div>
+      {% has_perm 'projectroles.view_project' request.user project as can_view_project %}
+      {% if can_view_project %}
+        <a class="dropdown-item" href="{% url 'project_detail' pk=project.pk %}">
+      {% else %}
+          <a class="dropdown-item disabled text-muted">
+      {% endif %}
+      {% if project.type == 'CATEGORY' %}
+          <i class="fa fa-cubes" aria-hidden="true"></i>
+      {% else %}
+          <i class="fa fa-cube" aria-hidden="true"></i>
+      {% endif %}
+          {{ project.title }}</a>
+      {% if project.children.count > 0 %}
+        {% for child in project.children.all %}
+          {% has_perm 'projectroles.view_project' request.user child as can_view_project %}
+          {% if can_view_project %}
+              <a class="dropdown-item" href="{% url 'project_detail' pk=child.pk %}"><span style="margin-left: 18px;"><i class="fa fa-cube" aria-hidden="true"></i> {{ child.title }}</span></a>
+          {% else %}
+              {% comment %}
+              <a class="dropdown-item disabled text-muted"><span style="margin-left: 18px;"><i class="fa fa-cube" aria-hidden="true"></i> {{ child.title }}</span></a>
+              {% endcomment %}
+          {% endif %}
+        {% endfor %}
+      {% endif %}
+  {% endfor %}
+</div>
+
+</div>

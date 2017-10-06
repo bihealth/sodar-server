@@ -1,0 +1,159 @@
+{% extends 'projectroles/base.html' %}
+{% load projectroles_tags %}
+{% load rules %}
+
+{% block css %}
+  {{ block.super }}
+  <style type="text/css">
+    .table th {
+      border-top: none !important;
+    }
+
+    .table tr td:nth-child(1) {
+        white-space: nowrap;
+    }
+
+    .table tr td:nth-child(3) {
+        white-space: nowrap;
+    }
+
+    div.card {
+        margin-bottom: 24px;
+    }
+
+    h4 {
+        margin-bottom: 0;
+    }
+
+  </style>
+{% endblock %}
+
+{% block title %}Omics Data Access Prototype: Home{% endblock %}
+
+{% block projectroles %}
+
+<div class="row">
+  {% comment %}
+    {% include 'projectroles/_project_list_dropdown.html' %}
+  {% endcomment %}
+  {% has_perm 'projectroles.create_project' request.user as can_create_project %}
+  {% if can_create_project %}
+    <div class="btn-group pull-right">
+      <a class="btn btn-primary" role="button" id="pr_list_buttons_create" href="{% url 'project_create' %}">
+        <i class="fa fa-plus" aria-hidden="true"></i>
+        Create Top Level Category or Project
+      </a>
+    </div>
+    {% endif %}
+  <h2>Home</h2>
+</div>
+
+<div class="row" style="padding-top: 8px; padding-bottom: 16px;">
+  <hr />
+</div>
+
+<div class="row">
+
+  {# Project List #}
+
+  <div class="card" style="margin-top: 0;" id="pr_project_list">
+    <div class="card-header">
+      <h4><i class="fa fa-globe" aria-hidden="true"></i> Available Projects</h4>
+    </div>
+    <div class="card-block" style="padding: 0;">
+     <table class="table table-striped" style="margin: 0">
+       <thead>
+         {% include 'projectroles/_project_list_header.html' %}
+       </thead>
+       <tbody>
+         {% if project_list|length > 0 %}
+           {% for p in project_list %}
+             {% include 'projectroles/_project_list_item.html' with is_child=False %}
+             {% for c in p.get_children %}
+               {% include 'projectroles/_project_list_item.html' with p=c is_child=True %}
+             {% endfor %}
+           {% endfor %}
+        {% else %}
+           <tr>
+             <td class="bg-faded font-italic text-xs-center text-danger" colspan="6">No projects available: access must be granted by project personnel or a superuser</td>
+           </tr>
+        {% endif %}
+       </tbody>
+     </table>
+    </div>
+  </div>
+
+  {% if request.user.is_superuser %}
+
+    {# Project Apps #}
+
+    <div class="card">
+      <div class="card-header">
+        <h4><i class="fa fa-mouse-pointer" aria-hidden="true"></i> Project Apps</h4>
+      </div>
+      <div class="card-block" style="padding-bottom: 0">
+        <dl class="row">
+          {% for plugin in app_plugins %}
+            <dt class="col-md-3"><i class="fa fa-{{ plugin.icon }}" aria-hidden="true"></i> {{ plugin.title }}</dt>
+            <dd class="col-lg-9">{{ plugin.description }}</dd>
+          {% endfor %}
+        </dl>
+      </div>
+    </div>
+
+    {# Enabled Backend Plugins #}
+
+    <div class="card">
+      <div class="card-header">
+        <h4><i class="fa fa-puzzle-piece" aria-hidden="true"></i> Enabled Backend Plugins</h4>
+      </div>
+      <div class="card-block" style="padding-bottom: 0">
+        <dl class="row">
+          {% for plugin in backend_plugins %}
+            <dt class="col-md-3"><i class="fa fa-{{ plugin.icon }}" aria-hidden="true"></i> {{ plugin.title }}</dt>
+            <dd class="col-lg-9">{{ plugin.description }}</dd>
+          {% endfor %}
+        </dl>
+      </div>
+    </div>
+
+  {% endif %}
+
+</div>
+
+{% endblock %}
+
+{% block javascript %}
+  {{ block.super }}
+
+  {# Tour content #}
+  <script type="text/javascript">
+    tourEnabled = true;
+
+    tour.addStep('home_project', {
+        title: 'Available Projects',
+        text: 'Projects available to you are listed in this table.',
+        attachTo: '#pr_home_header_project right',
+        advanceOn: '.docs-link click',
+        showCancelLink: true
+    });
+
+    tour.addStep('home_role', {
+        title: 'Your Roles',
+        text: 'The role assigned to you in each project can be seen here.',
+        attachTo: '#pr_home_header_role left',
+        advanceOn: '.docs-link click',
+        showCancelLink: true
+    });
+
+    if ($('#pr_list_buttons_create').length) {
+        tour.addStep('home_create', {
+            title: 'Create a Category or Project',
+            text: 'Click here to create a new top level category or project.',
+            attachTo: '#pr_list_buttons_create bottom',
+            advanceOn: '.docs-link click',
+            showCancelLink: true
+        });
+    }
+  </script>
+{% endblock %}

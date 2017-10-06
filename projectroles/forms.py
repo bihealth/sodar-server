@@ -1,0 +1,467 @@
+import datetime as dt
+
+from django import forms
+from django.conf import settings
+from django.contrib import auth
+from django.utils import timezone
+
+from pagedown.widgets import PagedownWidget
+
+from .models import Project, Role, RoleAssignment, ProjectInvite, \
+    ProjectSetting, OMICS_CONSTANTS
+from .plugins import ProjectAppPluginPoint
+from .utils import get_user_display_name, build_secret
+
+
+# Omics constants
+PROJECT_ROLE_OWNER = OMICS_CONSTANTS['PROJECT_ROLE_OWNER']
+PROJECT_ROLE_DELEGATE = OMICS_CONSTANTS['PROJECT_ROLE_DELEGATE']
+PROJECT_ROLE_STAFF = OMICS_CONSTANTS['PROJECT_ROLE_STAFF']
+PROJECT_TYPE_CHOICES = OMICS_CONSTANTS['PROJECT_TYPE_CHOICES']
+PROJECT_TYPE_PROJECT = OMICS_CONSTANTS['PROJECT_TYPE_PROJECT']
+PROJECT_TYPE_CATEGORY = OMICS_CONSTANTS['PROJECT_TYPE_CATEGORY']
+SUBMIT_STATUS_OK = OMICS_CONSTANTS['SUBMIT_STATUS_OK']
+SUBMIT_STATUS_PENDING = OMICS_CONSTANTS['SUBMIT_STATUS_PENDING']
+SUBMIT_STATUS_PENDING_TASKFLOW = OMICS_CONSTANTS['SUBMIT_STATUS_PENDING']
+
+# Settings
+APP_NAME = 'projectroles'
+INVITE_EXPIRY_DAYS = settings.PROJECTROLES_INVITE_EXPIRY_DAYS
+
+
+# Project form -----------------------------------------------------------
+
+
+class ProjectForm(forms.ModelForm):
+    """Form for Project creation/updating"""
+    owner = forms.ModelChoiceField(
+        auth.get_user_model().objects.all(),
+        required=True,
+        label='Owner',
+        help_text='Project owner')
+
+    class Meta:
+        model = Project
+        fields = ['title', 'type', 'parent', 'owner', 'description', 'readme']
+
+    def __init__(self, parent=None, current_user=None, *args, **kwargs):
+        """Override for form initialization"""
+        super(ProjectForm, self).__init__(*args, **kwargs)
+
+        # Access parent project if present
+        parent_project = None
+
+        if parent:
+            try:
+                parent_project = Project.objects.get(pk=parent)
+
+            except Project.DoesNotExist:
+                pass
+
+        # Get current user for checking permissions for form items
+        if current_user:
+            self.current_user = current_user
+
+        ####################
+        # Form modifications
+        ####################
+
+        # Only allow top level Projects to be selected as parent
+        self.fields['parent'].queryset = Project.objects.filter(parent=None)
+
+        # Set readme widget with preview
+        self.fields['readme'].widget = PagedownWidget(show_preview=True)
+
+        # Updating an existing project
+        if self.instance.pk:
+            # Set readme value as raw markdown
+            self.initial['readme'] = self.instance.readme.raw
+
+            # Do not allow change of project type
+            force_select_value(
+                self.fields['type'],
+                (self.instance.type, self.instance.type))
+
+            # Only owner/superuser has rights to modify owner
+            if (current_user.has_perm(
+                    'projectroles.update_project_owner',
+                    self.instance)):
+                # Limit owner choices to users without non-owner role in project
+                project_users = RoleAssignment.objects.filter(
+                    project=self.instance.pk).exclude(
+                   role__name=PROJECT_ROLE_OWNER).values_list('user').distinct()
+
+                # Get owner choices
+                self.fields['owner'].choices = [
+                    (user.pk, get_user_display_name(user, True)) for user in
+                    auth.get_user_model().objects.exclude(
+                        pk__in=project_users).order_by('name')]
+
+                # Set current owner as initial value
+                owner = self.instance.get_owner().user
+                self.initial['owner'] = owner.pk
+
+            # Else don't allow changing the user
+            else:
+                owner = self.instance.get_owner().user
+                force_select_value(
+                    self.fields['owner'],
+                    (owner.pk, get_user_display_name(owner, True)))
+
+            # Do not allow transfer under another parent
+            self.fields['parent'].disabled = True
+
+        # Project creation
+        else:
+            # Common stuff
+            self.fields['owner'].choices = [
+                (user.pk, get_user_display_name(user, True)) for user in
+                auth.get_user_model().objects.all().order_by('username')]
+
+            # Creating a subproject
+            if parent_project:
+                # Parent must be current parent
+                force_select_value(
+                    self.fields['parent'],
+                    (parent_project.pk, parent_project.title))
+
+                # Subproject can't be a category
+                force_select_value(
+                    self.fields['type'], PROJECT_TYPE_CHOICES[1])
+
+                # Set parent owner as initial value
+                parent_owner = parent_project.get_owner().user
+                self.initial['owner'] = parent_owner.pk
+
+            # Creating a top level project
+            else:
+                self.fields['owner'].choices = [
+                    (user.pk, get_user_display_name(user, True)) for user in
+                    auth.get_user_model().objects.all().order_by('username')]
+
+                self.fields['parent'].disabled = True
+
+    def clean(self):
+        """Function for custom form validation and cleanup"""
+
+        # Ensure the title is unique within parent
+        try:
+            existing_project = Project.objects.get(
+                parent=self.cleaned_data.get('parent'),
+                title=self.cleaned_data.get('title'))
+            if not self.instance or existing_project.pk != self.instance.pk:
+                self.add_error('title', 'Title must be unique within parent')
+
+        except Project.DoesNotExist:
+            pass
+
+        # Ensure a category is not being created as a subproject
+        if (self.cleaned_data.get('type') == PROJECT_TYPE_CATEGORY and
+                self.cleaned_data.get('parent') is not None):
+            error_msg = 'Nested project can not be a category'
+            self.add_error('type', error_msg)
+            self.add_error('parent', error_msg)
+
+        # Ensure owner has been set
+        if not self.cleaned_data.get('owner'):
+            self.add_error('owner', 'Owner must be set for project')
+
+        return self.cleaned_data
+
+
+# RoleAssignment form ----------------------------------------------------
+
+
+class RoleAssignmentForm(forms.ModelForm):
+    """Form for editing Project role assignments"""
+
+    class Meta:
+        model = RoleAssignment
+        fields = ['project', 'user', 'role']
+
+    def __init__(self, project=None, current_user=None, *args, **kwargs):
+        """Override for form initialization"""
+        super(RoleAssignmentForm, self).__init__(*args, **kwargs)
+
+        # Get current user for checking permissions for form items
+        if current_user:
+            self.current_user = current_user
+
+        # Get the project for which role is being assigned
+        self.project = None
+
+        if self.instance.pk:
+            self.project = self.instance.project
+
+        else:
+            try:
+                self.project = Project.objects.get(pk=project)
+
+            except Project.DoesNotExist:
+                pass
+
+        ####################
+        # Form modifications
+        ####################
+
+        # Limit role choices
+        self.fields['role'].choices = get_role_choices(
+            self.project, self.current_user)
+
+        # Updating an existing assignment
+        if self.instance.pk:
+            # Do not allow switching to another project
+            force_select_value(
+                self.fields['project'],
+                (self.instance.project.pk,
+                 self.instance.project.title))
+
+            # Do not allow switching to a different user
+            force_select_value(
+                self.fields['user'],
+                (self.instance.user.pk, get_user_display_name(
+                    self.instance.user, True)))
+
+            # Set initial role
+            self.fields['role'].initial = self.instance.role
+
+        # Creating a new assignment
+        elif self.project:
+            # Limit project choice to self.project
+            force_select_value(
+                self.fields['project'],
+                (self.project.pk, self.project.title))
+
+            # Limit user choices to users without roles in current project
+            project_users = RoleAssignment.objects.filter(
+                project=self.project.pk).values_list('user').distinct()
+
+            self.fields['user'].choices = [
+                (user.pk, get_user_display_name(user, True)) for user in
+                auth.get_user_model().objects.exclude(
+                    pk__in=project_users).order_by('name')]
+
+    def clean(self):
+        """Function for custom form validation and cleanup"""
+        role = self.cleaned_data.get('role')
+        existing_as = None
+
+        try:
+            existing_as = RoleAssignment.objects.get_assignment(
+                self.cleaned_data.get('user'),
+                self.cleaned_data.get('project'))
+
+        except RoleAssignment.DoesNotExist:
+            pass
+
+        # Adding a new RoleAssignment
+        if not self.instance.pk:
+            # Make sure user doesn't already have role in project
+            if existing_as:
+                self.add_error(
+                    'user',
+                    'User {} already assigned as {}'.format(
+                        existing_as.role.name,
+                        get_user_display_name(self.cleaned_data.get('user'))))
+
+        # Updating a RoleAssignment
+        else:
+            # Ensure not setting existing role again
+            if existing_as and existing_as.role == role:
+                self.add_error(
+                    'role', 'Role already assigned to user')
+
+        # Delegate checks
+        if role.name == PROJECT_ROLE_DELEGATE:
+            # Ensure current user has permission to set delegate
+            if (not self.current_user.has_perm(
+                    'projectroles.update_project_delegate',
+                    obj=self.project)):
+                self.add_error(
+                    'role', 'Insufficient permissions for altering delegate')
+
+            # Ensure user can't attempt to add another delegate
+            delegate = self.cleaned_data.get('project').get_delegate()
+
+            if delegate:
+                self.add_error(
+                    'role',
+                    'User {} already assigned as delegate, only one '
+                    'delegate allowed per project'.format(
+                        delegate.user.username))
+
+        return self.cleaned_data
+
+
+# ProjectInvite form -----------------------------------------------------
+
+
+class ProjectInviteForm(forms.ModelForm):
+    """Form for ProjectInvite modification"""
+
+    class Meta:
+        model = ProjectInvite
+        fields = ['email', 'role', 'message']
+
+    def __init__(self, project=None, current_user=None, *args, **kwargs):
+        """Override for form initialization"""
+        super(ProjectInviteForm, self).__init__(*args, **kwargs)
+
+        # Get current user for checking permissions and saving issuer
+        if current_user:
+            self.current_user = current_user
+
+        # Get the project for which invite is being sent
+        self.project = None
+
+        try:
+            self.project = Project.objects.get(pk=project)
+
+        except Project.DoesNotExist:
+            pass
+
+        # Limit Role choices according to user permissions
+        self.fields['role'].choices = get_role_choices(
+            self.project,
+            self.current_user,
+            allow_delegate=False)   # NOTE: Inviting delegate here not allowed
+
+    def clean(self):
+        # Check if user email is already in users
+        User = auth.get_user_model()
+
+        try:
+            existing_user = User.objects.get(
+                email=self.cleaned_data.get('email'))
+            self.add_error(
+                'email',
+                'User "{}" already exists in the system with this email. '
+                'Please use "Add Role" instead.'.format(existing_user.username))
+
+        except User.DoesNotExist:
+            pass
+
+        # Check if user already has an invite in the project
+        try:
+            ProjectInvite.objects.get(
+                project=self.project,
+                email=self.cleaned_data.get('email'),
+                active=True,
+                date_expire__gt=timezone.now())
+
+            self.add_error(
+                'email',
+                'There is already an active invite for email {} in {}'.format(
+                    self.cleaned_data.get('email'),
+                    self.project.title))
+
+        except ProjectInvite.DoesNotExist:
+            pass
+
+        return self.cleaned_data
+
+    def save(self, *args, **kwargs):
+        """Override of form saving function"""
+        obj = super(ProjectInviteForm, self).save(commit=False)
+
+        obj.project = self.project
+        obj.issuer = self.current_user
+        obj.date_expire = timezone.now() + dt.timedelta(
+            days=INVITE_EXPIRY_DAYS)
+        obj.secret = build_secret()
+
+        obj.save()
+        return obj
+
+
+# ProjectSetting form ----------------------------------------------------
+
+
+class ProjectSettingForm(forms.ModelForm):
+    """Form for ProjectSetting modification"""
+
+    class Meta:
+        model = ProjectSetting
+        fields = ['value']
+
+    def __init__(self, *args, **kwargs):
+        """Override for form initialization"""
+        super(ProjectSettingForm, self).__init__(*args, **kwargs)
+
+        self.fields['value'].label = '{}.{}'.format(
+            self.instance.app_plugin.name,
+            self.instance.name)
+
+        # Get description from plugin object (NOTE: not model)
+        plugin = ProjectAppPluginPoint.get_plugin(
+            self.instance.app_plugin.name)
+
+        if plugin and self.instance.name in plugin.project_settings:
+            desc = plugin.project_settings[
+                self.instance.name]['description']
+
+            self.fields['value'].help_text = '{} ({})'.format(
+                desc, self.instance.type)
+
+        # If setting type is boolean, show a select widget
+        if self.instance.type == 'BOOLEAN':
+            self.fields['value'].widget = forms.Select(
+                choices=[
+                    (1, 'True'),
+                    (0, 'False')])
+            self.initial['value'] = self.instance.value
+
+    def clean(self):
+        """Function for custom form validation and cleanup"""
+
+        # Ensure integer-type string contains a valid integer
+        if (self.instance.type == 'INTEGER' and
+                not self.cleaned_data['value'].isdigit()):
+            self.add_error('value', 'Please enter a valid integer.')
+
+        return self.cleaned_data
+
+
+# Helper functions -------------------------------------------------------
+
+
+def force_select_value(field, choice):
+    """
+    Force a pre-selected choice in a select field without disabling the
+    field from the form submission
+    :param field: Form field to be altered
+    :param choice: Selected choice (tuple)
+    """
+
+    # NOTE: "Readonly" does not actually work with select-fields, Django
+    #           still renders it as it would
+    field.choices = [choice]
+    field.widget.attrs['readonly'] = True
+
+
+def get_role_choices(project, current_user, allow_delegate=True):
+    """
+    Return valid role choices according to permissions of current user
+    :param project: Project in which role will be assigned
+    :param current_user: User for whom the form is displayed
+    :param allow_delegate: Whether delegate setting should be allowed (bool)
+    """
+
+    # Owner cannot be changed in role assignment
+    role_excludes = [PROJECT_ROLE_OWNER]
+
+    # Exclude delegate if not allowed or current user lacks perms
+    if not allow_delegate or not current_user.has_perm(
+            'projectroles.update_project_delegate',
+            obj=project):
+        role_excludes.append(PROJECT_ROLE_DELEGATE)
+
+    # Exclude staff if current user lacks perms
+    if not current_user.has_perm(
+            'projectroles.update_project_staff',
+            obj=project):
+        role_excludes.append(PROJECT_ROLE_STAFF)
+
+    return [
+        (role.pk, role.name) for role in Role.objects.exclude(
+            name__in=role_excludes)]

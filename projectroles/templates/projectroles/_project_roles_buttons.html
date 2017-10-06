@@ -1,0 +1,19 @@
+{% load rules %}
+
+<div class="btn-group pr_role_buttons" id="pr_role_buttons_{{ assignment_id }}">
+  <button class="btn btn-secondary btn-sm dropdown-toggle"
+      type="button" data-toggle="dropdown"
+      aria-haspopup="true" aria-expanded="false">
+    <i class="fa fa-cog" aria-hidden="true"></i>
+  </button>
+  <div class="dropdown-menu dropdown-menu-right">
+        <a class="dropdown-item" href="{% url 'role_update' project=project.pk pk=assignment_id %}">
+        <i class="fa fa-pencil" aria-hidden="true"></i>
+        Update Role
+      </a>
+    <a class="dropdown-item" href="{% url 'role_delete' project=project.pk pk=assignment_id %}">
+      <i class="fa fa-user-times" aria-hidden="true"></i>
+      Remove Role
+    </a>
+  </div>
+</div>

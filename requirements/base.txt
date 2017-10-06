@@ -55,3 +55,17 @@ redis>=2.10.5
 # NOTE: Commented out for flynn workaround
 # -e git://github.com/mikkonie/django-plugins.git@ce439b6281e40c6cc64660cfd2fc98349447dc7f#egg=django-plugins
 
+# Rules for permissions
+rules==1.2.1
+
+# REST framework
+djangorestframework==3.7.0
+
+# Extra views for formset helping
+django-extra-views==0.9.0
+
+# Markdown field support
+markdown==2.6.9
+django-markupfield==1.4.3
+django-pagedown==0.1.3
+mistune==0.7.4

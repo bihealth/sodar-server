@@ -1,0 +1,35 @@
+{% extends 'projectroles/project_base.html' %}
+{% load rules %}
+{% load projectroles_tags %}
+
+{% block title %}
+  Confirm removal of {{ object.user.username }} role in {{ object.project.title }}
+{% endblock %}
+
+{% block projectroles_extend %}
+
+  <div class="row" style="margin-bottom: 12px;">
+    <h3>Confirm removal of role for {{ object.user.username }}</h3>
+
+    <p>
+      Do you really want to remove the role of "{{ object.role.name }}"
+      from user {{ object.user.username }} in {{ object.project.title }}?
+    </p>
+
+    <form method="post">
+      {% csrf_token %}
+      <div class="btn-group pull-right">
+        <a role="button" class="btn btn-secondary"
+            href="{% url 'project_roles' pk=object.project.pk %}">
+          <i class="fa fa-arrow-circle-left" aria-hidden="true"></i>
+          Cancel
+        </a>
+        <button type="submit" class="btn btn-danger">
+          <i class="fa fa-user-times" aria-hidden="true"></i>
+            Remove
+        </button>
+      </div>
+    </form>
+  </div>
+
+{% endblock %}

@@ -84,3 +84,31 @@ TEST_RUNNER = 'django.test.runner.DiscoverRunner'
 
 # Your local stuff: Below this line define 3rd party library settings
 # ------------------------------------------------------------------------------
+
+
+# Local App Settings
+# ------------------------------------------------------------------------------
+
+
+# Show user name in title bar (mostly usable for development)
+TITLEBAR_SHOW_USER = True
+
+
+# Plugin settings
+ENABLED_BACKEND_PLUGINS = env.list('ENABLED_BACKEND_PLUGINS', None, [
+    # 'timeline_backend',
+    # 'taskflow',
+    # 'omics_irods',
+
+])
+
+
+# Samplesheets and Landingzones link settings
+# TODO: Deprecate this?
+IRODS_CLOUDBROWSER_ENABLED = True
+
+
+# Temporary local development hack
+# TODO: Deprecate these?
+LOCAL_DEMO_MODE = False
+LOCAL_TEMPLATE_INCLUDES = True

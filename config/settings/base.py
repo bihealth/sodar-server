@@ -38,9 +38,7 @@ if READ_DOT_ENV_FILE:
     # that is to say variables from the .env files will only be used if not defined
     # as environment variables.
     env_file = str(ROOT_DIR.path('.env'))
-    print('Loading : {}'.format(env_file))
     env.read_env(env_file)
-    print('The .env file has been loaded. See base.py for more information')
 
 # SITE CONFIGURATION
 # ------------------------------------------------------------------------------
@@ -71,7 +69,8 @@ THIRD_PARTY_APPS = [
     'allauth',  # registration
     'allauth.account',  # registration
     'allauth.socialaccount',  # registration
-    'djangoplugins'
+    'rules.apps.AutodiscoverRulesConfig',  # django rules engine
+    'djangoplugins',  # Django plugins
 ]
 
 # Apps specific for this project go here.
@@ -79,6 +78,7 @@ LOCAL_APPS = [
     # custom users app
     'omics_data_mgmt.users.apps.UsersConfig',
     # Your stuff: custom apps go here
+    'projectroles.apps.ProjectrolesConfig',
 ]
 
 # See: https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
@@ -117,6 +117,8 @@ FIXTURE_DIRS = (
 # EMAIL CONFIGURATION
 # ------------------------------------------------------------------------------
 EMAIL_BACKEND = env('DJANGO_EMAIL_BACKEND', default='django.core.mail.backends.smtp.EmailBackend')
+EMAIL_SENDER = env('EMAIL_SENDER', default='noreply@example.com')
+EMAIL_SUBJECT_PREFIX = env('EMAIL_SUBJECT_PREFIX', default='')
 
 # MANAGER CONFIGURATION
 # ------------------------------------------------------------------------------
@@ -351,3 +353,25 @@ if env.str('AUTH_LDAP_SERVER_URI', None):
         'last_name': 'sn',
         'email': 'mail',
     }
+
+
+# Local App Settings
+# ------------------------------------------------------------------------------
+
+
+# Temporary local demo hack
+LOCAL_DEMO_MODE = False
+
+# Show user name in title bar (mostly usable for development)
+TITLEBAR_SHOW_USER = False
+
+
+# Projectroles app settings
+PROJECTROLES_SECRET_LENGTH = 32
+PROJECTROLES_INVITE_EXPIRY_DAYS = env.int('PROJECTROLES_INVITE_EXPIRY_DAYS', 14)
+PROJECTROLES_SEND_EMAIL = env.bool('PROJECTROLES_SEND_EMAIL', False)
+
+# Temporary local development hack
+# TODO: Deprecate these?
+LOCAL_DEMO_MODE = False
+LOCAL_TEMPLATE_INCLUDES = False

@@ -1,0 +1,69 @@
+{% extends 'projectroles/base.html' %}
+{% load rules %}
+{% load crispy_forms_filters %}
+
+{% block title %}
+  {% if object.pk %}
+    Update {{ object.title }}
+  {% elif parent.pk %}
+    Create Subproject for {{ parent.title }}
+  {% else %}
+    Create Top Level Category or Project
+  {% endif %}
+{% endblock %}
+
+{% block head_extend %}
+    {{ form.media }}
+{% endblock %}
+
+{% block css %}
+  {{ block.super }}
+  <style type="text/css">
+    /* Fix for default pagedown css */
+    div.wmd-panel {
+      margin-left: 0;
+      margin-right: 0;
+      width: 100%;
+    }
+  </style>
+{% endblock %}
+
+{% block projectroles %}
+
+  {% if object.pk %}
+    {% include 'projectroles/_project_header.html' %}
+  {% endif %}
+
+<div class="row" style="margin-bottom: 12px">
+  {% if object.pk %}
+    <h3>Update Project</h3>
+  {% elif parent.pk %}
+    <h2>Create Subproject for {{ parent.title }}</h2>
+  {% else %}
+    <h2>Create Top Level Category or Project</h2>
+  {% endif %}
+</div>
+
+<div class="row">
+  <form method="post">
+    {% csrf_token %}
+    {{ form | crispy }}
+    <div class="btn-group pull-right">
+      <a role="button" class="btn btn-secondary"
+          href="{{ request.META.HTTP_REFERER }}">
+        <i class="fa fa-arrow-circle-left" aria-hidden="true"></i>
+        Cancel
+      </a>
+      <button type="submit" class="btn btn-primary">
+        <i class="fa fa-check" aria-hidden="true"></i>
+        {% if object.pk %}
+          Update
+        {% else %}
+          Create
+        {% endif %}
+      </button>
+    </div>
+  </form>
+</div>
+
+{% endblock %}

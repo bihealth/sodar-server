@@ -1,0 +1,136 @@
+{% extends 'projectroles/project_base.html' %}
+{% load rules %}
+{% block title %}User Roles for {{ object.title }}{% endblock %}
+
+{% block css %}
+    {{ block.super }}
+    <style type="text/css">
+      .table th {
+        border-top: none !important;
+      }
+    </style>
+{% endblock %}
+
+{% block projectroles_extend %}
+
+{% has_perm 'projectroles.update_project_members' request.user object as can_update_members %}
+{% has_perm 'projectroles.update_project_staff' request.user object as can_update_staff %}
+{% has_perm 'projectroles.update_project_delegate' request.user object as can_update_delegate %}
+{% has_perm 'projectroles.invite_users' request.user object as can_invite %}
+
+<div class="row">
+  {% if can_update_members or can_invite %}
+    {% include 'projectroles/_role_list_buttons.html' with object=object can_update_members=can_update_members can_invite=can_invite %}
+  {% endif %}
+  <h3><i class="fa fa-users" aria-hidden="true"></i> User Roles</h3>
+</div>
+
+<div class="row">
+  <div class="card" style="margin-top: 0;" id="pr_role_list">
+    <div class="card-block" style="padding: 0;">
+     <table class="table table-striped" style="margin: 0">
+       <thead>
+         <tr class="row">
+           <th>User</th>
+           <th>Name</th>
+           <th>Email</th>
+           <th>Role</th>
+           <th></th>
+         </tr>
+       </thead>
+       <tbody>
+         <tr>
+           <td>{{ owner.user.username }}</td>
+           <td>{{ owner.user.name }}</td>
+           <td><a href="mailto:{{ owner.user.email }}">{{ owner.user.email }}</a></td>
+           <td><strong>project owner <i class="fa fa-star" aria-hidden="true"></i></strong></td>
+           <td></td>
+         </tr>
+         {% if delegate %}
+           <tr>
+             <td>{{ delegate.user.username }}</td>
+             <td>{{ delegate.user.name }}</td>
+             <td><a href="mailto:{{ delegate.user.email }}">{{ delegate.user.email }}</a></td>
+             <td><strong>project delegate <i class="fa fa-star-half-o" aria-hidden="true"></i></strong></td>
+             <td>
+               {% if can_update_delegate %}
+                 {% include 'projectroles/_project_roles_buttons.html' with pk=object.pk assignment_id=delegate.pk %}
+               {% endif %}
+             </td>
+           </tr>
+         {% endif %}
+         {% for s_member in staff %}
+           <tr>
+             <td>{{ s_member.user.username }}</td>
+             <td>{{ s_member.user.name }}</td>
+             <td><a href="mailto:{{ s_member.user.email }}">{{ s_member.user.email }}</a></td>
+             <td>{{ s_member.role.name }}</td>
+             <td>
+               {% if can_update_staff %}
+                 {% include 'projectroles/_project_roles_buttons.html' with pk=object.pk assignment_id=s_member.id %}
+               {% endif %}
+             </td>
+           </tr>
+         {%  endfor %}
+         {% for member in members %}
+           <tr>
+             <td>{{ member.user.username }}</td>
+             <td>{{ member.user.name }}</td>
+             <td><a href="mailto:{{ member.user.email }}">{{ member.user.email }}</a></td>
+             <td>{{ member.role.name }}</td>
+             <td>
+               {% if can_update_members %}
+                 {% include 'projectroles/_project_roles_buttons.html' with pk=object.pk assignment_id=member.id %}
+               {% endif %}
+             </td>
+           </tr>
+         {% endfor %}
+       </tbody>
+     </table>
+    </div>
+  </div>
+
+  {% if can_update_members or can_invite %}
+    {% include 'projectroles/_role_list_buttons.html' with object=object can_update_members=can_update_members can_invite=can_invite up=True %}
+  {% endif %}
+
+</div>
+
+{% endblock %}
+
+{% block javascript %}
+  {{ block.super }}
+
+  {# Tour content #}
+  <script type="text/javascript">
+    tourEnabled = true;
+
+    tour.addStep('role_list', {
+        title: 'Role List',
+        text: 'List of roles assigned for this project can be seen here.',
+        attachTo: '#pr_role_list top',
+        advanceOn: '.docs-link click',
+        showCancelLink: true
+    });
+
+    tour.addStep('role_actions', {
+        title: 'Role Actions Menu',
+        text: 'Use this menu to add roles, send invites or view existing ' +
+              'invites.',
+        attachTo: '#pr_role_list_buttons left',
+        advanceOn: '.docs-link click',
+        showCancelLink: true
+    });
+
+    if ($('div.pr_role_buttons').length) {
+        tour.addStep('role_menu', {
+            title: 'Role Editing Menu',
+            text: 'Individual roles can be updated or removed from these menues.',
+            attachTo: 'div.pr_role_buttons left',
+            advanceOn: '.docs-link click',
+            showCancelLink: true,
+            scrollTo: true
+        });
+    }
+  </script>
+{% endblock %}

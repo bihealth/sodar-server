@@ -1,0 +1,82 @@
+{% extends 'projectroles/project_base.html' %}
+{% load crispy_forms_filters %}
+{% load projectroles_tags %}
+
+{% block title %}
+  {% if object.pk %}
+    Update Role for {{ object.user.username }} in {{ object.project.title }}
+  {% else %}
+    Add Role in {{ project.title }}
+  {% endif %}
+{% endblock %}
+
+{% block projectroles_extend %}
+
+<div class="row" style="margin-bottom: 12px;">
+  {% if object.pk %}
+    <h3>Update Role for {{ object.user.username }}</h3>
+  {% else %}
+    <h3>Add Role</h3>
+  {% endif %}
+</div>
+
+<div class="row">
+  <form method="post">
+    {% csrf_token %}
+    {{ form | crispy }}
+    <div class="btn-group pull-right">
+      <a role="button" class="btn btn-secondary"
+          href="{{ request.META.HTTP_REFERER }}">
+        <i class="fa fa-arrow-circle-left" aria-hidden="true"></i>
+        Cancel
+      </a>
+      <a role="button" class="btn btn-secondary" id="email_preview_link">
+        <i class="fa fa-eye" aria-hidden="true"></i>
+        Preview
+      </a>
+      <button type="submit" class="btn btn-primary">
+        <i class="fa fa-user-plus" aria-hidden="true"></i>
+        {% if object.pk %}
+          Update
+        {% else %}
+          Add
+        {% endif %}
+      </button>
+    </div>
+  </form>
+</div>
+
+<span id="email_preview_popup"></span>
+
+{% endblock %}
+
+{% block javascript %}
+  {{ block.super }}
+  <script type="text/javascript">
+    $('#email_preview_link').click(function() {
+        $('#email_preview_popup').popup('show');
+    });
+
+    $(document).ready(function() {
+        $('#email_preview_popup').popup({
+            transition: 'all 0.2s',
+            beforeopen: function () {
+                var body = '{{ preview_body }}';
+                var userName = $('#id_user option:selected').text();
+                var userDisplayName = userName.substr(0, userName.indexOf('(') - 1);
+                var roleName = $('#id_role option:selected').text();
+                body = body.replace('{role_name}', roleName);
+                body = body.replace('{user_name}', userDisplayName);
+
+                var htmlData = '<div class="card"><div class="card-block"><h5>Email Preview</h5><hr>';
+                htmlData += '<strong>Subject:</strong><pre>{{ preview_subject }}</pre>';
+                htmlData += '<strong>Body:</strong>';
+                htmlData += '<pre>' + body;
+                htmlData += '</pre></div></div>';
+                $(this).html(htmlData);
+            }
+        });
+    });
+  </script>
+
+{% endblock %}
