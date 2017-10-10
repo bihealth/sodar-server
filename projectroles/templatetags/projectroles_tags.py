@@ -2,7 +2,7 @@ from django import template
 from django.conf import settings
 import mistune
 
-from ..models import RoleAssignment
+from ..models import RoleAssignment, OMICS_CONSTANTS
 from ..plugins import get_backend_api
 
 
@@ -12,8 +12,8 @@ register = template.Library()
 @register.simple_tag
 def omics_constant(value):
     """Get value from OMICS_CONSTANTS in settings"""
-    return settings.OMICS_CONSTANTS[value] \
-        if value in settings.OMICS_CONSTANTS else None
+    return OMICS_CONSTANTS[value] \
+        if value in OMICS_CONSTANTS else None
 
 
 @register.simple_tag

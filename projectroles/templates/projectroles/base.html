@@ -1,38 +1,11 @@
-{# NOTE: Several ugly hacks for demo layout here, to be refactored.. #}
-
 {% extends 'base.html' %}
 {% load rules %}
 {% load projectroles_tags %}
 
-{% block css %}
-    {{ block.super }}
-    <style type="text/css">
-      .container {
-          max-width: 1700px;
-          padding-left: 35px;
-          padding-right: 35px;
-          overflow-x: hidden;
-      }
-      div.card-header {
-          padding: 12px;
-      }
-    </style>
-{% endblock %}
-
 {% block content %}
-<div class="modal-body row">
-  {% comment %}
-  <div class="col-sm-1" style="width: 40px"></div>
-  <div class="col-md-2" role="navigation" id="pr_column_nav" style="padding-left: 10px;">
-    <div class="pull-right" style="width: 230px;">
-      {% include 'projectroles/project_list.html' %}
-    </div>
+  <div class="container-fluid pr-content" id="pr_column_content">
+    {% block projectroles %}
+      Projectroles app content here
+    {% endblock %}
   </div>
-  {% endcomment %}
-  <div class="col-md-12" style="min-height: 75vh" id="pr_column_content">
-      {% block projectroles %}
-        Projectroles app content here
-      {% endblock %}
-  </div>
-</div>
 {% endblock %}

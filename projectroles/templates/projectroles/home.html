@@ -5,63 +5,45 @@
 {% block css %}
   {{ block.super }}
   <style type="text/css">
-    .table th {
-      border-top: none !important;
-    }
-
-    .table tr td:nth-child(1) {
+    .table#omics-main-project-list tr td:nth-child(1) {
         white-space: nowrap;
     }
 
-    .table tr td:nth-child(3) {
+    .table#omics-main-project-list tr td:nth-child(3) {
         white-space: nowrap;
     }
-
-    div.card {
-        margin-bottom: 24px;
-    }
-
-    h4 {
-        margin-bottom: 0;
-    }
-
   </style>
-{% endblock %}
+{% endblock css %}
 
-{% block title %}Omics Data Access Prototype: Home{% endblock %}
+{% block title %}Omics Data Management: Home{% endblock title %}
 
 {% block projectroles %}
 
+{% has_perm 'projectroles.create_project' request.user as can_create_project %}
 <div class="row">
-  {% comment %}
-    {% include 'projectroles/_project_list_dropdown.html' %}
-  {% endcomment %}
-  {% has_perm 'projectroles.create_project' request.user as can_create_project %}
-  {% if can_create_project %}
-    <div class="btn-group pull-right">
-      <a class="btn btn-primary" role="button" id="pr_list_buttons_create" href="{% url 'project_create' %}">
-        <i class="fa fa-plus" aria-hidden="true"></i>
-        Create Top Level Category or Project
-      </a>
-    </div>
-    {% endif %}
   <h2>Home</h2>
+  {% if can_create_project %}
+    <a role="button" class="btn btn-primary ml-auto" href="{% url 'project_create' %}" id="pr_list_buttons_create">
+      <i class="fa fa-plus"></i>
+      Create Category or Project
+    </a>
+  {% endif %}
 </div>
 
-<div class="row" style="padding-top: 8px; padding-bottom: 16px;">
-  <hr />
+<div class="container-fluid omics-hr-container">
+  <hr>
 </div>
 
-<div class="row">
+<div class="container-fluid">
 
   {# Project List #}
 
-  <div class="card" style="margin-top: 0;" id="pr_project_list">
+  <div class="card" id="pr_project_list">
     <div class="card-header">
-      <h4><i class="fa fa-globe" aria-hidden="true"></i> Available Projects</h4>
+      <h4><i class="fa fa-globe"></i> Available Projects</h4>
     </div>
-    <div class="card-block" style="padding: 0;">
-     <table class="table table-striped" style="margin: 0">
+    <div class="card-body omics-card-body-table">
+     <table class="table table-striped omics-card-table" id="omics-main-project-list">
        <thead>
          {% include 'projectroles/_project_list_header.html' %}
        </thead>
@@ -75,7 +57,7 @@
            {% endfor %}
         {% else %}
            <tr>
-             <td class="bg-faded font-italic text-xs-center text-danger" colspan="6">No projects available: access must be granted by project personnel or a superuser</td>
+             <td class="bg-faded font-italic text-center text-danger" colspan="3">No projects available: access must be granted by project personnel or a superuser</td>
            </tr>
         {% endif %}
        </tbody>
@@ -89,13 +71,16 @@
 
     <div class="card">
       <div class="card-header">
-        <h4><i class="fa fa-mouse-pointer" aria-hidden="true"></i> Project Apps</h4>
+        <h4><i class="fa fa-mouse-pointer"></i> Project Apps</h4>
       </div>
-      <div class="card-block" style="padding-bottom: 0">
-        <dl class="row">
+      <div class="card-body omics-card-body">
+        <dl class="row omics-dl">
+          {# TODO: Temporary test, remove once plugins are introduced #}
+          <dt class="col-md-2"><i class="fa fa-globe"></i> Testing</dt>
+          <dd class="col-md-10">Description will go here</dd>
           {% for plugin in app_plugins %}
-            <dt class="col-md-3"><i class="fa fa-{{ plugin.icon }}" aria-hidden="true"></i> {{ plugin.title }}</dt>
-            <dd class="col-lg-9">{{ plugin.description }}</dd>
+            <dt class="col-md-2"><i class="fa fa-{{ plugin.icon }}"></i> {{ plugin.title }}</dt>
+            <dd class="col-md-10">{{ plugin.description }}</dd>
           {% endfor %}
         </dl>
       </div>
@@ -105,13 +90,13 @@
 
     <div class="card">
       <div class="card-header">
-        <h4><i class="fa fa-puzzle-piece" aria-hidden="true"></i> Enabled Backend Plugins</h4>
+        <h4><i class="fa fa-puzzle-piece"></i> Enabled Backend Plugins</h4>
       </div>
-      <div class="card-block" style="padding-bottom: 0">
-        <dl class="row">
+      <div class="card-body omics-card-body">
+        <dl class="row omics-dl">
           {% for plugin in backend_plugins %}
-            <dt class="col-md-3"><i class="fa fa-{{ plugin.icon }}" aria-hidden="true"></i> {{ plugin.title }}</dt>
-            <dd class="col-lg-9">{{ plugin.description }}</dd>
+            <dt class="col-md-2"><i class="fa fa-{{ plugin.icon }}"></i> {{ plugin.title }}</dt>
+            <dd class="col-md-10">{{ plugin.description }}</dd>
           {% endfor %}
         </dl>
       </div>
@@ -121,7 +106,7 @@
 
 </div>
 
-{% endblock %}
+{% endblock projectroles %}
 
 {% block javascript %}
   {{ block.super }}
@@ -133,7 +118,7 @@
     tour.addStep('home_project', {
         title: 'Available Projects',
         text: 'Projects available to you are listed in this table.',
-        attachTo: '#pr_home_header_project right',
+        attachTo: '#pr_project_list top',
         advanceOn: '.docs-link click',
         showCancelLink: true
     });
@@ -150,10 +135,10 @@
         tour.addStep('home_create', {
             title: 'Create a Category or Project',
             text: 'Click here to create a new top level category or project.',
-            attachTo: '#pr_list_buttons_create bottom',
+            attachTo: '#pr_list_buttons_create left',
             advanceOn: '.docs-link click',
             showCancelLink: true
         });
     }
   </script>
-{% endblock %}
+{% endblock javascript %}

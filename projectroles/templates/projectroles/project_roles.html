@@ -1,15 +1,15 @@
 {% extends 'projectroles/project_base.html' %}
 {% load rules %}
-{% block title %}User Roles for {{ object.title }}{% endblock %}
+{% block title %}User Roles for {{ object.title }}{% endblock title %}
 
 {% block css %}
-    {{ block.super }}
-    <style type="text/css">
-      .table th {
-        border-top: none !important;
-      }
-    </style>
-{% endblock %}
+  {{ block.super }}
+  <style type="text/css">
+    table.omics-card-table td:nth-child(5) {
+      width: 3em;
+    }
+  </style>
+{% endblock css %}
 
 {% block projectroles_extend %}
 
@@ -18,19 +18,21 @@
 {% has_perm 'projectroles.update_project_delegate' request.user object as can_update_delegate %}
 {% has_perm 'projectroles.invite_users' request.user object as can_invite %}
 
-<div class="row">
+<div class="row omics-subtitle-container">
+  <h3>
+    <i class="fa fa-users"></i> User Roles
+  </h3>
   {% if can_update_members or can_invite %}
     {% include 'projectroles/_role_list_buttons.html' with object=object can_update_members=can_update_members can_invite=can_invite %}
   {% endif %}
-  <h3><i class="fa fa-users" aria-hidden="true"></i> User Roles</h3>
 </div>
 
-<div class="row">
-  <div class="card" style="margin-top: 0;" id="pr_role_list">
-    <div class="card-block" style="padding: 0;">
-     <table class="table table-striped" style="margin: 0">
+<div class="container-fluid">
+  <div class="card omics-card-single" id="omics-pr-role-list">
+    <div class="card-body omics-card-body-table">
+     <table class="table table-striped omics-card-table">
        <thead>
-         <tr class="row">
+         <tr>
            <th>User</th>
            <th>Name</th>
            <th>Email</th>
@@ -96,7 +98,7 @@
 
 </div>
 
-{% endblock %}
+{% endblock projectroles_extend %}
 
 {% block javascript %}
   {{ block.super }}
@@ -108,7 +110,7 @@
     tour.addStep('role_list', {
         title: 'Role List',
         text: 'List of roles assigned for this project can be seen here.',
-        attachTo: '#pr_role_list top',
+        attachTo: '#omics-pr-role-list top',
         advanceOn: '.docs-link click',
         showCancelLink: true
     });
@@ -133,4 +135,4 @@
         });
     }
   </script>
-{% endblock %}
+{% endblock javascript %}

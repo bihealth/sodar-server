@@ -5,51 +5,34 @@
 {% block css %}
   {{ block.super }}
   <style type="text/css">
-    .table th {
-      border-top: none !important;
-    }
-
-    h4 {
-        margin-bottom: 0;
-    }
-
-    div.card {
-        margin-bottom: 24px;
-    }
-
-    div.card-block {
-        padding-bottom: 0;
-    }
-
     div.app-plugin-description {
-        padding: 8px 12px;
-        color: #000000;
-        background-color: #FFFFE0;
+      padding: 8px 12px;
+      color: #000000;
+      background-color: #FFFFE0;
     }
   </style>
-{% endblock %}
+{% endblock css %}
 
-{% block title %}Project {{ object.title }}{% endblock %}
+{% block title %}Project {{ object.title }}{% endblock title %}
 
 {% block projectroles %}
 
 {% has_perm 'projectroles.view_project' request.user object as can_view_project %}
-
 {% omics_constant 'PROJECT_TYPE_CATEGORY' as PROJECT_TYPE_CATEGORY %}
 
 {% if can_view_project %}
   {% include 'projectroles/_project_header.html' %}
 
-  <div class="row">
+  <div class="container-fluid">
 
     {# README #}
 
     {% if object.readme.rendered|length > 0 %}
       <div class="card" id="details_card_readme">
         <div class="card-header">
-          <h4><i class="fa fa-book" aria-hidden="true"></i> ReadMe</h4>
+          <h4><i class="fa fa-book"></i> ReadMe</h4>
         </div>
-        <div class="card-block" style="padding-bottom: 0">
+        <div class="card-body omics-card-body">
           {% autoescape off %}
             {% render_markdown object.readme.raw %}
           {% endautoescape %}
@@ -64,33 +47,33 @@
         {% has_perm plugin.app_permission request.user object as can_view_app %}
         {% if can_view_app %}
           <div class="card pr_app_card" id="pr_app_card_{{ plugin.pk }}">
-            <div class="card-header">
+            <div class="card-header card-header-omics-app-detail">
               <h4>
-                <i class="fa fa-{{ plugin.icon }}" aria-hidden="true"></i>
+                <i class="fa fa-{{ plugin.icon }}"></i>
                 {% if plugin.details_title %}
                   {{ plugin.details_title }}
                 {% else %}
                   {{ plugin.title }}
                 {% endif %}
-                <a role="button" class="btn btn-secondary btn-sm pull-right pr_app_card_details_link" href="{% url plugin.entry_point_url_id project=project.pk %}"><i class="fa fa-arrow-circle-right" aria-hidden="true"></i> View Details</a>
+                <a role="button" class="btn btn-link omics-details-app-button pull-right" href="{% url plugin.entry_point_url_id project=project.pk %}"><i class="fa fa-arrow-circle-right"></i> View Details</a>
               </h4>
             </div>
-            <div class="card-block app-plugin-description">
-                <i class="fa fa-info-circle" aria-hidden="true"></i> {{ plugin.description }}
+            <div class="card-body omics-card-body app-plugin-description">
+                <i class="fa fa-info-circle"></i> {{ plugin.description }}
             </div>
             {% if plugin.details_template %}
-              <div class="card-block" style="padding: 0">
+              <div class="card-body omics-card-body">
                 {% include plugin.details_template %}
               </div>
             {% else %}
-              <div class="card-block">
+              <div class="card-body omics-card-body">
                 <dl class="row">
                   <dt class="col-md-2">Description</dt>
-                  <dd class="col-lg-10">{{ plugin.description }}</dd>
+                  <dd class="col-md-10">{{ plugin.description }}</dd>
                   {% get_plugin_info plugin project.pk as plugin_info %}
                   {% for key, value in plugin_info %}
                     <dt class="col-md-2">{{ key }}</dt>
-                    <dd class="col-lg-10">{{ value }}</dd>
+                    <dd class="col-md-10">{{ value }}</dd>
                   {% endfor %}
                 </dl>
               </div>
@@ -100,40 +83,15 @@
       {% endfor %}
     {% endif %}
 
-    {# Project Information #}
-
-    <div class="card">
-      <div class="card-header">
-        {% if object.type == PROJECT_TYPE_CATEGORY %}
-          <h4><i class="fa fa-cubes" aria-hidden="true"></i> Category Information</h4>
-        {% else %}
-          <h4><i class="fa fa-cube" aria-hidden="true"></i> Project Information</h4>
-        {% endif %}
-      </div>
-      <div class="card-block">
-        <dl class="row">
-          <dt class="col-md-2">Description</dt>
-          <dd class="col-lg-10">{{ object.description }}</dd>
-
-          <dt class="col-md-2">My Role</dt>
-          {% if request.user.is_superuser %}
-              <dd class="col-lg-10 text-danger" title="Full control, can create top level projects">superuser</dd>
-          {% else %}
-            <dd class="col-lg-10" title="{{ role.description }}">{{ role.name }}</dd>
-          {% endif %}
-        </dl>
-      </div>
-    </div>
-
    {# Subprojects #}
 
    {% if object.get_children.count > 0 %}
      <div class="card">
       <div class="card-header">
-        <h4><i class="fa fa-globe" aria-hidden="true"></i> Subprojects</h4>
+        <h4><i class="fa fa-globe"></i> Subprojects</h4>
       </div>
-      <div class="card-block" style="padding: 0;">
-        <table class="table table-striped" style="margin: 0">
+      <div class="card-body omics-card-body-table">
+        <table class="table table-striped omics-card-table">
          <thead>
            {% include 'projectroles/_project_list_header.html' %}
          </thead>
@@ -155,7 +113,7 @@
   </div>
 {% endif %}
 
-{% endblock %}
+{% endblock projectroles %}
 
 {% block javascript %}
   {{ block.super }}
@@ -174,21 +132,26 @@
         showCancelLink: true
     });
 
-    tour.addStep('project_app_cards', {
-        title: 'Project App Overviews',
-        text: 'Overviews of project apps and data are presented here.',
-        attachTo: '.pr_app_card top',
-        advanceOn: '.docs-link click',
-        showCancelLink: true
-    });
+    if ($('.pr_app_card').length) {
+        tour.addStep('project_app_cards', {
+            title: 'Project App Overviews',
+            text: 'Overviews of project apps and data are presented here.',
+            attachTo: '.pr_app_card top',
+            advanceOn: '.docs-link click',
+            showCancelLink: true
+        });
+    }
 
-    tour.addStep('project_app_details', {
-        title: 'View Details of Project App',
-        text: 'In addition to the project menu above, project apps can also ' +
-              'be accessed using the "View Details" buttons.',
-        attachTo: '.pr_app_card_details_link left',
-        advanceOn: '.docs-link click',
-        showCancelLink: true
-    });
+    if ($('.omics-details-app-button').length) {
+        tour.addStep('project_app_details', {
+            title: 'View Details of Project App',
+            text: 'In addition to the project menu above, project apps can also ' +
+            'be accessed using the "View Details" buttons.',
+            attachTo: '.omics-details-app-button left',
+            advanceOn: '.docs-link click',
+            showCancelLink: true
+        });
+    }
   </script>
-{% endblock %}
+{% endblock javascript %}
+

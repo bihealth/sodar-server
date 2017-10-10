@@ -12,9 +12,9 @@
       <td style="white-space: nowrap; padding-left: 40px;">
     {% endif %}
       {% if p.type == 'CATEGORY' %}
-        <i class="fa fa-cubes" aria-hidden="true"></i>
+        <i class="fa fa-cubes"></i>
       {% else %}
-        <i class="fa fa-cube" aria-hidden="true"></i>
+        <i class="fa fa-cube"></i>
       {% endif %}
       {% if can_view_project %}
         <a href="{% url 'project_detail' pk=p.pk %}">{{ p.title }}</a>
@@ -32,14 +32,5 @@
         {% get_user_role_str p request.user %}
       {% endif %}
     </td>
-    {% comment %}
-    {% if can_view_project and can_view_timeline %}
-      {% autoescape off %}
-        {% get_latest_activity p timeline_backend %}
-      {% endautoescape %}
-    {% else %}
-      <td colspan="3"></td>
-    {% endif %}
-    {% endcomment %}
   </tr>
 {% endif %}

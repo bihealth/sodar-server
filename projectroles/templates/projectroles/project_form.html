@@ -8,13 +8,13 @@
   {% elif parent.pk %}
     Create Subproject for {{ parent.title }}
   {% else %}
-    Create Top Level Category or Project
+    Create Category or Project
   {% endif %}
-{% endblock %}
+{% endblock title %}
 
 {% block head_extend %}
-    {{ form.media }}
-{% endblock %}
+  {{ form.media }}
+{% endblock head_extend %}
 
 {% block css %}
   {{ block.super }}
@@ -26,7 +26,7 @@
       width: 100%;
     }
   </style>
-{% endblock %}
+{% endblock css %}
 
 {% block projectroles %}
 
@@ -34,28 +34,28 @@
     {% include 'projectroles/_project_header.html' %}
   {% endif %}
 
-<div class="row" style="margin-bottom: 12px">
+<div class="row omics-subtitle-container">
   {% if object.pk %}
     <h3>Update Project</h3>
   {% elif parent.pk %}
     <h2>Create Subproject for {{ parent.title }}</h2>
   {% else %}
-    <h2>Create Top Level Category or Project</h2>
+    <h2>Create Category or Project</h2>
   {% endif %}
 </div>
 
-<div class="row">
+<div class="container-fluid">
   <form method="post">
     {% csrf_token %}
     {{ form | crispy }}
-    <div class="btn-group pull-right">
+    <div class="btn-group pull-right" role="group">
       <a role="button" class="btn btn-secondary"
           href="{{ request.META.HTTP_REFERER }}">
-        <i class="fa fa-arrow-circle-left" aria-hidden="true"></i>
+        <i class="fa fa-arrow-circle-left"></i>
         Cancel
       </a>
       <button type="submit" class="btn btn-primary">
-        <i class="fa fa-check" aria-hidden="true"></i>
+        <i class="fa fa-check"></i>
         {% if object.pk %}
           Update
         {% else %}
@@ -66,4 +66,4 @@
   </form>
 </div>
 
-{% endblock %}
+{% endblock projectroles %}

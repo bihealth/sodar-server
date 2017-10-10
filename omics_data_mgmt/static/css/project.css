@@ -24,21 +24,159 @@
 Project specific styles below
 ******************************/
 
+/* Containers */
+
+.row {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.container-fluid {
+  padding-left: 0;
+  padding-right: 0;
+}
+
 nav.omics-base-navbar {
-  padding-left: 20px;
-  padding-right: 20px;
+  padding-left: 42px;
+  padding-right: 42px;
 }
 
 div.omics-base-container {
-  max-width: 1700px;
-  padding-left: 35px;
-  padding-right: 35px;
+  max-width: 1500px;
+  padding: 28px 42px;
   overflow-x: hidden;
+  min-height: 75vh;
 }
+
+div.omics-container-alert {
+  margin-bottom: 0;
+}
+
+div.omics-hr-container {
+  padding-top: 8px;
+  padding-bottom: 12px;
+}
+
+div.omics-subtitle-container {
+  padding-bottom: 12px;
+}
+
+/* Titles */
+
+h2 {
+}
+
+h3 {
+  margin-top: 3px;
+}
+
+h4 {
+  margin-bottom: 0;
+}
+
+/* Cards */
 
 div.card {
   padding-left: 0;
   padding-right: 0;
   margin-left: 0;
   margin-right: 0;
+  margin-bottom: 24px;
+}
+
+div.omics-card-single {
+  margin-bottom: 16px;
+}
+
+div.card-header {
+  padding: 12px;
+}
+
+div.card-header-omics-app-detail {
+  padding-bottom: 3px;
+}
+
+div.omics-card-body {
+  padding: 12px 12px 0;
+}
+
+div.omics-card-body-table {
+  padding: 0;
+}
+
+/* Tables within cards */
+
+table.omics-card-table {
+  margin: 0;
+}
+
+table.omics-card-table th {
+  border-top: none !important;
+}
+
+/* Popups */
+
+.omics-popup-overlay {
+  background: transparent;
+  min-width: 50%;
+  max-width: 85%;
+  margin-top: 25px;
+  margin-bottom: 25px;
+  text-align: center;
+}
+
+/* Lists */
+
+dl.omics-dl {
+  margin: 0;
+  padding-left: 0;
+  padding-right: 0;
+  padding-bottom: 8px;
+}
+
+dl.omics-dl dt {
+  padding-left: 0;
+}
+
+dl.omics-dl dd {
+  padding-left: 0;
+}
+
+/* Buttons */
+
+/* HACK for Bootstrap v4 Beta button group alignmeng with dropdown enabled */
+.btn {
+  height: 2.35em;
+}
+
+.dropdown-toggle {
+  height: inherit;
+}
+
+.btn-group {
+  height: 2.35em;
+}
+
+.omics-edit-button-group {
+  height: 1.75em;
+}
+
+.omics-edit-dropdown {
+  height: 2.0em !important;
+  margin-bottom: 0;
+  padding-top: 2px;
+}
+
+.omics-details-app-button {
+  padding-top: 4px;
+  padding-right: 0;
+}
+
+/* Misc */
+
+.omics-alert-top {
+  padding-left: 42px;
+  padding-right: 42px;
+  border-radius: 0;
+  margin-bottom: 0;
 }

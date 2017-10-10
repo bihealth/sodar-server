@@ -37,6 +37,7 @@ if READ_DOT_ENV_FILE:
     # Operating System Environment variables have precedence over variables defined in the .env file,
     # that is to say variables from the .env files will only be used if not defined
     # as environment variables.
+
     env_file = str(ROOT_DIR.path('.env'))
     env.read_env(env_file)
 
@@ -66,11 +67,13 @@ DJANGO_APPS = [
 ]
 THIRD_PARTY_APPS = [
     'crispy_forms',  # Form layouts
-    'allauth',  # registration
-    'allauth.account',  # registration
-    'allauth.socialaccount',  # registration
-    'rules.apps.AutodiscoverRulesConfig',  # django rules engine
+    'allauth',  # Registration
+    'allauth.account',  # Registration
+    'allauth.socialaccount',  # RRegistration
+    'rules.apps.AutodiscoverRulesConfig',  # Django rules engine
     'djangoplugins',  # Django plugins
+    'pagedown',  # For markdown
+    'markupfield',  # For markdown
 ]
 
 # Apps specific for this project go here.

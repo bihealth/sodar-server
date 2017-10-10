@@ -1,7 +1,7 @@
 {% if up %}
-  <div class="btn-group dropup pull-right" id="pr_role_list_buttons_up" style="margin-bottom: 12px;">
+  <div class="btn-group dropup pull-right" id="pr_role_list_buttons_up">
 {% else %}
-  <div class="btn-group pull-right" id="pr_role_list_buttons" style="margin-bottom: 12px;">
+  <div class="btn-group ml-auto" id="pr_role_list_buttons">
 {% endif %}
   <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
     Role Actions
@@ -13,7 +13,7 @@
       <a class="dropdown-item" href="{% url 'project_roles' pk=object.pk %}"
          title="View Invites"
          id="pr_role_list_buttons_roles">
-        <i class="fa fa-users" aria-hidden="true"></i>
+        <i class="fa fa-users"></i>
           View Roles
       </a>
     {% endif %}
@@ -23,7 +23,7 @@
       <a class="dropdown-item" href="{% url 'role_invites' project=object.pk %}"
          title="View Invites"
          id="pr_role_list_buttons_invites">
-        <i class="fa fa-envelope" aria-hidden="true"></i>
+        <i class="fa fa-envelope"></i>
           View Invites
       </a>
     {% endif %}
@@ -33,7 +33,7 @@
       <a class="dropdown-item" href="{% url 'role_invite_create' project=object.pk %}"
          title="Send Invite"
          id="pr_role_list_buttons_invite">
-        <i class="fa fa-send" aria-hidden="true"></i>
+        <i class="fa fa-send"></i>
           Send Invite
       </a>
     {% endif %}
@@ -43,7 +43,7 @@
       <a class="dropdown-item" href="{% url 'role_create' project=object.pk %}"
          title="Add Role"
          id="pr_role_list_buttons_create">
-        <i class="fa fa-user-plus" aria-hidden="true"></i>
+        <i class="fa fa-user-plus"></i>
           Add Role
       </a>
     {% endif %}

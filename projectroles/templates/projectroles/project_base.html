@@ -2,7 +2,7 @@
 {% load rules %}
 {% load projectroles_tags %}
 
-{% block title %}Project "{{ project.title }}"{% endblock %}
+{% block title %}Project "{{ project.title }}"{% endblock title %}
 
 {% block projectroles %}
 
@@ -15,7 +15,7 @@
 
   {% block projectroles_extend %}
     {# Content from an app extending projectroles will go here #}
-  {% endblock %}
+  {% endblock projectroles_extend %}
 
 {% else %}
   <div class="alert alert-danger" role="alert">
@@ -23,4 +23,4 @@
   </div>
 {% endif %}
 
-{% endblock %}
+{% endblock projectroles %}

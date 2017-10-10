@@ -2,59 +2,39 @@
 {% load crispy_forms_filters %}
 {% load projectroles_tags %}
 
-{% block title %}
-  Send Invite for {{ project.title }}
-{% endblock %}
-
-{% block css %}
-    {{ block.super }}
-    <style type="text/css">
-      div.card {
-        margin-bottom: 24px;
-      }
-
-      #irods_dir_popup {
-          background: transparent;
-          min-width: 50%;
-          max-width: 85%;
-          margin-top: 25px;
-          margin-bottom: 25px;
-          text-align: center;
-      }
-    </style>
-{% endblock %}
+{% block title %}Send Invite for {{ project.title }}{% endblock title %}
 
 {% block projectroles_extend %}
 
-<div class="row">
+<div class="row omics-subtitle-container">
   <h3>Send Invite</h3>
 </div>
 
-<div class="row">
+<div class="container-fluid">
   <form method="post">
     {% csrf_token %}
     {{ form | crispy }}
     <div class="btn-group pull-right">
       <a role="button" class="btn btn-secondary"
           href="{% url 'project_roles' pk=project.pk %}">
-        <i class="fa fa-arrow-circle-left" aria-hidden="true"></i>
+        <i class="fa fa-arrow-circle-left"></i>
         Cancel
       </a>
-      <a role="button" class="btn btn-secondary" id="invite_preview_link">
-        <i class="fa fa-eye" aria-hidden="true"></i>
+      <a role="button" class="btn btn-primary text-light" id="invite_preview_link">
+        <i class="fa fa-eye"></i>
         Preview
       </a>
       <button type="submit" class="btn btn-primary">
-        <i class="fa fa-send" aria-hidden="true"></i>
+        <i class="fa fa-send"></i>
           Send
       </button>
     </div>
   </form>
 </div>
 
-<span id="invite_preview_popup"></span>
+<span class="omics-popup-overlay" id="invite_preview_popup"></span>
 
-{% endblock %}
+{% endblock projectroles_extend %}
 
 {% block javascript %}
   {{ block.super }}
@@ -72,7 +52,7 @@
                 var message = $('#id_message').val();
                 body = body.replace('{role_name}', roleName);
 
-                var htmlData = '<div class="card"><div class="card-block"><h5>Invite Preview</h5><hr>';
+                var htmlData = '<div class="card"><div class="card-body"><h5>Invite Preview</h5><hr>';
                 htmlData += '<strong>Subject:</strong><pre>{{ preview_subject }}</pre>';
                 htmlData += '<strong>To:</strong><pre>' + $('#id_email').val() + '</pre>';
                 htmlData += '<strong>Body:</strong>';
@@ -90,4 +70,4 @@
     });
   </script>
 
-{% endblock %}
+{% endblock javascript %}
