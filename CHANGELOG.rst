@@ -23,7 +23,8 @@ Changed
 
 - **General**
     - Update site from Bootstrap 4 Alpha 5 to Beta
-    - Update several third-party libraries to their latest versions
+    - Update third-party libraries to their latest versions
+    - Switch from PhantomJS to Headless Chrome for UI tests (improved performance and stability, Bootstrap 4 Beta compatibility)
     - General code refactoring and cleanup
     - Update installation instructions in ``INSTALL.rst``
 - **Projectroles**
@@ -41,7 +42,8 @@ Fixed
 Removed
 -------
 
-- TODO
+- **Projectroles**
+    - Remove temporary settings variables for demo and UI testing hacks
 
 
 v0.1 (2017-XX-YY)

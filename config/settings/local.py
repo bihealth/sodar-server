@@ -106,9 +106,3 @@ ENABLED_BACKEND_PLUGINS = env.list('ENABLED_BACKEND_PLUGINS', None, [
 # Samplesheets and Landingzones link settings
 # TODO: Deprecate this?
 IRODS_CLOUDBROWSER_ENABLED = True
-
-
-# Temporary local development hack
-# TODO: Deprecate these?
-LOCAL_DEMO_MODE = False
-LOCAL_TEMPLATE_INCLUDES = True

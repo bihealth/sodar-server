@@ -12,3 +12,6 @@ django-coverage-plugin==1.5.0
 # pytest
 pytest-django==3.1.2
 pytest-sugar==0.9.0
+
+# Selenium for UI testing
+selenium==3.6.0

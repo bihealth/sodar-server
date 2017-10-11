@@ -45,7 +45,7 @@ if READ_DOT_ENV_FILE:
 # ------------------------------------------------------------------------------
 # Hosts/domain names that are valid for this site
 # See https://docs.djangoproject.com/en/dev/ref/settings/#allowed-hosts
-ALLOWED_HOSTS = env.list('DJANGO_ALLOWED_HOSTS', default=['example.com', ])
+ALLOWED_HOSTS = env.list('DJANGO_ALLOWED_HOSTS', default=['*'])
 # END SITE CONFIGURATION
 
 # APP CONFIGURATION
@@ -273,6 +273,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # AUTHENTICATION CONFIGURATION
 # ------------------------------------------------------------------------------
 AUTHENTICATION_BACKENDS = [
+    'rules.permissions.ObjectPermissionBackend',    # For rules
     'django.contrib.auth.backends.ModelBackend',
     'allauth.account.auth_backends.AuthenticationBackend',
 ]
@@ -373,8 +374,3 @@ TITLEBAR_SHOW_USER = False
 PROJECTROLES_SECRET_LENGTH = 32
 PROJECTROLES_INVITE_EXPIRY_DAYS = env.int('PROJECTROLES_INVITE_EXPIRY_DAYS', 14)
 PROJECTROLES_SEND_EMAIL = env.bool('PROJECTROLES_SEND_EMAIL', False)
-
-# Temporary local development hack
-# TODO: Deprecate these?
-LOCAL_DEMO_MODE = False
-LOCAL_TEMPLATE_INCLUDES = False
