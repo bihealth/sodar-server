@@ -45,10 +45,9 @@ Install the dependencies:
 .. code-block:: shell
 
     $ sudo utility/install_os_dependencies.sh install
-    $ sudo utility/install_phantomjs.sh
+    $ sudo utility/install_chrome.sh
     $ pip install --upgrade pip
     $ utility/install_python_dependencies.sh install
-    $ for f in requirements/*.txt; do pip install -r $f; done
 
 Initialize the database:
 

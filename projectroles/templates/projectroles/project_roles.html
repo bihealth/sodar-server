@@ -115,20 +115,22 @@
         showCancelLink: true
     });
 
-    tour.addStep('role_actions', {
-        title: 'Role Actions Menu',
-        text: 'Use this menu to add roles, send invites or view existing ' +
-              'invites.',
-        attachTo: '#pr_role_list_buttons left',
-        advanceOn: '.docs-link click',
-        showCancelLink: true
-    });
+    if ($('#omics-pr-btn-role-list').length) {
+        tour.addStep('role_actions', {
+            title: 'Role Actions Menu',
+            text: 'Use this menu to add roles, send invites or view existing ' +
+            'invites.',
+            attachTo: '#omics-pr-btn-role-list left',
+            advanceOn: '.docs-link click',
+            showCancelLink: true
+        });
+    }
 
     if ($('div.pr_role_buttons').length) {
         tour.addStep('role_menu', {
             title: 'Role Editing Menu',
             text: 'Individual roles can be updated or removed from these menues.',
-            attachTo: 'div.pr_role_buttons left',
+            attachTo: 'div.omics-pr-btn-grp-role left',
             advanceOn: '.docs-link click',
             showCancelLink: true,
             scrollTo: true

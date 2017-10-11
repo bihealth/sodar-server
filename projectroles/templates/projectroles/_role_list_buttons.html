@@ -1,7 +1,7 @@
 {% if up %}
-  <div class="btn-group dropup pull-right" id="pr_role_list_buttons_up">
+  <div class="btn-group dropup pull-right" id="omics-pr-btn-role-list-up">
 {% else %}
-  <div class="btn-group ml-auto" id="pr_role_list_buttons">
+  <div class="btn-group ml-auto" id="omics-pr-btn-role-list">
 {% endif %}
   <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
     Role Actions
@@ -12,7 +12,7 @@
     {% if can_update_members and request.resolver_match.url_name != 'project_roles' %}
       <a class="dropdown-item" href="{% url 'project_roles' pk=object.pk %}"
          title="View Invites"
-         id="pr_role_list_buttons_roles">
+         id="omics-pr-btn-role-list-roles">
         <i class="fa fa-users"></i>
           View Roles
       </a>
@@ -22,7 +22,7 @@
     {% if can_invite and request.resolver_match.url_name != 'role_invites' %}
       <a class="dropdown-item" href="{% url 'role_invites' project=object.pk %}"
          title="View Invites"
-         id="pr_role_list_buttons_invites">
+         id="omics-pr-btn-role-list-invites">
         <i class="fa fa-envelope"></i>
           View Invites
       </a>
@@ -32,7 +32,7 @@
     {% if can_invite %}
       <a class="dropdown-item" href="{% url 'role_invite_create' project=object.pk %}"
          title="Send Invite"
-         id="pr_role_list_buttons_invite">
+         id="omics-pr-btn-role-list-invite">
         <i class="fa fa-send"></i>
           Send Invite
       </a>
@@ -42,7 +42,7 @@
     {% if can_update_members %}
       <a class="dropdown-item" href="{% url 'role_create' project=object.pk %}"
          title="Add Role"
-         id="pr_role_list_buttons_create">
+         id="omics-pr-btn-role-list-create">
         <i class="fa fa-user-plus"></i>
           Add Role
       </a>

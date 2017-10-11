@@ -20,7 +20,7 @@
         <i class="fa fa-arrow-circle-left"></i>
         Cancel
       </a>
-      <a role="button" class="btn btn-primary text-light" id="invite_preview_link">
+      <a role="button" class="btn btn-primary text-light" id="omics-pr-invite-preview-link">
         <i class="fa fa-eye"></i>
         Preview
       </a>
@@ -32,19 +32,19 @@
   </form>
 </div>
 
-<span class="omics-popup-overlay" id="invite_preview_popup"></span>
+<span class="omics-popup-overlay" id="omics-pr-invite-preview-popup"></span>
 
 {% endblock projectroles_extend %}
 
 {% block javascript %}
   {{ block.super }}
   <script type="text/javascript">
-    $('#invite_preview_link').click(function() {
-        $('#invite_preview_popup').popup('show');
+    $('#omics-pr-invite-preview-link').click(function() {
+        $('#omics-pr-invite-preview-popup').popup('show');
     });
 
     $(document).ready(function() {
-        $('#invite_preview_popup').popup({
+        $('#omics-pr-invite-preview-popup').popup({
             transition: 'all 0.2s',
             beforeopen: function () {
                 var body = '{{ preview_body }}';

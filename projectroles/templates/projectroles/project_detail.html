@@ -28,7 +28,7 @@
     {# README #}
 
     {% if object.readme.rendered|length > 0 %}
-      <div class="card" id="details_card_readme">
+      <div class="card" id="omics-pr-details-card-readme">
         <div class="card-header">
           <h4><i class="fa fa-book"></i> ReadMe</h4>
         </div>
@@ -46,7 +46,7 @@
       {% for plugin in app_plugins %}
         {% has_perm plugin.app_permission request.user object as can_view_app %}
         {% if can_view_app %}
-          <div class="card pr_app_card" id="pr_app_card_{{ plugin.pk }}">
+          <div class="card pr_app_card" id="omics-pr-app-card-{{ plugin.pk }}">
             <div class="card-header card-header-omics-app-detail">
               <h4>
                 <i class="fa fa-{{ plugin.icon }}"></i>
@@ -127,7 +127,7 @@
         text: 'From this menu you can access project apps and actions. ' +
               'The back link returns you to the previous level as you ' +
               'navigate within the project.',
-        attachTo: '#pr_buttons_back_overview bottom',
+        attachTo: '#omics-pr-btn-back-overview bottom',
         advanceOn: '.docs-link click',
         showCancelLink: true
     });

@@ -125,13 +125,13 @@ def get_invite_body(
         project, issuer, role_name, invite_url, date_expire_str, message=None):
     """
     Return the invite content header.
-    :project: Project object
-    :issuer: User object
-    :role_name: Display name of the Role object
-    :invite_url: Generated URL for the invite
-    :date_expire_str: Expiry date as a pre-formatted string
-    :message: Optional user message as string
-    :returns: string
+    :param project: Project object
+    :param issuer: User object
+    :param role_name: Display name of the Role object
+    :param invite_url: Generated URL for the invite
+    :param date_expire_str: Expiry date as a pre-formatted string
+    :param message: Optional user message as string
+    :return: string
     """
     body = MESSAGE_HEADER_NO_RECIPIENT
 
@@ -149,8 +149,8 @@ def get_invite_body(
 def get_invite_message(message=None):
     """
     Return the message from invite issuer, of empty string if not set.
-    :message: Optional user message as string
-    :returns: string
+    :param message: Optional user message as string
+    :return: string
     """
     if message and len(message) > 0:
         return MESSAGE_INVITE_ISSUER.format(message)
@@ -161,7 +161,7 @@ def get_invite_message(message=None):
 def get_email_footer():
     """
     Return the invite content footer.
-    :returns: string
+    :return: string
     """
     return MESSAGE_FOOTER
 
@@ -180,7 +180,7 @@ def get_role_change_subject(change_type, project):
     Return role change email subject
     :param change_type: Change type ('create', 'update', 'delete')
     :param project: Project object
-    :returns: String
+    :return: String
     """
     subject = SUBJECT_PREFIX + ' '
 
@@ -206,7 +206,7 @@ def get_role_change_body(
     :param role_name: Name of role as string
     :param issuer: User object for issuing user
     :param project_url: URL for the project
-    :returns: String
+    :return: String
     """
     body = MESSAGE_HEADER.format(recipient=user_name)
 
@@ -247,7 +247,7 @@ def send_role_change_mail(change_type, project, user, role, request):
     :param user: User object
     :param role: Role object (can be None for deletion)
     :param request: HTTP request
-    :returns: 1 or 0 depending on email sending success
+    :return: 1 or 0 depending on email sending success
     """
     project_url = request.build_absolute_uri(reverse(
         'project_detail',
@@ -275,7 +275,7 @@ def send_invite_mail(invite, request):
     Send an email invitation to user not yet registered in the system.
     :param invite: ProjectInvite object
     :param request: HTTP request
-    :returns: 1 or 0 depending on email sending success
+    :return: 1 or 0 depending on email sending success
     """
     invite_url = build_invite_url(invite, request)
 
@@ -305,7 +305,7 @@ def send_accept_note(invite, request):
     accepts the invitation.
     :param invite: ProjectInvite object
     :param request: HTTP request
-    :returns: 1 or 0 depending on email sending success
+    :return: 1 or 0 depending on email sending success
     """
     subject = SUBJECT_PREFIX + ' ' + SUBJECT_ACCEPT.format(
         user_name=request.user.name,
@@ -336,7 +336,7 @@ def send_expiry_note(invite, request):
     attempts to accept an expired invitation.
     :param invite: ProjectInvite object
     :param request: HTTP request
-    :returns: 1 or 0 depending on email sending success
+    :return: 1 or 0 depending on email sending success
     """
     subject = SUBJECT_PREFIX + ' ' + SUBJECT_EXPIRY.format(
         user_name=request.user.name,

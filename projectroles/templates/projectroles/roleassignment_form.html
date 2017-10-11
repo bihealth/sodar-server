@@ -30,7 +30,7 @@
         <i class="fa fa-arrow-circle-left"></i>
         Cancel
       </a>
-      <a role="button" class="btn btn-primary text-light" id="email_preview_link">
+      <a role="button" class="btn btn-primary text-light" id="omics-pr-email-preview-link">
         <i class="fa fa-eye"></i>
         Preview
       </a>
@@ -46,7 +46,7 @@
   </form>
 </div>
 
-<span class="omics-popup-overlay" id="email_preview_popup"></span>
+<span class="omics-popup-overlay" id="omics-pr-email-preview-popup"></span>
 
 {% endblock projectroles_extend %}
 
@@ -54,11 +54,11 @@
   {{ block.super }}
   <script type="text/javascript">
       $(document).ready(function() {
-          $('#email_preview_link').click(function() {
-            $('#email_preview_popup').popup('show');
+          $('#omics-pr-email-preview-link').click(function() {
+            $('#omics-pr-email-preview-popup').popup('show');
       });
 
-          $('#email_preview_popup').popup({
+          $('#omics-pr-email-preview-popup').popup({
               transition: 'all 0.2s',
               beforeopen: function () {
                   var body = '{{ preview_body }}';

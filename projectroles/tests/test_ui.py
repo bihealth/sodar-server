@@ -29,10 +29,10 @@ PROJECT_TYPE_PROJECT = OMICS_CONSTANTS['PROJECT_TYPE_PROJECT']
 
 # Local constants
 PROJECT_BUTTON_IDS = [
-    'pr_project_buttons_roles',
-    'pr_project_buttons_update',
-    'pr_project_buttons_create',
-    'pr_project_buttons_settings']
+    'omics-pr-btn-project-roles',
+    'omics-pr-btn-project-update',
+    'omics-pr-btn-project-create',
+    'omics-pr-btn-project-settings']
 
 
 User = auth.get_user_model()
@@ -286,10 +286,10 @@ class TestProjectList(TestUIBase):
         url = reverse('home')
 
         self.assert_element_exists(
-            expected_true, url, 'pr_list_buttons_create', True)
+            expected_true, url, 'omics-pr-home-btn-create', True)
 
         self.assert_element_exists(
-            expected_false, url, 'pr_list_buttons_create', False)
+            expected_false, url, 'omics-pr-home-btn-create', False)
 
 
 class TestProjectDetail(TestUIBase):
@@ -300,25 +300,25 @@ class TestProjectDetail(TestUIBase):
         permissions"""
         expected = [
             (self.superuser, [
-                'pr_project_buttons_roles',
-                'pr_project_buttons_update',
-                'pr_project_buttons_create',
-                'pr_project_buttons_settings']),
+                'omics-pr-btn-project-roles',
+                'omics-pr-btn-project-update',
+                'omics-pr-btn-project-create',
+                'omics-pr-btn-project-settings']),
             (self.as_owner.user, [
-                'pr_project_buttons_roles',
-                'pr_project_buttons_update',
-                'pr_project_buttons_create',
-                'pr_project_buttons_settings']),
+                'omics-pr-btn-project-roles',
+                'omics-pr-btn-project-update',
+                'omics-pr-btn-project-create',
+                'omics-pr-btn-project-settings']),
             (self.as_delegate.user, [
-                'pr_project_buttons_roles',
-                'pr_project_buttons_update',
-                'pr_project_buttons_settings']),
+                'omics-pr-btn-project-roles',
+                'omics-pr-btn-project-update',
+                'omics-pr-btn-project-settings']),
             (self.as_staff.user, [
-                'pr_project_buttons_roles']),
+                'omics-pr-btn-project-roles']),
             (self.as_contributor.user, [
-                'pr_project_buttons_roles']),
+                'omics-pr-btn-project-roles']),
             (self.as_guest.user, [
-                'pr_project_buttons_roles'])]
+                'omics-pr-btn-project-roles'])]
 
         url = reverse(
             'project_detail', kwargs={'pk': self.project_top.pk})
@@ -330,23 +330,23 @@ class TestProjectDetail(TestUIBase):
         permissions"""
         expected = [
             (self.superuser, [
-                'pr_project_buttons_roles',
-                'pr_project_buttons_update',
-                'pr_project_buttons_settings']),
+                'omics-pr-btn-project-roles',
+                'omics-pr-btn-project-update',
+                'omics-pr-btn-project-settings']),
             (self.as_owner.user, [
-                'pr_project_buttons_roles',
-                'pr_project_buttons_update',
-                'pr_project_buttons_settings']),
+                'omics-pr-btn-project-roles',
+                'omics-pr-btn-project-update',
+                'omics-pr-btn-project-settings']),
             (self.as_delegate.user, [
-                'pr_project_buttons_roles',
-                'pr_project_buttons_update',
-                'pr_project_buttons_settings']),
+                'omics-pr-btn-project-roles',
+                'omics-pr-btn-project-update',
+                'omics-pr-btn-project-settings']),
             (self.as_staff.user, [
-                'pr_project_buttons_roles']),
+                'omics-pr-btn-project-roles']),
             (self.as_contributor.user, [
-                'pr_project_buttons_roles']),
+                'omics-pr-btn-project-roles']),
             (self.as_guest.user, [
-                'pr_project_buttons_roles'])]
+                'omics-pr-btn-project-roles'])]
 
         url = reverse(
             'project_detail', kwargs={'pk': self.project.pk})
@@ -358,11 +358,11 @@ class TestProjectDetail(TestUIBase):
         permissions"""
         expected = [
             (self.superuser, [
-                'pr_project_buttons_update',
-                'pr_project_buttons_create']),
+                'omics-pr-btn-project-update',
+                'omics-pr-btn-project-create']),
             (self.as_owner.user, [
-                'pr_project_buttons_update',
-                'pr_project_buttons_create'])]
+                'omics-pr-btn-project-update',
+                'omics-pr-btn-project-create'])]
         url = reverse(
             'project_detail', kwargs={'pk': self.category.pk})
 
@@ -386,10 +386,10 @@ class TestProjectRoles(TestUIBase):
         url = reverse('project_roles', kwargs={'pk': self.project.pk})
 
         self.assert_element_exists(
-            expected_true, url, 'pr_role_list_buttons', True)
+            expected_true, url, 'omics-pr-btn-role-list', True)
 
         self.assert_element_exists(
-            expected_false, url, 'pr_role_list_buttons', False)
+            expected_false, url, 'omics-pr-btn-role-list', False)
 
     def test_role_list_invite_button(self):
         """Test visibility of role invite button according to user
@@ -405,10 +405,10 @@ class TestProjectRoles(TestUIBase):
         url = reverse('project_roles', kwargs={'pk': self.project.pk})
 
         self.assert_element_exists(
-            expected_true, url, 'pr_role_list_buttons_invite', True)
+            expected_true, url, 'omics-pr-btn-role-list-invite', True)
 
         self.assert_element_exists(
-            expected_false, url, 'pr_role_list_buttons_invite', False)
+            expected_false, url, 'omics-pr-btn-role-list-invite', False)
 
     def test_role_list_add_button(self):
         """Test visibility of role invite button according to user
@@ -424,10 +424,10 @@ class TestProjectRoles(TestUIBase):
         url = reverse('project_roles', kwargs={'pk': self.project.pk})
 
         self.assert_element_exists(
-            expected_true, url, 'pr_role_list_buttons_create', True)
+            expected_true, url, 'omics-pr-btn-role-list-create', True)
 
         self.assert_element_exists(
-            expected_false, url, 'pr_role_list_buttons_create', False)
+            expected_false, url, 'omics-pr-btn-role-list-create', False)
 
     def test_role_buttons(self):
         """Test visibility of role management buttons according to user
@@ -440,7 +440,7 @@ class TestProjectRoles(TestUIBase):
             (self.as_contributor.user, 0),
             (self.as_guest.user, 0)]
         url = reverse('project_roles', kwargs={'pk': self.project.pk})
-        self.assert_element_count(expected, url, 'pr_role_buttons')
+        self.assert_element_count(expected, url, 'omics-pr-btn-grp-role')
 
 
 class TestProjectInviteList(TestUIBase, ProjectInviteMixin):
@@ -456,7 +456,7 @@ class TestProjectInviteList(TestUIBase, ProjectInviteMixin):
         url = reverse('role_invites', kwargs={'project': self.project.pk})
 
         self.assert_element_exists(
-            expected_true, url, 'pr_role_list_buttons', True)
+            expected_true, url, 'omics-pr-btn-role-list', True)
 
     def test_role_list_invite_button(self):
         """Test visibility of role invite button according to user
@@ -468,7 +468,7 @@ class TestProjectInviteList(TestUIBase, ProjectInviteMixin):
         url = reverse('role_invites', kwargs={'project': self.project.pk})
 
         self.assert_element_exists(
-            expected_true, url, 'pr_role_list_buttons_invite', True)
+            expected_true, url, 'omics-pr-btn-role-list-invite', True)
 
     def test_role_list_add_button(self):
         """Test visibility of role invite button according to user
@@ -480,7 +480,7 @@ class TestProjectInviteList(TestUIBase, ProjectInviteMixin):
         url = reverse('role_invites', kwargs={'project': self.project.pk})
 
         self.assert_element_exists(
-            expected_true, url, 'pr_role_list_buttons_create', True)
+            expected_true, url, 'omics-pr-btn-role-list-create', True)
 
     def test_invite_buttons(self):
         """Test visibility of invite management buttons according to user
@@ -498,7 +498,7 @@ class TestProjectInviteList(TestUIBase, ProjectInviteMixin):
             (self.as_owner.user, 1),
             (self.as_delegate.user, 1)]
         url = reverse('role_invites', kwargs={'project': self.project.pk})
-        self.assert_element_count(expected, url, 'pr_invite_buttons')
+        self.assert_element_count(expected, url, 'omics-pr-btn-grp-invite')
 
 # TODO: Uncomment once other apps are added
 '''

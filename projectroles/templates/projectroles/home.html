@@ -23,7 +23,7 @@
 <div class="row">
   <h2>Home</h2>
   {% if can_create_project %}
-    <a role="button" class="btn btn-primary ml-auto" href="{% url 'project_create' %}" id="pr_list_buttons_create">
+    <a role="button" class="btn btn-primary ml-auto" href="{% url 'project_create' %}" id="omics-pr-home-btn-create">
       <i class="fa fa-plus"></i>
       Create Category or Project
     </a>
@@ -126,16 +126,16 @@
     tour.addStep('home_role', {
         title: 'Your Roles',
         text: 'The role assigned to you in each project can be seen here.',
-        attachTo: '#pr_home_header_role left',
+        attachTo: '#omics-pr-home-header-role left',
         advanceOn: '.docs-link click',
         showCancelLink: true
     });
 
-    if ($('#pr_list_buttons_create').length) {
+    if ($('#omics-pr-home-btn-create').length) {
         tour.addStep('home_create', {
             title: 'Create a Category or Project',
             text: 'Click here to create a new top level category or project.',
-            attachTo: '#pr_list_buttons_create left',
+            attachTo: '#omics-pr-home-btn-create left',
             advanceOn: '.docs-link click',
             showCancelLink: true
         });

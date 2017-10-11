@@ -137,7 +137,7 @@ def get_active_plugins(plugin_type='app'):
     """
     Return active plugins of a specific type
     :param plugin_type: 'app' or 'backend' (string)
-    :returns: List or None
+    :return: List or None
     """
     # TODO: Replace code doing this same thing in views
     if plugin_type == 'app':
