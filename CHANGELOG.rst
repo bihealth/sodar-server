@@ -12,31 +12,31 @@ Unreleased
 Added
 -----
 
-- **General:** New base project using the current version of
-  `cookiecutter-django<https://github.com/pydanny/cookiecutter-django>`_
-- **Projectroles:** Import app from prototype
-- **CHANGELOG.rst:** Add changelog
+- **General**
+    - Create new base project using the current version of `cookiecutter-django<https://github.com/pydanny/cookiecutter-django>`_
+    - Add changelog in ``CHANGELOG.rst``
+- **Projectroles**
+    - Import app from prototype
 
 Changed
 -------
 
-- **General:** Upgrade site from Bootstrap 4 Alpha to Bootstrap 4 Beta
-- **General:** Update several third-party libraries to their latest versions
-- **General:** General code refactoring and cleanup
-- **Projectroles:** Remove restrictions for project and category nesting in
-  models
-- **Projectroles:** Move ``OMICS_CONSTANTS`` from configuration into
-  ``models.py``
-- **Projectroles:** Role objects are populated in a migration script instead of
-  a fixture
-- **Projectroles:** Import patched ``django-plugins`` from GitHub instead of
-  including in project directly
-- **INSTALL.rst:** Update installation instructions
+- **General**
+    - Update site from Bootstrap 4 Alpha 5 to Beta
+    - Update several third-party libraries to their latest versions
+    - General code refactoring and cleanup
+    - Update installation instructions in ``INSTALL.rst``
+- **Projectroles**
+    - Remove restrictions for project and category nesting in models
+    - Move ``OMICS_CONSTANTS`` from configuration into ``models.py``
+    - Populate Role objects in a migration script instead of a fixture
+    - Import patched ``django-plugins`` from GitHub instead of including in project directly
 
 Fixed
 -----
 
-- **Projectroles:** Fix check for project title uniqueness
+- **Projectroles**
+    - Fix check for project title uniqueness
 
 Removed
 -------
