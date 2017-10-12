@@ -110,6 +110,18 @@ table.omics-card-table {
   margin: 0;
 }
 
+table.omics-card-table-borderless {
+  margin: 0;
+}
+
+table.omics-card-table-borderless tbody tr:hover {
+  background-color: #f2f2f2;
+}
+
+table.omics-card-table-borderless td {
+  border: 0;
+}
+
 table.omics-card-table th {
   border-top: none !important;
 }
@@ -142,7 +154,7 @@ dl.omics-dl dd {
   padding-left: 0;
 }
 
-/* Buttons */
+/* Buttons and links */
 
 /* HACK for Bootstrap v4 Beta button group alignmeng with dropdown enabled */
 .btn {
@@ -170,6 +182,10 @@ dl.omics-dl dd {
 .omics-details-app-button {
   padding-top: 4px;
   padding-right: 0;
+}
+
+a.omics-nav-link-last {
+  padding-right: 0 !important;
 }
 
 /* Misc */

@@ -183,23 +183,6 @@ class HomeView(LoginRequiredMixin, PluginContextMixin, TemplateView):
         if backend_plugins:
             context['backend_plugins'] = backend_plugins
 
-        # Provide project list for template
-        project_list = []
-
-        if self.request.user.is_superuser:
-            project_list = Project.objects.filter(
-                parent=None,
-                submit_status='OK').order_by('title')
-
-        elif not self.request.user.is_anonymous():
-            project_list = [
-                p for p in Project.objects.filter(
-                    parent=None,
-                    submit_status='OK').order_by('title')
-                if p.has_role(self.request.user, include_children=True)]
-
-        context['project_list'] = project_list
-
         return context
 
 

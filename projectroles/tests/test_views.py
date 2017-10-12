@@ -148,8 +148,8 @@ class TestProjectCreateView(TestViewsBase, ProjectMixin, RoleAssignmentMixin):
         # Assert form field values
         form = response.context['form']
         self.assertIsNotNone(form)
-        self.assertEquals(form.fields['type'].widget.attrs['readonly'], True)
         self.assertEquals(form.fields['type'].choices, [
+            (PROJECT_TYPE_CATEGORY, 'Category'),
             (PROJECT_TYPE_PROJECT, 'Project')])
         self.assertEquals(form.fields['parent'].widget.attrs['readonly'], True)
         self.assertEquals(
@@ -236,9 +236,9 @@ class TestProjectUpdateView(TestViewsBase, ProjectMixin, RoleAssignmentMixin):
         # Assert form field values
         form = response.context['form']
         self.assertIsNotNone(form)
-        self.assertEquals(form.fields['type'].widget.attrs['readonly'], True)
         self.assertEquals(form.fields['type'].choices, [
-            (PROJECT_TYPE_PROJECT, PROJECT_TYPE_PROJECT)])
+            (PROJECT_TYPE_CATEGORY, 'Category'),
+            (PROJECT_TYPE_PROJECT, 'Project')])
         self.assertEquals(form.fields['parent'].disabled, True)
 
     def test_update_project(self):

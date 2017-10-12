@@ -84,7 +84,7 @@
             Update Project
           </a>
         {% endif %}
-        {% if not project.parent and can_create_project %}
+        {% if can_create_project %}
           <a class="dropdown-item"
               href="{% url 'project_create' parent=project.pk %}"
               title="Create Subproject"

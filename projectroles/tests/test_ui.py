@@ -295,7 +295,7 @@ class TestProjectList(TestUIBase):
 class TestProjectDetail(TestUIBase):
     """Tests for the project detail page UI functionalities"""
 
-    def test_project_buttons_toplevel(self):
+    def test_project_buttons(self):
         """Test visibility of top level project buttons according to user
         permissions"""
         expected = [
@@ -322,34 +322,6 @@ class TestProjectDetail(TestUIBase):
 
         url = reverse(
             'project_detail', kwargs={'pk': self.project_top.pk})
-
-        self.assert_element_set(expected, PROJECT_BUTTON_IDS, url)
-
-    def test_project_buttons_sublevel(self):
-        """Test visibility of sub level project buttons according to user
-        permissions"""
-        expected = [
-            (self.superuser, [
-                'omics-pr-btn-project-roles',
-                'omics-pr-btn-project-update',
-                'omics-pr-btn-project-settings']),
-            (self.as_owner.user, [
-                'omics-pr-btn-project-roles',
-                'omics-pr-btn-project-update',
-                'omics-pr-btn-project-settings']),
-            (self.as_delegate.user, [
-                'omics-pr-btn-project-roles',
-                'omics-pr-btn-project-update',
-                'omics-pr-btn-project-settings']),
-            (self.as_staff.user, [
-                'omics-pr-btn-project-roles']),
-            (self.as_contributor.user, [
-                'omics-pr-btn-project-roles']),
-            (self.as_guest.user, [
-                'omics-pr-btn-project-roles'])]
-
-        url = reverse(
-            'project_detail', kwargs={'pk': self.project.pk})
 
         self.assert_element_set(expected, PROJECT_BUTTON_IDS, url)
 

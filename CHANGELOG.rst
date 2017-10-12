@@ -29,6 +29,7 @@ Changed
     - Update installation instructions in ``INSTALL.rst``
 - **Projectroles**
     - Remove restrictions for project and category nesting in models
+    - Improved project list layout
     - Move ``OMICS_CONSTANTS`` from configuration into ``models.py``
     - Populate Role objects in a migration script instead of a fixture
     - Import patched ``django-plugins`` from GitHub instead of including in project directly

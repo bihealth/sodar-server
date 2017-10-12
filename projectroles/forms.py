@@ -66,9 +66,6 @@ class ProjectForm(forms.ModelForm):
         # Form modifications
         ####################
 
-        # Only allow top level Projects to be selected as parent
-        self.fields['parent'].queryset = Project.objects.filter(parent=None)
-
         # Set readme widget with preview
         self.fields['readme'].widget = PagedownWidget(show_preview=True)
 
@@ -76,11 +73,6 @@ class ProjectForm(forms.ModelForm):
         if self.instance.pk:
             # Set readme value as raw markdown
             self.initial['readme'] = self.instance.readme.raw
-
-            # Do not allow change of project type
-            force_select_value(
-                self.fields['type'],
-                (self.instance.type, self.instance.type))
 
             # Only owner/superuser has rights to modify owner
             if (current_user.has_perm(
@@ -125,10 +117,6 @@ class ProjectForm(forms.ModelForm):
                     self.fields['parent'],
                     (parent_project.pk, parent_project.title))
 
-                # Subproject can't be a category
-                force_select_value(
-                    self.fields['type'], PROJECT_TYPE_CHOICES[1])
-
                 # Set parent owner as initial value
                 parent_owner = parent_project.get_owner().user
                 self.initial['owner'] = parent_owner.pk
@@ -154,13 +142,6 @@ class ProjectForm(forms.ModelForm):
 
         except Project.DoesNotExist:
             pass
-
-        # Ensure a category is not being created as a subproject
-        if (self.cleaned_data.get('type') == PROJECT_TYPE_CATEGORY and
-                self.cleaned_data.get('parent') is not None):
-            error_msg = 'Nested project can not be a category'
-            self.add_error('type', error_msg)
-            self.add_error('parent', error_msg)
 
         # Ensure owner has been set
         if not self.cleaned_data.get('owner'):

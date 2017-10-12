@@ -38,22 +38,20 @@
 
   {# Project List #}
 
-  <div class="card" id="pr_project_list">
+  <div class="card" id="omics-pr-project-list">
     <div class="card-header">
       <h4><i class="fa fa-globe"></i> Available Projects</h4>
     </div>
     <div class="card-body omics-card-body-table">
-     <table class="table table-striped omics-card-table" id="omics-main-project-list">
+     <table class="table table-hover omics-card-table-borderless" id="omics-main-project-list">
        <thead>
          {% include 'projectroles/_project_list_header.html' %}
        </thead>
        <tbody>
+         {% get_project_list user=request.user parent=None as project_list %}
          {% if project_list|length > 0 %}
            {% for p in project_list %}
-             {% include 'projectroles/_project_list_item.html' with is_child=False %}
-             {% for c in p.get_children %}
-               {% include 'projectroles/_project_list_item.html' with p=c is_child=True %}
-             {% endfor %}
+             {% include 'projectroles/_project_list_item.html' with list_parent=None %}
            {% endfor %}
         {% else %}
            <tr>
@@ -126,7 +124,7 @@
     tour.addStep('home_role', {
         title: 'Your Roles',
         text: 'The role assigned to you in each project can be seen here.',
-        attachTo: '#omics-pr-home-header-role left',
+        attachTo: '#omics-pr-project-list left',
         advanceOn: '.docs-link click',
         showCancelLink: true
     });

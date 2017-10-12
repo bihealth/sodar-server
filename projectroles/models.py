@@ -120,7 +120,19 @@ class Project(models.Model):
     # Custom row-level functions
     def get_children(self):
         """Return child objects for the Project sorted by title"""
-        return self.children.all().order_by('title')
+        return self.children.filter(
+            submit_status=OMICS_CONSTANTS['SUBMIT_STATUS_OK']).order_by('title')
+
+    def get_depth(self):
+        """Return depth of project in the project tree structure (root=0)"""
+        ret = 0
+        p = self
+
+        while p.parent:
+            ret += 1
+            p = p.parent
+
+        return ret
 
     def get_owner(self):
         """Return RoleAssignment for owner or None if not set"""
@@ -154,14 +166,14 @@ class Project(models.Model):
             ~Q(role__name=OMICS_CONSTANTS['PROJECT_ROLE_STAFF']))
 
     def has_role(self, user, include_children=False):
-        """Return whether user has roles in Project. Include children if
-        include_children is set True."""
+        """Return whether user has roles in Project. If include_children is
+        True, return True if user has roles in ANY child project"""
         if self.roles.filter(user=user).count() > 0:
-                return True
+            return True
 
         if include_children:
             for child in self.children.all():
-                if child.roles.filter(user=user).count() > 0:
+                if child.has_role(user, include_children=True):
                     return True
 
         return False

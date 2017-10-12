@@ -4,33 +4,35 @@
 {% has_perm 'projectroles.view_project' request.user p as can_view_project %}
 {% has_perm 'timeline.view_timeline' request.user p as can_view_timeline %}
 
-{% if not is_child or can_view_project %}
-  <tr>
-    {% if not p.parent or no_indent %}
-      <td style="white-space: nowrap;">
+<tr>
+  <td style="white-space: nowrap;">
+    {% get_project_list_indent p list_parent as project_indent %}
+    <span style="padding-left: {{ project_indent }}px;"></span>
+    {% if p.type == 'CATEGORY' %}
+      <i class="fa fa-cubes"></i>
     {% else %}
-      <td style="white-space: nowrap; padding-left: 40px;">
+      <i class="fa fa-cube"></i>
     {% endif %}
-      {% if p.type == 'CATEGORY' %}
-        <i class="fa fa-cubes"></i>
-      {% else %}
-        <i class="fa fa-cube"></i>
-      {% endif %}
-      {% if can_view_project %}
-        <a href="{% url 'project_detail' pk=p.pk %}">{{ p.title }}</a>
-      {% else %}
-        <span class="text-muted">{{ p.title }}</span>
-      {% endif %}
-    </td>
-    <td>
-      {% get_description p %}
-    </td>
-    <td>
-      {% if request.user.is_superuser %}
-        <span class="text-danger">superuser</span>
-      {% else %}
-        {% get_user_role_str p request.user %}
-      {% endif %}
-    </td>
-  </tr>
-{% endif %}
+    {% if p.type == 'CATEGORY' %}
+      <u>
+    {% endif %}
+    {% if can_view_project %}
+      <a href="{% url 'project_detail' pk=p.pk %}">{{ p.title }}</a>
+    {% else %}
+      <span class="text-muted">{{ p.title }}</span>
+    {% endif %}
+    {% if p.type == 'CATEGORY' %}
+      </u>
+    {% endif %}
+  </td>
+  <td>
+    {% get_description p %}
+  </td>
+  <td>
+    {% if request.user.is_superuser %}
+      <span class="text-danger">superuser</span>
+    {% else %}
+      {% get_user_role_str p request.user %}
+    {% endif %}
+  </td>
+</tr>
