@@ -28,8 +28,10 @@ from .models import Project, Role, RoleAssignment, ProjectInvite, \
 from .plugins import ProjectAppPluginPoint, get_active_plugins, get_backend_api
 from .utils import get_expiry_date, save_default_project_settings
 
+
 # Access Django user model
 User = auth.get_user_model()
+
 
 # Settings
 SEND_EMAIL = settings.PROJECTROLES_SEND_EMAIL
@@ -208,27 +210,6 @@ class IrodsInfoView(LoginRequiredMixin, TemplateView):
         return context
 
 
-class ProjectBaseView(
-        LoginRequiredMixin, LoggedInPermissionMixin, ProjectContextMixin,
-        TemplateView):
-    """Project base view which other apps will extend"""
-    permission_required = 'projectroles.view_project'
-    template_name = 'projectroles/project_base.html'
-    model = Project
-
-    # TODO: Repeating, create a mixin for this?
-    # TODO MGMT: Try creating a mixing for this after testing existing code
-    def get_object(self):
-        """Override get_object to provide a Project object for both template
-        and permission checking"""
-        try:
-            obj = Project.objects.get(pk=self.kwargs['pk'])
-            return obj
-
-        except Project.DoesNotExist:
-            return None
-
-
 class ProjectDetailView(
         LoginRequiredMixin, LoggedInPermissionMixin, ProjectContextMixin,
         DetailView):
@@ -254,7 +235,6 @@ class ProjectDetailView(
 
 
 class ProjectModifyMixin(ModelFormMixin):
-    @transaction.non_atomic_requests  # TODO: Should be able to remove this?
     def form_valid(self, form):
         taskflow = get_backend_api('taskflow')
         timeline = get_backend_api('timeline_backend')
@@ -379,7 +359,8 @@ class ProjectCreateView(
     form_class = ProjectForm
 
     def get_permission_object(self):
-        """Override get_object for checking Project permission from parent"""
+        """Override get_permission_object for checking Project permission from
+        parent"""
         if 'parent' in self.kwargs:
             try:
                 obj = Project.objects.get(pk=self.kwargs['parent'])
@@ -817,12 +798,9 @@ class ProjectInviteAcceptView(
     """View to handle accepting a project invite"""
 
     def get(self, *args, **kwargs):
-        # TODO: TBD: Check for user's email matching LDAP user email after
-        # TODO:     login? May be a problem with aliases (charite/mdc)
         timeline = get_backend_api('timeline_backend')
         taskflow = get_backend_api('taskflow')
         tl_event = None
-        invite = None
 
         def revoke_invite(invite, failed=True, fail_desc=''):
             """Set invite.active to False and save the invite"""
