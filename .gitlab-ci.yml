@@ -36,7 +36,7 @@ before_script:
   #     popd
 
   - sh ./utility/install_os_gitlab.sh
-  - sh ./utility/install_chrome.sh
+  - sh ./utility/install_chrome_gitlab.sh
   - pip3 install virtualenv
   - virtualenv env
   - source env/bin/activate
