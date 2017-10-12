@@ -20,4 +20,4 @@ chmod ugo+rx /usr/bin/chromedriver
 
 # Install Google Chrome
 wget -N https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb -P ~/
-sudo dpkg -i --force-depends ~/google-chrome-stable_current_amd64.deb
+dpkg -i --force-depends ~/google-chrome-stable_current_amd64.deb
