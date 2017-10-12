@@ -363,6 +363,14 @@ if env.str('AUTH_LDAP_SERVER_URI', None):
 # ------------------------------------------------------------------------------
 
 
+# Plugin settings
+ENABLED_BACKEND_PLUGINS = env.list('ENABLED_BACKEND_PLUGINS', None, [
+    # 'timeline_backend',
+    # 'taskflow',
+    # 'omics_irods',
+])
+
+
 # Temporary local demo hack
 LOCAL_DEMO_MODE = False
 
@@ -374,3 +382,5 @@ TITLEBAR_SHOW_USER = False
 PROJECTROLES_SECRET_LENGTH = 32
 PROJECTROLES_INVITE_EXPIRY_DAYS = env.int('PROJECTROLES_INVITE_EXPIRY_DAYS', 14)
 PROJECTROLES_SEND_EMAIL = env.bool('PROJECTROLES_SEND_EMAIL', False)
+
+

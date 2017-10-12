@@ -90,17 +90,16 @@ TEST_RUNNER = 'django.test.runner.DiscoverRunner'
 # ------------------------------------------------------------------------------
 
 
-# Show user name in title bar (mostly usable for development)
-TITLEBAR_SHOW_USER = True
-
-
 # Plugin settings
-ENABLED_BACKEND_PLUGINS = env.list('ENABLED_BACKEND_PLUGINS', None, [
+ENABLED_BACKEND_PLUGINS = [
     # 'timeline_backend',
     # 'taskflow',
     # 'omics_irods',
+]
 
-])
+
+# Show user name in title bar (mostly usable for development)
+TITLEBAR_SHOW_USER = True
 
 
 # Samplesheets and Landingzones link settings

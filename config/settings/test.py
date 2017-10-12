@@ -59,3 +59,15 @@ TEMPLATES[0]['OPTIONS']['loaders'] = [
         'django.template.loaders.app_directories.Loader',
     ], ],
 ]
+
+
+# Local App Settings
+# ------------------------------------------------------------------------------
+
+
+# Plugin settings
+ENABLED_BACKEND_PLUGINS = [
+    # 'timeline_backend',
+    # 'taskflow',
+    # 'omics_irods',
+]
