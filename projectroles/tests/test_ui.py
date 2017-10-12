@@ -71,6 +71,7 @@ class TestUIBase(
         # Init headless Chrome
         options = webdriver.ChromeOptions()
         options.add_argument('headless')
+        options.add_argument('no-sandbox')
         self.selenium = webdriver.Chrome(chrome_options=options)
 
         # Prevent ElementNotVisibleException
