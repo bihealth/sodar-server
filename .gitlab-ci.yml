@@ -44,6 +44,7 @@ before_script:
 
 all_tests:
   script:
+    - python3 manage.py collectstatic --noinput
     - python3 manage.py test -v 2 --settings=config.settings.test
     # NOTE: Coverage temporarily disabled until I figure out ODA issue #58
     # - coverage run --source="." manage.py test -v 2 --settings=config.settings.test
