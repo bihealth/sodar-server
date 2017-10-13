@@ -53,7 +53,7 @@ redis>=2.10.5
 
 # Django-plugins (with self-made Django 1.10 support)
 # NOTE: Commented out for flynn workaround
-# -e git://github.com/mikkonie/django-plugins.git@ce439b6281e40c6cc64660cfd2fc98349447dc7f#egg=django-plugins
+# -e git://github.com/mikkonie/django-plugins.git@1bc07181e6ab68b0f9ed3a00382eb1f6519e1009#egg=django-plugins
 
 # Rules for permissions
 rules==1.2.1

@@ -1,0 +1,41 @@
+{% load timeline_tags %}
+{% load rules %}
+{% has_perm 'timeline.view_timeline' request.user project as can_view_timeline %}
+{% has_perm 'timeline.view_classified_event' request.user project as can_view_classified %}
+
+{# HACK #}
+<style type="text/css">
+  .table th {
+    border-top: none !important;
+  }
+
+  /* Main table */
+  table.details-timeline-main tr td:nth-child(1) {
+    white-space: nowrap;
+  }
+
+  table.details-timeline-main td:nth-child(5) {
+    width: 100%;
+  }
+
+</style>
+
+{% if can_view_timeline %}
+  <table class="table table-striped details-timeline-main" style="margin-bottom: 0;">
+    <thead>
+      {% include 'timeline/_list_header.html' with details_card_mode=True %}
+    </thead>
+    <tbody>
+      {% get_details_events project can_view_classified as events %}
+      {% if events.count > 0 %}
+        {% for event in events %}
+          {% include 'timeline/_list_item.html' with event=event details_card_mode=True %}
+        {% endfor %}
+      {% else %}
+        <tr>
+          <td class="bg-faded font-italic text-xs-center" colspan="6">No events</td>
+        </tr>
+      {% endif %}
+    </tbody>
+  </table>
+{% endif %}

@@ -21,7 +21,7 @@ try:
 except ImportError:
     pip.main([
         'install',
-        'git+git://github.com/mikkonie/django-plugins.git@ce439b6281e40c6cc64660cfd2fc98349447dc7f#egg=django-plugins'])
+        'git+git://github.com/mikkonie/django-plugins.git@1bc07181e6ab68b0f9ed3a00382eb1f6519e1009#egg=django-plugins'])
 
 
 ROOT_DIR = environ.Path(__file__) - 3  # (omics_data_mgmt/config/settings/base.py - 3 = omics_data_mgmt/)
@@ -82,6 +82,7 @@ LOCAL_APPS = [
     'omics_data_mgmt.users.apps.UsersConfig',
     # Your stuff: custom apps go here
     'projectroles.apps.ProjectrolesConfig',
+    'timeline.apps.TimelineConfig',
 ]
 
 # See: https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
@@ -365,7 +366,7 @@ if env.str('AUTH_LDAP_SERVER_URI', None):
 
 # Plugin settings
 ENABLED_BACKEND_PLUGINS = env.list('ENABLED_BACKEND_PLUGINS', None, [
-    # 'timeline_backend',
+    'timeline_backend',
     # 'taskflow',
     # 'omics_irods',
 ])
@@ -384,3 +385,5 @@ PROJECTROLES_INVITE_EXPIRY_DAYS = env.int('PROJECTROLES_INVITE_EXPIRY_DAYS', 14)
 PROJECTROLES_SEND_EMAIL = env.bool('PROJECTROLES_SEND_EMAIL', False)
 
 
+# Timeline app settings
+TIMELINE_PAGINATION = 15

@@ -1,0 +1,28 @@
+{% load timeline_tags %}
+
+<tr>
+  {% comment %}
+  <td>{{ event.pk }}</td>
+  {% endcomment %}
+  <td>
+    {% if not details_card_mode %}
+      <a tabindex="0" data-toggle="popover" data-trigger="focus" data-placement="right" data-html="true" data-content="{% get_event_details event %}">
+        {% get_timestamp event %}
+      </a>
+    {% else %}
+      {% get_timestamp event %}
+    {% endif %}
+  </td>
+  <td><a href="{% get_app_url event %}">{{ event.app }}</a></td>
+  <td>{{ event.event_name }}</td>
+  <td><a href="{{ event.user.email }}">{{ event.user.username }}</a></td>
+  <td>
+    {% autoescape off %}
+      {% get_event_description event %}
+    {% endautoescape %}
+    {% if event.classified %}
+      <span class="pull-right text-muted"><i class="fa fa-lock" aria-hidden="true"></i></span>
+    {% endif %}
+  </td>
+  <td class="{% get_status_style event.get_current_status %}">{{ event.get_current_status.status_type }}</td>
+</tr>

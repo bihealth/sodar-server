@@ -8,6 +8,9 @@ from django.views.generic import TemplateView
 
 from projectroles.views import HomeView
 
+from djangoplugins.utils import include_plugins
+from projectroles.plugins import ProjectAppPluginPoint
+
 urlpatterns = [
     # url(r'^$', TemplateView.as_view(template_name='pages/home.html'), name='home'),
     url(r'^$', HomeView.as_view(), name='home'),
@@ -26,6 +29,10 @@ urlpatterns = [
 
     # Projectroles URLs
     url(r'^projects/', include('projectroles.urls')),
+
+    # App plugin URLs
+    # TODO: Test if this can be made to work on Flynn
+    url(r'^', include_plugins(ProjectAppPluginPoint)),
 
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

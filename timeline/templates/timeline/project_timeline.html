@@ -1,0 +1,148 @@
+{% extends 'projectroles/project_base.html' %}
+{% load rules %}
+{% load timeline_tags %}
+
+{% block title %}Timeline for {{ project.title }}{% endblock %}
+
+{% block css %}
+    {{ block.super }}
+    <style type="text/css">
+      .table th {
+        border-top: none !important;
+      }
+
+      /* Main table */
+      table.timeline-main tr td:nth-child(1) {
+        white-space: nowrap;
+      }
+
+      table.timeline-main td:nth-child(5) {
+        width: 100%;
+      }
+
+      /* Detail table */
+      table.timeline-detail tr td:nth-child(1) {
+          white-space: nowrap;
+      }
+
+      table.timeline-detail tr td:nth-child(2) {
+          max-width: 300px;
+          white-space: normal;
+      }
+
+      .popover{
+        max-width: 100%;
+      }
+    </style>
+{% endblock %}
+
+{% block projectroles_extend %}
+
+{% has_perm 'timeline.view_timeline' request.user project as can_view_timeline %}
+
+<div class="row">
+  <h3 style="padding-bottom: 24px;"><i class="fa fa-clock-o" aria-hidden="true"></i> Timeline</h3>
+</div>
+
+{% if object_list.count > 0 %}
+  <div class="row">
+    <div class="card" style="margin-top: 0;" id="tl_event_list">
+      <div class="card-block" style="padding: 0;">
+       <table class="table table-striped timeline-main" style="margin: 0">
+         <thead>
+           {% include 'timeline/_list_header.html' %}
+         </thead>
+         <tbody>
+           {% for event in object_list %}
+             {% include 'timeline/_list_item.html' %}
+           {% endfor %}
+          </tbody>
+       </table>
+      </div>
+    </div>
+  </div>
+
+  {% if is_paginated %}
+    <div class="row">
+      <div class="btn-group pull-right" id="tl_nav_buttons">
+        {% if page_obj.has_previous %}
+          <a role="button" class="btn btn-secondary"
+              href="?page={{ page_obj.previous_page_number }}">
+            <i class="fa fa-arrow-circle-left" aria-hidden="true"></i>
+            Newer
+          </a>
+        {% else %}
+          <a role="button" class="btn btn-secondary disabled"
+              href="#">
+            <i class="fa fa-arrow-circle-left" aria-hidden="true"></i>
+            Newer
+          </a>
+        {% endif %}
+        {% if page_obj.has_next %}
+          <a role="button" class="btn btn-secondary"
+              href="?page={{ page_obj.next_page_number }}">
+            <i class="fa fa-arrow-circle-right" aria-hidden="true"></i>
+            Older
+          </a>
+        {% else %}
+          <a role="button" class="btn btn-secondary disabled"
+              href="#">
+            <i class="fa fa-arrow-circle-right" aria-hidden="true"></i>
+            Older
+          </a>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+
+{% else %}
+  <div class="row">
+    <div class="alert alert-info" role="alert" style="margin-top: 24px;">
+      No timeline events found for this project.
+    </div>
+  </div>
+{% endif %}
+
+{% endblock %}
+
+{% block javascript %}
+  {{ block.super }}
+
+  <script type="text/javascript">
+    $('[data-toggle="popover"]').popover({
+      container: 'body'
+    });
+  </script>
+
+  {# Tour content #}
+  <script type="text/javascript">
+    tourEnabled = true;
+
+    tour.addStep('event_list', {
+        title: 'Event List',
+        text: 'This is the list of events for the project, organized by ' +
+              'newest first.',
+        attachTo: '#tl_event_list top',
+        advanceOn: '.docs-link click',
+        showCancelLink: true
+    });
+
+    tour.addStep('event_details', {
+        title: 'Event Details',
+        text: 'Click an event timestamp to open a popup with details ' +
+              'regarding each event.',
+        attachTo: '#tl_header_timestamp right',
+        advanceOn: '.docs-link click',
+        showCancelLink: true
+    });
+
+    tour.addStep('timeline_nav', {
+        title: 'Timeline Navigation',
+        text: 'Use these buttons to navigate through project events.',
+        attachTo: '#tl_nav_buttons left',
+        advanceOn: '.docs-link click',
+        showCancelLink: true,
+        scrollTo: true
+    });
+  </script>
+{% endblock %}
