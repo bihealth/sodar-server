@@ -143,6 +143,13 @@ class ProjectForm(forms.ModelForm):
         except Project.DoesNotExist:
             pass
 
+        # Ensure title is not equal to parent
+        parent = self.cleaned_data.get('parent')
+
+        if parent and parent.title == self.cleaned_data.get('title'):
+            self.add_error(
+                'title', 'Project and parent titles can not be equal')
+
         # Ensure owner has been set
         if not self.cleaned_data.get('owner'):
             self.add_error('owner', 'Owner must be set for project')

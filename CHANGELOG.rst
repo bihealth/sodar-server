@@ -25,6 +25,7 @@ Changed
     - Update site from Bootstrap 4 Alpha 5 to Beta
     - Update third-party libraries to their latest versions
     - Switch from PhantomJS to Headless Chrome for UI tests (improved performance and stability, Bootstrap 4 Beta compatibility)
+    - Include CSS and JS imports in testing configs and CI
     - General code refactoring and cleanup
     - Update installation instructions in ``INSTALL.rst``
 - **Projectroles**
@@ -38,7 +39,8 @@ Fixed
 -----
 
 - **Projectroles**
-    - Fix check for project title uniqueness
+    - Check for project title uniqueness
+    - Don't allow matching titles for subproject and parent
 
 Removed
 -------

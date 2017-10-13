@@ -128,6 +128,15 @@ class TestProject(TestCase, ProjectMixin):
             project_tmp.parent = project_tmp
             project_tmp.save()
 
+    def test_validate_title(self):
+        """Test title validation: title can't be equal between subproject and
+        parent parent"""
+        with self.assertRaises(ValidationError):
+            project_new = self._make_project(
+                title='TestProjectSub',
+                type=PROJECT_TYPE_PROJECT,
+                parent=self.project_sub)
+
 
 class TestRole(TestCase):
 

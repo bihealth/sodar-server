@@ -106,6 +106,7 @@ class Project(models.Model):
     def save(self, *args, **kwargs):
         """Version of save() to include custom validation for Project"""
         self._validate_parent()
+        self._validate_title()
         super().save(*args, **kwargs)
 
     def _validate_parent(self):
@@ -113,6 +114,13 @@ class Project(models.Model):
         parent"""
         if self.pk and self.parent == self:
             raise ValidationError('Project can not be set as its own parent')
+
+    def _validate_title(self):
+        """Validate title against parent title to ensure they don't equal
+        parent"""
+        if self.parent and self.title == self.parent.title:
+            raise ValidationError(
+                'Project and parent titles can not be equal')
 
     def get_absolute_url(self):
         return reverse('project', args=[str(self.pk)])
