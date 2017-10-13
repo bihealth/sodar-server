@@ -68,7 +68,7 @@
                   body = body.replace('{role_name}', roleName);
                   body = body.replace('{user_name}', userDisplayName);
 
-                  var htmlData = '<div class="card"><div class="card-body"><h5>Email Preview</h5><hr>';
+                  var htmlData = '<div class="card" id="omics-popup-content"><div class="card-body"><h5>Email Preview</h5><hr>';
                   htmlData += '<strong>Subject:</strong><pre>{{ preview_subject }}</pre>';
                   htmlData += '<strong>Body:</strong>';
                   htmlData += '<pre>' + body;

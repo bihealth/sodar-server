@@ -120,6 +120,24 @@ class TestProject(TestCase, ProjectMixin):
             "'TestCategoryTop')"
         self.assertEqual(repr(self.project_sub), expected)
 
+    def test_get_children_top(self):
+        """Test children getting function for top category"""
+        children = self.category_top.get_children()
+        self.assertEqual(children[0], self.project_sub)
+
+    def test_get_children_sub(self):
+        """Test children getting function for sub project"""
+        children = self.project_sub.get_children()
+        self.assertEqual(children.count(), 0)
+
+    def test_get_depth_top(self):
+        """Test project depth getting function for top category"""
+        self.assertEqual(self.category_top.get_depth(), 0)
+
+    def test_get_depth_sub(self):
+        """Test children getting function for sub project"""
+        self.assertEqual(self.project_sub.get_depth(), 1)
+
     def test_validate_parent(self):
         """Test parent ForeignKey validation: project can't be its own
         parent"""
@@ -149,7 +167,7 @@ class TestRole(TestCase):
             'id': self.role.pk,
             'name': PROJECT_ROLE_OWNER,
             'description': self.role.description}
-        self.assertEquals(model_to_dict(self.role), expected)
+        self.assertEqual(model_to_dict(self.role), expected)
 
     def test__str__(self):
         expected = PROJECT_ROLE_OWNER
@@ -233,12 +251,12 @@ class TestRoleAssignment(TestCase, ProjectMixin, RoleAssignmentMixin):
 
     def test__str__(self):
         expected = 'TestCategoryTop: {}: alice'.format(PROJECT_ROLE_OWNER)
-        self.assertEquals(str(self.assignment_owner), expected)
+        self.assertEqual(str(self.assignment_owner), expected)
 
     def test__repr__(self):
         expected = "RoleAssignment('TestCategoryTop', 'alice', '{}')".format(
             PROJECT_ROLE_OWNER)
-        self.assertEquals(repr(self.assignment_owner), expected)
+        self.assertEqual(repr(self.assignment_owner), expected)
 
     def test_validate_user(self):
         """Test user role uniqueness validation: can't add more than one
@@ -275,26 +293,26 @@ class TestRoleAssignment(TestCase, ProjectMixin, RoleAssignmentMixin):
 
     def test_get_assignment(self):
         """Test get_assignment() results"""
-        self.assertEquals(
+        self.assertEqual(
             model_to_dict(RoleAssignment.objects.get_assignment(
                 self.user_alice, self.category_top)), self.expected_default)
 
     def test_get_project_owner(self):
         """Test get_project_owner() results"""
-        self.assertEquals(self.category_top.get_owner().user, self.user_alice)
+        self.assertEqual(self.category_top.get_owner().user, self.user_alice)
 
     def test_get_project_delegate(self):
         """Test get_project_delegate() results"""
         assignment_del = self._make_assignment(
             self.project_top, self.user_carol, self.role_delegate)
-        self.assertEquals(
+        self.assertEqual(
             self.project_top.get_delegate().user, self.user_carol)
 
     def test_get_project_staff(self):
         """Test get_project_staff() results"""
         assignment_staff = self._make_assignment(
             self.project_top, self.user_dan, self.role_staff)
-        self.assertEquals(
+        self.assertEqual(
             self.project_top.get_staff()[0].user, self.user_dan)
 
     def test_get_project_members(self):
@@ -322,7 +340,26 @@ class TestRoleAssignment(TestCase, ProjectMixin, RoleAssignmentMixin):
         members = self.project_top.get_members()
 
         for i in range(0, members.count()):
-            self.assertEquals(model_to_dict(members[i]), expected[i])
+            self.assertEqual(model_to_dict(members[i]), expected[i])
+
+    def test_has_role(self):
+        """Test the has_role() function for an existing role"""
+        self.assertEqual(self.category_top.has_role(self.user_alice), True)
+
+    def test_has_role_norole(self):
+        """Test the has_role() function for a non-existing role without
+        recursion"""
+        self._make_assignment(
+            self.project_sub, self.user_bob, self.role_contributor)
+        self.assertEqual(self.category_top.has_role(self.user_bob), False)
+
+    def test_has_role_norole_children(self):
+        """Test the has_role() function for a non-existing role with
+        recursion using include_children"""
+        self._make_assignment(
+            self.project_sub, self.user_bob, self.role_contributor)
+        self.assertEqual(self.category_top.has_role(
+            self.user_bob, include_children=True), True)
 
 
 class TestProjectInvite(

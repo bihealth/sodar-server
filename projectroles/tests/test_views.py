@@ -83,14 +83,14 @@ class TestHomeView(TestViewsBase, ProjectMixin, RoleAssignmentMixin):
 
         # Assert the project list is provided by context processors
         self.assertIsNotNone(response.context['project_list'])
-        self.assertEquals(
+        self.assertEqual(
             response.context['project_list'][0].pk, self.project.pk)
 
         # Assert statistics values
-        self.assertEquals(response.context['count_categories'], 0)
-        self.assertEquals(response.context['count_projects'], 1)
-        self.assertEquals(response.context['count_users'], 1)
-        self.assertEquals(response.context['count_assignments'], 1)
+        self.assertEqual(response.context['count_categories'], 0)
+        self.assertEqual(response.context['count_projects'], 1)
+        self.assertEqual(response.context['count_users'], 1)
+        self.assertEqual(response.context['count_assignments'], 1)
 
 
 class TestProjectDetailView(TestViewsBase, ProjectMixin, RoleAssignmentMixin):
@@ -126,8 +126,8 @@ class TestProjectCreateView(TestViewsBase, ProjectMixin, RoleAssignmentMixin):
         # Assert form field values
         form = response.context['form']
         self.assertIsNotNone(form)
-        self.assertEquals(form.fields['type'].initial, PROJECT_TYPE_PROJECT)
-        self.assertEquals(form.fields['parent'].disabled, True)
+        self.assertEqual(form.fields['type'].initial, PROJECT_TYPE_PROJECT)
+        self.assertEqual(form.fields['parent'].disabled, True)
 
     def test_render_sub(self):
         """Test rendering of Project creation form if creating a subproject"""
@@ -148,11 +148,11 @@ class TestProjectCreateView(TestViewsBase, ProjectMixin, RoleAssignmentMixin):
         # Assert form field values
         form = response.context['form']
         self.assertIsNotNone(form)
-        self.assertEquals(form.fields['type'].choices, [
+        self.assertEqual(form.fields['type'].choices, [
             (PROJECT_TYPE_CATEGORY, 'Category'),
             (PROJECT_TYPE_PROJECT, 'Project')])
-        self.assertEquals(form.fields['parent'].widget.attrs['readonly'], True)
-        self.assertEquals(
+        self.assertEqual(form.fields['parent'].widget.attrs['readonly'], True)
+        self.assertEqual(
             form.fields['parent'].choices, [
                 (self.project.pk, self.project.title)])
 
@@ -236,10 +236,10 @@ class TestProjectUpdateView(TestViewsBase, ProjectMixin, RoleAssignmentMixin):
         # Assert form field values
         form = response.context['form']
         self.assertIsNotNone(form)
-        self.assertEquals(form.fields['type'].choices, [
+        self.assertEqual(form.fields['type'].choices, [
             (PROJECT_TYPE_CATEGORY, 'Category'),
             (PROJECT_TYPE_PROJECT, 'Project')])
-        self.assertEquals(form.fields['parent'].disabled, True)
+        self.assertEqual(form.fields['parent'].disabled, True)
 
     def test_update_project(self):
         """Test Project updating"""
@@ -374,8 +374,8 @@ class TestRoleAssignmentCreateView(
         # Assert form field values
         form = response.context['form']
         self.assertIsNotNone(form)
-        self.assertEquals(form.fields['project'].widget.attrs['readonly'], True)
-        self.assertEquals(
+        self.assertEqual(form.fields['project'].widget.attrs['readonly'], True)
+        self.assertEqual(
             form.fields['project'].choices, [
                 (self.project.pk, self.project.title)])
         # Assert user with previously added role in project is not selectable
@@ -490,11 +490,11 @@ class TestRoleAssignmentUpdateView(
         # Assert form field values
         form = response.context['form']
         self.assertIsNotNone(form)
-        self.assertEquals(form.fields['project'].widget.attrs['readonly'], True)
-        self.assertEquals(form.fields['project'].choices, [
+        self.assertEqual(form.fields['project'].widget.attrs['readonly'], True)
+        self.assertEqual(form.fields['project'].choices, [
             (self.project.pk, self.project.title)])
-        self.assertEquals(form.fields['user'].widget.attrs['readonly'], True)
-        self.assertEquals(
+        self.assertEqual(form.fields['user'].widget.attrs['readonly'], True)
+        self.assertEqual(
             form.fields['user'].choices, [
                 (self.role_as.user.pk,
                  get_user_display_name(self.role_as.user, True))])
@@ -712,9 +712,9 @@ class TestProjectInviteCreateView(
             message='')
 
         # Assert preconditions
-        self.assertEquals(ProjectInvite.objects.filter(active=True).count(), 1)
+        self.assertEqual(ProjectInvite.objects.filter(active=True).count(), 1)
 
-        self.assertEquals(RoleAssignment.objects.filter(
+        self.assertEqual(RoleAssignment.objects.filter(
             project=self.project,
             user=self.new_user,
             role=self.role_contributor).count(), 0)
@@ -728,10 +728,10 @@ class TestProjectInviteCreateView(
                 'project_detail', kwargs={'pk': self.project.pk}))
 
             # Assert postconditions
-            self.assertEquals(
+            self.assertEqual(
                 ProjectInvite.objects.filter(active=True).count(), 0)
 
-            self.assertEquals(RoleAssignment.objects.filter(
+            self.assertEqual(RoleAssignment.objects.filter(
                 project=self.project,
                 user=self.new_user,
                 role=self.role_contributor).count(), 1)
@@ -749,9 +749,9 @@ class TestProjectInviteCreateView(
             date_expire=timezone.now())
 
         # Assert preconditions
-        self.assertEquals(ProjectInvite.objects.filter(active=True).count(), 1)
+        self.assertEqual(ProjectInvite.objects.filter(active=True).count(), 1)
 
-        self.assertEquals(RoleAssignment.objects.filter(
+        self.assertEqual(RoleAssignment.objects.filter(
             project=self.project,
             user=self.new_user,
             role=self.role_contributor).count(), 0)
@@ -764,10 +764,10 @@ class TestProjectInviteCreateView(
             self.assertRedirects(response, reverse('home'))
 
             # Assert postconditions
-            self.assertEquals(
+            self.assertEqual(
                 ProjectInvite.objects.filter(active=True).count(), 0)
 
-            self.assertEquals(RoleAssignment.objects.filter(
+            self.assertEqual(RoleAssignment.objects.filter(
                 project=self.project,
                 user=self.new_user,
                 role=self.role_contributor).count(), 0)
@@ -892,7 +892,7 @@ class TestProjectGetAPIView(TestViewsBase, ProjectMixin, RoleAssignmentMixin):
             data={
                 'project_pk': pd_project.pk})
         response = views.ProjectGetAPIView.as_view()(request)
-        self.assertEquals(response.status_code, 404)
+        self.assertEqual(response.status_code, 404)
 
 
 class TestProjectUpdateAPIView(
@@ -921,11 +921,11 @@ class TestProjectUpdateAPIView(
                 'title': title,
                 'description': desc})
         response = views.ProjectUpdateAPIView.as_view()(request)
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
 
         self.project.refresh_from_db()
-        self.assertEquals(self.project.title, title)
-        self.assertEquals(self.project.description, desc)
+        self.assertEqual(self.project.title, title)
+        self.assertEqual(self.project.description, desc)
 
 
 class TestRoleAssignmentGetAPIView(
@@ -948,7 +948,7 @@ class TestRoleAssignmentGetAPIView(
                 'project_pk': self.project.pk,
                 'user_pk': self.user.pk})
         response = views.RoleAssignmentGetAPIView.as_view()(request)
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
 
         expected = {
             'assignment_pk': self.owner_as.pk,
@@ -956,7 +956,7 @@ class TestRoleAssignmentGetAPIView(
             'user_pk': self.user.pk,
             'role_pk': self.role_owner.pk,
             'role_name': self.role_owner.name}
-        self.assertEquals(response.data, expected)
+        self.assertEqual(response.data, expected)
 
 
 class TestRoleAssignmentSetAPIView(
@@ -986,11 +986,11 @@ class TestRoleAssignmentSetAPIView(
                 'role_pk': self.role_contributor.pk})
 
         response = views.RoleAssignmentSetAPIView.as_view()(request)
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         self.assertEqual(RoleAssignment.objects.all().count(), 2)
 
         new_as = RoleAssignment.objects.get(project=self.project, user=new_user)
-        self.assertEquals(new_as.role.pk, self.role_contributor.pk)
+        self.assertEqual(new_as.role.pk, self.role_contributor.pk)
 
     def test_post_existing(self):
         """Test POST request for updating an existing role"""
@@ -1008,11 +1008,11 @@ class TestRoleAssignmentSetAPIView(
                 'role_pk': self.role_staff.pk})
 
         response = views.RoleAssignmentSetAPIView.as_view()(request)
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         self.assertEqual(RoleAssignment.objects.all().count(), 2)
 
         new_as = RoleAssignment.objects.get(project=self.project, user=new_user)
-        self.assertEquals(new_as.role.pk, self.role_staff.pk)
+        self.assertEqual(new_as.role.pk, self.role_staff.pk)
 
 
 class TestRoleAssignmentDeleteAPIView(
@@ -1042,7 +1042,7 @@ class TestRoleAssignmentDeleteAPIView(
                 'user_pk': new_user.pk})
 
         response = views.RoleAssignmentDeleteAPIView.as_view()(request)
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         self.assertEqual(RoleAssignment.objects.all().count(), 1)
 
     def test_post_not_found(self):
@@ -1059,5 +1059,5 @@ class TestRoleAssignmentDeleteAPIView(
                 'user_pk': new_user.pk})
 
         response = views.RoleAssignmentDeleteAPIView.as_view()(request)
-        self.assertEquals(response.status_code, 404)
+        self.assertEqual(response.status_code, 404)
         self.assertEqual(RoleAssignment.objects.all().count(), 1)

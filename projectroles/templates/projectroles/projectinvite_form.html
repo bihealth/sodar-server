@@ -52,7 +52,7 @@
                 var message = $('#id_message').val();
                 body = body.replace('{role_name}', roleName);
 
-                var htmlData = '<div class="card"><div class="card-body"><h5>Invite Preview</h5><hr>';
+                var htmlData = '<div class="card" id="omics-popup-content"><div class="card-body"><h5>Invite Preview</h5><hr>';
                 htmlData += '<strong>Subject:</strong><pre>{{ preview_subject }}</pre>';
                 htmlData += '<strong>To:</strong><pre>' + $('#id_email').val() + '</pre>';
                 htmlData += '<strong>Body:</strong>';

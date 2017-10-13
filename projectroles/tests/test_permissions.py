@@ -7,6 +7,7 @@ from test_plus.test import TestCase
 from ..models import Role, OMICS_CONSTANTS
 from .test_models import ProjectMixin, RoleAssignmentMixin, ProjectInviteMixin
 
+
 # Omics constants
 PROJECT_ROLE_OWNER = OMICS_CONSTANTS['PROJECT_ROLE_OWNER']
 PROJECT_ROLE_DELEGATE = OMICS_CONSTANTS['PROJECT_ROLE_DELEGATE']
@@ -96,13 +97,13 @@ class TestPermissionBase(
                 with self.login(user):
                     response = self.client.get(url)
 
-                    self.assertEquals(
+                    self.assertEqual(
                         response.status_code, 200, 'user={}'.format(user))
 
             # Anonymous
             else:
                 response = self.client.get(url)
-                self.assertEquals(
+                self.assertEqual(
                     response.status_code, 200, 'user={}'.format(user))
 
     def assert_redirect(

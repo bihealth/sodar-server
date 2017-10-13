@@ -174,8 +174,7 @@ class TestUIBase(
 
                 # Wait for redirect
                 WebDriverWait(self.selenium, self.wait_time).until(
-                    ec.presence_of_element_located(
-                        (By.ID, 'log-in-link')))
+                    ec.presence_of_element_located((By.ID, 'log-in-link')))
 
         except NoSuchElementException:
             pass
@@ -233,7 +232,7 @@ class TestUIBase(
             self.login_and_redirect(expected_user, url)
 
             if expected_count > 0:
-                self.assertEquals(
+                self.assertEqual(
                     len(self.selenium.find_elements_by_xpath(
                         '//*[contains(@id, "{}")]'.format(id_substring))),
                     expected_count)
@@ -415,6 +414,35 @@ class TestProjectRoles(TestUIBase):
         url = reverse('project_roles', kwargs={'pk': self.project.pk})
         self.assert_element_count(expected, url, 'omics-pr-btn-grp-role')
 
+    def test_role_preview(self):
+        """Test visibility of role preview popup"""
+        url = reverse('role_create', kwargs={'project': self.project.pk})
+        self.login_and_redirect(self.as_owner.user, url)
+
+        button = self.selenium.find_element_by_id('omics-pr-email-preview-link')
+        button.click()
+
+        WebDriverWait(self.selenium, self.wait_time).until(
+            ec.presence_of_element_located((By.ID, 'omics-popup-content')))
+
+        self.assertIsNotNone(
+            self.selenium.find_element_by_id('omics-popup-content'))
+
+    def test_invite_preview(self):
+        """Test visibility of invite preview popup"""
+        url = reverse('role_invite_create', kwargs={'project': self.project.pk})
+        self.login_and_redirect(self.as_owner.user, url)
+
+        button = self.selenium.find_element_by_id(
+            'omics-pr-invite-preview-link')
+        button.click()
+
+        WebDriverWait(self.selenium, self.wait_time).until(
+            ec.presence_of_element_located((By.ID, 'omics-popup-content')))
+
+        self.assertIsNotNone(
+            self.selenium.find_element_by_id('omics-popup-content'))
+
 
 class TestProjectInviteList(TestUIBase, ProjectInviteMixin):
     """Tests for the project invite list page UI functionalities"""
@@ -472,6 +500,7 @@ class TestProjectInviteList(TestUIBase, ProjectInviteMixin):
             (self.as_delegate.user, 1)]
         url = reverse('role_invites', kwargs={'project': self.project.pk})
         self.assert_element_count(expected, url, 'omics-pr-btn-grp-invite')
+
 
 # TODO: Uncomment once other apps are added
 '''

@@ -422,9 +422,9 @@ class TestProjectInviteAcceptView(
         """Test user accepting an invite with taskflow"""
 
         # Assert preconditions
-        self.assertEquals(ProjectInvite.objects.filter(active=True).count(), 1)
+        self.assertEqual(ProjectInvite.objects.filter(active=True).count(), 1)
 
-        self.assertEquals(RoleAssignment.objects.filter(
+        self.assertEqual(RoleAssignment.objects.filter(
             project=self.project,
             user=self.user_new,
             role=self.role_contributor).count(), 0)
@@ -439,10 +439,10 @@ class TestProjectInviteAcceptView(
                 'project_detail', kwargs={'pk': self.project.pk}))
 
             # Assert postconditions
-            self.assertEquals(
+            self.assertEqual(
                 ProjectInvite.objects.filter(active=True).count(), 0)
 
-            self.assertEquals(RoleAssignment.objects.filter(
+            self.assertEqual(RoleAssignment.objects.filter(
                 project=self.project,
                 user=self.user_new,
                 role=self.role_contributor).count(), 1)

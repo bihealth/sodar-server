@@ -1,6 +1,5 @@
 """Tests for email sending in the projectroles Django app"""
 
-from django.conf import settings
 from django.core import mail
 from django.urls import reverse
 
@@ -59,8 +58,8 @@ class TestEmailSending(TestCase, ProjectMixin, RoleAssignmentMixin):
                 user=self.owner_as.user,
                 role=self.owner_as.role,
                 request=request)
-            self.assertEquals(email_sent, 1)
-            self.assertEquals(len(mail.outbox), 1)
+            self.assertEqual(email_sent, 1)
+            self.assertEqual(len(mail.outbox), 1)
 
     def test_role_update_mail(self):
         """Test role updating mail sending"""
@@ -73,8 +72,8 @@ class TestEmailSending(TestCase, ProjectMixin, RoleAssignmentMixin):
                 user=self.owner_as.user,
                 role=self.owner_as.role,
                 request=request)
-            self.assertEquals(email_sent, 1)
-            self.assertEquals(len(mail.outbox), 1)
+            self.assertEqual(email_sent, 1)
+            self.assertEqual(len(mail.outbox), 1)
 
     def test_role_delete_mail(self):
         """Test role deletion mail sending"""
@@ -87,5 +86,5 @@ class TestEmailSending(TestCase, ProjectMixin, RoleAssignmentMixin):
                 user=self.owner_as.user,
                 role=None,
                 request=request)
-            self.assertEquals(email_sent, 1)
-            self.assertEquals(len(mail.outbox), 1)
+            self.assertEqual(email_sent, 1)
+            self.assertEqual(len(mail.outbox), 1)
