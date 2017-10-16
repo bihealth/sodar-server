@@ -128,12 +128,11 @@ class ProjectEvent(models.Model):
     def set_status(self, status_type, status_desc=None, extra_data=None):
         """
         Set status of an existing ProjectEvent
-        :param event: ProjectEvent object
         :param status_type: Status type string (see EVENT_STATUS_TYPES)
         :param status_desc: Description string (optional)
         :param extra_data: Extra data for the status (dict, optional)
-        :returns: ProjectEventStatus object
-        :raises: TypeError if status_type is invalid
+        :return: ProjectEventStatus object
+        :raise: TypeError if status_type is invalid
         """
         if status_type not in EVENT_STATUS_TYPES:
             raise TypeError('Invalid status type (accepted values: {})'.format(
@@ -194,6 +193,22 @@ class ProjectEventObjectRef(models.Model):
     extra_data = JSONField(
         default=dict,
         help_text='Additional data related to the object as JSON')
+
+    def __str__(self):
+        return '{}: {}/{} ({})'.format(
+            self.event.project.title,
+            self.event.event_name,
+            self.event.user.username,
+            self.name)
+
+    def __repr__(self):
+        values = (
+            self.event.project.title,
+            self.event.event_name,
+            self.event.user.username,
+            self.name)
+        return 'ProjectEventObjectRef({})'.format(
+            ', '.join(repr(v) for v in values))
 
 
 class ProjectEventStatus(models.Model):

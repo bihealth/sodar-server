@@ -13,17 +13,17 @@ register = template.Library()
 
 STATUS_STYLES = {
     'OK': 'bg-success',
-    'INIT': 'bg-faded',
+    'INIT': 'bg-secondary',
     'SUBMIT': 'bg-warning',
     'FAILED': 'bg-danger',
     'INFO': 'bg-info',
-    'CANCEL': 'bg-faded'}
+    'CANCEL': 'bg-dark'}
 
 
 @register.simple_tag
 def get_status_style(status):
-    return STATUS_STYLES[status.status_type] \
-        if status.status_type in STATUS_STYLES else 'bg_faded'
+    return (STATUS_STYLES[status.status_type] + ' text-light') \
+        if status.status_type in STATUS_STYLES else 'bg-light'
 
 
 @register.simple_tag
@@ -32,7 +32,6 @@ def get_timestamp(obj):
 
 
 @register.simple_tag
-# TODO: Get these from appl plugins entry_point_url_id
 def get_app_url(event):
     # Projectroles is a special case
     if event.app == 'projectroles':
@@ -59,7 +58,7 @@ def get_event_description(event):
 @register.simple_tag
 def get_event_details(event):
     """Return HTML data for event detail popover"""
-    ret = '<table class="table table-striped timeline-detail">'
+    ret = '<table class="table table-striped omics-card-table omics-tl-table-detail">'
     ret += '\n<thead>\n<th>Timestamp</th>\n<th>Description</th>\n' \
            '<th>Status</th>\n</thead>\n<tbody>'
 
@@ -68,12 +67,12 @@ def get_event_details(event):
     for status in status_changes:
         ret += '\n<tr><td>{}</td>\n<td>{}</td>\n' \
                '<td class="{}">{}</td>\n</tr>'.format(
-            get_timestamp(status),
-            status.description[:256] + (
-                '<em class="text-muted"> (...)</em>'
-                if len(status.description) > 256 else ''),
-            get_status_style(status),
-            status.status_type)
+                    get_timestamp(status),
+                    status.description[:256] + (
+                        '<em class="text-muted"> (...)</em>'
+                        if len(status.description) > 256 else ''),
+                    get_status_style(status),
+                    status.status_type)
     ret += '\n</tbody>\n</table>'
     return ret
 
@@ -86,4 +85,7 @@ def get_details_events(project, view_classified):
     if not view_classified:
         events = events.exclude(classified=True)
 
-    return events.order_by('-pk')[:5]
+    events = events.order_by('-pk')
+
+    return [
+        x for x in events if x.get_current_status().status_type == 'OK'][:5]

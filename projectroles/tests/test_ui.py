@@ -1,4 +1,4 @@
-"""UI tests for the projectroles Django app"""
+"""UI tests for the projectroles app"""
 
 import socket
 
@@ -12,9 +12,10 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
 
+from projectroles.models import Role, OMICS_CONSTANTS
+from projectroles.plugins import get_active_plugins
 from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin,\
     ProjectInviteMixin
-from projectroles.models import Role, OMICS_CONSTANTS
 
 
 # Omics constants
@@ -71,7 +72,7 @@ class TestUIBase(
         # Init headless Chrome
         options = webdriver.ChromeOptions()
         options.add_argument('headless')
-        options.add_argument('no-sandbox')
+        options.add_argument('no-sandbox')  # For Gitlab-CI compatibility
         self.selenium = webdriver.Chrome(chrome_options=options)
 
         # Prevent ElementNotVisibleException
@@ -235,7 +236,8 @@ class TestUIBase(
                 self.assertEqual(
                     len(self.selenium.find_elements_by_xpath(
                         '//*[contains(@id, "{}")]'.format(id_substring))),
-                    expected_count)
+                    expected_count,
+                    'expected_user={}'.format(expected_user))
 
             else:
                 with self.assertRaises(NoSuchElementException):
@@ -502,22 +504,22 @@ class TestProjectInviteList(TestUIBase, ProjectInviteMixin):
         self.assert_element_count(expected, url, 'omics-pr-btn-grp-invite')
 
 
-# TODO: Uncomment once other apps are added
-'''
 class TestPlugins(TestUIBase):
     """Tests for app plugins in the UI"""
 
     # NOTE: Setting up the plugins is done during migration
+    def setUp(self):
+        super(TestPlugins, self).setUp()
+        self.plugin_count = len(get_active_plugins())
 
     def test_plugin_buttons(self):
         """Test visibility of app plugin buttons"""
-        expected = [(self.superuser, 4)]
+        expected = [(self.superuser, self.plugin_count)]
         url = reverse('project_detail', kwargs={'pk': self.project.pk})
-        self.assert_element_count(expected, url, 'pr_app_plugin_buttons')
+        self.assert_element_count(expected, url, 'omics-pr-btn-app-plugin')
 
     def test_plugin_cards(self):
         """Test visibility of app plugin cards"""
-        expected = [(self.superuser, 4)]
+        expected = [(self.superuser, self.plugin_count)]
         url = reverse('project_detail', kwargs={'pk': self.project.pk})
-        self.assert_element_count(expected, url, 'pr_app_card')
-'''
+        self.assert_element_count(expected, url, 'omics-pr-app-item')

@@ -1,4 +1,4 @@
-"""API for the Timeline app, used by other apps to add and update events"""
+"""API for the timeline app, used by other apps to add and update events"""
 
 import re
 
@@ -13,7 +13,6 @@ from timeline.models import ProjectEvent, ProjectEventObjectRef
 
 
 APP_NAMES = get_app_names()
-APP_NAMES.append('files')   # TEMP HACK
 
 
 class TimelineAPI:
@@ -40,8 +39,8 @@ class TimelineAPI:
         :param status_type: Initial status type (string, optional)
         :param status_desc: Initial status description (string, optional)
         :param status_extra_data: Extra data for initial status (dict, optional)
-        :returns: ProjectEvent object
-        :raises: TypeError if app_name is invalid
+        :return: ProjectEvent object
+        :raise: TypeError if app_name is invalid
         """
         if app_name not in APP_NAMES:
             raise TypeError('Unknown app name (active apps: {})'.format(
@@ -75,7 +74,7 @@ class TimelineAPI:
         Return ProjectEvent objects for project
         :param project: Project object
         :param classified: Include classified
-        :returns: QuerySet
+        :return: QuerySet
         """
         events = ProjectEvent.objects.filter(project=project)
 

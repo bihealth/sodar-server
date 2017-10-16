@@ -14,9 +14,12 @@ Added
 
 - **General**
     - Create new base project using the current version of `cookiecutter-django<https://github.com/pydanny/cookiecutter-django>`_
+    - Additional unit tests for site apps
     - Add changelog in ``CHANGELOG.rst``
 - **Projectroles**
     - Import app from prototype
+- **Timeline**
+    - Import app and backend plugin from prototype
 
 Changed
 -------
@@ -34,6 +37,10 @@ Changed
     - Move ``OMICS_CONSTANTS`` from configuration into ``models.py``
     - Populate Role objects in a migration script instead of a fixture
     - Import patched ``django-plugins`` from GitHub instead of including in project directly
+- **Timeline**
+    - Enable event details popover on the project details page
+    - Limit details page list to successful events
+    - Allow guest user to see non-classified events
 
 Fixed
 -----
@@ -41,6 +48,8 @@ Fixed
 - **Projectroles**
     - Check for project title uniqueness
     - Don't allow matching titles for subproject and parent
+- **Timeline**
+    - Tour help anchoring for list navigation buttons
 
 Removed
 -------

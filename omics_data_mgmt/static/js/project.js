@@ -46,3 +46,9 @@ var tourEnabled = false;  // Needs to set true if there is content
             classes: 'shepherd-theme-default'
         }
     });
+
+
+// Set up Bootstrap popover
+$('[data-toggle="popover"]').popover({
+    container: 'body'
+});

@@ -31,8 +31,10 @@ urlpatterns = [
     url(r'^projects/', include('projectroles.urls')),
 
     # App plugin URLs
-    # TODO: Test if this can be made to work on Flynn
-    url(r'^', include_plugins(ProjectAppPluginPoint)),
+    # TODO: Test if this can be made to work on Flynn and without the extra
+    # TODO:     "plugin" kwarg for the API view classes
+    # url(r'^', include_plugins(ProjectAppPluginPoint)),
+    url(r'^timeline/', include('timeline.urls')),
 
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

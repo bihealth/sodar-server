@@ -46,7 +46,7 @@
       {% for plugin in app_plugins %}
         {% has_perm plugin.app_permission request.user object as can_view_app %}
         {% if can_view_app %}
-          <div class="card pr_app_card" id="omics-pr-app-card-{{ plugin.pk }}">
+          <div class="card omics-card omics-pr-app-card" id="omics-pr-app-item-{{ plugin.pk }}">
             <div class="card-header card-header-omics-app-detail">
               <h4>
                 <i class="fa fa-{{ plugin.icon }}"></i>
@@ -62,7 +62,7 @@
                 <i class="fa fa-info-circle"></i> {{ plugin.description }}
             </div>
             {% if plugin.details_template %}
-              <div class="card-body omics-card-body">
+              <div class="card-body omics-card-body-table">
                 {% include plugin.details_template %}
               </div>
             {% else %}

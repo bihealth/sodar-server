@@ -73,9 +73,6 @@
       </div>
       <div class="card-body omics-card-body">
         <dl class="row omics-dl">
-          {# TODO: Temporary test, remove once plugins are introduced #}
-          <dt class="col-md-2"><i class="fa fa-globe"></i> Testing</dt>
-          <dd class="col-md-10">Description will go here</dd>
           {% for plugin in app_plugins %}
             <dt class="col-md-2"><i class="fa fa-{{ plugin.icon }}"></i> {{ plugin.title }}</dt>
             <dd class="col-md-10">{{ plugin.description }}</dd>

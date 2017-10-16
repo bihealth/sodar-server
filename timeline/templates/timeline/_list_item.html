@@ -1,17 +1,10 @@
 {% load timeline_tags %}
 
-<tr>
-  {% comment %}
-  <td>{{ event.pk }}</td>
-  {% endcomment %}
+<tr id="omics-tl-list-event-{{ event.pk }}">
   <td>
-    {% if not details_card_mode %}
-      <a tabindex="0" data-toggle="popover" data-trigger="focus" data-placement="right" data-html="true" data-content="{% get_event_details event %}">
-        {% get_timestamp event %}
-      </a>
-    {% else %}
+    <a class="omics-tl-detail-link" tabindex="0" data-toggle="popover" data-trigger="focus" data-placement="right" data-html="true" data-content="{% get_event_details event %}">
       {% get_timestamp event %}
-    {% endif %}
+    </a>
   </td>
   <td><a href="{% get_app_url event %}">{{ event.app }}</a></td>
   <td>{{ event.event_name }}</td>
@@ -21,8 +14,8 @@
       {% get_event_description event %}
     {% endautoescape %}
     {% if event.classified %}
-      <span class="pull-right text-muted"><i class="fa fa-lock" aria-hidden="true"></i></span>
+      <span class="pull-right text-muted"><i class="fa fa-lock"></i></span>
     {% endif %}
   </td>
-  <td class="{% get_status_style event.get_current_status %}">{{ event.get_current_status.status_type }}</td>
+  <td class="{% get_status_style event.get_current_status %} text-light">{{ event.get_current_status.status_type }}</td>
 </tr>

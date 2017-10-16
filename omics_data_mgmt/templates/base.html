@@ -98,7 +98,7 @@
       </nav>
     </div>
 
-    <div class="container-fluid omics-container-alert">
+    <div class="container-fluid omics-alert-container">
       {% if messages %}
           {% for message in messages %}
               <div class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %} omics-alert-top">{{ message }}</div>

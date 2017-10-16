@@ -80,6 +80,8 @@ class TestProjectEventBase(TestCase, ProjectMixin, RoleAssignmentMixin):
             'TestProject', PROJECT_TYPE_PROJECT, None)
         self.role_owner = Role.objects.get_or_create(
             name=PROJECT_ROLE_OWNER)[0]
+        self.role_delegate = Role.objects.get_or_create(
+            name=PROJECT_ROLE_DELEGATE)[0]
         self.assignment_owner = self._make_assignment(
             self.project, self.user_owner, self.role_owner)
 
@@ -111,9 +113,16 @@ class TestProjectEvent(
             'extra_data': {'test_key': 'test_val'},
             'omics_uuid': self.event.omics_uuid}
 
-        self.assertEquals(model_to_dict(self.event), expected)
+        self.assertEqual(model_to_dict(self.event), expected)
 
-    # TODO: Test __str__() & __repr__()
+    def test__str__(self):
+        expected = 'TestProject: test_event/owner'
+        self.assertEqual(str(self.event), expected)
+
+    def test__repr__(self):
+        expected = "ProjectEvent('TestProject', 'test_event', " \
+            "'owner')"
+        self.assertEqual(repr(self.event), expected)
 
 
 class TestProjectEventObjectRef(
@@ -148,9 +157,40 @@ class TestProjectEventObjectRef(
             'object_pk': self.assignment_owner.pk,
             'extra_data': {'test_key': 'test_val'}}
 
-        self.assertEquals(model_to_dict(self.obj_ref), expected)
+        self.assertEqual(model_to_dict(self.obj_ref), expected)
 
-    # TODO: Test __str__() & __repr__()
+    def test__str__(self):
+        expected = 'TestProject: test_event/owner (test_name)'
+        self.assertEqual(str(self.obj_ref), expected)
+
+    def test__repr__(self):
+        expected = "ProjectEventObjectRef('TestProject', 'test_event', " \
+            "'owner', 'test_name')"
+        self.assertEqual(repr(self.obj_ref), expected)
+
+    def test_add_object(self):
+        """Test the add_object() function of ProjectEvent"""
+
+        # Init new user and role
+        new_user = self.make_user('new_user')
+        new_as = self._make_assignment(
+            self.project, new_user, self.role_delegate)
+
+        new_obj = self.event.add_object(
+            obj=new_as,
+            label='new_label',
+            name='new_name')
+
+        expected = {
+            'id': new_obj.pk,
+            'event': self.event.pk,
+            'label': 'new_label',
+            'name': 'new_name',
+            'object_pk': new_as.pk,
+            'object_model': 'RoleAssignment',
+            'extra_data': {}}
+
+        self.assertEqual(model_to_dict(new_obj), expected)
 
 
 class TestProjectEventStatus(
@@ -168,7 +208,13 @@ class TestProjectEventStatus(
             classified=False,
             extra_data={'test_key': 'test_val'})
 
-        self.event_status = self._make_event_status(
+        self.event_status_submit = self._make_event_status(
+            event=self.event,
+            status_type='SUBMIT',
+            description='SUBMIT',
+            extra_data={'test_key': 'test_val'})
+
+        self.event_status_ok = self._make_event_status(
             event=self.event,
             status_type='OK',
             description='OK',
@@ -176,12 +222,66 @@ class TestProjectEventStatus(
 
     def test_initialization(self):
         expected = {
-            'id': self.event_status.pk,
+            'id': self.event_status_ok.pk,
             'event': self.event.pk,
             'status_type': 'OK',
             'description': 'OK',
             'extra_data': {'test_key': 'test_val'}}
 
-        self.assertEquals(model_to_dict(self.event_status), expected)
+        self.assertEqual(model_to_dict(self.event_status_ok), expected)
 
-    # TODO: Test __str__() & __repr__()
+    def test__str__(self):
+        expected = 'TestProject: test_event/owner (OK)'
+        self.assertEqual(str(self.event_status_ok), expected)
+
+    def test__repr__(self):
+        expected = "ProjectEventStatus('TestProject', 'test_event', " \
+            "'owner', 'OK')"
+        self.assertEqual(repr(self.event_status_ok), expected)
+
+    def test_get_current_status(self):
+        """Test the get_current_status() function of ProjectEvent"""
+        status = self.event.get_current_status()
+
+        expected = {
+            'id': self.event_status_ok.pk,
+            'event': self.event.pk,
+            'status_type': 'OK',
+            'description': 'OK',
+            'extra_data': {'test_key': 'test_val'}}
+
+        self.assertEqual(model_to_dict(status), expected)
+
+    def test_get_timestamp(self):
+        """Test the get_timestamp() function of ProjectEvent"""
+        timestamp = self.event.get_timestamp()
+        self.assertEqual(timestamp, self.event_status_ok.timestamp)
+
+    def test_get_status_changes(self):
+        """Test the get_status_changes() function of ProjectEvent"""
+        status_changes = self.event.get_status_changes()
+        self.assertEqual(status_changes.count(), 2)
+        self.assertEqual(status_changes[0], self.event_status_submit)
+
+    def test_get_status_changes_reverse(self):
+        """Test the get_status_changes() function of ProjectEvent with
+        reverse=True"""
+        status_changes = self.event.get_status_changes(reverse=True)
+        self.assertEqual(status_changes.count(), 2)
+        self.assertEqual(status_changes[0], self.event_status_ok)
+
+    def test_set_status(self):
+        """Test the set_status() function of ProjectEvent"""
+        new_status = self.event.set_status(
+            'FAILED',
+            status_desc='FAILED',
+            extra_data={'test_key': 'test_val'})
+
+        expected = {
+            'id': new_status.pk,
+            'event': self.event.pk,
+            'status_type': 'FAILED',
+            'description': 'FAILED',
+            'extra_data': {'test_key': 'test_val'}}
+
+        self.assertEqual(model_to_dict(new_status), expected)

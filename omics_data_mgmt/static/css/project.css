@@ -48,7 +48,7 @@ div.omics-base-container {
   min-height: 75vh;
 }
 
-div.omics-container-alert {
+div.omics-alert-container {
   margin-bottom: 0;
 }
 
@@ -108,6 +108,10 @@ div.omics-card-body-table {
 
 table.omics-card-table {
   margin: 0;
+}
+
+table.omics-card-table tr th {
+  border-top: 0;
 }
 
 table.omics-card-table-borderless {
@@ -195,4 +199,8 @@ a.omics-nav-link-last {
   padding-right: 42px;
   border-radius: 0;
   margin-bottom: 0;
+}
+
+.popover{
+  max-width: 100%;
 }

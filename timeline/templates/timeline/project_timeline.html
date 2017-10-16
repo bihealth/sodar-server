@@ -7,31 +7,24 @@
 {% block css %}
     {{ block.super }}
     <style type="text/css">
-      .table th {
-        border-top: none !important;
-      }
 
       /* Main table */
-      table.timeline-main tr td:nth-child(1) {
+      table#omics-tl-table tr td:nth-child(1) {
         white-space: nowrap;
       }
 
-      table.timeline-main td:nth-child(5) {
+      table#omics-tl-table td:nth-child(5) {
         width: 100%;
       }
 
       /* Detail table */
-      table.timeline-detail tr td:nth-child(1) {
+      table#omics-tl-table-detail tr td:nth-child(1) {
           white-space: nowrap;
       }
 
-      table.timeline-detail tr td:nth-child(2) {
+      table#omics-tl-table-detail tr td:nth-child(2) {
           max-width: 300px;
           white-space: normal;
-      }
-
-      .popover{
-        max-width: 100%;
       }
     </style>
 {% endblock %}
@@ -40,15 +33,15 @@
 
 {% has_perm 'timeline.view_timeline' request.user project as can_view_timeline %}
 
-<div class="row">
-  <h3 style="padding-bottom: 24px;"><i class="fa fa-clock-o" aria-hidden="true"></i> Timeline</h3>
+<div class="container-fluid omics-subtitle-container">
+  <h3><i class="fa fa-clock-o"></i> Timeline</h3>
 </div>
 
 {% if object_list.count > 0 %}
-  <div class="row">
-    <div class="card" style="margin-top: 0;" id="tl_event_list">
-      <div class="card-block" style="padding: 0;">
-       <table class="table table-striped timeline-main" style="margin: 0">
+  <div class="container-fluid">
+    <div class="card omics-card-single" id="omics-tl-event-list">
+      <div class="card-body omics-card-body" style="padding: 0;">
+       <table class="table table-striped omics-card-table" id="omics-tl-table">
          <thead>
            {% include 'timeline/_list_header.html' %}
          </thead>
@@ -63,31 +56,31 @@
   </div>
 
   {% if is_paginated %}
-    <div class="row">
-      <div class="btn-group pull-right" id="tl_nav_buttons">
+    <div class="container-fluid">
+      <div class="btn-group pull-right" id="omics-tl-nav-buttons">
         {% if page_obj.has_previous %}
           <a role="button" class="btn btn-secondary"
               href="?page={{ page_obj.previous_page_number }}">
-            <i class="fa fa-arrow-circle-left" aria-hidden="true"></i>
+            <i class="fa fa-arrow-circle-left"></i>
             Newer
           </a>
         {% else %}
           <a role="button" class="btn btn-secondary disabled"
               href="#">
-            <i class="fa fa-arrow-circle-left" aria-hidden="true"></i>
+            <i class="fa fa-arrow-circle-left"></i>
             Newer
           </a>
         {% endif %}
         {% if page_obj.has_next %}
           <a role="button" class="btn btn-secondary"
               href="?page={{ page_obj.next_page_number }}">
-            <i class="fa fa-arrow-circle-right" aria-hidden="true"></i>
+            <i class="fa fa-arrow-circle-right"></i>
             Older
           </a>
         {% else %}
           <a role="button" class="btn btn-secondary disabled"
               href="#">
-            <i class="fa fa-arrow-circle-right" aria-hidden="true"></i>
+            <i class="fa fa-arrow-circle-right"></i>
             Older
           </a>
         {% endif %}
@@ -96,8 +89,8 @@
   {% endif %}
 
 {% else %}
-  <div class="row">
-    <div class="alert alert-info" role="alert" style="margin-top: 24px;">
+  <div class="container-fluid">
+    <div class="alert alert-info" role="alert">
       No timeline events found for this project.
     </div>
   </div>
@@ -108,12 +101,6 @@
 {% block javascript %}
   {{ block.super }}
 
-  <script type="text/javascript">
-    $('[data-toggle="popover"]').popover({
-      container: 'body'
-    });
-  </script>
-
   {# Tour content #}
   <script type="text/javascript">
     tourEnabled = true;
@@ -122,7 +109,7 @@
         title: 'Event List',
         text: 'This is the list of events for the project, organized by ' +
               'newest first.',
-        attachTo: '#tl_event_list top',
+        attachTo: '#omics-tl-event-list top',
         advanceOn: '.docs-link click',
         showCancelLink: true
     });
@@ -131,18 +118,20 @@
         title: 'Event Details',
         text: 'Click an event timestamp to open a popup with details ' +
               'regarding each event.',
-        attachTo: '#tl_header_timestamp right',
+        attachTo: '#omics-tl-header-timestamp right',
         advanceOn: '.docs-link click',
         showCancelLink: true
     });
 
-    tour.addStep('timeline_nav', {
-        title: 'Timeline Navigation',
-        text: 'Use these buttons to navigate through project events.',
-        attachTo: '#tl_nav_buttons left',
-        advanceOn: '.docs-link click',
-        showCancelLink: true,
-        scrollTo: true
-    });
+    if ($('#omics-tl-nav-buttons').length) {
+        tour.addStep('timeline_nav', {
+            title: 'Timeline Navigation',
+            text: 'Use these buttons to navigate through project events.',
+            attachTo: '#omics-tl-nav-buttons left',
+            advanceOn: '.docs-link click',
+            showCancelLink: true,
+            scrollTo: true
+        });
+    }
   </script>
 {% endblock %}

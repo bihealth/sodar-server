@@ -1,4 +1,4 @@
-
+"""Plugins for the Timeline app"""
 
 # Projectroles dependency
 from projectroles.plugins import ProjectAppPluginPoint, BackendPluginPoint
@@ -52,7 +52,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         """
         Return app information to be displayed on the project details page
         :param pk: Project ID
-        :returns: List of tuples
+        :return: List of tuples
         """
         return [(
             'Event Count', ProjectEvent.objects.filter(project=pk).count())]
