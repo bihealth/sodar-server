@@ -241,11 +241,23 @@ class ProjectModifyMixin(ModelFormMixin):
         tl_event = None
         form_action = 'update' if self.object else 'create'
 
+        old_data = {
+            'title': None,
+            'description': None,
+            'readme': None,
+            'owner': None}
+
         if self.object:
-            project = self.object
+            project = self.get_object()
+            old_data['title'] = project.title
+            old_data['description'] = project.description
+            old_data['readme'] = project.readme.raw
+            old_data['owner'] = project.get_owner().user
+
             project.title = form.cleaned_data.get('title')
             project.description = form.cleaned_data.get('description')
             project.type = form.cleaned_data.get('type')
+            project.readme = form.cleaned_data.get('readme')
 
         else:
             project = Project(
@@ -266,8 +278,28 @@ class ProjectModifyMixin(ModelFormMixin):
         owner = form.cleaned_data.get('owner')
 
         if timeline:
-            tl_desc = 'create project with {owner} as owner' \
-                if form_action == 'create' else 'update project'
+            if form_action == 'create':
+                tl_desc = 'create project with {owner} as owner'
+
+            else:
+                tl_desc = 'update project'
+                upd_fields = []
+
+                if old_data['title'] != project.title:
+                    upd_fields.append('title')
+
+                if old_data['owner'] != owner:
+                    upd_fields.append('owner')
+
+                if old_data['description'] != project.description:
+                    upd_fields.append('description')
+
+                if old_data['readme'] != project.readme.raw:
+                    upd_fields.append('readme')
+
+                if len(upd_fields) > 0:
+                    tl_desc += ' (' + ', '.join(x for x in upd_fields) + ')'
+
             tl_event = timeline.add_event(
                 project=project,
                 app_name=APP_NAME,

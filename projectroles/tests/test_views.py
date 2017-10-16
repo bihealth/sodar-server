@@ -237,8 +237,7 @@ class TestProjectUpdateView(TestViewsBase, ProjectMixin, RoleAssignmentMixin):
         form = response.context['form']
         self.assertIsNotNone(form)
         self.assertEqual(form.fields['type'].choices, [
-            (PROJECT_TYPE_CATEGORY, 'Category'),
-            (PROJECT_TYPE_PROJECT, 'Project')])
+            (PROJECT_TYPE_PROJECT, 'PROJECT')])
         self.assertEqual(form.fields['parent'].disabled, True)
 
     def test_update_project(self):

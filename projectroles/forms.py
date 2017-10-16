@@ -74,6 +74,11 @@ class ProjectForm(forms.ModelForm):
             # Set readme value as raw markdown
             self.initial['readme'] = self.instance.readme.raw
 
+            # Do not allow change of project type
+            force_select_value(
+                self.fields['type'],
+                (self.instance.type, self.instance.type))
+
             # Only owner/superuser has rights to modify owner
             if (current_user.has_perm(
                     'projectroles.update_project_owner',

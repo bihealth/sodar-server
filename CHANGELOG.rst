@@ -37,6 +37,7 @@ Changed
     - Move ``OMICS_CONSTANTS`` from configuration into ``models.py``
     - Populate Role objects in a migration script instead of a fixture
     - Import patched ``django-plugins`` from GitHub instead of including in project directly
+    - Include modified fields in project_update timeline event
 - **Timeline**
     - Enable event details popover on the project details page
     - Limit details page list to successful events
