@@ -1,4 +1,4 @@
-"""Tests for models in the timeline Django app"""
+"""Tests for models in the timeline app"""
 
 from test_plus.test import TestCase
 

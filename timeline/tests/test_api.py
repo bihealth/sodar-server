@@ -1,4 +1,4 @@
-"""Tests for the API in the timeline Django app"""
+"""Tests for the API in the timeline app"""
 
 from django.forms.models import model_to_dict
 
@@ -33,8 +33,8 @@ class TestTimelineAPI(
         """Test adding an event"""
 
         # Assert precondition
-        self.assertEquals(ProjectEvent.objects.all().count(), 0)
-        self.assertEquals(ProjectEventStatus.objects.all().count(), 0)
+        self.assertEqual(ProjectEvent.objects.all().count(), 0)
+        self.assertEqual(ProjectEventStatus.objects.all().count(), 0)
 
         event = self.timeline.add_event(
             project=self.project,
@@ -45,8 +45,8 @@ class TestTimelineAPI(
             extra_data={'test_key': 'test_val'})
 
         # Assert object status after insert
-        self.assertEquals(ProjectEvent.objects.all().count(), 1)
-        self.assertEquals(ProjectEventStatus.objects.all().count(), 1)  # Init
+        self.assertEqual(ProjectEvent.objects.all().count(), 1)
+        self.assertEqual(ProjectEventStatus.objects.all().count(), 1)  # Init
 
         expected = {
             'id': event.pk,
@@ -59,7 +59,7 @@ class TestTimelineAPI(
             'extra_data': {'test_key': 'test_val'},
             'omics_uuid': event.omics_uuid}
 
-        self.assertEquals(model_to_dict(event), expected)
+        self.assertEqual(model_to_dict(event), expected)
 
         # Test Init status
         status = event.get_current_status()
@@ -71,14 +71,14 @@ class TestTimelineAPI(
             'description': DEFAULT_MESSAGES['INIT'],
             'extra_data': {}}
 
-        self.assertEquals(model_to_dict(status), expected_status)
+        self.assertEqual(model_to_dict(status), expected_status)
 
     def test_add_event_with_status(self):
         """Test adding an event with status"""
 
         # Assert precondition
-        self.assertEquals(ProjectEvent.objects.all().count(), 0)
-        self.assertEquals(ProjectEventStatus.objects.all().count(), 0)
+        self.assertEqual(ProjectEvent.objects.all().count(), 0)
+        self.assertEqual(ProjectEventStatus.objects.all().count(), 0)
 
         event = self.timeline.add_event(
             project=self.project,
@@ -94,8 +94,8 @@ class TestTimelineAPI(
         status = event.get_current_status()
 
         # Assert object status after insert
-        self.assertEquals(ProjectEvent.objects.all().count(), 1)
-        self.assertEquals(ProjectEventStatus.objects.all().count(), 2)
+        self.assertEqual(ProjectEvent.objects.all().count(), 1)
+        self.assertEqual(ProjectEventStatus.objects.all().count(), 2)
 
         expected_event = {
             'id': event.pk,
@@ -108,7 +108,7 @@ class TestTimelineAPI(
             'extra_data': {'test_key': 'test_val'},
             'omics_uuid': event.omics_uuid}
 
-        self.assertEquals(model_to_dict(event), expected_event)
+        self.assertEqual(model_to_dict(event), expected_event)
 
         expected_status = {
             'id': status.pk,
@@ -117,13 +117,13 @@ class TestTimelineAPI(
             'description': 'OK',
             'extra_data': {}}
 
-        self.assertEquals(model_to_dict(status), expected_status)
+        self.assertEqual(model_to_dict(status), expected_status)
 
     def test_add_object(self):
         """Test adding an object to an event"""
 
         # Assert precondition
-        self.assertEquals(ProjectEventObjectRef.objects.all().count(), 0)
+        self.assertEqual(ProjectEventObjectRef.objects.all().count(), 0)
 
         event = self.timeline.add_event(
             project=self.project,
@@ -142,7 +142,7 @@ class TestTimelineAPI(
             extra_data={'test_key': 'test_val'})
 
         # Assert object status after insert
-        self.assertEquals(ProjectEventObjectRef.objects.all().count(), 1)
+        self.assertEqual(ProjectEventObjectRef.objects.all().count(), 1)
 
         expected = {
             'id': ref.pk,
@@ -153,4 +153,4 @@ class TestTimelineAPI(
             'object_pk': temp_obj.pk,
             'extra_data': {'test_key': 'test_val'}}
 
-        self.assertEquals(model_to_dict(ref), expected)
+        self.assertEqual(model_to_dict(ref), expected)
