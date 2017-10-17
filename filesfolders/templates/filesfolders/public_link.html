@@ -1,0 +1,34 @@
+{% extends 'projectroles/project_base.html' %}
+{% load rules %}
+
+{% block title %}
+  Public Link for File "{{ object.name }}"
+{% endblock %}
+
+{% block projectroles_extend %}
+
+<div class="row" style="margin-bottom: 12px;">
+  <h3>Public Link to File "{{ object.name }}"</h3>
+</div>
+
+<div class="row">
+  <p>Use the URL below to provide a publicly available download link to the file "{{ object.name }}" in project {{ object.project.title }}.</p>
+  <div class="alert alert-warning" role="alert">
+    <strong>Warning:</strong> Anyone with this URL can access the file, including users without permissions in the project.
+  </div>
+
+  <dl class="row">
+      <dt class="col-sm-2">Link</dt>
+      <dd class="col-sm-10"><a href="{{ public_url }}">{{ public_url }}</a></dd>
+  </dl>
+
+  <div class="btn-group pull-right">
+    <a role="button" class="btn btn-secondary"
+        href="{{ request.META.HTTP_REFERER }}">
+      <i class="fa fa-arrow-circle-left" aria-hidden="true"></i>
+      Back
+    </a>
+  </div>
+</div>
+
+{% endblock %}

@@ -74,6 +74,7 @@ THIRD_PARTY_APPS = [
     'djangoplugins',  # Django plugins
     'pagedown',  # For markdown
     'markupfield',  # For markdown
+    'db_file_storage',  # For storing files in database
 ]
 
 # Apps specific for this project go here.
@@ -83,6 +84,7 @@ LOCAL_APPS = [
     # Your stuff: custom apps go here
     'projectroles.apps.ProjectrolesConfig',
     'timeline.apps.TimelineConfig',
+    'filesfolders.apps.FilesfoldersConfig',
 ]
 
 # See: https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
@@ -144,6 +146,8 @@ DATABASES = {
 }
 DATABASES['default']['ATOMIC_REQUESTS'] = False
 
+# Set django-db-file-storage as the default storage
+DEFAULT_FILE_STORAGE = 'db_file_storage.storage.DatabaseFileStorage'
 
 # GENERAL CONFIGURATION
 # ------------------------------------------------------------------------------
@@ -387,3 +391,9 @@ PROJECTROLES_SEND_EMAIL = env.bool('PROJECTROLES_SEND_EMAIL', False)
 
 # Timeline app settings
 TIMELINE_PAGINATION = 15
+
+
+# Filesfolders app settings
+FILESFOLDERS_MAX_UPLOAD_SIZE = env.int('FILESFOLDERS_MAX_UPLOAD_SIZE', 10485760)
+FILESFOLDERS_SERVE_AS_ATTACHMENT = False
+FILESFOLDERS_LINK_BAD_REQUEST_MSG = 'Invalid request'

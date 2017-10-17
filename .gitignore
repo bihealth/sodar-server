@@ -69,7 +69,7 @@ node_modules/
 .env
 
 # User-uploaded media
-omics_data_access/media/
+omics_data_mgmt/media/
 
 
 # Static files

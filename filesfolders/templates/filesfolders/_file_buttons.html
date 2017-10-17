@@ -1,0 +1,24 @@
+{% load rules %}
+
+{% has_perm 'filesfolders.update_data_own' request.user file.project as can_update_own %}
+{% has_perm 'filesfolders.update_data_all' request.user file.project as can_update_all %}
+
+<div class="btn-group" id="ff_file_buttons_{{ file.pk }}">
+  <button class="btn btn-secondary btn-sm dropdown-toggle"
+      type="button" data-toggle="dropdown"
+      aria-haspopup="true" aria-expanded="false">
+    <i class="fa fa-cog" aria-hidden="true"></i>
+  </button>
+  <div class="dropdown-menu dropdown-menu-right">
+    {% if can_update_all or file.owner == request.user and can_update_own %}
+      <a class="dropdown-item" href="{% url 'file_update' pk=file.pk project=file.project.pk %}">
+        <i class="fa fa-pencil" aria-hidden="true"></i>
+        Update File
+      </a>
+      <a class="dropdown-item" href="{% url 'file_delete' pk=file.pk project=file.project.pk %}">
+        <i class="fa fa-close" aria-hidden="true"></i>
+        Delete File
+      </a>
+    {% endif %}
+  </div>
+</div>

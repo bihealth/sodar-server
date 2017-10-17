@@ -1,0 +1,59 @@
+{% extends 'projectroles/project_base.html' %}
+{% load rules %}
+
+{% block title %}
+  Confirm Folder Deletion
+{% endblock %}
+
+{% block projectroles_extend %}
+
+<div class="row">
+  <h3>Confirm Folder Deletion</h3>
+
+  {% if object.children.count > 0 or object.files.count > 0 or object.links.count > 0 %}
+  <div class="alert alert-danger" role="alert">
+    <strong>Error:</strong> Unable to delete a non-empty folder. Please delete files and subfolders and try again.
+  </div>
+
+  <div class="btn-group pull-right">
+      {% if object.folder %}
+        <a role="button" class="btn btn-secondary"
+            href="{% url 'project_files' project=object.project.pk folder=object.folder.pk %}">
+      {% else %}
+        <a role="button" class="btn btn-secondary"
+            href="{% url 'project_files' project=object.project.pk %}">
+      {% endif %}
+        <i class="fa fa-arrow-circle-left" aria-hidden="true"></i>
+        Cancel
+      </a>
+    </div>
+
+  {% else %}
+  <p>
+    Do you really want to delete the folder "{{ object.name }}"
+    from {{ object.project.title }}?
+  </p>
+  <form method="post">
+    {% csrf_token %}
+    <div class="btn-group pull-right">
+      {% if object.folder %}
+        <a role="button" class="btn btn-secondary"
+            href="{% url 'project_files' project=object.project.pk folder=object.folder.pk %}">
+      {% else %}
+        <a role="button" class="btn btn-secondary"
+            href="{% url 'project_files' project=object.project.pk %}">
+      {% endif %}
+        <i class="fa fa-arrow-circle-left" aria-hidden="true"></i>
+        Cancel
+      </a>
+     <button type="submit" class="btn btn-danger">
+        <i class="fa fa-close" aria-hidden="true"></i>
+          Delete
+      </button>
+    </div>
+  </form>
+  {% endif %}
+
+</div>
+
+{% endblock %}

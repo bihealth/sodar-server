@@ -1,0 +1,127 @@
+{% extends 'projectroles/project_base.html' %}
+{% load rules %}
+
+{% block title %}
+  Batch
+  {% if batch_action == 'delete' %}
+    Deletion
+  {% elif batch_action == 'move' %}
+    Moving
+  {% endif %}
+{% endblock %}
+
+{% block projectroles_extend %}
+
+<div class="row">
+  <h3>
+    Batch
+    {% if batch_action == 'delete' %}
+      Deletion
+    {% elif batch_action == 'move' %}
+      Moving
+    {% endif %}
+  </h3>
+
+  {% if failed|length > 0 %}
+    <div class="alert alert-warning" role="alert">
+      <p><strong>Note:</strong> The following items can <strong>not</strong> be
+        {% if batch_action == 'move' %}
+          moved (insufficient permissions)
+        {% elif batch_action == 'delete' %}
+          deleted (insufficient permissions or non-empty folders)
+        {% endif %}
+      </p>
+      <ul class="list-unstyled">
+        {% for item in failed %}
+          <li>{{ item.name }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+
+  <form method="post"
+    {% if folder %}
+      action="{% url 'batch_edit' project=project.pk folder=folder %}">
+    {% else %}
+      action="{% url 'batch_edit' project=project.pk %}">
+    {% endif %}
+
+    {% csrf_token %}
+
+    {% if items|length > 0 %}
+
+      <div class="alert alert-warning" role="alert">
+        <p><strong>Warning:</strong>
+          {% if batch_action == 'move' %}
+            The following items will be moved:
+          {% elif batch_action == 'delete' %}
+            Are you sure you want to <strong>permanently delete</strong> the following items?
+          {% endif %}
+        </p>
+        <ul class="list-unstyled">
+          {% for item in items %}
+          <li>{{ item.name }}</li>
+         {% endfor %}
+        </ul>
+      </div>
+
+      <input type="hidden" id="ff_user_confirmed" name="user_confirmed" value="1" />
+      <input type="hidden" id="ff_batch_action" name="batch_action" value="{{ batch_action }}" />
+
+      {% for name in item_names %}
+        <input type="hidden" name="{{ name }}" value="1" />
+      {% endfor %}
+
+      {% if batch_action == 'move' and folder_check %}
+        <div class="form-group">
+          <label for="ff_folder_select">Select folder:</label>
+          <select class="form-control" id="ff_folder_select" name="target_folder">
+            {% if folder %}
+              <option value="0">root</option>
+            {% endif %}
+            {% for choice in folder_choices %}
+              <option value="{{ choice.pk }}">{{ choice.get_path }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      {% endif %}
+
+    {% endif %}
+
+    {% if items|length == 0 or not folder_check %}
+        <div class="alert alert-danger" role="alert">
+          <p><strong>Error:</strong>
+           {% if items|length == 0 %}
+             No items to edit!
+           {% elif not folder_check %}
+             No folders available for moving selected items!
+           {% endif %}
+          </p>
+        </div>
+    {% endif %}
+
+    <div class="btn-group pull-right">
+      <a role="button" class="btn btn-secondary" href="{{ request.META.HTTP_REFERER }}">
+        <i class="fa fa-arrow-circle-left" aria-hidden="true"></i>
+        Cancel
+      </a>
+     {% if items|length > 0 %}
+       {% if batch_action == 'move' and folder_check %}
+         <button type="submit" class="btn btn-primary">
+           <i class="fa fa-arrow-right" aria-hidden="true"></i>
+             Move
+         </button>
+       {% elif batch_action == 'delete' %}
+         <button type="submit" class="btn btn-danger">
+           <i class="fa fa-close" aria-hidden="true"></i>
+             Delete
+         </button>
+       {% endif %}
+     {% endif %}
+    </div>
+
+  </form>
+
+</div>
+
+{% endblock %}

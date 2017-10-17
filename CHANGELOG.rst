@@ -16,6 +16,8 @@ Added
     - Create new base project using the current version of `cookiecutter-django<https://github.com/pydanny/cookiecutter-django>`_
     - Additional unit tests for site apps
     - Add changelog in ``CHANGELOG.rst``
+- **Filesfolders**
+    - Import app from prototype
 - **Projectroles**
     - Import app from prototype
 - **Timeline**
@@ -31,6 +33,8 @@ Changed
     - Include CSS and JS imports in testing configs and CI
     - General code refactoring and cleanup
     - Update installation instructions in ``INSTALL.rst``
+- **Filesfolders**
+    - Redesign data model with inheritance to avoid field repetition
 - **Projectroles**
     - Remove restrictions for project and category nesting in models
     - Improved project list layout
@@ -55,6 +59,8 @@ Fixed
 Removed
 -------
 
+- **Filesfolders**
+    - Removed redundant and deprecated fields/functions from the data model
 - **Projectroles**
     - Remove temporary settings variables for demo and UI testing hacks
 

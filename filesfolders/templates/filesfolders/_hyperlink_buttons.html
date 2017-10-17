@@ -1,0 +1,17 @@
+<div class="btn-group" id="ff_hyperlink_buttons_{{ link.pk }}">
+  <button class="btn btn-secondary btn-sm dropdown-toggle"
+      type="button" data-toggle="dropdown"
+      aria-haspopup="true" aria-expanded="false">
+    <i class="fa fa-cog" aria-hidden="true"></i>
+  </button>
+  <div class="dropdown-menu dropdown-menu-right">
+    <a class="dropdown-item" href="{% url 'hyperlink_update' pk=link.pk project=link.project.pk %}">
+      <i class="fa fa-pencil" aria-hidden="true"></i>
+      Update Link
+    </a>
+    <a class="dropdown-item" href="{% url 'hyperlink_delete' pk=link.pk project=link.project.pk %}">
+      <i class="fa fa-close" aria-hidden="true"></i>
+      Delete Link
+    </a>
+  </div>
+</div>

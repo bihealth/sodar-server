@@ -1,0 +1,237 @@
+{# Projectroles dependency #}
+{% extends 'projectroles/project_base.html' %}
+
+{% load rules %}
+{% load filesfolders_tags %}
+
+{% block head_extend %}
+{% endblock %}
+
+{% block css %}
+  {{ block.super }}
+  <style type="text/css">
+    .table tr td:nth-child(1) {
+      padding-right: 0;
+      width: 20px;
+    }
+
+    .table tr td:nth-child(2) {
+      padding-left: 4px;
+    }
+  </style>
+{% endblock %}
+
+{% block projectroles_extend %}
+
+{# Projectroles dependency #}
+{% has_perm 'filesfolders.view_data' request.user project as can_view_data %}
+{% has_perm 'filesfolders.add_data' request.user project as can_add_data %}
+{% has_perm 'filesfolders.update_data_own' request.user project as can_update_own %}
+{% has_perm 'filesfolders.update_data_all' request.user project as can_update_all %}
+{% has_perm 'filesfolders.share_public_link' request.user project as can_share_link %}
+{% allow_public_links project as allow_public_links %}
+
+{% if can_view_data %}
+  <div class="row">
+
+    {% if can_add_data %}
+      {% include 'filesfolders/_list_buttons.html' with project=project folder=folder up=False %}
+    {% endif %}
+
+    <h3><i class="fa fa-file" aria-hidden="true"></i> Files</h3>
+
+    {% if folder %}
+      <form method="post" action="{% url 'batch_edit' project=project.pk folder=folder.pk %}" id="ff_batch_form">
+    {% else %}
+      <form method="post" action="{% url 'batch_edit' project=project.pk %}" id="ff_batch_form">
+    {% endif %}
+
+      {% csrf_token %}
+      <input type="hidden" id="ff_batch_form_action" name="batch_action" value="" />
+      <input type="hidden" id="ff_user_confirmed" name="user_confirmed" value="0" />
+
+      <div class="card" style="margin-top: 12px;" id="ff_file_list">
+        <div class="card-block" style="padding: 0; margin: 0;">
+
+          <!-- Breadcrumb -->
+          <ol id="ff_breadcrumb" class="breadcrumb" style="padding: 12px; margin: 0px; background: none;">
+            {% if not folder %}
+              <li class="breadcrumb-item active">
+                <i class="fa fa-angle-right" aria-hidden="true" id="ff_breadcrumb_icon"></i>
+                root
+              </li>
+            {% else %}
+              <li class="breadcrumb-item">
+                <i class="fa fa-angle-right" aria-hidden="true"></i>
+                <a href="{% url 'project_files' project=project.pk %}">root</a>
+              </li>
+              {% for f in breadcrumb %}
+                {% if f != folder %}
+                  <li class="breadcrumb-item"><a href="{% url 'project_files' project=project.pk folder=f.pk %}">{{ f.name }}</a></li>
+                {% else %}
+                  <li class="breadcrumb-item active">{{ f.name }}</li>
+                {% endif %}
+              {% endfor %}
+            {% endif %}
+          </ol>
+
+        </div>
+        <div class="card-block" style="padding: 0;">
+          <table class="table table-striped" style="margin-bottom: 0;">
+            <thead>
+              <tr class="row">
+                <th colspan="2">Name</th>
+                <th class="text-xs-right">Size</th>
+                <th>Description</th>
+                <th>Owner</th>
+                <th>Updated</th>
+                <th></th>
+                <th id="ff_header_select"><input class="form-check-input" type="checkbox" onchange="checkAll(this)" name="check_all" id="ff_check_all" title="Check/uncheck all" /></th>
+              </tr>
+            </thead>
+
+            <!-- Content -->
+            <tbody id="ff_content">
+
+              <!-- Folders -->
+              <!-- Print this if current folder is not root -->
+              {% if folder %}
+                <tr>
+                  <td>
+                    <i class="fa fa-folder" aria-hidden="true"></i>
+                  </td>
+                  <td>
+                    {% if folder.folder %}
+                      <a href="{% url 'project_files' project=project.pk folder=folder.folder.id %}">.. /</a>
+                    {% else %}
+                      <a href="{% url 'project_files' project=project.pk %}">.. /</a>
+                    {% endif %}
+                  </td>
+                  <td></td>
+                  <td>Parent folder</td>
+                  <td colspan="4"></td>
+                </tr>
+              {% endif %}
+
+              {% for folder in folders %}
+                {% include 'filesfolders/_file_item.html' with item=folder %}
+              {% endfor %}
+
+              <!-- External links -->
+              {% for link in links %}
+                {% include 'filesfolders/_file_item.html' with item=link %}
+              {% endfor %}
+
+              <!-- Files -->
+              {% if files.count > 0 %}
+                {% for file in files %}
+                  {% include 'filesfolders/_file_item.html' with item=file %}
+                {% endfor %}
+              {% endif %}
+
+              {% if links.count == 0 and files.count == 0 %}
+                <tr>
+                  <td class="bg-faded font-italic text-xs-center" colspan="8">Empty folder</td>
+                </tr>
+              {% endif %}
+
+             </tbody>
+          </table>
+        </div> <!-- End table card block -->
+      </div> <!-- End card -->
+
+    </form>
+
+    {% if can_add_data %}
+      {% include 'filesfolders/_list_buttons.html' with project=project folder=folder up=True %}
+    {% endif %}
+
+  </div> <!-- End row -->
+
+{% else %}
+  <div class="alert alert-danger" role="alert">
+    Insufficient permissions for viewing project files!
+  </div>
+{% endif %}
+
+{% endblock %}
+
+{% block javascript %}
+  {{ block.super }}
+
+  <script type="text/javascript">
+    // Script for checking/unchecking all checkboxes
+    function checkAll(ele) {
+         var checkboxes = document.getElementsByTagName('input');
+         if (ele.checked) {
+             for (var i = 0; i < checkboxes.length; i++) {
+                 if (checkboxes[i].type == 'checkbox') {
+                     checkboxes[i].checked = true;
+                 }
+             }
+         } else {
+             for (var i = 0; i < checkboxes.length; i++) {
+                 if (checkboxes[i].type == 'checkbox') {
+                     checkboxes[i].checked = false;
+                 }
+             }
+         }
+     }
+  </script>
+
+  {# Tour content #}
+  <script type="text/javascript">
+    tourEnabled = true;
+
+    tour.addStep('files_list', {
+        title: 'File List',
+        text: 'Here you can browse the files in the current folder and' +
+              'navigate between folders.',
+        attachTo: '#ff_file_list top',
+        advanceOn: '.docs-link click',
+        showCancelLink: true
+    });
+
+    tour.addStep('files_breadcrumb', {
+        title: 'Breadcrumb',
+        text: 'This element displays the path to the current folder for ' +
+              'quick navigation.',
+        attachTo: '#ff_breadcrumb_icon right',
+        advanceOn: '.docs-link click',
+        showCancelLink: true
+    });
+
+    tour.addStep('file_actions', {
+        title: 'File Actions Menu',
+        text: 'From this menu you can upload small files, create new ' +
+              'folders, define links to external resources and manage batch ' +
+              'moving or deletion of files.',
+        attachTo: '#ff_buttons_list left',
+        advanceOn: '.docs-link click',
+        showCancelLink: true
+    });
+
+    if ($('td.ff_action_column').length) {
+        tour.addStep('item_menu', {
+            title: 'Item Menu',
+            text: 'For each file, folder or hyperlink you are allowed to ' +
+                  'edit, functions for updating and deleting them can be ' +
+                  'found in this menu.',
+            attachTo: '.ff_action_column left',
+            advanceOn: '.docs-link click',
+            showCancelLink: true
+        });
+    }
+
+    if ($('#ff_header_select').length) {
+        tour.addStep('project_app_details', {
+            title: 'Item Selection Column',
+            text: 'Select files, folders and hyperlinks in this column for' +
+                  'batch moving from the File Actions menu.',
+            attachTo: '#ff_header_select left',
+            advanceOn: '.docs-link click',
+            showCancelLink: true
+        });
+    }
+  </script>
+{% endblock %}

@@ -1,0 +1,71 @@
+{% extends 'projectroles/project_base.html' %}
+{% load rules %}
+{% load crispy_forms_filters %}
+
+{% block title %}
+  {% if object.pk %}
+    Update External Link "{{ object.name }}"
+  {% else %}
+    Add External Link in {{ project.title }}
+    {% if folder %}
+      / {{ folder.name }}
+    {% else %}
+      / root
+    {% endif %}
+  {% endif %}
+{% endblock %}
+
+{% block projectroles_extend %}
+
+<div class="row" style="margin-bottom: 12px;">
+  {% if object.pk %}
+    <h3>Update External Link "{{ object.name }}"</h3>
+  {% else %}
+    <h3>
+      Add External Link in
+      {% if folder %}
+        {{ folder.name }}
+      {% else %}
+        root
+      {% endif %}
+    </h3>
+  {% endif %}
+</div>
+
+<div class="row">
+  <form method="post">
+    {% csrf_token %}
+    {{ form | crispy }}
+    <div class="btn-group pull-right">
+      <a role="button" class="btn btn-secondary"
+        {# TODO Simplify this #}
+        {% if object.pk %}
+          {% if object.folder %}
+            href="{% url 'project_files' project=object.project.pk folder=object.folder.pk %}"
+          {% else %}
+            href="{% url 'project_files' project=object.project.pk %}"
+          {% endif %}
+        {% else %}
+          {% if folder %}
+            href="{% url 'project_files' project=project.pk folder=folder.pk %}"
+          {% else %}
+            href="{% url 'project_files' project=project.pk %}"
+          {% endif %}
+        {% endif %}
+        >
+        <i class="fa fa-arrow-circle-left" aria-hidden="true"></i>
+        Cancel
+      </a>
+      <button type="submit" class="btn btn-primary">
+        <i class="fa fa-check" aria-hidden="true"></i>
+        {% if object.pk %}
+          Update
+        {% else %}
+          Add
+        {% endif %}
+      </button>
+    </div>
+  </form>
+</div>
+
+{% endblock %}
