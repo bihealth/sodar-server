@@ -276,25 +276,35 @@ class ProjectModifyMixin(ModelFormMixin):
 
         project.save()  # Got to save Project in order to refer to it
         owner = form.cleaned_data.get('owner')
+        extra_data = {}
 
         if timeline:
             if form_action == 'create':
                 tl_desc = 'create project with {owner} as owner'
+                extra_data = {
+                    'title': project.title,
+                    'owner': owner.username,
+                    'description': project.description,
+                    'readme': project.readme.raw}
 
             else:
                 tl_desc = 'update project'
                 upd_fields = []
 
                 if old_data['title'] != project.title:
+                    extra_data['title'] = project.title
                     upd_fields.append('title')
 
                 if old_data['owner'] != owner:
+                    extra_data['owner'] = owner.username
                     upd_fields.append('owner')
 
                 if old_data['description'] != project.description:
+                    extra_data['description'] = project.description
                     upd_fields.append('description')
 
                 if old_data['readme'] != project.readme.raw:
+                    extra_data['readme'] = project.readme.raw
                     upd_fields.append('readme')
 
                 if len(upd_fields) > 0:
@@ -305,7 +315,8 @@ class ProjectModifyMixin(ModelFormMixin):
                 app_name=APP_NAME,
                 user=self.request.user,
                 event_name='project_{}'.format(form_action),
-                description=tl_desc)
+                description=tl_desc,
+                extra_data=extra_data)
 
             if form_action == 'create':
                 tl_event.add_object(owner, 'owner', owner.username)
