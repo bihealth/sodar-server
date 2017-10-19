@@ -20,6 +20,9 @@ PROJECT_ROLE_STAFF = OMICS_CONSTANTS['PROJECT_ROLE_STAFF']
 PROJECT_TYPE_CATEGORY = OMICS_CONSTANTS['PROJECT_TYPE_CATEGORY']
 PROJECT_TYPE_PROJECT = OMICS_CONSTANTS['PROJECT_TYPE_PROJECT']
 
+# Local constants
+APP_NAME = 'filesfolders'
+
 
 class TestListView(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
     """Tests for filesfolders main file list view UI"""
@@ -182,7 +185,7 @@ class TestListView(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
         """Test public link visibility if allow_public_links is set to False"""
         setting = ProjectSetting.objects.get(
             project=self.project.pk,
-            app_plugin__name='files',
+            app_plugin__name=APP_NAME,
             name='allow_public_links')
         setting.value = 0
         setting.save()

@@ -13,11 +13,11 @@
       / root
     {% endif %}
   {% endif %}
-{% endblock %}
+{% endblock title %}
 
 {% block projectroles_extend %}
 
-<div class="row" style="margin-bottom: 12px;">
+<div class="row omics-subtitle-container">
   {% if object.pk %}
     <h3>Update Folder "{{ object.name }}"</h3>
   {% else %}
@@ -32,13 +32,12 @@
   {% endif %}
 </div>
 
-<div class="row">
+<div class="container-fluid">
   <form method="post">
     {% csrf_token %}
     {{ form | crispy }}
     <div class="btn-group pull-right">
       <a role="button" class="btn btn-secondary"
-        {# TODO Simplify this #}
         {% if object.pk %}
           {% if object.folder %}
             href="{% url 'project_files' project=object.project.pk folder=object.folder.pk %}"
@@ -53,11 +52,11 @@
           {% endif %}
         {% endif %}
         >
-        <i class="fa fa-arrow-circle-left" aria-hidden="true"></i>
+        <i class="fa fa-arrow-circle-left"></i>
         Cancel
       </a>
       <button type="submit" class="btn btn-primary">
-        <i class="fa fa-check" aria-hidden="true"></i>
+        <i class="fa fa-check"></i>
         {% if object.pk %}
           Update
         {% else %}
@@ -68,4 +67,4 @@
   </form>
 </div>
 
-{% endblock %}
+{% endblock projectroles_extend %}

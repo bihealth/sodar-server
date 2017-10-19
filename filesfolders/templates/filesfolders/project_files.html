@@ -4,22 +4,30 @@
 {% load rules %}
 {% load filesfolders_tags %}
 
-{% block head_extend %}
-{% endblock %}
+{% block title %}
+  Small Files for {{ project.title }}
+  {% if folder %}
+    / {{ folder.name }}
+  {% endif %}
+{% endblock title %}
 
 {% block css %}
   {{ block.super }}
   <style type="text/css">
-    .table tr td:nth-child(1) {
+    .table#omics-ff-list-table tr td:nth-child(1) {
       padding-right: 0;
       width: 20px;
     }
 
-    .table tr td:nth-child(2) {
+    .table#omics-ff-list-table tr td:nth-child(2) {
       padding-left: 4px;
     }
+
+    .table#omics-ff-list-table tr td:nth-child(6) {
+      white-space: nowrap;
+    }
   </style>
-{% endblock %}
+{% endblock css %}
 
 {% block projectroles_extend %}
 
@@ -29,17 +37,18 @@
 {% has_perm 'filesfolders.update_data_own' request.user project as can_update_own %}
 {% has_perm 'filesfolders.update_data_all' request.user project as can_update_all %}
 {% has_perm 'filesfolders.share_public_link' request.user project as can_share_link %}
+
 {% allow_public_links project as allow_public_links %}
 
 {% if can_view_data %}
-  <div class="row">
-
+  <div class="row omics-subtitle-container">
+    <h3><i class="fa fa-file"></i> Small Files</h3>
     {% if can_add_data %}
       {% include 'filesfolders/_list_buttons.html' with project=project folder=folder up=False %}
     {% endif %}
+  </div>
 
-    <h3><i class="fa fa-file" aria-hidden="true"></i> Files</h3>
-
+  <div class="container-fluid">
     {% if folder %}
       <form method="post" action="{% url 'batch_edit' project=project.pk folder=folder.pk %}" id="ff_batch_form">
     {% else %}
@@ -50,19 +59,19 @@
       <input type="hidden" id="ff_batch_form_action" name="batch_action" value="" />
       <input type="hidden" id="ff_user_confirmed" name="user_confirmed" value="0" />
 
-      <div class="card" style="margin-top: 12px;" id="ff_file_list">
-        <div class="card-block" style="padding: 0; margin: 0;">
+      <div class="card omics-card-single" id="ff_file_list">
+        <div class="card-body omics-card-body-table">
 
           <!-- Breadcrumb -->
-          <ol id="ff_breadcrumb" class="breadcrumb" style="padding: 12px; margin: 0px; background: none;">
+          <ol id="ff_breadcrumb" class="breadcrumb">
             {% if not folder %}
               <li class="breadcrumb-item active">
-                <i class="fa fa-angle-right" aria-hidden="true" id="ff_breadcrumb_icon"></i>
+                <i class="fa fa-angle-right" id="ff_breadcrumb_icon"></i>
                 root
               </li>
             {% else %}
               <li class="breadcrumb-item">
-                <i class="fa fa-angle-right" aria-hidden="true"></i>
+                <i class="fa fa-angle-right"></i>
                 <a href="{% url 'project_files' project=project.pk %}">root</a>
               </li>
               {% for f in breadcrumb %}
@@ -76,12 +85,12 @@
           </ol>
 
         </div>
-        <div class="card-block" style="padding: 0;">
-          <table class="table table-striped" style="margin-bottom: 0;">
+        <div class="card-body omics-card-body-table">
+          <table class="table table-striped omics-card-table" id="omics-ff-list-table">
             <thead>
-              <tr class="row">
+              <tr>
                 <th colspan="2">Name</th>
-                <th class="text-xs-right">Size</th>
+                <th class="text-right">Size</th>
                 <th>Description</th>
                 <th>Owner</th>
                 <th>Updated</th>
@@ -98,7 +107,7 @@
               {% if folder %}
                 <tr>
                   <td>
-                    <i class="fa fa-folder" aria-hidden="true"></i>
+                    <i class="fa fa-folder"></i>
                   </td>
                   <td>
                     {% if folder.folder %}
@@ -131,7 +140,7 @@
 
               {% if links.count == 0 and files.count == 0 %}
                 <tr>
-                  <td class="bg-faded font-italic text-xs-center" colspan="8">Empty folder</td>
+                  <td class="bg-faded font-italic text-center" colspan="8">Empty folder</td>
                 </tr>
               {% endif %}
 
@@ -154,7 +163,7 @@
   </div>
 {% endif %}
 
-{% endblock %}
+{% endblock projectroles_extend %}
 
 {% block javascript %}
   {{ block.super }}
@@ -234,4 +243,4 @@
         });
     }
   </script>
-{% endblock %}
+{% endblock javascript %}

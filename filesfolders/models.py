@@ -70,7 +70,7 @@ class BaseFilesfoldersClass(models.Model):
 
 
 class Folder(BaseFilesfoldersClass):
-    """Class representing a folder storing files and other folders"""
+    """Folder which stores filefolders objects"""
 
     class Meta:
         ordering = ['project', 'name']
@@ -88,12 +88,11 @@ class Folder(BaseFilesfoldersClass):
             self.project.title,
             self.name,
             self.folder if self.folder else '/')
+
         return 'Folder({})'.format(', '.join(repr(v) for v in values))
 
     def get_path(self):
         """Return full path as str"""
-        ret = ''
-
         if self.folder:
             ret = self.folder.get_path()
 
@@ -139,7 +138,7 @@ class FileData(models.Model):
 
 
 class File(BaseFilesfoldersClass):
-    """Class representing an uploaded file"""
+    """Small file uploaded using the filesfolders app"""
 
     #: Uploaded file using django-db-file-storage
     file = models.FileField(
@@ -191,7 +190,7 @@ class File(BaseFilesfoldersClass):
 
 
 class HyperLink(BaseFilesfoldersClass):
-    """Class representing a saved hyperlink"""
+    """Hyperlink saved using the filesfolders app"""
 
     #: URL for the link
     url = models.URLField(

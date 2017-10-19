@@ -27,8 +27,8 @@ PROJECT_TYPE_PROJECT = OMICS_CONSTANTS['PROJECT_TYPE_PROJECT']
 
 # Local constants
 SECRET = '7dqq83clo2iyhg29hifbor56og6911r5'
-PLUGIN_NAME = 'files'
-PLUGIN_TITLE = 'Files'
+PLUGIN_NAME = 'filesfolders'
+PLUGIN_TITLE = 'Small Files'
 PLUGIN_URL_ID = 'project_files'
 SETTING_KEY = 'allow_public_links'
 

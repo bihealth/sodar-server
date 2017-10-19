@@ -1,5 +1,3 @@
-# import magic
-
 from django import forms
 from django.conf import settings
 from django.template.defaultfilters import filesizeformat
@@ -8,7 +6,7 @@ from db_file_storage.form_widgets import DBClearableFileInput
 
 # Projectroles dependency
 from projectroles.models import Project, ProjectSetting
-from projectroles.utils import build_secret
+from projectroles.utils import build_secret, get_project_setting
 
 from .models import File, Folder, HyperLink
 
@@ -17,9 +15,7 @@ from .models import File, Folder, HyperLink
 MAX_UPLOAD_SIZE = settings.FILESFOLDERS_MAX_UPLOAD_SIZE
 
 # Local constants
-APP_NAME = 'files'
-
-# TODO: Clean up, simplify and refactor these forms
+APP_NAME = 'filesfolders'
 
 
 class FolderForm(forms.ModelForm):
@@ -35,7 +31,6 @@ class FolderForm(forms.ModelForm):
         """Override for form initialization"""
         super(FolderForm, self).__init__(*args, **kwargs)
 
-        # TODO: Simplify/refactor this
         self.current_user = None
         self.project = None
         self.folder = None
@@ -45,20 +40,10 @@ class FolderForm(forms.ModelForm):
             self.current_user = current_user
 
         if project:
-            try:
-                self.project = Project.objects.get(id=project)
-
-            except Project.DoesNotExist:
-                pass
+            self.project = Project.objects.get(pk=project)
 
         if folder:
-            try:
-                self.folder = Folder.objects.get(id=folder)
-
-            except Folder.DoesNotExist:
-                pass
-
-        # Form modifications
+            self.folder = Folder.objects.get(pk=folder)
 
         # Creation
         if not self.instance.pk:
@@ -88,14 +73,26 @@ class FolderForm(forms.ModelForm):
                 self.instance.folder.pk if self.instance.folder else None
 
     def clean(self):
-        # Ensure a folder with the same name does not exist in the location
-        # TODO: Simplify this
-        old_folder = None
+        # Creation
+        if not self.instance.pk:
+            try:
+                Folder.objects.get(
+                    project=self.project,
+                    folder=self.folder,
+                    name=self.cleaned_data['name'])
+
+                self.add_error('name', 'Folder already exists')
+
+            except Folder.DoesNotExist:
+                pass
 
         # Updating
-        if self.instance.pk:
+        else:
+            # Ensure a folder with the same name does not exist in the location
+            old_folder = None
+
             try:
-                old_folder = Folder.objects.get(id=self.instance.pk)
+                old_folder = Folder.objects.get(pk=self.instance.pk)
 
             except Folder.DoesNotExist:
                 pass
@@ -113,19 +110,6 @@ class FolderForm(forms.ModelForm):
 
                 except Folder.DoesNotExist:
                     pass
-
-        # Creation
-        else:
-            try:
-                Folder.objects.get(
-                    project=self.project,
-                    folder=self.folder,
-                    name=self.cleaned_data['name'])
-
-                self.add_error('name', 'Folder already exists')
-
-            except Folder.DoesNotExist:
-                pass
 
         return self.cleaned_data
 
@@ -178,20 +162,10 @@ class FileForm(forms.ModelForm):
             self.current_user = current_user
 
         if project:
-            try:
-                self.project = Project.objects.get(id=project)
-
-            except Project.DoesNotExist:
-                pass
+            self.project = Project.objects.get(pk=project)
 
         if folder:
-            try:
-                self.folder = Folder.objects.get(id=folder)
-
-            except Folder.DoesNotExist:
-                pass
-
-        # Form modifications
+            self.folder = Folder.objects.get(pk=folder)
 
         # Creation
         if not self.instance.pk:
@@ -202,7 +176,7 @@ class FileForm(forms.ModelForm):
             self.fields['folder'].widget.attrs['readonly'] = True
 
             # Disable public URL creation if setting is false
-            if not ProjectSetting.objects.get_setting_value(
+            if not get_project_setting(
                     self.project, APP_NAME, 'allow_public_links'):
                 self.fields['public_url'].disabled = True
 
@@ -220,14 +194,13 @@ class FileForm(forms.ModelForm):
                 self.instance.folder.pk if self.instance.folder else None
 
             # Disable public URL creation if setting is false
-            if not ProjectSetting.objects.get_setting_value(
+            if not get_project_setting(
                     self.instance.project, APP_NAME, 'allow_public_links'):
                 self.fields['public_url'].disabled = True
 
     def clean(self):
         if self.cleaned_data.get('file'):
             file = self.cleaned_data.get('file')
-            size = 0
 
             # Ensure max file size is not exceeded
             try:
@@ -244,10 +217,22 @@ class FileForm(forms.ModelForm):
                         MAX_UPLOAD_SIZE,
                         file.size))
 
-            # Ensure file with the same name does not exist in the same folder
-            # (Unless we update file with the same folder and name, that is ok)
+            # Creation
+            if not self.instance.pk:
+                try:
+                    File.objects.get(
+                        project=self.project,
+                        folder=self.folder,
+                        name=file.name)
+                    self.add_error('file', 'File already exists')
+
+                except File.DoesNotExist:
+                    pass
+
             # Updating
-            if self.instance.pk:
+            else:
+                # Ensure file with the same name does not exist in the same
+                # folder (unless we update file with the same folder and name)
                 old_file = None
 
                 try:
@@ -272,38 +257,35 @@ class FileForm(forms.ModelForm):
                     except File.DoesNotExist:
                         pass
 
-            # Creation
-            else:
-                try:
-                    File.objects.get(
-                        project=self.project,
-                        folder=self.folder,
-                        name=file.name)
-                    self.add_error('file', 'File already exists')
-
-                except File.DoesNotExist:
-                    pass
-
         return self.cleaned_data
 
     def save(self, *args, **kwargs):
         """Override of form saving function"""
         obj = super(FileForm, self).save(commit=False)
-        mime = magic.Magic(mime=True)
+
+        # Creation
+        if not self.instance.pk:
+            obj.name = obj.file.name
+            obj.owner = self.current_user
+            obj.project = self.project
+
+            if self.folder:
+                obj.folder = self.folder
+
+            obj.secret = build_secret()    # Secret string created here
 
         # Updating
-        if self.instance.pk:
-            old_file = File.objects.get(id=self.instance.pk)
+        else:
+            old_file = File.objects.get(pk=self.instance.pk)
 
             if old_file.file != self.instance.file:
                 obj.file = self.instance.file
                 obj.name = obj.file.name.split('/')[-1]
-                obj.content_type = mime.from_buffer(self.instance.file.read())
 
             obj.owner = self.instance.owner
             obj.project = self.instance.project
 
-            if (ProjectSetting.objects.get_setting_value(
+            if (get_project_setting(
                     self.instance.project, APP_NAME, 'allow_public_links')):
                 obj.public_url = self.instance.public_url
 
@@ -314,18 +296,6 @@ class FileForm(forms.ModelForm):
 
             if self.instance.folder:
                 obj.folder = self.instance.folder
-
-        # Creation
-        else:
-            obj.name = obj.file.name
-            obj.content_type = mime.from_buffer(obj.file.read())
-            obj.owner = self.current_user
-            obj.project = self.project
-
-            if self.folder:
-                obj.folder = self.folder
-
-            obj.secret = build_secret()    # Secret string created here
 
         obj.save()
         return obj
@@ -344,7 +314,6 @@ class HyperLinkForm(forms.ModelForm):
         """Override for form initialization"""
         super(HyperLinkForm, self).__init__(*args, **kwargs)
 
-        # TODO: Simplify/refactor this
         self.current_user = None
         self.project = None
         self.folder = None
@@ -354,20 +323,10 @@ class HyperLinkForm(forms.ModelForm):
             self.current_user = current_user
 
         if project:
-            try:
-                self.project = Project.objects.get(id=project)
-
-            except Project.DoesNotExist:
-                pass
+            self.project = Project.objects.get(pk=project)
 
         if folder:
-            try:
-                self.folder = Folder.objects.get(id=folder)
-
-            except Folder.DoesNotExist:
-                pass
-
-        # Form modifications
+            self.folder = Folder.objects.get(pk=folder)
 
         # Creation
         if not self.instance.pk:
@@ -391,14 +350,26 @@ class HyperLinkForm(forms.ModelForm):
                 self.instance.folder.pk if self.instance.folder else None
 
     def clean(self):
-        # Ensure a link with the same name does not exist in the location
-        # TODO: Simplify this
-        old_link = None
+        # Creation
+        if not self.instance.pk:
+            try:
+                HyperLink.objects.get(
+                    project=self.project,
+                    folder=self.folder,
+                    name=self.cleaned_data['name'])
+
+                self.add_error('name', 'Link already exists')
+
+            except HyperLink.DoesNotExist:
+                pass
 
         # Updating
-        if self.instance.pk:
+        else:
+            # Ensure a link with the same name does not exist in the location
+            old_link = None
+
             try:
-                old_link = HyperLink.objects.get(id=self.instance.pk)
+                old_link = HyperLink.objects.get(pk=self.instance.pk)
 
             except HyperLink.DoesNotExist:
                 pass
@@ -416,19 +387,6 @@ class HyperLinkForm(forms.ModelForm):
 
                 except HyperLink.DoesNotExist:
                     pass
-
-        # Creation
-        else:
-            try:
-                HyperLink.objects.get(
-                    project=self.project,
-                    folder=self.folder,
-                    name=self.cleaned_data['name'])
-
-                self.add_error('name', 'Link already exists')
-
-            except HyperLink.DoesNotExist:
-                pass
 
         return self.cleaned_data
 
@@ -451,5 +409,4 @@ class HyperLinkForm(forms.ModelForm):
                 obj.folder = self.folder
 
         obj.save()
-
         return obj

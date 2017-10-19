@@ -18,8 +18,10 @@ Added
     - Add changelog in ``CHANGELOG.rst``
 - **Filesfolders**
     - Import app from prototype
+    - Add page title to main files list
 - **Projectroles**
     - Import app from prototype
+    - Add `get_project_setting()` helper function in `utils.py`
 - **Timeline**
     - Import app and backend plugin from prototype
 
@@ -35,6 +37,8 @@ Changed
     - Update installation instructions in ``INSTALL.rst``
 - **Filesfolders**
     - Redesign data model with inheritance to avoid field repetition
+    - Internal app name is now "filesfolders"
+    - Removed example settings
 - **Projectroles**
     - Remove restrictions for project and category nesting in models
     - Improved project list layout
@@ -55,14 +59,16 @@ Fixed
     - Don't allow matching titles for subproject and parent
 - **Timeline**
     - Tour help anchoring for list navigation buttons
+    - User column link was missing the `mailto:` protocol syntax
 
 Removed
 -------
 
 - **Filesfolders**
-    - Removed redundant and deprecated fields/functions from the data model
+    - Redundant and deprecated fields/functions from the data model
+    - Example project settings
 - **Projectroles**
-    - Remove temporary settings variables for demo and UI testing hacks
+    - Temporary settings variables for demo and UI testing hacks
 
 
 v0.1 (2017-XX-YY)

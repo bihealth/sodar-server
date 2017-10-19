@@ -15,10 +15,10 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
     # Properties required by django-plugins ------------------------------
 
     #: Name (slug-safe, used in URLs)
-    name = 'files'
+    name = 'filesfolders'
 
     #: Title (used in templates)
-    title = 'Files'
+    title = 'Small Files'
 
     #: App URLs (will be included in settings by djangoplugins)
     urls = urlpatterns
@@ -31,14 +31,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
             'type': 'BOOLEAN',
             'default': True,
             'description': 'Allow generation of public links for files'},
-        'example_string_setting': {
-            'type': 'STRING',
-            'default': 'Example',
-            'description': 'Example string setting, does not do anything'},
-        'example_int_setting': {
-            'type': 'INTEGER',
-            'default': '1000',
-            'description': 'Example integer setting, does not do anything'}}
+        }
 
     #: FontAwesome icon ID string
     icon = 'file'

@@ -2,8 +2,12 @@ from django import template
 
 # Projectroles dependency
 from projectroles.models import ProjectSetting
+from projectroles.utils import get_project_setting
 
 from ..models import File, HyperLink
+
+
+APP_NAME = 'filesfolders'
 
 
 register = template.Library()
@@ -16,7 +20,6 @@ def get_class(obj):
 
 @register.filter
 def force_wrap(obj, length):
-    # TODO: Could make this more elegant, wrap by special char or end of word?
     # If string contains spaces, leave wrapping to browser
     if obj.find(' ') == -1 and len(obj) > length:
         return '<wbr />'.join(
@@ -40,5 +43,4 @@ def get_details_files(project):
 @register.simple_tag
 def allow_public_links(project):
     """Return the boolean value for allow_public_links in project settings"""
-    return ProjectSetting.objects.get_setting_value(
-        project, 'files', 'allow_public_links')
+    return get_project_setting(project, APP_NAME, 'allow_public_links')

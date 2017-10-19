@@ -4,25 +4,25 @@
   {# Icon & name column #}
   <td>
     {% if item|get_class == 'Folder' %}
-      <i class="fa fa-folder" aria-hidden="true"></i>
+      <i class="fa fa-folder"></i>
     {% elif item|get_class == 'HyperLink' %}
-      <i class="fa fa-external-link" aria-hidden="true"></i>
+      <i class="fa fa-external-link"></i>
     {% elif item|get_class == 'File' %}
-      {# TODO - this is ugly, get from settings instead? #}
+      {# TODO: this is ugly, get from settings instead? #}
       {% if file.content_type == 'application/pdf' %}
-        <i class="fa fa-file-pdf-o" aria-hidden="true"></i>
+        <i class="fa fa-file-pdf-o"></i>
       {% elif file.content_type == 'application/vnd.openxmlformats-officedocument.presentationml.presentation' %}
-        <i class="fa fa-file-powerpoint-o" aria-hidden="true"></i>
+        <i class="fa fa-file-powerpoint-o"></i>
       {% elif 'compressed' in file.content_type or 'zip' in file.content_type %}
-        <i class="fa fa-file-archive-o" aria-hidden="true"></i>
+        <i class="fa fa-file-archive-o"></i>
       {% elif 'excel' in file.content_type or file.content_type == 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' %}
-        <i class="fa fa-file-excel-o" aria-hidden="true"></i>
+        <i class="fa fa-file-excel-o"></i>
       {% elif 'image/' in file.content_type %}
-        <i class="fa fa-file-image-o" aria-hidden="true"></i>
+        <i class="fa fa-file-image-o"></i>
       {% elif 'text/' in file.content_type %}
-        <i class="fa fa-file-text-o" aria-hidden="true"></i>
+        <i class="fa fa-file-text-o"></i>
       {% else %}
-        <i class="fa fa-file-o" aria-hidden="true"></i>
+        <i class="fa fa-file-o"></i>
       {% endif %}
     {% endif %}
   </td>
@@ -42,7 +42,7 @@
     {% endif %}
   </td>
   {# File size column (only for files) #}
-  <td class="text-xs-right">
+  <td class="text-right">
     {% if item|get_class == 'File' %}
       {{ item.file.file.size|filesizeformat }}
     {% endif %}
@@ -52,7 +52,7 @@
   {# Owner column #}
   <td><a title="{{ item.owner.name }}" href="mailto:{{ item.owner.email }}">{{ item.owner.username }}</a></td>
   {# Date column #}
-  <td style="white-space: nowrap;">{{ item.date_modified|date:'Y-m-d H:i' }}</td>
+  <td>{{ item.date_modified|date:'Y-m-d H:i' }}</td>
 
   {% if not details_card_mode %}
   {# Action button column #}

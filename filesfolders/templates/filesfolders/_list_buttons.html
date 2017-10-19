@@ -1,10 +1,10 @@
 <div
   {% if not up %}
-    class="btn-group pull-right" id="ff_buttons_list"
+    class="btn-group ml-auto" id="ff_buttons_list"
   {% else %}
     class="btn-group dropup pull-right" id="ff_buttons_list_up"
   {% endif %}
-  style="margin-bottom: 12px;">
+  >
     <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
       File Actions
     </button>
@@ -17,7 +17,7 @@
         {% else %}
           href="{% url 'folder_create' project=project.pk %}">
         {% endif %}
-          <i class="fa fa-folder-open" aria-hidden="true"></i>
+          <i class="fa fa-folder-open"></i>
             Add Folder
         </a>
 
@@ -28,7 +28,7 @@
         {% else %}
           href="{% url 'hyperlink_create' project=project.pk %}">
         {% endif %}
-          <i class="fa fa-external-link" aria-hidden="true"></i>
+          <i class="fa fa-external-link"></i>
             Add Link
         </a>
 
@@ -39,7 +39,7 @@
         {% else %}
           href="{% url 'file_create' project=project.pk %}">
         {% endif %}
-          <i class="fa fa-upload" aria-hidden="true"></i>
+          <i class="fa fa-upload"></i>
             Upload File
         </a>
 
@@ -50,7 +50,7 @@
              document.getElementById('ff_batch_form_action').value = 'move';
              document.getElementById('ff_batch_form').submit();
              return false;">
-        <i class="fa fa-arrow-right" aria-hidden="true"></i>
+        <i class="fa fa-arrow-right"></i>
           Move Selected
       </a>
 
@@ -61,7 +61,7 @@
              document.getElementById('ff_batch_form_action').value = 'delete';
              document.getElementById('ff_batch_form').submit();
              return false;">
-        <i class="fa fa-trash" aria-hidden="true"></i>
+        <i class="fa fa-trash"></i>
           Delete Selected
       </a>
     </div>

@@ -8,7 +8,7 @@
   </td>
   <td><a href="{% get_app_url event %}">{{ event.app }}</a></td>
   <td>{{ event.event_name }}</td>
-  <td><a href="{{ event.user.email }}">{{ event.user.username }}</a></td>
+  <td><a href="mailto:{{ event.user.email }}">{{ event.user.username }}</a></td>
   <td>
     {% autoescape off %}
       {% get_event_description event %}

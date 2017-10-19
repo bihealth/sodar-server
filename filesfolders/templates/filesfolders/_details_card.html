@@ -6,18 +6,18 @@
 
 {# HACK #}
 <style type="text/css">
-  .table.details_files tr td:nth-child(1) {
+  .table#omics-ff-details-table tr td:nth-child(1) {
     padding-right: 0;
     width: 20px;
   }
 
-  .table.details_files tr td:nth-child(2) {
+  .table#omics-ff-details-table tr td:nth-child(2) {
     padding-left: 4px;
   }
 </style>
 
 {% if can_view_data %}
-  <table class="table table-striped details_files" style="margin-bottom: 0;">
+  <table class="table table-striped omics-card-table" id="omics-ff-details-table">
     <thead>
       {% include 'filesfolders/_list_header.html' with details_card_mode=True %}
     </thead>

@@ -204,3 +204,11 @@ a.omics-nav-link-last {
 .popover{
   max-width: 100%;
 }
+
+.breadcrumb {
+  padding: 12px;
+  margin: 0;
+  background: none;
+  border-bottom: 1px solid #dfdfdf;
+  border-radius: 0;
+}

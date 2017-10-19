@@ -1,10 +1,10 @@
 """Tests for permissions in the filesfolders app"""
 
-from django.conf import settings
 from django.urls import reverse
 
 # Projectroles dependency
 from projectroles.models import ProjectSetting, OMICS_CONSTANTS
+from projectroles.utils import get_project_setting
 from projectroles.tests.test_permissions import TestPermissionBase
 
 from filesfolders.tests.test_models import FileMixin, FolderMixin,\
@@ -20,6 +20,7 @@ PROJECT_TYPE_CATEGORY = OMICS_CONSTANTS['PROJECT_TYPE_CATEGORY']
 PROJECT_TYPE_PROJECT = OMICS_CONSTANTS['PROJECT_TYPE_PROJECT']
 
 # Local constants
+APP_NAME = 'filesfolders'
 SECRET = '7dqq83clo2iyhg29hifbor56og6911r5'
 
 
@@ -231,7 +232,7 @@ class TestFilePermissions(TestPermissionBase, FileMixin):
         """Test public file serving if not allowed in project, should fail"""
         setting = ProjectSetting.objects.get(
             project=self.file.project.pk,
-            app_plugin__name='files',
+            app_plugin__name=APP_NAME,
             name='allow_public_links')
         setting.value = 0
         setting.save()

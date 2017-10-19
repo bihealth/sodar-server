@@ -95,3 +95,15 @@ def get_app_names():
     return sorted([
         a.split('.')[0] for a in settings.LOCAL_APPS if
         a.split('.')[0] != 'omics_data_access'])
+
+
+def get_project_setting(project, app_name, setting_name):
+    """
+    Return setting value for a project and an app.
+    :param project: Project object
+    :param app_name: App name (string, must correspond to "name" in app plugin)
+    :param setting_name: Setting name (string)
+    :return: String or None
+    """
+    return ProjectSetting.objects.get_setting_value(
+        project, app_name, setting_name)

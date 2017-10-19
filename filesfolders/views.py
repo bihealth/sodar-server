@@ -21,6 +21,7 @@ from .utils import build_public_url
 # Projectroles dependency
 from projectroles.models import Project, ProjectSetting
 from projectroles.plugins import get_backend_api
+from projectroles.utils import get_project_setting
 from projectroles.views import LoggedInPermissionMixin, \
     ProjectContextMixin
 
@@ -178,7 +179,7 @@ class FileServeMixin:
 
         # Get File object
         try:
-            file = File.objects.get(id=kwargs['pk'])
+            file = File.objects.get(pk=kwargs['pk'])
 
         except File.DoesNotExist:
             messages.error(self.request, 'File object not found!')
@@ -219,8 +220,6 @@ class FileServeMixin:
 
         if not self.request.user.is_anonymous:
             # Add event in Timeline
-            # TODO: Also add failure events
-            # TODO: Add event for public link retrieval?
             if timeline:
                 tl_event = timeline.add_event(
                     project=file.project,
@@ -250,7 +249,7 @@ class BaseCreateView(
     def get_permission_object(self):
         """Override get_permission_object for checking Project permission"""
         try:
-            obj = Project.objects.get(id=self.kwargs['project'])
+            obj = Project.objects.get(pk=self.kwargs['project'])
             return obj
 
         except Project.DoesNotExist:
@@ -263,7 +262,7 @@ class BaseCreateView(
         if 'folder' in self.kwargs:
             try:
                 context['folder'] = Folder.objects.get(
-                    id=self.kwargs['folder'])
+                    pk=self.kwargs['folder'])
 
             except Folder.DoesNotExist:
                 pass
@@ -301,7 +300,7 @@ class ProjectFileView(
         """Override get_object to provide a Project object for both template
         and permission checking"""
         try:
-            obj = Project.objects.get(id=self.kwargs['project'])
+            obj = Project.objects.get(pk=self.kwargs['project'])
             return obj
 
         except Project.DoesNotExist:
@@ -317,7 +316,7 @@ class ProjectFileView(
         if 'folder' in self.kwargs:
             try:
                 root_folder = Folder.objects.get(
-                    id=self.kwargs['folder'])
+                    pk=self.kwargs['folder'])
 
                 context['folder'] = root_folder
 
@@ -416,7 +415,7 @@ class FileServeView(
     def get_permission_object(self):
         """Override get_permission_object for checking Project permission"""
         try:
-            obj = Project.objects.get(id=self.kwargs['project'])
+            obj = Project.objects.get(pk=self.kwargs['project'])
             return obj
 
         except Project.DoesNotExist:
@@ -433,8 +432,8 @@ class FileServePublicView(FileServeMixin, View):
             file = File.objects.get(secret=kwargs['secret'])
 
             # Check if sharing public files is not allowed in project settings
-            if not ProjectSetting.objects.get_setting_value(
-                    file.project, 'files', 'allow_public_links'):
+            if not get_project_setting(
+                    file.project, APP_NAME, 'allow_public_links'):
                 return HttpResponseBadRequest(LINK_BAD_REQUEST_MSG)
 
         except File.DoesNotExist:
@@ -461,7 +460,7 @@ class FilePublicLinkView(
     def get_permission_object(self):
         """Override get_permission_object for checking Project permission"""
         try:
-            obj = Project.objects.get(id=self.kwargs['project'])
+            obj = Project.objects.get(pk=self.kwargs['project'])
             return obj
 
         except Project.DoesNotExist:
@@ -471,7 +470,7 @@ class FilePublicLinkView(
         """Override get_object to provide a File object for perm checking
         and template"""
         try:
-            obj = File.objects.get(id=self.kwargs['pk'])
+            obj = File.objects.get(pk=self.kwargs['pk'])
             return obj
 
         except File.DoesNotExist:
@@ -481,14 +480,14 @@ class FilePublicLinkView(
         """Override of GET for checking project settings"""
         file = self.get_object()
 
-        if not ProjectSetting.objects.get_setting_value(
-                file.project, 'files', 'allow_public_links'):
+        if not get_project_setting(
+                file.project, APP_NAME, 'allow_public_links'):
             messages.error(
                 self.request,
                 'Sharing public links not allowed for this project')
 
             return redirect(reverse(
-                'project_files', kwargs={'pk': file.project.pk}))
+                'project_files', kwargs={'project': file.project.pk}))
 
         return super(FilePublicLinkView, self).get(*args, **kwargs)
 
@@ -511,13 +510,13 @@ class FilePublicLinkView(
             messages.error(self.request, 'File not found!')
 
             return redirect(reverse(
-                'project_files', kwargs={'pk': kwargs['project']}))
+                'project_files', kwargs={'project': kwargs['project']}))
 
         if not file.public_url:
             messages.error(self.request, 'Public URL for file not enabled!')
 
             return redirect(reverse(
-                'project_files', kwargs={'pk': kwargs['project']}))
+                'project_files', kwargs={'project': kwargs['project']}))
 
         # Build URL
         context['public_url'] = build_public_url(
@@ -568,7 +567,7 @@ class BatchEditView(
     def get_permission_object(self):
         """Override get_permission_object for checking Project permission"""
         try:
-            obj = Project.objects.get(id=self.kwargs['project'])
+            obj = Project.objects.get(pk=self.kwargs['project'])
             return obj
 
         except Project.DoesNotExist:

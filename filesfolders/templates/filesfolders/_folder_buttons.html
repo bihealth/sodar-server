@@ -1,16 +1,16 @@
-<div class="btn-group" id="ff_folder_buttons_{{ pk }}">
-  <button class="btn btn-secondary btn-sm dropdown-toggle"
+<div class="btn-group omics-edit-button-group" id="ff_folder_buttons_{{ pk }}">
+  <button class="btn btn-secondary dropdown-toggle btn-sm omics-edit-dropdown"
       type="button" data-toggle="dropdown"
       aria-haspopup="true" aria-expanded="false">
-    <i class="fa fa-cog" aria-hidden="true"></i>
+    <i class="fa fa-cog"></i>
   </button>
   <div class="dropdown-menu dropdown-menu-right">
     <a class="dropdown-item" href="{% url 'folder_update' pk=pk %}">
-      <i class="fa fa-pencil" aria-hidden="true"></i>
+      <i class="fa fa-pencil"></i>
       Update Folder
     </a>
     <a class="dropdown-item" href="{% url 'folder_delete' pk=pk %}">
-      <i class="fa fa-close" aria-hidden="true"></i>
+      <i class="fa fa-close"></i>
       Delete Folder
     </a>
   </div>
