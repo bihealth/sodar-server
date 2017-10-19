@@ -44,7 +44,7 @@ class ProjectAppPluginPoint(PluginPoint):
     app_permission = None
 
     #: App card template for the project details page
-    # TODO: Implement this in your app plugin (if None, get_info() is used)
+    # TODO: Implement this in your app plugin
     details_template = None
 
     #: App card title for the project details page
@@ -54,15 +54,6 @@ class ProjectAppPluginPoint(PluginPoint):
     #: App card position
     # TODO: Implement this in your app plugin (should be an integer)
     details_position = 50
-
-    def get_info(self, pk):
-        """
-        Return app information to be displayed on the project details page
-        :param pk: Project ID
-        :return: List of tuples
-        """
-        # TODO: Implement this in your app plugin
-        return [('TODO', 'Implement get_info() in the app plugin!')]
 
     # NOTE: For projectroles, this is implemented directly in synctaskflow
     def get_taskflow_sync_data(self):

@@ -107,21 +107,6 @@ class TestPlugins(
         plugin = ProjectAppPluginPoint.get_plugin(PLUGIN_NAME)
         self.assertEqual(plugin.urls, urlpatterns)
 
-    def test_plugin_info(self):
-        """Test the get_info() function in the plugin"""
-        plugin = ProjectAppPluginPoint.get_plugin(PLUGIN_NAME)
-
-        expected = [
-            ('Latest File', '{}/{} (from {} on {})'.format(
-                'root',
-                self.file.name,
-                self.file.owner.username,
-                self.file.date_modified.strftime('%Y-%m-%d'))),
-            ('Maximum File Size', filesizeformat(
-                settings.FILESFOLDERS_MAX_UPLOAD_SIZE))]
-
-        self.assertEquals(plugin.get_info(self.project.pk), expected)
-
     def test_plugin_setting_value(self):
         """Test plugin default setting value in the database"""
         plugin = ProjectAppPluginPoint.get_plugin(PLUGIN_NAME)

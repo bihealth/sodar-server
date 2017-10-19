@@ -55,33 +55,6 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
     #: App card position
     details_position = 20
 
-    def get_info(self, pk):
-        """
-        Return app information to be displayed on the project details page
-        :param pk: Project ID
-        :returns: List of tuples
-        """
-        info = []
-
-        latest_file = File.objects.filter(project=pk).order_by('-pk').first()
-
-        if latest_file:
-            info.append((
-                'Latest File',
-                '{}/{} (from {} on {})'.format(
-                    latest_file.folder.__str__().split(':')[1]
-                    if latest_file.folder else 'root',
-                    latest_file.name,
-                    latest_file.owner.username,
-                    latest_file.date_modified.strftime('%Y-%m-%d'))))
-
-        info.append((
-            'Maximum File Size',
-            '{}'.format(
-                filesizeformat(settings.FILESFOLDERS_MAX_UPLOAD_SIZE))))
-
-        return info
-
     def get_taskflow_sync_data(self):
         """
         Return data for syncing taskflow operations

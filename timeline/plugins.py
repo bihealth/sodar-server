@@ -48,15 +48,6 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
     #: App card position
     details_position = 40
 
-    def get_info(self, pk):
-        """
-        Return app information to be displayed on the project details page
-        :param pk: Project ID
-        :return: List of tuples
-        """
-        return [(
-            'Event Count', ProjectEvent.objects.filter(project=pk).count())]
-
     def get_taskflow_sync_data(self):
         """
         Return data for syncing taskflow operations

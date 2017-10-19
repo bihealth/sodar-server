@@ -65,12 +65,6 @@ def omics_constant(value):
 
 
 @register.simple_tag
-def get_plugin_info(plugin, pk):
-    """Return data from plugin get_info() with a specific project ID"""
-    return plugin.get_info(pk)
-
-
-@register.simple_tag
 def get_description(project):
     """Return description, truncate if needed"""
     max_len = 128

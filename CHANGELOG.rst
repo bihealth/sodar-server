@@ -13,7 +13,7 @@ Added
 -----
 
 - **General**
-    - Create new base project using the current version of `cookiecutter-django<https://github.com/pydanny/cookiecutter-django>`_
+    - Create new base project using the current version of `cookiecutter-django <https://github.com/pydanny/cookiecutter-django>`_
     - Additional unit tests for site apps
     - Add changelog in ``CHANGELOG.rst``
 - **Filesfolders**
@@ -21,7 +21,7 @@ Added
     - Add page title to main files list
 - **Projectroles**
     - Import app from prototype
-    - Add `get_project_setting()` helper function in `utils.py`
+    - Add ``get_project_setting()`` helper function in ``utils.py``
 - **Timeline**
     - Import app and backend plugin from prototype
 
@@ -37,7 +37,7 @@ Changed
     - Update installation instructions in ``INSTALL.rst``
 - **Filesfolders**
     - Redesign data model with inheritance to avoid field repetition
-    - Internal app name is now "filesfolders"
+    - Internal app name is now ``filesfolders``
     - Removed example settings
 - **Projectroles**
     - Remove restrictions for project and category nesting in models
@@ -59,11 +59,13 @@ Fixed
     - Don't allow matching titles for subproject and parent
 - **Timeline**
     - Tour help anchoring for list navigation buttons
-    - User column link was missing the `mailto:` protocol syntax
+    - User column link was missing the ``mailto:`` protocol syntax
 
 Removed
 -------
 
+- **General**
+    - The unused ``get_info()`` function and its implementations from ``plugins`` (provide ``details_template`` instead)
 - **Filesfolders**
     - Redundant and deprecated fields/functions from the data model
     - Example project settings

@@ -66,16 +66,8 @@
                 {% include plugin.details_template %}
               </div>
             {% else %}
-              <div class="card-body omics-card-body">
-                <dl class="row">
-                  <dt class="col-md-2">Description</dt>
-                  <dd class="col-md-10">{{ plugin.description }}</dd>
-                  {% get_plugin_info plugin project.pk as plugin_info %}
-                  {% for key, value in plugin_info %}
-                    <dt class="col-md-2">{{ key }}</dt>
-                    <dd class="col-md-10">{{ value }}</dd>
-                  {% endfor %}
-                </dl>
+              <div class="card-body omics-card-body text-center">
+                <p class="text-danger"><em>No app card template found</em></p>
               </div>
             {% endif %}
           </div>
