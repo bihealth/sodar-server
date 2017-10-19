@@ -3,10 +3,9 @@
 {% has_perm 'filesfolders.update_data_own' request.user file.project as can_update_own %}
 {% has_perm 'filesfolders.update_data_all' request.user file.project as can_update_all %}
 
-<div class="btn-group omics-edit-button-group" id="ff_file_buttons_{{ file.pk }}">
+<div class="btn-group omics-edit-button-group" id="omics-ff-file-buttons-{{ file.pk }}">
   <button class="btn btn-secondary dropdown-toggle btn-sm omics-edit-dropdown"
-      type="button" data-toggle="dropdown"
-      aria-haspopup="true" aria-expanded="false">
+      type="button" data-toggle="dropdown" aria-expanded="false">
     <i class="fa fa-cog"></i>
   </button>
   <div class="dropdown-menu dropdown-menu-right">

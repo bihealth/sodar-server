@@ -1,5 +1,3 @@
-from django.conf import settings
-from django.template.defaultfilters import filesizeformat
 from django.urls import reverse
 
 # Projectroles dependency

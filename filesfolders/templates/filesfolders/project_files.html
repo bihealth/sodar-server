@@ -50,23 +50,23 @@
 
   <div class="container-fluid">
     {% if folder %}
-      <form method="post" action="{% url 'batch_edit' project=project.pk folder=folder.pk %}" id="ff_batch_form">
+      <form method="post" action="{% url 'batch_edit' project=project.pk folder=folder.pk %}" id="omics-ff-batch-form">
     {% else %}
-      <form method="post" action="{% url 'batch_edit' project=project.pk %}" id="ff_batch_form">
+      <form method="post" action="{% url 'batch_edit' project=project.pk %}" id="omics-ff-batch-form">
     {% endif %}
 
       {% csrf_token %}
-      <input type="hidden" id="ff_batch_form_action" name="batch_action" value="" />
-      <input type="hidden" id="ff_user_confirmed" name="user_confirmed" value="0" />
+      <input type="hidden" id="omics-ff-batch-form-action" name="batch_action" value="" />
+      <input type="hidden" id="omics-ff-user-confirmed" name="user_confirmed" value="0" />
 
-      <div class="card omics-card-single" id="ff_file_list">
+      <div class="card omics-card-single" id="omics-ff-file-list">
         <div class="card-body omics-card-body-table">
 
           <!-- Breadcrumb -->
-          <ol id="ff_breadcrumb" class="breadcrumb">
+          <ol id="omics-ff-breadcrumb" class="breadcrumb">
             {% if not folder %}
               <li class="breadcrumb-item active">
-                <i class="fa fa-angle-right" id="ff_breadcrumb_icon"></i>
+                <i class="fa fa-angle-right" id="omics-ff-breadcrumb-icon"></i>
                 root
               </li>
             {% else %}
@@ -95,12 +95,12 @@
                 <th>Owner</th>
                 <th>Updated</th>
                 <th></th>
-                <th id="ff_header_select"><input class="form-check-input" type="checkbox" onchange="checkAll(this)" name="check_all" id="ff_check_all" title="Check/uncheck all" /></th>
+                <th id="omics-ff-list-header-select"><input class="form-check-input" type="checkbox" onchange="checkAll(this)" name="check_all" id="omics-ff-check-all" title="Check/uncheck all" /></th>
               </tr>
             </thead>
 
             <!-- Content -->
-            <tbody id="ff_content">
+            <tbody id="omics-ff-list-content">
 
               <!-- Folders -->
               <!-- Print this if current folder is not root -->
@@ -111,7 +111,7 @@
                   </td>
                   <td>
                     {% if folder.folder %}
-                      <a href="{% url 'project_files' project=project.pk folder=folder.folder.id %}">.. /</a>
+                      <a href="{% url 'project_files' project=project.pk folder=folder.folder.pk %}">.. /</a>
                     {% else %}
                       <a href="{% url 'project_files' project=project.pk %}">.. /</a>
                     {% endif %}
@@ -196,7 +196,7 @@
         title: 'File List',
         text: 'Here you can browse the files in the current folder and' +
               'navigate between folders.',
-        attachTo: '#ff_file_list top',
+        attachTo: '#omics-ff-file-list top',
         advanceOn: '.docs-link click',
         showCancelLink: true
     });
@@ -205,7 +205,7 @@
         title: 'Breadcrumb',
         text: 'This element displays the path to the current folder for ' +
               'quick navigation.',
-        attachTo: '#ff_breadcrumb_icon right',
+        attachTo: '#omics-ff-breadcrumb-icon right',
         advanceOn: '.docs-link click',
         showCancelLink: true
     });
@@ -215,29 +215,29 @@
         text: 'From this menu you can upload small files, create new ' +
               'folders, define links to external resources and manage batch ' +
               'moving or deletion of files.',
-        attachTo: '#ff_buttons_list left',
+        attachTo: '#omics-ff-buttons-list left',
         advanceOn: '.docs-link click',
         showCancelLink: true
     });
 
-    if ($('td.ff_action_column').length) {
+    if ($('td.omics-ff-action-column').length) {
         tour.addStep('item_menu', {
             title: 'Item Menu',
             text: 'For each file, folder or hyperlink you are allowed to ' +
                   'edit, functions for updating and deleting them can be ' +
                   'found in this menu.',
-            attachTo: '.ff_action_column left',
+            attachTo: '.omics-ff-action-column left',
             advanceOn: '.docs-link click',
             showCancelLink: true
         });
     }
 
-    if ($('#ff_header_select').length) {
+    if ($('#omics-ff-list-header-select').length) {
         tour.addStep('project_app_details', {
             title: 'Item Selection Column',
             text: 'Select files, folders and hyperlinks in this column for' +
                   'batch moving from the File Actions menu.',
-            attachTo: '#ff_header_select left',
+            attachTo: '#omics-ff-list-header-select left',
             advanceOn: '.docs-link click',
             showCancelLink: true
         });

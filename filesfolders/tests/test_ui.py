@@ -112,10 +112,10 @@ class TestListView(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
         url = reverse('project_files', kwargs={'project': self.project.pk})
 
         self.assert_element_exists(
-            expected_true, url, 'ff_buttons_list', True)
+            expected_true, url, 'omics-ff-buttons-list', True)
 
         self.assert_element_exists(
-            expected_false, url, 'ff_buttons_list', False)
+            expected_false, url, 'omics-ff-buttons-list', False)
 
     def test_buttons_file(self):
         """Test file action buttons visibility according to user permissions"""
@@ -127,7 +127,7 @@ class TestListView(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
             (self.as_contributor.user, 1),
             (self.as_guest.user, 0)]
         url = reverse('project_files', kwargs={'project': self.project.pk})
-        self.assert_element_count(expected, url, 'ff_file_buttons')
+        self.assert_element_count(expected, url, 'omics-ff-file-buttons')
 
     def test_buttons_folder(self):
         """Test folder action buttons visibility according to user
@@ -140,7 +140,7 @@ class TestListView(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
             (self.as_contributor.user, 1),
             (self.as_guest.user, 0)]
         url = reverse('project_files', kwargs={'project': self.project.pk})
-        self.assert_element_count(expected, url, 'ff_folder_buttons')
+        self.assert_element_count(expected, url, 'omics-ff-folder-buttons')
 
     def test_buttons_hyperlink(self):
         """Test hyperlink action buttons visibility according to user
@@ -153,7 +153,7 @@ class TestListView(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
             (self.as_contributor.user, 1),
             (self.as_guest.user, 0)]
         url = reverse('project_files', kwargs={'project': self.project.pk})
-        self.assert_element_count(expected, url, 'ff_hyperlink_buttons')
+        self.assert_element_count(expected, url, 'omics-ff-hyperlink-buttons')
 
     def test_file_checkboxes(self):
         """Test batch file editing checkbox visibility according to user
@@ -166,7 +166,7 @@ class TestListView(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
             (self.as_contributor.user, 3),
             (self.as_guest.user, 0)]
         url = reverse('project_files', kwargs={'project': self.project.pk})
-        self.assert_element_count(expected, url, 'ff_file_checkbox')
+        self.assert_element_count(expected, url, 'omics-ff-file-checkbox')
 
     def test_public_link(self):
         """Test public link visibility according to user
@@ -179,7 +179,7 @@ class TestListView(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
             (self.as_contributor.user, 1),
             (self.as_guest.user, 0)]
         url = reverse('project_files', kwargs={'project': self.project.pk})
-        self.assert_element_count(expected, url, 'ff_link_public')
+        self.assert_element_count(expected, url, 'omics-ff-link-public')
 
     def test_public_link_disable(self):
         """Test public link visibility if allow_public_links is set to False"""
@@ -198,4 +198,4 @@ class TestListView(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
             (self.as_contributor.user, 0),
             (self.as_guest.user, 0)]
         url = reverse('project_files', kwargs={'project': self.project.pk})
-        self.assert_element_count(expected, url, 'ff_link_public')
+        self.assert_element_count(expected, url, 'omics-ff-link-public')
