@@ -56,7 +56,7 @@ Create superuser:
 
 .. code-block:: shell
 
-    flynn run /app/manage.py createsuperuser
+    flynn -c {cluster-name} run /app/manage.py createsuperuser
 
 You should now be able to login with the created superuser.
 
