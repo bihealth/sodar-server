@@ -4,7 +4,6 @@ from django.urls import reverse
 
 # Projectroles dependency
 from projectroles.models import ProjectSetting, OMICS_CONSTANTS
-from projectroles.utils import get_project_setting
 from projectroles.tests.test_permissions import TestPermissionBase
 
 from filesfolders.tests.test_models import FileMixin, FolderMixin,\
@@ -255,11 +254,11 @@ class TestFilePermissions(TestPermissionBase, FileMixin):
         for user in bad_users:
             with self.login(user):
                 response = self.client.get(url)
-                self.assertEquals(response.status_code, 400)
+                self.assertEqual(response.status_code, 400)
 
         # Anonymous
         response = self.client.get(url)
-        self.assertEquals(response.status_code, 400)
+        self.assertEqual(response.status_code, 400)
 
 
 class TestHyperLinkPermissions(TestPermissionBase, HyperLinkMixin):
@@ -374,9 +373,9 @@ class TestBatchPermissions(TestPermissionBase, FolderMixin):
         for user in good_users:
             with self.login(user):
                 response = self.client.post(url, post_data)
-                self.assertEquals(response.status_code, 200)
+                self.assertEqual(response.status_code, 200)
 
         for user in bad_users:
             with self.login(user):
                 response = self.client.post(url, post_data)
-                self.assertEquals(response.status_code, 302)
+                self.assertEqual(response.status_code, 302)

@@ -1,7 +1,7 @@
 """Tests for models in the filesfolders app"""
+
 import base64
 
-from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.forms.models import model_to_dict
 
@@ -18,8 +18,32 @@ from projectroles.tests.test_models import ProjectMixin
 PROJECT_TYPE_CATEGORY = OMICS_CONSTANTS['PROJECT_TYPE_CATEGORY']
 PROJECT_TYPE_PROJECT = OMICS_CONSTANTS['PROJECT_TYPE_PROJECT']
 
+# Local constants
 PROJECT_NAME = 'Test Project'
 SECRET = '7dqq83clo2iyhg29hifbor56og6911r5'
+
+
+# Helper mixins ----------------------------------------------------------
+
+
+class FileMixin:
+    """Helper mixin for File creation"""
+    @classmethod
+    def _make_file(
+            cls, name, file_name, file_content, project, folder,
+            owner, description, public_url, secret):
+        values = {
+            'name': name,
+            'file': SimpleUploadedFile(file_name, file_content),
+            'project': project,
+            'folder': folder,
+            'owner': owner,
+            'description': description,
+            'public_url': public_url,
+            'secret': secret}
+        result = File(**values)
+        result.save()
+        return result
 
 
 class FolderMixin:
@@ -37,7 +61,26 @@ class FolderMixin:
         return result
 
 
-class TestFolder(TestCase, FolderMixin, ProjectMixin):
+class HyperLinkMixin:
+    """Helper mixin for HyperLink creation"""
+    @classmethod
+    def _make_hyperlink(cls, name, url, project, folder, owner, description):
+        values = {
+            'name': name,
+            'url': url,
+            'project': project,
+            'folder': folder,
+            'owner': owner,
+            'description': description}
+        result = HyperLink(**values)
+        result.save()
+        return result
+
+
+# Test classes -----------------------------------------------------------
+
+
+class TestFolder(TestCase, FolderMixin, ProjectMixin, HyperLinkMixin):
     """Tests for model.Folder"""
 
     def setUp(self):
@@ -69,11 +112,11 @@ class TestFolder(TestCase, FolderMixin, ProjectMixin):
 
     def test__str__(self):
         expected = '{}: root/folder'.format(PROJECT_NAME)
-        self.assertEquals(str(self.folder), expected)
+        self.assertEqual(str(self.folder), expected)
 
     def test__repr__(self):
         expected = "Folder('{}', 'folder', '/')".format(PROJECT_NAME)
-        self.assertEquals(repr(self.folder), expected)
+        self.assertEqual(repr(self.folder), expected)
 
     def test_create_subfolder(self):
         """Test subfolder creation"""
@@ -91,27 +134,68 @@ class TestFolder(TestCase, FolderMixin, ProjectMixin):
             'owner': self.user_owner.pk,
             'description': '',
             'omics_uuid': subfolder.omics_uuid}
-        self.assertEquals(model_to_dict(subfolder), expected)
+        self.assertEqual(model_to_dict(subfolder), expected)
 
+    def test_get_path(self):
+        """Test the get_path() function in Folder"""
+        self.assertEqual(self.folder.get_path(), 'root/folder/')
 
-class FileMixin:
-    """Helper mixin for File creation"""
-    @classmethod
-    def _make_file(
-            cls, name, file_name, file_content, project, folder,
-            owner, description, public_url, secret):
-        values = {
-            'name': name,
-            'file': SimpleUploadedFile(file_name, file_content),
-            'project': project,
-            'folder': folder,
-            'owner': owner,
-            'description': description,
-            'public_url': public_url,
-            'secret': secret}
-        result = File(**values)
-        result.save()
-        return result
+    def test_get_path_subfolder(self):
+        """Test the get_path() function in Folder for a subfolder"""
+
+        # Make subfolder
+        subfolder = self._make_folder(
+            name='subfolder',
+            project=self.project,
+            folder=self.folder,
+            owner=self.user_owner,
+            description='')
+        self.assertEqual(subfolder.get_path(), 'root/folder/subfolder/')
+
+    def test_is_empty(self):
+        """Test the is_empty() function in Folder for an empty folder"""
+        self.assertEqual(self.folder.is_empty(), True)
+
+    def test_is_empty_nonempty(self):
+        """Test the is_empty() function in Folder for a non-empty folder"""
+
+        # Make hyperlink
+        self.hyperlink = self._make_hyperlink(
+            name='Link',
+            url='http://www.google.com/',
+            project=self.project,
+            folder=self.folder,
+            owner=self.user_owner,
+            description='')
+
+        self.assertEqual(self.folder.is_empty(), False)
+
+    def test_has_in_path(self):
+        """Test the has_in_path() function in Folder"""
+
+        # Make subfolder
+        subfolder = self._make_folder(
+            name='subfolder',
+            project=self.project,
+            folder=self.folder,
+            owner=self.user_owner,
+            description='')
+
+        self.assertEqual(subfolder.has_in_path(self.folder), True)
+
+    def test_has_in_path_false(self):
+        """Test the has_in_path() function in Folder with expected false
+        result"""
+
+        # Make subfolder
+        subfolder = self._make_folder(
+            name='subfolder',
+            project=self.project,
+            folder=self.folder,
+            owner=self.user_owner,
+            description='')
+
+        self.assertEqual(self.folder.has_in_path(subfolder), False)
 
 
 class TestFile(TestCase, FileMixin, FolderMixin, ProjectMixin):
@@ -159,21 +243,21 @@ class TestFile(TestCase, FileMixin, FolderMixin, ProjectMixin):
             'public_url': True,
             'secret': SECRET,
             'omics_uuid': self.file.omics_uuid}
-        self.assertEquals(model_to_dict(self.file), expected)
+        self.assertEqual(model_to_dict(self.file), expected)
 
     def test__str__(self):
         expected = '{}: root/{}/{}'.format(
             PROJECT_NAME,
             self.folder.name,
             self.file.name)
-        self.assertEquals(str(self.file), expected)
+        self.assertEqual(str(self.file), expected)
 
     def test__repr__(self):
         expected = "File('{}', '{}', {})".format(
             PROJECT_NAME,
             self.file.name,
             self.folder.__repr__())
-        self.assertEquals(repr(self.file), expected)
+        self.assertEqual(repr(self.file), expected)
 
     def test_file_access(self):
         """Ensure file can be accessed in database after creation"""
@@ -186,34 +270,18 @@ class TestFile(TestCase, FileMixin, FolderMixin, ProjectMixin):
             'content_type': 'text/plain',
             'bytes': base64.b64encode(self.file_content).decode('utf-8')}
 
-        self.assertEquals(model_to_dict(file_data), expected)
+        self.assertEqual(model_to_dict(file_data), expected)
 
     def test_file_deletion(self):
         """Ensure file is removed from database after deletion"""
 
         # Assert precondition
-        self.assertEquals(FileData.objects.all().count(), 1)
+        self.assertEqual(FileData.objects.all().count(), 1)
 
         self.file.delete()
 
         # Assert postcondition
-        self.assertEquals(FileData.objects.all().count(), 0)
-
-
-class HyperLinkMixin:
-    """Helper mixin for HyperLink creation"""
-    @classmethod
-    def _make_hyperlink(cls, name, url, project, folder, owner, description):
-        values = {
-            'name': name,
-            'url': url,
-            'project': project,
-            'folder': folder,
-            'owner': owner,
-            'description': description}
-        result = HyperLink(**values)
-        result.save()
-        return result
+        self.assertEqual(FileData.objects.all().count(), 0)
 
 
 class TestHyperLink(
@@ -255,18 +323,18 @@ class TestHyperLink(
             'owner': self.user_owner.pk,
             'description': '',
             'omics_uuid': self.hyperlink.omics_uuid}
-        self.assertEquals(model_to_dict(self.hyperlink), expected)
+        self.assertEqual(model_to_dict(self.hyperlink), expected)
 
     def test__str__(self):
         expected = '{}: {} / {}'.format(
             PROJECT_NAME,
             self.folder.name,
             self.hyperlink.name)
-        self.assertEquals(str(self.hyperlink), expected)
+        self.assertEqual(str(self.hyperlink), expected)
 
     def test__repr__(self):
         expected = "HyperLink('{}', '{}', {})".format(
             PROJECT_NAME,
             self.hyperlink.name,
             self.folder.__repr__())
-        self.assertEquals(repr(self.hyperlink), expected)
+        self.assertEqual(repr(self.hyperlink), expected)

@@ -1,6 +1,5 @@
 """Tests for views in the filesfolders app"""
 
-from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.test import RequestFactory
 
@@ -9,6 +8,7 @@ from test_plus.test import TestCase
 # Projectroles dependency
 from projectroles.models import Role, OMICS_CONSTANTS
 from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
+from projectroles.utils import set_project_setting
 
 from ..models import File, Folder, HyperLink
 from .test_models import FolderMixin, FileMixin, HyperLinkMixin
@@ -25,6 +25,7 @@ PROJECT_TYPE_CATEGORY = OMICS_CONSTANTS['PROJECT_TYPE_CATEGORY']
 PROJECT_TYPE_PROJECT = OMICS_CONSTANTS['PROJECT_TYPE_PROJECT']
 
 # Local constants
+APP_NAME = 'filesfolders'
 SECRET = '7dqq83clo2iyhg29hifbor56og6911r5'
 
 
@@ -136,8 +137,8 @@ class TestFileCreateView(TestViewsBase):
         with self.login(self.user):
             response = self.client.get(reverse(
                 'file_create', kwargs={'project': self.project.pk}))
-            self.assertEquals(response.status_code, 200)
-            self.assertEquals(response.context['project'].pk, self.project.pk)
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.context['project'].pk, self.project.pk)
 
     def test_render_in_folder(self):
         """Test rendering of the File create view under a folder"""
@@ -146,9 +147,9 @@ class TestFileCreateView(TestViewsBase):
                 'file_create', kwargs={
                     'project': self.project.pk,
                     'folder': self.folder.pk}))
-            self.assertEquals(response.status_code, 200)
-            self.assertEquals(response.context['project'].pk, self.project.pk)
-            self.assertEquals(response.context['folder'].pk, self.folder.pk)
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.context['project'].pk, self.project.pk)
+            self.assertEqual(response.context['folder'].pk, self.folder.pk)
 
 
 class TestFileUpdateView(TestViewsBase):
@@ -161,8 +162,8 @@ class TestFileUpdateView(TestViewsBase):
                 'file_update', kwargs={
                     'project': self.project.pk,
                     'pk': self.file.pk}))
-            self.assertEquals(response.status_code, 200)
-            self.assertEquals(response.context['object'].pk, self.file.pk)
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.context['object'].pk, self.file.pk)
 
 
 class TestFileDeleteView(TestViewsBase):
@@ -175,8 +176,8 @@ class TestFileDeleteView(TestViewsBase):
                 'file_delete', kwargs={
                     'project': self.project.pk,
                     'pk': self.file.pk}))
-            self.assertEquals(response.status_code, 200)
-            self.assertEquals(response.context['object'].pk, self.file.pk)
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.context['object'].pk, self.file.pk)
 
 
 class TestFileServeView(TestViewsBase):
@@ -190,7 +191,7 @@ class TestFileServeView(TestViewsBase):
                     'pk': self.file.pk,
                     'project': self.project.pk,
                     'file_name': self.file.name}))
-            self.assertEquals(response.status_code, 200)
+            self.assertEqual(response.status_code, 200)
 
 
 class TestFileServePublicView(TestViewsBase):
@@ -203,7 +204,47 @@ class TestFileServePublicView(TestViewsBase):
                 'file_serve_public', kwargs={
                     'secret': SECRET,
                     'file_name': self.file.name}))
-            self.assertEquals(response.status_code, 200)
+            self.assertEqual(response.status_code, 200)
+
+    def test_bad_request_setting(self):
+        """Test bad request response from the public serving view if public
+        linking is disabled via settings"""
+        set_project_setting(
+            self.project, APP_NAME, 'allow_public_links', False)
+
+        with self.login(self.user):
+            response = self.client.get(reverse(
+                'file_serve_public', kwargs={
+                    'secret': SECRET,
+                    'file_name': self.file.name}))
+            self.assertEqual(response.status_code, 400)
+
+    def test_bad_request_file_flag(self):
+        """Test bad request response from the public serving view if the file
+        can not be served publicly"""
+        self.file.public_url = False
+        self.file.save()
+
+        with self.login(self.user):
+            response = self.client.get(reverse(
+                'file_serve_public', kwargs={
+                    'secret': SECRET,
+                    'file_name': self.file.name}))
+            self.assertEqual(response.status_code, 400)
+
+    def test_bad_request_no_file(self):
+        """Test bad request response from the public serving view if the file
+        has been deleted"""
+
+        file_name = self.file.name
+        self.file.delete()
+
+        with self.login(self.user):
+            response = self.client.get(reverse(
+                'file_serve_public', kwargs={
+                    'secret': SECRET,
+                    'file_name': file_name}))
+            self.assertEqual(response.status_code, 400)
 
 
 class TestFilePublicLinkView(TestViewsBase):
@@ -216,8 +257,8 @@ class TestFilePublicLinkView(TestViewsBase):
                 'file_public_link', kwargs={
                     'pk': self.file.pk,
                     'project': self.project.pk}))
-            self.assertEquals(response.status_code, 200)
-            self.assertEquals(
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(
                 response.context['public_url'], build_public_url(
                     self.file,
                     self.req_factory.get(
@@ -225,6 +266,32 @@ class TestFilePublicLinkView(TestViewsBase):
                         kwargs={
                             'pk': self.file.pk,
                             'project': self.project.pk})))
+
+    def test_redirect_setting(self):
+        """Test redirecting from the public link view if public linking is
+        disabled via settings """
+        set_project_setting(
+            self.project, APP_NAME, 'allow_public_links', False)
+
+        with self.login(self.user):
+            response = self.client.get(reverse(
+                'file_public_link', kwargs={
+                    'pk': self.file.pk,
+                    'project': self.project.pk}))
+            self.assertEqual(response.status_code, 302)
+
+    def test_redirect_no_file(self):
+        """Test redirecting from the public link view if the file has been
+        deleted"""
+        file_pk = self.file.pk
+        self.file.delete()
+
+        with self.login(self.user):
+            response = self.client.get(reverse(
+                'file_public_link', kwargs={
+                    'pk': file_pk,
+                    'project': self.project.pk}))
+            self.assertEqual(response.status_code, 302)
 
 
 # Folder Views -----------------------------------------------------------
@@ -238,8 +305,8 @@ class TestFolderCreateView(TestViewsBase):
         with self.login(self.user):
             response = self.client.get(reverse(
                 'folder_create', kwargs={'project': self.project.pk}))
-            self.assertEquals(response.status_code, 200)
-            self.assertEquals(response.context['project'].pk, self.project.pk)
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.context['project'].pk, self.project.pk)
 
     def test_render_in_folder(self):
         """Test rendering of the Folder create view under a folder"""
@@ -248,9 +315,9 @@ class TestFolderCreateView(TestViewsBase):
                 'folder_create', kwargs={
                     'project': self.project.pk,
                     'folder': self.folder.pk}))
-            self.assertEquals(response.status_code, 200)
-            self.assertEquals(response.context['project'].pk, self.project.pk)
-            self.assertEquals(response.context['folder'].pk, self.folder.pk)
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.context['project'].pk, self.project.pk)
+            self.assertEqual(response.context['folder'].pk, self.folder.pk)
 
 
 class TestFolderUpdateView(TestViewsBase):
@@ -262,8 +329,8 @@ class TestFolderUpdateView(TestViewsBase):
             response = self.client.get(reverse(
                 'folder_update', kwargs={
                     'pk': self.folder.pk}))
-            self.assertEquals(response.status_code, 200)
-            self.assertEquals(response.context['object'].pk, self.folder.pk)
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.context['object'].pk, self.folder.pk)
 
 
 class TestFolderDeleteView(TestViewsBase):
@@ -275,8 +342,8 @@ class TestFolderDeleteView(TestViewsBase):
             response = self.client.get(reverse(
                 'folder_delete', kwargs={
                     'pk': self.folder.pk}))
-            self.assertEquals(response.status_code, 200)
-            self.assertEquals(response.context['object'].pk, self.folder.pk)
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.context['object'].pk, self.folder.pk)
 
 
 # HyperLink Views --------------------------------------------------------
@@ -290,8 +357,8 @@ class TestHyperLinkCreateView(TestViewsBase):
         with self.login(self.user):
             response = self.client.get(reverse(
                 'hyperlink_create', kwargs={'project': self.project.pk}))
-            self.assertEquals(response.status_code, 200)
-            self.assertEquals(response.context['project'].pk, self.project.pk)
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.context['project'].pk, self.project.pk)
 
     def test_render_in_folder(self):
         """Test rendering of the HyperLink create view under a folder"""
@@ -300,9 +367,9 @@ class TestHyperLinkCreateView(TestViewsBase):
                 'hyperlink_create', kwargs={
                     'project': self.project.pk,
                     'folder': self.folder.pk}))
-            self.assertEquals(response.status_code, 200)
-            self.assertEquals(response.context['project'].pk, self.project.pk)
-            self.assertEquals(response.context['folder'].pk, self.folder.pk)
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.context['project'].pk, self.project.pk)
+            self.assertEqual(response.context['folder'].pk, self.folder.pk)
 
 
 class TestHyperLinkUpdateView(TestViewsBase):
@@ -315,8 +382,8 @@ class TestHyperLinkUpdateView(TestViewsBase):
                 'hyperlink_update', kwargs={
                     'project': self.project.pk,
                     'pk': self.hyperlink.pk}))
-            self.assertEquals(response.status_code, 200)
-            self.assertEquals(response.context['object'].pk, self.hyperlink.pk)
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.context['object'].pk, self.hyperlink.pk)
 
 
 class TestHyperLinkDeleteView(TestViewsBase):
@@ -329,8 +396,8 @@ class TestHyperLinkDeleteView(TestViewsBase):
                 'hyperlink_delete', kwargs={
                     'project': self.project.pk,
                     'pk': self.hyperlink.pk}))
-            self.assertEquals(response.status_code, 200)
-            self.assertEquals(response.context['object'].pk, self.hyperlink.pk)
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.context['object'].pk, self.hyperlink.pk)
 
 
 # Batch Editing View --------------------------------------------------------
@@ -354,7 +421,7 @@ class TestBatchEditView(TestViewsBase):
                 reverse('batch_edit', kwargs={'project': self.project.pk}),
                 post_data)
 
-            self.assertEquals(response.status_code, 200)
+            self.assertEqual(response.status_code, 200)
 
     def test_render_move(self):
         """Test rendering of the batch editing view when moving"""
@@ -370,7 +437,7 @@ class TestBatchEditView(TestViewsBase):
                 reverse('batch_edit', kwargs={'project': self.project.pk}),
                 post_data)
 
-            self.assertEquals(response.status_code, 200)
+            self.assertEqual(response.status_code, 200)
 
     def test_deletion(self):
         """Test batch object deletion"""
@@ -393,7 +460,7 @@ class TestBatchEditView(TestViewsBase):
                 reverse('batch_edit', kwargs={'project': self.project.pk}),
                 post_data)
 
-            self.assertEquals(response.status_code, 302)
+            self.assertEqual(response.status_code, 302)
 
             # Assert postconditions
             self.assertEqual(File.objects.all().count(), 0)
@@ -436,7 +503,7 @@ class TestBatchEditView(TestViewsBase):
                 reverse('batch_edit', kwargs={'project': self.project.pk}),
                 post_data)
 
-            self.assertEquals(response.status_code, 302)
+            self.assertEqual(response.status_code, 302)
 
             # Assert postconditions
             # The new folder and file should be left
@@ -462,7 +529,7 @@ class TestBatchEditView(TestViewsBase):
                 reverse('batch_edit', kwargs={'project': self.project.pk}),
                 post_data)
 
-            self.assertEquals(response.status_code, 302)
+            self.assertEqual(response.status_code, 302)
 
             # Assert postconditions
             self.assertEqual(
@@ -508,7 +575,7 @@ class TestBatchEditView(TestViewsBase):
                 reverse('batch_edit', kwargs={'project': self.project.pk}),
                 post_data)
 
-            self.assertEquals(response.status_code, 302)
+            self.assertEqual(response.status_code, 302)
 
             # Assert postconditions
             self.assertEqual(

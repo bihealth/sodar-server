@@ -110,7 +110,7 @@ class Folder(BaseFilesfoldersClass):
             self.filesfolders_hyperlink_children.count() == 0)
 
     def has_in_path(self, folder):
-        """Return True if folder exists in this folder's path"""
+        """Return True if folder exists in this folder's parent path"""
         if self.folder == folder:
             return True
 

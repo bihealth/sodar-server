@@ -6,7 +6,6 @@ Test settings
 
 from .base import *  # noqa
 
-
 # DEBUG
 # ------------------------------------------------------------------------------
 # Turn debug off so tests run faster

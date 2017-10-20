@@ -480,6 +480,12 @@ class FilePublicLinkView(
         """Override of GET for checking project settings"""
         file = self.get_object()
 
+        if not file:
+            messages.error(self.request, 'File not found!')
+
+            return redirect(reverse(
+                'project_files', kwargs={'project': kwargs['project']}))
+
         if not get_project_setting(
                 file.project, APP_NAME, 'allow_public_links'):
             messages.error(

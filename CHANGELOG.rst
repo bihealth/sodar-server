@@ -21,7 +21,10 @@ Added
     - Add page title to main files list
 - **Projectroles**
     - Import app from prototype
-    - Add ``get_project_setting()`` helper function in ``utils.py``
+    - Add ``get_app_plugin()`` helper function
+    - Add ``validate_project_setting()`` helper function
+    - Add ``get_project_setting()`` helper function
+    - Add ``set_project_setting()`` helper function
 - **Timeline**
     - Import app and backend plugin from prototype
 
@@ -54,6 +57,8 @@ Changed
 Fixed
 -----
 
+- **Filesfolders**
+    - Redirects in exception cases in ``FilePublicLinkView``
 - **Projectroles**
     - Check for project title uniqueness
     - Don't allow matching titles for subproject and parent

@@ -1,9 +1,7 @@
 """UI tests for the filesfolders app"""
 
-from django.conf import settings
 from django.urls import reverse
 
-# Projectroles dependency
 from projectroles.tests.test_ui import TestUIBase
 from projectroles.models import ProjectSetting, OMICS_CONSTANTS
 from projectroles.utils import build_secret

@@ -10,7 +10,7 @@ from pagedown.widgets import PagedownWidget
 from .models import Project, Role, RoleAssignment, ProjectInvite, \
     ProjectSetting, OMICS_CONSTANTS
 from .plugins import ProjectAppPluginPoint
-from .utils import get_user_display_name, build_secret
+from .utils import get_user_display_name, build_secret, validate_project_setting
 
 
 # Omics constants
@@ -407,10 +407,15 @@ class ProjectSettingForm(forms.ModelForm):
     def clean(self):
         """Function for custom form validation and cleanup"""
 
-        # Ensure integer-type string contains a valid integer
+        # Validate setting value
+        if not validate_project_setting(
+                self.instance.type, self.cleaned_data.get('value')):
+            pass
+        '''
         if (self.instance.type == 'INTEGER' and
                 not self.cleaned_data['value'].isdigit()):
             self.add_error('value', 'Please enter a valid integer.')
+        '''
 
         return self.cleaned_data
 

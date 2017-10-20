@@ -162,6 +162,19 @@ def change_plugin_status(name, status, plugin_type='app'):
         plugin.save()
 
 
+def get_app_plugin(plugin_name):
+    """
+    Return active app plugin
+    :param plugin_name: Plugin name (string)
+    :return: ProjectAppPlugin object or None if not found
+    """
+    try:
+        return ProjectAppPluginPoint.get_plugin(plugin_name)
+
+    except ProjectAppPluginPoint.DoesNotExist:
+        return None
+
+
 def get_backend_api(plugin_name, force=False):
     """
     Return backend API object

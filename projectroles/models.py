@@ -35,6 +35,11 @@ OMICS_CONSTANTS['PROJECT_TYPE_CHOICES'] = [
     (OMICS_CONSTANTS['PROJECT_TYPE_PROJECT'], 'Project')]
 
 # Local constants
+PROJECT_SETTING_TYPES = [
+    'BOOLEAN',
+    'INTEGER',
+    'STRING']
+
 PROJECT_SETTING_TYPE_CHOICES = [
     ('BOOLEAN', 'Boolean'),
     ('INTEGER', 'Integer'),

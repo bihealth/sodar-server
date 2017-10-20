@@ -96,11 +96,11 @@ class TestPlugins(
         """Test retrieving ProjectAppPlugin from the database"""
         plugin = ProjectAppPluginPoint.get_plugin(PLUGIN_NAME)
         self.assertIsNotNone(plugin)
-        self.assertEquals(plugin.get_model().name, PLUGIN_NAME)
-        self.assertEquals(plugin.name, PLUGIN_NAME)
-        self.assertEquals(plugin.get_model().title, PLUGIN_TITLE)
-        self.assertEquals(plugin.title, PLUGIN_TITLE)
-        self.assertEquals(plugin.entry_point_url_id, PLUGIN_URL_ID)
+        self.assertEqual(plugin.get_model().name, PLUGIN_NAME)
+        self.assertEqual(plugin.name, PLUGIN_NAME)
+        self.assertEqual(plugin.get_model().title, PLUGIN_TITLE)
+        self.assertEqual(plugin.title, PLUGIN_TITLE)
+        self.assertEqual(plugin.entry_point_url_id, PLUGIN_URL_ID)
 
     def test_plugin_urls(self):
         """Test plugin URLs to ensure they're the same as in the app config"""
@@ -118,5 +118,5 @@ class TestPlugins(
 
         expected = setting.get_value()
 
-        self.assertEquals(
+        self.assertEqual(
             plugin.project_settings[SETTING_KEY]['default'], expected)
