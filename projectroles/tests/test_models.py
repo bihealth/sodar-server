@@ -11,7 +11,7 @@ from test_plus.test import TestCase
 
 from ..models import Project, Role, RoleAssignment, ProjectInvite, \
     OMICS_CONSTANTS
-from ..utils import save_default_project_settings
+from projectroles.project_settings import save_default_project_settings
 
 # Omics constants
 PROJECT_ROLE_OWNER = OMICS_CONSTANTS['PROJECT_ROLE_OWNER']

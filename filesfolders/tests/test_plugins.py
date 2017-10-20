@@ -8,7 +8,7 @@ from test_plus.test import TestCase
 from projectroles.models import Role, ProjectSetting, OMICS_CONSTANTS
 from projectroles.plugins import ProjectAppPluginPoint
 from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
-from projectroles.utils import save_default_project_settings
+from projectroles.project_settings import save_default_project_settings
 
 from filesfolders.plugins import ProjectAppPlugin
 from filesfolders.urls import urlpatterns

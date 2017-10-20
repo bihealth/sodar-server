@@ -10,8 +10,8 @@ from pagedown.widgets import PagedownWidget
 from .models import Project, Role, RoleAssignment, ProjectInvite, \
     ProjectSetting, OMICS_CONSTANTS
 from .plugins import ProjectAppPluginPoint
-from .utils import get_user_display_name, build_secret, validate_project_setting
-
+from .utils import get_user_display_name, build_secret
+from projectroles.project_settings import validate_project_setting
 
 # Omics constants
 PROJECT_ROLE_OWNER = OMICS_CONSTANTS['PROJECT_ROLE_OWNER']

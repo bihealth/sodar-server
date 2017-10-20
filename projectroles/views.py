@@ -26,8 +26,8 @@ from .forms import ProjectForm, RoleAssignmentForm, ProjectInviteForm,\
 from .models import Project, Role, RoleAssignment, ProjectInvite, \
     ProjectSetting, OMICS_CONSTANTS
 from .plugins import ProjectAppPluginPoint, get_active_plugins, get_backend_api
-from .utils import get_expiry_date, save_default_project_settings
-
+from .utils import get_expiry_date
+from projectroles.project_settings import save_default_project_settings
 
 # Access Django user model
 User = auth.get_user_model()

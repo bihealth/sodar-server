@@ -6,7 +6,8 @@ from db_file_storage.form_widgets import DBClearableFileInput
 
 # Projectroles dependency
 from projectroles.models import Project, ProjectSetting
-from projectroles.utils import build_secret, get_project_setting
+from projectroles.utils import build_secret
+from projectroles.project_settings import get_project_setting
 
 from .models import File, Folder, HyperLink
 

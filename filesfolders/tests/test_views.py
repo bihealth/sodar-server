@@ -8,7 +8,7 @@ from test_plus.test import TestCase
 # Projectroles dependency
 from projectroles.models import Role, OMICS_CONSTANTS
 from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
-from projectroles.utils import set_project_setting
+from projectroles.project_settings import set_project_setting
 
 from ..models import File, Folder, HyperLink
 from .test_models import FolderMixin, FileMixin, HyperLinkMixin

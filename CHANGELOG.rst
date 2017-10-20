@@ -49,6 +49,7 @@ Changed
     - Populate Role objects in a migration script instead of a fixture
     - Import patched ``django-plugins`` from GitHub instead of including in project directly
     - Include modified fields in project_update timeline event
+    - Move Project settings helper functions to ``project_settings.py``
 - **Timeline**
     - Enable event details popover on the project details page
     - Limit details page list to successful events

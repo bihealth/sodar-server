@@ -4,7 +4,7 @@ from __future__ import unicode_literals
 
 from django.db import migrations
 
-from projectroles.utils import save_default_project_settings
+from projectroles.project_settings import save_default_project_settings
 
 
 def save_default_settings(apps, schema_editor):

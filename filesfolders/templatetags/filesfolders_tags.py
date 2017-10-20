@@ -2,7 +2,7 @@ from django import template
 
 # Projectroles dependency
 from projectroles.models import ProjectSetting
-from projectroles.utils import get_project_setting
+from projectroles.project_settings import get_project_setting
 
 from ..models import File, HyperLink
 
