@@ -8,14 +8,33 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
+    <!-- External Javascript includes -->
+
     <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
     <!--[if lt IE 9]>
       <script src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv.min.js"></script>
     <![endif]-->
 
+    <!-- Font Awesome icons -->
+    <script src="{% static 'js/fontawesome.js' %}"></script>
+
+    <!-- Required by Bootstrap v4 beta -->
+    <script src="{% static 'js/jquery-3.2.1.slim.min.js' %}"></script>
+    <script src="{% static 'js/popper.min.js' %}"></script>
+    <script src="{% static 'js/bootstrap.min.js' %}"></script>
+
+    <!-- JQuery Popup Overlay -->
+    <script src="{% static 'js/jquery.popupoverlay.js' %}"></script>
+
+    <!-- Shepherd -->
+    <script src="{% static 'js/tether.min.js' %}"></script>
+    <script src="{% static 'js/shepherd.min.js' %}"></script>
+
     {% block css %}
 
-      <!-- Fix for pull-right "jumping" effect on development config -->
+      <!-- CSS includes -->
+
+      <!-- Fix for pull-right bug when including improts -->
       <style type="text/css">
         .pull-right {
           float: right;
@@ -32,21 +51,6 @@
       <link href="{% static 'css/project.css' %}" rel="stylesheet">
 
     {% endblock css %}
-
-    <!-- Font Awesome icons -->
-    <script src="{% static 'js/fontawesome.js' %}"></script>
-
-    <!-- Required by Bootstrap v4 beta -->
-    <script src="{% static 'js/jquery-3.2.1.slim.min.js' %}"></script>
-    <script src="{% static 'js/popper.min.js' %}"></script>
-    <script src="{% static 'js/bootstrap.min.js' %}"></script>
-
-    <!-- JQuery Popup Overlay -->
-    <script src="{% static 'js/jquery.popupoverlay.js' %}"></script>
-
-    <!-- Shepherd -->
-    <script src="{% static 'js/tether.min.js' %}"></script>
-    <script src="{% static 'js/shepherd.min.js' %}"></script>
 
     {% block head_extend %}
       {# Extended head stuff from apps goes here #}
@@ -113,16 +117,15 @@
 
     </div> <!-- /container -->
 
-    <!-- Le javascript
-    ================================================== -->
+    <!-- Project specific Javascript -->
     {% block javascript %}
 
-      <!-- Project specific javascript -->
       <script src="{% static 'js/project.js' %}"></script>
 
     {% endblock javascript %}
 
     {# Set up Tour link #}
+
     <script type="text/javascript">
         if (tourEnabled == false) {
             $('#site-help-link').hide();
