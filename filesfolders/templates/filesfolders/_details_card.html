@@ -4,7 +4,6 @@
 {% has_perm 'filesfolders.share_public_link' request.user project as can_share_link %}
 {% allow_public_links project as allow_public_links %}
 
-{# HACK #}
 <style type="text/css">
   .table#omics-ff-details-table tr td:nth-child(1) {
     padding-right: 0;

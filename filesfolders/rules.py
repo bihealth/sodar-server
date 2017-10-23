@@ -7,18 +7,17 @@ from projectroles import rules as pr_rules  # To access common predicates
 # Predicates -------------------------------------------------------------
 
 
-# TODO: If we need to assign new predicates, we do it here
+# If we need to assign new predicates, we do it here
 
 
 # Rules ------------------------------------------------------------------
 
 
-# TODO: Rules should not be needed, use permissions for user rights
+# Rules should not be needed, use permissions for user rights
 
 
 # Permissions ------------------------------------------------------------
 
-# TODO: TBD: Should we split file and folder rules into different ones?
 
 # Allow viewing data in project
 rules.add_perm(

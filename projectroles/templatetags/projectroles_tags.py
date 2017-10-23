@@ -80,7 +80,7 @@ def get_description(project):
 def get_user_role_str(project, user):
     try:
         role_as = RoleAssignment.objects.get(project=project, user=user)
-        return role_as.role.name.split(' ')[1]   # HACK to save screen space :)
+        return role_as.role.name.split(' ')[1]
 
     except RoleAssignment.DoesNotExist:
         return ''

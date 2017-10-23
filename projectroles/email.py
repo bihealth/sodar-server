@@ -9,7 +9,6 @@ from .utils import build_invite_url
 
 
 # Settings
-
 SUBJECT_PREFIX = settings.EMAIL_SUBJECT_PREFIX
 EMAIL_SENDER = settings.EMAIL_SENDER
 DEBUG = settings.DEBUG

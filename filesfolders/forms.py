@@ -5,7 +5,7 @@ from django.template.defaultfilters import filesizeformat
 from db_file_storage.form_widgets import DBClearableFileInput
 
 # Projectroles dependency
-from projectroles.models import Project, ProjectSetting
+from projectroles.models import Project
 from projectroles.utils import build_secret
 from projectroles.project_settings import get_project_setting
 
@@ -153,7 +153,6 @@ class FileForm(forms.ModelForm):
         """Override for form initialization"""
         super(FileForm, self).__init__(*args, **kwargs)
 
-        # TODO: Simplify/refactor this
         self.current_user = None
         self.project = None
         self.folder = None

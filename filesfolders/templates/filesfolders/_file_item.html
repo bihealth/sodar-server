@@ -8,7 +8,6 @@
     {% elif item|get_class == 'HyperLink' %}
       <i class="fa fa-external-link"></i>
     {% elif item|get_class == 'File' %}
-      {# TODO: this is ugly, get from settings instead? #}
       {% if file.content_type == 'application/pdf' %}
         <i class="fa fa-file-pdf-o"></i>
       {% elif file.content_type == 'application/vnd.openxmlformats-officedocument.presentationml.presentation' %}
@@ -29,7 +28,7 @@
   {# Name/link column #}
   <td>
     {% if item|get_class == 'Folder' %}
-      <a href="{% url 'project_files' project=project.pk folder=item.id %}">{% autoescape off %}{{ item.name|force_wrap:24 }}{% endautoescape %}</a>
+      <a href="{% url 'project_files' project=project.pk folder=item.pk %}">{% autoescape off %}{{ item.name|force_wrap:24 }}{% endautoescape %}</a>
     {% elif item|get_class == 'HyperLink' %}
       <a href="{{ item.url }}" target="_blank">{% autoescape off %}{{ item.name|force_wrap:24 }}{% endautoescape %}</a>
     {% elif item|get_class == 'File' %}

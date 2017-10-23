@@ -19,7 +19,7 @@ from .models import Folder, File, FileData, HyperLink
 from .utils import build_public_url
 
 # Projectroles dependency
-from projectroles.models import Project, ProjectSetting
+from projectroles.models import Project
 from projectroles.plugins import get_backend_api
 from projectroles.project_settings import get_project_setting
 from projectroles.views import LoggedInPermissionMixin, \

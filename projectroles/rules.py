@@ -1,7 +1,5 @@
 import rules
 
-from django.conf import settings
-
 from .models import RoleAssignment, OMICS_CONSTANTS
 
 # Omics constants
@@ -85,7 +83,7 @@ def has_roles(user):
 # Rules ------------------------------------------------------------------
 
 
-# TODO: Rules should not be needed, use permissions for user rights
+# Rules should not be needed, use permissions for user rights
 
 
 # Permissions ------------------------------------------------------------
