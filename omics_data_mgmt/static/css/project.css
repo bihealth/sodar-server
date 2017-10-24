@@ -67,7 +67,7 @@ div.omics-subtitle-container {
   border-radius: 0;
   margin-bottom: 0;
   vertical-align: middle;
-  height: 50px;
+  min-height: 50px;
 }
 
 /* Titles */
@@ -209,7 +209,7 @@ a.omics-nav-link-last {
   padding-right: 42px;
   border-radius: 0;
   margin-bottom: 0;
-  height: 50px;
+  min-height: 50px;
 }
 
 .popover{
