@@ -19,7 +19,7 @@ urlpatterns = [
         name='project_create',
     ),
     url(
-        regex=r'^(?P<parent>\d+)/create$',
+        regex=r'^(?P<project>\d+)/create$',
         view=views.ProjectCreateView.as_view(),
         name='project_create',
     ),

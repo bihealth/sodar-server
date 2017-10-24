@@ -2,8 +2,52 @@
 {% load rules %}
 {% load projectroles_tags %}
 
+{% block sub_navbar %}
+  <div class="row bg-secondary omics-pr-navbar" id="omics-pr-navbar">
+    <ol id="omics-pr-breadcrumb" class="breadcrumb omics-pr-breadcrumb">
+      {% if request.resolver_match.url_name == 'home' %}
+        <li class="breadcrumb-item active"><i class="fa fa-home"></i> Home</li>
+      {% else %}
+        <li class="breadcrumb-item"><i class="fa fa-home"></i> <a href="{% url 'home' %}">Home</a></li>
+      {% endif %}
+      {% if project_breadcrumb %}
+        {% for p in project_breadcrumb %}
+          <li class="breadcrumb-item"><a href="{% url 'project_detail' pk=p.pk %}">{{ p.title }}</a></li>
+        {% endfor %}
+      {% endif %}
+      {% if project %}
+        {% if request.resolver_match.url_name == 'project_detail' %}
+          <li class="breadcrumb-item active">{{ project.title }}</li>
+        {% else %}
+            <li class="breadcrumb-item"><a href="{% url 'project_detail' pk=project.pk %}">{{ project.title }}</a></li>
+        {% endif %}
+
+      {% endif %}
+    </ol>
+
+    <div class="ml-auto d-flex align-items-center omics-pr-navbar-right">
+      {% block sub_navbar_links %}
+        {# Additional links go here #}
+      {% endblock sub_navbar_links %}
+      {% if project %}
+        {% has_perm 'projectroles.create_project' request.user project as can_create_project %}
+        {% if can_create_project %}
+          <a href="{% url 'project_create' project=project.pk %}" id="omics-pr-home-link-create"><i class="fa fa-plus"></i> Create Project</a>
+        {% endif %}
+      {% else %}
+        {% has_perm 'projectroles.create_project' request.user as can_create_project %}
+        {% if can_create_project %}
+          <a href="{% url 'project_create' %}" id="omics-pr-home-link-create"><i class="fa fa-plus"></i> Create Project</a>
+        {% endif %}
+      {% endif %}
+    </div>
+
+  </div>
+{% endblock sub_navbar %}
+
 {% block content %}
   <div class="container-fluid pr-content" id="omics-pr-content">
+    {# Projectroles navbar #}
     {% block projectroles %}
       Projectroles app content here
     {% endblock projectroles %}

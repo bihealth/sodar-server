@@ -11,9 +11,6 @@
 
 <div class="row">
   <h2>
-    {% if project.parent %}
-      {{ project.parent.title }} /
-    {% endif %}
     {{ project.title }}
   </h2>
 
@@ -86,7 +83,7 @@
         {% endif %}
         {% if can_create_project %}
           <a class="dropdown-item"
-              href="{% url 'project_create' parent=project.pk %}"
+              href="{% url 'project_create' project=project.pk %}"
               title="Create Subproject"
               id="omics-pr-btn-project-create">
             <i class="fa fa-cube"></i>

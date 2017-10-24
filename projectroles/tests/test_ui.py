@@ -272,8 +272,8 @@ class TestUIBase(
 class TestProjectList(TestUIBase):
     """Tests for the project list UI functionalities"""
 
-    def test_button_create_toplevel(self):
-        """Test top level creation button visibility according to user
+    def test_link_create_toplevel(self):
+        """Test project creation link visibility according to user
         permissions"""
         expected_true = [
             self.superuser]
@@ -288,10 +288,10 @@ class TestProjectList(TestUIBase):
         url = reverse('home')
 
         self.assert_element_exists(
-            expected_true, url, 'omics-pr-home-btn-create', True)
+            expected_true, url, 'omics-pr-home-link-create', True)
 
         self.assert_element_exists(
-            expected_false, url, 'omics-pr-home-btn-create', False)
+            expected_false, url, 'omics-pr-home-link-create', False)
 
 
 class TestProjectDetail(TestUIBase):

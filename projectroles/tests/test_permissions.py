@@ -286,7 +286,7 @@ class TestProjectViews(TestPermissionBase):
 
     def test_create_sub(self):
         """Test access to subproject creation"""
-        url = reverse('project_create', kwargs={'parent': self.category.pk})
+        url = reverse('project_create', kwargs={'project': self.category.pk})
         good_users = [
             self.superuser,
             self.as_owner.user]

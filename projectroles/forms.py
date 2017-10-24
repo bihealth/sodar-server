@@ -44,16 +44,16 @@ class ProjectForm(forms.ModelForm):
         model = Project
         fields = ['title', 'type', 'parent', 'owner', 'description', 'readme']
 
-    def __init__(self, parent=None, current_user=None, *args, **kwargs):
+    def __init__(self, project=None, current_user=None, *args, **kwargs):
         """Override for form initialization"""
         super(ProjectForm, self).__init__(*args, **kwargs)
 
         # Access parent project if present
         parent_project = None
 
-        if parent:
+        if project:
             try:
-                parent_project = Project.objects.get(pk=parent)
+                parent_project = Project.objects.get(pk=project)
 
             except Project.DoesNotExist:
                 pass
@@ -411,11 +411,6 @@ class ProjectSettingForm(forms.ModelForm):
         if not validate_project_setting(
                 self.instance.type, self.cleaned_data.get('value')):
             pass
-        '''
-        if (self.instance.type == 'INTEGER' and
-                not self.cleaned_data['value'].isdigit()):
-            self.add_error('value', 'Please enter a valid integer.')
-        '''
 
         return self.cleaned_data
 

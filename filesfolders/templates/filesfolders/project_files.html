@@ -63,7 +63,7 @@
         <div class="card-body omics-card-body-table">
 
           <!-- Breadcrumb -->
-          <ol id="omics-ff-breadcrumb" class="breadcrumb">
+          <ol id="omics-ff-breadcrumb" class="breadcrumb omics-breadcrumb-table">
             {% if not folder %}
               <li class="breadcrumb-item active">
                 <i class="fa fa-angle-right" id="omics-ff-breadcrumb-icon"></i>
@@ -74,7 +74,7 @@
                 <i class="fa fa-angle-right"></i>
                 <a href="{% url 'project_files' project=project.pk %}">root</a>
               </li>
-              {% for f in breadcrumb %}
+              {% for f in folder_breadcrumb %}
                 {% if f != folder %}
                   <li class="breadcrumb-item"><a href="{% url 'project_files' project=project.pk folder=f.pk %}">{{ f.name }}</a></li>
                 {% else %}

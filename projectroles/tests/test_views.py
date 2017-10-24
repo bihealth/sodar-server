@@ -141,7 +141,7 @@ class TestProjectCreateView(TestViewsBase, ProjectMixin, RoleAssignmentMixin):
 
         with self.login(self.user):
             response = self.client.get(
-                reverse('project_create', kwargs={'parent': self.project.pk}))
+                reverse('project_create', kwargs={'project': self.project.pk}))
 
         self.assertEqual(response.status_code, 200)
 

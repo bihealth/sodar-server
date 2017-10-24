@@ -121,7 +121,7 @@ class TestListView(TestViewsBase):
                 kwargs={'project': self.project.pk, 'folder': self.folder.pk}))
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response.context['object'].pk, self.project.pk)
-            self.assertIsNotNone(response.context['breadcrumb'])
+            self.assertIsNotNone(response.context['folder_breadcrumb'])
             self.assertIsNotNone(response.context['files'])
             self.assertIsNotNone(response.context['links'])
 

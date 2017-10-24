@@ -21,6 +21,7 @@ Added
     - Add page title to main files list
 - **Projectroles**
     - Import app from prototype
+    - Add sub-navbar with project breadcrumb
     - Add ``get_app_plugin()`` helper function
     - Add ``validate_project_setting()`` helper function
     - Add ``get_project_setting()`` helper function
@@ -50,6 +51,7 @@ Changed
     - Import patched ``django-plugins`` from GitHub instead of including in project directly
     - Include modified fields in project_update timeline event
     - Move Project settings helper functions to ``project_settings.py``
+    - Refactor URL kwargs
 - **Timeline**
     - Enable event details popover on the project details page
     - Limit details page list to successful events

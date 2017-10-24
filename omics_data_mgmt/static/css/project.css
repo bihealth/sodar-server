@@ -61,6 +61,15 @@ div.omics-subtitle-container {
   padding-bottom: 12px;
 }
 
+.omics-pr-navbar {
+  padding-left: 42px;
+  padding-right: 42px;
+  border-radius: 0;
+  margin-bottom: 0;
+  vertical-align: middle;
+  height: 50px;
+}
+
 /* Titles */
 
 h2 {
@@ -200,16 +209,43 @@ a.omics-nav-link-last {
   padding-right: 42px;
   border-radius: 0;
   margin-bottom: 0;
+  height: 50px;
 }
 
 .popover{
   max-width: 100%;
 }
 
-.breadcrumb {
+.omics-breadcrumb-table {
   padding: 12px;
   margin: 0;
   background: none;
   border-bottom: 1px solid #dfdfdf;
   border-radius: 0;
+}
+
+.omics-pr-breadcrumb {
+  padding: 12px;
+  padding-left: 0;
+  padding-right: 0;
+  margin: 0;
+  background: none;
+  border-radius: 0;
+  color: #ffffff;
+}
+
+.omics-pr-breadcrumb a {
+  color: #ffffff;
+}
+
+.omics-pr-navbar-right a {
+  color: #ffffff;
+}
+
+.omics-pr-breadcrumb li.breadcrumb-item.active {
+  color: #dfdfdf;
+}
+
+.omics-pr-breadcrumb li.breadcrumb-item:before {
+  color: #dfdfdf;
 }

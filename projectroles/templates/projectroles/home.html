@@ -20,14 +20,9 @@
 {% block projectroles %}
 
 {% has_perm 'projectroles.create_project' request.user as can_create_project %}
+
 <div class="row">
   <h2>Home</h2>
-  {% if can_create_project %}
-    <a role="button" class="btn btn-primary ml-auto" href="{% url 'project_create' %}" id="omics-pr-home-btn-create">
-      <i class="fa fa-plus"></i>
-      Create Category or Project
-    </a>
-  {% endif %}
 </div>
 
 <div class="container-fluid omics-hr-container">
@@ -118,11 +113,11 @@
         showCancelLink: true
     });
 
-    if ($('#omics-pr-home-btn-create').length) {
+    if ($('#omics-pr-home-link-create').length) {
         tour.addStep('home_create', {
-            title: 'Create a Category or Project',
-            text: 'Click here to create a new top level category or project.',
-            attachTo: '#omics-pr-home-btn-create left',
+            title: 'Create Project',
+            text: 'Click here to create a new project or category.',
+            attachTo: '#omics-pr-home-link-create bottom',
             advanceOn: '.docs-link click',
             showCancelLink: true
         });

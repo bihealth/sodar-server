@@ -328,7 +328,7 @@ class ProjectFileView(
                     breadcrumb.insert(0, f.folder)
                     f = f.folder
 
-                context['breadcrumb'] = breadcrumb
+                context['folder_breadcrumb'] = breadcrumb
 
             except Folder.DoesNotExist:
                 pass

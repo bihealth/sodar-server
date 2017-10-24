@@ -137,6 +137,17 @@ class ProjectContextMixin(ContextMixin):
                 p for p in plugins if p.is_active()],
                 key=lambda x: x.details_position)
 
+        # Project breadcrumb
+        if 'project' in context:
+            breadcrumb = []
+            parent = context['project'].parent
+
+            while parent:
+                breadcrumb.append(parent)
+                parent = parent.parent
+
+            context['project_breadcrumb'] = reversed(breadcrumb)
+
         return context
 
 
@@ -394,7 +405,7 @@ class ProjectModifyMixin(ModelFormMixin):
 
 class ProjectCreateView(
         LoginRequiredMixin, LoggedInPermissionMixin, ProjectModifyMixin,
-        CreateView):
+        ProjectContextMixin, CreateView):
     """Project creation view"""
     permission_required = 'projectroles.create_project'
     model = Project
@@ -403,9 +414,9 @@ class ProjectCreateView(
     def get_permission_object(self):
         """Override get_permission_object for checking Project permission from
         parent"""
-        if 'parent' in self.kwargs:
+        if 'project' in self.kwargs:
             try:
-                obj = Project.objects.get(pk=self.kwargs['parent'])
+                obj = Project.objects.get(pk=self.kwargs['project'])
                 return obj
 
             except Project.DoesNotExist:
@@ -415,8 +426,8 @@ class ProjectCreateView(
         context = super(ProjectCreateView, self).get_context_data(
             *args, **kwargs)
 
-        if 'parent' in self.kwargs:
-            context['parent'] = Project.objects.get(pk=self.kwargs['parent'])
+        if 'project' in self.kwargs:
+            context['parent'] = Project.objects.get(pk=self.kwargs['project'])
 
         return context
 
