@@ -29,11 +29,11 @@ PROJECT_TYPE_PROJECT = OMICS_CONSTANTS['PROJECT_TYPE_PROJECT']
 
 
 # Local constants
-PROJECT_BUTTON_IDS = [
-    'omics-pr-btn-project-roles',
-    'omics-pr-btn-project-update',
-    'omics-pr-btn-project-create',
-    'omics-pr-btn-project-settings']
+PROJECT_LINK_IDS = [
+    'omics-pr-link-project-roles',
+    'omics-pr-link-project-update',
+    'omics-pr-link-project-create',
+    'omics-pr-link-project-settings']
 
 
 User = auth.get_user_model()
@@ -76,7 +76,7 @@ class TestUIBase(
         self.selenium = webdriver.Chrome(chrome_options=options)
 
         # Prevent ElementNotVisibleException
-        self.selenium.set_window_size(1100, 700)
+        self.selenium.set_window_size(1400, 1000)
 
         # Init roles
         self.role_owner = Role.objects.get_or_create(
@@ -297,50 +297,50 @@ class TestProjectList(TestUIBase):
 class TestProjectDetail(TestUIBase):
     """Tests for the project detail page UI functionalities"""
 
-    def test_project_buttons(self):
-        """Test visibility of top level project buttons according to user
+    def test_project_links(self):
+        """Test visibility of top level project links according to user
         permissions"""
         expected = [
             (self.superuser, [
-                'omics-pr-btn-project-roles',
-                'omics-pr-btn-project-update',
-                'omics-pr-btn-project-create',
-                'omics-pr-btn-project-settings']),
+                'omics-pr-link-project-roles',
+                'omics-pr-link-project-update',
+                'omics-pr-link-project-create',
+                'omics-pr-link-project-settings']),
             (self.as_owner.user, [
-                'omics-pr-btn-project-roles',
-                'omics-pr-btn-project-update',
-                'omics-pr-btn-project-create',
-                'omics-pr-btn-project-settings']),
+                'omics-pr-link-project-roles',
+                'omics-pr-link-project-update',
+                'omics-pr-link-project-create',
+                'omics-pr-link-project-settings']),
             (self.as_delegate.user, [
-                'omics-pr-btn-project-roles',
-                'omics-pr-btn-project-update',
-                'omics-pr-btn-project-settings']),
+                'omics-pr-link-project-roles',
+                'omics-pr-link-project-update',
+                'omics-pr-link-project-settings']),
             (self.as_staff.user, [
-                'omics-pr-btn-project-roles']),
+                'omics-pr-link-project-roles']),
             (self.as_contributor.user, [
-                'omics-pr-btn-project-roles']),
+                'omics-pr-link-project-roles']),
             (self.as_guest.user, [
-                'omics-pr-btn-project-roles'])]
+                'omics-pr-link-project-roles'])]
 
         url = reverse(
             'project_detail', kwargs={'pk': self.project_top.pk})
 
-        self.assert_element_set(expected, PROJECT_BUTTON_IDS, url)
+        self.assert_element_set(expected, PROJECT_LINK_IDS, url)
 
-    def test_project_buttons_category(self):
-        """Test visibility of top level category buttons according to user
+    def test_project_links_category(self):
+        """Test visibility of top level category links according to user
         permissions"""
         expected = [
             (self.superuser, [
-                'omics-pr-btn-project-update',
-                'omics-pr-btn-project-create']),
+                'omics-pr-link-project-update',
+                'omics-pr-link-project-create']),
             (self.as_owner.user, [
-                'omics-pr-btn-project-update',
-                'omics-pr-btn-project-create'])]
+                'omics-pr-link-project-update',
+                'omics-pr-link-project-create'])]
         url = reverse(
             'project_detail', kwargs={'pk': self.category.pk})
 
-        self.assert_element_set(expected, PROJECT_BUTTON_IDS, url)
+        self.assert_element_set(expected, PROJECT_LINK_IDS, url)
 
 
 class TestProjectRoles(TestUIBase):
@@ -416,6 +416,8 @@ class TestProjectRoles(TestUIBase):
         url = reverse('project_roles', kwargs={'pk': self.project.pk})
         self.assert_element_count(expected, url, 'omics-pr-btn-grp-role')
 
+    # NOTE: Temporarily disabled (see issue #23)
+    '''
     def test_role_preview(self):
         """Test visibility of role preview popup"""
         url = reverse('role_create', kwargs={'project': self.project.pk})
@@ -429,7 +431,7 @@ class TestProjectRoles(TestUIBase):
 
         self.assertIsNotNone(
             self.selenium.find_element_by_id('omics-popup-content'))
-
+    
     def test_invite_preview(self):
         """Test visibility of invite preview popup"""
         url = reverse('role_invite_create', kwargs={'project': self.project.pk})
@@ -444,6 +446,7 @@ class TestProjectRoles(TestUIBase):
 
         self.assertIsNotNone(
             self.selenium.find_element_by_id('omics-popup-content'))
+    '''
 
 
 class TestProjectInviteList(TestUIBase, ProjectInviteMixin):
@@ -512,11 +515,11 @@ class TestPlugins(TestUIBase):
         super(TestPlugins, self).setUp()
         self.plugin_count = len(get_active_plugins())
 
-    def test_plugin_buttons(self):
-        """Test visibility of app plugin buttons"""
+    def test_plugin_links(self):
+        """Test visibility of app plugin links"""
         expected = [(self.superuser, self.plugin_count)]
         url = reverse('project_detail', kwargs={'pk': self.project.pk})
-        self.assert_element_count(expected, url, 'omics-pr-btn-app-plugin')
+        self.assert_element_count(expected, url, 'omics-pr-link-app-plugin')
 
     def test_plugin_cards(self):
         """Test visibility of app plugin cards"""

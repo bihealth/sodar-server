@@ -21,18 +21,17 @@
         {% else %}
             <li class="breadcrumb-item"><a href="{% url 'project_detail' pk=project.pk %}">{{ project.title }}</a></li>
         {% endif %}
-
       {% endif %}
     </ol>
 
-    <div class="ml-auto d-flex align-items-center omics-pr-navbar-right">
+    <div class="d-flex ml-auto align-items-center omics-pr-navbar-right">
       {% block sub_navbar_links %}
         {# Additional links go here #}
       {% endblock sub_navbar_links %}
       {% if project %}
         {% has_perm 'projectroles.create_project' request.user project as can_create_project %}
         {% if can_create_project %}
-          <a href="{% url 'project_create' project=project.pk %}" id="omics-pr-home-link-create"><i class="fa fa-plus"></i> Create Project</a>
+          <a href="{% url 'project_create' project=project.pk %}" id="omics-pr-link-project-create"><i class="fa fa-plus"></i> Create Project</a>
         {% endif %}
       {% else %}
         {% has_perm 'projectroles.create_project' request.user as can_create_project %}
@@ -41,15 +40,41 @@
         {% endif %}
       {% endif %}
     </div>
-
   </div>
 {% endblock sub_navbar %}
 
 {% block content %}
-  <div class="container-fluid pr-content" id="omics-pr-content">
-    {# Projectroles navbar #}
-    {% block projectroles %}
-      Projectroles app content here
-    {% endblock projectroles %}
+  {# Messages #}
+  {% if messages %}
+    {% if project %}
+      <div class="container-fluid omics-alert-container omics-alert-container-project">
+    {% else %}
+      <div class="container-fluid omics-alert-container">
+    {% endif %}
+      {% for message in messages %}
+        <div class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %} omics-alert-top">{{ message }}</div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+  <div class="row h-100">
+    {# Sidebar #}
+    {% if project %}
+      <div class="col h-100 fixed-top bg-dark text-center omics-pr-sidebar">
+        {% include 'projectroles/_project_sidebar.html' %}
+      </div>
+    {% endif %}
+
+    {# Actual content #}
+    {% if project %}
+      <div class="col omics-pr-content omics-pr-content-project" id="omics-pr-content">
+    {% else %}
+      <div class="col omics-pr-content" id="omics-pr-content">
+    {% endif %}
+      {% block projectroles %}
+        Projectroles app content here
+      {% endblock projectroles %}
+    </div>
+
   </div>
 {% endblock content %}

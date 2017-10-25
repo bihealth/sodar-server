@@ -26,6 +26,11 @@ Project specific styles below
 
 /* Containers */
 
+html, body {
+  min-height: 100%;
+  height: 100%;
+}
+
 .row {
   margin-left: 0;
   margin-right: 0;
@@ -37,19 +42,23 @@ Project specific styles below
 }
 
 nav.omics-base-navbar {
-  padding-left: 42px;
-  padding-right: 42px;
+  padding-left: 28px;
+  padding-right: 28px;
 }
 
 div.omics-base-container {
-  max-width: 1500px;
-  padding: 28px 42px;
-  overflow-x: hidden;
-  min-height: 75vh;
+  padding: 0;
+  min-width: 100%;
+  min-height: 100%;
 }
 
 div.omics-alert-container {
   margin-bottom: 0;
+  max-height: 50px;
+}
+
+div.omics-alert-container-project {
+  margin-left: 100px;
 }
 
 div.omics-hr-container {
@@ -62,17 +71,40 @@ div.omics-subtitle-container {
 }
 
 .omics-pr-navbar {
-  padding-left: 42px;
-  padding-right: 42px;
+  padding-left: 28px;
+  padding-right: 28px;
   border-radius: 0;
   margin-bottom: 0;
   vertical-align: middle;
   min-height: 50px;
 }
 
+.omics-pr-sidebar {
+  width: 100px;
+  max-width: 100px;
+  padding-top: 16px;
+  padding-left: 16px;
+  padding-right: 16px;
+  margin-top: 105px;
+
+}
+
+.omics-pr-content {
+  padding: 28px 28px 50px;
+  max-width: 1500px;
+}
+
+.omics-pr-content-project {
+  padding-left: 128px;
+}
+
 /* Titles */
 
-h2 {
+h2.omics-title {
+  font-weight: bold;
+  margin-bottom: 36px;
+  border-bottom: 1px solid #dfdfdf;
+  width: 100%;
 }
 
 h3 {
@@ -198,6 +230,16 @@ dl.omics-dl dd {
   padding-right: 0;
 }
 
+.omics-pr-sidebar-nav li {
+  font-size: 80%;
+  line-height: normal;
+  padding-bottom: 8px;
+}
+
+.omics-pr-sidebar-nav li i {
+  padding-bottom: 3px;
+}
+
 a.omics-nav-link-last {
   padding-right: 0 !important;
 }
@@ -205,8 +247,8 @@ a.omics-nav-link-last {
 /* Misc */
 
 .omics-alert-top {
-  padding-left: 42px;
-  padding-right: 42px;
+  padding-left: 28px;
+  padding-right: 28px;
   border-radius: 0;
   margin-bottom: 0;
   min-height: 50px;
@@ -225,9 +267,7 @@ a.omics-nav-link-last {
 }
 
 .omics-pr-breadcrumb {
-  padding: 12px;
-  padding-left: 0;
-  padding-right: 0;
+  padding: 12px 0;
   margin: 0;
   background: none;
   border-radius: 0;
@@ -248,4 +288,20 @@ a.omics-nav-link-last {
 
 .omics-pr-breadcrumb li.breadcrumb-item:before {
   color: #dfdfdf;
+}
+
+/* Media */
+
+@media screen and (max-width: 1000px) {
+  .omics-pr-sidebar {
+    display: none !important;
+  }
+
+  .omics-pr-content-project {
+    padding-left: 28px;
+  }
+
+  div.omics-alert-container-project {
+  margin-left: 0;
+  }
 }

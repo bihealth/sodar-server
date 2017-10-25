@@ -58,55 +58,47 @@
   </head>
 
   <body>
-    <div class="m-b-1">
-      <nav class="navbar navbar-expand-lg navbar-dark bg-dark omics-base-navbar">
-        <a class="navbar-brand" href="/">Omics Data Management</a>
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-          <span class="navbar-toggler-icon"></span>
-        </button>
+    <div class="d-flex mh-100 h-100 flex-column omics-base-container">
+      <div class="container-fluid sticky-top">
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark omics-base-navbar">
+          <a class="navbar-brand" href="/">Omics Data Management</a>
+          <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+          </button>
 
-        <div class="collapse navbar-collapse" id="navbarSupportedContent">
-          <ul class="navbar-nav ml-auto">
-            <li class="nav-item">
-              <a class="nav-link" id="site-help-link"><i class="fa fa-info-circle"></i> Help</a>
-            </li>
-            {% if request.user.is_authenticated %}
+          <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav ml-auto">
               <li class="nav-item">
-                <a id="log-out-link" class="nav-link omics-nav-link-last" href="{% url 'account_logout' %}"><i class="fa fa-sign-out"></i> {% trans "Sign Out" %}
-                  {% if titlebar_show_user %}
-                    ({{ request.user.username }})
-                  {% endif %}
-                </a>
+                <a class="nav-link" id="site-help-link"><i class="fa fa-info-circle"></i> Help</a>
               </li>
-            {% else %}
-              <li class="nav-item">
-                <a id="log-in-link" class="nav-link omics-nav-link-last" href="{% url 'account_login' %}"><i class="fa fa-sign-in"></i> {% trans "Sign In" %}</a>
-              </li>
-            {% endif %}
-          </ul>
-          {% comment %}
-          <form class="form-inline my-2 my-lg-0">
-            <input class="form-control mr-sm-2" type="text" placeholder="Search" aria-label="Search">
-            <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
-          </form>
-          {% endcomment %}
-        </div>
-      </nav>
-    </div>
+              {% if request.user.is_authenticated %}
+                <li class="nav-item">
+                  <a id="log-out-link" class="nav-link omics-nav-link-last" href="{% url 'account_logout' %}"><i class="fa fa-sign-out"></i> {% trans "Sign Out" %}
+                    {% if titlebar_show_user %}
+                      ({{ request.user.username }})
+                    {% endif %}
+                  </a>
+                </li>
+              {% else %}
+                <li class="nav-item">
+                  <a id="log-in-link" class="nav-link omics-nav-link-last" href="{% url 'account_login' %}"><i class="fa fa-sign-in"></i> {% trans "Sign In" %}</a>
+                </li>
+              {% endif %}
+            </ul>
+            {% comment %}
+            <form class="form-inline my-2 my-lg-0">
+              <input class="form-control mr-sm-2" type="text" placeholder="Search" aria-label="Search">
+              <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
+            </form>
+            {% endcomment %}
+          </div>
+        </nav>
 
-    {% block sub_navbar %}
-      {# Implement a sub-navbar here #}
-    {% endblock sub_navbar %}
+        {% block sub_navbar %}
+          {# Implement a sub-navbar here #}
+        {% endblock sub_navbar %}
+      </div>
 
-    <div class="container-fluid omics-alert-container">
-      {% if messages %}
-          {% for message in messages %}
-              <div class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %} omics-alert-top">{{ message }}</div>
-          {% endfor %}
-      {% endif %}
-    </div>
-
-    <div class="container-fluid omics-base-container">
       {% block content %}
         <p>Use this document as a way to quick start any new project.</p>
       {% endblock content %}
@@ -115,9 +107,7 @@
 
     <!-- Project specific Javascript -->
     {% block javascript %}
-
       <script src="{% static 'js/project.js' %}"></script>
-
     {% endblock javascript %}
 
     {# Set up Tour link #}

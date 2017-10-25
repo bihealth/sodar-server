@@ -22,6 +22,7 @@ Added
 - **Projectroles**
     - Import app from prototype
     - Add sub-navbar with project breadcrumb
+    - Move app and project editing links to project sidebar
     - Add ``get_app_plugin()`` helper function
     - Add ``validate_project_setting()`` helper function
     - Add ``get_project_setting()`` helper function
@@ -35,6 +36,7 @@ Changed
 - **General**
     - Update site from Bootstrap 4 Alpha 5 to Beta
     - Update third-party libraries to their latest versions
+    - Layout redesign
     - Switch from PhantomJS to Headless Chrome for UI tests (improved performance and stability, Bootstrap 4 Beta compatibility)
     - Include CSS and JS imports in testing configs and CI
     - General code refactoring and cleanup
