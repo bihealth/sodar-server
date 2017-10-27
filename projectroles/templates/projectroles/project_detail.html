@@ -116,20 +116,20 @@
     tourEnabled = true;
 
     tour.addStep('project_nav', {
-        title: 'Project Navigation Menu',
-        text: 'From this menu you can access project apps and actions. ' +
+        title: 'Project Sidebar',
+        text: 'From this sidebar you can access project apps and actions. ' +
               'The back link returns you to the previous level as you ' +
               'navigate within the project.',
-        attachTo: '#omics-pr-btn-back-overview bottom',
+        attachTo: '#omics-pr-sidebar right',
         advanceOn: '.docs-link click',
         showCancelLink: true
     });
 
-    if ($('.pr_app_card').length) {
+    if ($('.omics-pr-app-card').length) {
         tour.addStep('project_app_cards', {
             title: 'Project App Overviews',
             text: 'Overviews of project apps and data are presented here.',
-            attachTo: '.pr_app_card top',
+            attachTo: '.omics-pr-app-card top',
             advanceOn: '.docs-link click',
             showCancelLink: true
         });
@@ -138,7 +138,7 @@
     if ($('.omics-details-app-button').length) {
         tour.addStep('project_app_details', {
             title: 'View Details of Project App',
-            text: 'In addition to the project menu above, project apps can also ' +
+            text: 'In addition to the sidebar, project apps can also ' +
             'be accessed using the "View Details" buttons.',
             attachTo: '.omics-details-app-button left',
             advanceOn: '.docs-link click',
