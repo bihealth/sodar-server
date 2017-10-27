@@ -112,13 +112,21 @@ class Project(models.Model):
         """Version of save() to include custom validation for Project"""
         self._validate_parent()
         self._validate_title()
+        self._validate_parent_type()
         super().save(*args, **kwargs)
 
     def _validate_parent(self):
         """Validate parent value to ensure project can't be set as its own
         parent"""
-        if self.pk and self.parent == self:
+        if self.parent == self:
             raise ValidationError('Project can not be set as its own parent')
+
+    def _validate_parent_type(self):
+        """Validate parent value to ensure parent can not be a project"""
+        if (self.parent and
+                self.parent.type == OMICS_CONSTANTS['PROJECT_TYPE_PROJECT']):
+            raise ValidationError(
+                'Subprojects are only allowed within categories')
 
     def _validate_title(self):
         """Validate title against parent title to ensure they don't equal

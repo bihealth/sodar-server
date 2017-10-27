@@ -46,7 +46,8 @@ Changed
     - Internal app name is now ``filesfolders``
     - Removed example settings
 - **Projectroles**
-    - Remove restrictions for project and category nesting in models
+    - Remove two-level restriction for project and category nesting in models
+    - Only allow creation of categories on top level
     - Improved project list layout
     - Move ``OMICS_CONSTANTS`` from configuration into ``models.py``
     - Populate Role objects in a migration script instead of a fixture

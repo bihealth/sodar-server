@@ -24,22 +24,21 @@
       {% endif %}
     </ol>
 
-    <div class="d-flex ml-auto align-items-center omics-pr-navbar-right">
-      {% block sub_navbar_links %}
-        {# Additional links go here #}
-      {% endblock sub_navbar_links %}
-      {% if project %}
-        {% has_perm 'projectroles.create_project' request.user project as can_create_project %}
-        {% if can_create_project %}
-          <a href="{% url 'project_create' project=project.pk %}" id="omics-pr-link-project-create"><i class="fa fa-plus"></i> Create Project</a>
+    {% if request.resolver_match.url_name == 'home' or project and project.type == 'CATEGORY' %}
+      <div class="d-flex ml-auto align-items-center omics-pr-navbar-right">
+        {% if project %}
+          {% has_perm 'projectroles.create_project' request.user project as can_create_project %}
+          {% if can_create_project %}
+            <a href="{% url 'project_create' project=project.pk %}" id="omics-pr-link-project-create"><i class="fa fa-plus"></i> Create Project or Category</a>
+          {% endif %}
+        {% else %}
+          {% has_perm 'projectroles.create_project' request.user as can_create_project %}
+          {% if can_create_project %}
+            <a href="{% url 'project_create' %}" id="omics-pr-home-link-create"><i class="fa fa-plus"></i> Create Category</a>
+          {% endif %}
         {% endif %}
-      {% else %}
-        {% has_perm 'projectroles.create_project' request.user as can_create_project %}
-        {% if can_create_project %}
-          <a href="{% url 'project_create' %}" id="omics-pr-home-link-create"><i class="fa fa-plus"></i> Create Project</a>
-        {% endif %}
-      {% endif %}
-    </div>
+      </div>
+    {% endif %}
   </div>
 {% endblock sub_navbar %}
 

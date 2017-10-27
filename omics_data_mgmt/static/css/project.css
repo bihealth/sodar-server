@@ -99,7 +99,7 @@ nav.omics-base-navbar {
 
 div.omics-alert-container {
   margin-bottom: 0;
-  max-height: 50px;
+  min-height: 50px;
 }
 
 div.omics-hr-container {

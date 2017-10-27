@@ -132,7 +132,7 @@ class TestProjectCreateView(TestViewsBase, ProjectMixin, RoleAssignmentMixin):
     def test_render_sub(self):
         """Test rendering of Project creation form if creating a subproject"""
         self.project = self._make_project(
-            'TestProject', PROJECT_TYPE_PROJECT, None)
+            'TestProject', PROJECT_TYPE_CATEGORY, None)
         self.owner_as = self._make_assignment(
             self.project, self.user, self.role_owner)
 
@@ -156,8 +156,25 @@ class TestProjectCreateView(TestViewsBase, ProjectMixin, RoleAssignmentMixin):
             form.fields['parent'].choices, [
                 (self.project.pk, self.project.title)])
 
-    def test_create_project(self):
-        """Test Project creation"""
+    def test_render_sub_project(self):
+        """Test rendering of Project creation form if creating a subproject
+        under a project (should fail with redirect)"""
+        self.project = self._make_project(
+            'TestProject', PROJECT_TYPE_PROJECT, None)
+        self.owner_as = self._make_assignment(
+            self.project, self.user, self.role_owner)
+
+        # Create another user to enable checking for owner selection
+        self.user_new = self.make_user('newuser')
+
+        with self.login(self.user):
+            response = self.client.get(
+                reverse('project_create', kwargs={'project': self.project.pk}))
+
+        self.assertEqual(response.status_code, 302)
+
+    def test_create_top_level_category(self):
+        """Test creation of top level category"""
 
         # Assert precondition
         self.assertEqual(Project.objects.all().count(), 0)
@@ -165,7 +182,7 @@ class TestProjectCreateView(TestViewsBase, ProjectMixin, RoleAssignmentMixin):
         # Issue POST request
         values = {
             'title': 'TestProject',
-            'type': PROJECT_TYPE_PROJECT,
+            'type': PROJECT_TYPE_CATEGORY,
             'parent': None,
             'owner': self.user.pk,
             'submit_status': SUBMIT_STATUS_OK,
@@ -184,7 +201,7 @@ class TestProjectCreateView(TestViewsBase, ProjectMixin, RoleAssignmentMixin):
         expected = {
             'id': project.pk,
             'title': 'TestProject',
-            'type': PROJECT_TYPE_PROJECT,
+            'type': PROJECT_TYPE_CATEGORY,
             'parent': None,
             'submit_status': SUBMIT_STATUS_OK,
             'description': 'description'}

@@ -8,7 +8,7 @@
   {% elif parent.pk %}
     Create Project or Category Under {{ parent.title }}
   {% else %}
-    Create Top Level Project or Category
+    Create Top Level Category
   {% endif %}
 {% endblock title %}
 
@@ -40,7 +40,7 @@
   {% elif parent.pk %}
     <h2>Create Project or Category Under {{ parent.title }}</h2>
   {% else %}
-    <h2>Create Top Level Project or Category</h2>
+    <h2>Create Top Level Category</h2>
   {% endif %}
 </div>
 

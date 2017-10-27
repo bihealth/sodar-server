@@ -39,9 +39,12 @@ class TestEmailSending(TestCase, ProjectMixin, RoleAssignmentMixin):
         # Init users
         self.user_owner = self.make_user('owner')
 
-        # Init project
+        # Init projects
+        self.category = self._make_project(
+            'top_category', PROJECT_TYPE_CATEGORY, None)
+
         self.project = self._make_project(
-            'top_project', PROJECT_TYPE_PROJECT, None)
+            'sub_project', PROJECT_TYPE_PROJECT, self.category)
 
         # Assign owner role
         self.owner_as = self._make_assignment(

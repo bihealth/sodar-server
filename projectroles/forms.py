@@ -132,6 +132,11 @@ class ProjectForm(forms.ModelForm):
                     (user.pk, get_user_display_name(user, True)) for user in
                     auth.get_user_model().objects.all().order_by('username')]
 
+                # Limit project type choice to category
+                force_select_value(
+                    self.fields['type'],
+                    (PROJECT_TYPE_CATEGORY, 'Category'))
+
                 self.fields['parent'].disabled = True
 
     def clean(self):

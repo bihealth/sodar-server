@@ -438,6 +438,21 @@ class ProjectCreateView(
         kwargs.update({'current_user': self.request.user})
         return kwargs
 
+    def get(self, request, *args, **kwargs):
+        """Override get() to limit project creation under other projects"""
+        if 'project' in self.kwargs:
+            project = Project.objects.get(pk=self.kwargs['project'])
+
+            if project.type != PROJECT_TYPE_CATEGORY:
+                messages.error(
+                    self.request,
+                    'Creating a project within a project is not allowed')
+                return HttpResponseRedirect(
+                    reverse(
+                        'project_detail', kwargs={'pk': project.pk}))
+
+        return super(ProjectCreateView, self).get(request, *args, **kwargs)
+
 
 class ProjectUpdateView(
         LoginRequiredMixin, LoggedInPermissionMixin, ProjectContextMixin,

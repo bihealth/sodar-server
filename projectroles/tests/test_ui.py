@@ -113,12 +113,6 @@ class TestUIBase(
             type=PROJECT_TYPE_PROJECT,
             parent=self.category)
 
-        # Top level project
-        self.project_top = self._make_project(
-            title='TestProjectTop',
-            type=PROJECT_TYPE_PROJECT,
-            parent=None)
-
         # Init role assignments
 
         # Category
@@ -136,18 +130,6 @@ class TestUIBase(
             self.project, self.user_contributor, self.role_contributor)
         self.as_guest = self._make_assignment(
             self.project, self.user_guest, self.role_guest)
-
-        # Top level project (same roles as in self.project)
-        self.as_owner = self._make_assignment(
-            self.project_top, self.user_owner, self.role_owner)
-        self.as_delegate = self._make_assignment(
-            self.project_top, self.user_delegate, self.role_delegate)
-        self.as_staff = self._make_assignment(
-            self.project_top, self.user_staff, self.role_staff)
-        self.as_contributor = self._make_assignment(
-            self.project_top, self.user_contributor, self.role_contributor)
-        self.as_guest = self._make_assignment(
-            self.project_top, self.user_guest, self.role_guest)
 
         super(TestUIBase, self).setUp()
 
@@ -298,18 +280,16 @@ class TestProjectDetail(TestUIBase):
     """Tests for the project detail page UI functionalities"""
 
     def test_project_links(self):
-        """Test visibility of top level project links according to user
+        """Test visibility of project links according to user
         permissions"""
         expected = [
             (self.superuser, [
                 'omics-pr-link-project-roles',
                 'omics-pr-link-project-update',
-                'omics-pr-link-project-create',
                 'omics-pr-link-project-settings']),
             (self.as_owner.user, [
                 'omics-pr-link-project-roles',
                 'omics-pr-link-project-update',
-                'omics-pr-link-project-create',
                 'omics-pr-link-project-settings']),
             (self.as_delegate.user, [
                 'omics-pr-link-project-roles',
@@ -323,7 +303,7 @@ class TestProjectDetail(TestUIBase):
                 'omics-pr-link-project-roles'])]
 
         url = reverse(
-            'project_detail', kwargs={'pk': self.project_top.pk})
+            'project_detail', kwargs={'pk': self.project.pk})
 
         self.assert_element_set(expected, PROJECT_LINK_IDS, url)
 
