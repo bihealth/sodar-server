@@ -16,6 +16,7 @@
    See https://github.com/django-debug-toolbar/django-debug-toolbar/issues/742
    and https://github.com/pydanny/cookiecutter-django/issues/317
 */
+
 [hidden][style="display: block;"] {
   display: block !important;
 }
@@ -24,12 +25,62 @@
 Project specific styles below
 ******************************/
 
-/* Containers */
+/* Flexbox page setup */
 
-html, body {
-  min-height: 100%;
+body {
+  margin: 0;
+}
+
+body,
+html,
+.omics-base-container {
   height: 100%;
 }
+
+.omics-base-container,
+.omics-content-container {
+  display: flex;
+}
+
+.omics-base-container {
+  flex-direction: column;
+}
+
+.omics-content-container
+{
+  height: 100%;
+  overflow-y: hidden;
+}
+
+.onics-top-container {
+  flex-direction: column;
+}
+
+.omics-content-left {
+  height: 100%;
+  width: 100px !important;
+  overflow: hidden;
+}
+
+.omics-content-right {
+  flex: 1;
+  overflow-y: scroll;
+}
+
+.omics-titlebar-container {
+  width: 100%;
+  min-height: 20px;
+  flex: 1;
+}
+
+.omics-sub-navbar-container {
+  width: 100%;
+  min-height: 20px;
+  flex: 1;
+}
+
+
+/* Containers */
 
 .row {
   margin-left: 0;
@@ -46,19 +97,9 @@ nav.omics-base-navbar {
   padding-right: 28px;
 }
 
-div.omics-base-container {
-  padding: 0;
-  min-width: 100%;
-  min-height: 100%;
-}
-
 div.omics-alert-container {
   margin-bottom: 0;
   max-height: 50px;
-}
-
-div.omics-alert-container-project {
-  margin-left: 100px;
 }
 
 div.omics-hr-container {
@@ -85,17 +126,11 @@ div.omics-subtitle-container {
   padding-top: 16px;
   padding-left: 16px;
   padding-right: 16px;
-  margin-top: 105px;
-
 }
 
 .omics-pr-content {
   padding: 28px 28px 50px;
   max-width: 1500px;
-}
-
-.omics-pr-content-project {
-  padding-left: 128px;
 }
 
 /* Titles */
@@ -293,15 +328,8 @@ a.omics-nav-link-last {
 /* Media */
 
 @media screen and (max-width: 1000px) {
-  .omics-pr-sidebar {
+  .omics-content-left {
     display: none !important;
   }
 
-  .omics-pr-content-project {
-    padding-left: 28px;
-  }
-
-  div.omics-alert-container-project {
-  margin-left: 0;
-  }
 }

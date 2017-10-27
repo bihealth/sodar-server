@@ -44,37 +44,31 @@
 {% endblock sub_navbar %}
 
 {% block content %}
-  {# Messages #}
-  {% if messages %}
-    {% if project %}
-      <div class="container-fluid omics-alert-container omics-alert-container-project">
-    {% else %}
+
+  {% if project %}
+    <div class="omics-content-left">
+      {# Sidebar #}
+      <div class="col h-100 bg-dark text-center omics-pr-sidebar">
+        {% include 'projectroles/_project_sidebar.html' %}
+      </div>
+    </div>
+  {% endif %}
+
+  <div class="omics-content-right">
+    {# Messages #}
+    {% if messages %}
       <div class="container-fluid omics-alert-container">
-    {% endif %}
       {% for message in messages %}
         <div class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %} omics-alert-top">{{ message }}</div>
       {% endfor %}
-    </div>
-    {% endif %}
-
-  <div class="row h-100">
-    {# Sidebar #}
-    {% if project %}
-      <div class="col h-100 fixed-top bg-dark text-center omics-pr-sidebar">
-        {% include 'projectroles/_project_sidebar.html' %}
       </div>
     {% endif %}
 
     {# Actual content #}
-    {% if project %}
-      <div class="col omics-pr-content omics-pr-content-project" id="omics-pr-content">
-    {% else %}
-      <div class="col omics-pr-content" id="omics-pr-content">
-    {% endif %}
+    <div class="container-fluid omics-pr-content" id="omics-pr-content">
       {% block projectroles %}
         Projectroles app content here
       {% endblock projectroles %}
     </div>
-
   </div>
 {% endblock content %}
