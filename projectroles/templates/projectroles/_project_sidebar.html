@@ -15,15 +15,15 @@
 
         {# Overview #}
         <li id="omics-pr-nav-project-detail" class="nav-item {% get_link_state projectroles_urls request.resolver_match.url_name 'project_detail' %}">
-          <a class="nav-link"
+          <a class="nav-link omics-pr-sidebar-nav-link"
              href="{% url 'project_detail' pk=project.pk %}"
              id="omics-pr-link-project-detail">
             {% if project.type == PROJECT_TYPE_CATEGORY %}
-              <i class="fa fa-cubes fa-3x"></i>
+              <i class="fa fa-cubes"></i>
             {% else %}
-              <i class="fa fa-cube fa-3x"></i>
+              <i class="fa fa-cube"></i>
             {% endif %}
-            <br />Overview
+            <br />{% get_project_type_str project %} Overview
           </a>
         </li>
 
@@ -36,7 +36,7 @@
                 <a class="nav-link"
                    href="{% url plugin.entry_point_url_id project=project.pk %}"
                    id="omics-pr-link-app-plugin-{{ plugin.name }}">
-                  <i class="fa fa-{{ plugin.icon }} fa-3x"></i><br />{{ plugin.title }}
+                  <i class="fa fa-{{ plugin.icon }}"></i><br />{{ plugin.title }}
                 </a>
               </li>
             {% endif %}
@@ -49,7 +49,7 @@
             <a class="nav-link"
                href="{% url 'project_roles' pk=project.pk %}"
                id="omics-pr-link-project-roles">
-              <i class="fa fa-users fa-3x"></i><br />User Roles
+              <i class="fa fa-users"></i><br />User Roles
             </a>
           </li>
         {% endif %}
@@ -58,7 +58,7 @@
             <a class="nav-link"
                href="{% url 'settings_update' project=project.pk %}"
                id="omics-pr-link-project-settings">
-              <i class="fa fa-wrench fa-3x"></i><br />Project Settings
+              <i class="fa fa-wrench"></i><br />{% get_project_type_str project %} Settings
             </a>
           </li>
         {% endif %}
@@ -67,7 +67,7 @@
             <a class="nav-link"
                href="{% url 'project_update' pk=project.pk %}"
                id="omics-pr-link-project-update">
-              <i class="fa fa-pencil fa-3x"></i><br />Update Project
+              <i class="fa fa-pencil"></i><br />Update {% get_project_type_str project %}
             </a>
           </li>
         {% endif %}

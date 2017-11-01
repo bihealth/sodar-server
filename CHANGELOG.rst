@@ -70,6 +70,7 @@ Fixed
     - Don't allow matching titles for subproject and parent
     - App plugin element IDs in templates
     - Project context for role invite revocation page
+    - Project type correctly displayed for user
 - **Timeline**
     - Tour help anchoring for list navigation buttons
     - User column link was missing the ``mailto:`` protocol syntax

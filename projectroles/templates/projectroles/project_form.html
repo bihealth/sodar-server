@@ -1,10 +1,11 @@
 {% extends 'projectroles/base.html' %}
 {% load rules %}
 {% load crispy_forms_filters %}
+{% load projectroles_tags %}
 
 {% block title %}
   {% if object.pk %}
-    Update {{ object.title }}
+    Update {% get_project_type_str object %} {{ object.title }}
   {% elif parent.pk %}
     Create Project or Category Under {{ parent.title }}
   {% else %}
@@ -36,7 +37,7 @@
 
 <div class="row omics-subtitle-container">
   {% if object.pk %}
-    <h3>Update Project</h3>
+    <h3>Update {% get_project_type_str object %}</h3>
   {% elif parent.pk %}
     <h2>Create Project or Category Under {{ parent.title }}</h2>
   {% else %}

@@ -7,6 +7,10 @@ from ..models import Project, RoleAssignment, OMICS_CONSTANTS
 # Local constants
 INDENT_PX = 25
 
+PROJECT_TYPE_DISPLAY = {
+    'PROJECT': 'Project',
+    'CATEGORY': 'Category'}
+
 
 register = template.Library()
 
@@ -95,14 +99,19 @@ def render_markdown(raw_markdown):
 def get_link_state(app_urls, url_name, link_names=None):
     """Return "active" if url_name is found in app_plugin.urls. If link_names is
     set, only return "active" if url_name is found in link_names."""
-    url_found = True if url_name in [u.name for u in app_urls] else False
-
     if url_name in [u.name for u in app_urls]:
         if link_names:
             if not isinstance(link_names, list):
                 link_names = [link_names]
 
             if url_name not in link_names:
-                return None
+                return ''
 
         return 'active'
+
+
+@register.simple_tag
+def get_project_type_str(project, capitalize=True):
+    """Return printable version of the project type"""
+    ret = PROJECT_TYPE_DISPLAY[project.type]
+    return ret.lower() if not capitalize else ret

@@ -287,10 +287,13 @@ class ProjectModifyMixin(ModelFormMixin):
         project.save()  # Got to save Project in order to refer to it
         owner = form.cleaned_data.get('owner')
         extra_data = {}
+        type_str = 'Project' if project.type == PROJECT_TYPE_PROJECT else \
+            'Category'
 
         if timeline:
             if form_action == 'create':
-                tl_desc = 'create project with {owner} as owner'
+                tl_desc = 'create ' + type_str.lower() + \
+                          ' with {owner} as owner'
                 extra_data = {
                     'title': project.title,
                     'owner': owner.username,
@@ -298,7 +301,7 @@ class ProjectModifyMixin(ModelFormMixin):
                     'readme': project.readme.raw}
 
             else:
-                tl_desc = 'update project'
+                tl_desc = 'update ' + type_str.lower()
                 upd_fields = []
 
                 if old_data['title'] != project.title:
@@ -398,7 +401,7 @@ class ProjectModifyMixin(ModelFormMixin):
         if tl_event:
             tl_event.set_status('OK')
 
-        messages.success(self.request, 'Project {}d.'.format(form_action))
+        messages.success(self.request, '{} {}d.'.format(type_str, form_action))
         return HttpResponseRedirect(reverse(
             'project_detail', kwargs={'pk': project.pk}))
 

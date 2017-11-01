@@ -120,6 +120,11 @@ div.omics-subtitle-container {
   min-height: 50px;
 }
 
+.omics-pr-navbar i {
+  min-width: 15px;
+  display: inline-block;
+}
+
 .omics-pr-sidebar {
   width: 100px;
   max-width: 100px;
@@ -272,7 +277,8 @@ dl.omics-dl dd {
 }
 
 .omics-pr-sidebar-nav li i {
-  padding-bottom: 3px;
+  padding-bottom: 5px;
+  font-size: 42px;
 }
 
 a.omics-nav-link-last {
