@@ -10,13 +10,14 @@
 {% omics_constant 'PROJECT_TYPE_CATEGORY' as PROJECT_TYPE_CATEGORY %}
 
   <nav class="nav navbar-expand-lg navbar-dark bg-dark">
-    <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navbarWEX" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarWEX">
+    <div class="collapse navbar-collapse" id="omics-pr-sidebar-navbar">
       <ul class="navbar-nav flex-column omics-pr-sidebar-nav">
-        <li class="nav-item">
-          <a class="nav-link" href="{% url 'project_detail' pk=project.pk %}">
+
+        {# Overview #}
+        <li id="omics-pr-nav-project-detail" class="nav-item {% get_link_state projectroles_urls request.resolver_match.url_name 'project_detail' %}">
+          <a class="nav-link"
+             href="{% url 'project_detail' pk=project.pk %}"
+             id="omics-pr-link-project-detail">
             {% if project.type == PROJECT_TYPE_CATEGORY %}
               <i class="fa fa-cubes fa-3x"></i>
             {% else %}
@@ -25,15 +26,16 @@
             <br />Overview
           </a>
         </li>
+
         {# App plugins #}
         {% if project.type != PROJECT_TYPE_CATEGORY %}
           {% for plugin in app_plugins %}
             {% has_perm plugin.app_permission request.user project as can_view_app %}
             {% if can_view_app %}
-              <li class="nav-item">
+              <li id="omics-pr-nav-app-plugin-{{ plugin.name }}" class="nav-item {% get_link_state plugin.urls request.resolver_match.url_name %}">
                 <a class="nav-link"
                    href="{% url plugin.entry_point_url_id project=project.pk %}"
-                   id="omics-pr-link-app-plugin-{{ plugin.pk }}">
+                   id="omics-pr-link-app-plugin-{{ plugin.name }}">
                   <i class="fa fa-{{ plugin.icon }} fa-3x"></i><br />{{ plugin.title }}
                 </a>
               </li>
@@ -43,7 +45,7 @@
 
         {# Role and project editing #}
         {% if project.type != PROJECT_TYPE_CATEGORY and can_view_roles %}
-          <li class="nav-item">
+          <li id="omics-pr-nav-project-roles" class="nav-item {% get_link_state projectroles_urls request.resolver_match.url_name role_urls %}">
             <a class="nav-link"
                href="{% url 'project_roles' pk=project.pk %}"
                id="omics-pr-link-project-roles">
@@ -52,7 +54,7 @@
           </li>
         {% endif %}
         {% if project.type != PROJECT_TYPE_CATEGORY and can_update_settings %}
-          <li class="nav-item">
+          <li id="omics-pr-nav-project-settings" class="nav-item {% get_link_state projectroles_urls request.resolver_match.url_name 'settings_update' %}">
             <a class="nav-link"
                href="{% url 'settings_update' project=project.pk %}"
                id="omics-pr-link-project-settings">
@@ -61,7 +63,7 @@
           </li>
         {% endif %}
         {% if can_update_project %}
-          <li class="nav-item">
+          <li id="omics-pr-nav-project-update" class="nav-item {% get_link_state projectroles_urls request.resolver_match.url_name 'project_update' %}">
             <a class="nav-link"
                href="{% url 'project_update' pk=project.pk %}"
                id="omics-pr-link-project-update">
@@ -69,7 +71,7 @@
             </a>
           </li>
         {% endif %}
+
      </ul>
     </div>
   </nav>
-

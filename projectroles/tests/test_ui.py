@@ -13,7 +13,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
 
 from projectroles.models import Role, OMICS_CONSTANTS
-from projectroles.plugins import get_active_plugins
+from projectroles.plugins import get_active_plugins, ProjectAppPluginPoint
 from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin,\
     ProjectInviteMixin
 
@@ -249,6 +249,34 @@ class TestUIBase(
             for n in not_expected:
                 with self.assertRaises(NoSuchElementException):
                     self.selenium.find_element_by_id(n)
+
+    def assert_element_active(self, user, element_id, all_elements, url):
+        """
+        Assert the "active" status of an element based on logged user as well
+        as unset status of other elements.
+        :param user: User for logging in
+        :param element_id: ID of element to test (string)
+        :param all_elements: All possible elements in the set (list of strings)
+        :param url: URL to test (string)
+        """
+        self.login_and_redirect(user, url)
+
+        # Wait for element to be present (sometimes this is too slow)
+        WebDriverWait(self.selenium, self.wait_time).until(
+            ec.presence_of_element_located((By.ID, element_id)))
+
+        element = self.selenium.find_element_by_id(element_id)
+
+        self.assertIsNotNone(element)
+        self.assertIn('active', element.get_attribute('class'))
+
+        not_expected = [e for e in all_elements if e != element_id]
+        # print(not_expected)     # DEBUG
+
+        for n in not_expected:
+            element = self.selenium.find_element_by_id(n)
+            self.assertIsNotNone(element)
+            self.assertNotIn('active', element.get_attribute('class'))
 
 
 class TestProjectList(TestUIBase):
@@ -503,3 +531,140 @@ class TestPlugins(TestUIBase):
         expected = [(self.superuser, self.plugin_count)]
         url = reverse('project_detail', kwargs={'pk': self.project.pk})
         self.assert_element_count(expected, url, 'omics-pr-app-item')
+
+
+class TestProjectSidebar(TestUIBase, ProjectInviteMixin):
+    """Tests for the project sidebar"""
+
+    def setUp(self):
+        super(TestProjectSidebar, self).setUp()
+
+        self.sidebar_ids = [
+            'omics-pr-nav-project-detail',
+            'omics-pr-nav-project-roles',
+            'omics-pr-nav-project-settings',
+            'omics-pr-nav-project-update']
+
+        # Add app plugin navs
+        for p in get_active_plugins():
+            self.sidebar_ids.append('omics-pr-nav-app-plugin-{}'.format(p.name))
+
+    def test_render_detail(self):
+        """Test visibility of sidebar in the project_detail view"""
+        url = reverse('project_detail', kwargs={'pk': self.project.pk})
+
+        self.assert_element_exists(
+            [self.superuser], url, 'omics-pr-sidebar', True)
+
+    def test_render_home(self):
+        """Test visibility of sidebar in the home view"""
+        url = reverse('home')
+
+        self.assert_element_exists(
+            [self.superuser], url, 'omics-pr-sidebar', False)
+
+    def test_app_links(self):
+        """Test visibility of app links"""
+        url = reverse('project_detail', kwargs={'pk': self.project.pk})
+        expected = [(self.superuser, len(get_active_plugins()))]
+
+        self.assert_element_count(
+            expected, url, 'omics-pr-nav-app-plugin')
+
+    def test_link_active_detail(self):
+        """Test active status of link on the project_detail page"""
+        url = reverse('project_detail', kwargs={'pk': self.project.pk})
+
+        self.assert_element_active(
+            self.superuser, 'omics-pr-nav-project-detail',
+            self.sidebar_ids, url)
+
+    def test_link_active_role_list(self):
+        """Test active status of link on the project roles page"""
+        self.assert_element_active(
+            self.superuser, 'omics-pr-nav-project-roles', self.sidebar_ids,
+            reverse('project_roles', kwargs={'pk': self.project.pk}))
+
+    def test_link_active_role_create(self):
+        """Test active status of link on the role creation page"""
+        self.assert_element_active(
+            self.superuser, 'omics-pr-nav-project-roles', self.sidebar_ids,
+            reverse('role_create', kwargs={'project': self.project.pk}))
+
+    def test_link_active_role_update(self):
+        """Test active status of link on the role update page"""
+        self.assert_element_active(
+            self.superuser, 'omics-pr-nav-project-roles', self.sidebar_ids,
+            reverse(
+                'role_update', kwargs={
+                    'project': self.project.pk,
+                    'pk': self.as_contributor.pk}))
+
+    def test_link_active_role_delete(self):
+        """Test active status of link on the role deletion page"""
+        self.assert_element_active(
+            self.superuser, 'omics-pr-nav-project-roles', self.sidebar_ids,
+            reverse(
+                'role_delete', kwargs={
+                    'project': self.project.pk,
+                    'pk': self.as_contributor.pk}))
+
+    def test_link_active_role_invites(self):
+        """Test active status of link on the invites page"""
+        self.assert_element_active(
+            self.superuser, 'omics-pr-nav-project-roles', self.sidebar_ids,
+            reverse('role_invites', kwargs={'project': self.project.pk}))
+
+    def test_link_active_role_invite_create(self):
+        """Test active status of link on the invite create page"""
+        self.assert_element_active(
+            self.superuser, 'omics-pr-nav-project-roles', self.sidebar_ids,
+            reverse('role_invite_create', kwargs={'project': self.project.pk}))
+
+    def test_link_active_role_invite_resend(self):
+        """Test active status of link on the invite resend page"""
+        invite = self._make_invite(
+            email='test@example.com',
+            project=self.project,
+            role=self.role_contributor,
+            issuer=self.as_owner.user,
+            message='')
+
+        self.assert_element_active(
+            self.superuser, 'omics-pr-nav-project-roles', self.sidebar_ids,
+            reverse(
+                'role_invite_resend', kwargs={
+                    'project': self.project.pk,
+                    'pk': invite.pk}))
+
+    def test_link_active_role_invite_revoke(self):
+        """Test active status of link on the invite revoke page"""
+        invite = self._make_invite(
+            email='test@example.com',
+            project=self.project,
+            role=self.role_contributor,
+            issuer=self.as_owner.user,
+            message='')
+
+        self.assert_element_active(
+            self.superuser, 'omics-pr-nav-project-roles', self.sidebar_ids,
+            reverse(
+                'role_invite_revoke', kwargs={
+                    'project': self.project.pk,
+                    'pk': invite.pk}))
+
+    def test_link_active_settings(self):
+        """Test active status of link on the project_settings page"""
+        url = reverse('settings_update', kwargs={'project': self.project.pk})
+
+        self.assert_element_active(
+            self.superuser, 'omics-pr-nav-project-settings',
+            self.sidebar_ids, url)
+
+    def test_link_active_update(self):
+        """Test active status of link on the project_update page"""
+        url = reverse('project_update', kwargs={'pk': self.project.pk})
+
+        self.assert_element_active(
+            self.superuser, 'omics-pr-nav-project-update',
+            self.sidebar_ids, url)

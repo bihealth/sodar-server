@@ -68,6 +68,8 @@ Fixed
 - **Projectroles**
     - Check for project title uniqueness
     - Don't allow matching titles for subproject and parent
+    - App plugin element IDs in templates
+    - Project context for role invite revocation page
 - **Timeline**
     - Tour help anchoring for list navigation buttons
     - User column link was missing the ``mailto:`` protocol syntax

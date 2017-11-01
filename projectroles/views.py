@@ -1062,7 +1062,8 @@ class ProjectInviteResendView(
 
 
 class ProjectInviteRevokeView(
-        LoginRequiredMixin, LoggedInPermissionMixin, TemplateView):
+        LoginRequiredMixin, LoggedInPermissionMixin, ProjectContextMixin,
+        TemplateView):
     """Batch delete/move confirm view"""
     template_name = 'projectroles/invite_revoke_confirm.html'
     permission_required = 'projectroles.invite_users'

@@ -89,3 +89,20 @@ def get_user_role_str(project, user):
 @register.simple_tag
 def render_markdown(raw_markdown):
     return mistune.markdown(raw_markdown)
+
+
+@register.simple_tag
+def get_link_state(app_urls, url_name, link_names=None):
+    """Return "active" if url_name is found in app_plugin.urls. If link_names is
+    set, only return "active" if url_name is found in link_names."""
+    url_found = True if url_name in [u.name for u in app_urls] else False
+
+    if url_name in [u.name for u in app_urls]:
+        if link_names:
+            if not isinstance(link_names, list):
+                link_names = [link_names]
+
+            if url_name not in link_names:
+                return None
+
+        return 'active'
