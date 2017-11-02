@@ -274,11 +274,12 @@ dl.omics-dl dd {
   font-size: 80%;
   line-height: normal;
   padding-bottom: 8px;
+  height: 82px;
 }
 
 .omics-pr-sidebar-nav li i {
-  padding-bottom: 5px;
-  font-size: 42px;
+  padding-bottom: 4px;
+  font-size: 32px;
 }
 
 a.omics-nav-link-last {
