@@ -21,8 +21,8 @@ Added
     - Add page title to main files list
 - **Projectroles**
     - Import app from prototype
-    - Add sub-navbar with project breadcrumb
-    - Move app and project editing links to project sidebar
+    - Add sub-navbar with project breadcrumb (issue #20)
+    - Move app and project editing links to project sidebar (issue #20)
     - Add ``get_app_plugin()`` helper function
     - Add ``validate_project_setting()`` helper function
     - Add ``get_project_setting()`` helper function
@@ -36,7 +36,7 @@ Changed
 - **General**
     - Update site from Bootstrap 4 Alpha 5 to Beta
     - Update third-party libraries to their latest versions
-    - Layout redesign
+    - Layout redesign (issue #20)
     - Switch from PhantomJS to Headless Chrome for UI tests (improved performance and stability, Bootstrap 4 Beta compatibility)
     - Include CSS and JS imports in testing configs and CI
     - General code refactoring and cleanup
@@ -44,7 +44,6 @@ Changed
 - **Filesfolders**
     - Redesign data model with inheritance to avoid field repetition
     - Internal app name is now ``filesfolders``
-    - Removed example settings
 - **Projectroles**
     - Remove two-level restriction for project and category nesting in models
     - Only allow creation of categories on top level
@@ -70,7 +69,7 @@ Fixed
     - Don't allow matching titles for subproject and parent
     - App plugin element IDs in templates
     - Project context for role invite revocation page
-    - Project type correctly displayed for user
+    - Project type correctly displayed for user (issue #27)
 - **Timeline**
     - Tour help anchoring for list navigation buttons
     - User column link was missing the ``mailto:`` protocol syntax
