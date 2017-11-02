@@ -4,7 +4,6 @@
 {% has_perm 'projectroles.view_project' request.user project as can_view_project %}
 {% has_perm 'projectroles.view_project_roles' request.user project as can_view_roles %}
 {% has_perm 'projectroles.update_project' request.user project as can_update_project %}
-{% has_perm 'projectroles.create_project' request.user project as can_create_project %}
 {% has_perm 'projectroles.update_project_settings' request.user project as can_update_settings %}
 
 {% omics_constant 'PROJECT_TYPE_CATEGORY' as PROJECT_TYPE_CATEGORY %}

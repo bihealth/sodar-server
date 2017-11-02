@@ -34,10 +34,14 @@
 
       <!-- CSS includes -->
 
-      <!-- Fix for pull-right bug when including improts -->
+      <!-- Fix for pull-right/pull-left bug when including improts -->
       <style type="text/css">
         .pull-right {
           float: right;
+        }
+
+        .pull-left {
+          float: left;
         }
       </style>
 
@@ -59,7 +63,6 @@
 
   <body>
     <div class="omics-base-container">
-
       <div class="omics-top-container">
         <div class="omics-titlebar-container">
           <nav class="navbar navbar-expand-lg navbar-dark bg-dark omics-base-navbar">
@@ -75,7 +78,7 @@
                 </li>
                 {% if request.user.is_authenticated %}
                   <li class="nav-item">
-                    <a id="log-out-link" class="nav-link omics-nav-link-last" href="{% url 'account_logout' %}"><i class="fa fa-sign-out"></i> {% trans "Sign Out" %}
+                    <a id="log-out-link" class="nav-link omics-nav-link-last" href="{% url 'account_logout' %}"><i class="fa fa-sign-out"></i> Sign Out
                       {% if titlebar_show_user %}
                         ({{ request.user.username }})
                       {% endif %}
@@ -83,7 +86,7 @@
                   </li>
                 {% else %}
                   <li class="nav-item">
-                    <a id="log-in-link" class="nav-link omics-nav-link-last" href="{% url 'account_login' %}"><i class="fa fa-sign-in"></i> {% trans "Sign In" %}</a>
+                    <a id="log-in-link" class="nav-link omics-nav-link-last" href="{% url 'account_login' %}"><i class="fa fa-sign-in"></i> Sign In</a>
                   </li>
                 {% endif %}
               </ul>

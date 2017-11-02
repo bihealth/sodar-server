@@ -259,6 +259,17 @@ dl.omics-dl dd {
   height: 1.75em;
 }
 
+.omics-pr-project-menu-btn-group {
+  height: 100%;
+  padding-right: 8px;
+  display: none;
+  font-size: 100%;
+}
+
+.omics-pr-project-menu-btn-group a {
+  line-height: 24px;
+}
+
 .omics-edit-dropdown {
   height: 2.0em !important;
   margin-bottom: 0;
@@ -337,6 +348,10 @@ a.omics-nav-link-last {
 @media screen and (max-width: 1000px) {
   .omics-content-left {
     display: none !important;
+  }
+
+  .omics-pr-project-menu-btn-group {
+    display: inherit !important;
   }
 
 }
