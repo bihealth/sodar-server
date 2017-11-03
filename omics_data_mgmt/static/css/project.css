@@ -97,6 +97,10 @@ nav.omics-base-navbar {
   padding-right: 28px;
 }
 
+.omics-base-navbar-search {
+  padding-right: 24px;
+}
+
 div.omics-alert-container {
   margin-bottom: 0;
   min-height: 50px;

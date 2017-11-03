@@ -27,6 +27,9 @@ Added
     - Add ``validate_project_setting()`` helper function
     - Add ``get_project_setting()`` helper function
     - Add ``set_project_setting()`` helper function
+    - Initial project search by title (issue #17)
+    - Add ``ProjectManager`` in models for project search (issue #17)
+    - More helper functions in Project model: ``get_parents()``, ``get_full_title()``
 - **Timeline**
     - Import app and backend plugin from prototype
 
@@ -53,6 +56,7 @@ Changed
     - Import patched ``django-plugins`` from GitHub instead of including in project directly
     - Include modified fields in project_update timeline event
     - Move Project settings helper functions to ``project_settings.py``
+    - Disable help link instead of hiding if no tour help is available
     - Refactor URL kwargs
 - **Timeline**
     - Enable event details popover on the project details page

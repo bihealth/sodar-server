@@ -138,6 +138,26 @@ class TestProject(TestCase, ProjectMixin):
         """Test children getting function for sub project"""
         self.assertEqual(self.project_sub.get_depth(), 1)
 
+    def test_get_parents_top(self):
+        """Test get parents function for top category"""
+        self.assertEqual(list(self.category_top.get_parents()), [])
+
+    def test_get_parents_sub(self):
+        """Test get parents function for sub project"""
+        self.assertEqual(
+            list(self.project_sub.get_parents()), [self.category_top])
+
+    def test_get_full_title_top(self):
+        """Test full title function for top category"""
+        self.assertEqual(
+            self.category_top.get_full_title(), self.category_top.title)
+
+    def test_get_full_title_sub(self):
+        """Test full title function for sub project"""
+        expected = self.category_top.title + ' / ' + self.project_sub.title
+        self.assertEqual(
+            self.project_sub.get_full_title(), expected)
+
     def test_validate_parent(self):
         """Test parent ForeignKey validation: project can't be its own
         parent"""
@@ -150,7 +170,7 @@ class TestProject(TestCase, ProjectMixin):
         """Test title validation: title can't be equal between subproject and
         parent parent"""
         with self.assertRaises(ValidationError):
-            project_new = self._make_project(
+            self._make_project(
                 title='TestProjectSub',
                 type=PROJECT_TYPE_PROJECT,
                 parent=self.project_sub)

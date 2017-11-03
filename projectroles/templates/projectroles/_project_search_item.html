@@ -1,0 +1,32 @@
+{% load rules %}
+{% load projectroles_tags %}
+
+<tr>
+  <td style="white-space: nowrap;">
+    {% if p.type == 'CATEGORY' %}
+      <i class="fa fa-cubes"></i>
+    {% else %}
+      <i class="fa fa-cube"></i>
+    {% endif %}
+    <a href="{% url 'project_detail' pk=p.pk %}">
+      {% if p.get_parents %}
+        <span class="text-muted">
+          {% for parent in p.get_parents %}
+            {{ parent.title }} /
+          {% endfor %}
+        </span>
+      {% endif %}
+        {{ p.title }}
+    </a>
+  </td>
+  <td>
+    {% get_description p %}
+  </td>
+  <td>
+    {% if request.user.is_superuser %}
+      <span class="text-danger">superuser</span>
+    {% else %}
+      {% get_user_role_str p request.user %}
+    {% endif %}
+  </td>
+</tr>

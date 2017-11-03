@@ -73,6 +73,15 @@
 
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
               <ul class="navbar-nav ml-auto">
+                {# Search #}
+                <li class="nav-item omics-base-navbar-search">
+                  <form class="form-inline" method="get" action="{% url 'project_search' %}">
+                    <input class="form-control mr-sm-2" type="text" placeholder="Project title" name="title" aria-label="Project title">
+                     <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
+                  </form>
+                </li>
+
+                {# Nav links #}
                 <li class="nav-item">
                   <a class="nav-link" id="site-help-link"><i class="fa fa-info-circle"></i> Help</a>
                 </li>
@@ -90,12 +99,7 @@
                   </li>
                 {% endif %}
               </ul>
-              {% comment %}
-              <form class="form-inline my-2 my-lg-0">
-              <input class="form-control mr-sm-2" type="text" placeholder="Search" aria-label="Search">
-               <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
-              </form>
-              {% endcomment %}
+
             </div>
           </nav>
         </div>
@@ -121,7 +125,7 @@
 
     <script type="text/javascript">
         if (tourEnabled == false) {
-            $('#site-help-link').hide();
+            $('#site-help-link').addClass('disabled');
         }
 
         $('#site-help-link').click(function() {

@@ -10,8 +10,8 @@
       {% else %}
         <li class="breadcrumb-item"><i class="fa fa-home"></i> <a href="{% url 'home' %}">Home</a></li>
       {% endif %}
-      {% if project_breadcrumb %}
-        {% for p in project_breadcrumb %}
+      {% if project.get_parents %}
+        {% for p in project.get_parents %}
           <li class="breadcrumb-item"><a href="{% url 'project_detail' pk=p.pk %}">{{ p.title }}</a></li>
         {% endfor %}
       {% endif %}

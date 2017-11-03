@@ -137,17 +137,6 @@ class ProjectContextMixin(ContextMixin):
                 p for p in plugins if p.is_active()],
                 key=lambda x: x.details_position)
 
-        # Project breadcrumb
-        if 'project' in context:
-            breadcrumb = []
-            parent = context['project'].parent
-
-            while parent:
-                breadcrumb.append(parent)
-                parent = parent.parent
-
-            context['project_breadcrumb'] = reversed(breadcrumb)
-
         return context
 
 
@@ -237,6 +226,19 @@ class ProjectDetailView(
         else:
             context['role'] = RoleAssignment.objects.get_assignment(
                 self.request.user, self.object).role
+
+        return context
+
+
+class ProjectSearchView(LoginRequiredMixin, TemplateView):
+    """View for displaying results of simple project search"""
+    template_name = 'projectroles/project_search.html'
+
+    def get_context_data(self, *args, **kwargs):
+        context = super(ProjectSearchView, self).get_context_data(
+            *args, **kwargs)
+
+        context['search_title'] = self.request.GET.get('title')
 
         return context
 

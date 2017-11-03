@@ -46,6 +46,32 @@ PROJECT_SETTING_TYPE_CHOICES = [
     ('STRING', 'String')]
 
 
+class ProjectManager(models.Manager):
+    """Manager for custom table-level Project queries"""
+    def find_by_full_title(self, user, title, type=None):
+        """
+        Return projects with a partial match in full title, including titles of
+        parent Project objects. Restrict to project type if type is set.
+        :param user: User performing the search for permission checking
+        :param title: Title substring to be searched
+        :param type: Project type or None
+        :return: Python list of Proejct objects
+        """
+        title = title.lower()
+        projects = super(
+            ProjectManager, self).get_queryset().order_by('title')
+
+        if type:
+            projects = projects.filter(type=type)
+
+        result = [
+            p for p in projects if title in p.get_full_title().lower() and (
+                user.is_superuser or p.has_role(
+                    user, include_children=False))]
+
+        return sorted(result, key=lambda x: x.get_full_title())
+
+
 class Project(models.Model):
     """An omics project. Can have one parent project in case of nested
     subprojects. The project must be of a specific type, of which "CATEGORY" and
@@ -92,6 +118,9 @@ class Project(models.Model):
         default=OMICS_CONSTANTS['SUBMIT_STATUS_OK'],
         help_text='Status of project creation')
 
+    # Set manager for custom queries
+    objects = ProjectManager()
+
     class Meta:
         # Ensure title is unique within parent project
         unique_together = ('title', 'parent')
@@ -99,8 +128,14 @@ class Project(models.Model):
         ordering = ['parent__title', 'title']
 
     def __str__(self):
-        return '{}{}'.format(
-            self.parent.title + ' / ' if self.parent else '', self.title)
+        parents = self.get_parents()
+        ret = ' / '.join([p.title for p in parents]) if parents else ''
+
+        if ret:
+            ret += ' / '
+
+        ret += self.title
+        return ret
 
     def __repr__(self):
         values = (
@@ -198,6 +233,21 @@ class Project(models.Model):
                     return True
 
         return False
+
+    def get_parents(self):
+        """Return an array of parent projects in inheritance order"""
+        ret = []
+        parent = self.parent
+
+        while parent:
+            ret.append(parent)
+            parent = parent.parent
+
+        return reversed(ret)
+
+    def get_full_title(self):
+        """Return full title of project (just an alias for __str__())"""
+        return str(self)
 
 
 class Role(models.Model):
