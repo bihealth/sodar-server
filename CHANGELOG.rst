@@ -27,8 +27,8 @@ Added
     - Add ``validate_project_setting()`` helper function
     - Add ``get_project_setting()`` helper function
     - Add ``set_project_setting()`` helper function
-    - Initial project search by title (issue #17)
-    - Add ``ProjectManager`` in models for project search (issue #17)
+    - Initial project search by title (issue #16)
+    - Add ``ProjectManager`` in models for project search (issue #16)
     - More helper functions in Project model: ``get_parents()``, ``get_full_title()``
 - **Timeline**
     - Import app and backend plugin from prototype
