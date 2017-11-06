@@ -48,21 +48,21 @@ PROJECT_SETTING_TYPE_CHOICES = [
 
 class ProjectManager(models.Manager):
     """Manager for custom table-level Project queries"""
-    def find_by_full_title(self, user, title, type=None):
+    def find_by_full_title(self, user, title, project_type=None):
         """
         Return projects with a partial match in full title, including titles of
         parent Project objects. Restrict to project type if type is set.
         :param user: User performing the search for permission checking
         :param title: Title substring to be searched
-        :param type: Project type or None
-        :return: Python list of Proejct objects
+        :param project_type: Project type or None
+        :return: Python list of Project objects
         """
         title = title.lower()
         projects = super(
             ProjectManager, self).get_queryset().order_by('title')
 
-        if type:
-            projects = projects.filter(type=type)
+        if project_type:
+            projects = projects.filter(type=project_type)
 
         result = [
             p for p in projects if title in p.get_full_title().lower() and (

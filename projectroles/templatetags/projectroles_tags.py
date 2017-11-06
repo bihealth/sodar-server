@@ -64,7 +64,8 @@ def get_project_list_indent(project, list_parent):
 @register.simple_tag
 def get_project_search_list(user, title):
     """Return flat project list based on a title string search"""
-    return Project.objects.find_by_full_title(user, title, type='PROJECT')
+    return Project.objects.find_by_full_title(
+        user, title, project_type='PROJECT')
 
 
 @register.simple_tag

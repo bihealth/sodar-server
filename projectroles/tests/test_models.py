@@ -438,3 +438,82 @@ class TestProjectInvite(
         expected = "ProjectInvite('TestProject', 'test@example.com', " \
             "'project contributor', True)"
         self.assertEqual(repr(self.invite), expected)
+
+
+class TestProjectManager(TestCase, ProjectMixin, RoleAssignmentMixin):
+    """Tests for ProjectManager"""
+    # NOTE: These tests are not in TestProject as we also need assignments
+
+    def setUp(self):
+        # Init roles
+        self.role_owner = Role.objects.get_or_create(
+            name=PROJECT_ROLE_OWNER)[0]
+
+        # Init users
+        self.superuser = self.make_user('superuser')
+        self.superuser.is_superuser = True
+        self.user_owner = self.make_user('owner')
+        self.user_noroles = self.make_user('noroles')
+
+        # Init projects/categories
+        # Top level category
+        self.category_top = self._make_project(
+            title='TestCategoryTop',
+            type=PROJECT_TYPE_CATEGORY,
+            parent=None)
+        # Subproject under category_top
+        self.project_sub = self._make_project(
+            title='TestProjectSub',
+            type=PROJECT_TYPE_PROJECT,
+            parent=self.category_top)
+
+        # Init assignments
+        self.assignment_owner = self._make_assignment(
+            self.category_top, self.user_owner, self.role_owner)
+        self.assignment_owner = self._make_assignment(
+            self.project_sub, self.user_owner, self.role_owner)
+
+    def test_find_by_full_title_superuser(self):
+        """Test find_by_full_title() with superuser"""
+        result = Project.objects.find_by_full_title(
+            self.superuser, 'Test', project_type=None)
+        self.assertEqual(len(result), 2)
+        result = Project.objects.find_by_full_title(
+            self.superuser, 'Test', project_type=PROJECT_TYPE_PROJECT)
+        self.assertEqual(len(result), 1)
+        result = Project.objects.find_by_full_title(
+            self.superuser, 'Test', project_type=PROJECT_TYPE_CATEGORY)
+        self.assertEqual(len(result), 1)
+        result = Project.objects.find_by_full_title(
+            self.superuser, 'ThisFails', project_type=PROJECT_TYPE_CATEGORY)
+        self.assertEqual(len(result), 0)
+
+    def test_find_by_full_title_owner(self):
+        """Test find_by_full_title() with project owner"""
+        result = Project.objects.find_by_full_title(
+            self.user_owner, 'Test', project_type=None)
+        self.assertEqual(len(result), 2)
+        result = Project.objects.find_by_full_title(
+            self.user_owner, 'Test', project_type=PROJECT_TYPE_PROJECT)
+        self.assertEqual(len(result), 1)
+        result = Project.objects.find_by_full_title(
+            self.user_owner, 'Test', project_type=PROJECT_TYPE_CATEGORY)
+        self.assertEqual(len(result), 1)
+        result = Project.objects.find_by_full_title(
+            self.user_owner, 'ThisFails', project_type=PROJECT_TYPE_CATEGORY)
+        self.assertEqual(len(result), 0)
+
+    def test_find_by_full_title_noroles(self):
+        """Test find_by_full_title() with user without roles"""
+        result = Project.objects.find_by_full_title(
+            self.user_noroles, 'Test', project_type=None)
+        self.assertEqual(len(result), 0)
+        result = Project.objects.find_by_full_title(
+            self.user_noroles, 'Test', project_type=PROJECT_TYPE_PROJECT)
+        self.assertEqual(len(result), 0)
+        result = Project.objects.find_by_full_title(
+            self.user_noroles, 'Test', project_type=PROJECT_TYPE_CATEGORY)
+        self.assertEqual(len(result), 0)
+        result = Project.objects.find_by_full_title(
+            self.user_noroles, 'ThisFails', project_type=PROJECT_TYPE_CATEGORY)
+        self.assertEqual(len(result), 0)

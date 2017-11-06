@@ -52,3 +52,14 @@ var tourEnabled = false;  // Needs to set true if there is content
 $('[data-toggle="popover"]').popover({
     container: 'body'
 });
+
+
+// Disable nav project search until 3+ characters have been input
+$(document).ready(function() {
+     $('#omics-nav-search-submit').attr('disabled', 'disabled');
+     $('#omics-nav-search-input').keyup(function() {
+        if($(this).val().length > 2) {
+           $('#omics-nav-search-submit').removeAttr('disabled');
+        }
+     });
+ });

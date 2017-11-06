@@ -1,8 +1,8 @@
 {% load rules %}
 {% load projectroles_tags %}
 
-<tr>
-  <td style="white-space: nowrap;">
+<tr class="omics-pr-project-search-item" id="omics-pr-project-list-item-{{ p.pk }}">
+  <td>
     {% if p.type == 'CATEGORY' %}
       <i class="fa fa-cubes"></i>
     {% else %}

@@ -1,5 +1,7 @@
 """Tests for permissions in the projectroles Django app"""
 
+from urllib.parse import urlencode
+
 from django.core.urlresolvers import reverse
 
 from test_plus.test import TestCase
@@ -154,6 +156,21 @@ class TestBaseViews(TestPermissionBase):
             self.anonymous]
         self.assert_render200_ok(url, good_users)
         self.assert_redirect(url, bad_users)
+
+    def test_project_search(self):
+        url = reverse('project_search') + '?' + urlencode({'title': 'test'})
+        good_users = [
+            self.superuser,
+            self.as_owner.user,
+            self.as_delegate.user,
+            self.as_staff.user,
+            self.as_contributor.user,
+            self.as_guest.user,
+            self.user_no_roles]
+        bad_users = [
+            self.anonymous]
+        self.assert_render200_ok(url, good_users)
+        self.assert_redirect(reverse('home'), bad_users)
 
     def test_login(self):
         url = reverse('account_login')

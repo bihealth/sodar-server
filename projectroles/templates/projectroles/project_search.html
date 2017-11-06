@@ -2,19 +2,6 @@
 {% load projectroles_tags %}
 {% load rules %}
 
-{% block css %}
-  {{ block.super }}
-  <style type="text/css">
-    .table#omics-main-project-list tr td:nth-child(1) {
-        white-space: nowrap;
-    }
-
-    .table#omics-main-project-list tr td:nth-child(3) {
-        white-space: nowrap;
-    }
-  </style>
-{% endblock css %}
-
 {% block title %}Search Results{% endblock title %}
 
 {% block projectroles %}

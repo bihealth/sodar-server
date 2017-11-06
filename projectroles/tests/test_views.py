@@ -1,5 +1,7 @@
 """Tests for views in the projectroles Django app"""
 
+from urllib.parse import urlencode
+
 from django.core.urlresolvers import reverse
 from django.forms.models import model_to_dict
 from django.test import RequestFactory
@@ -70,8 +72,10 @@ class TestHomeView(TestViewsBase, ProjectMixin, RoleAssignmentMixin):
 
     def setUp(self):
         super(TestHomeView, self).setUp()
+        self.category = self._make_project(
+            'TestCategory', PROJECT_TYPE_CATEGORY, None)
         self.project = self._make_project(
-            'TestProject', PROJECT_TYPE_PROJECT, None)
+            'TestProject', PROJECT_TYPE_PROJECT, self.category)
         self.owner_as = self._make_assignment(
             self.project, self.user, self.role_owner)
 
@@ -84,13 +88,37 @@ class TestHomeView(TestViewsBase, ProjectMixin, RoleAssignmentMixin):
         # Assert the project list is provided by context processors
         self.assertIsNotNone(response.context['project_list'])
         self.assertEqual(
-            response.context['project_list'][0].pk, self.project.pk)
+            response.context['project_list'][1].pk, self.project.pk)
 
         # Assert statistics values
-        self.assertEqual(response.context['count_categories'], 0)
+        self.assertEqual(response.context['count_categories'], 1)
         self.assertEqual(response.context['count_projects'], 1)
         self.assertEqual(response.context['count_users'], 1)
         self.assertEqual(response.context['count_assignments'], 1)
+
+
+class TestProjectSearchView(TestViewsBase, ProjectMixin, RoleAssignmentMixin):
+    """Tests for the project search view"""
+
+    def setUp(self):
+        super(TestProjectSearchView, self).setUp()
+        self.category = self._make_project(
+            'TestCategory', PROJECT_TYPE_CATEGORY, None)
+        self.project = self._make_project(
+            'TestProject', PROJECT_TYPE_PROJECT, self.category)
+        self.owner_as = self._make_assignment(
+            self.project, self.user, self.role_owner)
+
+    def test_render(self):
+        """Test to ensure the project search view renders correctly"""
+        with self.login(self.user):
+            response = self.client.get(
+                reverse('project_search') + '?' + urlencode({'title': 'test'}))
+        self.assertEqual(response.status_code, 200)
+
+        # Assert the search parameter is provided
+        self.assertEqual(
+            response.context['search_title'], 'test')
 
 
 class TestProjectDetailView(TestViewsBase, ProjectMixin, RoleAssignmentMixin):

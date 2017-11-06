@@ -1,6 +1,7 @@
 """UI tests for the projectroles app"""
 
 import socket
+from urllib.parse import urlencode
 
 from django.contrib import auth
 from django.test import LiveServerTestCase
@@ -668,3 +669,20 @@ class TestProjectSidebar(TestUIBase, ProjectInviteMixin):
         self.assert_element_active(
             self.superuser, 'omics-pr-nav-project-update',
             self.sidebar_ids, url)
+
+
+class TestProjectSearch(TestUIBase):
+    """Tests for the project search UI functionalities"""
+
+    def test_search_results(self):
+        """Test project search items visibility according to user permissions"""
+        expected = [
+            (self.superuser, 1),
+            (self.as_owner.user, 1),
+            (self.as_delegate.user, 1),
+            (self.as_contributor.user, 1),
+            (self.as_staff.user, 1),
+            (self.as_guest.user, 1),
+            (self.user_no_roles, 0)]
+        url = reverse('project_search') + '?' + urlencode({'title': 'test'})
+        self.assert_element_count(expected, url, 'omics-pr-project-list-item')

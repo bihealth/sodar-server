@@ -216,6 +216,10 @@ table.omics-card-table tr th {
   border-top: 0 !important;
 }
 
+tr.omics-pr-project-list-item td:first-child {
+  white-space: nowrap;
+}
+
 /* Popups */
 
 .omics-popup-overlay {
