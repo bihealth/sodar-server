@@ -122,3 +122,23 @@ def get_project_type_str(project, capitalize=True):
     """Return printable version of the project type"""
     ret = PROJECT_TYPE_DISPLAY[project.type]
     return ret.lower() if not capitalize else ret
+
+
+@register.simple_tag
+def highlight_search_item(item, search):
+    """Return searched item string with search string highlighted"""
+
+    def get_highlights(item):
+        pos = item.lower().find(search)
+        sl = len(search)
+
+        if pos == -1:
+            return item     # Nothing to highlight
+
+        ret = item[:pos]
+        ret += '<strong>' + item[pos:pos + sl] + '</strong>'
+        if len(item[pos + sl:]) > 0:
+            ret += get_highlights(item[pos + sl:])
+        return ret
+
+    return get_highlights(item)

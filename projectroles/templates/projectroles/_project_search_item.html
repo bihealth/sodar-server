@@ -12,11 +12,15 @@
       {% if p.get_parents %}
         <span class="text-muted">
           {% for parent in p.get_parents %}
-            {{ parent.title }} /
+            {% autoescape off %}
+              {% highlight_search_item parent.title search_title %} /
+            {% endautoescape %}
           {% endfor %}
         </span>
       {% endif %}
-        {{ p.title }}
+      {% autoescape off %}
+        {% highlight_search_item p.title search_title %}
+      {% endautoescape %}
     </a>
   </td>
   <td>
