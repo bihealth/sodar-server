@@ -22,10 +22,13 @@
             <li class="breadcrumb-item"><a href="{% url 'project_detail' pk=project.pk %}">{{ project.title }}</a></li>
         {% endif %}
       {% else %}
-        <li class="breadcrumb-item active">
-          {% block sub_navbar_current %}
-          {% endblock sub_navbar_current %}
-        </li>
+        {% if request.resolver_match.url_name != 'home' %}
+          <li class="breadcrumb-item active">
+            {% block sub_navbar_current %}
+              TODO: Enter page title in block sub_navbar_current :)
+            {% endblock sub_navbar_current %}
+          </li>
+        {% endif %}
       {% endif %}
     </ol>
 
