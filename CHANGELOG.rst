@@ -19,6 +19,7 @@ Added
 - **Filesfolders**
     - Import app from prototype
     - Add page title to main files list
+    - Add file and link search (issue #21)
 - **Projectroles**
     - Import app from prototype
     - Add sub-navbar with project breadcrumb (issue #20)
@@ -27,8 +28,7 @@ Added
     - Add ``validate_project_setting()`` helper function
     - Add ``get_project_setting()`` helper function
     - Add ``set_project_setting()`` helper function
-    - Initial project search by title (issue #16)
-    - Add ``ProjectManager`` in models for project search (issue #16)
+    - Add project and app object search (issues #16, #21)
     - More helper functions in Project model: ``get_parents()``, ``get_full_title()``
 - **Timeline**
     - Import app and backend plugin from prototype
