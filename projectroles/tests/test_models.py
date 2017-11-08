@@ -38,14 +38,16 @@ class ProjectMixin:
     """Helper mixin for Project creation"""
 
     @classmethod
-    def _make_project(cls, title, type, parent, submit_status=SUBMIT_STATUS_OK):
+    def _make_project(
+            cls, title, type, parent, description='',
+            submit_status=SUBMIT_STATUS_OK):
         """Make and save a Project"""
         values = {
             'title': title,
             'type': type,
             'parent': parent,
             'submit_status': submit_status,
-            'description': ''}
+            'description': description}
         project = Project(**values)
         project.save()
 
@@ -442,78 +444,48 @@ class TestProjectInvite(
 
 class TestProjectManager(TestCase, ProjectMixin, RoleAssignmentMixin):
     """Tests for ProjectManager"""
-    # NOTE: These tests are not in TestProject as we also need assignments
 
     def setUp(self):
-        # Init roles
-        self.role_owner = Role.objects.get_or_create(
-            name=PROJECT_ROLE_OWNER)[0]
-
-        # Init users
-        self.superuser = self.make_user('superuser')
-        self.superuser.is_superuser = True
-        self.user_owner = self.make_user('owner')
-        self.user_noroles = self.make_user('noroles')
-
         # Init projects/categories
         # Top level category
         self.category_top = self._make_project(
             title='TestCategoryTop',
             type=PROJECT_TYPE_CATEGORY,
-            parent=None)
+            parent=None,
+            description='XXX')
         # Subproject under category_top
         self.project_sub = self._make_project(
             title='TestProjectSub',
             type=PROJECT_TYPE_PROJECT,
-            parent=self.category_top)
+            parent=self.category_top,
+            description='YYY')
 
-        # Init assignments
-        self.assignment_owner = self._make_assignment(
-            self.category_top, self.user_owner, self.role_owner)
-        self.assignment_owner = self._make_assignment(
-            self.project_sub, self.user_owner, self.role_owner)
-
-    def test_find_by_full_title_superuser(self):
-        """Test find_by_full_title() with superuser"""
-        result = Project.objects.find_by_full_title(
-            self.superuser, 'Test', project_type=None)
+    def test_find_all(self):
+        """Test find() with any project type"""
+        result = Project.objects.find(
+            'Test', project_type=None)
         self.assertEqual(len(result), 2)
-        result = Project.objects.find_by_full_title(
-            self.superuser, 'Test', project_type=PROJECT_TYPE_PROJECT)
-        self.assertEqual(len(result), 1)
-        result = Project.objects.find_by_full_title(
-            self.superuser, 'Test', project_type=PROJECT_TYPE_CATEGORY)
-        self.assertEqual(len(result), 1)
-        result = Project.objects.find_by_full_title(
-            self.superuser, 'ThisFails', project_type=PROJECT_TYPE_CATEGORY)
+        result = Project.objects.find(
+            'ThisFails', project_type=None)
         self.assertEqual(len(result), 0)
 
-    def test_find_by_full_title_owner(self):
-        """Test find_by_full_title() with project owner"""
-        result = Project.objects.find_by_full_title(
-            self.user_owner, 'Test', project_type=None)
-        self.assertEqual(len(result), 2)
-        result = Project.objects.find_by_full_title(
-            self.user_owner, 'Test', project_type=PROJECT_TYPE_PROJECT)
+    def test_find_project(self):
+        """Test find() with project_type=PROJECT"""
+        result = Project.objects.find(
+            'Test', project_type=PROJECT_TYPE_PROJECT)
         self.assertEqual(len(result), 1)
-        result = Project.objects.find_by_full_title(
-            self.user_owner, 'Test', project_type=PROJECT_TYPE_CATEGORY)
-        self.assertEqual(len(result), 1)
-        result = Project.objects.find_by_full_title(
-            self.user_owner, 'ThisFails', project_type=PROJECT_TYPE_CATEGORY)
-        self.assertEqual(len(result), 0)
+        self.assertEqual(result[0], self.project_sub)
 
-    def test_find_by_full_title_noroles(self):
-        """Test find_by_full_title() with user without roles"""
-        result = Project.objects.find_by_full_title(
-            self.user_noroles, 'Test', project_type=None)
-        self.assertEqual(len(result), 0)
-        result = Project.objects.find_by_full_title(
-            self.user_noroles, 'Test', project_type=PROJECT_TYPE_PROJECT)
-        self.assertEqual(len(result), 0)
-        result = Project.objects.find_by_full_title(
-            self.user_noroles, 'Test', project_type=PROJECT_TYPE_CATEGORY)
-        self.assertEqual(len(result), 0)
-        result = Project.objects.find_by_full_title(
-            self.user_noroles, 'ThisFails', project_type=PROJECT_TYPE_CATEGORY)
-        self.assertEqual(len(result), 0)
+    def test_find_category(self):
+        """Test find() with project_type=CATEGORY"""
+        result = Project.objects.find(
+            'Test', project_type=PROJECT_TYPE_CATEGORY)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0], self.category_top)
+
+    def test_find_description(self):
+        """Test find() with search term for description"""
+        result = Project.objects.find(
+            'XXX', project_type=None)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0], self.category_top)

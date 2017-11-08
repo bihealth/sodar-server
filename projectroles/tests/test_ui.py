@@ -14,7 +14,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
 
 from projectroles.models import Role, OMICS_CONSTANTS
-from projectroles.plugins import get_active_plugins, ProjectAppPluginPoint
+from projectroles.plugins import get_active_plugins
 from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin,\
     ProjectInviteMixin
 
@@ -684,5 +684,31 @@ class TestProjectSearch(TestUIBase):
             (self.as_staff.user, 1),
             (self.as_guest.user, 1),
             (self.user_no_roles, 0)]
-        url = reverse('project_search') + '?' + urlencode({'title': 'test'})
-        self.assert_element_count(expected, url, 'omics-pr-project-list-item')
+        url = reverse('project_search') + '?' + urlencode({'s': 'test'})
+        self.assert_element_count(expected, url, 'omics-pr-project-search-item')
+
+    def test_search_keyword_project(self):
+        """Test project search items visibility with 'project' keyword"""
+        expected = [
+            (self.superuser, 1),
+            (self.as_owner.user, 1),
+            (self.as_delegate.user, 1),
+            (self.as_contributor.user, 1),
+            (self.as_staff.user, 1),
+            (self.as_guest.user, 1),
+            (self.user_no_roles, 0)]
+        url = reverse('project_search') + '?' + urlencode({'s': 'project:test'})
+        self.assert_element_count(expected, url, 'omics-pr-project-search-item')
+
+    def test_search_keyword_nonexisting(self):
+        """Test project search items visibility with a nonexisting keyword"""
+        expected = [
+            (self.superuser, 0),
+            (self.as_owner.user, 0),
+            (self.as_delegate.user, 0),
+            (self.as_contributor.user, 0),
+            (self.as_staff.user, 0),
+            (self.as_guest.user, 0),
+            (self.user_no_roles, 0)]
+        url = reverse('project_search') + '?' + urlencode({'s': 'Jaix1au:test'})
+        self.assert_element_count(expected, url, 'omics-pr-project-search-item')

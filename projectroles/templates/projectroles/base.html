@@ -21,6 +21,11 @@
         {% else %}
             <li class="breadcrumb-item"><a href="{% url 'project_detail' pk=project.pk %}">{{ project.title }}</a></li>
         {% endif %}
+      {% else %}
+        <li class="breadcrumb-item active">
+          {% block sub_navbar_current %}
+          {% endblock sub_navbar_current %}
+        </li>
       {% endif %}
     </ol>
 

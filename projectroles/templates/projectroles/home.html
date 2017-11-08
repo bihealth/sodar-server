@@ -2,15 +2,17 @@
 {% load projectroles_tags %}
 {% load rules %}
 
-{% block title %}Omics Data Management: Home{% endblock title %}
+{% block title %}Home{% endblock title %}
 
 {% block projectroles %}
 
 {% has_perm 'projectroles.create_project' request.user as can_create_project %}
 
-<div class="row">
-  <h2 class="omics-title">Home</h2>
+
+<div class="row omics-pr-content-title align-bottom">
+  <h2 class="omics-pr-content-title">Home</h2>
 </div>
+
 
 <div class="container-fluid">
 

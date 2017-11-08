@@ -68,6 +68,7 @@ Fixed
 
 - **Filesfolders**
     - Redirects in exception cases in ``FilePublicLinkView``
+    - Unexpected characters in file name broke the ``file_serve`` view (ODA issue #109)
 - **Projectroles**
     - Check for project title uniqueness
     - Don't allow matching titles for subproject and parent

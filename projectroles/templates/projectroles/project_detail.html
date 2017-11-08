@@ -28,7 +28,7 @@
     {# README #}
 
     {% if object.readme.rendered|length > 0 %}
-      <div class="card" id="omics-pr-details-card-readme">
+      <div class="card omics-card" id="omics-pr-details-card-readme">
         <div class="card-header">
           <h4><i class="fa fa-book"></i> ReadMe</h4>
         </div>
@@ -46,7 +46,7 @@
       {% for plugin in app_plugins %}
         {% has_perm plugin.app_permission request.user object as can_view_app %}
         {% if can_view_app %}
-          <div class="card omics-card omics-pr-app-card" id="omics-pr-app-item-{{ plugin.pk }}">
+          <div class="card omics-card omics-pr-app-card" id="omics-pr-app-item-{{ plugin.name }}">
             <div class="card-header card-header-omics-app-detail">
               <h4>
                 <i class="fa fa-{{ plugin.icon }}"></i>
@@ -79,7 +79,7 @@
 
    {% get_project_list user=request.user parent=object as subproject_list %}
    {% if subproject_list|length > 0 %}
-     <div class="card">
+     <div class="card omics-card">
       <div class="card-header">
         <h4><i class="fa fa-globe"></i> Subprojects</h4>
       </div>

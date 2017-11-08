@@ -12,7 +12,7 @@ from test_plus.test import TestCase
 from .. import views
 from ..models import Project, Role, RoleAssignment, ProjectInvite, \
     OMICS_CONSTANTS
-from ..plugins import change_plugin_status, get_backend_api
+from ..plugins import change_plugin_status, get_backend_api, get_active_plugins
 from .test_models import ProjectMixin, RoleAssignmentMixin, ProjectInviteMixin
 from projectroles.utils import get_user_display_name
 
@@ -109,16 +109,40 @@ class TestProjectSearchView(TestViewsBase, ProjectMixin, RoleAssignmentMixin):
         self.owner_as = self._make_assignment(
             self.project, self.user, self.role_owner)
 
+        self.plugins = get_active_plugins(plugin_type='app')
+
     def test_render(self):
         """Test to ensure the project search view renders correctly"""
         with self.login(self.user):
             response = self.client.get(
-                reverse('project_search') + '?' + urlencode({'title': 'test'}))
+                reverse('project_search') + '?' + urlencode({'s': 'test'}))
         self.assertEqual(response.status_code, 200)
 
-        # Assert the search parameter is provided
+        # Assert the search parameters are provided
+        self.assertEqual(response.context['search_term'], 'test')
+        self.assertEqual(response.context['search_keyword'], None)
+        self.assertEqual(response.context['search_input'], 'test')
         self.assertEqual(
-            response.context['search_title'], 'test')
+            len(response.context['search_apps']),
+            len([p for p in self.plugins if p.search_enable]))
+
+    def test_render_keyword(self):
+        """Test to ensure the project search view renders correctly with a
+        search keyword"""
+        with self.login(self.user):
+            response = self.client.get(
+                reverse('project_search') + '?' + urlencode({'s': 'file:test'}))
+        self.assertEqual(response.status_code, 200)
+
+        # Assert the search parameters are provided
+        self.assertEqual(response.context['search_term'], 'test')
+        self.assertEqual(response.context['search_keyword'], 'file')
+        self.assertEqual(response.context['search_input'], 'file:test')
+        self.assertEqual(
+            len(response.context['search_apps']),
+            len([p for p in self.plugins if (
+                p.search_enable and
+                response.context['search_keyword'] in p.search_keywords)]))
 
 
 class TestProjectDetailView(TestViewsBase, ProjectMixin, RoleAssignmentMixin):

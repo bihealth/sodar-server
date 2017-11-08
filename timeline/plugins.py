@@ -39,6 +39,9 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
     #: Required permission for accessing the app
     app_permission = 'timeline.view_timeline'
 
+    #: Enable or disable general search from project title bar
+    search_enable = False   # Not allowed for timeline
+
     #: App card template for the project details page
     details_template = 'timeline/_details_card.html'
 

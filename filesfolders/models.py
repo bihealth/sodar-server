@@ -2,6 +2,7 @@ import uuid
 
 from django.conf import settings
 from django.db import models
+from django.db.models import Q
 
 from db_file_storage.model_utils import delete_file, delete_file_if_needed
 
@@ -14,6 +15,24 @@ AUTH_USER_MODEL = getattr(settings, 'AUTH_USER_MODEL', 'auth.User')
 
 
 # Base class -------------------------------------------------------------
+
+
+class FilesfoldersManager(models.Manager):
+    """Manager for custom table-level BaseFilesfoldersClass queries"""
+    def find(self, search_term):
+        """
+        Return objects or links matching the query.
+        :param search_term: Search term (string)
+        :return: Python list of BaseFilesfolderClass objects
+        """
+        objects = super(
+            FilesfoldersManager, self).get_queryset().order_by('name')
+
+        objects = objects.filter(
+            Q(name__icontains=search_term) |
+            Q(description__icontains=search_term))
+
+        return objects
 
 
 class BaseFilesfoldersClass(models.Model):
@@ -61,6 +80,9 @@ class BaseFilesfoldersClass(models.Model):
         default=uuid.uuid4,
         unique=True,
         help_text='Omics UUID')
+
+    # Set manager for custom queries
+    objects = FilesfoldersManager()
 
     class Meta:
         abstract = True

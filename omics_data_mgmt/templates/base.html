@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
-    <title>{% block title %}Omics Data Management{% endblock title %}</title>
+    <title>Omics Data Management: {% block title %}Page Title{% endblock title %}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="">
     <meta name="author" content="">
@@ -76,7 +76,7 @@
                 {# Search #}
                 <li class="nav-item omics-base-navbar-search">
                   <form class="form-inline" method="get" action="{% url 'project_search' %}">
-                    <input class="form-control mr-sm-2" type="text" placeholder="Project title" name="title" aria-label="Project title" id="omics-nav-search-input">
+                    <input class="form-control mr-sm-2" type="text" placeholder="keyword:term" name="s" aria-label="Search term" id="omics-nav-search-input" value="{{ search_input }}">
                      <button class="btn btn-outline-success my-2 my-sm-0" type="submit" id="omics-nav-search-submit">Search</button>
                   </form>
                 </li>

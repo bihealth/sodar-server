@@ -62,10 +62,10 @@ def get_project_list_indent(project, list_parent):
 
 
 @register.simple_tag
-def get_project_search_list(user, title):
-    """Return flat project list based on a title string search"""
-    return Project.objects.find_by_full_title(
-        user, title, project_type='PROJECT')
+def find_projects(search_term):
+    """Return flat project list based on a search term"""
+    return Project.objects.find(
+        search_term, project_type='PROJECT')
 
 
 @register.simple_tag
@@ -125,20 +125,36 @@ def get_project_type_str(project, capitalize=True):
 
 
 @register.simple_tag
-def highlight_search_item(item, search):
-    """Return searched item string with search string highlighted"""
+def highlight_search_term(item, term):
+    """Return string with search term highlighted"""
 
     def get_highlights(item):
-        pos = item.lower().find(search)
-        sl = len(search)
+        pos = item.lower().find(term)
+        tl = len(term)
 
         if pos == -1:
             return item     # Nothing to highlight
 
         ret = item[:pos]
-        ret += '<strong>' + item[pos:pos + sl] + '</strong>'
-        if len(item[pos + sl:]) > 0:
-            ret += get_highlights(item[pos + sl:])
+        ret += '<span class="omics-search-highlight">' + \
+               item[pos:pos + tl] + '</span>'
+
+        if len(item[pos + tl:]) > 0:
+            ret += get_highlights(item[pos + tl:])
+
         return ret
 
     return get_highlights(item)
+
+
+@register.simple_tag
+def get_project_title_html(project):
+    """Return HTML version of the full project title including parents"""
+    ret = ''
+
+    if project.get_parents():
+        ret += '<span class="text-muted">{}</span>'.format(
+            ' / '.join(project.get_full_title().split(' / ')[:-1]) + ' / ')
+
+    ret += project.title
+    return ret

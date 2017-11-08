@@ -44,6 +44,20 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
     #: Required permission for accessing the app
     app_permission = 'filesfolders.view_data'
 
+    #: Enable or disable general search from project title bar
+    search_enable = True
+
+    #: List of search keywords for the app
+    search_keywords = [
+        'file',
+        'link']
+
+    #: Search results template
+    search_template = 'filesfolders/_search_results.html'
+
+    #: App card title for the main search page
+    search_title = 'Small Files and Links'
+
     #: App card template for the project details page
     details_template = 'filesfolders/_details_card.html'
 

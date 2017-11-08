@@ -35,12 +35,12 @@ urlpatterns = [
     ),
     url(
         regex=r'^(?P<project>\d+)/download/'
-              r'(?P<pk>\d+)/(?P<file_name>[\w\s._-]{0,256})$',
+              r'(?P<pk>\d+)/(?P<file_name>[^\0]{0,256})$',
         view=views.FileServeView.as_view(),
         name='file_serve',
     ),
     url(
-        regex=r'^download/(?P<secret>[\w\-]+)/(?P<file_name>[\w\s._-]{0,256})$',
+        regex=r'^download/(?P<secret>[\w\-]+)/(?P<file_name>[^\0]{0,256})$',
         view=views.FileServePublicView.as_view(),
         name='file_serve_public',
     ),

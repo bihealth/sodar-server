@@ -55,11 +55,20 @@ $('[data-toggle="popover"]').popover({
 
 
 // Disable nav project search until 3+ characters have been input
+// (not counting keyword)
 $(document).ready(function() {
      $('#omics-nav-search-submit').attr('disabled', 'disabled');
      $('#omics-nav-search-input').keyup(function() {
-        if($(this).val().length > 2) {
-           $('#omics-nav-search-submit').removeAttr('disabled');
+        v = $(this).val();
+
+        if((v.indexOf(':') !== -1 && v.split(':')[1].length > 2) ||
+            (v.indexOf(':') === -1 && v.length > 2)) {
+           $('#omics-nav-search-submit').attr('disabled', false);
+        }
+
+        else if((v.indexOf(':') !== -1 && v.split(':')[1].length <= 2) ||
+            (v.indexOf(':') === -1 && v.length <= 2)) {
+           $('#omics-nav-search-submit').attr('disabled', true);
         }
      });
  });

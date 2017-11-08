@@ -158,7 +158,7 @@ class TestBaseViews(TestPermissionBase):
         self.assert_redirect(url, bad_users)
 
     def test_project_search(self):
-        url = reverse('project_search') + '?' + urlencode({'title': 'test'})
+        url = reverse('project_search') + '?' + urlencode({'s': 'test'})
         good_users = [
             self.superuser,
             self.as_owner.user,

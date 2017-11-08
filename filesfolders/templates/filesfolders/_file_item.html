@@ -8,21 +8,7 @@
     {% elif item|get_class == 'HyperLink' %}
       <i class="fa fa-external-link"></i>
     {% elif item|get_class == 'File' %}
-      {% if file.content_type == 'application/pdf' %}
-        <i class="fa fa-file-pdf-o"></i>
-      {% elif file.content_type == 'application/vnd.openxmlformats-officedocument.presentationml.presentation' %}
-        <i class="fa fa-file-powerpoint-o"></i>
-      {% elif 'compressed' in file.content_type or 'zip' in file.content_type %}
-        <i class="fa fa-file-archive-o"></i>
-      {% elif 'excel' in file.content_type or file.content_type == 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' %}
-        <i class="fa fa-file-excel-o"></i>
-      {% elif 'image/' in file.content_type %}
-        <i class="fa fa-file-image-o"></i>
-      {% elif 'text/' in file.content_type %}
-        <i class="fa fa-file-text-o"></i>
-      {% else %}
-        <i class="fa fa-file-o"></i>
-      {% endif %}
+        <i class="fa fa-{% get_file_icon item %}"></i>
     {% endif %}
   </td>
   {# Name/link column #}
@@ -32,7 +18,7 @@
     {% elif item|get_class == 'HyperLink' %}
       <a href="{{ item.url }}" target="_blank">{% autoescape off %}{{ item.name|force_wrap:24 }}{% endautoescape %}</a>
     {% elif item|get_class == 'File' %}
-      <a href="{% url 'file_serve' pk=item.pk project=object.pk file_name=item.name %}">{% autoescape off %}{{ item.name|force_wrap:24 }}{% endautoescape %}</a>
+      <a href="{% url 'file_serve' pk=item.pk project=item.project.pk file_name=item.name %}">{% autoescape off %}{{ item.name|force_wrap:24 }}{% endautoescape %}</a>
       {% if allow_public_links and item.public_url and can_share_link %}
         <a title="Public Link" href="{% url 'file_public_link' pk=item.pk project=item.project.pk %}" id="omics-ff-link-public-{{ item.pk }}">
           <i class="fa fa-link" aria-hidden="false"></i>

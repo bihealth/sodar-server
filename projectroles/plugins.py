@@ -43,6 +43,22 @@ class ProjectAppPluginPoint(PluginPoint):
     # TODO: Implement this in your app plugin (can be None)
     app_permission = None
 
+    #: Enable or disable general search from project title bar
+    # TODO: Implement this in your app plugin
+    search_enable = False
+
+    #: List of search keywords for the app
+    # TODO: Implement this in your app plugin
+    search_keywords = []
+
+    #: Search results template
+    # TODO: Implement this in your app plugin
+    search_template = None
+
+    #: App card title for the main search page
+    # TODO: Implement this in your app plugin
+    search_title = None
+
     #: App card template for the project details page
     # TODO: Implement this in your app plugin
     details_template = None

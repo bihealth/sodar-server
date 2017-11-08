@@ -97,7 +97,7 @@ class TestFolder(TestCase, FolderMixin, ProjectMixin, HyperLinkMixin):
             project=self.project,
             folder=None,
             owner=self.user_owner,
-            description='')
+            description='description')
 
     def test_initialization(self):
         expected = {
@@ -106,9 +106,26 @@ class TestFolder(TestCase, FolderMixin, ProjectMixin, HyperLinkMixin):
             'project': self.project.pk,
             'folder': None,
             'owner': self.user_owner.pk,
-            'description': '',
+            'description': 'description',
             'omics_uuid': self.folder.omics_uuid}
         self.assertEqual(model_to_dict(self.folder), expected)
+
+    def test_find_name(self):
+        """Test FilesfoldersManager find() with Folder name"""
+        objects = Folder.objects.find('folder')
+        self.assertEqual(len(objects), 1)
+        self.assertEqual(objects[0], self.folder)
+
+    def test_find_desc(self):
+        """Test FilesfoldersManager find() with Folder description"""
+        objects = Folder.objects.find('description')
+        self.assertEqual(len(objects), 1)
+        self.assertEqual(objects[0], self.folder)
+
+    def test_find_fail(self):
+        """Test FilesfoldersManager find() with a non-existing Folder"""
+        objects = Folder.objects.find('Jaix1azu')
+        self.assertEqual(len(objects), 0)
 
     def test__str__(self):
         expected = '{}: root/folder'.format(PROJECT_NAME)
@@ -215,7 +232,7 @@ class TestFile(TestCase, FileMixin, FolderMixin, ProjectMixin):
             project=self.project,
             folder=None,
             owner=self.user_owner,
-            description='')
+            description='description')
 
         self.file_content = bytes('content'.encode('utf-8'))
 
@@ -227,7 +244,7 @@ class TestFile(TestCase, FileMixin, FolderMixin, ProjectMixin):
             project=self.project,
             folder=self.folder,
             owner=self.user_owner,
-            description='',
+            description='description',
             public_url=True,
             secret=SECRET)
 
@@ -239,11 +256,28 @@ class TestFile(TestCase, FileMixin, FolderMixin, ProjectMixin):
             'project': self.project.pk,
             'folder': self.folder.pk,
             'owner': self.user_owner.pk,
-            'description': '',
+            'description': 'description',
             'public_url': True,
             'secret': SECRET,
             'omics_uuid': self.file.omics_uuid}
         self.assertEqual(model_to_dict(self.file), expected)
+
+    def test_find_name(self):
+        """Test FilesfoldersManager find() with File name"""
+        objects = File.objects.find('file.txt')
+        self.assertEqual(len(objects), 1)
+        self.assertEqual(objects[0], self.file)
+
+    def test_find_desc(self):
+        """Test FilesfoldersManager find() with File description"""
+        objects = File.objects.find('description')
+        self.assertEqual(len(objects), 1)
+        self.assertEqual(objects[0], self.file)
+
+    def test_find_fail(self):
+        """Test FilesfoldersManager find() with a non-existing File"""
+        objects = File.objects.find('Jaix1azu')
+        self.assertEqual(len(objects), 0)
 
     def test__str__(self):
         expected = '{}: root/{}/{}'.format(
@@ -311,7 +345,7 @@ class TestHyperLink(
             project=self.project,
             folder=self.folder,
             owner=self.user_owner,
-            description='')
+            description='description')
 
     def test_initialization(self):
         expected = {
@@ -321,7 +355,7 @@ class TestHyperLink(
             'project': self.project.pk,
             'folder': self.folder.pk,
             'owner': self.user_owner.pk,
-            'description': '',
+            'description': 'description',
             'omics_uuid': self.hyperlink.omics_uuid}
         self.assertEqual(model_to_dict(self.hyperlink), expected)
 
@@ -338,3 +372,20 @@ class TestHyperLink(
             self.hyperlink.name,
             self.folder.__repr__())
         self.assertEqual(repr(self.hyperlink), expected)
+
+    def test_find_name(self):
+        """Test FilesfoldersManager find() with HyperLink name"""
+        objects = HyperLink.objects.find('Link')
+        self.assertEqual(len(objects), 1)
+        self.assertEqual(objects[0], self.hyperlink)
+
+    def test_find_desc(self):
+        """Test FilesfoldersManager find() with HyperLink description"""
+        objects = HyperLink.objects.find('description')
+        self.assertEqual(len(objects), 1)
+        self.assertEqual(objects[0], self.hyperlink)
+
+    def test_find_fail(self):
+        """Test FilesfoldersManager find() with a non-existing HyperLink"""
+        objects = HyperLink.objects.find('Jaix1azu')
+        self.assertEqual(len(objects), 0)

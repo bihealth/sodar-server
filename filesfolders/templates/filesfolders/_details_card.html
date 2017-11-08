@@ -21,14 +21,14 @@
       {% include 'filesfolders/_list_header.html' with details_card_mode=True %}
     </thead>
     <tbody>
-      {% get_details_files project as files %}
-      {% if files|length > 0 %}
-        {% for file in files %}
-          {% include 'filesfolders/_file_item.html' with item=file can_share_link=can_share_link details_card_mode=True %}
+      {% get_details_items project as items %}
+      {% if items|length > 0 %}
+        {% for item in items %}
+          {% include 'filesfolders/_file_item.html' with item=item can_share_link=can_share_link details_card_mode=True %}
         {% endfor %}
       {% else %}
         <tr>
-          <td class="font-italic text-center" colspan="6">No files</td>
+          <td class="font-italic text-center" colspan="6">No files or links</td>
         </tr>
       {% endif %}
     </tbody>

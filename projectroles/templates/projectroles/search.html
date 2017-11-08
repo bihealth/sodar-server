@@ -1,0 +1,132 @@
+{% extends 'projectroles/base.html' %}
+{% load projectroles_tags %}
+{% load rules %}
+
+{% block title %}
+  Search Results for
+  {% if search_keyword %}
+    {{ search_keyword }}:
+  {% endif %}
+  {{ search_term }}
+{% endblock title %}
+
+{% block sub_navbar_current %}
+  Search Results
+{% endblock sub_navbar_current %}
+
+{% block projectroles %}
+
+{% has_perm 'projectroles.create_project' request.user as can_create_project %}
+
+<div class="row omics-pr-content-title align-bottom">
+  <h2 class="omics-pr-content-title">Search Results</h2>
+    <div class="omics-pr-content-title-secondary text-sm-right text-muted ml-auto">
+      {% if search_keyword %}
+        {{ search_keyword }}:
+      {% endif %}
+      {{ search_term }}
+    </div>
+</div>
+
+<div class="container-fluid">
+
+  {# Project Search #}
+
+  {% if not search_keyword or search_keyword == 'project' %}
+    <div class="card omics-card" id="omics-pr-search-project-list">
+      <div class="card-header">
+        <h4><i class="fa fa-cube"></i> Projects</h4>
+      </div>
+      <div class="card-body omics-card-body-table">
+       <table class="table table-hover omics-card-table omics-card-table-borderless" id="omics-main-project-list">
+         <thead>
+           <tr>
+            <th id="omics-pr-home-header-project">Project</th>
+            <th id="omics-pr-home-header-description">Description</th>
+            <th id="omics-pr-home-header-role">Your&nbsp;Role</th>
+          </tr>
+
+         </thead>
+         <tbody>
+           {% find_projects search_term=search_term as projects %}
+           {% if projects|length > 0 %}
+             {% for p in projects %}
+               {% has_perm 'projectroles.view_project' request.user p as can_view_project %}
+               {% if request.user.is_superuser or can_view_project %}
+                 {% include 'projectroles/_project_search_item.html' %}
+               {% endif %}
+             {% endfor %}
+          {% else %}
+             <tr>
+               <td class="bg-faded font-italic text-center text-danger" colspan="3">No projects found</td>
+             </tr>
+          {% endif %}
+         </tbody>
+       </table>
+      </div>
+    </div>
+  {% endif %}
+
+  {# App Search #}
+  {% for plugin in search_apps %}
+    <div class="card omics-card omics-pr-app-card" id="omics-pr-search-app-item-{{ plugin.name }}">
+      <div class="card-header">
+        <h4>
+          <i class="fa fa-{{ plugin.icon }}"></i> {{ plugin.search_title }}
+        </h4>
+      </div>
+      {% if plugin.search_template %}
+        <div class="card-body omics-card-body-table">
+          {% include plugin.search_template %}
+        </div>
+       {% else %}
+        <div class="card-body omics-card-body text-center">
+          <p class="text-danger"><em>No search template found</em></p>
+        </div>
+      {% endif %}
+    </div>
+  {% endfor %}
+
+</div>
+
+{% endblock projectroles %}
+
+{% block javascript %}
+  {{ block.super }}
+
+  {# Tour content #}
+  <script type="text/javascript">
+    tourEnabled = true;
+
+    if ($('#omics-pr-search-project-list').length) {
+        tour.addStep('search_project', {
+            title: 'Matching Projects',
+            text: 'Projects matching the search are listed here.',
+            attachTo: '#omics-pr-search-project-list top',
+            advanceOn: '.docs-link click',
+            showCancelLink: true
+        });
+    }
+
+    if ($('.omics-pr-app-card').length) {
+        tour.addStep('search_app', {
+            title: 'Matching Data from Apps',
+            text: 'Matching Data from Apps is listed for each app with search' +
+                  ' enabled.',
+            attachTo: '.omics-pr-app-card top',
+            advanceOn: '.docs-link click',
+            showCancelLink: true
+        });
+    }
+
+    if ($('.omics-search-highlight').length) {
+        tour.addStep('search_highlight', {
+            title: 'Search Highlight',
+            text: 'The search terms are highlighted for each matching object.',
+            attachTo: '.omics-search-highlight right',
+            advanceOn: '.docs-link click',
+            showCancelLink: true
+        });
+    }
+  </script>
+{% endblock javascript %}

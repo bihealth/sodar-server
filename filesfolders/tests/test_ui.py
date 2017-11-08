@@ -1,5 +1,7 @@
 """UI tests for the filesfolders app"""
 
+from urllib.parse import urlencode
+
 from django.urls import reverse
 
 from projectroles.tests.test_ui import TestUIBase
@@ -197,3 +199,130 @@ class TestListView(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
             (self.as_guest.user, 0)]
         url = reverse('project_files', kwargs={'project': self.project.pk})
         self.assert_element_count(expected, url, 'omics-ff-link-public')
+
+
+class TestSearch(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
+    """Tests for the project search UI functionalities"""
+
+    def setUp(self):
+        super(TestSearch, self).setUp()
+
+        self.file_content = bytes('content'.encode('utf-8'))
+        self.secret_file_owner = build_secret()
+        self.secret_file_contributor = build_secret()
+
+        # Init folders
+
+        # Folder created by project owner
+        self.folder_owner = self._make_folder(
+            name='folder_owner',
+            project=self.project,
+            folder=None,
+            owner=self.user_owner,
+            description='description')
+
+        # File created by project contributor
+        self.folder_contributor = self._make_folder(
+            name='folder_contributor',
+            project=self.project,
+            folder=None,
+            owner=self.user_contributor,
+            description='description')
+
+        # Init files
+
+        # File uploaded by project owner
+        self.file_owner = self._make_file(
+            name='file_owner.txt',
+            file_name='file_owner.txt',
+            file_content=self.file_content,
+            project=self.project,
+            folder=None,
+            owner=self.user_owner,
+            description='description',
+            public_url=True,    # NOTE: Public URL OK
+            secret=self.secret_file_owner)
+
+        # File uploaded by project contributor
+        self.file_contributor = self._make_file(
+            name='file_contributor.txt',
+            file_name='file_contributor.txt',
+            file_content=self.file_content,
+            project=self.project,
+            folder=None,
+            owner=self.user_contributor,
+            description='description',
+            public_url=False,   # NOTE: No public URL
+            secret=self.secret_file_contributor)
+
+        # Init hyperlinks
+
+        # HyperLink added by project owner
+        self.hyperlink_owner = self._make_hyperlink(
+            name='Owner link',
+            url='https://www.bihealth.org/',
+            project=self.project,
+            folder=None,
+            owner=self.user_owner,
+            description='description')
+
+        # HyperLink added by project contributor
+        self.hyperlink_contrib = self._make_hyperlink(
+            name='Contributor link',
+            url='http://www.google.com/',
+            project=self.project,
+            folder=None,
+            owner=self.user_contributor,
+            description='description')
+
+    def test_search_results(self):
+        """Test search items visibility according to user permissions"""
+        expected = [
+            (self.superuser, 4),
+            (self.as_owner.user, 4),
+            (self.as_delegate.user, 4),
+            (self.as_contributor.user, 4),
+            (self.as_staff.user, 4),
+            (self.as_guest.user, 4),
+            (self.user_no_roles, 0)]
+        url = reverse('project_search') + '?' + urlencode({'s': 'description'})
+        self.assert_element_count(expected, url, 'omics-ff-search-item')
+
+    def test_search_keyword_file(self):
+        """Test search items visibility with 'file' keyword"""
+        expected = [
+            (self.superuser, 2),
+            (self.as_owner.user, 2),
+            (self.as_delegate.user, 2),
+            (self.as_contributor.user, 2),
+            (self.as_staff.user, 2),
+            (self.as_guest.user, 2),
+            (self.user_no_roles, 0)]
+        url = reverse('project_search') + '?' + urlencode({'s': 'file:file'})
+        self.assert_element_count(expected, url, 'omics-ff-search-item')
+
+    def test_search_keyword_link(self):
+        """Test search items visibility with 'link' keyword"""
+        expected = [
+            (self.superuser, 2),
+            (self.as_owner.user, 2),
+            (self.as_delegate.user, 2),
+            (self.as_contributor.user, 2),
+            (self.as_staff.user, 2),
+            (self.as_guest.user, 2),
+            (self.user_no_roles, 0)]
+        url = reverse('project_search') + '?' + urlencode({'s': 'link:link'})
+        self.assert_element_count(expected, url, 'omics-ff-search-item')
+
+    def test_search_keyword_nonexisting(self):
+        """Test search items visibility with a nonexisting keyword"""
+        expected = [
+            (self.superuser, 0),
+            (self.as_owner.user, 0),
+            (self.as_delegate.user, 0),
+            (self.as_contributor.user, 0),
+            (self.as_staff.user, 0),
+            (self.as_guest.user, 0),
+            (self.user_no_roles, 0)]
+        url = reverse('project_search') + '?' + urlencode({'s': 'Jaix1au:test'})
+        self.assert_element_count(expected, url, 'omics-ff-search-item')

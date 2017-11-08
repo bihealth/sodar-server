@@ -231,14 +231,32 @@ class ProjectDetailView(
 
 
 class ProjectSearchView(LoginRequiredMixin, TemplateView):
-    """View for displaying results of simple project search"""
-    template_name = 'projectroles/project_search.html'
+    """View for displaying results of search within projects"""
+    template_name = 'projectroles/search.html'
 
     def get_context_data(self, *args, **kwargs):
         context = super(ProjectSearchView, self).get_context_data(
             *args, **kwargs)
 
-        context['search_title'] = self.request.GET.get('title')
+        search_input = self.request.GET.get('s')
+        plugins = get_active_plugins(plugin_type='app')
+
+        context['search_input'] = search_input   # For filling in the value
+
+        # Keyword given
+        if search_input.find(':') != -1:
+            context['search_keyword'] = search_input.split(':')[0]
+            context['search_term'] = search_input.split(':')[1].strip()
+            context['search_apps'] = [
+                p for p in plugins if (
+                    p.search_enable and
+                    context['search_keyword'] in p.search_keywords)]
+
+        # No keyword
+        else:
+            context['search_keyword'] = None
+            context['search_term'] = search_input
+            context['search_apps'] = [p for p in plugins if p.search_enable]
 
         return context
 

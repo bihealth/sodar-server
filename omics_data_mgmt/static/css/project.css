@@ -142,13 +142,27 @@ div.omics-subtitle-container {
   max-width: 1500px;
 }
 
-/* Titles */
-
-h2.omics-title {
-  font-weight: bold;
+div.omics-pr-content-title {
+  vertical-align: bottom;
   margin-bottom: 36px;
   border-bottom: 1px solid #dfdfdf;
-  width: 100%;
+}
+
+/* Titles */
+
+/* TODO: Fix line height, this is a hack */
+h2.omics-pr-content-title {
+  font-weight: bold;
+  margin-bottom: 0;
+  padding-bottom: 0;
+  line-height: 30px;
+}
+
+/* TODO: Fix line height, this is a hack */
+.omics-pr-content-title-secondary {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  line-height: 39px;
 }
 
 h3 {
@@ -349,6 +363,10 @@ a.omics-nav-link-last {
 
 .omics-pr-breadcrumb li.breadcrumb-item:before {
   color: #dfdfdf;
+}
+
+.omics-search-highlight {
+  font-weight: bold;
 }
 
 /* Media */
