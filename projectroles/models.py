@@ -45,15 +45,19 @@ PROJECT_SETTING_TYPE_CHOICES = [
     ('INTEGER', 'Integer'),
     ('STRING', 'String')]
 
+PROJECT_SEARCH_TYPES = [
+    'project']
+
 
 class ProjectManager(models.Manager):
     """Manager for custom table-level Project queries"""
-    def find(self, search_term, project_type=None):
+    def find(self, search_term, keywords=None, project_type=None):
         """
         Return projects with a partial match in full title or, including titles
         of parent Project objects, or the description of the current object.
         Restrict to project type if project_type is set.
         :param search_term: Search term (string)
+        :param keywords: Optional search keywords as key/value pairs (dict)
         :param project_type: Project type or None
         :return: Python list of Project objects
         """

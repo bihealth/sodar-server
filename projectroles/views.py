@@ -238,24 +238,43 @@ class ProjectSearchView(LoginRequiredMixin, TemplateView):
         context = super(ProjectSearchView, self).get_context_data(
             *args, **kwargs)
 
-        search_input = self.request.GET.get('s')
         plugins = get_active_plugins(plugin_type='app')
 
-        context['search_input'] = search_input   # For filling in the value
+        search_input = self.request.GET.get('s')
+        context['search_input'] = search_input
 
-        # Keyword given
-        if search_input.find(':') != -1:
-            context['search_keyword'] = search_input.split(':')[0]
-            context['search_term'] = search_input.split(':')[1].strip()
+        search_split = search_input.split(' ')
+        search_term = search_split[0]
+        search_type = None
+        search_keywords = {}
+
+        for i in range(1, len(search_split)):
+            s = search_split[i]
+
+            if ':' in s:
+                kw = s.split(':')[0].lower().strip()
+                val = s.split(':')[1].lower().strip()
+
+                if kw == 'type':
+                    search_type = val
+
+                else:
+                    search_keywords[kw] = val
+
+            else:
+                search_term += ' ' + s
+
+        context['search_term'] = search_term
+        context['search_type'] = search_type
+        context['search_keywords'] = search_keywords
+
+        if search_type:
             context['search_apps'] = [
                 p for p in plugins if (
                     p.search_enable and
-                    context['search_keyword'] in p.search_keywords)]
+                    search_type in p.search_types)]
 
-        # No keyword
         else:
-            context['search_keyword'] = None
-            context['search_term'] = search_input
             context['search_apps'] = [p for p in plugins if p.search_enable]
 
         return context

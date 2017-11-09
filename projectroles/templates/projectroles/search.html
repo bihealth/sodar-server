@@ -3,11 +3,10 @@
 {% load rules %}
 
 {% block title %}
-  Search Results for
-  {% if search_keyword %}
-    {{ search_keyword }}:
+  Search Results for "{{ search_term }}"
+  {% if search_type %}
+    (type:{{ search_type }})
   {% endif %}
-  {{ search_term }}
 {% endblock title %}
 
 {% block sub_navbar_current %}
@@ -18,74 +17,82 @@
 
 {% has_perm 'projectroles.create_project' request.user as can_create_project %}
 
-<div class="row omics-pr-content-title align-bottom">
+<div class="row omics-pr-content-title">
   <h2 class="omics-pr-content-title">Search Results</h2>
-    <div class="omics-pr-content-title-secondary text-sm-right text-muted ml-auto">
-      {% if search_keyword %}
-        {{ search_keyword }}:
+    <div class="omics-pr-content-title-secondary text-muted">
+      for "{{ search_term }}"
+      {% if search_type %}
+        (type:{{ search_type }})
       {% endif %}
-      {{ search_term }}
     </div>
 </div>
 
 <div class="container-fluid">
 
-  {# Project Search #}
-
-  {% if not search_keyword or search_keyword == 'project' %}
-    <div class="card omics-card" id="omics-pr-search-project-list">
-      <div class="card-header">
-        <h4><i class="fa fa-cube"></i> Projects</h4>
-      </div>
-      <div class="card-body omics-card-body-table">
-       <table class="table table-hover omics-card-table omics-card-table-borderless" id="omics-main-project-list">
-         <thead>
-           <tr>
-            <th id="omics-pr-home-header-project">Project</th>
-            <th id="omics-pr-home-header-description">Description</th>
-            <th id="omics-pr-home-header-role">Your&nbsp;Role</th>
-          </tr>
-
-         </thead>
-         <tbody>
-           {% find_projects search_term=search_term as projects %}
-           {% if projects|length > 0 %}
-             {% for p in projects %}
-               {% has_perm 'projectroles.view_project' request.user p as can_view_project %}
-               {% if request.user.is_superuser or can_view_project %}
-                 {% include 'projectroles/_project_search_item.html' %}
-               {% endif %}
-             {% endfor %}
-          {% else %}
-             <tr>
-               <td class="bg-faded font-italic text-center text-danger" colspan="3">No projects found</td>
-             </tr>
-          {% endif %}
-         </tbody>
-       </table>
-      </div>
+  {# TODO: Get valid search types from e.g. a template tag #}
+  {% if search_type and search_type != 'project' and search_apps|length == 0 %}
+    <div class="alert alert-danger" role="alert">
+      <strong>Error:</strong> Search type "{{ search_type }}" not recognized!
     </div>
-  {% endif %}
+  {% else %}
 
-  {# App Search #}
-  {% for plugin in search_apps %}
-    <div class="card omics-card omics-pr-app-card" id="omics-pr-search-app-item-{{ plugin.name }}">
-      <div class="card-header">
-        <h4>
-          <i class="fa fa-{{ plugin.icon }}"></i> {{ plugin.search_title }}
-        </h4>
-      </div>
-      {% if plugin.search_template %}
+    {# Project Search #}
+
+    {% if not search_type or search_type == 'project' %}
+      <div class="card omics-card" id="omics-pr-search-project-list">
+        <div class="card-header">
+          <h4><i class="fa fa-cube"></i> Projects</h4>
+        </div>
         <div class="card-body omics-card-body-table">
-          {% include plugin.search_template %}
+         <table class="table table-hover omics-card-table omics-card-table-borderless" id="omics-main-project-list">
+           <thead>
+             <tr>
+              <th id="omics-pr-home-header-project">Project</th>
+              <th id="omics-pr-home-header-description">Description</th>
+              <th id="omics-pr-home-header-role">Your&nbsp;Role</th>
+            </tr>
+           </thead>
+           <tbody>
+             {% find_projects search_term as projects %}
+             {% if projects|length > 0 %}
+               {% for p in projects %}
+                 {% has_perm 'projectroles.view_project' request.user p as can_view_project %}
+                 {% if request.user.is_superuser or can_view_project %}
+                   {% include 'projectroles/_project_search_item.html' %}
+                 {% endif %}
+               {% endfor %}
+            {% else %}
+               <tr>
+                 <td class="bg-faded font-italic text-center text-danger" colspan="3">No projects found</td>
+               </tr>
+            {% endif %}
+           </tbody>
+         </table>
         </div>
-       {% else %}
-        <div class="card-body omics-card-body text-center">
-          <p class="text-danger"><em>No search template found</em></p>
+      </div>
+    {% endif %}
+
+    {# App Search #}
+    {% for plugin in search_apps %}
+      <div class="card omics-card omics-pr-app-card" id="omics-pr-search-app-item-{{ plugin.name }}">
+        <div class="card-header">
+          <h4>
+            <i class="fa fa-{{ plugin.icon }}"></i> {{ plugin.search_title }}
+          </h4>
         </div>
-      {% endif %}
-    </div>
-  {% endfor %}
+        {% if plugin.search_template %}
+          <div class="card-body omics-card-body-table">
+            {% include plugin.search_template %}
+          </div>
+         {% else %}
+          <div class="card-body omics-card-body text-center">
+            <p class="text-danger"><em>No search template found</em></p>
+          </div>
+        {% endif %}
+      </div>
+    {% endfor %}
+
+  {% endif %}
 
 </div>
 

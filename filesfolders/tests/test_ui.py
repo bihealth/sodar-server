@@ -288,8 +288,8 @@ class TestSearch(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
         url = reverse('project_search') + '?' + urlencode({'s': 'description'})
         self.assert_element_count(expected, url, 'omics-ff-search-item')
 
-    def test_search_keyword_file(self):
-        """Test search items visibility with 'file' keyword"""
+    def test_search_type_file(self):
+        """Test search items visibility with 'file' type"""
         expected = [
             (self.superuser, 2),
             (self.as_owner.user, 2),
@@ -298,11 +298,12 @@ class TestSearch(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
             (self.as_staff.user, 2),
             (self.as_guest.user, 2),
             (self.user_no_roles, 0)]
-        url = reverse('project_search') + '?' + urlencode({'s': 'file:file'})
+        url = reverse('project_search') + '?' + urlencode({
+            's': 'file type:file'})
         self.assert_element_count(expected, url, 'omics-ff-search-item')
 
-    def test_search_keyword_link(self):
-        """Test search items visibility with 'link' keyword"""
+    def test_search_type_link(self):
+        """Test search items visibility with 'link' as type"""
         expected = [
             (self.superuser, 2),
             (self.as_owner.user, 2),
@@ -311,11 +312,12 @@ class TestSearch(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
             (self.as_staff.user, 2),
             (self.as_guest.user, 2),
             (self.user_no_roles, 0)]
-        url = reverse('project_search') + '?' + urlencode({'s': 'link:link'})
+        url = reverse('project_search') + '?' + urlencode({
+            's': 'link type:link'})
         self.assert_element_count(expected, url, 'omics-ff-search-item')
 
-    def test_search_keyword_nonexisting(self):
-        """Test search items visibility with a nonexisting keyword"""
+    def test_search_type_nonexisting(self):
+        """Test search items visibility with a nonexisting type"""
         expected = [
             (self.superuser, 0),
             (self.as_owner.user, 0),
@@ -324,5 +326,6 @@ class TestSearch(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
             (self.as_staff.user, 0),
             (self.as_guest.user, 0),
             (self.user_no_roles, 0)]
-        url = reverse('project_search') + '?' + urlencode({'s': 'Jaix1au:test'})
+        url = reverse('project_search') + '?' + urlencode({
+            's': 'test type:Jaix1au'})
         self.assert_element_count(expected, url, 'omics-ff-search-item')

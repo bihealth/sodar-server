@@ -47,8 +47,8 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
     #: Enable or disable general search from project title bar
     search_enable = True
 
-    #: List of search keywords for the app
-    search_keywords = [
+    #: List of search object types for the app
+    search_types = [
         'file',
         'link']
 

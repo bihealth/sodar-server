@@ -687,8 +687,8 @@ class TestProjectSearch(TestUIBase):
         url = reverse('project_search') + '?' + urlencode({'s': 'test'})
         self.assert_element_count(expected, url, 'omics-pr-project-search-item')
 
-    def test_search_keyword_project(self):
-        """Test project search items visibility with 'project' keyword"""
+    def test_search_type_project(self):
+        """Test project search items visibility with 'project' type"""
         expected = [
             (self.superuser, 1),
             (self.as_owner.user, 1),
@@ -697,11 +697,12 @@ class TestProjectSearch(TestUIBase):
             (self.as_staff.user, 1),
             (self.as_guest.user, 1),
             (self.user_no_roles, 0)]
-        url = reverse('project_search') + '?' + urlencode({'s': 'project:test'})
+        url = reverse('project_search') + '?' + urlencode(
+            {'s': 'test type:project'})
         self.assert_element_count(expected, url, 'omics-pr-project-search-item')
 
-    def test_search_keyword_nonexisting(self):
-        """Test project search items visibility with a nonexisting keyword"""
+    def test_search_type_nonexisting(self):
+        """Test project search items visibility with a nonexisting type"""
         expected = [
             (self.superuser, 0),
             (self.as_owner.user, 0),
@@ -710,5 +711,6 @@ class TestProjectSearch(TestUIBase):
             (self.as_staff.user, 0),
             (self.as_guest.user, 0),
             (self.user_no_roles, 0)]
-        url = reverse('project_search') + '?' + urlencode({'s': 'Jaix1au:test'})
+        url = reverse('project_search') + '?' + urlencode(
+            {'s': 'test type:Jaix1au'})
         self.assert_element_count(expected, url, 'omics-pr-project-search-item')

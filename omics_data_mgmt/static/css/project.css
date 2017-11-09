@@ -162,7 +162,8 @@ h2.omics-pr-content-title {
 .omics-pr-content-title-secondary {
   margin-bottom: 0;
   padding-bottom: 0;
-  line-height: 39px;
+  line-height: 41px;
+  margin-left: 12px;
 }
 
 h3 {

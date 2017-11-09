@@ -47,21 +47,21 @@ def allow_public_links(project):
 
 
 @register.simple_tag
-def find_filesfolders_items(search_term, keyword):
-    """Return files/links based on a search term and possible keyword"""
+def find_filesfolders_items(search_term, search_type, keywords):
+    """Return files/links based on a search term and possible type/keywords"""
 
-    if not keyword:
-        files = File.objects.find(search_term)
-        links = HyperLink.objects.find(search_term)
+    if not search_type:
+        files = File.objects.find(search_term, keywords)
+        links = HyperLink.objects.find(search_term, keywords)
         ret = list(files) + list(links)
         ret.sort(key=lambda x: x.name)
         return ret
 
-    elif keyword == 'file':
-        return File.objects.find(search_term)
+    elif search_type == 'file':
+        return File.objects.find(search_term, keywords)
 
-    elif keyword == 'link':
-        return HyperLink.objects.find(search_term)
+    elif search_type == 'link':
+        return HyperLink.objects.find(search_term, keywords)
 
     return None
 

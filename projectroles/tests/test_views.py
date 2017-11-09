@@ -120,29 +120,31 @@ class TestProjectSearchView(TestViewsBase, ProjectMixin, RoleAssignmentMixin):
 
         # Assert the search parameters are provided
         self.assertEqual(response.context['search_term'], 'test')
-        self.assertEqual(response.context['search_keyword'], None)
+        self.assertEqual(response.context['search_keywords'], {})
+        self.assertEqual(response.context['search_type'], None)
         self.assertEqual(response.context['search_input'], 'test')
         self.assertEqual(
             len(response.context['search_apps']),
             len([p for p in self.plugins if p.search_enable]))
 
-    def test_render_keyword(self):
-        """Test to ensure the project search view renders correctly with a
-        search keyword"""
+    def test_render_search_type(self):
+        """Test to ensure the project search view renders correctly with a search type"""
         with self.login(self.user):
             response = self.client.get(
-                reverse('project_search') + '?' + urlencode({'s': 'file:test'}))
+                reverse('project_search') + '?' + urlencode({
+                    's': 'test type:file'}))
         self.assertEqual(response.status_code, 200)
 
         # Assert the search parameters are provided
         self.assertEqual(response.context['search_term'], 'test')
-        self.assertEqual(response.context['search_keyword'], 'file')
-        self.assertEqual(response.context['search_input'], 'file:test')
+        self.assertEqual(response.context['search_keywords'], {})
+        self.assertEqual(response.context['search_type'], 'file')
+        self.assertEqual(response.context['search_input'], 'test type:file')
         self.assertEqual(
             len(response.context['search_apps']),
             len([p for p in self.plugins if (
                 p.search_enable and
-                response.context['search_keyword'] in p.search_keywords)]))
+                response.context['search_type'] in p.search_types)]))
 
 
 class TestProjectDetailView(TestViewsBase, ProjectMixin, RoleAssignmentMixin):

@@ -19,10 +19,11 @@ AUTH_USER_MODEL = getattr(settings, 'AUTH_USER_MODEL', 'auth.User')
 
 class FilesfoldersManager(models.Manager):
     """Manager for custom table-level BaseFilesfoldersClass queries"""
-    def find(self, search_term):
+    def find(self, search_term, keywords=None):
         """
         Return objects or links matching the query.
         :param search_term: Search term (string)
+        :param keywords: Optional search keywords as key/value pairs (dict)
         :return: Python list of BaseFilesfolderClass objects
         """
         objects = super(

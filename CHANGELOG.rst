@@ -24,10 +24,7 @@ Added
     - Import app from prototype
     - Add sub-navbar with project breadcrumb (issue #20)
     - Move app and project editing links to project sidebar (issue #20)
-    - Add ``get_app_plugin()`` helper function
-    - Add ``validate_project_setting()`` helper function
-    - Add ``get_project_setting()`` helper function
-    - Add ``set_project_setting()`` helper function
+    - Add helper functions for project settings
     - Add project and app object search (issues #16, #21)
     - More helper functions in Project model: ``get_parents()``, ``get_full_title()``
 - **Timeline**

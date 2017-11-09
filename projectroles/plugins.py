@@ -47,9 +47,9 @@ class ProjectAppPluginPoint(PluginPoint):
     # TODO: Implement this in your app plugin
     search_enable = False
 
-    #: List of search keywords for the app
+    #: List of search object types for the app
     # TODO: Implement this in your app plugin
-    search_keywords = []
+    search_types = []
 
     #: Search results template
     # TODO: Implement this in your app plugin

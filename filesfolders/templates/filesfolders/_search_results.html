@@ -22,7 +22,7 @@
     </tr>
   </thead>
   <tbody>
-    {% find_filesfolders_items search_term search_keyword as items %}
+    {% find_filesfolders_items search_term search_type search_keywords as items %}
     {% if items|length > 0 %}
       {% for item in items %}
         {% has_perm 'filesfolders.view_data' request.user item.project as can_view_data %}
