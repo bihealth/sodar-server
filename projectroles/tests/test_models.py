@@ -142,7 +142,7 @@ class TestProject(TestCase, ProjectMixin):
 
     def test_get_parents_top(self):
         """Test get parents function for top category"""
-        self.assertEqual(list(self.category_top.get_parents()), [])
+        self.assertEqual(self.category_top.get_parents(), None)
 
     def test_get_parents_sub(self):
         """Test get parents function for sub project"""

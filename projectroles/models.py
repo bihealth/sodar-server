@@ -241,6 +241,9 @@ class Project(models.Model):
 
     def get_parents(self):
         """Return an array of parent projects in inheritance order"""
+        if not self.parent:
+            return None
+
         ret = []
         parent = self.parent
 

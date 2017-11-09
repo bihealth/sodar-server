@@ -3,7 +3,7 @@
 
 {% has_perm 'projectroles.view_project' request.user p as can_view_project %}
 
-<tr class="omics-pr-project-list-item" id="omics-pr-project-list-item-{{ p.pk }}">
+<tr class="omics-pr-project-list-item omics-pr-home-display-default" id="omics-pr-project-list-item-{{ p.pk }}">
   <td>
     {% get_project_list_indent p list_parent as project_indent %}
     <span style="padding-left: {{ project_indent }}px;"></span>

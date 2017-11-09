@@ -1,0 +1,27 @@
+{% load rules %}
+{% load projectroles_tags %}
+
+<tr class="omics-pr-project-search-item omics-pr-home-display-filtered" id="omics-pr-project-search-item-{{ p.pk }}">
+  <td>
+    {% if p.type == 'CATEGORY' %}
+      <i class="fa fa-cubes"></i>
+    {% else %}
+      <i class="fa fa-cube"></i>
+    {% endif %}
+    <a href="{% url 'project_detail' pk=p.pk %}">
+      {% autoescape off %}
+        {% get_project_title_html p %}
+      {% endautoescape %}
+    </a>
+  </td>
+  <td>
+    {% get_description p %}
+  </td>
+  <td>
+    {% if request.user.is_superuser %}
+      <span class="text-danger">superuser</span>
+    {% else %}
+      {% get_user_role_str p request.user %}
+    {% endif %}
+  </td>
+</tr>

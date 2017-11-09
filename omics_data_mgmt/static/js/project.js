@@ -72,3 +72,42 @@ $(document).ready(function() {
         }
      });
  });
+
+
+// Home page project list filtering
+$(document).ready(function() {
+     $('.omics-pr-home-display-filtered').hide();
+     $('.omics-pr-home-display-notfound').hide();
+
+     $('#omics-pr-project-list-filter').keyup(function() {
+        v = $(this).val();
+        var valFound = false;
+
+        if(v.length > 2) {
+           $('.omics-pr-home-display-default').hide();
+           var fs = $('#omics-pr-project-list-filter').val().toLowerCase();
+
+           $('.omics-pr-home-display-filtered').each(function (i, row) {
+               if ($(this).html().toLowerCase().indexOf(fs) !== -1) {
+                   $(this).show();
+                   valFound = true;
+                   $('.omics-pr-home-display-notfound').hide();
+               }
+
+               else {
+                   $(this).hide();
+               }
+           });
+
+           if (valFound === false) {
+               $('.omics-pr-home-display-notfound').show();
+           }
+        }
+
+        else {
+           $('.omics-pr-home-display-default').show();
+           $('.omics-pr-home-display-filtered').hide();
+           $('.omics-pr-home-display-notfound').hide();
+        }
+     });
+ });
