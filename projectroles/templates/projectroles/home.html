@@ -9,7 +9,7 @@
 {% has_perm 'projectroles.create_project' request.user as can_create_project %}
 
 
-<div class="row omics-pr-content-title align-bottom">
+<div class="row omics-pr-content-title">
   <h2 class="omics-pr-content-title">Home</h2>
 </div>
 
@@ -72,11 +72,19 @@
         showCancelLink: true
     });
 
+    tour.addStep('home_filter', {
+        title: 'Filter Project List',
+        text: 'Type here to filter the project list according to a search term.',
+        attachTo: '#omics-pr-project-list-filter left',
+        advanceOn: '.docs-link click',
+        showCancelLink: true
+    });
+
     if ($('#omics-pr-home-link-create').length) {
         tour.addStep('home_create', {
             title: 'Create Project',
             text: 'Click here to create a new project or category.',
-            attachTo: '#omics-pr-home-link-create bottom',
+            attachTo: '#omics-pr-home-link-create left',
             advanceOn: '.docs-link click',
             showCancelLink: true
         });

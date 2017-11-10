@@ -8,7 +8,7 @@
 
 {% omics_constant 'PROJECT_TYPE_CATEGORY' as PROJECT_TYPE_CATEGORY %}
 
-<div class="row omics-pr-content-title align-bottom">
+<div class="row omics-pr-content-title">
   {# Project menu dropdown, only visible if browser width < X and sidebar is hidden #}
   <div class="btn-group omics-pr-project-menu-btn-group pull-left" role="group" id="omics-pr-btn-res-menu">
     <button class="btn btn-secondary dropdown-toggle btn-sm omics-edit-dropdown" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -67,4 +67,5 @@
   <div class="omics-pr-content-title-secondary text-muted">
     {{ project.description }}
   </div>
+  <hr />
 </div>
