@@ -53,43 +53,6 @@
      </table>
     </div>
   </div>
-
-  {% if request.user.is_superuser %}
-
-    {# Project Apps #}
-
-    <div class="card">
-      <div class="card-header">
-        <h4><i class="fa fa-mouse-pointer"></i> Project Apps</h4>
-      </div>
-      <div class="card-body omics-card-body">
-        <dl class="row omics-dl">
-          {% for plugin in app_plugins %}
-            <dt class="col-md-2"><i class="fa fa-{{ plugin.icon }}"></i> {{ plugin.title }}</dt>
-            <dd class="col-md-10">{{ plugin.description }}</dd>
-          {% endfor %}
-        </dl>
-      </div>
-    </div>
-
-    {# Enabled Backend Plugins #}
-
-    <div class="card">
-      <div class="card-header">
-        <h4><i class="fa fa-puzzle-piece"></i> Enabled Backend Plugins</h4>
-      </div>
-      <div class="card-body omics-card-body">
-        <dl class="row omics-dl">
-          {% for plugin in backend_plugins %}
-            <dt class="col-md-2"><i class="fa fa-{{ plugin.icon }}"></i> {{ plugin.title }}</dt>
-            <dd class="col-md-10">{{ plugin.description }}</dd>
-          {% endfor %}
-        </dl>
-      </div>
-    </div>
-
-  {% endif %}
-
 </div>
 
 {% endblock projectroles %}

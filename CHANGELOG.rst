@@ -19,14 +19,15 @@ Added
 - **Filesfolders**
     - Import app from prototype
     - Add page title to main files list
-    - Add file and link search (issue #21)
+    - Add file and link search (#21)
 - **Projectroles**
     - Import app from prototype
-    - Add sub-navbar with project breadcrumb (issue #20)
-    - Move app and project editing links to project sidebar (issue #20)
+    - Add sub-navbar with project breadcrumb (#20)
+    - Move app and project editing links to project sidebar (#20)
     - Add helper functions for project settings
-    - Add project and app object search (issues #16, #21)
+    - Initial project and app object search (#16, #21)
     - More helper functions in Project model: ``get_parents()``, ``get_full_title()``
+    - Project list filtering (#32)
 - **Timeline**
     - Import app and backend plugin from prototype
 
@@ -36,7 +37,7 @@ Changed
 - **General**
     - Update site from Bootstrap 4 Alpha 5 to Beta
     - Update third-party libraries to their latest versions
-    - Layout redesign (issue #20)
+    - Layout redesign (#20)
     - Switch from PhantomJS to Headless Chrome for UI tests (improved performance and stability, Bootstrap 4 Beta compatibility)
     - Include CSS and JS imports in testing configs and CI
     - General code refactoring and cleanup
@@ -65,13 +66,13 @@ Fixed
 
 - **Filesfolders**
     - Redirects in exception cases in ``FilePublicLinkView``
-    - Unexpected characters in file name broke the ``file_serve`` view (ODA issue #109)
+    - Unexpected characters in file name broke the ``file_serve`` view (ODA #109)
 - **Projectroles**
     - Check for project title uniqueness
     - Don't allow matching titles for subproject and parent
     - App plugin element IDs in templates
     - Project context for role invite revocation page
-    - Project type correctly displayed for user (issue #27)
+    - Project type correctly displayed for user (#27)
 - **Timeline**
     - Tour help anchoring for list navigation buttons
     - User column link was missing the ``mailto:`` protocol syntax
