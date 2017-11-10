@@ -61,13 +61,11 @@ $(document).ready(function() {
      $('#omics-nav-search-input').keyup(function() {
         v = $(this).val();
 
-        if((v.indexOf(':') !== -1 && v.split(':')[1].length > 2) ||
-            (v.indexOf(':') === -1 && v.length > 2)) {
+        if(v.length > 2) {
            $('#omics-nav-search-submit').attr('disabled', false);
         }
 
-        else if((v.indexOf(':') !== -1 && v.split(':')[1].length <= 2) ||
-            (v.indexOf(':') === -1 && v.length <= 2)) {
+        else {
            $('#omics-nav-search-submit').attr('disabled', true);
         }
      });

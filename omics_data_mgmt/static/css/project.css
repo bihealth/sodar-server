@@ -232,29 +232,28 @@ table.omics-card-table tr th {
 }
 
 tr.omics-pr-project-list-header th:first-child {
-  width: 40%;
+  width: 50%;
 }
 
-tr.omics-pr-project-list-header td:nth-child(2) {
-  width: 40%;
+tr.omics-pr-project-list-header th:nth-child(2) {
+  width: 35%;
 }
 
-tr.omics-pr-project-list-header td:nth-child(3) {
-  width: 20%;
+tr.omics-pr-project-list-header th:nth-child(3) {
+  width: 15%;
 }
 
 tr.omics-pr-project-list-item td:first-child {
-  white-space: nowrap;
-  width: 40%;
+  width: 50%;
 }
 
 tr.omics-pr-project-list-item td:nth-child(2) {
-  width: 40%;
+  width: 35%;
 }
 
 tr.omics-pr-project-list-item td:nth-child(3) {
   white-space: nowrap;
-  width: 20%;
+  width: 15%;
 }
 
 /* Popups */
