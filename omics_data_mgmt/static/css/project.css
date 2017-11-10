@@ -250,6 +250,15 @@ tr.omics-pr-project-list-item td:nth-child(3) {
   width: 15%;
 }
 
+.omics-card-header-form-container {
+  padding-right: 0;
+}
+
+.omics-card-header-input {
+  margin-right: 0 !important;
+  padding-right: 0 !important;
+}
+
 /* Popups */
 
 .omics-popup-overlay {

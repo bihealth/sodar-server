@@ -83,6 +83,8 @@ $(document).ready(function() {
 
         if(v.length > 2) {
            $('.omics-pr-home-display-default').hide();
+           $('#omics-pr-project-list-filter').removeClass('text-danger');
+           $('#omics-pr-project-list-filter').addClass('text-success');
            var fs = $('#omics-pr-project-list-filter').val().toLowerCase();
 
            $('.omics-pr-home-display-filtered').each(function (i, row) {
@@ -106,6 +108,8 @@ $(document).ready(function() {
            $('.omics-pr-home-display-default').show();
            $('.omics-pr-home-display-filtered').hide();
            $('.omics-pr-home-display-notfound').hide();
+           $('#omics-pr-project-list-filter').addClass('text-danger');
+           $('#omics-pr-project-list-filter').removeClass('text-success');
         }
      });
  });

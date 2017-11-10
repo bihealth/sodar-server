@@ -46,11 +46,7 @@
         <div class="card-body omics-card-body-table">
          <table class="table table-hover omics-card-table omics-card-table-borderless" id="omics-main-project-list">
            <thead>
-             <tr>
-              <th id="omics-pr-home-header-project">Project</th>
-              <th id="omics-pr-home-header-description">Description</th>
-              <th id="omics-pr-home-header-role">Your&nbsp;Role</th>
-            </tr>
+             {% include 'projectroles/_project_list_header.html' %}
            </thead>
            <tbody>
              {% find_projects search_term as projects %}
