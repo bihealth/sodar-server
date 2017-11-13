@@ -88,9 +88,10 @@ $(document).ready(function() {
            $('.omics-pr-home-display-filtered').each(function () {
                var titleTxt = $(this).find('td:nth-child(1)').attr('orig-txt');
                var descTxt = $(this).find('td:nth-child(2)').attr('orig-txt');
-               console.log('descTxt=' + descTxt);   // DEBUG
 
-               if ($(this).html().toLowerCase().indexOf(v) !== -1) {
+               if ($(this).find('td:nth-child(1) a').text().toLowerCase().indexOf(v) !== -1 ||
+                    $(this).find('td:nth-child(2)').text().toLowerCase().indexOf(v) !== -1)
+                {
                    // Reset content for updating the highlight
                    $(this).find('td:nth-child(1) a').html(titleTxt);
                    $(this).find('td:nth-child(2)').html(descTxt);
@@ -102,13 +103,11 @@ $(document).ready(function() {
 
                    if (titlePos !== -1) {
                        var titleVal = titleTxt.substring(titlePos, titlePos + v.length);
-                       console.log('titleVal=' + titleVal);     // DEBUG
                        $(this).find('td:nth-child(1) a').html(titleTxt.replace(pattern, '<span class="omics-search-highlight">' + titleVal + '</span>'));
                    }
 
                    if (descPos !== -1) {
                        var descVal = descTxt.substring(descPos, descPos + v.length);
-                       console.log('descVal=' + descVal);       // DEBUG
                        $(this).find('td:nth-child(2)').html(descTxt.replace(pattern, '<span class="omics-search-highlight">' + descVal + '</span>'));
                    }
 
