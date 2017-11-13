@@ -4,8 +4,10 @@ from urllib.parse import urlencode
 
 from django.urls import reverse
 
+# Projectroles dependency
 from projectroles.tests.test_ui import TestUIBase
 from projectroles.models import ProjectSetting, OMICS_CONSTANTS
+from projectroles.project_settings import set_project_setting
 from projectroles.utils import build_secret
 
 from .test_models import FolderMixin, FileMixin, HyperLinkMixin
@@ -29,6 +31,9 @@ class TestListView(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
 
     def setUp(self):
         super(TestListView, self).setUp()
+
+        set_project_setting(
+            self.project, APP_NAME, 'allow_public_links', True)
 
         self.file_content = bytes('content'.encode('utf-8'))
         self.secret_file_owner = build_secret()

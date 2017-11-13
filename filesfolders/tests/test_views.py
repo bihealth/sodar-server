@@ -64,6 +64,10 @@ class TestViewsBase(
         self.owner_as = self._make_assignment(
             self.project, self.user, self.role_owner)
 
+        # Change public link setting from default
+        set_project_setting(
+            self.project, APP_NAME, 'allow_public_links', True)
+
         # Init file
         self.file_content = bytes('content'.encode('utf-8'))
 

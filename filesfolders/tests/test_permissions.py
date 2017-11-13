@@ -4,6 +4,7 @@ from django.urls import reverse
 
 # Projectroles dependency
 from projectroles.models import ProjectSetting, OMICS_CONSTANTS
+from projectroles.project_settings import set_project_setting
 from projectroles.tests.test_permissions import TestPermissionBase
 
 from filesfolders.tests.test_models import FileMixin, FolderMixin,\
@@ -96,6 +97,9 @@ class TestFilePermissions(TestPermissionBase, FileMixin):
 
     def setUp(self):
         super(TestFilePermissions, self).setUp()
+
+        set_project_setting(
+            self.project, APP_NAME, 'allow_public_links', True)
 
         self.file_content = bytes('content'.encode('utf-8'))
 
@@ -229,12 +233,8 @@ class TestFilePermissions(TestPermissionBase, FileMixin):
 
     def test_file_serve_public_disabled(self):
         """Test public file serving if not allowed in project, should fail"""
-        setting = ProjectSetting.objects.get(
-            project=self.file.project.pk,
-            app_plugin__name=APP_NAME,
-            name='allow_public_links')
-        setting.value = 0
-        setting.save()
+        set_project_setting(
+            self.project, APP_NAME, 'allow_public_links', False)
 
         url = reverse(
             'file_serve_public',
