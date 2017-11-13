@@ -56,6 +56,7 @@ Changed
     - Include modified fields in project_update timeline event
     - Move Project settings helper functions to ``project_settings.py``
     - Disable help link instead of hiding if no tour help is available
+    - Show notice card if no ReadMe is available for project (#42)
     - Refactor URL kwargs
 - **Timeline**
     - Enable event details popover on the project details page

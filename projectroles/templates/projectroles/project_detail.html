@@ -18,6 +18,7 @@
 {% block projectroles %}
 
 {% has_perm 'projectroles.view_project' request.user object as can_view_project %}
+{% has_perm 'projectroles.update_project' request.user object as can_update_project %}
 {% omics_constant 'PROJECT_TYPE_CATEGORY' as PROJECT_TYPE_CATEGORY %}
 
 {% if can_view_project %}
@@ -27,18 +28,25 @@
 
     {# README #}
 
-    {% if object.readme.rendered|length > 0 %}
-      <div class="card omics-card" id="omics-pr-details-card-readme">
-        <div class="card-header">
-          <h4><i class="fa fa-book"></i> ReadMe</h4>
-        </div>
-        <div class="card-body omics-card-body">
+    <div class="card omics-card" id="omics-pr-details-card-readme">
+      <div class="card-header">
+        <h4><i class="fa fa-book"></i> ReadMe</h4>
+      </div>
+      <div class="card-body omics-card-body">
+        {% if object.readme.rendered|length > 0 %}
           {% autoescape off %}
             {% render_markdown object.readme.raw %}
           {% endautoescape %}
-        </div>
+        {% else %}
+          <p>
+          No ReadMe is currently set for this project.
+          {% if can_update_project %}
+           <a href="{% url 'project_update' pk=object.pk %}#div_id_readme">You can update the ReadMe here</a>.
+          {% endif %}
+          </p>
+        {% endif %}
       </div>
-    {% endif %}
+    </div>
 
     {# App Plugin Cards #}
 
