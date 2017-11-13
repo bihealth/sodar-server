@@ -4,9 +4,9 @@
 <tr class="omics-pr-project-list-item" id="omics-pr-project-search-item-{{ p.pk }}">
   <td>
     {% if p.type == 'CATEGORY' %}
-      <i class="fa fa-cubes"></i>
+      <i class="fa fa-fw fa-cubes"></i>
     {% else %}
-      <i class="fa fa-cube"></i>
+      <i class="fa fa-fw fa-cube"></i>
     {% endif %}
     <a href="{% url 'project_detail' pk=p.pk %}">
       {% get_project_title_html p as project_title %}

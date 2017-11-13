@@ -8,9 +8,9 @@
     {% get_project_list_indent p list_parent as project_indent %}
     <span style="padding-left: {{ project_indent }}px;"></span>
     {% if p.type == 'CATEGORY' %}
-      <i class="fa fa-cubes"></i>
+      <i class="fa fa-fw fa-cubes"></i>
     {% else %}
-      <i class="fa fa-cube"></i>
+      <i class="fa fa-fw fa-cube"></i>
     {% endif %}
     {% if p.type == 'CATEGORY' %}
       <u>

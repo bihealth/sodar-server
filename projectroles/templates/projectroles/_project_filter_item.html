@@ -2,11 +2,11 @@
 {% load projectroles_tags %}
 
 <tr class="omics-pr-project-list-item omics-pr-home-display-filtered" id="omics-pr-project-search-item-{{ p.pk }}">
-  <td>
+  <td orig-txt="{{ p.get_full_title }}">
     {% if p.type == 'CATEGORY' %}
-      <i class="fa fa-cubes"></i>
+      <i class="fa fa-fw fa-cubes"></i>
     {% else %}
-      <i class="fa fa-cube"></i>
+      <i class="fa fa-fw fa-cube"></i>
     {% endif %}
     <a href="{% url 'project_detail' pk=p.pk %}">
       {% autoescape off %}
@@ -14,7 +14,7 @@
       {% endautoescape %}
     </a>
   </td>
-  <td>
+  <td orig-txt="{% get_description p %}">
     {% get_description p %}
   </td>
   <td>
