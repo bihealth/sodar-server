@@ -45,6 +45,7 @@ Changed
 - **Filesfolders**
     - Redesign data model with inheritance to avoid field repetition
     - Internal app name is now ``filesfolders``
+    - Project setting ``allow_public_links`` is now False by default (#43)
 - **Projectroles**
     - Remove two-level restriction for project and category nesting in models
     - Only allow creation of categories on top level

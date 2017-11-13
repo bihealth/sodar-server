@@ -27,7 +27,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
     project_settings = {
         'allow_public_links': {
             'type': 'BOOLEAN',
-            'default': True,
+            'default': False,
             'description': 'Allow generation of public links for files'},
         }
 
