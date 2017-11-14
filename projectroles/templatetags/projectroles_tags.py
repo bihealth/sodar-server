@@ -90,11 +90,11 @@ def get_description(project):
 @register.simple_tag
 def get_user_role_str(project, user):
     if user.is_superuser:
-        return '<span class="text-danger">superuser</span>'
+        return '<span class="text-danger">Superuser</span>'
 
     try:
         role_as = RoleAssignment.objects.get(project=project, user=user)
-        return role_as.role.name.split(' ')[1]
+        return role_as.role.name.split(' ')[1].capitalize()
 
     except RoleAssignment.DoesNotExist:
         return '<span class="text-muted">N/A</span>'

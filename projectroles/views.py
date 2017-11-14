@@ -661,11 +661,11 @@ class RoleAssignmentModifyMixin(ModelFormMixin):
 
         messages.success(
             self.request,
-            'Role of {} {}d for {} in {}.'.format(
-                self.object.role.name,
-                form_action,
+            'Membership {} for {} in {} with the role of {}.'.format(
+                'added' if form_action == 'create' else 'updated',
                 self.object.user.username,
-                self.object.project.title))
+                self.object.project.title,
+                self.object.role.name))
         return redirect(
             reverse('project_roles', kwargs={'pk': self.object.project.pk}))
 
@@ -778,7 +778,7 @@ class RoleAssignmentDeleteView(
             tl_event.set_status('OK')
 
         messages.success(
-            self.request, 'Role of {} removed from {}.'.format(
+            self.request, 'Membership of {} removed from {}.'.format(
                 user.username,
                 project.title))
 

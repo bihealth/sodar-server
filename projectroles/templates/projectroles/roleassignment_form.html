@@ -4,9 +4,9 @@
 
 {% block title %}
   {% if object.pk %}
-    Update Role for {{ object.user.username }} in {{ object.project.title }}
+    Update Member {{ object.user.username }} in {{ object.project.title }}
   {% else %}
-    Add Role in {{ project.title }}
+    Add Member in {{ project.title }}
   {% endif %}
 {% endblock title %}
 
@@ -14,9 +14,9 @@
 
 <div class="container-fluid omics-subtitle-container">
   {% if object.pk %}
-    <h3>Update Role for {{ object.user.username }}</h3>
+    <h3>Update Member {{ object.user.username }}</h3>
   {% else %}
-    <h3>Add Role</h3>
+    <h3>Add Member</h3>
   {% endif %}
 </div>
 

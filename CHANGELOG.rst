@@ -59,6 +59,7 @@ Changed
     - Show notice card if no ReadMe is available for project (#42)
     - Refactor URL kwargs
     - Allow users with roles under category children to view category (#47)
+    - Update text labels for role management to refer to "members" (#40)
 - **Timeline**
     - Enable event details popover on the project details page
     - Limit details page list to successful events

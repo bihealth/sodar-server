@@ -20,7 +20,7 @@
 
 <div class="row omics-subtitle-container">
   <h3>
-    <i class="fa fa-users"></i> User Roles
+    <i class="fa fa-users"></i> Project Members
   </h3>
   {% if can_update_members or can_invite %}
     {% include 'projectroles/_role_list_buttons.html' with object=object can_update_members=can_update_members can_invite=can_invite %}
@@ -108,8 +108,8 @@
     tourEnabled = true;
 
     tour.addStep('role_list', {
-        title: 'Role List',
-        text: 'List of roles assigned for this project can be seen here.',
+        title: 'Members List',
+        text: 'List of users given access for this project can be seen here.',
         attachTo: '#omics-pr-role-list top',
         advanceOn: '.docs-link click',
         showCancelLink: true
@@ -117,8 +117,8 @@
 
     if ($('#omics-pr-btn-role-list').length) {
         tour.addStep('role_actions', {
-            title: 'Role Actions Menu',
-            text: 'Use this menu to add roles, send invites or view existing ' +
+            title: 'Member Operations Menu',
+            text: 'Use this menu to add members, send invites or view existing ' +
             'invites.',
             attachTo: '#omics-pr-btn-role-list left',
             advanceOn: '.docs-link click',
@@ -128,8 +128,9 @@
 
     if ($('div.pr_role_buttons').length) {
         tour.addStep('role_menu', {
-            title: 'Role Editing Menu',
-            text: 'Individual roles can be updated or removed from these menues.',
+            title: 'Member Editing Menu',
+            text: 'Individual memberships can be updated or removed from these ' +
+                  'menues.',
             attachTo: 'div.omics-pr-btn-grp-role left',
             advanceOn: '.docs-link click',
             showCancelLink: true,

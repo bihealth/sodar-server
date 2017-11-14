@@ -1,6 +1,6 @@
 {% extends 'projectroles/project_base.html' %}
 {% load rules %}
-{% block title %}Active Invites for {{ project.title }}{% endblock title %}
+{% block title %}Member Invites for {{ project.title }}{% endblock title %}
 
 {% block projectroles_extend %}
 
@@ -8,7 +8,7 @@
 {% has_perm 'projectroles.invite_users' request.user project as can_invite %}
 
 <div class="row omics-subtitle-container">
-  <h3>Active Invites</h3>
+  <h3><i class="fa fa-envelope"></i> Member Invites</h3>
   {% if can_invite %}
     {% include 'projectroles/_role_list_buttons.html' with project=project can_update_members=can_update_members can_invite=can_invite %}
   {% endif %}

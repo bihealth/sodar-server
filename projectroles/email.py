@@ -21,47 +21,49 @@ MESSAGE_HEADER = r'''
 Dear {recipient},
 
 This email has been automatically sent to you by the
-CUBI Omics Data Access prototype.
+CUBI Omics Data Management system.
 
 '''.lstrip()
 
 MESSAGE_HEADER_NO_RECIPIENT = r'''
 This email has been automatically sent to you by the
-CUBI Omics Data Access prototype.
+CUBI Omics Data Management system.
 '''.lstrip()
 
 MESSAGE_FOOTER = r'''
-For support or reporting issues regarding the CUBI Omics Data Access
-prototype, contact Mikko Nieminen (mikko.nieminen@bihealth.de).
+For support or reporting issues regarding the CUBI Omics Data Management
+system, contact Mikko Nieminen (mikko.nieminen@bihealth.de).
 '''
 
 
 # Role Change Template ---------------------------------------------------
 
 
-SUBJECT_ROLE_CREATE = 'Role granted for project "{}"'
-SUBJECT_ROLE_UPDATE = 'Role changed in project "{}"'
-SUBJECT_ROLE_DELETE = 'Role removed from project "{}"'
+SUBJECT_ROLE_CREATE = 'Membership granted for project "{}"'
+SUBJECT_ROLE_UPDATE = 'Membership changed in project "{}"'
+SUBJECT_ROLE_DELETE = 'Membership removed from project "{}"'
 
 MESSAGE_ROLE_CREATE = r'''
-{issuer_name} ({issuer_email}) has granted you the role of
-"{role}" in project "{project}".
+{issuer_name} ({issuer_email}) has granted you the membership
+in project "{project}" with the role of "{role}".
 
-To access the project in the Omics Data Access prototype,
-please click on the following link: {project_url}
+To access the project in the CUBI Omics Data Management
+system, please click on the following link:
+{project_url}
 '''.lstrip()
 
 MESSAGE_ROLE_UPDATE = r'''
-{issuer_name} ({issuer_email}) has changed your role
-in project "{project}" into "{role}".
+{issuer_name} ({issuer_email}) has changed your membership
+role in project "{project}" into "{role}".
 
-To access the project in the Omics Data Access prototype,
-please click on the following link: {project_url}
+To access the project in the CUBI Omics Data Management system,
+please click on the following link:
+{project_url}
 '''.lstrip()
 
 MESSAGE_ROLE_DELETE = r'''
-{issuer_name} ({issuer_email}) has removed your role from
-project "{project}".
+{issuer_name} ({issuer_email}) has removed your membership
+from project "{project}".
 '''.lstrip()
 
 
@@ -75,7 +77,7 @@ You have been invited by {issuer_name} ({issuer_email})
 to share data in the project "{project}" with the role of "{role}".
 
 To accept the invitation and access the project in the
-Omics Data Access prototype, please click on the following link:
+Omics Data Management system, please click on the following link:
 {invite_url}
 
 This invitation will expire on {date_expire}.
@@ -112,7 +114,7 @@ was attempted to be used by {user_name} ({user_email}).
 This invitation has expired on {date_expire}. Because of this,
 access was not granted to the user.
 
-Please add the role manually with "Add Role", if you still wish
+Please add the role manually with "Add Member", if you still wish
 to grant the user access to the project.
 '''.lstrip()
 

@@ -4,17 +4,17 @@
   <div class="btn-group ml-auto" id="omics-pr-btn-role-list">
 {% endif %}
   <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-    Role Actions
+    Member Operations
   </button>
   <div class="dropdown-menu dropdown-menu-right">
 
     {# View Roles #}
     {% if can_update_members and request.resolver_match.url_name != 'project_roles' %}
       <a class="dropdown-item" href="{% url 'project_roles' pk=object.pk %}"
-         title="View Invites"
+         title="View Members"
          id="omics-pr-btn-role-list-roles">
         <i class="fa fa-users"></i>
-          View Roles
+          View Members
       </a>
     {% endif %}
 
@@ -41,10 +41,10 @@
     {# Add Role #}
     {% if can_update_members %}
       <a class="dropdown-item" href="{% url 'role_create' project=object.pk %}"
-         title="Add Role"
+         title="Add Member"
          id="omics-pr-btn-role-list-create">
         <i class="fa fa-user-plus"></i>
-          Add Role
+          Add Member
       </a>
     {% endif %}
 
