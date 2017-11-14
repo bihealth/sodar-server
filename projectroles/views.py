@@ -224,8 +224,14 @@ class ProjectDetailView(
             context['role'] = None
 
         else:
-            context['role'] = RoleAssignment.objects.get_assignment(
-                self.request.user, self.object).role
+            try:
+                role_as = RoleAssignment.objects.get(
+                    user=self.request.user, project=self.object)
+
+                context['role'] = role_as.role
+
+            except RoleAssignment.DoesNotExist:
+                context['role'] = None
 
         return context
 

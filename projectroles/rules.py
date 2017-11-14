@@ -8,6 +8,7 @@ PROJECT_ROLE_DELEGATE = OMICS_CONSTANTS['PROJECT_ROLE_DELEGATE']
 PROJECT_ROLE_STAFF = OMICS_CONSTANTS['PROJECT_ROLE_STAFF']
 PROJECT_ROLE_CONTRIBUTOR = OMICS_CONSTANTS['PROJECT_ROLE_CONTRIBUTOR']
 PROJECT_ROLE_GUEST = OMICS_CONSTANTS['PROJECT_ROLE_GUEST']
+PROJECT_TYPE_CATEGORY = OMICS_CONSTANTS['PROJECT_TYPE_CATEGORY']
 
 
 # Predicates -------------------------------------------------------------
@@ -75,6 +76,14 @@ def has_project_role(user, obj):
 
 
 @rules.predicate
+def has_category_child_role(user, obj):
+    """Whether or not the user has any role in any child project under the
+    current one, if the current project is a category"""
+    return obj.type == PROJECT_TYPE_CATEGORY and obj.has_role(
+        user, include_children=True)
+
+
+@rules.predicate
 def has_roles(user):
     """Whether or not the user has any roles set in the system"""
     return RoleAssignment.objects.filter(user=user).count() > 0
@@ -89,10 +98,10 @@ def has_roles(user):
 # Permissions ------------------------------------------------------------
 
 
-# Allow viewing project details
+# Allow viewing project/category details
 rules.add_perm(
     'projectroles.view_project',
-    rules.is_superuser | has_project_role)
+    rules.is_superuser | has_project_role | has_category_child_role)
 
 # Allow project updating
 rules.add_perm(

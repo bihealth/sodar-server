@@ -22,10 +22,8 @@
     {% endautoescape %}
   </td>
   <td>
-    {% if request.user.is_superuser %}
-      <span class="text-danger">superuser</span>
-    {% else %}
+    {% autoescape off %}
       {% get_user_role_str p request.user %}
-    {% endif %}
+    {% endautoescape %}
   </td>
 </tr>

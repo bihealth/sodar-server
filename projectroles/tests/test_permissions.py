@@ -240,15 +240,23 @@ class TestProjectViews(TestPermissionBase):
     def test_category_details(self):
         """Test access to category details"""
         url = reverse('project_detail', kwargs={'pk': self.category.pk})
+
+        # Add user with access to project below category: should still be able
+        # to view the category
+        new_user = self.make_user('new_user')
+        self._make_assignment(
+            self.project, new_user, self.role_contributor)
+
         good_users = [
             self.superuser,
-            self.as_owner.user]
-        bad_users = [
-            self.anonymous,
+            self.as_owner.user,
             self.as_delegate.user,
             self.as_staff.user,
             self.as_contributor.user,
             self.as_guest.user,
+            new_user]
+        bad_users = [
+            self.anonymous,
             self.user_no_roles]
         self.assert_render200_ok(url, good_users)
         self.assert_redirect(url, bad_users)
