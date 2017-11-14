@@ -49,19 +49,15 @@
              {% include 'projectroles/_project_list_header.html' %}
            </thead>
            <tbody>
-             {% find_projects search_term as projects %}
-             {% if projects|length > 0 %}
-               {% for p in projects %}
-                 {% has_perm 'projectroles.view_project' request.user p as can_view_project %}
-                 {% if request.user.is_superuser or can_view_project %}
-                   {% include 'projectroles/_project_search_item.html' %}
-                 {% endif %}
-               {% endfor %}
-            {% else %}
+             {% find_projects search_term request.user as projects %}
+             {% for p in projects %}
+               {% include 'projectroles/_project_search_item.html' %}
+             {% endfor %}
+             {% if projects|length == 0 %}
                <tr>
                  <td class="bg-faded font-italic text-center text-danger" colspan="3">No projects found</td>
                </tr>
-            {% endif %}
+             {% endif %}
            </tbody>
          </table>
         </div>

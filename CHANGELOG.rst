@@ -15,16 +15,16 @@ Added
 - **General**
     - Create new base project using the current version of `cookiecutter-django <https://github.com/pydanny/cookiecutter-django>`_
     - Additional unit tests for site apps
-    - Add changelog in ``CHANGELOG.rst``
+    - Changelog in ``CHANGELOG.rst``
 - **Filesfolders**
     - Import app from prototype
-    - Add page title to main files list
-    - Add file and link search (#21)
+    - Page title to main files list
+    - File, folder and link search (#21)
 - **Projectroles**
     - Import app from prototype
-    - Add sub-navbar with project breadcrumb (#20)
+    - Sub-navbar with project breadcrumb (#20)
     - Move app and project editing links to project sidebar (#20)
-    - Add helper functions for project settings
+    - Helper functions for project settings
     - Initial project and app object search (#16, #21)
     - More helper functions in Project model: ``get_parents()``, ``get_full_title()``
     - Project list filtering (#32)

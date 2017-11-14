@@ -62,10 +62,11 @@ def get_project_list_indent(project, list_parent):
 
 
 @register.simple_tag
-def find_projects(search_term):
-    """Return flat project list based on a search term"""
-    return Project.objects.find(
-        search_term, project_type='PROJECT')
+def find_projects(search_term, user):
+    """Return flat project list based on a search term and user permissions"""
+    return [p for p in Project.objects.find(
+        search_term, project_type='PROJECT') if
+            user.has_perm('projectroles.view_project', p)]
 
 
 @register.simple_tag

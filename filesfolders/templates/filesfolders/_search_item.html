@@ -18,6 +18,8 @@
     {% highlight_search_term item.name search_term as item_display_name %}
     {% if item|get_class == 'HyperLink' %}
       <a href="{{ item.url }}" target="_blank">
+    {% elif item|get_class == 'Folder' %}
+      <a href="{% url 'project_files' project=item.project.pk folder=item.pk %}">
     {% elif item|get_class == 'File' %}
       <a href="{% url 'file_serve' pk=item.pk project=item.project.pk file_name=item.name %}">
     {% endif %}

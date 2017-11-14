@@ -283,12 +283,12 @@ class TestSearch(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
     def test_search_results(self):
         """Test search items visibility according to user permissions"""
         expected = [
-            (self.superuser, 4),
-            (self.as_owner.user, 4),
-            (self.as_delegate.user, 4),
-            (self.as_contributor.user, 4),
-            (self.as_staff.user, 4),
-            (self.as_guest.user, 4),
+            (self.superuser, 6),
+            (self.as_owner.user, 6),
+            (self.as_delegate.user, 6),
+            (self.as_contributor.user, 6),
+            (self.as_staff.user, 6),
+            (self.as_guest.user, 6),
             (self.user_no_roles, 0)]
         url = reverse('project_search') + '?' + urlencode({'s': 'description'})
         self.assert_element_count(expected, url, 'omics-ff-search-item')
@@ -306,6 +306,21 @@ class TestSearch(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
         url = reverse('project_search') + '?' + urlencode({
             's': 'file type:file'})
         self.assert_element_count(expected, url, 'omics-ff-search-item')
+
+    def test_search_type_folder(self):
+        """Test search items visibility with 'folder' type"""
+        expected = [
+            (self.superuser, 2),
+            (self.as_owner.user, 2),
+            (self.as_delegate.user, 2),
+            (self.as_contributor.user, 2),
+            (self.as_staff.user, 2),
+            (self.as_guest.user, 2),
+            (self.user_no_roles, 0)]
+        url = reverse('project_search') + '?' + urlencode({
+            's': 'folder type:folder'})
+        self.assert_element_count(expected, url, 'omics-ff-search-item')
+
 
     def test_search_type_link(self):
         """Test search items visibility with 'link' as type"""
