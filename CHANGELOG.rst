@@ -42,6 +42,7 @@ Changed
     - Include CSS and JS imports in testing configs and CI
     - General code refactoring and cleanup
     - Update installation instructions in ``INSTALL.rst``
+    - Rename "actions" into "operations" (#41)
 - **Filesfolders**
     - Redesign data model with inheritance to avoid field repetition
     - Internal app name is now ``filesfolders``
