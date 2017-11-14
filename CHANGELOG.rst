@@ -58,6 +58,7 @@ Changed
     - Disable help link instead of hiding if no tour help is available
     - Show notice card if no ReadMe is available for project (#42)
     - Refactor URL kwargs
+    - Allow users with roles under category children to view category (#47)
 - **Timeline**
     - Enable event details popover on the project details page
     - Limit details page list to successful events
