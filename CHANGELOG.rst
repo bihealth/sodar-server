@@ -28,6 +28,7 @@ Added
     - Initial project and app object search (#16, #21)
     - More helper functions in Project model: ``get_parents()``, ``get_full_title()``
     - Project list filtering (#32)
+    - Project tagging/starring functionality (#37)
 - **Timeline**
     - Import app and backend plugin from prototype
 

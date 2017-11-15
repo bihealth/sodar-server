@@ -14,7 +14,7 @@
     <button class="btn btn-secondary dropdown-toggle btn-sm omics-edit-dropdown" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
       <i class="fa fa-bars"></i>
     </button>
-    <div class="dropdown-menu dropdown-menu-right">
+    <div class="dropdown-menu">
 
        {# App plugins #}
       {% if project.type != PROJECT_TYPE_CATEGORY %}
@@ -39,7 +39,7 @@
             title="User Roles"
             id="omics-pr-res-link-project-roles">
           <i class="fa fa-users"></i>
-          User Roles
+          Project Members
         </a>
       {% endif %}
       {% if project.type != PROJECT_TYPE_CATEGORY and can_update_settings %}
@@ -63,9 +63,10 @@
 
    </div>
   </div>
-  <h2 class="omics-pr-content-title">{{ project.title }}</h2>
+  <h2 class="omics-pr-content-title">{{ project.title }}
+  </h2>
   <div class="omics-pr-content-title-secondary text-muted">
     {{ project.description }}
   </div>
-  <hr />
+
 </div>

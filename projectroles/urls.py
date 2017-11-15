@@ -29,6 +29,11 @@ urlpatterns = [
         name='project_search',
     ),
     url(
+        regex=r'^(?P<pk>\d+)/star',
+        view=views.ProjectStarringView.as_view(),
+        name='project_star',
+    ),
+    url(
         regex=r'^(?P<pk>\d+)/roles$',
         view=views.ProjectRoleView.as_view(),
         name='project_roles',

@@ -3,7 +3,10 @@
 
 {% has_perm 'projectroles.view_project' request.user p as can_view_project %}
 
-<tr class="omics-pr-project-list-item omics-pr-home-display-default" id="omics-pr-project-list-item-{{ p.pk }}">
+{% has_star p request.user as is_starred %}
+
+<tr class="omics-pr-project-list-item omics-pr-home-display-default {% if not is_starred %}omics-pr-home-unstarred{% endif %}"
+    id="omics-pr-project-list-item-{{ p.pk }}">
   <td>
     {% get_project_list_indent p list_parent as project_indent %}
     <span style="padding-left: {{ project_indent }}px;"></span>
@@ -17,6 +20,8 @@
     {% endif %}
     {% if can_view_project %}
       <a href="{% url 'project_detail' pk=p.pk %}">{{ p.title }}</a>
+      {% get_star p request.user as project_star %}
+      {{ project_star|safe }}
     {% else %}
       <span class="text-muted">{{ p.title }}</span>
     {% endif %}

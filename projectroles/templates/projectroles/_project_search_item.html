@@ -12,6 +12,7 @@
       {% get_project_title_html p as project_title %}
       {% autoescape off %}
         {% highlight_search_term project_title search_term %}
+        {% get_star p request.user %}
       {% endautoescape %}
     </a>
   </td>

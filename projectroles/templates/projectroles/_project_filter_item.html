@@ -1,7 +1,10 @@
 {% load rules %}
 {% load projectroles_tags %}
 
-<tr class="omics-pr-project-list-item omics-pr-home-display-filtered" id="omics-pr-project-search-item-{{ p.pk }}">
+{% has_star p request.user as is_starred %}
+
+<tr class="omics-pr-project-list-item omics-pr-home-display-filtered {% if is_starred %}omics-pr-home-display-starred{% endif %}"
+    id="omics-pr-project-search-item-{{ p.pk }}">
   <td orig-txt="{{ p.get_full_title }}">
     {% if p.type == 'CATEGORY' %}
       <i class="fa fa-fw fa-cubes"></i>
@@ -13,6 +16,8 @@
         {% get_project_title_html p %}
       {% endautoescape %}
     </a>
+    {% get_star p request.user as project_star %}
+    {{ project_star|safe }}
   </td>
   <td orig-txt="{% get_description p %}">
     {% get_description p %}

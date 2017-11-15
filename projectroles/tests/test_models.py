@@ -10,7 +10,7 @@ from django.utils import timezone
 from test_plus.test import TestCase
 
 from ..models import Project, Role, RoleAssignment, ProjectInvite, \
-    OMICS_CONSTANTS
+    ProjectUserTag, OMICS_CONSTANTS, PROJECT_TAG_STARRED
 from projectroles.project_settings import save_default_project_settings
 
 # Omics constants
@@ -78,6 +78,21 @@ class ProjectInviteMixin:
         invite.save()
 
         return invite
+
+
+class ProjectUserTagMixin:
+    """Helper mixin for ProjectUserTag creation"""
+
+    @classmethod
+    def _make_tag(cls, project, user, name):
+        """Make and save a ProjectUserTag"""
+        values = {
+            'project': project,
+            'user': user,
+            'name': name}
+        tag = ProjectUserTag(**values)
+        tag.save()
+        return tag
 
 
 class TestProject(TestCase, ProjectMixin):
@@ -489,3 +504,43 @@ class TestProjectManager(TestCase, ProjectMixin, RoleAssignmentMixin):
             'XXX', project_type=None)
         self.assertEqual(len(result), 1)
         self.assertEqual(result[0], self.category_top)
+
+
+class TestProjectUserTag(
+        TestCase, ProjectMixin, RoleAssignmentMixin, ProjectUserTagMixin):
+    """Tests for model.ProjectUserTag"""
+
+    def setUp(self):
+        # Init project
+        self.project = self._make_project(
+            title='TestProject',
+            type=PROJECT_TYPE_PROJECT,
+            parent=None)
+
+        # Init role
+        self.role_owner = Role.objects.get(
+            name=PROJECT_ROLE_OWNER)
+
+        # Init user & role
+        self.user = self.make_user('owner')
+        self.owner_as = self._make_assignment(
+            self.project, self.user, self.role_owner)
+
+        # Init tag
+        self.tag = self._make_tag(self.project, self.user, PROJECT_TAG_STARRED)
+
+    def test_initialization(self):
+        expected = {
+            'id': self.tag.pk,
+            'project': self.project.pk,
+            'user': self.user.pk,
+            'name': PROJECT_TAG_STARRED}
+        self.assertEqual(model_to_dict(self.tag), expected)
+
+    def test__str__(self):
+        expected = 'TestProject: owner: STARRED'
+        self.assertEqual(str(self.tag), expected)
+
+    def test__repr__(self):
+        expected = "ProjectUserTag('TestProject', 'owner', 'STARRED')"
+        self.assertEqual(repr(self.tag), expected)

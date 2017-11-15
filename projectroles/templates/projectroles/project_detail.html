@@ -63,7 +63,11 @@
                 {% else %}
                   {{ plugin.title }}
                 {% endif %}
-                <a role="button" class="btn btn-link omics-details-app-button pull-right" href="{% url plugin.entry_point_url_id project=project.pk %}"><i class="fa fa-arrow-circle-right"></i> View Details</a>
+                <a role="button"
+                   class="btn btn-link omics-details-app-button pull-right"
+                   href="{% url plugin.entry_point_url_id project=project.pk %}">
+                  <i class="fa fa-arrow-circle-right"></i> View Details
+                </a>
               </h4>
             </div>
             <div class="card-body omics-card-body app-plugin-description">

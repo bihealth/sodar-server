@@ -48,6 +48,8 @@ PROJECT_SETTING_TYPE_CHOICES = [
 PROJECT_SEARCH_TYPES = [
     'project']
 
+PROJECT_TAG_STARRED = 'STARRED'
+
 
 class ProjectManager(models.Manager):
     """Manager for custom table-level Project queries"""
@@ -550,3 +552,44 @@ class ProjectInvite(models.Model):
     def __repr__(self):
         values = (self.project.title, self.email, self.role.name, self.active)
         return 'ProjectInvite({})'.format(', '.join(repr(v) for v in values))
+
+
+class ProjectUserTag(models.Model):
+    """Tag assigned by a user to a project"""
+
+    #: Project to which the tag is assigned
+    project = models.ForeignKey(
+        Project,
+        null=False,
+        related_name='tags',
+        help_text='Project in which the tag is assigned')
+
+    #: User for whom the tag is assigned
+    user = models.ForeignKey(
+        AUTH_USER_MODEL,
+        null=False,
+        related_name='project_tags',
+        help_text='User for whom the tag is assigned')
+
+    #: Name of tag to be assigned
+    name = models.CharField(
+        max_length=64,
+        unique=False,
+        null=False,
+        blank=False,
+        default=PROJECT_TAG_STARRED,
+        help_text='Name of tag to be assigned')
+
+    class Meta:
+        ordering = [
+            'project__title',
+            'user__username',
+            'name']
+
+    def __str__(self):
+        return '{}: {}: {}'.format(
+            self.project.title, self.user.username, self.name)
+
+    def __repr__(self):
+        values = (self.project.title, self.user.username, self.name)
+        return 'ProjectUserTag({})'.format(', '.join(repr(v) for v in values))

@@ -71,6 +71,23 @@
           </li>
         {% endif %}
 
+        {# Project starring/unstarring #}
+
+          <li id="omics-pr-nav-project-star" class="nav-item">
+            {% if project_starred %}
+              <a class="nav-link"
+                 href="{% url 'project_star' pk=project.pk %}"
+                 id="omics-pr-link-project-star">
+                <i class="fa fa-star text-warning"></i><br />Unstar {% get_project_type_str project %}
+              </a>
+            {% else %}
+              <a class="nav-link"
+                 href="{% url 'project_star' pk=project.pk %}"
+                 id="omics-pr-link-project-unstar">
+                <i class="fa fa-star-o"></i><br />Star {% get_project_type_str project %}
+              </a>
+            {% endif %}
+          </li>
      </ul>
     </div>
   </nav>

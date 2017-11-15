@@ -323,6 +323,14 @@ dl.omics-dl dd {
   padding-top: 2px;
 }
 
+.omics-card-header-button {
+  padding-top: 4px;
+  padding-right: 0;
+  padding-bottom: 4px;
+  margin-bottom: 0;
+  height: inherit;
+}
+
 .omics-details-app-button {
   padding-top: 4px;
   padding-right: 0;

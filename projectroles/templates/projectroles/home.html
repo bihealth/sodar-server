@@ -21,10 +21,24 @@
   <div class="card" id="omics-pr-project-list">
     <div class="card-header">
       <h4><i class="fa fa-globe"></i> Available Projects
-        <div class="col-2 omics-card-header-form-container pull-right">
-          <input class="form-control form-control-sm mr-sm-2 omics-card-header-input" type="text" placeholder="Filter" aria-label="Filter projects" id="omics-pr-project-list-filter">
+        {# TODO: Use a real nav here #}
+        <div class="col-2 small omics-card-header-form-container pull-right">
+          <input
+             class="form-control form-control-sm mr-sm-2 omics-card-header-input"
+             type="text" placeholder="Filter" aria-label="Filter projects"
+             id="omics-pr-project-list-filter">
+        </div>
+        <div class="col-2 small omics-card-header-form-container pull-right">
+          <a
+             class="btn btn-link omics-card-header-button pull-right"
+             href="#"
+             id="omics-pr-project-list-link-star"
+             filter-mode="0">
+            <i class="fa fa-star-o"></i> Starred
+          </a>
         </div>
       </h4>
+
     </div>
     <div class="card-body omics-card-body-table">
      <table class="table table-hover omics-card-table omics-card-table-borderless" id="omics-main-project-list">
@@ -43,6 +57,9 @@
            {# Not found message for filtering #}
            <tr class="omics-pr-home-display-notfound">
              <td class="bg-faded font-italic text-center text-danger" colspan="3">No projects found matching current filter</td>
+           </tr>
+           <tr class="omics-pr-home-display-nostars">
+             <td class="bg-faded font-italic text-center text-danger" colspan="3">No starred projects found</td>
            </tr>
         {% else %}
            <tr>

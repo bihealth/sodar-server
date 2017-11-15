@@ -23,8 +23,9 @@ from .email import send_role_change_mail, send_invite_mail, send_accept_note,\
 from .forms import ProjectForm, RoleAssignmentForm, ProjectInviteForm,\
     ProjectSettingForm
 from .models import Project, Role, RoleAssignment, ProjectInvite, \
-    ProjectSetting, OMICS_CONSTANTS
+    ProjectSetting, OMICS_CONSTANTS, PROJECT_TAG_STARRED
 from .plugins import ProjectAppPluginPoint, get_active_plugins, get_backend_api
+from .project_tags import get_tag_state, set_tag_state
 from .utils import get_expiry_date
 from projectroles.project_settings import save_default_project_settings
 
@@ -136,6 +137,11 @@ class ProjectContextMixin(ContextMixin):
             context['app_plugins'] = sorted([
                 p for p in plugins if p.is_active()],
                 key=lambda x: x.details_position)
+
+        # Project tagging/starring
+        if 'project' in context:
+            context['project_starred'] = get_tag_state(
+                context['project'], self.request.user, PROJECT_TAG_STARRED)
 
         return context
 
@@ -514,6 +520,49 @@ class ProjectUpdateView(
         kwargs = super(ProjectUpdateView, self).get_form_kwargs()
         kwargs.update({'current_user': self.request.user})
         return kwargs
+
+
+class ProjectStarringView(
+        LoginRequiredMixin, LoggedInPermissionMixin, ProjectContextMixin, View):
+    """View to handle starring and unstarring a project"""
+    permission_required = 'projectroles.view_project'
+
+    def get_permission_object(self):
+        """Override get_permission_object for checking Project permission"""
+        try:
+            obj = Project.objects.get(pk=self.kwargs['pk'])
+            return obj
+
+        except Project.DoesNotExist:
+            return None
+
+    def get(self, *args, **kwargs):
+        project = self.get_permission_object()
+        user = self.request.user
+        timeline = get_backend_api('timeline_backend')
+
+        tag_state = get_tag_state(project, user)
+        action_str = '{}star'.format('un' if tag_state else '')
+
+        set_tag_state(project, user, PROJECT_TAG_STARRED)
+
+        # Add event in Timeline
+        if timeline:
+            timeline.add_event(
+                project=project,
+                app_name=APP_NAME,
+                user=user,
+                event_name='project_{}'.format(action_str),
+                description='{} project'.format(action_str),
+                classified=True,
+                status_type='INFO')
+
+        messages.success(
+            self.request,
+            'Project "{}" {}red.'.format(project.title, action_str))
+
+        return redirect(reverse(
+            'project_detail', kwargs={'pk': project.pk}))
 
 
 # RoleAssignment Views ---------------------------------------------------

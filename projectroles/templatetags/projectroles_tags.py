@@ -1,8 +1,9 @@
 from django import template
 import mistune
 
-from ..models import Project, RoleAssignment, OMICS_CONSTANTS
-
+from ..models import Project, RoleAssignment, OMICS_CONSTANTS, \
+    PROJECT_TAG_STARRED
+from ..project_tags import get_tag_state
 
 # Local constants
 INDENT_PX = 25
@@ -162,3 +163,20 @@ def get_project_title_html(project):
 
     ret += project.title
     return ret
+
+
+@register.simple_tag
+def get_star(project, user):
+    """Return HTML for project star tag state if it is set"""
+    if (user.has_perm('projectroles.view_project', project) and
+            get_tag_state(project, user, PROJECT_TAG_STARRED)):
+        return '<i class="fa fa-star text-warning omics-tag-starred"></i>'
+    return ''
+
+
+@register.simple_tag
+def has_star(project, user):
+    """Return True/False for project star tag state"""
+    return (
+        user.has_perm('projectroles.view_project', project) and
+        get_tag_state(project, user, PROJECT_TAG_STARRED))
