@@ -164,6 +164,18 @@
             showCancelLink: true
         });
     }
+
+    tour.addStep('project_star', {
+        title: 'Star a Project',
+        text: 'Using this link you can "star" a project to add it in your ' +
+              'favourites. Starred projects are highlighted and can be ' +
+              'listed on the home page with a shortcut. To "unstar" a ' +
+              'project, click on the same link again.',
+        attachTo: '#omics-pr-link-project-star right',
+        advanceOn: '.docs-link click',
+        showCancelLink: true
+    });
+
   </script>
 {% endblock javascript %}
 

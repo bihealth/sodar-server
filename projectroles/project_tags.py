@@ -40,3 +40,18 @@ def set_tag_state(project, user, name=PROJECT_TAG_STARRED):
             user=user,
             name=name)
         tag.save()
+
+
+def remove_tag(project, user, name=PROJECT_TAG_STARRED):
+    """
+    Remove ProjectUserTag object from project and user if it exists
+    :param project: Project object
+    :param user: User object
+    :param name: Tag name (string)
+    """
+    try:
+        ProjectUserTag.objects.get(
+            project=project, user=user, name=name).delete()
+
+    except ProjectUserTag.DoesNotExist:
+        pass

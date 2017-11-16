@@ -7,7 +7,8 @@ from django.core.urlresolvers import reverse
 from test_plus.test import TestCase
 
 from ..models import Role, OMICS_CONSTANTS
-from .test_models import ProjectMixin, RoleAssignmentMixin, ProjectInviteMixin
+from .test_models import ProjectMixin, RoleAssignmentMixin, \
+    ProjectInviteMixin
 
 
 # Omics constants
@@ -594,4 +595,23 @@ class TestProjectViews(TestPermissionBase):
             self.as_guest.user,
             self.user_no_roles]
         self.assert_render200_ok(url, good_users)
+        self.assert_redirect(url, bad_users)
+
+    def test_starring(self):
+        """Test access to project starring"""
+        url = reverse('project_star', kwargs={'pk': self.project.pk})
+        good_users = [
+            self.superuser,
+            self.as_owner.user,
+            self.as_delegate.user,
+            self.as_staff.user,
+            self.as_contributor.user,
+            self.as_guest.user]
+        bad_users = [
+            self.anonymous,
+            self.user_no_roles]
+        self.assert_redirect(
+            url, good_users,
+            redirect_user=reverse(
+                'project_detail', kwargs={'pk': self.project.pk}))
         self.assert_redirect(url, bad_users)

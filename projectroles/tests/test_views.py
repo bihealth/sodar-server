@@ -11,9 +11,10 @@ from test_plus.test import TestCase
 
 from .. import views
 from ..models import Project, Role, RoleAssignment, ProjectInvite, \
-    OMICS_CONSTANTS
+    ProjectUserTag, OMICS_CONSTANTS, PROJECT_TAG_STARRED
 from ..plugins import change_plugin_status, get_backend_api, get_active_plugins
-from .test_models import ProjectMixin, RoleAssignmentMixin, ProjectInviteMixin
+from .test_models import ProjectMixin, RoleAssignmentMixin, \
+    ProjectInviteMixin, ProjectUserTagMixin
 from projectroles.utils import get_user_display_name
 
 
@@ -920,6 +921,72 @@ class TestProjectInviteRevokeView(
         # Assert ProjectInvite state after creation
         self.assertEqual(ProjectInvite.objects.all().count(), 1)
         self.assertEqual(ProjectInvite.objects.filter(active=True).count(), 0)
+
+
+class TestProjectStarringView(
+        TestViewsBase, ProjectMixin, RoleAssignmentMixin, ProjectUserTagMixin):
+    """Tests for project starring view"""
+
+    def setUp(self):
+        super(TestProjectStarringView, self).setUp()
+
+        self.project = self._make_project(
+            'TestProject', PROJECT_TYPE_PROJECT, None)
+        self.owner_as = self._make_assignment(
+            self.project, self.user, self.role_owner)
+
+    def test_star_project(self):
+        """Test project starring"""
+
+        # Assert precondition
+        self.assertEqual(ProjectUserTag.objects.all().count(), 0)
+
+        # Issue request
+        with self.login(self.user):
+            response = self.client.get(
+                reverse('project_star', kwargs={
+                    'pk': self.project.pk}))
+
+        # Assert ProjectUserTag state after creation
+        self.assertEqual(ProjectUserTag.objects.all().count(), 1)
+
+        tag = ProjectUserTag.objects.get(
+            project=self.project, user=self.user, name=PROJECT_TAG_STARRED)
+        self.assertIsNotNone(tag)
+
+        expected = {
+            'id': tag.pk,
+            'project': self.project.pk,
+            'user': self.user.pk,
+            'name': PROJECT_TAG_STARRED}
+
+        self.assertEqual(model_to_dict(tag), expected)
+
+        # Assert redirect
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse(
+            'project_detail', kwargs={'pk': self.project.pk}))
+
+    def test_unstar_project(self):
+        """Test project unstarring"""
+        self._make_tag(self.project, self.user, name=PROJECT_TAG_STARRED)
+
+        # Assert precondition
+        self.assertEqual(ProjectUserTag.objects.all().count(), 1)
+
+        # Issue request
+        with self.login(self.user):
+            response = self.client.get(
+                reverse('project_star', kwargs={
+                    'pk': self.project.pk}))
+
+        # Assert ProjectUserTag state after creation
+        self.assertEqual(ProjectUserTag.objects.all().count(), 0)
+
+        # Assert redirect
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse(
+            'project_detail', kwargs={'pk': self.project.pk}))
 
 
 class TestProjectGetAPIView(TestViewsBase, ProjectMixin, RoleAssignmentMixin):

@@ -34,7 +34,8 @@ PROJECT_LINK_IDS = [
     'omics-pr-link-project-roles',
     'omics-pr-link-project-update',
     'omics-pr-link-project-create',
-    'omics-pr-link-project-settings']
+    'omics-pr-link-project-settings',
+    'omics-pr-link-project-star']
 
 
 User = auth.get_user_model()
@@ -315,21 +316,27 @@ class TestProjectDetail(TestUIBase):
             (self.superuser, [
                 'omics-pr-link-project-roles',
                 'omics-pr-link-project-update',
-                'omics-pr-link-project-settings']),
+                'omics-pr-link-project-settings',
+                'omics-pr-link-project-star']),
             (self.as_owner.user, [
                 'omics-pr-link-project-roles',
                 'omics-pr-link-project-update',
-                'omics-pr-link-project-settings']),
+                'omics-pr-link-project-settings',
+                'omics-pr-link-project-star']),
             (self.as_delegate.user, [
                 'omics-pr-link-project-roles',
                 'omics-pr-link-project-update',
-                'omics-pr-link-project-settings']),
+                'omics-pr-link-project-settings',
+                'omics-pr-link-project-star']),
             (self.as_staff.user, [
-                'omics-pr-link-project-roles']),
+                'omics-pr-link-project-roles',
+                'omics-pr-link-project-star']),
             (self.as_contributor.user, [
-                'omics-pr-link-project-roles']),
+                'omics-pr-link-project-roles',
+                'omics-pr-link-project-star']),
             (self.as_guest.user, [
-                'omics-pr-link-project-roles'])]
+                'omics-pr-link-project-roles',
+                'omics-pr-link-project-star'])]
 
         url = reverse(
             'project_detail', kwargs={'pk': self.project.pk})
@@ -339,13 +346,23 @@ class TestProjectDetail(TestUIBase):
     def test_project_links_category(self):
         """Test visibility of top level category links according to user
         permissions"""
+
+        # Add user with rights only for the subproject
+        sub_user = self._make_user('sub_user', False)
+        self._make_assignment(
+            self.project, sub_user, self.role_contributor)
+
         expected = [
             (self.superuser, [
                 'omics-pr-link-project-update',
-                'omics-pr-link-project-create']),
+                'omics-pr-link-project-create',
+                'omics-pr-link-project-star']),
             (self.as_owner.user, [
                 'omics-pr-link-project-update',
-                'omics-pr-link-project-create'])]
+                'omics-pr-link-project-create',
+                'omics-pr-link-project-star']),
+            (sub_user, [
+                'omics-pr-link-project-star'])]
         url = reverse(
             'project_detail', kwargs={'pk': self.category.pk})
 

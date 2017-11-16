@@ -97,6 +97,15 @@
         showCancelLink: true
     });
 
+    tour.addStep('home_star', {
+        title: 'View Starred Projects',
+        text: 'Click here to enable/disable viewing only projects you have ' +
+              '"starred" for your favourites in the project page. ',
+        attachTo: '#omics-pr-project-list-link-star bottom',
+        advanceOn: '.docs-link click',
+        showCancelLink: true
+    });
+
     if ($('#omics-pr-home-link-create').length) {
         tour.addStep('home_create', {
             title: 'Create Project',

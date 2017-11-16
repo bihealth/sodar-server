@@ -25,7 +25,7 @@ from .forms import ProjectForm, RoleAssignmentForm, ProjectInviteForm,\
 from .models import Project, Role, RoleAssignment, ProjectInvite, \
     ProjectSetting, OMICS_CONSTANTS, PROJECT_TAG_STARRED
 from .plugins import ProjectAppPluginPoint, get_active_plugins, get_backend_api
-from .project_tags import get_tag_state, set_tag_state
+from .project_tags import get_tag_state, set_tag_state, remove_tag
 from .utils import get_expiry_date
 from projectroles.project_settings import save_default_project_settings
 
@@ -822,6 +822,9 @@ class RoleAssignmentDeleteView(
         if SEND_EMAIL:
             send_role_change_mail(
                 'delete', project, user, None, self.request)
+
+        # Remove project star from user if it exists
+        remove_tag(project=project, user=user)
 
         if tl_event:
             tl_event.set_status('OK')
