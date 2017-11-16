@@ -203,12 +203,15 @@ class TestUIBase(
                 with self.assertRaises(NoSuchElementException):
                     self.selenium.find_element_by_id(element_id)
 
-    def assert_element_count(self, expected, url, id_substring):
+    def assert_element_count(
+            self, expected, url, search_string, attribute='id'):
         """
-        Assert count of elements containing specified id based on logged user.
+        Assert count of elements containing specified id or class based on
+        the logged user.
         :param expected: List of tuples with user (string), count (int)
         :param url: URL to test (string)
-        :param id_substring: ID substring of element (string)
+        :param search_string: ID substring of element (string)
+        :param attribute: Attribute to search for (string, default=id)
         """
         for e in expected:
             expected_user = e[0]    # Just to clarify code
@@ -219,14 +222,16 @@ class TestUIBase(
             if expected_count > 0:
                 self.assertEqual(
                     len(self.selenium.find_elements_by_xpath(
-                        '//*[contains(@id, "{}")]'.format(id_substring))),
+                        '//*[contains(@{}, "{}")]'.format(
+                            attribute, search_string))),
                     expected_count,
                     'expected_user={}'.format(expected_user))
 
             else:
                 with self.assertRaises(NoSuchElementException):
                     self.selenium.find_element_by_xpath(
-                        '//*[contains(@id, "{}")]'.format(id_substring))
+                        '//*[contains(@{}, "{}")]'.format(
+                            attribute, search_string))
 
     def assert_element_set(self, expected, all_elements, url):
         """

@@ -54,6 +54,12 @@ $('[data-toggle="popover"]').popover({
 });
 
 
+// Set up Bootstrap tooltip
+$(function(){
+    $('[data-toggle="tooltip"]').tooltip();
+});
+
+
 // Disable nav project search until 3+ characters have been input
 // (not counting keyword)
 $(document).ready(function() {

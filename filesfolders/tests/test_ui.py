@@ -205,6 +205,28 @@ class TestListView(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
         url = reverse('project_files', kwargs={'project': self.project.pk})
         self.assert_element_count(expected, url, 'omics-ff-link-public')
 
+    def test_item_flags(self):
+        """Test item flagging"""
+
+        # Set up flags
+        self.file_owner.flag = 'IMPORTANT'
+        self.file_owner.save()
+        self.folder_contributor.flag = 'FLAG'
+        self.folder_contributor.save()
+        self.hyperlink_contrib.flag = 'REVOKED'
+        self.hyperlink_contrib.save()
+
+        expected = [
+            (self.superuser, 3),
+            (self.as_owner.user, 3),
+            (self.as_delegate.user, 3),
+            (self.as_staff.user, 3),
+            (self.as_contributor.user, 3),
+            (self.as_guest.user, 3)]
+        url = reverse('project_files', kwargs={'project': self.project.pk})
+        self.assert_element_count(
+            expected, url, 'omics-ff-flag-icon', 'class')
+
 
 class TestSearch(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
     """Tests for the project search UI functionalities"""

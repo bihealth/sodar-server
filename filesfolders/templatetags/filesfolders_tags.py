@@ -3,7 +3,7 @@ from django import template
 # Projectroles dependency
 from projectroles.project_settings import get_project_setting
 
-from ..models import File, Folder, HyperLink
+from ..models import File, Folder, HyperLink, FILESFOLDERS_FLAGS
 
 
 APP_NAME = 'filesfolders'
@@ -103,3 +103,16 @@ def get_file_icon(file):
 
     # Default if not found
     return 'file-o'
+
+
+@register.simple_tag
+def get_flag(item):
+    if not item.flag:
+        return''
+
+    f = FILESFOLDERS_FLAGS[item.flag]
+
+    return '<i class="fa fa-{} fa-fw text-{} omics-ff-flag-icon" ' \
+           'title="{}" data-toggle="tooltip" data-placement="top">' \
+           '</i>'.format(
+                f['icon'], f['color'], f['label'])

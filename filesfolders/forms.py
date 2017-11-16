@@ -9,7 +9,7 @@ from projectroles.models import Project
 from projectroles.utils import build_secret
 from projectroles.project_settings import get_project_setting
 
-from .models import File, Folder, HyperLink
+from .models import File, Folder, HyperLink, FILESFOLDERS_FLAGS, FLAG_CHOICES
 
 
 # Settings
@@ -24,7 +24,7 @@ class FolderForm(forms.ModelForm):
 
     class Meta:
         model = Folder
-        fields = ['name', 'folder', 'description']
+        fields = ['name', 'folder', 'flag', 'description']
 
     def __init__(
             self, current_user=None, project=None, folder=None,
@@ -141,7 +141,7 @@ class FileForm(forms.ModelForm):
 
     class Meta:
         model = File
-        fields = ['file', 'folder', 'description', 'public_url']
+        fields = ['file', 'folder', 'description', 'flag', 'public_url']
         widgets = {'file': DBClearableFileInput}
         help_texts = {
             'file': 'Uploaded file (maximum size: {})'.format(
@@ -306,7 +306,7 @@ class HyperLinkForm(forms.ModelForm):
 
     class Meta:
         model = HyperLink
-        fields = ['name', 'url', 'folder', 'description']
+        fields = ['name', 'url', 'folder', 'flag', 'description']
 
     def __init__(
             self, current_user=None, project=None, folder=None,

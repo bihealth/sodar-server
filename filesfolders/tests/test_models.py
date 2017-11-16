@@ -31,7 +31,7 @@ class FileMixin:
     @classmethod
     def _make_file(
             cls, name, file_name, file_content, project, folder,
-            owner, description, public_url, secret):
+            owner, description, public_url, secret, flag=None):
         values = {
             'name': name,
             'file': SimpleUploadedFile(file_name, file_content),
@@ -40,7 +40,8 @@ class FileMixin:
             'owner': owner,
             'description': description,
             'public_url': public_url,
-            'secret': secret}
+            'secret': secret,
+            'flag': flag}
         result = File(**values)
         result.save()
         return result
@@ -49,13 +50,14 @@ class FileMixin:
 class FolderMixin:
     """Helper mixin for Folder creation"""
     @classmethod
-    def _make_folder(cls, name, project, folder, owner, description):
+    def _make_folder(cls, name, project, folder, owner, description, flag=None):
         values = {
             'name': name,
             'project': project,
             'folder': folder,
             'owner': owner,
-            'description': description}
+            'description': description,
+            'flag': flag}
         result = Folder(**values)
         result.save()
         return result
@@ -64,14 +66,16 @@ class FolderMixin:
 class HyperLinkMixin:
     """Helper mixin for HyperLink creation"""
     @classmethod
-    def _make_hyperlink(cls, name, url, project, folder, owner, description):
+    def _make_hyperlink(
+            cls, name, url, project, folder, owner, description, flag=None):
         values = {
             'name': name,
             'url': url,
             'project': project,
             'folder': folder,
             'owner': owner,
-            'description': description}
+            'description': description,
+            'flag': flag}
         result = HyperLink(**values)
         result.save()
         return result
@@ -107,6 +111,7 @@ class TestFolder(TestCase, FolderMixin, ProjectMixin, HyperLinkMixin):
             'folder': None,
             'owner': self.user_owner.pk,
             'description': 'description',
+            'flag': None,
             'omics_uuid': self.folder.omics_uuid}
         self.assertEqual(model_to_dict(self.folder), expected)
 
@@ -150,6 +155,7 @@ class TestFolder(TestCase, FolderMixin, ProjectMixin, HyperLinkMixin):
             'folder': self.folder.pk,
             'owner': self.user_owner.pk,
             'description': '',
+            'flag': None,
             'omics_uuid': subfolder.omics_uuid}
         self.assertEqual(model_to_dict(subfolder), expected)
 
@@ -259,6 +265,7 @@ class TestFile(TestCase, FileMixin, FolderMixin, ProjectMixin):
             'description': 'description',
             'public_url': True,
             'secret': SECRET,
+            'flag': None,
             'omics_uuid': self.file.omics_uuid}
         self.assertEqual(model_to_dict(self.file), expected)
 
@@ -356,6 +363,7 @@ class TestHyperLink(
             'folder': self.folder.pk,
             'owner': self.user_owner.pk,
             'description': 'description',
+            'flag': None,
             'omics_uuid': self.hyperlink.omics_uuid}
         self.assertEqual(model_to_dict(self.hyperlink), expected)
 

@@ -20,10 +20,14 @@
     {% elif item|get_class == 'File' %}
       <a href="{% url 'file_serve' pk=item.pk project=item.project.pk file_name=item.name %}">{% autoescape off %}{{ item.name|force_wrap:24 }}{% endautoescape %}</a>
       {% if allow_public_links and item.public_url and can_share_link %}
-        <a title="Public Link" href="{% url 'file_public_link' pk=item.pk project=item.project.pk %}" id="omics-ff-link-public-{{ item.pk }}">
+        <a title="Public Link" href="{% url 'file_public_link' pk=item.pk project=item.project.pk %}" id="omics-ff-link-public-{{ item.pk }}" data-toggle="tooltip" data-placement="top">
           <i class="fa fa-link" aria-hidden="false"></i>
         </a>
       {% endif %}
+    {% endif %}
+    {% if item.flag %}
+      {% get_flag item as item_flag %}
+      {{ item_flag|safe }}
     {% endif %}
   </td>
   {# File size column (only for files) #}
@@ -35,7 +39,7 @@
   {# Description column #}
   <td>{{ item.description }}</td>
   {# Owner column #}
-  <td><a title="{{ item.owner.name }}" href="mailto:{{ item.owner.email }}">{{ item.owner.username }}</a></td>
+  <td><a title="{{ item.owner.name }}" href="mailto:{{ item.owner.email }}" data-toggle="tooltip" data-placement="top">{{ item.owner.username }}</a></td>
   {# Date column #}
   <td>{{ item.date_modified|date:'Y-m-d H:i' }}</td>
 

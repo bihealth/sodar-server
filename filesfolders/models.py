@@ -14,6 +14,33 @@ from projectroles.models import Project
 AUTH_USER_MODEL = getattr(settings, 'AUTH_USER_MODEL', 'auth.User')
 
 
+# Local constants
+FILESFOLDERS_FLAGS = {
+    'IMPORTANT': {
+        'icon': 'exclamation-circle',
+        'label': 'Important',
+        'color': 'warning'},
+    'FLAG': {
+        'icon': 'flag',
+        'label': 'Flagged',
+        'color': 'info'},
+    'FLAG_HEART': {
+        'icon': 'heart',
+        'label': 'Flagged (Heart)',
+        'color': 'danger'},
+    'REVOKED': {
+        'icon': 'undo',
+        'label': 'Revoked',
+        'color': 'secondary'},
+    'SUPERSEDED': {
+        'icon': 'history',
+        'label': 'Superseded',
+        'color': 'dark'}}
+
+FLAG_CHOICES = [
+    (k, FILESFOLDERS_FLAGS[k]['label']) for k in sorted(FILESFOLDERS_FLAGS)]
+
+
 # Base class -------------------------------------------------------------
 
 
@@ -68,6 +95,15 @@ class BaseFilesfoldersClass(models.Model):
     date_modified = models.DateTimeField(
         auto_now=True,
         help_text='DateTime of last modification')
+
+    #: Flag (optional)
+    flag = models.CharField(
+        max_length=64,
+        unique=False,
+        blank=True,
+        null=True,
+        choices=FLAG_CHOICES,
+        help_text='Flag (optional)')
 
     #: Description (optional)
     description = models.CharField(
