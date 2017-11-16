@@ -20,6 +20,7 @@ Added
     - Import app from prototype
     - Page title to main files list
     - File, folder and link search (#21)
+    - Item flagging (#38)
 - **Projectroles**
     - Import app from prototype
     - Sub-navbar with project breadcrumb (#20)
