@@ -1,5 +1,6 @@
 """Tests for views in the filesfolders app"""
 
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.urlresolvers import reverse
 from django.test import RequestFactory
 
@@ -27,9 +28,6 @@ PROJECT_TYPE_PROJECT = OMICS_CONSTANTS['PROJECT_TYPE_PROJECT']
 # Local constants
 APP_NAME = 'filesfolders'
 SECRET = '7dqq83clo2iyhg29hifbor56og6911r5'
-
-
-# TODO: Proper tests for all forms with POST requests
 
 
 class TestViewsBase(
@@ -68,9 +66,11 @@ class TestViewsBase(
         set_project_setting(
             self.project, APP_NAME, 'allow_public_links', True)
 
-        # Init file
+        # Init file content
         self.file_content = bytes('content'.encode('utf-8'))
+        self.file_content_alt = bytes('alt content'.encode('utf-8'))
 
+        # Init file
         self.file = self._make_file(
             name='file.txt',
             file_name='file.txt',
@@ -155,6 +155,78 @@ class TestFileCreateView(TestViewsBase):
             self.assertEqual(response.context['project'].pk, self.project.pk)
             self.assertEqual(response.context['folder'].pk, self.folder.pk)
 
+    def test_create(self):
+        """Test file creation"""
+
+        self.assertEqual(File.objects.all().count(), 1)
+
+        post_data = {
+            'name': 'new_file.txt',
+            'file': SimpleUploadedFile('new_file.txt', self.file_content),
+            'folder': '',
+            'description': '',
+            'flag': '',
+            'public_url': False}
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse('file_create', kwargs={
+                    'project': self.project.pk}),
+                post_data)
+
+            self.assertEqual(response.status_code, 302)
+            self.assertEqual(response.url, reverse(
+                'project_files', kwargs={'project': self.project.pk}))
+
+        self.assertEqual(File.objects.all().count(), 2)
+
+    def test_create_in_folder(self):
+        """Test file creation within a folder"""
+        self.assertEqual(File.objects.all().count(), 1)
+
+        post_data = {
+            'name': 'new_file.txt',
+            'file': SimpleUploadedFile('new_file.txt', self.file_content),
+            'folder': self.folder.pk,
+            'description': '',
+            'flag': '',
+            'public_url': False}
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse('file_create', kwargs={
+                    'project': self.project.pk}),
+                post_data)
+
+            self.assertEqual(response.status_code, 302)
+            self.assertEqual(response.url, reverse(
+                'project_files', kwargs={
+                    'project': self.project.pk, 'folder': self.folder.pk}))
+
+        self.assertEqual(File.objects.all().count(), 2)
+
+    def test_create_existing(self):
+        """Test file create with an existing file name (should fail)"""
+        self.assertEqual(File.objects.all().count(), 1)
+
+        post_data = {
+            'name': 'file.txt',
+            'file': SimpleUploadedFile('file.txt', self.file_content_alt),
+            'folder': '',
+            'description': '',
+            'flag': '',
+            'public_url': False}
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse('file_create', kwargs={
+                    'project': self.project.pk}),
+                post_data)
+
+            self.assertEqual(response.status_code, 200)
+
+        self.assertEqual(File.objects.all().count(), 1)
+
 
 class TestFileUpdateView(TestViewsBase):
     """Tests for the File update view"""
@@ -168,6 +240,69 @@ class TestFileUpdateView(TestViewsBase):
                     'pk': self.file.pk}))
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response.context['object'].pk, self.file.pk)
+
+    def test_update(self):
+        """Test file update with different content"""
+        self.assertEqual(File.objects.all().count(), 1)
+        self.assertEqual(self.file.file.read(), self.file_content)
+
+        post_data = {
+            'name': 'file.txt',
+            'file': SimpleUploadedFile('file.txt', self.file_content_alt),
+            'folder': '',
+            'description': '',
+            'flag': '',
+            'public_url': False}
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse('file_update', kwargs={
+                    'project': self.project.pk, 'pk': self.file.pk}),
+                post_data)
+
+            self.assertEqual(response.status_code, 302)
+            self.assertEqual(response.url, reverse(
+                'project_files', kwargs={'project': self.project.pk}))
+
+        self.assertEqual(File.objects.all().count(), 1)
+        self.file.refresh_from_db()
+        self.assertEqual(self.file.file.read(), self.file_content_alt)
+
+    def test_update_existing(self):
+        """Test file update with a file name that already exists (should fail)"""
+
+        new_file = self._make_file(
+            name='file2.txt',
+            file_name='file2.txt',
+            file_content=self.file_content,
+            project=self.project,
+            folder=None,
+            owner=self.user,
+            description='',
+            public_url=True,
+            secret='abc123')
+
+        self.assertEqual(File.objects.all().count(), 2)
+
+        post_data = {
+            'name': 'file2.txt',
+            'file': SimpleUploadedFile('file2.txt', self.file_content_alt),
+            'folder': '',
+            'description': '',
+            'flag': '',
+            'public_url': False}
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse('file_update', kwargs={
+                    'project': self.project.pk, 'pk': self.file.pk}),
+                post_data)
+
+            self.assertEqual(response.status_code, 200)
+
+        self.assertEqual(File.objects.all().count(), 2)
+        self.file.refresh_from_db()
+        self.assertEqual(self.file.file.read(), self.file_content)
 
 
 class TestFileDeleteView(TestViewsBase):
@@ -323,6 +458,53 @@ class TestFolderCreateView(TestViewsBase):
             self.assertEqual(response.context['project'].pk, self.project.pk)
             self.assertEqual(response.context['folder'].pk, self.folder.pk)
 
+    def test_create(self):
+        """Test folder creation"""
+        self.assertEqual(Folder.objects.all().count(), 1)
+
+        post_data = {
+            'name': 'new_folder',
+            'folder': '',
+            'description': '',
+            'flag': ''}
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse('folder_create', kwargs={
+                    'project': self.project.pk}),
+                post_data)
+
+            self.assertEqual(response.status_code, 302)
+            self.assertEqual(response.url, reverse(
+                'project_files', kwargs={
+                    'project': self.project.pk}))
+
+        self.assertEqual(Folder.objects.all().count(), 2)
+
+    def test_create_in_folder(self):
+        """Test folder creation within a folder"""
+        self.assertEqual(Folder.objects.all().count(), 1)
+
+        post_data = {
+            'name': 'new_folder',
+            'folder': self.folder.pk,
+            'description': '',
+            'flag': ''}
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse('folder_create', kwargs={
+                    'project': self.project.pk}),
+                post_data)
+
+            self.assertEqual(response.status_code, 302)
+            self.assertEqual(response.url, reverse(
+                'project_files', kwargs={
+                    'project': self.project.pk,
+                    'folder': self.folder.pk}))
+
+        self.assertEqual(Folder.objects.all().count(), 2)
+
 
 class TestFolderUpdateView(TestViewsBase):
     """Tests for the Folder update view"""
@@ -335,6 +517,61 @@ class TestFolderUpdateView(TestViewsBase):
                     'pk': self.folder.pk}))
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response.context['object'].pk, self.folder.pk)
+
+    def test_update(self):
+        """Test folder update"""
+        self.assertEqual(Folder.objects.all().count(), 1)
+
+        post_data = {
+            'name': 'renamed_folder',
+            'folder': '',
+            'description': 'updated description',
+            'flag': ''}
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse('folder_update', kwargs={
+                    'pk': self.folder.pk}),
+                post_data)
+
+            self.assertEqual(response.status_code, 302)
+            self.assertEqual(response.url, reverse(
+                'project_files', kwargs={'project': self.project.pk}))
+
+        self.assertEqual(Folder.objects.all().count(), 1)
+        self.folder.refresh_from_db()
+        self.assertEqual(self.folder.name, 'renamed_folder')
+        self.assertEqual(self.folder.description, 'updated description')
+
+    def test_update_existing(self):
+        """Test folder update with a name that already exists (should fail)"""
+
+        self._make_folder(
+            name='folder2',
+            project=self.project,
+            folder=None,
+            owner=self.user,
+            description='')
+
+        self.assertEqual(Folder.objects.all().count(), 2)
+
+        post_data = {
+            'name': 'folder2',
+            'folder': '',
+            'description': '',
+            'flag': ''}
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse('folder_update', kwargs={
+                    'pk': self.folder.pk}),
+                post_data)
+
+            self.assertEqual(response.status_code, 200)
+
+        self.assertEqual(Folder.objects.all().count(), 2)
+        self.folder.refresh_from_db()
+        self.assertEqual(self.folder.name, 'folder')
 
 
 class TestFolderDeleteView(TestViewsBase):
@@ -375,6 +612,55 @@ class TestHyperLinkCreateView(TestViewsBase):
             self.assertEqual(response.context['project'].pk, self.project.pk)
             self.assertEqual(response.context['folder'].pk, self.folder.pk)
 
+    def test_create(self):
+        """Test hyperlink creation"""
+        self.assertEqual(HyperLink.objects.all().count(), 1)
+
+        post_data = {
+            'name': 'new link',
+            'url': 'http://link.com',
+            'folder': '',
+            'description': '',
+            'flag': ''}
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse('hyperlink_create', kwargs={
+                    'project': self.project.pk}),
+                post_data)
+
+            self.assertEqual(response.status_code, 302)
+            self.assertEqual(response.url, reverse(
+                'project_files', kwargs={
+                    'project': self.project.pk}))
+
+        self.assertEqual(HyperLink.objects.all().count(), 2)
+
+    def test_create_in_folder(self):
+        """Test folder creation within a folder"""
+        self.assertEqual(HyperLink.objects.all().count(), 1)
+
+        post_data = {
+            'name': 'new link',
+            'url': 'http://link.com',
+            'folder': self.folder.pk,
+            'description': '',
+            'flag': ''}
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse('hyperlink_create', kwargs={
+                    'project': self.project.pk}),
+                post_data)
+
+            self.assertEqual(response.status_code, 302)
+            self.assertEqual(response.url, reverse(
+                'project_files', kwargs={
+                    'project': self.project.pk,
+                    'folder': self.folder.pk}))
+
+        self.assertEqual(HyperLink.objects.all().count(), 2)
+
 
 class TestHyperLinkUpdateView(TestViewsBase):
     """Tests for the HyperLink update view"""
@@ -388,6 +674,67 @@ class TestHyperLinkUpdateView(TestViewsBase):
                     'pk': self.hyperlink.pk}))
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response.context['object'].pk, self.hyperlink.pk)
+
+    def test_update(self):
+        """Test hyperlink update"""
+        self.assertEqual(HyperLink.objects.all().count(), 1)
+
+        post_data = {
+            'name': 'Renamed Link',
+            'url': 'http://updated.com',
+            'folder': '',
+            'description': 'updated description',
+            'flag': ''}
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse('hyperlink_update', kwargs={
+                    'project': self.project.pk,
+                    'pk': self.hyperlink.pk}),
+                post_data)
+
+            self.assertEqual(response.status_code, 302)
+            self.assertEqual(response.url, reverse(
+                'project_files', kwargs={'project': self.project.pk}))
+
+        self.assertEqual(HyperLink.objects.all().count(), 1)
+        self.hyperlink.refresh_from_db()
+        self.assertEqual(self.hyperlink.name, 'Renamed Link')
+        self.assertEqual(self.hyperlink.url, 'http://updated.com')
+        self.assertEqual(self.hyperlink.description, 'updated description')
+
+    def test_update_existing(self):
+        """Test hyperlink update with a name that already exists (should fail)"""
+
+        self._make_hyperlink(
+            name='Link2',
+            url='http://url2.com',
+            project=self.project,
+            folder=None,
+            owner=self.user,
+            description='')
+
+        self.assertEqual(HyperLink.objects.all().count(), 2)
+
+        post_data = {
+            'name': 'Link2',
+            'url': self.hyperlink.url,
+            'folder': '',
+            'description': '',
+            'flag': ''}
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse('hyperlink_update', kwargs={
+                    'project': self.project.pk,
+                    'pk': self.hyperlink.pk}),
+                post_data)
+
+            self.assertEqual(response.status_code, 200)
+
+        self.assertEqual(HyperLink.objects.all().count(), 2)
+        self.hyperlink.refresh_from_db()
+        self.assertEqual(self.hyperlink.name, 'Link')
 
 
 class TestHyperLinkDeleteView(TestViewsBase):

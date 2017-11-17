@@ -9,7 +9,7 @@ from projectroles.models import Project
 from projectroles.utils import build_secret
 from projectroles.project_settings import get_project_setting
 
-from .models import File, Folder, HyperLink, FILESFOLDERS_FLAGS, FLAG_CHOICES
+from .models import File, Folder, HyperLink
 
 
 # Settings
@@ -19,18 +19,14 @@ MAX_UPLOAD_SIZE = settings.FILESFOLDERS_MAX_UPLOAD_SIZE
 APP_NAME = 'filesfolders'
 
 
-class FolderForm(forms.ModelForm):
-    """Form for Folder creation/updating"""
-
-    class Meta:
-        model = Folder
-        fields = ['name', 'folder', 'flag', 'description']
+class FilesfoldersItemForm(forms.ModelForm):
+    """Base form for Filesfolders item creation/updating"""
 
     def __init__(
             self, current_user=None, project=None, folder=None,
             *args, **kwargs):
         """Override for form initialization"""
-        super(FolderForm, self).__init__(*args, **kwargs)
+        super(FilesfoldersItemForm, self).__init__(*args, **kwargs)
 
         self.current_user = None
         self.project = None
@@ -45,6 +41,22 @@ class FolderForm(forms.ModelForm):
 
         if folder:
             self.folder = Folder.objects.get(pk=folder)
+
+
+class FolderForm(FilesfoldersItemForm):
+    """Form for Folder creation/updating"""
+
+    class Meta:
+        model = Folder
+        fields = ['name', 'folder', 'flag', 'description']
+
+    def __init__(
+            self, current_user=None, project=None, folder=None,
+            *args, **kwargs):
+        """Override for form initialization"""
+        super(FolderForm, self).__init__(
+            current_user=current_user, project=project, folder=folder,
+            *args, **kwargs)
 
         # Creation
         if not self.instance.pk:
@@ -136,7 +148,7 @@ class FolderForm(forms.ModelForm):
         return obj
 
 
-class FileForm(forms.ModelForm):
+class FileForm(FilesfoldersItemForm):
     """Form for File creation/updating"""
 
     class Meta:
@@ -151,21 +163,9 @@ class FileForm(forms.ModelForm):
             self, current_user=None, project=None, folder=None,
             *args, **kwargs):
         """Override for form initialization"""
-        super(FileForm, self).__init__(*args, **kwargs)
-
-        self.current_user = None
-        self.project = None
-        self.folder = None
-
-        # Get current user for checking permissions for form items
-        if current_user:
-            self.current_user = current_user
-
-        if project:
-            self.project = Project.objects.get(pk=project)
-
-        if folder:
-            self.folder = Folder.objects.get(pk=folder)
+        super(FileForm, self).__init__(
+            current_user=current_user, project=project, folder=folder,
+            *args, **kwargs)
 
         # Creation
         if not self.instance.pk:
@@ -301,7 +301,7 @@ class FileForm(forms.ModelForm):
         return obj
 
 
-class HyperLinkForm(forms.ModelForm):
+class HyperLinkForm(FilesfoldersItemForm):
     """Form for HyperLink creation/updating"""
 
     class Meta:
@@ -312,21 +312,9 @@ class HyperLinkForm(forms.ModelForm):
             self, current_user=None, project=None, folder=None,
             *args, **kwargs):
         """Override for form initialization"""
-        super(HyperLinkForm, self).__init__(*args, **kwargs)
-
-        self.current_user = None
-        self.project = None
-        self.folder = None
-
-        # Get current user for checking permissions for form items
-        if current_user:
-            self.current_user = current_user
-
-        if project:
-            self.project = Project.objects.get(pk=project)
-
-        if folder:
-            self.folder = Folder.objects.get(pk=folder)
+        super(HyperLinkForm, self).__init__(
+            current_user=current_user, project=project, folder=folder,
+            *args, **kwargs)
 
         # Creation
         if not self.instance.pk:
