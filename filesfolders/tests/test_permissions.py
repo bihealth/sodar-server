@@ -59,6 +59,7 @@ class TestFolderPermissions(TestPermissionBase, FolderMixin):
         url = reverse(
             'folder_update',
             kwargs={
+                'project': self.project.pk,
                 'pk': self.folder.pk})
         good_users = [
             self.superuser,
@@ -77,6 +78,7 @@ class TestFolderPermissions(TestPermissionBase, FolderMixin):
         url = reverse(
             'folder_delete',
             kwargs={
+                'project': self.project.pk,
                 'pk': self.folder.pk})
         good_users = [
             self.superuser,

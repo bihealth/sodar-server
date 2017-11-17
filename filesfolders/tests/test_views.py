@@ -318,6 +318,22 @@ class TestFileDeleteView(TestViewsBase):
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response.context['object'].pk, self.file.pk)
 
+    def test_post(self):
+        """Test deleting a File"""
+        self.assertEqual(File.objects.all().count(), 1)
+
+        with self.login(self.user):
+            response = self.client.post(reverse(
+                'file_delete', kwargs={
+                    'project': self.project.pk,
+                    'pk': self.file.pk}))
+            self.assertEqual(response.status_code, 302)
+            self.assertEqual(response.url, reverse(
+                'project_files', kwargs={
+                    'project': self.project.pk}))
+
+        self.assertEqual(File.objects.all().count(), 0)
+
 
 class TestFileServeView(TestViewsBase):
     """Tests for the File serving view"""
@@ -514,6 +530,7 @@ class TestFolderUpdateView(TestViewsBase):
         with self.login(self.user):
             response = self.client.get(reverse(
                 'folder_update', kwargs={
+                    'project': self.project.pk,
                     'pk': self.folder.pk}))
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response.context['object'].pk, self.folder.pk)
@@ -531,6 +548,7 @@ class TestFolderUpdateView(TestViewsBase):
         with self.login(self.user):
             response = self.client.post(
                 reverse('folder_update', kwargs={
+                    'project': self.project.pk,
                     'pk': self.folder.pk}),
                 post_data)
 
@@ -564,6 +582,7 @@ class TestFolderUpdateView(TestViewsBase):
         with self.login(self.user):
             response = self.client.post(
                 reverse('folder_update', kwargs={
+                    'project': self.project.pk,
                     'pk': self.folder.pk}),
                 post_data)
 
@@ -582,9 +601,26 @@ class TestFolderDeleteView(TestViewsBase):
         with self.login(self.user):
             response = self.client.get(reverse(
                 'folder_delete', kwargs={
+                    'project': self.project.pk,
                     'pk': self.folder.pk}))
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response.context['object'].pk, self.folder.pk)
+
+    def test_post(self):
+        """Test deleting a Folder"""
+        self.assertEqual(Folder.objects.all().count(), 1)
+
+        with self.login(self.user):
+            response = self.client.post(reverse(
+                'folder_delete', kwargs={
+                    'project': self.project.pk,
+                    'pk': self.folder.pk}))
+            self.assertEqual(response.status_code, 302)
+            self.assertEqual(response.url, reverse(
+                'project_files', kwargs={
+                    'project': self.project.pk}))
+
+        self.assertEqual(Folder.objects.all().count(), 0)
 
 
 # HyperLink Views --------------------------------------------------------
@@ -749,6 +785,22 @@ class TestHyperLinkDeleteView(TestViewsBase):
                     'pk': self.hyperlink.pk}))
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response.context['object'].pk, self.hyperlink.pk)
+
+    def test_post(self):
+        """Test deleting a HyperLink"""
+        self.assertEqual(HyperLink.objects.all().count(), 1)
+
+        with self.login(self.user):
+            response = self.client.post(reverse(
+                'hyperlink_delete', kwargs={
+                    'project': self.project.pk,
+                    'pk': self.hyperlink.pk}))
+            self.assertEqual(response.status_code, 302)
+            self.assertEqual(response.url, reverse(
+                'project_files', kwargs={
+                    'project': self.project.pk}))
+
+        self.assertEqual(HyperLink.objects.all().count(), 0)
 
 
 # Batch Editing View --------------------------------------------------------

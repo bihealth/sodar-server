@@ -88,15 +88,7 @@
         <div class="card-body omics-card-body-table">
           <table class="table table-striped omics-card-table" id="omics-ff-list-table">
             <thead>
-              <tr>
-                <th colspan="2">Name</th>
-                <th class="text-right">Size</th>
-                <th>Description</th>
-                <th>Owner</th>
-                <th>Updated</th>
-                <th></th>
-                <th id="omics-ff-list-header-select"><input class="form-check-input" type="checkbox" onchange="checkAll(this)" name="check_all" id="omics-ff-check-all" title="Check/uncheck all" /></th>
-              </tr>
+              {% include 'filesfolders/_list_header.html' with details_card_mode=False %}
             </thead>
 
             <!-- Content -->
