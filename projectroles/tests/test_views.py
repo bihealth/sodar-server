@@ -923,12 +923,12 @@ class TestProjectInviteRevokeView(
         self.assertEqual(ProjectInvite.objects.filter(active=True).count(), 0)
 
 
-class TestProjectStarringView(
+class TestProjectStarringAPIView(
         TestViewsBase, ProjectMixin, RoleAssignmentMixin, ProjectUserTagMixin):
-    """Tests for project starring view"""
+    """Tests for project starring API view"""
 
     def setUp(self):
-        super(TestProjectStarringView, self).setUp()
+        super(TestProjectStarringAPIView, self).setUp()
 
         self.project = self._make_project(
             'TestProject', PROJECT_TYPE_PROJECT, None)
@@ -963,9 +963,7 @@ class TestProjectStarringView(
         self.assertEqual(model_to_dict(tag), expected)
 
         # Assert redirect
-        self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, reverse(
-            'project_detail', kwargs={'pk': self.project.pk}))
+        self.assertEqual(response.status_code, 200)
 
     def test_unstar_project(self):
         """Test project unstarring"""
@@ -983,10 +981,8 @@ class TestProjectStarringView(
         # Assert ProjectUserTag state after creation
         self.assertEqual(ProjectUserTag.objects.all().count(), 0)
 
-        # Assert redirect
-        self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, reverse(
-            'project_detail', kwargs={'pk': self.project.pk}))
+        # Assert status code
+        self.assertEqual(response.status_code, 200)
 
 
 class TestProjectGetAPIView(TestViewsBase, ProjectMixin, RoleAssignmentMixin):

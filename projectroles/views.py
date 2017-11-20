@@ -2,7 +2,7 @@ from django.conf import settings
 from django.contrib import auth
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, HttpResponseForbidden
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils import timezone
@@ -159,6 +159,14 @@ class PluginContextMixin(ContextMixin):
             context['app_plugins'] = app_plugins
 
         return context
+
+
+class APIPermissionMixin(PermissionRequiredMixin):
+    """Mixin for handling permission response for API functions"""
+
+    def handle_no_permission(self):
+        """Override handle_no_permission to provide 403"""
+        return HttpResponseForbidden()
 
 
 # Base Project Views -----------------------------------------------------
@@ -516,49 +524,6 @@ class ProjectUpdateView(
         kwargs = super(ProjectUpdateView, self).get_form_kwargs()
         kwargs.update({'current_user': self.request.user})
         return kwargs
-
-
-class ProjectStarringView(
-        LoginRequiredMixin, LoggedInPermissionMixin, ProjectContextMixin, View):
-    """View to handle starring and unstarring a project"""
-    permission_required = 'projectroles.view_project'
-
-    def get_permission_object(self):
-        """Override get_permission_object for checking Project permission"""
-        try:
-            obj = Project.objects.get(pk=self.kwargs['pk'])
-            return obj
-
-        except Project.DoesNotExist:
-            return None
-
-    def post(self, request, *args, **kwargs):
-        project = self.get_permission_object()
-        user = request.user
-        timeline = get_backend_api('timeline_backend')
-
-        tag_state = get_tag_state(project, user)
-        action_str = '{}star'.format('un' if tag_state else '')
-
-        set_tag_state(project, user, PROJECT_TAG_STARRED)
-
-        # Add event in Timeline
-        if timeline:
-            timeline.add_event(
-                project=project,
-                app_name=APP_NAME,
-                user=user,
-                event_name='project_{}'.format(action_str),
-                description='{} project'.format(action_str),
-                classified=True,
-                status_type='INFO')
-
-        messages.success(
-            self.request,
-            'Project "{}" {}red.'.format(project.title, action_str))
-
-        return redirect(reverse(
-            'project_detail', kwargs={'pk': project.pk}))
 
 
 # RoleAssignment Views ---------------------------------------------------
@@ -1275,6 +1240,47 @@ class ProjectSettingUpdateView(
 
         return reverse(
             'project_detail', kwargs={'pk': self.kwargs['project']})
+
+
+# Javascript API Views ---------------------------------------------------
+
+
+class ProjectStarringAPIView(
+        LoginRequiredMixin, APIPermissionMixin, APIView):
+    """View to handle starring and unstarring a project via AJAX"""
+    permission_required = 'projectroles.view_project'
+
+    def get_permission_object(self):
+        """Override get_permission_object for checking Project permission"""
+        try:
+            obj = Project.objects.get(pk=self.kwargs['pk'])
+            return obj
+
+        except Project.DoesNotExist:
+            return None
+
+    def post(self, request, *args, **kwargs):
+        project = self.get_permission_object()
+        user = request.user
+        timeline = get_backend_api('timeline_backend')
+
+        tag_state = get_tag_state(project, user)
+        action_str = '{}star'.format('un' if tag_state else '')
+
+        set_tag_state(project, user, PROJECT_TAG_STARRED)
+
+        # Add event in Timeline
+        if timeline:
+            timeline.add_event(
+                project=project,
+                app_name=APP_NAME,
+                user=user,
+                event_name='project_{}'.format(action_str),
+                description='{} project'.format(action_str),
+                classified=True,
+                status_type='INFO')
+
+        return Response(0 if tag_state else 1, status=200)
 
 
 # Taskflow API Views -----------------------------------------------------

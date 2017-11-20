@@ -29,11 +29,6 @@ urlpatterns = [
         name='project_search',
     ),
     url(
-        regex=r'^(?P<pk>\d+)/star',
-        view=views.ProjectStarringView.as_view(),
-        name='project_star',
-    ),
-    url(
         regex=r'^(?P<pk>\d+)/roles$',
         view=views.ProjectRoleView.as_view(),
         name='project_roles',
@@ -82,6 +77,12 @@ urlpatterns = [
         regex=r'^(?P<project>\d+)/settings$',
         view=views.ProjectSettingUpdateView.as_view(),
         name='settings_update',
+    ),
+    # Javascript API Views
+    url(
+        regex=r'^(?P<pk>\d+)/star',
+        view=views.ProjectStarringAPIView.as_view(),
+        name='project_star',
     ),
     # Taskflow API Views
     url(

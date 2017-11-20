@@ -48,7 +48,7 @@
             transition: 'all 0.2s',
             beforeopen: function () {
                 var body = '{{ preview_body }}';
-                var roleName = $('#id_role option:selected').text();
+                var roleName = $('#id_role').find('option:selected').text();
                 var message = $('#id_message').val();
                 body = body.replace('{role_name}', roleName);
 
@@ -58,7 +58,7 @@
                 htmlData += '<strong>Body:</strong>';
                 htmlData += '<pre>' + body;
 
-                if (message != '') {
+                if (message !== '') {
                     htmlData += '{{ preview_message }}'.replace('{message}', message);
                 }
 

@@ -56,7 +56,9 @@ $('[data-toggle="popover"]').popover({
 
 // Set up Bootstrap tooltip
 $(function(){
-    $('[data-toggle="tooltip"]').tooltip();
+    $('[data-toggle="tooltip"]').tooltip({
+        trigger : 'hover'
+    });
 });
 
 
@@ -175,5 +177,35 @@ $(document).ready(function() {
             $('#omics-pr-project-list-link-star').html('<i class="fa fa-star-o"></i> Starred');
             $(this).attr('filter-mode', '0');
         }
+    });
+});
+
+// Star/unstar project with AJAX
+$(document).ready(function() {
+    $('#omics-pr-link-project-star').click(function () {
+        $.post({
+            url: $(this).attr('star-url'),
+            method: 'POST',
+            dataType: 'json',
+            headers: {
+                'X-CSRFToken': $(this).attr('csrf-token')
+            }
+        }).done(function (data) {
+            console.log('Star clicked: ' + data);  // DEBUG
+            if (data === 1) {
+                 $('#omics-pr-btn-star-icon').removeClass(
+                     'text-muted').addClass('text-warning').removeClass(
+                         'fa-star-o').addClass('fa-star');
+                 $('#omics-pr-link-project-star').attr('data-original-title', 'Unstar');
+            }
+            else {
+                $('#omics-pr-btn-star-icon').removeClass(
+                     'text-warning').addClass('text-muted').removeClass(
+                         'fa-star').addClass('fa-star-o');
+                $('#omics-pr-link-project-star').attr('data-original-title', 'Star');
+            }
+        }).fail(function() {
+            alert('Error: unable to set project star!');
+        });
     });
 });
