@@ -63,15 +63,9 @@
 
    </div>
   </div>
-  <h2 class="omics-pr-content-title">{{ project.title }}
-  </h2>
-  <div class="omics-pr-content-title-secondary text-muted">
-    {{ project.description }}
-  </div>
-
+  <h2 class="omics-pr-content-title">{{ project.title }}</h2>
   {# Project starring/unstarring #}
-
-  <div class="ml-auto">
+  <div>
     <a role="link" class="btn btn-link omics-pr-btn-star"
        href="#" id="omics-pr-link-project-star"
        star-url="{% url 'project_star' pk=project.pk %}"
@@ -84,6 +78,10 @@
         <i class="fa fa-star-o fa-2x text-muted" id="omics-pr-btn-star-icon"></i>
       {% endif %}
     </a>
+  </div>
+  {# Secondary title #}
+  <div class="omics-pr-content-title-secondary text-muted">
+    {{ project.description }}
   </div>
 
 </div>

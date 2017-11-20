@@ -447,7 +447,7 @@ class TestProjectRoles(TestUIBase):
         url = reverse('project_roles', kwargs={'pk': self.project.pk})
         self.assert_element_count(expected, url, 'omics-pr-btn-grp-role')
 
-    # NOTE: Temporarily disabled due to issue #
+    # NOTE: Temporarily disabled due to issue #55
     '''
     def test_role_preview(self):
         """Test visibility of role preview popup"""
@@ -478,6 +478,7 @@ class TestProjectRoles(TestUIBase):
         self.assertIsNotNone(
             self.selenium.find_element_by_id('omics-popup-content'))
     '''
+
 
 class TestProjectInviteList(TestUIBase, ProjectInviteMixin):
     """Tests for the project invite list page UI functionalities"""
