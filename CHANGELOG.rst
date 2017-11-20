@@ -49,6 +49,7 @@ Changed
     - Redesign data model with inheritance to avoid field repetition
     - Internal app name is now ``filesfolders``
     - Project setting ``allow_public_links`` is now False by default (#43)
+    - Include extra data in item creation and updating
 - **Projectroles**
     - Remove two-level restriction for project and category nesting in models
     - Only allow creation of categories on top level
@@ -56,7 +57,7 @@ Changed
     - Move ``OMICS_CONSTANTS`` from configuration into ``models.py``
     - Populate Role objects in a migration script instead of a fixture
     - Import patched ``django-plugins`` from GitHub instead of including in project directly
-    - Include modified fields in project_update timeline event
+    - Include extra data in project creation and updating
     - Move Project settings helper functions to ``project_settings.py``
     - Disable help link instead of hiding if no tour help is available
     - Show notice card if no ReadMe is available for project (#42)
