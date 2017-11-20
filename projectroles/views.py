@@ -301,15 +301,11 @@ class ProjectModifyMixin(ModelFormMixin):
         timeline = get_backend_api('timeline_backend')
         tl_event = None
         form_action = 'update' if self.object else 'create'
-
-        old_data = {
-            'title': None,
-            'description': None,
-            'readme': None,
-            'owner': None}
+        old_data = {}
 
         if self.object:
             project = self.get_object()
+
             old_data['title'] = project.title
             old_data['description'] = project.description
             old_data['readme'] = project.readme.raw
@@ -351,7 +347,7 @@ class ProjectModifyMixin(ModelFormMixin):
                     'description': project.description,
                     'readme': project.readme.raw}
 
-            else:
+            else:   # Update
                 tl_desc = 'update ' + type_str.lower()
                 upd_fields = []
 

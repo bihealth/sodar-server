@@ -86,21 +86,52 @@ class FormValidMixin(ModelFormMixin):
     """Mixin for overriding form_valid in form views for creation/updating"""
 
     def form_valid(self, form):
-        timeline = get_backend_api('timeline_backend')
-        self.object = form.save()
         view_action = self.get_view_action()
+        timeline = get_backend_api('timeline_backend')
+        old_data = {}
+
+        update_attrs = ['name', 'folder', 'description', 'flag']
+
+        if view_action == 'update':
+            old_item = self.get_object()
+
+            if old_item.__class__.__name__ == 'HyperLink':
+                update_attrs.append('url')
+
+            elif old_item.__class__.__name__ == 'File':
+                update_attrs.append('public_url')
+
+            # Get old fields
+            for a in update_attrs:
+                old_data[a] = getattr(old_item, a)
+
+        self.object = form.save()
 
         # Add event in Timeline
         if timeline:
             obj_type = TL_OBJ_TYPES[self.object.__class__.__name__]
+            extra_data = {}
+            tl_desc = '{} {} {{{}}}'.format(
+                view_action, obj_type, obj_type)
+
+            if view_action == 'create':
+                for a in update_attrs:
+                    extra_data[a] = str(getattr(self.object, a))
+
+            else:   # Update
+                for a in update_attrs:
+                    if old_data[a] != getattr(self.object, a):
+                        extra_data[a] = str(getattr(self.object, a))
+
+                tl_desc += ' (' + ', '.join(a for a in extra_data) + ')'
 
             tl_event = timeline.add_event(
                 project=self.object.project,
                 app_name=APP_NAME,
                 user=self.request.user,
                 event_name='{}_{}'.format(obj_type, view_action),
-                description='{} {} {{{}}}'.format(
-                    view_action, obj_type, obj_type),
+                description=tl_desc,
+                extra_data=extra_data,
                 status_type='OK')
 
             tl_event.add_object(
@@ -114,7 +145,7 @@ class FormValidMixin(ModelFormMixin):
             '{} "{}" successfully {}d.'.format(
                 self.object.__class__.__name__,
                 self.object.name,
-                self.view_action))
+                view_action))
 
         re_kwargs = {'project': self.object.project.pk}
 
@@ -561,7 +592,7 @@ class HyperLinkDeleteView(
 # Batch Edit Views --------------------------------------------------------
 
 
-# TODO: Refactor this completely for the final version. Use formsets?
+# TODO: Refactor this completely for the final version.
 class BatchEditView(
         LoginRequiredMixin, LoggedInPermissionMixin, TemplateView):
     """Batch delete/move confirm view"""

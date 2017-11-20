@@ -18,11 +18,9 @@ APP_NAMES = get_app_names()
 class TimelineAPI:
     """Timeline API to be used by Django apps"""
 
-    def __init__(self):
-        pass
-
+    @staticmethod
     def add_event(
-            self, project, app_name, user, event_name, description,
+            project, app_name, user, event_name, description,
             classified=False, extra_data=None, status_type=None,
             status_desc=None, status_extra_data=None):
         """
@@ -69,7 +67,8 @@ class TimelineAPI:
 
         return event
 
-    def get_project_events(self, project, classified=False):
+    @staticmethod
+    def get_project_events(project, classified=False):
         """
         Return ProjectEvent objects for project
         :param project: Project object
@@ -83,7 +82,8 @@ class TimelineAPI:
 
         return events
 
-    def get_event_description(self, event):
+    @staticmethod
+    def get_event_description(event):
         """Return printable version of event description"""
         desc = event.description
         unknown_label = '(unknown)'
