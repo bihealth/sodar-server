@@ -76,7 +76,7 @@
       {% csrf_token %}
       <button type="submit" role="link" class="btn btn-link omics-pr-btn-star"
          id="omics-pr-link-project-star"
-         title="Star {% get_project_type_str project %}"
+         title="{% if project_starred %}Unstar{% else %}Star{% endif %} {% get_project_type_str project %}"
          data-toggle="tooltip" data-placement="left">
         {% if project_starred %}
           <i class="fa fa-star fa-2x text-warning"></i>
