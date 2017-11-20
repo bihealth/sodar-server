@@ -69,4 +69,22 @@
     {{ project.description }}
   </div>
 
+  {# Project starring/unstarring #}
+
+  <div class="ml-auto">
+    <form action="{% url 'project_star' pk=project.pk %}" method="post">
+      {% csrf_token %}
+      <button type="submit" role="link" class="btn btn-link omics-pr-btn-star"
+         id="omics-pr-link-project-star"
+         title="Star {% get_project_type_str project %}"
+         data-toggle="tooltip" data-placement="left">
+        {% if project_starred %}
+          <i class="fa fa-star fa-2x text-warning"></i>
+        {% else %}
+          <i class="fa fa-star-o fa-2x text-muted"></i>
+        {% endif %}
+      </button>
+    </form>
+  </div>
+
 </div>

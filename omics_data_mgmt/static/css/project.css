@@ -306,6 +306,12 @@ dl.omics-dl dd {
   height: 1.75em;
 }
 
+.omics-pr-btn-star {
+  height: 30px;
+  margin-left: 0;
+  padding: 0;
+}
+
 .omics-pr-project-menu-btn-group {
   height: 100%;
   margin-right: 12px;

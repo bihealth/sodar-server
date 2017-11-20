@@ -943,7 +943,7 @@ class TestProjectStarringView(
 
         # Issue request
         with self.login(self.user):
-            response = self.client.get(
+            response = self.client.post(
                 reverse('project_star', kwargs={
                     'pk': self.project.pk}))
 
@@ -976,7 +976,7 @@ class TestProjectStarringView(
 
         # Issue request
         with self.login(self.user):
-            response = self.client.get(
+            response = self.client.post(
                 reverse('project_star', kwargs={
                     'pk': self.project.pk}))
 

@@ -532,9 +532,9 @@ class ProjectStarringView(
         except Project.DoesNotExist:
             return None
 
-    def get(self, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         project = self.get_permission_object()
-        user = self.request.user
+        user = request.user
         timeline = get_backend_api('timeline_backend')
 
         tag_state = get_tag_state(project, user)

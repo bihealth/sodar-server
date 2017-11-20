@@ -110,34 +110,40 @@ class TestPermissionBase(
                     response.status_code, 200, 'user={}'.format(user))
 
     def assert_redirect(
-            self, url, users, redirect_user=None, redirect_anon=None):
+            self, url, users, redirect_user=None, redirect_anon=None,
+            method='GET'):
         """
-        Assert redirection to an appropriate page if user is not authorized.
-        Adapted from flowcelltool.
+        Assert redirection to an appropriate page if user is not authorized
         :param url: Target URL for the request
         :param users: Users to test
         :param redirect_user: Redirect URL for signed in user (None=default)
         :param redirect_anon: Redirect URL for anonymous (None=default)
+        :param method: Method for URL (default = 'GET')
         """
-        for user in users:
-            # Authenticated user
-            if user:
-                if redirect_user is None:
-                    redirect_user = reverse('home')
-                with self.login(user):
-                    response = self.client.get(url)
-                    self.assertRedirects(
-                        response, redirect_user,
-                        msg_prefix='user={}'.format(user))
+        def make_request(url, method):
+            if method == 'POST':
+                return self.client.post(url)
 
-            # Anonymous
             else:
-                if not redirect_anon:
-                    redirect_anon = reverse('account_login') + '?next=' + url
-                response = self.client.get(url)
-                self.assertRedirects(
-                    response, redirect_anon,
-                    msg_prefix='user={}'.format(user))
+                return self.client.get(url)
+
+        for user in users:
+            if user:    # Authenticated user
+                redirect_url = redirect_user if redirect_user else \
+                    reverse('home')
+
+                with self.login(user):
+                    response = make_request(url, method)
+
+            else:   # Anonymous
+                redirect_url = redirect_anon if redirect_anon else \
+                    reverse('account_login') + '?next=' + url
+
+                response = make_request(url, method)
+
+            msg = 'user={}'.format(user)
+            self.assertEqual(response.status_code, 302, msg=msg)
+            self.assertEqual(response.url, redirect_url, msg=msg)
 
 
 class TestBaseViews(TestPermissionBase):
@@ -613,5 +619,6 @@ class TestProjectViews(TestPermissionBase):
         self.assert_redirect(
             url, good_users,
             redirect_user=reverse(
-                'project_detail', kwargs={'pk': self.project.pk}))
+                'project_detail', kwargs={'pk': self.project.pk}),
+            method='POST')
         self.assert_redirect(url, bad_users)
