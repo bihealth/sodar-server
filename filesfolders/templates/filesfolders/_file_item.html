@@ -59,7 +59,7 @@
     {# Checkbox column #}
     <td>
       {% if can_update_all or item.owner == request.user and can_update_own %}
-        <input class="form-check-input" type="checkbox" id="omics-ff-file-checkbox-{{ item.pk }}" name="batch_item_{{ item|get_class }}_{{ item.pk }}" value="1" />
+        <input class="omics-checkbox" type="checkbox" id="omics-ff-file-checkbox-{{ item.pk }}" name="batch_item_{{ item|get_class }}_{{ item.pk }}" value="1" />
       {% endif %}
     </td>
   {% endif %}
