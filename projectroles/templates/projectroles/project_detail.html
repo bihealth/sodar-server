@@ -136,9 +136,8 @@
 
     tour.addStep('project_nav', {
         title: 'Project Sidebar',
-        text: 'From this sidebar you can access project apps and actions. ' +
-              'The back link returns you to the previous level as you ' +
-              'navigate within the project.',
+        text: 'From this sidebar you can access apps and actions of the ' +
+              'currently selected project.',
         attachTo: '#omics-pr-sidebar right',
         advanceOn: '.docs-link click',
         showCancelLink: true
@@ -158,7 +157,7 @@
         tour.addStep('project_app_details', {
             title: 'View Details of Project App',
             text: 'In addition to the sidebar, project apps can also ' +
-            'be accessed using the "View Details" buttons.',
+                  'be accessed using the "View Details" buttons.',
             attachTo: '.omics-details-app-button left',
             advanceOn: '.docs-link click',
             showCancelLink: true
@@ -171,7 +170,7 @@
               'favourites. Starred projects are highlighted and can be ' +
               'listed on the home page with a shortcut. To "unstar" a ' +
               'project, click on the same link again.',
-        attachTo: '#omics-pr-link-project-star right',
+        attachTo: '#omics-pr-link-project-star bottom',
         advanceOn: '.docs-link click',
         showCancelLink: true
     });
