@@ -62,7 +62,10 @@
     {% if messages %}
       <div class="container-fluid omics-alert-container">
       {% for message in messages %}
-        <div class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %} omics-alert-top">{{ message }}</div>
+        <div class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %} omics-alert-top">
+          {{ message }}
+          <a href="#" class="pull-right omics-alert-close-link"><i class="fa fa-close text-muted"></i></a>
+        </div>
       {% endfor %}
       </div>
     {% endif %}

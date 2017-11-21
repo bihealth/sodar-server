@@ -48,6 +48,7 @@ Changed
     - General code refactoring and cleanup
     - Update installation instructions in ``INSTALL.rst``
     - Rename "actions" into "operations" (#41)
+    - Message alert boxes made dismissable (#25)
 - **Filesfolders**
     - Redesign data model with inheritance to avoid field repetition
     - Internal app name is now ``filesfolders``

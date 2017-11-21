@@ -209,3 +209,8 @@ $(document).ready(function() {
         });
     });
 });
+
+// Make alerts removable
+$('.omics-alert-close-link').click(function () {
+    $(this).closest('div').fadeOut('fast');
+});
