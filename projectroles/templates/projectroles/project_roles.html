@@ -56,7 +56,7 @@
              <td><strong>project delegate <i class="fa fa-star-half-o" aria-hidden="true"></i></strong></td>
              <td>
                {% if can_update_delegate %}
-                 {% include 'projectroles/_project_roles_buttons.html' with pk=object.pk assignment_id=delegate.pk %}
+                 {% include 'projectroles/_project_roles_buttons.html' with pk=object.pk user=delegate.user assignment_id=delegate.pk %}
                {% endif %}
              </td>
            </tr>
@@ -69,7 +69,7 @@
              <td>{{ s_member.role.name }}</td>
              <td>
                {% if can_update_staff %}
-                 {% include 'projectroles/_project_roles_buttons.html' with pk=object.pk assignment_id=s_member.id %}
+                 {% include 'projectroles/_project_roles_buttons.html' with pk=object.pk user=s_member.user assignment_id=s_member.id %}
                {% endif %}
              </td>
            </tr>
@@ -82,7 +82,7 @@
              <td>{{ member.role.name }}</td>
              <td>
                {% if can_update_members %}
-                 {% include 'projectroles/_project_roles_buttons.html' with pk=object.pk assignment_id=member.id %}
+                 {% include 'projectroles/_project_roles_buttons.html' with pk=object.pk user=member.user assignment_id=member.id %}
                {% endif %}
              </td>
            </tr>

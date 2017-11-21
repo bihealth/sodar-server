@@ -29,6 +29,24 @@ DEFAULT_MESSAGES = {
     'CANCEL': 'Action cancelled'}
 
 
+class ProjectEventManager(models.Manager):
+    """Manager for custom table-level ProjectEvent queries"""
+    def get_object_events(
+            self, project_pk, object_model, object_pk, order_by='-pk'):
+        """
+        Return events with object reference linked
+        :param project_pk: Project pk
+        :param object_model: Object model (string)
+        :param object_pk: Pk of the original object
+        :param order_by: Ordering (default = pk descending)
+        :return: Queryset
+        """
+        return ProjectEvent.objects.filter(
+            project=project_pk,
+            event_objects__object_model=object_model,
+            event_objects__object_pk=object_pk).order_by(order_by)
+
+
 class ProjectEvent(models.Model):
     """Class representing a Project event"""
 
@@ -75,6 +93,9 @@ class ProjectEvent(models.Model):
         default=uuid.uuid4,
         unique=True,
         help_text='UUID for the event')
+
+    # Set manager for custom queries
+    objects = ProjectEventManager()
 
     def __str__(self):
         return '{}: {}/{}'.format(
@@ -156,7 +177,7 @@ class ProjectEventObjectRef(models.Model):
     """Class representing a reference to an object (existing or removed)
     related to a Timeline event status"""
 
-    #: Event to which the status change belongs
+    #: Event to which the object belongs
     event = models.ForeignKey(
         ProjectEvent,
         related_name='event_objects',

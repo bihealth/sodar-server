@@ -192,6 +192,16 @@ class TestProjectEventObjectRef(
 
         self.assertEqual(model_to_dict(new_obj), expected)
 
+    def test_get_object_events(self):
+        """Test get_object_events() in ProjectEventManager"""
+        events = ProjectEvent.objects.get_object_events(
+            project_pk=self.project.pk,
+            object_model=self.obj_ref.object_model,
+            object_pk=self.obj_ref.object_pk)
+
+        self.assertEqual(events.count(), 1)
+        self.assertEqual(events[0], self.event)
+
 
 class TestProjectEventStatus(
         TestProjectEventBase, ProjectEventMixin, ProjectEventStatusMixin):

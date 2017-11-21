@@ -1,4 +1,6 @@
 {% load rules %}
+{# Projectroles dependency #}
+{% load projectroles_common_tags %}
 
 {% has_perm 'filesfolders.update_data_own' request.user file.project as can_update_own %}
 {% has_perm 'filesfolders.update_data_all' request.user file.project as can_update_all %}
@@ -18,6 +20,8 @@
         <i class="fa fa-close"></i>
         Delete File
       </a>
+      {% get_history_dropdown project=file.project obj=file as history_item %}
+      {{ history_item|safe }}
     {% endif %}
   </div>
 </div>

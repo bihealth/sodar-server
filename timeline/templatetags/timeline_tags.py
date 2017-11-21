@@ -77,7 +77,7 @@ def get_event_details(event):
     return ret
 
 
-@register.assignment_tag
+@register.simple_tag
 def get_details_events(project, view_classified):
     """Return recent events for card on project details page"""
     events = ProjectEvent.objects.filter(project=project)

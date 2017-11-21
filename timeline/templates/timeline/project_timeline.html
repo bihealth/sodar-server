@@ -2,7 +2,7 @@
 {% load rules %}
 {% load timeline_tags %}
 
-{% block title %}Timeline for {{ project.title }}{% endblock title %}
+{% block title %}{{ timeline_title }} {% if timeline_mode == 'project' %}for{% else %}in{% endif %} {{ project.title }}{% endblock title %}
 
 {% block css %}
   {{ block.super }}
@@ -33,8 +33,11 @@
 
 {% has_perm 'timeline.view_timeline' request.user project as can_view_timeline %}
 
-<div class="container-fluid omics-subtitle-container">
-  <h3><i class="fa fa-clock-o"></i> Timeline</h3>
+<div class="row omics-subtitle-container">
+  <h3><i class="fa fa-clock-o"></i> {{ timeline_title }}</h3>
+  {% if timeline_mode == 'object' %}
+    <a class="ml-auto omics-details-app-button" href="{% url 'project_timeline' project=project.pk %}"><i class="fa fa-arrow-circle-left"></i> Project Timeline</a>
+  {% endif %}
 </div>
 
 {% if object_list.count > 0 %}

@@ -1,6 +1,7 @@
 """Tests for the API in the timeline app"""
 
 from django.forms.models import model_to_dict
+from django.urls import reverse
 
 # Projectroles dependency
 from projectroles.models import OMICS_CONSTANTS
@@ -28,6 +29,9 @@ class TestTimelineAPI(
     def setUp(self):
         super(TestTimelineAPI, self).setUp()
         self.timeline = get_backend_api('timeline_backend')
+
+        # Init user
+        # self.user = self.make_user('user')
 
     def test_add_event(self):
         """Test adding an event"""
@@ -154,3 +158,27 @@ class TestTimelineAPI(
             'extra_data': {'test_key': 'test_val'}}
 
         self.assertEqual(model_to_dict(ref), expected)
+
+    def test_get_object_url(self):
+        """Test get_object_url()"""
+
+        event = self.timeline.add_event(
+            project=self.project,
+            app_name='projectroles',
+            user=self.user_owner,
+            event_name='test_event',
+            description='description',
+            extra_data={'test_key': 'test_val'})
+
+        # Add user as an object reference
+        self.ref_obj = event.add_object(
+            obj=self.user_owner,
+            label='user',
+            name=self.user_owner.username)
+
+        url = self.timeline.get_object_url(self.project.pk, self.user_owner)
+        expected = reverse('object_timeline', kwargs={
+            'project': self.project.pk,
+            'object_model': self.user_owner.__class__.__name__,
+            'object_pk': self.user_owner.pk})
+        self.assertEqual(url, expected)

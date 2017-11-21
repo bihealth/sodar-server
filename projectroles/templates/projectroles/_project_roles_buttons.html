@@ -1,4 +1,5 @@
 {% load rules %}
+{% load projectroles_common_tags %}
 
 <div class="btn-group omics-edit-button-group omics-pr-btn-grp-role" role="group" id="omics-pr-btn-grp-role-{{ assignment_id }}">
   <button class="btn btn-secondary dropdown-toggle btn-sm omics-edit-dropdown"
@@ -15,5 +16,7 @@
       <i class="fa fa-user-times"></i>
       Remove Member
     </a>
+    {% get_history_dropdown project=project obj=user as history_item %}
+      {{ history_item|safe }}
   </div>
 </div>

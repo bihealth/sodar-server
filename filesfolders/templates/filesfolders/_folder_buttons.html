@@ -1,3 +1,6 @@
+{# Projectroles dependency #}
+{% load projectroles_common_tags %}
+
 <div class="btn-group omics-edit-button-group" id="omics-ff-folder-buttons-{{ pk }}">
   <button class="btn btn-secondary dropdown-toggle btn-sm omics-edit-dropdown"
       type="button" data-toggle="dropdown" aria-expanded="false">
@@ -12,5 +15,7 @@
       <i class="fa fa-close"></i>
       Delete Folder
     </a>
+    {% get_history_dropdown project=folder.project obj=folder as history_item %}
+    {{ history_item|safe }}
   </div>
 </div>

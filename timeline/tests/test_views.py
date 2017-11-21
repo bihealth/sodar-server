@@ -64,15 +64,38 @@ class TestViewsBase(
             extra_data={'test_key': 'test_val'})
 
 
-class TestListView(TestViewsBase):
-    """Tests for the timeline list view"""
+class TestProjectListView(TestViewsBase):
+    """Tests for the timeline project list view"""
 
     def test_render(self):
-        """Test to ensure the home view renders correctly"""
+        """Test to ensure the view renders correctly"""
         with self.login(self.user):
             response = self.client.get(
                 reverse('project_timeline',
                 kwargs={'project': self.project.pk}))
+            self.assertEqual(response.status_code, 200)
+
+
+class TestObjectListView(TestViewsBase):
+    """Tests for the timeline object list view"""
+
+    def setUp(self):
+        super(TestObjectListView, self).setUp()
+
+        # Add user as an object reference
+        self.ref_obj = self.event.add_object(
+            obj=self.user,
+            label='user',
+            name=self.user.username)
+
+    def test_render(self):
+        """Test to ensure the view renders correctly"""
+        with self.login(self.user):
+            response = self.client.get(
+                reverse('object_timeline', kwargs={
+                    'project': self.project.pk,
+                    'object_model': self.ref_obj.object_model,
+                    'object_pk': self.ref_obj.object_pk}))
             self.assertEqual(response.status_code, 200)
 
 

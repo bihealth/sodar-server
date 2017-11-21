@@ -2,6 +2,8 @@
 
 import re
 
+from django.urls import reverse
+
 # Access Django user model
 from omics_data_mgmt.users.models import User
 
@@ -87,7 +89,7 @@ class TimelineAPI:
         """Return printable version of event description"""
         desc = event.description
         unknown_label = '(unknown)'
-        not_found_label = '<span class="text-danger">{}</span>'
+        not_found_label = '<span class="text-danger">{}</span> {}'
 
         ref_ids = re.findall("{'?(.*?)'?\}", desc)
 
@@ -102,19 +104,29 @@ class TimelineAPI:
                     event=event,
                     label=r)
 
+                # Get history link
+                history_url = reverse('object_timeline', kwargs={
+                    'project': event.project.pk,
+                    'object_model': ref_obj.object_model,
+                    'object_pk': ref_obj.object_pk})
+                history_link = '<a href="{}" class="omics-tl-object-link">' \
+                               '<i class="fa fa-clock-o"></i></a>'.format(
+                                history_url)
+
                 # User is a special case
                 if ref_obj.object_model == 'User':
                     try:
                         user = User.objects.get(pk=ref_obj.object_pk)
-                        refs[r] = '<a href="mailto:{}">{}</a>'.format(
-                            user.email, user.username)
+                        refs[r] = '<a href="mailto:{}">{}</a> {}'.format(
+                            user.email, user.username, history_link)
 
                     except User.DoesNotExist:
                         refs[r] = unknown_label
 
                 # Projectroles is also special
                 elif event.app == 'projectroles':
-                    refs[r] = not_found_label.format(ref_obj.name)
+                    refs[r] = not_found_label.format(
+                        ref_obj.name, history_link)
 
                 # Apps with plugins
                 else:
@@ -125,17 +137,45 @@ class TimelineAPI:
                         ref_obj.object_model, ref_obj.object_pk)
 
                     if link_data:
-                        refs[r] = '<a href="{}" {}>{}</a>'.format(
+                        refs[r] = '<a href="{}" {}>{}</a> {}'.format(
                             link_data['url'],
                             ('target="_blank"'
                              if 'blank' in link_data and
                                 link_data['blank'] is True else ''),
-                            link_data['label'])
+                            link_data['label'],
+                            history_link)
 
                     else:
-                        refs[r] = not_found_label.format(ref_obj.name)
+                        refs[r] = not_found_label.format(
+                            ref_obj.name, history_link)
 
             except ProjectEventObjectRef.DoesNotExist:
                 refs[r] = unknown_label
 
         return event.description.format(**refs)
+
+    @staticmethod
+    def get_object_url(project_pk, obj):
+        """
+        Return URL for object history in timeline
+        :param project_pk: Pk of the related project
+        :param obj: Django postgres database object
+        :return: String
+        """
+        return reverse('object_timeline', kwargs={
+            'project': project_pk,
+            'object_model': obj.__class__.__name__,
+            'object_pk': obj.pk})
+
+    @staticmethod
+    def get_object_link(project_pk, obj):
+        """
+        Return inline HTML icon link for object history in timeline.
+        :param project_pk:
+        :param project_pk: Pk of the related project
+        :param obj: Django postgres database object
+        :return: String
+        """
+        return '<a href="{}" class="omics-tl-object-link">' \
+               '<i class="fa fa-clock-o"></i></a>'.format(
+                TimelineAPI.get_object_url(project_pk, obj))

@@ -65,6 +65,34 @@ class TestListView(
         url = reverse('project_timeline', kwargs={'project': self.project.pk})
         self.assert_element_count(expected, url, 'omics-tl-list-event')
 
+    def test_object_event_visibility(self):
+        """Test visibility of object related events events in the timeline event list"""
+
+        # Add user as an object reference
+        self.ref_obj = self.event.add_object(
+            obj=self.superuser,
+            label='user',
+            name=self.superuser.username)
+
+        self.classified_ref_obj = self.classified_event.add_object(
+            obj=self.superuser,
+            label='user',
+            name=self.superuser.username)
+
+        expected = [
+            (self.superuser, 2),
+            (self.as_owner.user, 2),
+            (self.as_delegate.user, 2),
+            (self.as_staff.user, 1),
+            (self.as_contributor.user, 1),
+            (self.as_guest.user, 1)]
+
+        url = reverse('object_timeline', kwargs={
+            'project': self.project.pk,
+            'object_model': self.ref_obj.object_model,
+            'object_pk': self.ref_obj.object_pk})
+        self.assert_element_count(expected, url, 'omics-tl-list-event')
+
     def test_event_visibility_details(self):
         """Test visibility of events on the project details page"""
         expected = [

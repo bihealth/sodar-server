@@ -21,6 +21,7 @@ Added
     - Page title to main files list
     - File, folder and link search (#21)
     - Item flagging (#38)
+    - History links for items (#35)
 - **Projectroles**
     - Import app from prototype
     - Sub-navbar with project breadcrumb (#20)
@@ -30,8 +31,10 @@ Added
     - More helper functions in Project model: ``get_parents()``, ``get_full_title()``
     - Project list filtering (#32)
     - Project tagging/starring functionality (#37)
+    - History links for project members (#35)
 - **Timeline**
     - Import app and backend plugin from prototype
+    - Object event view history and API (#35)
 
 Changed
 -------
@@ -64,6 +67,7 @@ Changed
     - Refactor URL kwargs
     - Allow users with roles under category children to view category (#47)
     - Update text labels for role management to refer to "members" (#40)
+    - Separate common template tags into ``projectroles_common_tags``
 - **Timeline**
     - Enable event details popover on the project details page
     - Limit details page list to successful events
