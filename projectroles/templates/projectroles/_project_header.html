@@ -71,7 +71,7 @@
        star-url="{% url 'project_star' pk=project.pk %}"
        csrf-token="{{ csrf_token }}"
        title="{% if project_starred %}Unstar{% else %}Star{% endif %}"
-       data-toggle="tooltip" data-placement="left">
+       data-toggle="tooltip" data-placement="top">
       {% if project_starred %}
         <i class="fa fa-star fa-2x text-warning" id="omics-pr-btn-star-icon"></i>
       {% else %}
