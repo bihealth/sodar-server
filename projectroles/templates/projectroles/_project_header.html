@@ -25,7 +25,7 @@
                href="{% url plugin.entry_point_url_id project=project.pk %}"
                title="{{ plugin.title }}"
                id="omics-pr-res-link-app-plugin-{{ plugin.name }}">
-               <i class="fa fa-{{ plugin.icon }}"></i>
+               <i class="fa fa-fw fa-{{ plugin.icon }}"></i>
               {{ plugin.title }}
             </a>
           {% endif %}
@@ -38,7 +38,7 @@
             href="{% url 'project_roles' pk=project.pk %}"
             title="User Roles"
             id="omics-pr-res-link-project-roles">
-          <i class="fa fa-users"></i>
+          <i class="fa fa-fw fa-users"></i>
           Project Members
         </a>
       {% endif %}
@@ -47,7 +47,7 @@
             href="{% url 'settings_update' project=project.pk %}"
             title="Project Settings"
             id="omics-pr-res-link-project-settings">
-          <i class="fa fa-wrench"></i>
+          <i class="fa fa-fw fa-wrench"></i>
           {% get_project_type_str project %} Settings
         </a>
       {% endif %}
@@ -56,7 +56,7 @@
             href="{% url 'project_update' pk=project.pk %}"
             title="Update Project"
             id="omics-pr-res-link-project-update">
-          <i class="fa fa-pencil"></i>
+          <i class="fa fa-fw fa-pencil"></i>
           Update {% get_project_type_str project %}
         </a>
      {% endif %}
