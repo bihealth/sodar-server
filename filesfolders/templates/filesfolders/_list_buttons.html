@@ -17,8 +17,8 @@
         {% else %}
           href="{% url 'folder_create' project=project.pk %}">
         {% endif %}
-          <i class="fa fa-folder-open"></i>
-            Add Folder
+          <i class="fa fa-fw fa-folder-open"></i>
+          Add Folder
         </a>
 
       {# Hyperlink #}
@@ -28,8 +28,8 @@
         {% else %}
           href="{% url 'hyperlink_create' project=project.pk %}">
         {% endif %}
-          <i class="fa fa-external-link"></i>
-            Add Link
+          <i class="fa fa-fw fa-external-link"></i>
+          Add Link
         </a>
 
       {# File #}
@@ -39,8 +39,8 @@
         {% else %}
           href="{% url 'file_create' project=project.pk %}">
         {% endif %}
-          <i class="fa fa-upload"></i>
-            Upload File
+          <i class="fa fa-fw fa-upload"></i>
+          Upload File
         </a>
 
       {# Move Selected #}
@@ -50,8 +50,8 @@
              document.getElementById('omics-ff-batch-form-action').value = 'move';
              document.getElementById('omics-ff-batch-form').submit();
              return false;">
-        <i class="fa fa-arrow-right"></i>
-          Move Selected
+        <i class="fa fa-fw fa-arrow-right"></i>
+        Move Selected
       </a>
 
       {# Delete Selected #}
@@ -61,8 +61,8 @@
              document.getElementById('omics-ff-batch-form-action').value = 'delete';
              document.getElementById('omics-ff-batch-form').submit();
              return false;">
-        <i class="fa fa-trash"></i>
-          Delete Selected
+        <i class="fa fa-fw fa-trash"></i>
+        Delete Selected
       </a>
     </div>
 </div>

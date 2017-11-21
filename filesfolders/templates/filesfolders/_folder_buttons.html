@@ -8,11 +8,11 @@
   </button>
   <div class="dropdown-menu dropdown-menu-right">
     <a class="dropdown-item" href="{% url 'folder_update' project=project.pk pk=pk %}">
-      <i class="fa fa-pencil"></i>
+      <i class="fa fa-fw fa-pencil"></i>
       Update Folder
     </a>
     <a class="dropdown-item" href="{% url 'folder_delete' project=project.pk pk=pk %}">
-      <i class="fa fa-close"></i>
+      <i class="fa fa-fw fa-close"></i>
       Delete Folder
     </a>
     {% get_history_dropdown project=folder.project obj=folder as history_item %}

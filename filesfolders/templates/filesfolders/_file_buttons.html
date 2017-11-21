@@ -13,11 +13,11 @@
   <div class="dropdown-menu dropdown-menu-right">
     {% if can_update_all or file.owner == request.user and can_update_own %}
       <a class="dropdown-item" href="{% url 'file_update' pk=file.pk project=file.project.pk %}">
-        <i class="fa fa-pencil"></i>
+        <i class="fa fa-fw fa-pencil"></i>
         Update File
       </a>
       <a class="dropdown-item" href="{% url 'file_delete' pk=file.pk project=file.project.pk %}">
-        <i class="fa fa-close"></i>
+        <i class="fa fa-fw fa-close"></i>
         Delete File
       </a>
       {% get_history_dropdown project=file.project obj=file as history_item %}

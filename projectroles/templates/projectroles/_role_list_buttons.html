@@ -13,7 +13,7 @@
       <a class="dropdown-item" href="{% url 'project_roles' pk=object.pk %}"
          title="View Members"
          id="omics-pr-btn-role-list-roles">
-        <i class="fa fa-users"></i>
+        <i class="fa fa-fw fa-users"></i>
           View Members
       </a>
     {% endif %}
@@ -23,7 +23,7 @@
       <a class="dropdown-item" href="{% url 'role_invites' project=object.pk %}"
          title="View Invites"
          id="omics-pr-btn-role-list-invites">
-        <i class="fa fa-envelope"></i>
+        <i class="fa fa-fw fa-envelope"></i>
           View Invites
       </a>
     {% endif %}
@@ -33,7 +33,7 @@
       <a class="dropdown-item" href="{% url 'role_invite_create' project=object.pk %}"
          title="Send Invite"
          id="omics-pr-btn-role-list-invite">
-        <i class="fa fa-send"></i>
+        <i class="fa fa-fw fa-send"></i>
           Send Invite
       </a>
     {% endif %}
@@ -43,7 +43,7 @@
       <a class="dropdown-item" href="{% url 'role_create' project=object.pk %}"
          title="Add Member"
          id="omics-pr-btn-role-list-create">
-        <i class="fa fa-user-plus"></i>
+        <i class="fa fa-fw fa-user-plus"></i>
           Add Member
       </a>
     {% endif %}

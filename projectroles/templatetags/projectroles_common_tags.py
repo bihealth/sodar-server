@@ -17,8 +17,8 @@ def get_history_dropdown(project, obj):
         return ''
 
     url = timeline.get_object_url(project.pk, obj)
-    return '<a class="dropdown-item" href="{}">\n<i class="fa fa-clock-o">' \
-           '</i>\nHistory</a>\n'.format(url)
+    return '<a class="dropdown-item" href="{}">\n<i class="fa fa-fw ' \
+           'fa-clock-o"></i> History</a>\n'.format(url)
 
 
 @register.simple_tag
