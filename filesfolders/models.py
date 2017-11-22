@@ -196,6 +196,26 @@ class FileData(models.Model):
     content_type = models.CharField(max_length=255)
 
 
+class FileManager(FilesfoldersManager):
+    """Manager for custom table-level File queries"""
+
+    def get_folder_readme(self, project_pk, folder_pk):
+        """
+        Return readme file for a folder, or None if it wasn't found.
+        :param project_pk: Pk of the Project
+        :param folder_pk: Pk of the Folder or None if root
+        :return: File object or None
+        """
+        try:
+            return File.objects.get(
+                name__istartswith='readme',
+                project=project_pk,
+                folder=folder_pk)
+
+        except File.DoesNotExist:
+            return None
+
+
 class File(BaseFilesfoldersClass):
     """Small file uploaded using the filesfolders app"""
 
@@ -218,6 +238,9 @@ class File(BaseFilesfoldersClass):
         blank=False,
         null=False,
         help_text='Secret string for creating public URL')
+
+    # Set manager for custom queries
+    objects = FileManager()
 
     class Meta:
         ordering = ['folder', 'name']

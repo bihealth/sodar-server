@@ -22,6 +22,7 @@ Added
     - File, folder and link search (#21)
     - Item flagging (#38)
     - History links for items (#35)
+    - Folder readme file rendering (#36)
 - **Projectroles**
     - Import app from prototype
     - Sub-navbar with project breadcrumb (#20)

@@ -1,5 +1,4 @@
 from django import template
-import mistune
 
 from ..models import Project, RoleAssignment, OMICS_CONSTANTS, \
     PROJECT_TAG_STARRED
@@ -100,11 +99,6 @@ def get_user_role_str(project, user):
 
     except RoleAssignment.DoesNotExist:
         return '<span class="text-muted">N/A</span>'
-
-
-@register.simple_tag
-def render_markdown(raw_markdown):
-    return mistune.markdown(raw_markdown)
 
 
 @register.simple_tag

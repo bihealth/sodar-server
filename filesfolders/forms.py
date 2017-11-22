@@ -199,6 +199,9 @@ class FileForm(FilesfoldersItemForm):
                 self.fields['public_url'].disabled = True
 
     def clean(self):
+        # TODO: Add check for existing readme.*
+        # TODO: Add fix for file moving check
+
         if self.cleaned_data.get('file'):
             file = self.cleaned_data.get('file')
 

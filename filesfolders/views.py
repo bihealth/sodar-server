@@ -373,6 +373,16 @@ class ProjectFileView(
         context['links'] = HyperLink.objects.filter(
             project=self.get_object(), folder=root_folder)
 
+        # Get folder ReadMe
+        readme_file = File.objects.get_folder_readme(
+            self.get_object().pk, self.kwargs['folder'] if
+            'folder' in self.kwargs else None)
+
+        if readme_file:
+            context['readme_name'] = readme_file.name
+            context['readme_data'] = readme_file.file.read()
+            context['readme_mime'] = readme_file.file.file.mimetype
+
         return context
 
     def dispatch(self, request, *args, **kwargs):
