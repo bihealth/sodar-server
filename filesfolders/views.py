@@ -380,7 +380,7 @@ class ProjectFileView(
 
         if readme_file:
             context['readme_name'] = readme_file.name
-            context['readme_data'] = readme_file.file.read()
+            context['readme_data'] = readme_file.file.read().decode('utf-8')
             context['readme_mime'] = readme_file.file.file.mimetype
 
         return context

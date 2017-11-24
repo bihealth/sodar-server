@@ -12,9 +12,6 @@ register = template.Library()
 
 @register.simple_tag
 def render_markdown(raw_markdown):
-    if type(raw_markdown) == bytes:
-        raw_markdown = raw_markdown.decode('utf-8')
-
     return mistune.markdown(raw_markdown)
 
 

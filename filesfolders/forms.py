@@ -260,6 +260,20 @@ class FileForm(FilesfoldersItemForm):
                     except File.DoesNotExist:
                         pass
 
+                # If moving, ensure an identical file doesn't exist in the
+                # target folder
+                if self.instance.folder != self.cleaned_data.get('folder'):
+                    try:
+                        existing_file = File.objects.get(
+                            project=self.instance.project,
+                            folder=self.cleaned_data.get('folder'),
+                            name=self.cleaned_data.get('file'))
+                        self.add_error(
+                            'folder', 'File already exists in folder')
+
+                    except File.DoesNotExist:
+                        pass
+
         return self.cleaned_data
 
     def save(self, *args, **kwargs):
