@@ -1,5 +1,6 @@
 {# Projectroles dependency #}
 {% extends 'projectroles/project_base.html' %}
+{% load projectroles_common_tags %}
 
 {% load rules %}
 {% load filesfolders_tags %}
@@ -59,7 +60,7 @@
       <input type="hidden" id="omics-ff-batch-form-action" name="batch_action" value="" />
       <input type="hidden" id="omics-ff-user-confirmed" name="user_confirmed" value="0" />
 
-      <div class="card omics-card-single" id="omics-ff-file-list">
+      <div class="card omics-card{% if not readme_file %}-single{% endif %}" id="omics-ff-file-list">
         <div class="card-body omics-card-body-table">
 
           <!-- Breadcrumb -->
@@ -142,6 +143,23 @@
       </div> <!-- End card -->
 
     </form>
+
+    {# Folder ReadMe #}
+    {% if readme_data %}
+      <div class="card omics-card" id="omics-ff-readme-card">
+        <div class="card-header">
+          <h4><i class="fa fa-book"></i> Folder ReadMe ({{ readme_name }})</h4>
+        </div>
+        <div class="card-body omics-card-body">
+          {% if readme_mime == 'text/plain' %}
+            <pre>{{ readme_data|wordwrap:79 }}</pre>
+          {% elif readme_mime == 'text/markdown' %}
+            {% render_markdown readme_data as readme_markdown %}
+            <p>{{ readme_markdown|safe }}</p>
+          {% endif %}
+        </div>
+      </div>
+    {% endif %}
 
     {% if can_add_data %}
       {% include 'filesfolders/_list_buttons.html' with project=project folder=folder up=True %}

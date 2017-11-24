@@ -129,6 +129,30 @@ class TestListView(TestViewsBase):
             self.assertIsNotNone(response.context['files'])
             self.assertIsNotNone(response.context['links'])
 
+    def test_render_with_readme_txt(self):
+        """Test rendering of the project list with a plaintext readme file"""
+
+        # Init readme file
+        self.readme_file = self._make_file(
+            name='readme.txt',
+            file_name='readme.txt',
+            file_content=self.file_content,
+            project=self.project,
+            folder=None,
+            owner=self.user,
+            description='',
+            public_url=False,
+            secret='xxxxxxxxx')
+
+        with self.login(self.user):
+            response = self.client.get(
+                reverse('project_files',
+                        kwargs={'project': self.project.pk}))
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.context['readme_name'], 'readme.txt')
+            self.assertEqual(response.context['readme_data'], self.file_content)
+            self.assertEqual(response.context['readme_mime'], 'text/plain')
+
 
 # File Views -------------------------------------------------------------
 
@@ -303,6 +327,64 @@ class TestFileUpdateView(TestViewsBase):
         self.assertEqual(File.objects.all().count(), 2)
         self.file.refresh_from_db()
         self.assertEqual(self.file.file.read(), self.file_content)
+
+    def test_update_folder(self):
+        """Test moving file to a different folder"""
+        post_data = {
+            'name': 'file.txt',
+            'folder': self.folder.pk,
+            'description': '',
+            'flag': '',
+            'public_url': False}
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse('file_update', kwargs={
+                    'project': self.project.pk, 'pk': self.file.pk}),
+                post_data)
+
+            self.assertEqual(response.status_code, 302)
+            self.assertEqual(response.url, reverse(
+                'project_files', kwargs={
+                    'project': self.project.pk,
+                    'folder': self.folder.pk}))
+
+        self.file.refresh_from_db()
+        self.assertEqual(self.file.folder, self.folder)
+
+    def test_update_folder_existing(self):
+        """Test overwriting file in a different folder (should fail)"""
+
+        # Create file with same name in the target folder
+        self._make_file(
+            name='file.txt',
+            file_name='file.txt',
+            file_content=self.file_content_alt,
+            project=self.project,
+            folder=self.folder,
+            owner=self.user,
+            description='',
+            public_url=True,
+            secret='aaaaaaaaa')
+
+        post_data = {
+            'name': 'file.txt',
+            'folder': self.folder.pk,
+            'description': '',
+            'flag': '',
+            'public_url': False}
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse('file_update', kwargs={
+                    'project': self.project.pk, 'pk': self.file.pk}),
+                post_data)
+
+            self.assertEqual(response.status_code, 200)
+
+        self.assertEqual(File.objects.all().count(), 2)
+        self.file.refresh_from_db()
+        self.assertEqual(self.file.folder, None)
 
 
 class TestFileDeleteView(TestViewsBase):

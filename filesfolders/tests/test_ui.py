@@ -103,6 +103,33 @@ class TestListView(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
             owner=self.user_contributor,
             description='')
 
+    def test_readme(self):
+        """Test rendering readme if it has been uploaded to the folder"""
+
+        # Init readme file
+        self.readme_file = self._make_file(
+            name='readme.txt',
+            file_name='readme.txt',
+            file_content=self.file_content,
+            project=self.project,
+            folder=None,
+            owner=self.user_owner,
+            description='',
+            public_url=False,
+            secret='xxxxxxxxx')
+
+        expected_true = [
+            self.superuser,
+            self.as_owner.user,
+            self.as_delegate.user,
+            self.as_staff.user,
+            self.as_contributor.user,
+            self.as_guest.user]
+        url = reverse('project_files', kwargs={'project': self.project.pk})
+
+        self.assert_element_exists(
+            expected_true, url, 'omics-ff-readme-card', True)
+
     def test_buttons_list(self):
         """Test file/folder list-wide button visibility according to user
         permissions"""

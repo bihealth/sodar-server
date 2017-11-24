@@ -411,6 +411,10 @@ a.omics-nav-link-last {
   vertical-align: middle;
 }
 
+pre {
+  font-size: 85%;
+}
+
 /* Media */
 
 @media screen and (max-width: 1000px) {

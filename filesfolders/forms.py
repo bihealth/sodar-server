@@ -199,63 +199,87 @@ class FileForm(FilesfoldersItemForm):
                 self.fields['public_url'].disabled = True
 
     def clean(self):
-        if self.cleaned_data.get('file'):
-            file = self.cleaned_data.get('file')
+        project = self.instance.project if self.instance.pk else self.project
+        folder = self.cleaned_data.get('folder')
+        file = self.cleaned_data.get('file')
+        new_filename = file.name.split('/')[-1]
 
-            # Ensure max file size is not exceeded
+        # Ensure max file size is not exceeded
+        try:
+            size = file.size
+
+        except NotImplementedError:
+            size = file.file.size
+
+        if size > MAX_UPLOAD_SIZE:
+            self.add_error(
+                'file',
+                'File too large, maximum size is {} bytes '
+                '(file size is {} bytes)'.format(
+                    MAX_UPLOAD_SIZE,
+                    file.size))
+
+        # Ensure not overwriting a readme in the target folder
+        if (new_filename.lower().find('readme') == 0 and
+                File.objects.get_folder_readme(project.pk, folder)):
+            self.add_error(
+                'folder', 'ReadMe file already exists in folder')
+
+        else:
+            pass
+
+        # Creation
+        if not self.instance.pk:
             try:
-                size = file.size
+                File.objects.get(
+                    project=project,
+                    folder=self.folder,
+                    name=file.name)
+                self.add_error('file', 'File already exists')
 
-            except NotImplementedError:
-                size = file.file.size
+            except File.DoesNotExist:
+                pass
 
-            if size > MAX_UPLOAD_SIZE:
-                self.add_error(
-                    'file',
-                    'File too large, maximum size is {} bytes '
-                    '(file size is {} bytes)'.format(
-                        MAX_UPLOAD_SIZE,
-                        file.size))
+        # Updating
+        else:
+            # Ensure file with the same name does not exist in the same
+            # folder (unless we update file with the same folder and name)
 
-            # Creation
-            if not self.instance.pk:
+            old_file = None
+
+            try:
+                old_file = File.objects.get(
+                    project=self.instance.project,
+                    folder=self.instance.folder,
+                    name=self.instance.name)
+
+            except File.DoesNotExist:
+                pass
+
+            if old_file and self.instance.name != str(file):
                 try:
                     File.objects.get(
-                        project=self.project,
-                        folder=self.folder,
-                        name=file.name)
+                        project=self.instance.project,
+                        folder=folder,
+                        name=file)  # THIS FAILES
                     self.add_error('file', 'File already exists')
 
                 except File.DoesNotExist:
                     pass
 
-            # Updating
-            else:
-                # Ensure file with the same name does not exist in the same
-                # folder (unless we update file with the same folder and name)
-                old_file = None
+            # Moving
+            if self.instance.folder != folder:
+                # If moving, ensure an identical file doesn't exist in the
+                # target folder
+                existing = File.objects.filter(
+                    project=self.instance.project,
+                    folder=folder,
+                    name__in=[new_filename, self.instance.name])
 
-                try:
-                    old_file = File.objects.get(
-                        project=self.instance.project,
-                        folder=self.instance.folder,
-                        name=self.instance.name)
-
-                except File.DoesNotExist:
-                    pass
-
-                if (old_file and
-                        str(self.instance.name) != str(
-                            self.cleaned_data.get('file'))):
-                    try:
-                        new_file = File.objects.get(
-                            project=self.instance.project,
-                            folder=self.cleaned_data.get('folder'),
-                            name=self.cleaned_data.get('file'))
-                        self.add_error('file', 'File already exists')
-
-                    except File.DoesNotExist:
-                        pass
+                if existing.count() > 0:
+                    self.add_error(
+                        'folder',
+                        'File with identical name already exists in folder')
 
         return self.cleaned_data
 
