@@ -55,6 +55,7 @@ Changed
     - Internal app name is now ``filesfolders``
     - Project setting ``allow_public_links`` is now False by default (#43)
     - Include extra data in item creation and updating
+    - Only allow one readme.* file in each folder (#36)
 - **Projectroles**
     - Remove two-level restriction for project and category nesting in models
     - Only allow creation of categories on top level
@@ -81,6 +82,7 @@ Fixed
 - **Filesfolders**
     - Redirects in exception cases in ``FilePublicLinkView``
     - Unexpected characters in file name broke the ``file_serve`` view (ODA #109)
+    - Check for existing file if moving file during update (#56)
 - **Projectroles**
     - Check for project title uniqueness
     - Don't allow matching titles for subproject and parent
