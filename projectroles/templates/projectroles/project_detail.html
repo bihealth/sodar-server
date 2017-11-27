@@ -3,17 +3,6 @@
 {% load projectroles_tags %}
 {% load projectroles_common_tags %}
 
-{% block css %}
-  {{ block.super }}
-  <style type="text/css">
-    div.app-plugin-description {
-      padding: 8px 12px;
-      color: #000000;
-      background-color: #FFFFE0;
-    }
-  </style>
-{% endblock css %}
-
 {% block title %}Project {{ object.title }}{% endblock title %}
 
 {% block projectroles %}
@@ -71,7 +60,7 @@
                 </a>
               </h4>
             </div>
-            <div class="card-body omics-card-body app-plugin-description">
+            <div class="card-body omics-card-body omics-card-body-info">
                 <i class="fa fa-info-circle"></i> {{ plugin.description }}
             </div>
             {% if plugin.details_template %}
