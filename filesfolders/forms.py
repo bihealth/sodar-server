@@ -219,15 +219,6 @@ class FileForm(FilesfoldersItemForm):
                     MAX_UPLOAD_SIZE,
                     file.size))
 
-        # Ensure not overwriting a readme in the target folder
-        if (new_filename.lower().find('readme') == 0 and
-                File.objects.get_folder_readme(project.pk, folder)):
-            self.add_error(
-                'folder', 'ReadMe file already exists in folder')
-
-        else:
-            pass
-
         # Creation
         if not self.instance.pk:
             try:
@@ -244,7 +235,6 @@ class FileForm(FilesfoldersItemForm):
         else:
             # Ensure file with the same name does not exist in the same
             # folder (unless we update file with the same folder and name)
-
             old_file = None
 
             try:

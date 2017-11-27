@@ -199,21 +199,27 @@ class FileData(models.Model):
 class FileManager(FilesfoldersManager):
     """Manager for custom table-level File queries"""
 
-    def get_folder_readme(self, project_pk, folder_pk):
+    def get_folder_readme(
+            self, project_pk, folder_pk, mimetype='text/markdown'):
         """
-        Return readme file for a folder, or None if it wasn't found.
+        Return the readme file for a folder or None if not found
         :param project_pk: Pk of the Project
         :param folder_pk: Pk of the Folder or None if root
-        :return: File object or None
+        :param mimetype: Mimetype of the readme (default=text/markdown)
+        :return: File or None
         """
-        try:
-            return File.objects.get(
-                name__istartswith='readme',
-                project=project_pk,
-                folder=folder_pk)
 
-        except File.DoesNotExist:
-            return None
+        # NOTE: Can't just use get() with file__file__mimetype here
+        readme_files = File.objects.filter(
+            name__istartswith='readme.',
+            project=project_pk,
+            folder=folder_pk)
+
+        for f in readme_files:
+            if f.file.file.mimetype == mimetype:
+                return f
+
+        return None
 
 
 class File(BaseFilesfoldersClass):

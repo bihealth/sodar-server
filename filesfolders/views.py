@@ -374,9 +374,20 @@ class ProjectFileView(
             project=self.get_object(), folder=root_folder)
 
         # Get folder ReadMe
-        readme_file = File.objects.get_folder_readme(
-            self.get_object().pk, self.kwargs['folder'] if
-            'folder' in self.kwargs else None)
+        readme_md = File.objects.get_folder_readme(
+            project_pk=self.get_object().pk,
+            folder_pk=self.kwargs['folder'] if
+            'folder' in self.kwargs else None,
+            mimetype='text/markdown')
+
+        # If the markdown version is not found, try to get a plaintext version
+        readme_txt = File.objects.get_folder_readme(
+            project_pk=self.get_object().pk,
+            folder_pk=self.kwargs['folder'] if
+            'folder' in self.kwargs else None,
+            mimetype='text/plain')
+
+        readme_file = readme_md if readme_md else readme_txt
 
         if readme_file:
             context['readme_name'] = readme_file.name
@@ -384,6 +395,9 @@ class ProjectFileView(
 
             if context['readme_mime'] == 'text/markdown':
                 context['readme_data'] = readme_file.file.read().decode('utf-8')
+
+                if readme_txt:
+                    context['readme_alt'] = readme_txt.name
 
             else:
                 context['readme_data'] = readme_file.file.read()

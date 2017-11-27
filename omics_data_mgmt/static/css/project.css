@@ -197,6 +197,12 @@ div.omics-card-body-table {
   padding: 0;
 }
 
+div.omics-card-body-info {
+  padding: 8px 12px;
+  color: #000000;
+  background-color: #FFFFE0;
+}
+
 /* Tables within cards */
 
 table.omics-card-table {

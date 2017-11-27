@@ -150,6 +150,11 @@
         <div class="card-header">
           <h4><i class="fa fa-book"></i> Folder ReadMe ({{ readme_name }})</h4>
         </div>
+        {% if readme_alt %}
+          <div class="card-body omics-card-body omics-card-body-info">
+            <i class="fa fa-info-circle"></i> File "{{ readme_alt }}" also found in folder
+          </div>
+        {% endif %}
         <div class="card-body omics-card-body">
           {% if readme_mime == 'text/plain' %}
             <pre>{{ readme_data|wordwrap:79 }}</pre>
