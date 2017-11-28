@@ -71,10 +71,13 @@
     {% endif %}
 
     {# Actual content #}
-    <div class="container-fluid omics-pr-content" id="omics-pr-content">
+    <div class="omics-pr-content" id="omics-pr-content">
       {% block projectroles %}
         Projectroles app content here
       {% endblock projectroles %}
     </div>
+    <footer class="omics-footer">
+      <div class="text-sm-center">Developed by BIH CUBI. For support and feedback, please contact <a href="mailto:mikko.nieminen@bihealth.de">Mikko Nieminen</a>.</div>
+    </footer>
   </div>
 {% endblock content %}
