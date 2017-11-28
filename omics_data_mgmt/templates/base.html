@@ -1,4 +1,6 @@
 {% load static i18n %}<!DOCTYPE html>
+{% load projectroles_tags %}
+
 <html lang="en">
   <head>
     <meta charset="utf-8">
@@ -86,7 +88,7 @@
 
                 {# Nav links #}
                 <li class="nav-item">
-                  <a class="nav-link" id="site-help-link"><i class="fa fa-info-circle"></i> Help</a>
+                  <a class="nav-link {% get_help_highlight request.user %}" id="site-help-link"><i class="fa fa-info-circle"></i> Help</a>
                 </li>
                 {% if request.user.is_authenticated %}
                   <li class="nav-item">
@@ -140,7 +142,8 @@
 
     <script type="text/javascript">
         if (tourEnabled == false) {
-            $('#site-help-link').addClass('disabled');
+            $('#site-help-link').addClass(
+                'disabled').removeClass('text-warning');
         }
 
         $('#site-help-link').click(function() {

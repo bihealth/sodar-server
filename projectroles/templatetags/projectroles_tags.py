@@ -1,8 +1,14 @@
 from django import template
+from django.conf import settings
+from django.utils import timezone
 
 from ..models import Project, RoleAssignment, OMICS_CONSTANTS, \
     PROJECT_TAG_STARRED
 from ..project_tags import get_tag_state
+
+
+# Settings
+HELP_HIGHLIGHT_DAYS = settings.PROJECTROLES_HELP_HIGHLIGHT_DAYS
 
 # Local constants
 INDENT_PX = 25
@@ -138,3 +144,16 @@ def has_star(project, user):
     return (
         user.has_perm('projectroles.view_project', project) and
         get_tag_state(project, user, PROJECT_TAG_STARRED))
+
+
+@register.simple_tag
+def get_help_highlight(user):
+    """Return classes to highlight navbar help link if user has recently 
+    signed in"""
+    if user.__class__.__name__ == 'User' and not user.is_anonymous:
+        delta_days = (timezone.now() - user.date_joined).days
+
+        if delta_days < HELP_HIGHLIGHT_DAYS:
+            return 'font-weight-bold text-warning'
+
+    return ''
