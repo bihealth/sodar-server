@@ -16,6 +16,8 @@ Added
     - Create new base project using the current version of `cookiecutter-django <https://github.com/pydanny/cookiecutter-django>`_
     - Additional unit tests for site apps
     - Changelog in ``CHANGELOG.rst``
+    - User profile page (#29)
+    - Highlight help link for new users (#30)
 - **Filesfolders**
     - Import app from prototype
     - Page title to main files list
@@ -98,6 +100,7 @@ Removed
 
 - **General**
     - The unused ``get_info()`` function and its implementations from ``plugins`` (provide ``details_template`` instead)
+    - Unused user app features
 - **Filesfolders**
     - Redundant and deprecated fields/functions from the data model
     - Example project settings

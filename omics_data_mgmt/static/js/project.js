@@ -214,3 +214,15 @@ $(document).ready(function() {
 $('.omics-alert-close-link').click(function () {
     $(this).closest('div').fadeOut('fast');
 });
+
+// Improve responsiveness of titlebar
+$(window).on('resize', function() {
+  // var win = $(this);
+  if ($(this).width() < 750) {
+
+    $('#omics-base-navbar-nav').removeClass('ml-auto').addClass('mr-auto');
+
+  } else {
+    $('#omics-base-navbar-nav').removeClass('mr-auto').addClass('ml-auto');
+  }
+});

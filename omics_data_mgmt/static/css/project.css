@@ -97,6 +97,10 @@ nav.omics-base-navbar {
   padding-right: 28px;
 }
 
+nav.omics-base-navbar ul li.nav-item {
+  white-space: nowrap;
+}
+
 .omics-base-navbar-search {
   padding-right: 24px;
 }
@@ -442,3 +446,15 @@ pre {
     display: inherit !important;
   }
 }
+
+/*
+@media screen and (max-width: 750px) {
+  #omics-base-navbar-brand {
+    display: none !important;
+  }
+
+  #omics-base-navbar {
+
+  }
+}
+*/

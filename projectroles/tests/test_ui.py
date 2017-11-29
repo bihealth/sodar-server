@@ -149,22 +149,37 @@ class TestUIBase(
 
         self.selenium.get(self.build_selenium_url('/'))
 
+        ########################
         # Logout (if logged in)
+        ########################
 
         try:
-            signout_button = self.selenium.find_element_by_id('log-out-link')
+            user_button = self.selenium.find_element_by_id(
+                'omics-base-navbar-user-dropdown')
 
-            if signout_button:
+            user_button.click()
+
+            # Wait for element to be visible
+            WebDriverWait(self.selenium, self.wait_time).until(
+                ec.presence_of_element_located((By.ID, 'log-out-link')))
+
+            try:
+                signout_button = self.selenium.find_element_by_id('log-out-link')
                 signout_button.click()
 
                 # Wait for redirect
                 WebDriverWait(self.selenium, self.wait_time).until(
                     ec.presence_of_element_located((By.ID, 'log-in-link')))
 
+            except NoSuchElementException:
+                pass
+
         except NoSuchElementException:
             pass
 
+        ########
         # Login
+        ########
 
         self.selenium.get(self.build_selenium_url(url))
 

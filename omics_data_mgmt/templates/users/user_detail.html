@@ -1,36 +1,37 @@
-{% extends "base.html" %}
-{% load static %}
+{% extends "projectroles/base.html" %}
 
-{% block title %}User: {{ object.username }}{% endblock %}
+{% block title %}User Profile for {{ object.name }}{% endblock %}
 
-{% block content %}
-<div class="container">
+{% block sub_navbar_current %}User Profile{% endblock sub_navbar_current %}
 
-  <div class="row">
-    <div class="col-sm-12">
+{% block projectroles %}
+<div class="row omics-pr-content-title">
+  <h2 class="omics-pr-content-title">{{ object.name }}</h2>
+  <div class="omics-pr-content-title-secondary text-muted">
+    User Profile
+  </div>
+</div>
 
-      <h2>{{ object.username }}</h2>
-      {% if object.name %}
-        <p>{{ object.name }}</p>
-      {% endif %}
+<div class="container-fluid">
+
+  <div class="card omics-card" id="omics-user-details-card">
+    <div class="card-header">
+      <h4><i class="fa fa-user"></i> Details</h4>
+    </div>
+    <div class="card-body omics-card-body">
+      <dl class="row">
+        <dt class="col-md-2">Full Name</dt>
+        <dd class="col-md-10">{{ object.name }}</dd>
+        <dt class="col-md-2">Username</dt>
+        <dd class="col-md-10">{{ object.username }}</dd>
+        <dt class="col-md-2">Email</dt>
+        <dd class="col-md-10"><a href="mailto:{{ object.email }}">{{ object.email }}</a></dd>
+        <dt class="col-md-2">Date Joined</dt>
+        <dd class="col-md-10">{{ object.date_joined|date:'Y-m-d H:i' }}</dd>
+      </dl>
     </div>
   </div>
 
-{% if object == request.user %}
-<!-- Action buttons -->
-<div class="row">
-
-  <div class="col-sm-12">
-    <a class="btn btn-primary" href="{% url 'users:update' %}" role="button">My Info</a>
-    <a class="btn btn-primary" href="{% url 'account_email' %}" role="button">E-Mail</a>
-    <!-- Your Stuff: Custom user template urls -->
-  </div>
-
 </div>
-<!-- End Action buttons -->
-{% endif %}
-
-
-</div>
-{% endblock content %}
+{% endblock projectroles %}
 

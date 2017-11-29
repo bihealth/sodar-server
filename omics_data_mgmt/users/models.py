@@ -17,11 +17,11 @@ class User(AbstractUser):
         return self.username
 
     def get_absolute_url(self):
-        return reverse('users:detail', kwargs={'username': self.username})
+        return reverse('users:user_detail', kwargs={'username': self.username})
 
 
 def handle_ldap_login(sender, user, **kwargs):
-    """Do special stuff for LDAP logins here as needed"""
+    """Handle LDAP logins here as needed"""
 
     if hasattr(user, 'ldap_username'):
 
