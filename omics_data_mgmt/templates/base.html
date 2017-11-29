@@ -17,9 +17,6 @@
       <script src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv.min.js"></script>
     <![endif]-->
 
-    <!-- Font Awesome icons -->
-    <script src="{% static 'js/fontawesome.js' %}"></script>
-
     <!-- Required by Bootstrap v4 beta -->
     <script src="{% static 'js/jquery-3.2.1.min.js' %}"></script>
     <script src="{% static 'js/popper.min.js' %}"></script>
@@ -100,7 +97,7 @@
                     <div class="dropdown-header">{{ request.user.name }} ({{ request.user.username }})</div>
                     <div class="dropdown-divider"></div>
                     <a class="dropdown-item" href="{{ request.user.get_absolute_url }}" id="omics-base-navbar-link-user-details">
-                      <i class="fa fa-fw fa-user"></i> User Profile
+                      <i class="fa fa-fw fa-user-circle-o"></i> User Profile
                     </a>
                     <a class="dropdown-item text-danger" href="{% url 'account_logout' %}" id="log-out-link">
                       <i class="fa fa-fw fa-sign-out"></i> Sign Out
