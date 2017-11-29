@@ -161,15 +161,18 @@ class TestUIBase(
 
             # Wait for element to be visible
             WebDriverWait(self.selenium, self.wait_time).until(
-                ec.presence_of_element_located((By.ID, 'log-out-link')))
+                ec.presence_of_element_located(
+                    (By.ID, 'omics-base-navbar-link-logout')))
 
             try:
-                signout_button = self.selenium.find_element_by_id('log-out-link')
+                signout_button = self.selenium.find_element_by_id(
+                    'omics-base-navbar-link-logout')
                 signout_button.click()
 
                 # Wait for redirect
                 WebDriverWait(self.selenium, self.wait_time).until(
-                    ec.presence_of_element_located((By.ID, 'log-in-link')))
+                    ec.presence_of_element_located(
+                        (By.ID, 'omics-form-signin')))
 
             except NoSuchElementException:
                 pass
@@ -197,7 +200,7 @@ class TestUIBase(
         # Wait for redirect
         WebDriverWait(self.selenium, self.wait_time).until(
             ec.presence_of_element_located(
-                (By.ID, 'log-out-link')))
+                (By.ID, 'omics-base-navbar-user-dropdown')))
 
     def assert_element_exists(self, users, url, element_id, exists):
         """

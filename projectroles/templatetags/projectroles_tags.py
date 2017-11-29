@@ -150,7 +150,7 @@ def has_star(project, user):
 def get_help_highlight(user):
     """Return classes to highlight navbar help link if user has recently
     signed in"""
-    if user.__class__.__name__ == 'User' and not user.is_anonymous:
+    if user.is_authenticated:
         delta_days = (timezone.now() - user.date_joined).days
 
         if delta_days < HELP_HIGHLIGHT_DAYS:

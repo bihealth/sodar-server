@@ -1,22 +1,22 @@
 {% extends 'base.html' %}
 
-{% block title %}Login{% endblock %}
+{% block title %}Login{% endblock title %}
 
 {% block content %}
 <div class="container-fluid">
-  <div class="col-md-4" style="float: none; margin: 0 auto;">
-    <h2>Login</h2>
+  <div class="col-md-4 mx-auto">
+    <h2 class="omics-pr-content-title">Login</h2>
 
     <p>Please log in using your Charité account.</p>
 
-    <form class="form-signin" method="post">
+    <form class="form-signin" method="post" id="omics-form-signin">
       {% csrf_token %}
       <label for="input-username" class="sr-only">User Name</label>
-      <input type="text" name="username" id="input-username" class="form-control" placeholder="User Name" required autofocus>
+      <input type="text" name="username" id="input-username" class="form-control my-sm-2" placeholder="User Name" required autofocus>
       <label for="input-password" class="sr-only">Password</label>
-      <input type="password" name="password" id="input-password" class="form-control" placeholder="Password" required>
-      <button class="btn btn-md btn-primary btn-block" type="submit">Sign In</button>
+      <input type="password" name="password" id="input-password" class="form-control my-sm-2" placeholder="Password" required>
+      <button class="btn btn-md btn-primary btn-block" type="submit"><i class="fa fa-sign-in"></i> Sign In</button>
     </form>
   </div>
 </div>
-{% endblock %}
+{% endblock content %}

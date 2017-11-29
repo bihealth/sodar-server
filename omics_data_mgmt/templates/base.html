@@ -72,43 +72,41 @@
             <ul class="navbar-nav ml-auto" id="omics-base-navbar-nav">
 
               {# Search #}
-              <li class="nav-item omics-base-navbar-search">
-                <div class="input-group" style="white-space: nowrap;">
-                <form class="form-inline" method="get" action="{% url 'project_search' %}">
-                  <input class="form-control" type="text" placeholder="Search term" name="s" aria-label="Search term" id="omics-nav-search-input" value="{{ search_input }}">
-                   <div class="input-group-btn">
-                   <button class="btn btn-outline-success my-1 my-sm-0" type="submit" id="omics-nav-search-submit">Search</button>
-                   </div>
-                </form>
-                </div>
-              </li>
+              {% if request.user.is_authenticated %}
+                <li class="nav-item omics-base-navbar-search">
+                  <div class="input-group" style="white-space: nowrap;">
+                  <form class="form-inline" method="get" action="{% url 'project_search' %}">
+                    <input class="form-control" type="text" placeholder="Search term" name="s" aria-label="Search term" id="omics-nav-search-input" value="{{ search_input }}">
+                     <div class="input-group-btn">
+                     <button class="btn btn-outline-success my-sm-0" type="submit" id="omics-nav-search-submit">Search</button>
+                     </div>
+                  </form>
+                  </div>
+                </li>
+              {% endif %}
 
-              {# Nav links #}
+              {# Help link #}
               <li class="nav-item">
                 <a class="nav-link {% get_help_highlight request.user %}" id="site-help-link"><i class="fa fa-fw fa-info-circle"></i> Help</a>
               </li>
 
-              {% if request.user.is_authenticated %}
-                <li class="nav-item">
-                  <a id="omics-base-navbar-user-dropdown" class="nav-link omics-nav-link-last dropdown-toggle" data-toggle="dropdown">
-                    <i class="fa fa-fw fa-user"></i>
+              {# User menu #}
+              <li class="nav-item">
+                <a class="nav-link omics-nav-link-last dropdown-toggle {% if not request.user.is_authenticated %}disabled{% endif %}" id="omics-base-navbar-user-dropdown{% if not request.user.is_authenticated%}-disabled{% endif %}" data-toggle="dropdown">
+                  <i class="fa fa-fw fa-user"></i>
+                </a>
+                <div class="dropdown-menu dropdown-menu-right">
+                  <div class="dropdown-header">{{ request.user.name }} ({{ request.user.username }})</div>
+                  <div class="dropdown-divider"></div>
+                  <a class="dropdown-item" href="{{ request.user.get_absolute_url }}" id="omics-base-navbar-link-user-details">
+                    <i class="fa fa-fw fa-user-circle-o"></i> User Profile
                   </a>
-                  <div class="dropdown-menu dropdown-menu-right">
-                    <div class="dropdown-header">{{ request.user.name }} ({{ request.user.username }})</div>
-                    <div class="dropdown-divider"></div>
-                    <a class="dropdown-item" href="{{ request.user.get_absolute_url }}" id="omics-base-navbar-link-user-details">
-                      <i class="fa fa-fw fa-user-circle-o"></i> User Profile
-                    </a>
-                    <a class="dropdown-item text-danger" href="{% url 'account_logout' %}" id="log-out-link">
-                      <i class="fa fa-fw fa-sign-out"></i> Sign Out
-                    </a>
-                  </div>
-                </li>
-              {% else %}
-                <li class="nav-item">
-                  <a id="log-in-link" class="nav-link omics-nav-link-last" href="{% url 'account_login' %}"><i class="fa fa-sign-in"></i> Sign In</a>
-                </li>
-              {% endif %}
+                  <a class="dropdown-item text-danger" href="{% url 'account_logout' %}" id="omics-base-navbar-link-logout">
+                    <i class="fa fa-fw fa-sign-out"></i> Sign Out
+                  </a>
+                </div>
+              </li>
+
             </ul>
           </nav>
         </div>
