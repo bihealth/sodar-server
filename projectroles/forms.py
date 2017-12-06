@@ -8,7 +8,7 @@ from django.utils import timezone
 from pagedown.widgets import PagedownWidget
 
 from .models import Project, Role, RoleAssignment, ProjectInvite, \
-    ProjectSetting, OMICS_CONSTANTS
+    ProjectSetting, OMICS_CONSTANTS, PROJECT_SETTING_VAL_MAXLENGTH
 from .plugins import ProjectAppPluginPoint
 from .utils import get_user_display_name, build_secret
 from projectroles.project_settings import validate_project_setting
@@ -47,6 +47,47 @@ class ProjectForm(forms.ModelForm):
     def __init__(self, project=None, current_user=None, *args, **kwargs):
         """Override for form initialization"""
         super(ProjectForm, self).__init__(*args, **kwargs)
+
+        # Add settings fields
+        self.app_plugins = sorted(
+            [p for p in ProjectAppPluginPoint.get_plugins() if
+             p.project_settings],
+            key=lambda x: x.name)
+
+        for p in self.app_plugins:
+            for s_key in p.project_settings:    # TODO: Sort
+                s = p.project_settings[s_key]
+                s_field = 'settings.{}.{}'.format(p.name, s_key)
+                setting_kwargs = {
+                    'required': False,
+                    'label': '{}.{}'.format(p.name, s_key),
+                    'help_text': s['description']}
+
+                if s['type'] == 'STRING':
+                    self.fields[s_field] = forms.CharField(
+                        max_length=PROJECT_SETTING_VAL_MAXLENGTH,
+                        **setting_kwargs)
+
+                elif s['type'] == 'INTEGER':
+                    self.fields[s_field] = forms.IntegerField(
+                        max_length=PROJECT_SETTING_VAL_MAXLENGTH,
+                        **setting_kwargs)
+
+                elif s['type'] == 'BOOLEAN':
+                    self.fields[s_field] = forms.BooleanField(
+                        **setting_kwargs)
+
+                # Set initial value
+                if self.instance.pk:
+                    existing_val = ProjectSetting.objects.get_setting_value(
+                        project=self.instance,
+                        app_name=p.name,
+                        setting_name=s_key)
+                    self.initial[s_field] = existing_val if \
+                        existing_val else s['default']
+
+                else:
+                    self.initial[s_field] = s['default']
 
         # Access parent project if present
         parent_project = None
@@ -163,6 +204,20 @@ class ProjectForm(forms.ModelForm):
         # Ensure owner has been set
         if not self.cleaned_data.get('owner'):
             self.add_error('owner', 'Owner must be set for project')
+
+        # Verify settings fields
+        for p in self.app_plugins:
+            for s_key in p.project_settings:    # TODO: Sort
+                s = p.project_settings[s_key]
+                s_field = 'settings.{}.{}'.format(p.name, s_key)
+
+                print('settings value = {}'.format(
+                    self.cleaned_data.get(s_field)))    # DEBUG
+
+                if not validate_project_setting(
+                        setting_type=s['type'],
+                        setting_value=self.cleaned_data.get(s_field)):
+                    self.add_error(s_field, 'Invalid value')
 
         return self.cleaned_data
 

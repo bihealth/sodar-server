@@ -25,6 +25,7 @@ from .forms import ProjectForm, RoleAssignmentForm, ProjectInviteForm,\
 from .models import Project, Role, RoleAssignment, ProjectInvite, \
     ProjectSetting, OMICS_CONSTANTS, PROJECT_TAG_STARRED
 from .plugins import ProjectAppPluginPoint, get_active_plugins, get_backend_api
+from .project_settings import set_project_setting
 from .project_tags import get_tag_state, set_tag_state, remove_tag
 from .utils import get_expiry_date
 from projectroles.project_settings import save_default_project_settings
@@ -394,6 +395,8 @@ class ProjectModifyMixin(ModelFormMixin):
             if tl_event:
                 tl_event.set_status('SUBMIT')
 
+            # TODO: Add settings saving to taskflow once we use it
+
             flow_data = {
                 'project_title': project.title,
                 'project_description': project.description,
@@ -444,11 +447,45 @@ class ProjectModifyMixin(ModelFormMixin):
                     role=Role.objects.get(name=PROJECT_ROLE_OWNER))
                 assignment.save()
 
+            # Modify settings
+            app_plugins = [
+                p for p in ProjectAppPluginPoint.get_plugins() if
+                p.project_settings]
+
+            # TODO: Also add settings values to timeline
+            for p in app_plugins:
+                for s_key in p.project_settings:
+                    s = p.project_settings[s_key]
+                    s_val = form.cleaned_data.get(
+                        'settings.{}.{}'.format(p.name, s_key))
+
+                    if form_action == 'create':
+                        setting = ProjectSetting(
+                            app_plugin=p.get_model(),
+                            project=project,
+                            name=s_key,
+                            type=s['type'],
+                            value=s_val)
+                        setting.save()
+
+                    else:
+                        set_project_setting(
+                            project=project,
+                            app_name=APP_NAME,
+                            setting_name=s_key,
+                            value=s_val,
+                            validate=False)     # Already validated in form
+
         # Post submit/save
         if form_action == 'create':
             # Set default settings for project app plugins
+            # No longer needed if the aforementioned changes are made
+            # TODO: Make sure we can still add default settings to existing
+            # TODO:     projects if we e.g. add a new setting
+            '''
             if project.type == PROJECT_TYPE_PROJECT:
                 save_default_project_settings(project)
+            '''
 
             project.submit_status = SUBMIT_STATUS_OK
             project.save()

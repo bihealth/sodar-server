@@ -73,6 +73,7 @@ Changed
     - Allow users with roles under category children to view category (#47)
     - Update text labels for role management to refer to "members" (#40)
     - Separate common template tags into ``projectroles_common_tags``
+    - Move project settings forms to project creation/update view (#44)
 - **Timeline**
     - Enable event details popover on the project details page
     - Limit details page list to successful events

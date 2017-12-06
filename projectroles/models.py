@@ -45,6 +45,8 @@ PROJECT_SETTING_TYPE_CHOICES = [
     ('INTEGER', 'Integer'),
     ('STRING', 'String')]
 
+PROJECT_SETTING_VAL_MAXLENGTH = 255
+
 PROJECT_SEARCH_TYPES = [
     'project']
 
@@ -385,14 +387,17 @@ class RoleAssignment(models.Model):
 class ProjectSettingManager(models.Manager):
     """Manager for custom table-level ProjectSetting queries"""
     def get_setting_value(self, project, app_name, setting_name):
-        """Return value of setting_name for app_name in project"""
-        try:
-            setting = super(ProjectSettingManager, self).get_queryset().get(
-                app_plugin__name=app_name, project=project, name=setting_name)
-            return setting.get_value()
-
-        except ProjectSetting.DoesNotExist:
-            return None
+        """
+        Return value of setting_name for app_name in project
+        :param project: Project object or pk
+        :param app_name: App plugin name (string)
+        :param setting_name: Name of setting (string)
+        :return: Value (string)
+        :raise: ProjectSetting.DoesNotExist if setting is not found
+        """
+        setting = super(ProjectSettingManager, self).get_queryset().get(
+            app_plugin__name=app_name, project=project, name=setting_name)
+        return setting.get_value()
 
 
 class ProjectSetting(models.Model):
@@ -429,7 +434,7 @@ class ProjectSetting(models.Model):
 
     #: Value of the setting
     value = models.CharField(
-        max_length=255,
+        max_length=PROJECT_SETTING_VAL_MAXLENGTH,
         unique=False,
         null=True,
         blank=True,

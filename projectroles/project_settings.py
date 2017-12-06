@@ -12,11 +12,16 @@ def get_project_setting(project, app_name, setting_name):
     :param setting_name: Setting name (string)
     :return: String or None
     """
-    return ProjectSetting.objects.get_setting_value(
-        project, app_name, setting_name)
+    try:
+        return ProjectSetting.objects.get_setting_value(
+            project, app_name, setting_name)
+
+    except ProjectSetting.DoesNotExist:
+        # TODO: Raise exception if not found, as value CAN also be None
+        return None
 
 
-def set_project_setting(project, app_name, setting_name, value):
+def set_project_setting(project, app_name, setting_name, value, validate=True):
     """
     Set value of an existing project settings variable. Mainly intended for
     testing.
@@ -24,6 +29,7 @@ def set_project_setting(project, app_name, setting_name, value):
     :param app_name: App name (string, must correspond to "name" in app plugin)
     :param setting_name: Setting name (string)
     :param value: Value to be set
+    :param validate: Validate value (bool, default=True)
     :return: True if changed, False if not changed
     :raise: ValueError if value is not accepted for setting type
     """
@@ -34,7 +40,9 @@ def set_project_setting(project, app_name, setting_name, value):
         if setting.value == value:
             return False
 
-        validate_project_setting(setting.type, value)
+        if validate:
+            validate_project_setting(setting.type, value)
+
         setting.value = value
         setting.save()
         return True
@@ -58,6 +66,8 @@ def validate_project_setting(setting_type, setting_value):
 
     if setting_type == 'INTEGER' and not setting_value.isdigit():
         raise ValueError('Please enter a valid integer value')
+
+    return True
 
 
 def save_default_project_settings(project):
