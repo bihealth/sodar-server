@@ -102,17 +102,3 @@ class TestPlugins(
         """Test plugin URLs to ensure they're the same as in the app config"""
         plugin = ProjectAppPluginPoint.get_plugin(PLUGIN_NAME)
         self.assertEqual(plugin.urls, urlpatterns)
-
-    def test_plugin_setting_value(self):
-        """Test plugin default setting value in the database"""
-        plugin = ProjectAppPluginPoint.get_plugin(PLUGIN_NAME)
-
-        setting = ProjectSetting.objects.get(
-            app_plugin=plugin.get_model(),
-            project=self.project.pk,
-            name=SETTING_KEY)
-
-        expected = setting.get_value()
-
-        self.assertEqual(
-            plugin.project_settings[SETTING_KEY]['default'], expected)
