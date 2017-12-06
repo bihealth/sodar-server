@@ -34,7 +34,6 @@ PROJECT_LINK_IDS = [
     'omics-pr-link-project-roles',
     'omics-pr-link-project-update',
     'omics-pr-link-project-create',
-    'omics-pr-link-project-settings',
     'omics-pr-link-project-star']
 
 
@@ -339,17 +338,14 @@ class TestProjectDetail(TestUIBase):
             (self.superuser, [
                 'omics-pr-link-project-roles',
                 'omics-pr-link-project-update',
-                'omics-pr-link-project-settings',
                 'omics-pr-link-project-star']),
             (self.as_owner.user, [
                 'omics-pr-link-project-roles',
                 'omics-pr-link-project-update',
-                'omics-pr-link-project-settings',
                 'omics-pr-link-project-star']),
             (self.as_delegate.user, [
                 'omics-pr-link-project-roles',
                 'omics-pr-link-project-update',
-                'omics-pr-link-project-settings',
                 'omics-pr-link-project-star']),
             (self.as_staff.user, [
                 'omics-pr-link-project-roles',
@@ -583,7 +579,6 @@ class TestProjectSidebar(TestUIBase, ProjectInviteMixin):
         self.sidebar_ids = [
             'omics-pr-nav-project-detail',
             'omics-pr-nav-project-roles',
-            'omics-pr-nav-project-settings',
             'omics-pr-nav-project-update']
 
         # Add app plugin navs
@@ -693,14 +688,6 @@ class TestProjectSidebar(TestUIBase, ProjectInviteMixin):
                 'role_invite_revoke', kwargs={
                     'project': self.project.pk,
                     'pk': invite.pk}))
-
-    def test_link_active_settings(self):
-        """Test active status of link on the project_settings page"""
-        url = reverse('settings_update', kwargs={'project': self.project.pk})
-
-        self.assert_element_active(
-            self.superuser, 'omics-pr-nav-project-settings',
-            self.sidebar_ids, url)
 
     def test_link_active_update(self):
         """Test active status of link on the project_update page"""

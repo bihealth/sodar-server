@@ -11,7 +11,6 @@ from test_plus.test import TestCase
 
 from ..models import Project, Role, RoleAssignment, ProjectInvite, \
     ProjectUserTag, OMICS_CONSTANTS, PROJECT_TAG_STARRED
-from projectroles.project_settings import save_default_project_settings
 
 # Omics constants
 PROJECT_ROLE_OWNER = OMICS_CONSTANTS['PROJECT_ROLE_OWNER']
@@ -50,10 +49,6 @@ class ProjectMixin:
             'description': description}
         project = Project(**values)
         project.save()
-
-        # Save default project settings (only for non-categories)
-        if project.type == PROJECT_TYPE_PROJECT:
-            save_default_project_settings(project)
 
         return project
 

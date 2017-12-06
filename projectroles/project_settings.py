@@ -1,31 +1,43 @@
 """Helper functions for Project settings"""
 
 from projectroles.models import ProjectSetting, PROJECT_SETTING_TYPES, Project
-from projectroles.plugins import ProjectAppPluginPoint
+from projectroles.plugins import ProjectAppPluginPoint, get_app_plugin
 
 
 def get_project_setting(project, app_name, setting_name):
     """
-    Return setting value for a project and an app.
+    Return setting value for a project and an app. If not set, return default.
     :param project: Project object
     :param app_name: App name (string, must correspond to "name" in app plugin)
     :param setting_name: Setting name (string)
     :return: String or None
     """
-    return ProjectSetting.objects.get_setting_value(
-        project, app_name, setting_name)
+    try:
+        return ProjectSetting.objects.get_setting_value(
+            project, app_name, setting_name)
+
+    except ProjectSetting.DoesNotExist:
+        # Get default
+        app_plugin = get_app_plugin(app_name)
+
+        if (app_plugin.project_settings and
+                setting_name in app_plugin.project_settings):
+            return app_plugin.project_settings[setting_name]['default']
+
+        return None
 
 
-def set_project_setting(project, app_name, setting_name, value):
+def set_project_setting(project, app_name, setting_name, value, validate=True):
     """
-    Set value of an existing project settings variable. Mainly intended for
-    testing.
+    Set value of an existing project settings variable. Creates the object if
+    not found.
     :param project: Project object
     :param app_name: App name (string, must correspond to "name" in app plugin)
     :param setting_name: Setting name (string)
     :param value: Value to be set
+    :param validate: Validate value (bool, default=True)
     :return: True if changed, False if not changed
-    :raise: ValueError if value is not accepted for setting type
+    :raise: ValueError if validating and value is not accepted for setting type
     """
     try:
         setting = ProjectSetting.objects.get(
@@ -34,13 +46,28 @@ def set_project_setting(project, app_name, setting_name, value):
         if setting.value == value:
             return False
 
-        validate_project_setting(setting.type, value)
+        if validate:
+            validate_project_setting(setting.type, value)
+
         setting.value = value
         setting.save()
         return True
 
     except ProjectSetting.DoesNotExist:
-        return False
+        app_plugin = ProjectAppPluginPoint.get_plugin(name=app_name)
+        s_type = app_plugin.project_settings[setting_name]['type']
+
+        if validate:
+            validate_project_setting(s_type, value)
+
+        setting = ProjectSetting(
+            app_plugin=app_plugin.get_model(),
+            project=project,
+            name=setting_name,
+            type=s_type,
+            value=value)
+        setting.save()
+        return True
 
 
 def validate_project_setting(setting_type, setting_value):
@@ -56,32 +83,9 @@ def validate_project_setting(setting_type, setting_value):
     if setting_type == 'BOOLEAN' and not isinstance(setting_value, bool):
         raise ValueError('Please enter a valid boolean value')
 
-    if setting_type == 'INTEGER' and not setting_value.isdigit():
+    if setting_type == 'INTEGER' and (
+            not isinstance(setting_value, int) or
+            not str(setting_value).isdigit()):
         raise ValueError('Please enter a valid integer value')
 
-
-def save_default_project_settings(project):
-    """
-    Save default project settings for project.
-    :param project: Project in which settings will be saved
-    """
-    plugins = [p for p in ProjectAppPluginPoint.get_plugins() if p.is_active()]
-    project = Project.objects.get(pk=project.pk)
-
-    for plugin in [p for p in plugins if hasattr(p, 'project_settings')]:
-        for set_key in plugin.project_settings.keys():
-            try:
-                ProjectSetting.objects.get(
-                    project=project,
-                    app_plugin=plugin.get_model(),
-                    name=set_key)
-
-            except ProjectSetting.DoesNotExist:
-                set_def = plugin.project_settings[set_key]
-                setting = ProjectSetting(
-                    project=project,
-                    app_plugin=plugin.get_model(),
-                    name=set_key,
-                    type=set_def['type'],
-                    value=set_def['default'])
-                setting.save()
+    return True

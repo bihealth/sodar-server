@@ -73,11 +73,6 @@ urlpatterns = [
         view=views.ProjectInviteRevokeView.as_view(),
         name='role_invite_revoke',
     ),
-    url(
-        regex=r'^(?P<project>\d+)/settings$',
-        view=views.ProjectSettingUpdateView.as_view(),
-        name='settings_update',
-    ),
     # Javascript API Views
     url(
         regex=r'^(?P<pk>\d+)/star',
