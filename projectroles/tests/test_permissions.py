@@ -626,25 +626,6 @@ class TestProjectViews(TestPermissionBase):
         self.assert_render200_ok(url, good_users)
         self.assert_redirect(url, bad_users)
 
-    def test_settings_update(self):
-        """Test access to settings updating"""
-        url = reverse(
-            'settings_update',
-            kwargs={
-                'project': self.project.pk})
-        good_users = [
-            self.superuser,
-            self.as_owner.user,
-            self.as_delegate.user]
-        bad_users = [
-            self.anonymous,
-            self.as_staff.user,
-            self.as_contributor.user,
-            self.as_guest.user,
-            self.user_no_roles]
-        self.assert_render200_ok(url, good_users)
-        self.assert_redirect(url, bad_users)
-
     def test_starring_api(self):
         """Test access to project starring API view"""
         url = reverse('project_star', kwargs={'pk': self.project.pk})

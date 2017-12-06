@@ -12,7 +12,8 @@ from test_plus.test import TestCase
 from .. import views
 from ..models import Project, Role, RoleAssignment, ProjectInvite, \
     ProjectUserTag, OMICS_CONSTANTS, PROJECT_TAG_STARRED
-from ..plugins import change_plugin_status, get_backend_api, get_active_plugins
+from ..plugins import change_plugin_status, get_backend_api, \
+    get_active_plugins, ProjectAppPluginPoint
 from .test_models import ProjectMixin, RoleAssignmentMixin, \
     ProjectInviteMixin, ProjectUserTagMixin
 from projectroles.utils import get_user_display_name
@@ -34,6 +35,28 @@ SUBMIT_STATUS_PENDING_TASKFLOW = OMICS_CONSTANTS['SUBMIT_STATUS_PENDING']
 # Local constants
 INVITE_EMAIL = 'test@example.com'
 SECRET = 'rsd886hi8276nypuvw066sbvv0rb2a6x'
+
+
+class ProjectSettingMixin:
+    """Helper mixin for Project settings"""
+
+    @classmethod
+    def _get_settings(cls):
+        """Get settings"""
+        ret = {}
+
+        app_plugins = sorted(
+            [p for p in ProjectAppPluginPoint.get_plugins() if
+             p.project_settings],
+            key=lambda x: x.name)
+
+        for p in app_plugins:
+            for s_key in p.project_settings:
+                s = p.project_settings[s_key]
+                ret['settings.{}.{}'.format(p.name, s_key)] = \
+                    p.project_settings[s_key]['default']
+
+        return ret
 
 
 class TestViewsBase(TestCase):
@@ -167,7 +190,8 @@ class TestProjectDetailView(TestViewsBase, ProjectMixin, RoleAssignmentMixin):
         self.assertEqual(response.context['object'].pk, self.project.pk)
 
 
-class TestProjectCreateView(TestViewsBase, ProjectMixin, RoleAssignmentMixin):
+class TestProjectCreateView(
+        TestViewsBase, ProjectMixin, RoleAssignmentMixin, ProjectSettingMixin):
     """Tests for Project creation view"""
 
     def test_render_top(self):
@@ -243,6 +267,9 @@ class TestProjectCreateView(TestViewsBase, ProjectMixin, RoleAssignmentMixin):
             'submit_status': SUBMIT_STATUS_OK,
             'description': 'description'}
 
+        # Add settings values
+        values.update(self._get_settings())
+
         with self.login(self.user):
             response = self.client.post(
                 reverse('project_create'),
@@ -265,6 +292,8 @@ class TestProjectCreateView(TestViewsBase, ProjectMixin, RoleAssignmentMixin):
         model_dict.pop('readme', None)
         self.assertEqual(model_dict, expected)
 
+        # TODO: Assert settings
+
         # Assert owner role assignment
         owner_as = RoleAssignment.objects.get(
             project=project, role=self.role_owner)
@@ -283,7 +312,8 @@ class TestProjectCreateView(TestViewsBase, ProjectMixin, RoleAssignmentMixin):
                 response, reverse('project_detail', kwargs={'pk': project.pk}))
 
 
-class TestProjectUpdateView(TestViewsBase, ProjectMixin, RoleAssignmentMixin):
+class TestProjectUpdateView(
+        TestViewsBase, ProjectMixin, RoleAssignmentMixin, ProjectSettingMixin):
     """Tests for Project updating view"""
 
     def setUp(self):
@@ -323,6 +353,9 @@ class TestProjectUpdateView(TestViewsBase, ProjectMixin, RoleAssignmentMixin):
         values['description'] = 'updated description'
         values['owner'] = self.user.pk  # NOTE: Must add owner
 
+        # Add settings values
+        values.update(self._get_settings())
+
         with self.login(self.user):
             response = self.client.post(
                 reverse('project_update', kwargs={'pk': self.project.pk}),
@@ -344,6 +377,8 @@ class TestProjectUpdateView(TestViewsBase, ProjectMixin, RoleAssignmentMixin):
         model_dict = model_to_dict(project)
         model_dict.pop('readme', None)
         self.assertEqual(model_dict, expected)
+
+        # TODO: Assert settings
 
         # Assert redirect
         with self.login(self.user):

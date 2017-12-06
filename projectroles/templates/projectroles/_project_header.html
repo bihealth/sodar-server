@@ -4,7 +4,6 @@
 {% has_perm 'projectroles.view_project' request.user project as can_view_project %}
 {% has_perm 'projectroles.view_project_roles' request.user project as can_view_roles %}
 {% has_perm 'projectroles.update_project' request.user project as can_update_project %}
-{% has_perm 'projectroles.update_project_settings' request.user project as can_update_settings %}
 
 {% omics_constant 'PROJECT_TYPE_CATEGORY' as PROJECT_TYPE_CATEGORY %}
 
@@ -40,15 +39,6 @@
             id="omics-pr-res-link-project-roles">
           <i class="fa fa-fw fa-users"></i>
           Project Members
-        </a>
-      {% endif %}
-      {% if project.type != PROJECT_TYPE_CATEGORY and can_update_settings %}
-        <a class="dropdown-item"
-            href="{% url 'settings_update' project=project.pk %}"
-            title="Project Settings"
-            id="omics-pr-res-link-project-settings">
-          <i class="fa fa-fw fa-wrench"></i>
-          {% get_project_type_str project %} Settings
         </a>
       {% endif %}
       {% if can_update_project %}

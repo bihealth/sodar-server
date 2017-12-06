@@ -12,7 +12,6 @@ from django.views.generic import TemplateView, DetailView, UpdateView,\
 from django.views.generic.edit import ModelFormMixin
 from django.views.generic.detail import SingleObjectMixin, ContextMixin
 
-from extra_views import ModelFormSetView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rules.contrib.views import PermissionRequiredMixin, redirect_to_login
@@ -20,15 +19,13 @@ from rules.contrib.views import PermissionRequiredMixin, redirect_to_login
 from .email import send_role_change_mail, send_invite_mail, send_accept_note,\
     send_expiry_note, get_invite_subject, get_invite_body, get_invite_message, \
     get_email_footer, get_role_change_body, get_role_change_subject
-from .forms import ProjectForm, RoleAssignmentForm, ProjectInviteForm,\
-    ProjectSettingForm
+from .forms import ProjectForm, RoleAssignmentForm, ProjectInviteForm
 from .models import Project, Role, RoleAssignment, ProjectInvite, \
-    ProjectSetting, OMICS_CONSTANTS, PROJECT_TAG_STARRED
+    OMICS_CONSTANTS, PROJECT_TAG_STARRED
 from .plugins import ProjectAppPluginPoint, get_active_plugins, get_backend_api
-from .project_settings import set_project_setting
+from .project_settings import set_project_setting, get_project_setting
 from .project_tags import get_tag_state, set_tag_state, remove_tag
 from .utils import get_expiry_date
-from projectroles.project_settings import save_default_project_settings
 
 # Access Django user model
 User = auth.get_user_model()
@@ -312,6 +309,10 @@ class ProjectModifyMixin(ModelFormMixin):
         form_action = 'update' if self.object else 'create'
         old_data = {}
 
+        app_plugins = [
+            p for p in ProjectAppPluginPoint.get_plugins() if
+            p.project_settings]
+
         if self.object:
             project = self.get_object()
 
@@ -375,6 +376,19 @@ class ProjectModifyMixin(ModelFormMixin):
                 if old_data['readme'] != project.readme.raw:
                     extra_data['readme'] = project.readme.raw
                     upd_fields.append('readme')
+
+                # Settings
+                for p in app_plugins:
+                    for s_key in p.project_settings:
+                        s_title = '{}.{}'.format(p.name, s_key)
+                        old_val = get_project_setting(
+                            project, p.name, s_key)
+                        s_val = form.cleaned_data.get(
+                            'settings.{}'.format(s_title))
+
+                        if old_val != s_val:
+                            extra_data[s_title] = s_val
+                            upd_fields.append(s_title)
 
                 if len(upd_fields) > 0:
                     tl_desc += ' (' + ', '.join(x for x in upd_fields) + ')'
@@ -448,45 +462,21 @@ class ProjectModifyMixin(ModelFormMixin):
                 assignment.save()
 
             # Modify settings
-            app_plugins = [
-                p for p in ProjectAppPluginPoint.get_plugins() if
-                p.project_settings]
-
-            # TODO: Also add settings values to timeline
             for p in app_plugins:
                 for s_key in p.project_settings:
                     s = p.project_settings[s_key]
                     s_val = form.cleaned_data.get(
                         'settings.{}.{}'.format(p.name, s_key))
 
-                    if form_action == 'create':
-                        setting = ProjectSetting(
-                            app_plugin=p.get_model(),
-                            project=project,
-                            name=s_key,
-                            type=s['type'],
-                            value=s_val)
-                        setting.save()
-
-                    else:
-                        set_project_setting(
-                            project=project,
-                            app_name=APP_NAME,
-                            setting_name=s_key,
-                            value=s_val,
-                            validate=False)     # Already validated in form
+                    set_project_setting(
+                        project=project,
+                        app_name=p.name,
+                        setting_name=s_key,
+                        value=s_val,
+                        validate=False)     # Already validated in form
 
         # Post submit/save
         if form_action == 'create':
-            # Set default settings for project app plugins
-            # No longer needed if the aforementioned changes are made
-            # TODO: Make sure we can still add default settings to existing
-            # TODO:     projects if we e.g. add a new setting
-            '''
-            if project.type == PROJECT_TYPE_PROJECT:
-                save_default_project_settings(project)
-            '''
-
             project.submit_status = SUBMIT_STATUS_OK
             project.save()
 
@@ -1227,56 +1217,6 @@ class ProjectInviteRevokeView(
         return redirect(reverse(
             'role_invites',
             kwargs={'project': kwargs['project']}))
-
-
-# Settings Views ---------------------------------------------------------
-
-
-class ProjectSettingUpdateView(
-        LoginRequiredMixin, LoggedInPermissionMixin,
-        ProjectContextMixin, ModelFormSetView):
-    permission_required = 'projectroles.update_project_settings'
-    template_name = 'projectroles/projectsettings_formset.html'
-    model = ProjectSetting
-    fields = ['value']
-    can_delete = False
-    extra = 0
-    form_class = ProjectSettingForm
-
-    def get_permission_object(self):
-        """Override get_permission_object for checking Project permission"""
-        try:
-            obj = Project.objects.get(pk=self.kwargs['project'])
-            return obj
-
-        except Project.DoesNotExist:
-            return None
-
-    def get_queryset(self):
-        project = self.kwargs['project']
-
-        return super(
-            ProjectSettingUpdateView, self).get_queryset().filter(
-                project=project)
-
-    def get_success_url(self):
-        timeline = get_backend_api('timeline_backend')
-
-        # Add event in Timeline
-        if timeline:
-            timeline.add_event(
-                project=Project.objects.get(pk=self.kwargs['project']),
-                app_name=APP_NAME,
-                user=self.request.user,
-                event_name='settings_update',
-                description='update settings',
-                status_type='OK')
-
-        messages.success(
-            self.request, 'Settings updated.')
-
-        return reverse(
-            'project_detail', kwargs={'pk': self.kwargs['project']})
 
 
 # Javascript API Views ---------------------------------------------------

@@ -28,8 +28,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         'allow_public_links': {
             'type': 'BOOLEAN',
             'default': False,
-            'description': 'Allow generation of public links for files'},
-        }
+            'description': 'Allow generation of public links for files'}}
 
     #: FontAwesome icon ID string
     icon = 'file'
