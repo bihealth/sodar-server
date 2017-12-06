@@ -56,7 +56,7 @@ class ProjectForm(forms.ModelForm):
             key=lambda x: x.name)
 
         for p in self.app_plugins:
-            for s_key in p.project_settings:    # TODO: Sort
+            for s_key in sorted(p.project_settings.iterkeys()):
                 s = p.project_settings[s_key]
                 s_field = 'settings.{}.{}'.format(p.name, s_key)
                 setting_kwargs = {
@@ -201,7 +201,7 @@ class ProjectForm(forms.ModelForm):
 
         # Verify settings fields
         for p in self.app_plugins:
-            for s_key in p.project_settings:    # TODO: Sort
+            for s_key in sorted(p.project_settings.iterkeys()):
                 s = p.project_settings[s_key]
                 s_field = 'settings.{}.{}'.format(p.name, s_key)
 

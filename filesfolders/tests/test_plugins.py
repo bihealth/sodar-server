@@ -8,7 +8,6 @@ from test_plus.test import TestCase
 from projectroles.models import Role, ProjectSetting, OMICS_CONSTANTS
 from projectroles.plugins import ProjectAppPluginPoint
 from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
-from projectroles.project_settings import save_default_project_settings
 
 from filesfolders.plugins import ProjectAppPlugin
 from filesfolders.urls import urlpatterns
@@ -57,9 +56,6 @@ class TestPlugins(
             'TestProject', PROJECT_TYPE_PROJECT, None)
         self.owner_as = self._make_assignment(
             self.project, self.user, self.role_owner)
-
-        # Save default settings for project
-        save_default_project_settings(self.project)
 
         # Init file
         self.file_content = bytes('content'.encode('utf-8'))

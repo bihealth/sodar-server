@@ -89,30 +89,3 @@ def validate_project_setting(setting_type, setting_value):
         raise ValueError('Please enter a valid integer value')
 
     return True
-
-
-def save_default_project_settings(project):
-    """
-    Save default project settings for project.
-    :param project: Project in which settings will be saved
-    """
-    plugins = [p for p in ProjectAppPluginPoint.get_plugins() if p.is_active()]
-    project = Project.objects.get(pk=project.pk)
-
-    for plugin in [p for p in plugins if hasattr(p, 'project_settings')]:
-        for set_key in plugin.project_settings.keys():
-            try:
-                ProjectSetting.objects.get(
-                    project=project,
-                    app_plugin=plugin.get_model(),
-                    name=set_key)
-
-            except ProjectSetting.DoesNotExist:
-                set_def = plugin.project_settings[set_key]
-                setting = ProjectSetting(
-                    project=project,
-                    app_plugin=plugin.get_model(),
-                    name=set_key,
-                    type=set_def['type'],
-                    value=set_def['default'])
-                setting.save()
