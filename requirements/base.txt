@@ -23,10 +23,6 @@ Pillow==4.2.1
 # Password storage
 argon2-cffi==16.3.0
 
-# For user registration, either via email or social
-# Well-built with regular release cycles!
-django-allauth==0.33.0
-
 # Python-PostgreSQL Database Adapter
 psycopg2==2.7.3.1
 

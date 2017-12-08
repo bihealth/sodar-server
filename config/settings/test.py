@@ -6,6 +6,7 @@ Test settings
 
 from .base import *  # noqa
 
+
 # DEBUG
 # ------------------------------------------------------------------------------
 # Turn debug off so tests run faster
@@ -14,7 +15,6 @@ TEMPLATES[0]['OPTIONS']['debug'] = False
 
 # SECRET CONFIGURATION
 # ------------------------------------------------------------------------------
-# See: https://docs.djangoproject.com/en/dev/ref/settings/#secret-key
 # Note: This key only used for development and testing.
 SECRET_KEY = env('DJANGO_SECRET_KEY', default='CHANGEME!!!')
 
@@ -40,7 +40,6 @@ CACHES = {
 # TESTING
 # ------------------------------------------------------------------------------
 TEST_RUNNER = 'django.test.runner.DiscoverRunner'
-
 
 # PASSWORD HASHING
 # ------------------------------------------------------------------------------
