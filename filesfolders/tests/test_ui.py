@@ -198,7 +198,7 @@ class TestListView(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
             (self.as_contributor.user, 3),
             (self.as_guest.user, 0)]
         url = reverse('project_files', kwargs={'project': self.project.pk})
-        self.assert_element_count(expected, url, 'omics-ff-file-checkbox')
+        self.assert_element_count(expected, url, 'omics-ff-checkbox')
 
     def test_public_link(self):
         """Test public link visibility according to user

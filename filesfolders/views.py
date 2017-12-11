@@ -621,7 +621,6 @@ class HyperLinkDeleteView(
 # Batch Edit Views --------------------------------------------------------
 
 
-# TODO: Refactor this completely for the final version.
 class BatchEditView(
         LoginRequiredMixin, LoggedInPermissionMixin, TemplateView):
     """Batch delete/move confirm view"""
@@ -640,7 +639,6 @@ class BatchEditView(
             return None
 
     def post(self, request, **kwargs):
-        timeline = get_backend_api('timeline_backend')
         post_data = request.POST
 
         #: Items we will delete
@@ -655,14 +653,14 @@ class BatchEditView(
         can_update_all = request.user.has_perm(
             'filesfolders.update_data_all', self.get_permission_object())
 
-        user_confirmed = bool(int(post_data['user_confirmed']))
-        batch_action = post_data['batch_action']
+        user_confirmed = bool(int(post_data['user-confirmed']))
+        batch_action = post_data['batch-action']
         target_folder = None
 
-        if batch_action == 'move' and 'target_folder' in post_data:
+        if batch_action == 'move' and 'target-folder' in post_data:
             try:
                 target_folder = Folder.objects.get(
-                    pk=int(post_data['target_folder']))
+                    pk=int(post_data['target-folder']))
 
             except Folder.DoesNotExist:
                 pass
@@ -671,11 +669,11 @@ class BatchEditView(
 
         for key in [
                 key for key, val in post_data.items()
-                if key.startswith('batch_item') and val == '1']:
-            cls = eval(key.split('_')[2])
+                if key.startswith('batch-item') and val == '1']:
+            cls = eval(key.split('-')[2])
 
             try:
-                item = cls.objects.get(pk=int(key.split('_')[3]))
+                item = cls.objects.get(pk=int(key.split('-')[3]))
 
             except cls.DoesNotExist:
                 pass
@@ -719,19 +717,19 @@ class BatchEditView(
             ##############
 
             if perm_ok and item not in failed:
-                if user_confirmed and batch_action == 'move':
+                if not user_confirmed:
+                    items.append(item)
+                    item_names.append(key)
+
+                elif batch_action == 'move':
                     item.folder = target_folder
 
                     item.save()
                     edit_count += 1
 
-                elif user_confirmed and batch_action == 'delete':
+                elif batch_action == 'delete':
                     item.delete()
                     edit_count += 1
-
-                elif not user_confirmed:
-                    items.append(item)
-                    item_names.append(key)
 
         ##################
         # Render/redirect
@@ -739,34 +737,46 @@ class BatchEditView(
 
         # User confirmed, batch operation done
         if user_confirmed:
+            edit_suffix = 's' if edit_count != 1 else ''
+            fail_suffix = 's' if len(failed) != 1 else ''
+
             if len(failed) > 0:
                 messages.warning(
                     self.request,
-                    'Unable to edit {} items, check '
+                    'Unable to edit {} item{}, check '
                     'permissions and target folder! Failed: {}'.format(
                         len(failed),
+                        fail_suffix,
                         ', '.join(f.name for f in failed)))
 
             if edit_count > 0:
-                messages.success(self.request, 'Batch {} {} items.'.format(
+                messages.success(self.request, 'Batch {} {} item{}.'.format(
                     'deleted' if batch_action == 'delete' else 'moved',
-                    edit_count))
+                    edit_count,
+                    edit_suffix))
 
             # Add event in Timeline
-            # TODO: Add extra info regarding modified files
+            timeline = get_backend_api('timeline_backend')
+
             if timeline:
+                extra_data = {
+                    'items': [x.name for x in items],
+                    'failed': [x.name for x in failed]}
+
                 tl_event = timeline.add_event(
                     project=Project.objects.get(pk=kwargs['project']),
                     app_name=APP_NAME,
                     user=self.request.user,
                     event_name='batch_{}'.format(batch_action),
-                    description='batch {} {} items {} {}'.format(
+                    description='batch {} {} item{} {} {}'.format(
                         batch_action,
                         edit_count,
+                        edit_suffix,
                         '({} failed)'.format(len(failed))
                         if len(failed) > 0 else '',
                         'to {target_folder}'
                         if batch_action == 'move' and target_folder else ''),
+                    extra_data=extra_data,
                     status_type='OK' if edit_count > 0 else 'FAILED')
 
                 if batch_action == 'move' and target_folder:
@@ -813,7 +823,6 @@ class BatchEditView(
 
                 context['folder_choices'] = folder_choices
 
-                # HACK: Quick fix for root folder option not showing
                 if 'folder' in kwargs or folder_choices.count() > 0:
                     context['folder_check'] = True
 

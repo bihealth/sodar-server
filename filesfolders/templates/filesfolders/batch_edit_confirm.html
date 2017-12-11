@@ -25,8 +25,8 @@
 
 <div class="container-fluid">
   {% if failed|length > 0 %}
-    <div class="alert alert-warning" role="alert">
-      <p><strong>Note:</strong> The following items can <strong>not</strong> be
+    <div class="alert alert-danger" role="alert">
+      <p><strong>Note:</strong> The following item{% if failed|length != 1 %}s{% endif %} can <strong>not</strong> be
         {% if batch_action == 'move' %}
           moved (insufficient permissions)
         {% elif batch_action == 'delete' %}
@@ -55,9 +55,9 @@
       <div class="alert alert-warning" role="alert">
         <p><strong>Warning:</strong>
           {% if batch_action == 'move' %}
-            The following items will be moved:
+            The following item{% if items|length != 1 %}s{% endif %} will be moved:
           {% elif batch_action == 'delete' %}
-            Are you sure you want to <strong>permanently delete</strong> the following items?
+            Are you sure you want to <strong>permanently delete</strong> the following item{% if items|length != 1 %}s{% endif %}?
           {% endif %}
         </p>
         <ul class="list-unstyled">
@@ -67,8 +67,8 @@
         </ul>
       </div>
 
-      <input type="hidden" id="omics-ff-user-confirmed" name="user_confirmed" value="1" />
-      <input type="hidden" id="ff_batch_action" name="batch_action" value="{{ batch_action }}" />
+      <input type="hidden" id="omics-ff-user-confirmed" name="user-confirmed" value="1" />
+      <input type="hidden" id="omics-ff-batch-action" name="batch-action" value="{{ batch_action }}" />
 
       {% for name in item_names %}
         <input type="hidden" name="{{ name }}" value="1" />
@@ -76,8 +76,8 @@
 
       {% if batch_action == 'move' and folder_check %}
         <div class="form-group">
-          <label for="ff_folder_select">Select folder:</label>
-          <select class="form-control" id="ff_folder_select" name="target_folder">
+          <label for="omics-ff-older-select">Select folder:</label>
+          <select class="form-control" id="omics-ff-folder-select" name="target-folder">
             {% if folder %}
               <option value="0">root</option>
             {% endif %}
@@ -96,7 +96,7 @@
            {% if items|length == 0 %}
              No items to edit!
            {% elif not folder_check %}
-             No folders available for moving selected items!
+             No folders available for moving selected item{% if items|length != 1 %}s{% endif %}!
            {% endif %}
           </p>
         </div>

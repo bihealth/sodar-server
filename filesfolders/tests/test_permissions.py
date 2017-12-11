@@ -368,9 +368,9 @@ class TestBatchPermissions(TestPermissionBase, FolderMixin):
             self.user_no_roles]
 
         post_data = {
-            'batch_action': 'delete',
-            'user_confirmed': '0',
-            'batch_item_Folder_{}'.format(self.folder.pk): '1'}
+            'batch-action': 'delete',
+            'user-confirmed': '0',
+            'batch-item-Folder-{}'.format(self.folder.pk): '1'}
 
         for user in good_users:
             with self.login(user):

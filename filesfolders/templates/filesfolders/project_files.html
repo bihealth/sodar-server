@@ -57,8 +57,8 @@
     {% endif %}
 
       {% csrf_token %}
-      <input type="hidden" id="omics-ff-batch-form-action" name="batch_action" value="" />
-      <input type="hidden" id="omics-ff-user-confirmed" name="user_confirmed" value="0" />
+      <input type="hidden" id="omics-ff-batch-form-action" name="batch-action" value="" />
+      <input type="hidden" id="omics-ff-user-confirmed" name="user-confirmed" value="0" />
 
       <div class="card omics-card{% if not readme_file %}-single{% endif %}" id="omics-ff-file-list">
         <div class="card-body omics-card-body-table">

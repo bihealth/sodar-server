@@ -894,12 +894,12 @@ class TestBatchEditView(TestViewsBase):
     def test_render_delete(self):
         """Test rendering of the batch editing view when deleting"""
         post_data = {
-            'batch_action': 'delete',
-            'user_confirmed': '0'}
+            'batch-action': 'delete',
+            'user-confirmed': '0'}
 
-        post_data['batch_item_File_{}'.format(self.file.pk)] = 1
-        post_data['batch_item_Folder_{}'.format(self.folder.pk)] = 1
-        post_data['batch_item_HyperLink_{}'.format(self.hyperlink.pk)] = 1
+        post_data['batch-item-File-{}'.format(self.file.pk)] = 1
+        post_data['batch-item-Folder-{}'.format(self.folder.pk)] = 1
+        post_data['batch-item-HyperLink-{}'.format(self.hyperlink.pk)] = 1
 
         with self.login(self.user):
             response = self.client.post(
@@ -911,11 +911,11 @@ class TestBatchEditView(TestViewsBase):
     def test_render_move(self):
         """Test rendering of the batch editing view when moving"""
         post_data = {
-            'batch_action': 'move',
-            'user_confirmed': '0'}
+            'batch-action': 'move',
+            'user-confirmed': '0'}
 
-        post_data['batch_item_File_{}'.format(self.file.pk)] = 1
-        post_data['batch_item_HyperLink_{}'.format(self.hyperlink.pk)] = 1
+        post_data['batch-item-File-{}'.format(self.file.pk)] = 1
+        post_data['batch-item-HyperLink-{}'.format(self.hyperlink.pk)] = 1
 
         with self.login(self.user):
             response = self.client.post(
@@ -933,12 +933,12 @@ class TestBatchEditView(TestViewsBase):
         self.assertEqual(HyperLink.objects.all().count(), 1)
 
         post_data = {
-            'batch_action': 'delete',
-            'user_confirmed': '1'}
+            'batch-action': 'delete',
+            'user-confirmed': '1'}
 
-        post_data['batch_item_File_{}'.format(self.file.pk)] = 1
-        post_data['batch_item_Folder_{}'.format(self.folder.pk)] = 1
-        post_data['batch_item_HyperLink_{}'.format(self.hyperlink.pk)] = 1
+        post_data['batch-item-File-{}'.format(self.file.pk)] = 1
+        post_data['batch-item-Folder-{}'.format(self.folder.pk)] = 1
+        post_data['batch-item-HyperLink-{}'.format(self.hyperlink.pk)] = 1
 
         with self.login(self.user):
             response = self.client.post(
@@ -976,12 +976,12 @@ class TestBatchEditView(TestViewsBase):
         self.assertEqual(Folder.objects.all().count(), 2)
 
         post_data = {
-            'batch_action': 'delete',
-            'user_confirmed': '1'}
+            'batch-action': 'delete',
+            'user-confirmed': '1'}
 
-        post_data['batch_item_File_{}'.format(self.file.pk)] = 1
-        post_data['batch_item_Folder_{}'.format(self.folder.pk)] = 1
-        post_data['batch_item_Folder_{}'.format(new_folder.pk)] = 1
+        post_data['batch-item-File-{}'.format(self.file.pk)] = 1
+        post_data['batch-item-Folder-{}'.format(self.folder.pk)] = 1
+        post_data['batch-item-Folder-{}'.format(new_folder.pk)] = 1
 
         with self.login(self.user):
             response = self.client.post(
@@ -1001,13 +1001,13 @@ class TestBatchEditView(TestViewsBase):
             'target_folder', self.project, None, self.user, '')
 
         post_data = {
-            'batch_action': 'move',
-            'user_confirmed': '1',
-            'target_folder': target_folder.pk}
+            'batch-action': 'move',
+            'user-confirmed': '1',
+            'target-folder': target_folder.pk}
 
-        post_data['batch_item_File_{}'.format(self.file.pk)] = 1
-        post_data['batch_item_Folder_{}'.format(self.folder.pk)] = 1
-        post_data['batch_item_HyperLink_{}'.format(self.hyperlink.pk)] = 1
+        post_data['batch-item-File-{}'.format(self.file.pk)] = 1
+        post_data['batch-item-Folder-{}'.format(self.folder.pk)] = 1
+        post_data['batch-item-HyperLink-{}'.format(self.hyperlink.pk)] = 1
 
         with self.login(self.user):
             response = self.client.post(
@@ -1047,13 +1047,13 @@ class TestBatchEditView(TestViewsBase):
             secret='7dqq83clo2iyhg29hifbor56og6911r6')
 
         post_data = {
-            'batch_action': 'move',
-            'user_confirmed': '1',
-            'target_folder': target_folder.pk}
+            'batch-action': 'move',
+            'user-confirmed': '1',
+            'target-folder': target_folder.pk}
 
-        post_data['batch_item_File_{}'.format(self.file.pk)] = 1
-        post_data['batch_item_Folder_{}'.format(self.folder.pk)] = 1
-        post_data['batch_item_HyperLink_{}'.format(self.hyperlink.pk)] = 1
+        post_data['batch-item-File-{}'.format(self.file.pk)] = 1
+        post_data['batch-item-Folder-{}'.format(self.folder.pk)] = 1
+        post_data['batch-item-HyperLink-{}'.format(self.hyperlink.pk)] = 1
 
         with self.login(self.user):
             response = self.client.post(
