@@ -1,68 +1,68 @@
-<div
-  {% if not up %}
-    class="btn-group ml-auto" id="omics-ff-buttons-list"
-  {% else %}
-    class="btn-group dropup pull-right" id="omics-ff-buttons-list-up"
-  {% endif %}
-  >
-    <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-      File Operations
-    </button>
-    <div class="dropdown-menu dropdown-menu-right">
+{% if up %}
+  <div class="row">
+    <div class="btn-group dropup ml-auto" id="omics-ff-buttons-list-up">
+{% else %}
+  <div class="btn-group ml-auto" id="omics-ff-buttons-list">
+{% endif %}
+  <button class="btn btn-primary dropdown-toggle"
+          type="button" data-toggle="dropdown"
+          aria-haspopup="true" aria-expanded="false">
+    File Operations
+  </button>
+  <div class="dropdown-menu dropdown-menu-right">
 
-      {# Folder #}
-      <a class="dropdown-item"
-        {% if folder %}
-          href="{% url 'folder_create' project=project.pk folder=folder.pk %}">
-        {% else %}
-          href="{% url 'folder_create' project=project.pk %}">
-        {% endif %}
-          <i class="fa fa-fw fa-folder-open"></i>
-          Add Folder
-        </a>
-
-      {# Hyperlink #}
-      <a class="dropdown-item"
-        {% if folder %}
-          href="{% url 'hyperlink_create' project=project.pk folder=folder.pk %}">
-        {% else %}
-          href="{% url 'hyperlink_create' project=project.pk %}">
-        {% endif %}
-          <i class="fa fa-fw fa-external-link"></i>
-          Add Link
-        </a>
-
-      {# File #}
-      <a class="dropdown-item"
-        {% if folder %}
-          href="{% url 'file_create' project=project.pk folder=folder.pk %}">
-        {% else %}
-          href="{% url 'file_create' project=project.pk %}">
-        {% endif %}
-          <i class="fa fa-fw fa-upload"></i>
-          Upload File
-        </a>
-
-      {# Move Selected #}
-      <a class="dropdown-item"
-           href="javascript:{}"
-           onclick="
-             document.getElementById('omics-ff-batch-form-action').value = 'move';
-             document.getElementById('omics-ff-batch-form').submit();
-             return false;">
-        <i class="fa fa-fw fa-arrow-right"></i>
-        Move Selected
+    {# Folder #}
+    <a class="dropdown-item"
+      {% if folder %}
+        href="{% url 'folder_create' project=project.pk folder=folder.pk %}">
+      {% else %}
+        href="{% url 'folder_create' project=project.pk %}">
+      {% endif %}
+        <i class="fa fa-fw fa-folder-open"></i> Add Folder
       </a>
 
-      {# Delete Selected #}
-      <a class="dropdown-item"
-           href="javascript:{}"
-           onclick="
-             document.getElementById('omics-ff-batch-form-action').value = 'delete';
-             document.getElementById('omics-ff-batch-form').submit();
-             return false;">
-        <i class="fa fa-fw fa-trash"></i>
-        Delete Selected
+    {# Hyperlink #}
+    <a class="dropdown-item"
+      {% if folder %}
+        href="{% url 'hyperlink_create' project=project.pk folder=folder.pk %}">
+      {% else %}
+        href="{% url 'hyperlink_create' project=project.pk %}">
+      {% endif %}
+        <i class="fa fa-fw fa-external-link"></i> Add Link
       </a>
-    </div>
+
+    {# File #}
+    <a class="dropdown-item"
+      {% if folder %}
+        href="{% url 'file_create' project=project.pk folder=folder.pk %}">
+      {% else %}
+        href="{% url 'file_create' project=project.pk %}">
+      {% endif %}
+        <i class="fa fa-fw fa-upload"></i> Upload File
+      </a>
+
+    {# Move Selected #}
+    <a class="dropdown-item"
+         href="javascript:{}"
+         onclick="
+           document.getElementById('omics-ff-batch-form-action').value = 'move';
+           document.getElementById('omics-ff-batch-form').submit();
+           return false;">
+      <i class="fa fa-fw fa-arrow-right"></i> Move Selected
+    </a>
+
+    {# Delete Selected #}
+    <a class="dropdown-item"
+         href="javascript:{}"
+         onclick="
+           document.getElementById('omics-ff-batch-form-action').value = 'delete';
+           document.getElementById('omics-ff-batch-form').submit();
+           return false;">
+      <i class="fa fa-fw fa-trash"></i> Delete Selected
+    </a>
+  </div>
 </div>
+{% if up %}
+  </div>
+{% endif %}
+

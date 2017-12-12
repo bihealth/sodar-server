@@ -1,5 +1,6 @@
 {% if up %}
-  <div class="btn-group dropup pull-right" id="omics-pr-btn-role-list-up">
+  <div class="row">
+  <div class="btn-group dropup ml-auto" id="omics-pr-btn-role-list-up">
 {% else %}
   <div class="btn-group ml-auto" id="omics-pr-btn-role-list">
 {% endif %}
@@ -50,3 +51,6 @@
 
   </div>
 </div>
+{% if up %}
+  </div>
+{% endif %}

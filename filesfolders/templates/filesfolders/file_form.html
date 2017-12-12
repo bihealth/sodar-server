@@ -36,34 +36,33 @@
   <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
     {{ form | crispy }}
-    <div class="btn-group pull-right">
-      <a role="button" class="btn btn-secondary"
-        {% if object.pk %}
-          {% if object.folder %}
-            href="{% url 'project_files' project=object.project.pk folder=object.folder.pk %}"
+    <div class="row">
+      <div class="btn-group ml-auto">
+        <a role="button" class="btn btn-secondary"
+          {% if object.pk %}
+            {% if object.folder %}
+              href="{% url 'project_files' project=object.project.pk folder=object.folder.pk %}"
+            {% else %}
+              href="{% url 'project_files' project=object.project.pk %}"
+            {% endif %}
           {% else %}
-            href="{% url 'project_files' project=object.project.pk %}"
+            {% if folder %}
+              href="{% url 'project_files' project=project.pk folder=folder.pk %}"
+            {% else %}
+              href="{% url 'project_files' project=project.pk %}"
+            {% endif %}
           {% endif %}
-        {% else %}
-          {% if folder %}
-            href="{% url 'project_files' project=project.pk folder=folder.pk %}"
+          >
+          <i class="fa fa-arrow-circle-left"></i> Cancel
+        </a>
+        <button type="submit" class="btn btn-primary">
+          {% if object.pk %}
+            <i class="fa fa-pencil"></i> Update
           {% else %}
-            href="{% url 'project_files' project=project.pk %}"
+            <i class="fa fa-upload"></i> Upload
           {% endif %}
-        {% endif %}
-        >
-        <i class="fa fa-arrow-circle-left"></i>
-        Cancel
-      </a>
-      <button type="submit" class="btn btn-primary">
-        {% if object.pk %}
-          <i class="fa fa-pencil"></i>
-          Update
-        {% else %}
-          <i class="fa fa-upload"></i>
-          Upload
-        {% endif %}
-      </button>
+         </button>
+      </div>
     </div>
   </form>
 </div>

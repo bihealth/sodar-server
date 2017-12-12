@@ -13,23 +13,25 @@
 
 <div class="container-fluid">
   <div class="alert alert-warning" role="alert">
-    <p><strong>Warning:</strong> Are you sure you want to permanently revoke
-        the invite sent to {{ invite.email }}?
+    <p>
+      <strong>Warning:</strong> Are you sure you want to permanently revoke
+      the invite sent to {{ invite.email }}?
     </p>
   </div>
 
   <form method="post" action="{% url 'role_invite_revoke' project=project.pk pk=invite.pk %}">
     {% csrf_token %}
 
-    <div class="btn-group pull-right">
-      <a role="button" class="btn btn-secondary" href="{{ request.META.HTTP_REFERER }}">
-        <i class="fa fa-arrow-circle-left"></i>
-        Cancel
-      </a>
-      <button type="submit" class="btn btn-danger">
-        <i class="fa fa-close"></i>
-          Revoke
-      </button>
+    <div class="row">
+      <div class="btn-group ml-auto">
+        <a role="button" class="btn btn-secondary"
+           href="{{ request.META.HTTP_REFERER }}">
+          <i class="fa fa-arrow-circle-left"></i> Cancel
+        </a>
+        <button type="submit" class="btn btn-danger">
+          <i class="fa fa-close"></i> Revoke
+        </button>
+      </div>
     </div>
   </form>
 </div>

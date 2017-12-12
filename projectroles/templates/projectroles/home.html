@@ -21,24 +21,17 @@
   <div class="card" id="omics-pr-project-list">
     <div class="card-header">
       <h4><i class="fa fa-globe"></i> Available Projects
-        {# TODO: Use a real nav here #}
-        <div class="col-2 small omics-card-header-form-container pull-right">
-          <input
-             class="form-control form-control-sm mr-sm-2 omics-card-header-input"
-             type="text" placeholder="Filter" aria-label="Filter projects"
-             id="omics-pr-project-list-filter">
-        </div>
-        <div class="col-2 small omics-card-header-form-container pull-right">
-          <a
-             class="btn btn-link omics-card-header-button pull-right"
-             href="#"
-             id="omics-pr-project-list-link-star"
-             filter-mode="0">
-            <i class="fa fa-star-o"></i> Starred
-          </a>
+        <div class="input-group omics-header-input-group pull-right">
+          <div class="input-group-btn">
+            <button class="btn btn-secondary my-sm-0"
+                    type="submit" id="omics-pr-project-list-link-star"
+                    filter-mode="0"><i class="fa fa-star-o"></i> Starred</button>
+          </div>
+          <input class="form-control"
+                 type="text" placeholder="Filter" aria-label="Filter projects"
+                 id="omics-pr-project-list-filter">
         </div>
       </h4>
-
     </div>
     <div class="card-body omics-card-body-table">
      <table class="table table-hover omics-card-table omics-card-table-borderless" id="omics-main-project-list">

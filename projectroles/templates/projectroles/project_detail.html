@@ -45,7 +45,7 @@
         {% has_perm plugin.app_permission request.user object as can_view_app %}
         {% if can_view_app %}
           <div class="card omics-card omics-pr-app-card" id="omics-pr-app-item-{{ plugin.name }}">
-            <div class="card-header card-header-omics-app-detail">
+            <div class="card-header">
               <h4>
                 <i class="fa fa-{{ plugin.icon }}"></i>
                 {% if plugin.details_title %}
@@ -53,11 +53,14 @@
                 {% else %}
                   {{ plugin.title }}
                 {% endif %}
-                <a role="button"
-                   class="btn btn-link omics-details-app-button pull-right"
-                   href="{% url plugin.entry_point_url_id project=project.pk %}">
-                  <i class="fa fa-arrow-circle-right"></i> View Details
-                </a>
+                <div class="input-group omics-header-input-group pull-right">
+                  <a href="{% url plugin.entry_point_url_id project=project.pk %}"
+                     class="btn btn-secondary ml-auto omics-pr-app-details-link"
+                     role="button"
+                     id="omics-pr-app-details-link-{{ plugin.name }}">
+                     <i class="fa fa-arrow-circle-right"></i> View Details
+                  </a>
+                </div>
               </h4>
             </div>
             <div class="card-body omics-card-body omics-card-body-info">
@@ -143,12 +146,12 @@
         });
     }
 
-    if ($('.omics-details-app-button').length) {
+    if ($('.omics-pr-app-details-link').length) {
         tour.addStep('project_app_details', {
             title: 'View Details of Project App',
             text: 'In addition to the sidebar, project apps can also ' +
                   'be accessed using the "View Details" buttons.',
-            attachTo: '.omics-details-app-button left',
+            attachTo: '.omics-pr-app-details-link left',
             advanceOn: '.docs-link click',
             showCancelLink: true
         });

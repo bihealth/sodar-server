@@ -36,7 +36,13 @@
 <div class="row omics-subtitle-container">
   <h3><i class="fa fa-clock-o"></i> {{ timeline_title }}</h3>
   {% if timeline_mode == 'object' %}
-    <a class="ml-auto omics-details-app-button" href="{% url 'project_timeline' project=project.pk %}"><i class="fa fa-arrow-circle-left"></i> Project Timeline</a>
+    <div class="input-group omics-header-input-group ml-auto">
+      <a href="{% url 'project_timeline' project=project.pk %}"
+         class="btn btn-secondary ml-auto"
+         role="button">
+        <i class="fa fa-arrow-circle-left"></i> Project Timeline
+      </a>
+    </div>
   {% endif %}
 </div>
 
@@ -59,8 +65,8 @@
   </div>
 
   {% if is_paginated %}
-    <div class="container-fluid">
-      <div class="btn-group pull-right" id="omics-tl-nav-buttons">
+    <div class="row">
+      <div class="btn-group ml-auto" id="omics-tl-nav-buttons">
         {% if page_obj.has_previous %}
           <a role="button" class="btn btn-secondary"
               href="?page={{ page_obj.previous_page_number }}">

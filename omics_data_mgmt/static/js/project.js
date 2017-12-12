@@ -142,6 +142,7 @@ $(document).ready(function() {
             $('.omics-pr-home-display-filtered').hide();
             $('.omics-pr-home-display-notfound').hide();
             $('#omics-pr-project-list-filter').addClass('text-danger').removeClass('text-success');
+            $('#omics-pr-project-list-link-star').attr('filter-mode', '0');
         }
     });
 
