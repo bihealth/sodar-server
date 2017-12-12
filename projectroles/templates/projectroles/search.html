@@ -42,7 +42,7 @@
           <h4><i class="fa fa-cube"></i> Projects</h4>
         </div>
         <div class="card-body omics-card-body-table">
-         <table class="table table-hover omics-card-table omics-card-table-borderless" id="omics-main-project-list">
+         <table class="table table-hover omics-card-table omics-card-table-borderless" id="omics-pr-project-list-table">
            <thead>
              {% include 'projectroles/_project_list_header.html' %}
            </thead>
@@ -67,7 +67,7 @@
       <div class="card omics-card omics-pr-app-card" id="omics-pr-search-app-item-{{ plugin.name }}">
         <div class="card-header">
           <h4>
-            <i class="fa fa-{{ plugin.icon }}"></i> {{ plugin.search_title }}
+            <i class="{{ plugin.icon }}"></i> {{ plugin.search_title }}
           </h4>
         </div>
         {% if plugin.search_template %}

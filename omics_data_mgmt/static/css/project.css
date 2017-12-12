@@ -442,8 +442,9 @@ pre {
   font-size: 85%;
 }
 
-/* Media */
+/* Responsive modifications */
 
+/* Sidebar */
 @media screen and (max-width: 1000px) {
   .omics-content-left {
     display: none !important;
@@ -454,14 +455,23 @@ pre {
   }
 }
 
-/*
-@media screen and (max-width: 750px) {
-  #omics-base-navbar-brand {
-    display: none !important;
+/* Project list */
+@media screen and (max-width: 1000px) {
+  .table#omics-pr-project-list-table tr th:nth-child(3) {
+    display: none;
   }
 
-  #omics-base-navbar {
-
+  .table#omics-pr-project-list-table tr td:nth-child(3) {
+    display: none;
   }
 }
-*/
+
+@media screen and (max-width: 800px) {
+  .table#omics-pr-project-list-table tr th:nth-child(2) {
+    display: none;
+  }
+
+  .table#omics-pr-project-list-table tr td:nth-child(2) {
+    display: none;
+  }
+}

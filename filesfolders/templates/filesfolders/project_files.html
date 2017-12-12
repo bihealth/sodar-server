@@ -27,6 +27,47 @@
     .table#omics-ff-list-table tr td:nth-child(6) {
       white-space: nowrap;
     }
+
+    /* Responsive modifications */
+    @media screen and (max-width: 1100px) {
+      .table#omics-ff-list-table tr th:nth-child(5) {
+        display: none;
+      }
+
+      .table#omics-ff-list-table tr td:nth-child(6) {
+        display: none;
+      }
+    }
+
+    @media screen and (max-width: 900px) {
+      .table#omics-ff-list-table tr th:nth-child(4) {
+        display: none;
+      }
+
+      .table#omics-ff-list-table tr td:nth-child(5) {
+        display: none;
+      }
+    }
+
+    @media screen and (max-width: 750px) {
+      .table#omics-ff-list-table tr th:nth-child(3) {
+        display: none;
+      }
+
+      .table#omics-ff-list-table tr td:nth-child(4) {
+        display: none;
+      }
+    }
+
+    @media screen and (max-width: 500px) {
+      .table#omics-ff-list-table tr th:nth-child(2) {
+        display: none;
+      }
+
+      .table#omics-ff-list-table tr td:nth-child(3) {
+        display: none;
+      }
+    }
   </style>
 {% endblock css %}
 
@@ -111,7 +152,10 @@
                   </td>
                   <td></td>
                   <td>Parent folder</td>
-                  <td colspan="4"></td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
                 </tr>
               {% endif %}
 

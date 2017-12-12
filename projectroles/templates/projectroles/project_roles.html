@@ -8,6 +8,27 @@
     table.omics-card-table td:nth-child(5) {
       width: 3em;
     }
+
+    /* Responsive modifications */
+    @media screen and (max-width: 800px) {
+      .table#omics-pr-role-list-table tr th:nth-child(3) {
+        display: none;
+      }
+
+      .table#omics-pr-role-list-table tr td:nth-child(3) {
+        display: none;
+      }
+    }
+
+    @media screen and (max-width: 550px) {
+      .table#omics-pr-role-list-table tr th:nth-child(1) {
+        display: none;
+      }
+
+      .table#omics-pr-role-list-table tr td:nth-child(1) {
+        display: none;
+      }
+    }
   </style>
 {% endblock css %}
 
@@ -30,7 +51,7 @@
 <div class="container-fluid">
   <div class="card omics-card-single" id="omics-pr-role-list">
     <div class="card-body omics-card-body-table">
-     <table class="table table-striped omics-card-table">
+     <table class="table table-striped omics-card-table" id="omics-pr-role-list-table">
        <thead>
          <tr>
            <th>User</th>

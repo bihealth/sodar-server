@@ -13,6 +13,47 @@
   .table#omics-ff-details-table tr td:nth-child(2) {
     padding-left: 4px;
   }
+
+  /* Responsive modifications */
+  @media screen and (max-width: 1100px) {
+    .table#omics-ff-details-table tr th:nth-child(5) {
+      display: none;
+    }
+
+    .table#omics-ff-details-table tr td:nth-child(6) {
+      display: none;
+    }
+  }
+
+  @media screen and (max-width: 900px) {
+    .table#omics-ff-details-table tr th:nth-child(4) {
+      display: none;
+    }
+
+    .table#omics-ff-details-table tr td:nth-child(5) {
+      display: none;
+    }
+  }
+
+  @media screen and (max-width: 750px) {
+    .table#omics-ff-details-table tr th:nth-child(3) {
+      display: none;
+    }
+
+    .table#omics-ff-details-table tr td:nth-child(4) {
+      display: none;
+    }
+  }
+
+  @media screen and (max-width: 500px) {
+    .table#omics-ff-details-table tr th:nth-child(2) {
+      display: none;
+    }
+
+    .table#omics-ff-details-table tr td:nth-child(3) {
+      display: none;
+    }
+  }
 </style>
 
 {% if can_view_data %}
