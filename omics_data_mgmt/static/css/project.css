@@ -109,11 +109,6 @@ div.omics-alert-container {
   margin-bottom: 0;
 }
 
-div.omics-hr-container {
-  padding-top: 8px;
-  padding-bottom: 12px;
-}
-
 div.omics-subtitle-container {
   padding-bottom: 12px;
 }
@@ -143,7 +138,6 @@ div.omics-subtitle-container {
 .omics-pr-content {
   padding: 28px;
   max-width: 1500px;
-  /* TODO: Fix the flexbox setup instead, this works but is hacky */
   min-height: calc(100% - 40px);
 }
 
@@ -333,14 +327,6 @@ dl.omics-dl dd {
   height: 2.0em !important;
   margin-bottom: 0;
   padding-top: 2px;
-}
-
-.omics-card-header-button {
-  padding-top: 4px;
-  padding-right: 0;
-  padding-bottom: 4px;
-  margin-bottom: 0;
-  height: inherit;
 }
 
 .omics-details-app-button {
