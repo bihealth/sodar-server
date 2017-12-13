@@ -45,7 +45,7 @@ before_script:
 all_tests:
   script:
     - python3 manage.py collectstatic --noinput
-    - python3 manage.py test -v 2 --settings=config.settings.test
+    # - python3 manage.py test -v 2 --settings=config.settings.test
     - coverage run --source="." manage.py test -v 2 --settings=config.settings.test
     - coverage xml
     # TODO: Set up SonarQube
