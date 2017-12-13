@@ -45,9 +45,8 @@ before_script:
 all_tests:
   script:
     - python3 manage.py collectstatic --noinput
-    # - python3 manage.py test -v 2 --settings=config.settings.test
     - coverage run --source="." manage.py test -v 2 --settings=config.settings.test
-    - coverage xml
+    - coverage report
     # TODO: Set up SonarQube
     # - /opt/sonar-scanner/bin/sonar-scanner -Dsonar.login=$SONAR_TOKEN
   when: on_success
