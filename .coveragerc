@@ -1,5 +1,5 @@
 [run]
-include = omics_data_mgmt/*
-omit = *migrations*, *tests*
+include = ./*
+omit = *migrations*, *tests*, *config*, *docs*, manage.py
 plugins =
     django_coverage_plugin
