@@ -79,6 +79,7 @@ Changed
     - Enable event details popover on the project details page
     - Limit details page list to successful events
     - Allow guest user to see non-classified events
+    - Function ``add_event()`` raises proper ``ValueError`` exceptions
 
 Fixed
 -----

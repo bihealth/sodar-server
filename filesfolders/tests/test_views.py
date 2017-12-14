@@ -779,6 +779,26 @@ class TestHyperLinkCreateView(TestViewsBase):
 
         self.assertEqual(HyperLink.objects.all().count(), 2)
 
+    def test_create_existing(self):
+        """Test hyperlink creation with an existing file (should fail)"""
+        self.assertEqual(HyperLink.objects.all().count(), 1)
+
+        post_data = {
+            'name': 'Link',
+            'url': 'http://google.com',
+            'folder': '',
+            'description': '',
+            'flag': ''}
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse('hyperlink_create', kwargs={
+                    'project': self.project.pk}),
+                post_data)
+
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(HyperLink.objects.all().count(), 1)
+
 
 class TestHyperLinkUpdateView(TestViewsBase):
     """Tests for the HyperLink update view"""

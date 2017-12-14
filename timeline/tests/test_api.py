@@ -80,7 +80,7 @@ class TestTimelineAPI(
     def test_add_event_with_status(self):
         """Test adding an event with status"""
 
-        # Assert precondition
+        # Assert preconditions
         self.assertEqual(ProjectEvent.objects.all().count(), 0)
         self.assertEqual(ProjectEventStatus.objects.all().count(), 0)
 
@@ -122,6 +122,47 @@ class TestTimelineAPI(
             'extra_data': {}}
 
         self.assertEqual(model_to_dict(status), expected_status)
+
+    def test_add_event_invalid_app(self):
+        """Test adding an event with an invalid app name"""
+
+        # Assert preconditions
+        self.assertEqual(ProjectEvent.objects.all().count(), 0)
+        self.assertEqual(ProjectEventStatus.objects.all().count(), 0)
+
+        with self.assertRaises(ValueError):
+            self.timeline.add_event(
+                project=self.project,
+                app_name='NON-EXISTING APP NAME',
+                user=self.user_owner,
+                event_name='test_event',
+                description='description',
+                extra_data={'test_key': 'test_val'})
+
+        # Assert object status
+        self.assertEqual(ProjectEvent.objects.all().count(), 0)
+        self.assertEqual(ProjectEventStatus.objects.all().count(), 0)
+
+    def test_add_event_invalid_status(self):
+        """Test adding an event with an invalid status type"""
+
+        # Assert preconditions
+        self.assertEqual(ProjectEvent.objects.all().count(), 0)
+        self.assertEqual(ProjectEventStatus.objects.all().count(), 0)
+
+        with self.assertRaises(ValueError):
+            self.timeline.add_event(
+                project=self.project,
+                app_name='projectroles',
+                user=self.user_owner,
+                event_name='test_event',
+                description='description',
+                status_type='NON-EXISTING STATUS TYPE',
+                extra_data={'test_key': 'test_val'})
+
+        # Assert object status
+        self.assertEqual(ProjectEvent.objects.all().count(), 0)
+        self.assertEqual(ProjectEventStatus.objects.all().count(), 0)
 
     def test_add_object(self):
         """Test adding an object to an event"""
@@ -182,3 +223,62 @@ class TestTimelineAPI(
             'object_model': self.user_owner.__class__.__name__,
             'object_pk': self.user_owner.pk})
         self.assertEqual(url, expected)
+
+    def test_get_project_events(self):
+        """Test get_project_events()"""
+
+        event_normal = self.timeline.add_event(
+            project=self.project,
+            app_name='projectroles',
+            user=self.user_owner,
+            event_name='test_event',
+            description='description',
+            extra_data={'test_key': 'test_val'})
+
+        event_classified = self.timeline.add_event(
+            project=self.project,
+            app_name='projectroles',
+            user=self.user_owner,
+            event_name='test_event',
+            description='description',
+            classified=True,
+            extra_data={'test_key': 'test_val'})
+
+        # Test non-classified first
+        events = self.timeline.get_project_events(
+            self.project, classified=False)
+
+        self.assertEqual(events.count(), 1)
+        self.assertEqual(events[0], event_normal)
+
+        # Test with classified
+        events = self.timeline.get_project_events(
+            self.project, classified=True)
+
+        self.assertEqual(events.count(), 2)
+        self.assertIn(event_classified, events)
+
+    def test_get_object_url(self):
+        """Test get_object_url()"""
+
+        expected_url = reverse('object_timeline', kwargs={
+            'project': self.project.pk,
+            'object_model': self.user_owner.__class__.__name__,
+            'object_pk': self.user_owner.pk})
+        url = self.timeline.get_object_url(
+            self.project.pk, self.user_owner)
+
+        self.assertEqual(expected_url, url)
+
+    def test_get_object_link(self):
+        """Test get_object_link()"""
+
+        expected_url = reverse('object_timeline', kwargs={
+            'project': self.project.pk,
+            'object_model': self.user_owner.__class__.__name__,
+            'object_pk': self.user_owner.pk})
+
+        link = self.timeline.get_object_link(
+            self.project.pk, self.user_owner)
+
+        self.assertIn(expected_url, link)

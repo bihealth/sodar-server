@@ -11,7 +11,8 @@ from omics_data_mgmt.users.models import User
 from projectroles.plugins import ProjectAppPluginPoint
 from projectroles.utils import get_app_names
 
-from timeline.models import ProjectEvent, ProjectEventObjectRef
+from timeline.models import ProjectEvent, ProjectEventObjectRef, \
+    EVENT_STATUS_TYPES
 
 
 APP_NAMES = get_app_names()
@@ -40,11 +41,15 @@ class TimelineAPI:
         :param status_desc: Initial status description (string, optional)
         :param status_extra_data: Extra data for initial status (dict, optional)
         :return: ProjectEvent object
-        :raise: TypeError if app_name is invalid
+        :raise: ValueError if app_name or status_type is invalid
         """
         if app_name not in APP_NAMES:
-            raise TypeError('Unknown app name (active apps: {})'.format(
-                ', '.join(v for v in APP_NAMES)))
+            raise ValueError('Unknown app name (active apps: {})'.format(
+                ', '.join(x for x in APP_NAMES)))
+
+        if status_type and status_type not in EVENT_STATUS_TYPES:
+            raise ValueError('Unknown status type (valid types: {})'.format(
+                ', '.join(x for x in EVENT_STATUS_TYPES)))
 
         event = ProjectEvent()
         event.project = project

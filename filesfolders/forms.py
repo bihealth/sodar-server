@@ -167,6 +167,11 @@ class FileForm(FilesfoldersItemForm):
             current_user=current_user, project=project, folder=folder,
             *args, **kwargs)
 
+        # Disable public URL creation if setting is false
+        if not get_project_setting(
+                self.project, APP_NAME, 'allow_public_links'):
+            self.fields['public_url'].disabled = True
+
         # Creation
         if not self.instance.pk:
             # Don't allow changing folder if we are creating a new object
@@ -174,11 +179,6 @@ class FileForm(FilesfoldersItemForm):
                 (self.folder.pk, self.folder.name)
                 if self.folder else (None, 'root')]
             self.fields['folder'].widget.attrs['readonly'] = True
-
-            # Disable public URL creation if setting is false
-            if not get_project_setting(
-                    self.project, APP_NAME, 'allow_public_links'):
-                self.fields['public_url'].disabled = True
 
         # Updating
         else:
@@ -192,11 +192,6 @@ class FileForm(FilesfoldersItemForm):
             self.fields['folder'].choices = folder_choices
             self.initial['folder'] =\
                 self.instance.folder.pk if self.instance.folder else None
-
-            # Disable public URL creation if setting is false
-            if not get_project_setting(
-                    self.instance.project, APP_NAME, 'allow_public_links'):
-                self.fields['public_url'].disabled = True
 
     def clean(self):
         project = self.instance.project if self.instance.pk else self.project

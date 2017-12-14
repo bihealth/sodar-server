@@ -1,15 +1,13 @@
 """Plugin tests for the filesfolders app"""
 
-from django.conf import settings
-from django.template.defaultfilters import filesizeformat
+from django.urls import reverse
 from test_plus.test import TestCase
 
 # Projectroles dependency
-from projectroles.models import Role, ProjectSetting, OMICS_CONSTANTS
+from projectroles.models import Role, OMICS_CONSTANTS
 from projectroles.plugins import ProjectAppPluginPoint
 from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
 
-from filesfolders.plugins import ProjectAppPlugin
 from filesfolders.urls import urlpatterns
 from filesfolders.tests.test_models import FolderMixin, FileMixin,\
     HyperLinkMixin
@@ -102,3 +100,46 @@ class TestPlugins(
         """Test plugin URLs to ensure they're the same as in the app config"""
         plugin = ProjectAppPluginPoint.get_plugin(PLUGIN_NAME)
         self.assertEqual(plugin.urls, urlpatterns)
+
+    def test_get_object_link_file(self):
+        """Test get_object_link() for a File object"""
+        plugin = ProjectAppPluginPoint.get_plugin(PLUGIN_NAME)
+        url = reverse('file_serve', kwargs={
+            'project': self.project.pk,
+            'pk': self.file.pk,
+            'file_name': self.file.name})
+        ret = plugin.get_object_link('File', self.file.pk)
+
+        self.assertEqual(ret['url'], url)
+        self.assertEqual(ret['label'], self.file.name)
+        self.assertEqual(ret['blank'], True)
+
+    def test_get_object_link_folder(self):
+        """Test get_object_link() for a Folder object"""
+        plugin = ProjectAppPluginPoint.get_plugin(PLUGIN_NAME)
+        url = reverse('project_files', kwargs={
+            'project': self.project.pk,
+            'folder': self.folder.pk})
+        ret = plugin.get_object_link('Folder', self.folder.pk)
+
+        self.assertEqual(ret['url'], url)
+        self.assertEqual(ret['label'], self.folder.name)
+
+    def test_get_object_link_hyperlink(self):
+        """Test get_object_link() for a HyperLink object"""
+        plugin = ProjectAppPluginPoint.get_plugin(PLUGIN_NAME)
+        ret = plugin.get_object_link('HyperLink', self.hyperlink.pk)
+
+        self.assertEqual(ret['url'], self.hyperlink.url)
+        self.assertEqual(ret['label'], self.hyperlink.name)
+        self.assertEqual(ret['blank'], True)
+
+    def test_get_taskflow_sync_data(self):
+        """Test get_taskflow_sync_data()"""
+        plugin = ProjectAppPluginPoint.get_plugin(PLUGIN_NAME)
+        self.assertEqual(plugin.get_taskflow_sync_data(), None)
+
+    def test_get_object_link_fail(self):
+        """Test get_object_link() with a non-existent object"""
+        plugin = ProjectAppPluginPoint.get_plugin(PLUGIN_NAME)
+        self.assertEqual(plugin.get_object_link('File', 0), None)
