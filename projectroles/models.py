@@ -180,7 +180,7 @@ class Project(models.Model):
                 'Project and parent titles can not be equal')
 
     def get_absolute_url(self):
-        return reverse('project', args=[str(self.pk)])
+        return reverse('project_detail', kwargs={'pk': self.pk})
 
     # Custom row-level functions
     def get_children(self):

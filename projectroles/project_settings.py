@@ -11,6 +11,7 @@ def get_project_setting(project, app_name, setting_name):
     :param app_name: App name (string, must correspond to "name" in app plugin)
     :param setting_name: Setting name (string)
     :return: String or None
+    :raise: KeyError if nothing is found with setting_name
     """
     try:
         return ProjectSetting.objects.get_setting_value(
@@ -24,7 +25,9 @@ def get_project_setting(project, app_name, setting_name):
                 setting_name in app_plugin.project_settings):
             return app_plugin.project_settings[setting_name]['default']
 
-        return None
+        raise KeyError(
+            'Setting "{}" not found in app plugin "{}"'.format(
+                setting_name, app_name))
 
 
 def set_project_setting(project, app_name, setting_name, value, validate=True):
@@ -38,6 +41,7 @@ def set_project_setting(project, app_name, setting_name, value, validate=True):
     :param validate: Validate value (bool, default=True)
     :return: True if changed, False if not changed
     :raise: ValueError if validating and value is not accepted for setting type
+    :raise: KeyError if setting name is not found in plugin specification
     """
     try:
         setting = ProjectSetting.objects.get(
@@ -55,6 +59,11 @@ def set_project_setting(project, app_name, setting_name, value, validate=True):
 
     except ProjectSetting.DoesNotExist:
         app_plugin = ProjectAppPluginPoint.get_plugin(name=app_name)
+
+        if setting_name not in app_plugin.project_settings:
+            raise KeyError('Setting "{}" not found in app plugin "{}"'.format(
+                setting_name, app_name))
+
         s_type = app_plugin.project_settings[setting_name]['type']
 
         if validate:
@@ -84,7 +93,7 @@ def validate_project_setting(setting_type, setting_value):
         raise ValueError('Please enter a valid boolean value')
 
     if setting_type == 'INTEGER' and (
-            not isinstance(setting_value, int) or
+            not isinstance(setting_value, int) and
             not str(setting_value).isdigit()):
         raise ValueError('Please enter a valid integer value')
 

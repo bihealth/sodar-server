@@ -5,12 +5,14 @@ import datetime as dt
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.forms.models import model_to_dict
+from django.urls import reverse
 from django.utils import timezone
 
 from test_plus.test import TestCase
 
 from ..models import Project, Role, RoleAssignment, ProjectInvite, \
-    ProjectUserTag, OMICS_CONSTANTS, PROJECT_TAG_STARRED
+    ProjectSetting, ProjectUserTag, OMICS_CONSTANTS, PROJECT_TAG_STARRED
+from ..plugins import get_app_plugin
 
 # Omics constants
 PROJECT_ROLE_OWNER = OMICS_CONSTANTS['PROJECT_ROLE_OWNER']
@@ -73,6 +75,23 @@ class ProjectInviteMixin:
         invite.save()
 
         return invite
+
+
+class ProjectSettingMixin:
+    """Helper mixin for ProjectSetting creation"""
+
+    @classmethod
+    def _make_setting(cls, app_name, project, name, setting_type, value):
+        """Make and save a ProjectSetting"""
+        values = {
+            'app_plugin': get_app_plugin(app_name).get_model(),
+            'project': project,
+            'name': name,
+            'type': setting_type,
+            'value': value}
+        setting = ProjectSetting(**values)
+        setting.save()
+        return setting
 
 
 class ProjectUserTagMixin:
@@ -180,12 +199,26 @@ class TestProject(TestCase, ProjectMixin):
 
     def test_validate_title(self):
         """Test title validation: title can't be equal between subproject and
-        parent parent"""
+        parent"""
         with self.assertRaises(ValidationError):
             self._make_project(
-                title='TestProjectSub',
+                title='TestCategoryTop',
                 type=PROJECT_TYPE_PROJECT,
-                parent=self.project_sub)
+                parent=self.category_top)
+
+    def test_validate_parent_type(self):
+        """Test parent type validation"""
+        with self.assertRaises(ValidationError):
+            self._make_project(
+                title='FailProject',
+                type=PROJECT_TYPE_PROJECT,
+                parent=self.project_top)
+
+    def test_get_absolute_url(self):
+        """Test get_absolute_url()"""
+        expected_url = reverse(
+            'project_detail', kwargs={'pk': self.project_sub.pk})
+        self.assertEqual(self.project_sub.get_absolute_url(), expected_url)
 
 
 class TestRole(TestCase):
@@ -499,6 +532,101 @@ class TestProjectManager(TestCase, ProjectMixin, RoleAssignmentMixin):
             'XXX', project_type=None)
         self.assertEqual(len(result), 1)
         self.assertEqual(result[0], self.category_top)
+
+
+class TestProjectSetting(
+        TestCase, ProjectMixin, RoleAssignmentMixin, ProjectSettingMixin):
+    """Tests for model.ProjectSetting"""
+    # NOTE: This assumes the filesfolders app is available!
+    def setUp(self):
+        # Init project
+        self.project = self._make_project(
+            title='TestProject',
+            type=PROJECT_TYPE_PROJECT,
+            parent=None)
+
+        # Init role
+        self.role_owner = Role.objects.get(
+            name=PROJECT_ROLE_OWNER)
+
+        # Init user & role
+        self.user = self.make_user('owner')
+        self.owner_as = self._make_assignment(
+            self.project, self.user, self.role_owner)
+
+        # Init test setting
+        self.setting_str = self._make_setting(
+            app_name='filesfolders',
+            project=self.project,
+            name='str_setting',
+            setting_type='STRING',
+            value='test')
+
+        # Init integer setting
+        self.setting_int = self._make_setting(
+            app_name='filesfolders',
+            project=self.project,
+            name='int_setting',
+            setting_type='INTEGER',
+            value=170)
+
+        # Init boolean setting
+        self.setting_bool = self._make_setting(
+            app_name='filesfolders',
+            project=self.project,
+            name='bool_setting',
+            setting_type='BOOLEAN',
+            value=True)
+
+    def test_initialization(self):
+        expected = {
+            'id': self.setting_str.pk,
+            'app_plugin': get_app_plugin('filesfolders').get_model().pk,
+            'project': self.project.pk,
+            'name': 'str_setting',
+            'type': 'STRING',
+            'value': 'test'}
+        self.assertEqual(model_to_dict(self.setting_str), expected)
+
+    def test_initialization_integer(self):
+        """Test initialization with integer value"""
+        expected = {
+            'id': self.setting_int.pk,
+            'app_plugin': get_app_plugin('filesfolders').get_model().pk,
+            'project': self.project.pk,
+            'name': 'int_setting',
+            'type': 'INTEGER',
+            'value': '170'}
+        self.assertEqual(model_to_dict(self.setting_int), expected)
+
+    def test__str__(self):
+        expected = 'TestProject: filesfolders / str_setting'
+        self.assertEqual(str(self.setting_str), expected)
+
+    def test__repr__(self):
+        expected = "ProjectSetting('TestProject', 'filesfolders', " \
+            "'str_setting')"
+        self.assertEqual(repr(self.setting_str), expected)
+
+    def test_get_value_str(self):
+        """Test get_value() with type STRING"""
+        val = self.setting_str.get_value()
+        self.assertIsInstance(val, str)
+        self.assertEqual(val, 'test')
+
+    def test_get_value_int(self):
+        """Test get_value() with type INTEGER"""
+        val = self.setting_int.get_value()
+        self.assertIsInstance(val, int)
+        self.assertEqual(val, 170)
+
+    def test_get_value_bool(self):
+        """Test get_value() with type BOOLEAN"""
+        val = self.setting_bool.get_value()
+        self.assertIsInstance(val, bool)
+        self.assertEqual(val, True)
+
+# TODO: Test manager
 
 
 class TestProjectUserTag(

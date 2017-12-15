@@ -603,6 +603,25 @@ class TestFolderCreateView(TestViewsBase):
 
         self.assertEqual(Folder.objects.all().count(), 2)
 
+    def test_create_existing(self):
+        """Test folder creation with existing folder (should fail)"""
+        self.assertEqual(Folder.objects.all().count(), 1)
+
+        post_data = {
+            'name': 'folder',
+            'folder': '',
+            'description': '',
+            'flag': ''}
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse('folder_create', kwargs={
+                    'project': self.project.pk}),
+                post_data)
+
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(Folder.objects.all().count(), 1)
+
 
 class TestFolderUpdateView(TestViewsBase):
     """Tests for the Folder update view"""
