@@ -38,6 +38,7 @@
 {% has_perm 'projectroles.update_project_staff' request.user object as can_update_staff %}
 {% has_perm 'projectroles.update_project_delegate' request.user object as can_update_delegate %}
 {% has_perm 'projectroles.invite_users' request.user object as can_invite %}
+{% has_perm 'projectroles.import_roles' request.user object as can_import %}
 
 <div class="row omics-subtitle-container">
   <h3>

@@ -832,6 +832,57 @@ class RoleAssignmentDeleteView(
         return kwargs
 
 
+class RoleAssignmentImportView(
+        LoginRequiredMixin, LoggedInPermissionMixin, ProjectContextMixin,
+        TemplateView):
+    """View for importing roles from an existing project"""
+    http_method_names = ['get', 'post']
+    template_name = 'projectroles/roleassignment_import.html'
+    permission_required = 'projectroles.import_roles'
+
+    def get_permission_object(self):
+        """Override get_permission_object for checking Project permission"""
+        try:
+            obj = Project.objects.get(pk=self.kwargs['project'])
+            return obj
+
+        except Project.DoesNotExist:
+            return None
+
+    def get_context_data(self, *args, **kwargs):
+        context = super(RoleAssignmentImportView, self).get_context_data(
+            *args, **kwargs)
+
+        # TODO: Move
+        assignments = RoleAssignment.objects.filter(
+            project__type=PROJECT_TYPE_PROJECT,
+            user=self.request.user,
+            role__name=PROJECT_ROLE_OWNER).exclude(
+                project__pk=self.kwargs['project'])
+
+        if assignments.count() > 0:
+            context['owned_projects'] = sorted(
+                [a.project for a in assignments],
+                key=lambda x: x.get_full_title())
+
+        return context
+
+    def post(self, request, **kwargs):
+        context = self.get_context_data()
+        post_data = request.POST
+        source_project = Project.objects.get(pk=post_data['source-project'])
+        context['source_project'] = source_project
+        source_as = source_project.roles.exclude(
+            role__name=PROJECT_ROLE_OWNER).order_by('user__name')
+
+        print(source_as)
+
+        # TODO: Exclude roles already in destination project
+
+        context['source_as'] = source_as
+        return super(TemplateView, self).render_to_response(context)
+
+
 # ProjectInvite Views ----------------------------------------------------
 
 

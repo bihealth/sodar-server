@@ -1,0 +1,90 @@
+{% extends 'projectroles/project_base.html' %}
+{% load crispy_forms_filters %}
+{% load projectroles_tags %}
+
+{% block title %}
+  Import Members into {{ project.title }}
+{% endblock title %}
+
+{% block projectroles_extend %}
+
+<div class="container-fluid omics-subtitle-container">
+  <h3>
+    Import Members
+    {% if source_project %}
+      from {{ source_project.title }}
+    {% endif %}
+  </h3>
+</div>
+
+<div class="container-fluid">
+  <form method="post">
+    {% csrf_token %}
+
+    {% if not source_project and not owned_projects %}
+      <div class="alert alert-danger" role="alert">
+        <strong>Error:</strong> You do not own any other projects from which to
+        import members!
+      </div>
+
+    {% elif not source_project %}
+      {# Project selection #}
+      <div class="form-group">
+        <label for="omics-pr-role-import-select">Select the source project:</label>
+        <select class="form-control"
+                id="omics-pr-role-import-select" name="source-project">
+          {% for p in owned_projects %}
+            <option value="{{ p.pk }}">{{ p.get_full_title }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+    {% elif source_as %}
+      {# Confirmation of roles to be imported #}
+      <div class="card omics-card-single" id="omics-pr-role-list">
+      <div class="card-body omics-card-body-table">
+        <table class="table table-striped omics-card-table" id="omics-pr-role-import-table">
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Role</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for a in source_as %}
+            <tr>
+              <td>{{ a.user.username }}</td>
+              <td>{{ a.user.name }}</td>
+              <td><a href="mailto:{{ a.user.email }}">{{ a.user.email }}</a></td>
+              <td>{{ a.role.name }}</td>
+              <input type="hidden" name="role-import-field-{{ a.pk }}" value="1" />
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      </div>
+    {% endif %}
+    <div class="row">
+      <div class="btn-group ml-auto">
+        <a role="button" class="btn btn-secondary"
+            href="{{ request.META.HTTP_REFERER }}">
+          <i class="fa fa-arrow-circle-left"></i> Cancel
+        </a>
+        {% if source_project or owned_projects %}
+          <button type="submit" class="btn btn-primary">
+            {% if not source_project %}
+              <i class="fa fa-check"></i> Select
+            {% else %}
+              <i class="fa fa-copy"></i> Import
+            {% endif %}
+          </button>
+        {% endif %}
+      </div>
+    </div>
+  </form>
+</div>
+
+{% endblock projectroles_extend %}

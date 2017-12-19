@@ -32,6 +32,7 @@
 
 {% has_perm 'projectroles.update_project_members' request.user project as can_update_members %}
 {% has_perm 'projectroles.invite_users' request.user project as can_invite %}
+{% has_perm 'projectroles.import_roles' request.user object as can_import %}
 
 <div class="row omics-subtitle-container">
   <h3><i class="fa fa-envelope"></i> Member Invites</h3>
