@@ -200,30 +200,6 @@ class TestTimelineAPI(
 
         self.assertEqual(model_to_dict(ref), expected)
 
-    def test_get_object_url(self):
-        """Test get_object_url()"""
-
-        event = self.timeline.add_event(
-            project=self.project,
-            app_name='projectroles',
-            user=self.user_owner,
-            event_name='test_event',
-            description='description',
-            extra_data={'test_key': 'test_val'})
-
-        # Add user as an object reference
-        self.ref_obj = event.add_object(
-            obj=self.user_owner,
-            label='user',
-            name=self.user_owner.username)
-
-        url = self.timeline.get_object_url(self.project.pk, self.user_owner)
-        expected = reverse('object_timeline', kwargs={
-            'project': self.project.pk,
-            'object_model': self.user_owner.__class__.__name__,
-            'object_pk': self.user_owner.pk})
-        self.assertEqual(url, expected)
-
     def test_get_project_events(self):
         """Test get_project_events()"""
 

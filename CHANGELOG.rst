@@ -35,9 +35,11 @@ Added
     - Project list filtering (#32)
     - Project tagging/starring functionality (#37)
     - History links for project members (#35)
+    - Import roles from another owned project (#9)
 - **Timeline**
     - Import app and backend plugin from prototype
     - Object event view history and API (#35)
+    - Project model support in event references
 
 Changed
 -------

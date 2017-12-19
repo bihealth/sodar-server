@@ -39,8 +39,10 @@
         </select>
       </div>
 
-    {% elif source_as %}
+    {% elif assignments %}
       {# Confirmation of roles to be imported #}
+      <input type="hidden" name="role-import-confirmed" value="1" />
+      <input type="hidden" name="source-project" value="{{ source_project.pk }}" />
       <div class="card omics-card-single" id="omics-pr-role-list">
       <div class="card-body omics-card-body-table">
         <table class="table table-striped omics-card-table" id="omics-pr-role-import-table">
@@ -53,7 +55,7 @@
             </tr>
           </thead>
           <tbody>
-            {% for a in source_as %}
+            {% for a in assignments %}
             <tr>
               <td>{{ a.user.username }}</td>
               <td>{{ a.user.name }}</td>
@@ -66,14 +68,18 @@
         </table>
       </div>
       </div>
+    {% elif not assignments %}
+      <div class="alert alert-danger" role="alert">
+        No members to import found. The users may already be members of this project.
+      </div>
     {% endif %}
     <div class="row">
       <div class="btn-group ml-auto">
         <a role="button" class="btn btn-secondary"
-            href="{{ request.META.HTTP_REFERER }}">
+            href="{{ previous_page }}">
           <i class="fa fa-arrow-circle-left"></i> Cancel
         </a>
-        {% if source_project or owned_projects %}
+        {% if owned_projects or assignments %}
           <button type="submit" class="btn btn-primary">
             {% if not source_project %}
               <i class="fa fa-check"></i> Select

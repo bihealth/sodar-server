@@ -698,10 +698,9 @@ class RoleAssignmentModifyMixin(ModelFormMixin):
 
         messages.success(
             self.request,
-            'Membership {} for {} in {} with the role of {}.'.format(
+            'Membership {} for {} with the role of {}.'.format(
                 'added' if form_action == 'create' else 'updated',
                 self.object.user.username,
-                self.object.project.title,
                 self.object.role.name))
         return redirect(
             reverse('project_roles', kwargs={'pk': self.object.project.pk}))
@@ -818,9 +817,8 @@ class RoleAssignmentDeleteView(
             tl_event.set_status('OK')
 
         messages.success(
-            self.request, 'Membership of {} removed from {}.'.format(
-                user.username,
-                project.title))
+            self.request, 'Membership of {} removed.'.format(
+                user.username))
 
         return HttpResponseRedirect(reverse(
             'project_roles', kwargs={'pk': project.pk}))
@@ -849,39 +847,133 @@ class RoleAssignmentImportView(
         except Project.DoesNotExist:
             return None
 
-    def get_context_data(self, *args, **kwargs):
+    def get(self, request, *args, **kwargs):
         context = super(RoleAssignmentImportView, self).get_context_data(
             *args, **kwargs)
 
-        # TODO: Move
-        assignments = RoleAssignment.objects.filter(
-            project__type=PROJECT_TYPE_PROJECT,
-            user=self.request.user,
-            role__name=PROJECT_ROLE_OWNER).exclude(
-                project__pk=self.kwargs['project'])
+        if request.user.is_superuser:
+            projects = Project.objects.filter(
+                type=PROJECT_TYPE_PROJECT).exclude(pk=self.kwargs['project'])
 
-        if assignments.count() > 0:
             context['owned_projects'] = sorted(
-                [a.project for a in assignments],
+                [p for p in projects],
                 key=lambda x: x.get_full_title())
 
-        return context
+        else:
+            assignments = RoleAssignment.objects.filter(
+                project__type=PROJECT_TYPE_PROJECT,
+                user=self.request.user,
+                role__name=PROJECT_ROLE_OWNER).exclude(
+                    project__pk=self.kwargs['project'])
 
-    def post(self, request, **kwargs):
-        context = self.get_context_data()
-        post_data = request.POST
-        source_project = Project.objects.get(pk=post_data['source-project'])
-        context['source_project'] = source_project
-        source_as = source_project.roles.exclude(
-            role__name=PROJECT_ROLE_OWNER).order_by('user__name')
+            if assignments.count() > 0:
+                context['owned_projects'] = sorted(
+                    [a.project for a in assignments],
+                    key=lambda x: x.get_full_title())
 
-        print(source_as)
+        context['previous_page'] = reverse(
+            'project_roles', kwargs={'pk': self.kwargs['project']})
 
-        # TODO: Exclude roles already in destination project
-
-        context['source_as'] = source_as
         return super(TemplateView, self).render_to_response(context)
 
+    def post(self, request, **kwargs):
+        timeline = get_backend_api('timeline_backend')
+        context = self.get_context_data()
+        post_data = request.POST
+        confirmed = True if 'role-import-confirmed' in post_data else False
+
+        dest_project = self.get_permission_object()
+        source_project = Project.objects.get(pk=post_data['source-project'])
+
+        # Confirmation needed
+        if not confirmed:
+            context['source_project'] = source_project
+            dest_users = dest_project.roles.all().values_list(
+                'user', flat=True)
+
+            assignments = source_project.roles.exclude(
+                role__name=PROJECT_ROLE_OWNER).exclude(
+                    user__in=dest_users).order_by('user__username')
+            context['assignments'] = assignments
+
+            context['previous_page'] = reverse(
+                'role_import', kwargs={'project': dest_project.pk})
+
+            return super(TemplateView, self).render_to_response(context)
+
+        # If confirmed, import roles
+        import_keys = [
+            key for key, val in post_data.items()
+            if key.startswith('role-import-field') and val == '1']
+        import_count = len(import_keys)
+
+        if import_count == 0:
+            messages.warning(
+                self.request,
+                'No members imported from project "{}"'.format(
+                    source_project.title))
+
+        else:
+            import_users = []
+
+            for key in import_keys:
+                source_as = RoleAssignment.objects.get(pk=key.split('-')[3])
+
+                dest_as = RoleAssignment(
+                    project=dest_project,
+                    role=source_as.role,
+                    user=source_as.user)
+                dest_as.save()
+
+                if SEND_EMAIL:
+                    send_role_change_mail(
+                        'create', dest_project, dest_as.user, dest_as.role,
+                        self.request)
+
+                import_users.append(dest_as.user)
+
+            # Add Timeline event
+            if timeline:
+                tl_desc_users = []
+
+                for i in range(0, len(import_users)):
+                    tl_desc_users.append('{user' + str(i) + '}')
+
+                tl_desc = 'import {} member{} from {{{}}} ({})'.format(
+                    import_count,
+                    's' if import_count != 1 else '',
+                    'source_project',
+                    ', '.join(tl_desc_users))
+
+                tl_event = timeline.add_event(
+                    project=dest_project,
+                    app_name=APP_NAME,
+                    user=self.request.user,
+                    event_name='role_import',
+                    description=tl_desc,
+                    status_type='OK')
+
+                tl_event.add_object(
+                    obj=source_project,
+                    label='source_project',
+                    name=source_project.title)
+
+                for i in range(0, len(import_users)):
+                    tl_event.add_object(
+                        obj=import_users[i],
+                        label='user{}'.format(i),
+                        name=import_users[i].username)
+
+            messages.success(
+                self.request,
+                'Imported {} member{} from project "{}" ({})'.format(
+                    len(import_keys),
+                    's' if import_count != 1 else '',
+                    source_project.title,
+                    ', '.join([u.username for u in import_users])))
+
+        return redirect(reverse(
+            'project_roles', kwargs={'pk': dest_project.pk}))
 
 # ProjectInvite Views ----------------------------------------------------
 

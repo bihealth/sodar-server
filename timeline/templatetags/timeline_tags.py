@@ -49,10 +49,10 @@ def get_app_url(event):
 
 
 @register.simple_tag
-def get_event_description(event):
+def get_event_description(event, request=None):
     """Return printable version of event description"""
     timeline = TimelineAPI()
-    return timeline.get_event_description(event)
+    return timeline.get_event_description(event, request)
 
 
 @register.simple_tag

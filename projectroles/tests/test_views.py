@@ -725,6 +725,84 @@ class TestRoleAssignmentDeleteView(
                 'project_roles', kwargs={'pk': self.project.pk}))
 
 
+class TestRoleAssignmentImportView(
+        TestViewsBase, ProjectMixin, RoleAssignmentMixin):
+    """Tests for RoleAssignment importing view"""
+
+    def setUp(self):
+        super(TestRoleAssignmentImportView, self).setUp()
+
+        self.project = self._make_project(
+            'TestProject', PROJECT_TYPE_PROJECT, None)
+        self.user_owner = self.make_user('owner')
+        self.owner_as = self._make_assignment(
+            self.project, self.user_owner, self.role_owner)
+
+        # Init other users and roles
+        self.user_contributor = self.make_user('contributor')
+        self.contributor_as = self._make_assignment(
+            self.project, self.user_contributor, self.role_contributor)
+
+        self.user_guest = self.make_user('guest')
+        self.guest_as = self._make_assignment(
+            self.project, self.user_guest, self.role_guest)
+
+        # Init target project
+        self.project_new = self._make_project(
+            'NewProject', PROJECT_TYPE_PROJECT, None)
+        self._make_assignment(
+            self.project_new, self.user_owner, self.role_owner)
+
+    def test_render(self):
+        """Test rendering of RoleAssignment importing form with the owner"""
+
+        with self.login(self.user_owner):
+            response = self.client.get(
+                reverse('role_import', kwargs={'project': self.project_new.pk}))
+
+        self.assertEqual(response.status_code, 200)
+
+        # Assert context
+        self.assertEqual(
+            response.context['owned_projects'], [self.project])
+
+    def test_render_superuser(self):
+        """Test rendering of RoleAssignment importing form with superuser"""
+
+        with self.login(self.user):
+            response = self.client.get(
+                reverse('role_import', kwargs={'project': self.project_new.pk}))
+
+        self.assertEqual(response.status_code, 200)
+
+        # Assert context
+        self.assertEqual(
+            response.context['owned_projects'], [self.project])
+
+    def test_import(self):
+        """Test importing users from a different project"""
+
+        # Assert precondition
+        self.assertEqual(self.project.roles.count(), 3)
+        self.assertEqual(self.project_new.roles.count(), 1)
+
+        values = {
+            'source-project': self.project.pk,
+            'role-import-confirmed': 1,
+            'role-import-field-{}'.format(self.contributor_as.pk): 1,
+            'role-import-field-{}'.format(self.guest_as.pk): 1}
+
+        with self.login(self.user_owner):
+            response = self.client.post(
+                reverse('role_import', kwargs={
+                    'project': self.project_new.pk}),
+                values)
+
+        # Assert postcondition
+        self.assertEqual(self.project.roles.count(), 3)
+        self.assertEqual(self.project_new.roles.count(), 3)
+
+
 class TestProjectInviteCreateView(
         TestViewsBase, ProjectMixin, RoleAssignmentMixin, ProjectInviteMixin):
     """Tests for ProjectInvite creation view"""
