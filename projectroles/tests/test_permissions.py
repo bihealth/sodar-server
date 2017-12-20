@@ -525,6 +525,25 @@ class TestProjectViews(TestPermissionBase):
         self.assert_render200_ok(url, good_users)
         self.assert_redirect(url, bad_users)
 
+    def test_role_import(self):
+        """Test access to role importing"""
+        url = reverse(
+            'role_import',
+            kwargs={
+                'project': self.project.pk})
+        good_users = [
+            self.superuser,
+            self.as_owner.user]
+        bad_users = [
+            self.anonymous,
+            self.as_delegate.user,
+            self.as_staff.user,
+            self.as_contributor.user,
+            self.as_guest.user,
+            self.user_no_roles]
+        self.assert_render200_ok(url, good_users)
+        self.assert_redirect(url, bad_users)
+
     def test_role_invite_create(self):
         """Test access to role invite creation"""
         url = reverse(

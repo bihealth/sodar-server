@@ -11,7 +11,7 @@
   <td><a href="mailto:{{ event.user.email }}">{{ event.user.username }}</a></td>
   <td>
     {% autoescape off %}
-      {% get_event_description event %}
+      {% get_event_description event request %}
     {% endautoescape %}
     {% if event.classified %}
       <span class="pull-right text-muted"><i class="fa fa-lock"></i></span>

@@ -49,6 +49,11 @@ urlpatterns = [
         name='role_delete',
     ),
     url(
+        regex=r'^(?P<project>\d+)/roles/import$',
+        view=views.RoleAssignmentImportView.as_view(),
+        name='role_import',
+    ),
+    url(
         regex=r'^(?P<project>\d+)/invites$',
         view=views.ProjectInviteView.as_view(),
         name='role_invites',

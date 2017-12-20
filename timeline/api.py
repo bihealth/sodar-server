@@ -8,6 +8,7 @@ from django.urls import reverse
 from omics_data_mgmt.users.models import User
 
 # Projectroles dependency
+from projectroles.models import Project
 from projectroles.plugins import ProjectAppPluginPoint
 from projectroles.utils import get_app_names
 
@@ -90,7 +91,7 @@ class TimelineAPI:
         return events
 
     @staticmethod
-    def get_event_description(event):
+    def get_event_description(event, request=None):
         """Return printable version of event description"""
         desc = event.description
         unknown_label = '(unknown)'
@@ -118,7 +119,7 @@ class TimelineAPI:
                                '<i class="fa fa-clock-o"></i></a>'.format(
                                 history_url)
 
-                # User is a special case
+                # Special case: User model
                 if ref_obj.object_model == 'User':
                     try:
                         user = User.objects.get(pk=ref_obj.object_pk)
@@ -128,7 +129,27 @@ class TimelineAPI:
                     except User.DoesNotExist:
                         refs[r] = unknown_label
 
-                # Projectroles is also special
+                # Special case: Project model
+                elif ref_obj.object_model == 'Project':
+                    try:
+                        project = Project.objects.get(pk=ref_obj.object_pk)
+
+                        if request and request.user.has_perm(
+                                'projectroles.view_project', project):
+                            refs[r] = '<a href="{}">{}</a>'.format(
+                                reverse(
+                                    'project_detail',
+                                    kwargs={'pk': project.pk}),
+                                project.title)
+
+                        else:
+                            refs[r] = '<span class="text-danger">' \
+                                      '{}</span>'.format(project.title)
+
+                    except Project.DoesNotExist:
+                        refs[r] = ref_obj.name
+
+                # Special case: projectroles app
                 elif event.app == 'projectroles':
                     refs[r] = not_found_label.format(
                         ref_obj.name, history_link)

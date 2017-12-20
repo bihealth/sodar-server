@@ -149,3 +149,8 @@ rules.add_perm(
 rules.add_perm(
     'projectroles.invite_users',
     rules.is_superuser | is_project_owner | is_project_delegate)
+
+# Allow importing roles from another project
+rules.add_perm(
+    'projectroles.import_roles',
+    rules.is_superuser | is_project_owner)
