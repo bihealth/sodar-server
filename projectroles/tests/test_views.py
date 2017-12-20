@@ -779,18 +779,19 @@ class TestRoleAssignmentImportView(
         self.assertEqual(
             response.context['owned_projects'], [self.project])
 
-    def test_import(self):
-        """Test importing users from a different project"""
+    def test_import_append(self):
+        """Test appending roles to project"""
 
         # Assert precondition
         self.assertEqual(self.project.roles.count(), 3)
         self.assertEqual(self.project_new.roles.count(), 1)
 
         values = {
+            'import-mode': 'append',
             'source-project': self.project.pk,
-            'role-import-confirmed': 1,
-            'role-import-field-{}'.format(self.contributor_as.pk): 1,
-            'role-import-field-{}'.format(self.guest_as.pk): 1}
+            'import-confirmed': 1,
+            'import-field-{}'.format(self.contributor_as.pk): 1,
+            'import-field-{}'.format(self.guest_as.pk): 1}
 
         with self.login(self.user_owner):
             response = self.client.post(
@@ -801,6 +802,70 @@ class TestRoleAssignmentImportView(
         # Assert postcondition
         self.assertEqual(self.project.roles.count(), 3)
         self.assertEqual(self.project_new.roles.count(), 3)
+
+    def test_import_replace(self):
+        """Test deleting roles through replacing"""
+
+        user_new = self.make_user('newuser')
+        new_as = self._make_assignment(
+            self.project_new, user_new, self.role_contributor)
+
+        # Assert precondition
+        self.assertEqual(self.project.roles.count(), 3)
+        self.assertEqual(self.project_new.roles.count(), 2)
+
+        values = {
+            'import-mode': 'replace',
+            'source-project': self.project.pk,
+            'import-confirmed': 1,
+            'import-field-{}'.format(self.contributor_as.pk): 1,
+            'import-field-{}'.format(self.guest_as.pk): 1,
+            'delete-field-{}'.format(new_as.pk): 1}
+
+        with self.login(self.user_owner):
+            response = self.client.post(
+                reverse('role_import', kwargs={
+                    'project': self.project_new.pk}),
+                values)
+
+        # Assert postcondition
+        self.assertEqual(self.project.roles.count(), 3)
+        self.assertEqual(self.project_new.roles.count(), 3)
+
+        with self.assertRaises(RoleAssignment.DoesNotExist):
+            RoleAssignment.objects.get(project=self.project_new, user=user_new)
+
+    def test_import_replace_update(self):
+        """Test updating roles through replacing"""
+
+        self._make_assignment(
+            self.project_new, self.user_contributor, self.role_guest)
+
+        # Assert precondition
+        self.assertEqual(self.project.roles.count(), 3)
+        self.assertEqual(self.project_new.roles.count(), 2)
+
+        values = {
+            'import-mode': 'replace',
+            'source-project': self.project.pk,
+            'import-confirmed': 1,
+            'import-field-{}'.format(self.contributor_as.pk): 1,
+            'import-field-{}'.format(self.guest_as.pk): 1}
+
+        with self.login(self.user_owner):
+            response = self.client.post(
+                reverse('role_import', kwargs={
+                    'project': self.project_new.pk}),
+                values)
+
+        # Assert postcondition
+        self.assertEqual(self.project.roles.count(), 3)
+        self.assertEqual(self.project_new.roles.count(), 3)
+
+        updated_as = RoleAssignment.objects.get(
+            project=self.project_new, user=self.user_contributor)
+
+        self.assertEqual(updated_as.role, self.role_contributor)
 
 
 class TestProjectInviteCreateView(

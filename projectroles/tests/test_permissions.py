@@ -544,7 +544,6 @@ class TestProjectViews(TestPermissionBase):
         self.assert_render200_ok(url, good_users)
         self.assert_redirect(url, bad_users)
 
-
     def test_role_invite_create(self):
         """Test access to role invite creation"""
         url = reverse(

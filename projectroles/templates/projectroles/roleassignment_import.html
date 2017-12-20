@@ -30,19 +30,36 @@
     {% elif not source_project %}
       {# Project selection #}
       <div class="form-group">
-        <label for="omics-pr-role-import-select">Select the source project:</label>
+        <label for="omics-pr-role-import-mode">Import mode</label>
         <select class="form-control"
-                id="omics-pr-role-import-select" name="source-project">
+                id="omics-pr-role-import-mode" name="import-mode">
+          <option value="append">Append</option>
+          <option value="replace">Replace</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="omics-pr-role-import-project">Source project</label>
+        <select class="form-control"
+                id="omics-pr-role-import-project" name="source-project">
           {% for p in owned_projects %}
             <option value="{{ p.pk }}">{{ p.get_full_title }}</option>
           {% endfor %}
         </select>
       </div>
 
-    {% elif assignments %}
+    {% elif import_assignments or del_assignments %}
       {# Confirmation of roles to be imported #}
-      <input type="hidden" name="role-import-confirmed" value="1" />
+      {% if import_mode == 'replace' %}
+        <div class="alert alert-danger" role="alert">
+          <strong>Warning:</strong> "Replace" selected, existing members
+          will be removed if not found in source project!
+        </div>
+      {% endif %}
+
+      <input type="hidden" name="import-mode" value="{{ import_mode }}" />
+      <input type="hidden" name="import-confirmed" value="1" />
       <input type="hidden" name="source-project" value="{{ source_project.pk }}" />
+
       <div class="card omics-card-single" id="omics-pr-role-list">
       <div class="card-body omics-card-body-table">
         <table class="table table-striped omics-card-table" id="omics-pr-role-import-table">
@@ -52,25 +69,37 @@
               <th>Name</th>
               <th>Email</th>
               <th>Role</th>
+              <th>Action</th>
             </tr>
           </thead>
           <tbody>
-            {% for a in assignments %}
-            <tr>
-              <td>{{ a.user.username }}</td>
-              <td>{{ a.user.name }}</td>
-              <td><a href="mailto:{{ a.user.email }}">{{ a.user.email }}</a></td>
-              <td>{{ a.role.name }}</td>
-              <input type="hidden" name="role-import-field-{{ a.pk }}" value="1" />
-            </tr>
+            {% for a in import_assignments %}
+              <tr>
+                <td>{{ a.user.username }}</td>
+                <td>{{ a.user.name }}</td>
+                <td><a href="mailto:{{ a.user.email }}">{{ a.user.email }}</a></td>
+                <td>{{ a.role.name }}</td>
+                <td>Import</td>
+                <input type="hidden" name="import-field-{{ a.pk }}" value="1" />
+              </tr>
+            {% endfor %}
+            {% for a in del_assignments %}
+              <tr>
+                <td class="text-danger">{{ a.user.username }}</td>
+                <td class="text-danger">{{ a.user.name }}</td>
+                <td class="text-danger"><a href="mailto:{{ a.user.email }}">{{ a.user.email }}</a></td>
+                <td class="text-danger">{{ a.role.name }}</td>
+                <td class="text-danger font-weight-bold">Remove</td>
+                <input type="hidden" name="delete-field-{{ a.pk }}" value="1" />
+              </tr>
             {% endfor %}
           </tbody>
         </table>
       </div>
       </div>
-    {% elif not assignments %}
+    {% elif not import_assignments %}
       <div class="alert alert-danger" role="alert">
-        No members to import found. The users may already be members of this project.
+        Did not find any members to {{ import_mode }}.
       </div>
     {% endif %}
     <div class="row">
@@ -79,12 +108,12 @@
             href="{{ previous_page }}">
           <i class="fa fa-arrow-circle-left"></i> Cancel
         </a>
-        {% if owned_projects or assignments %}
+        {% if owned_projects or import_assignments or import_mode == 'replace' %}
           <button type="submit" class="btn btn-primary">
             {% if not source_project %}
-              <i class="fa fa-check"></i> Select
+              <i class="fa fa-check"></i> Select Project
             {% else %}
-              <i class="fa fa-copy"></i> Import
+              <i class="fa fa-copy"></i> Update Members
             {% endif %}
           </button>
         {% endif %}
