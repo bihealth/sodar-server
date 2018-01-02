@@ -1,4 +1,4 @@
-image: python:3.5
+image: python:3.6
 
 services:
   - postgres:9.4

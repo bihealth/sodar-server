@@ -45,6 +45,7 @@ Changed
 -------
 
 - **General**
+    - Update site for Django 1.11.9 (#1) and Python 3.6.2 (#2)
     - Update site from Bootstrap 4 Alpha 5 to Beta
     - Update third-party libraries to their latest versions
     - Layout redesign (#20)

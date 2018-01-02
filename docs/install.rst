@@ -37,7 +37,7 @@ Clone the repository and setup the virtual environment inside:
 
 .. code-block:: shell
 
-    $ virtualenv -p python3 .venv
+    $ virtualenv -p python3.6 .venv
     $ source .venv/bin/activate
 
 Install the dependencies:
