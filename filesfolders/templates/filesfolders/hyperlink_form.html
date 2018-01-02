@@ -35,7 +35,13 @@
 <div class="container-fluid">
   <form method="post">
     {% csrf_token %}
-    {{ form | crispy }}
+
+    {{ form.name | as_crispy_field }}
+    {{ form.url | as_crispy_field }}
+    {{ form.folder | as_crispy_field }}
+    {{ form.description | as_crispy_field }}
+    {% include 'filesfolders/_flag_select.html' %}
+
     <div class="row">
       <div class="btn-group ml-auto">
         <a role="button" class="btn btn-secondary"

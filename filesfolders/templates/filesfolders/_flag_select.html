@@ -1,0 +1,21 @@
+{% load filesfolders_tags %}
+
+<label for="omics-ff-flag-group">{{ form.flag.label }}</label>
+<div class="form-group" id="omics-ff-flag-group">
+  {% for k, v in form.fields.flag.choices %}
+    <label for="omics-ff-flag-select" class="omics-horizontal-radio">
+      <input id="omics-ff-flag-select"
+             type="radio" value="{{ k }}" name="flag"
+             class="radio-inline" {% get_flag_status form.flag.value k %}>
+        {% if k %}
+          {{ v }}
+        {% else %}
+          None
+        {% endif %}
+        {% if k %}
+          {% get_flag k False as flag_icon %}
+          {{ flag_icon | safe }}
+        {% endif %}
+    </label>
+  {% endfor %}
+</div>

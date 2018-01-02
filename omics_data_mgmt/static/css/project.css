@@ -370,6 +370,10 @@ a.omics-nav-link-last {
   padding-top: 3px;
 }
 
+.omics-horizontal-radio {
+  padding-right: 18px;
+}
+
 /* Misc */
 
 .omics-alert-top {

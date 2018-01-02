@@ -106,13 +106,22 @@ def get_file_icon(file):
 
 
 @register.simple_tag
-def get_flag(item):
-    if not item.flag:
-        return''
+def get_flag(flag_name, tooltip=True):
+    f = FILESFOLDERS_FLAGS[flag_name]
+    tip_str = ''
 
-    f = FILESFOLDERS_FLAGS[item.flag]
+    if tooltip:
+        tip_str = 'title="{}" data-toggle="tooltip" ' \
+                  'data-placement="top"'.format(f['label'])
 
-    return '<i class="fa fa-{} fa-fw text-{} omics-ff-flag-icon" ' \
-           'title="{}" data-toggle="tooltip" data-placement="top">' \
+    return '<i class="fa fa-{} fa-fw text-{} omics-ff-flag-icon" {}>' \
            '</i>'.format(
-                f['icon'], f['color'], f['label'])
+                f['icon'], f['color'], tip_str)
+
+
+@register.simple_tag
+def get_flag_status(val, choice):
+    if val == choice:
+        return 'checked="checked"'
+
+    return ''

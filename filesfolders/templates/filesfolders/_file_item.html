@@ -26,7 +26,7 @@
       {% endif %}
     {% endif %}
     {% if item.flag %}
-      {% get_flag item as item_flag %}
+      {% get_flag item.flag as item_flag %}
       {{ item_flag|safe }}
     {% endif %}
   </td>
