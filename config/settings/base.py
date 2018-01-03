@@ -76,10 +76,14 @@ THIRD_PARTY_APPS = [
 LOCAL_APPS = [
     # Custom users app
     'omics_data_mgmt.users.apps.UsersConfig',
-    # Site apps
+
+    # Project apps
     'projectroles.apps.ProjectrolesConfig',
     'timeline.apps.TimelineConfig',
     'filesfolders.apps.FilesfoldersConfig',
+
+    # General site apps
+    'adminalerts.apps.AdminalertsConfig',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS

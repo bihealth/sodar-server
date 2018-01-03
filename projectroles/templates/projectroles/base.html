@@ -2,6 +2,9 @@
 {% load rules %}
 {% load projectroles_tags %}
 
+{# Adminalerts dependency #}
+{% load adminalerts_tags %}
+
 {% block sub_navbar %}
   <div class="row bg-secondary omics-pr-navbar" id="omics-pr-navbar">
     <ol id="omics-pr-breadcrumb" class="breadcrumb omics-pr-breadcrumb">
@@ -57,10 +60,26 @@
     </div>
   {% endif %}
 
+  {# Django messages and Adminalerts app alers #}
   <div class="omics-content-right">
-    {# Messages #}
-    {% if messages %}
+    {% get_active_alerts as admin_alerts %}
+
+    {% if messages or admin_alerts %}
       <div class="container-fluid omics-alert-container">
+
+      {# Alerts #}
+      {% for alert in admin_alerts %}
+        <div class="alert alert-info omics-alert-top">
+          {% if alert.description %}
+            <span class="pull-right">
+              <a href="{% url 'alert_detail' pk=alert.pk %}" class="text-info"><i class="fa fa-arrow-circle-right"></i> Details</a>
+            </span>
+          {% endif %}
+          <i class="fa fa-exclamation-triangle"></i> {{ alert.message }}
+        </div>
+      {% endfor %}
+
+      {# Messages #}
       {% for message in messages %}
         <div class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %} omics-alert-top">
           {{ message }}

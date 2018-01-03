@@ -94,7 +94,7 @@ html,
 
 nav.omics-base-navbar {
   padding-left: 28px;
-  padding-right: 28px;
+  padding-right: 38px;
 }
 
 nav.omics-base-navbar ul li.nav-item {
@@ -115,7 +115,7 @@ div.omics-subtitle-container {
 
 .omics-pr-navbar {
   padding-left: 28px;
-  padding-right: 28px;
+  padding-right: 38px;
   border-radius: 0;
   margin-bottom: 0;
   vertical-align: middle;

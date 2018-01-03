@@ -26,6 +26,9 @@ urlpatterns = [
     url(r'^login/$', auth_views.login, name='account_login'),
     url(r'^logout/$', auth_views.logout_then_login, name='account_logout'),
 
+    # General site apps
+    url(r'^alerts/', include('adminalerts.urls')),
+
     # Projectroles URLs
     url(r'^projects/', include('projectroles.urls')),
 
