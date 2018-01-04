@@ -4,6 +4,7 @@ from django.utils import timezone
 
 from ..models import Project, RoleAssignment, OMICS_CONSTANTS, \
     PROJECT_TAG_STARRED
+from ..plugins import get_active_plugins
 from ..project_tags import get_tag_state
 
 
@@ -157,3 +158,21 @@ def get_help_highlight(user):
             return 'font-weight-bold text-warning'
 
     return ''
+
+
+@register.simple_tag
+def get_site_apps():
+    """Get active site apps"""
+    return get_active_plugins('site_app')
+
+
+@register.simple_tag
+def get_site_app_messages():
+    """Get messages from site apps"""
+    plugins = get_active_plugins('site_app')
+    ret = []
+
+    for p in plugins:
+        ret += p.get_messages()
+
+    return ret

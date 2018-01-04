@@ -384,6 +384,10 @@ a.omics-nav-link-last {
   min-height: 50px;
 }
 
+.omics-alert-close-link {
+  padding-left: 16px;
+}
+
 .popover{
   max-width: 100%;
 }

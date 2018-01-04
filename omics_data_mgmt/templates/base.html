@@ -1,5 +1,6 @@
 {% load static i18n %}<!DOCTYPE html>
 {% load projectroles_tags %}
+{% load rules %}
 
 <html lang="en">
   <head>
@@ -87,6 +88,20 @@
                 </li>
               {% endif %}
 
+              {# Site-wide apps #}
+              {% get_site_apps as site_apps %}
+              {% for plugin in site_apps %}
+                {% has_perm plugin.app_permission request.user as can_view_app %}
+                {% if not plugin.app_permission or can_view_app %}
+                  <li class="nav-item">
+                    <a class="nav-link"
+                       href="{% url plugin.entry_point_url_id %}"
+                       id="omics-base-navbar-app-link-{{ plugin.name }}">
+                      <i class="fa fa-fw fa-{{ plugin.icon }}"></i> {{ plugin.title }}</a>
+                  </li>
+                {% endif %}
+              {% endfor %}
+
               {# Help link #}
               <li class="nav-item">
                 <a class="nav-link {% get_help_highlight request.user %}"
@@ -106,11 +121,6 @@
                   <a class="dropdown-item" href="{{ request.user.get_absolute_url }}" id="omics-base-navbar-link-user-details">
                     <i class="fa fa-fw fa-user-circle-o"></i> User Profile
                   </a>
-                  {% if request.user.is_superuser %}
-                  <a class="dropdown-item" href="{% url 'alert_list' %}" id="omics-base-navbar-link-alerts">
-                    <i class="fa fa-fw fa-exclamation-triangle"></i> Admin Alerts
-                  </a>
-                  {% endif %}
                   <a class="dropdown-item text-danger" href="{% url 'account_logout' %}" id="omics-base-navbar-link-logout">
                     <i class="fa fa-fw fa-sign-out"></i> Sign Out
                   </a>

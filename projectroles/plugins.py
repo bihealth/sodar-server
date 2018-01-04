@@ -12,7 +12,7 @@ REMOVED = 2
 
 
 class ProjectAppPluginPoint(PluginPoint):
-    """Projectroles plugin points for registering apps"""
+    """Projectroles plugin point for registering project specific apps"""
 
     #: App URLs (will be included in settings by djangoplugins)
     urls = []
@@ -124,7 +124,7 @@ class ProjectAppPluginPoint(PluginPoint):
 
 
 class BackendPluginPoint(PluginPoint):
-    """Projectroles plugin points for registering backend apps"""
+    """Projectroles plugin point for registering backend apps"""
 
     #: FontAwesome icon ID string
     # TODO: Implement this in your backend plugin
@@ -140,23 +140,67 @@ class BackendPluginPoint(PluginPoint):
         raise NotImplementedError
 
 
-def get_active_plugins(plugin_type='app'):
+class SiteAppPluginPoint(PluginPoint):
+    """Projectroles plugin point for registering site-wide apps"""
+
+    #: FontAwesome icon ID string
+    # TODO: Implement this in your site app plugin
+    icon = 'question-circle-o'
+
+    #: Description string
+    # TODO: Implement this in your site app plugin
+    description = 'TODO: Write a description for your plugin'
+
+    #: Entry point URL ID
+    # TODO: Implement this in your app plugin
+    entry_point_url_id = 'home'
+
+    #: Required permission for displaying the app
+    # TODO: Implement this in your site app plugin (can be None)
+    app_permission = None
+
+    def get_messages(self):
+        """
+        Return a list of messages to be shown to users.
+        :return: List of dicts or and empty list if no messages
+        """
+        # TODO: Implement this in your site app plugin
+
+        '''
+        # Output example:
+        return [{
+            'content': 'Message content in here, can contain html',
+            'color': 'info',        # Corresponds to bg-* in Bootstrap
+            'dismissable': True     # False for non-dismissable
+        }]
+        '''
+        return []
+
+
+def get_active_plugins(plugin_type='project_app'):
     """
     Return active plugins of a specific type
-    :param plugin_type: 'app' or 'backend' (string)
+    :param plugin_type: 'project_app', 'site_app' or 'backend' (string)
     :return: List or None
+    :raise: ValueError if plugin_type is not recognized
     """
     # TODO: Replace code doing this same thing in views
-    if plugin_type == 'app':
+    if plugin_type == 'project_app':
         plugins = ProjectAppPluginPoint.get_plugins()
 
-    else:
+    elif plugin_type == 'backend':
         plugins = BackendPluginPoint.get_plugins()
+
+    elif plugin_type == 'site_app':
+        plugins = SiteAppPluginPoint.get_plugins()
+
+    else:
+        raise ValueError('Invalid value for plugin_type')
 
     if plugins:
         return sorted([
             p for p in plugins if (p.is_active() and (
-                plugin_type == 'app' or
+                plugin_type in ['project_app', 'site_app'] or
                 p.name in settings.ENABLED_BACKEND_PLUGINS))],
             key=lambda x: x.name)
 

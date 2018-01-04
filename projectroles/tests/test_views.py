@@ -133,7 +133,7 @@ class TestProjectSearchView(TestViewsBase, ProjectMixin, RoleAssignmentMixin):
         self.owner_as = self._make_assignment(
             self.project, self.user, self.role_owner)
 
-        self.plugins = get_active_plugins(plugin_type='app')
+        self.plugins = get_active_plugins(plugin_type='project_app')
 
     def test_render(self):
         """Test to ensure the project search view renders correctly"""
