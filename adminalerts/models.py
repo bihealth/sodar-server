@@ -53,7 +53,7 @@ class AdminAlert(models.Model):
                 self.active and self.date_expire > timezone.now()) else '')
 
     def __repr__(self):
-        values = (self.message, self.user, self.active)
+        values = (self.message, self.user.username, self.active)
         return 'AdminAlert({})'.format(', '.join(repr(v) for v in values))
 
     def is_active(self):

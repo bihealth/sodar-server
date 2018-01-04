@@ -1,5 +1,3 @@
-import datetime as dt
-
 from django import forms
 from django.utils import timezone
 
@@ -23,16 +21,17 @@ class AdminAlertForm(forms.ModelForm):
         self.fields['user'].widget = forms.HiddenInput()
 
         # Set date_expire properties
+        # NOTE: "format" works in source but not in widget, any way to fix?
         self.fields['date_expire'].label = 'Expiry date'
         self.fields['date_expire'].widget = forms.widgets.DateInput(
             attrs={'type': 'date'},
-            format='%Y-%m-%d')  # TODO: "format" doesn't seem to work here?
+            format='%Y-%m-%d')
 
         # Set initial values if creating
         if not self.instance.pk:
             self.fields['user'].initial = self.current_user
             self.fields['date_expire'].initial = timezone.now() + \
-                dt.timedelta(days=1)
+                timezone.timedelta(days=1)
 
     def clean(self):
         """Custom form validation and cleanup"""

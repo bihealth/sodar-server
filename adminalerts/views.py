@@ -19,7 +19,7 @@ from .models import AdminAlert
 
 class AdminAlertListView(LoggedInPermissionMixin, ListView):
     """Alert list view"""
-    permission_required = 'adminalerts.view_alerts'
+    permission_required = 'adminalerts.create_alert'
     template_name = 'adminalerts/alert_list.html'
     model = AdminAlert
     paginate_by = settings.ADMINALERTS_PAGINATION
@@ -30,7 +30,7 @@ class AdminAlertListView(LoggedInPermissionMixin, ListView):
 
 class AdminAlertDetailView(LoggedInPermissionMixin, DetailView):
     """Alert detail view"""
-    permission_required = 'adminalerts.view_alerts'
+    permission_required = 'adminalerts.view_alert'
     template_name = 'adminalerts/alert_detail.html'
     model = AdminAlert
 

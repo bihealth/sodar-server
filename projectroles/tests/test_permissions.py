@@ -21,73 +21,7 @@ PROJECT_TYPE_CATEGORY = OMICS_CONSTANTS['PROJECT_TYPE_CATEGORY']
 PROJECT_TYPE_PROJECT = OMICS_CONSTANTS['PROJECT_TYPE_PROJECT']
 
 
-class TestPermissionBase(
-        TestCase, ProjectMixin, RoleAssignmentMixin, ProjectInviteMixin):
-    """Base class for testing permissions"""
-
-    def setUp(self):
-        # Init roles
-        self.role_owner = Role.objects.get_or_create(
-            name=PROJECT_ROLE_OWNER)[0]
-        self.role_delegate = Role.objects.get_or_create(
-            name=PROJECT_ROLE_DELEGATE)[0]
-        self.role_staff = Role.objects.get_or_create(
-            name=PROJECT_ROLE_STAFF)[0]
-        self.role_contributor = Role.objects.get_or_create(
-            name=PROJECT_ROLE_CONTRIBUTOR)[0]
-        self.role_guest = Role.objects.get_or_create(
-            name=PROJECT_ROLE_GUEST)[0]
-
-        # Init users
-
-        # Superuser
-        self.superuser = self.make_user('superuser')
-        self.superuser.is_staff = True
-        self.superuser.is_superuser = True
-        self.superuser.save()
-
-        # No user
-        self.anonymous = None
-
-        # Users with role assignments
-        self.user_owner = self.make_user('user_owner')
-        self.user_delegate = self.make_user('user_delegate')
-        self.user_staff = self.make_user('user_staff')
-        self.user_contributor = self.make_user('user_contributor')
-        self.user_guest = self.make_user('user_guest')
-
-        # User without role assignments
-        self.user_no_roles = self.make_user('user_no_roles')
-
-        # Init projects
-
-        # Top level category
-        self.category = self._make_project(
-            title='TestCategoryTop',
-            type=PROJECT_TYPE_CATEGORY,
-            parent=None)
-
-        # Subproject under category
-        self.project = self._make_project(
-            title='TestProjectSub',
-            type=PROJECT_TYPE_PROJECT,
-            parent=self.category)
-
-        # Init role assignments
-
-        self._make_assignment(
-            self.category, self.user_owner, self.role_owner)
-        self.as_owner = self._make_assignment(
-            self.project, self.user_owner, self.role_owner)
-        self.as_delegate = self._make_assignment(
-            self.project, self.user_delegate, self.role_delegate)
-        self.as_staff = self._make_assignment(
-            self.project, self.user_staff, self.role_staff)
-        self.as_contributor = self._make_assignment(
-            self.project, self.user_contributor, self.role_contributor)
-        self.as_guest = self._make_assignment(
-            self.project, self.user_guest, self.role_guest)
-
+class TestPermissionBase(TestCase):
     # TODO: Remove and use assert_response() instead
     def assert_render200_ok(self, url, users):
         """
@@ -188,7 +122,76 @@ class TestPermissionBase(
                 self.assertEqual(response.url, redirect_url, msg=msg)
 
 
-class TestBaseViews(TestPermissionBase):
+class TestProjectPermissionBase(
+        ProjectMixin, RoleAssignmentMixin, ProjectInviteMixin,
+        TestPermissionBase):
+    """Base class for testing project permissions"""
+
+    def setUp(self):
+        # Init roles
+        self.role_owner = Role.objects.get_or_create(
+            name=PROJECT_ROLE_OWNER)[0]
+        self.role_delegate = Role.objects.get_or_create(
+            name=PROJECT_ROLE_DELEGATE)[0]
+        self.role_staff = Role.objects.get_or_create(
+            name=PROJECT_ROLE_STAFF)[0]
+        self.role_contributor = Role.objects.get_or_create(
+            name=PROJECT_ROLE_CONTRIBUTOR)[0]
+        self.role_guest = Role.objects.get_or_create(
+            name=PROJECT_ROLE_GUEST)[0]
+
+        # Init users
+
+        # Superuser
+        self.superuser = self.make_user('superuser')
+        self.superuser.is_staff = True
+        self.superuser.is_superuser = True
+        self.superuser.save()
+
+        # No user
+        self.anonymous = None
+
+        # Users with role assignments
+        self.user_owner = self.make_user('user_owner')
+        self.user_delegate = self.make_user('user_delegate')
+        self.user_staff = self.make_user('user_staff')
+        self.user_contributor = self.make_user('user_contributor')
+        self.user_guest = self.make_user('user_guest')
+
+        # User without role assignments
+        self.user_no_roles = self.make_user('user_no_roles')
+
+        # Init projects
+
+        # Top level category
+        self.category = self._make_project(
+            title='TestCategoryTop',
+            type=PROJECT_TYPE_CATEGORY,
+            parent=None)
+
+        # Subproject under category
+        self.project = self._make_project(
+            title='TestProjectSub',
+            type=PROJECT_TYPE_PROJECT,
+            parent=self.category)
+
+        # Init role assignments
+
+        self._make_assignment(
+            self.category, self.user_owner, self.role_owner)
+        self.as_owner = self._make_assignment(
+            self.project, self.user_owner, self.role_owner)
+        self.as_delegate = self._make_assignment(
+            self.project, self.user_delegate, self.role_delegate)
+        self.as_staff = self._make_assignment(
+            self.project, self.user_staff, self.role_staff)
+        self.as_contributor = self._make_assignment(
+            self.project, self.user_contributor, self.role_contributor)
+        self.as_guest = self._make_assignment(
+            self.project, self.user_guest, self.role_guest)
+
+
+class TestBaseViews(TestProjectPermissionBase):
     """Tests for base views"""
 
     def test_home(self):
@@ -283,7 +286,7 @@ class TestBaseViews(TestPermissionBase):
             redirect_anon='/admin/login/?next=/admin/')
 
 
-class TestProjectViews(TestPermissionBase):
+class TestProjectViews(TestProjectPermissionBase):
     """Tests for Project views"""
 
     def test_category_details(self):
