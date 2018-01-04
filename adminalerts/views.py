@@ -1,12 +1,10 @@
+from django.conf import settings
 from django.contrib import messages
 from django.http import HttpResponseRedirect
-from django.shortcuts import redirect
 from django.urls import reverse
-from django.views.generic import TemplateView, DetailView, UpdateView,\
-    CreateView, DeleteView, View
+from django.views.generic import DetailView, UpdateView, CreateView, \
+    DeleteView, ListView
 from django.views.generic.edit import ModelFormMixin
-
-from rules.contrib.views import PermissionRequiredMixin, redirect_to_login
 
 # Projectroles dependency
 # TBD: Ok to depend on Projectroles here even though this is not a project app?
@@ -19,16 +17,15 @@ from .models import AdminAlert
 # Listing/details views --------------------------------------------------------
 
 
-class AdminAlertListView(LoggedInPermissionMixin, TemplateView):
+class AdminAlertListView(LoggedInPermissionMixin, ListView):
     """Alert list view"""
     permission_required = 'adminalerts.view_alerts'
     template_name = 'adminalerts/alert_list.html'
+    model = AdminAlert
+    paginate_by = settings.ADMINALERTS_PAGINATION
 
-    def get_context_data(self, *args, **kwargs):
-        """Override get_context_data() for list content"""
-        context = super(AdminAlertListView, self).get_context_data()
-        context['alerts'] = AdminAlert.objects.all().order_by('-pk')
-        return context
+    def get_queryset(self):
+        return AdminAlert.objects.all().order_by('-pk')
 
 
 class AdminAlertDetailView(LoggedInPermissionMixin, DetailView):
