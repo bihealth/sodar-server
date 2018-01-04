@@ -70,3 +70,15 @@ class AdminAlertUpdateView(
     model = AdminAlert
     form_class = AdminAlertForm
     permission_required = 'adminalerts.update_alert'
+
+
+class AdminAlertDeleteView(
+        LoggedInPermissionMixin, DeleteView):
+    """AdminAlert deletion view"""
+    model = AdminAlert
+    permission_required = 'adminalerts.update_alert'
+
+    def get_success_url(self):
+        """Override for redirecting alert list view with message"""
+        messages.success(self.request, 'Alert deleted.')
+        return reverse('alert_list')

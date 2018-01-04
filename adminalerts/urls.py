@@ -21,4 +21,9 @@ urlpatterns = [
         view=views.AdminAlertUpdateView.as_view(),
         name='alert_update',
     ),
+    url(
+        regex=r'^(?P<pk>\d+)/delete$',
+        view=views.AdminAlertDeleteView.as_view(),
+        name='alert_delete',
+    ),
 ]
