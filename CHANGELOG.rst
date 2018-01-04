@@ -18,6 +18,8 @@ Added
     - Changelog in ``CHANGELOG.rst``
     - User profile page (#29)
     - Highlight help link for new users (#30)
+- **Adminalerts**
+    - Add adminalerts app (#17)
 - **Filesfolders**
     - Import app from prototype
     - Page title to main files list

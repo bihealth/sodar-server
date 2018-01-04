@@ -410,7 +410,7 @@ class ProjectInviteForm(forms.ModelForm):
 
         obj.project = self.project
         obj.issuer = self.current_user
-        obj.date_expire = timezone.now() + dt.timedelta(
+        obj.date_expire = timezone.now() + timezone.timedelta(
             days=INVITE_EXPIRY_DAYS)
         obj.secret = build_secret()
 

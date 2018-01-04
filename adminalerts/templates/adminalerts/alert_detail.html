@@ -1,0 +1,42 @@
+{% extends "projectroles/base.html" %}
+
+{% load rules %}
+
+{% block title %}Admin Alert{% endblock %}
+{% block sub_navbar_current %}Admin Alert{% endblock sub_navbar_current %}
+
+{% block projectroles %}
+
+<div class="row omics-subtitle-container">
+  <h2><i class="fa fa-exclamation-triangle"></i> Admin Alert</h2>
+</div>
+
+<div class="container-fluid">
+  <div class="card omics-card-single" id="omics-aa-alert-list">
+    <div class="card-body omics-card-body">
+      <dl class="row">
+        <dt class="col-md-2">Message</dt>
+        <dd class="col-md-10">{{ object.message }}</dd>
+        {% if object.description %}
+          <dt class="col-md-2">Description</dt>
+          <dd class="col-md-10">{{ object.description }}</dd>
+        {% endif %}
+        <dt class="col-md-2">Created</dt>
+        <dd class="col-md-10">{{ object.date_created|date:'Y-m-d H:i' }}</dd>
+        <dt class="col-md-2">Expires</dt>
+        <dd class="col-md-10">{{ object.date_expire|date:'Y-m-d' }}</dd>
+      </dl>
+    </div>
+  </div>
+
+  <div class="row">
+    <a role="button" class="btn btn-secondary ml-auto"
+       href="{{ request.META.HTTP_REFERER }}">
+      <i class="fa fa-arrow-circle-left"></i>
+      Back
+    </a>
+  </div>
+
+</div>
+
+{% endblock projectroles %}

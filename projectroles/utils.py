@@ -1,4 +1,3 @@
-import datetime as dt
 import random
 import string
 
@@ -54,8 +53,7 @@ def get_expiry_date():
     Return expiry date based on current date + INVITE_EXPIRY_DAYS
     :return: DateTime object
     """
-    return timezone.now() + dt.timedelta(
-        days=INVITE_EXPIRY_DAYS)
+    return timezone.now() + timezone.timedelta(days=INVITE_EXPIRY_DAYS)
 
 
 def get_app_names():

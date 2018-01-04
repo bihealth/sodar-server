@@ -1,0 +1,160 @@
+{% extends "projectroles/base.html" %}
+
+{% load rules %}
+
+{% block title %}Admin Alerts{% endblock %}
+{% block sub_navbar_current %}Admin Alerts{% endblock sub_navbar_current %}
+
+{% block css %}
+  {{ block.super }}
+  <style type="text/css">
+    .table#omics-aa-list-table tr td:nth-child(3) {
+      white-space: nowrap;
+    }
+
+    .table#omics-aa-list-table tr td:nth-child(4) {
+      white-space: nowrap;
+    }
+
+    .table#omics-aa-list-table tr td:nth-child(5) {
+      width: 110px;
+    }
+
+    .table#omics-aa-list-table tr td:nth-child(6) {
+      width: 75px;
+    }
+
+    /* Responsive modifications */
+    @media screen and (max-width: 1100px) {
+      .table#omics-aa-list-table tr th:nth-child(3) {
+        display: none;
+      }
+
+      .table#omics-aa-list-table tr td:nth-child(3) {
+        display: none;
+      }
+    }
+
+    @media screen and (max-width: 900px) {
+      .table#omics-aa-list-table tr th:nth-child(2) {
+        display: none;
+      }
+
+      .table#omics-aa-list-table tr td:nth-child(2) {
+        display: none;
+      }
+    }
+
+    @media screen and (max-width: 750px) {
+      .table#omics-aa-list-table tr th:nth-child(4) {
+        display: none;
+      }
+
+      .table#omics-aa-list-table tr td:nth-child(4) {
+        display: none;
+      }
+    }
+  </style>
+{% endblock css %}
+
+{% block projectroles %}
+
+<div class="row omics-subtitle-container">
+  <h2><i class="fa fa-exclamation-triangle"></i> Admin Alerts</h2>
+
+  <a role="button" class="btn btn-primary ml-auto"
+     href="{% url 'alert_create' %}">
+    <i class="fa fa-plus"></i> Create Alert
+  </a>
+</div>
+
+{% if object_list.count > 0 %}
+  <div class="container-fluid">
+    <div class="card omics-card-single" id="omics-aa-alert-list">
+      <div class="card-body omics-card-body-table">
+        <table class="table table-striped omics-card-table" id="omics-aa-list-table">
+          <thead>
+            <tr>
+              <th>Message</th>
+              <th>User</th>
+              <th>Created</th>
+              <th>Expiry</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for a in object_list %}
+              <tr {% if not a.is_active %}class="text-muted"{% endif %} id="omics-aa-alert-item-{{ a.pk }}">
+                <td><a href="{% url 'alert_detail' pk=a.pk %}">{{ a.message }}</a></td>
+                <td><a href="mailto:{{ a.user.email }}">{{ a.user.username }}</a></td>
+                <td>{{ a.date_created | date:'Y-m-d H:i:s' }}</td>
+                <td>{{ a.date_expire | date:'Y-m-d' }}</td>
+                {% if a.is_active %}
+                  <td class="bg-info text-white">ACTIVE</td>
+                {% elif a.is_expired %}
+                  <td class="bg-danger text-white">EXPIRED</td>
+                {% else %}
+                  <td class="bg-warning text-white">INACTIVE</td>
+                {% endif %}
+                <td>
+                  <div class="btn-group omics-edit-button-group" id="omics-aa-alert-buttons-{{ a.pk }}">
+                    <button class="btn btn-secondary dropdown-toggle btn-sm omics-edit-dropdown"
+                            type="button" data-toggle="dropdown" aria-expanded="false">
+                      <i class="fa fa-cog"></i>
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-right">
+                      <a class="dropdown-item" href="{% url 'alert_update' pk=a.pk %}">
+                        <i class="fa fa-fw fa-pencil"></i> Update Alert
+                      </a>
+                      <a class="dropdown-item" href="{% url 'alert_delete' pk=a.pk %}">
+                        <i class="fa fa-fw fa-close"></i> Delete Alert
+                      </a>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  {% if is_paginated %}
+    <div class="row">
+      <div class="btn-group ml-auto" id="omics-aa-nav-buttons">
+        {% if page_obj.has_previous %}
+          <a role="button" class="btn btn-secondary"
+              href="?page={{ page_obj.previous_page_number }}">
+            <i class="fa fa-arrow-circle-left"></i> Newer
+          </a>
+        {% else %}
+          <a role="button" class="btn btn-secondary disabled" href="#">
+            <i class="fa fa-arrow-circle-left"></i> Newer
+          </a>
+        {% endif %}
+        {% if page_obj.has_next %}
+          <a role="button" class="btn btn-secondary"
+              href="?page={{ page_obj.next_page_number }}">
+            <i class="fa fa-arrow-circle-right"></i> Older
+          </a>
+        {% else %}
+          <a role="button" class="btn btn-secondary disabled" href="#">
+            <i class="fa fa-arrow-circle-right"></i> Older
+          </a>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+
+{% else %}
+    <div class="container-fluid">
+    <div class="alert alert-info" role="alert">
+      No alerts found.
+    </div>
+  </div>
+
+{% endif %}
+
+{% endblock projectroles %}

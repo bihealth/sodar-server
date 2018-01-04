@@ -57,10 +57,24 @@
     </div>
   {% endif %}
 
+  {# Django messages / site app messages #}
   <div class="omics-content-right">
-    {# Messages #}
-    {% if messages %}
+    {% get_site_app_messages as site_app_messages %}
+
+    {% if messages or site_app_messages %}
       <div class="container-fluid omics-alert-container">
+
+      {# Site app messages #}
+      {% for message in site_app_messages %}
+        <div class="alert alert-{{ message.color }} omics-alert-top" id="omics-site-app-alert">
+          {% if message.dismissable %}
+            <a href="#" class="pull-right omics-alert-close-link"><i class="fa fa-close text-muted"></i></a>
+          {% endif %}
+          {{ message.content | safe }}
+        </div>
+      {% endfor %}
+
+      {# Regular Django messages #}
       {% for message in messages %}
         <div class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %} omics-alert-top">
           {{ message }}

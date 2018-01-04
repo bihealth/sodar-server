@@ -1,5 +1,6 @@
 {% load static i18n %}<!DOCTYPE html>
 {% load projectroles_tags %}
+{% load rules %}
 
 <html lang="en">
   <head>
@@ -86,6 +87,20 @@
                   </div>
                 </li>
               {% endif %}
+
+              {# Site-wide apps #}
+              {% get_site_apps as site_apps %}
+              {% for plugin in site_apps %}
+                {% has_perm plugin.app_permission request.user as can_view_app %}
+                {% if not plugin.app_permission or can_view_app %}
+                  <li class="nav-item">
+                    <a class="nav-link"
+                       href="{% url plugin.entry_point_url_id %}"
+                       id="omics-base-navbar-app-link-{{ plugin.name }}">
+                      <i class="fa fa-fw fa-{{ plugin.icon }}"></i> {{ plugin.title }}</a>
+                  </li>
+                {% endif %}
+              {% endfor %}
 
               {# Help link #}
               <li class="nav-item">

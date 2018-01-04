@@ -1,7 +1,5 @@
 """Tests for models in the projectroles Django app"""
 
-import datetime as dt
-
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.forms.models import model_to_dict
@@ -68,7 +66,7 @@ class ProjectInviteMixin:
             'issuer': issuer,
             'message': message,
             'date_expire': date_expire if date_expire else (
-                timezone.now() + dt.timedelta(days=INVITE_EXPIRY_DAYS)),
+                timezone.now() + timezone.timedelta(days=INVITE_EXPIRY_DAYS)),
             'secret': SECRET,
             'active': True}
         invite = ProjectInvite(**values)

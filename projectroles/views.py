@@ -151,7 +151,7 @@ class PluginContextMixin(ContextMixin):
         context = super(PluginContextMixin, self).get_context_data(
             *args, **kwargs)
 
-        app_plugins = get_active_plugins(plugin_type='app')
+        app_plugins = get_active_plugins(plugin_type='project_app')
 
         if app_plugins:
             context['app_plugins'] = app_plugins
@@ -256,7 +256,7 @@ class ProjectSearchView(LoginRequiredMixin, TemplateView):
         context = super(ProjectSearchView, self).get_context_data(
             *args, **kwargs)
 
-        plugins = get_active_plugins(plugin_type='app')
+        plugins = get_active_plugins(plugin_type='project_app')
 
         search_input = self.request.GET.get('s')
         context['search_input'] = search_input

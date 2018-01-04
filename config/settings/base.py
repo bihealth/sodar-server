@@ -76,10 +76,14 @@ THIRD_PARTY_APPS = [
 LOCAL_APPS = [
     # Custom users app
     'omics_data_mgmt.users.apps.UsersConfig',
-    # Site apps
+
+    # Project apps
     'projectroles.apps.ProjectrolesConfig',
     'timeline.apps.TimelineConfig',
     'filesfolders.apps.FilesfoldersConfig',
+
+    # General site apps
+    'adminalerts.apps.AdminalertsConfig',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -362,3 +366,7 @@ TIMELINE_PAGINATION = 15
 FILESFOLDERS_MAX_UPLOAD_SIZE = env.int('FILESFOLDERS_MAX_UPLOAD_SIZE', 10485760)
 FILESFOLDERS_SERVE_AS_ATTACHMENT = False
 FILESFOLDERS_LINK_BAD_REQUEST_MSG = 'Invalid request'
+
+
+# Adminalerts app settings
+ADMINALERTS_PAGINATION = 15

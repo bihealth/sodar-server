@@ -5,7 +5,7 @@ from django.urls import reverse
 # Projectroles dependency
 from projectroles.models import ProjectSetting, OMICS_CONSTANTS
 from projectroles.project_settings import set_project_setting
-from projectroles.tests.test_permissions import TestPermissionBase
+from projectroles.tests.test_permissions import TestProjectPermissionBase
 
 from filesfolders.tests.test_models import FileMixin, FolderMixin,\
     HyperLinkMixin
@@ -24,7 +24,7 @@ APP_NAME = 'filesfolders'
 SECRET = '7dqq83clo2iyhg29hifbor56og6911r5'
 
 
-class TestFolderPermissions(TestPermissionBase, FolderMixin):
+class TestFolderPermissions(TestProjectPermissionBase, FolderMixin):
     """Tests for Folder views"""
 
     def setUp(self):
@@ -94,7 +94,7 @@ class TestFolderPermissions(TestPermissionBase, FolderMixin):
         self.assert_redirect(url, bad_users)
 
 
-class TestFilePermissions(TestPermissionBase, FileMixin):
+class TestFilePermissions(TestProjectPermissionBase, FileMixin):
     """Tests for File views"""
 
     def setUp(self):
@@ -263,7 +263,7 @@ class TestFilePermissions(TestPermissionBase, FileMixin):
         self.assertEqual(response.status_code, 400)
 
 
-class TestHyperLinkPermissions(TestPermissionBase, HyperLinkMixin):
+class TestHyperLinkPermissions(TestProjectPermissionBase, HyperLinkMixin):
     """Tests for HyperLink views"""
 
     def setUp(self):
@@ -335,7 +335,7 @@ class TestHyperLinkPermissions(TestPermissionBase, HyperLinkMixin):
         self.assert_redirect(url, bad_users)
 
 
-class TestBatchPermissions(TestPermissionBase, FolderMixin):
+class TestBatchPermissions(TestProjectPermissionBase, FolderMixin):
     """Tests for batch editing views"""
 
     def setUp(self):
