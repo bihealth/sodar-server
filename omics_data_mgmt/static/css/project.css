@@ -345,7 +345,7 @@ dl.omics-dl dd {
 .omics-pr-sidebar-nav li.active:after {
     content: "";
     position: absolute;
-    right: -14px;
+    right: -16px;
     top: 13px;
     width: 0;
     height: 0;
