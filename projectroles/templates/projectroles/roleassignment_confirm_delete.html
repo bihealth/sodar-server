@@ -11,10 +11,10 @@
 <div class="container-fluid">
   <h3>Confirm removal of member {{ object.user.username }}</h3>
 
-  <p>
+  <div class="alert alert-warning" role="alert">
     Do you really want to remove the role of "{{ object.role.name }}"
     from user {{ object.user.username }} in {{ object.project.title }}?
-  </p>
+  </div>
 
   <form method="post">
     {% csrf_token %}
