@@ -96,14 +96,14 @@ class BaseFilesfoldersClass(models.Model):
         auto_now=True,
         help_text='DateTime of last modification')
 
-    #: Flag
+    #: Flag for highlighting the item (optional)
     flag = models.CharField(
         max_length=64,
         unique=False,
         blank=True,
         null=True,
         choices=FLAG_CHOICES,
-        help_text='Flag')
+        help_text='Flag for highlighting the item (optional)')
 
     #: Description (optional)
     description = models.CharField(
