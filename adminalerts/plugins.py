@@ -31,11 +31,12 @@ class SiteAppPlugin(SiteAppPluginPoint):
     entry_point_url_id = 'alert_list'
 
     #: Required permission for displaying the app
-    app_permission = 'adminalerts.add_alert'
+    app_permission = 'adminalerts.create_alert'
 
-    def get_messages(self):
+    def get_messages(self, user=None):
         """
         Return a list of messages to be shown to users.
+        :param user: User object (optional)
         :return: List of dicts or and empty list if no messages
         """
         messages = []

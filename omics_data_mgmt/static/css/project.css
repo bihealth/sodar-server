@@ -338,6 +338,20 @@ dl.omics-dl dd {
   font-size: 80%;
   line-height: normal;
   padding-bottom: 8px;
+  position: relative;
+}
+
+/* Notch visualizaton */
+.omics-pr-sidebar-nav li.active:after {
+    content: "";
+    position: absolute;
+    right: -14px;
+    top: 13px;
+    width: 0;
+    height: 0;
+    border-top: 10px solid transparent;
+    border-right: 10px solid #ffffff;
+    border-bottom: 10px solid transparent;
 }
 
 .omics-pr-sidebar-nav li i {

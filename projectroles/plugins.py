@@ -159,9 +159,10 @@ class SiteAppPluginPoint(PluginPoint):
     # TODO: Implement this in your site app plugin (can be None)
     app_permission = None
 
-    def get_messages(self):
+    def get_messages(self, user=None):
         """
         Return a list of messages to be shown to users.
+        :param user: User object (optional)
         :return: List of dicts or and empty list if no messages
         """
         # TODO: Implement this in your site app plugin
