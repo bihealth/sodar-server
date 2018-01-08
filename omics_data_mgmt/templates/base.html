@@ -75,16 +75,18 @@
               {# Search #}
               {% if request.user.is_authenticated %}
                 <li class="nav-item omics-base-navbar-search">
-                  <div class="input-group omics-input-group">
                   <form class="form-inline" method="get" action="{% url 'project_search' %}">
-                    <input class="form-control" type="text"
-                           placeholder="Search term" name="s" aria-label="Search term"
-                           id="omics-nav-search-input" value="{{ search_input }}">
-                     <div class="input-group-btn">
-                       <button class="btn btn-outline-success my-sm-0" type="submit" id="omics-nav-search-submit">Search</button>
-                     </div>
-                  </form>
+                  <div class="input-group omics-input-group">
+
+                      <input class="form-control" type="text"
+                             placeholder="Search term" name="s" aria-label="Search term"
+                             id="omics-nav-search-input" value="{{ search_input }}">
+                       <div class="input-group-append">
+                         <button class="btn btn-outline-success" type="submit" id="omics-nav-search-submit">Search</button>
+                       </div>
+
                   </div>
+                  </form>
                 </li>
               {% endif %}
 

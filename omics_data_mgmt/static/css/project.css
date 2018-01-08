@@ -370,7 +370,6 @@ a.omics-nav-link-last {
 .omics-header-input-group {
   white-space: nowrap;
   padding-right: 0;
-  height: 32px;
   max-width: 300px;
 }
 
@@ -382,6 +381,10 @@ a.omics-nav-link-last {
 .omics-header-input-group a {
   height: 32px;
   padding-top: 3px;
+}
+
+.omics-header-input-group input.form-control {
+  height: 32px;
 }
 
 .omics-horizontal-radio {

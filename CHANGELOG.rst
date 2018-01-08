@@ -48,7 +48,7 @@ Changed
 
 - **General**
     - Update site for Django 1.11.9 (#1) and Python 3.6.2 (#2)
-    - Update site from Bootstrap 4 Alpha 5 to Beta
+    - Update site to Bootstrap 4 Beta 3 (#70)
     - Update third-party libraries to their latest versions
     - Layout redesign (#20)
     - Switch from PhantomJS to Headless Chrome for UI tests (improved performance and stability, Bootstrap 4 Beta compatibility)
