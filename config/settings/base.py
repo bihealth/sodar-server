@@ -316,27 +316,33 @@ if env.str('AUTH_LDAP_SERVER_URI', None):
         from django_auth_ldap.config import LDAPSearch
     # FLYNN WORKAROUND ENDS
 
-    AUTH_LDAP_SERVER_URI = env.str('AUTH_LDAP_SERVER_URI')
-    AUTH_LDAP_BIND_DN = env.str('AUTH_LDAP_BIND_DN')
-    AUTH_LDAP_BIND_PASSWORD = env.str('AUTH_LDAP_BIND_PASSWORD')
-    AUTH_LDAP_CONNECTION_OPTIONS = {
+    # TODO: Change params in env
+    AUTH_CHARITE_LDAP_SERVER_URI = env.str('AUTH_LDAP_SERVER_URI')
+    AUTH_CHARITE_LDAP_BIND_DN = env.str('AUTH_LDAP_BIND_DN')
+    AUTH_CHARITE_LDAP_BIND_PASSWORD = env.str('AUTH_LDAP_BIND_PASSWORD')
+    AUTH_CHARITE_LDAP_CONNECTION_OPTIONS = {
         ldap.OPT_REFERRALS: 0
     }
 
-    AUTHENTICATION_BACKENDS = tuple(itertools.chain(
-        ('django_auth_ldap.backend.LDAPBackend',),
-        AUTHENTICATION_BACKENDS,
-    ))
-
-    AUTH_LDAP_USER_SEARCH = LDAPSearch(
+    AUTH_CHARITE_LDAP_USER_SEARCH = LDAPSearch(
         env.str('AUTH_LDAP_USER_SEARCH_BASE'),
         ldap.SCOPE_SUBTREE, '(sAMAccountName=%(user)s)')
 
-    AUTH_LDAP_USER_ATTR_MAP = {
+    AUTH_CHARITE_LDAP_USER_ATTR_MAP = {
         'first_name': 'givenName',
         'last_name': 'sn',
         'email': 'mail',
     }
+
+    # TODO: MDC params
+    # TODO: AD examples here: https://github.com/etianen/django-python3-ldap#microsoft-active-directory-support
+
+    AUTHENTICATION_BACKENDS = tuple(itertools.chain(
+        # ('django_auth_ldap.backend.LDAPBackend',),
+        ('omics_data_mgmt.users.backends.ChariteLDAPBackend',),
+        # TODO: Add MDC backend here
+        AUTHENTICATION_BACKENDS,
+    ))
 
 
 # Local App Settings

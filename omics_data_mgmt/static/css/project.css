@@ -391,6 +391,13 @@ a.omics-nav-link-last {
   padding-right: 18px;
 }
 
+/* HACK for Bootstrap4 not properly supporting <select> with input-group */
+.omics-select-append {
+  border-left: 0;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
 /* Misc */
 
 .omics-alert-top {

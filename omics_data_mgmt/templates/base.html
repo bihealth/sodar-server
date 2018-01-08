@@ -118,7 +118,7 @@
                   <i class="fa fa-fw fa-user"></i>
                 </a>
                 <div class="dropdown-menu dropdown-menu-right">
-                  <div class="dropdown-header">{{ request.user.name }} ({{ request.user.username }})</div>
+                  <div class="dropdown-header">{{ request.user.name }}<br />{{ request.user.username }}</div>
                   <div class="dropdown-divider"></div>
                   <a class="dropdown-item" href="{{ request.user.get_absolute_url }}" id="omics-base-navbar-link-user-details">
                     <i class="fa fa-fw fa-user-circle-o"></i> User Profile
