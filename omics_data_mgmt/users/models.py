@@ -25,6 +25,13 @@ def handle_ldap_login(sender, user, **kwargs):
 
     if hasattr(user, 'ldap_username'):
 
+        # Make domain in username uppercase
+        if (user.username.find('@') != -1 and
+                user.username.split('@')[1].islower()):
+            u_split = user.username.split('@')
+            user.username = u_split[0] + '@' + u_split[1].upper()
+            user.save()
+
         # Save user name from first_name and last_name into name
         if user.name in ['', None]:
             if user.first_name != '':

@@ -7,7 +7,8 @@ class ChariteLDAPBackend(LDAPBackend):
 
     def authenticate(self, username, password, **kwargs):
         # Ensure username has proper suffix
-        if username.find('@') == -1 or username.split('@')[1] != 'CHARITE':
+        if (username.find('@') == -1 or
+                username.split('@')[1].upper() != 'CHARITE'):
             return None
 
         ldap_user = _LDAPUser(self, username=username.split('@')[0].strip())
@@ -28,7 +29,8 @@ class MDCLDAPBackend(LDAPBackend):
 
     def authenticate(self, username, password, **kwargs):
         # Ensure username has proper suffix
-        if username.find('@') == -1 or username.split('@')[1] != 'MDC-BERLIN':
+        if (username.find('@') == -1 or
+                username.split('@')[1].upper() != 'MDC-BERLIN'):
             return None
 
         ldap_user = _LDAPUser(self, username=username.split('@')[0].strip())
