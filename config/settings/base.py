@@ -317,10 +317,11 @@ if env.str('ENABLE_LDAP', None):
     # FLYNN WORKAROUND ENDS
 
     # Ensure we get full log from django_auth_ldap
-    import logging
-    logger = logging.getLogger('django_auth_ldap')
-    logger.addHandler(logging.StreamHandler())
-    logger.setLevel(logging.DEBUG)
+    if DEBUG:
+        import logging
+        logger = logging.getLogger('django_auth_ldap')
+        logger.addHandler(logging.StreamHandler())
+        logger.setLevel(logging.DEBUG)
 
     # Charite LDAP settings
     AUTH_CHARITE_LDAP_SERVER_URI = env.str('AUTH_CHARITE_LDAP_SERVER_URI')

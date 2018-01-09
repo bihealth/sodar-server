@@ -3,6 +3,7 @@
 {% load projectroles_tags %}
 
 {% block sub_navbar %}
+ <div class="omics-sub-navbar-container">
   <div class="row bg-secondary omics-pr-navbar" id="omics-pr-navbar">
     <ol id="omics-pr-breadcrumb" class="breadcrumb omics-pr-breadcrumb">
       {% if request.resolver_match.url_name == 'home' %}
@@ -44,6 +45,7 @@
       </div>
     {% endif %}
   </div>
+ </div>
 {% endblock sub_navbar %}
 
 {% block content %}
