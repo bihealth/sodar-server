@@ -287,7 +287,7 @@ ADMIN_URL = r'^admin/'
 # ------------------------------------------------------------------------------
 
 # Enable LDAP if configured
-if env.str('AUTH_LDAP_SERVER_URI', None):
+if env.str('ENABLE_LDAP', None):
     import itertools
 
     # FLYNN WORKAROUND
@@ -316,33 +316,49 @@ if env.str('AUTH_LDAP_SERVER_URI', None):
         from django_auth_ldap.config import LDAPSearch
     # FLYNN WORKAROUND ENDS
 
-    # TODO: Change params in env
-    AUTH_CHARITE_LDAP_SERVER_URI = env.str('AUTH_LDAP_SERVER_URI')
-    AUTH_CHARITE_LDAP_BIND_DN = env.str('AUTH_LDAP_BIND_DN')
-    AUTH_CHARITE_LDAP_BIND_PASSWORD = env.str('AUTH_LDAP_BIND_PASSWORD')
+    # Ensure we get full log from django_auth_ldap
+    import logging
+    logger = logging.getLogger('django_auth_ldap')
+    logger.addHandler(logging.StreamHandler())
+    logger.setLevel(logging.DEBUG)
+
+    # Charite LDAP settings
+    AUTH_CHARITE_LDAP_SERVER_URI = env.str('AUTH_CHARITE_LDAP_SERVER_URI')
+    AUTH_CHARITE_LDAP_BIND_PASSWORD = env.str('AUTH_CHARITE_LDAP_BIND_PASSWORD')
+    AUTH_CHARITE_LDAP_BIND_DN = env.str('AUTH_CHARITE_LDAP_BIND_DN')
     AUTH_CHARITE_LDAP_CONNECTION_OPTIONS = {
-        ldap.OPT_REFERRALS: 0
-    }
+        ldap.OPT_REFERRALS: 0}
 
     AUTH_CHARITE_LDAP_USER_SEARCH = LDAPSearch(
-        env.str('AUTH_LDAP_USER_SEARCH_BASE'),
+        env.str('AUTH_CHARITE_LDAP_USER_SEARCH_BASE'),
         ldap.SCOPE_SUBTREE, '(sAMAccountName=%(user)s)')
 
     AUTH_CHARITE_LDAP_USER_ATTR_MAP = {
         'first_name': 'givenName',
         'last_name': 'sn',
-        'email': 'mail',
-    }
+        'email': 'mail'}
 
-    # TODO: MDC params
-    # TODO: AD examples here: https://github.com/etianen/django-python3-ldap#microsoft-active-directory-support
+    # MDC LDAP settings
+    AUTH_MDC_LDAP_SERVER_URI = env.str('AUTH_MDC_LDAP_SERVER_URI')
+    AUTH_MDC_LDAP_BIND_PASSWORD = env.str('AUTH_MDC_LDAP_BIND_PASSWORD')
+    AUTH_MDC_LDAP_BIND_DN = env.str('AUTH_MDC_LDAP_BIND_DN')
+    AUTH_MDC_LDAP_CONNECTION_OPTIONS = {
+        ldap.OPT_REFERRALS: 0}
+
+    AUTH_MDC_LDAP_USER_SEARCH = LDAPSearch(
+        env.str('AUTH_MDC_LDAP_USER_SEARCH_BASE'),
+        ldap.SCOPE_SUBTREE, '(sAMAccountName=%(user)s)')
+
+    AUTH_MDC_LDAP_USER_ATTR_MAP = {
+        'first_name': 'givenName',
+        'last_name': 'sn',
+        'email': 'mail'}
 
     AUTHENTICATION_BACKENDS = tuple(itertools.chain(
         # ('django_auth_ldap.backend.LDAPBackend',),
         ('omics_data_mgmt.users.backends.ChariteLDAPBackend',),
-        # TODO: Add MDC backend here
-        AUTHENTICATION_BACKENDS,
-    ))
+        ('omics_data_mgmt.users.backends.MDCLDAPBackend',),
+        AUTHENTICATION_BACKENDS,))
 
 
 # Local App Settings
