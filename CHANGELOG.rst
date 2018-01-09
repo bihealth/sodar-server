@@ -18,6 +18,7 @@ Added
     - Changelog in ``CHANGELOG.rst``
     - User profile page (#29)
     - Highlight help link for new users (#30)
+    - Support for multiple LDAP backends (#69)
 - **Adminalerts**
     - Add adminalerts app (#17)
 - **Filesfolders**
@@ -47,7 +48,7 @@ Changed
 -------
 
 - **General**
-    - Update site for Django 1.11.9 (#1) and Python 3.6.2 (#2)
+    - Update site for Django 1.11.9 (#1) and Python 3.6.3 (#2)
     - Update site to Bootstrap 4 Beta 3 (#70)
     - Update third-party libraries to their latest versions
     - Layout redesign (#20)

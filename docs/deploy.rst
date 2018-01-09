@@ -19,15 +19,20 @@ Add database resources:
     flynn -c {cluster-name} resource add postgres
     flynn -c {cluster-name} resource add redis
 
-Edit the app’s flynn env as follows:
+Edit the app’s flynn env as follows.
 
 .. code-block:: shell
 
     flynn -c {cluster-name} env set \
-        AUTH_LDAP_BIND_DN=CN={DN HERE} \
-        AUTH_LDAP_BIND_PASSWORD={PASSWORD HERE} \
-        AUTH_LDAP_SERVER_URI={URI HERE} \
-        AUTH_LDAP_USER_SEARCH_BASE={BASE HERE} \
+        LDAP_ENABLED=1 \
+        AUTH_CHARITE_LDAP_BIND_DN=CN={DN HERE} \
+        AUTH_CHARITE_LDAP_BIND_PASSWORD={PASSWORD HERE} \
+        AUTH_CHARITE_LDAP_SERVER_URI={URI HERE} \
+        AUTH_CHARITE_LDAP_USER_SEARCH_BASE={BASE HERE} \
+        AUTH_MDC_LDAP_BIND_DN=CN={DN HERE} \
+        AUTH_MDC_LDAP_BIND_PASSWORD={PASSWORD HERE} \
+        AUTH_MDC_LDAP_SERVER_URI={URI HERE} \
+        AUTH_MDC_LDAP_USER_SEARCH_BASE={BASE HERE} \
         DJANGO_ALLOWED_HOSTS=* \
         DJANGO_SECRET_KEY="{CHANGE THIS}" \
         DJANGO_SETTINGS_MODULE=config.settings.production \
