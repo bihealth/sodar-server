@@ -186,11 +186,11 @@ class TestUIBase(
         self.selenium.get(self.build_selenium_url(url))
 
         # Submit user data into form
-        field_user = self.selenium.find_element_by_id('input-username')  # stock
+        field_user = self.selenium.find_element_by_id('omics-signin-username')
         # field_user.send_keys(user.username)
         field_user.send_keys(user.username)
 
-        field_pass = self.selenium.find_element_by_id('input-password')
+        field_pass = self.selenium.find_element_by_id('omics-signin-password')
         field_pass.send_keys('password')
 
         self.selenium.find_element_by_xpath(

@@ -227,3 +227,34 @@ $(window).on('resize', function() {
     $('#omics-base-navbar-nav').removeClass('mr-auto').addClass('ml-auto');
   }
 });
+
+
+// Autofill domain in login username
+$(document).ready(function() {
+     $('#omics-signin-username').keyup(function(event) {
+        v = $(this).val();
+
+        // Fill domain
+        if (event.keyCode !== 8 && v.length > 3 &&
+            v.indexOf('@') > 0 && v.indexOf('@') < v.length - 1) {
+            var domainName = null;
+
+            if (v.charAt(v.indexOf('@') + 1).toUpperCase() === 'C') {
+                domainName = 'CHARITE';
+            }
+
+            else if (v.charAt(v.indexOf('@') + 1).toUpperCase() === 'M') {
+                domainName = 'MDC-BERLIN';
+            }
+
+            if (domainName !== null) {
+                $(this).val(v.substring(0, v.indexOf('@') + 1) + domainName);
+            }
+         }
+
+         // Erase domain if backspace is pressed
+         else if (event.keyCode === 8 && v.indexOf('@') > 0) {
+            $(this).val(v.substring(0, v.indexOf('@') + 1));
+        }
+     });
+ });

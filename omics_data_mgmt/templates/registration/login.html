@@ -11,10 +11,52 @@
 
     <form class="form-signin" method="post" id="omics-form-signin">
       {% csrf_token %}
-      <input type="text" name="username" id="input-username" class="form-control" placeholder="username@DOMAIN" required autofocus>
-      <input type="password" name="password" id="input-password" class="form-control my-sm-2 mb-sm-2" placeholder="Password" required>
-      <button class="btn btn-md btn-primary btn-block" type="submit"><i class="fa fa-sign-in"></i> Sign In</button>
+      <input type="text" name="username" id="omics-signin-username" class="form-control" placeholder="username@DOMAIN" required autofocus>
+      <input type="password" name="password" id="omics-signin-password" class="form-control my-sm-2 mb-sm-2" placeholder="Password" required>
+      <button class="btn btn-md btn-primary btn-block" type="submit" id="omics-signin-submit"><i class="fa fa-sign-in"></i> Sign In</button>
     </form>
   </div>
 </div>
 {% endblock content %}
+
+{% block javascript %}
+  {{ block.super }}
+
+  {# Tour content #}
+  <script type="text/javascript">
+    tourEnabled = true;
+
+    tour.addStep('login_username1', {
+        title: 'Log In to Omics Data Management',
+        text: 'To use the Omics Data Management system, you must log in. For ' +
+              'this, you need to use an existing Charité or MDC account.',
+        attachTo: '#omics-signin-username bottom',
+        advanceOn: '.docs-link click',
+        showCancelLink: true
+    });
+
+    tour.addStep('login_username2', {
+        title: 'User Name and Domain',
+        text: 'The user name must be supplied in the format ' +
+              '"username@CHARITE" or "username@MDC-BERLIN", depending on the ' +
+              'account used.',
+        attachTo: '#omics-signin-username bottom',
+        advanceOn: '.docs-link click',
+        showCancelLink: true
+    });
+
+    tour.addStep('login_username2', {
+        title: 'Note on Multiple Accounts',
+        text: 'IMPORTANT: if you have user accounts for both Charité and ' +
+              'MDC, note that these user accounts will not be connected. ' +
+              'Please choose one of your accounts and always use the same ' +
+              'one to log in to the Omics Data Management system. Also note ' +
+              'that you will receive email notifications to the address ' +
+              'specified for the account used.',
+        attachTo: '#omics-signin-username bottom',
+        advanceOn: '.docs-link click',
+        showCancelLink: true
+    });
+
+  </script>
+{% endblock javascript %}
