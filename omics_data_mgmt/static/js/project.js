@@ -240,11 +240,18 @@ $(document).ready(function() {
             var domainName = null;
 
             if (v.charAt(v.indexOf('@') + 1).toUpperCase() === 'C') {
+                $(this).removeClass('text-danger');
                 domainName = 'CHARITE';
             }
 
             else if (v.charAt(v.indexOf('@') + 1).toUpperCase() === 'M') {
+                $(this).removeClass('text-danger');
                 domainName = 'MDC-BERLIN';
+            }
+
+            // Gently inform the user of an invalid domain :)
+            else {
+                $(this).addClass('text-danger');
             }
 
             if (domainName !== null) {
@@ -252,9 +259,13 @@ $(document).ready(function() {
             }
          }
 
-         // Erase domain if backspace is pressed
-         else if (event.keyCode === 8 && v.indexOf('@') > 0) {
+        // Erase domain if backspace is pressed
+        else if (event.keyCode === 8 && v.indexOf('@') > 0) {
             $(this).val(v.substring(0, v.indexOf('@') + 1));
+        }
+
+        else if (v.indexOf('@') === -1) {
+            $(this).removeClass('text-danger');
         }
      });
  });
