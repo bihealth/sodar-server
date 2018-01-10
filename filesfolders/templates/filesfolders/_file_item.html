@@ -1,5 +1,8 @@
 {% load filesfolders_tags %}
 
+{# Projectroles dependency #}
+{% load projectroles_common_tags %}
+
 <tr>
   {# Icon & name column #}
   <td>
@@ -39,7 +42,7 @@
   {# Description column #}
   <td>{{ item.description }}</td>
   {# Owner column #}
-  <td><a title="{{ item.owner.name }}" href="mailto:{{ item.owner.email }}" data-toggle="tooltip" data-placement="top">{{ item.owner.username }}</a></td>
+  <td>{% get_user_html item.owner as user_html %}{{ user_html|safe }}</td>
   {# Date column #}
   <td>{{ item.date_modified|date:'Y-m-d H:i' }}</td>
 

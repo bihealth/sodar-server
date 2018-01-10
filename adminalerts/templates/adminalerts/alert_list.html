@@ -1,6 +1,8 @@
 {% extends "projectroles/base.html" %}
-
 {% load rules %}
+
+{# Projectroles dependency #}
+{% load projectroles_common_tags %}
 
 {% block title %}Admin Alerts{% endblock %}
 {% block sub_navbar_current %}Admin Alerts{% endblock sub_navbar_current %}
@@ -87,7 +89,7 @@
             {% for a in object_list %}
               <tr {% if not a.is_active %}class="text-muted"{% endif %} id="omics-aa-alert-item-{{ a.pk }}">
                 <td><a href="{% url 'alert_detail' pk=a.pk %}">{{ a.message }}</a></td>
-                <td><a href="mailto:{{ a.user.email }}">{{ a.user.username }}</a></td>
+                <td>{% get_user_html a.user as user_html %}{{ user_html|safe }}</td>
                 <td>{{ a.date_created | date:'Y-m-d H:i:s' }}</td>
                 <td>{{ a.date_expire | date:'Y-m-d' }}</td>
                 {% if a.is_active %}

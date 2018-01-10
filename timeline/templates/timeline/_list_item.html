@@ -1,5 +1,8 @@
 {% load timeline_tags %}
 
+{# Projectroles dependency #}
+{% load projectroles_common_tags %}
+
 <tr id="omics-tl-list-event-{{ event.pk }}">
   <td>
     <a class="omics-tl-detail-link" tabindex="0" data-toggle="popover" data-trigger="focus" data-placement="right" data-html="true" data-content="{% get_event_details event %}">
@@ -8,7 +11,7 @@
   </td>
   <td><a href="{% get_app_url event %}">{{ event.app }}</a></td>
   <td>{{ event.event_name }}</td>
-  <td><a href="mailto:{{ event.user.email }}">{{ event.user.username }}</a></td>
+  <td>{% get_user_html event.user as user_html %}{{ user_html|safe }}</td>
   <td>
     {% autoescape off %}
       {% get_event_description event request %}

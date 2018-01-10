@@ -10,6 +10,7 @@ from omics_data_mgmt.users.models import User
 # Projectroles dependency
 from projectroles.models import Project
 from projectroles.plugins import ProjectAppPluginPoint
+from projectroles.templatetags.projectroles_common_tags import get_user_html
 from projectroles.utils import get_app_names
 
 from timeline.models import ProjectEvent, ProjectEventObjectRef, \
@@ -123,8 +124,8 @@ class TimelineAPI:
                 if ref_obj.object_model == 'User':
                     try:
                         user = User.objects.get(pk=ref_obj.object_pk)
-                        refs[r] = '<a href="mailto:{}">{}</a> {}'.format(
-                            user.email, user.username, history_link)
+                        refs[r] = '{} {}'.format(
+                            get_user_html(user), history_link)
 
                     except User.DoesNotExist:
                         refs[r] = unknown_label
