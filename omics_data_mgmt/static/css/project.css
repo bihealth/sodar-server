@@ -347,13 +347,13 @@ dl.omics-dl dd {
 .omics-pr-sidebar-nav li.active:after {
     content: "";
     position: absolute;
-    right: -16px;
-    top: 13px;
+    right: -13px;
+    top: 9px;
     width: 0;
     height: 0;
-    border-top: 10px solid transparent;
-    border-right: 10px solid #ffffff;
-    border-bottom: 10px solid transparent;
+    border-top: 15px solid transparent;
+    border-right: 15px solid #ffffff;
+    border-bottom: 15px solid transparent;
 }
 
 .omics-pr-sidebar-nav li i {
