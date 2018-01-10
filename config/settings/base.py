@@ -316,13 +316,6 @@ if env.str('ENABLE_LDAP', None):
         from django_auth_ldap.config import LDAPSearch
     # FLYNN WORKAROUND ENDS
 
-    # Ensure we get full log from django_auth_ldap
-    if DEBUG:
-        import logging
-        logger = logging.getLogger('django_auth_ldap')
-        logger.addHandler(logging.StreamHandler())
-        logger.setLevel(logging.DEBUG)
-
     # Charite LDAP settings
     AUTH_CHARITE_LDAP_SERVER_URI = env.str('AUTH_CHARITE_LDAP_SERVER_URI')
     AUTH_CHARITE_LDAP_BIND_PASSWORD = env.str('AUTH_CHARITE_LDAP_BIND_PASSWORD')
