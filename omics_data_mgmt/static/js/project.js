@@ -241,17 +241,20 @@ $(document).ready(function() {
 
             if (v.charAt(v.indexOf('@') + 1).toUpperCase() === 'C') {
                 $(this).removeClass('text-danger');
+                $('#omics-signin-submit').removeClass('disabled');
                 domainName = 'CHARITE';
             }
 
             else if (v.charAt(v.indexOf('@') + 1).toUpperCase() === 'M') {
                 $(this).removeClass('text-danger');
+                $('#omics-signin-submit').removeClass('disabled');
                 domainName = 'MDC-BERLIN';
             }
 
             // Gently inform the user of an invalid domain :)
             else {
                 $(this).addClass('text-danger');
+                $('#omics-signin-submit').addClass('disabled');
             }
 
             if (domainName !== null) {
@@ -262,10 +265,20 @@ $(document).ready(function() {
         // Erase domain if backspace is pressed
         else if (event.keyCode === 8 && v.indexOf('@') > 0) {
             $(this).val(v.substring(0, v.indexOf('@') + 1));
+            $(this).addClass('text-danger');
+            $('#omics-signin-submit').addClass('disabled');
         }
 
+        // Don't allow login if there is an empty domain
+        if (v.indexOf('@') === v.length - 1) {
+            $(this).addClass('text-danger');
+            $('#omics-signin-submit').addClass('disabled');
+        }
+
+        // User without domain is OK (only for local admin/test users)
         else if (v.indexOf('@') === -1) {
             $(this).removeClass('text-danger');
+            $('#omics-signin-submit').removeClass('disabled');
         }
      });
  });
