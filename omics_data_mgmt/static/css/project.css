@@ -58,7 +58,7 @@ html,
 
 .omics-content-left {
   height: 100%;
-  width: 100px !important;
+  flex: 0 0 100px;
   overflow: hidden;
 }
 
@@ -347,13 +347,13 @@ dl.omics-dl dd {
 .omics-pr-sidebar-nav li.active:after {
     content: "";
     position: absolute;
-    right: -13px;
-    top: 9px;
+    right: -16px;
+    top: 11px;
     width: 0;
     height: 0;
-    border-top: 15px solid transparent;
-    border-right: 15px solid #ffffff;
-    border-bottom: 15px solid transparent;
+    border-top: 12px solid transparent;
+    border-right: 12px solid #ffffff;
+    border-bottom: 12px solid transparent;
 }
 
 .omics-pr-sidebar-nav li i {
