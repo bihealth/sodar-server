@@ -106,9 +106,24 @@ class RolePermissionMixin(LoggedInPermissionMixin):
         return None
 
 
-class ProjectContextMixin(ContextMixin):
+class HTTPRefererMixin:
+    """Mixin for updating a correct referer url in session cookie regardless of
+    page reload"""
+
+    def get(self, request, *args, **kwargs):
+        if 'HTTP_REFERER' in request.META:
+            referer = request.META['HTTP_REFERER']
+
+            if ('real_referer' not in request.session or
+                    referer != request.build_absolute_uri()):
+                request.session['real_referer'] = referer
+
+        return super(HTTPRefererMixin, self).get(request, *args, **kwargs)
+
+
+class ProjectContextMixin(HTTPRefererMixin, ContextMixin):
     """Mixin for adding context data to Project base view and other views
-    extending it"""
+    extending it. Includes HTTPRefererMixin for correct referer URL"""
     def get_context_data(self, *args, **kwargs):
         context = super(ProjectContextMixin, self).get_context_data(
             *args, **kwargs)
@@ -490,7 +505,7 @@ class ProjectModifyMixin(ModelFormMixin):
 
 class ProjectCreateView(
         LoginRequiredMixin, LoggedInPermissionMixin, ProjectModifyMixin,
-        ProjectContextMixin, CreateView):
+        ProjectContextMixin, HTTPRefererMixin, CreateView):
     """Project creation view"""
     permission_required = 'projectroles.create_project'
     model = Project

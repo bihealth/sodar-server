@@ -20,13 +20,11 @@
     {% csrf_token %}
     <div class="btn-group pull-right">
       <a role="button" class="btn btn-secondary"
-          href="{% url 'project_roles' pk=object.project.pk %}">
-        <i class="fa fa-arrow-circle-left" aria-hidden="true"></i>
-        Cancel
+          href="{{ request.session.real_referer }}">
+        <i class="fa fa-arrow-circle-left" aria-hidden="true"></i> Cancel
       </a>
       <button type="submit" class="btn btn-danger">
-        <i class="fa fa-user-times" aria-hidden="true"></i>
-          Remove
+        <i class="fa fa-user-times" aria-hidden="true"></i> Remove
       </button>
     </div>
   </form>

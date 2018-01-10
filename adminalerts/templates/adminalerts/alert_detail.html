@@ -31,7 +31,7 @@
 
   <div class="row">
     <a role="button" class="btn btn-secondary ml-auto"
-       href="{{ request.META.HTTP_REFERER }}">
+       href="{{ request.session.real_referer }}">
       <i class="fa fa-arrow-circle-left"></i>
       Back
     </a>

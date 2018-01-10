@@ -23,7 +23,7 @@ from projectroles.models import Project
 from projectroles.plugins import get_backend_api
 from projectroles.project_settings import get_project_setting
 from projectroles.views import LoggedInPermissionMixin, \
-    ProjectContextMixin
+    ProjectContextMixin, HTTPRefererMixin
 
 
 # Settings and constants
@@ -622,7 +622,8 @@ class HyperLinkDeleteView(
 
 
 class BatchEditView(
-        LoginRequiredMixin, LoggedInPermissionMixin, TemplateView):
+        LoginRequiredMixin, LoggedInPermissionMixin, HTTPRefererMixin,
+        TemplateView):
     """Batch delete/move confirm view"""
     http_method_names = ['post']
     template_name = 'filesfolders/batch_edit_confirm.html'

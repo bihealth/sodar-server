@@ -20,9 +20,8 @@
     <div class="row">
       <div class="btn-group ml-auto" role="group">
         <a role="button" class="btn btn-secondary"
-           href="{% url 'alert_list' %}">
-          <i class="fa fa-arrow-circle-left"></i>
-          Cancel
+           href="{{ request.session.real_referer }}">
+          <i class="fa fa-arrow-circle-left"></i> Cancel
         </a>
         <button type="submit" class="btn btn-primary">
           <i class="fa fa-check"></i>

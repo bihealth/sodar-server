@@ -82,6 +82,7 @@ Changed
     - Update text labels for role management to refer to "members" (#40)
     - Separate common template tags into ``projectroles_common_tags``
     - Move project settings forms to project creation/update view (#44)
+    - Provide reload-safe referer URL in ``request.session.real_referer`` (#67)
 - **Timeline**
     - Enable event details popover on the project details page
     - Limit details page list to successful events

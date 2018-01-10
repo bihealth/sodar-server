@@ -8,7 +8,7 @@ from django.views.generic.edit import ModelFormMixin
 
 # Projectroles dependency
 # TBD: Ok to depend on Projectroles here even though this is not a project app?
-from projectroles.views import LoggedInPermissionMixin
+from projectroles.views import LoggedInPermissionMixin, HTTPRefererMixin
 
 from .forms import AdminAlertForm
 from .models import AdminAlert
@@ -28,7 +28,8 @@ class AdminAlertListView(LoggedInPermissionMixin, ListView):
         return AdminAlert.objects.all().order_by('-pk')
 
 
-class AdminAlertDetailView(LoggedInPermissionMixin, DetailView):
+class AdminAlertDetailView(
+        LoggedInPermissionMixin, HTTPRefererMixin, DetailView):
     """Alert detail view"""
     permission_required = 'adminalerts.view_alert'
     template_name = 'adminalerts/alert_detail.html'
@@ -47,7 +48,8 @@ class AdminAlertModifyMixin(ModelFormMixin):
 
 
 class AdminAlertCreateView(
-        LoggedInPermissionMixin, AdminAlertModifyMixin, CreateView):
+        LoggedInPermissionMixin, AdminAlertModifyMixin, HTTPRefererMixin,
+        CreateView):
     """AdminAlert creation view"""
     model = AdminAlert
     form_class = AdminAlertForm
@@ -62,7 +64,8 @@ class AdminAlertCreateView(
 
 
 class AdminAlertUpdateView(
-        LoggedInPermissionMixin, AdminAlertModifyMixin, UpdateView):
+        LoggedInPermissionMixin, AdminAlertModifyMixin, HTTPRefererMixin,
+        UpdateView):
     """AdminAlert updating view"""
     model = AdminAlert
     form_class = AdminAlertForm
@@ -70,7 +73,7 @@ class AdminAlertUpdateView(
 
 
 class AdminAlertDeleteView(
-        LoggedInPermissionMixin, DeleteView):
+        LoggedInPermissionMixin, HTTPRefererMixin, DeleteView):
     """AdminAlert deletion view"""
     model = AdminAlert
     permission_required = 'adminalerts.update_alert'
