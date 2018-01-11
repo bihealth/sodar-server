@@ -28,36 +28,18 @@
         {% endif %}
       {% endif %}
     </ol>
-
-    {% if request.resolver_match.url_name == 'home' or project and project.type == 'CATEGORY' %}
-      <div class="d-flex ml-auto align-items-center omics-pr-navbar-right">
-        {% if project %}
-          {% has_perm 'projectroles.create_project' request.user project as can_create_project %}
-          {% if can_create_project %}
-            <a href="{% url 'project_create' project=project.pk %}" id="omics-pr-link-project-create"><i class="fa fa-plus"></i> Create Project or Category</a>
-          {% endif %}
-        {% else %}
-          {% has_perm 'projectroles.create_project' request.user as can_create_project %}
-          {% if can_create_project %}
-            <a href="{% url 'project_create' %}" id="omics-pr-home-link-create"><i class="fa fa-plus"></i> Create Category</a>
-          {% endif %}
-        {% endif %}
-      </div>
-    {% endif %}
   </div>
  </div>
 {% endblock sub_navbar %}
 
 {% block content %}
 
-  {% if project %}
-    <div class="omics-content-left">
-      {# Sidebar #}
-      <div class="col h-100 bg-dark text-center omics-pr-sidebar" id="omics-pr-sidebar">
-        {% include 'projectroles/_project_sidebar.html' %}
-      </div>
+  {# Sidebar #}
+  <div class="omics-content-left">
+    <div class="col h-100 bg-dark text-center omics-pr-sidebar" id="omics-pr-sidebar">
+      {% include 'projectroles/_project_sidebar.html' %}
     </div>
-  {% endif %}
+  </div>
 
   {# Django messages / site app messages #}
   <div class="omics-content-right">
