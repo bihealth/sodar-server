@@ -141,9 +141,26 @@
       </div> <!-- /omics-top-container -->
 
       <div class="omics-content-container">
+
+        {# Sidebar #}
+        <div class="omics-content-left">
+          <div class="col h-100 bg-dark text-center omics-pr-sidebar" id="omics-pr-sidebar">
+            <nav class="nav navbar-expand-lg navbar-dark bg-dark">
+              <div class="collapse navbar-collapse" id="omics-pr-sidebar-navbar">
+                <ul class="navbar-nav flex-column omics-pr-sidebar-nav">
+                  {% block sidebar %}
+                  {% endblock sidebar %}
+                </ul>
+              </div>
+            </nav>
+          </div>
+        </div>
+
+        {# Content #}
         {% block content %}
           <p>Use this document as a way to quick start any new project.</p>
         {% endblock content %}
+
       </div>
 
     <!-- Project specific Javascript -->

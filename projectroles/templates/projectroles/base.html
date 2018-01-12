@@ -32,14 +32,12 @@
  </div>
 {% endblock sub_navbar %}
 
-{% block content %}
+{# Sidebar #}
+{% block sidebar %}
+  {% include 'projectroles/_project_sidebar.html' %}
+{% endblock sidebar %}
 
-  {# Sidebar #}
-  <div class="omics-content-left">
-    <div class="col h-100 bg-dark text-center omics-pr-sidebar" id="omics-pr-sidebar">
-      {% include 'projectroles/_project_sidebar.html' %}
-    </div>
-  </div>
+{% block content %}
 
   {# Django messages / site app messages #}
   <div class="omics-content-right">

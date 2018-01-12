@@ -314,14 +314,14 @@ dl.omics-dl dd {
   padding: 0;
 }
 
-.omics-pr-project-menu-btn-group {
+.omics-siderbar-alt-btn {
   height: 100%;
   margin-right: 12px;
   display: none;
   font-size: 100%;
 }
 
-.omics-pr-project-menu-btn-group a {
+.omics-siderbar-alt-btn a {
   line-height: 24px;
 }
 
@@ -348,7 +348,7 @@ dl.omics-dl dd {
     content: "";
     position: absolute;
     right: -16px;
-    top: 11px;
+    top: 10px;
     width: 0;
     height: 0;
     border-top: 12px solid transparent;
@@ -470,7 +470,7 @@ pre {
     display: none !important;
   }
 
-  .omics-pr-project-menu-btn-group {
+  .omics-siderbar-alt-btn {
     display: inherit !important;
   }
 }

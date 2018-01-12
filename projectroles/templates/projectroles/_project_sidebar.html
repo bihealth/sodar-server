@@ -1,19 +1,14 @@
 {% load rules %}
 {% load projectroles_tags %}
 
-{% has_perm 'projectroles.view_project' request.user project as can_view_project %}
-{% has_perm 'projectroles.view_project_roles' request.user project as can_view_roles %}
-{% has_perm 'projectroles.update_project' request.user project as can_update_project %}
-
 {% omics_constant 'PROJECT_TYPE_CATEGORY' as PROJECT_TYPE_CATEGORY %}
-
-  <nav class="nav navbar-expand-lg navbar-dark bg-dark">
-    <div class="collapse navbar-collapse" id="omics-pr-sidebar-navbar">
-      <ul class="navbar-nav flex-column omics-pr-sidebar-nav">
 
         {# Project nav #}
         {% if project %}
-
+          {% has_perm 'projectroles.view_project' request.user project as can_view_project %}
+          {% has_perm 'projectroles.view_project_roles' request.user project as can_view_roles %}
+          {% has_perm 'projectroles.update_project' request.user project as can_update_project %}
+            
           {# Overview #}
           <li id="omics-pr-nav-project-detail" class="nav-item {% get_link_state projectroles_urls request.resolver_match.url_name 'project_detail' %}">
             <a class="nav-link omics-pr-sidebar-nav-link"
@@ -91,9 +86,3 @@
             </li>
           {% endif %}
         {% endif %}
-
-        {#  #}
-
-     </ul>
-    </div>
-  </nav>

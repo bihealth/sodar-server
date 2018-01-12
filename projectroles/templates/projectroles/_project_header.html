@@ -8,51 +8,10 @@
 {% omics_constant 'PROJECT_TYPE_CATEGORY' as PROJECT_TYPE_CATEGORY %}
 
 <div class="row omics-pr-content-title">
+
   {# Project menu dropdown, only visible if browser width < X and sidebar is hidden #}
-  <div class="btn-group omics-pr-project-menu-btn-group pull-left" role="group" id="omics-pr-btn-res-menu">
-    <button class="btn btn-secondary dropdown-toggle btn-sm omics-edit-dropdown" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-      <i class="fa fa-bars"></i>
-    </button>
-    <div class="dropdown-menu">
+  {% include 'projectroles/_project_menu_btn.html' %}
 
-       {# App plugins #}
-      {% if project.type != PROJECT_TYPE_CATEGORY %}
-        {% for plugin in app_plugins %}
-          {% has_perm plugin.app_permission request.user project as can_view_app %}
-          {% if can_view_app %}
-            <a class="dropdown-item"
-               href="{% url plugin.entry_point_url_id project=project.pk %}"
-               title="{{ plugin.title }}"
-               id="omics-pr-res-link-app-plugin-{{ plugin.name }}">
-               <i class="fa fa-fw fa-{{ plugin.icon }}"></i>
-              {{ plugin.title }}
-            </a>
-          {% endif %}
-        {% endfor %}
-      {% endif %}
-
-      {# Role and project editing #}
-      {% if project.type != PROJECT_TYPE_CATEGORY and can_view_roles %}
-        <a class="dropdown-item"
-            href="{% url 'project_roles' pk=project.pk %}"
-            title="User Roles"
-            id="omics-pr-res-link-project-roles">
-          <i class="fa fa-fw fa-users"></i>
-          Project Members
-        </a>
-      {% endif %}
-      {% if can_update_project %}
-        <a class="dropdown-item"
-            href="{% url 'project_update' pk=project.pk %}"
-            title="Update Project"
-            id="omics-pr-res-link-project-update">
-          <i class="fa fa-fw fa-pencil"></i>
-          Update {% get_project_type_str project %}
-        </a>
-     {% endif %}
-
-   </div>
-  </div>
   <h2 class="omics-pr-content-title">{{ project.title }}</h2>
   {# Project starring/unstarring #}
   <div>

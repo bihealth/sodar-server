@@ -1,0 +1,69 @@
+{% load projectroles_tags %}
+{% load rules %}
+
+<div class="btn-group omics-siderbar-alt-btn pull-left" role="group" id="omics-pr-sidebar-alt-btn">
+  <button class="btn btn-dark dropdown-toggle btn-sm omics-edit-dropdown" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+    <i class="fa fa-bars"></i>
+  </button>
+  <div class="dropdown-menu">
+
+     {# App plugins #}
+    {% if project.type != PROJECT_TYPE_CATEGORY %}
+      {% for plugin in app_plugins %}
+        {% has_perm plugin.app_permission request.user project as can_view_app %}
+        {% if can_view_app %}
+          <a class="dropdown-item"
+             href="{% url plugin.entry_point_url_id project=project.pk %}"
+             title="{{ plugin.title }}"
+             id="omics-pr-alt-link-app-plugin-{{ plugin.name }}">
+             <i class="fa fa-fw fa-{{ plugin.icon }}"></i>
+            {{ plugin.title }}
+          </a>
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+
+    {# Role and project editing #}
+    {% if project.type != PROJECT_TYPE_CATEGORY and can_view_roles %}
+      <a class="dropdown-item"
+          href="{% url 'project_roles' pk=project.pk %}"
+          title="Members"
+          id="omics-pr-alt-link-project-roles">
+        <i class="fa fa-fw fa-users"></i>
+        Members
+      </a>
+    {% endif %}
+    {% if can_update_project %}
+      <a class="dropdown-item"
+          href="{% url 'project_update' pk=project.pk %}"
+          title="Update Project"
+          id="omics-pr-alt-link-project-update">
+        <i class="fa fa-fw fa-pencil"></i>
+        Update {% get_project_type_str project %}
+      </a>
+   {% endif %}
+
+    {# Project and Category Creation #}
+
+    {% if project and project.type == 'CATEGORY' %}
+      {% has_perm 'projectroles.create_project' request.user project as can_create_project %}
+      {% if can_create_project %}
+         <a class="dropdown-item"
+            href="{% url 'project_create' project=project.pk %}"
+            id="omics-pr-alt-link-project-create">
+           <i class="fa fa-fw fa-plus"></i> Create Project or Category
+         </a>
+      {% endif %}
+    {% elif request.resolver_match.url_name == 'home' or request.resolver_match.url_name == 'project_create' and not project %}
+      {% has_perm 'projectroles.create_project' request.user as can_create_project %}
+      {% if can_create_project %}
+        <a class="dropdown-item"
+           href="{% url 'project_create' %}"
+           id="omics-pr-alt-link-home-create">
+          <i class="fa fa-fw fa-plus"></i> Create Category
+        </a>
+      {% endif %}
+    {% endif %}
+
+ </div>
+</div>
