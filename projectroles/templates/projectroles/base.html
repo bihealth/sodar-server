@@ -16,7 +16,7 @@
     <div class="omics-sub-navbar-container">
       <div class="row bg-secondary omics-pr-navbar" id="omics-pr-navbar">
         <ol id="omics-pr-breadcrumb" class="breadcrumb omics-pr-breadcrumb">
-          <li class="mr-1"><i class="fa fa-chevron-right"></i></li>
+          <li><i class="fa fa-angle-right"></i></li>
           {% if project.get_parents %}
             {% for p in project.get_parents %}
               <li class="breadcrumb-item"><a href="{% url 'project_detail' pk=p.pk %}">{{ p.title }}</a></li>

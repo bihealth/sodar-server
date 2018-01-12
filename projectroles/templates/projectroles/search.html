@@ -9,8 +9,6 @@
   {% endif %}
 {% endblock title %}
 
-{% block sub_navbar_current %}Search Results{% endblock sub_navbar_current %}
-
 {% block projectroles %}
 
 {% has_perm 'projectroles.create_project' request.user as can_create_project %}
