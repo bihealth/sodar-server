@@ -2,98 +2,78 @@
 {% load rules %}
 {% load projectroles_tags %}
 
-{% block sub_navbar %}
- <div class="omics-sub-navbar-container">
-  <div class="row bg-secondary omics-pr-navbar" id="omics-pr-navbar">
-    <ol id="omics-pr-breadcrumb" class="breadcrumb omics-pr-breadcrumb">
-      {% if request.resolver_match.url_name == 'home' %}
-        <li class="breadcrumb-item active"><i class="fa fa-home"></i> Home</li>
-      {% else %}
-        <li class="breadcrumb-item"><i class="fa fa-home"></i> <a href="{% url 'home' %}">Home</a></li>
-      {% endif %}
-      {% if project.get_parents %}
-        {% for p in project.get_parents %}
-          <li class="breadcrumb-item"><a href="{% url 'project_detail' pk=p.pk %}">{{ p.title }}</a></li>
-        {% endfor %}
-      {% endif %}
-      {% if project %}
-        {% if request.resolver_match.url_name == 'project_detail' %}
-          <li class="breadcrumb-item active">{{ project.title }}</li>
-        {% else %}
-            <li class="breadcrumb-item"><a href="{% url 'project_detail' pk=project.pk %}">{{ project.title }}</a></li>
-        {% endif %}
-      {% else %}
-        {% if request.resolver_match.url_name != 'home' %}
-          <li class="breadcrumb-item active">{% block sub_navbar_current %} TODO: Enter page title in block sub_navbar_current :) {% endblock sub_navbar_current %}</li>
-        {% endif %}
-      {% endif %}
-    </ol>
-
-    {% if request.resolver_match.url_name == 'home' or project and project.type == 'CATEGORY' %}
-      <div class="d-flex ml-auto align-items-center omics-pr-navbar-right">
-        {% if project %}
-          {% has_perm 'projectroles.create_project' request.user project as can_create_project %}
-          {% if can_create_project %}
-            <a href="{% url 'project_create' project=project.pk %}" id="omics-pr-link-project-create"><i class="fa fa-plus"></i> Create Project or Category</a>
-          {% endif %}
-        {% else %}
-          {% has_perm 'projectroles.create_project' request.user as can_create_project %}
-          {% if can_create_project %}
-            <a href="{% url 'project_create' %}" id="omics-pr-home-link-create"><i class="fa fa-plus"></i> Create Category</a>
-          {% endif %}
-        {% endif %}
-      </div>
-    {% endif %}
-  </div>
- </div>
-{% endblock sub_navbar %}
+{# Sidebar #}
+{% block sidebar %}
+  {% include 'projectroles/_project_sidebar.html' %}
+{% endblock sidebar %}
 
 {% block content %}
 
+<div class="omics-content-right">
+
+  {# Project breadcrumb #}
   {% if project %}
-    <div class="omics-content-left">
-      {# Sidebar #}
-      <div class="col h-100 bg-dark text-center omics-pr-sidebar" id="omics-pr-sidebar">
-        {% include 'projectroles/_project_sidebar.html' %}
+    <div class="omics-sub-navbar-container">
+      <div class="row bg-secondary omics-pr-navbar" id="omics-pr-navbar">
+        <ol id="omics-pr-breadcrumb" class="breadcrumb omics-pr-breadcrumb">
+          <li><i class="fa fa-angle-right"></i></li>
+          {% if project.get_parents %}
+            {% for p in project.get_parents %}
+              <li class="breadcrumb-item"><a href="{% url 'project_detail' pk=p.pk %}">{{ p.title }}</a></li>
+            {% endfor %}
+          {% endif %}
+          {% if project %}
+            {% if request.resolver_match.url_name == 'project_detail' %}
+              <li class="breadcrumb-item active">{{ project.title }}</li>
+            {% else %}
+                <li class="breadcrumb-item"><a href="{% url 'project_detail' pk=project.pk %}">{{ project.title }}</a></li>
+            {% endif %}
+          {% endif %}
+        </ol>
       </div>
     </div>
   {% endif %}
 
-  {# Django messages / site app messages #}
-  <div class="omics-content-right">
-    {% get_site_app_messages as site_app_messages %}
+  <div class="omics-app-container">
 
-    {% if messages or site_app_messages %}
-      <div class="container-fluid omics-alert-container">
+    {# Django messages / site app messages #}
+      {% get_site_app_messages as site_app_messages %}
 
-      {# Site app messages #}
-      {% for message in site_app_messages %}
-        <div class="alert alert-{{ message.color }} omics-alert-top" id="omics-site-app-alert">
-          {% if message.dismissable %}
+      {% if messages or site_app_messages %}
+        <div class="container-fluid omics-alert-container">
+
+        {# Site app messages #}
+        {% for message in site_app_messages %}
+          <div class="alert alert-{{ message.color }} omics-alert-top" id="omics-site-app-alert">
+            {% if message.dismissable %}
+              <a href="#" class="pull-right omics-alert-close-link"><i class="fa fa-close text-muted"></i></a>
+            {% endif %}
+            {{ message.content | safe }}
+          </div>
+        {% endfor %}
+
+        {# Regular Django messages #}
+        {% for message in messages %}
+          <div class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %} omics-alert-top">
+            {{ message }}
             <a href="#" class="pull-right omics-alert-close-link"><i class="fa fa-close text-muted"></i></a>
-          {% endif %}
-          {{ message.content | safe }}
+          </div>
+        {% endfor %}
         </div>
-      {% endfor %}
+      {% endif %}
 
-      {# Regular Django messages #}
-      {% for message in messages %}
-        <div class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %} omics-alert-top">
-          {{ message }}
-          <a href="#" class="pull-right omics-alert-close-link"><i class="fa fa-close text-muted"></i></a>
-        </div>
-      {% endfor %}
+      {# Actual content #}
+      <div class="omics-app-content" id="omics-app-content">
+        {% block projectroles %}
+          Projectroles app content here
+        {% endblock projectroles %}
       </div>
-    {% endif %}
-
-    {# Actual content #}
-    <div class="omics-pr-content" id="omics-pr-content">
-      {% block projectroles %}
-        Projectroles app content here
-      {% endblock projectroles %}
+      <footer class="omics-footer">
+        <div class="text-sm-center">Developed by BIH CUBI. For support and feedback, please contact <a href="mailto:mikko.nieminen@bihealth.de">Mikko Nieminen</a>.</div>
+      </footer>
     </div>
-    <footer class="omics-footer">
-      <div class="text-sm-center">Developed by BIH CUBI. For support and feedback, please contact <a href="mailto:mikko.nieminen@bihealth.de">Mikko Nieminen</a>.</div>
-    </footer>
+
   </div>
+</div>
+
 {% endblock content %}

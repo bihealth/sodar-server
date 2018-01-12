@@ -597,7 +597,7 @@ class TestProjectSidebar(TestUIBase, ProjectInviteMixin):
         url = reverse('home')
 
         self.assert_element_exists(
-            [self.superuser], url, 'omics-pr-sidebar', False)
+            [self.superuser], url, 'omics-pr-sidebar', True)
 
     def test_app_links(self):
         """Test visibility of app links"""

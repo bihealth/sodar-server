@@ -10,6 +10,10 @@
 
 
 <div class="row omics-pr-content-title">
+  {% if can_create_project %}
+    {# Project menu dropdown, only visible if browser width < X and sidebar is hidden #}
+    {% include 'projectroles/_project_menu_btn.html' %}
+  {% endif %}
   <h2 class="omics-pr-content-title">Home</h2>
 </div>
 
