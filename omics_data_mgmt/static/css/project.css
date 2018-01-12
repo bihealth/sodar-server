@@ -56,9 +56,15 @@ html,
   flex-direction: column;
 }
 
+.omics-titlebar-container {
+  width: 100%;
+  min-height: 20px;
+  flex: 1;
+}
+
 .omics-content-left {
   height: 100%;
-  flex: 0 0 100px;
+  flex: 0 0 90px;
   overflow: hidden;
 }
 
@@ -66,21 +72,28 @@ html,
   width: 100%;
   display: flex;
   flex-direction: column;
-  overflow-y: scroll;
-}
-
-.omics-titlebar-container {
-  width: 100%;
-  min-height: 20px;
-  flex: 1;
+  overflow-y: hidden;
 }
 
 .omics-sub-navbar-container {
   width: 100%;
   min-height: 20px;
-  flex: 1;
+  flex: 0 0 auto;
 }
 
+.omics-app-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow-y: scroll;
+  flex: auto;
+}
+
+.omics-app-content {
+  padding: 28px;
+  max-width: 1500px;
+  flex: auto;
+}
 
 /* Containers */
 
@@ -130,17 +143,11 @@ div.omics-subtitle-container {
 }
 
 .omics-pr-sidebar {
-  width: 100px;
-  max-width: 100px;
-  padding-top: 16px;
-  padding-left: 16px;
-  padding-right: 16px;
-}
-
-.omics-pr-content {
-  padding: 28px;
-  max-width: 1500px;
-  flex: auto;
+  width: 90px;
+  max-width: 90px;
+  padding-top: 2px;
+  padding-left: 8px;
+  padding-right: 8px;
 }
 
 div.omics-pr-content-title {
@@ -336,7 +343,16 @@ dl.omics-dl dd {
   padding-right: 0;
 }
 
-.omics-pr-sidebar-nav li {
+.omics-pr-sidebar-nav {
+  width: 100%;
+}
+
+.omics-pr-sidebar-nav-ul {
+  width: 100%;
+}
+
+.omics-pr-sidebar-nav-ul li {
+  width: 100%;
   font-size: 75%;
   line-height: normal;
   padding-bottom: 8px;
@@ -344,10 +360,10 @@ dl.omics-dl dd {
 }
 
 /* Notch visualizaton */
-.omics-pr-sidebar-nav li.active:after {
+.omics-pr-sidebar-nav-ul li.active:after {
     content: "";
     position: absolute;
-    right: -16px;
+    right: -10px;
     top: 10px;
     width: 0;
     height: 0;
@@ -356,7 +372,7 @@ dl.omics-dl dd {
     border-bottom: 12px solid transparent;
 }
 
-.omics-pr-sidebar-nav li i {
+.omics-pr-sidebar-nav-ul li i {
   padding-bottom: 4px;
   font-size: 32px;
 }

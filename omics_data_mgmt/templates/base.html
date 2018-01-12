@@ -76,16 +76,14 @@
               {% if request.user.is_authenticated %}
                 <li class="nav-item omics-base-navbar-search">
                   <form class="form-inline" method="get" action="{% url 'project_search' %}">
-                  <div class="input-group omics-input-group">
-
+                    <div class="input-group omics-input-group">
                       <input class="form-control" type="text"
                              placeholder="Search term" name="s" aria-label="Search term"
                              id="omics-nav-search-input" value="{{ search_input }}">
                        <div class="input-group-append">
                          <button class="btn btn-outline-success" type="submit" id="omics-nav-search-submit">Search</button>
                        </div>
-
-                  </div>
+                    </div>
                   </form>
                 </li>
               {% endif %}
@@ -133,11 +131,6 @@
           </nav>
         </div>
 
-
-        {% block sub_navbar %}
-          {# Implement a sub-navbar here #}
-        {% endblock sub_navbar %}
-
       </div> <!-- /omics-top-container -->
 
       <div class="omics-content-container">
@@ -145,9 +138,16 @@
         {# Sidebar #}
         <div class="omics-content-left">
           <div class="col h-100 bg-dark text-center omics-pr-sidebar" id="omics-pr-sidebar">
-            <nav class="nav navbar-expand-lg navbar-dark bg-dark">
+            <nav class="nav navbar-expand-lg navbar-dark bg-dark omics-pr-sidebar-nav">
               <div class="collapse navbar-collapse" id="omics-pr-sidebar-navbar">
-                <ul class="navbar-nav flex-column omics-pr-sidebar-nav">
+                <ul class="navbar-nav flex-column omics-pr-sidebar-nav-ul">
+                  <li id="omics-pr-nav-home" class="nav-item {% if request.resolver_match.url_name == 'home' %}active{% endif %}">
+                    <a class="nav-link"
+                       href="{% url 'home' %}"
+                       id="omics-pr-nav-home-link">
+                      <i class="fa fa-home"></i><br />Home
+                    </a>
+                  </li>
                   {% block sidebar %}
                   {% endblock sidebar %}
                 </ul>
