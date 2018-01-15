@@ -377,24 +377,6 @@ dl.omics-dl dd {
   font-size: 32px;
 }
 
-/* Notch visualizaton for top bar */
-.omics-site-app-nav-item {
-  text-align: center;
-}
-
-/* Notch visualizaton for top bar */
-.omics-site-app-nav-item.active:after {
-    content: "";
-    position: absolute;
-    margin-left: -9px;
-    bottom: 0;
-    width: 0;
-    height: 0;
-    border-left: 12px solid transparent;
-    border-bottom: 12px solid #ffffff;
-    border-right: 12px solid transparent;
-}
-
 a.omics-nav-link-last {
   padding-right: 0 !important;
 }
@@ -527,5 +509,26 @@ pre {
 
   .table#omics-pr-project-list-table tr td:nth-child(2) {
     display: none;
+  }
+}
+
+/* Navbar site app links */
+@media screen and (min-width: 800px) {
+  /* Notch visualizaton for top bar */
+  .omics-site-app-nav-item {
+    text-align: center;
+  }
+
+  /* Notch visualizaton for top bar */
+  .omics-site-app-nav-item.active:after {
+    content: "";
+    position: absolute;
+    margin-left: -9px;
+    bottom: 0;
+    width: 0;
+    height: 0;
+    border-left: 12px solid transparent;
+    border-bottom: 12px solid #ffffff;
+    border-right: 12px solid transparent;
   }
 }
