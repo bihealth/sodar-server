@@ -176,3 +176,19 @@ def get_site_app_messages():
         ret += p.get_messages()
 
     return ret
+
+
+@register.simple_tag
+def get_role_import_action(source_as, dest_project):
+    """Return label for role imporrt action based on existing assignment"""
+    try:
+        target_as = RoleAssignment.objects.get(
+            project=dest_project, user=source_as.user)
+
+        if target_as.role == source_as.role:
+            return 'No action'
+
+        return 'Update'
+
+    except RoleAssignment.DoesNotExist:
+        return 'Import'

@@ -986,18 +986,21 @@ class RoleAssignmentImportView(
 
                     import_users.append(old_as.user)
 
+            final_count = len(import_users)
+
             # Add Timeline event for import
             if timeline:
                 tl_users = []
 
-                for i in range(0, len(import_users)):
+                for i in range(0, final_count):
                     tl_users.append('{user' + str(i) + '}')
 
-                tl_desc = 'import {} role{} from {{{}}} ({})'.format(
-                    import_count,
-                    's' if len(import_users) != 1 else '',
+                tl_desc = 'import {} role{} from {{{}}}{}'.format(
+                    final_count,
+                    's' if final_count != 1 else '',
                     'project',
-                    ', '.join(tl_users))
+                    ' ({})'.format(', '.join(tl_users)) if
+                    final_count > 0 else '')
 
                 tl_event = timeline.add_event(
                     project=dest_project,
@@ -1012,19 +1015,25 @@ class RoleAssignmentImportView(
                     label='project',
                     name=source_project.title)
 
-                for i in range(0, len(import_users)):
+                for i in range(0, final_count):
                     tl_event.add_object(
                         obj=import_users[i],
                         label='user{}'.format(i),
                         name=import_users[i].username)
 
-            messages.success(
-                self.request,
-                'Imported {} member{} from project "{}" ({}).'.format(
-                    len(import_keys),
-                    's' if import_count != 1 else '',
+            msg = 'Imported {} member{} from project "{}"{}.'.format(
+                    final_count,
+                    's' if final_count != 1 else '',
                     source_project.title,
-                    ', '.join([u.username for u in import_users])))
+                    ' ({})'.format(
+                        ', '.join([u.username for u in import_users])) if
+                    import_users else '')
+
+            if final_count > 0:
+                messages.success(self.request, msg)
+
+            else:
+                messages.warning(self.request, msg)
 
         # Delete
         del_keys = [
@@ -1039,6 +1048,11 @@ class RoleAssignmentImportView(
             del_users = [a.user for a in del_assignments]
 
             del_assignments.delete()
+
+            if SEND_EMAIL:
+                for u in del_users:
+                    send_role_change_mail(
+                        'delete', dest_project, u, None, self.request)
 
             if timeline:
                 tl_users = []

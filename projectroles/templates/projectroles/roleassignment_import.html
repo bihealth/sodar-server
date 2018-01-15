@@ -79,7 +79,7 @@
                 <td>{{ a.user.name }}</td>
                 <td><a href="mailto:{{ a.user.email }}">{{ a.user.email }}</a></td>
                 <td>{{ a.role.name }}</td>
-                <td>Import</td>
+                <td>{% get_role_import_action a project %}</td>
                 <input type="hidden" name="import-field-{{ a.pk }}" value="1" />
               </tr>
             {% endfor %}
