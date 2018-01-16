@@ -232,6 +232,7 @@ $(window).on('resize', function() {
 // Autofill domain in login username
 $(document).ready(function() {
      $('#omics-signin-username').keyup(function(event) {
+        var maxLength = 255;
         v = $(this).val();
 
         // Fill domain
@@ -259,6 +260,7 @@ $(document).ready(function() {
 
             if (domainName !== null) {
                 $(this).val(v.substring(0, v.indexOf('@') + 1) + domainName);
+                $(this).attr('maxlength', $(this).val().length);
             }
          }
 
@@ -267,6 +269,7 @@ $(document).ready(function() {
             $(this).val(v.substring(0, v.indexOf('@') + 1));
             $(this).addClass('text-danger');
             $('#omics-signin-submit').addClass('disabled');
+            $(this).attr('maxlength', maxLength);
         }
 
         // Don't allow login if there is an empty domain
@@ -279,6 +282,7 @@ $(document).ready(function() {
         else if (v.indexOf('@') === -1) {
             $(this).removeClass('text-danger');
             $('#omics-signin-submit').removeClass('disabled');
+            $(this).attr('maxlength', maxLength);
         }
      });
  });
