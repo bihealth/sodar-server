@@ -154,18 +154,18 @@ class TestUIBase(
 
         try:
             user_button = self.selenium.find_element_by_id(
-                'omics-base-navbar-user-dropdown')
+                'omics-navbar-user-dropdown')
 
             user_button.click()
 
             # Wait for element to be visible
             WebDriverWait(self.selenium, self.wait_time).until(
                 ec.presence_of_element_located(
-                    (By.ID, 'omics-base-navbar-link-logout')))
+                    (By.ID, 'omics-navbar-link-logout')))
 
             try:
                 signout_button = self.selenium.find_element_by_id(
-                    'omics-base-navbar-link-logout')
+                    'omics-navbar-link-logout')
                 signout_button.click()
 
                 # Wait for redirect
@@ -199,7 +199,7 @@ class TestUIBase(
         # Wait for redirect
         WebDriverWait(self.selenium, self.wait_time).until(
             ec.presence_of_element_located(
-                (By.ID, 'omics-base-navbar-user-dropdown')))
+                (By.ID, 'omics-navbar-user-dropdown')))
 
     def assert_element_exists(self, users, url, element_id, exists):
         """

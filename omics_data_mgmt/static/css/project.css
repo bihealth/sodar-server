@@ -116,7 +116,7 @@ nav.omics-base-navbar ul li.nav-item {
   white-space: nowrap;
 }
 
-.omics-base-navbar-search {
+.omics-navbar-search {
   padding-right: 24px;
 }
 
@@ -383,6 +383,7 @@ a.omics-nav-link-last {
 
 .omics-input-group {
   white-space: nowrap;
+  max-width: 296px;
 }
 
 .omics-header-input-group {
@@ -480,6 +481,22 @@ pre {
 
 /* Responsive modifications */
 
+.omics-navbar-alt-item {
+  display: none;
+}
+
+/* Navbar */
+/* Note: 767px is where navbar-expand-md is triggered in BS4b3 */
+@media screen and (max-width: 767px) {
+  .omics-navbar-user-dropdown {
+    display: none;
+  }
+
+  .omics-navbar-alt-item {
+    display: inherit;
+  }
+}
+
 /* Sidebar */
 @media screen and (max-width: 1000px) {
   .omics-content-left {
@@ -513,14 +530,14 @@ pre {
 }
 
 /* Navbar site app links */
-@media screen and (min-width: 800px) {
+@media screen and (min-width: 767px) {
   /* Notch visualizaton for top bar */
-  .omics-site-app-nav-item {
+  .omics-navbar-siteapp-item {
     text-align: center;
   }
 
   /* Notch visualizaton for top bar */
-  .omics-site-app-nav-item.active:after {
+  .omics-navbar-siteapp-item.active:after {
     content: "";
     position: absolute;
     margin-left: -9px;
