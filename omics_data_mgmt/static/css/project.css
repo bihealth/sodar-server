@@ -383,7 +383,6 @@ a.omics-nav-link-last {
 
 .omics-input-group {
   white-space: nowrap;
-  max-width: 296px;
 }
 
 .omics-header-input-group {
@@ -486,7 +485,7 @@ pre {
 }
 
 /* Navbar */
-/* Note: 767px is where navbar-expand-md is triggered in BS4b3 */
+/* Note: 767px is where navbar-expand-md is triggered in Bootstrap 4 */
 @media screen and (max-width: 767px) {
   .omics-navbar-user-dropdown {
     display: none;
@@ -494,6 +493,11 @@ pre {
 
   .omics-navbar-alt-item {
     display: inherit;
+  }
+
+  .omics-navbar-search {
+    width: 250px;
+    padding-top: 10px;
   }
 }
 
