@@ -213,7 +213,7 @@ $(document).ready(function() {
 
 // Make alerts removable
 $('.omics-alert-close-link').click(function () {
-    $(this).closest('div').fadeOut('fast');
+    $(this).closest('.omics-alert-top').fadeOut('fast');
 });
 
 // Improve responsiveness of titlebar

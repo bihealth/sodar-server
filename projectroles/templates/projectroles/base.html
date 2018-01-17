@@ -45,18 +45,22 @@
         {# Site app messages #}
         {% for message in site_app_messages %}
           <div class="alert alert-{{ message.color }} omics-alert-top" id="omics-site-app-alert">
-            {% if message.dismissable %}
-              <a href="#" class="pull-right omics-alert-close-link"><i class="fa fa-close text-muted"></i></a>
-            {% endif %}
-            {{ message.content | safe }}
+            <div class="omics-alert-top-content">
+              {% if message.dismissable %}
+                <a href="#" class="pull-right omics-alert-close-link"><i class="fa fa-close text-muted"></i></a>
+              {% endif %}
+              {{ message.content | safe }}
+            </div>
           </div>
         {% endfor %}
 
         {# Regular Django messages #}
         {% for message in messages %}
           <div class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %} omics-alert-top">
-            {{ message }}
-            <a href="#" class="pull-right omics-alert-close-link"><i class="fa fa-close text-muted"></i></a>
+            <div class="omics-alert-top-content">
+              {{ message }}
+              <a href="#" class="pull-right omics-alert-close-link"><i class="fa fa-close text-muted"></i></a>
+            </div>
           </div>
         {% endfor %}
         </div>

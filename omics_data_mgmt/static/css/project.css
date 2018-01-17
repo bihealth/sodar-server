@@ -426,6 +426,11 @@ a.omics-nav-link-last {
   min-height: 50px;
 }
 
+.omics-alert-top-content {
+  width: 100%;
+  display: inline-block;
+}
+
 .omics-alert-close-link {
   padding-left: 16px;
 }
