@@ -18,22 +18,22 @@ before_script:
   - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
 
   # Install Java 8 for sonar-scanner
-  - echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | /usr/bin/debconf-set-selections &&
-    echo "deb http://ppa.launchpad.net/webupd8team/java/ubuntu xenial main" > /etc/apt/sources.list.d/java8.list &&
-    apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys EEA14886 &&
-    apt-get update -q &&
-    apt-get install -y oracle-java8-installer oracle-java8-set-default
+  # - echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | /usr/bin/debconf-set-selections &&
+  #   echo "deb http://ppa.launchpad.net/webupd8team/java/ubuntu xenial main" > /etc/apt/sources.list.d/java8.list &&
+  #   apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys EEA14886 &&
+  #   apt-get update -q &&
+  #   apt-get install -y oracle-java8-installer oracle-java8-set-default
   # Install sonar-scanner
-  - apt-get update -q && apt-get install -y wget unzip &&
-      wget -O /tmp/sonar-scanner-2.8.zip https://sonarsource.bintray.com/Distribution/sonar-scanner-cli/sonar-scanner-2.8.zip &&
-      pushd /tmp &&
-      unzip sonar-scanner-2.8.zip &&
-      mkdir -p /opt/sonar-scanner &&
-      mv sonar-scanner-2.8/* /opt/sonar-scanner &&
-      chmod a+rX /opt &&
-      chmod a+rX -R /opt/sonar-scanner &&
-      chmod a+x /opt/sonar-scanner/bin/sonar-scanner &&
-      popd
+  # - apt-get update -q && apt-get install -y wget unzip &&
+  #     wget -O /tmp/sonar-scanner-2.8.zip https://sonarsource.bintray.com/Distribution/sonar-scanner-cli/sonar-scanner-2.8.zip &&
+  #     pushd /tmp &&
+  #     unzip sonar-scanner-2.8.zip &&
+  #     mkdir -p /opt/sonar-scanner &&
+  #     mv sonar-scanner-2.8/* /opt/sonar-scanner &&
+  #     chmod a+rX /opt &&
+  #     chmod a+rX -R /opt/sonar-scanner &&
+  #     chmod a+x /opt/sonar-scanner/bin/sonar-scanner &&
+  #     popd
 
   - sh ./utility/install_os_gitlab.sh
   - sh ./utility/install_chrome_gitlab.sh
