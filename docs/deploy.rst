@@ -24,7 +24,7 @@ Edit the app’s flynn env as follows.
 .. code-block:: shell
 
     flynn -c {cluster-name} env set \
-        LDAP_ENABLED=1 \
+        ENABLE_LDAP=1 \
         AUTH_CHARITE_LDAP_BIND_DN=CN={DN HERE} \
         AUTH_CHARITE_LDAP_BIND_PASSWORD={PASSWORD HERE} \
         AUTH_CHARITE_LDAP_SERVER_URI={URI HERE} \
@@ -38,7 +38,7 @@ Edit the app’s flynn env as follows.
         DJANGO_SETTINGS_MODULE=config.settings.production \
         DJANGO_SECURE_SSL_REDIRECT=1
         EMAIL_SENDER="{SENDER ADDRESS HERE}" \
-        EMAIL_SUBJECT_PREFIX="[CUBI Omics Data Access]" \
+        EMAIL_SUBJECT_PREFIX="[CUBI Omics Data Management]" \
         EMAIL_URL=smtp://postamt.charite.de \
         ENABLED_BACKEND_PLUGINS=timeline_backend \
         PROJECTROLES_SEND_EMAIL={1/0, 0 if testing}
