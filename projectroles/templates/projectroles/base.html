@@ -44,7 +44,7 @@
 
         {# Site app messages #}
         {% for message in site_app_messages %}
-          <div class="alert alert-{{ message.color }} omics-alert-top" id="omics-site-app-alert">
+          <div class="alert alert-{{ message.color }} omics-alert-top omics-alert-site-app">
             <div class="omics-alert-top-content">
               {% if message.dismissable %}
                 <a href="#" class="pull-right omics-alert-close-link"><i class="fa fa-close text-muted"></i></a>
