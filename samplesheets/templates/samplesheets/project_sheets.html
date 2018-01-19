@@ -1,0 +1,24 @@
+{# Projectroles dependency #}
+{% extends 'projectroles/project_base.html' %}
+
+{% load rules %}
+{% load samplesheets_tags %}
+
+{% block title %}
+  Sample Sheets for {{ project.title }}
+{% endblock title %}
+
+{% block projectroles_extend %}
+
+<p>Content from the samplesheets app goes here.</p>
+
+{% endblock projectroles_extend %}
+
+{% block javascript %}
+  {{ block.super }}
+
+  {# Tour content #}
+  <script type="text/javascript">
+    tourEnabled = false;
+  </script>
+{% endblock javascript %}

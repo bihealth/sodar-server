@@ -81,6 +81,7 @@ LOCAL_APPS = [
     'projectroles.apps.ProjectrolesConfig',
     'timeline.apps.TimelineConfig',
     'filesfolders.apps.FilesfoldersConfig',
+    'samplesheets.apps.SamplesheetsConfig',
 
     # General site apps
     'adminalerts.apps.AdminalertsConfig',
