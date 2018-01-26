@@ -6,6 +6,19 @@ Changelog for the Omics Data Management Web UI. Loosely follows the
 guidelines.
 
 
+
+Unreleased
+==========
+
+Added
+-----
+
+- **Samplesheets**
+    - Add samplesheets app
+    - ISA specification compatible data model (#76)
+
+
+
 v0.1 (2018-01-26)
 =================
 
