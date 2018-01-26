@@ -6,8 +6,8 @@ Changelog for the Omics Data Management Web UI. Loosely follows the
 guidelines.
 
 
-Unreleased
-==========
+v0.1 (2018-01-26)
+=================
 
 Added
 -----
