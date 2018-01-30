@@ -23,6 +23,13 @@ GENERIC_MATERIAL_CHOICES = [
 class BaseSampleSheet(models.Model):
     """Abstract class with common ODM sample sheet properties"""
 
+    #: JSON @id value
+    json_id = models.CharField(
+        max_length=DEFAULT_LENGTH,
+        blank=True,
+        null=True,
+        help_text='JSON @id value')
+
     #: Internal UUID for the object
     omics_uuid = models.UUIDField(
         default=uuid.uuid4,
@@ -70,6 +77,20 @@ class Investigation(BaseSampleSheet):
         related_name='investigations',
         help_text='Project to which the investigation belongs')
 
+    #: Investigation title (optional, can be derived from project)
+    title = models.CharField(
+        max_length=DEFAULT_LENGTH,
+        blank=True,
+        null=True,
+        help_text='Title (optional, can be derived from project)')
+
+    #: Investigation description (optional, can be derived from project)
+    description = models.TextField(
+        blank=True,
+        null=True,
+        help_text='Investigation description (optional, can be derived from '
+                  'project)')
+
     #: Ontology source references
     ontology_source_refs = JSONField(
         default=dict,
@@ -81,15 +102,10 @@ class Investigation(BaseSampleSheet):
         help_text='Comments')
 
     def __str__(self):
-        return '{}: {}'.format(
-            self.project.title,
-            self.identifier)
+        return self.title
 
     def __repr__(self):
-        values = (
-            self.project.title,
-            self.identifier)
-        return 'Investigation({})'.format(', '.join(repr(v) for v in values))
+        return 'Investigation({})'.format(self.title)
 
 
 # Study ------------------------------------------------------------------------
@@ -119,18 +135,18 @@ class Study(BaseSampleSheet):
         related_name='studies',
         help_text='Investigation to which the study belongs')
 
-    #: Title of the study
+    #: Title of the study (optional)
     title = models.CharField(
         max_length=DEFAULT_LENGTH,
         unique=False,
-        blank=False,
-        help_text='Title of the study')
+        blank=True,
+        help_text='Title of the study (optional)')
 
-    #: Study description
+    #: Study description (optional)
     description = models.TextField(
         unique=False,
         blank=True,
-        help_text='Study description')
+        help_text='Study description (optional)')
 
     #: Study design descriptors
     study_design = JSONField(
@@ -142,6 +158,21 @@ class Study(BaseSampleSheet):
         default=dict,
         help_text='Study factors')
 
+    #: Characteristic categories
+    characteristic_cat = JSONField(
+        default=dict,
+        help_text='Characteristic categories')
+
+    #: Unit categories
+    unit_cat = JSONField(
+        default=dict,
+        help_text='Unit categories')
+
+    #: Comments
+    comments = JSONField(
+        default=dict,
+        help_text='Comments')
+
     #: First process in the process sequence
     first_process = models.ForeignKey(
         'Process',
@@ -151,15 +182,16 @@ class Study(BaseSampleSheet):
 
     class Meta:
         unique_together = ('investigation', 'identifier', 'title')
+        verbose_name_plural = 'studies'
 
     def __str__(self):
         return '{}/{}'.format(
-            self.investigation.identifier,
+            self.investigation.title,
             self.identifier)
 
     def __repr__(self):
         values = (
-            self.investigation.identifier,
+            self.investigation.title,
             self.identifier)
         return 'Study({})'.format(', '.join(repr(v) for v in values))
 
@@ -220,13 +252,13 @@ class Protocol(BaseSampleSheet):
 
     def __str__(self):
         return '{}/{}/{}'.format(
-            self.study.investigation.identifier,
+            self.study.investigation.title,
             self.study.identifier,
             self.name)
 
     def __repr__(self):
         values = (
-            self.study.investigation.identifier,
+            self.study.investigation.title,
             self.study.identifier,
             self.name)
         return 'Protocol({})'.format(', '.join(repr(v) for v in values))
@@ -269,6 +301,16 @@ class Assay(BaseSampleSheet):
         default=dict,
         help_text='Measurement type')
 
+    #: Characteristic categories
+    characteristic_cat = JSONField(
+        default=dict,
+        help_text='Characteristic categories')
+
+    #: Unit categories
+    unit_cat = JSONField(
+        default=dict,
+        help_text='Unit categories')
+
     #: Comments
     comments = JSONField(
         default=dict,
@@ -286,13 +328,13 @@ class Assay(BaseSampleSheet):
 
     def __str__(self):
         return '{}/{}/{}'.format(
-            self.study.investigation.identifier,
+            self.study.investigation.title,
             self.study.identifier,
             self.file_name)
 
     def __repr__(self):
         values = (
-            self.study.investigation.identifier,
+            self.study.investigation.title,
             self.study.identifier,
             self.file_name)
         return 'Assay({})'.format(', '.join(repr(v) for v in values))
@@ -327,12 +369,12 @@ class GenericMaterial(BaseSampleSheet):
         default=dict,
         help_text='Material characteristics')
 
-    #: Study to which the item belongs (optional, for sample collection)
+    #: Study to which the item belongs
     study = models.ForeignKey(
         Study,
         related_name='materials',
         null=True,
-        help_text='Study to which the material belongs (optional)')
+        help_text='Study to which the material belongs')
 
     #: Assay to which the material belongs (optional, for assay sequence)
     assay = models.ForeignKey(
@@ -355,35 +397,38 @@ class GenericMaterial(BaseSampleSheet):
         help_text='Factor values for a sample')
 
     class Meta:
-        pass    # TODO: Implement unique_together in validation functions
+        verbose_name = 'material'
+        verbose_name_plural = 'materials'
+        # TODO: Implement unique_together in validation functions
 
     def __str__(self):
-        if hasattr(self, 'study'):
-            return '{}/{}/{}'.format(
-                self.study.investigation.identifier,
-                self.study.identifier,
-                self.name)
-        else:
+        if self.assay:
             return '{}/{}/{}/{}'.format(
-                self.assay.study.investigation.identifier,
+                self.assay.study.investigation.title,
                 self.assay.study.identifier,
                 self.assay.file_name,
+                self.name)
+
+        else:
+            return '{}/{}/{}'.format(
+                self.study.investigation.title,
+                self.study.identifier,
                 self.name)
 
     def __repr__(self):
-        if hasattr(self, 'study'):
+        if self.assay:
             values = (
-                self.study.investigation.identifier,
-                self.study.identifier,
-                self.name)
-
-        else:
-            values = (
-                self.assay.study.investigation.identifier,
+                self.assay.study.investigation.title,
                 self.assay.study.identifier,
                 self.assay.file_name,
                 self.name)
-        return 'Process({})'.format(', '.join(repr(v) for v in values))
+        else:
+            values = (
+                self.study.investigation.title,
+                self.study.identifier,
+                self.name)
+
+        return 'GenericMaterial({})'.format(', '.join(repr(v) for v in values))
 
 
 # Process ----------------------------------------------------------------------
@@ -392,13 +437,13 @@ class GenericMaterial(BaseSampleSheet):
 class Process(BaseSampleSheet):
     """ISA model compatible process"""
 
-    #: Process name
+    #: Process name (optional)
     name = models.CharField(
         max_length=DEFAULT_LENGTH,
         unique=False,
-        blank=False,
-        null=False,
-        help_text='Process name')
+        blank=True,
+        null=True,
+        help_text='Process name (optional)')
 
     #: Protocol which the process executes
     protocol = models.ForeignKey(
@@ -429,6 +474,11 @@ class Process(BaseSampleSheet):
         null=True,
         help_text='Process performer (optional)')
 
+    #: Process performing date (optional)
+    perform_date = models.DateField(
+        null=True,
+        help_text='Process performing date (optional)')
+
     #: Comments
     comments = JSONField(
         default=dict,
@@ -447,32 +497,19 @@ class Process(BaseSampleSheet):
         help_text='Material and data file outputs')
 
     class Meta:
-        unique_together = ('protocol', 'name')
+        verbose_name_plural = 'processes'
 
     def __str__(self):
-        if hasattr(self, 'study'):
-            return '{}/{}/{}'.format(
-                self.study.investigation.identifier,
-                self.study.identifier,
-                self.name)
-        else:
-            return '{}/{}/{}/{}'.format(
-                self.assay.study.investigation.identifier,
-                self.assay.study.identifier,
-                self.assay.file_name,
-                self.name)
+        return '{}/{}/{}/{}'.format(
+            self.protocol.study.investigation.title,
+            self.protocol.study.json_id,
+            self.protocol.json_id,
+            self.json_id)
 
     def __repr__(self):
-        if hasattr(self, 'study'):
-            values = (
-                self.study.investigation.identifier,
-                self.study.identifier,
-                self.name)
-
-        else:
-            values = (
-                self.assay.study.investigation.identifier,
-                self.assay.study.identifier,
-                self.assay.file_name,
-                self.name)
+        values = (
+            self.protocol.study.investigation.title,
+            self.protocol.study.json_id,
+            self.protocol.json_id,
+            self.json_id)
         return 'Process({})'.format(', '.join(repr(v) for v in values))

@@ -1,0 +1,30 @@
+{% if up %}
+  <div class="row">
+    <div class="btn-group dropup ml-auto" id="omics-ss-buttons-list-up">
+{% else %}
+  <div class="btn-group ml-auto" id="omics-ss-buttons-list">
+{% endif %}
+
+  <button class="btn btn-primary dropdown-toggle"
+          type="button" data-toggle="dropdown"
+          aria-haspopup="true" aria-expanded="false">
+    Sheet Operations
+  </button>
+  <div class="dropdown-menu dropdown-menu-right">
+
+    {# Import #}
+    <a class="dropdown-item" href="{% url 'sheet_import' project=project.pk %}">
+      <i class="fa fa-fw fa-upload"></i> Import Sheet
+    </a>
+
+    {# Delete #}
+    <a class="dropdown-item" href="{% url 'home' %}">
+      <i class="fa fa-fw fa-close"></i> Delete Sheet
+    </a>
+
+  </div>
+</div>
+
+{% if up %}
+  </div>
+{% endif %}

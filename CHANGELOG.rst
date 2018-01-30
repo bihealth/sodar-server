@@ -16,6 +16,7 @@ Added
 - **Samplesheets**
     - Add samplesheets app
     - ISA specification compatible data model (#76)
+    - Importing ISA investigations as sample sheets (#77)
 
 
 

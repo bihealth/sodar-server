@@ -10,7 +10,27 @@
 
 {% block projectroles_extend %}
 
-<p>Content from the samplesheets app goes here.</p>
+{% has_perm 'samplesheets.edit_sheet' request.user as can_edit_sheet %}
+
+<div class="row omics-subtitle-container">
+  <h3><i class="fa fa-file"></i> Sample Sheets</h3>
+  {% if can_edit_sheet %}
+    {% include 'samplesheets/_list_buttons.html' with project=project up=False %}
+  {% endif %}
+</div>
+
+{% if not investigation %}
+  <div class="alert alert-info" role="alert">
+    No sample sheets are currently available for this project.
+    {% if can_edit_sheet %}
+      To add sample sheets, please import it from an existing ISAtab or JSON file.
+    {% endif %}
+  </div>
+{% else %}
+  <div class="alert alert-success" role="alert">
+    Sample sheet(s) found. TODO: visualization here.
+  </div>
+{% endif %}
 
 {% endblock projectroles_extend %}
 
