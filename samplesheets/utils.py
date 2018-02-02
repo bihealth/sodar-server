@@ -82,14 +82,8 @@ def add_processes(sequence, parent):
 
         # Link inputs
         for i in p['inputs']:
-            # TODO: Make this a manager function in models.py
-            try:
-                input_material = GenericMaterial.objects.get(
-                    **{parent_query_arg: parent, 'json_id': i['@id']})
-
-            except GenericMaterial.DoesNotExist:    # Sample
-                input_material = GenericMaterial.objects.get(
-                    study=study, json_id=i['@id'])
+            input_material = GenericMaterial.objects.find_child(
+                parent, i['@id'])
 
             process.inputs.add(input_material)
             logging.debug('Linked input material "{}"'.format(
@@ -97,13 +91,8 @@ def add_processes(sequence, parent):
 
         # Link outputs
         for o in p['outputs']:
-            try:
-                output_material = GenericMaterial.objects.get(
-                    **{parent_query_arg: parent, 'json_id': o['@id']})
-
-            except GenericMaterial.DoesNotExist:    # Sample
-                output_material = GenericMaterial.objects.get(
-                    study=study, json_id=o['@id'])
+            output_material = GenericMaterial.objects.find_child(
+                parent, o['@id'])
 
             process.outputs.add(output_material)
             logging.debug('Linked output material "{}"'.format(

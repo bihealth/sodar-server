@@ -344,6 +344,23 @@ class Assay(BaseSampleSheet):
 # Materials and data files -----------------------------------------------------
 
 
+class GenericMaterialManager(models.Manager):
+    """Manager for custom table-level GenericMaterial queries"""
+
+    def find_child(self, parent, json_id):
+        """Find child material of a parent with a specific json_id"""
+        parent_query_arg = parent.__class__.__name__.lower()
+        study = parent if type(parent) == Study else parent.study
+
+        try:
+            return super(GenericMaterialManager, self).get_queryset().get(
+                **{parent_query_arg: parent, 'json_id': json_id})
+
+        except GenericMaterial.DoesNotExist:  # Sample, get from study
+            return super(GenericMaterialManager, self).get_queryset().get(
+                study=study, json_id=json_id)
+
+
 class GenericMaterial(BaseSampleSheet):
     """Generic model for materials in the ISA specification. Contains required
     properties for Source, Material, Sample and Data objects"""
@@ -396,6 +413,9 @@ class GenericMaterial(BaseSampleSheet):
     factor_values = JSONField(
         default=dict,
         help_text='Factor values for a sample')
+
+    # Set manager for custom queries
+    objects = GenericMaterialManager()
 
     class Meta:
         verbose_name = 'material'
