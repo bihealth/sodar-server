@@ -13,4 +13,9 @@ urlpatterns = [
         view=views.SampleSheetImportView.as_view(),
         name='sheet_import',
     ),
+    url(
+        regex=r'^(?P<project>\d+)/delete$',
+        view=views.SampleSheetDeleteView.as_view(),
+        name='sheet_delete',
+    ),
 ]

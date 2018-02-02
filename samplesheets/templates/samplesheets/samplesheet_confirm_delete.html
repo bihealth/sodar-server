@@ -1,0 +1,36 @@
+{% extends 'projectroles/project_base.html' %}
+{% load rules %}
+
+{% block title %}
+  Confirm Sample Sheet Deletion
+{% endblock title %}
+
+{% block projectroles_extend %}
+
+<div class="row omics-subtitle-container">
+  <h3>Confirm Sample Sheet Deletion</h3>
+</div>
+
+<div class="container-fluid">
+  <div class="alert alert-warning" role="alert">
+    Do you really want to delete all sample sheet data from the project
+    "{{ project.title }}"?
+  </div>
+
+  <form method="post">
+    {% csrf_token %}
+    <div class="row">
+      <div class="btn-group ml-auto">
+        <a role="button" class="btn btn-secondary"
+            href="{{ request.session.real_referer }}">
+          <i class="fa fa-arrow-circle-left"></i> Cancel
+        </a>
+       <button type="submit" class="btn btn-danger">
+          <i class="fa fa-close"></i> Delete
+        </button>
+      </div>
+    </div>
+  </form>
+</div>
+
+{% endblock projectroles_extend %}

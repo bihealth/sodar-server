@@ -1,3 +1,7 @@
+{% load rules %}
+{% has_perm 'samplesheets.edit_sheet' request.user as can_edit_sheet %}
+{% has_perm 'samplesheets.delete_sheet' request.user as can_delete_sheet %}
+
 {% if up %}
   <div class="row">
     <div class="btn-group dropup ml-auto" id="omics-ss-buttons-list-up">
@@ -13,14 +17,18 @@
   <div class="dropdown-menu dropdown-menu-right">
 
     {# Import #}
-    <a class="dropdown-item" href="{% url 'sheet_import' project=project.pk %}">
-      <i class="fa fa-fw fa-upload"></i> Import Sheet
-    </a>
+    {% if not investigation and can_edit_sheet %}
+      <a class="dropdown-item" href="{% url 'sheet_import' project=project.pk %}">
+        <i class="fa fa-fw fa-upload"></i> Import Sheets
+      </a>
+    {% endif %}
 
     {# Delete #}
-    <a class="dropdown-item" href="{% url 'home' %}">
-      <i class="fa fa-fw fa-close"></i> Delete Sheet
-    </a>
+    {% if investigation and can_delete_sheet %}
+      <a class="dropdown-item" href="{% url 'sheet_delete' project=project.pk %}">
+        <i class="fa fa-fw fa-close"></i> Delete Sheets
+      </a>
+    {% endif %}
 
   </div>
 </div>
