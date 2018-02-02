@@ -1,6 +1,7 @@
 import uuid
 
 from django.contrib.postgres.fields import JSONField
+from django.core.exceptions import ValidationError
 from django.db import models
 
 # Projectroles dependency
@@ -369,7 +370,7 @@ class GenericMaterial(BaseSampleSheet):
         default=dict,
         help_text='Material characteristics')
 
-    #: Study to which the item belongs
+    #: Study to which the material belongs
     study = models.ForeignKey(
         Study,
         related_name='materials',
@@ -429,6 +430,32 @@ class GenericMaterial(BaseSampleSheet):
                 self.name)
 
         return 'GenericMaterial({})'.format(', '.join(repr(v) for v in values))
+
+    def save(self, *args, **kwargs):
+        """Override save() to include custom validation functions"""
+        self._validate_parent()
+        self._validate_item_fields()
+        super(GenericMaterial, self).save(*args, **kwargs)
+
+    def _validate_parent(self):
+        """Validate existence of a parent study/assay"""
+        if not self.study and not self.assay:
+            raise ValidationError(
+                'Material must provide either a parent study or assay')
+
+    def _validate_item_fields(self):
+        """Validate fields related to specific material types"""
+
+        if self.item_type == 'DATA' and self.characteristics:
+            raise ValidationError(
+                'Field "characteristics" should not be included for a data '
+                'file')
+
+        if self.item_type in ['DATA', 'MATERIAL'] and not self.material_type:
+            raise ValidationError('Type of material missing')
+
+        if self.item_type != 'SAMPLE' and self.factor_values:
+            raise ValidationError('Factor values included for a non-sample')
 
 
 # Process ----------------------------------------------------------------------
