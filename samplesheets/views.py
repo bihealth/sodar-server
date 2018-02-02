@@ -19,7 +19,8 @@ from projectroles.views import LoggedInPermissionMixin, \
     ProjectContextMixin, HTTPRefererMixin
 
 from .forms import SampleSheetImportForm
-from .models import Investigation
+from .models import Investigation, Study, Assay, Protocol, Process, \
+    GenericMaterial
 
 
 APP_NAME = 'samplesheets'
@@ -41,6 +42,21 @@ class ProjectSheetsView(
         try:
             context['investigation'] = Investigation.objects.get(
                 project=context['project'])
+
+            # Statistics
+            context['sheet_stats'] = {
+                'study_count': Study.objects.all().count(),
+                'assay_count': Assay.objects.all().count(),
+                'protocol_count': Protocol.objects.all().count(),
+                'process_count': Process.objects.all().count(),
+                'source_count': GenericMaterial.objects.filter(
+                    item_type='SOURCE').count(),
+                'material_count': GenericMaterial.objects.filter(
+                    item_type='MATERIAL').count(),
+                'sample_count': GenericMaterial.objects.filter(
+                    item_type='SAMPLE').count(),
+                'data_count': GenericMaterial.objects.filter(
+                    item_type='DATA').count()}
 
         except Investigation.DoesNotExist:
             context['investigation'] = None

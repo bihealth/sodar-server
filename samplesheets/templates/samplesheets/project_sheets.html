@@ -27,8 +27,32 @@
     {% endif %}
   </div>
 {% else %}
-  <div class="alert alert-success" role="alert">
-    Sample sheet(s) found. TODO: visualization here.
+  <div class="container-fluid">
+    <div class="card omics-card" id="omics-user-details-card">
+      <div class="card-header">
+        <h4>Investigation Statistics</h4>
+      </div>
+      <div class="card-body omics-card-body">
+        <dl class="row">
+          <dt class="col-md-2">Studies</dt>
+          <dd class="col-md-10">{{ sheet_stats.study_count }}</dd>
+          <dt class="col-md-2">Assays</dt>
+          <dd class="col-md-10">{{ sheet_stats.assay_count }}</dd>
+          <dt class="col-md-2">Protocols</dt>
+          <dd class="col-md-10">{{ sheet_stats.protocol_count }}</dd>
+          <dt class="col-md-2">Processes</dt>
+          <dd class="col-md-10">{{ sheet_stats.process_count }}</dd>
+          <dt class="col-md-2">Sources</dt>
+          <dd class="col-md-10">{{ sheet_stats.source_count }}</dd>
+          <dt class="col-md-2">Materials</dt>
+          <dd class="col-md-10">{{ sheet_stats.material_count }}</dd>
+          <dt class="col-md-2">Samples</dt>
+          <dd class="col-md-10">{{ sheet_stats.sample_count }}</dd>
+          <dt class="col-md-2">Data Files</dt>
+          <dd class="col-md-10">{{ sheet_stats.data_count }}</dd>
+        </dl>
+      </div>
+    </div>
   </div>
 {% endif %}
 
