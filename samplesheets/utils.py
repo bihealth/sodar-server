@@ -57,15 +57,13 @@ def add_processes(sequence, parent):
     :param parent: Parent study or assay
     :return: Process object (first_process)
     """
-    investigation = parent.investigation if \
-        type(parent) == Study else parent.study.investigation
     prev_process = None
     parent_query_arg = parent.__class__.__name__.lower()
     study = parent if type(parent) == Study else parent.study
 
     for p in sequence:
         protocol = Protocol.objects.get(
-            study__investigation=investigation,
+            study=study,
             json_id=p['executesProtocol']['@id'])
 
         values = {
