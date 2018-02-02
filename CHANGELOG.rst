@@ -13,6 +13,9 @@ Unreleased
 Added
 -----
 
+- **General**
+    - Graph output with pygraphviz for local development
+
 - **Samplesheets**
     - Add samplesheets app
     - ISA specification compatible data model (#76)
