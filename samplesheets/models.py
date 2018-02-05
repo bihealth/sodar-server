@@ -387,14 +387,14 @@ class GenericMaterial(BaseSampleSheet):
         default=dict,
         help_text='Material characteristics')
 
-    #: Study to which the material belongs
+    #: Study to which the material belongs (for study sequence)
     study = models.ForeignKey(
         Study,
         related_name='materials',
         null=True,
         help_text='Study to which the material belongs')
 
-    #: Assay to which the material belongs (optional, for assay sequence)
+    #: Assay to which the material belongs (for assay sequence)
     assay = models.ForeignKey(
         Assay,
         related_name='materials',
@@ -430,11 +430,14 @@ class GenericMaterial(BaseSampleSheet):
                 self.assay.file_name,
                 self.name)
 
-        else:
+        elif self.study:
             return '{}/{}/{}'.format(
                 self.study.investigation.title,
                 self.study.identifier,
                 self.name)
+
+        else:
+            return self.name
 
     def __repr__(self):
         if self.assay:
@@ -443,10 +446,15 @@ class GenericMaterial(BaseSampleSheet):
                 self.assay.study.identifier,
                 self.assay.file_name,
                 self.name)
-        else:
+
+        elif self.study:
             values = (
                 self.study.investigation.title,
                 self.study.identifier,
+                self.name)
+
+        else:
+            values = (
                 self.name)
 
         return 'GenericMaterial({})'.format(', '.join(repr(v) for v in values))
@@ -501,7 +509,7 @@ class Process(BaseSampleSheet):
         help_text='Protocol which the process executes')
 
     #: Previous process (can be None for first process in sequence)
-    previous_process = models.ForeignKey(
+    previous_process = models.OneToOneField(
         'Process',
         related_name='next_process',
         null=True,

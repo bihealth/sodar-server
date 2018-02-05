@@ -34,7 +34,6 @@ def import_material(material, parent, item_type):
 
     elif type(parent) == Assay:
         values['assay'] = parent
-        values['study'] = parent.study
 
     if 'type' in material:
         values['material_type'] = material['type']
@@ -237,7 +236,7 @@ def export_materials(parent_obj, parent_data):
     :param parent_obj: Study or Assay object
     :param parent_data: Parent study or assay in output dict
     """
-    for material in parent_obj.materials:
+    for material in parent_obj.materials.all():
         material_data = {
             '@id': material.json_id,
             'mame': material.name}
@@ -248,17 +247,17 @@ def export_materials(parent_obj, parent_data):
 
         # Source
         if material.item_type == 'SOURCE':
-            parent_data['sources'].append(material_data)
+            parent_data['materials']['sources'].append(material_data)
 
         # Sample
         elif material.item_type == 'SAMPLE':
             material_data['factorValues'] = material.factor_values
-            parent_data['samples'].append(material_data)
+            parent_data['materials']['samples'].append(material_data)
 
         # Other materials
         elif material.item_type == 'MATERIAL':
             material_data['type'] = material.material_type
-            parent_data['otherMaterials'].append(material_data)
+            parent_data['materials']['otherMaterials'].append(material_data)
 
         # Data files
         elif material.item_type == 'DATA':
@@ -289,22 +288,26 @@ def export_processes(parent_obj, parent_data):
             'inputs': [],
             'outputs': []}
 
-        if process.next_process:
+        if hasattr(process, 'next_process') and process.next_process:
             process_data['nextProcess'] = get_reference(process.next_process)
 
-        if process.previous_process:
+        if hasattr(process, 'previous_process') and process.previous_process:
             process_data['previousProcess'] = get_reference(
                 process.previous_process)
 
-        for i in process.inputs:
+        for i in process.inputs.all():
             process_data['inputs'].append(get_reference(i))
 
-        for o in process.outputs:
+        for o in process.outputs.all():
             process_data['outputs'].append(get_reference(o))
 
         parent_data['processSequence'].append(process_data)
         logging.debug('Added process "{}"'.format(process.name))
-        process = process.next_process
+
+        process = None
+
+        if hasattr(process, 'next_process'):
+            process = process.next_process
 
 
 def export_isa(investigation):
@@ -331,7 +334,7 @@ def export_isa(investigation):
     logging.debug('Added investigation "{}"'.format(investigation.title))
 
     # Studies
-    for study in investigation.studies:
+    for study in investigation.studies.all():
         study_data = {
             '@id': study.json_id,
             'identifier': study.identifier,
@@ -346,15 +349,17 @@ def export_isa(investigation):
             'publicReleaseDate': '',
             'comments': study.comments,
             'protocols': [],
-            'sources': [],
-            'samples': [],
-            'otherMaterials': [],
+            'materials': {
+                'sources': [],
+                'samples': [],
+                'otherMaterials': []
+            },
             'assays': [],
             'processSequence': []}
         logging.debug('Added study "{}"'.format(study.title))
 
         # Protocols
-        for protocol in study.protocols:
+        for protocol in study.protocols.all():
             protocol_data = {
                 '@id': protocol.json_id,
                 'name': protocol.name,
@@ -374,7 +379,7 @@ def export_isa(investigation):
         export_processes(study, study_data)
 
         # Assays
-        for assay in study.assays:
+        for assay in study.assays.all():
             assay_data = {
                 '@id': assay.json_id,
                 'filename': assay.file_name,
@@ -385,8 +390,11 @@ def export_isa(investigation):
                 'unitCategories': assay.unit_cat,
                 'comments': assay.comments,
                 'processSequence': [],
-                'dataFiles': []}
-            logging.debug('Added assay "{}"'.format(assay.filename))
+                'dataFiles': [],
+                'materials': {
+                    'samples': [],
+                    'otherMaterials': []}}
+            logging.debug('Added assay "{}"'.format(assay.file_name))
 
             # Assay materials and data files
             export_materials(assay, assay_data)

@@ -14,6 +14,11 @@ urlpatterns = [
         name='sheet_import',
     ),
     url(
+        regex=r'^(?P<project>\d+)/export/json$',
+        view=views.SampleSheetExportJSONView.as_view(),
+        name='sheet_export_json',
+    ),
+    url(
         regex=r'^(?P<project>\d+)/delete$',
         view=views.SampleSheetDeleteView.as_view(),
         name='sheet_delete',

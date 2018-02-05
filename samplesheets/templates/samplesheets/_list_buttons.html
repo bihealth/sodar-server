@@ -1,5 +1,6 @@
 {% load rules %}
 {% has_perm 'samplesheets.edit_sheet' request.user as can_edit_sheet %}
+{% has_perm 'samplesheets.export_sheet' request.user as can_export_sheet %}
 {% has_perm 'samplesheets.delete_sheet' request.user as can_delete_sheet %}
 
 {% if up %}
@@ -20,6 +21,13 @@
     {% if not investigation and can_edit_sheet %}
       <a class="dropdown-item" href="{% url 'sheet_import' project=project.pk %}">
         <i class="fa fa-fw fa-upload"></i> Import Sheets
+      </a>
+    {% endif %}
+
+    {# Export #}
+    {% if investigation and can_export_sheet %}
+      <a class="dropdown-item" href="{% url 'sheet_export_json' project=project.pk %}">
+        <i class="fa fa-fw fa-download"></i> Export JSON
       </a>
     {% endif %}
 
