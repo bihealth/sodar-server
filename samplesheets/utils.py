@@ -117,6 +117,7 @@ def import_isa(data, file_name, project):
     :param project: Project object
     :return: Investigation object
     """
+    logging.debug('Importing investigation..')
 
     # Create investigation
     values = {
@@ -214,6 +215,7 @@ def import_isa(data, file_name, project):
             # Create assay processes
             import_processes(a['processSequence'], parent=assay)
 
+    logging.debug('Import OK')
     return investigation
 
 
@@ -263,6 +265,9 @@ def export_materials(parent_obj, parent_data):
             material_data['type'] = material.material_type
             parent_data['dataFiles'].append(material_data)
 
+        logging.debug('Added material "{}" ({})'.format(
+            material.name, material.item_type))
+
 
 def export_processes(parent_obj, parent_data):
     """
@@ -276,13 +281,20 @@ def export_processes(parent_obj, parent_data):
         process_data = {
             '@id': process.json_id,
             'name': process.name,
-            'protocol': get_reference(process.protocol),
+            'executesProtocol': get_reference(process.protocol),
             'parameterValues': process.parameter_values,
             'performer': process.performer,
             'date': process.perform_date,
             'comments': process.comments,
             'inputs': [],
             'outputs': []}
+
+        if process.next_process:
+            process_data['nextProcess'] = get_reference(process.next_process)
+
+        if process.previous_process:
+            process_data['previousProcess'] = get_reference(
+                process.previous_process)
 
         for i in process.inputs:
             process_data['inputs'].append(get_reference(i))
@@ -291,6 +303,7 @@ def export_processes(parent_obj, parent_data):
             process_data['outputs'].append(get_reference(o))
 
         parent_data['processSequence'].append(process_data)
+        logging.debug('Added process "{}"'.format(process.name))
         process = process.next_process
 
 
@@ -300,9 +313,9 @@ def export_isa(investigation):
     :param investigation: Investigation object
     :return: Dictionary
     """
+    logging.debug('Exporting ISA data..')
 
     # Investigation properties
-    # TODO: TBD: OrderedDict instead?
     ret = {
         'identifier': investigation.identifier,
         'title': investigation.title,
@@ -310,7 +323,12 @@ def export_isa(investigation):
         'filename': investigation.file_name,
         'ontologySourceReferences': investigation.ontology_source_refs,
         'comments': investigation.comments,
-        'studies': []}
+        'submissionDate': '',
+        'publicReleaseDate': '',
+        'studies': [],
+        'publications': [],
+        'people': []}
+    logging.debug('Added investigation "{}"'.format(investigation.title))
 
     # Studies
     for study in investigation.studies:
@@ -324,6 +342,8 @@ def export_isa(investigation):
             'factors': study.factors,
             'characteristicCategories': study.characteristic_cat,
             'unitCategories': study.unit_cat,
+            'submissionDate': '',
+            'publicReleaseDate': '',
             'comments': study.comments,
             'protocols': [],
             'sources': [],
@@ -331,6 +351,7 @@ def export_isa(investigation):
             'otherMaterials': [],
             'assays': [],
             'processSequence': []}
+        logging.debug('Added study "{}"'.format(study.title))
 
         # Protocols
         for protocol in study.protocols:
@@ -344,6 +365,7 @@ def export_isa(investigation):
                 'parameters': protocol.parameters,
                 'components': protocol.components}
             study_data['protocols'].append(protocol_data)
+            logging.debug('Added protocol "{}"'.format(protocol.name))
 
         # Materials
         export_materials(study, study_data)
@@ -364,6 +386,7 @@ def export_isa(investigation):
                 'comments': assay.comments,
                 'processSequence': [],
                 'dataFiles': []}
+            logging.debug('Added assay "{}"'.format(assay.filename))
 
             # Assay materials and data files
             export_materials(assay, assay_data)
@@ -375,4 +398,5 @@ def export_isa(investigation):
 
         ret['studies'].append(study_data)
 
+    logging.debug('Export to dict OK')
     return ret
