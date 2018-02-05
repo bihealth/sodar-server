@@ -9,7 +9,10 @@ from .models import Investigation, Study, Assay, GenericMaterial, Protocol, \
 logger = logging.getLogger(__name__)
 
 
-def add_material(material, parent, item_type):
+# Importing --------------------------------------------------------------------
+
+
+def import_material(material, parent, item_type):
     """
     Create a material object in Django database.
     :param material: Material dictionary from ISA JSON
@@ -50,7 +53,7 @@ def add_material(material, parent, item_type):
     return material_obj
 
 
-def add_processes(sequence, parent):
+def import_processes(sequence, parent):
     """
     Create processes of a process sequence in the database.
     :param sequence: Process sequence of a study or an assay
@@ -58,7 +61,6 @@ def add_processes(sequence, parent):
     :return: Process object (first_process)
     """
     prev_process = None
-    parent_query_arg = parent.__class__.__name__.lower()
     study = parent if type(parent) == Study else parent.study
 
     for p in sequence:
@@ -111,7 +113,6 @@ def import_isa(data, file_name, project):
     """
     Import ISA investigation from JSON data and create relevant objects in
     the Django database.
-    :param data: JSON data as a dictionary
     :param file_name: Name of the investigation file
     :param project: Project object
     :return: Investigation object
@@ -170,18 +171,18 @@ def import_isa(data, file_name, project):
 
         # Create study sources
         for m in s['materials']['sources']:
-            add_material(m, parent=study, item_type='SOURCE')
+            import_material(m, parent=study, item_type='SOURCE')
 
         # Create study samples
         for m in s['materials']['samples']:
-            add_material(m, parent=study, item_type='SAMPLE')
+            import_material(m, parent=study, item_type='SAMPLE')
 
         # Create other study materials
         for m in s['materials']['otherMaterials']:
-            add_material(m, parent=study, item_type='MATERIAL')
+            import_material(m, parent=study, item_type='MATERIAL')
 
         # Create study processes
-        add_processes(s['processSequence'], parent=study)
+        import_processes(s['processSequence'], parent=study)
 
         # Create assays
         for a in s['assays']:
@@ -203,14 +204,175 @@ def import_isa(data, file_name, project):
 
             # Create assay data files
             for m in a['dataFiles']:
-                add_material(m, parent=assay, item_type='DATA')
+                import_material(m, parent=assay, item_type='DATA')
 
             # Create other assay materials
             # NOTE: Samples were already created when parsing study
             for m in a['materials']['otherMaterials']:
-                add_material(m, parent=assay, item_type='MATERIAL')
+                import_material(m, parent=assay, item_type='MATERIAL')
 
             # Create assay processes
-            add_processes(a['processSequence'], parent=assay)
+            import_processes(a['processSequence'], parent=assay)
 
     return investigation
+
+
+# Exporting --------------------------------------------------------------------
+
+
+def get_reference(obj):
+    """
+    Return reference to an object for exporting
+    :param obj: Any object inheriting BaseSampleSheet
+    :return: Reference value as dict
+    """
+    return {'@id': obj.json_id}
+
+
+def export_materials(parent_obj, parent_data):
+    """
+    Export materials from a parent into output dict
+    :param parent_obj: Study or Assay object
+    :param parent_data: Parent study or assay in output dict
+    """
+    for material in parent_obj.materials:
+        material_data = {
+            '@id': material.json_id,
+            'mame': material.name}
+
+        # Characteristics for all material types except data files
+        if material.item_type != 'DATA':
+            material_data['characteristics']: material.characteristics
+
+        # Source
+        if material.item_type == 'SOURCE':
+            parent_data['sources'].append(material_data)
+
+        # Sample
+        elif material.item_type == 'SAMPLE':
+            material_data['factorValues'] = material.factor_values
+            parent_data['samples'].append(material_data)
+
+        # Other materials
+        elif material.item_type == 'MATERIAL':
+            material_data['type'] = material.material_type
+            parent_data['otherMaterials'].append(material_data)
+
+        # Data files
+        elif material.item_type == 'DATA':
+            material_data['type'] = material.material_type
+            parent_data['dataFiles'].append(material_data)
+
+
+def export_processes(parent_obj, parent_data):
+    """
+    Export process sequence from a parent into output dict
+    :param parent_obj: Study or Assay object
+    :param parent_data: Parent study or assay in output dict
+    """
+    process = parent_obj.first_process
+
+    while process:
+        process_data = {
+            '@id': process.json_id,
+            'name': process.name,
+            'protocol': get_reference(process.protocol),
+            'parameterValues': process.parameter_values,
+            'performer': process.performer,
+            'date': process.perform_date,
+            'comments': process.comments,
+            'inputs': [],
+            'outputs': []}
+
+        for i in process.inputs:
+            process_data['inputs'].append(get_reference(i))
+
+        for o in process.outputs:
+            process_data['outputs'].append(get_reference(o))
+
+        parent_data['processSequence'].append(process_data)
+        process = process.next_process
+
+
+def export_isa(investigation):
+    """
+    Export ISA investigation into a dictionary corresponding to ISA JSON
+    :param investigation: Investigation object
+    :return: Dictionary
+    """
+
+    # Investigation properties
+    # TODO: TBD: OrderedDict instead?
+    ret = {
+        'identifier': investigation.identifier,
+        'title': investigation.title,
+        'description': investigation.description,
+        'filename': investigation.file_name,
+        'ontologySourceReferences': investigation.ontology_source_refs,
+        'comments': investigation.comments,
+        'studies': []}
+
+    # Studies
+    for study in investigation.studies:
+        study_data = {
+            '@id': study.json_id,
+            'identifier': study.identifier,
+            'filename': study.file_name,
+            'title': study.title,
+            'description': study.description,
+            'studyDesignDescriptors': study.study_design,
+            'factors': study.factors,
+            'characteristicCategories': study.characteristic_cat,
+            'unitCategories': study.unit_cat,
+            'comments': study.comments,
+            'protocols': [],
+            'sources': [],
+            'samples': [],
+            'otherMaterials': [],
+            'assays': [],
+            'processSequence': []}
+
+        # Protocols
+        for protocol in study.protocols:
+            protocol_data = {
+                '@id': protocol.json_id,
+                'name': protocol.name,
+                'protocolType': protocol.protocol_type,
+                'description': protocol.description,
+                'uri': protocol.uri,
+                'version': protocol.version,
+                'parameters': protocol.parameters,
+                'components': protocol.components}
+            study_data['protocols'].append(protocol_data)
+
+        # Materials
+        export_materials(study, study_data)
+
+        # Processes
+        export_processes(study, study_data)
+
+        # Assays
+        for assay in study.assays:
+            assay_data = {
+                '@id': assay.json_id,
+                'filename': assay.file_name,
+                'technologyPlatform': assay.technology_platform,
+                'technologyType': assay.technology_type,
+                'measurementType': assay.measurement_type,
+                'characteristicCategories': assay.characteristic_cat,
+                'unitCategories': assay.unit_cat,
+                'comments': assay.comments,
+                'processSequence': [],
+                'dataFiles': []}
+
+            # Assay materials and data files
+            export_materials(assay, assay_data)
+
+            # Assay processes
+            export_processes(assay, assay_data)
+
+            study_data['assays'].append(assay_data)
+
+        ret['studies'].append(study_data)
+
+    return ret
