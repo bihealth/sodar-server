@@ -15,6 +15,7 @@ Added
 
 - **General**
     - Graph output with pygraphviz for local development
+    - ``ProjectPermissionObjectMixin`` for project apps
 
 - **Samplesheets**
     - Add samplesheets app

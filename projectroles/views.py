@@ -52,6 +52,17 @@ APP_NAME = 'projectroles'
 # Mixins -----------------------------------------------------------------
 
 
+class ProjectPermissionObjectMixin(PermissionRequiredMixin):
+    """Mixin for providing a Project object for permission checking"""
+    def get_permission_object(self):
+        try:
+            obj = Project.objects.get(pk=self.kwargs['project'])
+            return obj
+
+        except Project.DoesNotExist:
+            return None
+
+
 class LoggedInPermissionMixin(PermissionRequiredMixin):
     """Mixin for handling redirection for both unlogged users and authenticated
     users without permissions"""

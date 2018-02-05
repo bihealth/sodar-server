@@ -16,7 +16,7 @@ from projectroles.models import Project
 from projectroles.plugins import get_backend_api
 from projectroles.project_settings import get_project_setting
 from projectroles.views import LoggedInPermissionMixin, \
-    ProjectContextMixin, HTTPRefererMixin
+    ProjectContextMixin, HTTPRefererMixin, ProjectPermissionObjectMixin
 
 from .forms import SampleSheetImportForm
 from .models import Investigation, Study, Assay, Protocol, Process, \
@@ -66,7 +66,7 @@ class ProjectSheetsView(
 
 class SampleSheetImportView(
         LoginRequiredMixin, LoggedInPermissionMixin, ProjectContextMixin,
-        FormView):
+        ProjectPermissionObjectMixin, FormView):
     """Sample sheet JSON import view"""
 
     permission_required = 'samplesheets.edit_sheet'
@@ -74,6 +74,7 @@ class SampleSheetImportView(
     form_class = SampleSheetImportForm
     template_name = 'samplesheets/samplesheet_import_form.html'
 
+    '''
     def get_permission_object(self):
         """Override get_permission_object for checking Project permission"""
         try:
@@ -82,6 +83,7 @@ class SampleSheetImportView(
 
         except Project.DoesNotExist:
             return None
+    '''
 
     def get_form_kwargs(self):
         """Pass URL kwargs to form"""
@@ -122,14 +124,16 @@ class SampleSheetImportView(
 
 class SampleSheetDeleteView(
         LoginRequiredMixin, LoggedInPermissionMixin, ProjectContextMixin,
-        TemplateView):
+        ProjectPermissionObjectMixin, TemplateView):
     """SampleSheet deletion view"""
     permission_required = 'samplesheets.delete_sheet'
     template_name = 'samplesheets/samplesheet_confirm_delete.html'
 
+    '''
     def get_permission_object(self):
         """Override get_permission_object for checking Project permission"""
         return Project.objects.get(pk=self.kwargs['project'])
+    '''
 
     def post(self, request, *args, **kwargs):
         timeline = get_backend_api('timeline_backend')
