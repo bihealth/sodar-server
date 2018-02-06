@@ -137,9 +137,7 @@ class SampleSheetExportJSONView(
                 'project_sheets', kwargs={'project': kwargs['project']}))
 
         # Return file as attachment
-        file_name = 'export.json'
-        # file_name = investigation.file_name   # TODO: Convert file name
-
+        file_name = investigation.file_name
         response = HttpResponse(json_str, content_type='application/json')
         response['Content-Disposition'] = \
             'attachment; filename={}'.format(file_name)
