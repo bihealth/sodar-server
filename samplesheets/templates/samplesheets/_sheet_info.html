@@ -1,0 +1,14 @@
+<div class="card-body omics-card-body">
+  <dl class="row omics-dl">
+    <dt class="col-md-2">Idenfitier</dt>
+    <dd class="col-md-10">{{ investigation.identifier }}</dd>
+    {% if investigation.title != project.title %}
+      <dt class="col-md-2">Title</dt>
+      <dd class="col-md-10">{{ investigation.title }}</dd>
+    {% endif %}
+    {% if show_description and investigation.description != project.description %}
+      <dt class="col-md-2">Description</dt>
+      <dd class="col-md-10">{{ investigation.description }}</dd>
+    {% endif %}
+  </dl>
+</div>

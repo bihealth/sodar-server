@@ -1,3 +1,14 @@
-<div class="card-body omics-card-body bg-faded font-italic text-center">
-  <p>TODO</p>
-</div>
+{% load rules %}
+{% load samplesheets_tags %}
+
+{% has_perm 'samplesheets.view_sheet' request.user project as can_view_sheet %}
+
+{% get_investigation project as investigation %}
+
+{% if investigation and can_view_sheet %}
+  {% include 'samplesheets/_sheet_info.html' with show_description=False %}
+{% else %}
+  <div class="card-body omics-card-body bg-faded font-italic text-center">
+    <p>No sample sheets available</p>
+  </div>
+{% endif %}
