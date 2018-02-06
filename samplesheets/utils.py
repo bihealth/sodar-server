@@ -1,5 +1,6 @@
 """Utilities for the samplesheets app"""
 
+import datetime as dt
 import logging
 
 from .models import Investigation, Study, Assay, GenericMaterial, Protocol, \
@@ -73,7 +74,9 @@ def import_processes(sequence, parent):
             'previous_process': prev_process,
             'parameter_values': p['parameterValues'],
             'performer': p['performer'],
-            'perform_date': None,  # TODO
+            'perform_date': (
+                dt.datetime.strptime(p['date'], '%Y-%m-%d').date() if
+                p['date'] else None),
             'comments': p['comments']}
 
         process = Process(**values)
@@ -279,14 +282,17 @@ def export_processes(parent_obj, parent_data):
     while process:
         process_data = {
             '@id': process.json_id,
-            'name': process.name,
             'executesProtocol': get_reference(process.protocol),
             'parameterValues': process.parameter_values,
             'performer': process.performer,
-            'date': process.perform_date,
+            'date': str(process.perform_date) if process.perform_date else '',
             'comments': process.comments,
             'inputs': [],
             'outputs': []}
+
+        # The name string seems to be optional
+        if process.name:
+            process_data['name'] = process.name
 
         if hasattr(process, 'next_process') and process.next_process:
             process_data['nextProcess'] = get_reference(process.next_process)
@@ -304,10 +310,11 @@ def export_processes(parent_obj, parent_data):
         parent_data['processSequence'].append(process_data)
         logging.debug('Added process "{}"'.format(process.name))
 
-        process = None
-
         if hasattr(process, 'next_process'):
             process = process.next_process
+
+        else:
+            process = None
 
 
 def export_isa(investigation):
