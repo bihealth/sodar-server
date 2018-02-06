@@ -242,7 +242,7 @@ def export_materials(parent_obj, parent_data):
     for material in parent_obj.materials.all():
         material_data = {
             '@id': material.json_id,
-            'mame': material.name}
+            'name': material.name}
 
         # Characteristics for all material types except data files
         if material.item_type != 'DATA':

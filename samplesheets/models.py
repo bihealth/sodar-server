@@ -411,7 +411,7 @@ class GenericMaterial(BaseSampleSheet):
 
     #: Factor values for a sample (only for samples)
     factor_values = JSONField(
-        default=dict,
+        default=list,
         help_text='Factor values for a sample')
 
     # Set manager for custom queries
