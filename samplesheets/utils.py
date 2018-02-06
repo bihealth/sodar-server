@@ -139,7 +139,7 @@ def import_isa(data, file_name, project):
     # Create studies
     for s in data['studies']:
         values = {
-            'json_id': s['@id'],
+            'json_id': s['@id'] if hasattr(s, '@id') else None,
             'identifier': s['identifier'],
             'file_name': s['filename'],
             'investigation': investigation,
@@ -190,7 +190,7 @@ def import_isa(data, file_name, project):
         # Create assays
         for a in s['assays']:
             values = {
-                'json_id': a['@id'],
+                'json_id': a['@id'] if hasattr(a, '@id') else None,
                 'file_name': a['filename'],
                 'study': study,
                 'measurement_type': a['measurementType'],
@@ -343,7 +343,6 @@ def export_isa(investigation):
     # Studies
     for study in investigation.studies.all():
         study_data = {
-            '@id': study.json_id,
             'identifier': study.identifier,
             'filename': study.file_name,
             'title': study.title,
@@ -363,6 +362,10 @@ def export_isa(investigation):
             },
             'assays': [],
             'processSequence': []}
+
+        if study.json_id:
+            study_data['@id'] = study.json_id
+
         logging.debug('Added study "{}"'.format(study.title))
 
         # Protocols
@@ -388,7 +391,6 @@ def export_isa(investigation):
         # Assays
         for assay in study.assays.all():
             assay_data = {
-                '@id': assay.json_id,
                 'filename': assay.file_name,
                 'technologyPlatform': assay.technology_platform,
                 'technologyType': assay.technology_type,
@@ -401,6 +403,10 @@ def export_isa(investigation):
                 'materials': {
                     'samples': [],
                     'otherMaterials': []}}
+
+            if assay.json_id:
+                assay_data['@id'] = assay.json_id
+
             logging.debug('Added assay "{}"'.format(assay.file_name))
 
             # Assay materials and data files

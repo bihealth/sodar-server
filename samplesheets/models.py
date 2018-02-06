@@ -420,7 +420,6 @@ class GenericMaterial(BaseSampleSheet):
     class Meta:
         verbose_name = 'material'
         verbose_name_plural = 'materials'
-        # TODO: Implement unique_together in validation functions
 
     def __str__(self):
         if self.assay:
