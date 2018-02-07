@@ -19,7 +19,7 @@ from projectroles.views import LoggedInPermissionMixin, \
 from .forms import SampleSheetImportForm
 from .models import Investigation, Study, Assay, Protocol, Process, \
     GenericMaterial
-from .utils import export_isa
+from .utils import export_isa_json
 
 
 APP_NAME = 'samplesheets'
@@ -124,7 +124,7 @@ class SampleSheetExportJSONView(
         investigation = Investigation.objects.get(project=project)
 
         # Export Investigation as dict
-        json_data = export_isa(investigation)
+        json_data = export_isa_json(investigation)
         json_str = json.dumps(json_data, indent=4)
 
         # TODO: Validate JSON data

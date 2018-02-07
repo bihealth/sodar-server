@@ -10,7 +10,7 @@ from projectroles.models import Project
 
 from .models import Investigation, Study, Assay, GenericMaterial, Protocol, \
     Process
-from .utils import import_isa
+from .utils import import_isa_json
 
 
 class SampleSheetImportForm(forms.Form):
@@ -67,8 +67,8 @@ class SampleSheetImportForm(forms.Form):
         return self.cleaned_data
 
     def save(self, *args, **kwargs):
-        investigation = import_isa(
-            data=self.isa_data,
+        investigation = import_isa_json(
+            json_data=self.isa_data,
             file_name=self.inv_file_name,
             project=self.project)
 

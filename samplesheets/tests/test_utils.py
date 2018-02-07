@@ -11,7 +11,7 @@ from projectroles.models import Role, OMICS_CONSTANTS
 from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
 
 from ..models import Investigation
-from ..utils import import_isa, export_isa
+from ..utils import import_isa_json, export_isa_json
 
 
 class TestSampleSheetUtils(TestCase, ProjectMixin, RoleAssignmentMixin):
@@ -114,14 +114,14 @@ class TestSampleSheetUtils(TestCase, ProjectMixin, RoleAssignmentMixin):
                     isa_report['validation_finished'], True)
 
                 # Import JSON into Django
-                investigation = import_isa(json_data, file_name, self.project)
+                investigation = import_isa_json(json_data, file_name, self.project)
                 self.assertEqual(Investigation.objects.count(), 1)
 
                 # Check investigation content
                 self._compare_isa_data(investigation, json_data)
 
                 # Export Django model into JSON data
-                json_data = export_isa(investigation)
+                json_data = export_isa_json(investigation)
 
                 # Check exported data content
                 self._compare_isa_data(investigation, json_data)

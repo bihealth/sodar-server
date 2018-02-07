@@ -13,131 +13,132 @@ logger = logging.getLogger(__name__)
 # Importing --------------------------------------------------------------------
 
 
-def import_material(material, parent, item_type):
-    """
-    Create a material object in Django database.
-    :param material: Material dictionary from ISA JSON
-    :param parent: Parent database object (Assay or Study)
-    :param item_type: Type of GenericMaterial
-    :return: GenericMaterial object
-    """
-
-    # Common values
-    values = {
-        'json_id': material['@id'],
-        'item_type': item_type,
-        'name': material['name'],
-        'characteristics': (material['characteristics'] if
-                            item_type != 'DATA' else dict())}
-
-    if type(parent) == Study:
-        values['study'] = parent
-
-    elif type(parent) == Assay:
-        values['assay'] = parent
-
-    if 'type' in material:
-        values['material_type'] = material['type']
-
-    if 'characteristics' in material:
-        values['characteristics'] = material['characteristics']
-
-    if 'factor_values' in material:
-        values['factor_values'] = material['factorValues']
-
-    material_obj = GenericMaterial(**values)
-    material_obj.save()
-    logging.debug('Added material "{}" ({})'.format(
-        material_obj.name, item_type))
-
-    return material_obj
-
-
-def import_processes(sequence, parent):
-    """
-    Create processes of a process sequence in the database.
-    :param sequence: Process sequence of a study or an assay
-    :param parent: Parent study or assay
-    :return: Process object (first_process)
-    """
-    prev_process = None
-    study = parent if type(parent) == Study else parent.study
-
-    for p in sequence:
-        protocol = Protocol.objects.get(
-            study=study,
-            json_id=p['executesProtocol']['@id'])
-
-        values = {
-            'json_id': p['@id'],
-            'protocol': protocol,
-            'previous_process': prev_process,
-            'parameter_values': p['parameterValues'],
-            'performer': p['performer'],
-            'perform_date': (
-                dt.datetime.strptime(p['date'], '%Y-%m-%d').date() if
-                p['date'] else None),
-            'comments': p['comments']}
-
-        process = Process(**values)
-        process.save()
-        logging.debug('Added process "{}" to "{}"'.format(
-            process.json_id, parent.json_id))
-
-        # Link inputs
-        for i in p['inputs']:
-            input_material = GenericMaterial.objects.find_child(
-                parent, i['@id'])
-
-            process.inputs.add(input_material)
-            logging.debug('Linked input material "{}"'.format(
-                input_material.json_id))
-
-        # Link outputs
-        for o in p['outputs']:
-            output_material = GenericMaterial.objects.find_child(
-                parent, o['@id'])
-
-            process.outputs.add(output_material)
-            logging.debug('Linked output material "{}"'.format(
-                output_material.json_id))
-
-        if not prev_process:
-            parent.first_process = process
-            parent.save()
-            logging.debug('Set process "{}" as first_process in "{}"'.format(
-                process.json_id, parent.json_id))
-
-        prev_process = process
-
-
-def import_isa(data, file_name, project):
+def import_isa_json(json_data, file_name, project):
     """
     Import ISA investigation from JSON data and create relevant objects in
     the Django database.
+    :param json_data: JSON data (dict)
     :param file_name: Name of the investigation file
     :param project: Project object
     :return: Investigation object
     """
-    logging.debug('Importing investigation..')
+
+    def import_material(material, parent, item_type):
+        """
+        Create a material object in Django database.
+        :param material: Material dictionary from ISA JSON
+        :param parent: Parent database object (Assay or Study)
+        :param item_type: Type of GenericMaterial
+        :return: GenericMaterial object
+        """
+
+        # Common values
+        values = {
+            'json_id': material['@id'],
+            'item_type': item_type,
+            'name': material['name'],
+            'characteristics': (material['characteristics'] if
+                                item_type != 'DATA' else dict())}
+
+        if type(parent) == Study:
+            values['study'] = parent
+
+        elif type(parent) == Assay:
+            values['assay'] = parent
+
+        if 'type' in material:
+            values['material_type'] = material['type']
+
+        if 'characteristics' in material:
+            values['characteristics'] = material['characteristics']
+
+        if 'factor_values' in material:
+            values['factor_values'] = material['factorValues']
+
+        material_obj = GenericMaterial(**values)
+        material_obj.save()
+        logging.debug('Added material "{}" ({})'.format(
+            material_obj.name, item_type))
+
+        return material_obj
+
+    def import_processes(sequence, parent):
+        """
+        Create processes of a process sequence in the database.
+        :param sequence: Process sequence of a study or an assay
+        :param parent: Parent study or assay
+        :return: Process object (first_process)
+        """
+        prev_process = None
+        study = parent if type(parent) == Study else parent.study
+
+        for p in sequence:
+            protocol = Protocol.objects.get(
+                study=study,
+                json_id=p['executesProtocol']['@id'])
+
+            values = {
+                'json_id': p['@id'],
+                'protocol': protocol,
+                'previous_process': prev_process,
+                'parameter_values': p['parameterValues'],
+                'performer': p['performer'],
+                'perform_date': (
+                    dt.datetime.strptime(p['date'], '%Y-%m-%d').date() if
+                    p['date'] else None),
+                'comments': p['comments']}
+
+            process = Process(**values)
+            process.save()
+            logging.debug('Added process "{}" to "{}"'.format(
+                process.json_id, parent.json_id))
+
+            # Link inputs
+            for i in p['inputs']:
+                input_material = GenericMaterial.objects.find_child(
+                    parent, i['@id'])
+
+                process.inputs.add(input_material)
+                logging.debug('Linked input material "{}"'.format(
+                    input_material.json_id))
+
+            # Link outputs
+            for o in p['outputs']:
+                output_material = GenericMaterial.objects.find_child(
+                    parent, o['@id'])
+
+                process.outputs.add(output_material)
+                logging.debug('Linked output material "{}"'.format(
+                    output_material.json_id))
+
+            if not prev_process:
+                parent.first_process = process
+                parent.save()
+                logging.debug(
+                    'Set process "{}" as first_process in "{}"'.format(
+                        process.json_id, parent.json_id))
+
+            prev_process = process
+
+    logging.debug('Importing investigation from JSON dict..')
 
     # Create investigation
     values = {
         'project': project,
-        'identifier': data['identifier'],
-        'title': (data['title'] or project.title),
-        'description': (data['description'] or
+        'identifier': json_data['identifier'],
+        'title': (json_data['title'] or project.title),
+        'description': (json_data['description'] or
                         project.description),
         'file_name': file_name,
-        'ontology_source_refs': data['ontologySourceReferences'],
-        'comments': data['comments']}
+        'ontology_source_refs': json_data['ontologySourceReferences'],
+        'comments': json_data['comments']}
 
     investigation = Investigation(**values)
     investigation.save()
     logging.debug('Created investigation "{}"'.format(investigation.title))
 
     # Create studies
-    for s in data['studies']:
+    for s in json_data['studies']:
         values = {
             'json_id': s['@id'] if hasattr(s, '@id') else None,
             'identifier': s['identifier'],
@@ -224,106 +225,107 @@ def import_isa(data, file_name, project):
 # Exporting --------------------------------------------------------------------
 
 
-def get_reference(obj):
-    """
-    Return reference to an object for exporting
-    :param obj: Any object inheriting BaseSampleSheet
-    :return: Reference value as dict
-    """
-    return {'@id': obj.json_id}
-
-
-def export_materials(parent_obj, parent_data):
-    """
-    Export materials from a parent into output dict
-    :param parent_obj: Study or Assay object
-    :param parent_data: Parent study or assay in output dict
-    """
-    for material in parent_obj.materials.all():
-        material_data = {
-            '@id': material.json_id,
-            'name': material.name}
-
-        # Characteristics for all material types except data files
-        if material.item_type != 'DATA':
-            material_data['characteristics']: material.characteristics
-
-        # Source
-        if material.item_type == 'SOURCE':
-            parent_data['materials']['sources'].append(material_data)
-
-        # Sample
-        elif material.item_type == 'SAMPLE':
-            material_data['factorValues'] = material.factor_values
-            parent_data['materials']['samples'].append(material_data)
-
-        # Other materials
-        elif material.item_type == 'MATERIAL':
-            material_data['type'] = material.material_type
-            parent_data['materials']['otherMaterials'].append(material_data)
-
-        # Data files
-        elif material.item_type == 'DATA':
-            material_data['type'] = material.material_type
-            parent_data['dataFiles'].append(material_data)
-
-        logging.debug('Added material "{}" ({})'.format(
-            material.name, material.item_type))
-
-
-def export_processes(parent_obj, parent_data):
-    """
-    Export process sequence from a parent into output dict
-    :param parent_obj: Study or Assay object
-    :param parent_data: Parent study or assay in output dict
-    """
-    process = parent_obj.first_process
-
-    while process:
-        process_data = {
-            '@id': process.json_id,
-            'executesProtocol': get_reference(process.protocol),
-            'parameterValues': process.parameter_values,
-            'performer': process.performer,
-            'date': str(process.perform_date) if process.perform_date else '',
-            'comments': process.comments,
-            'inputs': [],
-            'outputs': []}
-
-        # The name string seems to be optional
-        if process.name:
-            process_data['name'] = process.name
-
-        if hasattr(process, 'next_process') and process.next_process:
-            process_data['nextProcess'] = get_reference(process.next_process)
-
-        if hasattr(process, 'previous_process') and process.previous_process:
-            process_data['previousProcess'] = get_reference(
-                process.previous_process)
-
-        for i in process.inputs.all():
-            process_data['inputs'].append(get_reference(i))
-
-        for o in process.outputs.all():
-            process_data['outputs'].append(get_reference(o))
-
-        parent_data['processSequence'].append(process_data)
-        logging.debug('Added process "{}"'.format(process.name))
-
-        if hasattr(process, 'next_process'):
-            process = process.next_process
-
-        else:
-            process = None
-
-
-def export_isa(investigation):
+def export_isa_json(investigation):
     """
     Export ISA investigation into a dictionary corresponding to ISA JSON
     :param investigation: Investigation object
     :return: Dictionary
     """
-    logging.debug('Exporting ISA data..')
+
+    def get_reference(obj):
+        """
+        Return reference to an object for exporting
+        :param obj: Any object inheriting BaseSampleSheet
+        :return: Reference value as dict
+        """
+        return {'@id': obj.json_id}
+
+    def export_materials(parent_obj, parent_data):
+        """
+        Export materials from a parent into output dict
+        :param parent_obj: Study or Assay object
+        :param parent_data: Parent study or assay in output dict
+        """
+        for material in parent_obj.materials.all():
+            material_data = {
+                '@id': material.json_id,
+                'name': material.name}
+
+            # Characteristics for all material types except data files
+            if material.item_type != 'DATA':
+                material_data['characteristics']: material.characteristics
+
+            # Source
+            if material.item_type == 'SOURCE':
+                parent_data['materials']['sources'].append(material_data)
+
+            # Sample
+            elif material.item_type == 'SAMPLE':
+                material_data['factorValues'] = material.factor_values
+                parent_data['materials']['samples'].append(material_data)
+
+            # Other materials
+            elif material.item_type == 'MATERIAL':
+                material_data['type'] = material.material_type
+                parent_data['materials']['otherMaterials'].append(material_data)
+
+            # Data files
+            elif material.item_type == 'DATA':
+                material_data['type'] = material.material_type
+                parent_data['dataFiles'].append(material_data)
+
+            logging.debug('Added material "{}" ({})'.format(
+                material.name, material.item_type))
+
+    def export_processes(parent_obj, parent_data):
+        """
+        Export process sequence from a parent into output dict
+        :param parent_obj: Study or Assay object
+        :param parent_data: Parent study or assay in output dict
+        """
+        process = parent_obj.first_process
+
+        while process:
+            process_data = {
+                '@id': process.json_id,
+                'executesProtocol': get_reference(process.protocol),
+                'parameterValues': process.parameter_values,
+                'performer': process.performer,
+                'date': str(
+                    process.perform_date) if process.perform_date else '',
+                'comments': process.comments,
+                'inputs': [],
+                'outputs': []}
+
+            # The name string seems to be optional
+            if process.name:
+                process_data['name'] = process.name
+
+            if hasattr(process, 'next_process') and process.next_process:
+                process_data['nextProcess'] = get_reference(
+                    process.next_process)
+
+            if hasattr(process,
+                       'previous_process') and process.previous_process:
+                process_data['previousProcess'] = get_reference(
+                    process.previous_process)
+
+            for i in process.inputs.all():
+                process_data['inputs'].append(get_reference(i))
+
+            for o in process.outputs.all():
+                process_data['outputs'].append(get_reference(o))
+
+            parent_data['processSequence'].append(process_data)
+            logging.debug('Added process "{}"'.format(process.name))
+
+            if hasattr(process, 'next_process'):
+                process = process.next_process
+
+            else:
+                process = None
+
+    logging.debug('Exporting ISA data into JSON dict..')
 
     # Investigation properties
     ret = {
