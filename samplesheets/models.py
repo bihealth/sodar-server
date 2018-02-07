@@ -228,7 +228,8 @@ class Protocol(BaseSampleSheet):
         help_text='Protocol description')
 
     #: Protocol URI
-    uri = models.URLField(
+    uri = models.CharField(
+        max_length=2048,
         unique=False,
         help_text='Protocol URI')
 
