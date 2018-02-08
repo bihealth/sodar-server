@@ -108,7 +108,6 @@ class Migration(migrations.Migration):
                 ('description', models.TextField(blank=True, help_text='Study description')),
                 ('study_design', django.contrib.postgres.fields.jsonb.JSONField(default=dict, help_text='Study design descriptors')),
                 ('factors', django.contrib.postgres.fields.jsonb.JSONField(default=dict, help_text='Study factors')),
-                ('first_process', models.ForeignKey(help_text='First process in the process sequence', null=True, on_delete=django.db.models.deletion.CASCADE, related_name='study', to='samplesheets.Process')),
                 ('investigation', models.ForeignKey(help_text='Investigation to which the study belongs', on_delete=django.db.models.deletion.CASCADE, related_name='studies', to='samplesheets.Investigation')),
                 ('json_id', models.CharField(blank=True, help_text='JSON @id value', max_length=255, null=True)),
                 ('characteristic_cat', django.contrib.postgres.fields.jsonb.JSONField(default=dict, help_text='Characteristic categories')),
@@ -276,9 +275,5 @@ class Migration(migrations.Migration):
             model_name='genericmaterial',
             name='study',
             field=models.ForeignKey(help_text='Study to which the material belongs (for study sequence)', null=True, on_delete=django.db.models.deletion.CASCADE, related_name='materials', to='samplesheets.Study'),
-        ),
-        migrations.RemoveField(
-            model_name='study',
-            name='first_process',
         ),
     ]
