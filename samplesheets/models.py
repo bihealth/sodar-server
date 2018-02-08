@@ -174,13 +174,6 @@ class Study(BaseSampleSheet):
         default=dict,
         help_text='Comments')
 
-    #: First process in the process sequence
-    first_process = models.ForeignKey(
-        'Process',
-        related_name='study',
-        null=True,  # This may be created before we have a process
-        help_text='First process in the process sequence')
-
     class Meta:
         unique_together = ('investigation', 'identifier', 'title')
         verbose_name_plural = 'studies'
@@ -195,6 +188,17 @@ class Study(BaseSampleSheet):
             self.investigation.title,
             self.identifier)
         return 'Study({})'.format(', '.join(repr(v) for v in values))
+
+    # Custom row-level functions
+
+    def get_first_process(self):
+        """Return first process in the process sequence or None if not found"""
+        try:
+            return Process.objects.get(
+                study=self, assay=None, previous_process=None)
+
+        except Process.DoesNotExist:
+            return None
 
 
 # Protocol ---------------------------------------------------------------------
@@ -318,13 +322,6 @@ class Assay(BaseSampleSheet):
         default=dict,
         help_text='Comments')
 
-    #: First process in the process sequence
-    first_process = models.ForeignKey(
-        'Process',
-        related_name='assay',
-        null=True,  # This may be created before we have a process
-        help_text='First process in the process sequence')
-
     class Meta:
         unique_together = ('study', 'file_name')
 
@@ -340,6 +337,16 @@ class Assay(BaseSampleSheet):
             self.study.identifier,
             self.file_name)
         return 'Assay({})'.format(', '.join(repr(v) for v in values))
+
+    # Custom row-level functions
+
+    def get_first_process(self):
+        """Return first process in the process sequence or None if not found"""
+        try:
+            return Process.objects.get(assay=self, previous_process=None)
+
+        except Process.DoesNotExist:
+            return None
 
 
 # Materials and data files -----------------------------------------------------
@@ -393,14 +400,14 @@ class GenericMaterial(BaseSampleSheet):
         Study,
         related_name='materials',
         null=True,
-        help_text='Study to which the material belongs')
+        help_text='Study to which the material belongs (for study sequence)')
 
     #: Assay to which the material belongs (for assay sequence)
     assay = models.ForeignKey(
         Assay,
         related_name='materials',
         null=True,
-        help_text='Assay to which the material belongs (optional)')
+        help_text='Assay to which the material belongs (for assay sequence)')
 
     #: Material or data field type (only for materials and data files)
     material_type = models.CharField(
@@ -459,17 +466,29 @@ class GenericMaterial(BaseSampleSheet):
 
         return 'GenericMaterial({})'.format(', '.join(repr(v) for v in values))
 
+    # Saving and validation
+
     def save(self, *args, **kwargs):
         """Override save() to include custom validation functions"""
         self._validate_parent()
+        self._validate_json_id()
         self._validate_item_fields()
         super(GenericMaterial, self).save(*args, **kwargs)
 
     def _validate_parent(self):
-        """Validate existence of a parent study/assay"""
-        if not self.study and not self.assay:
+        """Validate the existence of a parent assay or study"""
+        if not self.get_parent():
+            raise ValidationError('Parent assay or study not set')
+
+    def _validate_json_id(self):
+        """Validate json_id uniqueness within parent"""
+        if (GenericMaterial.objects.filter(
+                study=self.study,
+                assay=self.assay,
+                json_id=self.json_id).count() != 0):
             raise ValidationError(
-                'Material must provide either a parent study or assay')
+                'Material id "{}" not unique within parent'.format(
+                    self.json_id))
 
     def _validate_item_fields(self):
         """Validate fields related to specific material types"""
@@ -484,6 +503,18 @@ class GenericMaterial(BaseSampleSheet):
 
         if self.item_type != 'SAMPLE' and self.factor_values:
             raise ValidationError('Factor values included for a non-sample')
+
+    # Custom row-level functions
+
+    def get_parent(self):
+        """Return parent assay or study"""
+        if self.assay:
+            return self.assay
+
+        elif self.study:
+            return self.study
+
+        return None  # This should not happen and is caught during validation
 
 
 # Process ----------------------------------------------------------------------
@@ -507,6 +538,20 @@ class Process(BaseSampleSheet):
         null=True,  # When under a study, protocol is not needed
         blank=True,
         help_text='Protocol which the process executes')
+
+    #: Study to which the process belongs
+    study = models.ForeignKey(
+        Study,
+        related_name='processes',
+        null=True,
+        help_text='Study to which the process belongs (for study sequence)')
+
+    #: Assay to which the process belongs (for assay sequence)
+    assay = models.ForeignKey(
+        Assay,
+        related_name='processes',
+        null=True,
+        help_text='Assay to which the process belongs (for assay sequence)')
 
     #: Previous process (can be None for first process in sequence)
     previous_process = models.OneToOneField(
@@ -568,3 +613,77 @@ class Process(BaseSampleSheet):
             self.protocol.json_id,
             self.json_id)
         return 'Process({})'.format(', '.join(repr(v) for v in values))
+
+    # Saving and validation
+
+    def save(self, *args, **kwargs):
+        """Override save() to include custom validation functions"""
+        self._validate_parent()
+        self._validate_first()
+        self._validate_json_id()
+        self._validate_sequence()
+        super(Process, self).save(*args, **kwargs)
+
+    def _validate_parent(self):
+        """Validate the existence of a parent assay or study"""
+        if not self.get_parent():
+            raise ValidationError('Parent assay or study not set')
+
+    def _validate_json_id(self):
+        """Validate json_id uniqueness within parent"""
+        if (Process.objects.filter(
+                study=self.study,
+                assay=self.assay,
+                json_id=self.json_id).count() != 0):
+            raise ValidationError(
+                'Process id "{}" not unique within parent'.format(
+                    self.json_id))
+
+    def _validate_first(self):
+        """Ensure only one process can be the first (no previous_process)"""
+        if (not self.previous_process and Process.objects.filter(
+                study=self.study,
+                assay=self.assay,
+                previous_process=None).count() != 0):
+            raise ValidationError(
+                'Only one process can be the first in sequence')
+
+    def _validate_sequence(self):
+        """Validate sequence for not looping"""
+        msg = 'Sequence loops to itself: '
+
+        # Check connections of current process
+        if self.previous_process and self.get_next_process():
+            if self.previous_process == self.get_next_process():
+                raise ValidationError(msg + 'previous process = next process')
+
+            if self.previous_process == self or self.get_next_process() == self:
+                raise ValidationError(msg + 'process refers to itself')
+
+        # Traverse backwards in process
+        prev = self.previous_process
+
+        while prev:
+            if hasattr(self, 'next_process') and prev == self.next_process:
+                raise ValidationError(
+                    msg + 'next process appears earlier in sequence')
+
+            prev = prev.previous_process
+
+    # Custom row-level functions
+
+    def get_next_process(self):
+        """Return next process or None if it doesn't exist"""
+        return self.next_process if (
+            hasattr(self, 'next_process') and
+            self.next_process) else None
+
+    def get_parent(self):
+        """Return parent assay or study"""
+        if self.assay:
+            return self.assay
+
+        elif self.study:
+            return self.study
+
+        return None  # This should not happen and is caught during validation

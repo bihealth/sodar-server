@@ -67,8 +67,9 @@ def import_isa_json(json_data, file_name, project):
         Create processes of a process sequence in the database.
         :param sequence: Process sequence of a study or an assay
         :param parent: Parent study or assay
-        :return: Process object (first_process)
+        :return: Process object (first process)
         """
+        first_process = None
         prev_process = None
         study = parent if type(parent) == Study else parent.study
 
@@ -80,6 +81,8 @@ def import_isa_json(json_data, file_name, project):
             values = {
                 'json_id': p['@id'],
                 'protocol': protocol,
+                'assay': parent if type(parent) == Assay else None,
+                'study': parent if type(parent) == Study else None,
                 'previous_process': prev_process,
                 'parameter_values': p['parameterValues'],
                 'performer': p['performer'],
@@ -92,6 +95,9 @@ def import_isa_json(json_data, file_name, project):
             process.save()
             logging.debug('Added process "{}" to "{}"'.format(
                 process.json_id, parent.json_id))
+
+            if not first_process:
+                first_process = process
 
             # Link inputs
             for i in p['inputs']:
@@ -111,14 +117,9 @@ def import_isa_json(json_data, file_name, project):
                 logging.debug('Linked output material "{}"'.format(
                     output_material.json_id))
 
-            if not prev_process:
-                parent.first_process = process
-                parent.save()
-                logging.debug(
-                    'Set process "{}" as first_process in "{}"'.format(
-                        process.json_id, parent.json_id))
-
             prev_process = process
+
+        return first_process
 
     logging.debug('Importing investigation from JSON dict..')
 
@@ -283,7 +284,7 @@ def export_isa_json(investigation):
         :param parent_obj: Study or Assay object
         :param parent_data: Parent study or assay in output dict
         """
-        process = parent_obj.first_process
+        process = parent_obj.get_first_process()
 
         while process:
             process_data = {

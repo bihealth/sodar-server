@@ -33,7 +33,7 @@ class TestSampleSheetUtils(TestCase, ProjectMixin, RoleAssignmentMixin):
         """Compare imported/exported ISA JSON data to Investigation"""
 
         def compare_process_seq(parent, json_parent):
-            process = parent.first_process
+            process = parent.get_first_process()
 
             for json_process in json_parent['processSequence']:
                 self.assertEqual(process.json_id, json_process['@id'])
