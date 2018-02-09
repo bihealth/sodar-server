@@ -200,22 +200,22 @@ class Study(BaseSampleSheet):
         except Process.DoesNotExist:
             return None
 
-    def get_characteristic_cat(self, json_id):
-        """Return characteristic category with a JSON ID"""
+    def get_characteristic_cat(self, characteristic):
+        """Return characteristic category"""
         for c in self.characteristic_cat:
-            if c['@id'] == json_id:
+            if c['@id'] == characteristic['category']['@id']:
                 return c['characteristicType']
 
-    def get_unit_cat(self, json_id):
-        """Return unit category with a JSON ID"""
+    def get_unit_cat(self, unit):
+        """Return unit category"""
         for c in self.unit_cat:
-            if c['@id'] == json_id:
+            if c['@id'] == unit['@id']:
                 return c
 
-    def get_factor(self, json_id):
-        """Return factor definition with a JSON ID"""
+    def get_factor(self, factor_value):
+        """Return factor definition"""
         for f in self.factors:
-            if f['@id'] == json_id:
+            if f['@id'] == factor_value['category']['@id']:
                 return f
 
 

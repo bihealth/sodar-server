@@ -47,8 +47,7 @@ def get_assay_data(assay):
         char_count = 0
 
         for c in material.characteristics:
-            category = assay.study.get_characteristic_cat(
-                c['category']['@id'])
+            category = assay.study.get_characteristic_cat(c)
             field_header.append(category['annotationValue'])
             char_count += 1
 
@@ -70,7 +69,7 @@ def get_assay_data(assay):
         factor_count = 0
 
         for fv in material.factor_values:
-            factor = assay.study.get_factor(fv['category']['@id'])
+            factor = assay.study.get_factor(fv)
             field_header.append(
                 factor['factorType']['annotationValue'].capitalize())
             factor_count += 1
@@ -95,7 +94,7 @@ def get_assay_data(assay):
                 val = fv['value']
 
                 if 'unit' in fv:
-                    category = assay.study.get_unit_cat(fv['unit']['@id'])
+                    category = assay.study.get_unit_cat(fv['unit'])
                     unit = category['annotationValue']
 
             add_val(row, val, unit=unit, link=link)
