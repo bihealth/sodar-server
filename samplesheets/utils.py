@@ -52,8 +52,17 @@ def import_isa_json(json_data, file_name, project):
         if 'characteristics' in material:
             values['characteristics'] = material['characteristics']
 
-        if 'factor_values' in material:
-            values['factor_values'] = material['factorValues']
+        if 'factorValues' in material:
+            # HACK: Workaround for factor values imported twice in ISA JSON
+            imported_ids = []
+            factor_values = []
+
+            for fv in material['factorValues']:
+                if fv['category']['@id'] not in imported_ids:
+                    factor_values.append(fv)
+                    imported_ids.append(fv['category']['@id'])
+
+            values['factor_values'] = factor_values
 
         material_obj = GenericMaterial(**values)
         material_obj.save()

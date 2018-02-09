@@ -74,6 +74,48 @@
       </div>
     </div>
 
+    {% for assay in investigation.studies.first.assays.all %}
+    <div class="card">
+      <div class="card-header">
+        <h4>Assay "{{ assay.file_name }}"</h4>
+      </div>
+      <div class="card-body omics-card-body-table">
+        <div class="table-responsive">
+        {% get_assay_data assay as assay_data %}
+
+          <table class="table table-bordered omics-card-table">
+            <thead>
+              {# Top header #}
+              <tr>
+                <th class="bg-info text-white" colspan="{{ assay_data.top_header.sources.colspan }}">Sources</th>
+                <th class="bg-warning text-white" colspan="{{ assay_data.top_header.samples.colspan }}">Samples</th>
+                <th class="bg-success text-white" colspan="{{ assay_data.top_header.samples.colspan }}">Assay</th>
+              </tr>
+              {# Field header #}
+              <tr>
+                {% for header_title in assay_data.field_header %}
+                  <th>{{ header_title }}</th>
+                {% endfor %}
+              </tr>
+            </thead>
+            <tbody>
+              {# Content #}
+              {% for row in assay_data.assay_table %}
+                <tr>
+                  {% for col in row %}
+                    {% autoescape off %}
+                      {% render_sheet_column col %}
+                    {% endautoescape %}
+                  {% endfor %}
+                </tr>
+              {% endfor %}
+            </tbody>
+        </table>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+
   </div>
 {% endif %}
 

@@ -38,27 +38,31 @@ class ProjectSheetsView(
         context = super(ProjectSheetsView, self).get_context_data(
             *args, **kwargs)
 
-        try:
-            context['investigation'] = Investigation.objects.get(
-                project=context['project'])
+        investigation = None
 
-            # Statistics
-            context['sheet_stats'] = {
-                'study_count': Study.objects.all().count(),
-                'assay_count': Assay.objects.all().count(),
-                'protocol_count': Protocol.objects.all().count(),
-                'process_count': Process.objects.all().count(),
-                'source_count': GenericMaterial.objects.filter(
-                    item_type='SOURCE').count(),
-                'material_count': GenericMaterial.objects.filter(
-                    item_type='MATERIAL').count(),
-                'sample_count': GenericMaterial.objects.filter(
-                    item_type='SAMPLE').count(),
-                'data_count': GenericMaterial.objects.filter(
-                    item_type='DATA').count()}
+        try:
+            investigation = Investigation.objects.get(
+                project=context['project'])
+            context['investigation'] = investigation
 
         except Investigation.DoesNotExist:
             context['investigation'] = None
+            return context
+
+        # Statistics
+        context['sheet_stats'] = {
+            'study_count': Study.objects.all().count(),
+            'assay_count': Assay.objects.all().count(),
+            'protocol_count': Protocol.objects.all().count(),
+            'process_count': Process.objects.all().count(),
+            'source_count': GenericMaterial.objects.filter(
+                item_type='SOURCE').count(),
+            'material_count': GenericMaterial.objects.filter(
+                item_type='MATERIAL').count(),
+            'sample_count': GenericMaterial.objects.filter(
+                item_type='SAMPLE').count(),
+            'data_count': GenericMaterial.objects.filter(
+                item_type='DATA').count()}
 
         return context
 

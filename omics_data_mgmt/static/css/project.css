@@ -222,13 +222,17 @@ table.omics-card-table {
   margin: 0;
 }
 
-table.omics-card-table-borderless {
-  margin: 0;
+table.omics-card-table tr th {
+  border-top: 0 !important;
+  border-bottom: 1px solid #dfdfdf;
 }
 
 table.omics-card-table tr th {
   border-top: 0 !important;
-  border-bottom: 1px solid #dfdfdf;
+}
+
+table.omics-card-table-borderless {
+  margin: 0;
 }
 
 table.omics-card-table-borderless tbody tr:hover {
@@ -239,8 +243,9 @@ table.omics-card-table-borderless td {
   border: 0;
 }
 
-table.omics-card-table tr th {
-  border-top: 0 !important;
+table.omics-card-table-bordered {
+  margin: 0;
+
 }
 
 tr.omics-pr-project-list-header th:first-child {

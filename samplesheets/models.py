@@ -200,6 +200,24 @@ class Study(BaseSampleSheet):
         except Process.DoesNotExist:
             return None
 
+    def get_characteristic_cat(self, json_id):
+        """Return characteristic category with a JSON ID"""
+        for c in self.characteristic_cat:
+            if c['@id'] == json_id:
+                return c['characteristicType']
+
+    def get_unit_cat(self, json_id):
+        """Return unit category with a JSON ID"""
+        for c in self.unit_cat:
+            if c['@id'] == json_id:
+                return c
+
+    def get_factor(self, json_id):
+        """Return factor definition with a JSON ID"""
+        for f in self.factors:
+            if f['@id'] == json_id:
+                return f
+
 
 # Protocol ---------------------------------------------------------------------
 
@@ -348,6 +366,20 @@ class Assay(BaseSampleSheet):
         except Process.DoesNotExist:
             return None
 
+    def get_samples(self):
+        """Return assay samples"""
+        # NOTE: Filtering should not be required but just in case
+        return self.get_first_process().inputs.filter(item_type='SAMPLE')
+
+    def get_sources(self):
+        """Return sources of samples used in this assay as a list"""
+        sources = []
+
+        for sample in self.get_samples():
+            sources += sample.get_sources()
+
+        return sorted(set(sources), key=lambda x: x.name)
+
 
 # Materials and data files -----------------------------------------------------
 
@@ -432,6 +464,7 @@ class GenericMaterial(BaseSampleSheet):
     def __str__(self):
         if self.assay:
             return '{}/{}/{}/{}'.format(
+                self.item_type,
                 self.assay.study.investigation.title,
                 self.assay.study.identifier,
                 self.assay.file_name,
@@ -439,16 +472,18 @@ class GenericMaterial(BaseSampleSheet):
 
         elif self.study:
             return '{}/{}/{}'.format(
+                self.item_type,
                 self.study.investigation.title,
                 self.study.identifier,
                 self.name)
 
         else:
-            return self.name
+            return '{}/{}'.format(self.item_type, self.name)
 
     def __repr__(self):
         if self.assay:
             values = (
+                self.item_type,
                 self.assay.study.investigation.title,
                 self.assay.study.identifier,
                 self.assay.file_name,
@@ -456,12 +491,14 @@ class GenericMaterial(BaseSampleSheet):
 
         elif self.study:
             values = (
+                self.item_type,
                 self.study.investigation.title,
                 self.study.identifier,
                 self.name)
 
         else:
             values = (
+                self.item_type,
                 self.name)
 
         return 'GenericMaterial({})'.format(', '.join(repr(v) for v in values))
@@ -515,6 +552,27 @@ class GenericMaterial(BaseSampleSheet):
             return self.study
 
         return None  # This should not happen and is caught during validation
+
+    def get_sources(self):
+        """Return sources of material as a list"""
+
+        def find_sources(material, sources):
+            if material.item_type == 'SOURCE':
+                sources.append(material)
+
+            elif hasattr(material, 'material_sources'):
+                for source_process in material.material_sources.all():
+                    for input_material in source_process.inputs.all():
+                        if input_material.item_type == 'SOURCE':
+                            sources.append(input_material)
+
+                        else:
+                            sources += find_sources(input_material, sources)
+
+            return set(sources)
+
+        sources = find_sources(self, [])
+        return sorted(sources, key=lambda x: x.name)
 
 
 # Process ----------------------------------------------------------------------
