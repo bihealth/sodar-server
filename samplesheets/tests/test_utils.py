@@ -36,7 +36,7 @@ class TestSampleSheetUtils(TestCase, ProjectMixin, RoleAssignmentMixin):
             process = parent.get_first_process()
 
             for json_process in json_parent['processSequence']:
-                self.assertEqual(process.json_id, json_process['@id'])
+                self.assertEqual(process.api_id, json_process['@id'])
                 self.assertEqual(
                     process.inputs.all().count(), len(json_process['inputs']))
                 self.assertEqual(

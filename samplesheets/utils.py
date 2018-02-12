@@ -34,7 +34,7 @@ def import_isa_json(json_data, file_name, project):
 
         # Common values
         values = {
-            'json_id': material['@id'],
+            'api_id': material['@id'],
             'item_type': item_type,
             'name': material['name'],
             'characteristics': (material['characteristics'] if
@@ -85,10 +85,10 @@ def import_isa_json(json_data, file_name, project):
         for p in sequence:
             protocol = Protocol.objects.get(
                 study=study,
-                json_id=p['executesProtocol']['@id'])
+                api_id=p['executesProtocol']['@id'])
 
             values = {
-                'json_id': p['@id'],
+                'api_id': p['@id'],
                 'protocol': protocol,
                 'assay': parent if type(parent) == Assay else None,
                 'study': parent if type(parent) == Study else None,
@@ -103,7 +103,7 @@ def import_isa_json(json_data, file_name, project):
             process = Process(**values)
             process.save()
             logging.debug('Added process "{}" to "{}"'.format(
-                process.json_id, parent.json_id))
+                process.api_id, parent.api_id))
 
             if not first_process:
                 first_process = process
@@ -115,7 +115,7 @@ def import_isa_json(json_data, file_name, project):
 
                 process.inputs.add(input_material)
                 logging.debug('Linked input material "{}"'.format(
-                    input_material.json_id))
+                    input_material.api_id))
 
             # Link outputs
             for o in p['outputs']:
@@ -124,7 +124,7 @@ def import_isa_json(json_data, file_name, project):
 
                 process.outputs.add(output_material)
                 logging.debug('Linked output material "{}"'.format(
-                    output_material.json_id))
+                    output_material.api_id))
 
             prev_process = process
 
@@ -150,7 +150,7 @@ def import_isa_json(json_data, file_name, project):
     # Create studies
     for s in json_data['studies']:
         values = {
-            'json_id': s['@id'] if hasattr(s, '@id') else None,
+            'api_id': s['@id'] if hasattr(s, '@id') else None,
             'identifier': s['identifier'],
             'file_name': s['filename'],
             'investigation': investigation,
@@ -163,12 +163,12 @@ def import_isa_json(json_data, file_name, project):
 
         study = Study(**values)
         study.save()
-        logging.debug('Added study "{}"'.format(study.json_id))
+        logging.debug('Added study "{}"'.format(study.api_id))
 
         # Create protocols
         for p in s['protocols']:
             values = {
-                'json_id': p['@id'],
+                'api_id': p['@id'],
                 'name': p['name'],
                 'study': study,
                 'protocol_type': p['protocolType'],
@@ -181,7 +181,7 @@ def import_isa_json(json_data, file_name, project):
             protocol = Protocol(**values)
             protocol.save()
             logging.debug('Added protocol "{}" in study "{}"'.format(
-                protocol.json_id, study.json_id))
+                protocol.api_id, study.api_id))
 
         # Create study sources
         for m in s['materials']['sources']:
@@ -201,7 +201,7 @@ def import_isa_json(json_data, file_name, project):
         # Create assays
         for a in s['assays']:
             values = {
-                'json_id': a['@id'] if hasattr(a, '@id') else None,
+                'api_id': a['@id'] if hasattr(a, '@id') else None,
                 'file_name': a['filename'],
                 'study': study,
                 'measurement_type': a['measurementType'],
@@ -214,7 +214,7 @@ def import_isa_json(json_data, file_name, project):
             assay = Assay(**values)
             assay.save()
             logging.debug('Added assay "{}" in study "{}"'.format(
-                assay.json_id, study.json_id))
+                assay.api_id, study.api_id))
 
             # Create assay data files
             for m in a['dataFiles']:
@@ -248,7 +248,7 @@ def export_isa_json(investigation):
         :param obj: Any object inheriting BaseSampleSheet
         :return: Reference value as dict
         """
-        return {'@id': obj.json_id}
+        return {'@id': obj.api_id}
 
     def export_materials(parent_obj, parent_data):
         """
@@ -258,7 +258,7 @@ def export_isa_json(investigation):
         """
         for material in parent_obj.materials.all():
             material_data = {
-                '@id': material.json_id,
+                '@id': material.api_id,
                 'name': material.name}
 
             # Characteristics for all material types except data files
@@ -297,7 +297,7 @@ def export_isa_json(investigation):
 
         while process:
             process_data = {
-                '@id': process.json_id,
+                '@id': process.api_id,
                 'executesProtocol': get_reference(process.protocol),
                 'parameterValues': process.parameter_values,
                 'performer': process.performer,
@@ -375,15 +375,15 @@ def export_isa_json(investigation):
             'assays': [],
             'processSequence': []}
 
-        if study.json_id:
-            study_data['@id'] = study.json_id
+        if study.api_id:
+            study_data['@id'] = study.api_id
 
         logging.debug('Added study "{}"'.format(study.title))
 
         # Protocols
         for protocol in study.protocols.all():
             protocol_data = {
-                '@id': protocol.json_id,
+                '@id': protocol.api_id,
                 'name': protocol.name,
                 'protocolType': protocol.protocol_type,
                 'description': protocol.description,
@@ -416,8 +416,8 @@ def export_isa_json(investigation):
                     'samples': [],
                     'otherMaterials': []}}
 
-            if assay.json_id:
-                assay_data['@id'] = assay.json_id
+            if assay.api_id:
+                assay_data['@id'] = assay.api_id
 
             logging.debug('Added assay "{}"'.format(assay.file_name))
 

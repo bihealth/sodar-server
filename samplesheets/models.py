@@ -24,12 +24,12 @@ GENERIC_MATERIAL_CHOICES = [
 class BaseSampleSheet(models.Model):
     """Abstract class with common ODM sample sheet properties"""
 
-    #: JSON @id value
-    json_id = models.CharField(
+    #: ISA API object id
+    api_id = models.CharField(
         max_length=DEFAULT_LENGTH,
         blank=True,
         null=True,
-        help_text='JSON @id value')
+        help_text='ISA API object id')
 
     #: Internal UUID for the object
     omics_uuid = models.UUIDField(
@@ -387,18 +387,18 @@ class Assay(BaseSampleSheet):
 class GenericMaterialManager(models.Manager):
     """Manager for custom table-level GenericMaterial queries"""
 
-    def find_child(self, parent, json_id):
-        """Find child material of a parent with a specific json_id"""
+    def find_child(self, parent, api_id):
+        """Find child material of a parent with a specific api_id"""
         parent_query_arg = parent.__class__.__name__.lower()
         study = parent if type(parent) == Study else parent.study
 
         try:
             return super(GenericMaterialManager, self).get_queryset().get(
-                **{parent_query_arg: parent, 'json_id': json_id})
+                **{parent_query_arg: parent, 'api_id': api_id})
 
         except GenericMaterial.DoesNotExist:  # Sample, get from study
             return super(GenericMaterialManager, self).get_queryset().get(
-                study=study, json_id=json_id)
+                study=study, api_id=api_id)
 
 
 class GenericMaterial(BaseSampleSheet):
@@ -508,7 +508,7 @@ class GenericMaterial(BaseSampleSheet):
     def save(self, *args, **kwargs):
         """Override save() to include custom validation functions"""
         self._validate_parent()
-        self._validate_json_id()
+        self._validate_api_id()
         self._validate_item_fields()
         super(GenericMaterial, self).save(*args, **kwargs)
 
@@ -517,15 +517,15 @@ class GenericMaterial(BaseSampleSheet):
         if not self.get_parent():
             raise ValidationError('Parent assay or study not set')
 
-    def _validate_json_id(self):
-        """Validate json_id uniqueness within parent"""
+    def _validate_api_id(self):
+        """Validate api_id uniqueness within parent"""
         if (GenericMaterial.objects.filter(
                 study=self.study,
                 assay=self.assay,
-                json_id=self.json_id).count() != 0):
+                api_id=self.api_id).count() != 0):
             raise ValidationError(
                 'Material id "{}" not unique within parent'.format(
-                    self.json_id))
+                    self.api_id))
 
     def _validate_item_fields(self):
         """Validate fields related to specific material types"""
@@ -660,16 +660,16 @@ class Process(BaseSampleSheet):
     def __str__(self):
         return '{}/{}/{}/{}'.format(
             self.protocol.study.investigation.title,
-            self.protocol.study.json_id,
-            self.protocol.json_id,
-            self.json_id)
+            self.protocol.study.api_id,
+            self.protocol.api_id,
+            self.api_id)
 
     def __repr__(self):
         values = (
             self.protocol.study.investigation.title,
-            self.protocol.study.json_id,
-            self.protocol.json_id,
-            self.json_id)
+            self.protocol.study.api_id,
+            self.protocol.api_id,
+            self.api_id)
         return 'Process({})'.format(', '.join(repr(v) for v in values))
 
     # Saving and validation
@@ -678,7 +678,7 @@ class Process(BaseSampleSheet):
         """Override save() to include custom validation functions"""
         self._validate_parent()
         self._validate_first()
-        self._validate_json_id()
+        self._validate_api_id()
         self._validate_sequence()
         super(Process, self).save(*args, **kwargs)
 
@@ -687,15 +687,15 @@ class Process(BaseSampleSheet):
         if not self.get_parent():
             raise ValidationError('Parent assay or study not set')
 
-    def _validate_json_id(self):
-        """Validate json_id uniqueness within parent"""
+    def _validate_api_id(self):
+        """Validate api_id uniqueness within parent"""
         if (Process.objects.filter(
                 study=self.study,
                 assay=self.assay,
-                json_id=self.json_id).count() != 0):
+                api_id=self.api_id).count() != 0):
             raise ValidationError(
                 'Process id "{}" not unique within parent'.format(
-                    self.json_id))
+                    self.api_id))
 
     def _validate_first(self):
         """Ensure only one process can be the first (no previous_process)"""
