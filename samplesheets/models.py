@@ -60,14 +60,14 @@ class Investigation(BaseSampleSheet):
     #: Locally unique identifier
     identifier = models.CharField(
         max_length=DEFAULT_LENGTH,
-        unique=True,
+        unique=False,
         blank=False,
         help_text='Locally unique identifier')
 
     #: File name for exporting
     file_name = models.CharField(
         max_length=DEFAULT_LENGTH,
-        unique=True,
+        unique=False,
         blank=False,
         help_text='File name for exporting')
 

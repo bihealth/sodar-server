@@ -1,9 +1,12 @@
 """Tests for utils in the samplesheets app"""
 
 from collections import OrderedDict
-from isatools import isajson
+from isatools import isajson, isatab
 import json
 import os
+from tempfile import TemporaryDirectory
+from zipfile import ZipFile
+
 from test_plus.test import TestCase
 
 # Projectroles dependency
@@ -11,7 +14,7 @@ from projectroles.models import Role, OMICS_CONSTANTS
 from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
 
 from ..models import Investigation
-from ..utils import import_isa_json, export_isa_json
+from ..utils import import_isa, get_inv_file_name
 
 
 class TestSampleSheetUtils(TestCase, ProjectMixin, RoleAssignmentMixin):
@@ -29,6 +32,7 @@ class TestSampleSheetUtils(TestCase, ProjectMixin, RoleAssignmentMixin):
         self.assignment_owner = self._make_assignment(
             self.project, self.user_owner, self.role_owner)
 
+    '''
     def _compare_isa_data(self, investigation, json_data):
         """Compare imported/exported ISA JSON data to Investigation"""
 
@@ -90,47 +94,47 @@ class TestSampleSheetUtils(TestCase, ProjectMixin, RoleAssignmentMixin):
 
                 # Processes
                 compare_process_seq(assay, json_assay)
+    '''
 
-    def test_json_batch(self):
-        """Test ISA JSON import and export in batch"""
+    def test_isa_batch(self):
+        """Test ISAtab import in batch"""
 
-        json_dir = os.fsencode(os.path.dirname(__file__) + '/isa_json/')
+        isa_dir = os.fsencode(os.path.dirname(__file__) + '/isatab/')
         print('\n')     # HACK for no newline for 1st entry with -v 2
         self.assertEqual(Investigation.objects.count(), 0)
 
         for file in sorted(
-                [x for x in os.scandir(json_dir) if x.is_file()],
+                [x for x in os.scandir(isa_dir) if x.is_file()],
                 key=lambda x: x.name):
-            with open(file.path, 'r') as f:
-                file_name = os.fsdecode(file.name)
-                print('Testing file "{}"'.format(file_name))
-                json_data = json.loads(f.read(), object_pairs_hook=OrderedDict)
+            with ZipFile(os.fsdecode(file.path)) as zf:
+                with TemporaryDirectory() as temp_dir:
+                    file_name = os.fsdecode(file.name)
+                    print('Testing file "{}"'.format(file_name))
+                    inv_file_name = get_inv_file_name(zf)
+                    zf.extractall(temp_dir)
 
-                # Validate input just in case
-                isa_report = isajson.validate(json_data)
+                    # Parse ISAtab
+                    isa_data = isatab.load(temp_dir)
 
-                self.assertEqual(len(isa_report['errors']), 0)
-                self.assertEqual(
-                    isa_report['validation_finished'], True)
+                    # Import JSON into Django
+                    investigation = import_isa(
+                        isa_data, inv_file_name, self.project)
+                    self.assertEqual(Investigation.objects.count(), 1)
 
-                # Import JSON into Django
-                investigation = import_isa_json(json_data, file_name, self.project)
-                self.assertEqual(Investigation.objects.count(), 1)
+                    # Check investigation content
+                    # self._compare_isa_data(investigation, json_data)
 
-                # Check investigation content
-                self._compare_isa_data(investigation, json_data)
+                    # Export Django model into JSON data
+                    # json_data = export_isa_json(investigation)
 
-                # Export Django model into JSON data
-                json_data = export_isa_json(investigation)
+                    # Check exported data content
+                    # self._compare_isa_data(investigation, json_data)
 
-                # Check exported data content
-                self._compare_isa_data(investigation, json_data)
+                    # Validate export
+                    # isa_report = isajson.validate(json_data)
+                    # self.assertEqual(len(isa_report['errors']), 0)
+                    # self.assertEqual(
+                    #    isa_report['validation_finished'], True)
 
-                # Validate export
-                isa_report = isajson.validate(json_data)
-                self.assertEqual(len(isa_report['errors']), 0)
-                self.assertEqual(
-                    isa_report['validation_finished'], True)
-
-                investigation.delete()
-                self.assertEqual(Investigation.objects.count(), 0)
+                    investigation.delete()
+                    self.assertEqual(Investigation.objects.count(), 0)

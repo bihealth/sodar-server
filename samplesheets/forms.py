@@ -1,6 +1,6 @@
-from collections import OrderedDict
-from isatools import isajson
-import json
+from isatools import isatab
+from tempfile import TemporaryDirectory
+from zipfile import ZipFile
 
 from django import forms
 from django.conf import settings
@@ -10,24 +10,23 @@ from projectroles.models import Project
 
 from .models import Investigation, Study, Assay, GenericMaterial, Protocol, \
     Process
-from .utils import import_isa_json
+from .utils import import_isa, get_inv_file_name
 
 
 class SampleSheetImportForm(forms.Form):
-    """Form for importing an ISA investigation from an JSON file (ISAtab format
-    to be done)"""
+    """Form for importing an ISA investigation from an ISAtab archive"""
 
     file_upload = forms.FileField(
         allow_empty_file=False,
-        help_text='ISA-Tools compatible JSON file')
+        help_text='Zip archive containing ISAtab investigation files')
 
     class Meta:
-        fields = ['json_file']
+        fields = ['file_upload']
 
     def __init__(self, project=None, *args, **kwargs):
         """Override form initialization"""
         super(SampleSheetImportForm, self).__init__(*args, **kwargs)
-        self.isa_data = None
+        self.isa_inv = None
         self.project = None
         self.inv_file_name = None
 
@@ -40,36 +39,48 @@ class SampleSheetImportForm(forms.Form):
 
     def clean(self):
         file = self.cleaned_data.get('file_upload')
-        self.inv_file_name = file.name
 
-        try:
-            json_file = file.read().decode('utf8')
+        # TODO: Ensure filetype is zip
 
-            self.isa_data = json.loads(
-                json_file,
-                object_pairs_hook=OrderedDict)
+        # Extract zip into temporary dir
+        with TemporaryDirectory() as temp_dir:
+            with ZipFile(file) as zip_file:
+                zip_file = ZipFile(file)
 
-        except ValueError as ex:
-            self.add_error('file_upload', 'Not a valid JSON file!')
-            print(str(ex))  # DEBUG
+                # Get investigation file name
+                self.inv_file_name = get_inv_file_name(zip_file)
 
-        report = isajson.validate(self.isa_data)
+                if not self.inv_file_name:
+                    self.add_error(
+                        'file_upload',
+                        'Investigation file not found in archive')
+                    return self.cleaned_data
 
-        if len(report['errors']) > 0:
-            self.add_error(
-                'file_upload', 'JSON file failed ISA API validation!')
+                zip_file.extractall(temp_dir)
 
-            # DEBUG
-            print('ISA API Errors:')
-            for e in report['errors']:
-                print(e)
+            # Parse ISAtab
+            try:
+                self.isa_inv = isatab.load(temp_dir)
+
+            except Exception as ex:
+                self.add_error(
+                    'file_upload', 'ISA-API import failed: {}'.format(ex))
 
         return self.cleaned_data
 
     def save(self, *args, **kwargs):
-        investigation = import_isa_json(
-            json_data=self.isa_data,
-            file_name=self.inv_file_name,
-            project=self.project)
+        try:
+            return import_isa(
+                isa_inv=self.isa_inv,
+                file_name=self.inv_file_name,
+                project=self.project)
 
-        return investigation
+        except Exception as ex:
+            # If investigation was partially created, delete it
+            try:
+                Investigation.objects.get(project=self.project).delete()
+
+            except Investigation.DoesNotExist:
+                pass
+
+            raise Exception('Django import failed: {}'.format(ex))
