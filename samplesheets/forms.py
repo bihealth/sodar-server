@@ -40,7 +40,10 @@ class SampleSheetImportForm(forms.Form):
     def clean(self):
         file = self.cleaned_data.get('file_upload')
 
-        # TODO: Ensure filetype is zip
+        # Ensure file type
+        if file.content_type != 'application/zip':
+            self.add_error('file_upload', 'The file is not a Zip archive')
+            return self.cleaned_data
 
         # Extract zip into temporary dir
         with TemporaryDirectory() as temp_dir:
