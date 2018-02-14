@@ -24,7 +24,7 @@ def import_isa(isa_inv, file_name, project):
     :param project: Project object
     :return: Django Investigation object
     """
-    logging.debug('Importing investigation from ISA-API object structure..')
+    logger.debug('Importing investigation from ISA-API object structure..')
 
     ###################
     # Helper functions
@@ -118,7 +118,7 @@ def import_isa(isa_inv, file_name, project):
 
         material_obj = GenericMaterial(**values)
         material_obj.save()
-        logging.debug('Added material "{}" ({})'.format(
+        logger.debug('Added material "{}" ({})'.format(
             material_obj.name, item_type))
 
         return material_obj
@@ -175,7 +175,7 @@ def import_isa(isa_inv, file_name, project):
 
             process = Process(**values)
             process.save()
-            logging.debug('Added process "{}" to "{}"'.format(
+            logger.debug('Added process "{}" to "{}"'.format(
                 process.api_id, parent.api_id))
 
             if not first_process:
@@ -187,7 +187,7 @@ def import_isa(isa_inv, file_name, project):
                     parent, id(i))
 
                 process.inputs.add(input_material)
-                logging.debug('Linked input material "{}"'.format(
+                logger.debug('Linked input material "{}"'.format(
                     input_material.api_id))
 
             # Link outputs
@@ -196,7 +196,7 @@ def import_isa(isa_inv, file_name, project):
                     parent, id(o))
 
                 process.outputs.add(output_material)
-                logging.debug('Linked output material "{}"'.format(
+                logger.debug('Linked output material "{}"'.format(
                     output_material.api_id))
 
             prev_process = process
@@ -228,7 +228,7 @@ def import_isa(isa_inv, file_name, project):
 
     investigation = Investigation(**values)
     investigation.save()
-    logging.debug('Created investigation "{}"'.format(investigation.title))
+    logger.debug('Created investigation "{}"'.format(investigation.title))
 
     # Create studies
     for s in isa_inv.studies:
@@ -254,7 +254,7 @@ def import_isa(isa_inv, file_name, project):
 
         study = Study(**values)
         study.save()
-        logging.debug('Added study "{}"'.format(study.api_id))
+        logger.debug('Added study "{}"'.format(study.api_id))
 
         # Create protocols
         for p in s.protocols:
@@ -274,7 +274,7 @@ def import_isa(isa_inv, file_name, project):
 
             protocol = Protocol(**values)
             protocol.save()
-            logging.debug('Added protocol "{}" in study "{}"'.format(
+            logger.debug('Added protocol "{}" in study "{}"'.format(
                 protocol.name, study.file_name))
 
         # Create study sources
@@ -308,7 +308,7 @@ def import_isa(isa_inv, file_name, project):
 
             assay = Assay(**values)
             assay.save()
-            logging.debug('Added assay "{}" in study "{}"'.format(
+            logger.debug('Added assay "{}" in study "{}"'.format(
                 assay.api_id, study.api_id))
 
             # Create assay data files
@@ -323,7 +323,7 @@ def import_isa(isa_inv, file_name, project):
             # Create assay processes
             import_processes(a.process_sequence, parent=assay)
 
-    logging.debug('Import OK')
+    logger.debug('Import OK')
     return investigation
 
 
@@ -382,7 +382,7 @@ def export_isa_json(investigation):
                 material_data['type'] = material.material_type
                 parent_data['dataFiles'].append(material_data)
 
-            logging.debug('Added material "{}" ({})'.format(
+            logger.debug('Added material "{}" ({})'.format(
                 material.name, material.item_type))
 
     def export_processes(parent_obj, parent_data):
@@ -425,7 +425,7 @@ def export_isa_json(investigation):
                 process_data['outputs'].append(get_reference(o))
 
             parent_data['processSequence'].append(process_data)
-            logging.debug('Added process "{}"'.format(process.name))
+            logger.debug('Added process "{}"'.format(process.name))
 
             if hasattr(process, 'next_process'):
                 process = process.next_process
@@ -433,7 +433,7 @@ def export_isa_json(investigation):
             else:
                 process = None
 
-    logging.debug('Exporting ISA data into JSON dict..')
+    logger.debug('Exporting ISA data into JSON dict..')
 
     # Investigation properties
     ret = {
@@ -448,7 +448,7 @@ def export_isa_json(investigation):
         'studies': [],
         'publications': [],
         'people': []}
-    logging.debug('Added investigation "{}"'.format(investigation.title))
+    logger.debug('Added investigation "{}"'.format(investigation.title))
 
     # Studies
     for study in investigation.studies.all():
@@ -476,7 +476,7 @@ def export_isa_json(investigation):
         if study.api_id:
             study_data['@id'] = study.api_id
 
-        logging.debug('Added study "{}"'.format(study.title))
+        logger.debug('Added study "{}"'.format(study.title))
 
         # Protocols
         for protocol in study.protocols.all():
@@ -490,7 +490,7 @@ def export_isa_json(investigation):
                 'parameters': protocol.parameters,
                 'components': protocol.components}
             study_data['protocols'].append(protocol_data)
-            logging.debug('Added protocol "{}"'.format(protocol.name))
+            logger.debug('Added protocol "{}"'.format(protocol.name))
 
         # Materials
         export_materials(study, study_data)
@@ -517,7 +517,7 @@ def export_isa_json(investigation):
             if assay.api_id:
                 assay_data['@id'] = assay.api_id
 
-            logging.debug('Added assay "{}"'.format(assay.file_name))
+            logger.debug('Added assay "{}"'.format(assay.file_name))
 
             # Assay materials and data files
             export_materials(assay, assay_data)
@@ -529,7 +529,7 @@ def export_isa_json(investigation):
 
         ret['studies'].append(study_data)
 
-    logging.debug('Export to dict OK')
+    logger.debug('Export to dict OK')
     return ret
 
 

@@ -99,7 +99,7 @@ class TestSampleSheetUtils(TestCase, ProjectMixin, RoleAssignmentMixin):
     def test_isa_batch(self):
         """Test ISAtab import in batch"""
 
-        isa_dir = os.fsencode(os.path.dirname(__file__) + '/isatab2/')
+        isa_dir = os.fsencode(os.path.dirname(__file__) + '/isatab/')
         print('\n')     # HACK for no newline for 1st entry with -v 2
         self.assertEqual(Investigation.objects.count(), 0)
 

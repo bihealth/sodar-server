@@ -356,6 +356,37 @@ if env.str('ENABLE_LDAP', None):
         AUTHENTICATION_BACKENDS,))
 
 
+# Logging
+# ------------------------------------------------------------------------------
+
+def set_logging(debug):
+    return {
+        'version': 1,
+        'disable_existing_loggers': False,
+        'formatters': {
+            'simple': {
+                'format': '%(levelname)s | %(name)s: %(message)s'
+            }
+        },
+        'handlers': {
+            'console': {
+                'level': 'DEBUG' if debug else 'ERROR',
+                'class': 'logging.StreamHandler',
+                'formatter': 'simple'
+            }
+        },
+        'loggers': {
+            'samplesheets': {
+                'level': 'DEBUG' if debug else 'ERROR',
+                'handlers': ['console', ],
+                'propagate': False,
+            },
+        },
+    }
+
+LOGGING = set_logging(DEBUG)
+
+
 # Local App Settings
 # ------------------------------------------------------------------------------
 
