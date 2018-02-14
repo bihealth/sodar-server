@@ -240,6 +240,7 @@ class Protocol(BaseSampleSheet):
 
     #: Protocol type
     protocol_type = JSONField(
+        null=True,
         default=dict,
         help_text='Protocol type')
 

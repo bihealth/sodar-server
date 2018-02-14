@@ -67,7 +67,7 @@ class SampleSheetImportForm(forms.Form):
 
             except Exception as ex:
                 self.add_error(
-                    'file_upload', 'ISA-API import failed: {}'.format(ex))
+                    'file_upload', 'ISA-API parsing failed: {}'.format(ex))
 
         return self.cleaned_data
 

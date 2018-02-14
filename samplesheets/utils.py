@@ -91,7 +91,8 @@ def import_isa(isa_inv, file_name, project):
         if hasattr(material, 'characteristics'):
             values['characteristics'] = [{
                 'category': {'@id': id(x.category)},
-                'value': get_annotation(x.value)} for
+                'value': get_annotation(x.value) if
+                type(x.value) == OntologyAnnotation else x.value} for
                 x in material.characteristics]
 
         if hasattr(material, 'factor_values'):
