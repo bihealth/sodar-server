@@ -1,9 +1,9 @@
-from isatools import isajson
 import json
 
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db.models import Q
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import redirect
 from django.urls import reverse
@@ -49,20 +49,26 @@ class ProjectSheetsView(
             context['investigation'] = None
             return context
 
+        def get_material_count(item_type):
+            return GenericMaterial.objects.filter(
+                Q(item_type=item_type),
+                Q(study__investigation=investigation) |
+                Q(assay__study__investigation=investigation)).count()
+
         # Statistics
         context['sheet_stats'] = {
-            'study_count': Study.objects.all().count(),
-            'assay_count': Assay.objects.all().count(),
-            'protocol_count': Protocol.objects.all().count(),
-            'process_count': Process.objects.all().count(),
-            'source_count': GenericMaterial.objects.filter(
-                item_type='SOURCE').count(),
-            'material_count': GenericMaterial.objects.filter(
-                item_type='MATERIAL').count(),
-            'sample_count': GenericMaterial.objects.filter(
-                item_type='SAMPLE').count(),
-            'data_count': GenericMaterial.objects.filter(
-                item_type='DATA').count()}
+            'study_count': Study.objects.filter(
+                investigation=investigation).count(),
+            'assay_count': Assay.objects.filter(
+                study__investigation=investigation).count(),
+            'protocol_count': Protocol.objects.filter(
+                study__investigation=investigation).count(),
+            'process_count': Process.objects.filter(
+                protocol__study__investigation=investigation).count(),
+            'source_count': get_material_count('SOURCE'),
+            'material_count': get_material_count('MATERIAL'),
+            'sample_count': get_material_count('SAMPLE'),
+            'data_count': get_material_count('DATA')}
 
         return context
 

@@ -23,7 +23,7 @@
   <div class="alert alert-info" role="alert">
     No sample sheets are currently available for this project.
     {% if can_edit_sheet %}
-      To add sample sheets, please import it from an existing ISAtab or JSON file.
+      To add sample sheets, please import it from ab existing ISAtab investigation.
     {% endif %}
   </div>
 {% else %}
@@ -81,7 +81,7 @@
       </div>
       <div class="card-body omics-card-body-table">
         <div class="table-responsive">
-        {% get_assay_data assay as assay_data %}
+        {% get_assay_table assay as assay_data %}
 
           <table class="table table-bordered omics-card-table-bordered">
             <thead>

@@ -17,7 +17,7 @@ def get_investigation(project):
 
 
 @register.simple_tag
-def get_assay_data(assay):
+def get_assay_table(assay):
     """Return data grid for a "simple" HTML assay table"""
 
     assay_table = []
@@ -58,11 +58,17 @@ def get_assay_data(assay):
         for c in material.characteristics:
             val = ''
 
-            if c['value']['termSource']:
-                val = c['value']['termSource'] + ': '
+            if type(c['value']) == dict:
+                if c['value']['termSource']:
+                    val = c['value']['termSource'] + ': '
+                val += c['value']['annotationValue']
+                accession = c['value']['termAccession']
 
-            val += c['value']['annotationValue']
-            add_val(row, val, link=c['value']['termAccession'])
+            else:
+                val = c['value']
+                accession = None
+
+            add_val(row, val, link=accession)
 
     def add_factor_header(field_header, material):
         """Append factor value columns to field header"""
@@ -71,7 +77,7 @@ def get_assay_data(assay):
         for fv in material.factor_values:
             factor = assay.study.get_factor(fv)
             field_header.append(
-                factor['factorType']['annotationValue'].capitalize())
+                factor['factorName'].capitalize())
             factor_count += 1
 
         return factor_count

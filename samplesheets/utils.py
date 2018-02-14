@@ -23,7 +23,7 @@ def import_isa(isa_inv, file_name, project):
     :param project: Project object
     :return: Django Investigation object
     """
-    logger.debug('Importing investigation from ISA-API object structure..')
+    logger.info('Importing investigation from ISA-API object structure..')
 
     ###################
     # Helper functions
@@ -97,22 +97,26 @@ def import_isa(isa_inv, file_name, project):
 
         if hasattr(material, 'factor_values'):
             factor_values = []
+            added_factors = []
 
             for fv in material.factor_values:
-                export_value = {
-                    'category': {
-                        '@id': id(fv.factor_name)}}
+                # HACK: Fix for ISA-API bug which adds factor values twice
+                if fv.factor_name not in added_factors:
+                    export_value = {
+                        'category': {
+                            '@id': id(fv.factor_name)}}
 
-                if type(fv.value) == OntologyAnnotation:
-                    export_value['value'] = get_annotation(fv.value)
+                    if type(fv.value) == OntologyAnnotation:
+                        export_value['value'] = get_annotation(fv.value)
 
-                else:
-                    export_value['value'] = str(fv.value)
+                    else:
+                        export_value['value'] = str(fv.value)
 
-                if fv.unit:
-                    export_value['unit'] = {'@id': id(fv.unit)}
+                    if fv.unit:
+                        export_value['unit'] = {'@id': id(fv.unit)}
 
-                factor_values.append(export_value)
+                    factor_values.append(export_value)
+                    added_factors.append(fv.factor_name)
 
             values['factor_values'] = factor_values
 
@@ -128,10 +132,7 @@ def import_isa(isa_inv, file_name, project):
         Create processes of a process sequence in the database.
         :param sequence: Process sequence of a study or an assay
         :param parent: Parent study or assay
-        :return: Process object (first process)
         """
-        first_process = None
-        prev_process = None
         study = parent if type(parent) == Study else parent.study
 
         for p in sequence:
@@ -145,7 +146,8 @@ def import_isa(isa_inv, file_name, project):
                 'protocol': protocol,
                 'assay': parent if type(parent) == Assay else None,
                 'study': parent if type(parent) == Study else None,
-                'previous_process': prev_process,
+                'previous_process': None,   # This will be linked later
+                'next_process': None,       # This will be linked later
                 'performer': p.performer,
                 'perform_date': (
                     dt.datetime.strptime(p.date, '%Y-%m-%d').date() if
@@ -178,9 +180,6 @@ def import_isa(isa_inv, file_name, project):
             logger.debug('Added process "{}" to "{}"'.format(
                 process.api_id, parent.api_id))
 
-            if not first_process:
-                first_process = process
-
             # Link inputs
             for i in p.inputs:
                 input_material = GenericMaterial.objects.find_child(
@@ -199,9 +198,42 @@ def import_isa(isa_inv, file_name, project):
                 logger.debug('Linked output material "{}"'.format(
                     output_material.api_id))
 
-            prev_process = process
+        # Link previous/next processes
+        for p in sequence:
+            process = Process.objects.get(api_id=id(p))
 
-        return first_process
+            prev_process = None
+            next_process = None
+
+            if p.prev_process:
+                try:
+                    prev_process = Process.objects.get(
+                        api_id=id(p.prev_process))
+                    logger.debug(
+                        'Linking previous process "{}" to "{}"'.format(
+                            id(p.prev_process), process.api_id))
+
+                except Process.DoesNotExist:
+                    logger.error(
+                        'Previous process not found with id {}'.format(
+                            id(p.prev_process)))
+
+            if p.next_process:
+                try:
+                    next_process = Process.objects.get(
+                        api_id=id(p.next_process))
+                    logger.debug(
+                        'Linking previous process "{}" to "{}"'.format(
+                            id(p.prev_process), process.api_id))
+
+                except Process.DoesNotExist:
+                    logger.error(
+                        'Next process not found with id {}'.format(
+                            id(p.next_process)))
+
+            process.previous_process = prev_process
+            process.next_process = next_process
+            process.save()
 
     ############
     # Importing
@@ -323,7 +355,7 @@ def import_isa(isa_inv, file_name, project):
             # Create assay processes
             import_processes(a.process_sequence, parent=assay)
 
-    logger.debug('Import OK')
+    logger.info('Import of investigation "{}" OK'.format(investigation.title))
     return investigation
 
 

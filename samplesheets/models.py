@@ -191,15 +191,6 @@ class Study(BaseSampleSheet):
 
     # Custom row-level functions
 
-    def get_first_process(self):
-        """Return first process in the process sequence or None if not found"""
-        try:
-            return Process.objects.get(
-                study=self, assay=None, previous_process=None)
-
-        except Process.DoesNotExist:
-            return None
-
     def get_characteristic_cat(self, characteristic):
         """Return characteristic category"""
         for c in self.characteristic_cat:
@@ -359,18 +350,10 @@ class Assay(BaseSampleSheet):
 
     # Custom row-level functions
 
-    def get_first_process(self):
-        """Return first process in the process sequence or None if not found"""
-        try:
-            return Process.objects.get(assay=self, previous_process=None)
-
-        except Process.DoesNotExist:
-            return None
-
     def get_samples(self):
         """Return assay samples"""
-        # NOTE: Filtering should not be required but just in case
-        return self.get_first_process().inputs.filter(item_type='SAMPLE')
+        return GenericMaterial.objects.filter(
+            item_type='SAMPLE', material_targets__assay=self).distinct()
 
     def get_sources(self):
         """Return sources of samples used in this assay as a list"""
@@ -613,12 +596,19 @@ class Process(BaseSampleSheet):
         help_text='Assay to which the process belongs (for assay sequence)')
 
     #: Previous process (can be None for first process in sequence)
-    previous_process = models.OneToOneField(
+    previous_process = models.ForeignKey(
         'Process',
-        related_name='next_process',
+        related_name='next',
         null=True,
         help_text='Previous process (can be None for first process in '
                   'sequence)')
+
+    #: Next process (can be None for the last process in sequence)
+    next_process = models.ForeignKey(
+        'Process',
+        related_name='previous',
+        null=True,
+        help_text='Next process (can be None for the last process in sequence)')
 
     #: Process parameter values
     parameter_values = JSONField(
@@ -678,56 +668,12 @@ class Process(BaseSampleSheet):
     def save(self, *args, **kwargs):
         """Override save() to include custom validation functions"""
         self._validate_parent()
-        self._validate_first()
-        self._validate_api_id()
-        self._validate_sequence()
         super(Process, self).save(*args, **kwargs)
 
     def _validate_parent(self):
         """Validate the existence of a parent assay or study"""
         if not self.get_parent():
             raise ValidationError('Parent assay or study not set')
-
-    def _validate_api_id(self):
-        """Validate api_id uniqueness within parent"""
-        if (Process.objects.filter(
-                study=self.study,
-                assay=self.assay,
-                api_id=self.api_id).count() != 0):
-            raise ValidationError(
-                'Process id "{}" not unique within parent'.format(
-                    self.api_id))
-
-    def _validate_first(self):
-        """Ensure only one process can be the first (no previous_process)"""
-        if (not self.previous_process and Process.objects.filter(
-                study=self.study,
-                assay=self.assay,
-                previous_process=None).count() != 0):
-            raise ValidationError(
-                'Only one process can be the first in sequence')
-
-    def _validate_sequence(self):
-        """Validate sequence for not looping"""
-        msg = 'Sequence loops to itself: '
-
-        # Check connections of current process
-        if self.previous_process and self.get_next_process():
-            if self.previous_process == self.get_next_process():
-                raise ValidationError(msg + 'previous process = next process')
-
-            if self.previous_process == self or self.get_next_process() == self:
-                raise ValidationError(msg + 'process refers to itself')
-
-        # Traverse backwards in process
-        prev = self.previous_process
-
-        while prev:
-            if hasattr(self, 'next_process') and prev == self.next_process:
-                raise ValidationError(
-                    msg + 'next process appears earlier in sequence')
-
-            prev = prev.previous_process
 
     # Custom row-level functions
 
