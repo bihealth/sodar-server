@@ -2,7 +2,6 @@
 
 import datetime as dt
 from isatools.model import OntologyAnnotation, OntologySource
-from isatools.isajson import ISAJSONEncoder
 import logging
 
 from .models import Investigation, Study, Assay, GenericMaterial, Protocol, \
@@ -42,6 +41,7 @@ def import_isa(isa_inv, file_name, project):
     def get_annotation(obj):
         """Return ontology annotation dict for JSONfield"""
         if not obj.term:    # Sometimes the API produces an empty object here
+            logger.debug('Empty annotation object: {}'.format(id(obj)))
             return None
 
         return {

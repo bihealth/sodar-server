@@ -95,7 +95,11 @@ def get_assay_data(assay):
 
                 if 'unit' in fv:
                     category = assay.study.get_unit_cat(fv['unit'])
-                    unit = category['annotationValue']
+
+                    # In case a factor value has been declared outside a sample
+                    # (Should not be allowed but ISA-API fails to check for it)
+                    if category:
+                        unit = category['annotationValue']
 
             add_val(row, val, unit=unit, link=link)
 
