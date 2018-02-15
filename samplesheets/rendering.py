@@ -1,6 +1,13 @@
 """Rendering helpers for samplesheets"""
 
 
+HEADER_COLOURS = {
+    'source': 'info',
+    'sample': 'warning',
+    'process': 'danger',
+    'material': 'success'}
+
+
 def get_assay_table(assay):
     """
     Return data grid for a "simple" HTML assay table
@@ -9,11 +16,15 @@ def get_assay_table(assay):
     """
 
     assay_table = []
-    top_header = {
-        'sources': {'colspan': 0},
-        'samples': {'colspan': 0},
-        'assay': {'colspan': 0}}
+    top_header = []
     field_header = []
+
+    def add_top_header(top_header, title, colspan):
+        """Append columns to top header"""
+        top_header.append({
+            'title': title,
+            'colour': HEADER_COLOURS[title.lower()],
+            'colspan': colspan})
 
     def add_val(
             row, value=None, unit=None, repeat=False, link=None, tooltip=None):
@@ -113,7 +124,7 @@ def get_assay_table(assay):
         if first_source:
             field_header.append('Name')     # Name column
             field_count = add_char_header(field_header, source) + 1
-            top_header['sources']['colspan'] = field_count
+            add_top_header(top_header, 'source', field_count)
             first_source = False
 
         # Add source columns
@@ -139,7 +150,7 @@ def get_assay_table(assay):
                 # Factor values
                 field_count += add_factor_header(field_header, sample)
 
-                top_header['samples']['colspan'] = field_count
+                add_top_header(top_header, 'sample', field_count)
                 first_sample = False
 
             if not first_sample_in_source:
@@ -154,9 +165,8 @@ def get_assay_table(assay):
             ##################
             # Assay sequences
             ##################
-            top_header['assay']['colspan'] = 1
-
             if first_seq:
+                add_top_header(top_header, 'process', 1)
                 field_header.append('Something')    # TODO
                 first_seq = False
 
@@ -172,6 +182,18 @@ def get_assay_table(assay):
         'top_header': top_header,
         'field_header': field_header,
         'assay_table': assay_table}
+
+
+def render_top_header(section):
+    """
+    Render section of top header
+    :param section: Header section (dict)
+    :return: String (contains HTML)
+    """
+    return '<th class="bg-{} text-white" colspan="{}">{}</th>\n'.format(
+        section['colour'],
+        section['colspan'],
+        section['title'].capitalize())
 
 
 def render_assay_cell(cell):

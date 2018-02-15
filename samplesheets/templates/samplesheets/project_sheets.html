@@ -87,9 +87,11 @@
             <thead>
               {# Top header #}
               <tr>
-                <th class="bg-info text-white" colspan="{{ assay_data.top_header.sources.colspan }}">Sources</th>
-                <th class="bg-warning text-white" colspan="{{ assay_data.top_header.samples.colspan }}">Samples</th>
-                <th class="bg-success text-white" colspan="{{ assay_data.top_header.samples.colspan }}">Assay</th>
+                {% for section in assay_data.top_header %}
+                  {% autoescape off %}
+                    {% render_top_header section %}
+                  {% endautoescape %}
+                {% endfor %}
               </tr>
               {# Field header #}
               <tr>
