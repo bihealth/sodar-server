@@ -19,7 +19,7 @@ from projectroles.views import LoggedInPermissionMixin, \
 from .forms import SampleSheetImportForm
 from .models import Investigation, Study, Assay, Protocol, Process, \
     GenericMaterial
-from .utils import export_isa_json
+from .io import export_isa_json
 
 
 APP_NAME = 'samplesheets'

@@ -102,9 +102,9 @@
               {# Content #}
               {% for row in assay_data.assay_table %}
                 <tr>
-                  {% for col in row %}
+                  {% for cell in row %}
                     {% autoescape off %}
-                      {% render_sheet_column col %}
+                      {% render_assay_cell cell %}
                     {% endautoescape %}
                   {% endfor %}
                 </tr>

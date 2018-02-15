@@ -10,7 +10,7 @@ from projectroles.models import Project
 
 from .models import Investigation, Study, Assay, GenericMaterial, Protocol, \
     Process
-from .utils import import_isa, get_inv_file_name
+from .io import import_isa, get_inv_file_name
 
 
 class SampleSheetImportForm(forms.Form):

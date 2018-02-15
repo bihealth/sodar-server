@@ -1,4 +1,4 @@
-"""Utilities for the samplesheets app"""
+"""Import and export utilities for the samplesheets app"""
 
 import datetime as dt
 from isatools.model import OntologyAnnotation, OntologySource
@@ -359,6 +359,18 @@ def import_isa(isa_inv, file_name, project):
     return investigation
 
 
+def get_inv_file_name(zip_file):
+    """
+    Return investigation file name, or None if not found
+    :param zip_file: ZipFile
+    :return: string or None
+    """
+    # TODO: HACK: Quick and ugly way, improve
+    for file_name in zip_file.namelist():
+        if file_name.find('i_') == 0:
+            return file_name
+
+
 # Exporting --------------------------------------------------------------------
 
 
@@ -563,17 +575,3 @@ def export_isa_json(investigation):
 
     logger.debug('Export to dict OK')
     return ret
-
-
-# Misc -------------------------------------------------------------------------
-
-def get_inv_file_name(zip_file):
-    """
-    Return investigation file name, or None if not found
-    :param zip_file: ZipFile
-    :return: string or None
-    """
-    # TODO: HACK: Quick and ugly way, improve
-    for file_name in zip_file.namelist():
-        if file_name.find('i_') == 0:
-            return file_name
