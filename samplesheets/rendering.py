@@ -36,9 +36,9 @@ def get_assay_table(assay):
             'link': link,
             'tooltip': tooltip})
 
-    def add_repetition(row, colspan):
+    def add_repetition(row, top_header):
         """Append repetition columns"""
-        for i in range(0, colspan):
+        for i in range(0, sum([x['colspan'] for x in top_header[:-2]])):
             add_val(row, repeat=True)
 
     def add_char_header(field_header, material):
@@ -155,7 +155,7 @@ def get_assay_table(assay):
 
             if not first_sample_in_source:
                 row = []
-                add_repetition(row, top_header['sources']['colspan'])
+                add_repetition(row, top_header)
 
             # Add sample columns
             add_val(row, sample.name)
@@ -165,6 +165,8 @@ def get_assay_table(assay):
             ##################
             # Assay sequences
             ##################
+            # def add_seq(sample)
+
             if first_seq:
                 add_top_header(top_header, 'process', 1)
                 field_header.append('Something')    # TODO
