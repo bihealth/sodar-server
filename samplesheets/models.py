@@ -103,10 +103,13 @@ class Investigation(BaseSampleSheet):
         help_text='Comments')
 
     def __str__(self):
-        return self.title
+        return '{}: {}'.format(self.project.title, self.title)
 
     def __repr__(self):
-        return 'Investigation({})'.format(self.title)
+        values = (
+            self.project.title,
+            self.title)
+        return 'Investigation({})'.format(', '.join(repr(v) for v in values))
 
 
 # Study ------------------------------------------------------------------------
@@ -118,14 +121,14 @@ class Study(BaseSampleSheet):
     #: Locally unique identifier
     identifier = models.CharField(
         max_length=DEFAULT_LENGTH,
-        unique=True,
+        unique=False,
         blank=False,
         help_text='Locally unique identifier')
 
     #: File name for exporting
     file_name = models.CharField(
         max_length=DEFAULT_LENGTH,
-        unique=True,
+        unique=False,
         blank=False,
         help_text='File name for exporting')
 
@@ -175,6 +178,7 @@ class Study(BaseSampleSheet):
         help_text='Comments')
 
     class Meta:
+        ordering = ['identifier']
         unique_together = ('investigation', 'identifier', 'title')
         verbose_name_plural = 'studies'
 
@@ -279,6 +283,14 @@ class Protocol(BaseSampleSheet):
             self.name)
         return 'Protocol({})'.format(', '.join(repr(v) for v in values))
 
+    # Custom row-level functions
+
+    def get_parameter(self, parameter_value):
+        """Return parameter definition"""
+        for p in self.parameters:
+            if p['parameterName']['@id'] == parameter_value['category']['@id']:
+                return p
+
 
 # Assay ------------------------------------------------------------------------
 
@@ -289,7 +301,7 @@ class Assay(BaseSampleSheet):
     #: File name for exporting
     file_name = models.CharField(
         max_length=DEFAULT_LENGTH,
-        unique=True,
+        unique=False,
         blank=False,
         help_text='File name for exporting')
 
@@ -363,6 +375,18 @@ class Assay(BaseSampleSheet):
             sources += sample.get_sources()
 
         return sorted(set(sources), key=lambda x: x.name)
+
+    def get_sequences_by_sample(self, sample):
+        """
+        Return process sequences which take sample as initial input
+        :param sample: GenericMaterial object of type "SAMPLE"
+        :return: QuerySet of Process objects (first process of each sequence)
+        :raise: ValueError if input GenericMaterial is not of type "SAMPLE"
+        """
+        if sample.item_type != 'SAMPLE':
+            raise ValueError('Input is not a sample')
+
+        return Process.objects.filter(previous_process=None, inputs=sample)
 
 
 # Materials and data files -----------------------------------------------------
@@ -442,6 +466,7 @@ class GenericMaterial(BaseSampleSheet):
     objects = GenericMaterialManager()
 
     class Meta:
+        ordering = ['name']
         verbose_name = 'material'
         verbose_name_plural = 'materials'
 

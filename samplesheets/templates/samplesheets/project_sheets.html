@@ -8,6 +8,16 @@
   Sample Sheets for {{ project.title }}
 {% endblock title %}
 
+{% block css %}
+  {{ block.super }}
+  <style type="text/css">
+    .omics-ss-assay-container {
+      max-height: 500px;
+      overflow-y: scroll;
+    }
+  </style>
+{% endblock css %}
+
 {% block projectroles_extend %}
 
 {% has_perm 'samplesheets.edit_sheet' request.user as can_edit_sheet %}
@@ -29,12 +39,13 @@
 {% else %}
   <div class="container-fluid">
 
+
     {# Information #}
     <div class="card">
       <div class="card-header">
         <h4>Investigation Information</h4>
       </div>
-      {% include 'samplesheets/_sheet_info.html' with show_description=True %}
+      {% include 'samplesheets/_sheet_info.html' with show_description=False %}
     </div>
 
     {# Statistics #}
@@ -74,49 +85,55 @@
       </div>
     </div>
 
+    {% comment %}
+    {% with investigation.studies.first.assays.first as assay %}
+    {% endcomment %}
     {% for assay in investigation.studies.first.assays.all %}
-    <div class="card">
-      <div class="card-header">
-        <h4>Assay "{{ assay.file_name }}"</h4>
-      </div>
-      <div class="card-body omics-card-body-table">
-        <div class="table-responsive">
-        {% get_assay_table assay as assay_data %}
+      <div class="card">
+        <div class="card-header">
+          <h4>Assay "{{ assay.file_name }}"</h4>
+        </div>
+        <div class="card-body omics-card-body-table">
+          <div class="table-responsive dragscroll omics-ss-assay-container">
+          {% get_assay_table assay as assay_table %}
 
-          <table class="table table-bordered omics-card-table-bordered">
-            <thead>
-              {# Top header #}
-              <tr>
-                {% for section in assay_data.top_header %}
-                  {% autoescape off %}
-                    {% render_top_header section %}
-                  {% endautoescape %}
-                {% endfor %}
-              </tr>
-              {# Field header #}
-              <tr>
-                {% for header_title in assay_data.field_header %}
-                  <th>{{ header_title }}</th>
-                {% endfor %}
-              </tr>
-            </thead>
-            <tbody>
-              {# Content #}
-              {% for row in assay_data.assay_table %}
+            <table class="table table-bordered omics-card-table-bordered">
+              <thead>
+                {# Top header #}
                 <tr>
-                  {% for cell in row %}
+                  {% for section in assay_table.top_header %}
                     {% autoescape off %}
-                      {% render_assay_cell cell %}
+                      {% render_top_header section %}
                     {% endautoescape %}
                   {% endfor %}
                 </tr>
-              {% endfor %}
-            </tbody>
-        </table>
+                {# Field header #}
+                <tr>
+                  {% for header_title in assay_table.field_header %}
+                    <th>{{ header_title }}</th>
+                  {% endfor %}
+               </tr>
+               </thead>
+              <tbody>
+                {# Content #}
+                {% for row in assay_table.table_data %}
+                  <tr>
+                    {% for cell in row %}
+                      {% autoescape off %}
+                        {% render_assay_cell cell %}
+                      {% endautoescape %}
+                    {% endfor %}
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
-    </div>
     {% endfor %}
+    {% comment %}
+    {% endwith %}
+    {% endcomment %}
 
   </div>
 {% endif %}
@@ -125,6 +142,8 @@
 
 {% block javascript %}
   {{ block.super }}
+
+  <script type="text/javascript" src="https://cdn.rawgit.com/asvd/dragscroll/master/dragscroll.js"></script>
 
   {# Tour content #}
   <script type="text/javascript">
