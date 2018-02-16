@@ -149,6 +149,25 @@ def get_assay_table(assay):
     first_sample = True
     first_seq = True
 
+    def add_material(row, top_header, field_header, first_seq, material):
+        if material and material.item_type != 'SAMPLE':
+            if first_seq:
+                # Add material headers
+                field_header.append('Name')  # Material name
+                field_count = 1
+
+                # Characteristics
+                field_count += add_char_headers(
+                    field_header, material)
+
+                header_type = 'data file' if \
+                    material.item_type == 'DATA' else 'material'
+                add_top_header(top_header, header_type, field_count)
+
+            # Material columns
+            add_val(row, material.name)  # Material name
+            add_chars(row, material)  # Characteristics
+
     ##########
     # Sources
     ##########
@@ -156,6 +175,7 @@ def get_assay_table(assay):
 
     for source in sources:
         row = []
+        source_section = []
         added_sequences = []    # For assay sequences
 
         # Build source header
@@ -166,8 +186,9 @@ def get_assay_table(assay):
             first_source = False
 
         # Add source columns
-        add_val(row, source.name)                       # Name column
-        add_chars(row, source)                          # Characteristics
+        add_val(source_section, source.name)            # Name column
+        add_chars(source_section, source)               # Characteristics
+        row += source_section
 
         ################
         # Source Samples
@@ -193,7 +214,8 @@ def get_assay_table(assay):
 
             if not first_sample_in_source:
                 row = []
-                add_repetition(row, top_header, 1)
+                row += source_section
+                # add_repetition(row, top_header, 1)
 
             # Add sample columns
             sample_section = []
@@ -212,34 +234,32 @@ def get_assay_table(assay):
             sample_seqs = assay.get_sequences_by_sample(sample)
 
             # Iterate through sequences, ignore previously added ones
-            for process in set(sample_seqs) - set(added_sequences):
-                added_sequences.append(process)
+            for first_process in set(sample_seqs) - set(added_sequences):
+                added_sequences.append(first_process)
+                process = first_process
+                first_input = True
+
+                if not first_seq_in_sample:
+                    row = []
+                    row += source_section
+                    # add_repetition(row, top_header, 2)
+                    row += sample_section
 
                 while process:
-                    if not first_seq_in_sample:
-                        row = []
-                        add_repetition(row, top_header, 1)
-                        row += sample_section
+                    ###########
+                    # Material
+                    ###########
+                    # TODO: Add iteration & row creation for multiple inputs
+                    material = process.inputs.first()
 
-                    ##########
-                    # Process
-                    ##########
+                    add_material(
+                        row, top_header, field_header, first_seq, material)
+                    first_input = False
 
                     if first_seq:
                         # Add process headers
                         field_header.append('Protocol')     # Protocol name
                         field_count = 1
-
-                        # NOTE: Performer and date don't work correctly in API
-                        '''
-                        if process.performer:               # Performer
-                            field_header.append('Performer')
-                            field_count += 1
-
-                        if process.perform_date:            # Perform date
-                            field_header.append('Date')
-                            field_count += 1
-                        '''
 
                         # Parameter values
                         field_count += add_param_headers(field_header, process)
@@ -248,47 +268,15 @@ def get_assay_table(assay):
 
                     # Add process columns
                     add_val(row, process.protocol.name)     # Protocol name
-
-                    # NOTE: Performer and date don't work correctly in API
-                    '''
-                    if process.performer:                   # Performer
-                        add_val(row, process.performer)
-
-                    if process.perform_date:                # Perform date
-                        add_val(row, process.perform_date)
-                    '''
-
                     add_param_values(row, process)          # Parameter values
 
-                    ###########
-                    # Material
-                    ###########
-
-                    # TODO: Add iteration & row creation for multiple outputs
-                    material = process.outputs.first()
-
-                    if material:
-                        if first_seq:
-                            # Add material headers
-
-                            field_header.append('Name')     # Material name
-                            field_count = 1
-
-                            '''
-                            # Characteristics
-                            field_count += add_char_headers(
-                                field_header, sample)
-                            '''
-
-                            header_type = 'data file' if \
-                                material.item_type == 'DATA' else 'material'
-                            add_top_header(top_header, header_type, field_count)
-
-                        # Material columns
-                        add_val(row, material.name)         # Material name
-                        '''
-                        add_chars(row, material)
-                        '''
+                    # For last process, add output materials
+                    if (not process.next_process or
+                            process == process.next_process):
+                        # TODO: Iteration
+                        material = process.outputs.first()
+                        add_material(
+                            row, top_header, field_header, first_seq, material)
 
                     # TODO: Add this fix to the import code already
                     if process != process.next_process:
@@ -317,10 +305,11 @@ def render_top_header(section):
     :param section: Header section (dict)
     :return: String (contains HTML)
     """
-    return '<th class="bg-{} text-white" colspan="{}">{}</th>\n'.format(
-        section['colour'],
-        section['colspan'],
-        section['title'].capitalize())
+    return '<th class="bg-{} text-nowrap text-white" colspan="{}">' \
+           '{}</th>\n'.format(
+            section['colour'],
+            section['colspan'],
+            section['title'].capitalize())
 
 
 def render_assay_cell(cell):

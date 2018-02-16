@@ -386,7 +386,8 @@ class Assay(BaseSampleSheet):
         if sample.item_type != 'SAMPLE':
             raise ValueError('Input is not a sample')
 
-        return Process.objects.filter(previous_process=None, inputs=sample)
+        return Process.objects.filter(
+            assay=self, previous_process=None, inputs=sample)
 
 
 # Materials and data files -----------------------------------------------------

@@ -12,7 +12,7 @@
   {{ block.super }}
   <style type="text/css">
     .omics-ss-assay-container {
-      max-height: 500px;
+      max-height: 600px;
       overflow-y: scroll;
     }
   </style>
@@ -85,16 +85,13 @@
       </div>
     </div>
 
-    {% comment %}
-    {% with investigation.studies.first.assays.first as assay %}
-    {% endcomment %}
     {% for assay in investigation.studies.first.assays.all %}
       <div class="card">
         <div class="card-header">
           <h4>Assay "{{ assay.file_name }}"</h4>
         </div>
         <div class="card-body omics-card-body-table">
-          <div class="table-responsive dragscroll omics-ss-assay-container">
+          <div class="table-responsive omics-ss-assay-container">
           {% get_assay_table assay as assay_table %}
 
             <table class="table table-bordered omics-card-table-bordered">
@@ -110,7 +107,7 @@
                 {# Field header #}
                 <tr>
                   {% for header_title in assay_table.field_header %}
-                    <th>{{ header_title }}</th>
+                    <th class="text-nowrap">{{ header_title }}</th>
                   {% endfor %}
                </tr>
                </thead>
@@ -131,9 +128,6 @@
         </div>
       </div>
     {% endfor %}
-    {% comment %}
-    {% endwith %}
-    {% endcomment %}
 
   </div>
 {% endif %}
