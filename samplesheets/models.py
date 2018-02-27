@@ -208,18 +208,21 @@ class Study(BaseSampleSheet):
 
     def get_characteristic_cat(self, characteristic):
         """Return characteristic category"""
+        # TODO: Refactor for altamISA
         for c in self.characteristic_cat:
             if c['@id'] == characteristic['category']['@id']:
                 return c['characteristicType']
 
     def get_unit_cat(self, unit):
         """Return unit category"""
+        # TODO: Refactor for altamISA
         for c in self.unit_cat:
             if c['@id'] == unit['@id']:
                 return c
 
     def get_factor(self, factor_value):
         """Return factor definition"""
+        # TODO: Refactor for altamISA
         for f in self.factors:
             if f['@id'] == factor_value['category']['@id']:
                 return f
@@ -297,6 +300,7 @@ class Protocol(BaseSampleSheet):
     # Custom row-level functions
 
     def get_parameter(self, parameter_value):
+        # TODO: Refactor for altamISA
         """Return parameter definition"""
         for p in self.parameters:
             if p['parameterName']['@id'] == parameter_value['category']['@id']:
@@ -383,12 +387,14 @@ class Assay(BaseSampleSheet):
         return self.file_name
 
     def get_samples(self):
-        """Return assay samples"""
-        return GenericMaterial.objects.filter(
-            item_type='SAMPLE', material_targets__assay=self).distinct()
+        """Return samples used in assay"""
+        GenericMaterial.objects.filter(
+            item_type='SAMPLE',
+            arcs_as_tail__assay=self).order_by('name').distinct()
 
     def get_sources(self):
         """Return sources of samples used in this assay as a list"""
+        # TODO: Refactor
         sources = []
 
         for sample in self.get_samples():
@@ -403,6 +409,7 @@ class Assay(BaseSampleSheet):
         :return: QuerySet of Process objects (first process of each sequence)
         :raise: ValueError if input GenericMaterial is not of type "SAMPLE"
         """
+        # TODO: Refactor/remove
         if sample.item_type != 'SAMPLE':
             raise ValueError('Input is not a sample')
 
@@ -492,6 +499,7 @@ class GenericMaterial(BaseSampleSheet):
         verbose_name_plural = 'materials'
 
     def __str__(self):
+        # TODO: Refactor (see Arc)
         if self.assay:
             return '{}/{}/{}/{}'.format(
                 self.item_type,
