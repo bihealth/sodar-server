@@ -205,15 +205,16 @@ def import_isa(isa_zip, project):
             tail_obj = find_by_name(a.tail)
             head_obj = find_by_name(a.head)
 
+            tail_obj_arg = 'tail_{}'.format(
+                'material' if type(tail_obj) == GenericMaterial else 'process')
+            head_obj_arg = 'head_{}'.format(
+                'material' if type(head_obj) == GenericMaterial else 'process')
+
             values = {
                 'assay': db_parent if type(db_parent) == Assay else None,
                 'study': db_parent if type(db_parent) == Study else None,
-                'tail_content_type': ContentType.objects.get_for_model(
-                    type(tail_obj)),
-                'tail_object_id': tail_obj.pk,
-                'head_content_type': ContentType.objects.get_for_model(
-                    type(head_obj)),
-                'head_object_id': head_obj.pk}
+                tail_obj_arg: tail_obj,
+                head_obj_arg: head_obj}
 
             arc = Arc(**values)
             arc.save()

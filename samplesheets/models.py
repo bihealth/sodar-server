@@ -752,59 +752,79 @@ class Arc(models.Model):
         null=True,
         help_text='Assay to which the arc belongs (for assay sequence)')
 
-    #: Tail object content type
-    tail_content_type = models.ForeignKey(
-        ContentType,
-        related_name='%(app_label)s_%(class)s_as_tail',
-        on_delete=models.CASCADE)
+    #: Tail process (can be null if tail object is a material)
+    tail_process = models.ForeignKey(
+        Process,
+        related_name='arcs_as_tail',
+        null=True,
+        on_delete=models.SET_NULL,
+        help_text='Tail process (can be null if tail object is a material)')
 
-    #: Tail object pk
-    tail_object_id = models.PositiveIntegerField()
+    #: Tail material (can be null if tail object is a process)
+    tail_material = models.ForeignKey(
+        GenericMaterial,
+        related_name='arcs_as_tail',
+        null=True,
+        on_delete=models.SET_NULL,
+        help_text='Tail material (can be null if tail object is a process)')
 
-    #: Tail object foreign key
-    tail_object = GenericForeignKey('tail_content_type', 'tail_object_id')
+    #: Head process (can be null if head object is a material)
+    head_process = models.ForeignKey(
+        Process,
+        related_name='arcs_as_head',
+        null=True,
+        on_delete=models.SET_NULL,
+        help_text='Head process (can be null if head object is a material)')
 
-    #: Head object content type
-    head_content_type = models.ForeignKey(
-        ContentType,
-        related_name='%(app_label)s_%(class)s_as_head',
-        on_delete=models.CASCADE)
-
-    #: Head object pk
-    head_object_id = models.PositiveIntegerField()
-
-    #: Head object foreign key
-    head_object = GenericForeignKey('head_content_type', 'head_object_id')
+    #: Tail material (can be null if tail object is a process)
+    head_material = models.ForeignKey(
+        GenericMaterial,
+        related_name='arcs_as_head',
+        null=True,
+        on_delete=models.SET_NULL,
+        help_text='Head material (can be null if head object is a process)')
 
     class Meta:
-        ordering = ('study', 'assay', 'tail_object__name', 'head_object__name')
+        ordering = ('study', 'assay')
 
     def __str__(self):
-        study = self.assay.study if self.assay else self.study
-
-        if study:
-            return '{}/{}/{}/{}'.format(
-                study.investigation.title,
-                study.identifier,
-                self.tail_object.name,
-                self.head_object.name)
-
-        else:
-            return '{}/{}'.format(self.tail_object.name, self.head_object.name)
+        return '{}/{}/{}/{}'.format(
+            self.get_study().investigation.title,
+            self.get_study().identifier,
+            self.get_tail().name,
+            self.get_head().name)
 
     def __repr__(self):
-        study = self.assay.study if self.assay else self.study
-
-        if study:
-            values = (
-                study.investigation.title,
-                study.identifier,
-                self.tail_object.name,
-                self.head_object.name)
-
-        else:
-            values = (
-                self.tail_object.name,
-                self.head_object.name)
+        values = (
+            self.get_study().investigation.title,
+            self.get_study().identifier,
+            self.get_tail().name,
+            self.get_head().name)
 
         return 'Arc({})'.format(', '.join(repr(v) for v in values))
+
+    # Saving and validation
+
+    # TODO: Validate only one type of head/tail object is present
+
+    # Custom row-level functions
+
+    def get_tail(self):
+        """Return tail object"""
+        if self.tail_process:
+            return self.tail_process
+
+        elif self.tail_material:
+            return self.tail_material
+
+    def get_head(self):
+        """Return head object"""
+        if self.head_process:
+            return self.head_process
+
+        elif self.head_material:
+            return self.head_material
+
+    def get_study(self):
+        """Return associated study"""
+        return self.assay.study if self.assay else self.study
