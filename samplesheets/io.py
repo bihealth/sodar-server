@@ -32,8 +32,7 @@ MATERIAL_TYPE_MAP = {
     'Derived Array Data Matrix File': 'DATA',
     'Free Induction Decay Data File': 'DATA',
     'Metabolite Assignment File': 'DATA',
-    'Array Data Matrix File': 'DATA'
-}
+    'Array Data Matrix File': 'DATA'}
 
 
 logger = logging.getLogger(__name__)
@@ -185,12 +184,17 @@ def import_isa(isa_zip, project):
             :return: GenericMaterial or Process object
             :raise: ValueError if not found
             """
+            parent_query_arg = db_parent.__class__.__name__.lower()
+            query_params = {
+                parent_query_arg: db_parent,
+                'name': name}
+
             try:
-                return GenericMaterial.objects.get(name=name)
+                return GenericMaterial.objects.get(**query_params)
 
             except GenericMaterial.DoesNotExist:
                 try:
-                    return Process.objects.get(name=name)
+                    return Process.objects.get(**query_params)
 
                 except Process.DoesNotExist:
                     raise ValueError(
@@ -291,19 +295,16 @@ def import_isa(isa_zip, project):
                 db_assay.api_id, db_study.title))
 
             # Create assay materials (excluding samples)
-            assay_materials = dict(a.materials)
-
-            for k, v in dict(assay_materials).items():
-                if v.type == ALTAMISA_MATERIAL_TYPE_SAMPLE:
-                    assay_materials.pop(k)
-
+            assay_materials = {
+                k: a.materials[k] for k in a.materials if
+                a.materials[k].type not in ['SOURCE', 'SAMPLE']}
             import_materials(assay_materials, db_parent=db_assay)
 
             # Create assay processes
             import_processes(a.processes, db_parent=db_assay)
 
             # Create assay arcs
-            import_arcs(s.arcs, db_parent=db_assay)
+            import_arcs(a.arcs, db_parent=db_assay)
 
     logger.info('Import of investigation "{}" OK'.format(
         db_investigation.title))
