@@ -19,7 +19,6 @@ from projectroles.views import LoggedInPermissionMixin, \
 from .forms import SampleSheetImportForm
 from .models import Investigation, Study, Assay, Protocol, Process, \
     GenericMaterial
-from .io import export_isa_json
 
 
 APP_NAME = 'samplesheets'
@@ -27,7 +26,7 @@ APP_NAME = 'samplesheets'
 
 class ProjectSheetsView(
         LoginRequiredMixin, LoggedInPermissionMixin, ProjectContextMixin,
-        TemplateView):
+        ProjectPermissionObjectMixin, TemplateView):
     """Main view for displaying sample sheets in a project"""
 
     # Projectroles dependency
@@ -118,57 +117,6 @@ class SampleSheetImportView(
         return redirect(
             reverse('project_sheets', kwargs={
                 'project': self.get_permission_object().pk}))
-
-
-class SampleSheetExportJSONView(
-        LoginRequiredMixin, LoggedInPermissionMixin,
-        ProjectPermissionObjectMixin, View):
-    """View for exporting the sample sheet as an ISA compatible JSON file"""
-
-    permission_required = 'samplesheets.export_sheet'
-
-    def get(self, *args, **kwargs):
-        """GET request to return the JSON as attachment"""
-        timeline = get_backend_api('timeline_backend')
-        project = Project.objects.get(pk=self.kwargs['project'])
-        investigation = Investigation.objects.get(project=project)
-
-        # Export Investigation as dict
-        json_data = export_isa_json(investigation)
-        json_str = json.dumps(json_data, indent=4)
-
-        # TODO: Validate JSON data
-        # json_report = isajson.validate(...)
-
-        if not json_str or not json_data:
-            messages.error(self.request, 'JSON data not available!')
-
-            return redirect(reverse(
-                'project_sheets', kwargs={'project': kwargs['project']}))
-
-        # Return file as attachment
-        file_name = investigation.file_name
-        response = HttpResponse(json_str, content_type='application/json')
-        response['Content-Disposition'] = \
-            'attachment; filename={}'.format(file_name)
-
-        # Add event in Timeline
-        if timeline:
-            tl_event = timeline.add_event(
-                project=investigation.project,
-                app_name=APP_NAME,
-                user=self.request.user,
-                event_name='sheet_export',
-                description='export sample sheets from {investigation}',
-                status_type='INFO',
-                classified=True)
-
-            tl_event.add_object(
-                obj=investigation,
-                label='investigation',
-                name=investigation.title)
-
-        return response
 
 
 class SampleSheetDeleteView(

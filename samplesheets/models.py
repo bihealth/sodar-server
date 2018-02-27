@@ -1,5 +1,7 @@
 import uuid
 
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.fields import JSONField
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -177,6 +179,11 @@ class Study(BaseSampleSheet):
         default=dict,
         help_text='Comments')
 
+    #: Column headers
+    header = JSONField(
+        default=dict,
+        help_text='Column headers')
+
     class Meta:
         ordering = ['identifier']
         unique_together = ('investigation', 'identifier', 'title')
@@ -194,6 +201,10 @@ class Study(BaseSampleSheet):
         return 'Study({})'.format(', '.join(repr(v) for v in values))
 
     # Custom row-level functions
+
+    def get_name(self):
+        """Return simple printable name for Assay"""
+        return self.title
 
     def get_characteristic_cat(self, characteristic):
         """Return characteristic category"""
@@ -344,6 +355,11 @@ class Assay(BaseSampleSheet):
         default=dict,
         help_text='Comments')
 
+    #: Column headers
+    header = JSONField(
+        default=dict,
+        help_text='Column headers')
+
     class Meta:
         unique_together = ('study', 'file_name')
 
@@ -361,6 +377,10 @@ class Assay(BaseSampleSheet):
         return 'Assay({})'.format(', '.join(repr(v) for v in values))
 
     # Custom row-level functions
+
+    def get_name(self):
+        """Return simple printable name for Assay"""
+        return self.file_name
 
     def get_samples(self):
         """Return assay samples"""
@@ -545,8 +565,10 @@ class GenericMaterial(BaseSampleSheet):
                 'Field "characteristics" should not be included for a data '
                 'file')
 
+        '''
         if self.item_type in ['DATA', 'MATERIAL'] and not self.material_type:
             raise ValidationError('Type of material missing')
+        '''
 
         if self.item_type != 'SAMPLE' and self.factor_values:
             raise ValidationError('Factor values included for a non-sample')
@@ -621,21 +643,6 @@ class Process(BaseSampleSheet):
         null=True,
         help_text='Assay to which the process belongs (for assay sequence)')
 
-    #: Previous process (can be None for first process in sequence)
-    previous_process = models.ForeignKey(
-        'Process',
-        related_name='next',
-        null=True,
-        help_text='Previous process (can be None for first process in '
-                  'sequence)')
-
-    #: Next process (can be None for the last process in sequence)
-    next_process = models.ForeignKey(
-        'Process',
-        related_name='previous',
-        null=True,
-        help_text='Next process (can be None for the last process in sequence)')
-
     #: Process parameter values
     parameter_values = JSONField(
         default=dict,
@@ -654,22 +661,26 @@ class Process(BaseSampleSheet):
         null=True,
         help_text='Process performing date (optional)')
 
+    #: Array design ref
+    array_design_ref = models.CharField(
+        max_length=DEFAULT_LENGTH,
+        unique=False,
+        blank=True,
+        null=True,
+        help_text='Array design ref')
+
+    #: Scan name for special cases in ISAtab
+    scan_name = models.CharField(
+        max_length=DEFAULT_LENGTH,
+        unique=False,
+        blank=True,
+        null=True,
+        help_text='Scan name for special cases in ISAtab')
+
     #: Comments
     comments = JSONField(
         default=dict,
         help_text='Comments')
-
-    #: Material and data file inputs
-    inputs = models.ManyToManyField(
-        GenericMaterial,
-        related_name='material_targets',
-        help_text='Material and data file inputs')
-
-    #: Material inputs
-    outputs = models.ManyToManyField(
-        GenericMaterial,
-        related_name='material_sources',
-        help_text='Material and data file outputs')
 
     class Meta:
         verbose_name_plural = 'processes'
@@ -718,3 +729,82 @@ class Process(BaseSampleSheet):
             return self.study
 
         return None  # This should not happen and is caught during validation
+
+
+# Arc --------------------------------------------------------------------------
+
+
+class Arc(models.Model):
+    """altamISA parser model compatible arc depicting a relationship between
+    material and process"""
+
+    #: Study to which the arc belongs (for study sequence)
+    study = models.ForeignKey(
+        Study,
+        related_name='arcs',
+        null=True,
+        help_text='Study to which the arc belongs (for study sequence)')
+
+    #: Assay to which the arc belongs (for assay sequence)
+    assay = models.ForeignKey(
+        Assay,
+        related_name='arcs',
+        null=True,
+        help_text='Assay to which the arc belongs (for assay sequence)')
+
+    #: Tail object content type
+    tail_content_type = models.ForeignKey(
+        ContentType,
+        related_name='%(app_label)s_%(class)s_as_tail',
+        on_delete=models.CASCADE)
+
+    #: Tail object pk
+    tail_object_id = models.PositiveIntegerField()
+
+    #: Tail object foreign key
+    tail_object = GenericForeignKey('tail_content_type', 'tail_object_id')
+
+    #: Head object content type
+    head_content_type = models.ForeignKey(
+        ContentType,
+        related_name='%(app_label)s_%(class)s_as_head',
+        on_delete=models.CASCADE)
+
+    #: Head object pk
+    head_object_id = models.PositiveIntegerField()
+
+    #: Head object foreign key
+    head_object = GenericForeignKey('head_content_type', 'head_object_id')
+
+    class Meta:
+        ordering = ('study', 'assay', 'tail_object__name', 'head_object__name')
+
+    def __str__(self):
+        study = self.assay.study if self.assay else self.study
+
+        if study:
+            return '{}/{}/{}/{}'.format(
+                study.investigation.title,
+                study.identifier,
+                self.tail_object.name,
+                self.head_object.name)
+
+        else:
+            return '{}/{}'.format(self.tail_object.name, self.head_object.name)
+
+    def __repr__(self):
+        study = self.assay.study if self.assay else self.study
+
+        if study:
+            values = (
+                study.investigation.title,
+                study.identifier,
+                self.tail_object.name,
+                self.head_object.name)
+
+        else:
+            values = (
+                self.tail_object.name,
+                self.head_object.name)
+
+        return 'Arc({})'.format(', '.join(repr(v) for v in values))

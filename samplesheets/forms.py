@@ -1,5 +1,3 @@
-from isatools import isatab
-from tempfile import TemporaryDirectory
 from zipfile import ZipFile
 
 from django import forms
@@ -26,7 +24,7 @@ class SampleSheetImportForm(forms.Form):
     def __init__(self, project=None, *args, **kwargs):
         """Override form initialization"""
         super(SampleSheetImportForm, self).__init__(*args, **kwargs)
-        self.isa_inv = None
+        self.isa_zip = None
         self.project = None
         self.inv_file_name = None
 
@@ -45,37 +43,28 @@ class SampleSheetImportForm(forms.Form):
             self.add_error('file_upload', 'The file is not a Zip archive')
             return self.cleaned_data
 
-        # Extract zip into temporary dir
-        with TemporaryDirectory() as temp_dir:
-            with ZipFile(file) as zip_file:
-                zip_file = ZipFile(file)
+        # Validate zip file
+        zip_file = ZipFile(file)
 
-                # Get investigation file name
-                self.inv_file_name = get_inv_file_name(zip_file)
+        # Get investigation file name
+        self.inv_file_name = get_inv_file_name(zip_file)
 
-                if not self.inv_file_name:
-                    self.add_error(
-                        'file_upload',
-                        'Investigation file not found in archive')
-                    return self.cleaned_data
+        if not self.inv_file_name:
+            self.add_error(
+                'file_upload',
+                'Investigation file not found in archive')
+            return self.cleaned_data
 
-                zip_file.extractall(temp_dir)
+        # TODO: Further validation
 
-            # Parse ISAtab
-            try:
-                self.isa_inv = isatab.load(temp_dir)
-
-            except Exception as ex:
-                self.add_error(
-                    'file_upload', 'ISA-API parsing failed: {}'.format(ex))
+        self.isa_zip = zip_file
 
         return self.cleaned_data
 
     def save(self, *args, **kwargs):
         try:
             return import_isa(
-                isa_inv=self.isa_inv,
-                file_name=self.inv_file_name,
+                isa_zip=self.isa_zip,
                 project=self.project)
 
         except Exception as ex:

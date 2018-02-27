@@ -14,6 +14,20 @@ import imp
 import pip
 
 
+# FLYNN WORKAROUND for altamisa
+try:
+    import altamisa
+
+except ImportError:
+    print('Flynn issue #3932 workaround: installing altamisa..')
+    pip.main([
+        'install',
+        '-e',
+        'git+git://github.com/bihealth/altamisa.git@'
+        '56eb18aa4a158ce4d29e2fda6100408b19a349ac#egg=altamisa'])
+
+# FLYNN WORKAROUND ENDS
+
 # FLYNN WORKAROUND for django-plugins
 try:
     imp.find_module('djangoplugins')

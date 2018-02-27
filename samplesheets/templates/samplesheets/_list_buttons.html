@@ -25,11 +25,13 @@
     {% endif %}
 
     {# Export #}
+    {% comment %}
     {% if investigation and can_export_sheet %}
       <a class="dropdown-item" href="{% url 'sheet_export_json' project=project.pk %}">
         <i class="fa fa-fw fa-download"></i> Export JSON
       </a>
     {% endif %}
+    {% endcomment %}
 
     {# Delete #}
     {% if investigation and can_delete_sheet %}

@@ -1,6 +1,9 @@
 """Rendering helpers for samplesheets"""
 
 
+# TODO: Refactor everything for altamISA import
+
+
 HEADER_COLOURS = {
     'source': 'info',
     'sample': 'warning',

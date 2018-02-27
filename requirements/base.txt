@@ -69,5 +69,6 @@ mistune==0.7.4
 # Database file storage
 django-db-file-storage==0.4.3
 
-# ISA-Tools API
-isatools==0.9.5
+# CUBI AltamISA parser
+# NOTE: Commented out for flynn workaround
+-e git://github.com/bihealth/altamisa.git@56eb18aa4a158ce4d29e2fda6100408b19a349ac#egg=altamisa
