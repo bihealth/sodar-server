@@ -54,7 +54,7 @@ def import_isa(isa_zip, project):
     ######################
 
     def get_file(zip_file, file_name):
-        file = zip_file.open(file_name, 'r')
+        file = zip_file.open(str(file_name), 'r')
         return io.TextIOWrapper(file)
 
     # Parse investigation
