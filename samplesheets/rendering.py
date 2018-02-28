@@ -1,6 +1,9 @@
 """Rendering helpers for samplesheets"""
 
 
+from .models import Process, GenericMaterial
+
+
 # TODO: Refactor everything for altamISA import
 
 
@@ -56,6 +59,7 @@ def get_assay_table(assay):
 
         return char_count
 
+    # TODO: Modify for altamISA
     def add_chars(row, material):
         """Append material characteristics to row columns"""
         for c in material.characteristics:
@@ -73,6 +77,7 @@ def get_assay_table(assay):
 
             add_val(row, val, link=accession)
 
+    # TODO: Modify for altamISA
     def add_factor_header(field_header, material):
         """Append factor value columns to field header"""
         factor_count = 0
@@ -85,6 +90,7 @@ def get_assay_table(assay):
 
         return factor_count
 
+    # TODO: Modify for altamISA
     def add_factors(row, material):
         """Append factor values to row columns"""
         for fv in material.factor_values:
@@ -112,6 +118,7 @@ def get_assay_table(assay):
 
             add_val(row, val, unit=unit, link=link)
 
+    # TODO: Modify for altamISA
     def add_param_headers(field_header, process):
         """Append parameter columns to field header"""
         param_count = 0
@@ -130,6 +137,7 @@ def get_assay_table(assay):
 
         return param_count
 
+    # TODO: Modify for altamISA
     def add_param_values(row, process):
         """Append parameter values of process to row"""
         for pv in process.parameter_values:
@@ -148,10 +156,7 @@ def get_assay_table(assay):
 
             add_val(row, val, link=link)
 
-    first_source = True
-    first_sample = True
-    first_seq = True
-
+    # TODO: Modify for altamISA
     def add_material(row, top_header, field_header, first_seq, material):
         if material and material.item_type != 'SAMPLE':
             if first_seq:
@@ -160,8 +165,8 @@ def get_assay_table(assay):
                 field_count = 1
 
                 # Characteristics
-                field_count += add_char_headers(
-                    field_header, material)
+                # field_count += add_char_headers(
+                #     field_header, material)
 
                 header_type = 'data file' if \
                     material.item_type == 'DATA' else 'material'
@@ -169,7 +174,15 @@ def get_assay_table(assay):
 
             # Material columns
             add_val(row, material.name)  # Material name
-            add_chars(row, material)  # Characteristics
+            # add_chars(row, material)  # Characteristics
+
+    ############
+    # Rendering
+    ############
+
+    first_source = True
+    first_sample = True
+    first_arc = True
 
     ##########
     # Sources
@@ -179,18 +192,18 @@ def get_assay_table(assay):
     for source in sources:
         row = []
         source_section = []
-        added_sequences = []    # For assay sequences
 
         # Build source header
         if first_source:
             field_header.append('Name')                 # Name column
-            field_count = add_char_headers(field_header, source) + 1
+            field_count = 1
+            # field_count += add_char_headers(field_header, source)
             add_top_header(top_header, 'source', field_count)
             first_source = False
 
         # Add source columns
         add_val(source_section, source.name)            # Name column
-        add_chars(source_section, source)               # Characteristics
+        # add_chars(source_section, source)               # Characteristics
         row += source_section
 
         ################
@@ -207,95 +220,88 @@ def get_assay_table(assay):
                 field_count = 1
 
                 # Characteristics
-                field_count += add_char_headers(field_header, sample)
+                # field_count += add_char_headers(field_header, sample)
 
                 # Factor values
-                field_count += add_factor_header(field_header, sample)
+                # field_count += add_factor_header(field_header, sample)
 
                 add_top_header(top_header, 'sample', field_count)
                 first_sample = False
 
             if not first_sample_in_source:
                 row = []
-                row += source_section
-                # add_repetition(row, top_header, 1)
+                # row += source_section
+                add_repetition(row, top_header, 1)
 
             # Add sample columns
             sample_section = []
             add_val(sample_section, sample.name)
-            add_chars(sample_section, sample)
-            add_factors(sample_section, sample)
+            # add_chars(sample_section, sample)
+            # add_factors(sample_section, sample)
             row += sample_section
             first_sample_in_source = False
 
-            ##################
-            # Assay sequences
-            ##################
-            first_seq_in_sample = True
+            #############
+            # Assay arcs
+            #############
+            first_arc_in_sample = True
 
             # Get sequences
-            sample_seqs = assay.get_sequences_by_sample(sample)
+            arcs = assay.get_arcs_by_sample(sample)
 
-            # Iterate through sequences, ignore previously added ones
-            for first_process in set(sample_seqs) - set(added_sequences):
-                added_sequences.append(first_process)
-                process = first_process
-                first_input = True
+            # TODO: Pooling/splitting
 
-                if not first_seq_in_sample:
-                    row = []
-                    row += source_section
-                    # add_repetition(row, top_header, 2)
-                    row += sample_section
+            # Iterate through arcs
+            for arc in arcs:
+                head_obj = arc.get_head_obj()
 
-                while process:
-                    ###########
-                    # Material
-                    ###########
-                    # TODO: Add iteration & row creation for multiple inputs
-                    material = process.inputs.first()
+                while head_obj:
+                    if not first_arc_in_sample:
+                        row = []
+                        # row += source_section
+                        add_repetition(row, top_header, 1)
+                        row += sample_section
 
-                    add_material(
-                        row, top_header, field_header, first_seq, material)
-                    first_input = False
-
-                    if first_seq:
+                    # Header
+                    if first_arc:
                         # Add process headers
-                        field_header.append('Protocol')     # Protocol name
-                        field_count = 1
+                        if type(head_obj) == Process:
+                            # field_header.append('Protocol')  # Protocol name
+                            field_header.append('Name')  # Process name
+                            field_count = 1
 
-                        # Parameter values
-                        field_count += add_param_headers(field_header, process)
+                            # TODO: Parameter values
+                            # field_count += add_param_headers(
+                            # field_header, process)
 
-                        add_top_header(top_header, 'process', field_count)
+                            add_top_header(top_header, 'process', field_count)
 
-                    # Add process columns
-                    add_val(row, process.protocol.name)     # Protocol name
-                    add_param_values(row, process)          # Parameter values
+                        # Add material headers
+                        elif type(head_obj) == GenericMaterial:
+                            field_header.append('Name')
+                            field_count = 1
+                            # TODO: Material stuff
+                            add_top_header(top_header, 'material', field_count)
 
-                    # For last process, add output materials
-                    if (not process.next_process or
-                            process == process.next_process):
-                        # TODO: Iteration
-                        material = process.outputs.first()
-                        add_material(
-                            row, top_header, field_header, first_seq, material)
+                    add_val(row, head_obj.name)  # Object name
 
-                    # TODO: Add this fix to the import code already
-                    if process != process.next_process:
-                        process = process.next_process
+                    # TODO: Process/material stuff
+
+                    next_arcs = arc.go_forward()
+
+                    if next_arcs:
+                        arc = arc.go_forward()[0]
+                        head_obj = arc.get_head_obj()
 
                     else:
-                        process = None
-
-                first_seq_in_sample = False
+                        head_obj = None
 
                 # Add row to table
                 # print('Row: {}'.format(row))    # DEBUG
                 table_data.append(row)
-                first_seq = False
+                first_arc = False
+                first_arc_in_sample = False
 
-    # Apparently Django doesn't support multiple return objects from a tag
     return {
         'top_header': top_header,
         'field_header': field_header,

@@ -4,8 +4,6 @@ from altamisa.isatab import InvestigationReader, StudyReader, AssayReader
 import io
 import logging
 
-from django.contrib.contenttypes.models import ContentType
-
 from .models import Investigation, Study, Assay, GenericMaterial, Protocol, \
     Process, Arc
 
@@ -115,6 +113,7 @@ def import_isa(isa_zip, project):
                 values['study'] = db_parent
 
             elif type(db_parent) == Assay:
+                values['study'] = db_parent.study
                 values['assay'] = db_parent
 
             # Type
@@ -184,10 +183,17 @@ def import_isa(isa_zip, project):
             :return: GenericMaterial or Process object
             :raise: ValueError if not found
             """
-            parent_query_arg = db_parent.__class__.__name__.lower()
             query_params = {
-                parent_query_arg: db_parent,
                 'name': name}
+
+            # TODO: DEMO HACK: Recognize samples by name
+            if name.find('sample') == 0:
+                query_params['study'] = db_parent if \
+                    type(db_parent) == Study else db_parent.study
+
+            else:
+                parent_query_arg = db_parent.__class__.__name__.lower()
+                query_params[parent_query_arg] = db_parent
 
             try:
                 return GenericMaterial.objects.get(**query_params)
@@ -205,6 +211,7 @@ def import_isa(isa_zip, project):
             tail_obj = find_by_name(a.tail)
             head_obj = find_by_name(a.head)
 
+            # TODO: This is now done in two ways, see ARC_OBJ_SUFFIX_MAP
             tail_obj_arg = 'tail_{}'.format(
                 'material' if type(tail_obj) == GenericMaterial else 'process')
             head_obj_arg = 'head_{}'.format(
@@ -212,7 +219,8 @@ def import_isa(isa_zip, project):
 
             values = {
                 'assay': db_parent if type(db_parent) == Assay else None,
-                'study': db_parent if type(db_parent) == Study else None,
+                'study': db_parent if
+                type(db_parent) == Study else db_parent.study,
                 tail_obj_arg: tail_obj,
                 head_obj_arg: head_obj}
 
@@ -295,10 +303,11 @@ def import_isa(isa_zip, project):
             logger.debug('Added assay "{}" in study "{}"'.format(
                 db_assay.api_id, db_study.title))
 
-            # Create assay materials (excluding samples)
+            # Create assay materials (excluding sources and samples)
             assay_materials = {
                 k: a.materials[k] for k in a.materials if
-                a.materials[k].type not in ['SOURCE', 'SAMPLE']}
+                MATERIAL_TYPE_MAP[a.materials[k].type] not in [
+                    'SOURCE', 'SAMPLE']}
             import_materials(assay_materials, db_parent=db_assay)
 
             # Create assay processes

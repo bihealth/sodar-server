@@ -19,6 +19,10 @@ GENERIC_MATERIAL_CHOICES = [
     ('SAMPLE', 'Sample'),
     ('DATA', 'Data')]
 
+ARC_OBJ_SUFFIX_MAP = {
+    'GenericMaterial': 'material',
+    'Process': 'process'}
+
 
 # Abstract base class ----------------------------------------------------------
 
@@ -51,6 +55,15 @@ class BaseSampleSheet(models.Model):
 
     class Meta:
         abstract = True
+
+    # Custom row-level functions
+    def get_study(self):
+        """Return associated study if it exists"""
+        if hasattr(self, 'assay') and self.assay:
+            return self.assay.study
+
+        elif hasattr(self, 'study') and self.study:
+            return self.study
 
 
 # Investigation ----------------------------------------------------------------
@@ -208,24 +221,30 @@ class Study(BaseSampleSheet):
 
     def get_characteristic_cat(self, characteristic):
         """Return characteristic category"""
-        # TODO: Refactor for altamISA
+        # TODO: Refactor for altamISA, currently not implemented
+        '''
         for c in self.characteristic_cat:
             if c['@id'] == characteristic['category']['@id']:
                 return c['characteristicType']
+        '''
 
     def get_unit_cat(self, unit):
         """Return unit category"""
-        # TODO: Refactor for altamISA
+        # TODO: Refactor for altamISA, currently not implemented
+        '''
         for c in self.unit_cat:
             if c['@id'] == unit['@id']:
                 return c
+        '''
 
     def get_factor(self, factor_value):
         """Return factor definition"""
-        # TODO: Refactor for altamISA
+        # TODO: Refactor for altamISA, currently not implemented
+        '''
         for f in self.factors:
             if f['@id'] == factor_value['category']['@id']:
                 return f
+        '''
 
 
 # Protocol ---------------------------------------------------------------------
@@ -300,11 +319,13 @@ class Protocol(BaseSampleSheet):
     # Custom row-level functions
 
     def get_parameter(self, parameter_value):
-        # TODO: Refactor for altamISA
+        # TODO: Refactor for altamISA, currently not implemented
         """Return parameter definition"""
+        '''
         for p in self.parameters:
             if p['parameterName']['@id'] == parameter_value['category']['@id']:
                 return p
+        '''
 
 
 # Assay ------------------------------------------------------------------------
@@ -388,13 +409,12 @@ class Assay(BaseSampleSheet):
 
     def get_samples(self):
         """Return samples used in assay"""
-        GenericMaterial.objects.filter(
+        return GenericMaterial.objects.filter(
             item_type='SAMPLE',
             arcs_as_tail__assay=self).order_by('name').distinct()
 
     def get_sources(self):
         """Return sources of samples used in this assay as a list"""
-        # TODO: Refactor
         sources = []
 
         for sample in self.get_samples():
@@ -402,19 +422,17 @@ class Assay(BaseSampleSheet):
 
         return sorted(set(sources), key=lambda x: x.name)
 
-    def get_sequences_by_sample(self, sample):
+    def get_arcs_by_sample(self, sample):
         """
-        Return process sequences which take sample as initial input
+        Return starting Arcs which take sample as initial tail
         :param sample: GenericMaterial object of type "SAMPLE"
         :return: QuerySet of Process objects (first process of each sequence)
         :raise: ValueError if input GenericMaterial is not of type "SAMPLE"
         """
-        # TODO: Refactor/remove
         if sample.item_type != 'SAMPLE':
             raise ValueError('Input is not a sample')
 
-        return Process.objects.filter(
-            assay=self, previous_process=None, inputs=sample)
+        return Arc.objects.filter(assay=self, tail_material=sample)
 
 
 # Materials and data files -----------------------------------------------------
@@ -499,45 +517,20 @@ class GenericMaterial(BaseSampleSheet):
         verbose_name_plural = 'materials'
 
     def __str__(self):
-        # TODO: Refactor (see Arc)
-        if self.assay:
-            return '{}/{}/{}/{}'.format(
-                self.item_type,
-                self.assay.study.investigation.title,
-                self.assay.study.identifier,
-                self.assay.file_name,
-                self.name)
-
-        elif self.study:
-            return '{}/{}/{}'.format(
-                self.item_type,
-                self.study.investigation.title,
-                self.study.identifier,
-                self.name)
-
-        else:
-            return '{}/{}'.format(self.item_type, self.name)
+        return '{}/{}/{}/{}/{}'.format(
+            self.get_study().investigation.title,
+            self.get_study().title,
+            self.assay.file_name if self.assay else 'N/A',
+            self.item_type,
+            self.name)
 
     def __repr__(self):
-        if self.assay:
-            values = (
-                self.item_type,
-                self.assay.study.investigation.title,
-                self.assay.study.identifier,
-                self.assay.file_name,
-                self.name)
-
-        elif self.study:
-            values = (
-                self.item_type,
-                self.study.investigation.title,
-                self.study.identifier,
-                self.name)
-
-        else:
-            values = (
-                self.item_type,
-                self.name)
+        values = (
+            self.get_study().investigation.title,
+            self.get_study().title,
+            self.assay.file_name if self.assay else 'N/A',
+            self.item_type,
+            self.name)
 
         return 'GenericMaterial({})'.format(', '.join(repr(v) for v in values))
 
@@ -595,23 +588,25 @@ class GenericMaterial(BaseSampleSheet):
 
     def get_sources(self):
         """Return sources of material as a list"""
+        if self.item_type == 'SOURCE':
+            return self
 
-        def find_sources(material, sources):
-            if material.item_type == 'SOURCE':
-                sources.append(material)
+        def find_sources(arcs, sources):
+            for a in arcs:
+                if a.tail_material and a.tail_material.item_type == 'SOURCE':
+                    sources.append(a.tail_material)
 
-            elif hasattr(material, 'material_sources'):
-                for source_process in material.material_sources.all():
-                    for input_material in source_process.inputs.all():
-                        if input_material.item_type == 'SOURCE':
-                            sources.append(input_material)
+                else:
+                    prev_arcs = a.go_back(include_study=True)
 
-                        else:
-                            sources += find_sources(input_material, sources)
+                    if prev_arcs:
+                        sources += find_sources(prev_arcs, sources)
 
             return set(sources)
 
-        sources = find_sources(self, [])
+        material_arcs = Arc.objects.filter(study=self.study, tail_material=self)
+        sources = find_sources(material_arcs, [])
+
         return sorted(sources, key=lambda x: x.name)
 
 
@@ -694,18 +689,20 @@ class Process(BaseSampleSheet):
         verbose_name_plural = 'processes'
 
     def __str__(self):
+        # TODO: Refactor once we're using protocols again
         return '{}/{}/{}/{}'.format(
-            self.protocol.study.investigation.title,
-            self.protocol.study.api_id,
-            self.protocol.api_id,
-            self.api_id)
+            self.get_study().investigation.title,
+            self.get_study().title,
+            self.assay.file_name if self.assay else 'N/A',
+            self.name)
 
     def __repr__(self):
+        # TODO: Refactor once we're using protocols again
         values = (
-            self.protocol.study.investigation.title,
-            self.protocol.study.api_id,
-            self.protocol.api_id,
-            self.api_id)
+            self.get_study().investigation.title,
+            self.get_study().title,
+            self.assay.file_name if self.assay else 'N/A',
+            self.name)
         return 'Process({})'.format(', '.join(repr(v) for v in values))
 
     # Saving and validation
@@ -742,7 +739,7 @@ class Process(BaseSampleSheet):
 # Arc --------------------------------------------------------------------------
 
 
-class Arc(models.Model):
+class Arc(BaseSampleSheet):
     """altamISA parser model compatible arc depicting a relationship between
     material and process"""
 
@@ -796,28 +793,43 @@ class Arc(models.Model):
         ordering = ('study', 'assay')
 
     def __str__(self):
-        return '{}/{}/{}/{}'.format(
+        return '{}/{}/{}/{}->{}'.format(
             self.get_study().investigation.title,
-            self.get_study().identifier,
-            self.get_tail().name,
-            self.get_head().name)
+            self.get_study().title,
+            self.assay.file_name if self.assay else 'N/A',
+            self.get_tail_obj().name,
+            self.get_head_obj().name)
 
     def __repr__(self):
         values = (
             self.get_study().investigation.title,
-            self.get_study().identifier,
-            self.get_tail().name,
-            self.get_head().name)
-
+            self.get_study().title,
+            self.assay.file_name if self.assay else 'N/A',
+            self.get_tail_obj().name,
+            self.get_head_obj().name)
         return 'Arc({})'.format(', '.join(repr(v) for v in values))
 
     # Saving and validation
 
-    # TODO: Validate only one type of head/tail object is present
+    def save(self, *args, **kwargs):
+        """Override save() to include custom validation functions"""
+        self._validate_tail()
+        self._validate_head()
+        super(Arc, self).save(*args, **kwargs)
+
+    def _validate_tail(self):
+        """Validate that one (and only one) type of tail object is present"""
+        if (self.tail_material is None) == (self.tail_process is None):
+            raise ValidationError('Exactly one tail object must be set')
+
+    def _validate_head(self):
+        """Validate that one (and only one) type of head object is present"""
+        if (self.head_material is None) == (self.head_process is None):
+            raise ValidationError('Exactly one head object must be set')
 
     # Custom row-level functions
 
-    def get_tail(self):
+    def get_tail_obj(self):
         """Return tail object"""
         if self.tail_process:
             return self.tail_process
@@ -825,7 +837,7 @@ class Arc(models.Model):
         elif self.tail_material:
             return self.tail_material
 
-    def get_head(self):
+    def get_head_obj(self):
         """Return head object"""
         if self.head_process:
             return self.head_process
@@ -833,6 +845,53 @@ class Arc(models.Model):
         elif self.head_material:
             return self.head_material
 
-    def get_study(self):
-        """Return associated study"""
-        return self.assay.study if self.assay else self.study
+    def go_back(self, include_study=False):
+        """
+        Traverse backward in arc.
+        :param include_study: Allow traversal from assay to study if True
+        :return: QuerySet of 0-N Arc objects
+        """
+        head_obj_arg = 'head_{}'.format(
+            ARC_OBJ_SUFFIX_MAP[self.get_tail_obj().__class__.__name__])
+
+        query_args = {
+            'study': self.study,
+            head_obj_arg: self.get_tail_obj()}
+
+        # Special cases when reaching a sample
+        if self.tail_material and self.tail_material.item_type == 'SAMPLE':
+            if self.assay and not include_study:
+                return Arc.objects.none()
+
+        elif self.assay:
+            query_args['assay'] = self.assay
+
+        # print('query_args={}'.format(query_args))   # DEBUG
+        return Arc.objects.filter(**query_args)
+
+    def go_forward(self, assay=None):
+        """
+        Traverse forward in arc.
+        :param assay: Allow traversal from study arc to specified assay if set
+        :return: QuerySet of 0-N Arc objects
+        """
+        tail_obj_arg = 'tail_{}'.format(
+            ARC_OBJ_SUFFIX_MAP[self.get_head_obj().__class__.__name__])
+
+        query_args = {
+            'study': self.study,
+            tail_obj_arg: self.get_head_obj()}
+
+        # Special cases when reaching a sample
+        if self.head_material and self.head_material.item_type == 'SAMPLE':
+            if not self.assay and not assay:
+                return Arc.objects.none()
+
+            elif assay:
+                query_args['assay'] = assay
+
+        elif self.assay:
+            query_args['assay'] = self.assay
+
+        # print('query_args={}'.format(query_args))   # DEBUG
+        return Arc.objects.filter(**query_args)
