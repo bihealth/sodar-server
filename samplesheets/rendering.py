@@ -8,11 +8,11 @@ from .models import Process, GenericMaterial
 
 
 HEADER_COLOURS = {
-    'source': 'info',
-    'sample': 'warning',
-    'process': 'danger',
-    'material': 'success',
-    'data file': 'success'}
+    'SOURCE': 'info',
+    'SAMPLE': 'warning',
+    'PROCESS': 'danger',
+    'MATERIAL': 'success',
+    'DATA': 'success'}
 
 
 def get_assay_table(assay):
@@ -26,11 +26,11 @@ def get_assay_table(assay):
     top_header = []
     field_header = []
 
-    def add_top_header(top_header, title, colspan):
+    def add_top_header(top_header, item_type, colspan):
         """Append columns to top header"""
         top_header.append({
-            'title': title.capitalize(),
-            'colour': HEADER_COLOURS[title.lower()],
+            'title': item_type.capitalize(),
+            'colour': HEADER_COLOURS[item_type],
             'colspan': colspan})
 
     def add_val(
@@ -168,9 +168,7 @@ def get_assay_table(assay):
                 # field_count += add_char_headers(
                 #     field_header, material)
 
-                header_type = 'data file' if \
-                    material.item_type == 'DATA' else 'material'
-                add_top_header(top_header, header_type, field_count)
+                add_top_header(top_header, material.item_type, field_count)
 
             # Material columns
             add_val(row, material.name)  # Material name
@@ -198,7 +196,7 @@ def get_assay_table(assay):
             field_header.append('Name')                 # Name column
             field_count = 1
             # field_count += add_char_headers(field_header, source)
-            add_top_header(top_header, 'source', field_count)
+            add_top_header(top_header, 'SOURCE', field_count)
             first_source = False
 
         # Add source columns
@@ -225,7 +223,7 @@ def get_assay_table(assay):
                 # Factor values
                 # field_count += add_factor_header(field_header, sample)
 
-                add_top_header(top_header, 'sample', field_count)
+                add_top_header(top_header, 'SAMPLE', field_count)
                 first_sample = False
 
             if not first_sample_in_source:
@@ -274,14 +272,15 @@ def get_assay_table(assay):
                             # field_count += add_param_headers(
                             # field_header, process)
 
-                            add_top_header(top_header, 'process', field_count)
+                            add_top_header(top_header, 'PROCESS', field_count)
 
                         # Add material headers
                         elif type(head_obj) == GenericMaterial:
                             field_header.append('Name')
                             field_count = 1
                             # TODO: Material stuff
-                            add_top_header(top_header, 'material', field_count)
+                            add_top_header(
+                                top_header, head_obj.item_type, field_count)
 
                     add_val(row, head_obj.name)  # Object name
 
