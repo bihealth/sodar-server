@@ -3,6 +3,7 @@
 from altamisa.isatab import InvestigationReader, StudyReader, AssayReader
 import io
 import logging
+from typing import NamedTuple
 
 from .models import Investigation, Study, Assay, GenericMaterial, Protocol, \
     Process, Arc
@@ -67,6 +68,10 @@ def import_isa(isa_zip, project):
     # Helper functions
     ###################
 
+    def get_multitype_val(o):
+        """Get value where the member type can vary"""
+        return o._asdict() if isinstance(o, tuple) else o
+
     def get_tuple_list(tuples):
         """Get list of dicts from tuples for JSONField"""
         if type(tuples) == dict:
@@ -125,8 +130,13 @@ def import_isa(isa_zip, project):
             elif m.label:
                 values['material_type'] = m.label
 
+            # TODO: DEMO HACK, refactor
             if m.characteristics:
-                values['characteristics'] = get_tuple_list(m.characteristics)
+                values['characteristics'] = {}
+                for c in m.characteristics:
+                    values['characteristics'][c.name] = {
+                        'unit': get_multitype_val(c.unit),
+                        'value': get_multitype_val(c.value)}
 
             # TODO: Add factor values
 

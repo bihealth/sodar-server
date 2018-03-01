@@ -61,23 +61,21 @@ def get_assay_table(assay):
         char_count = 0
 
         for c in material.characteristics:
-            category = assay.study.get_characteristic_cat(c)
-            field_header.append(category['annotationValue'].capitalize())
+            field_header.append(c.capitalize())
             char_count += 1
 
         return char_count
 
-    # TODO: Modify for altamISA
     def add_chars(row, material):
         """Append material characteristics to row columns"""
-        for c in material.characteristics:
+        for k, c in material.characteristics.items():
             val = ''
 
             if type(c['value']) == dict:
-                if c['value']['termSource']:
-                    val = c['value']['termSource'] + ': '
-                val += c['value']['annotationValue']
-                accession = c['value']['termAccession']
+                if c['value']['ontology_name']:
+                    val = c['value']['ontology_name'] + ': '
+                val += k
+                accession = c['value']['accession']
 
             else:
                 val = c['value']
@@ -199,17 +197,18 @@ def get_assay_table(assay):
         row = []
         source_section = []
 
-        # Build source header
+        # Source header
         if first_source:
-            field_header.append('Name')                 # Name column
+            field_header.append('Name')                 # Name
             field_count = 1
-            # field_count += add_char_headers(field_header, source)
+            field_count += add_char_headers(
+                field_header, source)                   # Characteristics
             add_top_header(top_header, 'SOURCE', field_count)
             first_source = False
 
-        # Add source columns
-        add_val(source_section, source.name)            # Name column
-        # add_chars(source_section, source)               # Characteristics
+        # Source columns
+        add_val(source_section, source.name)            # Name
+        add_chars(source_section, source)               # Characteristics
         row += source_section
 
         ##########
@@ -220,13 +219,12 @@ def get_assay_table(assay):
         for sample in [
                 s for s in assay.get_samples() if source in s.get_sources()]:
 
-            # Build sample header
+            # Sample header
             if first_sample:
-                field_header.append('Name')             # Name column
+                field_header.append('Name')             # Name
                 field_count = 1
-
-                # Characteristics
-                # field_count += add_char_headers(field_header, sample)
+                field_count += add_char_headers(
+                    field_header, sample)               # Characteristics
 
                 # Factor values
                 # field_count += add_factor_header(field_header, sample)
@@ -239,10 +237,10 @@ def get_assay_table(assay):
                 # row += source_section
                 add_repetition(row, top_header, 1)
 
-            # Add sample columns
+            # Sample columns
             sample_section = []
-            add_val(sample_section, sample.name)
-            # add_chars(sample_section, sample)
+            add_val(sample_section, sample.name)        # Name
+            add_chars(sample_section, sample)           # Characteristics
             # add_factors(sample_section, sample)
             row += sample_section
             first_sample_in_source = False
@@ -259,9 +257,9 @@ def get_assay_table(assay):
 
             # Iterate through arcs
             for arc in arcs:
-                head_obj = arc.get_head_obj()
+                col_obj = arc.get_head_obj()
 
-                while head_obj:
+                while col_obj:
                     if not first_arc_in_sample:
                         row = []
                         # row += source_section
@@ -271,12 +269,19 @@ def get_assay_table(assay):
                     ##########
                     # Process
                     ##########
-                    if type(head_obj) == Process:
+                    if type(col_obj) == Process:
                         # Process headers
                         if first_arc:
-                            field_header.append('Protocol')     # Protocol name
-                            field_header.append('Name')         # Process name
-                            field_count = 2
+                            field_count = 0
+
+                            # Protocol name
+                            if col_obj.protocol:
+                                field_header.append('Protocol')
+                                field_count += 1
+
+                            # Process name
+                            field_header.append('Name')
+                            field_count += 1
 
                             # TODO: Process header stuff
                             # field_count += add_param_headers(
@@ -285,39 +290,39 @@ def get_assay_table(assay):
                             add_top_header(
                                 top_header, 'PROCESS', field_count)
 
-                        # TODO: TBD: Just hide column if protocol is unknown?
-                        protocol_name = head_obj.protocol.name if \
-                            head_obj.protocol else 'UNKNOWN'
+                        # Protocol name
+                        if col_obj.protocol:
+                            add_val(row, col_obj.protocol.name)
 
-                        add_val(row, protocol_name)             # Protocol name
-                        add_val(row, head_obj.name)             # Process name
+                        # Process name
+                        add_val(row, col_obj.name)
                         # TODO: Other Process stuff
 
                     ###########
                     # Material
                     ###########
-                    elif type(head_obj) == GenericMaterial:
+                    elif type(col_obj) == GenericMaterial:
                         # Material headers
                         if first_arc:
-                            field_header.append('Name')
+                            field_header.append('Name')     # Name
                             field_count = 1
-
-                            # TODO: Material header stuff
+                            field_count += add_char_headers(
+                                field_header, sample)       # Characteristics
 
                             add_top_header(
-                                top_header, head_obj.item_type, field_count)
+                                top_header, col_obj.item_type, field_count)
 
-                        add_val(row, head_obj.name)     # Material name
-                        # TODO: Other material stuff
+                        add_val(row, col_obj.name)          # Name
+                        add_chars(row, col_obj)             # Characteristics
 
                     next_arcs = arc.go_forward()
 
                     if next_arcs:
                         arc = arc.go_forward()[0]
-                        head_obj = arc.get_head_obj()
+                        col_obj = arc.get_head_obj()
 
                     else:
-                        head_obj = None
+                        col_obj = None
 
                 # Add row to table
                 # print('Row: {}'.format(row))    # DEBUG
