@@ -68,9 +68,21 @@ def import_isa(isa_zip, project):
     # Helper functions
     ###################
 
+    # TODO: Move inside get_ontology_vals?
     def get_multitype_val(o):
         """Get value where the member type can vary"""
         return o._asdict() if isinstance(o, tuple) else o
+
+    def get_ontology_vals(vals):
+        """Get value data from porential ontology references"""
+        ret = {}
+
+        for v in vals:
+            ret[v.name] = {
+                'unit': get_multitype_val(v.unit),
+                'value': get_multitype_val(v.value)}
+
+        return ret
 
     def get_tuple_list(tuples):
         """Get list of dicts from tuples for JSONField"""
@@ -130,15 +142,13 @@ def import_isa(isa_zip, project):
             elif m.label:
                 values['material_type'] = m.label
 
-            # TODO: DEMO HACK, refactor
+            # Characteristics
             if m.characteristics:
-                values['characteristics'] = {}
-                for c in m.characteristics:
-                    values['characteristics'][c.name] = {
-                        'unit': get_multitype_val(c.unit),
-                        'value': get_multitype_val(c.value)}
+                values['characteristics'] = get_ontology_vals(m.characteristics)
 
-            # TODO: Add factor values
+            # Factor values
+            if m.factor_values:
+                values['factor_values'] = get_ontology_vals(m.factor_values)
 
             material_obj = GenericMaterial(**values)
             material_obj.save()
@@ -186,13 +196,9 @@ def import_isa(isa_zip, project):
                 'comments': []}     # TODO
 
             # Parameter values
-            # TODO: DEMO HACK, refactor
             if p.parameter_values:
-                values['parameter_values'] = {}
-                for v in p.parameter_values:
-                    values['parameter_values'][v.name] = {
-                        'unit': get_multitype_val(v.unit),
-                        'value': get_multitype_val(v.value)}
+                values['parameter_values'] = get_ontology_vals(
+                    p.parameter_values)
 
             process = Process(**values)
             process.save()

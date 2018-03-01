@@ -4,9 +4,6 @@
 from .models import Process, GenericMaterial
 
 
-# TODO: Refactor everything for altamISA import
-
-
 HEADER_COLOURS = {
     'SOURCE': 'info',
     'SAMPLE': 'warning',
@@ -56,127 +53,76 @@ def get_assay_table(assay):
         for i in range(0, sum([x['colspan'] for x in top_header[0:sections]])):
             add_val(row, repeat=True)
 
-    def add_char_headers(field_header, material):
-        """Append characteristics columns to field header"""
-        # TODO: Repetition between functions, unify
-        char_count = 0
+    def add_annotation_headers(field_header, annotations):
+        """Append annotation columns to field header"""
+        a_count = 0
 
-        for c in material.characteristics:
-            field_header.append(c.capitalize())
-            char_count += 1
+        for a in annotations:
+            field_header.append(a.capitalize())
+            a_count += 1
 
-        return char_count
+        return a_count
 
-    def add_chars(row, material):
-        """Append material characteristics to row columns"""
-        # TODO: Repetition between functions, unify
-        for k, c in material.characteristics.items():
-            val = ''
+    def add_annotations(row, annotations):
+        """Append annotations to row columns"""
+        if not annotations:
+            return None
 
-            if type(c['value']) == dict:
-                if c['value']['ontology_name']:
-                    val = c['value']['ontology_name'] + ': '
-                val += k
-                accession = c['value']['accession']
-
-            else:
-                val = c['value']
-                accession = None
-
-            add_val(row, val, link=accession)
-
-    # TODO: Modify for altamISA
-    def add_factor_header(field_header, material):
-        """Append factor value columns to field header"""
-        factor_count = 0
-
-        for fv in material.factor_values:
-            factor = assay.study.get_factor(fv)
-            field_header.append(
-                factor['factorName'].capitalize())
-            factor_count += 1
-
-        return factor_count
-
-    # TODO: Modify for altamISA
-    def add_factors(row, material):
-        """Append factor values to row columns"""
-        for fv in material.factor_values:
+        for k, v in annotations.items():
             val = ''
             unit = None
             link = None
 
-            if type(fv['value']) == dict:
-                if fv['value']['termSource']:
-                    val = fv['value']['termSource'] + ': '
-
-                val += fv['value']['annotationValue']
-                link = fv['value']['termAccession']
-
-            else:
-                val = fv['value']
-
-                if 'unit' in fv:
-                    category = assay.study.get_unit_cat(fv['unit'])
-
-                    # In case a factor value has been declared outside a sample
-                    # (Should not be allowed but ISA-API fails to check for it)
-                    if category:
-                        unit = category['annotationValue']
-
-            add_val(row, val, unit=unit, link=link)
-
-    def add_param_headers(field_header, process):
-        """Append parameter columns to field header"""
-        param_count = 0
-
-        for pv in process.parameter_values:
-            field_header.append(pv.capitalize())
-            param_count += 1
-
-        return param_count
-
-    def add_param_values(row, process):
-        """Append parameter values of process to row"""
-        for k, v in process.parameter_values.items():
-            val = ''
-
             if type(v['value']) == dict:
                 if v['value']['ontology_name']:
                     val = v['value']['ontology_name'] + ': '
-                val += k
-                accession = v['value']['accession']
+
+                val += v['value']['name']
+                link = v['value']['accession']
 
             else:
                 val = v['value']
-                accession = None
 
-            add_val(row, val, link=accession)
+            # TODO: Test unit
+            if 'unit' in v:
+                if type(v['unit']) == dict:
+                    unit = v['value']['name']
 
-    # TODO: Modify for altamISA
-    def add_material(row, top_header, field_header, first_seq, material):
-        if material and material.item_type != 'SAMPLE':
-            if first_seq:
-                # Add material headers
-                field_header.append('Name')  # Material name
-                field_count = 1
+                else:
+                    unit = v['unit']
 
-                # Characteristics
-                # field_count += add_char_headers(
-                #     field_header, material)
+            add_val(row, val, unit=unit, link=link)
 
-                add_top_header(top_header, material.item_type, field_count)
+    # TODO: Expand to support Process objects
+    def add_element(row, top_header, field_header, material, first_row):
+        if first_row:
+            # Add material headers
+            field_header.append('Name')  # Material name
+            field_count = 1
 
-            # Material columns
-            add_val(row, material.name)  # Material name
-            # add_chars(row, material)  # Characteristics
+            # Characteristics
+            field_count += add_annotation_headers(
+                field_header, material.characteristics)
+
+            # Factor values
+            if material.item_type == 'SAMPLE':
+                field_count += add_annotation_headers(
+                    field_header, material.factor_values)
+
+            add_top_header(top_header, material.item_type, field_count)
+
+        # Material columns
+        add_val(row, material.name)  # Material name
+        add_annotations(row, material.characteristics)  # Characteristics
+
+        if material.item_type == 'SAMPLE':
+            add_annotations(row, material.factor_values)
 
     ############
     # Rendering
     ############
 
-    first_source = True
-    first_sample = True
+    first_row = True
     first_arc = True
 
     ##########
@@ -188,53 +134,21 @@ def get_assay_table(assay):
         row = []
         source_section = []
 
-        # Source header
-        if first_source:
-            field_header.append('Name')                 # Name
-            field_count = 1
-            field_count += add_char_headers(
-                field_header, source)                   # Characteristics
-            add_top_header(top_header, 'SOURCE', field_count)
-            first_source = False
-
-        # Source columns
-        add_val(source_section, source.name)            # Name
-        add_chars(source_section, source)               # Characteristics
+        add_element(
+            source_section, top_header, field_header, source, first_row)
         row += source_section
 
         ##########
         # Samples
         ##########
-        first_sample_in_source = True
 
         for sample in [
                 s for s in assay.get_samples() if source in s.get_sources()]:
-
-            # Sample header
-            if first_sample:
-                field_header.append('Name')             # Name
-                field_count = 1
-                field_count += add_char_headers(
-                    field_header, sample)               # Characteristics
-
-                # Factor values
-                # field_count += add_factor_header(field_header, sample)
-
-                add_top_header(top_header, 'SAMPLE', field_count)
-                first_sample = False
-
-            if not first_sample_in_source:
-                row = []
-                # row += source_section
-                add_repetition(row, top_header, 1)
-
-            # Sample columns
             sample_section = []
-            add_val(sample_section, sample.name)        # Name
-            add_chars(sample_section, sample)           # Characteristics
-            # add_factors(sample_section, sample)
+
+            add_element(
+                sample_section, top_header, field_header, sample, first_row)
             row += sample_section
-            first_sample_in_source = False
 
             #############
             # Assay arcs
@@ -244,7 +158,9 @@ def get_assay_table(assay):
             # Get sequences
             arcs = assay.get_arcs_by_sample(sample)
 
-            # TODO: Pooling/splitting
+            # TODO: Ensure correct pooling/splitting
+
+            # TODO: Refactor arcs
 
             # Iterate through arcs
             for arc in arcs:
@@ -261,6 +177,7 @@ def get_assay_table(assay):
                     # Process
                     ##########
                     if type(col_obj) == Process:
+                        # TODO: Build using add_element
                         # Process headers
                         if first_arc:
                             field_count = 0
@@ -274,8 +191,9 @@ def get_assay_table(assay):
                             field_header.append('Name')     # Name
                             field_count += 1
 
-                            field_count += add_param_headers(
-                                field_header, col_obj)      # Param values
+                            # Param values
+                            field_count += add_annotation_headers(
+                                field_header, col_obj.parameter_values)
 
                             add_top_header(
                                 top_header, 'PROCESS', field_count)
@@ -285,24 +203,28 @@ def get_assay_table(assay):
                             add_val(row, col_obj.protocol.name)
 
                         add_val(row, col_obj.name)          # Process name
-                        add_param_values(row, col_obj)      # Param values
+                        # Param values
+                        add_annotations(row, col_obj.parameter_values)
 
                     ###########
                     # Material
                     ###########
                     elif type(col_obj) == GenericMaterial:
+                        # TODO: Build using add_element
                         # Material headers
                         if first_arc:
                             field_header.append('Name')     # Name
                             field_count = 1
-                            field_count += add_char_headers(
-                                field_header, col_obj)      # Characteristics
+                            # Characteristics
+                            field_count += add_annotation_headers(
+                                field_header, col_obj.characteristics)
 
                             add_top_header(
                                 top_header, col_obj.item_type, field_count)
 
                         add_val(row, col_obj.name)          # Name
-                        add_chars(row, col_obj)             # Characteristics
+                        # Characteristics
+                        add_annotations(row, col_obj.characteristics)
 
                     next_arcs = arc.go_forward()
 
@@ -318,6 +240,7 @@ def get_assay_table(assay):
                 table_data.append(row)
                 first_arc = False
                 first_arc_in_sample = False
+                first_row = False
 
     return {
         'top_header': top_header,

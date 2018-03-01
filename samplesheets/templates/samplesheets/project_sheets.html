@@ -16,8 +16,14 @@
       overflow-y: scroll;
     }
 
-    .omics-ss-assay-table tbody tr td {
+    .omics-ss-data-table thead tr th {
         white-space: nowrap;
+        padding: 5px; /* Demo "Excel" mode */
+    }
+
+    .omics-ss-data-table tbody tr td {
+        white-space: nowrap;
+        padding: 5px; /* Demo "Excel" mode */
     }
   </style>
 {% endblock css %}
@@ -98,7 +104,7 @@
           <div class="table-responsive omics-ss-assay-container">
           {% get_assay_table assay as assay_table %}
 
-            <table class="table table-bordered omics-card-table-bordered omics-ss-assay-table">
+            <table class="table table-bordered omics-card-table-bordered omics-ss-data-table">
               <thead>
                 {# Top header #}
                 <tr>
