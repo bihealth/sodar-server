@@ -94,25 +94,31 @@ class SampleSheetImportView(
     def form_valid(self, form):
         timeline = get_backend_api('timeline_backend')
         project = Project.objects.get(pk=self.kwargs['project'])
-        self.object = form.save()
 
-        # Add event in Timeline
-        if timeline:
-            tl_event = timeline.add_event(
-                project=project,
-                app_name=APP_NAME,
-                user=self.request.user,
-                event_name='sheet_create',
-                description='create investigation {investigation}',
-                status_type='OK')
+        try:
+            self.object = form.save()
 
-            tl_event.add_object(
-                obj=self.object,
-                label='investigation',
-                name=self.object.title)
+            # Add event in Timeline
+            if timeline:
+                tl_event = timeline.add_event(
+                    project=project,
+                    app_name=APP_NAME,
+                    user=self.request.user,
+                    event_name='sheet_create',
+                    description='create investigation {investigation}',
+                    status_type='OK')
 
-        messages.success(
-            self.request, 'Sample sheets imported from an ISA investigation.')
+                tl_event.add_object(
+                    obj=self.object,
+                    label='investigation',
+                    name=self.object.title)
+
+            messages.success(
+                self.request,
+                'Sample sheets imported from an ISA investigation.')
+
+        except Exception as ex:
+            messages.error(self.request, str(ex))
 
         return redirect(
             reverse('project_sheets', kwargs={

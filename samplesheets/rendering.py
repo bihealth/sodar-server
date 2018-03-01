@@ -14,6 +14,14 @@ HEADER_COLOURS = {
     'MATERIAL': 'success',
     'DATA': 'success'}
 
+HEADER_LEGEND = {
+    'SOURCE': 'Source',
+    'SAMPLE': 'Sample',
+    'PROCESS': 'Process',
+    'MATERIAL': 'Material',
+    'DATA': 'Data File'
+}
+
 
 def get_assay_table(assay):
     """
@@ -29,7 +37,7 @@ def get_assay_table(assay):
     def add_top_header(top_header, item_type, colspan):
         """Append columns to top header"""
         top_header.append({
-            'title': item_type.capitalize(),
+            'legend': HEADER_LEGEND[item_type],
             'colour': HEADER_COLOURS[item_type],
             'colspan': colspan})
 
@@ -204,9 +212,9 @@ def get_assay_table(assay):
         # add_chars(source_section, source)               # Characteristics
         row += source_section
 
-        ################
-        # Source Samples
-        ################
+        ##########
+        # Samples
+        ##########
         first_sample_in_source = True
 
         for sample in [
@@ -260,31 +268,47 @@ def get_assay_table(assay):
                         add_repetition(row, top_header, 1)
                         row += sample_section
 
-                    # Header
-                    if first_arc:
-                        # Add process headers
-                        if type(head_obj) == Process:
-                            # field_header.append('Protocol')  # Protocol name
-                            field_header.append('Name')  # Process name
-                            field_count = 1
+                    ##########
+                    # Process
+                    ##########
+                    if type(head_obj) == Process:
+                        # Process headers
+                        if first_arc:
+                            field_header.append('Protocol')     # Protocol name
+                            field_header.append('Name')         # Process name
+                            field_count = 2
 
-                            # TODO: Parameter values
+                            # TODO: Process header stuff
                             # field_count += add_param_headers(
                             # field_header, process)
 
-                            add_top_header(top_header, 'PROCESS', field_count)
+                            add_top_header(
+                                top_header, 'PROCESS', field_count)
 
-                        # Add material headers
-                        elif type(head_obj) == GenericMaterial:
+                        # TODO: TBD: Just hide column if protocol is unknown?
+                        protocol_name = head_obj.protocol.name if \
+                            head_obj.protocol else 'UNKNOWN'
+
+                        add_val(row, protocol_name)             # Protocol name
+                        add_val(row, head_obj.name)             # Process name
+                        # TODO: Other Process stuff
+
+                    ###########
+                    # Material
+                    ###########
+                    elif type(head_obj) == GenericMaterial:
+                        # Material headers
+                        if first_arc:
                             field_header.append('Name')
                             field_count = 1
-                            # TODO: Material stuff
+
+                            # TODO: Material header stuff
+
                             add_top_header(
                                 top_header, head_obj.item_type, field_count)
 
-                    add_val(row, head_obj.name)  # Object name
-
-                    # TODO: Process/material stuff
+                        add_val(row, head_obj.name)     # Material name
+                        # TODO: Other material stuff
 
                     next_arcs = arc.go_forward()
 
@@ -317,7 +341,7 @@ def render_top_header(section):
            '{}</th>\n'.format(
             section['colour'],
             section['colspan'],
-            section['title'].capitalize())
+            section['legend'])
 
 
 def render_assay_cell(cell):

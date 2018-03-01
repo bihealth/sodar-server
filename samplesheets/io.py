@@ -144,24 +144,36 @@ def import_isa(isa_zip, project):
         study = db_parent if type(db_parent) == Study else db_parent.study
 
         for p in processes.values():
-            # TODO: Link protocol
-            '''
-            protocol = Protocol.objects.get(
-                study=study,
-                api_id=id(p.executes_protocol))
-            '''
+            # Link protocol
+            protocol = None
+
+            if p.protocol_ref != 'UNKNOWN':
+                try:
+                    protocol = Protocol.objects.get(
+                        study=study,
+                        name=p.protocol_ref)
+
+                except Protocol.DoesNotExist:
+                    logger.error(
+                        'No protocol found for process "{}" '
+                        'with ref "{}"'.format(
+                            p.name, p.protocol_ref))
+
+            else:
+                logger.debug(
+                    'Unknown protocol for process "{}"'.format(p.name))
 
             values = {
-                'api_id': id(p),
+                'api_id': id(p),    # TODO: Remove api_id?
                 'name': p.name,
-                'protocol': None,   # TODO: Link protocol
+                'protocol': protocol,
                 'assay': db_parent if type(db_parent) == Assay else None,
                 'study': db_parent if type(db_parent) == Study else None,
                 'performer': p.performer,
                 'perform_date': p.date,
                 'array_design_ref': p.array_design_ref,
                 'scan_name': p.scan_name,
-                'comments': {}}     # TODO
+                'comments': []}     # TODO
 
             # TODO: Parameter values
 
@@ -270,7 +282,25 @@ def import_isa(isa_zip, project):
         db_study.save()
         logger.debug('Added study "{}"'.format(db_study.title))
 
-        # TODO: Create protocols once they are supported in altamISA
+        # Create protocols
+        # TODO: Changes expected to parameters and components
+        # TODO: Comments
+        for p_i in s_i.protocols.values():
+            values = {
+                'api_id': id(p_i),
+                'name': p_i.name,
+                'study': db_study,
+                'protocol_type': p_i.type._asdict(),
+                'description': p_i.description,
+                'uri': p_i.uri,
+                'version': p_i.version,
+                'parameters': [x._asdict() for x in list(p_i.parameters)],
+                'components': [x._asdict() for x in list(p_i.component)]}
+
+            protocol = Protocol(**values)
+            protocol.save()
+            logger.debug('Added protocol "{}" in study "{}"'.format(
+                protocol.name, db_study.title))
 
         # Create study materials
         import_materials(
