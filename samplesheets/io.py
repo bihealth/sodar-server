@@ -185,7 +185,14 @@ def import_isa(isa_zip, project):
                 'scan_name': p.scan_name,
                 'comments': []}     # TODO
 
-            # TODO: Parameter values
+            # Parameter values
+            # TODO: DEMO HACK, refactor
+            if p.parameter_values:
+                values['parameter_values'] = {}
+                for v in p.parameter_values:
+                    values['parameter_values'][v.name] = {
+                        'unit': get_multitype_val(v.unit),
+                        'value': get_multitype_val(v.value)}
 
             process = Process(**values)
             process.save()

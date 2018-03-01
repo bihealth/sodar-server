@@ -58,6 +58,7 @@ def get_assay_table(assay):
 
     def add_char_headers(field_header, material):
         """Append characteristics columns to field header"""
+        # TODO: Repetition between functions, unify
         char_count = 0
 
         for c in material.characteristics:
@@ -68,6 +69,7 @@ def get_assay_table(assay):
 
     def add_chars(row, material):
         """Append material characteristics to row columns"""
+        # TODO: Repetition between functions, unify
         for k, c in material.characteristics.items():
             val = ''
 
@@ -124,43 +126,32 @@ def get_assay_table(assay):
 
             add_val(row, val, unit=unit, link=link)
 
-    # TODO: Modify for altamISA
     def add_param_headers(field_header, process):
         """Append parameter columns to field header"""
         param_count = 0
 
         for pv in process.parameter_values:
-            param = process.protocol.get_parameter(pv)
-
-            if param:
-                field_header.append(
-                    param['parameterName']['annotationValue'].capitalize())
-
-            else:
-                field_header.append('Unknown parameter')    # In case of failure
-
+            field_header.append(pv.capitalize())
             param_count += 1
 
         return param_count
 
-    # TODO: Modify for altamISA
     def add_param_values(row, process):
         """Append parameter values of process to row"""
-        for pv in process.parameter_values:
+        for k, v in process.parameter_values.items():
             val = ''
-            link = None
 
-            if type(pv['value']) == dict:
-                if pv['value']['termSource']:
-                    val = pv['value']['termSource'] + ': '
-
-                val += pv['value']['annotationValue']
-                link = pv['value']['termAccession']
+            if type(v['value']) == dict:
+                if v['value']['ontology_name']:
+                    val = v['value']['ontology_name'] + ': '
+                val += k
+                accession = v['value']['accession']
 
             else:
-                val = pv['value']
+                val = v['value']
+                accession = None
 
-            add_val(row, val, link=link)
+            add_val(row, val, link=accession)
 
     # TODO: Modify for altamISA
     def add_material(row, top_header, field_header, first_seq, material):
@@ -280,12 +271,11 @@ def get_assay_table(assay):
                                 field_count += 1
 
                             # Process name
-                            field_header.append('Name')
+                            field_header.append('Name')     # Name
                             field_count += 1
 
-                            # TODO: Process header stuff
-                            # field_count += add_param_headers(
-                            # field_header, process)
+                            field_count += add_param_headers(
+                                field_header, col_obj)      # Param values
 
                             add_top_header(
                                 top_header, 'PROCESS', field_count)
@@ -294,9 +284,8 @@ def get_assay_table(assay):
                         if col_obj.protocol:
                             add_val(row, col_obj.protocol.name)
 
-                        # Process name
-                        add_val(row, col_obj.name)
-                        # TODO: Other Process stuff
+                        add_val(row, col_obj.name)          # Process name
+                        add_param_values(row, col_obj)      # Param values
 
                     ###########
                     # Material
@@ -307,7 +296,7 @@ def get_assay_table(assay):
                             field_header.append('Name')     # Name
                             field_count = 1
                             field_count += add_char_headers(
-                                field_header, sample)       # Characteristics
+                                field_header, col_obj)      # Characteristics
 
                             add_top_header(
                                 top_header, col_obj.item_type, field_count)
