@@ -283,7 +283,6 @@ def import_isa(isa_zip, project):
         logger.debug('Added study "{}"'.format(db_study.title))
 
         # Create protocols
-        # TODO: Changes expected to parameters and components
         # TODO: Comments
         for p_i in s_i.protocols.values():
             values = {
@@ -294,8 +293,8 @@ def import_isa(isa_zip, project):
                 'description': p_i.description,
                 'uri': p_i.uri,
                 'version': p_i.version,
-                'parameters': [x._asdict() for x in list(p_i.parameters)],
-                'components': [x._asdict() for x in list(p_i.component)]}
+                'parameters': get_tuple_list(p_i.parameters),
+                'components': get_tuple_list(p_i.components)}
 
             protocol = Protocol(**values)
             protocol.save()
