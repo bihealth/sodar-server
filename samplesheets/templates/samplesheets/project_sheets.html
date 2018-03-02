@@ -57,7 +57,7 @@
       <ul class="nav nav-tabs">
         {% for s in investigation.studies.all %}
           <li class="nav-item">
-            <a class="nav-link {% if s == study %}active{% endif %}" href="{% url 'project_sheets' project=project.pk study=s.pk %}">{{ s.title }}</a>
+            <a class="nav-link {% if s == study %}active{% endif %}" href="{% url 'project_sheets' project=project.pk study=s.pk %}">{% get_study_title s %}</a>
           </li>
         {% endfor %}
         <li class="nav-item">

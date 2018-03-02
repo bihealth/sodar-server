@@ -1,3 +1,5 @@
+{% load samplesheets_tags %}
+
 <div class="card-body omics-card-body">
   <dl class="row omics-dl">
     {% comment %}
@@ -5,7 +7,7 @@
     <dd class="col-md-10">{{ study.identifier }}</dd>
     {% endcomment %}
     <dt class="col-md-2">Title</dt>
-    <dd class="col-md-10">{{ study.title }}</dd>
+    <dd class="col-md-10">{% get_study_title study %}</dd>
   {% if study.description %}
     <dt class="col-md-2">Description</dt>
     <dd class="col-md-10">{{ study.description }}</dd>

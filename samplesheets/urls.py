@@ -14,7 +14,7 @@ urlpatterns = [
         name='project_sheets',
     ),
     url(
-        regex=r'^(?P<project>\d+)/(?P<subpage>[^\0]{0,256})$',
+        regex=r'^(?P<project>\d+)/meta/(?P<subpage>[^\0]{0,256})$',
         view=views.ProjectSheetsView.as_view(),
         name='project_sheets',
     ),

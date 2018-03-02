@@ -38,6 +38,7 @@ def get_assay_table(assay):
             'colour': HEADER_COLOURS[item_type],
             'colspan': colspan})
 
+    # TODO: Add possibility to define additional classes
     def add_val(
             row, value=None, unit=None, repeat=False, link=None, tooltip=None):
         """Append column value to row"""
@@ -94,37 +95,64 @@ def get_assay_table(assay):
 
             add_val(row, val, unit=unit, link=link, tooltip=tooltip)
 
-    # TODO: Expand to support Process objects
-    def add_element(row, top_header, field_header, material, first_row):
+    def add_element(row, top_header, field_header, obj, first_row):
+        """Append GenericMaterial or Protocol element to row"""
+
+        # Headers
         if first_row:
-            # Add material headers
-            field_header.append('Name')  # Material name
-            field_count = 1
+            field_count = 0
 
-            # Characteristics
-            field_count += add_annotation_headers(
-                field_header, material.characteristics)
+            # Material headers
+            if type(obj) == GenericMaterial:
+                field_header.append('Name')                 # Name
+                field_count += 1
 
-            # Factor values
-            if material.item_type == 'SAMPLE':
                 field_count += add_annotation_headers(
-                    field_header, material.factor_values)
+                    field_header, obj.characteristics)      # Characteristics
 
-            add_top_header(top_header, material.item_type, field_count)
+                if obj.item_type == 'SAMPLE':
+                    field_count += add_annotation_headers(
+                        field_header, obj.factor_values)    # Factor values
 
-        # Material columns
-        add_val(row, material.name)  # Material name
-        add_annotations(row, material.characteristics)  # Characteristics
+                top_header_type = obj.item_type
 
-        if material.item_type == 'SAMPLE':
-            add_annotations(row, material.factor_values)
+            # Process headers
+            elif type(obj) == Process:
+                if obj.protocol:
+                    field_header.append('Protocol')         # Protocol
+                    field_count += 1
+
+                field_header.append('Name')                 # Name
+                field_count += 1
+
+                field_count += add_annotation_headers(
+                    field_header, obj.parameter_values)     # Parameter values
+
+                top_header_type = 'PROCESS'
+
+            add_top_header(top_header, top_header_type, field_count)
+
+        # Material data
+        if type(obj) == GenericMaterial:
+            add_val(row, obj.name)  # Name
+            add_annotations(row, obj.characteristics)       # Characteristics
+
+            if obj.item_type == 'SAMPLE':
+                add_annotations(row, obj.factor_values)     # Factor values
+
+        # Process data
+        elif type(obj) == Process:
+            if obj.protocol:
+                add_val(row, obj.name)                      # Protocol
+
+            add_val(row, obj.name)                          # Name
+            add_annotations(row, obj.parameter_values)      # Parameter values
 
     ############
     # Rendering
     ############
 
     first_row = True
-    first_arc = True
 
     ##########
     # Sources
@@ -160,8 +188,7 @@ def get_assay_table(assay):
             arcs = assay.get_arcs_by_sample(sample)
 
             # TODO: Ensure correct pooling/splitting
-
-            # TODO: Refactor arcs
+            # TODO: Refactor arc iteration
 
             # Iterate through arcs
             for arc in arcs:
@@ -174,58 +201,19 @@ def get_assay_table(assay):
                         add_repetition(row, top_header, 1)
                         row += sample_section
 
-                    ##########
-                    # Process
-                    ##########
-                    if type(col_obj) == Process:
-                        # TODO: Build using add_element
-                        # Process headers
-                        if first_arc:
-                            field_count = 0
-
-                            # Protocol name
-                            if col_obj.protocol:
-                                field_header.append('Protocol')
-                                field_count += 1
-
-                            # Process name
-                            field_header.append('Name')     # Name
-                            field_count += 1
-
-                            # Param values
-                            field_count += add_annotation_headers(
-                                field_header, col_obj.parameter_values)
-
-                            add_top_header(
-                                top_header, 'PROCESS', field_count)
-
-                        # Protocol name
-                        if col_obj.protocol:
-                            add_val(row, col_obj.protocol.name)
-
-                        add_val(row, col_obj.name)          # Process name
-                        # Param values
-                        add_annotations(row, col_obj.parameter_values)
-
                     ###########
                     # Material
                     ###########
-                    elif type(col_obj) == GenericMaterial:
-                        # TODO: Build using add_element
-                        # Material headers
-                        if first_arc:
-                            field_header.append('Name')     # Name
-                            field_count = 1
-                            # Characteristics
-                            field_count += add_annotation_headers(
-                                field_header, col_obj.characteristics)
+                    if type(col_obj) == GenericMaterial:
+                        add_element(
+                            row, top_header, field_header, col_obj, first_row)
 
-                            add_top_header(
-                                top_header, col_obj.item_type, field_count)
-
-                        add_val(row, col_obj.name)          # Name
-                        # Characteristics
-                        add_annotations(row, col_obj.characteristics)
+                    ##########
+                    # Process
+                    ##########
+                    elif type(col_obj) == Process:
+                        add_element(
+                            row, top_header, field_header, col_obj, first_row)
 
                     next_arcs = arc.go_forward()
 
@@ -239,7 +227,6 @@ def get_assay_table(assay):
                 # Add row to table
                 # print('Row: {}'.format(row))    # DEBUG
                 table_data.append(row)
-                first_arc = False
                 first_arc_in_sample = False
                 first_row = False
 
@@ -262,6 +249,7 @@ def render_top_header(section):
             section['legend'])
 
 
+# TODO: Render additional classes (see add_val())
 def render_assay_cell(cell):
     """
     Return assay table cell as HTML

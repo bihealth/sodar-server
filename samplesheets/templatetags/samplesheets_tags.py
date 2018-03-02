@@ -30,7 +30,14 @@ def render_assay_cell(cell):
     """Return assay table cell as HTML"""
     return r_render_assay_cell(cell)
 
+
 @register.simple_tag
 def render_top_header(section):
     """Render section of top header"""
     return r_render_top_header(section)
+
+
+@register.simple_tag
+def get_study_title(study):
+    """Return study title or an equivalent field if not set"""
+    return study.title if study.title else study.file_name
