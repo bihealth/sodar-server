@@ -6,7 +6,7 @@
 {% get_investigation project as investigation %}
 
 {% if investigation and can_view_sheet %}
-  {% include 'samplesheets/_sheet_info.html' with show_description=False %}
+  {% include 'samplesheets/_investigation_info.html' with show_description=False %}
 {% else %}
   <div class="card-body omics-card-body bg-faded font-italic text-center">
     <p>No sample sheets available</p>

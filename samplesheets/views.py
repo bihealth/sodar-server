@@ -37,6 +37,7 @@ class ProjectSheetsView(
         context = super(ProjectSheetsView, self).get_context_data(
             *args, **kwargs)
 
+        # Investigation
         investigation = None
 
         try:
@@ -48,26 +49,43 @@ class ProjectSheetsView(
             context['investigation'] = None
             return context
 
-        def get_material_count(item_type):
-            return GenericMaterial.objects.filter(
-                Q(item_type=item_type),
-                Q(study__investigation=investigation) |
-                Q(assay__study__investigation=investigation)).count()
+        # Info page
+        if 'subpage' in self.kwargs and self.kwargs['subpage'] == 'info':
+            context['subpage'] = 'info'
 
-        # Statistics
-        context['sheet_stats'] = {
-            'study_count': Study.objects.filter(
-                investigation=investigation).count(),
-            'assay_count': Assay.objects.filter(
-                study__investigation=investigation).count(),
-            'protocol_count': Protocol.objects.filter(
-                study__investigation=investigation).count(),
-            'process_count': Process.objects.filter(
-                protocol__study__investigation=investigation).count(),
-            'source_count': get_material_count('SOURCE'),
-            'material_count': get_material_count('MATERIAL'),
-            'sample_count': get_material_count('SAMPLE'),
-            'data_count': get_material_count('DATA')}
+            def get_material_count(item_type):
+                return GenericMaterial.objects.filter(
+                    Q(item_type=item_type),
+                    Q(study__investigation=investigation) |
+                    Q(assay__study__investigation=investigation)).count()
+
+            # Statistics
+            context['sheet_stats'] = {
+                'study_count': Study.objects.filter(
+                    investigation=investigation).count(),
+                'assay_count': Assay.objects.filter(
+                    study__investigation=investigation).count(),
+                'protocol_count': Protocol.objects.filter(
+                    study__investigation=investigation).count(),
+                'process_count': Process.objects.filter(
+                    protocol__study__investigation=investigation).count(),
+                'source_count': get_material_count('SOURCE'),
+                'material_count': get_material_count('MATERIAL'),
+                'sample_count': get_material_count('SAMPLE'),
+                'data_count': get_material_count('DATA')}
+
+        # Study view
+        else:
+            try:
+                if 'study' in self.kwargs and self.kwargs['study']:
+                    context['study'] = Study.objects.get(
+                        pk=self.kwargs['study'])
+                else:
+                    context['study'] = Study.objects.filter(
+                        investigation=investigation).first()
+
+            except Study.DoesNotExist:
+                return None
 
         return context
 

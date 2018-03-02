@@ -9,6 +9,16 @@ urlpatterns = [
         name='project_sheets',
     ),
     url(
+        regex=r'^(?P<project>\d+)/study/(?P<study>\d+)$',
+        view=views.ProjectSheetsView.as_view(),
+        name='project_sheets',
+    ),
+    url(
+        regex=r'^(?P<project>\d+)/(?P<subpage>[^\0]{0,256})$',
+        view=views.ProjectSheetsView.as_view(),
+        name='project_sheets',
+    ),
+    url(
         regex=r'^(?P<project>\d+)/import$',
         view=views.SampleSheetImportView.as_view(),
         name='sheet_import',

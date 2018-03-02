@@ -1,0 +1,22 @@
+<div class="card-body omics-card-body">
+  <dl class="row omics-dl">
+    {% comment %}
+    <dt class="col-md-2">Idenfitier</dt>
+    <dd class="col-md-10">{{ study.identifier }}</dd>
+    {% endcomment %}
+    <dt class="col-md-2">Title</dt>
+    <dd class="col-md-10">{{ study.title }}</dd>
+  {% if study.description %}
+    <dt class="col-md-2">Description</dt>
+    <dd class="col-md-10">{{ study.description }}</dd>
+  {% endif %}
+  {% if study.assays %}
+    <dt class="col-md-2">Assays</dt>
+    <dd class="col-md-10">
+      {% for assay in study.assays.all %}
+        <a href="#assay{{ assay.pk }}">{{ assay.file_name }}</a><br />
+      {% endfor %}
+    </dd>
+  {% endif %}
+  </dl>
+</div>
