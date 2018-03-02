@@ -72,10 +72,11 @@ def get_assay_table(assay):
             val = ''
             unit = None
             link = None
+            tooltip = None
 
             if type(v['value']) == dict:
                 if v['value']['ontology_name']:
-                    val = v['value']['ontology_name'] + ': '
+                    tooltip = v['value']['ontology_name']
 
                 val += v['value']['name']
                 link = v['value']['accession']
@@ -91,7 +92,7 @@ def get_assay_table(assay):
                 else:
                     unit = v['unit']
 
-            add_val(row, val, unit=unit, link=link)
+            add_val(row, val, unit=unit, link=link, tooltip=tooltip)
 
     # TODO: Expand to support Process objects
     def add_element(row, top_header, field_header, material, first_row):
@@ -270,7 +271,12 @@ def render_assay_cell(cell):
     if cell['repeat']:
         return '<td class="bg-light text-muted text-center">"</td>\n'
 
-    ret = '<td>'
+    if cell['tooltip']:
+        ret = '<td title="{}" data-toggle="tooltip" ' \
+              'data-placement="top">'.format(cell['tooltip'])
+
+    else:
+        ret = '<td>'
 
     if cell['value']:
         if cell['link']:
