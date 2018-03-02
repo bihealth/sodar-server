@@ -87,10 +87,10 @@ def import_isa(isa_zip, project):
     def get_tuple_list(tuples):
         """Get list of dicts from tuples for JSONField"""
         if type(tuples) == dict:
-            return [v._asdict() for v in tuples.values()]
+            return [get_multitype_val(v) for v in tuples.values()]
 
         elif type(tuples) in [tuple, list]:
-            return[v._asdict() for v in tuples]
+            return[get_multitype_val(v) for v in tuples]
 
     def get_header(header):
         """Get list of dicts from an object list for JSONField"""
@@ -312,7 +312,7 @@ def import_isa(isa_zip, project):
                 'api_id': id(p_i),
                 'name': p_i.name,
                 'study': db_study,
-                'protocol_type': p_i.type._asdict(),
+                'protocol_type': get_multitype_val(p_i.type),
                 'description': p_i.description,
                 'uri': p_i.uri,
                 'version': p_i.version,
