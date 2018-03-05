@@ -11,7 +11,7 @@
 {% block css %}
   {{ block.super }}
   <style type="text/css">
-    .omics-ss-assay-container {
+    .omics-ss-data-container {
       max-height: 600px;
       overflow-y: scroll;
     }
@@ -71,17 +71,27 @@
       {# Information #}
       <div class="card">
         <div class="card-header">
-          <h4>Study Information</h4>
+          <h4>Study Information: {% get_study_title study %}</h4>
         </div>
         {% include 'samplesheets/_study_info.html' %}
       </div>
 
       {# Study overview table #}
-      {# TODO #}
+      <div class="card omics-ss-data-card" id="omics-ss-study{{ study.pk }}">
+        <div class="card-header">
+          <h4>Study Overview</h4>
+        </div>
+        <div class="card-body omics-card-body-table">
+          <div class="table-responsive omics-ss-data-container">
+            {% get_study_table study as study_table %}
+            {% include 'samplesheets/_sheet_table.html' with table=study_table %}
+          </div>
+        </div>
+      </div>
 
       {# Assay tables #}
       {% for assay in study.assays.all %}
-        <div class="card omics-ss-data-card" id="assay{{ assay.pk }}">
+        <div class="card omics-ss-data-card" id="omics-ss-assay{{ assay.pk }}">
           <div class="card-header">
             <h4>Assay {{ assay.file_name }}
               <div class="input-group omics-header-input-group pull-right">
@@ -97,41 +107,9 @@
             </h4>
           </div>
           <div class="card-body omics-card-body-table">
-            <div class="table-responsive omics-ss-assay-container">
-            {% get_assay_table assay as assay_table %}
-
-              <table class="table table-bordered omics-card-table-bordered omics-ss-data-table">
-                <thead>
-                  {# Top header #}
-                  <tr>
-                    {% for section in assay_table.top_header %}
-                      {% autoescape off %}
-                        {% render_top_header section %}
-                      {% endautoescape %}
-                    {% endfor %}
-                  </tr>
-                  {# Field header #}
-                  <tr>
-                    {% for header in assay_table.field_header %}
-                      {% autoescape off %}
-                        {% render_header header %}
-                      {% endautoescape %}
-                    {% endfor %}
-                 </tr>
-                 </thead>
-                <tbody>
-                  {# Content #}
-                  {% for row in assay_table.table_data %}
-                    <tr>
-                      {% for cell in row %}
-                        {% autoescape off %}
-                          {% render_assay_cell cell %}
-                        {% endautoescape %}
-                      {% endfor %}
-                    </tr>
-                  {% endfor %}
-                 </tbody>
-              </table>
+            <div class="table-responsive omics-ss-data-container">
+              {% get_assay_table assay as assay_table %}
+              {% include 'samplesheets/_sheet_table.html' with table=assay_table %}
             </div>
           </div>
         </div>

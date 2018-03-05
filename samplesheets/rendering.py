@@ -194,9 +194,62 @@ def add_element(
 # Table building ---------------------------------------------------------------
 
 
+# TODO: Repetition between get_study_table() and get_assay_table(), unify?
+
+
+def get_study_table(study):
+    """
+    Return data grid for an HTML study table
+    :param study: Study object
+    :return: Dict
+    """
+
+    table_data = []
+    top_header = []
+    field_header = []
+    first_row = True
+
+    ##########
+    # Sources
+    ##########
+    for source in study.get_sources():
+        row = []
+        source_section = []
+
+        add_element(
+            source_section, top_header, field_header, source, first_row)
+        row += source_section
+
+        ##########
+        # Samples
+        ##########
+        samples = source.get_samples()
+
+        if samples:
+            for sample in samples:
+                sample_section = []
+
+                add_element(
+                    sample_section, top_header, field_header, sample, first_row)
+                row += sample_section
+
+                # Add row to table
+                table_data.append(row)
+                first_row = False
+
+        else:
+            table_data.append(row)
+            first_row = False
+
+    return {
+        'top_header': top_header,
+        'field_header': field_header,
+        'table_data': table_data}
+
+
 def get_assay_table(assay):
     """
-    Return data grid for a "simple" HTML assay table
+    Return data grid for an HTML assay table
     :param assay: Assay object
     :return: Dict
     """
@@ -204,7 +257,6 @@ def get_assay_table(assay):
     table_data = []
     top_header = []
     field_header = []
-
     first_row = True
 
     ##########
@@ -224,9 +276,7 @@ def get_assay_table(assay):
         ##########
         # Samples
         ##########
-
-        for sample in [
-                s for s in assay.get_samples() if source in s.get_sources()]:
+        for sample in source.get_samples():
             sample_section = []
 
             add_element(

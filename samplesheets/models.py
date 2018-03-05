@@ -219,6 +219,11 @@ class Study(BaseSampleSheet):
         """Return simple printable name for Assay"""
         return self.title
 
+    def get_sources(self):
+        """Return study sources"""
+        return GenericMaterial.objects.filter(
+            study=self, item_type='SOURCE').order_by('name')
+
     def get_characteristic_cat(self, characteristic):
         """Return characteristic category"""
         # TODO: Refactor for altamISA, currently not implemented
@@ -608,6 +613,29 @@ class GenericMaterial(BaseSampleSheet):
         sources = find_sources(material_arcs, [])
 
         return sorted(sources, key=lambda x: x.name)
+
+    def get_samples(self):
+        """Return samples derived from source"""
+        if self.item_type != 'SOURCE':
+            return None
+
+        def find_samples(arcs, samples):
+            for a in arcs:
+                if a.head_material and a.head_material.item_type == 'SAMPLE':
+                    samples.append(a.head_material)
+
+                else:
+                    next_arcs = a.go_forward()
+
+                    if next_arcs:
+                        samples += find_samples(next_arcs, samples)
+
+            return set(samples)
+
+        source_arcs = Arc.objects.filter(study=self.study, tail_material=self)
+        samples = find_samples(source_arcs, [])
+
+        return sorted(samples, key=lambda x: x.name)
 
 
 # Process ----------------------------------------------------------------------
