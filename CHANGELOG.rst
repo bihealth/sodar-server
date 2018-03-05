@@ -21,7 +21,14 @@ Added
     - Add samplesheets app
     - ISA specification compatible data model (#76)
     - Importing ISA investigations as sample sheets (#77)
+    - Rendering and navigation of sample sheets (#79)
 
+Changed
+-------
+
+- **General**
+    - Modify subtitle and page content containers for all apps
+    - Site-wide CSS tweaks
 
 
 v0.1 (2018-01-26)

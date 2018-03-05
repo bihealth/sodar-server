@@ -125,7 +125,9 @@ div.omics-alert-container {
 }
 
 div.omics-subtitle-container {
-  padding-bottom: 12px;
+  padding-top: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #dfdfdf;
 }
 
 .omics-pr-navbar {
@@ -152,8 +154,12 @@ div.omics-subtitle-container {
 
 div.omics-pr-content-title {
   vertical-align: bottom;
-  margin-bottom: 36px;
+  margin-bottom: 6px;
   border-bottom: 1px solid #dfdfdf;
+}
+
+div.omics-page-container {
+  padding-top: 24px;
 }
 
 .omics-footer {

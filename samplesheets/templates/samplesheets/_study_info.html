@@ -16,7 +16,7 @@
     <dt class="col-md-2">Assays</dt>
     <dd class="col-md-10">
       {% for assay in study.assays.all %}
-        <a href="#assay{{ assay.pk }}">{{ assay.file_name }}</a><br />
+        <a href="#assay{{ assay.pk }}">{% get_assay_title assay %}</a><br />
       {% endfor %}
     </dd>
   {% endif %}

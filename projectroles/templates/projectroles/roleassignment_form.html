@@ -12,7 +12,7 @@
 
 {% block projectroles_extend %}
 
-<div class="container-fluid omics-subtitle-container">
+<div class="row omics-subtitle-container bg-white sticky-top">
   {% if object.pk %}
     <h3>Update Member {{ object.user.username }}</h3>
   {% else %}
@@ -20,7 +20,7 @@
   {% endif %}
 </div>
 
-<div class="container-fluid">
+<div class="container-fluid omics-page-container">
   <form method="post">
     {% csrf_token %}
     {{ form | crispy }}

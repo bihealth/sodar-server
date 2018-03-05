@@ -11,20 +11,44 @@
 {% block css %}
   {{ block.super }}
   <style type="text/css">
+    /* Special version of the container for samplesheets */
+    div.omics-subtitle-container {
+      padding-top: 10px;
+      padding-bottom: 8px;
+      // border-bottom: 1px solid #dfdfdf;
+    }
+
+    .omics-ss-nav-tabs {
+      border-bottom: 0;
+    }
+
+    .omics-ss-nav-tabs li a {
+      margin-bottom: -1px !important;
+      border-bottom: 0 !important;
+      height: 118%; /* HACK */
+    }
+
     .omics-ss-data-container {
       max-height: 600px;
       overflow-y: scroll;
     }
 
     .omics-ss-data-table thead tr th {
-        white-space: nowrap;
-        padding: 5px; /* Demo "Excel" mode */
+      white-space: nowrap;
+      padding: 5px; /* Demo "Excel" mode */
     }
 
     .omics-ss-data-table tbody tr td {
-        white-space: nowrap;
-        padding: 5px; /* Demo "Excel" mode */
+      white-space: nowrap;
+      padding: 5px; /* Demo "Excel" mode */
     }
+
+    @media screen and (max-width: 1000px) {
+      .omics-ss-nav-tabs {
+        display: none;
+      }
+    }
+
   </style>
 {% endblock css %}
 
@@ -32,14 +56,38 @@
 
 {% has_perm 'samplesheets.edit_sheet' request.user as can_edit_sheet %}
 
-<div class="row omics-subtitle-container">
-  <h3><i class="fa fa-file"></i> Sample Sheets</h3>
-  {% if can_edit_sheet %}
-    {% include 'samplesheets/_list_buttons.html' with project=project up=False %}
+<div class="row omics-subtitle-container bg-white sticky-top">
+  <h3><i class="fa fa-flask"></i> Sample Sheets</h3>
+
+  {% if investigation %}
+    <ul class="nav nav-tabs omics-ss-nav-tabs ml-4 mr-auto">
+      {% for s in investigation.studies.all %}
+        <li class="nav-item">
+          <a class="nav-link {% if s == study %}bg-light active{% endif %}"
+             href="{% url 'project_sheets' project=project.pk study=s.pk %}">
+              <i class="fa fa-list-alt"></i> {% get_study_title s %}</a>
+        </li>
+      {% endfor %}
+      <li class="nav-item">
+        <a class="nav-link {% if subpage == 'info' %}bg-light active{% endif %}"
+           href="{% url 'project_sheets' project=project.pk subpage='info' %}">
+            <i class="fa fa-sitemap"></i> Overview</a>
+      </li>
+    </ul>
   {% endif %}
+
+  <div class="ml-auto">
+    {% if investigation %}
+      {% include 'samplesheets/_nav_buttons.html' %}
+    {% endif %}
+      {% if can_edit_sheet %}
+      {% include 'samplesheets/_list_buttons.html' %}
+    {% endif %}
+  </div>
+
 </div>
 
-<div class="container-fluid"> {# Main container #}
+<div class="container-fluid omics-page-container"> {# Main container #}
 
   {% if not investigation %}
 
@@ -52,32 +100,18 @@
 
   {% else %}
 
-    {# Navigation #}
-    <div class="mb-4">
-      <ul class="nav nav-tabs">
-        {% for s in investigation.studies.all %}
-          <li class="nav-item">
-            <a class="nav-link {% if s == study %}active{% endif %}" href="{% url 'project_sheets' project=project.pk study=s.pk %}">{% get_study_title s %}</a>
-          </li>
-        {% endfor %}
-        <li class="nav-item">
-          <a class="nav-link {% if subpage == 'info' %}active{% endif %}" href="{% url 'project_sheets' project=project.pk subpage='info' %}">General Information</a>
-        </li>
-      </ul>
-    </div>
-
     {% if study %}
 
       {# Information #}
       <div class="card">
         <div class="card-header">
-          <h4>Study Information: {% get_study_title study %}</h4>
+          <h4>Study Details</h4>
         </div>
         {% include 'samplesheets/_study_info.html' %}
       </div>
 
       {# Study overview table #}
-      <div class="card omics-ss-data-card" id="omics-ss-study{{ study.pk }}">
+      <div class="card omics-ss-data-card" id="study{{ study.pk }}">
         <div class="card-header">
           <h4>Study Overview</h4>
         </div>
@@ -91,9 +125,9 @@
 
       {# Assay tables #}
       {% for assay in study.assays.all %}
-        <div class="card omics-ss-data-card" id="omics-ss-assay{{ assay.pk }}">
+        <div class="card omics-ss-data-card" id="assay{{ assay.pk }}">
           <div class="card-header">
-            <h4>Assay {{ assay.file_name }}
+            <h4>Assay {% get_assay_title assay %}
               <div class="input-group omics-header-input-group pull-right">
                 <div class="input-group-prepend">
                   <button class="btn btn-secondary omics-ss-assay-hide"
@@ -120,7 +154,7 @@
       {# Information #}
       <div class="card">
         <div class="card-header">
-          <h4>Investigation Information</h4>
+          <h4>Investigation Details</h4>
         </div>
         {% include 'samplesheets/_investigation_info.html' with show_description=True %}
       </div>

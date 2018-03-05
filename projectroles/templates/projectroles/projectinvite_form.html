@@ -6,11 +6,11 @@
 
 {% block projectroles_extend %}
 
-<div class="row omics-subtitle-container">
+<div class="row omics-subtitle-container bg-white">
   <h3>Send Invite</h3>
 </div>
 
-<div class="container-fluid">
+<div class="container-fluid omics-page-container">
   <form method="post">
     {% csrf_token %}
     {{ form | crispy }}

@@ -185,7 +185,7 @@ def add_element(
     # Process data
     elif type(obj) == Process:
         if obj.protocol:
-            add_cell(row, obj.name)  # Protocol
+            add_cell(row, obj.protocol.name)            # Protocol
 
         add_cell(row, obj.name)  # Name
         add_annotations(row, obj.parameter_values)      # Parameter values

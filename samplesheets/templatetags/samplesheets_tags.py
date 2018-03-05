@@ -53,5 +53,12 @@ def render_header(header):
 
 @register.simple_tag
 def get_study_title(study):
-    """Return study title or an equivalent field if not set"""
-    return study.title if study.title else study.file_name
+    """Return printable study title"""
+    return study.title if study.title else study.file_name.split('.')[0]
+
+
+@register.simple_tag
+def get_assay_title(assay):
+    """Return printable assy title"""
+    # TODO: How to construct assay title?
+    return assay.file_name.split('.')[0]

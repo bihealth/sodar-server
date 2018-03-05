@@ -1,0 +1,27 @@
+{% load samplesheets_tags %}
+
+<div class="btn-group ml-auto" id="omics-ss-buttons-nav">
+  <button class="btn btn-success dropdown-toggle"
+          type="button" data-toggle="dropdown"
+          aria-haspopup="true" aria-expanded="false">
+    <i class="fa fa-navicon"></i>
+  </button>
+  <div class="dropdown-menu dropdown-menu-right">
+
+    {% for s in investigation.studies.all %}
+      <a class="dropdown-item" href="{% url 'project_sheets' project=project.pk study=s.pk %}">
+        <i class="fa fa-fw fa-list-alt"></i> Study: {% get_study_title s %}
+      </a>
+
+      {% for a in s.assays.all %}
+        <a class="dropdown-item" href="{% url 'project_sheets' project=project.pk study=s.pk %}#assay{{ a.pk }}">
+          <i class="fa fa-fw fa-table ml-4"></i> Assay: {% get_assay_title a %}
+        </a>
+      {% endfor %}
+    {% endfor %}
+
+    <a class="dropdown-item" href="{% url 'project_sheets' project=project.pk subpage='info' %}">
+      <i class="fa fa-fw fa-sitemap"></i> Overview
+    </a>
+  </div>
+</div>

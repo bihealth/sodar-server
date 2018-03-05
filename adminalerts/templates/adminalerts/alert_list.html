@@ -60,7 +60,7 @@
 
 {% block projectroles %}
 
-<div class="row omics-subtitle-container">
+<div class="row omics-subtitle-container bg-white sticky-top">
   <h2><i class="fa fa-exclamation-triangle"></i> Admin Alerts</h2>
 
   <a role="button" class="btn btn-primary ml-auto"
@@ -70,7 +70,7 @@
 </div>
 
 {% if object_list.count > 0 %}
-  <div class="container-fluid">
+  <div class="container-fluid omics-page-container">
     <div class="card omics-card-single" id="omics-aa-alert-list">
       <div class="card-body omics-card-body-table">
         <table class="table table-striped omics-card-table" id="omics-aa-list-table">
