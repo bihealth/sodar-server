@@ -81,9 +81,20 @@
 
       {# Assay tables #}
       {% for assay in study.assays.all %}
-        <div class="card" id="assay{{ assay.pk }}">
+        <div class="card omics-ss-data-card" id="assay{{ assay.pk }}">
           <div class="card-header">
-            <h4>Assay {{ assay.file_name }}</h4>
+            <h4>Assay {{ assay.file_name }}
+              <div class="input-group omics-header-input-group pull-right">
+                <div class="input-group-prepend">
+                  <button class="btn btn-secondary omics-ss-assay-hide"
+                          type="submit" id="omics-ss-assay-hide-{{ assay.pk }}"
+                          assay-hide-mode="1"><i class="fa fa-eye-slash"></i> Toggle Study</button>
+                </div>
+                <input class="form-control"
+                       type="text" placeholder="Filter" aria-label="Filter assay {{ assay.pk }}"
+                       id="omics-ss-assay-filter-{{ assay.pk }}">
+              </div>
+            </h4>
           </div>
           <div class="card-body omics-card-body-table">
             <div class="table-responsive omics-ss-assay-container">
@@ -101,8 +112,10 @@
                   </tr>
                   {# Field header #}
                   <tr>
-                    {% for header_title in assay_table.field_header %}
-                      <th class="text-nowrap">{{ header_title }}</th>
+                    {% for header in assay_table.field_header %}
+                      {% autoescape off %}
+                        {% render_header header %}
+                      {% endautoescape %}
                     {% endfor %}
                  </tr>
                  </thead>
@@ -182,7 +195,60 @@
 {% block javascript %}
   {{ block.super }}
 
+  <script type="text/javascript">
+    $(document).ready(function() {
+        // Study column hiding
+        // TODO: Cleanup/refactor this
+
+        // Hide study columns by default
+         $('.omics-ss-data-table').find('.omics-ss-hideable-study').hide();
+         $('.omics-ss-top-header').each(function () {
+             if ($(this).attr('omics-ss-hideable-study-cols') !== '0') {
+                var colspan = $(this).attr('colspan');
+                var hideCols = $(this).attr('omics-ss-hideable-study-cols');
+                $(this).attr('colspan', colspan - hideCols);
+             }
+         });
+
+        // Hide/show study columns when clicked
+        $('.omics-ss-assay-hide').click(function () {
+            // Hide
+            if ($(this).attr('assay-hide-mode') === '0') {
+                $(this).find('i').removeClass('fa-eye');
+                $(this).find('i').addClass('fa-eye-slash');
+                $(this).closest('.omics-ss-data-card').find('.omics-ss-data-table').find('.omics-ss-hideable-study').hide();
+                $(this).closest('.omics-ss-data-card').find('.omics-ss-data-table').find('.omics-ss-top-header').each(function () {
+                    if ($(this).attr('omics-ss-hideable-study-cols') !== '0') {
+                        var colspan = $(this).attr('colspan');
+                        var hideCols = $(this).attr('omics-ss-hideable-study-cols');
+                        $(this).attr('colspan', colspan - hideCols);
+                    }
+                });
+
+                $(this).attr('assay-hide-mode', '1');
+            }
+
+            // Show
+            else {
+                $(this).find('i').removeClass('fa-eye-slash');
+                $(this).find('i').addClass('fa-eye');
+                $(this).closest('.omics-ss-data-card').find('.omics-ss-data-table').find('.omics-ss-hideable-study').show();
+                $(this).closest('.omics-ss-data-card').find('.omics-ss-data-table').find('.omics-ss-top-header').each(function () {
+                    if ($(this).attr('omics-ss-hideable-study-cols') !== '0') {
+                        var originalCols = $(this).attr('original-colspan');
+                        $(this).attr('colspan', originalCols);
+                    }
+                });
+
+                $(this).attr('assay-hide-mode', '0');
+            }
+        });
+    });
+  </script>
+
+  <!--
   <script type="text/javascript" src="https://cdn.rawgit.com/asvd/dragscroll/master/dragscroll.js"></script>
+  -->
 
   {# Tour content #}
   <script type="text/javascript">

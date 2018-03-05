@@ -2,8 +2,9 @@ from django import template
 
 from ..models import Investigation
 from ..rendering import get_assay_table as r_get_assay_table, \
-    render_assay_cell as r_render_assay_cell, \
-    render_top_header as r_render_top_header
+    render_cell as r_render_assay_cell, \
+    render_top_header as r_render_top_header, \
+    render_header as r_render_header
 
 
 register = template.Library()
@@ -35,6 +36,12 @@ def render_assay_cell(cell):
 def render_top_header(section):
     """Render section of top header"""
     return r_render_top_header(section)
+
+
+@register.simple_tag
+def render_header(header):
+    """Render section of top header"""
+    return r_render_header(header)
 
 
 @register.simple_tag
