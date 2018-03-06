@@ -410,7 +410,7 @@ def render_cell(cell):
 
 def render_links_top_header():
     return '<th class="bg-dark text-nowrap text-white omics-ss-top-header ' \
-           'omics-ss-data-cell-links affix">Links</th>'
+           'omics-ss-data-cell-links">Links</th>'
 
 
 def render_links_header():
@@ -418,7 +418,7 @@ def render_links_header():
     Render data table links column header
     :return: String (contains HTML)
     """
-    return '<th class="omics-ss-data-cell-links">iRODS</th>\n'
+    return '<th class="bg-white omics-ss-data-cell-links">iRODS</th>\n'
 
 
 def render_links_cell(row):
