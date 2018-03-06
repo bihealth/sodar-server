@@ -29,7 +29,7 @@
     }
 
     .omics-ss-data-container {
-      // max-height: 600px;
+      max-height: 600px;
       overflow-y: scroll;
     }
 
@@ -54,14 +54,14 @@
 
     /* Screenshot HACK */
     .omics-ss-data-cell-links {
-        width: 110px;
+        width: 50px;
     }
 
     /* Screenshot HACK */
     .fixed-column {
         position: absolute;
         display: inline-block;
-        width: 125px;
+        width: 60px;
         right: 0;
         border-left: 1px solid #f5f5f5 !important;
     }
@@ -239,6 +239,7 @@
 
   <script type="text/javascript">
     $(document).ready(function() {
+        /*
         // HACK for sxcreenshots: Fix links column position
         $('.omics-ss-data-table').each(function () {
             var $table = $(this);
@@ -249,6 +250,7 @@
                 $(this).height($table.find('tr:eq(' + i + ')').height());
                 });
             });
+        */
 
         // Study column hiding
         // TODO: Cleanup/refactor this

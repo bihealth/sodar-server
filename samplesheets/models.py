@@ -521,6 +521,9 @@ class GenericMaterial(BaseSampleSheet):
         verbose_name = 'material'
         verbose_name_plural = 'materials'
 
+        indexes = [
+            models.Index(fields=['study', 'item_type'])]
+
     def __str__(self):
         return '{}/{}/{}/{}/{}'.format(
             self.get_study().investigation.title,
@@ -819,6 +822,12 @@ class Arc(BaseSampleSheet):
 
     class Meta:
         ordering = ('study', 'assay')
+
+        indexes = [
+            models.Index(fields=['study', 'head_process']),
+            models.Index(fields=['study', 'head_material']),
+            models.Index(fields=['assay', 'tail_process']),
+            models.Index(fields=['assay', 'tail_material'])]
 
     def __str__(self):
         return '{}/{}/{}/{}->{}'.format(

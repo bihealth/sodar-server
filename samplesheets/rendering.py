@@ -1,6 +1,9 @@
 """Rendering helpers for samplesheets"""
 
 
+import functools
+
+
 from .models import Process, GenericMaterial
 
 
@@ -22,6 +25,9 @@ STUDY_HIDEABLE_CLASS = 'omics-ss-hideable-study'
 
 
 # General/helper functions -----------------------------------------------------
+
+
+# TODO: Refactor addition funcs so that we return the row instead
 
 
 def add_top_header(
@@ -68,10 +74,15 @@ def add_cell(
         'classes': classes})
 
 
-def add_repetition(row, top_header, sections):
+def add_repetition(row, colspan, study_data_in_assay=False):
     """Append repetition columns"""
-    for i in range(0, sum([x['colspan'] for x in top_header[0:sections]])):
-        add_cell(row, repeat=True)
+    for i in range(0, colspan):
+        add_cell(
+            row,
+            repeat=True,
+            classes=[STUDY_HIDEABLE_CLASS] if (
+                    i > 0 and study_data_in_assay) else list())
+        # NOTE: First field is not hidden
 
 
 def add_annotation_headers(field_header, annotations, classes=list()):
@@ -109,7 +120,7 @@ def add_annotations(row, annotations, classes=list()):
         # TODO: Test unit
         if 'unit' in v:
             if type(v['unit']) == dict:
-                unit = v['value']['name']
+                unit = v['unit']['name']
 
             else:
                 unit = v['unit']
@@ -197,6 +208,7 @@ def add_element(
 # TODO: Repetition between get_study_table() and get_assay_table(), unify?
 
 
+@functools.lru_cache()
 def get_study_table(study):
     """
     Return data grid for an HTML study table
@@ -226,8 +238,16 @@ def get_study_table(study):
         samples = source.get_samples()
 
         if samples:
+            first_sample_in_source = True
+
             for sample in samples:
                 sample_section = []
+
+                if not first_sample_in_source:
+                    add_repetition(row, len(source_section))
+                    # row += source_section
+
+                first_sample_in_source = False
 
                 add_element(
                     sample_section, top_header, field_header, sample, first_row)
@@ -235,10 +255,12 @@ def get_study_table(study):
 
                 # Add row to table
                 table_data.append(row)
+                row = []
                 first_row = False
 
         else:
             table_data.append(row)
+            row = []
             first_row = False
 
     return {
@@ -247,6 +269,7 @@ def get_study_table(study):
         'table_data': table_data}
 
 
+@functools.lru_cache()
 def get_assay_table(assay):
     """
     Return data grid for an HTML assay table
@@ -276,33 +299,47 @@ def get_assay_table(assay):
         ##########
         # Samples
         ##########
+        first_sample_in_source = True
+
         for sample in source.get_samples():
             sample_section = []
+
+            if not first_sample_in_source:
+                # row += source_section
+                add_repetition(
+                    row, len(source_section), study_data_in_assay=True)
+
+            first_sample_in_source = False
 
             add_element(
                 sample_section, top_header, field_header, sample, first_row,
                 study_data_in_assay=True)
+
             row += sample_section
 
             #############
             # Assay arcs
             #############
-            first_arc_in_sample = True
 
             # Get sequences
             arcs = assay.get_arcs_by_sample(sample)
+            first_arc_in_sample = True
 
             # Iterate through arcs
             for arc in arcs:
                 col_obj = arc.get_head_obj()
 
-                while col_obj:
-                    if not first_arc_in_sample:
-                        row = []
-                        # row += source_section
-                        add_repetition(row, top_header, 1)
-                        row += sample_section
+                if not first_arc_in_sample:
+                    # row += source_section
+                    add_repetition(
+                        row, len(source_section), study_data_in_assay=True)
+                    # row += sample_section
+                    add_repetition(
+                        row, len(sample_section), study_data_in_assay=True)
 
+                first_arc_in_sample = False
+
+                while col_obj:
                     ###########
                     # Material
                     ###########
@@ -330,7 +367,7 @@ def get_assay_table(assay):
                 # Add row to table
                 # print('Row: {}'.format(row))    # DEBUG
                 table_data.append(row)
-                first_arc_in_sample = False
+                row = []
                 first_row = False
 
     return {
@@ -375,19 +412,32 @@ def render_cell(cell):
     :param cell: Cell dict
     :return: String (contains HTML)
     """
-    # TODO: refactor use of cell['classes']
+    td_class_str = ' '.join(cell['classes'])
+
+    # If repeating cell, return that
     if cell['repeat']:
         return '<td class="bg-light text-muted text-center {}">' \
-               '"</td>\n'.format(' '.join(cell['classes']))
+               '"</td>\n'.format(td_class_str)
 
+    # Right aligning
+    def is_num(x):
+        try:
+            float(x)
+            return True
+
+        except ValueError:
+            return False
+
+    if cell['value'] and is_num(cell['value']):
+        td_class_str += ' text-right'
+
+    # Build <td>
     if cell['tooltip']:
         ret = '<td class="{}" title="{}" data-toggle="tooltip" ' \
-              'data-placement="top">'.format(
-                ' '.join(cell['classes']),
-                cell['tooltip'])
+              'data-placement="top">'.format(td_class_str, cell['tooltip'])
 
     else:
-        ret = '<td class="{}">'.format(' '.join(cell['classes']))
+        ret = '<td class="{}">'.format(td_class_str)
 
     if cell['value']:
         if cell['link']:
@@ -397,12 +447,12 @@ def render_cell(cell):
         else:
             ret += cell['value']
 
+        if cell['unit']:
+            ret += '&nbsp;<span class=" text-muted">{}</span>'.format(
+                cell['unit'])
+
     else:   # Empty value
         ret += '-'
-
-    if cell['unit']:
-        ret += '<span class="pull-right text-muted">{}</span>'.format(
-            cell['unit'])
 
     ret += '</td>\n'
     return ret
@@ -418,7 +468,7 @@ def render_links_header():
     Render data table links column header
     :return: String (contains HTML)
     """
-    return '<th class="bg-white omics-ss-data-cell-links">iRODS</th>\n'
+    return '<th class="bg-white omics-ss-data-cell-links">&nbsp;</th>\n'
 
 
 def render_links_cell(row):
@@ -430,15 +480,13 @@ def render_links_cell(row):
     # TODO: Add actual links
     # TODO: Refactor/cleanup, this is a quick screenshot HACK
 
-    def get_button(link, fa_class):
-        return '<a role="button" class="btn btn-secondary ' \
-               'btn-sm omics-ss-data-table-btn" href="{}">' \
-               '<i class="fa {}"></i></a>'.format(link, fa_class)
-
-    buttons = [
-        get_button('#', 'fa-folder-open-o'),
-        get_button('#', 'fa-terminal'),
-        get_button('#', 'fa-desktop')]
-
-    return '<td class="bg-light omics-ss-data-cell-links">' \
-           '{}</td>\n'.format('&nbsp;'.join(buttons))
+    return '<td class="bg-light omics-ss-data-cell-links">\n' \
+           '  <div class="btn-group omics-edit-button-group">\n' \
+           '    <button class="btn btn-secondary dropdown-toggle btn-sm ' \
+           '                   omics-edit-dropdown"' \
+           '                   type="button" data-toggle="dropdown" ' \
+           '                   aria-expanded="false">' \
+           '                   <i class="fa fa-external-link"></i>' \
+           '    </button>' \
+           '  </div>\n' \
+           '</td>\n'
