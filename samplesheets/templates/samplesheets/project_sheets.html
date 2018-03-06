@@ -77,7 +77,7 @@
 
 {% block projectroles_extend %}
 
-{% has_perm 'samplesheets.edit_sheet' request.user as can_edit_sheet %}
+{% has_perm 'samplesheets.edit_sheet' request.user project as can_edit_sheet %}
 
 <div class="row omics-subtitle-container bg-white sticky-top">
   <h3><i class="fa fa-flask"></i> Sample Sheets</h3>
@@ -103,7 +103,7 @@
     {% if investigation %}
       {% include 'samplesheets/_nav_buttons.html' %}
     {% endif %}
-      {% if can_edit_sheet %}
+    {% if can_edit_sheet %}
       {% include 'samplesheets/_list_buttons.html' %}
     {% endif %}
   </div>
