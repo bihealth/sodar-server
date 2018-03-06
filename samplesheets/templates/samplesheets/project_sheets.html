@@ -48,7 +48,7 @@
       height: 1.75em;
       padding-top: 1px;
     }
-    
+
     @media screen and (max-width: 1000px) {
       .omics-ss-nav-tabs {
         display: none;
@@ -119,7 +119,14 @@
       {# Study overview table #}
       <div class="card omics-ss-data-card" id="study{{ study.pk }}">
         <div class="card-header">
-          <h4>Study Overview</h4>
+          <h4>Study Overview
+            {# HACK for demo screenshots #}
+            <div class="input-group omics-header-input-group pull-right" style="width: 160px;">
+              <input class="form-control"
+                     type="text" placeholder="Filter" aria-label="Filter assay {{ assay.pk }}"
+                     id="omics-ss-assay-filter-{{ assay.pk }}">
+            </div>
+          </h4>
         </div>
         <div class="card-body omics-card-body-table">
           <div class="table-responsive omics-ss-data-container">
