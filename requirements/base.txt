@@ -71,4 +71,4 @@ django-db-file-storage==0.4.3
 
 # CUBI AltamISA parser
 # NOTE: Commented out for flynn workaround
-# -e git://github.com/bihealth/altamisa.git@0be4f13a92828e200eeeb2e9db0ca0104de3788d#egg=altamisa
+# -e git://github.com/bihealth/altamisa.git@8f452c8616348f6c4558f46d3b6f7b9603d8bd8f#egg=altamisa

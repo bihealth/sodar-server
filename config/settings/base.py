@@ -24,7 +24,7 @@ except ImportError:
         'install',
         '-e',
         'git+git://github.com/bihealth/altamisa.git@'
-        '0be4f13a92828e200eeeb2e9db0ca0104de3788d#egg=altamisa'])
+        '8f452c8616348f6c4558f46d3b6f7b9603d8bd8f#egg=altamisa'])
 
 # FLYNN WORKAROUND ENDS
 

@@ -136,6 +136,9 @@ class SampleSheetImportView(
                 'Sample sheets imported from an ISA investigation.')
 
         except Exception as ex:
+            if settings.DEBUG:
+                raise ex
+
             messages.error(self.request, str(ex))
 
         return redirect(

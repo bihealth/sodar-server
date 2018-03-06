@@ -103,6 +103,9 @@ def import_isa(isa_zip, project):
                 h_ret['term_source_ref_header'] = \
                     h_ret['term_source_ref_header'].__dict__
 
+            if h_ret['unit_header']:
+                h_ret['unit_header'] = h_ret['unit_header'].__dict__
+
             ret.append(h_ret)
 
         return ret
@@ -243,8 +246,12 @@ def import_isa(isa_zip, project):
                         'name={}'.format(name))
 
         for a in arcs:
-            tail_obj = find_by_name(a.tail)
-            head_obj = find_by_name(a.head)
+            try:
+                tail_obj = find_by_name(a.tail)
+                head_obj = find_by_name(a.head)
+
+            except ValueError as ex:
+                raise ValueError('{} / arc = {}'.format(ex, a))
 
             # TODO: This is now done in two ways, see ARC_OBJ_SUFFIX_MAP
             tail_obj_arg = 'tail_{}'.format(
@@ -342,8 +349,8 @@ def import_isa(isa_zip, project):
                 'api_id': id(a),    # TODO: Remove api_id?
                 'file_name': a_i.path,
                 'study': db_study,
-                'measurement_type': a_i.measurement_type._asdict(),
-                'technology_type': a_i.technology_type._asdict(),
+                'measurement_type': get_multitype_val(a_i.measurement_type),
+                'technology_type': get_multitype_val(a_i.technology_type),
                 'technology_platform': a_i.platform,
                 'characteristic_cat': [],           # TODO
                 'unit_cat': [],                     # TODO
