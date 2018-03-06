@@ -9,6 +9,9 @@
           {% render_top_header section %}
         {% endautoescape %}
       {% endfor %}
+      {% autoescape off %}
+        {% render_links_top_header %}
+      {% endautoescape %}
     </tr>
     {# Field header #}
     <tr>
@@ -17,6 +20,9 @@
           {% render_header header %}
         {% endautoescape %}
       {% endfor %}
+      {% autoescape off %}
+        {% render_links_header %}
+      {% endautoescape %}
    </tr>
    </thead>
   <tbody>
@@ -28,6 +34,9 @@
             {% render_cell cell %}
           {% endautoescape %}
         {% endfor %}
+        {% autoescape off %}
+          {% render_links_cell row %}
+        {% endautoescape %}
       </tr>
     {% endfor %}
    </tbody>

@@ -406,3 +406,39 @@ def render_cell(cell):
 
     ret += '</td>\n'
     return ret
+
+
+def render_links_top_header():
+    return '<th class="bg-dark text-nowrap text-white omics-ss-top-header ' \
+           'omics-ss-data-cell-links affix">Links</th>'
+
+
+def render_links_header():
+    """
+    Render data table links column header
+    :return: String (contains HTML)
+    """
+    return '<th class="omics-ss-data-cell-links">iRODS</th>\n'
+
+
+def render_links_cell(row):
+    """
+    Return links cell for row as HTML
+    :param row: Row (list of dicts)
+    :return: String (contains HTML)
+    """
+    # TODO: Add actual links
+    # TODO: Refactor/cleanup, this is a quick screenshot HACK
+
+    def get_button(link, fa_class):
+        return '<a role="button" class="btn btn-secondary ' \
+               'btn-sm omics-ss-data-table-btn" href="{}">' \
+               '<i class="fa {}"></i></a>'.format(link, fa_class)
+
+    buttons = [
+        get_button('#', 'fa-folder-open-o'),
+        get_button('#', 'fa-terminal'),
+        get_button('#', 'fa-desktop')]
+
+    return '<td class="bg-light omics-ss-data-cell-links">' \
+           '{}</td>\n'.format('&nbsp;'.join(buttons))
