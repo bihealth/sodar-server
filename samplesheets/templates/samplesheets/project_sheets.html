@@ -153,8 +153,7 @@
         </div>
         <div class="card-body omics-card-body-table">
           <div class="table-responsive omics-ss-data-container">
-            {% get_study_table study as study_table %}
-            {% include 'samplesheets/_sheet_table.html' with table=study_table %}
+            {% include 'samplesheets/_sheet_table.html' with table=study.render_table %}
           </div>
         </div>
       </div>
@@ -178,8 +177,7 @@
           </div>
           <div class="card-body omics-card-body-table">
             <div class="table-responsive omics-ss-data-container">
-              {% get_assay_table assay as assay_table %}
-              {% include 'samplesheets/_sheet_table.html' with table=assay_table %}
+              {% include 'samplesheets/_sheet_table.html' with table=assay.render_table %}
             </div>
           </div>
         </div>

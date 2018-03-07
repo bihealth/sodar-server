@@ -10,6 +10,8 @@ from django.db import connection
 from .models import Investigation, Study, Assay, GenericMaterial, Protocol, \
     Process, Arc
 
+from .rendering import get_study_table, get_assay_table
+
 
 # Local constants
 ALTAMISA_MATERIAL_TYPE_SAMPLE = 'Sample Name'
@@ -386,8 +388,30 @@ def import_isa(isa_zip, project):
         db_investigation.title))
 
     # Update investigation status
+    db_investigation.status = 'RENDERING'
+    db_investigation.save()
+
+    # TODO: Get proper titles
+    for study in db_investigation.studies.all():
+        logger.info('Rendering table for study "{}"..'.format(study.title))
+        study.render_table = get_study_table(study)
+        study.save()
+        logger.info('Rendering table for study "{}" OK'.format(study.title))
+
+        for assay in study.assays.all():
+            logger.info('Rendering table for assay "{}"..'.format(
+                assay.file_name))
+            assay.render_table = get_assay_table(assay)
+            assay.save()
+            logger.info('Rendering table for assay "{}" OK'.format(
+                assay.file_name))
+
+    # Update investigation status
     db_investigation.status = 'OK'
     db_investigation.save()
+
+    logger.info('Investigation "{}": All OK'.format(
+        db_investigation.title))
 
     return db_investigation
 

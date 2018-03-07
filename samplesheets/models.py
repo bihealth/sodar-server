@@ -26,6 +26,7 @@ ARC_OBJ_SUFFIX_MAP = {
 INVESTIGATION_STATUS_TYPES = [
     'OK',
     'IMPORTING',
+    'RENDERING',
     'FAILED']
 
 
@@ -210,6 +211,11 @@ class Study(BaseSampleSheet):
     header = JSONField(
         default=dict,
         help_text='Column headers')
+
+    #: Pre-constructed study table for rendering
+    render_table = JSONField(
+        default=dict,
+        help_text='Pre-constructed study table for rendering')
 
     class Meta:
         ordering = ['identifier']
@@ -403,6 +409,11 @@ class Assay(BaseSampleSheet):
     header = JSONField(
         default=dict,
         help_text='Column headers')
+
+    #: Pre-constructed assay table for rendering
+    render_table = JSONField(
+        default=dict,
+        help_text='Pre-constructed assay table for rendering')
 
     class Meta:
         unique_together = ('study', 'file_name')

@@ -1,9 +1,6 @@
 """Rendering helpers for samplesheets"""
 
 
-import functools
-
-
 from .models import Process, GenericMaterial
 
 
@@ -208,7 +205,6 @@ def add_element(
 # TODO: Repetition between get_study_table() and get_assay_table(), unify?
 
 
-@functools.lru_cache()
 def get_study_table(study):
     """
     Return data grid for an HTML study table
@@ -269,7 +265,6 @@ def get_study_table(study):
         'table_data': table_data}
 
 
-@functools.lru_cache()
 def get_assay_table(assay):
     """
     Return data grid for an HTML assay table
