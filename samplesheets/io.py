@@ -5,6 +5,8 @@ import io
 import logging
 from typing import NamedTuple
 
+from django.db import connection
+
 from .models import Investigation, Study, Assay, GenericMaterial, Protocol, \
     Process, Arc
 
@@ -48,6 +50,10 @@ def import_isa(isa_zip, project):
     :param project: Project object
     :return: Django Investigation object
     """
+
+    # ASYNC HACK
+    connection.close()
+
     logger.info('Importing investigation from a Zip archive..')
 
     ######################
@@ -283,7 +289,8 @@ def import_isa(isa_zip, project):
         'description': (isa_inv.info.description or project.description),
         'file_name': inv_file_name,
         'ontology_source_refs': get_tuple_list(isa_inv.ontology_source_refs),
-        'comments': []}
+        'comments': [],     # TODO
+        'status': 'IMPORTING'}
 
     db_investigation = Investigation(**values)
     db_investigation.save()
@@ -377,6 +384,11 @@ def import_isa(isa_zip, project):
 
     logger.info('Import of investigation "{}" OK'.format(
         db_investigation.title))
+
+    # Update investigation status
+    db_investigation.status = 'OK'
+    db_investigation.save()
+
     return db_investigation
 
 

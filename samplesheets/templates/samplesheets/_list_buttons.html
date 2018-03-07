@@ -34,7 +34,7 @@
     {% endcomment %}
 
     {# Delete #}
-    {% if investigation and can_delete_sheet %}
+    {% if investigation and investigation.status == 'OK' and can_delete_sheet %}
       <a class="dropdown-item" href="{% url 'sheet_delete' project=project.pk %}">
         <i class="fa fa-fw fa-close"></i> Delete Sheets
       </a>

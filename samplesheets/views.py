@@ -1,4 +1,6 @@
 import json
+import multiprocessing
+import time
 
 from django.conf import settings
 from django.contrib import messages
@@ -113,9 +115,11 @@ class SampleSheetImportView(
         timeline = get_backend_api('timeline_backend')
         project = Project.objects.get(pk=self.kwargs['project'])
 
+        '''
         try:
+            
             self.object = form.save()
-
+            
             # Add event in Timeline
             if timeline:
                 tl_event = timeline.add_event(
@@ -130,20 +134,30 @@ class SampleSheetImportView(
                     obj=self.object,
                     label='investigation',
                     name=self.object.title)
+            '''
 
-            messages.success(
-                self.request,
-                'Sample sheets imported from an ISA investigation.')
 
+        '''
         except Exception as ex:
             if settings.DEBUG:
                 raise ex
-
             messages.error(self.request, str(ex))
+        '''
+
+        p = multiprocessing.Process(
+            target=form.save)
+        p.start()
+
+        messages.warning(
+            self.request,
+            'Sample sheet import from an ISA investigation initiated. '
+            'See information/progress on this page.')
+
+        time.sleep(3)    # I can't believe I'm doing this again..
 
         return redirect(
             reverse('project_sheets', kwargs={
-                'project': self.get_permission_object().pk}))
+                'project': project.pk}))
 
 
 class SampleSheetDeleteView(

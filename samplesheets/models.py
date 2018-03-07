@@ -23,6 +23,11 @@ ARC_OBJ_SUFFIX_MAP = {
     'GenericMaterial': 'material',
     'Process': 'process'}
 
+INVESTIGATION_STATUS_TYPES = [
+    'OK',
+    'IMPORTING',
+    'FAILED']
+
 
 # Abstract base class ----------------------------------------------------------
 
@@ -116,6 +121,15 @@ class Investigation(BaseSampleSheet):
     comments = JSONField(
         default=dict,
         help_text='Comments')
+
+    #: Creation/editing status of investigation
+    status = models.CharField(
+        max_length=64,
+        default='OK',
+        unique=False,
+        blank=True,
+        null=True,
+        help_text='Creation/editing status of investigation')
 
     def __str__(self):
         return '{}: {}'.format(self.project.title, self.title)

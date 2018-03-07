@@ -82,7 +82,7 @@
 <div class="row omics-subtitle-container bg-white sticky-top">
   <h3><i class="fa fa-flask"></i> Sample Sheets</h3>
 
-  {% if investigation %}
+  {% if investigation and investigation.status == 'OK' %}
     <ul class="nav nav-tabs omics-ss-nav-tabs ml-4 mr-auto">
       {% for s in investigation.studies.all %}
         <li class="nav-item">
@@ -121,7 +121,13 @@
       {% endif %}
     </div>
 
-  {% else %}
+  {% elif investigation and investigation.status != 'OK' %}
+    <div class="alert alert-warning" role="warning">
+      Sample sheet importing in progress. Please <a href="{% url 'project_sheets' project=project.pk %}">reload</a> the page to
+      see the status (javascript status update coming soon).
+    </div>
+
+  {% elif investigation and investigation.status == 'OK' %}
 
     {% if study %}
 

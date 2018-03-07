@@ -1,3 +1,4 @@
+import multiprocessing
 from zipfile import ZipFile
 
 from django import forms
@@ -68,11 +69,4 @@ class SampleSheetImportForm(forms.Form):
                 project=self.project)
 
         except Exception as ex:
-            # If investigation was partially created, delete it
-            try:
-                Investigation.objects.get(project=self.project).delete()
-
-            except Investigation.DoesNotExist:
-                pass
-
             raise Exception('Django import failed: {}'.format(ex))
