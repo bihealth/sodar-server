@@ -9,12 +9,12 @@
   <div class="dropdown-menu dropdown-menu-right">
 
     {% for s in investigation.studies.all %}
-      <a class="dropdown-item" href="{% url 'project_sheets' project=project.pk study=s.pk %}">
+      <a class="dropdown-item" href="{% if s != study %}{% url 'project_sheets' project=project.pk study=s.pk %}{% endif %}#study{{ s.pk }}">
         <i class="fa fa-fw fa-list-alt"></i> Study: {% get_study_title s %}
       </a>
 
       {% for a in s.assays.all %}
-        <a class="dropdown-item" href="{% url 'project_sheets' project=project.pk study=s.pk %}#assay{{ a.pk }}">
+        <a class="dropdown-item" href="{% if s != study %}{% url 'project_sheets' project=project.pk study=s.pk %}{% endif %}#assay{{ a.pk }}">
           <i class="fa fa-fw fa-table ml-4"></i> Assay: {% get_assay_title a %}
         </a>
       {% endfor %}
