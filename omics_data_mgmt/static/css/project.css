@@ -423,7 +423,8 @@ a.omics-nav-link-last {
 .omics-header-input-group {
   white-space: nowrap;
   padding-right: 0;
-  max-width: 300px;
+  width: 300px;
+  max-width: 600px;
 }
 
 .omics-header-input-group button {

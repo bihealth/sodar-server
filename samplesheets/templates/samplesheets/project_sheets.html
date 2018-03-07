@@ -150,11 +150,15 @@
       <div class="card omics-ss-data-card" id="study{{ study.pk }}">
         <div class="card-header">
           <h4>Study: {% get_study_title study %}
-            <div class="input-group omics-header-input-group pull-right">
+            <div class="input-group omics-header-input-group pull-right" style="width: 320px;">
               <div class="input-group-prepend">
+                {# TODO: Include buttons from a separate file #}
                 <button class="btn btn-secondary omics-ss-data-drag-toggle"
-                        type="submit" id="omics-ss-data-drag-toggle-{{ assay.pk }}"
+                        type="submit" id="omics-ss-data-drag-toggle-{{ study.pk }}"
                         drag-mode="0"><i class="fa fa-mouse-pointer"></i> Drag</button>
+                <button class="btn btn-secondary omics-ss-data-excel"
+                        type="submit" id="omics-ss-data-drag-excel-{{ study.pk }}">
+                        <i class="fa fa-file-excel-o"></i> Excel</button>
               </div>
               <input class="form-control omics-ss-data-filter"
                      type="text" placeholder="Filter" aria-label="Filter assay {{ assay.pk }}"
@@ -174,7 +178,7 @@
         <div class="card omics-ss-data-card" id="assay{{ assay.pk }}">
           <div class="card-header">
             <h4>Assay: {% get_assay_title assay %}
-              <div class="input-group omics-header-input-group pull-right">
+              <div class="input-group omics-header-input-group pull-right" style="width: 400px;">
                 <div class="input-group-prepend">
                   <button class="btn btn-secondary omics-ss-data-drag-toggle"
                           type="submit" id="omics-ss-data-drag-toggle-{{ assay.pk }}"
@@ -182,6 +186,9 @@
                   <button class="btn btn-secondary omics-ss-assay-hide"
                           type="submit" id="omics-ss-assay-hide-{{ assay.pk }}"
                           assay-hide-mode="1"><i class="fa fa-eye-slash"></i> Study</button>
+                  <button class="btn btn-secondary omics-ss-data-excel"
+                        type="submit" id="omics-ss-data-drag-excel-{{ study.pk }}">
+                        <i class="fa fa-file-excel-o"></i> Excel</button>
                 </div>
                 <input class="form-control omics-ss-data-filter"
                        type="text" placeholder="Filter" aria-label="Filter assay {{ assay.pk }}"
