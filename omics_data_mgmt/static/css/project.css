@@ -120,6 +120,10 @@ nav.omics-base-navbar ul li.nav-item {
   padding-right: 24px;
 }
 
+.omics-navbar-user-dropdown {
+  z-index: 1100;
+}
+
 div.omics-alert-container {
   margin-bottom: 0;
 }
