@@ -3,7 +3,6 @@
 from altamisa.isatab import InvestigationReader, StudyReader, AssayReader
 import io
 import logging
-from typing import NamedTuple
 
 from django.db import connection
 
@@ -70,7 +69,8 @@ def import_isa(isa_zip, project):
     inv_file_name = get_inv_file_name(isa_zip)
 
     input_file = get_file(isa_zip, inv_file_name)
-    isa_inv = InvestigationReader.from_stream(input_file).read()
+    isa_inv = InvestigationReader.from_stream(
+        input_file=input_file).read()
 
     ###################
     # Helper functions
@@ -136,6 +136,10 @@ def import_isa(isa_zip, project):
             if hasattr(m, 'name'):
                 values['name'] = m.name
 
+            # Unique name
+            if hasattr(m, 'unique_name'):
+                values['unique_name'] = m.unique_name
+
             # Parent
             if type(db_parent) == Study:
                 values['study'] = db_parent
@@ -150,8 +154,8 @@ def import_isa(isa_zip, project):
                 values['material_type'] = m.type
 
             # TODO: TBD: Separate field for label?
-            elif m.label:
-                values['material_type'] = m.label
+            elif m.extract_label:
+                values['material_type'] = m.extract_label
 
             # Characteristics
             if m.characteristics:
@@ -164,7 +168,7 @@ def import_isa(isa_zip, project):
             material_obj = GenericMaterial(**values)
             material_obj.save()
             logger.debug('Added material "{}" ({}) to "{}"'.format(
-                material_obj.name, item_type, db_parent.get_name()))
+                material_obj.unique_name, item_type, db_parent.get_name()))
 
     def import_processes(processes, db_parent):
         """
@@ -188,15 +192,16 @@ def import_isa(isa_zip, project):
                     logger.error(
                         'No protocol found for process "{}" '
                         'with ref "{}"'.format(
-                            p.name, p.protocol_ref))
+                            p.unique_name, p.protocol_ref))
 
             else:
                 logger.debug(
-                    'Unknown protocol for process "{}"'.format(p.name))
+                    'Unknown protocol for process "{}"'.format(p.unique_name))
 
             values = {
                 'api_id': id(p),    # TODO: Remove api_id?
                 'name': p.name,
+                'unique_name': p.unique_name,
                 'protocol': protocol,
                 'assay': db_parent if type(db_parent) == Assay else None,
                 'study': db_parent if type(db_parent) == Study else None,
@@ -214,7 +219,7 @@ def import_isa(isa_zip, project):
             process = Process(**values)
             process.save()
             logger.debug('Added process "{}" to "{}"'.format(
-                process.name, db_parent.get_name()))
+                process.unique_name, db_parent.get_name()))
 
     def import_arcs(arcs, db_parent):
         """
@@ -222,18 +227,18 @@ def import_isa(isa_zip, project):
         :param arcs: Tuple
         :param db_parent: Study or Assay object
         """
-        def find_by_name(name):
+        def find_by_name(unique_name):
             """
             Find GenericMaterial or Process object by name
-            :param name: Name (string)
+            :param unique_name: Name (string)
             :return: GenericMaterial or Process object
             :raise: ValueError if not found
             """
             query_params = {
-                'name': name}
+                'unique_name': unique_name}
 
             # TODO: DEMO HACK: Recognize samples by name
-            if name.find('sample') == 0:
+            if unique_name.find('-sample-') != -1:
                 query_params['study'] = db_parent if \
                     type(db_parent) == Study else db_parent.study
 
@@ -251,7 +256,7 @@ def import_isa(isa_zip, project):
                 except Process.DoesNotExist:
                     raise ValueError(
                         'No GenericMaterial or Process found with '
-                        'name={}'.format(name))
+                        'unique_name={}'.format(unique_name))
 
         for a in arcs:
             try:
@@ -277,7 +282,9 @@ def import_isa(isa_zip, project):
             arc = Arc(**values)
             arc.save()
             logger.debug('Added arc "{} -> {}" to "{}"'.format(
-                tail_obj.name, head_obj.name, db_parent.get_name()))
+                tail_obj.unique_name,
+                head_obj.unique_name,
+                db_parent.get_name()))
 
     #########
     # Import
@@ -302,7 +309,9 @@ def import_isa(isa_zip, project):
     for s_i in isa_inv.studies:
         # Parse study file
         s = StudyReader.from_stream(
-            isa_inv, get_file(isa_zip, s_i.info.path)).read()
+            isa_inv,
+            input_file=get_file(isa_zip, s_i.info.path),
+            study_id=s_i.info.path).read()
 
         values = {
             'api_id': id(s),                    # TODO: Remove api_id?
@@ -352,7 +361,10 @@ def import_isa(isa_zip, project):
 
         for a_i in s_i.assays.values():
             a = AssayReader.from_stream(
-                isa_inv, get_file(isa_zip, a_i.path)).read()
+                isa_inv,
+                input_file=get_file(isa_zip, a_i.path),
+                study_id=s_i.info.path,
+                assay_id=a_i.path).read()
 
             values = {
                 'api_id': id(a),    # TODO: Remove api_id?

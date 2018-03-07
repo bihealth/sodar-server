@@ -506,6 +506,14 @@ class GenericMaterial(BaseSampleSheet):
         blank=False,
         help_text='Material name')
 
+    #: Unique material name
+    unique_name = models.CharField(
+        max_length=DEFAULT_LENGTH,
+        unique=False,
+        blank=True,
+        null=True,
+        help_text='Unique material name')
+
     #: Material characteristics (NOT needed for DataFile)
     characteristics = JSONField(
         default=dict,
@@ -555,7 +563,7 @@ class GenericMaterial(BaseSampleSheet):
             self.get_study().title,
             self.assay.file_name if self.assay else 'N/A',
             self.item_type,
-            self.name)
+            self.unique_name)
 
     def __repr__(self):
         values = (
@@ -563,7 +571,7 @@ class GenericMaterial(BaseSampleSheet):
             self.get_study().title,
             self.assay.file_name if self.assay else 'N/A',
             self.item_type,
-            self.name)
+            self.unique_name)
 
         return 'GenericMaterial({})'.format(', '.join(repr(v) for v in values))
 
@@ -681,6 +689,14 @@ class Process(BaseSampleSheet):
         null=True,
         help_text='Process name (optional)')
 
+    #: Unique process name
+    unique_name = models.CharField(
+        max_length=DEFAULT_LENGTH,
+        unique=False,
+        blank=True,
+        null=True,
+        help_text='Unique process name')
+
     #: Protocol which the process executes
     protocol = models.ForeignKey(
         Protocol,
@@ -751,7 +767,7 @@ class Process(BaseSampleSheet):
             self.get_study().investigation.title,
             self.get_study().title,
             self.assay.file_name if self.assay else 'N/A',
-            self.name)
+            self.unique_name)
 
     def __repr__(self):
         # TODO: Refactor once we're using protocols again
@@ -759,7 +775,7 @@ class Process(BaseSampleSheet):
             self.get_study().investigation.title,
             self.get_study().title,
             self.assay.file_name if self.assay else 'N/A',
-            self.name)
+            self.unique_name)
         return 'Process({})'.format(', '.join(repr(v) for v in values))
 
     # Saving and validation
@@ -860,16 +876,16 @@ class Arc(BaseSampleSheet):
             self.get_study().investigation.title,
             self.get_study().title,
             self.assay.file_name if self.assay else 'N/A',
-            self.get_tail_obj().name,
-            self.get_head_obj().name)
+            self.get_tail_obj().unique_name,
+            self.get_head_obj().unique_name)
 
     def __repr__(self):
         values = (
             self.get_study().investigation.title,
             self.get_study().title,
             self.assay.file_name if self.assay else 'N/A',
-            self.get_tail_obj().name,
-            self.get_head_obj().name)
+            self.get_tail_obj().unique_name,
+            self.get_head_obj().unique_name)
         return 'Arc({})'.format(', '.join(repr(v) for v in values))
 
     # Saving and validation

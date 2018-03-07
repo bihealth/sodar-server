@@ -185,7 +185,7 @@ def add_element(
 
     # Material data
     if type(obj) == GenericMaterial:
-        add_cell(row, obj.name)  # Name
+        add_cell(row, obj.name)                         # Name
         add_annotations(
             row, obj.characteristics, hideable)         # Characteristics
 
@@ -290,7 +290,7 @@ def get_assay_table(assay):
     sample_sources = {}
 
     for sample in samples:
-        sample_sources[sample.name] = sample.get_sources()
+        sample_sources[sample.unique_name] = sample.get_sources()
 
     for source in sources:
         row = []
@@ -308,7 +308,7 @@ def get_assay_table(assay):
 
         # TODO: Optimize this: fixes multi-assay rendering but is VERY slow
         for sample in [
-                s for s in samples if source in sample_sources[s.name]]:
+                s for s in samples if source in sample_sources[s.unique_name]]:
             sample_section = []
 
             if not first_sample_in_source:
