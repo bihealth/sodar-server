@@ -309,6 +309,7 @@
 
             if (v.length > 2) {
               var valFound = false;
+              tableBody.find('tr').show();
 
               tableBody.find('tr').each(function() {
                   if ($(this).text().toLowerCase().indexOf(v) === -1) {

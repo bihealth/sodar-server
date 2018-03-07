@@ -642,6 +642,7 @@ class GenericMaterial(BaseSampleSheet):
 
         return sorted(sources, key=lambda x: x.name)
 
+    # TODO: Add optional limitation for assay
     def get_samples(self):
         """Return samples derived from source"""
         if self.item_type != 'SOURCE':

@@ -284,6 +284,13 @@ def get_assay_table(assay):
     # Sources
     ##########
     sources = assay.get_sources()
+    samples = assay.get_samples()
+
+    # Store sample sources
+    sample_sources = {}
+
+    for sample in samples:
+        sample_sources[sample.name] = sample.get_sources()
 
     for source in sources:
         row = []
@@ -299,7 +306,9 @@ def get_assay_table(assay):
         ##########
         first_sample_in_source = True
 
-        for sample in source.get_samples():
+        # TODO: Optimize this: fixes multi-assay rendering but is VERY slow
+        for sample in [
+                s for s in samples if source in sample_sources[s.name]]:
             sample_section = []
 
             if not first_sample_in_source:
@@ -367,6 +376,8 @@ def get_assay_table(assay):
                 table_data.append(row)
                 row = []
                 first_row = False
+
+            # row = []    # Clear out row even if we could not find arcs
 
     return {
         'top_header': top_header,
