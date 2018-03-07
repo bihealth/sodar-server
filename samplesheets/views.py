@@ -115,6 +115,10 @@ class SampleSheetImportView(
         timeline = get_backend_api('timeline_backend')
         project = Project.objects.get(pk=self.kwargs['project'])
 
+        # TODO: Add to timeline
+        # TODO: Add proper reporting and cleanup in case of import failures
+        # TODO: Update import status via JQuery
+
         '''
         try:
             
