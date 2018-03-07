@@ -24,6 +24,9 @@ STUDY_HIDEABLE_CLASS = 'omics-ss-hideable-study'
 # General/helper functions -----------------------------------------------------
 
 
+# TODO: Add repetition with full data but repeat=True so the values can be used
+#       in filtering (e.g. add as "hidden" attributes)
+
 # TODO: Refactor addition funcs so that we return the row instead
 
 
@@ -240,8 +243,8 @@ def get_study_table(study):
                 sample_section = []
 
                 if not first_sample_in_source:
-                    add_repetition(row, len(source_section))
-                    # row += source_section
+                    # add_repetition(row, len(source_section))
+                    row += source_section
 
                 first_sample_in_source = False
 
@@ -300,9 +303,9 @@ def get_assay_table(assay):
             sample_section = []
 
             if not first_sample_in_source:
-                # row += source_section
-                add_repetition(
-                    row, len(source_section), study_data_in_assay=True)
+                row += source_section
+                # add_repetition(
+                #     row, len(source_section), study_data_in_assay=True)
 
             first_sample_in_source = False
 
@@ -325,12 +328,12 @@ def get_assay_table(assay):
                 col_obj = arc.get_head_obj()
 
                 if not first_arc_in_sample:
-                    # row += source_section
-                    add_repetition(
-                        row, len(source_section), study_data_in_assay=True)
-                    # row += sample_section
-                    add_repetition(
-                        row, len(sample_section), study_data_in_assay=True)
+                    row += source_section
+                    # add_repetition(
+                    #     row, len(source_section), study_data_in_assay=True)
+                    row += sample_section
+                    # add_repetition(
+                    #     row, len(sample_section), study_data_in_assay=True)
 
                 first_arc_in_sample = False
 

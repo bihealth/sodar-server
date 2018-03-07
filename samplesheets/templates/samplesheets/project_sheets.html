@@ -29,7 +29,7 @@
     }
 
     .omics-ss-data-container {
-      max-height: 500px;
+      height: 500px;
       overflow-y: scroll;
     }
 
@@ -149,9 +149,9 @@
           <h4>Study Overview
             {# HACK for demo screenshots #}
             <div class="input-group omics-header-input-group pull-right" style="width: 160px;">
-              <input class="form-control"
+              <input class="form-control omics-ss-data-filter"
                      type="text" placeholder="Filter" aria-label="Filter assay {{ assay.pk }}"
-                     id="omics-ss-assay-filter-{{ assay.pk }}">
+                     id="omics-ss-data-filter-{{ study.pk }}">
             </div>
           </h4>
         </div>
@@ -173,9 +173,9 @@
                           type="submit" id="omics-ss-assay-hide-{{ assay.pk }}"
                           assay-hide-mode="1"><i class="fa fa-eye-slash"></i> Toggle Study</button>
                 </div>
-                <input class="form-control"
+                <input class="form-control omics-ss-data-filter"
                        type="text" placeholder="Filter" aria-label="Filter assay {{ assay.pk }}"
-                       id="omics-ss-assay-filter-{{ assay.pk }}">
+                       id="omics-ss-data-filter-{{ assay.pk }}">
               </div>
             </h4>
           </div>
@@ -248,7 +248,11 @@
   <script type="text/javascript">
     $(document).ready(function() {
         /*
-        // HACK for sxcreenshots: Fix links column position
+        /*************************************************
+         * HACK for screenshots: Fix links column position
+         * NOTE: Disabled as this fails with table-responsive
+        **************************************************/
+        /*
         $('.omics-ss-data-table').each(function () {
             var $table = $(this);
             var $fixedColumn = $table.clone().insertBefore($table).addClass('fixed-column');
@@ -260,7 +264,36 @@
             });
         */
 
-        // Study column hiding
+        /**********************
+         * Filtering
+         **********************/
+
+        // TODO: Highlight found string
+        // TODO: Handle repeating rows (once re-enabled)
+
+        $('.omics-ss-data-filter').keyup(function () {
+            var v = $(this).val().toLowerCase();
+            var tableBody = $(this).closest('.omics-ss-data-card').find('.omics-ss-data-table').find('tbody');
+
+            if (v.length > 2) {
+              var valFound = false;
+
+              tableBody.find('tr').each(function() {
+                  if ($(this).text().toLowerCase().indexOf(v) === -1) {
+                      $(this).hide();
+                  }
+              });
+            }
+
+            else {
+                tableBody.find('tr').show();
+            }
+        });
+
+        /**********************
+         * Study column hiding
+        ***********************/
+
         // TODO: Cleanup/refactor this
 
         // Hide study columns by default
