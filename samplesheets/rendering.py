@@ -476,7 +476,7 @@ def render_links_cell(row):
     # TODO: Refactor/cleanup, this is a quick screenshot HACK
 
     return '<td class="bg-light omics-ss-data-cell-links">\n' \
-           '  <div class="btn-group omics-edit-button-group">\n' \
+           '  <div class="btn-group omics-ss-data-btn-group">\n' \
            '    <button class="btn btn-secondary dropdown-toggle btn-sm ' \
            '                   omics-edit-dropdown"' \
            '                   type="button" data-toggle="dropdown" ' \
