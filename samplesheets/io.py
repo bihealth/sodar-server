@@ -7,7 +7,7 @@ import logging
 from django.db import connection
 
 from .models import Investigation, Study, Assay, GenericMaterial, Protocol, \
-    Process, Arc
+    Process, Arc, ARC_OBJ_SUFFIX_MAP
 
 from .rendering import get_study_table, get_assay_table
 
@@ -78,7 +78,6 @@ def import_isa(isa_zip, project, async=False):
     # Helper functions
     ###################
 
-    # TODO: Move inside get_ontology_vals?
     def get_multitype_val(o):
         """Get value where the member type can vary"""
         return o._asdict() if isinstance(o, tuple) else o
@@ -190,7 +189,7 @@ def import_isa(isa_zip, project, async=False):
                         name=p.protocol_ref)
 
                 except Protocol.DoesNotExist:
-                    logger.error(
+                    logger.warning(
                         'No protocol found for process "{}" '
                         'with ref "{}"'.format(
                             p.unique_name, p.protocol_ref))
@@ -266,11 +265,10 @@ def import_isa(isa_zip, project, async=False):
             except ValueError as ex:
                 raise ValueError('{} / arc = {}'.format(ex, a))
 
-            # TODO: This is now done in two ways, see ARC_OBJ_SUFFIX_MAP
             tail_obj_arg = 'tail_{}'.format(
-                'material' if type(tail_obj) == GenericMaterial else 'process')
+                ARC_OBJ_SUFFIX_MAP[tail_obj.__class__.__name__])
             head_obj_arg = 'head_{}'.format(
-                'material' if type(head_obj) == GenericMaterial else 'process')
+                ARC_OBJ_SUFFIX_MAP[head_obj.__class__.__name__])
 
             values = {
                 'assay': db_parent if type(db_parent) == Assay else None,
@@ -304,14 +302,17 @@ def import_isa(isa_zip, project, async=False):
     db_investigation = Investigation(**values)
     db_investigation.save()
     logger.debug('Created investigation "{}"'.format(db_investigation.title))
+    study_count = 0
 
     # Create studies
     for s_i in isa_inv.studies:
+        study_id = 'p{}-s{}'.format(project.pk, study_count)
+
         # Parse study file
         s = StudyReader.from_stream(
             isa_inv,
             input_file=get_file(isa_zip, s_i.info.path),
-            study_id=s_i.info.path).read()
+            study_id=study_id).read()
 
         values = {
             'identifier': s_i.info.identifier,
@@ -357,12 +358,16 @@ def import_isa(isa_zip, project, async=False):
         # Create study arcs
         import_arcs(s.arcs, db_parent=db_study)
 
+        assay_count = 0
+
         for a_i in s_i.assays.values():
+            assay_id = 'a{}'.format(project.pk, study_count, assay_count)
+
             a = AssayReader.from_stream(
                 isa_inv,
                 input_file=get_file(isa_zip, a_i.path),
-                study_id=s_i.info.path,
-                assay_id=a_i.path).read()
+                study_id=study_id,
+                assay_id=assay_id).read()
 
             values = {
                 'file_name': a_i.path,
@@ -392,6 +397,9 @@ def import_isa(isa_zip, project, async=False):
 
             # Create assay arcs
             import_arcs(a.arcs, db_parent=db_assay)
+            assay_count += 1
+
+        study_count += 1
 
     logger.info('Import of investigation "{}" OK'.format(
         db_investigation.title))
@@ -400,20 +408,20 @@ def import_isa(isa_zip, project, async=False):
     db_investigation.status = 'RENDERING'
     db_investigation.save()
 
-    # TODO: Get proper titles
     for study in db_investigation.studies.all():
-        logger.info('Rendering table for study "{}"..'.format(study.title))
+        logger.info('Rendering table for study "{}"..'.format(study.get_name()))
         study.render_table = get_study_table(study)
         study.save()
-        logger.info('Rendering table for study "{}" OK'.format(study.title))
+        logger.info(
+            'Rendering table for study "{}" OK'.format(study.get_name()))
 
         for assay in study.assays.all():
             logger.info('Rendering table for assay "{}"..'.format(
-                assay.file_name))
+                assay.get_name()))
             assay.render_table = get_assay_table(assay)
             assay.save()
             logger.info('Rendering table for assay "{}" OK'.format(
-                assay.file_name))
+                assay.get_name()))
 
     # Update investigation status
     db_investigation.status = 'OK'
