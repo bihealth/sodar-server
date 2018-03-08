@@ -5,7 +5,7 @@ echo "Installing Chrome + Driver for UI Testing"
 echo "***********************************************"
 
 # Version
-CHROME_DRIVER_VERSION=2.33
+CHROME_DRIVER_VERSION=2.36
 
 # Install dependencies
 apt-get -y install default-jre unzip

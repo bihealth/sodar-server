@@ -43,17 +43,19 @@ logger = logging.getLogger(__name__)
 # Importing --------------------------------------------------------------------
 
 
-def import_isa(isa_zip, project):
+def import_isa(isa_zip, project, async=False):
     """
     Import ISA investigation and its studies/assays from an ISAtab Zip archive
     into the Django database, utilizing the altamISA parser
     :param isa_zip: ZipFile (archive containing a single ISAtab investigation)
     :param project: Project object
+    :param async: Async HACK enabled (boolean)
     :return: Django Investigation object
     """
 
-    # ASYNC HACK
-    connection.close()
+    # ASYNC HACK, to be replaced
+    if async:
+        connection.close()
 
     logger.info('Importing investigation from a Zip archive..')
 
