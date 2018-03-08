@@ -31,6 +31,8 @@ INVESTIGATION_STATUS_TYPES = [
     'RENDERING',
     'FAILED']
 
+NOT_AVAILABLE_STR = ''
+
 
 # Abstract base class ----------------------------------------------------------
 
@@ -73,6 +75,9 @@ class BaseSampleSheet(models.Model):
 
         elif type(self) == Study:
             return self.investigation.project
+
+        elif type(self) == Protocol:
+            return self.study.investigation.project
 
         elif type(self) in [Assay, Arc, GenericMaterial, Process]:
             if self.study:
@@ -233,21 +238,21 @@ class Study(BaseSampleSheet):
         verbose_name_plural = 'studies'
 
     def __str__(self):
-        return '{}/{}'.format(
-            self.investigation.title,
-            self.identifier)
+        return '{}: {}'.format(
+            self.get_project().title,
+            self.get_name())
 
     def __repr__(self):
         values = (
-            self.investigation.title,
-            self.identifier)
+            self.get_project().title,
+            self.get_name())
         return 'Study({})'.format(', '.join(repr(v) for v in values))
 
     # Custom row-level functions
 
     def get_name(self):
-        """Return simple printable name for Assay"""
-        return self.title
+        """Return simple printable name for study"""
+        return self.title if self.title else self.identifier
 
     def get_sources(self):
         """Return study sources"""
@@ -312,15 +317,15 @@ class Protocol(BaseSampleSheet):
         unique_together = ('study', 'name')
 
     def __str__(self):
-        return '{}/{}/{}'.format(
-            self.study.investigation.title,
-            self.study.identifier,
+        return '{}: {}/{}'.format(
+            self.get_project().title,
+            self.study.get_name(),
             self.name)
 
     def __repr__(self):
         values = (
-            self.study.investigation.title,
-            self.study.identifier,
+            self.get_project().title,
+            self.study.get_name(),
             self.name)
         return 'Protocol({})'.format(', '.join(repr(v) for v in values))
 
@@ -391,23 +396,23 @@ class Assay(BaseSampleSheet):
         unique_together = ('study', 'file_name')
 
     def __str__(self):
-        return '{}/{}/{}'.format(
-            self.study.investigation.title,
-            self.study.identifier,
-            self.file_name)
+        return '{}: {}/{}'.format(
+            self.get_project().title,
+            self.study.get_name(),
+            self.get_name())
 
     def __repr__(self):
         values = (
-            self.study.investigation.title,
-            self.study.identifier,
-            self.file_name)
+            self.get_project().title,
+            self.study.get_name(),
+            self.get_name())
         return 'Assay({})'.format(', '.join(repr(v) for v in values))
 
     # Custom row-level functions
 
     def get_name(self):
         """Return simple printable name for Assay"""
-        return self.file_name
+        return ''.join(str(self.file_name).split('.')[:-1])
 
     def get_samples(self):
         """Return samples used in assay"""
@@ -541,18 +546,18 @@ class GenericMaterial(BaseSampleSheet):
             models.Index(fields=['study', 'item_type'])]
 
     def __str__(self):
-        return '{}/{}/{}/{}/{}'.format(
-            self.get_study().investigation.title,
+        return '{}: {}/{}/{}/{}'.format(
+            self.get_project().title,
             self.get_study().title,
-            self.assay.file_name if self.assay else 'N/A',
+            self.assay.file_name if self.assay else NOT_AVAILABLE_STR,
             self.item_type,
             self.unique_name)
 
     def __repr__(self):
         values = (
-            self.get_study().investigation.title,
+            self.get_project().title,
             self.get_study().title,
-            self.assay.file_name if self.assay else 'N/A',
+            self.assay.file_name if self.assay else NOT_AVAILABLE_STR,
             self.item_type,
             self.unique_name)
 
@@ -734,19 +739,17 @@ class Process(BaseSampleSheet):
         verbose_name_plural = 'processes'
 
     def __str__(self):
-        # TODO: Refactor once we're using protocols again
-        return '{}/{}/{}/{}'.format(
-            self.get_study().investigation.title,
-            self.get_study().title,
-            self.assay.file_name if self.assay else 'N/A',
+        return '{}: {}/{}/{}'.format(
+            self.get_project().title,
+            self.get_study().get_name(),
+            self.assay.get_name() if self.assay else NOT_AVAILABLE_STR,
             self.unique_name)
 
     def __repr__(self):
-        # TODO: Refactor once we're using protocols again
         values = (
-            self.get_study().investigation.title,
-            self.get_study().title,
-            self.assay.file_name if self.assay else 'N/A',
+            self.get_project().title,
+            self.get_study().get_name(),
+            self.assay.get_name() if self.assay else NOT_AVAILABLE_STR,
             self.unique_name)
         return 'Process({})'.format(', '.join(repr(v) for v in values))
 
@@ -764,12 +767,6 @@ class Process(BaseSampleSheet):
 
     # Custom row-level functions
 
-    def get_next_process(self):
-        """Return next process or None if it doesn't exist"""
-        return self.next_process if (
-            hasattr(self, 'next_process') and
-            self.next_process) else None
-
     def get_parent(self):
         """Return parent assay or study"""
         if self.assay:
@@ -777,8 +774,6 @@ class Process(BaseSampleSheet):
 
         elif self.study:
             return self.study
-
-        return None  # This should not happen and is caught during validation
 
 
 # Arc --------------------------------------------------------------------------
@@ -846,18 +841,18 @@ class Arc(BaseSampleSheet):
             models.Index(fields=['assay', 'tail_material'])]
 
     def __str__(self):
-        return '{}/{}/{}/{}->{}'.format(
-            self.get_study().investigation.title,
-            self.get_study().title,
-            self.assay.file_name if self.assay else 'N/A',
+        return '{}: {}/{}/{}->{}'.format(
+            self.get_project().title,
+            self.get_study().get_name(),
+            self.assay.get_name() if self.assay else NOT_AVAILABLE_STR,
             self.get_tail_obj().unique_name,
             self.get_head_obj().unique_name)
 
     def __repr__(self):
         values = (
-            self.get_study().investigation.title,
-            self.get_study().title,
-            self.assay.file_name if self.assay else 'N/A',
+            self.get_project().title,
+            self.get_study().get_name(),
+            self.assay.get_name() if self.assay else NOT_AVAILABLE_STR,
             self.get_tail_obj().unique_name,
             self.get_head_obj().unique_name)
         return 'Arc({})'.format(', '.join(repr(v) for v in values))
