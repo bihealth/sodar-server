@@ -16,12 +16,14 @@ Added
 - **General**
     - Graph output with pygraphviz for local development
     - ``ProjectPermissionObjectMixin`` for project apps
-
+- **Projectroles**
+    - Add ``get_project_link()`` in templatetags
 - **Samplesheets**
     - Add samplesheets app
     - ISA specification compatible data model (#76)
     - Importing ISA investigations as sample sheets (#77)
     - Rendering and navigation of sample sheets (#79)
+    - Simple sample sheet search (#87)
 
 Changed
 -------
@@ -29,6 +31,14 @@ Changed
 - **General**
     - Modify subtitle and page content containers for all apps
     - Site-wide CSS tweaks
+- **Projectroles**
+    - Search view improvements
+
+Fixed
+-----
+
+- **General**
+    - Update ChromeDriver to eliminate UI test crashes (#85)
 
 
 v0.1 (2018-01-26)
