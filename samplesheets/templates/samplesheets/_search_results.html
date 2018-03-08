@@ -1,0 +1,69 @@
+{% load samplesheets_tags %}
+{% load rules %}
+
+<style type="text/css">
+
+  /* Responsive modifications */
+  @media screen and (max-width: 1300px) {
+    .table#omics-ss-search-table tr th:nth-child(5) {
+      display: none;
+    }
+
+    .table#omics-ss-search-table tr td:nth-child(5) {
+      display: none;
+    }
+  }
+
+  @media screen and (max-width: 900px) {
+    .table#omics-ss-search-table tr th:nth-child(4) {
+      display: none;
+    }
+
+    .table#omics-ss-search-table tr td:nth-child(4) {
+      display: none;
+    }
+  }
+
+  @media screen and (max-width: 700px) {
+    .table#omics-ss-search-table tr th:nth-child(2) {
+      display: none;
+    }
+     .table#omics-ss-search-table tr td:nth-child(2) {
+      display: none;
+    }
+  }
+
+  @media screen and (max-width: 500px) {
+    .table#omics-ss-search-table tr th:nth-child(3) {
+      display: none;
+    }
+
+    .table#omics-ss-search-table tr td:nth-child(3) {
+      display: none;
+    }
+  }
+</style>
+
+<table class="table table-striped omics-card-table" id="omics-ss-search-table">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Project</th>
+      <th>Study</th>
+      <th>Assay</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% find_samplesheets_items search_term request.user search_type search_keywords as items %}
+    {% if items|length > 0 %}
+      {% for item in items %}
+        {% include 'samplesheets/_search_item.html' with item=item %}
+      {% endfor %}
+   {% else %}
+      <tr>
+        <td class="font-italic text-center text-danger" colspan="5">No items found</td>
+      </tr>
+    {% endif %}
+  </tbody>
+</table>

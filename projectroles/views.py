@@ -313,13 +313,16 @@ class ProjectSearchView(LoginRequiredMixin, TemplateView):
         context['search_keywords'] = search_keywords
 
         if search_type:
-            context['search_apps'] = [
+            context['search_apps'] = sorted([
                 p for p in plugins if (
                     p.search_enable and
-                    search_type in p.search_types)]
+                    search_type in p.search_types)],
+                key=lambda x: x.details_position)
 
         else:
-            context['search_apps'] = [p for p in plugins if p.search_enable]
+            context['search_apps'] = sorted(
+                [p for p in plugins if p.search_enable],
+                key=lambda x: x.details_position)
 
         return context
 

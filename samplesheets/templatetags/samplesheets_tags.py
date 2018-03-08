@@ -1,6 +1,8 @@
 from django import template
+from django.urls import reverse
 
-from ..models import Investigation
+from ..models import Investigation, Assay, Study, GenericMaterial, \
+    GENERIC_MATERIAL_TYPES
 from ..rendering import get_study_table as r_get_study_table, \
     get_assay_table as r_get_assay_table, \
     render_cell as r_render_cell, \
@@ -86,3 +88,60 @@ def get_assay_title(assay):
     """Return printable assy title"""
     # TODO: How to construct assay title?
     return assay.file_name.split('.')[0]
+
+
+@register.simple_tag
+def find_samplesheets_items(search_term, user, search_type, keywords):
+    """Return samplesheets items based on a search term, user and
+    possible type/keywords"""
+    ret = None
+
+    # TODO: Refactor, add different types, etc.
+
+    if not search_type:
+        sources = GenericMaterial.objects.find(
+            search_term, keywords, item_type='SOURCE')
+        samples = GenericMaterial.objects.find(
+            search_term, keywords, item_type='SAMPLE')
+        data_files = GenericMaterial.objects.find(
+            search_term, keywords, item_type='DATA')
+        ret = list(sources) + list(samples) + list(data_files)
+        ret.sort(key=lambda x: x.name.lower())
+
+    elif search_type == 'source':
+        ret = GenericMaterial.objects.find(
+            search_term, keywords, item_type='SOURCE').order_by('name')
+
+    elif search_type == 'sample':
+        ret = GenericMaterial.objects.find(
+            search_term, keywords, item_type='SAMPLE').order_by('name')
+
+    elif search_type == 'file':
+        ret = GenericMaterial.objects.find(
+            search_term, keywords, item_type='DATA').order_by('name')
+
+    if ret:
+        ret = [x for x in ret if
+               user.has_perm('samplesheets.view_sheet', x.get_project())]
+        return ret
+
+    return None
+
+
+@register.simple_tag
+def get_material_type(material):
+    """Return printable version of material item_type"""
+    return GENERIC_MATERIAL_TYPES[material.item_type]
+
+
+@register.simple_tag
+def get_material_link(material):
+    """Return link to material"""
+    url = reverse('project_sheets', kwargs={
+        'project': material.get_project().pk,
+        'study': material.study.pk})
+
+    if material.assay:
+        url += '#assay{}'.format(material.assay.pk)
+
+    return url

@@ -129,7 +129,6 @@ def import_isa(isa_zip, project):
 
             # Common values
             values = {
-                'api_id': id(m),     # TODO: Remove api_id?
                 'item_type': item_type}
 
             # Name
@@ -199,7 +198,6 @@ def import_isa(isa_zip, project):
                     'Unknown protocol for process "{}"'.format(p.unique_name))
 
             values = {
-                'api_id': id(p),    # TODO: Remove api_id?
                 'name': p.name,
                 'unique_name': p.unique_name,
                 'protocol': protocol,
@@ -314,7 +312,6 @@ def import_isa(isa_zip, project):
             study_id=s_i.info.path).read()
 
         values = {
-            'api_id': id(s),                    # TODO: Remove api_id?
             'identifier': s_i.info.identifier,
             'file_name': s_i.info.path,
             'investigation': db_investigation,
@@ -334,7 +331,6 @@ def import_isa(isa_zip, project):
         # TODO: Comments
         for p_i in s_i.protocols.values():
             values = {
-                'api_id': id(p_i),
                 'name': p_i.name,
                 'study': db_study,
                 'protocol_type': get_multitype_val(p_i.type),
@@ -367,7 +363,6 @@ def import_isa(isa_zip, project):
                 assay_id=a_i.path).read()
 
             values = {
-                'api_id': id(a),    # TODO: Remove api_id?
                 'file_name': a_i.path,
                 'study': db_study,
                 'measurement_type': get_multitype_val(a_i.measurement_type),
@@ -381,7 +376,7 @@ def import_isa(isa_zip, project):
             db_assay = Assay(**values)
             db_assay.save()
             logger.debug('Added assay "{}" in study "{}"'.format(
-                db_assay.api_id, db_study.title))
+                db_assay.file_name, db_study.title))
 
             # Create assay materials (excluding sources and samples)
             assay_materials = {

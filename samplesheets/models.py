@@ -1,10 +1,10 @@
 import uuid
 
-from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.fields import JSONField
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models import Q
 
 # Projectroles dependency
 from projectroles.models import Project
@@ -13,11 +13,13 @@ from projectroles.models import Project
 # Local constants
 DEFAULT_LENGTH = 255
 
-GENERIC_MATERIAL_CHOICES = [
-    ('SOURCE', 'Source'),
-    ('MATERIAL', 'Material'),
-    ('SAMPLE', 'Sample'),
-    ('DATA', 'Data')]
+GENERIC_MATERIAL_TYPES = {
+    'SOURCE': 'Source',
+    'MATERIAL': 'Material',
+    'SAMPLE': 'Sample',
+    'DATA': 'Data File'}
+
+GENERIC_MATERIAL_CHOICES = [(k, v) for k, v in GENERIC_MATERIAL_TYPES.items()]
 
 ARC_OBJ_SUFFIX_MAP = {
     'GenericMaterial': 'material',
@@ -35,13 +37,6 @@ INVESTIGATION_STATUS_TYPES = [
 
 class BaseSampleSheet(models.Model):
     """Abstract class with common ODM sample sheet properties"""
-
-    #: ISA API object id
-    api_id = models.CharField(
-        max_length=DEFAULT_LENGTH,
-        blank=True,
-        null=True,
-        help_text='ISA API object id')
 
     #: Internal UUID for the object
     omics_uuid = models.UUIDField(
@@ -70,6 +65,21 @@ class BaseSampleSheet(models.Model):
 
         elif hasattr(self, 'study') and self.study:
             return self.study
+
+    def get_project(self):
+        """Return associated project"""
+        if type(self) == Investigation:
+            return self.project
+
+        elif type(self) == Study:
+            return self.investigation.project
+
+        elif type(self) in [Assay, Arc, GenericMaterial, Process]:
+            if self.study:
+                return self.study.investigation.project
+
+            elif self.assay:
+                return self.assay.study.investigation.project
 
 
 # Investigation ----------------------------------------------------------------
@@ -244,33 +254,6 @@ class Study(BaseSampleSheet):
         return GenericMaterial.objects.filter(
             study=self, item_type='SOURCE').order_by('name')
 
-    def get_characteristic_cat(self, characteristic):
-        """Return characteristic category"""
-        # TODO: Refactor for altamISA, currently not implemented
-        '''
-        for c in self.characteristic_cat:
-            if c['@id'] == characteristic['category']['@id']:
-                return c['characteristicType']
-        '''
-
-    def get_unit_cat(self, unit):
-        """Return unit category"""
-        # TODO: Refactor for altamISA, currently not implemented
-        '''
-        for c in self.unit_cat:
-            if c['@id'] == unit['@id']:
-                return c
-        '''
-
-    def get_factor(self, factor_value):
-        """Return factor definition"""
-        # TODO: Refactor for altamISA, currently not implemented
-        '''
-        for f in self.factors:
-            if f['@id'] == factor_value['category']['@id']:
-                return f
-        '''
-
 
 # Protocol ---------------------------------------------------------------------
 
@@ -340,17 +323,6 @@ class Protocol(BaseSampleSheet):
             self.study.identifier,
             self.name)
         return 'Protocol({})'.format(', '.join(repr(v) for v in values))
-
-    # Custom row-level functions
-
-    def get_parameter(self, parameter_value):
-        # TODO: Refactor for altamISA, currently not implemented
-        """Return parameter definition"""
-        '''
-        for p in self.parameters:
-            if p['parameterName']['@id'] == parameter_value['category']['@id']:
-                return p
-        '''
 
 
 # Assay ------------------------------------------------------------------------
@@ -471,18 +443,27 @@ class Assay(BaseSampleSheet):
 class GenericMaterialManager(models.Manager):
     """Manager for custom table-level GenericMaterial queries"""
 
-    def find_child(self, parent, api_id):
-        """Find child material of a parent with a specific api_id"""
-        parent_query_arg = parent.__class__.__name__.lower()
-        study = parent if type(parent) == Study else parent.study
+    def find(self, search_term, keywords=None, item_type=None):
+        """
+        Return objects matching the query.
+        :param search_term: Search term (string)
+        :param keywords: Optional search keywords as key/value pairs (dict)
+        :param item_type: Restrict to a specific item_type
+        :return: Python list of GenericMaterial objects
+        """
 
-        try:
-            return super(GenericMaterialManager, self).get_queryset().get(
-                **{parent_query_arg: parent, 'api_id': api_id})
+        # NOTE: Exlude intermediate materials, at least for now
+        objects = super(
+            GenericMaterialManager, self).get_queryset().exclude(
+            item_type='MATERIAL').order_by('name')
 
-        except GenericMaterial.DoesNotExist:  # Sample, get from study
-            return super(GenericMaterialManager, self).get_queryset().get(
-                study=study, api_id=api_id)
+        objects = objects.filter(
+            Q(name__icontains=search_term))     # TODO: TBD: Other fields?
+
+        if item_type:
+            objects = objects.filter(item_type=item_type)
+
+        return objects
 
 
 class GenericMaterial(BaseSampleSheet):
@@ -555,6 +536,8 @@ class GenericMaterial(BaseSampleSheet):
         verbose_name_plural = 'materials'
 
         indexes = [
+            models.Index(fields=['name']),
+            models.Index(fields=['unique_name']),
             models.Index(fields=['study', 'item_type'])]
 
     def __str__(self):
@@ -580,7 +563,6 @@ class GenericMaterial(BaseSampleSheet):
     def save(self, *args, **kwargs):
         """Override save() to include custom validation functions"""
         self._validate_parent()
-        self._validate_api_id()
         self._validate_item_fields()
         super(GenericMaterial, self).save(*args, **kwargs)
 
@@ -588,16 +570,6 @@ class GenericMaterial(BaseSampleSheet):
         """Validate the existence of a parent assay or study"""
         if not self.get_parent():
             raise ValidationError('Parent assay or study not set')
-
-    def _validate_api_id(self):
-        """Validate api_id uniqueness within parent"""
-        if (GenericMaterial.objects.filter(
-                study=self.study,
-                assay=self.assay,
-                api_id=self.api_id).count() != 0):
-            raise ValidationError(
-                'Material id "{}" not unique within parent'.format(
-                    self.api_id))
 
     def _validate_item_fields(self):
         """Validate fields related to specific material types"""
@@ -866,6 +838,8 @@ class Arc(BaseSampleSheet):
         ordering = ('study', 'assay')
 
         indexes = [
+            models.Index(fields=['study']),
+            models.Index(fields=['assay']),
             models.Index(fields=['study', 'head_process']),
             models.Index(fields=['study', 'head_material']),
             models.Index(fields=['assay', 'tail_process']),

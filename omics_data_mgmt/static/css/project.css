@@ -226,6 +226,10 @@ div.omics-card-body-info {
   background-color: #FFFFE0;
 }
 
+div.omics-pr-app-search-container {
+  max-height: 400px;
+}
+
 /* Tables within cards */
 
 table.omics-card-table {

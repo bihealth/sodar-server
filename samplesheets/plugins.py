@@ -42,16 +42,19 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
     app_permission = 'samplesheets.view_sheet'
 
     #: Enable or disable general search from project title bar
-    search_enable = False   # TODO
+    search_enable = True
 
     #: List of search object types for the app
-    search_types = []   # TODO
+    search_types = [
+        'source',
+        'sample',
+        'file']
 
     #: Search results template
     search_template = 'samplesheets/_search_results.html'
 
     #: App card title for the main search page
-    search_title = 'Sample Sheet Data'
+    search_title = 'Sample Sheet Sources, Samples and Files'
 
     #: App card template for the project details page
     details_template = 'samplesheets/_details_card.html'
