@@ -62,8 +62,8 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
     #: App card title for the project details page
     details_title = 'Sample Sheets Overview'
 
-    #: App card position
-    details_position = 10
+    #: Position in plugin ordering
+    plugin_ordering = 10
 
     def get_info(self, pk):
         """

@@ -67,9 +67,9 @@ class ProjectAppPluginPoint(PluginPoint):
     # TODO: Implement this in your app plugin (can be None)
     details_title = None
 
-    #: App card position
-    # TODO: Implement this in your app plugin (should be an integer)
-    details_position = 50
+    #: Position in plugin ordering
+    # TODO: Implement this in your app plugin (must be an integer)
+    plugin_ordering = 50
 
     # NOTE: For projectroles, this is implemented directly in synctaskflow
     def get_taskflow_sync_data(self):

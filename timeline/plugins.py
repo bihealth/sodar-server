@@ -66,8 +66,8 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
     #: App card title for the project details page
     details_title = 'Project Timeline Overview'
 
-    #: App card position
-    details_position = 40
+    #: Position in plugin ordering
+    plugin_ordering = 40
 
     def get_taskflow_sync_data(self):
         """

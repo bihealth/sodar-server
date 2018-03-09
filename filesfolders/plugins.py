@@ -64,8 +64,8 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
     #: App card title for the project details page
     details_title = 'Small Files Overview'
 
-    #: App card position
-    details_position = 20
+    #: Position in plugin ordering
+    plugin_ordering = 20
 
     def get_taskflow_sync_data(self):
         """

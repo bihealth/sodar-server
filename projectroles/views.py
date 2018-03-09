@@ -160,7 +160,7 @@ class ProjectContextMixin(HTTPRefererMixin, ContextMixin):
         if plugins:
             context['app_plugins'] = sorted([
                 p for p in plugins if p.is_active()],
-                key=lambda x: x.details_position)
+                key=lambda x: x.plugin_ordering)
 
         # Project tagging/starring
         if 'project' in context:
@@ -317,12 +317,12 @@ class ProjectSearchView(LoginRequiredMixin, TemplateView):
                 p for p in plugins if (
                     p.search_enable and
                     search_type in p.search_types)],
-                key=lambda x: x.details_position)
+                key=lambda x: x.plugin_ordering)
 
         else:
             context['search_apps'] = sorted(
                 [p for p in plugins if p.search_enable],
-                key=lambda x: x.details_position)
+                key=lambda x: x.plugin_ordering)
 
         return context
 
