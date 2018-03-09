@@ -29,6 +29,10 @@
       height: 118%; /* HACK */
     }
 
+    .omics-ss-assay-info-popup {
+      max-width: 800px;
+    }
+
     .omics-ss-data-container {
       height: 500px;
       overflow-y: scroll;
@@ -136,7 +140,6 @@
 
     {% if study %}
 
-      {% comment temporarily commented out %}
       {# Details #}
       <div class="card">
         <div class="card-header">
@@ -144,7 +147,6 @@
         </div>
         {% include 'samplesheets/_study_info.html' %}
       </div>
-      {% endcomment %}
 
       {# Study overview table #}
       <div class="card omics-ss-data-card" id="study{{ study.pk }}">

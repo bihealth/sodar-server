@@ -56,6 +56,11 @@ class BaseSampleSheet(models.Model):
         default=dict,
         help_text='Consent retraction data')
 
+    #: Comments
+    comments = JSONField(
+        default=dict,
+        help_text='Comments')
+
     class Meta:
         abstract = True
 
@@ -132,11 +137,6 @@ class Investigation(BaseSampleSheet):
     ontology_source_refs = JSONField(
         default=dict,
         help_text='Ontology source references')
-
-    #: Comments
-    comments = JSONField(
-        default=dict,
-        help_text='Comments')
 
     #: Creation/editing status of investigation
     status = models.CharField(
@@ -216,11 +216,6 @@ class Study(BaseSampleSheet):
     unit_cat = JSONField(
         default=dict,
         help_text='Unit categories')
-
-    #: Comments
-    comments = JSONField(
-        default=dict,
-        help_text='Comments')
 
     #: Column headers
     header = JSONField(
@@ -376,11 +371,6 @@ class Assay(BaseSampleSheet):
     unit_cat = JSONField(
         default=dict,
         help_text='Unit categories')
-
-    #: Comments
-    comments = JSONField(
-        default=dict,
-        help_text='Comments')
 
     #: Column headers
     header = JSONField(
@@ -730,11 +720,6 @@ class Process(BaseSampleSheet):
         null=True,
         help_text='Scan name for special cases in ISAtab')
 
-    #: Comments
-    comments = JSONField(
-        default=dict,
-        help_text='Comments')
-
     class Meta:
         verbose_name_plural = 'processes'
 
@@ -779,6 +764,7 @@ class Process(BaseSampleSheet):
 # Arc --------------------------------------------------------------------------
 
 
+# TODO: Optimize or don't save as a db class at all (see issue #92)
 class Arc(BaseSampleSheet):
     """altamISA parser model compatible arc depicting a relationship between
     material and process"""
@@ -828,6 +814,9 @@ class Arc(BaseSampleSheet):
         null=True,
         on_delete=models.SET_NULL,
         help_text='Head material (can be null if head object is a process)')
+
+    # No comments for Arc
+    comments = None
 
     class Meta:
         ordering = ('study', 'assay')

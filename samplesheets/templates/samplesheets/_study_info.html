@@ -2,21 +2,30 @@
 
 <div class="card-body omics-card-body">
   <dl class="row omics-dl">
-    {% comment %}
-    <dt class="col-md-2">Idenfitier</dt>
-    <dd class="col-md-10">{{ study.identifier }}</dd>
-    {% endcomment %}
-    <dt class="col-md-2">Title</dt>
-    <dd class="col-md-10">{% get_study_title study %}</dd>
+    <dt class="col-md-3">Title</dt>
+    <dd class="col-md-9">{% get_study_title study %}</dd>
   {% if study.description %}
-    <dt class="col-md-2">Description</dt>
-    <dd class="col-md-10">{{ study.description }}</dd>
+    <dt class="col-md-3">Description</dt>
+    <dd class="col-md-9">{{ study.description }}</dd>
   {% endif %}
+  {% for comment_k, comment_v in study.comments.items %}
+    {% if comment_v.value %}
+      <dt class="col-md-3">{{ comment_k }}</dt>
+      <dd class="col-md-9">{{ comment_v.value }}</dd>
+    {% endif %}
+  {% endfor %}
   {% if study.assays %}
-    <dt class="col-md-2">Assays</dt>
-    <dd class="col-md-10">
+    <dt class="col-md-3">Assays</dt>
+    <dd class="col-md-9">
       {% for assay in study.assays.all %}
-        <a href="#assay{{ assay.pk }}">{% get_assay_title assay %}</a><br />
+        <a href="#assay{{ assay.pk }}">{% get_assay_title assay %}</a>
+        {% if assay.comments %}
+          <a class="omics-ss-assay-info-link" tabindex="0" data-toggle="popover"
+             data-trigger="focus" data-placement="top" data-html="true"
+             data-content="{% get_assay_info_html assay %}">
+            <i class="fa fa-info-circle text-info"></i></a>
+        {% endif %}
+        <br />
       {% endfor %}
     </dd>
   {% endif %}

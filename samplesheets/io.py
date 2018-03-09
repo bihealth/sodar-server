@@ -36,6 +36,8 @@ MATERIAL_TYPE_MAP = {
     'Metabolite Assignment File': 'DATA',
     'Array Data Matrix File': 'DATA'}
 
+SAMPLE_SEARCH_SUBSTR = '-sample-'
+
 
 logger = logging.getLogger(__name__)
 
@@ -165,6 +167,9 @@ def import_isa(isa_zip, project, async=False):
             if m.factor_values:
                 values['factor_values'] = get_ontology_vals(m.factor_values)
 
+            # Comments
+            values['comments'] = get_ontology_vals(m.comments)
+
             material_obj = GenericMaterial(**values)
             material_obj.save()
             logger.debug('Added material "{}" ({}) to "{}"'.format(
@@ -208,7 +213,7 @@ def import_isa(isa_zip, project, async=False):
                 'perform_date': p.date,
                 'array_design_ref': p.array_design_ref,
                 'scan_name': p.scan_name,
-                'comments': []}     # TODO
+                'comments': get_ontology_vals(p.comments)}
 
             # Parameter values
             if p.parameter_values:
@@ -236,8 +241,8 @@ def import_isa(isa_zip, project, async=False):
             query_params = {
                 'unique_name': unique_name}
 
-            # TODO: DEMO HACK: Recognize samples by name
-            if unique_name.find('-sample-') != -1:
+            # Recognize samples by name
+            if unique_name.find(SAMPLE_SEARCH_SUBSTR) != -1:
                 query_params['study'] = db_parent if \
                     type(db_parent) == Study else db_parent.study
 
@@ -296,7 +301,7 @@ def import_isa(isa_zip, project, async=False):
         'description': (isa_inv.info.description or project.description),
         'file_name': inv_file_name,
         'ontology_source_refs': get_tuple_list(isa_inv.ontology_source_refs),
-        'comments': [],     # TODO
+        'comments': get_ontology_vals(isa_inv.info.comments),
         'status': 'IMPORTING'}
 
     db_investigation = Investigation(**values)
@@ -323,7 +328,7 @@ def import_isa(isa_zip, project, async=False):
             'factors': s_i.factors,             # TODO
             'characteristic_cat': [],           # TODO
             'unit_cat': [],                     # TODO
-            'comments': [],                     # TODO
+            'comments': get_ontology_vals(s_i.info.comments),
             'header': get_header(s.header)}
 
         db_study = Study(**values)
@@ -331,7 +336,6 @@ def import_isa(isa_zip, project, async=False):
         logger.debug('Added study "{}"'.format(db_study.title))
 
         # Create protocols
-        # TODO: Comments
         for p_i in s_i.protocols.values():
             values = {
                 'name': p_i.name,
@@ -341,7 +345,8 @@ def import_isa(isa_zip, project, async=False):
                 'uri': p_i.uri,
                 'version': p_i.version,
                 'parameters': get_tuple_list(p_i.parameters),
-                'components': get_tuple_list(p_i.components)}
+                'components': get_tuple_list(p_i.components),
+                'comments': get_ontology_vals(p_i.comments)}
 
             protocol = Protocol(**values)
             protocol.save()
@@ -377,7 +382,7 @@ def import_isa(isa_zip, project, async=False):
                 'technology_platform': a_i.platform,
                 'characteristic_cat': [],           # TODO
                 'unit_cat': [],                     # TODO
-                'comments': [],                     # TODO
+                'comments': get_ontology_vals(a_i.comments),
                 'header': get_header(a.header)}
 
             db_assay = Assay(**values)

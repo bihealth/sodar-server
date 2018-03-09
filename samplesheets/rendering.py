@@ -168,17 +168,25 @@ def add_element(
         # Process headers
         # NOTE: No hiding of processes
         else:   # type(obj) == Process
-            if obj.protocol:
+            if obj.protocol and obj.protocol.name:
                 add_header(field_header, 'Protocol')    # Protocol
                 field_count += 1
 
-            add_header(field_header, 'Name')            # Name
-            field_count += 1
+            else:
+                add_header(field_header, 'Name')        # Name
+                field_count += 1
 
             field_count += add_annotation_headers(
                 field_header, obj.parameter_values)     # Parameter values
 
             top_header_type = 'PROCESS'
+
+        a_header_count = add_annotation_headers(
+            field_header, obj.comments, hideable)       # Comments
+        field_count += a_header_count
+
+        if hideable:
+            hideable_count += a_header_count
 
         add_top_header(top_header, top_header_type, field_count, hiding={
             STUDY_HIDEABLE_CLASS: hideable_count})
@@ -195,11 +203,14 @@ def add_element(
 
     # Process data
     elif type(obj) == Process:
-        if obj.protocol:
+        if obj.protocol and obj.protocol.name:
             add_cell(row, obj.protocol.name)            # Protocol
 
-        add_cell(row, obj.name)  # Name
+        else:
+            add_cell(row, obj.name)                     # Name
         add_annotations(row, obj.parameter_values)      # Parameter values
+
+    add_annotations(row, obj.comments)                  # Comments
 
 
 # Table building ---------------------------------------------------------------

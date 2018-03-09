@@ -145,3 +145,17 @@ def get_material_link(material):
         url += '#assay{}'.format(material.assay.pk)
 
     return url
+
+
+@register.simple_tag
+def get_assay_info_html(assay):
+    """Return assay info popup HTML"""
+    ret = '<div class="row omics-ss-assay-info-popup">\n'
+
+    for k, v in assay.comments.items():
+        if v['value']:
+            ret += '<dt class="col-md-4">{}</dt>\n'.format(k)
+            ret += '<dd class="col-md-8">{}</dd>\n'.format(v['value'])
+
+    ret += '</div>\n'
+    return ret

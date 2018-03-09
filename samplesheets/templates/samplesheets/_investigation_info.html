@@ -1,14 +1,20 @@
 <div class="card-body omics-card-body">
   <dl class="row omics-dl">
-    <dt class="col-md-2">Idenfitier</dt>
-    <dd class="col-md-10">{{ investigation.identifier }}</dd>
+    <dt class="col-md-3">Idenfitier</dt>
+    <dd class="col-md-9">{{ investigation.identifier }}</dd>
     {% if investigation.title != project.title %}
-      <dt class="col-md-2">Title</dt>
-      <dd class="col-md-10">{{ investigation.title }}</dd>
+      <dt class="col-md-3">Title</dt>
+      <dd class="col-md-9">{{ investigation.title }}</dd>
     {% endif %}
     {% if show_description and investigation.description != project.description %}
-      <dt class="col-md-2">Description</dt>
-      <dd class="col-md-10">{{ investigation.description }}</dd>
+      <dt class="col-md-3">Description</dt>
+      <dd class="col-md-9">{{ investigation.description }}</dd>
     {% endif %}
+    {% for comment_k, comment_v in investigation.comments.items %}
+      {% if comment_v.value %}
+        <dt class="col-md-3">{{ comment_k }}</dt>
+        <dd class="col-md-9">{{ comment_v.value }}</dd>
+      {% endif %}
+    {% endfor %}
   </dl>
 </div>
