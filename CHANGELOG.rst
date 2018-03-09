@@ -31,6 +31,7 @@ Changed
 - **General**
     - Modify subtitle and page content containers for all apps
     - Site-wide CSS tweaks
+    - Rename ``details_position`` to ``plugin_ordering`` in plugins (#90)
 - **Projectroles**
     - Search view improvements
 
