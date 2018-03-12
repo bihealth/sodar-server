@@ -249,10 +249,20 @@ class Study(BaseSampleSheet):
         """Return simple printable name for study"""
         return self.title if self.title else self.identifier
 
-    def get_sources(self):
+    def get_sources(self, search_arcs=None):
         """Return study sources"""
-        return GenericMaterial.objects.filter(
-            study=self, item_type='SOURCE').order_by('name')
+        if search_arcs:
+            ret = []
+
+            for a in search_arcs:
+                if a.tail_material and a.tail_material.item_type == 'SOURCE':
+                    ret.append(a.tail_material)
+
+            return sorted(set(ret), key=lambda x: x.name)
+
+        else:
+            return GenericMaterial.objects.filter(
+                study=self, item_type='SOURCE').order_by('name')
 
 
 # Protocol ---------------------------------------------------------------------
@@ -410,12 +420,12 @@ class Assay(BaseSampleSheet):
             item_type='SAMPLE',
             arcs_as_tail__assay=self).order_by('name').distinct()
 
-    def get_sources(self):
+    def get_sources(self, search_arcs):
         """Return sources of samples used in this assay as a list"""
         sources = []
 
         for sample in self.get_samples():
-            sources += sample.get_sources()
+            sources += sample.get_sources(search_arcs)
 
         return sorted(set(sources), key=lambda x: x.name)
 
@@ -574,11 +584,6 @@ class GenericMaterial(BaseSampleSheet):
                 'Field "characteristics" should not be included for a data '
                 'file')
 
-        '''
-        if self.item_type in ['DATA', 'MATERIAL'] and not self.material_type:
-            raise ValidationError('Type of material missing')
-        '''
-
         if self.item_type != 'SAMPLE' and self.factor_values:
             raise ValidationError('Factor values included for a non-sample')
 
@@ -594,31 +599,36 @@ class GenericMaterial(BaseSampleSheet):
 
         return None  # This should not happen and is caught during validation
 
-    def get_sources(self):
+    def get_sources(self, search_arcs):
         """Return sources of material as a list"""
         if self.item_type == 'SOURCE':
             return self
 
-        def find_sources(arcs, sources):
+        def find_sources(arcs, search_arcs):
+            sources = []
+
             for a in arcs:
                 if a.tail_material and a.tail_material.item_type == 'SOURCE':
                     sources.append(a.tail_material)
 
                 else:
-                    prev_arcs = a.go_back(include_study=True)
+                    prev_arcs = a.go_back(search_arcs, include_study=True)
 
                     if prev_arcs:
-                        sources += find_sources(prev_arcs, sources)
+                        sources += find_sources(prev_arcs, search_arcs)
 
             return set(sources)
 
-        material_arcs = Arc.objects.filter(study=self.study, tail_material=self)
-        sources = find_sources(material_arcs, [])
+        starting_arcs = []
 
+        for a in search_arcs:
+            if a.tail_material == self:
+                starting_arcs.append(a)
+
+        sources = find_sources(starting_arcs, search_arcs)
         return sorted(sources, key=lambda x: x.name)
 
-    # TODO: Add optional limitation for assay
-    def get_samples(self):
+    def get_samples(self, search_arcs):
         """Return samples derived from source"""
         if self.item_type != 'SOURCE':
             return None
@@ -629,15 +639,21 @@ class GenericMaterial(BaseSampleSheet):
                     samples.append(a.head_material)
 
                 else:
-                    next_arcs = a.go_forward()
+                    next_arcs = a.go_forward(search_arcs)
 
                     if next_arcs:
                         samples += find_samples(next_arcs, samples)
 
             return set(samples)
 
-        source_arcs = Arc.objects.filter(study=self.study, tail_material=self)
-        samples = find_samples(source_arcs, [])
+        starting_arcs = []
+
+        for a in search_arcs:
+            if a.tail_material == self:
+                starting_arcs.append(a)
+
+        # source_arcs = Arc.objects.filter(study=self.study, tail_material=self)
+        samples = find_samples(starting_arcs, [])
 
         return sorted(samples, key=lambda x: x.name)
 
@@ -764,7 +780,6 @@ class Process(BaseSampleSheet):
 # Arc --------------------------------------------------------------------------
 
 
-# TODO: Optimize or don't save as a db class at all (see issue #92)
 class Arc(BaseSampleSheet):
     """altamISA parser model compatible arc depicting a relationship between
     material and process"""
@@ -882,53 +897,54 @@ class Arc(BaseSampleSheet):
         elif self.head_material:
             return self.head_material
 
-    def go_back(self, include_study=False):
+    def go_back(self, search_arcs, include_study=False):
         """
-        Traverse backward in arc.
+        Traverse backward in arcs
+        :param search_arcs: QuerySet of arcs to search through
         :param include_study: Allow traversal from assay to study if True
-        :return: QuerySet of 0-N Arc objects
+        :return: List of 0-N Arc objects
         """
+
+        # Special case when reaching a sample
+        if (not include_study and
+                self.tail_material and
+                self.tail_material.item_type == 'SAMPLE' and
+                self.assay):
+            return []
+
         head_obj_arg = 'head_{}'.format(
             ARC_OBJ_SUFFIX_MAP[self.get_tail_obj().__class__.__name__])
+        ret = []
 
-        query_args = {
-            'study': self.study,
-            head_obj_arg: self.get_tail_obj()}
+        for a in search_arcs:
+            if (getattr(a, head_obj_arg) and
+                    getattr(a, head_obj_arg) == self.get_tail_obj()):
+                ret.append(a)
 
-        # Special cases when reaching a sample
-        if self.tail_material and self.tail_material.item_type == 'SAMPLE':
-            if self.assay and not include_study:
-                return Arc.objects.none()
+        return ret
 
-        elif self.assay:
-            query_args['assay'] = self.assay
-
-        # print('query_args={}'.format(query_args))   # DEBUG
-        return Arc.objects.filter(**query_args)
-
-    def go_forward(self, assay=None):
+    def go_forward(self, search_arcs, assay=None):
         """
-        Traverse forward in arc.
+        Traverse forward in arcs
+        :param search_arcs: QuerySet of arcs to search through
         :param assay: Allow traversal from study arc to specified assay if set
         :return: QuerySet of 0-N Arc objects
         """
+
+        # Special case when reaching a sample
+        if (not assay and
+                self.head_material and
+                self.head_material.item_type == 'SAMPLE' and
+                not self.assay):
+            return []
+
         tail_obj_arg = 'tail_{}'.format(
             ARC_OBJ_SUFFIX_MAP[self.get_head_obj().__class__.__name__])
+        ret = []
 
-        query_args = {
-            'study': self.study,
-            tail_obj_arg: self.get_head_obj()}
+        for arc in search_arcs:
+            if (getattr(arc, tail_obj_arg) and
+                    getattr(arc, tail_obj_arg) == self.get_head_obj()):
+                ret.append(arc)
 
-        # Special cases when reaching a sample
-        if self.head_material and self.head_material.item_type == 'SAMPLE':
-            if not self.assay and not assay:
-                return Arc.objects.none()
-
-            elif assay:
-                query_args['assay'] = assay
-
-        elif self.assay:
-            query_args['assay'] = self.assay
-
-        # print('query_args={}'.format(query_args))   # DEBUG
-        return Arc.objects.filter(**query_args)
+        return ret

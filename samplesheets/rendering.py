@@ -216,9 +216,6 @@ def add_element(
 # Table building ---------------------------------------------------------------
 
 
-# TODO: Repetition between get_study_table() and get_assay_table(), unify?
-
-
 def get_study_table(study):
     """
     Return data grid for an HTML study table
@@ -231,10 +228,13 @@ def get_study_table(study):
     field_header = []
     first_row = True
 
+    # Prefetch arcs
+    study_arcs = list(study.arcs.all())
+
     ##########
     # Sources
     ##########
-    for source in study.get_sources():
+    for source in study.get_sources(study_arcs):
         row = []
         source_section = []
 
@@ -245,7 +245,7 @@ def get_study_table(study):
         ##########
         # Samples
         ##########
-        samples = source.get_samples()
+        samples = source.get_samples(study_arcs)
 
         if samples:
             first_sample_in_source = True
@@ -294,14 +294,19 @@ def get_assay_table(assay):
     ##########
     # Sources
     ##########
-    sources = assay.get_sources()
+
+    # Prefetch arcs
+    assay_arcs = list(assay.arcs.all())
+    study_arcs = list(assay.study.arcs.all())
+
+    sources = assay.get_sources(study_arcs)
     samples = assay.get_samples()
 
     # Store sample sources
     sample_sources = {}
 
     for sample in samples:
-        sample_sources[sample.unique_name] = sample.get_sources()
+        sample_sources[sample.unique_name] = sample.get_sources(study_arcs)
 
     for source in sources:
         row = []
@@ -317,7 +322,6 @@ def get_assay_table(assay):
         ##########
         first_sample_in_source = True
 
-        # TODO: Optimize this: fixes multi-assay rendering but is VERY slow
         for sample in [
                 s for s in samples if source in sample_sources[s.unique_name]]:
             sample_section = []
@@ -339,56 +343,63 @@ def get_assay_table(assay):
             # Assay arcs
             #############
 
-            # Get sequences
-            arcs = assay.get_arcs_by_sample(sample)
+            # Get arcs
+            # arcs = assay.get_arcs_by_sample(sample)
             first_arc_in_sample = True
 
             # Iterate through arcs
-            for arc in arcs:
-                col_obj = arc.get_head_obj()
+            for arc in assay_arcs:
+                if arc.tail_material == sample:
 
-                if not first_arc_in_sample:
-                    row += source_section
-                    # add_repetition(
-                    #     row, len(source_section), study_data_in_assay=True)
-                    row += sample_section
-                    # add_repetition(
-                    #     row, len(sample_section), study_data_in_assay=True)
+                    col_obj = arc.get_head_obj()
 
-                first_arc_in_sample = False
+                    if not first_arc_in_sample:
+                        row += source_section
+                        # add_repetition(
+                        #     row, len(source_section),
+                        #     study_data_in_assay=True)
+                        row += sample_section
+                        # add_repetition(
+                        #     row, len(sample_section),
+                        #     study_data_in_assay=True)
 
-                while col_obj:
-                    ###########
-                    # Material
-                    ###########
-                    if type(col_obj) == GenericMaterial:
-                        add_element(
-                            row, top_header, field_header, col_obj, first_row)
+                    first_arc_in_sample = False
 
-                    ##########
-                    # Process
-                    ##########
-                    elif type(col_obj) == Process:
-                        add_element(
-                            row, top_header, field_header, col_obj, first_row)
+                    while col_obj:
+                        ###########
+                        # Material
+                        ###########
+                        if type(col_obj) == GenericMaterial:
+                            add_element(
+                                row, top_header, field_header, col_obj,
+                                first_row)
 
-                    next_arcs = arc.go_forward()
+                        ##########
+                        # Process
+                        ##########
+                        elif type(col_obj) == Process:
+                            add_element(
+                                row, top_header, field_header, col_obj,
+                                first_row)
 
-                    if next_arcs:
-                        # TODO: Support splitting (copy preceding row)
-                        arc = arc.go_forward()[0]
-                        col_obj = arc.get_head_obj()
+                        # Go forward
+                        next_arcs = arc.go_forward(assay_arcs)
 
-                    else:
-                        col_obj = None
+                        if next_arcs:
+                            # TODO: Support splitting (copy preceding row)
+                            # Go forward
+                            # arc = arc.go_forward(arcs)[0]
+                            arc = next_arcs[0]
+                            col_obj = arc.get_head_obj()
 
-                # Add row to table
-                # print('Row: {}'.format(row))    # DEBUG
-                table_data.append(row)
-                row = []
-                first_row = False
+                        else:
+                            col_obj = None
 
-            # row = []    # Clear out row even if we could not find arcs
+                    # Add row to table
+                    # print('Row: {}'.format(row))    # DEBUG
+                    table_data.append(row)
+                    row = []
+                    first_row = False
 
     return {
         'top_header': top_header,
