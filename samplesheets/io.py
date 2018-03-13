@@ -3,6 +3,7 @@
 from altamisa.isatab import InvestigationReader, StudyReader, AssayReader
 import io
 import logging
+import time
 
 from django.db import connection
 
@@ -54,6 +55,7 @@ def import_isa(isa_zip, project, async=False):
     :param async: Async HACK enabled (boolean)
     :return: Django Investigation object
     """
+    t_start = time.time()
 
     # ASYNC HACK, to be replaced
     if async:
@@ -406,8 +408,8 @@ def import_isa(isa_zip, project, async=False):
 
         study_count += 1
 
-    logger.info('Import of investigation "{}" OK'.format(
-        db_investigation.title))
+    logger.info('Import of investigation "{}" OK ({:.1f}s)'.format(
+        db_investigation.title, time.time() - t_start))
 
     # Update investigation status
     db_investigation.status = 'RENDERING'
@@ -420,9 +422,7 @@ def import_isa(isa_zip, project, async=False):
     db_investigation.status = 'OK'
     db_investigation.save()
 
-    logger.info('Investigation "{}": All OK'.format(
-        db_investigation.title))
-
+    logger.info('Investigation "{}": All OK'.format(db_investigation.title))
     return db_investigation
 
 

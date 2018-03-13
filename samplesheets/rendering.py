@@ -1,7 +1,7 @@
 """Rendering helpers for samplesheets"""
 
 import logging
-
+import time
 
 from .models import Process, GenericMaterial
 
@@ -420,11 +420,12 @@ def render_study(study):
     Render study table
     :param study: Study object
     """
+    t_start = time.time()
     logger.info('Rendering study "{}" (pk={})..'.format(
         study.get_name(), study.pk))
     study.render_table = get_study_table(study)
     study.save()
-    logger.info('Rendering study OK')
+    logger.info('Rendering study OK ({:.1f}s)'.format(time.time() - t_start))
 
 
 def render_assay(assay):
@@ -432,11 +433,12 @@ def render_assay(assay):
     Render assay table
     :param assay: Assay object
     """
+    t_start = time.time()
     logger.info('Rendering assay "{}" (pk={})..'.format(
         assay.get_name(), assay.pk))
     assay.render_table = get_assay_table(assay)
     assay.save()
-    logger.info('Rendering assay OK')
+    logger.info('Rendering assay OK ({:.1f}s)'.format(time.time() - t_start))
 
 
 def render_investigation(investigation):
@@ -444,11 +446,18 @@ def render_investigation(investigation):
     Render all study and assay tables for an investigation
     :param investigation: Investigation object
     """
+    t_start = time.time()
+    logger.info('Rendering investigation "{}" (pk={}, project={})'.format(
+        investigation.title, investigation.pk, investigation.project.pk))
+
     for study in investigation.studies.all():
         render_study(study)
 
         for assay in study.assays.all():
             render_assay(assay)
+
+    logger.info('Rendering investigation OK ({:.1f}s)'.format(
+        time.time() - t_start))
 
 
 # HTML rendering ---------------------------------------------------------------

@@ -37,8 +37,6 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         if options['assay']:
-            print('Rendering assay (pk={})'.format(options['assay']))
-
             try:
                 assay = Assay.objects.get(pk=options['assay'])
                 render_assay(assay)
@@ -47,8 +45,6 @@ class Command(BaseCommand):
                 print('ERROR: Assay not found')
 
         elif options['study']:
-            print('Rendering study (pk={})'.format(options['study']))
-
             try:
                 study = Study.objects.get(pk=options['study'])
                 render_study(study)
@@ -57,9 +53,6 @@ class Command(BaseCommand):
                 print('ERROR: Study not found')
 
         elif options['project']:
-            print('Rendering all tables for project (pk={})'.format(
-                options['project']))
-
             try:
                 investigation = Investigation.objects.get(
                     project__pk=options['project'])
