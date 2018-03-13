@@ -36,6 +36,8 @@ pytz==2017.3
 django-redis==4.8.0
 redis>=2.10.5
 
+django-cprofile-middleware==1.0
+
 
 # Project imports below
 
