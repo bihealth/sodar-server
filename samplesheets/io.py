@@ -123,11 +123,12 @@ def import_isa(isa_zip, project, async=False):
 
         return ret
 
-    def import_materials(materials, db_parent):
+    def import_materials(materials, db_parent, obj_lookup):
         """
         Create material objects in Django database.
         :param materials: altamISA materials dict
         :param db_parent: Parent Django db object (Assay or Study)
+        :param obj_lookup: Dictionary for in-memory lookup
         """
         for m in materials.values():
             item_type = MATERIAL_TYPE_MAP[m.type]
@@ -174,14 +175,16 @@ def import_isa(isa_zip, project, async=False):
 
             material_obj = GenericMaterial(**values)
             material_obj.save()
+            obj_lookup[material_obj.unique_name] = material_obj
             logger.debug('Added material "{}" ({}) to "{}"'.format(
                 material_obj.unique_name, item_type, db_parent.get_name()))
 
-    def import_processes(processes, db_parent):
+    def import_processes(processes, db_parent, obj_lookup):
         """
         Create processes of a process sequence in the database.
         :param processes: Process sequence of a study or an assay in altamISA
         :param db_parent: Parent study or assay
+        :param obj_lookup: Dictionary for in-memory lookup
         """
         study = db_parent if type(db_parent) == Study else db_parent.study
 
@@ -224,14 +227,16 @@ def import_isa(isa_zip, project, async=False):
 
             process = Process(**values)
             process.save()
+            obj_lookup[process.unique_name] = process
             logger.debug('Added process "{}" to "{}"'.format(
                 process.unique_name, db_parent.get_name()))
 
-    def import_arcs(arcs, db_parent):
+    def import_arcs(arcs, db_parent, obj_lookup):
         """
         Create process/material arcs according to the altamISA structure
         :param arcs: Tuple
         :param db_parent: Study or Assay object
+        :param obj_lookup: Lookup dict for materials and processes
         """
         def find_by_name(unique_name):
             """
@@ -240,29 +245,13 @@ def import_isa(isa_zip, project, async=False):
             :return: GenericMaterial or Process object
             :raise: ValueError if not found
             """
-            query_params = {
-                'unique_name': unique_name}
-
-            # Recognize samples by name
-            if unique_name.find(SAMPLE_SEARCH_SUBSTR) != -1:
-                query_params['study'] = db_parent if \
-                    type(db_parent) == Study else db_parent.study
-
-            else:
-                parent_query_arg = db_parent.__class__.__name__.lower()
-                query_params[parent_query_arg] = db_parent
-
             try:
-                return GenericMaterial.objects.get(**query_params)
+                return obj_lookup[unique_name]
 
-            except GenericMaterial.DoesNotExist:
-                try:
-                    return Process.objects.get(**query_params)
-
-                except Process.DoesNotExist:
-                    raise ValueError(
-                        'No GenericMaterial or Process found with '
-                        'unique_name={}'.format(unique_name))
+            except KeyError:
+                raise ValueError(
+                    'No GenericMaterial or Process found with '
+                    'unique_name={}'.format(unique_name))
 
         for a in arcs:
             try:
@@ -313,6 +302,7 @@ def import_isa(isa_zip, project, async=False):
 
     # Create studies
     for s_i in isa_inv.studies:
+        obj_lookup = {}  # Lookup dict for study materials and processes
         study_id = 'p{}-s{}'.format(project.pk, study_count)
 
         # Parse study file
@@ -356,14 +346,13 @@ def import_isa(isa_zip, project, async=False):
                 protocol.name, db_study.title))
 
         # Create study materials
-        import_materials(
-            s.materials, db_parent=db_study)
+        import_materials(s.materials, db_study, obj_lookup)
 
         # Create study processes
-        import_processes(s.processes, db_parent=db_study)
+        import_processes(s.processes, db_study, obj_lookup)
 
         # Create study arcs
-        import_arcs(s.arcs, db_parent=db_study)
+        import_arcs(s.arcs, db_study, obj_lookup)
 
         assay_count = 0
 
@@ -397,13 +386,13 @@ def import_isa(isa_zip, project, async=False):
                 k: a.materials[k] for k in a.materials if
                 MATERIAL_TYPE_MAP[a.materials[k].type] not in [
                     'SOURCE', 'SAMPLE']}
-            import_materials(assay_materials, db_parent=db_assay)
+            import_materials(assay_materials, db_assay, obj_lookup)
 
             # Create assay processes
-            import_processes(a.processes, db_parent=db_assay)
+            import_processes(a.processes, db_assay, obj_lookup)
 
             # Create assay arcs
-            import_arcs(a.arcs, db_parent=db_assay)
+            import_arcs(a.arcs, db_assay, obj_lookup)
             assay_count += 1
 
         study_count += 1
