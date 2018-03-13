@@ -179,12 +179,13 @@ def import_isa(isa_zip, project, async=False):
             logger.debug('Added material "{}" ({}) to "{}"'.format(
                 material_obj.unique_name, item_type, db_parent.get_name()))
 
-    def import_processes(processes, db_parent, obj_lookup):
+    def import_processes(processes, db_parent, obj_lookup, protocol_lookup):
         """
         Create processes of a process sequence in the database.
         :param processes: Process sequence of a study or an assay in altamISA
         :param db_parent: Parent study or assay
-        :param obj_lookup: Dictionary for in-memory lookup
+        :param obj_lookup: Dictionary for in-memory material/process lookup
+        :param protocol_lookup: Dictionary for in-memory protocol lookup
         """
         study = db_parent if type(db_parent) == Study else db_parent.study
 
@@ -194,11 +195,9 @@ def import_isa(isa_zip, project, async=False):
 
             if p.protocol_ref != 'UNKNOWN':
                 try:
-                    protocol = Protocol.objects.get(
-                        study=study,
-                        name=p.protocol_ref)
+                    protocol = protocol_lookup[p.protocol_ref]
 
-                except Protocol.DoesNotExist:
+                except KeyError:
                     logger.warning(
                         'No protocol found for process "{}" '
                         'with ref "{}"'.format(
@@ -302,6 +301,7 @@ def import_isa(isa_zip, project, async=False):
 
     # Create studies
     for s_i in isa_inv.studies:
+        protocol_lookup = {}    # Lookup dict for study protocols
         obj_lookup = {}  # Lookup dict for study materials and processes
         study_id = 'p{}-s{}'.format(project.pk, study_count)
 
@@ -342,6 +342,7 @@ def import_isa(isa_zip, project, async=False):
 
             protocol = Protocol(**values)
             protocol.save()
+            protocol_lookup[protocol.name] = protocol
             logger.debug('Added protocol "{}" in study "{}"'.format(
                 protocol.name, db_study.title))
 
@@ -349,7 +350,7 @@ def import_isa(isa_zip, project, async=False):
         import_materials(s.materials, db_study, obj_lookup)
 
         # Create study processes
-        import_processes(s.processes, db_study, obj_lookup)
+        import_processes(s.processes, db_study, obj_lookup, protocol_lookup)
 
         # Create study arcs
         import_arcs(s.arcs, db_study, obj_lookup)
@@ -389,7 +390,7 @@ def import_isa(isa_zip, project, async=False):
             import_materials(assay_materials, db_assay, obj_lookup)
 
             # Create assay processes
-            import_processes(a.processes, db_assay, obj_lookup)
+            import_processes(a.processes, db_assay, obj_lookup, protocol_lookup)
 
             # Create assay arcs
             import_arcs(a.arcs, db_assay, obj_lookup)
