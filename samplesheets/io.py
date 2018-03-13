@@ -130,6 +130,8 @@ def import_isa(isa_zip, project, async=False):
         :param db_parent: Parent Django db object (Assay or Study)
         :param obj_lookup: Dictionary for in-memory lookup
         """
+        material_vals = []
+
         for m in materials.values():
             item_type = MATERIAL_TYPE_MAP[m.type]
 
@@ -137,13 +139,8 @@ def import_isa(isa_zip, project, async=False):
             values = {
                 'item_type': item_type}
 
-            # Name
-            if hasattr(m, 'name'):
-                values['name'] = m.name
-
-            # Unique name
-            if hasattr(m, 'unique_name'):
-                values['unique_name'] = m.unique_name
+            values['name'] = m.name
+            values['unique_name'] = m.unique_name
 
             # Parent
             if type(db_parent) == Study:
@@ -162,22 +159,22 @@ def import_isa(isa_zip, project, async=False):
             elif m.extract_label:
                 values['material_type'] = m.extract_label
 
-            # Characteristics
             if m.characteristics:
                 values['characteristics'] = get_ontology_vals(m.characteristics)
-
-            # Factor values
             if m.factor_values:
                 values['factor_values'] = get_ontology_vals(m.factor_values)
-
-            # Comments
             values['comments'] = get_ontology_vals(m.comments)
 
-            material_obj = GenericMaterial(**values)
-            material_obj.save()
-            obj_lookup[material_obj.unique_name] = material_obj
-            logger.debug('Added material "{}" ({}) to "{}"'.format(
-                material_obj.unique_name, item_type, db_parent.get_name()))
+            material_vals.append(values)
+
+        materials = GenericMaterial.objects.bulk_create([
+            GenericMaterial(**v) for v in material_vals])
+
+        for material in materials:
+            obj_lookup[material.unique_name] = material
+
+        logger.debug('Added {} materials to "{}"'.format(
+            len(materials), db_parent.get_name()))
 
     def import_processes(processes, db_parent, obj_lookup, protocol_lookup):
         """
@@ -188,6 +185,7 @@ def import_isa(isa_zip, project, async=False):
         :param protocol_lookup: Dictionary for in-memory protocol lookup
         """
         study = db_parent if type(db_parent) == Study else db_parent.study
+        process_vals = []
 
         for p in processes.values():
             # Link protocol
@@ -224,11 +222,16 @@ def import_isa(isa_zip, project, async=False):
                 values['parameter_values'] = get_ontology_vals(
                     p.parameter_values)
 
-            process = Process(**values)
-            process.save()
+            process_vals.append(values)
+
+        processes = Process.objects.bulk_create([
+            Process(**v) for v in process_vals])
+
+        for process in processes:
             obj_lookup[process.unique_name] = process
-            logger.debug('Added process "{}" to "{}"'.format(
-                process.unique_name, db_parent.get_name()))
+
+        logger.debug('Added {} processes to "{}"'.format(
+            len(processes), db_parent.get_name()))
 
     def import_arcs(arcs, db_parent, obj_lookup):
         """
@@ -252,6 +255,8 @@ def import_isa(isa_zip, project, async=False):
                     'No GenericMaterial or Process found with '
                     'unique_name={}'.format(unique_name))
 
+        arc_vals = []
+
         for a in arcs:
             try:
                 tail_obj = find_by_name(a.tail)
@@ -265,19 +270,16 @@ def import_isa(isa_zip, project, async=False):
             head_obj_arg = 'head_{}'.format(
                 ARC_OBJ_SUFFIX_MAP[head_obj.__class__.__name__])
 
-            values = {
+            arc_vals.append({
                 'assay': db_parent if type(db_parent) == Assay else None,
                 'study': db_parent if
                 type(db_parent) == Study else db_parent.study,
                 tail_obj_arg: tail_obj,
-                head_obj_arg: head_obj}
+                head_obj_arg: head_obj})
 
-            arc = Arc(**values)
-            arc.save()
-            logger.debug('Added arc "{} -> {}" to "{}"'.format(
-                tail_obj.unique_name,
-                head_obj.unique_name,
-                db_parent.get_name()))
+        arcs = Arc.objects.bulk_create([Arc(**v) for v in arc_vals])
+        logger.debug('Added {} arcs to "{}"'.format(
+            len(arcs), db_parent.get_name()))
 
     #########
     # Import
@@ -328,8 +330,10 @@ def import_isa(isa_zip, project, async=False):
         logger.debug('Added study "{}"'.format(db_study.title))
 
         # Create protocols
+        protocol_vals = []
+
         for p_i in s_i.protocols.values():
-            values = {
+            protocol_vals.append({
                 'name': p_i.name,
                 'study': db_study,
                 'protocol_type': get_multitype_val(p_i.type),
@@ -338,13 +342,16 @@ def import_isa(isa_zip, project, async=False):
                 'version': p_i.version,
                 'parameters': get_tuple_list(p_i.parameters),
                 'components': get_tuple_list(p_i.components),
-                'comments': get_ontology_vals(p_i.comments)}
+                'comments': get_ontology_vals(p_i.comments)})
 
-            protocol = Protocol(**values)
-            protocol.save()
+        protocols = Protocol.objects.bulk_create([
+            Protocol(**v) for v in protocol_vals])
+
+        for protocol in protocols:
             protocol_lookup[protocol.name] = protocol
-            logger.debug('Added protocol "{}" in study "{}"'.format(
-                protocol.name, db_study.title))
+
+        logger.debug('Added {} protocols in study "{}"'.format(
+            len(protocols), db_study.title))
 
         # Create study materials
         import_materials(s.materials, db_study, obj_lookup)
