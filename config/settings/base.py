@@ -384,14 +384,14 @@ def set_logging(debug):
         },
         'handlers': {
             'console': {
-                'level': 'DEBUG' if debug else 'ERROR',
+                'level': 'DEBUG' if debug else 'INFO',
                 'class': 'logging.StreamHandler',
                 'formatter': 'simple'
             }
         },
         'loggers': {
             'samplesheets': {
-                'level': 'DEBUG' if debug else 'ERROR',
+                'level': 'DEBUG' if debug else 'INFO',
                 'handlers': ['console', ],
                 'propagate': False,
             },
