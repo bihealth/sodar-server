@@ -384,7 +384,7 @@ def set_logging(debug):
         },
         'handlers': {
             'console': {
-                'level': 'DEBUG' if debug else 'INFO',
+                'level': 'DEBUG',
                 'class': 'logging.StreamHandler',
                 'formatter': 'simple'
             }
@@ -397,6 +397,7 @@ def set_logging(debug):
             },
         },
     }
+
 
 LOGGING = set_logging(DEBUG)
 

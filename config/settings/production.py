@@ -84,17 +84,6 @@ CACHES = {
 
 LOGGING = set_logging(DEBUG)
 
-LOGGING['formatters']['verbose'] = {
-    'format': '%(levelname)s %(asctime)s %(module)s '
-              '%(process)d %(thread)d %(message)s'
-}
-
-LOGGING['handlers']['console'] = {
-    'level': 'DEBUG',
-    'class': 'logging.StreamHandler',
-    'formatter': 'verbose'
-}
-
 LOGGING['loggers']['django.db.backends'] = {
     'level': 'ERROR',
     'handlers': ['console', ],
