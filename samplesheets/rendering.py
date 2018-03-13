@@ -1,5 +1,7 @@
 """Rendering helpers for samplesheets"""
 
+import logging
+
 
 from .models import Process, GenericMaterial
 
@@ -19,6 +21,9 @@ HEADER_LEGEND = {
     'DATA': 'Data File'}
 
 STUDY_HIDEABLE_CLASS = 'omics-ss-hideable-study'
+
+
+logger = logging.getLogger(__name__)
 
 
 # General/helper functions -----------------------------------------------------
@@ -405,6 +410,45 @@ def get_assay_table(assay):
         'top_header': top_header,
         'field_header': field_header,
         'table_data': table_data}
+
+
+# Rendering API ----------------------------------------------------------------
+
+
+def render_study(study):
+    """
+    Render study table
+    :param study: Study object
+    """
+    logger.info('Rendering study "{}" (pk={})..'.format(
+        study.get_name(), study.pk))
+    study.render_table = get_study_table(study)
+    study.save()
+    logger.info('Rendering study OK')
+
+
+def render_assay(assay):
+    """
+    Render assay table
+    :param assay: Assay object
+    """
+    logger.info('Rendering assay "{}" (pk={})..'.format(
+        assay.get_name(), assay.pk))
+    assay.render_table = get_assay_table(assay)
+    assay.save()
+    logger.info('Rendering assay OK')
+
+
+def render_investigation(investigation):
+    """
+    Render all study and assay tables for an investigation
+    :param investigation: Investigation object
+    """
+    for study in investigation.studies.all():
+        render_study(study)
+
+        for assay in study.assays.all():
+            render_assay(assay)
 
 
 # HTML rendering ---------------------------------------------------------------

@@ -1,4 +1,3 @@
-import json
 import multiprocessing
 import time
 
@@ -9,7 +8,7 @@ from django.db.models import Q
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import redirect
 from django.urls import reverse
-from django.views.generic import TemplateView, FormView, View
+from django.views.generic import TemplateView, FormView
 
 
 # Projectroles dependency
@@ -167,7 +166,7 @@ class SampleSheetImportView(
 class SampleSheetDeleteView(
         LoginRequiredMixin, LoggedInPermissionMixin, ProjectContextMixin,
         ProjectPermissionObjectMixin, TemplateView):
-    """SampleSheet deletion view"""
+    """Sample sheet deletion view"""
     permission_required = 'samplesheets.delete_sheet'
     template_name = 'samplesheets/samplesheet_confirm_delete.html'
 

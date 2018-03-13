@@ -9,7 +9,7 @@ from django.db import connection
 from .models import Investigation, Study, Assay, GenericMaterial, Protocol, \
     Process, Arc, ARC_OBJ_SUFFIX_MAP
 
-from .rendering import get_study_table, get_assay_table
+from .rendering import render_investigation
 
 
 # Local constants
@@ -413,20 +413,8 @@ def import_isa(isa_zip, project, async=False):
     db_investigation.status = 'RENDERING'
     db_investigation.save()
 
-    for study in db_investigation.studies.all():
-        logger.info('Rendering table for study "{}"..'.format(study.get_name()))
-        study.render_table = get_study_table(study)
-        study.save()
-        logger.info(
-            'Rendering table for study "{}" OK'.format(study.get_name()))
-
-        for assay in study.assays.all():
-            logger.info('Rendering table for assay "{}"..'.format(
-                assay.get_name()))
-            assay.render_table = get_assay_table(assay)
-            assay.save()
-            logger.info('Rendering table for assay "{}" OK'.format(
-                assay.get_name()))
+    # Render tables
+    render_investigation(db_investigation)
 
     # Update investigation status
     db_investigation.status = 'OK'
