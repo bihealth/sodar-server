@@ -155,9 +155,8 @@ def import_isa(isa_zip, project, async=False):
             if item_type in ['DATA', 'MATERIAL'] or m.material_type:
                 values['material_type'] = m.type
 
-            # TODO: TBD: Separate field for label?
             elif m.extract_label:
-                values['material_type'] = m.extract_label
+                values['extract_label'] = m.extract_label
 
             if m.characteristics:
                 values['characteristics'] = get_ontology_vals(m.characteristics)
@@ -169,9 +168,7 @@ def import_isa(isa_zip, project, async=False):
 
         materials = GenericMaterial.objects.bulk_create([
             GenericMaterial(**v) for v in material_vals])
-
-        for material in materials:
-            obj_lookup[material.unique_name] = material
+        obj_lookup.update({m.unique_name: m for m in materials})
 
         logger.debug('Added {} materials to "{}"'.format(
             len(materials), db_parent.get_name()))
@@ -226,9 +223,7 @@ def import_isa(isa_zip, project, async=False):
 
         processes = Process.objects.bulk_create([
             Process(**v) for v in process_vals])
-
-        for process in processes:
-            obj_lookup[process.unique_name] = process
+        obj_lookup.update({p.unique_name: p for p in processes})
 
         logger.debug('Added {} processes to "{}"'.format(
             len(processes), db_parent.get_name()))
@@ -303,7 +298,6 @@ def import_isa(isa_zip, project, async=False):
 
     # Create studies
     for s_i in isa_inv.studies:
-        protocol_lookup = {}    # Lookup dict for study protocols
         obj_lookup = {}  # Lookup dict for study materials and processes
         study_id = 'p{}-s{}'.format(project.pk, study_count)
 
@@ -320,8 +314,8 @@ def import_isa(isa_zip, project, async=False):
             'title': s_i.info.title,
             'study_design': s_i.designs,        # TODO
             'factors': s_i.factors,             # TODO
-            'characteristic_cat': [],           # TODO
-            'unit_cat': [],                     # TODO
+            'characteristic_cat': [],           # TODO: TBD: Implement or omit?
+            'unit_cat': [],                     # TODO: TBD: Implement or omit?
             'comments': get_ontology_vals(s_i.info.comments),
             'header': get_header(s.header)}
 
@@ -346,9 +340,7 @@ def import_isa(isa_zip, project, async=False):
 
         protocols = Protocol.objects.bulk_create([
             Protocol(**v) for v in protocol_vals])
-
-        for protocol in protocols:
-            protocol_lookup[protocol.name] = protocol
+        protocol_lookup = {p.name: p for p in protocols}  # Per study, no update
 
         logger.debug('Added {} protocols in study "{}"'.format(
             len(protocols), db_study.title))

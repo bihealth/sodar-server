@@ -58,12 +58,11 @@ TEMPLATES[0]['OPTIONS']['loaders'] = [
     ], ],
 ]
 
-
 # Logging
 # ------------------------------------------------------------------------------
 
 LOGGING = set_logging(DEBUG)
-
+LOGGING['handlers']['console']['level'] = 'ERROR'
 
 # Local App Settings
 # ------------------------------------------------------------------------------

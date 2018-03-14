@@ -1,4 +1,4 @@
-"""Tests for utils in the samplesheets app"""
+"""Tests for samplesheets.io"""
 
 import os
 from zipfile import ZipFile
@@ -13,7 +13,7 @@ from ..models import Investigation
 from ..io import import_isa
 
 
-class TestSampleSheetUtils(TestCase, ProjectMixin, RoleAssignmentMixin):
+class TestSampleSheetIO(TestCase, ProjectMixin, RoleAssignmentMixin):
     def setUp(self):
         # Make owner user
         self.user_owner = self.make_user('owner')

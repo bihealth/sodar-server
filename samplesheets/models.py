@@ -532,6 +532,14 @@ class GenericMaterial(BaseSampleSheet):
         default=list,
         help_text='Factor values for a sample')
 
+    #: Extract label
+    extract_label = models.CharField(
+        max_length=DEFAULT_LENGTH,
+        unique=False,
+        blank=True,
+        null=True,
+        help_text='Extract label')
+
     # Set manager for custom queries
     objects = GenericMaterialManager()
 
