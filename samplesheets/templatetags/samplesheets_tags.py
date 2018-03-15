@@ -1,22 +1,11 @@
 from django import template
 from django.urls import reverse
 
-from ..models import Investigation, Assay, Study, GenericMaterial, \
+from ..models import Investigation, GenericMaterial, \
     GENERIC_MATERIAL_TYPES
-from ..rendering import get_study_table as r_get_study_table, \
-    get_assay_table as r_get_assay_table, \
-    render_cell as r_render_cell, \
-    render_top_header as r_render_top_header, \
-    render_header as r_render_header, \
-    render_links_cell as r_render_links_cell, \
-    render_links_header as r_render_links_header, \
-    render_links_top_header as r_render_links_top_header
-
+from ..rendering import SampleSheetHTMLRenderer as Renderer
 
 register = template.Library()
-
-
-# TODO: Organize similar to ..rendering
 
 
 @register.simple_tag
@@ -30,51 +19,39 @@ def get_investigation(project):
 
 
 @register.simple_tag
-def get_study_table(study):
-    """Return data grid for an HTML study table"""
-    return r_get_study_table(study)
-
-
-@register.simple_tag
-def get_assay_table(assay):
-    """Return data grid for an HTML assay table"""
-    return r_get_assay_table(assay)
-
-
-@register.simple_tag
 def render_cell(cell):
     """Return assay table cell as HTML"""
-    return r_render_cell(cell)
+    return Renderer.render_cell(cell)
 
 
 @register.simple_tag
 def render_links_cell(row):
     """Render iRODS/IGV links cell"""
-    return r_render_links_cell(row)
+    return Renderer.render_links_cell()
 
 
 @register.simple_tag
 def render_top_header(section):
     """Render section of top header"""
-    return r_render_top_header(section)
+    return Renderer.render_top_header(section)
 
 
 @register.simple_tag
 def render_links_top_header():
     """Render top links header"""
-    return r_render_links_top_header()
+    return Renderer.render_links_top_header()
 
 
 @register.simple_tag
 def render_header(header):
     """Render section of top header"""
-    return r_render_header(header)
+    return Renderer.render_header(header)
 
 
 @register.simple_tag
 def render_links_header():
     """Render links column header"""
-    return r_render_links_header()
+    return Renderer.render_links_header()
 
 
 @register.simple_tag

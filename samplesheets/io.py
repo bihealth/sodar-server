@@ -9,8 +9,7 @@ from django.db import connection
 
 from .models import Investigation, Study, Assay, GenericMaterial, Protocol, \
     Process, Arc, ARC_OBJ_SUFFIX_MAP
-
-from .rendering import render_investigation
+from .rendering import SampleSheetTableBuilder
 
 
 # Local constants
@@ -82,6 +81,14 @@ def import_isa(isa_zip, project, async=False):
     # Helper functions
     ###################
 
+    def get_study(o):
+        """Return study for a potentially unknown type of object"""
+        if type(o) == Study:
+            return o
+
+        elif hasattr(o, 'study'):
+            return o.study
+
     def get_multitype_val(o):
         """Get value where the member type can vary"""
         return o._asdict() if isinstance(o, tuple) else o
@@ -131,23 +138,19 @@ def import_isa(isa_zip, project, async=False):
         :param obj_lookup: Dictionary for in-memory lookup
         """
         material_vals = []
+        study = get_study(db_parent)
 
         for m in materials.values():
             item_type = MATERIAL_TYPE_MAP[m.type]
 
             # Common values
             values = {
-                'item_type': item_type}
+                'item_type': item_type,
+                'name': m.name,
+                'unique_name': m.unique_name,
+                'study': study}
 
-            values['name'] = m.name
-            values['unique_name'] = m.unique_name
-
-            # Parent
-            if type(db_parent) == Study:
-                values['study'] = db_parent
-
-            elif type(db_parent) == Assay:
-                values['study'] = db_parent.study
+            if type(db_parent) == Assay:
                 values['assay'] = db_parent
 
             # Type
@@ -181,7 +184,7 @@ def import_isa(isa_zip, project, async=False):
         :param obj_lookup: Dictionary for in-memory material/process lookup
         :param protocol_lookup: Dictionary for in-memory protocol lookup
         """
-        study = db_parent if type(db_parent) == Study else db_parent.study
+        study = get_study(db_parent)
         process_vals = []
 
         for p in processes.values():
@@ -198,16 +201,12 @@ def import_isa(isa_zip, project, async=False):
                         'with ref "{}"'.format(
                             p.unique_name, p.protocol_ref))
 
-            else:
-                logger.debug(
-                    'Unknown protocol for process "{}"'.format(p.unique_name))
-
             values = {
                 'name': p.name,
                 'unique_name': p.unique_name,
                 'protocol': protocol,
                 'assay': db_parent if type(db_parent) == Assay else None,
-                'study': db_parent if type(db_parent) == Study else None,
+                'study': study,
                 'performer': p.performer,
                 'perform_date': p.date,
                 'array_design_ref': p.array_design_ref,
@@ -357,7 +356,7 @@ def import_isa(isa_zip, project, async=False):
         assay_count = 0
 
         for a_i in s_i.assays.values():
-            assay_id = 'a{}'.format(project.pk, study_count, assay_count)
+            assay_id = 'a{}'.format(assay_count)
 
             a = AssayReader.from_stream(
                 isa_inv,
@@ -404,8 +403,9 @@ def import_isa(isa_zip, project, async=False):
     db_investigation.status = 'RENDERING'
     db_investigation.save()
 
-    # Render tables
-    render_investigation(db_investigation)
+    # Build pre-rendered tables
+    tb = SampleSheetTableBuilder()
+    tb.build_investigation(db_investigation)
 
     # Update investigation status
     db_investigation.status = 'OK'

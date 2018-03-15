@@ -1,9 +1,9 @@
-"""Rendering helpers for samplesheets"""
+"""Rendering utilities for samplesheets"""
 
 import logging
 import time
 
-from .models import Process, GenericMaterial
+from .models import Assay, Process, GenericMaterial, Arc
 
 
 HEADER_COLOURS = {
@@ -21,556 +21,548 @@ HEADER_LEGEND = {
     'DATA': 'Data File'}
 
 STUDY_HIDEABLE_CLASS = 'omics-ss-hideable-study'
+SOURCE_SEARCH_STR = '-source-'
 
 
 logger = logging.getLogger(__name__)
 
 
-# General/helper functions -----------------------------------------------------
+# TODO: Wrap rendering stuff in a class
 
 
-# TODO: Add repetition with full data but repeat=True so the values can be used
-#       in filtering (e.g. add as "hidden" attributes)
-
-# TODO: Refactor addition funcs so that we return the row instead
+# Graph traversal / reference table building -----------------------------------
 
 
-def add_top_header(
-        top_header, item_type, colspan, classes=list(), hiding={}):
-    """Append columns to top header"""
-    top_header.append({
-        'legend': HEADER_LEGEND[item_type],
-        'colour': HEADER_COLOURS[item_type],
-        'colspan': colspan,
-        'hiding': hiding})
+class Digraph:
+    """Simple class encapsulating directed graph with vertices and arcs"""
+    def __init__(self, vertices, arcs):
+        self.vertices = vertices
+        self.arcs = arcs
+        self.v_by_name = {v.unique_name: v for v in self.vertices}
+        self.a_by_name = {
+            (a.get_tail_obj().unique_name,
+             a.get_head_obj().unique_name) for a in self.arcs}
+        self.source_names = [
+            k for k in self.v_by_name.keys() if SOURCE_SEARCH_STR in k]
+        self.outgoing = {}
+
+        for s_name, t_name in self.a_by_name:
+            self.outgoing.setdefault(s_name, []).append(t_name)
 
 
-def add_header(field_header, value, classes=list()):
-    """
-    Add column header value
-    :param field_header: Header to be appended
-    :param value: Value to be displayed
-    :param classes: Optional extra classes
-    """
-    field_header.append({
-        'value': value,
-        'classes': classes})
+class UnionFind:
+    """Union-Find (disjoint set) data structure allowing to address by vertex
+    name"""
 
+    def __init__(self, vertex_names):
+        self.name_to_id = {i: v for i, v in enumerate(vertex_names)}
+        self.id_to_name = {v: i for i, v in self.name_to_id.items()}
+        self._id = list(range(len(vertex_names)))
+        self._sz = [1] * len(vertex_names)
 
-def add_cell(
-        row, value=None, unit=None, repeat=False, link=None, tooltip=None,
-        classes=list()):
-    """
-    Add cell data
-    :param row: Row in which the cell is added (list)
-    :param value: Value to be displayed in the cell
-    :param unit: Unit to be displayed in the cell
-    :param repeat: Whether this is a repeating column (boolean)
-    :param link: Link from the value (URL string)
-    :param tooltip: Tooltip to be shown on mouse hover (string)
-    :param classes: Optional extra classes
-    """
-    row.append({
-        'value': value,
-        'unit': unit,
-        'repeat': repeat,
-        'link': link,
-        'tooltip': tooltip,
-        'classes': classes})
+    def find(self, v):
+        assert type(v) is int
+        j = v
 
+        while j != self._id[j]:
+            self._id[j] = self._id[self._id[j]]
+            j = self._id[j]
 
-def add_repetition(row, colspan, study_data_in_assay=False):
-    """Append repetition columns"""
-    for i in range(0, colspan):
-        add_cell(
-            row,
-            repeat=True,
-            classes=[STUDY_HIDEABLE_CLASS] if (
-                    i > 0 and study_data_in_assay) else list())
-        # NOTE: First field is not hidden
+        return j
 
+    def find_by_name(self, v_name):
+        return self.find(self.id_to_name[v_name])
 
-def add_annotation_headers(field_header, annotations, classes=list()):
-    """Append annotation columns to field header"""
-    a_count = 0
+    def union_by_name(self, v_name, w_name):
+        self.union(self.find_by_name(v_name), self.find_by_name(w_name))
 
-    for a in annotations:
-        add_header(field_header, a.capitalize(), classes)
-        a_count += 1
+    def union(self, v, w):
+        assert type(v) is int
+        assert type(w) is int
+        i = self.find(v)
+        j = self.find(w)
 
-    return a_count
+        if i == j:
+            return
 
-
-def add_annotations(row, annotations, classes=list()):
-    """Append annotations to row columns"""
-    if not annotations:
-        return None
-
-    for k, v in annotations.items():
-        val = ''
-        unit = None
-        link = None
-        tooltip = None
-
-        if type(v['value']) == dict:
-            if v['value']['ontology_name']:
-                tooltip = v['value']['ontology_name']
-
-            val += v['value']['name']
-            link = v['value']['accession']
+        if self._sz[i] < self._sz[j]:
+            self._id[i] = j
+            self._sz[j] += self._sz[i]
 
         else:
-            val = v['value']
+            self._id[j] = i
 
-        # TODO: Test unit
-        if 'unit' in v:
-            if type(v['unit']) == dict:
-                unit = v['unit']['name']
-
-            else:
-                unit = v['unit']
-
-        add_cell(
-            row, val, unit=unit, link=link, tooltip=tooltip, classes=classes)
+        self._sz[i] += self._sz[j]
 
 
-def add_element(
-        row, top_header, field_header, obj, first_row,
-        study_data_in_assay=False):
-    """Append GenericMaterial or Protocol element to row"""
-    hideable = [STUDY_HIDEABLE_CLASS] if study_data_in_assay else list()
+class RefTableBuilder:
+    """Class for building reference table from a graph"""
+    def __init__(self, nodes, arcs):
+        self.digraph = Digraph(nodes, arcs)
+        self._rows = []
 
-    # Headers
-    if first_row:
-        field_count = 0
-        hideable_count = 0
+    def _partition(self):
+        uf = UnionFind(self.digraph.v_by_name.keys())
 
-        # Material headers
-        if type(obj) == GenericMaterial:
-            add_header(field_header, 'Name')            # Name
-            field_count += 1
-            # NOTE: No study data hiding of name field
+        for arc in self.digraph.arcs:
+            uf.union_by_name(
+                arc.get_tail_obj().unique_name,
+                arc.get_head_obj().unique_name)
 
-            a_header_count = add_annotation_headers(
-                field_header, obj.characteristics,
-                hideable)                               # Characteristics
-            field_count += a_header_count
+        result = {}
 
-            if hideable:
-                hideable_count += a_header_count
+        for v_name in self.digraph.v_by_name.keys():
+            result.setdefault(v_name, []).append(v_name)
 
-            if obj.item_type == 'SAMPLE':
-                a_header_count = add_annotation_headers(
-                    field_header, obj.factor_values,
-                    hideable)                           # Factor values
-                field_count += a_header_count
+        return list(result.values())
 
-                if hideable:
-                    hideable_count += a_header_count
+    def _dump_row(self, v_names):
+        # print('row: {}'.format(v_names))
+        self._rows.append(list(v_names))
 
-            top_header_type = obj.item_type
+    def _dfs(self, source, path):
+        next_v_names = None
 
-        # Process headers
-        # NOTE: No hiding of processes
-        else:   # type(obj) == Process
-            if obj.protocol and obj.protocol.name:
-                add_header(field_header, 'Protocol')    # Protocol
-                field_count += 1
+        if source in self.digraph.outgoing:
+            next_v_names = self.digraph.outgoing[source]
 
-            else:
-                add_header(field_header, 'Name')        # Name
-                field_count += 1
-
-            field_count += add_annotation_headers(
-                field_header, obj.parameter_values)     # Parameter values
-
-            top_header_type = 'PROCESS'
-
-        a_header_count = add_annotation_headers(
-            field_header, obj.comments, hideable)       # Comments
-        field_count += a_header_count
-
-        if hideable:
-            hideable_count += a_header_count
-
-        add_top_header(top_header, top_header_type, field_count, hiding={
-            STUDY_HIDEABLE_CLASS: hideable_count})
-
-    # Material data
-    if type(obj) == GenericMaterial:
-        add_cell(row, obj.name)                         # Name
-        add_annotations(
-            row, obj.characteristics, hideable)         # Characteristics
-
-        if obj.item_type == 'SAMPLE':
-            add_annotations(
-                row, obj.factor_values, hideable)       # Factor values
-
-    # Process data
-    elif type(obj) == Process:
-        if obj.protocol and obj.protocol.name:
-            add_cell(row, obj.protocol.name)            # Protocol
+        if next_v_names:
+            for target in next_v_names:
+                path.append(target)
+                self._dfs(target, path)
+                path.pop()
 
         else:
-            add_cell(row, obj.name)                     # Name
-        add_annotations(row, obj.parameter_values)      # Parameter values
+            self._dump_row(path)
 
-    add_annotations(row, obj.comments)                  # Comments
+    def _process_component(self, v_names):
+        sources = list(sorted(set(v_names) & set(self.digraph.source_names)))
+
+        for source in sources:
+            self._dfs(source, [source])
+
+    def run(self):
+        components = self._partition()
+
+        for component in components:
+            self._process_component(component)
+
+        return self._rows
 
 
 # Table building ---------------------------------------------------------------
 
 
-def get_study_table(study):
-    """
-    Return data grid for an HTML study table
-    :param study: Study object
-    :return: Dict
-    """
-
-    table_data = []
-    top_header = []
-    field_header = []
-    first_row = True
-
-    # Prefetch arcs
-    study_arcs = list(study.arcs.all())
-
-    ##########
-    # Sources
-    ##########
-    for source in study.get_sources(study_arcs):
-        row = []
-        source_section = []
-
-        add_element(
-            source_section, top_header, field_header, source, first_row)
-        row += source_section
-
-        ##########
-        # Samples
-        ##########
-        samples = source.get_samples(study_arcs)
-
-        if samples:
-            first_sample_in_source = True
-
-            for sample in samples:
-                sample_section = []
-
-                if not first_sample_in_source:
-                    # add_repetition(row, len(source_section))
-                    row += source_section
-
-                first_sample_in_source = False
-
-                add_element(
-                    sample_section, top_header, field_header, sample, first_row)
-                row += sample_section
-
-                # Add row to table
-                table_data.append(row)
-                row = []
-                first_row = False
-
-        else:
-            table_data.append(row)
-            row = []
-            first_row = False
-
-    return {
-        'top_header': top_header,
-        'field_header': field_header,
-        'table_data': table_data}
+# TODO: Add repetition with full data but repeat=True so the values can be used
+#       in filtering (e.g. add as "hidden" attributes)
 
 
-def get_assay_table(assay):
-    """
-    Return data grid for an HTML assay table
-    :param assay: Assay object
-    :return: Dict
-    """
+class SampleSheetTableBuilder:
+    """Class for building a dict table with table cells, their properties and
+    headers, to be rendered as HTML on the site"""
 
-    table_data = []
-    top_header = []
-    field_header = []
-    first_row = True
+    def __init__(self):
+        self.row = []
+        self.top_header = []
+        self.field_header = []
+        self.table_data = []
+        self.first_row = True
 
-    ##########
-    # Sources
-    ##########
+    def _add_top_header(self, item_type, colspan, hiding={}):
+        """Append columns to top header"""
+        self.top_header.append({
+            'legend': HEADER_LEGEND[item_type],
+            'colour': HEADER_COLOURS[item_type],
+            'colspan': colspan,
+            'hiding': hiding})
 
-    # Prefetch arcs
-    assay_arcs = list(assay.arcs.all())
-    study_arcs = list(assay.study.arcs.all())
+    def _add_header(self, value, classes=list()):
+        """
+        Add column header value
+        :param value: Value to be displayed
+        :param classes: Optional extra classes
+        """
+        self.field_header.append({
+            'value': value,
+            'classes': classes})
 
-    sources = assay.get_sources(study_arcs)
-    samples = assay.get_samples()
+    def _add_cell(
+            self, value=None, unit=None, repeat=False, link=None,
+            tooltip=None, classes=list()):
+        """
+        Add cell data
+        :param value: Value to be displayed in the cell
+        :param unit: Unit to be displayed in the cell
+        :param repeat: Whether this is a repeating column (boolean)
+        :param link: Link from the value (URL string)
+        :param tooltip: Tooltip to be shown on mouse hover (string)
+        :param classes: Optional extra classes
+        """
+        self.row.append({
+            'value': value,
+            'unit': unit,
+            'repeat': repeat,
+            'link': link,
+            'tooltip': tooltip,
+            'classes': classes})
 
-    # Store sample sources
-    sample_sources = {}
+    def _add_repetition(self, colspan, study_data_in_assay=False):
+        """Append repetition columns"""
+        for i in range(0, colspan):
+            self._add_cell(
+                repeat=True,
+                classes=[STUDY_HIDEABLE_CLASS] if (
+                        i > 0 and study_data_in_assay) else list())
+            # NOTE: First field is not hidden
 
-    for sample in samples:
-        sample_sources[sample.unique_name] = sample.get_sources(study_arcs)
+    def _add_annotation_headers(self, annotations, classes=list()):
+        """Append annotation columns to field header"""
+        a_count = 0
 
-    for source in sources:
-        row = []
-        source_section = []
+        for a in annotations:
+            self._add_header(a.capitalize(), classes)
+            a_count += 1
 
-        add_element(
-            source_section, top_header, field_header, source, first_row,
-            study_data_in_assay=True)
-        row += source_section
+        return a_count
 
-        ##########
-        # Samples
-        ##########
-        first_sample_in_source = True
+    def _add_annotations(self, annotations, classes=list()):
+        """Append annotations to row columns"""
+        if not annotations:
+            return None
 
-        for sample in [
-                s for s in samples if source in sample_sources[s.unique_name]]:
-            sample_section = []
+        for k, v in annotations.items():
+            val = ''
+            unit = None
+            link = None
+            tooltip = None
 
-            if not first_sample_in_source:
-                row += source_section
-                # add_repetition(
-                #     row, len(source_section), study_data_in_assay=True)
+            if type(v['value']) == dict:
+                if v['value']['ontology_name']:
+                    tooltip = v['value']['ontology_name']
 
-            first_sample_in_source = False
+                val += v['value']['name']
+                link = v['value']['accession']
 
-            add_element(
-                sample_section, top_header, field_header, sample, first_row,
-                study_data_in_assay=True)
+            else:
+                val = v['value']
 
-            row += sample_section
+            # TODO: Test unit
+            if 'unit' in v:
+                if type(v['unit']) == dict:
+                    unit = v['unit']['name']
 
-            #############
-            # Assay arcs
-            #############
+                else:
+                    unit = v['unit']
 
-            # Get arcs
-            # arcs = assay.get_arcs_by_sample(sample)
-            first_arc_in_sample = True
+            self._add_cell(
+                val, unit=unit, link=link, tooltip=tooltip,
+                classes=classes)
 
-            # Iterate through arcs
-            for arc in assay_arcs:
-                if arc.tail_material == sample:
+    def _add_element(self, obj, study_data_in_assay=False):
+        """
+        Append GenericMaterial or Process element to row along with its
+        attributes
+        :param obj: GenericMaterial or Pocess element
+        :param study_data_in_assay: Whether this element is part of study data
+        in assay (boolean)
+        """
+        hideable = [STUDY_HIDEABLE_CLASS] if study_data_in_assay else list()
 
-                    col_obj = arc.get_head_obj()
+        # Headers
+        if self.first_row:
+            field_count = 0
+            hideable_count = 0
 
-                    if not first_arc_in_sample:
-                        row += source_section
-                        # add_repetition(
-                        #     row, len(source_section),
-                        #     study_data_in_assay=True)
-                        row += sample_section
-                        # add_repetition(
-                        #     row, len(sample_section),
-                        #     study_data_in_assay=True)
+            # Material headers
+            if type(obj) == GenericMaterial:
+                self._add_header('Name')      # Name
+                field_count += 1
+                # NOTE: No study data hiding of name field
 
-                    first_arc_in_sample = False
+                a_header_count = self._add_annotation_headers(
+                    obj.characteristics,
+                    hideable)                            # Characteristics
+                field_count += a_header_count
 
-                    while col_obj:
-                        ###########
-                        # Material
-                        ###########
-                        if type(col_obj) == GenericMaterial:
-                            add_element(
-                                row, top_header, field_header, col_obj,
-                                first_row)
+                if hideable:
+                    hideable_count += a_header_count
 
-                        ##########
-                        # Process
-                        ##########
-                        elif type(col_obj) == Process:
-                            add_element(
-                                row, top_header, field_header, col_obj,
-                                first_row)
+                if obj.item_type == 'SAMPLE':
+                    a_header_count = self._add_annotation_headers(
+                        obj.factor_values, hideable)     # Factor values
+                    field_count += a_header_count
 
-                        # Go forward
-                        next_arcs = arc.go_forward(assay_arcs)
+                    if hideable:
+                        hideable_count += a_header_count
 
-                        if next_arcs:
-                            # TODO: Support splitting (copy preceding row)
-                            # Go forward
-                            # arc = arc.go_forward(arcs)[0]
-                            arc = next_arcs[0]
-                            col_obj = arc.get_head_obj()
+                top_header_type = obj.item_type
 
-                        else:
-                            col_obj = None
+            # Process headers
+            # NOTE: No hiding of processes
+            else:   # type(obj) == Process
+                if obj.protocol and obj.protocol.name:
+                    self._add_header('Protocol')        # Protocol
+                    field_count += 1
 
-                    # Add row to table
-                    # print('Row: {}'.format(row))    # DEBUG
-                    table_data.append(row)
-                    row = []
-                    first_row = False
+                else:
+                    self._add_header('Name')            # Name
+                    field_count += 1
 
-    return {
-        'top_header': top_header,
-        'field_header': field_header,
-        'table_data': table_data}
+                field_count += self._add_annotation_headers(
+                    obj.parameter_values)               # Param values
 
+                top_header_type = 'PROCESS'
 
-# Rendering API ----------------------------------------------------------------
+            a_header_count = self._add_annotation_headers(
+                obj.comments, hideable)                 # Comments
+            field_count += a_header_count
 
+            if hideable:
+                hideable_count += a_header_count
 
-def render_study(study):
-    """
-    Render study table
-    :param study: Study object
-    """
-    t_start = time.time()
-    logger.info('Rendering study "{}" (pk={})..'.format(
-        study.get_name(), study.pk))
-    study.render_table = get_study_table(study)
-    study.save()
-    logger.info('Rendering study OK ({:.1f}s)'.format(time.time() - t_start))
+            self._add_top_header(
+                top_header_type, field_count, hiding={
+                    STUDY_HIDEABLE_CLASS: hideable_count})
 
+        # Material data
+        if type(obj) == GenericMaterial:
+            self._add_cell(obj.name)                   # Name
+            self._add_annotations(
+                obj.characteristics, hideable)         # Characteristics
 
-def render_assay(assay):
-    """
-    Render assay table
-    :param assay: Assay object
-    """
-    t_start = time.time()
-    logger.info('Rendering assay "{}" (pk={})..'.format(
-        assay.get_name(), assay.pk))
-    assay.render_table = get_assay_table(assay)
-    assay.save()
-    logger.info('Rendering assay OK ({:.1f}s)'.format(time.time() - t_start))
+            if obj.item_type == 'SAMPLE':
+                self._add_annotations(
+                    obj.factor_values, hideable)       # Factor values
 
+        # Process data
+        elif type(obj) == Process:
+            if obj.protocol and obj.protocol.name:
+                self._add_cell(obj.protocol.name)      # Protocol
 
-def render_investigation(investigation):
-    """
-    Render all study and assay tables for an investigation
-    :param investigation: Investigation object
-    """
-    t_start = time.time()
-    logger.info('Rendering investigation "{}" (pk={}, project={})'.format(
-        investigation.title, investigation.pk, investigation.project.pk))
+            else:
+                self._add_cell(obj.name)               # Name
 
-    for study in investigation.studies.all():
-        render_study(study)
+            self._add_annotations(
+                obj.parameter_values)                  # Parameter values
 
-        for assay in study.assays.all():
-            render_assay(assay)
+        self._add_annotations(obj.comments)            # Comments
 
-    logger.info('Rendering investigation OK ({:.1f}s)'.format(
-        time.time() - t_start))
+    def _append_row(self):
+        """Append current row to table data and cleanup"""
+        self.table_data.append(self.row)
+        self.row = []
+        self.first_row = False
+
+    def _build_table(self, table_refs, node_lookup, sample_pos, table_parent):
+        """
+        Function for building a table for rendering.
+        :param table_refs: Object unique_name:s in a list of lists
+        :param node_lookup: Dictionary containing objects
+        :param sample_pos: Position of sample column (int)
+        :param table_parent: Parent object of table (Study or Assay)
+        :return: Dict
+        """
+        self.row = []
+        self.top_header = []
+        self.field_header = []
+        self.table_data = []
+        self.first_row = True
+
+        for input_row in table_refs:
+            col_pos = 0
+
+            for col in input_row:
+                obj = node_lookup[col]
+                study_data_in_assay = True if \
+                    type(table_parent) == Assay and \
+                    col_pos <= sample_pos else False
+                self._add_element(obj, study_data_in_assay)
+                col_pos += 1
+
+            self._append_row()
+
+        return {
+            'top_header': self.top_header,
+            'field_header': self.field_header,
+            'table_data': self.table_data}
+
+    def build_investigation(self, investigation):
+        """
+        Render all study and assay tables for an investigation
+        :param investigation: Investigation object
+        """
+        t_start = time.time()
+        logger.info('Building investigation "{}" (pk={}, project={})'.format(
+            investigation.title, investigation.pk, investigation.project.pk))
+
+        for study in investigation.studies.all():
+            s_start = time.time()
+            logger.info('Building study "{}" (pk={})..'.format(
+                study.get_name(), study.pk))
+
+            nodes = list(GenericMaterial.objects.filter(study=study)) + \
+                    list(Process.objects.filter(study=study))
+            arcs = list(Arc.objects.filter(study=study))
+            tb = RefTableBuilder(nodes, arcs)
+            all_refs = tb.run()     # All rows within a study
+
+            sample_pos = [
+                i for i, col in enumerate(all_refs[0]) if
+                '-sample-' in col][0]
+            node_lookup = {n.unique_name: n for n in nodes}
+
+            # Study table
+            study_refs = [
+                row[:sample_pos + 1] for row in all_refs]
+
+            study.render_table = self._build_table(
+                study_refs, node_lookup, sample_pos, study)
+            study.save()
+
+            logger.info(
+                'Building study OK ({:.1f}s)'.format(time.time() - s_start))
+
+            # Assay tables
+            assay_count = 0
+
+            for assay in study.assays.all():
+                a_start = time.time()
+                logger.info('Building assay "{}" (pk={})..'.format(
+                    assay.get_name(), assay.pk))
+
+                assay_search_str = '-a{}-'.format(assay_count)
+                assay_refs = []
+
+                for row in all_refs:
+                    if (len(row) > sample_pos + 1 and
+                            assay_search_str in row[sample_pos + 1]):
+                        assay_refs.append(row)
+
+                assay.render_table = self._build_table(
+                    assay_refs, node_lookup, sample_pos, assay)
+                assay.save()
+                assay_count += 1
+
+                logger.info(
+                    'Building assay OK ({:.1f}s)'.format(
+                        time.time() - a_start))
+
+        logger.info('Building investigation OK ({:.1f}s)'.format(
+            time.time() - t_start))
 
 
 # HTML rendering ---------------------------------------------------------------
 
 
-def render_top_header(section):
-    """
-    Render section of top header
-    :param section: Header section (dict)
-    :return: String (contains HTML)
-    """
-    return '<th class="bg-{} text-nowrap text-white omics-ss-top-header" ' \
-           'colspan="{}" original-colspan="{}" {}>{}</th>\n'.format(
-            section['colour'],
-            section['colspan'],     # Actual colspan
-            section['colspan'],     # Original colspan
-            ''.join(['{}-cols="{}" '.format(k, v) for
-                     k, v in section['hiding'].items()]),
-            section['legend'])
+class SampleSheetHTMLRenderer:
+    @classmethod
+    def render_top_header(cls, section):
+        """
+        Render section of top header
+        :param section: Header section (dict)
+        :return: String (contains HTML)
+        """
+        return '<th class="bg-{} text-nowrap text-white omics-ss-top-header" ' \
+               'colspan="{}" original-colspan="{}" {}>{}</th>\n'.format(
+                section['colour'],
+                section['colspan'],     # Actual colspan
+                section['colspan'],     # Original colspan
+                ''.join(['{}-cols="{}" '.format(k, v) for
+                         k, v in section['hiding'].items()]),
+                section['legend'])
 
+    @classmethod
+    def render_header(cls, header):
+        """
+        Render data table column header
+        :param header: Header dict
+        :return: String (contains HTML)
+        """
+        return '<th class="{}">{}</th>\n'.format(
+            ' '.join(header['classes']),
+            header['value'])
 
-def render_header(header):
-    """
-    Render data table column header
-    :param header: Header dict
-    :return: String (contains HTML)
-    """
-    return '<th class="{}">{}</th>\n'.format(
-        ' '.join(header['classes']),
-        header['value'])
+    @classmethod
+    def render_cell(cls, cell):
+        """
+        Return data table cell as HTML
+        :param cell: Cell dict
+        :return: String (contains HTML)
+        """
+        td_class_str = ' '.join(cell['classes'])
 
+        # If repeating cell, return that
+        if cell['repeat']:
+            return '<td class="bg-light text-muted text-center {}">' \
+                   '"</td>\n'.format(td_class_str)
 
-def render_cell(cell):
-    """
-    Return data table cell as HTML
-    :param cell: Cell dict
-    :return: String (contains HTML)
-    """
-    td_class_str = ' '.join(cell['classes'])
+        # Right aligning
+        def is_num(x):
+            try:
+                float(x)
+                return True
 
-    # If repeating cell, return that
-    if cell['repeat']:
-        return '<td class="bg-light text-muted text-center {}">' \
-               '"</td>\n'.format(td_class_str)
+            except ValueError:
+                return False
 
-    # Right aligning
-    def is_num(x):
-        try:
-            float(x)
-            return True
+        if cell['value'] and is_num(cell['value']):
+            td_class_str += ' text-right'
 
-        except ValueError:
-            return False
-
-    if cell['value'] and is_num(cell['value']):
-        td_class_str += ' text-right'
-
-    # Build <td>
-    if cell['tooltip']:
-        ret = '<td class="{}" title="{}" data-toggle="tooltip" ' \
-              'data-placement="top">'.format(td_class_str, cell['tooltip'])
-
-    else:
-        ret = '<td class="{}">'.format(td_class_str)
-
-    if cell['value']:
-        if cell['link']:
-            ret += '<a href="{}" target="_blank">{}</a>'.format(
-                cell['link'], cell['value'])
+        # Build <td>
+        if cell['tooltip']:
+            ret = '<td class="{}" title="{}" data-toggle="tooltip" ' \
+                  'data-placement="top">'.format(td_class_str, cell['tooltip'])
 
         else:
-            ret += cell['value']
+            ret = '<td class="{}">'.format(td_class_str)
 
-        if cell['unit']:
-            ret += '&nbsp;<span class=" text-muted">{}</span>'.format(
-                cell['unit'])
+        if cell['value']:
+            if cell['link']:
+                ret += '<a href="{}" target="_blank">{}</a>'.format(
+                    cell['link'], cell['value'])
 
-    else:   # Empty value
-        ret += '-'
+            else:
+                ret += cell['value']
 
-    ret += '</td>\n'
-    return ret
+            if cell['unit']:
+                ret += '&nbsp;<span class=" text-muted">{}</span>'.format(
+                    cell['unit'])
 
+        else:   # Empty value
+            ret += '-'
 
-def render_links_top_header():
-    return '<th class="bg-dark text-nowrap text-white omics-ss-top-header ' \
-           'omics-ss-data-cell-links">Links</th>'
+        ret += '</td>\n'
+        return ret
 
+    @classmethod
+    def render_links_top_header(cls):
+        return '<th class="bg-dark text-nowrap text-white omics-ss-top-header ' \
+               'omics-ss-data-cell-links">Links</th>'
 
-def render_links_header():
-    """
-    Render data table links column header
-    :return: String (contains HTML)
-    """
-    return '<th class="bg-white omics-ss-data-cell-links">&nbsp;</th>\n'
+    @classmethod
+    def render_links_header(cls):
+        """
+        Render data table links column header
+        :return: String (contains HTML)
+        """
+        return '<th class="bg-white omics-ss-data-cell-links">&nbsp;</th>\n'
 
+    @classmethod
+    def render_links_cell(cls):
+        """
+        Return links cell for row as HTML
+        :return: String (contains HTML)
+        """
+        # TODO: Add actual links
+        # TODO: Refactor/cleanup, this is a quick screenshot HACK
 
-def render_links_cell(row):
-    """
-    Return links cell for row as HTML
-    :param row: Row (list of dicts)
-    :return: String (contains HTML)
-    """
-    # TODO: Add actual links
-    # TODO: Refactor/cleanup, this is a quick screenshot HACK
-
-    return '<td class="bg-light omics-ss-data-cell-links">\n' \
-           '  <div class="btn-group omics-ss-data-btn-group">\n' \
-           '    <button class="btn btn-secondary dropdown-toggle btn-sm ' \
-           '                   omics-edit-dropdown"' \
-           '                   type="button" data-toggle="dropdown" ' \
-           '                   aria-expanded="false">' \
-           '                   <i class="fa fa-external-link"></i>' \
-           '    </button>' \
-           '  </div>\n' \
-           '</td>\n'
+        return '<td class="bg-light omics-ss-data-cell-links">\n' \
+               '  <div class="btn-group omics-ss-data-btn-group">\n' \
+               '    <button class="btn btn-secondary dropdown-toggle btn-sm ' \
+               '                   omics-edit-dropdown"' \
+               '                   type="button" data-toggle="dropdown" ' \
+               '                   aria-expanded="false">' \
+               '                   <i class="fa fa-external-link"></i>' \
+               '    </button>' \
+               '  </div>\n' \
+               '</td>\n'
