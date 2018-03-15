@@ -3,7 +3,7 @@
 import logging
 import time
 
-from .models import Assay, Process, GenericMaterial, Arc
+from .models import Assay, Process, GenericMaterial
 
 
 HEADER_COLOURS = {
@@ -39,9 +39,7 @@ class Digraph:
         self.vertices = vertices
         self.arcs = arcs
         self.v_by_name = {v.unique_name: v for v in self.vertices}
-        self.a_by_name = {
-            (a.get_tail_obj().unique_name,
-             a.get_head_obj().unique_name) for a in self.arcs}
+        self.a_by_name = {(a[0], a[1]) for a in self.arcs}
         self.source_names = [
             k for k in self.v_by_name.keys() if SOURCE_SEARCH_STR in k]
         self.outgoing = {}
@@ -106,8 +104,8 @@ class RefTableBuilder:
 
         for arc in self.digraph.arcs:
             uf.union_by_name(
-                arc.get_tail_obj().unique_name,
-                arc.get_head_obj().unique_name)
+                arc[0],
+                arc[1])
 
         result = {}
 
@@ -162,15 +160,15 @@ class SampleSheetTableBuilder:
     headers, to be rendered as HTML on the site"""
 
     def __init__(self):
-        self.row = []
-        self.top_header = []
-        self.field_header = []
-        self.table_data = []
-        self.first_row = True
+        self._row = []
+        self._top_header = []
+        self._field_header = []
+        self._table_data = []
+        self._first_row = True
 
     def _add_top_header(self, item_type, colspan, hiding={}):
         """Append columns to top header"""
-        self.top_header.append({
+        self._top_header.append({
             'legend': HEADER_LEGEND[item_type],
             'colour': HEADER_COLOURS[item_type],
             'colspan': colspan,
@@ -182,7 +180,7 @@ class SampleSheetTableBuilder:
         :param value: Value to be displayed
         :param classes: Optional extra classes
         """
-        self.field_header.append({
+        self._field_header.append({
             'value': value,
             'classes': classes})
 
@@ -198,7 +196,7 @@ class SampleSheetTableBuilder:
         :param tooltip: Tooltip to be shown on mouse hover (string)
         :param classes: Optional extra classes
         """
-        self.row.append({
+        self._row.append({
             'value': value,
             'unit': unit,
             'repeat': repeat,
@@ -269,7 +267,7 @@ class SampleSheetTableBuilder:
         hideable = [STUDY_HIDEABLE_CLASS] if study_data_in_assay else list()
 
         # Headers
-        if self.first_row:
+        if self._first_row:
             field_count = 0
             hideable_count = 0
 
@@ -349,9 +347,9 @@ class SampleSheetTableBuilder:
 
     def _append_row(self):
         """Append current row to table data and cleanup"""
-        self.table_data.append(self.row)
-        self.row = []
-        self.first_row = False
+        self._table_data.append(self._row)
+        self._row = []
+        self._first_row = False
 
     def _build_table(self, table_refs, node_lookup, sample_pos, table_parent):
         """
@@ -362,11 +360,11 @@ class SampleSheetTableBuilder:
         :param table_parent: Parent object of table (Study or Assay)
         :return: Dict
         """
-        self.row = []
-        self.top_header = []
-        self.field_header = []
-        self.table_data = []
-        self.first_row = True
+        self._row = []
+        self._top_header = []
+        self._field_header = []
+        self._table_data = []
+        self._first_row = True
 
         for input_row in table_refs:
             col_pos = 0
@@ -382,9 +380,9 @@ class SampleSheetTableBuilder:
             self._append_row()
 
         return {
-            'top_header': self.top_header,
-            'field_header': self.field_header,
-            'table_data': self.table_data}
+            'top_header': self._top_header,
+            'field_header': self._field_header,
+            'table_data': self._table_data}
 
     def build_investigation(self, investigation):
         """
@@ -402,7 +400,13 @@ class SampleSheetTableBuilder:
 
             nodes = list(GenericMaterial.objects.filter(study=study)) + \
                     list(Process.objects.filter(study=study))
-            arcs = list(Arc.objects.filter(study=study))
+
+            # TODO: Onelinerize this
+            arcs = study.arcs
+
+            for a in study.assays.all():
+                arcs += a.arcs
+
             tb = RefTableBuilder(nodes, arcs)
             all_refs = tb.run()     # All rows within a study
 
@@ -536,8 +540,8 @@ class SampleSheetHTMLRenderer:
 
     @classmethod
     def render_links_top_header(cls):
-        return '<th class="bg-dark text-nowrap text-white omics-ss-top-header ' \
-               'omics-ss-data-cell-links">Links</th>'
+        return '<th class="bg-dark text-nowrap text-white ' \
+               'omics-ss-top-header omics-ss-data-cell-links">Links</th>'
 
     @classmethod
     def render_links_header(cls):

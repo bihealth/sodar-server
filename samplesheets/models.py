@@ -1,7 +1,7 @@
 import uuid
 
 from django.contrib.contenttypes.models import ContentType
-from django.contrib.postgres.fields import JSONField
+from django.contrib.postgres.fields import ArrayField, JSONField
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
@@ -217,6 +217,13 @@ class Study(BaseSampleSheet):
         default=dict,
         help_text='Unit categories')
 
+    #: Study arcs
+    arcs = ArrayField(
+        ArrayField(
+            models.CharField(max_length=DEFAULT_LENGTH, blank=True)),
+        default=list,
+        help_text='Study arcs')
+
     #: Column headers
     header = JSONField(
         default=dict,
@@ -248,21 +255,6 @@ class Study(BaseSampleSheet):
     def get_name(self):
         """Return simple printable name for study"""
         return self.title if self.title else self.identifier
-
-    def get_sources(self, search_arcs=None):
-        """Return study sources"""
-        if search_arcs:
-            ret = []
-
-            for a in search_arcs:
-                if a.tail_material and a.tail_material.item_type == 'SOURCE':
-                    ret.append(a.tail_material)
-
-            return sorted(set(ret), key=lambda x: x.name)
-
-        else:
-            return GenericMaterial.objects.filter(
-                study=self, item_type='SOURCE').order_by('name')
 
 
 # Protocol ---------------------------------------------------------------------
@@ -382,6 +374,13 @@ class Assay(BaseSampleSheet):
         default=dict,
         help_text='Unit categories')
 
+    #: Assay arcs
+    arcs = ArrayField(
+        ArrayField(
+            models.CharField(max_length=DEFAULT_LENGTH, blank=True)),
+        default=list,
+        help_text='Assay arcs')
+
     #: Column headers
     header = JSONField(
         default=dict,
@@ -413,33 +412,6 @@ class Assay(BaseSampleSheet):
     def get_name(self):
         """Return simple printable name for Assay"""
         return ''.join(str(self.file_name).split('.')[:-1])
-
-    def get_samples(self):
-        """Return samples used in assay"""
-        return GenericMaterial.objects.filter(
-            item_type='SAMPLE',
-            arcs_as_tail__assay=self).order_by('name').distinct()
-
-    def get_sources(self, search_arcs):
-        """Return sources of samples used in this assay as a list"""
-        sources = []
-
-        for sample in self.get_samples():
-            sources += sample.get_sources(search_arcs)
-
-        return sorted(set(sources), key=lambda x: x.name)
-
-    def get_arcs_by_sample(self, sample):
-        """
-        Return starting Arcs which take sample as initial tail
-        :param sample: GenericMaterial object of type "SAMPLE"
-        :return: QuerySet of Process objects (first process of each sequence)
-        :raise: ValueError if input GenericMaterial is not of type "SAMPLE"
-        """
-        if sample.item_type != 'SAMPLE':
-            raise ValueError('Input is not a sample')
-
-        return Arc.objects.filter(assay=self, tail_material=sample)
 
 
 # Materials and data files -----------------------------------------------------
@@ -607,64 +579,6 @@ class GenericMaterial(BaseSampleSheet):
 
         return None  # This should not happen and is caught during validation
 
-    def get_sources(self, search_arcs):
-        """Return sources of material as a list"""
-        if self.item_type == 'SOURCE':
-            return self
-
-        def find_sources(arcs, search_arcs):
-            sources = []
-
-            for a in arcs:
-                if a.tail_material and a.tail_material.item_type == 'SOURCE':
-                    sources.append(a.tail_material)
-
-                else:
-                    prev_arcs = a.go_back(search_arcs, include_study=True)
-
-                    if prev_arcs:
-                        sources += find_sources(prev_arcs, search_arcs)
-
-            return set(sources)
-
-        starting_arcs = []
-
-        for a in search_arcs:
-            if a.tail_material == self:
-                starting_arcs.append(a)
-
-        sources = find_sources(starting_arcs, search_arcs)
-        return sorted(sources, key=lambda x: x.name)
-
-    def get_samples(self, search_arcs):
-        """Return samples derived from source"""
-        if self.item_type != 'SOURCE':
-            return None
-
-        def find_samples(arcs, samples):
-            for a in arcs:
-                if a.head_material and a.head_material.item_type == 'SAMPLE':
-                    samples.append(a.head_material)
-
-                else:
-                    next_arcs = a.go_forward(search_arcs)
-
-                    if next_arcs:
-                        samples += find_samples(next_arcs, samples)
-
-            return set(samples)
-
-        starting_arcs = []
-
-        for a in search_arcs:
-            if a.tail_material == self:
-                starting_arcs.append(a)
-
-        # source_arcs = Arc.objects.filter(study=self.study, tail_material=self)
-        samples = find_samples(starting_arcs, [])
-
-        return sorted(samples, key=lambda x: x.name)
-
 
 # Process ----------------------------------------------------------------------
 
@@ -783,176 +697,3 @@ class Process(BaseSampleSheet):
 
         elif self.study:
             return self.study
-
-
-# Arc --------------------------------------------------------------------------
-
-
-class Arc(BaseSampleSheet):
-    """altamISA parser model compatible arc depicting a relationship between
-    material and process"""
-
-    #: Study to which the arc belongs (for study sequence)
-    study = models.ForeignKey(
-        Study,
-        related_name='arcs',
-        null=True,
-        help_text='Study to which the arc belongs (for study sequence)')
-
-    #: Assay to which the arc belongs (for assay sequence)
-    assay = models.ForeignKey(
-        Assay,
-        related_name='arcs',
-        null=True,
-        help_text='Assay to which the arc belongs (for assay sequence)')
-
-    #: Tail process (can be null if tail object is a material)
-    tail_process = models.ForeignKey(
-        Process,
-        related_name='arcs_as_tail',
-        null=True,
-        on_delete=models.SET_NULL,
-        help_text='Tail process (can be null if tail object is a material)')
-
-    #: Tail material (can be null if tail object is a process)
-    tail_material = models.ForeignKey(
-        GenericMaterial,
-        related_name='arcs_as_tail',
-        null=True,
-        on_delete=models.SET_NULL,
-        help_text='Tail material (can be null if tail object is a process)')
-
-    #: Head process (can be null if head object is a material)
-    head_process = models.ForeignKey(
-        Process,
-        related_name='arcs_as_head',
-        null=True,
-        on_delete=models.SET_NULL,
-        help_text='Head process (can be null if head object is a material)')
-
-    #: Tail material (can be null if tail object is a process)
-    head_material = models.ForeignKey(
-        GenericMaterial,
-        related_name='arcs_as_head',
-        null=True,
-        on_delete=models.SET_NULL,
-        help_text='Head material (can be null if head object is a process)')
-
-    # No comments for Arc
-    comments = None
-
-    class Meta:
-        ordering = ('study', 'assay')
-
-        indexes = [
-            models.Index(fields=['study']),
-            models.Index(fields=['assay']),
-            models.Index(fields=['study', 'head_process']),
-            models.Index(fields=['study', 'head_material']),
-            models.Index(fields=['assay', 'tail_process']),
-            models.Index(fields=['assay', 'tail_material'])]
-
-    def __str__(self):
-        return '{}: {}/{}/{}->{}'.format(
-            self.get_project().title,
-            self.get_study().get_name(),
-            self.assay.get_name() if self.assay else NOT_AVAILABLE_STR,
-            self.get_tail_obj().unique_name,
-            self.get_head_obj().unique_name)
-
-    def __repr__(self):
-        values = (
-            self.get_project().title,
-            self.get_study().get_name(),
-            self.assay.get_name() if self.assay else NOT_AVAILABLE_STR,
-            self.get_tail_obj().unique_name,
-            self.get_head_obj().unique_name)
-        return 'Arc({})'.format(', '.join(repr(v) for v in values))
-
-    # Saving and validation
-
-    def save(self, *args, **kwargs):
-        """Override save() to include custom validation functions"""
-        self._validate_tail()
-        self._validate_head()
-        super(Arc, self).save(*args, **kwargs)
-
-    def _validate_tail(self):
-        """Validate that one (and only one) type of tail object is present"""
-        if (self.tail_material is None) == (self.tail_process is None):
-            raise ValidationError('Exactly one tail object must be set')
-
-    def _validate_head(self):
-        """Validate that one (and only one) type of head object is present"""
-        if (self.head_material is None) == (self.head_process is None):
-            raise ValidationError('Exactly one head object must be set')
-
-    # Custom row-level functions
-
-    def get_tail_obj(self):
-        """Return tail object"""
-        if self.tail_process:
-            return self.tail_process
-
-        elif self.tail_material:
-            return self.tail_material
-
-    def get_head_obj(self):
-        """Return head object"""
-        if self.head_process:
-            return self.head_process
-
-        elif self.head_material:
-            return self.head_material
-
-    def go_back(self, search_arcs, include_study=False):
-        """
-        Traverse backward in arcs
-        :param search_arcs: QuerySet of arcs to search through
-        :param include_study: Allow traversal from assay to study if True
-        :return: List of 0-N Arc objects
-        """
-
-        # Special case when reaching a sample
-        if (not include_study and
-                self.tail_material and
-                self.tail_material.item_type == 'SAMPLE' and
-                self.assay):
-            return []
-
-        head_obj_arg = 'head_{}'.format(
-            ARC_OBJ_SUFFIX_MAP[self.get_tail_obj().__class__.__name__])
-        ret = []
-
-        for a in search_arcs:
-            if (getattr(a, head_obj_arg) and
-                    getattr(a, head_obj_arg) == self.get_tail_obj()):
-                ret.append(a)
-
-        return ret
-
-    def go_forward(self, search_arcs, assay=None):
-        """
-        Traverse forward in arcs
-        :param search_arcs: QuerySet of arcs to search through
-        :param assay: Allow traversal from study arc to specified assay if set
-        :return: QuerySet of 0-N Arc objects
-        """
-
-        # Special case when reaching a sample
-        if (not assay and
-                self.head_material and
-                self.head_material.item_type == 'SAMPLE' and
-                not self.assay):
-            return []
-
-        tail_obj_arg = 'tail_{}'.format(
-            ARC_OBJ_SUFFIX_MAP[self.get_head_obj().__class__.__name__])
-        ret = []
-
-        for arc in search_arcs:
-            if (getattr(arc, tail_obj_arg) and
-                    getattr(arc, tail_obj_arg) == self.get_head_obj()):
-                ret.append(arc)
-
-        return ret

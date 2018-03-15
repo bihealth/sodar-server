@@ -8,7 +8,7 @@ import time
 from django.db import connection
 
 from .models import Investigation, Study, Assay, GenericMaterial, Protocol, \
-    Process, Arc, ARC_OBJ_SUFFIX_MAP
+    Process
 from .rendering import SampleSheetTableBuilder
 
 
@@ -227,53 +227,22 @@ def import_isa(isa_zip, project, async=False):
         logger.debug('Added {} processes to "{}"'.format(
             len(processes), db_parent.get_name()))
 
-    def import_arcs(arcs, db_parent, obj_lookup):
+    def import_arcs(arcs, db_parent):
         """
         Create process/material arcs according to the altamISA structure
         :param arcs: Tuple
         :param db_parent: Study or Assay object
-        :param obj_lookup: Lookup dict for materials and processes
         """
-        def find_by_name(unique_name):
-            """
-            Find GenericMaterial or Process object by name
-            :param unique_name: Name (string)
-            :return: GenericMaterial or Process object
-            :raise: ValueError if not found
-            """
-            try:
-                return obj_lookup[unique_name]
-
-            except KeyError:
-                raise ValueError(
-                    'No GenericMaterial or Process found with '
-                    'unique_name={}'.format(unique_name))
-
         arc_vals = []
 
         for a in arcs:
-            try:
-                tail_obj = find_by_name(a.tail)
-                head_obj = find_by_name(a.head)
+            arc_vals.append([a.tail, a.head])
 
-            except ValueError as ex:
-                raise ValueError('{} / arc = {}'.format(ex, a))
+        db_parent.arcs = arc_vals
+        db_parent.save()
 
-            tail_obj_arg = 'tail_{}'.format(
-                ARC_OBJ_SUFFIX_MAP[tail_obj.__class__.__name__])
-            head_obj_arg = 'head_{}'.format(
-                ARC_OBJ_SUFFIX_MAP[head_obj.__class__.__name__])
-
-            arc_vals.append({
-                'assay': db_parent if type(db_parent) == Assay else None,
-                'study': db_parent if
-                type(db_parent) == Study else db_parent.study,
-                tail_obj_arg: tail_obj,
-                head_obj_arg: head_obj})
-
-        arcs = Arc.objects.bulk_create([Arc(**v) for v in arc_vals])
         logger.debug('Added {} arcs to "{}"'.format(
-            len(arcs), db_parent.get_name()))
+            len(arc_vals), db_parent.get_name()))
 
     #########
     # Import
@@ -351,7 +320,7 @@ def import_isa(isa_zip, project, async=False):
         import_processes(s.processes, db_study, obj_lookup, protocol_lookup)
 
         # Create study arcs
-        import_arcs(s.arcs, db_study, obj_lookup)
+        import_arcs(s.arcs, db_study)
 
         assay_count = 0
 
@@ -391,7 +360,7 @@ def import_isa(isa_zip, project, async=False):
             import_processes(a.processes, db_assay, obj_lookup, protocol_lookup)
 
             # Create assay arcs
-            import_arcs(a.arcs, db_assay, obj_lookup)
+            import_arcs(a.arcs, db_assay)
             assay_count += 1
 
         study_count += 1
