@@ -9,7 +9,6 @@ from django.db import connection
 
 from .models import Investigation, Study, Assay, GenericMaterial, Protocol, \
     Process
-from .rendering import SampleSheetTableBuilder
 
 
 # Local constants
@@ -367,14 +366,6 @@ def import_isa(isa_zip, project, async=False):
 
     logger.info('Import of investigation "{}" OK ({:.1f}s)'.format(
         db_investigation.title, time.time() - t_start))
-
-    # Update investigation status
-    db_investigation.status = 'RENDERING'
-    db_investigation.save()
-
-    # Build pre-rendered tables
-    tb = SampleSheetTableBuilder()
-    tb.build_investigation(db_investigation)
 
     # Update investigation status
     db_investigation.status = 'OK'
