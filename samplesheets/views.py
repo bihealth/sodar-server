@@ -20,6 +20,7 @@ from projectroles.views import LoggedInPermissionMixin, \
 from .forms import SampleSheetImportForm
 from .models import Investigation, Study, Assay, Protocol, Process, \
     GenericMaterial
+from .rendering import SampleSheetTableBuilder
 
 
 APP_NAME = 'samplesheets'
@@ -79,11 +80,15 @@ class ProjectSheetsView(
         else:
             try:
                 if 'study' in self.kwargs and self.kwargs['study']:
-                    context['study'] = Study.objects.get(
+                    study = Study.objects.get(
                         pk=self.kwargs['study'])
                 else:
-                    context['study'] = Study.objects.filter(
+                    study = Study.objects.filter(
                         investigation=investigation).first()
+
+                context['study'] = study
+                tb = SampleSheetTableBuilder()
+                context['table_data'] = tb.build_study(study)
 
             except Study.DoesNotExist:
                 return None

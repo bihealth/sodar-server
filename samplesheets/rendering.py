@@ -383,76 +383,73 @@ class SampleSheetTableBuilder:
             'field_header': self._field_header,
             'table_data': self._table_data}
 
-    def build_investigation(self, investigation):
+    def build_study(self, study):
         """
-        Render all study and assay tables for an investigation
-        :param investigation: Investigation object
+        Build study table and associated assay tables for rendering
+        :param study: Study object
+        :return: Dict
         """
-        t_start = time.time()
-        logger.info('Building investigation "{}" (pk={}, project={})'.format(
-            investigation.title, investigation.pk, investigation.project.pk))
+        s_start = time.time()
+        logger.debug('Building study "{}" (pk={})..'.format(
+            study.get_name(), study.pk))
 
-        for study in investigation.studies.all():
-            s_start = time.time()
-            logger.info('Building study "{}" (pk={})..'.format(
-                study.get_name(), study.pk))
+        ret = {
+            'study': None,
+            'assays': {}}
 
-            nodes = list(GenericMaterial.objects.filter(study=study)) + \
+        nodes = list(GenericMaterial.objects.filter(study=study)) + \
                 list(Process.objects.filter(
                     study=study).prefetch_related('protocol'))
 
-            # TODO: Onelinerize this
-            arcs = study.arcs
+        # TODO: Onelinerize this
+        arcs = study.arcs
 
-            for a in study.assays.all():
-                arcs += a.arcs
+        for a in study.assays.all():
+            arcs += a.arcs
 
-            tb = RefTableBuilder(nodes, arcs)
-            all_refs = tb.run()     # All rows within a study
+        tb = RefTableBuilder(nodes, arcs)
+        all_refs = tb.run()  # All rows within a study
 
-            sample_pos = [
-                i for i, col in enumerate(all_refs[0]) if
-                '-sample-' in col][0]
-            node_lookup = {n.unique_name: n for n in nodes}
+        sample_pos = [
+            i for i, col in enumerate(all_refs[0]) if
+            '-sample-' in col][0]
+        node_lookup = {n.unique_name: n for n in nodes}
 
-            # Study table
-            study_refs = [
-                row[:sample_pos + 1] for row in all_refs]
+        # Study table
+        study_refs = [
+            row[:sample_pos + 1] for row in all_refs]
 
-            study.render_table = self._build_table(
-                study_refs, node_lookup, sample_pos, study)
-            study.save()
+        ret['study'] = self._build_table(
+            study_refs, node_lookup, sample_pos, study)
 
-            logger.info(
-                'Building study OK ({:.1f}s)'.format(time.time() - s_start))
+        logger.debug(
+            'Building study OK ({:.1f}s)'.format(time.time() - s_start))
 
-            # Assay tables
-            assay_count = 0
+        # Assay tables
+        assay_count = 0
 
-            for assay in study.assays.all():
-                a_start = time.time()
-                logger.info('Building assay "{}" (pk={})..'.format(
-                    assay.get_name(), assay.pk))
+        for assay in study.assays.all():
+            a_start = time.time()
+            logger.debug('Building assay "{}" (pk={})..'.format(
+                assay.get_name(), assay.pk))
 
-                assay_search_str = '-a{}-'.format(assay_count)
-                assay_refs = []
+            assay_search_str = '-a{}-'.format(assay_count)
+            assay_refs = []
 
-                for row in all_refs:
-                    if (len(row) > sample_pos + 1 and
-                            assay_search_str in row[sample_pos + 1]):
-                        assay_refs.append(row)
+            for row in all_refs:
+                if (len(row) > sample_pos + 1 and
+                        assay_search_str in row[sample_pos + 1]):
+                    assay_refs.append(row)
 
-                assay.render_table = self._build_table(
-                    assay_refs, node_lookup, sample_pos, assay)
-                assay.save()
-                assay_count += 1
+            ret['assays'][assay.get_name()] = self._build_table(
+                assay_refs, node_lookup, sample_pos, assay)
 
-                logger.info(
-                    'Building assay OK ({:.1f}s)'.format(
-                        time.time() - a_start))
+            assay_count += 1
+            logger.debug(
+                'Building assay OK ({:.1f}s)'.format(
+                    time.time() - a_start))
 
-        logger.info('Building investigation OK ({:.1f}s)'.format(
-            time.time() - t_start))
+        return ret
 
 
 # HTML rendering ---------------------------------------------------------------

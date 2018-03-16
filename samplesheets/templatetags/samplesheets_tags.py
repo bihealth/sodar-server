@@ -63,8 +63,18 @@ def get_study_title(study):
 @register.simple_tag
 def get_assay_title(assay):
     """Return printable assy title"""
-    # TODO: How to construct assay title?
-    return assay.file_name.split('.')[0]
+    return assay.get_name()
+
+
+@register.simple_tag
+def get_assay_table(table_data, assay):
+    """
+    Return assay table for rendering
+    :param table_data: Dict from context['table_data']
+    :param assay: Assay object
+    :return: Dict
+    """
+    return table_data['assays'][assay.get_name()]
 
 
 @register.simple_tag
