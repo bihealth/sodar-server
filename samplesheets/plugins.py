@@ -3,7 +3,7 @@ from django.urls import reverse
 # Projectroles dependency
 from projectroles.plugins import ProjectAppPluginPoint
 
-# from .models import SampleSheet
+from .models import Investigation
 from .urls import urlpatterns
 # from .utils import get_irods_dirs
 
@@ -120,7 +120,6 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         :param pk: Pk of the referred object
         :return: Dict or None if not found
         """
-        '''
         obj = self.get_object(eval(model_str), pk)
 
         if not obj:
@@ -129,9 +128,6 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         # The only possible model is SampleSheet, directing to entry point
         return {
             'url': reverse(
-                'project_sheet',
+                'project_sheets',
                 kwargs={'project': obj.project.pk}),
             'label': obj.title}
-        '''
-
-        return None

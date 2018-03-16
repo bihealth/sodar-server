@@ -20,13 +20,6 @@ GENERIC_MATERIAL_TYPES = {
     'DATA': 'Data File'}
 
 GENERIC_MATERIAL_CHOICES = [(k, v) for k, v in GENERIC_MATERIAL_TYPES.items()]
-
-INVESTIGATION_STATUS_TYPES = [
-    'OK',
-    'IMPORTING',
-    'RENDERING',
-    'FAILED']
-
 NOT_AVAILABLE_STR = ''
 
 
@@ -134,15 +127,6 @@ class Investigation(BaseSampleSheet):
         default=dict,
         help_text='Ontology source references')
 
-    #: Creation/editing status of investigation
-    status = models.CharField(
-        max_length=64,
-        default='OK',
-        unique=False,
-        blank=True,
-        null=True,
-        help_text='Creation/editing status of investigation')
-
     def __str__(self):
         return '{}: {}'.format(self.project.title, self.title)
 
@@ -224,11 +208,6 @@ class Study(BaseSampleSheet):
     header = JSONField(
         default=dict,
         help_text='Column headers')
-
-    #: Pre-constructed study table for rendering
-    render_table = JSONField(
-        default=dict,
-        help_text='Pre-constructed study table for rendering')
 
     class Meta:
         ordering = ['identifier']
@@ -381,11 +360,6 @@ class Assay(BaseSampleSheet):
     header = JSONField(
         default=dict,
         help_text='Column headers')
-
-    #: Pre-constructed assay table for rendering
-    render_table = JSONField(
-        default=dict,
-        help_text='Pre-constructed assay table for rendering')
 
     class Meta:
         unique_together = ('study', 'file_name')

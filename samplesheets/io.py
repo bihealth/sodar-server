@@ -5,8 +5,6 @@ import io
 import logging
 import time
 
-from django.db import connection
-
 from .models import Investigation, Study, Assay, GenericMaterial, Protocol, \
     Process
 
@@ -44,21 +42,15 @@ logger = logging.getLogger(__name__)
 # Importing --------------------------------------------------------------------
 
 
-def import_isa(isa_zip, project, async=False):
+def import_isa(isa_zip, project):
     """
     Import ISA investigation and its studies/assays from an ISAtab Zip archive
     into the Django database, utilizing the altamISA parser
     :param isa_zip: ZipFile (archive containing a single ISAtab investigation)
     :param project: Project object
-    :param async: Async HACK enabled (boolean)
     :return: Django Investigation object
     """
     t_start = time.time()
-
-    # ASYNC HACK, to be replaced
-    if async:
-        connection.close()
-
     logger.info('Importing investigation from a Zip archive..')
 
     ######################
@@ -255,8 +247,7 @@ def import_isa(isa_zip, project, async=False):
         'description': (isa_inv.info.description or project.description),
         'file_name': inv_file_name,
         'ontology_source_refs': get_tuple_list(isa_inv.ontology_source_refs),
-        'comments': get_ontology_vals(isa_inv.info.comments),
-        'status': 'IMPORTING'}
+        'comments': get_ontology_vals(isa_inv.info.comments)}
 
     db_investigation = Investigation(**values)
     db_investigation.save()
@@ -366,12 +357,6 @@ def import_isa(isa_zip, project, async=False):
 
     logger.info('Import of investigation "{}" OK ({:.1f}s)'.format(
         db_investigation.title, time.time() - t_start))
-
-    # Update investigation status
-    db_investigation.status = 'OK'
-    db_investigation.save()
-
-    logger.info('Investigation "{}": All OK'.format(db_investigation.title))
     return db_investigation
 
 

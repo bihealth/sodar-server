@@ -1,11 +1,8 @@
-import multiprocessing
-import time
-
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponseRedirect
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.views.generic import TemplateView, FormView
@@ -119,15 +116,9 @@ class SampleSheetImportView(
         timeline = get_backend_api('timeline_backend')
         project = Project.objects.get(pk=self.kwargs['project'])
 
-        # TODO: Add to timeline
-        # TODO: Add proper reporting and cleanup in case of import failures
-        # TODO: Update import status via JQuery
-
-        '''
         try:
-            
             self.object = form.save()
-            
+
             # Add event in Timeline
             if timeline:
                 tl_event = timeline.add_event(
@@ -142,26 +133,11 @@ class SampleSheetImportView(
                     obj=self.object,
                     label='investigation',
                     name=self.object.title)
-            '''
 
-
-        '''
         except Exception as ex:
             if settings.DEBUG:
                 raise ex
             messages.error(self.request, str(ex))
-        '''
-
-        p = multiprocessing.Process(
-            target=form.save)
-        p.start()
-
-        messages.warning(
-            self.request,
-            'Sample sheet import from an ISA investigation initiated. '
-            'See information/progress on this page.')
-
-        time.sleep(3)    # I can't believe I'm doing this again..
 
         return redirect(
             reverse('project_sheets', kwargs={
