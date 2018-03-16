@@ -261,8 +261,8 @@ class SampleSheetTableBuilder:
         Append GenericMaterial or Process element to row along with its
         attributes
         :param obj: GenericMaterial or Pocess element
-        :param study_data_in_assay: Whether this element is part of study data
-        in assay (boolean)
+        :param study_data_in_assay: Whether we are adding hideable study data in
+        an assay table (boolean)
         """
         hideable = [STUDY_HIDEABLE_CLASS] if study_data_in_assay else list()
 
@@ -273,9 +273,8 @@ class SampleSheetTableBuilder:
 
             # Material headers
             if type(obj) == GenericMaterial:
-                self._add_header('Name')      # Name
+                self._add_header('Name')                 # Name
                 field_count += 1
-                # NOTE: No study data hiding of name field
 
                 a_header_count = self._add_annotation_headers(
                     obj.characteristics,
@@ -399,7 +398,8 @@ class SampleSheetTableBuilder:
                 study.get_name(), study.pk))
 
             nodes = list(GenericMaterial.objects.filter(study=study)) + \
-                    list(Process.objects.filter(study=study))
+                list(Process.objects.filter(
+                    study=study).prefetch_related('protocol'))
 
             # TODO: Onelinerize this
             arcs = study.arcs

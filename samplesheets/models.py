@@ -21,10 +21,6 @@ GENERIC_MATERIAL_TYPES = {
 
 GENERIC_MATERIAL_CHOICES = [(k, v) for k, v in GENERIC_MATERIAL_TYPES.items()]
 
-ARC_OBJ_SUFFIX_MAP = {
-    'GenericMaterial': 'material',
-    'Process': 'process'}
-
 INVESTIGATION_STATUS_TYPES = [
     'OK',
     'IMPORTING',
@@ -84,7 +80,7 @@ class BaseSampleSheet(models.Model):
         elif type(self) == Protocol:
             return self.study.investigation.project
 
-        elif type(self) in [Assay, Arc, GenericMaterial, Process]:
+        elif type(self) in [Assay, GenericMaterial, Process]:
             if self.study:
                 return self.study.investigation.project
 
@@ -521,9 +517,8 @@ class GenericMaterial(BaseSampleSheet):
         verbose_name_plural = 'materials'
 
         indexes = [
-            models.Index(fields=['name']),
             models.Index(fields=['unique_name']),
-            models.Index(fields=['study', 'item_type'])]
+            models.Index(fields=['study'])]
 
     def __str__(self):
         return '{}: {}/{}/{}/{}'.format(
@@ -660,6 +655,9 @@ class Process(BaseSampleSheet):
 
     class Meta:
         verbose_name_plural = 'processes'
+        indexes = [
+            models.Index(fields=['unique_name']),
+            models.Index(fields=['study'])]
 
     def __str__(self):
         return '{}: {}/{}/{}'.format(

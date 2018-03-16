@@ -78,3 +78,6 @@ staticfiles/
 
 # File handles
 .nfs*
+
+# Flamegraph
+flamegraph.pl
