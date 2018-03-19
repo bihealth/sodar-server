@@ -1,0 +1,48 @@
+{% load rules %}
+{% has_perm 'samplesheets.edit_sheet' request.user project as can_edit_sheet %}
+{% has_perm 'samplesheets.export_sheet' request.user project as can_export_sheet %}
+{% has_perm 'samplesheets.delete_sheet' request.user project as can_delete_sheet %}
+
+{% if up %}
+  <div class="row">
+    <div class="btn-group dropup ml-auto" id="omics-ss-buttons-list-up">
+{% else %}
+  <div class="btn-group ml-auto" id="omics-ss-buttons-list">
+{% endif %}
+
+  <button class="btn btn-primary dropdown-toggle"
+          type="button" data-toggle="dropdown"
+          aria-haspopup="true" aria-expanded="false">
+    Sheet Operations
+  </button>
+  <div class="dropdown-menu dropdown-menu-right">
+
+    {# Import #}
+    {% if not investigation and can_edit_sheet %}
+      <a class="dropdown-item" href="{% url 'sheet_import' project=project.pk %}">
+        <i class="fa fa-fw fa-upload"></i> Import ISAtab
+      </a>
+    {% endif %}
+
+    {# Export #}
+    {% comment %}
+    {% if investigation and can_export_sheet %}
+      <a class="dropdown-item" href="{% url 'sheet_export_json' project=project.pk %}">
+        <i class="fa fa-fw fa-download"></i> Export JSON
+      </a>
+    {% endif %}
+    {% endcomment %}
+
+    {# Delete #}
+    {% if investigation and can_delete_sheet %}
+      <a class="dropdown-item" href="{% url 'sheet_delete' project=project.pk %}">
+        <i class="fa fa-fw fa-close"></i> Delete Sheets
+      </a>
+    {% endif %}
+
+  </div>
+</div>
+
+{% if up %}
+  </div>
+{% endif %}

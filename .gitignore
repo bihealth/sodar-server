@@ -75,3 +75,9 @@ omics_data_mgmt/media/
 
 # Static files
 staticfiles/
+
+# File handles
+.nfs*
+
+# Flamegraph
+flamegraph.pl

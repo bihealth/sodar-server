@@ -8,29 +8,20 @@ from rest_framework.views import APIView
 # Projectroles dependency
 from projectroles.models import Project
 from projectroles.views import LoggedInPermissionMixin, \
-    ProjectContextMixin
+    ProjectContextMixin, ProjectPermissionObjectMixin
 
 from .models import ProjectEvent
 
 
 class ProjectTimelineView(
         LoginRequiredMixin, LoggedInPermissionMixin, ProjectContextMixin,
-        ListView):
+        ProjectPermissionObjectMixin, ListView):
     """View for displaying files and folders for a project"""
     permission_required = 'timeline.view_timeline'
 
     template_name = 'timeline/project_timeline.html'
     model = ProjectEvent
     paginate_by = settings.TIMELINE_PAGINATION
-
-    def get_permission_object(self):
-        """Override get_permission_object for checking Project permission"""
-        try:
-            obj = Project.objects.get(id=self.kwargs['project'])
-            return obj
-
-        except Project.DoesNotExist:
-            return None
 
     def get_context_data(self, *args, **kwargs):
         context = super(

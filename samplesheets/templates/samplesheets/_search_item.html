@@ -1,0 +1,31 @@
+{% load rules %}
+{% load samplesheets_tags %}
+{% load projectroles_common_tags %}
+
+<tr class="omics-ss-search-list-item" id="omics-ss-project-search-item-{{ item.pk }}">
+  <td><a href="{% get_material_link item %}">{{ item.name }}</a></td>
+  <td>{% get_material_type item %}</td>
+  <td>
+    {% autoescape off %}
+      {% get_project_link item.get_project %}
+    {% endautoescape %}
+  </td>
+  <td>
+    {% if item.study %}
+      <a href="{% url 'project_sheets' project=item.get_project.pk study=item.study.pk %}">
+        {% get_study_title item.study %}
+      </a>
+    {% else %}
+      N/A
+    {% endif %}
+  </td>
+  <td>
+    {% if item.assay %}
+      <a href="{% url 'project_sheets' project=item.get_project.pk study=item.study.pk %}#assay{{ item.assay.pk }}">
+        {% get_assay_title item.assay %}
+      </a>
+    {% else %}
+      N/A
+    {% endif %}
+  </td>
+</tr>

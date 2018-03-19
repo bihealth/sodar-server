@@ -36,6 +36,8 @@ pytz==2017.3
 django-redis==4.8.0
 redis>=2.10.5
 
+django-cprofile-middleware==1.0
+
 
 # Project imports below
 
@@ -68,3 +70,7 @@ mistune==0.7.4
 
 # Database file storage
 django-db-file-storage==0.4.3
+
+# CUBI AltamISA parser
+# NOTE: Commented out for flynn workaround
+# -e git://github.com/bihealth/altamisa.git@00e98d93dddd2e4c4e81fb09e16bc25a0986e2ae#egg=altamisa

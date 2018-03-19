@@ -23,7 +23,7 @@ from projectroles.models import Project
 from projectroles.plugins import get_backend_api
 from projectroles.project_settings import get_project_setting
 from projectroles.views import LoggedInPermissionMixin, \
-    ProjectContextMixin, HTTPRefererMixin
+    ProjectContextMixin, HTTPRefererMixin, ProjectPermissionObjectMixin
 
 
 # Settings and constants
@@ -274,17 +274,8 @@ class FileServeMixin:
 
 class BaseCreateView(
         LoginRequiredMixin, LoggedInPermissionMixin, FormValidMixin,
-        ProjectContextMixin, CreateView):
+        ProjectContextMixin, ProjectPermissionObjectMixin, CreateView):
     """Base File/Folder/HyperLink creation view"""
-
-    def get_permission_object(self):
-        """Override get_permission_object for checking Project permission"""
-        try:
-            obj = Project.objects.get(pk=self.kwargs['project'])
-            return obj
-
-        except Project.DoesNotExist:
-            return None
 
     def get_context_data(self, *args, **kwargs):
         context = super(BaseCreateView, self).get_context_data(
@@ -468,18 +459,10 @@ class FileDeleteView(
 
 # NOTE: This should only be used for prototype use with the development server
 class FileServeView(
-        LoginRequiredMixin, LoggedInPermissionMixin, FileServeMixin, View):
+        LoginRequiredMixin, LoggedInPermissionMixin, FileServeMixin,
+        ProjectPermissionObjectMixin, View):
     """View for serving file to a logged in user with permissions"""
     permission_required = 'filesfolders.view_data'
-
-    def get_permission_object(self):
-        """Override get_permission_object for checking Project permission"""
-        try:
-            obj = Project.objects.get(pk=self.kwargs['project'])
-            return obj
-
-        except Project.DoesNotExist:
-            return None
 
 
 class FileServePublicView(FileServeMixin, View):
@@ -512,19 +495,10 @@ class FileServePublicView(FileServeMixin, View):
 
 class FilePublicLinkView(
         LoginRequiredMixin, LoggedInPermissionMixin, SingleObjectMixin,
-        ProjectContextMixin, TemplateView):
+        ProjectContextMixin, ProjectPermissionObjectMixin, TemplateView):
     """View for generating a public secure link to a file"""
     permission_required = 'filesfolders.share_public_link'
     template_name = 'filesfolders/public_link.html'
-
-    def get_permission_object(self):
-        """Override get_permission_object for checking Project permission"""
-        try:
-            obj = Project.objects.get(pk=self.kwargs['project'])
-            return obj
-
-        except Project.DoesNotExist:
-            return None
 
     def get_object(self):
         """Override get_object to provide a File object for perm checking
@@ -623,21 +597,12 @@ class HyperLinkDeleteView(
 
 class BatchEditView(
         LoginRequiredMixin, LoggedInPermissionMixin, HTTPRefererMixin,
-        TemplateView):
+        ProjectPermissionObjectMixin, TemplateView):
     """Batch delete/move confirm view"""
     http_method_names = ['post']
     template_name = 'filesfolders/batch_edit_confirm.html'
     # NOTE: minimum perm, all checked files will be tested in post()
     permission_required = 'filesfolders.update_data_own'
-
-    def get_permission_object(self):
-        """Override get_permission_object for checking Project permission"""
-        try:
-            obj = Project.objects.get(pk=self.kwargs['project'])
-            return obj
-
-        except Project.DoesNotExist:
-            return None
 
     def post(self, request, **kwargs):
         post_data = request.POST

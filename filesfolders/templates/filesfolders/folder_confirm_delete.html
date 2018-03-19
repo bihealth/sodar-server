@@ -11,7 +11,7 @@
   <h3>Confirm Folder Deletion</h3>
 </div>
 
-<div class="container-fluid">
+<div class="container-fluid omics-page-container">
   {% if object.children.count > 0 or object.files.count > 0 or object.links.count > 0 %}
   <div class="alert alert-danger" role="alert">
     <strong>Error:</strong> Unable to delete a non-empty folder. Please delete files and subfolders and try again.

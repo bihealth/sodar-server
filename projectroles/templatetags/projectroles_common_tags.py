@@ -3,6 +3,7 @@
 import mistune
 
 from django import template
+from django.urls import reverse
 
 from projectroles.plugins import get_backend_api
 
@@ -74,3 +75,11 @@ def get_user_html(user):
     return '<a title="{}" href="mailto:{}" data-toggle="tooltip" ' \
            'data-placement="top">{}</a>'.format(
                 full_name, user.email, user.username)
+
+
+@register.simple_tag
+def get_project_link(project):
+    """Return link to project with simple title"""
+    return '<a href="{}">{}</a>'.format(
+        reverse('project_detail', kwargs={'pk': project.pk}),
+        project.title)

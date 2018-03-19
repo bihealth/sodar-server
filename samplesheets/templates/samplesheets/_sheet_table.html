@@ -1,0 +1,43 @@
+{% load samplesheets_tags %}
+
+<table class="table table-bordered omics-card-table-bordered omics-ss-data-table">
+  <thead>
+    {# Top header #}
+    <tr>
+      {% for section in table.top_header %}
+        {% autoescape off %}
+          {% render_top_header section %}
+        {% endautoescape %}
+      {% endfor %}
+      {% autoescape off %}
+        {% render_links_top_header %}
+      {% endautoescape %}
+    </tr>
+    {# Field header #}
+    <tr>
+      {% for header in table.field_header %}
+        {% autoescape off %}
+          {% render_header header %}
+        {% endautoescape %}
+      {% endfor %}
+      {% autoescape off %}
+        {% render_links_header %}
+      {% endautoescape %}
+   </tr>
+   </thead>
+  <tbody>
+    {# Content #}
+    {% for row in table.table_data %}
+      <tr>
+        {% for cell in row %}
+          {% autoescape off %}
+            {% render_cell cell %}
+          {% endautoescape %}
+        {% endfor %}
+        {% autoescape off %}
+          {% render_links_cell row %}
+        {% endautoescape %}
+      </tr>
+    {% endfor %}
+   </tbody>
+</table>

@@ -38,6 +38,7 @@ urlpatterns = [
     # url(r'^', include_plugins(ProjectAppPluginPoint)),
     url(r'^timeline/', include('timeline.urls')),
     url(r'^files/', include('filesfolders.urls')),
+    url(r'^samplesheets/', include('samplesheets.urls')),
 
     # django-db-file-storage URLs (needed for admin, obfuscated for users)
     url(r'^xu7in5zs9lylar0n/', include('db_file_storage.urls')),

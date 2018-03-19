@@ -52,6 +52,17 @@ APP_NAME = 'projectroles'
 # Mixins -----------------------------------------------------------------
 
 
+class ProjectPermissionObjectMixin(PermissionRequiredMixin):
+    """Mixin for providing a Project object for permission checking"""
+    def get_permission_object(self):
+        try:
+            obj = Project.objects.get(pk=self.kwargs['project'])
+            return obj
+
+        except Project.DoesNotExist:
+            return None
+
+
 class LoggedInPermissionMixin(PermissionRequiredMixin):
     """Mixin for handling redirection for both unlogged users and authenticated
     users without permissions"""
@@ -149,7 +160,7 @@ class ProjectContextMixin(HTTPRefererMixin, ContextMixin):
         if plugins:
             context['app_plugins'] = sorted([
                 p for p in plugins if p.is_active()],
-                key=lambda x: x.details_position)
+                key=lambda x: x.plugin_ordering)
 
         # Project tagging/starring
         if 'project' in context:
@@ -302,13 +313,16 @@ class ProjectSearchView(LoginRequiredMixin, TemplateView):
         context['search_keywords'] = search_keywords
 
         if search_type:
-            context['search_apps'] = [
+            context['search_apps'] = sorted([
                 p for p in plugins if (
                     p.search_enable and
-                    search_type in p.search_types)]
+                    search_type in p.search_types)],
+                key=lambda x: x.plugin_ordering)
 
         else:
-            context['search_apps'] = [p for p in plugins if p.search_enable]
+            context['search_apps'] = sorted(
+                [p for p in plugins if p.search_enable],
+                key=lambda x: x.plugin_ordering)
 
         return context
 

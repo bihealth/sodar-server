@@ -79,7 +79,7 @@
 
 {% has_perm 'timeline.view_timeline' request.user project as can_view_timeline %}
 
-<div class="row omics-subtitle-container">
+<div class="row omics-subtitle-container bg-white sticky-top">
   <h3><i class="fa fa-clock-o"></i> {{ timeline_title }}</h3>
   {% if timeline_mode == 'object' %}
     <div class="input-group omics-header-input-group ml-auto">
@@ -93,7 +93,7 @@
 </div>
 
 {% if object_list.count > 0 %}
-  <div class="container-fluid">
+  <div class="container-fluid omics-pr-main-container">
     <div class="card omics-card-single" id="omics-tl-event-list">
       <div class="card-body omics-card-body-table">
        <table class="table table-striped omics-card-table" id="omics-tl-table">

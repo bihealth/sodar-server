@@ -14,6 +14,20 @@ import imp
 import pip
 
 
+# FLYNN WORKAROUND for altamisa
+try:
+    import altamisa
+
+except ImportError:
+    print('Flynn issue #3932 workaround: installing altamisa..')
+    pip.main([
+        'install',
+        '-e',
+        'git+git://github.com/bihealth/altamisa.git@'
+        '00e98d93dddd2e4c4e81fb09e16bc25a0986e2ae#egg=altamisa'])
+
+# FLYNN WORKAROUND ENDS
+
 # FLYNN WORKAROUND for django-plugins
 try:
     imp.find_module('djangoplugins')
@@ -81,6 +95,7 @@ LOCAL_APPS = [
     'projectroles.apps.ProjectrolesConfig',
     'timeline.apps.TimelineConfig',
     'filesfolders.apps.FilesfoldersConfig',
+    'samplesheets.apps.SamplesheetsConfig',
 
     # General site apps
     'adminalerts.apps.AdminalertsConfig',
@@ -98,6 +113,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django_cprofile_middleware.middleware.ProfilerMiddleware',
 ]
 
 # MIGRATIONS CONFIGURATION
@@ -353,6 +369,38 @@ if env.str('ENABLE_LDAP', None):
         ('omics_data_mgmt.users.backends.ChariteLDAPBackend',),
         ('omics_data_mgmt.users.backends.MDCLDAPBackend',),
         AUTHENTICATION_BACKENDS,))
+
+
+# Logging
+# ------------------------------------------------------------------------------
+
+def set_logging(debug):
+    return {
+        'version': 1,
+        'disable_existing_loggers': False,
+        'formatters': {
+            'simple': {
+                'format': '%(levelname)s | %(name)s: %(message)s'
+            }
+        },
+        'handlers': {
+            'console': {
+                'level': 'DEBUG',
+                'class': 'logging.StreamHandler',
+                'formatter': 'simple'
+            }
+        },
+        'loggers': {
+            'samplesheets': {
+                'level': 'DEBUG' if debug else 'INFO',
+                'handlers': ['console', ],
+                'propagate': False,
+            },
+        },
+    }
+
+
+LOGGING = set_logging(DEBUG)
 
 
 # Local App Settings

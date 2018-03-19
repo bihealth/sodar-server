@@ -11,7 +11,7 @@
   <h2>{% if object.pk %}Update{% else %}Create{% endif %} Admin Alert</h2>
 </div>
 
-<div class="container-fluid">
+<div class="container-fluid omics-page-container">
   <form method="post">
     {% csrf_token %}
     {{ form | crispy }}
