@@ -11,6 +11,10 @@
 
 {% block css %}
   {{ block.super }}
+  <!-- DataTables -->
+  <link rel="stylesheet" type="text/css" href="{% static 'datatables/datatables.min.css' %}"/>
+  <link rel="stylesheet" type="text/css" href="{% static 'datatables/DataTables-1.10.16/integration/dataTables.fontAwesome.css' %}"/>
+
   <style type="text/css">
     /* Special version of the container for samplesheets */
     div.omics-subtitle-container {
@@ -34,45 +38,66 @@
     }
 
     .omics-ss-data-container {
-      height: 500px;
-      overflow-y: scroll;
+      // height: 500px;
+      // overflow-y: scroll;
+    }
+
+    .omics-ss-data-table {
+      border: 0 !important;
     }
 
     .omics-ss-data-table thead tr th {
       white-space: nowrap;
-      padding: 5px; /* Demo "Excel" mode */
+      padding: 5px;
+      padding-right: 22px; /* Avoid covering sort icons */
+      border-top: 0;
+      border-right: 1px solid #dfdfdf;
+      border-bottom: 1px solid #dfdfdf;
     }
 
     .omics-ss-data-table tbody tr td {
       white-space: nowrap;
-      padding: 5px; /* Demo "Excel" mode */
+      padding: 5px;
+      margin: 0 !important;
+    }
+
+    .DTFC_RightBodyLiner {
+      overflow-x: hidden;
     }
 
     .omics-ss-data-table tbody tr:last-child td {
-        border-bottom: 0;
+      border-bottom: 0;
     }
 
-    .omics-ss-data-table-btn {
-      height: 1.75em;
-      padding-top: 1px;
+    .omics-ss-data-table tbody tr td:first-child {
+      border-left: 0 !important;
+    }
+
+    .DTFC_Cloned tbody tr td:first-child {
+      border-left: 1px solid #dfdfdf !important;
+    }
+
+    .omics-ss-data-links-header {
+      border-left: 1px solid #dfdfdf !important;
+    }
+
+    .omics-ss-data-cell-links {
+      // padding-top: 1px !important;
+      border-left: 1px solid #dfdfdf !important;
     }
 
     .omics-ss-data-btn-group {
-      height: 1.5em;
+      height: 1.25em;
     }
 
-    /* Screenshot HACK */
-    .omics-ss-data-cell-links {
-        width: 50px;
+    .omics-ss-data-table-btn {
+      height: 1em !important;
+      padding-top: 0;
     }
 
-    /* Screenshot HACK */
-    .fixed-column {
-        position: absolute;
-        display: inline-block;
-        width: 60px;
-        right: 0;
-        border-left: 1px solid #f5f5f5 !important;
+    .omics-ss-data-dropdown {
+      // padding-top: 3px;
+      height: 1.75em;
     }
 
     @media screen and (max-width: 1000px) {
@@ -146,7 +171,8 @@
       <div class="card omics-ss-data-card" id="study{{ study.pk }}">
         <div class="card-header">
           <h4>Study: {% get_study_title study %}
-            <div class="input-group omics-header-input-group pull-right" style="width: 320px;">
+            <div class="input-group omics-header-input-group pull-right"
+                 style="width: 320px;" table-id="{% get_table_id study %}">
               <div class="input-group-prepend">
                 {# TODO: Include buttons from a separate file #}
                 <button class="btn btn-secondary omics-ss-data-drag-toggle"
@@ -163,8 +189,8 @@
           </h4>
         </div>
         <div class="card-body omics-card-body-table">
-          <div class="table-responsive omics-ss-data-container">
-            {% include 'samplesheets/_sheet_table.html' with table=table_data.study %}
+          <div class="omics-ss-data-container">
+            {% include 'samplesheets/_sheet_table.html' with table=table_data.study parent=study %}
           </div>
         </div>
       </div>
@@ -174,7 +200,8 @@
         <div class="card omics-ss-data-card" id="assay{{ assay.pk }}">
           <div class="card-header">
             <h4>Assay: {% get_assay_title assay %}
-              <div class="input-group omics-header-input-group pull-right" style="width: 400px;">
+              <div class="input-group omics-header-input-group pull-right"
+                   style="width: 400px;" table-id="{% get_table_id assay %}">
                 <div class="input-group-prepend">
                   <button class="btn btn-secondary omics-ss-data-drag-toggle"
                           type="submit" id="omics-ss-data-drag-toggle-{{ assay.pk }}"
@@ -193,9 +220,9 @@
             </h4>
           </div>
           <div class="card-body omics-card-body-table">
-            <div class="table-responsive omics-ss-data-container">
+            <div class="omics-ss-data-container">
               {% get_assay_table table_data assay as assay_table %}
-              {% include 'samplesheets/_sheet_table.html' with table=assay_table %}
+              {% include 'samplesheets/_sheet_table.html' with table=assay_table parent=assay %}
             </div>
           </div>
         </div>
@@ -259,27 +286,43 @@
 {% block javascript %}
   {{ block.super }}
 
+  <!-- DataTables -->
+  <script type="text/javascript" src="{% static 'datatables/datatables.min.js'%}"></script>
+
   <!-- Dragscroll for tables -->
   <script type="text/javascript" src="{% static 'js/dragscroll.js' %}"></script>
 
   <script type="text/javascript">
     $(document).ready(function() {
-        /*
-        /*************************************************
-         * HACK for screenshots: Fix links column position
-         * NOTE: Disabled as this fails with table-responsive
-        **************************************************/
-        /*
-        $('.omics-ss-data-table').each(function () {
-            var $table = $(this);
-            var $fixedColumn = $table.clone().insertBefore($table).addClass('fixed-column');
-            $fixedColumn.find('th:not(:last-child),td:not(:last-child)').remove();
 
-            $fixedColumn.find('tr').each(function (i, elem) {
-                $(this).height($table.find('tr:eq(' + i + ')').height());
-                });
-            });
-        */
+        /************************
+         * Initialize DataTables
+         ************************/
+        $('.omics-ss-data-table').DataTable({
+            scrollY: 400,
+            scrollX: true,
+            paging: false,
+            scrollCollapse: true,
+            info: false,
+            fixedColumns: {
+                leftColumns: 0,
+                rightColumns: 1
+            },
+            columnDefs: [
+                {
+                    /* Disable sorting from links column */
+                    targets: [
+                        'omics-ss-data-cell-links',
+                        'omics-ss-data-links-header'],
+                    orderable: false
+                },
+                {
+                    targets: 'omics-ss-hideable-study',
+                    visible: false
+                }
+                ],
+            dom: 't' /* Disable toolbar */
+        });
 
         /****************************
          * Enable/disable dragscroll
@@ -288,14 +331,14 @@
             if ($(this).attr('drag-mode') === '0') {
                 $(this).find('i').addClass('text-warning');
                 $(this).attr('drag-mode', '1');
-                $(this).closest('.omics-ss-data-card').find('.table-responsive').addClass('dragscroll');
+                $(this).closest('.omics-ss-data-card').find('.dataTables_scrollBody').addClass('dragscroll');
                 dragscroll.reset();
             }
 
             else {
                 $(this).find('i').removeClass('text-warning');
                 $(this).attr('drag-mode', '0');
-                $(this).closest('.omics-ss-data-card').find('.table-responsive').removeClass('dragscroll');
+                $(this).closest('.omics-ss-data-card').find('.dataTables_scrollBody').removeClass('dragscroll');
                 dragscroll.reset();
             }
         });
@@ -304,75 +347,33 @@
          * Filtering
          **********************/
 
-        // TODO: Highlight found string
-        // TODO: Handle repeating rows (once re-enabled)
-
         $('.omics-ss-data-filter').keyup(function () {
-            var v = $(this).val().toLowerCase();
-            var tableBody = $(this).closest('.omics-ss-data-card').find('.omics-ss-data-table').find('tbody');
-
-            if (v.length > 2) {
-              var valFound = false;
-              tableBody.find('tr').show();
-
-              tableBody.find('tr').each(function() {
-                  if ($(this).text().toLowerCase().indexOf(v) === -1) {
-                      $(this).hide();
-                  }
-              });
-            }
-
-            else {
-                tableBody.find('tr').show();
-            }
+            var tableId = $(this).closest('.input-group').attr('table-id');
+            var dt = $('#' + tableId).dataTable();
+            var v = $(this).val();
+            dt.fnFilter(v);
         });
 
         /**********************
          * Study column hiding
         ***********************/
 
-        // TODO: Cleanup/refactor this
-
-        // Hide study columns by default
-         $('.omics-ss-data-table').find('.omics-ss-hideable-study').hide();
-         $('.omics-ss-top-header').each(function () {
-             if ($(this).attr('omics-ss-hideable-study-cols') !== '0') {
-                var colspan = $(this).attr('colspan');
-                var hideCols = $(this).attr('omics-ss-hideable-study-cols');
-                $(this).attr('colspan', colspan - hideCols);
-             }
-         });
-
         // Hide/show study columns when clicked
         $('.omics-ss-assay-hide').click(function () {
+            var tableId = $(this).closest('.input-group').attr('table-id');
+            var dt = $('#' + tableId).DataTable();
+
             // Hide
             if ($(this).attr('assay-hide-mode') === '0') {
-                $(this).find('i').removeClass('fa-eye');
-                $(this).find('i').addClass('fa-eye-slash');
-                $(this).closest('.omics-ss-data-card').find('.omics-ss-data-table').find('.omics-ss-hideable-study').hide();
-                $(this).closest('.omics-ss-data-card').find('.omics-ss-data-table').find('.omics-ss-top-header').each(function () {
-                    if ($(this).attr('omics-ss-hideable-study-cols') !== '0') {
-                        var colspan = $(this).attr('colspan');
-                        var hideCols = $(this).attr('omics-ss-hideable-study-cols');
-                        $(this).attr('colspan', colspan - hideCols);
-                    }
-                });
-
+                $(this).find('i').removeClass('fa-eye').addClass('fa-eye-slash').removeClass('text-warning');
+                dt.columns('.omics-ss-hideable-study').visible(false);
                 $(this).attr('assay-hide-mode', '1');
             }
 
             // Show
             else {
-                $(this).find('i').removeClass('fa-eye-slash');
-                $(this).find('i').addClass('fa-eye');
-                $(this).closest('.omics-ss-data-card').find('.omics-ss-data-table').find('.omics-ss-hideable-study').show();
-                $(this).closest('.omics-ss-data-card').find('.omics-ss-data-table').find('.omics-ss-top-header').each(function () {
-                    if ($(this).attr('omics-ss-hideable-study-cols') !== '0') {
-                        var originalCols = $(this).attr('original-colspan');
-                        $(this).attr('colspan', originalCols);
-                    }
-                });
-
+                $(this).find('i').removeClass('fa-eye-slash').addClass('fa-eye').addClass('text-warning');
+                dt.columns('.omics-ss-hideable-study').visible(true);
                 $(this).attr('assay-hide-mode', '0');
             }
         });
