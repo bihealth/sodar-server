@@ -30,7 +30,8 @@ Changed
 -------
 
 - **General**
-    - Update site to Django 1.11.11
+    - Upgrade site to Django 1.11.11
+    - Upgrade site to Boostrap 4.0.0 Stable (#78)
     - Modify subtitle and page content containers for all apps
     - Site-wide CSS tweaks
     - Rename ``details_position`` to ``plugin_ordering`` in plugins (#90)
