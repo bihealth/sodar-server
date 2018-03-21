@@ -537,9 +537,9 @@ class SampleSheetHTMLRenderer:
 
     @classmethod
     def render_links_top_header(cls):
-        return '<th class="bg-dark text-nowrap text-white ' \
+        return '<th class="bg-white ' \
                'omics-ss-top-header omics-ss-data-links-header ' \
-               'omics-ss-data-cell-links">Links</th>\n'
+               'omics-ss-data-cell-links">&nbsp;</th>\n'
 
     @classmethod
     def render_links_header(cls):
@@ -547,7 +547,7 @@ class SampleSheetHTMLRenderer:
         Render data table links column header
         :return: String (contains HTML)
         """
-        return '<th class="bg-light omics-ss-data-links-header">&nbsp;</th>\n'
+        return '<th class="bg-white omics-ss-data-links-header">Links</th>\n'
 
     @classmethod
     def render_links_cell(cls):

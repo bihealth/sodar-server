@@ -37,9 +37,8 @@
       max-width: 800px;
     }
 
-    .omics-ss-data-container {
-      // height: 500px;
-      // overflow-y: scroll;
+    .omics-ss-init-container {
+      height: 470px;
     }
 
     .omics-ss-data-table {
@@ -73,8 +72,20 @@
       border-left: 0 !important;
     }
 
+    .DTFC_RightHeadBlocker {
+        border-bottom: 1px solid #dfdfdf !important;
+    }
+
     .DTFC_Cloned {
       border-left: 3px solid #dfdfdf !important;
+    }
+
+    .omics-ss-data-links-header {
+      border-right: 0 !important;
+    }
+
+    .DTFC_Cloned thead tr:first-child th {
+      border-bottom: 0 !important;
     }
 
     .DTFC_Cloned tbody tr td:first-child {
@@ -184,7 +195,7 @@
           </h4>
         </div>
         <div class="card-body omics-card-body-table">
-          <div class="omics-ss-data-container">
+          <div class="table-responsive omics-ss-init-container">
             {% include 'samplesheets/_sheet_table.html' with table=table_data.study parent=study %}
           </div>
         </div>
@@ -215,7 +226,7 @@
             </h4>
           </div>
           <div class="card-body omics-card-body-table">
-            <div class="omics-ss-data-container">
+            <div class="table-responsive omics-ss-init-container">
               {% get_assay_table table_data assay as assay_table %}
               {% include 'samplesheets/_sheet_table.html' with table=assay_table parent=assay %}
             </div>
@@ -305,7 +316,7 @@
             },
             columnDefs: [
                 {
-                    /* Disable sorting from links column */
+                    // Disable sorting from links column
                     targets: [
                         'omics-ss-data-cell-links',
                         'omics-ss-data-links-header'],
@@ -316,8 +327,11 @@
                     visible: false
                 }
                 ],
-            dom: 't' /* Disable toolbar */
+            dom: 't' // Disable toolbar
         });
+
+        // Once initialized, remove temporary init classes
+        $('.omics-ss-init-container').removeClass('table-responsive').removeClass('omics-ss-init-container');
 
         /****************************
          * Enable/disable dragscroll
