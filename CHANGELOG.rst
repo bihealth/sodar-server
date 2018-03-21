@@ -24,11 +24,13 @@ Added
     - Importing ISA investigations as sample sheets (#77)
     - Rendering and navigation of sample sheets (#79)
     - Simple sample sheet search (#87)
+    - DataTables rendering of sheets (#81)
 
 Changed
 -------
 
 - **General**
+    - Update site to Django 1.11.11
     - Modify subtitle and page content containers for all apps
     - Site-wide CSS tweaks
     - Rename ``details_position`` to ``plugin_ordering`` in plugins (#90)
@@ -40,6 +42,7 @@ Fixed
 
 - **General**
     - Update ChromeDriver to eliminate UI test crashes (#85)
+    - Fix user dropdown rendering depth (#82)
 
 
 v0.1 (2018-01-26)
