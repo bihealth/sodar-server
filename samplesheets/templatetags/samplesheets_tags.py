@@ -1,7 +1,7 @@
 from django import template
 from django.urls import reverse
 
-from ..models import Investigation, GenericMaterial, \
+from ..models import Investigation, Study, Assay, GenericMaterial, \
     GENERIC_MATERIAL_TYPES
 from ..rendering import SampleSheetHTMLRenderer as Renderer
 
@@ -52,6 +52,17 @@ def render_header(header):
 def render_links_header():
     """Render links column header"""
     return Renderer.render_links_header()
+
+
+@register.simple_tag
+def get_table_id(parent):
+    """
+    Return table id for DataTable reference
+    :param parent: Study or Assay object
+    :return: string
+    """
+    return 'omics-ss-data-table-{}-{}'.format(
+        parent.__class__.__name__.lower(), parent.pk)
 
 
 @register.simple_tag

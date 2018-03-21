@@ -1,3 +1,6 @@
+# Required for Flynn workarounds with the current buildpack
+setuptools==39.0.1
+
 # Wheel 0.25+ needed to install certain packages on CPython 3.5+
 # like Pillow and psycopg2
 # See http://bitly.com/wheel-building-fails-CPython-35
