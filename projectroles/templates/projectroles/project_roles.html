@@ -114,10 +114,6 @@
     </div>
   </div>
 
-  {% if can_update_members or can_invite %}
-    {% include 'projectroles/_role_list_buttons.html' with object=object can_update_members=can_update_members can_invite=can_invite up=True %}
-  {% endif %}
-
 </div>
 
 {% endblock projectroles_extend %}
