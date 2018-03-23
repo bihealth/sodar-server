@@ -41,7 +41,7 @@ FLAG_CHOICES = [
     (k, FILESFOLDERS_FLAGS[k]['label']) for k in sorted(FILESFOLDERS_FLAGS)]
 
 
-# Base class -------------------------------------------------------------
+# Base class -------------------------------------------------------------------
 
 
 class FilesfoldersManager(models.Manager):
@@ -112,11 +112,11 @@ class BaseFilesfoldersClass(models.Model):
         blank=True,
         help_text='Description (optional)')
 
-    #: Omics UUID
+    #: Filesfolders Omics UUID
     omics_uuid = models.UUIDField(
         default=uuid.uuid4,
         unique=True,
-        help_text='Omics UUID')
+        help_text='Filesfolders Omics UUID')
 
     # Set manager for custom queries
     objects = FilesfoldersManager()
@@ -125,7 +125,7 @@ class BaseFilesfoldersClass(models.Model):
         abstract = True
 
 
-# Folder -----------------------------------------------------------------
+# Folder -----------------------------------------------------------------------
 
 
 class Folder(BaseFilesfoldersClass):
@@ -133,7 +133,6 @@ class Folder(BaseFilesfoldersClass):
 
     class Meta:
         ordering = ['project', 'name']
-        # Ensure name is unique within parent folder
         unique_together = ('project', 'folder', 'name')
 
     def __str__(self):
@@ -179,7 +178,7 @@ class Folder(BaseFilesfoldersClass):
         return False
 
 
-# File -------------------------------------------------------------------
+# File -------------------------------------------------------------------------
 
 
 class FileData(models.Model):
@@ -250,7 +249,6 @@ class File(BaseFilesfoldersClass):
 
     class Meta:
         ordering = ['folder', 'name']
-        # Ensure file/folder combination is unique
         unique_together = ('project', 'folder', 'name')
 
     def __str__(self):
@@ -289,7 +287,6 @@ class HyperLink(BaseFilesfoldersClass):
 
     class Meta:
         ordering = ['folder', 'name']
-        # Ensure link/folder combination is unique
         unique_together = ('project', 'folder', 'name')
 
     def __str__(self):

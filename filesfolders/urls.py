@@ -4,98 +4,101 @@ from . import views
 
 urlpatterns = [
     url(
-        regex=r'^(?P<project>\d+)$',
+        regex=r'^(?P<project>[0-9a-f-]+)$',
         view=views.ProjectFileView.as_view(),
         name='project_files',
     ),
     url(
-        regex=r'^(?P<project>\d+)/folder/(?P<folder>\d+)$',
+        regex=r'^(?P<project>[0-9a-f-]+)/folder/(?P<folder>[0-9a-f-]+)$',
         view=views.ProjectFileView.as_view(),
         name='project_files',
     ),
     url(
-        regex=r'^(?P<project>\d+)/upload$',
+        regex=r'^(?P<project>[0-9a-f-]+)/upload$',
         view=views.FileCreateView.as_view(),
         name='file_create',
     ),
     url(
-        regex=r'^(?P<project>\d+)/folder/(?P<folder>\d+)/upload$',
+        regex=r'^(?P<project>[0-9a-f-]+)/folder/(?P<folder>[0-9a-f-]+)/upload$',
         view=views.FileCreateView.as_view(),
         name='file_create',
     ),
     url(
-        regex=r'^(?P<project>\d+)/update-file/(?P<pk>\d+)$',
+        regex=r'^(?P<project>[0-9a-f-]+)/update-file/(?P<item>[0-9a-f-]+)$',
         view=views.FileUpdateView.as_view(),
         name='file_update',
     ),
     url(
-        regex=r'^(?P<project>\d+)/delete-file/(?P<pk>\d+)$',
+        regex=r'^(?P<project>[0-9a-f-]+)/delete-file/(?P<item>[0-9a-f-]+)$',
         view=views.FileDeleteView.as_view(),
         name='file_delete',
     ),
     url(
-        regex=r'^(?P<project>\d+)/download/'
-              r'(?P<pk>\d+)/(?P<file_name>[^\0]{0,256})$',
+        regex=r'^(?P<project>[0-9a-f-]+)/download/'
+              r'(?P<file>[0-9a-f-]+)/(?P<file_name>[^\0/]+)$',
         view=views.FileServeView.as_view(),
         name='file_serve',
     ),
     url(
-        regex=r'^download/(?P<secret>[\w\-]+)/(?P<file_name>[^\0]{0,256})$',
+        regex=r'^download/(?P<secret>[\w\-]+)/(?P<file_name>[^\0/]+)$',
         view=views.FileServePublicView.as_view(),
         name='file_serve_public',
     ),
     url(
-        regex=r'^(?P<project>\d+)/link/(?P<pk>\d+)$',
+        regex=r'^(?P<project>[0-9a-f-]+)/link/(?P<file>[0-9a-f-]+)$',
         view=views.FilePublicLinkView.as_view(),
         name='file_public_link',
     ),
     url(
-        regex=r'^(?P<project>\d+)/add-folder$',
+        regex=r'^(?P<project>[0-9a-f-]+)/add-folder$',
         view=views.FolderCreateView.as_view(),
         name='folder_create',
     ),
     url(
-        regex=r'^(?P<project>\d+)/folder/(?P<folder>\d+)/add_folder$',
+        regex=r'^(?P<project>[0-9a-f-]+)/folder/(?P<folder>[0-9a-f-]+)/'
+              r'add_folder$',
         view=views.FolderCreateView.as_view(),
         name='folder_create',
     ),
     url(
-        regex=r'^(?P<project>\d+)/update-folder/(?P<pk>\d+)$',
+        regex=r'^(?P<project>[0-9a-f-]+)/update-folder/(?P<item>[0-9a-f-]+)$',
         view=views.FolderUpdateView.as_view(),
         name='folder_update',
     ),
     url(
-        regex=r'^(?P<project>\d+)/delete-folder/(?P<pk>\d+)$',
+        regex=r'^(?P<project>[0-9a-f-]+)/delete-folder/(?P<item>[0-9a-f-]+)$',
         view=views.FolderDeleteView.as_view(),
         name='folder_delete',
     ),
     url(
-        regex=r'^(?P<project>\d+)/add-link$',
+        regex=r'^(?P<project>[0-9a-f-]+)/add-link$',
         view=views.HyperLinkCreateView.as_view(),
         name='hyperlink_create',
     ),
     url(
-        regex=r'^(?P<project>\d+)/folder/(?P<folder>\d+)/add-link$',
+        regex=r'^(?P<project>[0-9a-f-]+)/folder/'
+              r'(?P<folder>[0-9a-f-]+)/add-link$',
         view=views.HyperLinkCreateView.as_view(),
         name='hyperlink_create',
     ),
     url(
-        regex=r'^(?P<project>\d+)/update-link/(?P<pk>\d+)$',
+        regex=r'^(?P<project>[0-9a-f-]+)/update-link/(?P<item>[0-9a-f-]+)$',
         view=views.HyperLinkUpdateView.as_view(),
         name='hyperlink_update',
     ),
     url(
-        regex=r'^(?P<project>\d+)/delete-link/(?P<pk>\d+)$',
+        regex=r'^(?P<project>[0-9a-f-]+)/delete-link/(?P<item>[0-9a-f-]+)$',
         view=views.HyperLinkDeleteView.as_view(),
         name='hyperlink_delete',
     ),
     url(
-        regex=r'^(?P<project>\d+)/batch-edit$',
+        regex=r'^(?P<project>[0-9a-f-]+)/batch-edit$',
         view=views.BatchEditView.as_view(),
         name='batch_edit',
     ),
     url(
-        regex=r'^(?P<project>\d+)/folder/(?P<folder>\d+)/batch-edit$',
+        regex=r'^(?P<project>[0-9a-f-]+)/folder/'
+              r'(?P<folder>[0-9a-f-]+)/batch-edit$',
         view=views.BatchEditView.as_view(),
         name='batch_edit',
     ),

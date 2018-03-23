@@ -37,10 +37,10 @@ class FilesfoldersItemForm(forms.ModelForm):
             self.current_user = current_user
 
         if project:
-            self.project = Project.objects.get(pk=project)
+            self.project = Project.objects.get(omics_uuid=project)
 
         if folder:
-            self.folder = Folder.objects.get(pk=folder)
+            self.folder = Folder.objects.get(omics_uuid=folder)
 
 
 class FolderForm(FilesfoldersItemForm):

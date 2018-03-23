@@ -1,3 +1,5 @@
+import uuid
+
 from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.signals import user_logged_in
 from django.core.urlresolvers import reverse
@@ -12,6 +14,12 @@ class User(AbstractUser):
     # First Name and Last Name do not cover name patterns
     # around the globe.
     name = models.CharField(_('Name of User'), blank=True, max_length=255)
+
+    #: User Omics UUID
+    omics_uuid = models.UUIDField(
+        default=uuid.uuid4,
+        unique=True,
+        help_text='User Omics UUID')
 
     def __str__(self):
         return self.username
@@ -39,5 +47,6 @@ def handle_ldap_login(sender, user, **kwargs):
                     ' ' + user.last_name if user.last_name != '' else '')
 
                 user.save()
+
 
 user_logged_in.connect(handle_ldap_login)

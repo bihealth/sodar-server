@@ -5,7 +5,9 @@
 
 <tr id="omics-tl-list-event-{{ event.pk }}">
   <td>
-    <a class="omics-tl-detail-link" tabindex="0" data-toggle="popover" data-trigger="focus" data-placement="right" data-html="true" data-content="{% get_event_details event %}">
+    <a class="omics-tl-detail-link" tabindex="0" data-toggle="popover"
+       data-trigger="focus" data-placement="right" data-html="true"
+       data-content="{% get_event_details event %}">
       {% get_timestamp event %}
     </a>
   </td>

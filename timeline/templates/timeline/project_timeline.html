@@ -83,7 +83,7 @@
   <h3><i class="fa fa-clock-o"></i> {{ timeline_title }}</h3>
   {% if timeline_mode == 'object' %}
     <div class="input-group omics-header-input-group ml-auto">
-      <a href="{% url 'project_timeline' project=project.pk %}"
+      <a href="{% url 'project_timeline' project=project.omics_uuid %}"
          class="btn btn-secondary ml-auto"
          role="button">
         <i class="fa fa-arrow-circle-left"></i> Project Timeline
@@ -93,7 +93,7 @@
 </div>
 
 {% if object_list.count > 0 %}
-  <div class="container-fluid omics-pr-main-container">
+  <div class="container-fluid omics-pr-main-container my-3">
     <div class="card omics-card-single" id="omics-tl-event-list">
       <div class="card-body omics-card-body-table">
        <table class="table table-striped omics-card-table" id="omics-tl-table">

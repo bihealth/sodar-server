@@ -113,9 +113,9 @@ class TimelineAPI:
 
                 # Get history link
                 history_url = reverse('object_timeline', kwargs={
-                    'project': event.project.pk,
+                    'project': event.project.omics_uuid,
                     'object_model': ref_obj.object_model,
-                    'object_pk': ref_obj.object_pk})
+                    'object_uuid': ref_obj.object_uuid})
                 history_link = '<a href="{}" class="omics-tl-object-link">' \
                                '<i class="fa fa-clock-o"></i></a>'.format(
                                 history_url)
@@ -123,7 +123,7 @@ class TimelineAPI:
                 # Special case: User model
                 if ref_obj.object_model == 'User':
                     try:
-                        user = User.objects.get(pk=ref_obj.object_pk)
+                        user = User.objects.get(omics_uuid=ref_obj.object_uuid)
                         refs[r] = '{} {}'.format(
                             get_user_html(user), history_link)
 
@@ -133,14 +133,15 @@ class TimelineAPI:
                 # Special case: Project model
                 elif ref_obj.object_model == 'Project':
                     try:
-                        project = Project.objects.get(pk=ref_obj.object_pk)
+                        project = Project.objects.get(
+                            omics_uuid=ref_obj.object_uuid)
 
                         if request and request.user.has_perm(
                                 'projectroles.view_project', project):
                             refs[r] = '<a href="{}">{}</a>'.format(
                                 reverse(
                                     'project_detail',
-                                    kwargs={'pk': project.pk}),
+                                    kwargs={'project': project.omics_uuid}),
                                 project.title)
 
                         else:
@@ -161,7 +162,7 @@ class TimelineAPI:
                         name=event.app)
 
                     link_data = app_plugin.get_object_link(
-                        ref_obj.object_model, ref_obj.object_pk)
+                        ref_obj.object_model, ref_obj.object_uuid)
 
                     if link_data:
                         refs[r] = '<a href="{}" {}>{}</a> {}'.format(
@@ -182,27 +183,26 @@ class TimelineAPI:
         return event.description.format(**refs)
 
     @staticmethod
-    def get_object_url(project_pk, obj):
+    def get_object_url(project_uuid, obj):
         """
         Return URL for object history in timeline
-        :param project_pk: Pk of the related project
+        :param project_uuid: UUID of the related project
         :param obj: Django postgres database object
         :return: String
         """
         return reverse('object_timeline', kwargs={
-            'project': project_pk,
+            'project': project_uuid,
             'object_model': obj.__class__.__name__,
-            'object_pk': obj.pk})
+            'object_uuid': obj.omics_uuid})
 
     @staticmethod
-    def get_object_link(project_pk, obj):
+    def get_object_link(project_uuid, obj):
         """
         Return inline HTML icon link for object history in timeline.
-        :param project_pk:
-        :param project_pk: Pk of the related project
+        :param project_uuid: UUID of the related project
         :param obj: Django postgres database object
         :return: String
         """
         return '<a href="{}" class="omics-tl-object-link">' \
                '<i class="fa fa-clock-o"></i></a>'.format(
-                TimelineAPI.get_object_url(project_pk, obj))
+                TimelineAPI.get_object_url(project_uuid, obj))

@@ -20,7 +20,7 @@
 
       {# Overview #}
       <a class="dropdown-item {% get_link_state projectroles_urls request.resolver_match.url_name 'project_detail' %}"
-          href="{% url 'project_detail' pk=project.pk %}"
+          href="{% url 'project_detail' project=project.omics_uuid %}"
           title="Overview"
           id="omics-pr-alt-link-overview">
         <i class="fa fa-fw fa-cube{% if project.type == PROJECT_TYPE_CATEGORY %}s{% endif %}"></i> Overview
@@ -32,7 +32,7 @@
           {% has_perm plugin.app_permission request.user project as can_view_app %}
           {% if can_view_app %}
             <a class="dropdown-item {% get_link_state plugin.urls request.resolver_match.url_name %}"
-               href="{% url plugin.entry_point_url_id project=project.pk %}"
+               href="{% url plugin.entry_point_url_id project=project.omics_uuid %}"
                title="{{ plugin.title }}"
                id="omics-pr-alt-link-app-plugin-{{ plugin.name }}">
                <i class="fa fa-fw fa-{{ plugin.icon }}"></i>
@@ -45,7 +45,7 @@
       {# Role and project editing #}
       {% if project.type != PROJECT_TYPE_CATEGORY and can_view_roles %}
         <a class="dropdown-item {% get_link_state projectroles_urls request.resolver_match.url_name role_urls %}"
-           href="{% url 'project_roles' pk=project.pk %}"
+           href="{% url 'project_roles' project=project.omics_uuid %}"
            title="Members"
            id="omics-pr-alt-link-project-roles">
           <i class="fa fa-fw fa-users"></i> Members
@@ -53,7 +53,7 @@
       {% endif %}
       {% if can_update_project %}
         <a class="dropdown-item {% get_link_state projectroles_urls request.resolver_match.url_name 'project_update' %}"
-           href="{% url 'project_update' pk=project.pk %}"
+           href="{% url 'project_update' project=project.omics_uuid %}"
            title="Update Project"
            id="omics-pr-alt-link-project-update">
           <i class="fa fa-fw fa-pencil"></i> Update {% get_project_type_str project %}
@@ -68,7 +68,7 @@
       {% has_perm 'projectroles.create_project' request.user project as can_create_project %}
       {% if can_create_project %}
          <a class="dropdown-item"
-            href="{% url 'project_create' project=project.pk %}"
+            href="{% url 'project_create' project=project.omics_uuid %}"
             id="omics-pr-alt-link-project-create">
            <i class="fa fa-fw fa-plus"></i> Create Project or Category
          </a>

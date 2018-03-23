@@ -1,3 +1,5 @@
+import uuid
+
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -127,13 +129,17 @@ class Project(models.Model):
         default=OMICS_CONSTANTS['SUBMIT_STATUS_OK'],
         help_text='Status of project creation')
 
+    #: Project Omics UUID
+    omics_uuid = models.UUIDField(
+        default=uuid.uuid4,
+        unique=True,
+        help_text='Project Omics UUID')
+
     # Set manager for custom queries
     objects = ProjectManager()
 
     class Meta:
-        # Ensure title is unique within parent project
         unique_together = ('title', 'parent')
-
         ordering = ['parent__title', 'title']
 
     def __str__(self):
@@ -317,6 +323,12 @@ class RoleAssignment(models.Model):
         related_name='assignments',
         help_text='Role to be assigned')
 
+    #: RoleAssignment Omics UUID
+    omics_uuid = models.UUIDField(
+        default=uuid.uuid4,
+        unique=True,
+        help_text='RoleAssignment Omics UUID')
+
     # Set manager for custom queries
     objects = RoleAssignmentManager()
 
@@ -326,6 +338,9 @@ class RoleAssignment(models.Model):
             'project__title',
             'role__name',
             'user__username']
+        indexes = [
+            models.Index(fields=['project']),
+            models.Index(fields=['user'])]
 
     def __str__(self):
         return '{}: {}: {}'.format(self.project, self.role, self.user)
@@ -440,6 +455,12 @@ class ProjectSetting(models.Model):
         blank=True,
         help_text='Value of the setting')
 
+    #: ProjectSetting Omics UUID
+    omics_uuid = models.UUIDField(
+        default=uuid.uuid4,
+        unique=True,
+        help_text='ProjectSetting Omics UUID')
+
     # Set manager for custom queries
     objects = ProjectSettingManager()
 
@@ -448,7 +469,6 @@ class ProjectSetting(models.Model):
             'project__title',
             'app_plugin__name',
             'name']
-
         unique_together = ('project', 'app_plugin', 'name')
 
     def __str__(self):
@@ -541,6 +561,12 @@ class ProjectInvite(models.Model):
         default=True,
         help_text='Status of the invite (False if claimed or revoked)')
 
+    #: ProjectInvite Omics UUID
+    omics_uuid = models.UUIDField(
+        default=uuid.uuid4,
+        unique=True,
+        help_text='ProjectInvite Omics UUID')
+
     class Meta:
         ordering = [
             'project__title',
@@ -584,6 +610,12 @@ class ProjectUserTag(models.Model):
         blank=False,
         default=PROJECT_TAG_STARRED,
         help_text='Name of tag to be assigned')
+
+    #: ProjectUserTag Omics UUID
+    omics_uuid = models.UUIDField(
+        default=uuid.uuid4,
+        unique=True,
+        help_text='ProjectUserTag Omics UUID')
 
     class Meta:
         ordering = [

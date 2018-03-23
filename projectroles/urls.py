@@ -2,14 +2,15 @@ from django.conf.urls import url
 
 from . import views
 
+
 urlpatterns = [
     url(
-        regex=r'^(?P<pk>\d+)$',
+        regex=r'^(?P<project>[0-9a-f-]+)$',
         view=views.ProjectDetailView.as_view(),
         name='project_detail',
     ),
     url(
-        regex=r'^(?P<pk>\d+)/update$',
+        regex=r'^(?P<project>[0-9a-f-]+)/update$',
         view=views.ProjectUpdateView.as_view(),
         name='project_update',
     ),
@@ -19,7 +20,7 @@ urlpatterns = [
         name='project_create',
     ),
     url(
-        regex=r'^(?P<project>\d+)/create$',
+        regex=r'^(?P<project>[0-9a-f-]+)/create$',
         view=views.ProjectCreateView.as_view(),
         name='project_create',
     ),
@@ -29,37 +30,37 @@ urlpatterns = [
         name='project_search',
     ),
     url(
-        regex=r'^(?P<pk>\d+)/roles$',
+        regex=r'^(?P<project>[0-9a-f-]+)/roles$',
         view=views.ProjectRoleView.as_view(),
         name='project_roles',
     ),
     url(
-        regex=r'^(?P<project>\d+)/roles/create$',
+        regex=r'^(?P<project>[0-9a-f-]+)/roles/create$',
         view=views.RoleAssignmentCreateView.as_view(),
         name='role_create',
     ),
     url(
-        regex=r'^(?P<project>\d+)/roles/(?P<pk>\d+)/update$',
+        regex=r'^(?P<project>[0-9a-f-]+)/roles/(?P<role>[0-9a-f-]+)/update$',
         view=views.RoleAssignmentUpdateView.as_view(),
         name='role_update',
     ),
     url(
-        regex=r'^(?P<project>\d+)/roles/(?P<pk>\d+)/delete$',
+        regex=r'^(?P<project>[0-9a-f-]+)/roles/(?P<role>[0-9a-f-]+)/delete$',
         view=views.RoleAssignmentDeleteView.as_view(),
         name='role_delete',
     ),
     url(
-        regex=r'^(?P<project>\d+)/roles/import$',
+        regex=r'^(?P<project>[0-9a-f-]+)/roles/import$',
         view=views.RoleAssignmentImportView.as_view(),
         name='role_import',
     ),
     url(
-        regex=r'^(?P<project>\d+)/invites$',
+        regex=r'^(?P<project>[0-9a-f-]+)/invites$',
         view=views.ProjectInviteView.as_view(),
         name='role_invites',
     ),
     url(
-        regex=r'^(?P<project>\d+)/create_invite$',
+        regex=r'^(?P<project>[0-9a-f-]+)/create_invite$',
         view=views.ProjectInviteCreateView.as_view(),
         name='role_invite_create',
     ),
@@ -69,18 +70,19 @@ urlpatterns = [
         name='role_invite_accept',
     ),
     url(
-        regex=r'^(?P<project>\d+)/invites/(?P<pk>\d+)/resend$',
+        regex=r'^(?P<project>[0-9a-f-]+)/invites/'
+              r'(?P<invite>[0-9a-f-]+)/resend$',
         view=views.ProjectInviteResendView.as_view(),
         name='role_invite_resend',
     ),
     url(
-        regex=r'^(?P<project>\d+)/invites/(?P<pk>\d+)/revoke$',
+        regex=r'^(?P<project>[0-9a-f-]+)/invites/(?P<invite>[0-9a-f-]+)/revoke$',
         view=views.ProjectInviteRevokeView.as_view(),
         name='role_invite_revoke',
     ),
     # Javascript API Views
     url(
-        regex=r'^(?P<pk>\d+)/star',
+        regex=r'^(?P<project>[0-9a-f-]+)/star',
         view=views.ProjectStarringAPIView.as_view(),
         name='project_star',
     ),

@@ -8,11 +8,11 @@
     <i class="fa fa-cog"></i>
   </button>
   <div class="dropdown-menu dropdown-menu-right">
-    <a class="dropdown-item" href="{% url 'role_update' project=project.pk pk=assignment_id %}">
+    <a class="dropdown-item" href="{% url 'role_update' project=project.omics_uuid role=assignment_id %}">
       <i class="fa fa-fw fa-pencil"></i>
       Update Member
     </a>
-    <a class="dropdown-item" href="{% url 'role_delete' project=project.pk pk=assignment_id %}">
+    <a class="dropdown-item" href="{% url 'role_delete' project=project.omics_uuid role=assignment_id %}">
       <i class="fa fa-fw fa-user-times"></i>
       Remove Member
     </a>

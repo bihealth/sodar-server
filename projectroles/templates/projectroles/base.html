@@ -19,14 +19,14 @@
           <li><i class="fa fa-angle-right"></i></li>
           {% if project.get_parents %}
             {% for p in project.get_parents %}
-              <li class="breadcrumb-item"><a href="{% url 'project_detail' pk=p.pk %}">{{ p.title }}</a></li>
+              <li class="breadcrumb-item"><a href="{% url 'project_detail' project=p.omics_uuid %}">{{ p.title }}</a></li>
             {% endfor %}
           {% endif %}
           {% if project %}
             {% if request.resolver_match.url_name == 'project_detail' %}
               <li class="breadcrumb-item active">{{ project.title }}</li>
             {% else %}
-                <li class="breadcrumb-item"><a href="{% url 'project_detail' pk=project.pk %}">{{ project.title }}</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'project_detail' project=project.omics_uuid %}">{{ project.title }}</a></li>
             {% endif %}
           {% endif %}
         </ol>

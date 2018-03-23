@@ -31,7 +31,7 @@
           <p>
           No ReadMe is currently set for this {{ object.type|lower }}.
           {% if can_update_project %}
-           <a href="{% url 'project_update' pk=object.pk %}#div_id_readme">You can update the ReadMe here</a>.
+           <a href="{% url 'project_update' project=project.omics_uuid %}#div_id_readme">You can update the ReadMe here</a>.
           {% endif %}
           </p>
         {% endif %}
@@ -54,7 +54,7 @@
                   {{ plugin.title }}
                 {% endif %}
                 <div class="input-group omics-header-input-group pull-right">
-                  <a href="{% url plugin.entry_point_url_id project=project.pk %}"
+                  <a href="{% url plugin.entry_point_url_id project=project.omics_uuid %}"
                      class="btn btn-secondary ml-auto omics-pr-app-details-link"
                      role="button"
                      id="omics-pr-app-details-link-{{ plugin.name }}">

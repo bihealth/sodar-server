@@ -18,7 +18,7 @@
     <dt class="col-md-3">Assays</dt>
     <dd class="col-md-9">
       {% for assay in study.assays.all %}
-        <a href="#assay{{ assay.pk }}">{% get_assay_title assay %}</a>
+        <a href="#assay{{ assay.omics_uuid }}">{% get_assay_title assay %}</a>
         {% if assay.comments %}
           <a class="omics-ss-assay-info-link" tabindex="0" data-toggle="popover"
              data-trigger="focus" data-placement="top" data-html="true"

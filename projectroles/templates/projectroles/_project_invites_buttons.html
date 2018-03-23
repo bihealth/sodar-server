@@ -1,15 +1,15 @@
-<div class="btn-group omics-edit-button-group omics-pr-btn-grp-invite" id="omics-pr-btn-grp-invite-{{ invite_id }}">
+<div class="btn-group omics-edit-button-group omics-pr-btn-grp-invite" id="omics-pr-btn-grp-invite-{{ invite_uuid }}">
   <button class="btn btn-secondary btn-sm dropdown-toggle omics-edit-dropdown"
       type="button" data-toggle="dropdown"
       aria-haspopup="true" aria-expanded="false">
     <i class="fa fa-cog"></i>
   </button>
   <div class="dropdown-menu dropdown-menu-right">
-    <a class="dropdown-item" href="{% url 'role_invite_resend' project=project.pk pk=invite_id %}">
+    <a class="dropdown-item" href="{% url 'role_invite_resend' project=project.omics_uuid invite=invite_uuid %}">
       <i class="fa fa-fw fa-send"></i>
         Resend Invite
       </a>
-    <a class="dropdown-item" href="{% url 'role_invite_revoke' project=project.pk pk=invite_id %}">
+    <a class="dropdown-item" href="{% url 'role_invite_revoke' project=project.omics_uuid invite=invite_uuid %}">
       <i class="fa fa-fw fa-close"></i>
       Revoke Invite
     </a>

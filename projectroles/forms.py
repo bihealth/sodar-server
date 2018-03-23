@@ -88,7 +88,7 @@ class ProjectForm(forms.ModelForm):
 
         if project:
             try:
-                parent_project = Project.objects.get(pk=project)
+                parent_project = Project.objects.get(omics_uuid=project)
 
             except Project.DoesNotExist:
                 pass
@@ -239,7 +239,7 @@ class RoleAssignmentForm(forms.ModelForm):
 
         else:
             try:
-                self.project = Project.objects.get(pk=project)
+                self.project = Project.objects.get(omics_uuid=project)
 
             except Project.DoesNotExist:
                 pass
@@ -359,7 +359,7 @@ class ProjectInviteForm(forms.ModelForm):
         self.project = None
 
         try:
-            self.project = Project.objects.get(pk=project)
+            self.project = Project.objects.get(omics_uuid=project)
 
         except Project.DoesNotExist:
             pass

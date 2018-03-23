@@ -44,9 +44,9 @@
 
   <form method="post"
     {% if folder %}
-      action="{% url 'batch_edit' project=project.pk folder=folder %}">
+      action="{% url 'batch_edit' project=project.omics_uuid folder=folder %}">
     {% else %}
-      action="{% url 'batch_edit' project=project.pk %}">
+      action="{% url 'batch_edit' project=project.omics_uuid %}">
     {% endif %}
 
     {% csrf_token %}
@@ -85,7 +85,7 @@
               <option value="0">root</option>
             {% endif %}
             {% for choice in folder_choices %}
-              <option value="{{ choice.pk }}">{{ choice.get_path }}</option>
+              <option value="{{ choice.omics_uuid }}">{{ choice.get_path }}</option>
             {% endfor %}
           </select>
         </div>

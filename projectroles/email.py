@@ -252,7 +252,7 @@ def send_role_change_mail(change_type, project, user, role, request):
     """
     project_url = request.build_absolute_uri(reverse(
         'project_detail',
-        kwargs={'pk': project.pk}))
+        kwargs={'project': project.omics_uuid}))
 
     subject = get_role_change_subject(change_type, project)
     body = get_role_change_body(

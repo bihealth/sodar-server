@@ -5,14 +5,14 @@
 {% has_star p request.user as is_starred %}
 
 <tr class="omics-pr-project-list-item omics-pr-home-display-filtered {% if is_starred %}omics-pr-home-display-starred{% endif %}"
-    id="omics-pr-project-search-item-{{ p.pk }}">
+    id="omics-pr-project-search-item-{{ p.omics_uuid }}">
   <td orig-txt="{{ p.get_full_title }}">
     {% if p.type == 'CATEGORY' %}
       <i class="fa fa-fw fa-cubes"></i>
     {% else %}
       <i class="fa fa-fw fa-cube"></i>
     {% endif %}
-    <a href="{% url 'project_detail' pk=p.pk %}">
+    <a href="{% url 'project_detail' project=p.omics_uuid %}">
       {% autoescape off %}
         {% get_project_title_html p %}
       {% endautoescape %}

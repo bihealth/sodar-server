@@ -42,7 +42,7 @@
         <select class="form-control"
                 id="omics-pr-role-import-project" name="source-project">
           {% for p in owned_projects %}
-            <option value="{{ p.pk }}">{{ p.get_full_title }}</option>
+            <option value="{{ p.omics_uuid }}">{{ p.get_full_title }}</option>
           {% endfor %}
         </select>
       </div>
@@ -58,7 +58,7 @@
 
       <input type="hidden" name="import-mode" value="{{ import_mode }}" />
       <input type="hidden" name="import-confirmed" value="1" />
-      <input type="hidden" name="source-project" value="{{ source_project.pk }}" />
+      <input type="hidden" name="source-project" value="{{ source_project.omics_uuid }}" />
 
       <div class="card omics-card-single" id="omics-pr-role-list">
       <div class="card-body omics-card-body-table">
@@ -80,7 +80,7 @@
                 <td><a href="mailto:{{ a.user.email }}">{{ a.user.email }}</a></td>
                 <td>{{ a.role.name }}</td>
                 <td>{% get_role_import_action a project %}</td>
-                <input type="hidden" name="import-field-{{ a.pk }}" value="1" />
+                <input type="hidden" name="import_field_{{ a.omics_uuid }}" value="1" />
               </tr>
             {% endfor %}
             {% for a in del_assignments %}
@@ -90,7 +90,7 @@
                 <td class="text-danger"><a href="mailto:{{ a.user.email }}">{{ a.user.email }}</a></td>
                 <td class="text-danger">{{ a.role.name }}</td>
                 <td class="text-danger font-weight-bold">Remove</td>
-                <input type="hidden" name="delete-field-{{ a.pk }}" value="1" />
+                <input type="hidden" name="delete_field_{{ a.omics_uuid }}" value="1" />
               </tr>
             {% endfor %}
           </tbody>

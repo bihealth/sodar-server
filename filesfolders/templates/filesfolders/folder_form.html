@@ -46,15 +46,15 @@
         <a role="button" class="btn btn-secondary"
           {% if object.pk %}
             {% if object.folder %}
-              href="{% url 'project_files' project=object.project.pk folder=object.folder.pk %}"
+              href="{% url 'project_files' project=object.project.omics_uuid folder=object.folder.omics_uuid %}"
             {% else %}
-              href="{% url 'project_files' project=object.project.pk %}"
+              href="{% url 'project_files' project=object.project.omics_uuid %}"
             {% endif %}
           {% else %}
             {% if folder %}
-              href="{% url 'project_files' project=project.pk folder=folder.pk %}"
+              href="{% url 'project_files' project=project.omics_uuid folder=folder.omics_uuid %}"
             {% else %}
-              href="{% url 'project_files' project=project.pk %}"
+              href="{% url 'project_files' project=project.omics_uuid %}"
             {% endif %}
           {% endif %}
           >

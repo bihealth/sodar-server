@@ -78,7 +78,7 @@ class ProjectSheetsView(
             try:
                 if 'study' in self.kwargs and self.kwargs['study']:
                     study = Study.objects.get(
-                        pk=self.kwargs['study'])
+                        omics_uuid=self.kwargs['study'])
                 else:
                     study = Study.objects.filter(
                         investigation=investigation).first()
@@ -114,7 +114,7 @@ class SampleSheetImportView(
 
     def form_valid(self, form):
         timeline = get_backend_api('timeline_backend')
-        project = Project.objects.get(pk=self.kwargs['project'])
+        project = Project.objects.get(omics_uuid=self.kwargs['project'])
 
         try:
             self.object = form.save()
@@ -141,7 +141,7 @@ class SampleSheetImportView(
 
         return redirect(
             reverse('project_sheets', kwargs={
-                'project': project.pk}))
+                'project': project.omics_uuid}))
 
 
 class SampleSheetDeleteView(
@@ -153,7 +153,7 @@ class SampleSheetDeleteView(
 
     def post(self, request, *args, **kwargs):
         timeline = get_backend_api('timeline_backend')
-        project = Project.objects.get(pk=self.kwargs['project'])
+        project = Project.objects.get(omics_uuid=self.kwargs['project'])
         investigation = Investigation.objects.get(project=project)
 
         # Add event in Timeline
@@ -177,4 +177,4 @@ class SampleSheetDeleteView(
             self.request, 'Sample sheets deleted.')
 
         return HttpResponseRedirect(reverse('project_sheets', kwargs={
-            'project': project.pk}))
+            'project': project.omics_uuid}))
