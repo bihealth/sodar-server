@@ -31,7 +31,7 @@
           <p>
           No ReadMe is currently set for this {{ object.type|lower }}.
           {% if can_update_project %}
-           <a href="{% url 'project_update' project=project.omics_uuid %}#div_id_readme">You can update the ReadMe here</a>.
+           <a href="{% url 'projectroles:update' project=project.omics_uuid %}#div_id_readme">You can update the ReadMe here</a>.
           {% endif %}
           </p>
         {% endif %}

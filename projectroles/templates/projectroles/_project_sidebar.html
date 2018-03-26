@@ -11,9 +11,10 @@
   {% has_perm 'projectroles.update_project' request.user project as can_update_project %}
 
   {# Overview #}
-  <li id="omics-pr-nav-project-detail" class="nav-item {% get_link_state projectroles_urls request.resolver_match.url_name 'project_detail' %}">
+  <li id="omics-pr-nav-project-detail"
+      class="nav-item {% get_link_state projectroles_urls request.resolver_match.url_name 'detail' %}">
     <a class="nav-link omics-pr-sidebar-nav-link"
-       href="{% url 'project_detail' project=project.omics_uuid %}"
+       href="{% url 'projectroles:detail' project=project.omics_uuid %}"
        id="omics-pr-link-project-detail">
       {% if project.type == PROJECT_TYPE_CATEGORY %}
         <i class="fa fa-cubes"></i>
@@ -29,7 +30,8 @@
     {% for plugin in app_plugins %}
       {% has_perm plugin.app_permission request.user project as can_view_app %}
       {% if can_view_app %}
-        <li id="omics-pr-nav-app-plugin-{{ plugin.name }}" class="nav-item {% get_link_state plugin.urls request.resolver_match.url_name %}">
+        <li id="omics-pr-nav-app-plugin-{{ plugin.name }}"
+            class="nav-item {% get_link_state plugin.urls request.resolver_match.url_name %}">
           <a class="nav-link"
              href="{% url plugin.entry_point_url_id project=project.omics_uuid %}"
              id="omics-pr-link-app-plugin-{{ plugin.name }}">
@@ -42,18 +44,20 @@
 
   {# Role and project editing #}
   {% if project.type != PROJECT_TYPE_CATEGORY and can_view_roles %}
-    <li id="omics-pr-nav-project-roles" class="nav-item {% get_link_state projectroles_urls request.resolver_match.url_name role_urls %}">
+    <li id="omics-pr-nav-project-roles"
+        class="nav-item {% get_link_state projectroles_urls request.resolver_match.url_name role_urls %}">
       <a class="nav-link"
-         href="{% url 'project_roles' project=project.omics_uuid %}"
+         href="{% url 'projectroles:roles' project=project.omics_uuid %}"
          id="omics-pr-link-project-roles">
         <i class="fa fa-users"></i><br />Members
       </a>
     </li>
   {% endif %}
   {% if can_update_project %}
-    <li id="omics-pr-nav-project-update" class="nav-item {% get_link_state projectroles_urls request.resolver_match.url_name 'project_update' %}">
+    <li id="omics-pr-nav-project-update"
+        class="nav-item {% get_link_state projectroles_urls request.resolver_match.url_name 'update' %}">
       <a class="nav-link"
-         href="{% url 'project_update' project=project.omics_uuid %}"
+         href="{% url 'projectroles:update' project=project.omics_uuid %}"
          id="omics-pr-link-project-update">
         <i class="fa fa-pencil"></i><br />Update {% get_project_type_str project %}
       </a>
@@ -67,20 +71,21 @@
 {% if project and project.type == 'CATEGORY' %}
   {% has_perm 'projectroles.create_project' request.user project as can_create_project %}
   {% if can_create_project %}
-    <li id="omics-pr-nav-project-create" class="nav-item {% get_link_state projectroles_urls request.resolver_match.url_name 'project_create' %}">
+    <li id="omics-pr-nav-project-create"
+        class="nav-item {% get_link_state projectroles_urls request.resolver_match.url_name 'create' %}">
       <a class="nav-link"
-         href="{% url 'project_create' project=project.omics_uuid %}"
+         href="{% url 'projectroles:create' project=project.omics_uuid %}"
          id="omics-pr-link-project-create">
         <i class="fa fa-plus"></i><br />Create Project or Category
       </a>
     </li>
   {% endif %}
-{% elif request.resolver_match.url_name == 'home' or request.resolver_match.url_name == 'project_create' and not project %}
+{% elif request.resolver_match.url_name == 'home' or request.resolver_match.url_name == 'create' and not project %}
   {% has_perm 'projectroles.create_project' request.user as can_create_project %}
   {% if can_create_project %}
-    <li id="omics-pr-nav-project-create" class="nav-item {% get_link_state projectroles_urls request.resolver_match.url_name 'project_create' %}">
+    <li id="omics-pr-nav-project-create" class="nav-item {% get_link_state projectroles_urls request.resolver_match.url_name 'create' %}">
       <a class="nav-link"
-         href="{% url 'project_create' %}"
+         href="{% url 'projectroles:create' %}"
          id="omics-pr-home-link-create">
         <i class="fa fa-plus"></i><br />Create Category
       </a>

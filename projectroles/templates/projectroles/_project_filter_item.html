@@ -12,7 +12,7 @@
     {% else %}
       <i class="fa fa-fw fa-cube"></i>
     {% endif %}
-    <a href="{% url 'project_detail' project=p.omics_uuid %}">
+    <a href="{% url 'projectroles:detail' project=p.omics_uuid %}">
       {% autoescape off %}
         {% get_project_title_html p %}
       {% endautoescape %}

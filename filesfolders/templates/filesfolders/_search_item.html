@@ -19,13 +19,13 @@
     {% if item|get_class == 'HyperLink' %}
       <a href="{{ item.url }}" target="_blank">
     {% elif item|get_class == 'Folder' %}
-      <a href="{% url 'project_files' project=item.project.omics_uuid folder=item.omics_uuid %}">
+      <a href="{% url 'filesfolders:project_files' folder=item.omics_uuid %}">
     {% elif item|get_class == 'File' %}
-      <a href="{% url 'file_serve' file=item.omics_uuid project=item.project.omics_uuid file_name=item.name %}">
+      <a href="{% url 'filesfolders:file_serve' file=item.omics_uuid file_name=item.name %}">
     {% endif %}
     {% autoescape off %}{{ item_display_name }}{% endautoescape %}</a>
     {% if item|get_class == 'File' and allow_public_links and item.public_url and can_share_link %}
-      <a title="Public Link" href="{% url 'file_public_link' file=item.omics_uuid project=item.project.omics_uuid %}" id="omics-ff-link-public-{{ item.omics_uuid }}">
+      <a title="Public Link" href="{% url 'filesfolders:file_public_link' file=item.omics_uuid %}" id="omics-ff-link-public-{{ item.omics_uuid }}">
         <i class="fa fa-link" aria-hidden="false"></i>
       </a>
     {% endif %}
@@ -39,9 +39,9 @@
   <td>
     {% get_project_title_html item.project as project_title %}
     {% if item.folder %}
-      <a href="{% url 'project_files' project=item.project.omics_uuid folder=item.folder.omics_uuid %}">
+      <a href="{% url 'filesfolders:project_files' folder=item.folder.omics_uuid %}">
     {% else %}
-      <a href="{% url 'project_files' project=item.project.omics_uuid %}">
+      <a href="{% url 'filesfolders:project_files' project=item.project.omics_uuid %}">
     {% endif %}
       {% autoescape off %}
         {# NOTE: No highlight here as project is not searched for here #}

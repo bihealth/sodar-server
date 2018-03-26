@@ -12,11 +12,11 @@
   </button>
   <div class="dropdown-menu dropdown-menu-right">
     {% if can_update_all or file.owner == request.user and can_update_own %}
-      <a class="dropdown-item" href="{% url 'file_update' item=file.omics_uuid project=file.project.omics_uuid %}">
+      <a class="dropdown-item" href="{% url 'filesfolders:file_update' item=file.omics_uuid %}">
         <i class="fa fa-fw fa-pencil"></i>
         Update File
       </a>
-      <a class="dropdown-item" href="{% url 'file_delete' item=file.omics_uuid project=file.project.omics_uuid %}">
+      <a class="dropdown-item" href="{% url 'filesfolders:file_delete' item=file.omics_uuid %}">
         <i class="fa fa-fw fa-close"></i>
         Delete File
       </a>

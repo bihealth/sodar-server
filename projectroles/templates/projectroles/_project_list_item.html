@@ -19,7 +19,7 @@
       <u>
     {% endif %}
     {% if can_view_project %}
-      <a href="{% url 'project_detail' project=p.omics_uuid %}">{{ p.title }}</a>
+      <a href="{% url 'projectroles:detail' project=p.omics_uuid %}">{{ p.title }}</a>
       {% get_star p request.user as project_star %}
       {{ project_star|safe }}
     {% else %}

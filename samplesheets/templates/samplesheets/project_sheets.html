@@ -127,13 +127,13 @@
       {% for s in investigation.studies.all %}
         <li class="nav-item">
           <a class="nav-link {% if s == study %}bg-light active{% endif %}"
-             href="{% url 'project_sheets' project=project.omics_uuid study=s.omics_uuid %}">
+             href="{% url 'samplesheets:project_sheets' study=s.omics_uuid %}">
               <i class="fa fa-list-alt"></i> {% get_study_title s %}</a>
         </li>
       {% endfor %}
       <li class="nav-item">
         <a class="nav-link {% if subpage == 'info' %}bg-light active{% endif %}"
-           href="{% url 'project_sheets' project=project.omics_uuid subpage='info' %}">
+           href="{% url 'samplesheets:project_sheets' project=project.omics_uuid subpage='info' %}">
             <i class="fa fa-sitemap"></i> Overview</a>
       </li>
     </ul>

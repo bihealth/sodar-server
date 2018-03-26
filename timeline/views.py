@@ -8,14 +8,14 @@ from rest_framework.views import APIView
 # Projectroles dependency
 from projectroles.models import Project
 from projectroles.views import LoggedInPermissionMixin, \
-    ProjectContextMixin, ProjectPermissionObjectMixin
+    ProjectContextMixin, ProjectPermissionMixin
 
 from .models import ProjectEvent
 
 
 class ProjectTimelineView(
         LoginRequiredMixin, LoggedInPermissionMixin, ProjectContextMixin,
-        ProjectPermissionObjectMixin, ListView):
+        ProjectPermissionMixin, ListView):
     """View for displaying files and folders for a project"""
     permission_required = 'timeline.view_timeline'
 

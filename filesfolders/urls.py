@@ -2,6 +2,13 @@ from django.conf.urls import url
 
 from . import views
 
+# NOTES:
+# - file/folder/hyperlink objects can be referred to as "item", but only if
+#   ObjectPermissionMixin is used in the view
+
+
+app_name = 'filesfolders'
+
 urlpatterns = [
     url(
         regex=r'^(?P<project>[0-9a-f-]+)$',
@@ -9,33 +16,32 @@ urlpatterns = [
         name='project_files',
     ),
     url(
-        regex=r'^(?P<project>[0-9a-f-]+)/folder/(?P<folder>[0-9a-f-]+)$',
+        regex=r'^folder/(?P<folder>[0-9a-f-]+)$',
         view=views.ProjectFileView.as_view(),
         name='project_files',
     ),
     url(
-        regex=r'^(?P<project>[0-9a-f-]+)/upload$',
+        regex=r'^upload/(?P<project>[0-9a-f-]+)$',
         view=views.FileCreateView.as_view(),
         name='file_create',
     ),
     url(
-        regex=r'^(?P<project>[0-9a-f-]+)/folder/(?P<folder>[0-9a-f-]+)/upload$',
+        regex=r'^upload/(?P<folder>[0-9a-f-]+)$',
         view=views.FileCreateView.as_view(),
         name='file_create',
     ),
     url(
-        regex=r'^(?P<project>[0-9a-f-]+)/update-file/(?P<item>[0-9a-f-]+)$',
+        regex=r'^file/update/(?P<item>[0-9a-f-]+)$',
         view=views.FileUpdateView.as_view(),
         name='file_update',
     ),
     url(
-        regex=r'^(?P<project>[0-9a-f-]+)/delete-file/(?P<item>[0-9a-f-]+)$',
+        regex=r'^file/delete/(?P<item>[0-9a-f-]+)$',
         view=views.FileDeleteView.as_view(),
         name='file_delete',
     ),
     url(
-        regex=r'^(?P<project>[0-9a-f-]+)/download/'
-              r'(?P<file>[0-9a-f-]+)/(?P<file_name>[^\0/]+)$',
+        regex=r'^download/(?P<file>[0-9a-f-]+)/(?P<file_name>[^\0/]+)$',
         view=views.FileServeView.as_view(),
         name='file_serve',
     ),
@@ -45,60 +51,57 @@ urlpatterns = [
         name='file_serve_public',
     ),
     url(
-        regex=r'^(?P<project>[0-9a-f-]+)/link/(?P<file>[0-9a-f-]+)$',
+        regex=r'^link/(?P<file>[0-9a-f-]+)$',
         view=views.FilePublicLinkView.as_view(),
         name='file_public_link',
     ),
     url(
-        regex=r'^(?P<project>[0-9a-f-]+)/add-folder$',
+        regex=r'^folder/add/(?P<project>[0-9a-f-]+)$',
         view=views.FolderCreateView.as_view(),
         name='folder_create',
     ),
     url(
-        regex=r'^(?P<project>[0-9a-f-]+)/folder/(?P<folder>[0-9a-f-]+)/'
-              r'add_folder$',
+        regex=r'^folder/add/(?P<folder>[0-9a-f-]+)$',
         view=views.FolderCreateView.as_view(),
         name='folder_create',
     ),
     url(
-        regex=r'^(?P<project>[0-9a-f-]+)/update-folder/(?P<item>[0-9a-f-]+)$',
+        regex=r'^folder/update/(?P<item>[0-9a-f-]+)$',
         view=views.FolderUpdateView.as_view(),
         name='folder_update',
     ),
     url(
-        regex=r'^(?P<project>[0-9a-f-]+)/delete-folder/(?P<item>[0-9a-f-]+)$',
+        regex=r'^folder/delete(?P<item>[0-9a-f-]+)$',
         view=views.FolderDeleteView.as_view(),
         name='folder_delete',
     ),
     url(
-        regex=r'^(?P<project>[0-9a-f-]+)/add-link$',
+        regex=r'^link/add/(?P<project>[0-9a-f-]+)$',
         view=views.HyperLinkCreateView.as_view(),
         name='hyperlink_create',
     ),
     url(
-        regex=r'^(?P<project>[0-9a-f-]+)/folder/'
-              r'(?P<folder>[0-9a-f-]+)/add-link$',
+        regex=r'^link/add/(?P<folder>[0-9a-f-]+)$',
         view=views.HyperLinkCreateView.as_view(),
         name='hyperlink_create',
     ),
     url(
-        regex=r'^(?P<project>[0-9a-f-]+)/update-link/(?P<item>[0-9a-f-]+)$',
+        regex=r'^link/update/(?P<item>[0-9a-f-]+)$',
         view=views.HyperLinkUpdateView.as_view(),
         name='hyperlink_update',
     ),
     url(
-        regex=r'^(?P<project>[0-9a-f-]+)/delete-link/(?P<item>[0-9a-f-]+)$',
+        regex=r'^link/delete/(?P<item>[0-9a-f-]+)$',
         view=views.HyperLinkDeleteView.as_view(),
         name='hyperlink_delete',
     ),
     url(
-        regex=r'^(?P<project>[0-9a-f-]+)/batch-edit$',
+        regex=r'^batch/(?P<project>[0-9a-f-]+)$',
         view=views.BatchEditView.as_view(),
         name='batch_edit',
     ),
     url(
-        regex=r'^(?P<project>[0-9a-f-]+)/folder/'
-              r'(?P<folder>[0-9a-f-]+)/batch-edit$',
+        regex=r'^batch/(?P<folder>[0-9a-f-]+)$',
         view=views.BatchEditView.as_view(),
         name='batch_edit',
     ),

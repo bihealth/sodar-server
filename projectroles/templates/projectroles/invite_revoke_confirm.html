@@ -16,7 +16,7 @@
     Are you sure you want to permanently revoke the invite sent to {{ invite.email }}?
   </div>
 
-  <form method="post" action="{% url 'role_invite_revoke' project=project.omics_uuid invite=invite.omics_uuid %}">
+  <form method="post" action="{% url 'role_invite_revoke' projectinvite=invite.omics_uuid %}">
     {% csrf_token %}
 
     <div class="row">

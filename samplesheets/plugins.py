@@ -31,7 +31,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
     icon = 'flask'
 
     #: Entry point URL ID (must take project omics_uuid as "project" argument)
-    entry_point_url_id = 'project_sheets'
+    entry_point_url_id = 'samplesheets:project_sheets'
 
     #: Description string
     description = 'Sample sheets contain your donors/patients, samples, and ' \
@@ -128,6 +128,6 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         # The only possible model is SampleSheet, directing to entry point
         return {
             'url': reverse(
-                'project_sheets',
+                'samplesheets:project_sheets',
                 kwargs={'project': obj.project.omics_uuid}),
             'label': obj.title}

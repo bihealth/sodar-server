@@ -2,30 +2,33 @@ from django.conf.urls import url
 
 from . import views
 
+
+app_name = 'samplesheets'
+
 urlpatterns = [
     url(
-        regex=r'^(?P<project>[\w-]+)$',
+        regex=r'^(?P<project>[0-9a-f-]+)$',
         view=views.ProjectSheetsView.as_view(),
         name='project_sheets',
     ),
     url(
-        regex=r'^(?P<project>[\w-]+)/study/(?P<study>[\w-]+)$',
+        regex=r'^study/(?P<study>[0-9a-f-]+)$',
         view=views.ProjectSheetsView.as_view(),
         name='project_sheets',
     ),
     url(
-        regex=r'^(?P<project>[\w-]+)/meta/(?P<subpage>[\w-]+)$',
+        regex=r'^(?P<project>[0-9a-f-]+)/meta/(?P<subpage>[\w-]+)$',
         view=views.ProjectSheetsView.as_view(),
         name='project_sheets',
     ),
     url(
-        regex=r'^(?P<project>[\w-]+)/import$',
+        regex=r'^import/(?P<project>[0-9a-f-]+)$',
         view=views.SampleSheetImportView.as_view(),
-        name='sheet_import',
+        name='import',
     ),
     url(
-        regex=r'^(?P<project>[\w-]+)/delete$',
+        regex=r'^delete/(?P<project>[0-9a-f-]+)$',
         view=views.SampleSheetDeleteView.as_view(),
-        name='sheet_delete',
+        name='delete',
     ),
 ]

@@ -8,11 +8,11 @@ def urls_processor(request):
     return {
         'projectroles_urls': urlpatterns,
         'role_urls': [
-            'project_roles',
+            'roles',
             'role_create',
             'role_update',
             'role_delete',
-            'role_invites',
-            'role_invite_create',
-            'role_invite_resend',
-            'role_invite_revoke']}
+            'invites',
+            'invite_create',
+            'invite_resend',
+            'invite_revoke']}

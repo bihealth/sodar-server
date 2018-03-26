@@ -30,7 +30,7 @@ urlpatterns = [
     url(r'^alerts/', include('adminalerts.urls')),
 
     # Projectroles URLs
-    url(r'^projects/', include('projectroles.urls')),
+    url(r'^project/', include('projectroles.urls')),
 
     # App plugin URLs
     # TODO: Test if this can be made to work on Flynn and without the extra

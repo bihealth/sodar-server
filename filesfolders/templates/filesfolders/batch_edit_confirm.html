@@ -44,9 +44,9 @@
 
   <form method="post"
     {% if folder %}
-      action="{% url 'batch_edit' project=project.omics_uuid folder=folder %}">
+      action="{% url 'filesfolders:batch_edit' folder=folder %}">
     {% else %}
-      action="{% url 'batch_edit' project=project.omics_uuid %}">
+      action="{% url 'filesfolders:batch_edit' project=project.omics_uuid %}">
     {% endif %}
 
     {% csrf_token %}
@@ -95,14 +95,13 @@
 
     {% if items|length == 0 or not folder_check %}
       <div class="alert alert-danger" role="alert">
-        <p><strong>Error:</strong>
-         {% if items|length == 0 %}
-           No items to edit!
-         {% elif not folder_check %}
-           No folders available for moving selected
-             item{% if items|length != 1 %}s{% endif %}!
-         {% endif %}
-        </p>
+        <strong>Error:</strong>
+        {% if items|length == 0 %}
+          No items to edit!
+        {% elif not folder_check %}
+          No folders available for moving selected
+            item{% if items|length != 1 %}s{% endif %}!
+        {% endif %}
       </div>
     {% endif %}
 

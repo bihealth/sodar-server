@@ -7,11 +7,11 @@
     <i class="fa fa-cog"></i>
   </button>
   <div class="dropdown-menu dropdown-menu-right">
-    <a class="dropdown-item" href="{% url 'folder_update' project=project.omics_uuid item=item.omics_uuid %}">
+    <a class="dropdown-item" href="{% url 'filesfolders:folder_update' item=item.omics_uuid %}">
       <i class="fa fa-fw fa-pencil"></i>
       Update Folder
     </a>
-    <a class="dropdown-item" href="{% url 'folder_delete' project=project.omics_uuid item=item.omics_uuid %}">
+    <a class="dropdown-item" href="{% url 'filesfolders:folder_delete' item=item.omics_uuid %}">
       <i class="fa fa-fw fa-close"></i>
       Delete Folder
     </a>

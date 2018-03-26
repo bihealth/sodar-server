@@ -23,7 +23,8 @@ from projectroles.models import Project
 from projectroles.plugins import get_backend_api
 from projectroles.project_settings import get_project_setting
 from projectroles.views import LoggedInPermissionMixin, \
-    ProjectContextMixin, HTTPRefererMixin, ProjectPermissionObjectMixin
+    ProjectContextMixin, HTTPRefererMixin, ProjectPermissionMixin, \
+    ProjectAccessMixin
 
 
 # Settings and constants
@@ -148,16 +149,17 @@ class FormValidMixin(ModelFormMixin):
                 self.object.name,
                 view_action))
 
-        re_kwargs = {'project': self.object.project.omics_uuid}
-
         if type(self.object) == Folder and self.object.folder:
-            re_kwargs['folder'] = self.object.folder.omics_uuid
+            re_kwargs = {'folder': self.object.folder.omics_uuid}
 
         elif type(self.object) != Folder and self.object.folder:
-            re_kwargs['folder'] = self.object.folder.omics_uuid
+            re_kwargs = {'folder': self.object.folder.omics_uuid}
+
+        else:
+            re_kwargs = {'project': self.object.project.omics_uuid}
 
         return redirect(
-            reverse('project_files', kwargs=re_kwargs))
+            reverse('filesfolders:project_files', kwargs=re_kwargs))
 
 
 class DeleteSuccessMixin(DeletionMixin):
@@ -191,15 +193,16 @@ class DeleteSuccessMixin(DeletionMixin):
                 self.object.__class__.__name__,
                 self.object.name))
 
-        re_kwargs = {'project': self.object.project.omics_uuid}
-
         if type(self.object) == Folder and self.object.folder:
-            re_kwargs['folder'] = self.object.folder.omics_uuid
+            re_kwargs = {'folder': self.object.folder.omics_uuid}
 
         elif type(self.object) != Folder and self.object.folder:
-            re_kwargs['folder'] = self.object.folder.omics_uuid
+            re_kwargs = {'folder': self.object.folder.omics_uuid}
 
-        return reverse('project_files', kwargs=re_kwargs)
+        else:
+            re_kwargs = {'project': self.object.project.omics_uuid}
+
+        return reverse('filesfolders:project_files', kwargs=re_kwargs)
 
 
 class FileServeMixin:
@@ -217,7 +220,8 @@ class FileServeMixin:
             messages.error(self.request, 'File object not found!')
 
             return redirect(reverse(
-                'project_files', kwargs={'project': kwargs['project']}))
+                'filesfolders:project_files',
+                kwargs={'project': kwargs['project']}))
 
         # Get corresponding FileData object with file content
         try:
@@ -227,7 +231,8 @@ class FileServeMixin:
             messages.error(self.request, 'File data not found!')
 
             return redirect(reverse(
-                'project_files', kwargs={'project': kwargs['project']}))
+                'filesfolders:project_files',
+                kwargs={'project': kwargs['project']}))
 
         # Open file for serving
         try:
@@ -239,7 +244,8 @@ class FileServeMixin:
             messages.error(self.request, 'Error opening file!')
 
             return redirect(reverse(
-                'project_files', kwargs={'project': kwargs['project']}))
+                'filesfolders:project_files',
+                kwargs={'project': kwargs['project']}))
 
         # Return file as attachment
         response = HttpResponse(
@@ -275,7 +281,7 @@ class FileServeMixin:
 
 class BaseCreateView(
         LoginRequiredMixin, LoggedInPermissionMixin, FormValidMixin,
-        ProjectContextMixin, ProjectPermissionObjectMixin, CreateView):
+        ProjectContextMixin, ProjectPermissionMixin, CreateView):
     """Base File/Folder/HyperLink creation view"""
 
     def get_context_data(self, *args, **kwargs):
@@ -300,7 +306,7 @@ class BaseCreateView(
         if 'project' in self.kwargs:
             kwargs.update({'project': self.kwargs['project']})
 
-        if 'folder' in self.kwargs:
+        elif 'folder' in self.kwargs:
             kwargs.update({'folder': self.kwargs['folder']})
 
         return kwargs
@@ -309,29 +315,22 @@ class BaseCreateView(
 # File List View ---------------------------------------------------------
 
 
+# TODO: Remove SingleObjectMixin
 class ProjectFileView(
-        LoginRequiredMixin, LoggedInPermissionMixin, ProjectContextMixin,
-        SingleObjectMixin, TemplateView):
+        LoginRequiredMixin, LoggedInPermissionMixin, ProjectPermissionMixin,
+        ProjectContextMixin, TemplateView):
     """View for displaying files and folders for a project"""
 
     # Projectroles dependency
     permission_required = 'filesfolders.view_data'
     template_name = 'filesfolders/project_files.html'
-    model = Project
-
-    def get_object(self):
-        """Override get_object to provide a Project object for both template
-        and permission checking"""
-        try:
-            obj = Project.objects.get(omics_uuid=self.kwargs['project'])
-            return obj
-
-        except Project.DoesNotExist:
-            return None
 
     def get_context_data(self, *args, **kwargs):
         context = super(ProjectFileView, self).get_context_data(
             *args, **kwargs)
+
+        project = self._get_project(self.kwargs, self.request)
+        context['project'] = project
 
         # Get folder and file data
         root_folder = None
@@ -357,26 +356,26 @@ class ProjectFileView(
                 pass
 
         context['folders'] = Folder.objects.filter(
-            project=self.get_object(), folder=root_folder)
+            project=project, folder=root_folder)
 
         context['files'] = File.objects.filter(
-            project=self.get_object(), folder=root_folder)
+            project=project, folder=root_folder)
 
         context['links'] = HyperLink.objects.filter(
-            project=self.get_object(), folder=root_folder)
+            project=project, folder=root_folder)
 
         folder_pk = Folder.objects.get(omics_uuid=self.kwargs['folder']).pk if \
             'folder' in self.kwargs else None
 
         # Get folder ReadMe
         readme_md = File.objects.get_folder_readme(
-            project_pk=self.get_object().pk,
+            project_pk=project.pk,
             folder_pk=folder_pk,
             mimetype='text/markdown')
 
         # If the markdown version is not found, try to get a plaintext version
         readme_txt = File.objects.get_folder_readme(
-            project_pk=self.get_object().pk,
+            project_pk=project.pk,
             folder_pk=folder_pk,
             mimetype='text/plain')
 
@@ -396,13 +395,6 @@ class ProjectFileView(
                 context['readme_data'] = readme_file.file.read()
 
         return context
-
-    def dispatch(self, request, *args, **kwargs):
-        """Override dispatch to ensure self.object is provided to template"""
-        self.object = self.get_object()
-
-        return super(
-            ProjectFileView, self).dispatch(request, *args, **kwargs)
 
 
 # Folder Views -----------------------------------------------------------
@@ -467,10 +459,9 @@ class FileDeleteView(
     slug_field = 'omics_uuid'
 
 
-# NOTE: This should only be used for prototype use with the development server
 class FileServeView(
         LoginRequiredMixin, LoggedInPermissionMixin, FileServeMixin,
-        ProjectPermissionObjectMixin, View):
+        ProjectPermissionMixin, View):
     """View for serving file to a logged in user with permissions"""
     permission_required = 'filesfolders.view_data'
 
@@ -504,13 +495,15 @@ class FileServePublicView(FileServeMixin, View):
         return super(FileServePublicView, self).get(*args, **kwargs)
 
 
+# TODO: Remove SingleObjectMixin
 class FilePublicLinkView(
         LoginRequiredMixin, LoggedInPermissionMixin, SingleObjectMixin,
-        ProjectContextMixin, ProjectPermissionObjectMixin, TemplateView):
+        ProjectContextMixin, ProjectPermissionMixin, TemplateView):
     """View for generating a public secure link to a file"""
     permission_required = 'filesfolders.share_public_link'
     template_name = 'filesfolders/public_link.html'
 
+    # TODO: Remove
     def get_object(self):
         """Override get_object to provide a File object for perm checking
         and template"""
@@ -527,8 +520,7 @@ class FilePublicLinkView(
 
         if not file:
             messages.error(self.request, 'File not found!')
-            return redirect(reverse(
-                'project_files', kwargs={'project': kwargs['project']}))
+            return redirect(reverse('home'))
 
         if not get_project_setting(
                 file.project, APP_NAME, 'allow_public_links'):
@@ -536,10 +528,12 @@ class FilePublicLinkView(
                 self.request,
                 'Sharing public links not allowed for this project')
             return redirect(reverse(
-                'project_files', kwargs={'project': kwargs['project']}))
+                'filesfolders:project_files',
+                kwargs={'project': file.project.omics_uuid}))
 
         return super(FilePublicLinkView, self).get(*args, **kwargs)
 
+    # TODO: Remove
     def dispatch(self, request, *args, **kwargs):
         """Override dispatch to ensure self.object is provided to template"""
         self.object = self.get_object()
@@ -557,19 +551,16 @@ class FilePublicLinkView(
 
         except File.DoesNotExist:
             messages.error(self.request, 'File not found!')
-
-            return redirect(reverse(
-                'project_files', kwargs={'project': kwargs['project']}))
+            return redirect(reverse('home'))
 
         if not file.public_url:
             messages.error(self.request, 'Public URL for file not enabled!')
-
             return redirect(reverse(
-                'project_files', kwargs={'project': kwargs['project']}))
+                'filesfolders:project_files',
+                kwargs={'project': file.project.omics_uuid}))
 
         # Build URL
-        context['public_url'] = build_public_url(
-            file, self.request)
+        context['public_url'] = build_public_url(file, self.request)
 
         return context
 
@@ -609,8 +600,8 @@ class HyperLinkDeleteView(
 
 
 class BatchEditView(
-        LoginRequiredMixin, LoggedInPermissionMixin, HTTPRefererMixin,
-        ProjectPermissionObjectMixin, TemplateView):
+        LoginRequiredMixin, LoggedInPermissionMixin,
+        HTTPRefererMixin, ProjectPermissionMixin, TemplateView):
     """Batch delete/move confirm view"""
     http_method_names = ['post']
     template_name = 'filesfolders/batch_edit_confirm.html'
@@ -619,6 +610,7 @@ class BatchEditView(
 
     def post(self, request, **kwargs):
         post_data = request.POST
+        project = self._get_project(kwargs, request)
 
         #: Items we will delete
         items = []
@@ -673,7 +665,7 @@ class BatchEditView(
 
                 # Can't move if item with same name in target
                 get_kwargs = {
-                    'project__omics_uuid': kwargs['project'],
+                    'project__omics_uuid': project.omics_uuid,
                     'folder': target_folder.omics_uuid if
                     target_folder else None,
                     'name': item.name}
@@ -744,7 +736,7 @@ class BatchEditView(
                     'failed': [x.name for x in failed]}
 
                 tl_event = timeline.add_event(
-                    project=Project.objects.get(omics_uuid=kwargs['project']),
+                    project=Project.objects.get(omics_uuid=project.omics_uuid),
                     app_name=APP_NAME,
                     user=self.request.user,
                     event_name='batch_{}'.format(batch_action),
@@ -765,13 +757,14 @@ class BatchEditView(
                         label='target_folder',
                         name=target_folder.get_path())
 
-            re_kwargs = {'project': kwargs['project']}
-
             if 'folder' in kwargs:
-                re_kwargs['folder'] = kwargs['folder']
+                re_kwargs = {'folder': kwargs['folder']}
+
+            else:
+                re_kwargs = {'project': kwargs['project']}
 
             return redirect(
-                reverse('project_files', kwargs=re_kwargs))
+                reverse('filesfolders:project_files', kwargs=re_kwargs))
 
         # Confirmation needed
         else:
@@ -780,7 +773,7 @@ class BatchEditView(
                 'items': items,
                 'item_names': item_names,
                 'failed': failed,
-                'project': Project.objects.get(omics_uuid=kwargs['project'])}
+                'project': Project.objects.get(omics_uuid=project.omics_uuid)}
 
             if 'folder' in kwargs:
                 context['folder'] = kwargs['folder']
@@ -794,7 +787,7 @@ class BatchEditView(
                 for i in items:
                     exclude_list += [
                         x.omics_uuid for x in Folder.objects.filter(
-                            project__omics_uuid=kwargs['project']) if
+                            project__omics_uuid=project.omics_uuid) if
                                 x.has_in_path(i)]
 
                 # Exclude current folder
@@ -802,7 +795,7 @@ class BatchEditView(
                     exclude_list.append(kwargs['folder'])
 
                 folder_choices = Folder.objects.filter(
-                    project__omics_uuid=kwargs['project']).exclude(
+                    project__omics_uuid=project.omics_uuid).exclude(
                     omics_uuid__in=exclude_list)
 
                 context['folder_choices'] = folder_choices

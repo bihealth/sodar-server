@@ -81,5 +81,5 @@ def get_user_html(user):
 def get_project_link(project):
     """Return link to project with simple title"""
     return '<a href="{}">{}</a>'.format(
-        reverse('project_detail', kwargs={'project': project.omics_uuid}),
+        reverse('projectroles:detail', kwargs={'project': project.omics_uuid}),
         project.title)

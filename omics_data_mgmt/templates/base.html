@@ -83,7 +83,7 @@
                 {# Search #}
                 {% if request.user.is_authenticated %}
                   <li class="nav-item omics-navbar-search">
-                    <form class="form-inline" method="get" action="{% url 'project_search' %}">
+                    <form class="form-inline" method="get" action="{% url 'projectroles:search' %}">
                       <div class="input-group omics-input-group">
                         <input class="form-control" type="text"
                                placeholder="Search term" name="s" aria-label="Search term"
