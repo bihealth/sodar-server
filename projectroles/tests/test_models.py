@@ -134,6 +134,7 @@ class TestProject(TestCase, ProjectMixin):
             'type': PROJECT_TYPE_PROJECT,
             'parent': self.category_top.pk,
             'submit_status': SUBMIT_STATUS_OK,
+            'omics_uuid': self.project_sub.omics_uuid,
             'description': ''}
         model_dict = model_to_dict(self.project_sub)
         # HACK: Can't compare markupfields like this. Better solution?
@@ -215,7 +216,8 @@ class TestProject(TestCase, ProjectMixin):
     def test_get_absolute_url(self):
         """Test get_absolute_url()"""
         expected_url = reverse(
-            'project_detail', kwargs={'pk': self.project_sub.pk})
+            'projectroles:detail',
+            kwargs={'project': self.project_sub.omics_uuid})
         self.assertEqual(self.project_sub.get_absolute_url(), expected_url)
 
 
@@ -306,7 +308,8 @@ class TestRoleAssignment(TestCase, ProjectMixin, RoleAssignmentMixin):
             'id': self.assignment_owner.pk,
             'project': self.category_top.pk,
             'user': self.user_alice.pk,
-            'role': self.role_owner.pk}
+            'role': self.role_owner.pk,
+            'omics_uuid': self.assignment_owner.omics_uuid}
 
     def test_initialization(self):
         self.assertEqual(
@@ -390,13 +393,15 @@ class TestRoleAssignment(TestCase, ProjectMixin, RoleAssignmentMixin):
                 'id': assignment_c0.pk,
                 'project': self.project_top.pk,
                 'user': self.user_erin.pk,
-                'role': self.role_contributor.pk
+                'role': self.role_contributor.pk,
+                'omics_uuid': assignment_c0.omics_uuid
             },
             {
                 'id': assignment_c1.pk,
                 'project': self.project_top.pk,
                 'user': self.user_frank.pk,
-                'role': self.role_contributor.pk
+                'role': self.role_contributor.pk,
+                'omics_uuid': assignment_c1.omics_uuid
             }
         ]
 
@@ -469,6 +474,7 @@ class TestProjectInvite(
             'date_expire': self.invite.date_expire,
             'message': '',
             'secret': SECRET,
+            'omics_uuid': self.invite.omics_uuid,
             'active': True}
         self.assertEqual(model_to_dict(self.invite), expected)
 
@@ -583,7 +589,8 @@ class TestProjectSetting(
             'project': self.project.pk,
             'name': 'str_setting',
             'type': 'STRING',
-            'value': 'test'}
+            'value': 'test',
+            'omics_uuid': self.setting_str.omics_uuid}
         self.assertEqual(model_to_dict(self.setting_str), expected)
 
     def test_initialization_integer(self):
@@ -594,7 +601,8 @@ class TestProjectSetting(
             'project': self.project.pk,
             'name': 'int_setting',
             'type': 'INTEGER',
-            'value': '170'}
+            'value': '170',
+            'omics_uuid': self.setting_int.omics_uuid}
         self.assertEqual(model_to_dict(self.setting_int), expected)
 
     def test__str__(self):
@@ -655,7 +663,8 @@ class TestProjectUserTag(
             'id': self.tag.pk,
             'project': self.project.pk,
             'user': self.user.pk,
-            'name': PROJECT_TAG_STARRED}
+            'name': PROJECT_TAG_STARRED,
+            'omics_uuid': self.tag.omics_uuid}
         self.assertEqual(model_to_dict(self.tag), expected)
 
     def test__str__(self):

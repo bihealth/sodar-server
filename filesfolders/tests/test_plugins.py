@@ -1,4 +1,5 @@
 """Plugin tests for the filesfolders app"""
+import uuid
 
 from django.urls import reverse
 from test_plus.test import TestCase
@@ -26,7 +27,7 @@ PROJECT_TYPE_PROJECT = OMICS_CONSTANTS['PROJECT_TYPE_PROJECT']
 SECRET = '7dqq83clo2iyhg29hifbor56og6911r5'
 PLUGIN_NAME = 'filesfolders'
 PLUGIN_TITLE = 'Small Files'
-PLUGIN_URL_ID = 'project_files'
+PLUGIN_URL_ID = 'filesfolders:project_files'
 SETTING_KEY = 'allow_public_links'
 
 
@@ -104,11 +105,10 @@ class TestPlugins(
     def test_get_object_link_file(self):
         """Test get_object_link() for a File object"""
         plugin = ProjectAppPluginPoint.get_plugin(PLUGIN_NAME)
-        url = reverse('file_serve', kwargs={
-            'project': self.project.pk,
-            'pk': self.file.pk,
+        url = reverse('filesfolders:file_serve', kwargs={
+            'file': self.file.omics_uuid,
             'file_name': self.file.name})
-        ret = plugin.get_object_link('File', self.file.pk)
+        ret = plugin.get_object_link('File', self.file.omics_uuid)
 
         self.assertEqual(ret['url'], url)
         self.assertEqual(ret['label'], self.file.name)
@@ -117,10 +117,9 @@ class TestPlugins(
     def test_get_object_link_folder(self):
         """Test get_object_link() for a Folder object"""
         plugin = ProjectAppPluginPoint.get_plugin(PLUGIN_NAME)
-        url = reverse('project_files', kwargs={
-            'project': self.project.pk,
-            'folder': self.folder.pk})
-        ret = plugin.get_object_link('Folder', self.folder.pk)
+        url = reverse('filesfolders:project_files', kwargs={
+            'folder': self.folder.omics_uuid})
+        ret = plugin.get_object_link('Folder', self.folder.omics_uuid)
 
         self.assertEqual(ret['url'], url)
         self.assertEqual(ret['label'], self.folder.name)
@@ -128,7 +127,7 @@ class TestPlugins(
     def test_get_object_link_hyperlink(self):
         """Test get_object_link() for a HyperLink object"""
         plugin = ProjectAppPluginPoint.get_plugin(PLUGIN_NAME)
-        ret = plugin.get_object_link('HyperLink', self.hyperlink.pk)
+        ret = plugin.get_object_link('HyperLink', self.hyperlink.omics_uuid)
 
         self.assertEqual(ret['url'], self.hyperlink.url)
         self.assertEqual(ret['label'], self.hyperlink.name)
@@ -142,4 +141,4 @@ class TestPlugins(
     def test_get_object_link_fail(self):
         """Test get_object_link() with a non-existent object"""
         plugin = ProjectAppPluginPoint.get_plugin(PLUGIN_NAME)
-        self.assertEqual(plugin.get_object_link('File', 0), None)
+        self.assertEqual(plugin.get_object_link('File', uuid.uuid4()), None)

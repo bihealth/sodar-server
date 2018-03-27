@@ -11,9 +11,9 @@ urlpatterns = [
         view=views.ProjectTimelineView.as_view(),
         name='project_timeline',
     ),
-    url(
+    url(    # TODO: Refactor this to use the object ref model uuid?
         regex=r'^(?P<project>[0-9a-f-]+)/(?P<object_model>[\w-]+)/'
-              r'(?P<object_uuid>[\w-]+)$',
+              r'(?P<object_uuid>[0-9a-f-]+)$',
         view=views.ObjectTimelineView.as_view(),
         name='object_timeline',
     ),

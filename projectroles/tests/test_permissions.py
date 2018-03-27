@@ -210,7 +210,7 @@ class TestBaseViews(TestProjectPermissionBase):
         self.assert_redirect(url, bad_users)
 
     def test_project_search(self):
-        url = reverse('project_search') + '?' + urlencode({'s': 'test'})
+        url = reverse('projectroles:search') + '?' + urlencode({'s': 'test'})
         good_users = [
             self.superuser,
             self.as_owner.user,
@@ -291,7 +291,8 @@ class TestProjectViews(TestProjectPermissionBase):
 
     def test_category_details(self):
         """Test access to category details"""
-        url = reverse('project_detail', kwargs={'pk': self.category.pk})
+        url = reverse(
+            'projectroles:detail', kwargs={'project': self.category.omics_uuid})
 
         # Add user with access to project below category: should still be able
         # to view the category
@@ -315,7 +316,9 @@ class TestProjectViews(TestProjectPermissionBase):
 
     def test_project_details(self):
         """Test access to project details"""
-        url = reverse('project_detail', kwargs={'pk': self.project.pk})
+        url = reverse(
+            'projectroles:detail',
+            kwargs={'project': self.project.omics_uuid})
         good_users = [
             self.superuser,
             self.as_owner.user,
@@ -331,7 +334,9 @@ class TestProjectViews(TestProjectPermissionBase):
 
     def test_update(self):
         """Test access to project updating"""
-        url = reverse('project_update', kwargs={'pk': self.project.pk})
+        url = reverse(
+            'projectroles:update',
+            kwargs={'project': self.project.omics_uuid})
         good_users = [
             self.superuser,
             self.as_owner.user,
@@ -347,7 +352,7 @@ class TestProjectViews(TestProjectPermissionBase):
 
     def test_create_top(self):
         """Test access to top level project creation"""
-        url = reverse('project_create')
+        url = reverse('projectroles:create')
         good_users = [
             self.superuser]
         bad_users = [
@@ -363,7 +368,9 @@ class TestProjectViews(TestProjectPermissionBase):
 
     def test_create_sub(self):
         """Test access to subproject creation"""
-        url = reverse('project_create', kwargs={'project': self.category.pk})
+        url = reverse(
+            'projectroles:create',
+            kwargs={'project': self.category.omics_uuid})
         good_users = [
             self.superuser,
             self.as_owner.user]
@@ -379,7 +386,9 @@ class TestProjectViews(TestProjectPermissionBase):
 
     def test_roles(self):
         """Test access to role list"""
-        url = reverse('project_roles', kwargs={'pk': self.project.pk})
+        url = reverse(
+            'projectroles:roles',
+            kwargs={'project': self.project.omics_uuid})
         good_users = [
             self.superuser,
             self.as_owner.user,
@@ -396,9 +405,8 @@ class TestProjectViews(TestProjectPermissionBase):
     def test_role_create(self):
         """Test access to role creation"""
         url = reverse(
-            'role_create',
-            kwargs={
-                'project': self.project.pk})
+            'projectroles:role_create',
+            kwargs={'project': self.project.omics_uuid})
         good_users = [
             self.superuser,
             self.as_owner.user,
@@ -415,10 +423,8 @@ class TestProjectViews(TestProjectPermissionBase):
     def test_role_update(self):
         """Test access to role updating"""
         url = reverse(
-            'role_update',
-            kwargs={
-                'project': self.project.pk,
-                'pk': self.as_contributor.pk})
+            'projectroles:role_update',
+            kwargs={'roleassignment': self.as_contributor.omics_uuid})
         good_users = [
             self.superuser,
             self.as_owner.user,
@@ -435,10 +441,8 @@ class TestProjectViews(TestProjectPermissionBase):
     def test_role_delete(self):
         """Test access to role deletion"""
         url = reverse(
-            'role_delete',
-            kwargs={
-                'project': self.project.pk,
-                'pk': self.as_contributor.pk})
+            'projectroles:role_delete',
+            kwargs={'roleassignment': self.as_contributor.omics_uuid})
         good_users = [
             self.superuser,
             self.as_owner.user,
@@ -455,10 +459,8 @@ class TestProjectViews(TestProjectPermissionBase):
     def test_role_update_owner(self):
         """Test access to owner role update: not allowed, should fail"""
         url = reverse(
-            'role_update',
-            kwargs={
-                'project': self.project.pk,
-                'pk': self.as_owner.pk})
+            'projectroles:role_update',
+            kwargs={'roleassignment': self.as_owner.omics_uuid})
         bad_users = [
             self.anonymous,
             self.superuser,
@@ -473,10 +475,8 @@ class TestProjectViews(TestProjectPermissionBase):
     def test_role_delete_owner(self):
         """Test access to owner role deletion: not allowed, should fail"""
         url = reverse(
-            'role_delete',
-            kwargs={
-                'project': self.project.pk,
-                'pk': self.as_owner.pk})
+            'projectroles:role_delete',
+            kwargs={'roleassignment': self.as_owner.omics_uuid})
         bad_users = [
             self.anonymous,
             self.superuser,
@@ -491,10 +491,8 @@ class TestProjectViews(TestProjectPermissionBase):
     def test_role_update_delegate(self):
         """Test access to delegate role update"""
         url = reverse(
-            'role_update',
-            kwargs={
-                'project': self.project.pk,
-                'pk': self.as_delegate.pk})
+            'projectroles:role_update',
+            kwargs={'roleassignment': self.as_delegate.omics_uuid})
         good_users = [
             self.superuser,
             self.as_owner.user]
@@ -511,10 +509,8 @@ class TestProjectViews(TestProjectPermissionBase):
     def test_role_delete_delegate(self):
         """Test access to role deletion for delegate"""
         url = reverse(
-            'role_delete',
-            kwargs={
-                'project': self.project.pk,
-                'pk': self.as_delegate.pk})
+            'projectroles:role_delete',
+            kwargs={'roleassignment': self.as_delegate.omics_uuid})
         good_users = [
             self.superuser,
             self.as_owner.user]
@@ -531,9 +527,8 @@ class TestProjectViews(TestProjectPermissionBase):
     def test_role_import(self):
         """Test access to role importing"""
         url = reverse(
-            'role_import',
-            kwargs={
-                'project': self.project.pk})
+            'projectroles:role_import',
+            kwargs={'project': self.project.omics_uuid})
         good_users = [
             self.superuser,
             self.as_owner.user]
@@ -550,9 +545,8 @@ class TestProjectViews(TestProjectPermissionBase):
     def test_role_invite_create(self):
         """Test access to role invite creation"""
         url = reverse(
-            'role_invite_create',
-            kwargs={
-                'project': self.project.pk})
+            'projectroles:invite_create',
+            kwargs={'project': self.project.omics_uuid})
         good_users = [
             self.superuser,
             self.as_owner.user,
@@ -569,9 +563,8 @@ class TestProjectViews(TestProjectPermissionBase):
     def test_role_invite_list(self):
         """Test access to role invite list"""
         url = reverse(
-            'role_invites',
-            kwargs={
-                'project': self.project.pk})
+            'projectroles:invites',
+            kwargs={'project': self.project.omics_uuid})
         good_users = [
             self.superuser,
             self.as_owner.user,
@@ -597,10 +590,8 @@ class TestProjectViews(TestProjectPermissionBase):
             message='')
 
         url = reverse(
-            'role_invite_resend',
-            kwargs={
-                'project': self.project.pk,
-                'pk': invite.pk})
+            'projectroles:invite_resend',
+            kwargs={'projectinvite': invite.omics_uuid})
         good_users = [
             self.superuser,
             self.as_owner.user,
@@ -615,8 +606,8 @@ class TestProjectViews(TestProjectPermissionBase):
             url,
             good_users,
             redirect_user=reverse(
-                'role_invites',
-                kwargs={'project': self.project.pk}))
+                'projectroles:invites',
+                kwargs={'project': self.project.omics_uuid}))
         self.assert_redirect(url, bad_users)
 
     def test_role_invite_revoke(self):
@@ -631,10 +622,8 @@ class TestProjectViews(TestProjectPermissionBase):
             message='')
 
         url = reverse(
-            'role_invite_revoke',
-            kwargs={
-                'project': self.project.pk,
-                'pk': invite.pk})
+            'projectroles:invite_revoke',
+            kwargs={'projectinvite': invite.omics_uuid})
         good_users = [
             self.superuser,
             self.as_owner.user,
@@ -650,7 +639,9 @@ class TestProjectViews(TestProjectPermissionBase):
 
     def test_starring_api(self):
         """Test access to project starring API view"""
-        url = reverse('project_star', kwargs={'pk': self.project.pk})
+        url = reverse(
+            'projectroles:star',
+            kwargs={'project': self.project.omics_uuid})
         good_users = [
             self.superuser,
             self.as_owner.user,

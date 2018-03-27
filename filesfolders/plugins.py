@@ -92,7 +92,6 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                 'url': reverse(
                     'filesfolders:file_serve',
                     kwargs={
-                        'project': obj.project.omics_uuid,
                         'file': obj.omics_uuid,
                         'file_name': obj.name}),
                     'label': obj.name,
@@ -102,9 +101,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
             return {
                 'url': reverse(
                     'filesfolders:project_files',
-                    kwargs={
-                        'project': obj.project.omics_uuid,
-                        'folder': obj.omics_uuid}),
+                    kwargs={'folder': obj.omics_uuid}),
                 'label': obj.name}
 
         elif obj.__class__ == HyperLink:

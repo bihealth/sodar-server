@@ -123,7 +123,7 @@ class LoggedInPermissionMixin(PermissionRequiredMixin):
             return redirect_to_login(self.request.get_full_path())
 
 
-class RolePermissionMixin(LoggedInPermissionMixin):
+class RolePermissionMixin(LoggedInPermissionMixin, ProjectAccessMixin):
     """Mixin to ensure permissions for RoleAssignment according to user role in
     project"""
     def has_permission(self):
@@ -156,10 +156,7 @@ class RolePermissionMixin(LoggedInPermissionMixin):
 
     def get_permission_object(self):
         """Override get_permission_object for checking Project permission"""
-        if self.get_object():
-            return self.get_object().project
-
-        return None
+        return self._get_project(self.kwargs, self.request)
 
 
 class HTTPRefererMixin:
@@ -567,19 +564,6 @@ class ProjectCreateView(
     model = Project
     form_class = ProjectForm
 
-    '''
-    def get_permission_object(self):
-        """Override get_permission_object for checking Project permission from
-        parent"""
-        if 'project' in self.kwargs:
-            try:
-                obj = Project.objects.get(omics_uuid=self.kwargs['project'])
-                return obj
-
-            except Project.DoesNotExist:
-                return None
-    '''
-
     def get_context_data(self, *args, **kwargs):
         context = super(ProjectCreateView, self).get_context_data(
             *args, **kwargs)
@@ -633,22 +617,12 @@ class ProjectUpdateView(
 
 
 class ProjectRoleView(
-        LoginRequiredMixin, LoggedInPermissionMixin, ProjectContextMixin,
-        TemplateView):
+        LoginRequiredMixin, LoggedInPermissionMixin, ProjectPermissionMixin,
+        ProjectContextMixin, TemplateView):
     """View for displaying project roles"""
     permission_required = 'projectroles.view_project_roles'
     template_name = 'projectroles/project_roles.html'
     model = Project
-
-    def get_object(self):
-        """Override get_object to provide a Project object for both template
-        and permission checking"""
-        try:
-            obj = Project.objects.get(omics_uuid=self.kwargs['project'])
-            return obj
-
-        except Project.DoesNotExist:
-            return None
 
     def get_context_data(self, *args, **kwargs):
         context = super(ProjectRoleView, self).get_context_data(
@@ -666,7 +640,7 @@ class RoleAssignmentModifyMixin(ModelFormMixin):
             *args, **kwargs)
 
         change_type = self.request.resolver_match.url_name.split('_')[1]
-        project = Project.objects.get(omics_uuid=self.kwargs['project'])
+        project = self._get_project(self.kwargs, self.request)
 
         if change_type != 'delete':
             context['preview_subject'] = get_role_change_subject(
@@ -786,17 +760,6 @@ class RoleAssignmentCreateView(
     model = RoleAssignment
     form_class = RoleAssignmentForm
 
-    '''
-    def get_permission_object(self):
-        """Override get_permission_object for checking Project permission"""
-        try:
-            obj = Project.objects.get(omics_uuid=self.kwargs['project'])
-            return obj
-
-        except Project.DoesNotExist:
-            return None
-    '''
-
     def get_form_kwargs(self):
         """Pass URL arguments and current user to form"""
         kwargs = super(RoleAssignmentCreateView, self).get_form_kwargs()
@@ -811,7 +774,7 @@ class RoleAssignmentUpdateView(
     """RoleAssignment updating view"""
     model = RoleAssignment
     form_class = RoleAssignmentForm
-    slug_url_kwarg = 'role'
+    slug_url_kwarg = 'roleassignment'
     slug_field = 'omics_uuid'
 
     def get_form_kwargs(self):
@@ -826,7 +789,7 @@ class RoleAssignmentDeleteView(
         DeleteView):
     """RoleAssignment deletion view"""
     model = RoleAssignment
-    slug_url_kwarg = 'role'
+    slug_url_kwarg = 'roleassignment'
     slug_field = 'omics_uuid'
 
     def post(self, *args, **kwargs):
@@ -919,17 +882,6 @@ class RoleAssignmentImportView(
     template_name = 'projectroles/roleassignment_import.html'
     permission_required = 'projectroles.import_roles'
 
-    '''
-    def get_permission_object(self):
-        """Override get_permission_object for checking Project permission"""
-        try:
-            obj = Project.objects.get(omics_uuid=self.kwargs['project'])
-            return obj
-
-        except Project.DoesNotExist:
-            return None
-    '''
-
     def get(self, request, *args, **kwargs):
         context = super(RoleAssignmentImportView, self).get_context_data(
             *args, **kwargs)
@@ -994,7 +946,7 @@ class RoleAssignmentImportView(
 
             if import_mode == 'replace':
                 import_users = assignments.values_list(
-                        'user', flat=True)
+                    'user', flat=True)
 
                 context['del_assignments'] = dest_project.roles.exclude(
                     role__name=PROJECT_ROLE_OWNER).exclude(
@@ -1210,17 +1162,6 @@ class ProjectInviteCreateView(
     form_class = ProjectInviteForm
     permission_required = 'projectroles.invite_users'
 
-    '''
-    def get_permission_object(self):
-        """Override get_permission_object for checking Project permission"""
-        try:
-            obj = Project.objects.get(omics_uuid=self.kwargs['project'])
-            return obj
-
-        except Project.DoesNotExist:
-            return None
-    '''
-
     def get_context_data(self, *args, **kwargs):
         context = super(ProjectInviteCreateView, self).get_context_data(
             *args, **kwargs)
@@ -1424,18 +1365,10 @@ class ProjectInviteAcceptView(
 
 
 class ProjectInviteResendView(
-        LoginRequiredMixin, LoggedInPermissionMixin, View):
+        LoginRequiredMixin, LoggedInPermissionMixin, ProjectPermissionMixin,
+        View):
     """View to handle resending a project invite"""
     permission_required = 'projectroles.invite_users'
-
-    def get_permission_object(self):
-        """Override get_permission_object for checking Project permission"""
-        try:
-            obj = Project.objects.get(omics_uuid=self.kwargs['project'])
-            return obj
-
-        except Project.DoesNotExist:
-            return None
 
     def get(self, *args, **kwargs):
         timeline = get_backend_api('timeline_backend')
@@ -1451,7 +1384,8 @@ class ProjectInviteResendView(
                 'Error: Invite not found!')
             return redirect(reverse(
                 'projectroles:invites',
-                kwargs={'project': kwargs['project']}))
+                kwargs={'project': self._get_project(
+                    self.kwargs, self.request)}))
 
         # Reset invite expiration date
         invite.date_expire = get_expiry_date()
@@ -1484,34 +1418,18 @@ class ProjectInviteResendView(
 
 
 class ProjectInviteRevokeView(
-        LoginRequiredMixin, LoggedInPermissionMixin, ProjectContextMixin,
-        TemplateView):
+        LoginRequiredMixin, LoggedInPermissionMixin, ProjectPermissionMixin,
+        ProjectContextMixin, TemplateView):
     """Batch delete/move confirm view"""
     template_name = 'projectroles/invite_revoke_confirm.html'
     permission_required = 'projectroles.invite_users'
 
-    def get_permission_object(self):
-        """Override get_permission_object for checking Project permission"""
-        try:
-            obj = Project.objects.get(omics_uuid=self.kwargs['project'])
-            return obj
-
-        except Project.DoesNotExist:
-            return None
-
     def get_context_data(self, *args, **kwargs):
         context = super(ProjectInviteRevokeView, self).get_context_data(
             *args, **kwargs)
+        context['project'] = self._get_project(self.kwargs, self.request)
 
-        if 'project' in self.kwargs:
-            try:
-                context['project'] = Project.objects.get(
-                    omics_uuid=self.kwargs['project'])
-
-            except Project.DoesNotExist:
-                pass
-
-        if 'invite' in self.kwargs:
+        if 'projectinvite' in self.kwargs:
             try:
                 context['invite'] = ProjectInvite.objects.get(
                     omics_uuid=self.kwargs['projectinvite'])
@@ -1525,6 +1443,7 @@ class ProjectInviteRevokeView(
         """Override post() to handle POST from confirmation template"""
         timeline = get_backend_api('timeline_backend')
         invite = None
+        project = self._get_project(self.kwargs, self.request)
 
         try:
             invite = ProjectInvite.objects.get(
@@ -1538,9 +1457,9 @@ class ProjectInviteRevokeView(
             messages.error(self.request, 'Error: Unable to revoke invite!')
 
         # Add event in Timeline
-        if timeline:
+        if timeline and invite:
             timeline.add_event(
-                project=Project.objects.get(omics_uuid=self.kwargs['project']),
+                project=project,
                 app_name=APP_NAME,
                 user=self.request.user,
                 event_name='invite_revoke',
@@ -1550,7 +1469,7 @@ class ProjectInviteRevokeView(
 
         return redirect(reverse(
             'projectroles:invites',
-            kwargs={'project': kwargs['project']}))
+            kwargs={'project': project.omics_uuid}))
 
 
 # Javascript API Views ---------------------------------------------------

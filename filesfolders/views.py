@@ -23,8 +23,7 @@ from projectroles.models import Project
 from projectroles.plugins import get_backend_api
 from projectroles.project_settings import get_project_setting
 from projectroles.views import LoggedInPermissionMixin, \
-    ProjectContextMixin, HTTPRefererMixin, ProjectPermissionMixin, \
-    ProjectAccessMixin
+    ProjectContextMixin, HTTPRefererMixin, ProjectPermissionMixin
 
 
 # Settings and constants
@@ -303,11 +302,11 @@ class BaseCreateView(
         kwargs = super(BaseCreateView, self).get_form_kwargs()
         kwargs.update({'current_user': self.request.user})
 
-        if 'project' in self.kwargs:
-            kwargs.update({'project': self.kwargs['project']})
-
-        elif 'folder' in self.kwargs:
+        if 'folder' in self.kwargs:
             kwargs.update({'folder': self.kwargs['folder']})
+
+        elif 'project' in self.kwargs:
+            kwargs.update({'project': self.kwargs['project']})
 
         return kwargs
 
@@ -665,8 +664,8 @@ class BatchEditView(
 
                 # Can't move if item with same name in target
                 get_kwargs = {
-                    'project__omics_uuid': project.omics_uuid,
-                    'folder': target_folder.omics_uuid if
+                    'project': project,
+                    'folder': target_folder if
                     target_folder else None,
                     'name': item.name}
 

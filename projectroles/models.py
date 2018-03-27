@@ -186,7 +186,8 @@ class Project(models.Model):
                 'Project and parent titles can not be equal')
 
     def get_absolute_url(self):
-        return reverse('project_detail', kwargs={'pk': self.pk})
+        return reverse(
+            'projectroles:detail', kwargs={'project': self.omics_uuid})
 
     # Custom row-level functions
     def get_children(self):

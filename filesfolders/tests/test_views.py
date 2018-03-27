@@ -110,9 +110,11 @@ class TestListView(TestViewsBase):
         """Test rendering of the project root view"""
         with self.login(self.user):
             response = self.client.get(
-                reverse('project_files', kwargs={'project': self.project.pk}))
+                reverse(
+                    'filesfolders:project_files',
+                    kwargs={'project': self.project.omics_uuid}))
             self.assertEqual(response.status_code, 200)
-            self.assertEqual(response.context['object'].pk, self.project.pk)
+            self.assertEqual(response.context['project'].pk, self.project.pk)
             self.assertIsNotNone(response.context['folders'])
             self.assertIsNotNone(response.context['files'])
             self.assertIsNotNone(response.context['links'])
@@ -121,10 +123,10 @@ class TestListView(TestViewsBase):
         """Test rendering of a folder view within the project"""
         with self.login(self.user):
             response = self.client.get(reverse(
-                'project_files',
-                kwargs={'project': self.project.pk, 'folder': self.folder.pk}))
+                'filesfolders:project_files',
+                kwargs={'folder': self.folder.omics_uuid}))
             self.assertEqual(response.status_code, 200)
-            self.assertEqual(response.context['object'].pk, self.project.pk)
+            self.assertEqual(response.context['project'].pk, self.project.pk)
             self.assertIsNotNone(response.context['folder_breadcrumb'])
             self.assertIsNotNone(response.context['files'])
             self.assertIsNotNone(response.context['links'])
@@ -145,9 +147,9 @@ class TestListView(TestViewsBase):
             secret='xxxxxxxxx')
 
         with self.login(self.user):
-            response = self.client.get(
-                reverse('project_files',
-                        kwargs={'project': self.project.pk}))
+            response = self.client.get(reverse(
+                'filesfolders:project_files',
+                kwargs={'project': self.project.omics_uuid}))
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response.context['readme_name'], 'readme.txt')
             self.assertEqual(response.context['readme_data'], self.file_content)
@@ -164,7 +166,8 @@ class TestFileCreateView(TestViewsBase):
         """Test rendering of the File create view"""
         with self.login(self.user):
             response = self.client.get(reverse(
-                'file_create', kwargs={'project': self.project.pk}))
+                'filesfolders:file_create',
+                kwargs={'project': self.project.omics_uuid}))
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response.context['project'].pk, self.project.pk)
 
@@ -172,9 +175,8 @@ class TestFileCreateView(TestViewsBase):
         """Test rendering of the File create view under a folder"""
         with self.login(self.user):
             response = self.client.get(reverse(
-                'file_create', kwargs={
-                    'project': self.project.pk,
-                    'folder': self.folder.pk}))
+                'filesfolders:file_create',
+                kwargs={'folder': self.folder.omics_uuid}))
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response.context['project'].pk, self.project.pk)
             self.assertEqual(response.context['folder'].pk, self.folder.pk)
@@ -194,13 +196,15 @@ class TestFileCreateView(TestViewsBase):
 
         with self.login(self.user):
             response = self.client.post(
-                reverse('file_create', kwargs={
-                    'project': self.project.pk}),
+                reverse(
+                    'filesfolders:file_create',
+                    kwargs={'project': self.project.omics_uuid}),
                 post_data)
 
             self.assertEqual(response.status_code, 302)
             self.assertEqual(response.url, reverse(
-                'project_files', kwargs={'project': self.project.pk}))
+                'filesfolders:project_files',
+                kwargs={'project': self.project.omics_uuid}))
 
         self.assertEqual(File.objects.all().count(), 2)
 
@@ -218,14 +222,15 @@ class TestFileCreateView(TestViewsBase):
 
         with self.login(self.user):
             response = self.client.post(
-                reverse('file_create', kwargs={
-                    'project': self.project.pk}),
+                reverse(
+                    'filesfolders:file_create',
+                    kwargs={'project': self.project.omics_uuid}),
                 post_data)
 
             self.assertEqual(response.status_code, 302)
             self.assertEqual(response.url, reverse(
-                'project_files', kwargs={
-                    'project': self.project.pk, 'folder': self.folder.pk}))
+                'filesfolders:project_files',
+                kwargs={'folder': self.folder.omics_uuid}))
 
         self.assertEqual(File.objects.all().count(), 2)
 
@@ -243,8 +248,9 @@ class TestFileCreateView(TestViewsBase):
 
         with self.login(self.user):
             response = self.client.post(
-                reverse('file_create', kwargs={
-                    'project': self.project.pk}),
+                reverse(
+                    'filesfolders:file_create',
+                    kwargs={'project': self.project.omics_uuid}),
                 post_data)
 
             self.assertEqual(response.status_code, 200)
@@ -259,9 +265,8 @@ class TestFileUpdateView(TestViewsBase):
         """Test rendering of the File update view"""
         with self.login(self.user):
             response = self.client.get(reverse(
-                'file_update', kwargs={
-                    'project': self.project.pk,
-                    'pk': self.file.pk}))
+                'filesfolders:file_update',
+                kwargs={'item': self.file.omics_uuid}))
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response.context['object'].pk, self.file.pk)
 
@@ -280,13 +285,15 @@ class TestFileUpdateView(TestViewsBase):
 
         with self.login(self.user):
             response = self.client.post(
-                reverse('file_update', kwargs={
-                    'project': self.project.pk, 'pk': self.file.pk}),
+                reverse(
+                    'filesfolders:file_update',
+                    kwargs={'item': self.file.omics_uuid}),
                 post_data)
 
             self.assertEqual(response.status_code, 302)
             self.assertEqual(response.url, reverse(
-                'project_files', kwargs={'project': self.project.pk}))
+                'filesfolders:project_files',
+                kwargs={'project': self.project.omics_uuid}))
 
         self.assertEqual(File.objects.all().count(), 1)
         self.file.refresh_from_db()
@@ -318,8 +325,9 @@ class TestFileUpdateView(TestViewsBase):
 
         with self.login(self.user):
             response = self.client.post(
-                reverse('file_update', kwargs={
-                    'project': self.project.pk, 'pk': self.file.pk}),
+                reverse(
+                    'filesfolders:file_update',
+                    kwargs={'item': self.file.omics_uuid}),
                 post_data)
 
             self.assertEqual(response.status_code, 200)
@@ -339,15 +347,15 @@ class TestFileUpdateView(TestViewsBase):
 
         with self.login(self.user):
             response = self.client.post(
-                reverse('file_update', kwargs={
-                    'project': self.project.pk, 'pk': self.file.pk}),
+                reverse(
+                    'filesfolders:file_update',
+                    kwargs={'item': self.file.omics_uuid}),
                 post_data)
 
             self.assertEqual(response.status_code, 302)
             self.assertEqual(response.url, reverse(
-                'project_files', kwargs={
-                    'project': self.project.pk,
-                    'folder': self.folder.pk}))
+                'filesfolders:project_files',
+                kwargs={'folder': self.folder.omics_uuid}))
 
         self.file.refresh_from_db()
         self.assertEqual(self.file.folder, self.folder)
@@ -376,8 +384,9 @@ class TestFileUpdateView(TestViewsBase):
 
         with self.login(self.user):
             response = self.client.post(
-                reverse('file_update', kwargs={
-                    'project': self.project.pk, 'pk': self.file.pk}),
+                reverse(
+                    'filesfolders:file_update',
+                    kwargs={'item': self.file.omics_uuid}),
                 post_data)
 
             self.assertEqual(response.status_code, 200)
@@ -394,9 +403,8 @@ class TestFileDeleteView(TestViewsBase):
         """Test rendering of the File delete view"""
         with self.login(self.user):
             response = self.client.get(reverse(
-                'file_delete', kwargs={
-                    'project': self.project.pk,
-                    'pk': self.file.pk}))
+                'filesfolders:file_delete',
+                kwargs={'item': self.file.omics_uuid}))
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response.context['object'].pk, self.file.pk)
 
@@ -406,13 +414,12 @@ class TestFileDeleteView(TestViewsBase):
 
         with self.login(self.user):
             response = self.client.post(reverse(
-                'file_delete', kwargs={
-                    'project': self.project.pk,
-                    'pk': self.file.pk}))
+                'filesfolders:file_delete',
+                kwargs={'item': self.file.omics_uuid}))
             self.assertEqual(response.status_code, 302)
             self.assertEqual(response.url, reverse(
-                'project_files', kwargs={
-                    'project': self.project.pk}))
+                'filesfolders:project_files',
+                kwargs={'project': self.project.omics_uuid}))
 
         self.assertEqual(File.objects.all().count(), 0)
 
@@ -424,9 +431,9 @@ class TestFileServeView(TestViewsBase):
         """Test rendering of the File serving view"""
         with self.login(self.user):
             response = self.client.get(reverse(
-                'file_serve', kwargs={
-                    'pk': self.file.pk,
-                    'project': self.project.pk,
+                'filesfolders:file_serve',
+                kwargs={
+                    'file': self.file.omics_uuid,
                     'file_name': self.file.name}))
             self.assertEqual(response.status_code, 200)
 
@@ -438,7 +445,8 @@ class TestFileServePublicView(TestViewsBase):
         """Test rendering of the File public serving view"""
         with self.login(self.user):
             response = self.client.get(reverse(
-                'file_serve_public', kwargs={
+                'filesfolders:file_serve_public',
+                kwargs={
                     'secret': SECRET,
                     'file_name': self.file.name}))
             self.assertEqual(response.status_code, 200)
@@ -451,7 +459,8 @@ class TestFileServePublicView(TestViewsBase):
 
         with self.login(self.user):
             response = self.client.get(reverse(
-                'file_serve_public', kwargs={
+                'filesfolders:file_serve_public',
+                kwargs={
                     'secret': SECRET,
                     'file_name': self.file.name}))
             self.assertEqual(response.status_code, 400)
@@ -464,7 +473,8 @@ class TestFileServePublicView(TestViewsBase):
 
         with self.login(self.user):
             response = self.client.get(reverse(
-                'file_serve_public', kwargs={
+                'filesfolders:file_serve_public',
+                kwargs={
                     'secret': SECRET,
                     'file_name': self.file.name}))
             self.assertEqual(response.status_code, 400)
@@ -478,7 +488,8 @@ class TestFileServePublicView(TestViewsBase):
 
         with self.login(self.user):
             response = self.client.get(reverse(
-                'file_serve_public', kwargs={
+                'filesfolders:file_serve_public',
+                kwargs={
                     'secret': SECRET,
                     'file_name': file_name}))
             self.assertEqual(response.status_code, 400)
@@ -491,18 +502,15 @@ class TestFilePublicLinkView(TestViewsBase):
         """Test rendering of the File public link view"""
         with self.login(self.user):
             response = self.client.get(reverse(
-                'file_public_link', kwargs={
-                    'pk': self.file.pk,
-                    'project': self.project.pk}))
+                'filesfolders:file_public_link',
+                kwargs={'file': self.file.omics_uuid}))
             self.assertEqual(response.status_code, 200)
             self.assertEqual(
                 response.context['public_url'], build_public_url(
                     self.file,
                     self.req_factory.get(
                         'file_public_link',
-                        kwargs={
-                            'pk': self.file.pk,
-                            'project': self.project.pk})))
+                        kwargs={'file': self.file.omics_uuid})))
 
     def test_redirect_setting(self):
         """Test redirecting from the public link view if public linking is
@@ -512,22 +520,20 @@ class TestFilePublicLinkView(TestViewsBase):
 
         with self.login(self.user):
             response = self.client.get(reverse(
-                'file_public_link', kwargs={
-                    'pk': self.file.pk,
-                    'project': self.project.pk}))
+                'filesfolders:file_public_link',
+                kwargs={'file': self.file.omics_uuid}))
             self.assertEqual(response.status_code, 302)
 
     def test_redirect_no_file(self):
         """Test redirecting from the public link view if the file has been
         deleted"""
-        file_pk = self.file.pk
+        file_uuid = self.file.omics_uuid
         self.file.delete()
 
         with self.login(self.user):
             response = self.client.get(reverse(
-                'file_public_link', kwargs={
-                    'pk': file_pk,
-                    'project': self.project.pk}))
+                'filesfolders:file_public_link',
+                kwargs={'file': file_uuid}))
             self.assertEqual(response.status_code, 302)
 
 
@@ -541,7 +547,8 @@ class TestFolderCreateView(TestViewsBase):
         """Test rendering of the Folder create view"""
         with self.login(self.user):
             response = self.client.get(reverse(
-                'folder_create', kwargs={'project': self.project.pk}))
+                'filesfolders:folder_create',
+                kwargs={'project': self.project.omics_uuid}))
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response.context['project'].pk, self.project.pk)
 
@@ -549,9 +556,8 @@ class TestFolderCreateView(TestViewsBase):
         """Test rendering of the Folder create view under a folder"""
         with self.login(self.user):
             response = self.client.get(reverse(
-                'folder_create', kwargs={
-                    'project': self.project.pk,
-                    'folder': self.folder.pk}))
+                'filesfolders:folder_create',
+                kwargs={'folder': self.folder.omics_uuid}))
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response.context['project'].pk, self.project.pk)
             self.assertEqual(response.context['folder'].pk, self.folder.pk)
@@ -568,14 +574,15 @@ class TestFolderCreateView(TestViewsBase):
 
         with self.login(self.user):
             response = self.client.post(
-                reverse('folder_create', kwargs={
-                    'project': self.project.pk}),
+                reverse(
+                    'filesfolders:folder_create',
+                    kwargs={'project': self.project.omics_uuid}),
                 post_data)
 
             self.assertEqual(response.status_code, 302)
             self.assertEqual(response.url, reverse(
-                'project_files', kwargs={
-                    'project': self.project.pk}))
+                'filesfolders:project_files',
+                kwargs={'project': self.project.omics_uuid}))
 
         self.assertEqual(Folder.objects.all().count(), 2)
 
@@ -591,15 +598,15 @@ class TestFolderCreateView(TestViewsBase):
 
         with self.login(self.user):
             response = self.client.post(
-                reverse('folder_create', kwargs={
-                    'project': self.project.pk}),
+                reverse(
+                    'filesfolders:folder_create',
+                    kwargs={'project': self.project.omics_uuid}),
                 post_data)
 
             self.assertEqual(response.status_code, 302)
             self.assertEqual(response.url, reverse(
-                'project_files', kwargs={
-                    'project': self.project.pk,
-                    'folder': self.folder.pk}))
+                'filesfolders:project_files',
+                kwargs={'folder': self.folder.omics_uuid}))
 
         self.assertEqual(Folder.objects.all().count(), 2)
 
@@ -615,8 +622,9 @@ class TestFolderCreateView(TestViewsBase):
 
         with self.login(self.user):
             response = self.client.post(
-                reverse('folder_create', kwargs={
-                    'project': self.project.pk}),
+                reverse(
+                    'filesfolders:folder_create',
+                    kwargs={'project': self.project.omics_uuid}),
                 post_data)
 
             self.assertEqual(response.status_code, 200)
@@ -630,9 +638,8 @@ class TestFolderUpdateView(TestViewsBase):
         """Test rendering of the Folder update view"""
         with self.login(self.user):
             response = self.client.get(reverse(
-                'folder_update', kwargs={
-                    'project': self.project.pk,
-                    'pk': self.folder.pk}))
+                'filesfolders:folder_update',
+                kwargs={'item': self.folder.omics_uuid}))
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response.context['object'].pk, self.folder.pk)
 
@@ -648,14 +655,15 @@ class TestFolderUpdateView(TestViewsBase):
 
         with self.login(self.user):
             response = self.client.post(
-                reverse('folder_update', kwargs={
-                    'project': self.project.pk,
-                    'pk': self.folder.pk}),
+                reverse(
+                    'filesfolders:folder_update',
+                    kwargs={'item': self.folder.omics_uuid}),
                 post_data)
 
             self.assertEqual(response.status_code, 302)
             self.assertEqual(response.url, reverse(
-                'project_files', kwargs={'project': self.project.pk}))
+                'filesfolders:project_files',
+                kwargs={'project': self.project.omics_uuid}))
 
         self.assertEqual(Folder.objects.all().count(), 1)
         self.folder.refresh_from_db()
@@ -682,9 +690,9 @@ class TestFolderUpdateView(TestViewsBase):
 
         with self.login(self.user):
             response = self.client.post(
-                reverse('folder_update', kwargs={
-                    'project': self.project.pk,
-                    'pk': self.folder.pk}),
+                reverse(
+                    'filesfolders:folder_update',
+                    kwargs={'item': self.folder.omics_uuid}),
                 post_data)
 
             self.assertEqual(response.status_code, 200)
@@ -701,9 +709,8 @@ class TestFolderDeleteView(TestViewsBase):
         """Test rendering of the Folder delete view"""
         with self.login(self.user):
             response = self.client.get(reverse(
-                'folder_delete', kwargs={
-                    'project': self.project.pk,
-                    'pk': self.folder.pk}))
+                'filesfolders:folder_delete',
+                kwargs={'item': self.folder.omics_uuid}))
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response.context['object'].pk, self.folder.pk)
 
@@ -713,13 +720,12 @@ class TestFolderDeleteView(TestViewsBase):
 
         with self.login(self.user):
             response = self.client.post(reverse(
-                'folder_delete', kwargs={
-                    'project': self.project.pk,
-                    'pk': self.folder.pk}))
+                'filesfolders:folder_delete',
+                kwargs={'item': self.folder.omics_uuid}))
             self.assertEqual(response.status_code, 302)
             self.assertEqual(response.url, reverse(
-                'project_files', kwargs={
-                    'project': self.project.pk}))
+                'filesfolders:project_files',
+                kwargs={'project': self.project.omics_uuid}))
 
         self.assertEqual(Folder.objects.all().count(), 0)
 
@@ -734,7 +740,8 @@ class TestHyperLinkCreateView(TestViewsBase):
         """Test rendering of the HyperLink create view"""
         with self.login(self.user):
             response = self.client.get(reverse(
-                'hyperlink_create', kwargs={'project': self.project.pk}))
+                'filesfolders:hyperlink_create',
+                kwargs={'project': self.project.omics_uuid}))
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response.context['project'].pk, self.project.pk)
 
@@ -742,9 +749,8 @@ class TestHyperLinkCreateView(TestViewsBase):
         """Test rendering of the HyperLink create view under a folder"""
         with self.login(self.user):
             response = self.client.get(reverse(
-                'hyperlink_create', kwargs={
-                    'project': self.project.pk,
-                    'folder': self.folder.pk}))
+                'filesfolders:hyperlink_create',
+                kwargs={'folder': self.folder.omics_uuid}))
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response.context['project'].pk, self.project.pk)
             self.assertEqual(response.context['folder'].pk, self.folder.pk)
@@ -762,14 +768,15 @@ class TestHyperLinkCreateView(TestViewsBase):
 
         with self.login(self.user):
             response = self.client.post(
-                reverse('hyperlink_create', kwargs={
-                    'project': self.project.pk}),
+                reverse(
+                    'filesfolders:hyperlink_create',
+                    kwargs={'project': self.project.omics_uuid}),
                 post_data)
 
             self.assertEqual(response.status_code, 302)
             self.assertEqual(response.url, reverse(
-                'project_files', kwargs={
-                    'project': self.project.pk}))
+                'filesfolders:project_files',
+                kwargs={'project': self.project.omics_uuid}))
 
         self.assertEqual(HyperLink.objects.all().count(), 2)
 
@@ -786,15 +793,15 @@ class TestHyperLinkCreateView(TestViewsBase):
 
         with self.login(self.user):
             response = self.client.post(
-                reverse('hyperlink_create', kwargs={
-                    'project': self.project.pk}),
+                reverse(
+                    'filesfolders:hyperlink_create',
+                    kwargs={'project': self.project.omics_uuid}),
                 post_data)
 
             self.assertEqual(response.status_code, 302)
             self.assertEqual(response.url, reverse(
-                'project_files', kwargs={
-                    'project': self.project.pk,
-                    'folder': self.folder.pk}))
+                'filesfolders:project_files',
+                kwargs={'folder': self.folder.omics_uuid}))
 
         self.assertEqual(HyperLink.objects.all().count(), 2)
 
@@ -811,8 +818,9 @@ class TestHyperLinkCreateView(TestViewsBase):
 
         with self.login(self.user):
             response = self.client.post(
-                reverse('hyperlink_create', kwargs={
-                    'project': self.project.pk}),
+                reverse(
+                    'filesfolders:hyperlink_create',
+                    kwargs={'project': self.project.omics_uuid}),
                 post_data)
 
             self.assertEqual(response.status_code, 200)
@@ -826,9 +834,8 @@ class TestHyperLinkUpdateView(TestViewsBase):
         """Test rendering of the HyperLink update view"""
         with self.login(self.user):
             response = self.client.get(reverse(
-                'hyperlink_update', kwargs={
-                    'project': self.project.pk,
-                    'pk': self.hyperlink.pk}))
+                'filesfolders:hyperlink_update',
+                kwargs={'item': self.hyperlink.omics_uuid}))
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response.context['object'].pk, self.hyperlink.pk)
 
@@ -845,14 +852,15 @@ class TestHyperLinkUpdateView(TestViewsBase):
 
         with self.login(self.user):
             response = self.client.post(
-                reverse('hyperlink_update', kwargs={
-                    'project': self.project.pk,
-                    'pk': self.hyperlink.pk}),
+                reverse(
+                    'filesfolders:hyperlink_update',
+                    kwargs={'item': self.hyperlink.omics_uuid}),
                 post_data)
 
             self.assertEqual(response.status_code, 302)
             self.assertEqual(response.url, reverse(
-                'project_files', kwargs={'project': self.project.pk}))
+                'filesfolders:project_files',
+                kwargs={'project': self.project.omics_uuid}))
 
         self.assertEqual(HyperLink.objects.all().count(), 1)
         self.hyperlink.refresh_from_db()
@@ -882,9 +890,9 @@ class TestHyperLinkUpdateView(TestViewsBase):
 
         with self.login(self.user):
             response = self.client.post(
-                reverse('hyperlink_update', kwargs={
-                    'project': self.project.pk,
-                    'pk': self.hyperlink.pk}),
+                reverse(
+                    'filesfolders:hyperlink_update',
+                    kwargs={'item': self.hyperlink.omics_uuid}),
                 post_data)
 
             self.assertEqual(response.status_code, 200)
@@ -901,9 +909,8 @@ class TestHyperLinkDeleteView(TestViewsBase):
         """Test rendering of the File delete view"""
         with self.login(self.user):
             response = self.client.get(reverse(
-                'hyperlink_delete', kwargs={
-                    'project': self.project.pk,
-                    'pk': self.hyperlink.pk}))
+                'filesfolders:hyperlink_delete',
+                kwargs={'item': self.hyperlink.omics_uuid}))
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response.context['object'].pk, self.hyperlink.pk)
 
@@ -913,13 +920,12 @@ class TestHyperLinkDeleteView(TestViewsBase):
 
         with self.login(self.user):
             response = self.client.post(reverse(
-                'hyperlink_delete', kwargs={
-                    'project': self.project.pk,
-                    'pk': self.hyperlink.pk}))
+                'filesfolders:hyperlink_delete',
+                kwargs={'item': self.hyperlink.omics_uuid}))
             self.assertEqual(response.status_code, 302)
             self.assertEqual(response.url, reverse(
-                'project_files', kwargs={
-                    'project': self.project.pk}))
+                'filesfolders:project_files',
+                kwargs={'project': self.project.omics_uuid}))
 
         self.assertEqual(HyperLink.objects.all().count(), 0)
 
@@ -936,13 +942,16 @@ class TestBatchEditView(TestViewsBase):
             'batch-action': 'delete',
             'user-confirmed': '0'}
 
-        post_data['batch-item-File-{}'.format(self.file.pk)] = 1
-        post_data['batch-item-Folder-{}'.format(self.folder.pk)] = 1
-        post_data['batch-item-HyperLink-{}'.format(self.hyperlink.pk)] = 1
+        post_data['batch_item_File_{}'.format(self.file.omics_uuid)] = 1
+        post_data['batch_item_Folder_{}'.format(self.folder.omics_uuid)] = 1
+        post_data['batch_item_HyperLink_{}'.format(
+            self.hyperlink.omics_uuid)] = 1
 
         with self.login(self.user):
             response = self.client.post(
-                reverse('batch_edit', kwargs={'project': self.project.pk}),
+                reverse(
+                    'filesfolders:batch_edit',
+                    kwargs={'project': self.project.omics_uuid}),
                 post_data)
 
             self.assertEqual(response.status_code, 200)
@@ -953,12 +962,15 @@ class TestBatchEditView(TestViewsBase):
             'batch-action': 'move',
             'user-confirmed': '0'}
 
-        post_data['batch-item-File-{}'.format(self.file.pk)] = 1
-        post_data['batch-item-HyperLink-{}'.format(self.hyperlink.pk)] = 1
+        post_data['batch_item_File_{}'.format(self.file.omics_uuid)] = 1
+        post_data['batch_item_HyperLink_{}'.format(
+            self.hyperlink.omics_uuid)] = 1
 
         with self.login(self.user):
             response = self.client.post(
-                reverse('batch_edit', kwargs={'project': self.project.pk}),
+                reverse(
+                    'filesfolders:batch_edit',
+                    kwargs={'project': self.project.omics_uuid}),
                 post_data)
 
             self.assertEqual(response.status_code, 200)
@@ -975,13 +987,16 @@ class TestBatchEditView(TestViewsBase):
             'batch-action': 'delete',
             'user-confirmed': '1'}
 
-        post_data['batch-item-File-{}'.format(self.file.pk)] = 1
-        post_data['batch-item-Folder-{}'.format(self.folder.pk)] = 1
-        post_data['batch-item-HyperLink-{}'.format(self.hyperlink.pk)] = 1
+        post_data['batch_item_File_{}'.format(self.file.omics_uuid)] = 1
+        post_data['batch_item_Folder_{}'.format(self.folder.omics_uuid)] = 1
+        post_data['batch_item_HyperLink_{}'.format(
+            self.hyperlink.omics_uuid)] = 1
 
         with self.login(self.user):
             response = self.client.post(
-                reverse('batch_edit', kwargs={'project': self.project.pk}),
+                reverse(
+                    'filesfolders:batch_edit',
+                    kwargs={'project': self.project.omics_uuid}),
                 post_data)
 
             self.assertEqual(response.status_code, 302)
@@ -1018,13 +1033,15 @@ class TestBatchEditView(TestViewsBase):
             'batch-action': 'delete',
             'user-confirmed': '1'}
 
-        post_data['batch-item-File-{}'.format(self.file.pk)] = 1
-        post_data['batch-item-Folder-{}'.format(self.folder.pk)] = 1
-        post_data['batch-item-Folder-{}'.format(new_folder.pk)] = 1
+        post_data['batch_item_File_{}'.format(self.file.omics_uuid)] = 1
+        post_data['batch_item_Folder_{}'.format(self.folder.omics_uuid)] = 1
+        post_data['batch_item_Folder_{}'.format(new_folder.omics_uuid)] = 1
 
         with self.login(self.user):
             response = self.client.post(
-                reverse('batch_edit', kwargs={'project': self.project.pk}),
+                reverse(
+                    'filesfolders:batch_edit',
+                    kwargs={'project': self.project.omics_uuid}),
                 post_data)
 
             self.assertEqual(response.status_code, 302)
@@ -1042,15 +1059,18 @@ class TestBatchEditView(TestViewsBase):
         post_data = {
             'batch-action': 'move',
             'user-confirmed': '1',
-            'target-folder': target_folder.pk}
+            'target-folder': target_folder.omics_uuid}
 
-        post_data['batch-item-File-{}'.format(self.file.pk)] = 1
-        post_data['batch-item-Folder-{}'.format(self.folder.pk)] = 1
-        post_data['batch-item-HyperLink-{}'.format(self.hyperlink.pk)] = 1
+        post_data['batch_item_File_{}'.format(self.file.omics_uuid)] = 1
+        post_data['batch_item_Folder_{}'.format(self.folder.omics_uuid)] = 1
+        post_data['batch_item_HyperLink_{}'.format(
+            self.hyperlink.omics_uuid)] = 1
 
         with self.login(self.user):
             response = self.client.post(
-                reverse('batch_edit', kwargs={'project': self.project.pk}),
+                reverse(
+                    'filesfolders:batch_edit',
+                    kwargs={'project': self.project.omics_uuid}),
                 post_data)
 
             self.assertEqual(response.status_code, 302)
@@ -1088,15 +1108,18 @@ class TestBatchEditView(TestViewsBase):
         post_data = {
             'batch-action': 'move',
             'user-confirmed': '1',
-            'target-folder': target_folder.pk}
+            'target-folder': target_folder.omics_uuid}
 
-        post_data['batch-item-File-{}'.format(self.file.pk)] = 1
-        post_data['batch-item-Folder-{}'.format(self.folder.pk)] = 1
-        post_data['batch-item-HyperLink-{}'.format(self.hyperlink.pk)] = 1
+        post_data['batch_item_File_{}'.format(self.file.omics_uuid)] = 1
+        post_data['batch_item_Folder_{}'.format(self.folder.omics_uuid)] = 1
+        post_data['batch_item_HyperLink_{}'.format(
+            self.hyperlink.omics_uuid)] = 1
 
         with self.login(self.user):
             response = self.client.post(
-                reverse('batch_edit', kwargs={'project': self.project.pk}),
+                reverse(
+                    'filesfolders:batch_edit',
+                    kwargs={'project': self.project.omics_uuid}),
                 post_data)
 
             self.assertEqual(response.status_code, 302)

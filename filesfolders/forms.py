@@ -23,7 +23,7 @@ class FilesfoldersItemForm(forms.ModelForm):
     """Base form for Filesfolders item creation/updating"""
 
     def __init__(
-            self, current_user=None, project=None, folder=None,
+            self, current_user=None, folder=None, project=None,
             *args, **kwargs):
         """Override for form initialization"""
         super(FilesfoldersItemForm, self).__init__(*args, **kwargs)
@@ -36,11 +36,12 @@ class FilesfoldersItemForm(forms.ModelForm):
         if current_user:
             self.current_user = current_user
 
-        if project:
-            self.project = Project.objects.get(omics_uuid=project)
-
         if folder:
             self.folder = Folder.objects.get(omics_uuid=folder)
+            self.project = self.folder.project
+
+        elif project:
+            self.project = Project.objects.get(omics_uuid=project)
 
 
 class FolderForm(FilesfoldersItemForm):

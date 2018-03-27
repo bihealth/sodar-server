@@ -26,17 +26,17 @@ urlpatterns = [
         name='file_create',
     ),
     url(
-        regex=r'^upload/(?P<folder>[0-9a-f-]+)$',
+        regex=r'^upload/in/(?P<folder>[0-9a-f-]+)$',
         view=views.FileCreateView.as_view(),
         name='file_create',
     ),
     url(
-        regex=r'^file/update/(?P<item>[0-9a-f-]+)$',
+        regex=r'^update/(?P<item>[0-9a-f-]+)$',
         view=views.FileUpdateView.as_view(),
         name='file_update',
     ),
     url(
-        regex=r'^file/delete/(?P<item>[0-9a-f-]+)$',
+        regex=r'^delete/(?P<item>[0-9a-f-]+)$',
         view=views.FileDeleteView.as_view(),
         name='file_delete',
     ),
@@ -61,7 +61,7 @@ urlpatterns = [
         name='folder_create',
     ),
     url(
-        regex=r'^folder/add/(?P<folder>[0-9a-f-]+)$',
+        regex=r'^folder/add/in/(?P<folder>[0-9a-f-]+)$',
         view=views.FolderCreateView.as_view(),
         name='folder_create',
     ),
@@ -81,7 +81,7 @@ urlpatterns = [
         name='hyperlink_create',
     ),
     url(
-        regex=r'^link/add/(?P<folder>[0-9a-f-]+)$',
+        regex=r'^link/add/in/(?P<folder>[0-9a-f-]+)$',
         view=views.HyperLinkCreateView.as_view(),
         name='hyperlink_create',
     ),

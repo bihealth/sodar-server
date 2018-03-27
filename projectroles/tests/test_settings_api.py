@@ -1,11 +1,5 @@
 """Tests for the project settings API in the projectroles app"""
 
-from django.conf import settings
-from django.core.exceptions import ValidationError
-from django.forms.models import model_to_dict
-from django.urls import reverse
-from django.utils import timezone
-
 from test_plus.test import TestCase
 
 from ..models import Project, Role, RoleAssignment, ProjectSetting, \
