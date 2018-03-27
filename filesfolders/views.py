@@ -10,7 +10,6 @@ from django.urls import reverse
 from django.views.generic import TemplateView, UpdateView,\
     CreateView, DeleteView, View
 from django.views.generic.edit import ModelFormMixin, DeletionMixin
-from django.views.generic.detail import SingleObjectMixin
 
 from db_file_storage.storage import DatabaseFileStorage
 
@@ -314,7 +313,6 @@ class BaseCreateView(
 # File List View ---------------------------------------------------------
 
 
-# TODO: Remove SingleObjectMixin
 class ProjectFileView(
         LoginRequiredMixin, LoggedInPermissionMixin, ProjectPermissionMixin,
         ProjectContextMixin, TemplateView):
@@ -494,30 +492,19 @@ class FileServePublicView(FileServeMixin, View):
         return super(FileServePublicView, self).get(*args, **kwargs)
 
 
-# TODO: Remove SingleObjectMixin
 class FilePublicLinkView(
-        LoginRequiredMixin, LoggedInPermissionMixin, SingleObjectMixin,
+        LoginRequiredMixin, LoggedInPermissionMixin,
         ProjectContextMixin, ProjectPermissionMixin, TemplateView):
     """View for generating a public secure link to a file"""
     permission_required = 'filesfolders.share_public_link'
     template_name = 'filesfolders/public_link.html'
 
-    # TODO: Remove
-    def get_object(self):
-        """Override get_object to provide a File object for perm checking
-        and template"""
-        try:
-            obj = File.objects.get(omics_uuid=self.kwargs['file'])
-            return obj
-
-        except File.DoesNotExist:
-            return None
-
     def get(self, *args, **kwargs):
         """Override of GET for checking project settings"""
-        file = self.get_object()
+        try:
+            file = File.objects.get(omics_uuid=self.kwargs['file'])
 
-        if not file:
+        except File.DoesNotExist:
             messages.error(self.request, 'File not found!')
             return redirect(reverse('home'))
 
@@ -532,21 +519,13 @@ class FilePublicLinkView(
 
         return super(FilePublicLinkView, self).get(*args, **kwargs)
 
-    # TODO: Remove
-    def dispatch(self, request, *args, **kwargs):
-        """Override dispatch to ensure self.object is provided to template"""
-        self.object = self.get_object()
-
-        return super(
-            FilePublicLinkView, self).dispatch(request, *args, **kwargs)
-
     def get_context_data(self, *args, **kwargs):
         """Provide URL to context"""
         context = super(FilePublicLinkView, self).get_context_data(
             *args, **kwargs)
 
         try:
-            file = self.get_object()
+            file = File.objects.get(omics_uuid=self.kwargs['file'])
 
         except File.DoesNotExist:
             messages.error(self.request, 'File not found!')
@@ -558,9 +537,8 @@ class FilePublicLinkView(
                 'filesfolders:list',
                 kwargs={'project': file.project.omics_uuid}))
 
-        # Build URL
+        context['file'] = file
         context['public_url'] = build_public_url(file, self.request)
-
         return context
 
 
