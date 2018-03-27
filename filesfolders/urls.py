@@ -13,12 +13,12 @@ urlpatterns = [
     url(
         regex=r'^(?P<project>[0-9a-f-]+)$',
         view=views.ProjectFileView.as_view(),
-        name='project_files',
+        name='list',
     ),
     url(
         regex=r'^folder/(?P<folder>[0-9a-f-]+)$',
         view=views.ProjectFileView.as_view(),
-        name='project_files',
+        name='list',
     ),
     url(
         regex=r'^upload/(?P<project>[0-9a-f-]+)$',

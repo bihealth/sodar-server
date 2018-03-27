@@ -19,7 +19,7 @@
     {% if item|get_class == 'HyperLink' %}
       <a href="{{ item.url }}" target="_blank">
     {% elif item|get_class == 'Folder' %}
-      <a href="{% url 'filesfolders:project_files' folder=item.omics_uuid %}">
+      <a href="{% url 'filesfolders:list' folder=item.omics_uuid %}">
     {% elif item|get_class == 'File' %}
       <a href="{% url 'filesfolders:file_serve' file=item.omics_uuid file_name=item.name %}">
     {% endif %}
@@ -39,9 +39,9 @@
   <td>
     {% get_project_title_html item.project as project_title %}
     {% if item.folder %}
-      <a href="{% url 'filesfolders:project_files' folder=item.folder.omics_uuid %}">
+      <a href="{% url 'filesfolders:list' folder=item.folder.omics_uuid %}">
     {% else %}
-      <a href="{% url 'filesfolders:project_files' project=item.project.omics_uuid %}">
+      <a href="{% url 'filesfolders:list' project=item.project.omics_uuid %}">
     {% endif %}
       {% autoescape off %}
         {# NOTE: No highlight here as project is not searched for here #}

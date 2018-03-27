@@ -17,7 +17,7 @@
   {# Name/link column #}
   <td>
     {% if item|get_class == 'Folder' %}
-      <a href="{% url 'filesfolders:project_files' folder=item.omics_uuid %}">{% autoescape off %}{{ item.name|force_wrap:24 }}{% endautoescape %}</a>
+      <a href="{% url 'filesfolders:list' folder=item.omics_uuid %}">{% autoescape off %}{{ item.name|force_wrap:24 }}{% endautoescape %}</a>
     {% elif item|get_class == 'HyperLink' %}
       <a href="{{ item.url }}" target="_blank">{% autoescape off %}{{ item.name|force_wrap:24 }}{% endautoescape %}</a>
     {% elif item|get_class == 'File' %}

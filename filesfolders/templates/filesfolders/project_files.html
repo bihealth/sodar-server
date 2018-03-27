@@ -114,11 +114,11 @@
             {% else %}
               <li class="breadcrumb-item">
                 <i class="fa fa-angle-right"></i>
-                <a href="{% url 'filesfolders:project_files' project=project.omics_uuid %}">root</a>
+                <a href="{% url 'filesfolders:list' project=project.omics_uuid %}">root</a>
               </li>
               {% for f in folder_breadcrumb %}
                 {% if f != folder %}
-                  <li class="breadcrumb-item"><a href="{% url 'filesfolders:project_files' folder=f.omics_uuid %}">{{ f.name }}</a></li>
+                  <li class="breadcrumb-item"><a href="{% url 'filesfolders:list' folder=f.omics_uuid %}">{{ f.name }}</a></li>
                 {% else %}
                   <li class="breadcrumb-item active">{{ f.name }}</li>
                 {% endif %}
@@ -145,9 +145,9 @@
                   </td>
                   <td>
                     {% if folder.folder %}
-                      <a href="{% url 'filesfolders:project_files' project=project.omics_uuid folder=folder.folder.omics_uuid %}">.. /</a>
+                      <a href="{% url 'filesfolders:list' project=project.omics_uuid folder=folder.folder.omics_uuid %}">.. /</a>
                     {% else %}
-                      <a href="{% url 'filesfolders:project_files' project=project.omics_uuid %}">.. /</a>
+                      <a href="{% url 'filesfolders:list' project=project.omics_uuid %}">.. /</a>
                     {% endif %}
                   </td>
                   <td></td>

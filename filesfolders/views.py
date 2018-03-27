@@ -158,7 +158,7 @@ class FormValidMixin(ModelFormMixin):
             re_kwargs = {'project': self.object.project.omics_uuid}
 
         return redirect(
-            reverse('filesfolders:project_files', kwargs=re_kwargs))
+            reverse('filesfolders:list', kwargs=re_kwargs))
 
 
 class DeleteSuccessMixin(DeletionMixin):
@@ -201,7 +201,7 @@ class DeleteSuccessMixin(DeletionMixin):
         else:
             re_kwargs = {'project': self.object.project.omics_uuid}
 
-        return reverse('filesfolders:project_files', kwargs=re_kwargs)
+        return reverse('filesfolders:list', kwargs=re_kwargs)
 
 
 class FileServeMixin:
@@ -219,7 +219,7 @@ class FileServeMixin:
             messages.error(self.request, 'File object not found!')
 
             return redirect(reverse(
-                'filesfolders:project_files',
+                'filesfolders:list',
                 kwargs={'project': kwargs['project']}))
 
         # Get corresponding FileData object with file content
@@ -230,7 +230,7 @@ class FileServeMixin:
             messages.error(self.request, 'File data not found!')
 
             return redirect(reverse(
-                'filesfolders:project_files',
+                'filesfolders:list',
                 kwargs={'project': kwargs['project']}))
 
         # Open file for serving
@@ -243,7 +243,7 @@ class FileServeMixin:
             messages.error(self.request, 'Error opening file!')
 
             return redirect(reverse(
-                'filesfolders:project_files',
+                'filesfolders:list',
                 kwargs={'project': kwargs['project']}))
 
         # Return file as attachment
@@ -527,7 +527,7 @@ class FilePublicLinkView(
                 self.request,
                 'Sharing public links not allowed for this project')
             return redirect(reverse(
-                'filesfolders:project_files',
+                'filesfolders:list',
                 kwargs={'project': file.project.omics_uuid}))
 
         return super(FilePublicLinkView, self).get(*args, **kwargs)
@@ -555,7 +555,7 @@ class FilePublicLinkView(
         if not file.public_url:
             messages.error(self.request, 'Public URL for file not enabled!')
             return redirect(reverse(
-                'filesfolders:project_files',
+                'filesfolders:list',
                 kwargs={'project': file.project.omics_uuid}))
 
         # Build URL
@@ -763,7 +763,7 @@ class BatchEditView(
                 re_kwargs = {'project': kwargs['project']}
 
             return redirect(
-                reverse('filesfolders:project_files', kwargs=re_kwargs))
+                reverse('filesfolders:list', kwargs=re_kwargs))
 
         # Confirmation needed
         else:

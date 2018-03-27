@@ -111,7 +111,7 @@ class TestListView(TestViewsBase):
         with self.login(self.user):
             response = self.client.get(
                 reverse(
-                    'filesfolders:project_files',
+                    'filesfolders:list',
                     kwargs={'project': self.project.omics_uuid}))
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response.context['project'].pk, self.project.pk)
@@ -123,7 +123,7 @@ class TestListView(TestViewsBase):
         """Test rendering of a folder view within the project"""
         with self.login(self.user):
             response = self.client.get(reverse(
-                'filesfolders:project_files',
+                'filesfolders:list',
                 kwargs={'folder': self.folder.omics_uuid}))
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response.context['project'].pk, self.project.pk)
@@ -148,7 +148,7 @@ class TestListView(TestViewsBase):
 
         with self.login(self.user):
             response = self.client.get(reverse(
-                'filesfolders:project_files',
+                'filesfolders:list',
                 kwargs={'project': self.project.omics_uuid}))
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response.context['readme_name'], 'readme.txt')
@@ -203,7 +203,7 @@ class TestFileCreateView(TestViewsBase):
 
             self.assertEqual(response.status_code, 302)
             self.assertEqual(response.url, reverse(
-                'filesfolders:project_files',
+                'filesfolders:list',
                 kwargs={'project': self.project.omics_uuid}))
 
         self.assertEqual(File.objects.all().count(), 2)
@@ -229,7 +229,7 @@ class TestFileCreateView(TestViewsBase):
 
             self.assertEqual(response.status_code, 302)
             self.assertEqual(response.url, reverse(
-                'filesfolders:project_files',
+                'filesfolders:list',
                 kwargs={'folder': self.folder.omics_uuid}))
 
         self.assertEqual(File.objects.all().count(), 2)
@@ -292,7 +292,7 @@ class TestFileUpdateView(TestViewsBase):
 
             self.assertEqual(response.status_code, 302)
             self.assertEqual(response.url, reverse(
-                'filesfolders:project_files',
+                'filesfolders:list',
                 kwargs={'project': self.project.omics_uuid}))
 
         self.assertEqual(File.objects.all().count(), 1)
@@ -354,7 +354,7 @@ class TestFileUpdateView(TestViewsBase):
 
             self.assertEqual(response.status_code, 302)
             self.assertEqual(response.url, reverse(
-                'filesfolders:project_files',
+                'filesfolders:list',
                 kwargs={'folder': self.folder.omics_uuid}))
 
         self.file.refresh_from_db()
@@ -418,7 +418,7 @@ class TestFileDeleteView(TestViewsBase):
                 kwargs={'item': self.file.omics_uuid}))
             self.assertEqual(response.status_code, 302)
             self.assertEqual(response.url, reverse(
-                'filesfolders:project_files',
+                'filesfolders:list',
                 kwargs={'project': self.project.omics_uuid}))
 
         self.assertEqual(File.objects.all().count(), 0)
@@ -581,7 +581,7 @@ class TestFolderCreateView(TestViewsBase):
 
             self.assertEqual(response.status_code, 302)
             self.assertEqual(response.url, reverse(
-                'filesfolders:project_files',
+                'filesfolders:list',
                 kwargs={'project': self.project.omics_uuid}))
 
         self.assertEqual(Folder.objects.all().count(), 2)
@@ -605,7 +605,7 @@ class TestFolderCreateView(TestViewsBase):
 
             self.assertEqual(response.status_code, 302)
             self.assertEqual(response.url, reverse(
-                'filesfolders:project_files',
+                'filesfolders:list',
                 kwargs={'folder': self.folder.omics_uuid}))
 
         self.assertEqual(Folder.objects.all().count(), 2)
@@ -662,7 +662,7 @@ class TestFolderUpdateView(TestViewsBase):
 
             self.assertEqual(response.status_code, 302)
             self.assertEqual(response.url, reverse(
-                'filesfolders:project_files',
+                'filesfolders:list',
                 kwargs={'project': self.project.omics_uuid}))
 
         self.assertEqual(Folder.objects.all().count(), 1)
@@ -724,7 +724,7 @@ class TestFolderDeleteView(TestViewsBase):
                 kwargs={'item': self.folder.omics_uuid}))
             self.assertEqual(response.status_code, 302)
             self.assertEqual(response.url, reverse(
-                'filesfolders:project_files',
+                'filesfolders:list',
                 kwargs={'project': self.project.omics_uuid}))
 
         self.assertEqual(Folder.objects.all().count(), 0)
@@ -775,7 +775,7 @@ class TestHyperLinkCreateView(TestViewsBase):
 
             self.assertEqual(response.status_code, 302)
             self.assertEqual(response.url, reverse(
-                'filesfolders:project_files',
+                'filesfolders:list',
                 kwargs={'project': self.project.omics_uuid}))
 
         self.assertEqual(HyperLink.objects.all().count(), 2)
@@ -800,7 +800,7 @@ class TestHyperLinkCreateView(TestViewsBase):
 
             self.assertEqual(response.status_code, 302)
             self.assertEqual(response.url, reverse(
-                'filesfolders:project_files',
+                'filesfolders:list',
                 kwargs={'folder': self.folder.omics_uuid}))
 
         self.assertEqual(HyperLink.objects.all().count(), 2)
@@ -859,7 +859,7 @@ class TestHyperLinkUpdateView(TestViewsBase):
 
             self.assertEqual(response.status_code, 302)
             self.assertEqual(response.url, reverse(
-                'filesfolders:project_files',
+                'filesfolders:list',
                 kwargs={'project': self.project.omics_uuid}))
 
         self.assertEqual(HyperLink.objects.all().count(), 1)
@@ -924,7 +924,7 @@ class TestHyperLinkDeleteView(TestViewsBase):
                 kwargs={'item': self.hyperlink.omics_uuid}))
             self.assertEqual(response.status_code, 302)
             self.assertEqual(response.url, reverse(
-                'filesfolders:project_files',
+                'filesfolders:list',
                 kwargs={'project': self.project.omics_uuid}))
 
         self.assertEqual(HyperLink.objects.all().count(), 0)

@@ -27,7 +27,7 @@ PROJECT_TYPE_PROJECT = OMICS_CONSTANTS['PROJECT_TYPE_PROJECT']
 SECRET = '7dqq83clo2iyhg29hifbor56og6911r5'
 PLUGIN_NAME = 'filesfolders'
 PLUGIN_TITLE = 'Small Files'
-PLUGIN_URL_ID = 'filesfolders:project_files'
+PLUGIN_URL_ID = 'filesfolders:list'
 SETTING_KEY = 'allow_public_links'
 
 
@@ -117,7 +117,7 @@ class TestPlugins(
     def test_get_object_link_folder(self):
         """Test get_object_link() for a Folder object"""
         plugin = ProjectAppPluginPoint.get_plugin(PLUGIN_NAME)
-        url = reverse('filesfolders:project_files', kwargs={
+        url = reverse('filesfolders:list', kwargs={
             'folder': self.folder.omics_uuid})
         ret = plugin.get_object_link('Folder', self.folder.omics_uuid)
 

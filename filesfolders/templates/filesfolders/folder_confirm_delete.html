@@ -21,10 +21,10 @@
     <div class="btn-group ml-auto">
       {% if object.folder %}
         <a role="button" class="btn btn-secondary"
-            href="{% url 'filesfolders:project_files' folder=object.folder.omics_uuid %}">
+            href="{% url 'filesfolders:list' folder=object.folder.omics_uuid %}">
       {% else %}
         <a role="button" class="btn btn-secondary"
-            href="{% url 'filesfolders:project_files' project=object.project.omics_uuid %}">
+            href="{% url 'filesfolders:list' project=object.project.omics_uuid %}">
       {% endif %}
         <i class="fa fa-arrow-circle-left"></i> Cancel
       </a>
@@ -42,10 +42,10 @@
       <div class="btn-group ml-auto">
         {% if object.folder %}
           <a role="button" class="btn btn-secondary"
-             href="{% url 'filesfolders:project_files' folder=object.folder.omics_uuid %}">
+             href="{% url 'filesfolders:list' folder=object.folder.omics_uuid %}">
         {% else %}
           <a role="button" class="btn btn-secondary"
-             href="{% url 'filesfolders:project_files' project=object.project.omics_uuid %}">
+             href="{% url 'filesfolders:list' project=object.project.omics_uuid %}">
         {% endif %}
           <i class="fa fa-arrow-circle-left"></i> Cancel
         </a>

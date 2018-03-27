@@ -34,7 +34,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
     icon = 'file'
 
     #: Entry point URL ID (must take project omics_uuid as "project" argument)
-    entry_point_url_id = 'filesfolders:project_files'
+    entry_point_url_id = 'filesfolders:list'
 
     #: Description string
     description = 'Smaller files (e.g., reports, spreadsheets, and ' \
@@ -100,7 +100,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         elif obj.__class__ == Folder:
             return {
                 'url': reverse(
-                    'filesfolders:project_files',
+                    'filesfolders:list',
                     kwargs={'folder': obj.omics_uuid}),
                 'label': obj.name}
 
