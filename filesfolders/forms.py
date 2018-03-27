@@ -52,7 +52,7 @@ class FolderForm(FilesfoldersItemForm):
         fields = ['name', 'folder', 'flag', 'description']
 
     def __init__(
-            self, current_user=None, project=None, folder=None,
+            self, current_user=None, folder=None, project=None,
             *args, **kwargs):
         """Override for form initialization"""
         super(FolderForm, self).__init__(
@@ -161,12 +161,15 @@ class FileForm(FilesfoldersItemForm):
                 filesizeformat(MAX_UPLOAD_SIZE))}
 
     def __init__(
-            self, current_user=None, project=None, folder=None,
+            self, current_user=None, folder=None, project=None,
             *args, **kwargs):
         """Override for form initialization"""
         super(FileForm, self).__init__(
-            current_user=current_user, project=project, folder=folder,
+            current_user=current_user, folder=folder, project=project,
             *args, **kwargs)
+
+        if self.instance.pk:
+            self.project = self.instance.project
 
         # Disable public URL creation if setting is false
         if not get_project_setting(
@@ -319,7 +322,7 @@ class HyperLinkForm(FilesfoldersItemForm):
         fields = ['name', 'url', 'folder', 'flag', 'description']
 
     def __init__(
-            self, current_user=None, project=None, folder=None,
+            self, current_user=None, folder=None, project=None,
             *args, **kwargs):
         """Override for form initialization"""
         super(HyperLinkForm, self).__init__(
