@@ -9,6 +9,7 @@ from django.views.generic import TemplateView, FormView
 
 
 # Projectroles dependency
+from projectroles.models import Project
 from projectroles.plugins import get_backend_api
 from projectroles.views import LoggedInPermissionMixin, \
     ProjectContextMixin, ProjectPermissionMixin
@@ -108,7 +109,7 @@ class SampleSheetImportView(
 
         if 'project' in self.kwargs:
             kwargs.update({'project': self._get_project(
-                self.kwargs, self.request)})
+                self.kwargs, self.request).omics_uuid})
 
         return kwargs
 
@@ -153,7 +154,7 @@ class SampleSheetDeleteView(
 
     def post(self, request, *args, **kwargs):
         timeline = get_backend_api('timeline_backend')
-        project = self._get_project(request, kwargs)
+        project = Project.objects.get(omics_uuid=kwargs['project'])
         investigation = Investigation.objects.get(project=project)
 
         # Add event in Timeline
