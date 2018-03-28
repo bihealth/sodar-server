@@ -84,8 +84,8 @@ class ProjectManager(models.Manager):
 
 
 class Project(models.Model):
-    """An omics project. Can have one parent project in case of nested
-    subprojects. The project must be of a specific type, of which "CATEGORY" and
+    """An omics project. Can have one parent category in case of nested
+    projects. The project must be of a specific type, of which "CATEGORY" and
     "PROJECT" are currently implemented. "CATEGORY" projects are used as
     containers for other projects"""
 
@@ -102,13 +102,13 @@ class Project(models.Model):
         default=OMICS_CONSTANTS['PROJECT_TYPE_PROJECT'],
         help_text='Type of project ("CATEGORY", "PROJECT")')
 
-    #: Parent project/category if nested, otherwise null
+    #: Parent category if nested, otherwise null
     parent = models.ForeignKey(
         'self',
         blank=True,
         null=True,
         related_name='children',
-        help_text='Parent project/category if nested')
+        help_text='Parent category if nested')
 
     #: Short project description
     description = models.CharField(

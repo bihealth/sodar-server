@@ -237,7 +237,7 @@ class TestProjectCreateView(
         self.assertEqual(form.fields['parent'].widget.attrs['readonly'], True)
         self.assertEqual(
             form.fields['parent'].choices, [
-                (self.project.pk, self.project.title)])
+                (self.project.omics_uuid, self.project.title)])
 
     def test_render_sub_project(self):
         """Test rendering of Project creation form if creating a subproject
@@ -269,7 +269,7 @@ class TestProjectCreateView(
             'title': 'TestProject',
             'type': PROJECT_TYPE_CATEGORY,
             'parent': None,
-            'owner': self.user.pk,
+            'owner': self.user.omics_uuid,
             'submit_status': SUBMIT_STATUS_OK,
             'description': 'description'}
 
@@ -363,7 +363,7 @@ class TestProjectUpdateView(
         values = model_to_dict(self.project)
         values['title'] = 'updated title'
         values['description'] = 'updated description'
-        values['owner'] = self.user.pk  # NOTE: Must add owner
+        values['owner'] = self.user.omics_uuid  # NOTE: Must add owner
 
         # Add settings values
         values.update(self._get_settings())
@@ -507,10 +507,10 @@ class TestRoleAssignmentCreateView(
         self.assertEqual(form.fields['project'].widget.attrs['readonly'], True)
         self.assertEqual(
             form.fields['project'].choices, [
-                (self.project.pk, self.project.title)])
+                (self.project.omics_uuid, self.project.title)])
         # Assert user with previously added role in project is not selectable
         self.assertNotIn([(
-            self.owner_as.user.pk,
+            self.owner_as.user.omics_uuid,
             get_user_display_name(self.owner_as.user, True))],
             form.fields['user'].choices)
         # Assert owner role is not selectable
@@ -557,8 +557,8 @@ class TestRoleAssignmentCreateView(
 
         # Issue POST request
         values = {
-            'project': self.project.pk,
-            'user': self.user_new.pk,
+            'project': self.project.omics_uuid,
+            'user': self.user_new.omics_uuid,
             'role': self.role_guest.pk}
 
         with self.login(self.user):
@@ -629,11 +629,11 @@ class TestRoleAssignmentUpdateView(
         self.assertIsNotNone(form)
         self.assertEqual(form.fields['project'].widget.attrs['readonly'], True)
         self.assertEqual(form.fields['project'].choices, [
-            (self.project.pk, self.project.title)])
+            (self.project.omics_uuid, self.project.title)])
         self.assertEqual(form.fields['user'].widget.attrs['readonly'], True)
         self.assertEqual(
             form.fields['user'].choices, [
-                (self.role_as.user.pk,
+                (self.role_as.user.omics_uuid,
                  get_user_display_name(self.role_as.user, True))])
         # Assert owner role is not sectable
         self.assertNotIn([(
@@ -678,8 +678,10 @@ class TestRoleAssignmentUpdateView(
         # Assert precondition
         self.assertEqual(RoleAssignment.objects.all().count(), 3)
 
-        values = model_to_dict(self.role_as)
-        values['role'] = self.role_contributor.pk
+        values = {
+            'project': self.role_as.project.omics_uuid,
+            'user': self.role_as.user.omics_uuid,
+            'role': self.role_contributor.pk}
 
         with self.login(self.user):
             response = self.client.post(

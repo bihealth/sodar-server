@@ -215,7 +215,7 @@ class TestFileCreateView(TestViewsBase):
         post_data = {
             'name': 'new_file.txt',
             'file': SimpleUploadedFile('new_file.txt', self.file_content),
-            'folder': self.folder.pk,
+            'folder': self.folder.omics_uuid,
             'description': '',
             'flag': '',
             'public_url': False}
@@ -340,7 +340,7 @@ class TestFileUpdateView(TestViewsBase):
         """Test moving file to a different folder"""
         post_data = {
             'name': 'file.txt',
-            'folder': self.folder.pk,
+            'folder': self.folder.omics_uuid,
             'description': '',
             'flag': '',
             'public_url': False}
@@ -592,7 +592,7 @@ class TestFolderCreateView(TestViewsBase):
 
         post_data = {
             'name': 'new_folder',
-            'folder': self.folder.pk,
+            'folder': self.folder.omics_uuid,
             'description': '',
             'flag': ''}
 
@@ -787,7 +787,7 @@ class TestHyperLinkCreateView(TestViewsBase):
         post_data = {
             'name': 'new link',
             'url': 'http://link.com',
-            'folder': self.folder.pk,
+            'folder': self.folder.omics_uuid,
             'description': '',
             'flag': ''}
 

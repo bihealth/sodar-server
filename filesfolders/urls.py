@@ -101,7 +101,7 @@ urlpatterns = [
         name='batch_edit',
     ),
     url(
-        regex=r'^batch/(?P<folder>[0-9a-f-]+)$',
+        regex=r'^batch/in/(?P<folder>[0-9a-f-]+)$',
         view=views.BatchEditView.as_view(),
         name='batch_edit',
     ),

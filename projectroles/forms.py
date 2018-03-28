@@ -38,6 +38,7 @@ class ProjectForm(forms.ModelForm):
     owner = forms.ModelChoiceField(
         auth.get_user_model().objects.all(),
         required=True,
+        to_field_name='omics_uuid',
         label='Owner',
         help_text='Project owner')
 
@@ -101,6 +102,9 @@ class ProjectForm(forms.ModelForm):
         # Form modifications
         ####################
 
+        # Modify ModelChoiceFields to use omics_uuid
+        self.fields['parent'].to_field_name = 'omics_uuid'
+
         # Set readme widget with preview
         self.fields['readme'].widget = PagedownWidget(show_preview=True)
 
@@ -125,20 +129,20 @@ class ProjectForm(forms.ModelForm):
 
                 # Get owner choices
                 self.fields['owner'].choices = [
-                    (user.pk, get_user_display_name(user, True)) for user in
-                    auth.get_user_model().objects.exclude(
+                    (user.omics_uuid, get_user_display_name(user, True)) for
+                    user in auth.get_user_model().objects.exclude(
                         pk__in=project_users).order_by('name')]
 
                 # Set current owner as initial value
                 owner = self.instance.get_owner().user
-                self.initial['owner'] = owner.pk
+                self.initial['owner'] = owner.omics_uuid
 
             # Else don't allow changing the user
             else:
                 owner = self.instance.get_owner().user
                 force_select_value(
                     self.fields['owner'],
-                    (owner.pk, get_user_display_name(owner, True)))
+                    (owner.omics_uuid, get_user_display_name(owner, True)))
 
             # Do not allow transfer under another parent
             self.fields['parent'].disabled = True
@@ -147,7 +151,7 @@ class ProjectForm(forms.ModelForm):
         else:
             # Common stuff
             self.fields['owner'].choices = [
-                (user.pk, get_user_display_name(user, True)) for user in
+                (user.omics_uuid, get_user_display_name(user, True)) for user in
                 auth.get_user_model().objects.all().order_by('username')]
 
             # Creating a subproject
@@ -155,17 +159,18 @@ class ProjectForm(forms.ModelForm):
                 # Parent must be current parent
                 force_select_value(
                     self.fields['parent'],
-                    (parent_project.pk, parent_project.title))
+                    (parent_project.omics_uuid, parent_project.title))
 
                 # Set parent owner as initial value
                 parent_owner = parent_project.get_owner().user
-                self.initial['owner'] = parent_owner.pk
+                self.initial['owner'] = parent_owner.omics_uuid
 
             # Creating a top level project
             else:
                 self.fields['owner'].choices = [
-                    (user.pk, get_user_display_name(user, True)) for user in
-                    auth.get_user_model().objects.all().order_by('username')]
+                    (user.omics_uuid, get_user_display_name(user, True)) for
+                    user in auth.get_user_model().objects.all().order_by(
+                        'username')]
 
                 # Limit project type choice to category
                 force_select_value(
@@ -248,6 +253,10 @@ class RoleAssignmentForm(forms.ModelForm):
         # Form modifications
         ####################
 
+        # Modify ModelChoiceFields to use omics_uuid
+        self.fields['project'].to_field_name = 'omics_uuid'
+        self.fields['user'].to_field_name = 'omics_uuid'
+
         # Limit role choices
         self.fields['role'].choices = get_role_choices(
             self.project, self.current_user)
@@ -257,13 +266,13 @@ class RoleAssignmentForm(forms.ModelForm):
             # Do not allow switching to another project
             force_select_value(
                 self.fields['project'],
-                (self.instance.project.pk,
+                (self.instance.project.omics_uuid,
                  self.instance.project.title))
 
             # Do not allow switching to a different user
             force_select_value(
                 self.fields['user'],
-                (self.instance.user.pk, get_user_display_name(
+                (self.instance.user.omics_uuid, get_user_display_name(
                     self.instance.user, True)))
 
             # Set initial role
@@ -274,14 +283,14 @@ class RoleAssignmentForm(forms.ModelForm):
             # Limit project choice to self.project
             force_select_value(
                 self.fields['project'],
-                (self.project.pk, self.project.title))
+                (self.project.omics_uuid, self.project.title))
 
             # Limit user choices to users without roles in current project
             project_users = RoleAssignment.objects.filter(
                 project=self.project.pk).values_list('user').distinct()
 
             self.fields['user'].choices = [
-                (user.pk, get_user_display_name(user, True)) for user in
+                (user.omics_uuid, get_user_display_name(user, True)) for user in
                 auth.get_user_model().objects.exclude(
                     pk__in=project_users).order_by('name')]
 
