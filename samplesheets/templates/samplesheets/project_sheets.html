@@ -113,7 +113,7 @@
       height: 1.75em;
     }
 
-    @media screen and (max-width: 1000px) {
+    @media screen and (max-width: 1200px) {
       .omics-ss-nav-tabs {
         display: none;
       }
@@ -132,10 +132,14 @@
   {% if investigation %}
     <ul class="nav nav-tabs omics-ss-nav-tabs ml-4 mr-auto">
       {% for s in investigation.studies.all %}
+        {% get_study_title s as s_title %}
         <li class="nav-item">
           <a class="nav-link {% if s == study %}bg-light active{% endif %}"
-             href="{% url 'samplesheets:project_sheets' study=s.omics_uuid %}">
-              <i class="fa fa-list-alt"></i> {% get_study_title s %}</a>
+             href="{% url 'samplesheets:project_sheets' study=s.omics_uuid %}"
+             {% if s != study and s_title|length > 20 %}
+               data-toggle="tooltip" data-placement="top" title="{{ s_title }}"
+             {% endif %}>
+            <i class="fa fa-list-alt"></i> {{ s_title|truncatechars:20 }}</a>
         </li>
       {% endfor %}
       <li class="nav-item">
