@@ -23,6 +23,8 @@ class AdminAlertListView(LoggedInPermissionMixin, ListView):
     template_name = 'adminalerts/alert_list.html'
     model = AdminAlert
     paginate_by = settings.ADMINALERTS_PAGINATION
+    slug_url_kwarg = 'uuid'
+    slug_field = 'omics_uuid'
 
     def get_queryset(self):
         return AdminAlert.objects.all().order_by('-pk')
@@ -34,6 +36,8 @@ class AdminAlertDetailView(
     permission_required = 'adminalerts.view_alert'
     template_name = 'adminalerts/alert_detail.html'
     model = AdminAlert
+    slug_url_kwarg = 'uuid'
+    slug_field = 'omics_uuid'
 
 
 # Modification views -----------------------------------------------------------
@@ -44,7 +48,7 @@ class AdminAlertModifyMixin(ModelFormMixin):
         form.save()
         form_action = 'update' if self.object else 'create'
         messages.success(self.request, 'Alert {}d.'.format(form_action))
-        return HttpResponseRedirect(reverse('alert_list'))
+        return HttpResponseRedirect(reverse('adminalerts:list'))
 
 
 class AdminAlertCreateView(
@@ -70,6 +74,8 @@ class AdminAlertUpdateView(
     model = AdminAlert
     form_class = AdminAlertForm
     permission_required = 'adminalerts.update_alert'
+    slug_url_kwarg = 'uuid'
+    slug_field = 'omics_uuid'
 
 
 class AdminAlertDeleteView(
@@ -77,8 +83,10 @@ class AdminAlertDeleteView(
     """AdminAlert deletion view"""
     model = AdminAlert
     permission_required = 'adminalerts.update_alert'
+    slug_url_kwarg = 'uuid'
+    slug_field = 'omics_uuid'
 
     def get_success_url(self):
         """Override for redirecting alert list view with message"""
         messages.success(self.request, 'Alert deleted.')
-        return reverse('alert_list')
+        return reverse('adminalerts:list')

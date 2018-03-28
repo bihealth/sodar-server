@@ -50,7 +50,8 @@ class TestAdminAlert(TestCase, AdminAlertMixin):
             'user': self.superuser.pk,
             'description': 'description',
             'date_expire': self.alert.date_expire,
-            'active': True}
+            'active': True,
+            'omics_uuid': self.alert.omics_uuid}
         self.assertEqual(model_to_dict(self.alert), expected)
 
     def test__str__(self):

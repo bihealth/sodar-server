@@ -31,7 +31,7 @@ class TestAdminAlertPermissions(TestPermissionBase, AdminAlertMixin):
             active=True)
 
     def test_alert_create(self):
-        url = reverse('alert_create')
+        url = reverse('adminalerts:create')
         good_users = [
             self.superuser]
         bad_users = [
@@ -42,9 +42,8 @@ class TestAdminAlertPermissions(TestPermissionBase, AdminAlertMixin):
 
     def test_alert_update(self):
         url = reverse(
-            'alert_update',
-            kwargs={
-                'pk': self.alert.pk})
+            'adminalerts:update',
+            kwargs={'uuid': self.alert.omics_uuid})
         good_users = [
             self.superuser]
         bad_users = [
@@ -55,9 +54,8 @@ class TestAdminAlertPermissions(TestPermissionBase, AdminAlertMixin):
 
     def test_alert_delete(self):
         url = reverse(
-            'alert_delete',
-            kwargs={
-                'pk': self.alert.pk})
+            'adminalerts:delete',
+            kwargs={'uuid': self.alert.omics_uuid})
         good_users = [
             self.superuser]
         bad_users = [
@@ -67,7 +65,7 @@ class TestAdminAlertPermissions(TestPermissionBase, AdminAlertMixin):
         self.assert_redirect(url, bad_users)
 
     def test_alert_list(self):
-        url = reverse('alert_list')
+        url = reverse('adminalerts:list')
         good_users = [
             self.superuser]
         bad_users = [
@@ -78,9 +76,8 @@ class TestAdminAlertPermissions(TestPermissionBase, AdminAlertMixin):
 
     def test_alert_detail(self):
         url = reverse(
-            'alert_detail',
-            kwargs={
-                'pk': self.alert.pk})
+            'adminalerts:detail',
+            kwargs={'uuid': self.alert.omics_uuid})
         good_users = [
             self.superuser,
             self.regular_user]
