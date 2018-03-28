@@ -12,7 +12,7 @@
 
   {# Overview #}
   <li id="omics-pr-nav-project-detail"
-      class="nav-item {% get_link_state projectroles_urls request.resolver_match.url_name 'detail' %}">
+      class="nav-item {% get_pr_link_state projectroles_urls request.resolver_match.url_name 'detail' %}">
     <a class="nav-link omics-pr-sidebar-nav-link"
        href="{% url 'projectroles:detail' project=project.omics_uuid %}"
        id="omics-pr-link-project-detail">
@@ -31,7 +31,7 @@
       {% has_perm plugin.app_permission request.user project as can_view_app %}
       {% if can_view_app %}
         <li id="omics-pr-nav-app-plugin-{{ plugin.name }}"
-            class="nav-item {% get_link_state plugin.urls request.resolver_match.url_name %}">
+            class="nav-item {% get_app_link_state plugin request.resolver_match.app_name request.resolver_match.url_name %}">
           <a class="nav-link"
              href="{% url plugin.entry_point_url_id project=project.omics_uuid %}"
              id="omics-pr-link-app-plugin-{{ plugin.name }}">
@@ -45,7 +45,7 @@
   {# Role and project editing #}
   {% if project.type != PROJECT_TYPE_CATEGORY and can_view_roles %}
     <li id="omics-pr-nav-project-roles"
-        class="nav-item {% get_link_state projectroles_urls request.resolver_match.url_name role_urls %}">
+        class="nav-item {% get_pr_link_state projectroles_urls request.resolver_match.url_name role_urls %}">
       <a class="nav-link"
          href="{% url 'projectroles:roles' project=project.omics_uuid %}"
          id="omics-pr-link-project-roles">
@@ -55,7 +55,7 @@
   {% endif %}
   {% if can_update_project %}
     <li id="omics-pr-nav-project-update"
-        class="nav-item {% get_link_state projectroles_urls request.resolver_match.url_name 'update' %}">
+        class="nav-item {% get_pr_link_state projectroles_urls request.resolver_match.url_name 'update' %}">
       <a class="nav-link"
          href="{% url 'projectroles:update' project=project.omics_uuid %}"
          id="omics-pr-link-project-update">
@@ -72,7 +72,7 @@
   {% has_perm 'projectroles.create_project' request.user project as can_create_project %}
   {% if can_create_project %}
     <li id="omics-pr-nav-project-create"
-        class="nav-item {% get_link_state projectroles_urls request.resolver_match.url_name 'create' %}">
+        class="nav-item {% get_pr_link_state projectroles_urls request.resolver_match.url_name 'create' %}">
       <a class="nav-link"
          href="{% url 'projectroles:create' project=project.omics_uuid %}"
          id="omics-pr-link-project-create">
@@ -83,7 +83,7 @@
 {% elif request.resolver_match.url_name == 'home' or request.resolver_match.url_name == 'create' and not project %}
   {% has_perm 'projectroles.create_project' request.user as can_create_project %}
   {% if can_create_project %}
-    <li id="omics-pr-nav-project-create" class="nav-item {% get_link_state projectroles_urls request.resolver_match.url_name 'create' %}">
+    <li id="omics-pr-nav-project-create" class="nav-item {% get_pr_link_state projectroles_urls request.resolver_match.url_name 'create' %}">
       <a class="nav-link"
          href="{% url 'projectroles:create' %}"
          id="omics-pr-home-link-create">

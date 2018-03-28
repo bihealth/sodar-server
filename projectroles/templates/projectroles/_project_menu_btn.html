@@ -8,7 +8,7 @@
   <div class="dropdown-menu">
 
     {# Home #}
-    <a class="dropdown-item {% get_link_state projectroles_urls request.resolver_match.url_name 'home' %}"
+    <a class="dropdown-item {% get_pr_link_state projectroles_urls request.resolver_match.url_name 'home' %}"
         href="{% url 'home' %}"
         title="Home"
         id="omics-pr-alt-link-home">
@@ -19,7 +19,7 @@
     {% if project %}
 
       {# Overview #}
-      <a class="dropdown-item {% get_link_state projectroles_urls request.resolver_match.url_name 'project_detail' %}"
+      <a class="dropdown-item {% get_pr_link_state projectroles_urls request.resolver_match.url_name 'project_detail' %}"
           href="{% url 'projectroles:detail' project=project.omics_uuid %}"
           title="Overview"
           id="omics-pr-alt-link-overview">
@@ -31,7 +31,7 @@
         {% for plugin in app_plugins %}
           {% has_perm plugin.app_permission request.user project as can_view_app %}
           {% if can_view_app %}
-            <a class="dropdown-item {% get_link_state plugin.urls request.resolver_match.url_name %}"
+            <a class="dropdown-item {% get_app_link_state plugin request.resolver_match.app_name request.resolver_match.url_name %}"
                href="{% url plugin.entry_point_url_id project=project.omics_uuid %}"
                title="{{ plugin.title }}"
                id="omics-pr-alt-link-app-plugin-{{ plugin.name }}">
@@ -44,7 +44,7 @@
 
       {# Role and project editing #}
       {% if project.type != PROJECT_TYPE_CATEGORY and can_view_roles %}
-        <a class="dropdown-item {% get_link_state projectroles_urls request.resolver_match.url_name role_urls %}"
+        <a class="dropdown-item {% get_pr_link_state projectroles_urls request.resolver_match.url_name role_urls %}"
            href="{% url 'projectroles:roles' project=project.omics_uuid %}"
            title="Members"
            id="omics-pr-alt-link-project-roles">
@@ -52,7 +52,7 @@
         </a>
       {% endif %}
       {% if can_update_project %}
-        <a class="dropdown-item {% get_link_state projectroles_urls request.resolver_match.url_name 'project_update' %}"
+        <a class="dropdown-item {% get_pr_link_state projectroles_urls request.resolver_match.url_name 'project_update' %}"
            href="{% url 'projectroles:update' project=project.omics_uuid %}"
            title="Update Project"
            id="omics-pr-alt-link-project-update">

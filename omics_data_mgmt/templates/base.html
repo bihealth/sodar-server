@@ -101,7 +101,7 @@
                 {% for plugin in site_apps %}
                   {% has_perm plugin.app_permission request.user as can_view_app %}
                   {% if not plugin.app_permission or can_view_app %}
-                    <li class="nav-item omics-navbar-siteapp-item {% get_link_state plugin.urls request.resolver_match.url_name %}">
+                    <li class="nav-item omics-navbar-siteapp-item {% get_app_link_state plugin request.resolver_match.app_name request.resolver_match.url_name %}">
                       <a class="nav-link"
                          href="{% url plugin.entry_point_url_id %}"
                          id="omics-navbar-siteapp-link-{{ plugin.name }}">

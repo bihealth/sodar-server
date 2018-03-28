@@ -17,7 +17,7 @@ Added
     - Graph output with pygraphviz for local development
     - ``ProjectPermissionMixin`` for project apps
     - ``ProjectAccessMixin`` for retrieving project from UUID URL kwargs
-    - The ``omics_uuid`` field to User model (#97)
+    - The ``omics_uuid`` field in models where it was missing (#97)
 - **Projectroles**
     - Add ``get_project_link()`` in templatetags
 - **Samplesheets**
@@ -43,6 +43,7 @@ Changed
 - **Projectroles**
     - Search view improvements
     - Refactor roles and invites views
+    - Split ``get_link_state`` tag into ``get_app_link_state`` and ``get_pr_link_state`` to support new URLs (#105)
 - **Timeline**
     - Use ``omics_uuid`` for object lookup in ``plugins.get_object_link()`` (#97)
 
@@ -51,7 +52,10 @@ Fixed
 
 - **General**
     - Update ChromeDriver to eliminate UI test crashes (#85)
-    - Fix user dropdown rendering depth (#82)
+    - User dropdown rendering depth (#82)
+    - Error template layout breaking (#108)
+- **Filesfolders**
+    - Public link form widget always disabled when updating a file (#102)
 
 
 v0.1 (2018-01-26)

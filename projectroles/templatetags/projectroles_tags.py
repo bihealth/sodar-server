@@ -109,9 +109,19 @@ def get_user_role_str(project, user):
 
 
 @register.simple_tag
-def get_link_state(app_urls, url_name, link_names=None):
-    """Return "active" if url_name is found in app_plugin.urls. If link_names is
-    set, only return "active" if url_name is found in link_names."""
+def get_app_link_state(app_plugin, app_name, url_name):
+    """Return "active" if plugin matches app_name and url_name is found in
+    app_plugin.urls. """
+    if (app_name == app_plugin.name and
+            url_name in [u.name for u in app_plugin.urls]):
+        return 'active'
+
+
+@register.simple_tag
+def get_pr_link_state(app_urls, url_name, link_names=None):
+    """Version of get_app_link_state() to be used within the projectroles app.
+    If link_names is set, only return "active" if url_name is found in
+    link_names."""
     if url_name in [u.name for u in app_urls]:
         if link_names:
             if not isinstance(link_names, list):
