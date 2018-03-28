@@ -37,6 +37,13 @@
       max-width: 800px;
     }
 
+    a.omics-ss-anchor {
+      display: block;
+      position: relative;
+      top: -75px;
+      visibility: hidden;
+    }
+
     .omics-ss-init-container {
       height: 470px;
     }
@@ -174,7 +181,8 @@
       </div>
 
       {# Study overview table #}
-      <div class="card omics-ss-data-card" id="study{{ study.omics_uuid }}">
+      <a class="omics-ss-anchor" id="{{ study.omics_uuid }}"></a>
+      <div class="card omics-ss-data-card">
         <div class="card-header">
           <h4>Study: {% get_study_title study %}
             <div class="input-group omics-header-input-group pull-right"
@@ -203,7 +211,8 @@
 
       {# Assay tables #}
       {% for assay in study.assays.all %}
-        <div class="card omics-ss-data-card" id="assay{{ assay.omics_uuid }}">
+        <a class="omics-ss-anchor" id="{{ assay.omics_uuid }}"></a>
+        <div class="card omics-ss-data-card">
           <div class="card-header">
             <h4>Assay: {% get_assay_title assay %}
               <div class="input-group omics-header-input-group pull-right"
