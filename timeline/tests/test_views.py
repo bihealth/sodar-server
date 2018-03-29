@@ -71,8 +71,9 @@ class TestProjectListView(TestViewsBase):
         """Test to ensure the view renders correctly"""
         with self.login(self.user):
             response = self.client.get(
-                reverse('project_timeline',
-                kwargs={'project': self.project.pk}))
+                reverse(
+                    'timeline:project_timeline',
+                    kwargs={'project': self.project.omics_uuid}))
             self.assertEqual(response.status_code, 200)
 
 
@@ -92,10 +93,12 @@ class TestObjectListView(TestViewsBase):
         """Test to ensure the view renders correctly"""
         with self.login(self.user):
             response = self.client.get(
-                reverse('object_timeline', kwargs={
-                    'project': self.project.pk,
-                    'object_model': self.ref_obj.object_model,
-                    'object_pk': self.ref_obj.object_pk}))
+                reverse(
+                    'timeline:object_timeline',
+                    kwargs={
+                        'project': self.project.omics_uuid,
+                        'object_model': self.ref_obj.object_model,
+                        'object_uuid': self.ref_obj.object_uuid}))
             self.assertEqual(response.status_code, 200)
 
 
@@ -123,7 +126,7 @@ class TestTaskflowSetStatusAPIView(TestViewsBase):
             'status_desc': ''}
 
         response = self.client.post(
-            reverse('taskflow_timeline_event_status_set'),
+            reverse('timeline:taskflow_timeline_event_status_set'),
             values)
 
         self.assertEqual(response.status_code, 200)
@@ -136,7 +139,7 @@ class TestTaskflowSetStatusAPIView(TestViewsBase):
             'status_desc': ''}
 
         response = self.client.post(
-            reverse('taskflow_timeline_event_status_set'),
+            reverse('timeline:taskflow_timeline_event_status_set'),
             values)
 
         self.assertEqual(response.status_code, 404)
@@ -149,7 +152,7 @@ class TestTaskflowSetStatusAPIView(TestViewsBase):
             'status_desc': ''}
 
         response = self.client.post(
-            reverse('taskflow_timeline_event_status_set'),
+            reverse('timeline:taskflow_timeline_event_status_set'),
             values)
 
         self.assertEqual(response.status_code, 400)

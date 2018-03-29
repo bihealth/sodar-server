@@ -264,7 +264,8 @@ class SampleSheetTableBuilder:
         :param study_data_in_assay: Whether we are adding hideable study data in
         an assay table (boolean)
         """
-        hideable = [STUDY_HIDEABLE_CLASS] if study_data_in_assay else list()
+        # TODO: Contains repetition, refactor
+        hide_cls = [STUDY_HIDEABLE_CLASS] if study_data_in_assay else list()
 
         # Headers
         if self._first_row:
@@ -273,76 +274,74 @@ class SampleSheetTableBuilder:
 
             # Material headers
             if type(obj) == GenericMaterial:
-                self._add_header('Name')                 # Name
+                self._add_header(
+                    'Name', hide_cls if obj.item_type in
+                    ['DATA', 'MATERIAL'] else list())           # Name
                 field_count += 1
 
                 a_header_count = self._add_annotation_headers(
-                    obj.characteristics,
-                    hideable)                            # Characteristics
+                    obj.characteristics, hide_cls)              # Character.
                 field_count += a_header_count
-
-                if hideable:
-                    hideable_count += a_header_count
+                hideable_count += a_header_count
 
                 if obj.item_type == 'SAMPLE':
                     a_header_count = self._add_annotation_headers(
-                        obj.factor_values, hideable)     # Factor values
+                        obj.factor_values, hide_cls)            # Factor values
                     field_count += a_header_count
-
-                    if hideable:
-                        hideable_count += a_header_count
+                    hideable_count += a_header_count
 
                 top_header_type = obj.item_type
 
             # Process headers
-            # NOTE: No hiding of processes
             else:   # type(obj) == Process
                 if obj.protocol and obj.protocol.name:
-                    self._add_header('Protocol')        # Protocol
+                    self._add_header('Protocol', hide_cls)      # Protocol
                     field_count += 1
 
                 else:
-                    self._add_header('Name')            # Name
+                    self._add_header('Name', hide_cls)          # Name
                     field_count += 1
 
-                field_count += self._add_annotation_headers(
-                    obj.parameter_values)               # Param values
+                a_header_count = self._add_annotation_headers(
+                    obj.parameter_values, hide_cls)             # Param values
+                field_count += a_header_count
+                hideable_count += a_header_count
 
                 top_header_type = 'PROCESS'
 
             a_header_count = self._add_annotation_headers(
-                obj.comments, hideable)                 # Comments
+                obj.comments, hide_cls)                         # Comments
             field_count += a_header_count
-
-            if hideable:
-                hideable_count += a_header_count
+            hideable_count += a_header_count
 
             self._add_top_header(
                 top_header_type, field_count, hiding={
-                    STUDY_HIDEABLE_CLASS: hideable_count})
+                    STUDY_HIDEABLE_CLASS: hideable_count if
+                    study_data_in_assay else 0})
 
         # Material data
         if type(obj) == GenericMaterial:
-            self._add_cell(obj.name)                   # Name
+            self._add_cell(obj.name)                            # Name
             self._add_annotations(
-                obj.characteristics, hideable)         # Characteristics
+                obj.characteristics, hide_cls)                  # Character.
 
             if obj.item_type == 'SAMPLE':
                 self._add_annotations(
-                    obj.factor_values, hideable)       # Factor values
+                    obj.factor_values, hide_cls)                # Factor values
 
         # Process data
         elif type(obj) == Process:
             if obj.protocol and obj.protocol.name:
-                self._add_cell(obj.protocol.name)      # Protocol
+                self._add_cell(
+                    obj.protocol.name, classes=hide_cls)        # Protocol
 
             else:
-                self._add_cell(obj.name)               # Name
+                self._add_cell(obj.name, classes=hide_cls)      # Name
 
             self._add_annotations(
-                obj.parameter_values)                  # Parameter values
+                obj.parameter_values, hide_cls)             # Param values
 
-        self._add_annotations(obj.comments)            # Comments
+        self._add_annotations(obj.comments, hide_cls)       # Comments
 
     def _append_row(self):
         """Append current row to table data and cleanup"""
@@ -398,8 +397,8 @@ class SampleSheetTableBuilder:
             'assays': {}}
 
         nodes = list(GenericMaterial.objects.filter(study=study)) + \
-                list(Process.objects.filter(
-                    study=study).prefetch_related('protocol'))
+            list(Process.objects.filter(
+                study=study).prefetch_related('protocol'))
 
         # TODO: Onelinerize this
         arcs = study.arcs

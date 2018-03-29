@@ -8,14 +8,14 @@ from rest_framework.views import APIView
 # Projectroles dependency
 from projectroles.models import Project
 from projectroles.views import LoggedInPermissionMixin, \
-    ProjectContextMixin, ProjectPermissionObjectMixin
+    ProjectContextMixin, ProjectPermissionMixin
 
 from .models import ProjectEvent
 
 
 class ProjectTimelineView(
         LoginRequiredMixin, LoggedInPermissionMixin, ProjectContextMixin,
-        ProjectPermissionObjectMixin, ListView):
+        ProjectPermissionMixin, ListView):
     """View for displaying files and folders for a project"""
     permission_required = 'timeline.view_timeline'
 
@@ -34,7 +34,7 @@ class ProjectTimelineView(
 
     def get_queryset(self):
         set_kwargs = {
-            'project': self.kwargs['project']}
+            'project__omics_uuid': self.kwargs['project']}
 
         if not self.request.user.has_perm(
                     'timeline.view_classified_event',
@@ -59,10 +59,12 @@ class ObjectTimelineView(ProjectTimelineView):
         return context
 
     def get_queryset(self):
+        project = Project.objects.get(omics_uuid=self.kwargs['project'])
+
         queryset = ProjectEvent.objects.get_object_events(
-            project_pk=self.kwargs['project'],
+            project=project,
             object_model=self.kwargs['object_model'],
-            object_pk=self.kwargs['object_pk'])
+            object_uuid=self.kwargs['object_uuid'])
 
         if not self.request.user.has_perm(
                 'timeline.view_classified_event',
@@ -75,6 +77,7 @@ class ObjectTimelineView(ProjectTimelineView):
 # Taskflow API Views -----------------------------------------------------
 
 
+# TODO: Modify once integrating Taskflow
 class TimelineEventStatusSetAPIView(APIView):
     def post(self, request):
         try:

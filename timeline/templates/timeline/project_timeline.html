@@ -79,11 +79,11 @@
 
 {% has_perm 'timeline.view_timeline' request.user project as can_view_timeline %}
 
-<div class="row omics-subtitle-container bg-white sticky-top">
+<div class="row omics-subtitle-container omics-subtitle-shadow bg-white sticky-top">
   <h3><i class="fa fa-clock-o"></i> {{ timeline_title }}</h3>
   {% if timeline_mode == 'object' %}
     <div class="input-group omics-header-input-group ml-auto">
-      <a href="{% url 'project_timeline' project=project.pk %}"
+      <a href="{% url 'timeline:project_timeline' project=project.omics_uuid %}"
          class="btn btn-secondary ml-auto"
          role="button">
         <i class="fa fa-arrow-circle-left"></i> Project Timeline
@@ -93,7 +93,7 @@
 </div>
 
 {% if object_list.count > 0 %}
-  <div class="container-fluid omics-pr-main-container">
+  <div class="container-fluid omics-pr-main-container my-3">
     <div class="card omics-card-single" id="omics-tl-event-list">
       <div class="card-body omics-card-body-table">
        <table class="table table-striped omics-card-table" id="omics-tl-table">
@@ -145,7 +145,7 @@
 
 {% else %}
   <div class="container-fluid">
-    <div class="alert alert-info" role="alert">
+    <div class="alert alert-info my-3" role="alert">
       No timeline events found for this project.
     </div>
   </div>

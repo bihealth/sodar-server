@@ -33,8 +33,8 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
     #: FontAwesome icon ID string
     icon = 'file'
 
-    #: Entry point URL ID (must take project pk as "project" argument)
-    entry_point_url_id = 'project_files'
+    #: Entry point URL ID (must take project omics_uuid as "project" argument)
+    entry_point_url_id = 'filesfolders:list'
 
     #: Description string
     description = 'Smaller files (e.g., reports, spreadsheets, and ' \
@@ -74,15 +74,15 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         """
         return None
 
-    def get_object_link(self, model_str, pk):
+    def get_object_link(self, model_str, uuid):
         """
         Return URL for referring to a object used by the app, along with a
         label to be shown to the user for linking.
         :param model_str: Object class (string)
-        :param pk: Pk of the referred object
+        :param uuid: omics_uuid of the referred object
         :return: Dict or None if not found
         """
-        obj = self.get_object(eval(model_str), pk)
+        obj = self.get_object(eval(model_str), uuid)
 
         if not obj:
             return None
@@ -90,10 +90,9 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         elif obj.__class__ == File:
             return {
                 'url': reverse(
-                    'file_serve',
+                    'filesfolders:file_serve',
                     kwargs={
-                        'project': obj.project.pk,
-                        'pk': obj.pk,
+                        'file': obj.omics_uuid,
                         'file_name': obj.name}),
                     'label': obj.name,
                     'blank': True}
@@ -101,10 +100,8 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         elif obj.__class__ == Folder:
             return {
                 'url': reverse(
-                    'project_files',
-                    kwargs={
-                        'project': obj.project.pk,
-                        'folder': obj.pk}),
+                    'filesfolders:list',
+                    kwargs={'folder': obj.omics_uuid}),
                 'label': obj.name}
 
         elif obj.__class__ == HyperLink:

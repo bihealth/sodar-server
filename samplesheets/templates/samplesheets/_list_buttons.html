@@ -19,7 +19,7 @@
 
     {# Import #}
     {% if not investigation and can_edit_sheet %}
-      <a class="dropdown-item" href="{% url 'sheet_import' project=project.pk %}">
+      <a class="dropdown-item" href="{% url 'samplesheets:import' project=project.omics_uuid %}">
         <i class="fa fa-fw fa-upload"></i> Import ISAtab
       </a>
     {% endif %}
@@ -27,7 +27,7 @@
     {# Export #}
     {% comment %}
     {% if investigation and can_export_sheet %}
-      <a class="dropdown-item" href="{% url 'sheet_export_json' project=project.pk %}">
+      <a class="dropdown-item" href="{% url 'sheet_export_json' project=project.omics_uuid %}">
         <i class="fa fa-fw fa-download"></i> Export JSON
       </a>
     {% endif %}
@@ -35,7 +35,7 @@
 
     {# Delete #}
     {% if investigation and can_delete_sheet %}
-      <a class="dropdown-item" href="{% url 'sheet_delete' project=project.pk %}">
+      <a class="dropdown-item" href="{% url 'samplesheets:delete' project=project.omics_uuid %}">
         <i class="fa fa-fw fa-close"></i> Delete Sheets
       </a>
     {% endif %}

@@ -17,7 +17,7 @@
   <div>
     <a role="link" class="btn btn-link omics-pr-btn-star"
        href="#" id="omics-pr-link-project-star"
-       star-url="{% url 'project_star' pk=project.pk %}"
+       star-url="{% url 'projectroles:star' project=project.omics_uuid %}"
        csrf-token="{{ csrf_token }}"
        title="{% if project_starred %}Unstar{% else %}Star{% endif %}"
        data-toggle="tooltip" data-placement="top">

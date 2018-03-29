@@ -48,8 +48,8 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
     #: FontAwesome icon ID string
     icon = 'clock-o'
 
-    #: Entry point URL ID (must take project pk as "project" argument)
-    entry_point_url_id = 'project_timeline'
+    #: Entry point URL ID (must take project omics_uuid as "project" argument)
+    entry_point_url_id = 'timeline:project_timeline'
 
     #: Description string
     description = 'Timeline of project events'

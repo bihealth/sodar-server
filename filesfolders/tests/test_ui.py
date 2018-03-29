@@ -125,7 +125,9 @@ class TestListView(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
             self.as_staff.user,
             self.as_contributor.user,
             self.as_guest.user]
-        url = reverse('project_files', kwargs={'project': self.project.pk})
+        url = reverse(
+            'filesfolders:list',
+            kwargs={'project': self.project.omics_uuid})
 
         self.assert_element_exists(
             expected_true, url, 'omics-ff-readme-card', True)
@@ -141,7 +143,9 @@ class TestListView(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
             self.as_contributor.user]
         expected_false = [
             self.as_guest.user]
-        url = reverse('project_files', kwargs={'project': self.project.pk})
+        url = reverse(
+            'filesfolders:list',
+            kwargs={'project': self.project.omics_uuid})
 
         self.assert_element_exists(
             expected_true, url, 'omics-ff-buttons-list', True)
@@ -158,7 +162,9 @@ class TestListView(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
             (self.as_staff.user, 2),
             (self.as_contributor.user, 1),
             (self.as_guest.user, 0)]
-        url = reverse('project_files', kwargs={'project': self.project.pk})
+        url = reverse(
+            'filesfolders:list',
+            kwargs={'project': self.project.omics_uuid})
         self.assert_element_count(expected, url, 'omics-ff-file-buttons')
 
     def test_buttons_folder(self):
@@ -171,7 +177,9 @@ class TestListView(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
             (self.as_staff.user, 2),
             (self.as_contributor.user, 1),
             (self.as_guest.user, 0)]
-        url = reverse('project_files', kwargs={'project': self.project.pk})
+        url = reverse(
+            'filesfolders:list',
+            kwargs={'project': self.project.omics_uuid})
         self.assert_element_count(expected, url, 'omics-ff-folder-buttons')
 
     def test_buttons_hyperlink(self):
@@ -184,7 +192,9 @@ class TestListView(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
             (self.as_staff.user, 2),
             (self.as_contributor.user, 1),
             (self.as_guest.user, 0)]
-        url = reverse('project_files', kwargs={'project': self.project.pk})
+        url = reverse(
+            'filesfolders:list',
+            kwargs={'project': self.project.omics_uuid})
         self.assert_element_count(expected, url, 'omics-ff-hyperlink-buttons')
 
     def test_file_checkboxes(self):
@@ -197,7 +207,9 @@ class TestListView(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
             (self.as_staff.user, 6),
             (self.as_contributor.user, 3),
             (self.as_guest.user, 0)]
-        url = reverse('project_files', kwargs={'project': self.project.pk})
+        url = reverse(
+            'filesfolders:list',
+            kwargs={'project': self.project.omics_uuid})
         self.assert_element_count(expected, url, 'omics-ff-checkbox')
 
     def test_public_link(self):
@@ -210,7 +222,9 @@ class TestListView(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
             (self.as_staff.user, 1),
             (self.as_contributor.user, 1),
             (self.as_guest.user, 0)]
-        url = reverse('project_files', kwargs={'project': self.project.pk})
+        url = reverse(
+            'filesfolders:list',
+            kwargs={'project': self.project.omics_uuid})
         self.assert_element_count(expected, url, 'omics-ff-link-public')
 
     def test_public_link_disable(self):
@@ -229,7 +243,9 @@ class TestListView(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
             (self.as_staff.user, 0),
             (self.as_contributor.user, 0),
             (self.as_guest.user, 0)]
-        url = reverse('project_files', kwargs={'project': self.project.pk})
+        url = reverse(
+            'filesfolders:list',
+            kwargs={'project': self.project.omics_uuid})
         self.assert_element_count(expected, url, 'omics-ff-link-public')
 
     def test_item_flags(self):
@@ -250,7 +266,9 @@ class TestListView(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
             (self.as_staff.user, 3),
             (self.as_contributor.user, 3),
             (self.as_guest.user, 3)]
-        url = reverse('project_files', kwargs={'project': self.project.pk})
+        url = reverse(
+            'filesfolders:list',
+            kwargs={'project': self.project.omics_uuid})
         self.assert_element_count(
             expected, url, 'omics-ff-flag-icon', 'class')
 
@@ -339,7 +357,8 @@ class TestSearch(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
             (self.as_staff.user, 6),
             (self.as_guest.user, 6),
             (self.user_no_roles, 0)]
-        url = reverse('project_search') + '?' + urlencode({'s': 'description'})
+        url = reverse('projectroles:search') + '?' + urlencode(
+            {'s': 'description'})
         self.assert_element_count(expected, url, 'omics-ff-search-item')
 
     def test_search_type_file(self):
@@ -352,7 +371,7 @@ class TestSearch(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
             (self.as_staff.user, 2),
             (self.as_guest.user, 2),
             (self.user_no_roles, 0)]
-        url = reverse('project_search') + '?' + urlencode({
+        url = reverse('projectroles:search') + '?' + urlencode({
             's': 'file type:file'})
         self.assert_element_count(expected, url, 'omics-ff-search-item')
 
@@ -366,10 +385,9 @@ class TestSearch(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
             (self.as_staff.user, 2),
             (self.as_guest.user, 2),
             (self.user_no_roles, 0)]
-        url = reverse('project_search') + '?' + urlencode({
+        url = reverse('projectroles:search') + '?' + urlencode({
             's': 'folder type:folder'})
         self.assert_element_count(expected, url, 'omics-ff-search-item')
-
 
     def test_search_type_link(self):
         """Test search items visibility with 'link' as type"""
@@ -381,7 +399,7 @@ class TestSearch(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
             (self.as_staff.user, 2),
             (self.as_guest.user, 2),
             (self.user_no_roles, 0)]
-        url = reverse('project_search') + '?' + urlencode({
+        url = reverse('projectroles:search') + '?' + urlencode({
             's': 'link type:link'})
         self.assert_element_count(expected, url, 'omics-ff-search-item')
 
@@ -395,6 +413,6 @@ class TestSearch(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
             (self.as_staff.user, 0),
             (self.as_guest.user, 0),
             (self.user_no_roles, 0)]
-        url = reverse('project_search') + '?' + urlencode({
+        url = reverse('projectroles:search') + '?' + urlencode({
             's': 'test type:Jaix1au'})
         self.assert_element_count(expected, url, 'omics-ff-search-item')

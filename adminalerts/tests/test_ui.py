@@ -76,7 +76,7 @@ class TestListView(TestAlertUIBase):
         """Test existence of items in list"""
         expected = [
             (self.superuser, 1)]
-        url = reverse('alert_list')
+        url = reverse('adminalerts:list')
 
         self.assert_element_count(
             expected, url, 'omics-aa-alert-item', 'id')
@@ -85,7 +85,7 @@ class TestListView(TestAlertUIBase):
         """Test existence of buttons in list"""
         expected = [
             (self.superuser, 1)]
-        url = reverse('alert_list')
+        url = reverse('adminalerts:list')
 
         self.assert_element_count(
             expected, url, 'omics-aa-alert-buttons', 'id')

@@ -251,8 +251,8 @@ def send_role_change_mail(change_type, project, user, role, request):
     :return: 1 or 0 depending on email sending success
     """
     project_url = request.build_absolute_uri(reverse(
-        'project_detail',
-        kwargs={'pk': project.pk}))
+        'projectroles:detail',
+        kwargs={'project': project.omics_uuid}))
 
     subject = get_role_change_subject(change_type, project)
     body = get_role_change_body(

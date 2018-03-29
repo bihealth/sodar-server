@@ -134,6 +134,10 @@ div.omics-subtitle-container {
   border-bottom: 1px solid #dfdfdf;
 }
 
+div.omics-subtitle-shadow {
+  box-shadow: 0 6px 6px -6px #909090;
+}
+
 .omics-pr-navbar {
   padding-left: 28px;
   padding-right: 38px;
@@ -360,14 +364,15 @@ dl.omics-dl dd {
   padding: 0;
 }
 
-.omics-siderbar-alt-btn {
+.omics-sidebar-alt-btn {
   height: 100%;
   margin-right: 12px;
   display: none;
   font-size: 100%;
+  z-index: 1100;
 }
 
-.omics-siderbar-alt-btn a {
+.omics-sidebar-alt-btn a {
   line-height: 24px;
 }
 
@@ -552,7 +557,7 @@ pre {
     display: none !important;
   }
 
-  .omics-siderbar-alt-btn {
+  .omics-sidebar-alt-btn {
     display: inherit !important;
   }
 }

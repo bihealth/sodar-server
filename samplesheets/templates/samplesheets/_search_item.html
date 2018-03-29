@@ -2,7 +2,7 @@
 {% load samplesheets_tags %}
 {% load projectroles_common_tags %}
 
-<tr class="omics-ss-search-list-item" id="omics-ss-project-search-item-{{ item.pk }}">
+<tr class="omics-ss-search-list-item" id="omics-ss-project-search-item-{{ item.omics_uuid }}">
   <td><a href="{% get_material_link item %}">{{ item.name }}</a></td>
   <td>{% get_material_type item %}</td>
   <td>
@@ -12,7 +12,7 @@
   </td>
   <td>
     {% if item.study %}
-      <a href="{% url 'project_sheets' project=item.get_project.pk study=item.study.pk %}">
+      <a href="{% url 'samplesheets:project_sheets' study=item.study.omics_uuid %}">
         {% get_study_title item.study %}
       </a>
     {% else %}
@@ -21,7 +21,7 @@
   </td>
   <td>
     {% if item.assay %}
-      <a href="{% url 'project_sheets' project=item.get_project.pk study=item.study.pk %}#assay{{ item.assay.pk }}">
+      <a href="{% url 'samplesheets:project_sheets' study=item.study.omics_uuid %}#assay{{ item.assay.omics_uuid }}">
         {% get_assay_title item.assay %}
       </a>
     {% else %}

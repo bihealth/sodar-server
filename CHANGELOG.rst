@@ -15,7 +15,9 @@ Added
 
 - **General**
     - Graph output with pygraphviz for local development
-    - ``ProjectPermissionObjectMixin`` for project apps
+    - ``ProjectPermissionMixin`` for project apps
+    - ``ProjectAccessMixin`` for retrieving project from UUID URL kwargs
+    - The ``omics_uuid`` field in models where it was missing (#97)
 - **Projectroles**
     - Add ``get_project_link()`` in templatetags
 - **Samplesheets**
@@ -32,18 +34,28 @@ Changed
 - **General**
     - Upgrade site to Django 1.11.11
     - Upgrade site to Boostrap 4.0.0 Stable (#78)
+    - Use ``omics_uuid`` instead of ``pk`` in URLs and templates (#97)
+    - Rework URL scheme for consistency and compactness (#105)
     - Modify subtitle and page content containers for all apps
     - Site-wide CSS tweaks
     - Rename ``details_position`` to ``plugin_ordering`` in plugins (#90)
+    - Refactor app views with redundant ``SingleObjectMixin`` includes (#106)
 - **Projectroles**
     - Search view improvements
+    - Refactor roles and invites views
+    - Split ``get_link_state`` tag into ``get_app_link_state`` and ``get_pr_link_state`` to support new URLs (#105)
+- **Timeline**
+    - Use ``omics_uuid`` for object lookup in ``plugins.get_object_link()`` (#97)
 
 Fixed
 -----
 
 - **General**
     - Update ChromeDriver to eliminate UI test crashes (#85)
-    - Fix user dropdown rendering depth (#82)
+    - User dropdown rendering depth (#82)
+    - Error template layout breaking (#108)
+- **Filesfolders**
+    - Public link form widget always disabled when updating a file (#102)
 
 
 v0.1 (2018-01-26)

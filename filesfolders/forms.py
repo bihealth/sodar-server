@@ -23,7 +23,7 @@ class FilesfoldersItemForm(forms.ModelForm):
     """Base form for Filesfolders item creation/updating"""
 
     def __init__(
-            self, current_user=None, project=None, folder=None,
+            self, current_user=None, folder=None, project=None,
             *args, **kwargs):
         """Override for form initialization"""
         super(FilesfoldersItemForm, self).__init__(*args, **kwargs)
@@ -36,11 +36,15 @@ class FilesfoldersItemForm(forms.ModelForm):
         if current_user:
             self.current_user = current_user
 
-        if project:
-            self.project = Project.objects.get(pk=project)
-
         if folder:
-            self.folder = Folder.objects.get(pk=folder)
+            self.folder = Folder.objects.get(omics_uuid=folder)
+            self.project = self.folder.project
+
+        elif project:
+            self.project = Project.objects.get(omics_uuid=project)
+
+        # Modify ModelChoiceFields to use omics_uuid
+        self.fields['folder'].to_field_name = 'omics_uuid'
 
 
 class FolderForm(FilesfoldersItemForm):
@@ -51,7 +55,7 @@ class FolderForm(FilesfoldersItemForm):
         fields = ['name', 'folder', 'flag', 'description']
 
     def __init__(
-            self, current_user=None, project=None, folder=None,
+            self, current_user=None, folder=None, project=None,
             *args, **kwargs):
         """Override for form initialization"""
         super(FolderForm, self).__init__(
@@ -62,7 +66,7 @@ class FolderForm(FilesfoldersItemForm):
         if not self.instance.pk:
             # Don't allow changing folder if we are creating a new object
             self.fields['folder'].choices = [
-                (self.folder.pk, self.folder.name)
+                (self.folder.omics_uuid, self.folder.name)
                 if self.folder else (None, 'root')]
             self.fields['folder'].widget.attrs['readonly'] = True
 
@@ -79,11 +83,11 @@ class FolderForm(FilesfoldersItemForm):
             folders = [f for f in folders if not f.has_in_path(self.instance)]
 
             for f in folders:
-                folder_choices.append((f.pk, f.get_path()))
+                folder_choices.append((f.omics_uuid, f.get_path()))
 
             self.fields['folder'].choices = folder_choices
-            self.initial['folder'] =\
-                self.instance.folder.pk if self.instance.folder else None
+            self.initial['folder'] = self.instance.folder.omics_uuid if \
+                self.instance.folder else None
 
     def clean(self):
         # Creation
@@ -160,12 +164,15 @@ class FileForm(FilesfoldersItemForm):
                 filesizeformat(MAX_UPLOAD_SIZE))}
 
     def __init__(
-            self, current_user=None, project=None, folder=None,
+            self, current_user=None, folder=None, project=None,
             *args, **kwargs):
         """Override for form initialization"""
         super(FileForm, self).__init__(
-            current_user=current_user, project=project, folder=folder,
+            current_user=current_user, folder=folder, project=project,
             *args, **kwargs)
+
+        if self.instance.pk:
+            self.project = self.instance.project
 
         # Disable public URL creation if setting is false
         if not get_project_setting(
@@ -176,7 +183,7 @@ class FileForm(FilesfoldersItemForm):
         if not self.instance.pk:
             # Don't allow changing folder if we are creating a new object
             self.fields['folder'].choices = [
-                (self.folder.pk, self.folder.name)
+                (self.folder.omics_uuid, self.folder.name)
                 if self.folder else (None, 'root')]
             self.fields['folder'].widget.attrs['readonly'] = True
 
@@ -187,11 +194,11 @@ class FileForm(FilesfoldersItemForm):
 
             for f in Folder.objects.filter(
                     project=self.instance.project.pk):
-                folder_choices.append((f.pk, f.get_path()))
+                folder_choices.append((f.omics_uuid, f.get_path()))
 
             self.fields['folder'].choices = folder_choices
-            self.initial['folder'] =\
-                self.instance.folder.pk if self.instance.folder else None
+            self.initial['folder'] = self.instance.folder.omics_uuid if \
+                self.instance.folder else None
 
     def clean(self):
         project = self.instance.project if self.instance.pk else self.project
@@ -318,7 +325,7 @@ class HyperLinkForm(FilesfoldersItemForm):
         fields = ['name', 'url', 'folder', 'flag', 'description']
 
     def __init__(
-            self, current_user=None, project=None, folder=None,
+            self, current_user=None, folder=None, project=None,
             *args, **kwargs):
         """Override for form initialization"""
         super(HyperLinkForm, self).__init__(
@@ -329,7 +336,7 @@ class HyperLinkForm(FilesfoldersItemForm):
         if not self.instance.pk:
             # Don't allow changing folder if we are creating a new object
             self.fields['folder'].choices = [
-                (self.folder.pk, self.folder.name)
+                (self.folder.omics_uuid, self.folder.name)
                 if self.folder else (None, 'root')]
             self.fields['folder'].widget.attrs['readonly'] = True
 
@@ -340,11 +347,11 @@ class HyperLinkForm(FilesfoldersItemForm):
 
             for f in Folder.objects.filter(
                     project=self.instance.project.pk):
-                folder_choices.append((f.pk, f.get_path()))
+                folder_choices.append((f.omics_uuid, f.get_path()))
 
             self.fields['folder'].choices = folder_choices
-            self.initial['folder'] =\
-                self.instance.folder.pk if self.instance.folder else None
+            self.initial['folder'] = self.instance.folder.omics_uuid if \
+                self.instance.folder else None
 
     def clean(self):
         # Creation
@@ -354,7 +361,6 @@ class HyperLinkForm(FilesfoldersItemForm):
                     project=self.project,
                     folder=self.folder,
                     name=self.cleaned_data['name'])
-
                 self.add_error('name', 'Link already exists')
 
             except HyperLink.DoesNotExist:

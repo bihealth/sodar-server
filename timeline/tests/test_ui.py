@@ -62,7 +62,9 @@ class TestListView(
             (self.as_contributor.user, 1),
             (self.as_guest.user, 1)]
 
-        url = reverse('project_timeline', kwargs={'project': self.project.pk})
+        url = reverse(
+            'timeline:project_timeline',
+            kwargs={'project': self.project.omics_uuid})
         self.assert_element_count(expected, url, 'omics-tl-list-event')
 
     def test_object_event_visibility(self):
@@ -87,10 +89,12 @@ class TestListView(
             (self.as_contributor.user, 1),
             (self.as_guest.user, 1)]
 
-        url = reverse('object_timeline', kwargs={
-            'project': self.project.pk,
-            'object_model': self.ref_obj.object_model,
-            'object_pk': self.ref_obj.object_pk})
+        url = reverse(
+            'timeline:object_timeline',
+            kwargs={
+                'project': self.project.omics_uuid,
+                'object_model': self.ref_obj.object_model,
+                'object_uuid': self.ref_obj.object_uuid})
         self.assert_element_count(expected, url, 'omics-tl-list-event')
 
     def test_event_visibility_details(self):
@@ -103,5 +107,7 @@ class TestListView(
             (self.as_contributor.user, 1),
             (self.as_guest.user, 1)]
 
-        url = reverse('project_detail', kwargs={'pk': self.project.pk})
+        url = reverse(
+            'projectroles:detail',
+            kwargs={'project': self.project.omics_uuid})
         self.assert_element_count(expected, url, 'omics-tl-list-event')

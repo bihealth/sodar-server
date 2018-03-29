@@ -5,18 +5,18 @@
 {% has_perm 'filesfolders.update_data_own' request.user file.project as can_update_own %}
 {% has_perm 'filesfolders.update_data_all' request.user file.project as can_update_all %}
 
-<div class="btn-group omics-edit-button-group" id="omics-ff-file-buttons-{{ file.pk }}">
+<div class="btn-group omics-edit-button-group" id="omics-ff-file-buttons-{{ file.omics_uuid }}">
   <button class="btn btn-secondary dropdown-toggle btn-sm omics-edit-dropdown"
       type="button" data-toggle="dropdown" aria-expanded="false">
     <i class="fa fa-cog"></i>
   </button>
   <div class="dropdown-menu dropdown-menu-right">
     {% if can_update_all or file.owner == request.user and can_update_own %}
-      <a class="dropdown-item" href="{% url 'file_update' pk=file.pk project=file.project.pk %}">
+      <a class="dropdown-item" href="{% url 'filesfolders:file_update' item=file.omics_uuid %}">
         <i class="fa fa-fw fa-pencil"></i>
         Update File
       </a>
-      <a class="dropdown-item" href="{% url 'file_delete' pk=file.pk project=file.project.pk %}">
+      <a class="dropdown-item" href="{% url 'filesfolders:file_delete' item=file.omics_uuid %}">
         <i class="fa fa-fw fa-close"></i>
         Delete File
       </a>

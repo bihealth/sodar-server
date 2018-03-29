@@ -30,8 +30,8 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
     #: FontAwesome icon ID string
     icon = 'flask'
 
-    #: Entry point URL ID (must take project pk as "project" argument)
-    entry_point_url_id = 'project_sheets'
+    #: Entry point URL ID (must take project omics_uuid as "project" argument)
+    entry_point_url_id = 'samplesheets:project_sheets'
 
     #: Description string
     description = 'Sample sheets contain your donors/patients, samples, and ' \
@@ -112,15 +112,15 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         return sync_flows
     '''
 
-    def get_object_link(self, model_str, pk):
+    def get_object_link(self, model_str, uuid):
         """
         Return URL for referring to a object used by the app, along with a
         label to be shown to the user for linking.
         :param model_str: Object class (string)
-        :param pk: Pk of the referred object
+        :param uuid: omics_uuid of the referred object
         :return: Dict or None if not found
         """
-        obj = self.get_object(eval(model_str), pk)
+        obj = self.get_object(eval(model_str), uuid)
 
         if not obj:
             return None
@@ -128,6 +128,6 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         # The only possible model is SampleSheet, directing to entry point
         return {
             'url': reverse(
-                'project_sheets',
-                kwargs={'project': obj.project.pk}),
+                'samplesheets:project_sheets',
+                kwargs={'project': obj.project.omics_uuid}),
             'label': obj.title}

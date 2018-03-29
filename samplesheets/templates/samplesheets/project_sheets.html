@@ -30,11 +30,18 @@
     .omics-ss-nav-tabs li a {
       margin-bottom: -1px !important;
       border-bottom: 0 !important;
-      height: 118%; /* HACK */
+      height: 117%; /* HACK */
     }
 
     .omics-ss-assay-info-popup {
       max-width: 800px;
+    }
+
+    a.omics-ss-anchor {
+      display: block;
+      position: relative;
+      top: -75px;
+      visibility: hidden;
     }
 
     .omics-ss-init-container {
@@ -106,7 +113,7 @@
       height: 1.75em;
     }
 
-    @media screen and (max-width: 1000px) {
+    @media screen and (max-width: 1200px) {
       .omics-ss-nav-tabs {
         display: none;
       }
@@ -119,21 +126,25 @@
 
 {% has_perm 'samplesheets.edit_sheet' request.user project as can_edit_sheet %}
 
-<div class="row omics-subtitle-container bg-white sticky-top">
+<div class="row omics-subtitle-container omics-subtitle-shadow bg-white sticky-top">
   <h3><i class="fa fa-flask"></i> Sample Sheets</h3>
 
   {% if investigation %}
     <ul class="nav nav-tabs omics-ss-nav-tabs ml-4 mr-auto">
       {% for s in investigation.studies.all %}
+        {% get_study_title s as s_title %}
         <li class="nav-item">
           <a class="nav-link {% if s == study %}bg-light active{% endif %}"
-             href="{% url 'project_sheets' project=project.pk study=s.pk %}">
-              <i class="fa fa-list-alt"></i> {% get_study_title s %}</a>
+             href="{% url 'samplesheets:project_sheets' study=s.omics_uuid %}"
+             {% if s != study and s_title|length > 20 %}
+               data-toggle="tooltip" data-placement="top" title="{{ s_title }}"
+             {% endif %}>
+            <i class="fa fa-list-alt"></i> {{ s_title|truncatechars:20 }}</a>
         </li>
       {% endfor %}
       <li class="nav-item">
         <a class="nav-link {% if subpage == 'info' %}bg-light active{% endif %}"
-           href="{% url 'project_sheets' project=project.pk subpage='info' %}">
+           href="{% url 'samplesheets:project_sheets' project=project.omics_uuid subpage='info' %}">
             <i class="fa fa-sitemap"></i> Overview</a>
       </li>
     </ul>
@@ -166,31 +177,34 @@
     {% if table_data.study %}
 
       {# Details #}
+      {% comment %}
       <div class="card">
         <div class="card-header">
           <h4>Study Details</h4>
         </div>
         {% include 'samplesheets/_study_info.html' %}
       </div>
+      {% endcomment %}
 
       {# Study overview table #}
-      <div class="card omics-ss-data-card" id="study{{ study.pk }}">
+      <a class="omics-ss-anchor" id="{{ study.omics_uuid }}"></a>
+      <div class="card omics-ss-data-card">
         <div class="card-header">
-          <h4>Study: {% get_study_title study %}
+            <h4><span class="font-weight-bold text-info">Study</span> <span class="text-muted">|</span> {% get_study_title study %}
             <div class="input-group omics-header-input-group pull-right"
                  style="width: 320px;" table-id="{% get_table_id study %}">
               <div class="input-group-prepend">
                 {# TODO: Include buttons from a separate file #}
                 <button class="btn btn-secondary omics-ss-data-drag-toggle"
-                        type="submit" id="omics-ss-data-drag-toggle-{{ study.pk }}"
+                        type="submit" id="omics-ss-data-drag-toggle-{{ study.omics_uuid }}"
                         drag-mode="0"><i class="fa fa-mouse-pointer"></i> Drag</button>
                 <button class="btn btn-secondary omics-ss-data-excel"
-                        type="submit" id="omics-ss-data-drag-excel-{{ study.pk }}">
+                        type="submit" id="omics-ss-data-drag-excel-{{ study.omics_uuid }}">
                         <i class="fa fa-file-excel-o"></i> Excel</button>
               </div>
               <input class="form-control omics-ss-data-filter"
-                     type="text" placeholder="Filter" aria-label="Filter assay {{ assay.pk }}"
-                     id="omics-ss-data-filter-{{ study.pk }}">
+                     type="text" placeholder="Filter" aria-label="Filter assay {{ assay.omics_uuid }}"
+                     id="omics-ss-data-filter-{{ study.omics_uuid }}">
             </div>
           </h4>
         </div>
@@ -203,25 +217,26 @@
 
       {# Assay tables #}
       {% for assay in study.assays.all %}
-        <div class="card omics-ss-data-card" id="assay{{ assay.pk }}">
+        <a class="omics-ss-anchor" id="{{ assay.omics_uuid }}"></a>
+        <div class="card omics-ss-data-card">
           <div class="card-header">
-            <h4>Assay: {% get_assay_title assay %}
+              <h4><span class="font-weight-bold text-danger">Assay</span> <span class="text-muted">|</span> {% get_assay_title assay %}
               <div class="input-group omics-header-input-group pull-right"
                    style="width: 400px;" table-id="{% get_table_id assay %}">
                 <div class="input-group-prepend">
                   <button class="btn btn-secondary omics-ss-data-drag-toggle"
-                          type="submit" id="omics-ss-data-drag-toggle-{{ assay.pk }}"
+                          type="submit" id="omics-ss-data-drag-toggle-{{ assay.omics_uuid }}"
                           drag-mode="0"><i class="fa fa-mouse-pointer"></i> Drag</button>
                   <button class="btn btn-secondary omics-ss-assay-hide"
-                          type="submit" id="omics-ss-assay-hide-{{ assay.pk }}"
+                          type="submit" id="omics-ss-assay-hide-{{ assay.omics_uuid }}"
                           assay-hide-mode="1"><i class="fa fa-eye-slash"></i> Study</button>
                   <button class="btn btn-secondary omics-ss-data-excel"
-                        type="submit" id="omics-ss-data-drag-excel-{{ study.pk }}">
+                        type="submit" id="omics-ss-data-drag-excel-{{ study.omics_uuid }}">
                         <i class="fa fa-file-excel-o"></i> Excel</button>
                 </div>
                 <input class="form-control omics-ss-data-filter"
-                       type="text" placeholder="Filter" aria-label="Filter assay {{ assay.pk }}"
-                       id="omics-ss-data-filter-{{ assay.pk }}">
+                       type="text" placeholder="Filter" aria-label="Filter assay {{ assay.omics_uuid }}"
+                       id="omics-ss-data-filter-{{ assay.omics_uuid }}">
               </div>
             </h4>
           </div>

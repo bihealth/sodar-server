@@ -135,9 +135,8 @@ def get_material_type(material):
 @register.simple_tag
 def get_material_link(material):
     """Return link to material"""
-    url = reverse('project_sheets', kwargs={
-        'project': material.get_project().pk,
-        'study': material.study.pk})
+    url = reverse(
+        'samplesheets:project_sheets', kwargs={'study': material.study.pk})
 
     if material.assay:
         url += '#assay{}'.format(material.assay.pk)

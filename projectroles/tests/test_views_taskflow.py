@@ -58,11 +58,11 @@ class TaskflowMixin:
 
         with self.login(self.user):
             response = self.client.post(
-                reverse('project_create'),
+                reverse('projectroles:create'),
                 values)
             project = Project.objects.get(title=title)
             self.assertRedirects(
-                response, reverse('project_detail', kwargs={'pk': project.pk}))
+                response, reverse('projectroles:detail', kwargs={'pk': project.omics_uuid}))
 
         project = Project.objects.get(title=title)
         owner_as = project.get_owner()
@@ -78,13 +78,13 @@ class TaskflowMixin:
 
         with self.login(self.user):
             response = self.client.post(
-                reverse('role_create', kwargs={
-                    'project': project.pk}),
+                reverse('projectroles:create', kwargs={
+                    'project': project.omics_uuid}),
                 values)
             role_as = RoleAssignment.objects.get(
                 project=project, user=user)
             self.assertRedirects(response, reverse(
-                'project_roles', kwargs={'pk': project.pk}))
+                'project_roles', kwargs={'pk': project.omics_uuid}))
 
         role_as = RoleAssignment.objects.get(project=project, user=user)
         return role_as
@@ -144,7 +144,7 @@ class TestProjectCreateView(TestViewsTaskflowBase, TaskflowMixin):
 
         with self.login(self.user):
             response = self.client.post(
-                reverse('project_create'),
+                reverse('projectroles:create'),
                 values)
 
         # Assert Project state after creation
@@ -179,7 +179,9 @@ class TestProjectCreateView(TestViewsTaskflowBase, TaskflowMixin):
         # Assert redirect
         with self.login(self.user):
             self.assertRedirects(
-                response, reverse('project_detail', kwargs={'pk': project.pk}))
+                response, reverse(
+                    'projectroles:detail',
+                    kwargs={'project': project.omics_uuid}))
 
 
 class TestProjectUpdateView(TestViewsTaskflowBase, TaskflowMixin):
@@ -211,7 +213,9 @@ class TestProjectUpdateView(TestViewsTaskflowBase, TaskflowMixin):
 
         with self.login(self.user):
             response = self.client.post(
-                reverse('project_update', kwargs={'pk': self.project.pk}),
+                reverse(
+                    'projectroles:update',
+                    kwargs={'project': self.project.omics_uuid}),
                 values)
 
         # Assert Project state after update
@@ -234,7 +238,9 @@ class TestProjectUpdateView(TestViewsTaskflowBase, TaskflowMixin):
         # Assert redirect
         with self.login(self.user):
             self.assertRedirects(
-                response, reverse('project_detail', kwargs={'pk': project.pk}))
+                response, reverse(
+                    'projectroles:detail',
+                    kwargs={'project': project.omics_uuid}))
 
 
 class TestRoleAssignmentCreateView(TestViewsTaskflowBase, TaskflowMixin):
@@ -268,8 +274,9 @@ class TestRoleAssignmentCreateView(TestViewsTaskflowBase, TaskflowMixin):
 
         with self.login(self.user):
             response = self.client.post(
-                reverse('role_create', kwargs={
-                    'project': self.project.pk}),
+                reverse(
+                    'projectroles:role_create',
+                    kwargs={'project': self.project.omics_uuid}),
                 values)
 
         # Assert RoleAssignment state after creation
@@ -289,7 +296,8 @@ class TestRoleAssignmentCreateView(TestViewsTaskflowBase, TaskflowMixin):
         # Assert redirect
         with self.login(self.user):
             self.assertRedirects(response, reverse(
-                'project_roles', kwargs={'pk': self.project.pk}))
+                'projectroles:roles',
+                kwargs={'project': self.project.omics_uuid}))
 
 
 class TestRoleAssignmentUpdateView(TestViewsTaskflowBase, TaskflowMixin):
@@ -324,9 +332,9 @@ class TestRoleAssignmentUpdateView(TestViewsTaskflowBase, TaskflowMixin):
 
         with self.login(self.user):
             response = self.client.post(
-                reverse('role_update', kwargs={
-                    'project': self.project.pk,
-                    'pk': self.role_as.pk}),
+                reverse(
+                    'projectroles:role_update',
+                    kwargs={'roleassignment': self.role_as.omics_uuid}),
                 values)
 
         # Assert RoleAssignment state after update
@@ -346,7 +354,8 @@ class TestRoleAssignmentUpdateView(TestViewsTaskflowBase, TaskflowMixin):
         # Assert redirect
         with self.login(self.user):
             self.assertRedirects(response, reverse(
-                'project_roles', kwargs={'pk': self.project.pk}))
+                'projectroles:roles',
+                kwargs={'project': self.project.omics_uuid}))
 
 
 class TestRoleAssignmentDeleteView(TestViewsTaskflowBase, TaskflowMixin):
@@ -377,9 +386,9 @@ class TestRoleAssignmentDeleteView(TestViewsTaskflowBase, TaskflowMixin):
 
         with self.login(self.user):
             response = self.client.post(
-                reverse('role_delete', kwargs={
-                    'project': self.project.pk,
-                    'pk': self.role_as.pk}),
+                reverse(
+                    'projectroles:role_delete',
+                    kwargs={'roleassignment': self.role_as.omics_uuid}),
                 {'omics_url': self.live_server_url})
 
         # Assert RoleAssignment state after update
@@ -388,7 +397,8 @@ class TestRoleAssignmentDeleteView(TestViewsTaskflowBase, TaskflowMixin):
         # Assert redirect
         with self.login(self.user):
             self.assertRedirects(response, reverse(
-                'project_roles', kwargs={'pk': self.project.pk}))
+                'projectroles:roles',
+                kwargs={'project': self.project.omics_uuid}))
 
 
 class TestProjectInviteAcceptView(
@@ -431,12 +441,13 @@ class TestProjectInviteAcceptView(
 
         with self.login(self.user_new):
             response = self.client.get(reverse(
-                'role_invite_accept',
+                'projectroles:invite_accept',
                 kwargs={'secret': self.invite.secret}),
                 {'omics_url': self.live_server_url})
 
             self.assertRedirects(response, reverse(
-                'project_detail', kwargs={'pk': self.project.pk}))
+                'projectroles:detail',
+                kwargs={'project': self.project.omics_uuid}))
 
             # Assert postconditions
             self.assertEqual(

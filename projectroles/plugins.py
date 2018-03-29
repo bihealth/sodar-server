@@ -31,7 +31,7 @@ class ProjectAppPluginPoint(PluginPoint):
     # TODO: Implement this in your app plugin
     icon = 'question-circle-o'
 
-    #: Entry point URL ID (must take project pk as "project" argument)
+    #: Entry point URL ID (must take project omics_uuid as "project" argument)
     # TODO: Implement this in your app plugin
     entry_point_url_id = 'home'
 
@@ -91,30 +91,30 @@ class ProjectAppPluginPoint(PluginPoint):
         # TODO: Implement this in your app plugin
         return None
 
-    def get_object(self, model, pk):
+    def get_object(self, model, uuid):
         """
-        Return object based on the model class string and the object's pk.
+        Return object based on the model class string and the object's UUID.
         :param model: Object model class
-        :param pk: Pk of the referred object
+        :param uuid: omics_uuid of the referred object
         :return: Model object or None if not found
         :raise: NameError if model corresponding to class_str is not found
         """
         # NOTE: we raise NameError because it shouldn't happen (missing import)
         try:
-            return model.objects.get(pk=pk)
+            return model.objects.get(omics_uuid=uuid)
 
         except model.DoesNotExist:
             return None
 
-    def get_object_link(self, model_str, pk):
+    def get_object_link(self, model_str, uuid):
         """
         Return URL for referring to a object used by the app, along with a
         label to be shown to the user for linking.
         :param model_str: Object class (string)
-        :param pk: Pk of the referred object
+        :param uuid: omics_uuid of the referred object
         :return: Dict or None if not found
         """
-        obj = self.get_object(eval(model_str), pk)
+        obj = self.get_object(eval(model_str), uuid)
 
         if not obj:
             return None

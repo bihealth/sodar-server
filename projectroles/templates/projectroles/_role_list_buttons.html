@@ -11,7 +11,7 @@
 
     {# Add Role #}
     {% if can_update_members %}
-      <a class="dropdown-item" href="{% url 'role_create' project=object.pk %}"
+      <a class="dropdown-item" href="{% url 'projectroles:role_create' project=project.omics_uuid %}"
          title="Add Member"
          id="omics-pr-btn-role-list-create">
         <i class="fa fa-fw fa-user-plus"></i> Add Member
@@ -20,7 +20,7 @@
 
     {# Send Invite #}
     {% if can_invite %}
-      <a class="dropdown-item" href="{% url 'role_invite_create' project=object.pk %}"
+      <a class="dropdown-item" href="{% url 'projectroles:invite_create' project=project.omics_uuid %}"
          title="Send Invite"
          id="omics-pr-btn-role-list-invite">
         <i class="fa fa-fw fa-send"></i> Send Invite
@@ -29,7 +29,7 @@
 
     {# View Roles #}
     {% if can_update_members and request.resolver_match.url_name != 'project_roles' %}
-      <a class="dropdown-item" href="{% url 'project_roles' pk=object.pk %}"
+      <a class="dropdown-item" href="{% url 'projectroles:roles' project=project.omics_uuid %}"
          title="View Members"
          id="omics-pr-btn-role-list-roles">
         <i class="fa fa-fw fa-users"></i> View Members
@@ -38,7 +38,7 @@
 
     {# View Invites #}
     {% if can_invite and request.resolver_match.url_name != 'role_invites' %}
-      <a class="dropdown-item" href="{% url 'role_invites' project=object.pk %}"
+      <a class="dropdown-item" href="{% url 'projectroles:invites' project=project.omics_uuid %}"
          title="View Invites"
          id="omics-pr-btn-role-list-invites">
         <i class="fa fa-fw fa-envelope"></i> View Invites
@@ -47,7 +47,7 @@
 
     {# Import Roles #}
     {% if can_import %}
-      <a class="dropdown-item" href="{% url 'role_import' project=object.pk %}"
+      <a class="dropdown-item" href="{% url 'projectroles:role_import' project=project.omics_uuid %}"
          title="Import Members"
          id="omics-pr-btn-role-list-import">
         <i class="fa fa-fw fa-copy"></i> Import Members

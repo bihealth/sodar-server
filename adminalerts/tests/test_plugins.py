@@ -12,7 +12,7 @@ from .test_models import AdminAlertMixin
 
 PLUGIN_NAME = 'adminalerts'
 PLUGIN_TITLE = 'Alerts'
-PLUGIN_URL_ID = 'alert_list'
+PLUGIN_URL_ID = 'adminalerts:list'
 
 
 # NOTE: Setting up the plugin is done during migration

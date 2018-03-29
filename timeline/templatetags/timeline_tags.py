@@ -35,7 +35,8 @@ def get_timestamp(obj):
 def get_app_url(event):
     # Projectroles is a special case
     if event.app == 'projectroles':
-        return reverse('project_detail', kwargs={'pk': event.project.pk})
+        return reverse(
+            'projectroles:detail', kwargs={'project': event.project.omics_uuid})
 
     else:
         app_plugin = ProjectAppPluginPoint.get_plugin(event.app)
@@ -43,7 +44,7 @@ def get_app_url(event):
         if app_plugin:
             return reverse(
                 app_plugin.entry_point_url_id,
-                kwargs={'project': event.project.pk})
+                kwargs={'project': event.project.omics_uuid})
 
     return '#'
 
@@ -58,9 +59,10 @@ def get_event_description(event, request=None):
 @register.simple_tag
 def get_event_details(event):
     """Return HTML data for event detail popover"""
-    ret = '<table class="table table-striped omics-card-table omics-tl-table-detail">'
-    ret += '\n<thead>\n<th>Timestamp</th>\n<th>Description</th>\n' \
-           '<th>Status</th>\n</thead>\n<tbody>'
+    ret = '<table class="table table-striped omics-card-table ' \
+          'omics-tl-table-detail">\n' \
+          '<thead>\n<th>Timestamp</th>\n<th>Description</th>\n' \
+          '<th>Status</th>\n</thead>\n<tbody>'
 
     status_changes = event.get_status_changes(reverse=True)
 

@@ -9,18 +9,18 @@
   <div class="dropdown-menu dropdown-menu-right">
 
     {% for s in investigation.studies.all %}
-      <a class="dropdown-item" href="{% if s != study %}{% url 'project_sheets' project=project.pk study=s.pk %}{% endif %}#study{{ s.pk }}">
+      <a class="dropdown-item" href="{% if s != study %}{% url 'samplesheets:project_sheets' study=s.omics_uuid %}{% endif %}#{{ s.omics_uuid }}">
         <i class="fa fa-fw fa-list-alt"></i> Study: {% get_study_title s %}
       </a>
 
       {% for a in s.assays.all %}
-        <a class="dropdown-item" href="{% if s != study %}{% url 'project_sheets' project=project.pk study=s.pk %}{% endif %}#assay{{ a.pk }}">
+        <a class="dropdown-item" href="{% if s != study %}{% url 'samplesheets:project_sheets' study=s.omics_uuid %}{% endif %}#{{ a.omics_uuid }}">
           <i class="fa fa-fw fa-table ml-4"></i> Assay: {% get_assay_title a %}
         </a>
       {% endfor %}
     {% endfor %}
 
-    <a class="dropdown-item" href="{% url 'project_sheets' project=project.pk subpage='info' %}">
+    <a class="dropdown-item" href="{% url 'samplesheets:project_sheets' project=project.omics_uuid subpage='info' %}">
       <i class="fa fa-fw fa-sitemap"></i> Overview
     </a>
   </div>

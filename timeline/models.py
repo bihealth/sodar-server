@@ -32,19 +32,19 @@ DEFAULT_MESSAGES = {
 class ProjectEventManager(models.Manager):
     """Manager for custom table-level ProjectEvent queries"""
     def get_object_events(
-            self, project_pk, object_model, object_pk, order_by='-pk'):
+            self, project, object_model, object_uuid, order_by='-pk'):
         """
         Return events with object reference linked
-        :param project_pk: Project pk
+        :param project: Project object
         :param object_model: Object model (string)
-        :param object_pk: Pk of the original object
+        :param object_uuid: omics_uuid of the original object
         :param order_by: Ordering (default = pk descending)
         :return: Queryset
         """
         return ProjectEvent.objects.filter(
-            project=project_pk,
+            project=project,
             event_objects__object_model=object_model,
-            event_objects__object_pk=object_pk).order_by(order_by)
+            event_objects__object_uuid=object_uuid).order_by(order_by)
 
 
 class ProjectEvent(models.Model):
@@ -92,7 +92,7 @@ class ProjectEvent(models.Model):
     omics_uuid = models.UUIDField(
         default=uuid.uuid4,
         unique=True,
-        help_text='UUID for the event')
+        help_text='Event omics UUID')
 
     # Set manager for custom queries
     objects = ProjectEventManager()
@@ -138,7 +138,7 @@ class ProjectEvent(models.Model):
         ref.label = label
         ref.name = name
         ref.object_model = obj.__class__.__name__
-        ref.object_pk = obj.pk
+        ref.object_uuid = obj.omics_uuid
 
         if extra_data:
             ref.extra_data = extra_data
@@ -204,11 +204,12 @@ class ProjectEventObjectRef(models.Model):
         blank=False,
         help_text='Object model as string')
 
-    #: Pk of the object
-    object_pk = models.IntegerField(
-        null=False,
-        blank=False,
-        help_text='Pk of the object')
+    #: Object Omics UUID
+    object_uuid = models.UUIDField(
+        null=True,
+        blank=True,
+        unique=False,
+        help_text='Object Omics UUID')
 
     #: Additional data related to the object as JSON
     extra_data = JSONField(

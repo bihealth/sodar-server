@@ -17,13 +17,13 @@
   {# Name/link column #}
   <td>
     {% if item|get_class == 'Folder' %}
-      <a href="{% url 'project_files' project=project.pk folder=item.pk %}">{% autoescape off %}{{ item.name|force_wrap:24 }}{% endautoescape %}</a>
+      <a href="{% url 'filesfolders:list' folder=item.omics_uuid %}">{% autoescape off %}{{ item.name|force_wrap:24 }}{% endautoescape %}</a>
     {% elif item|get_class == 'HyperLink' %}
       <a href="{{ item.url }}" target="_blank">{% autoescape off %}{{ item.name|force_wrap:24 }}{% endautoescape %}</a>
     {% elif item|get_class == 'File' %}
-      <a href="{% url 'file_serve' pk=item.pk project=item.project.pk file_name=item.name %}">{% autoescape off %}{{ item.name|force_wrap:24 }}{% endautoescape %}</a>
+      <a href="{% url 'filesfolders:file_serve' file=item.omics_uuid file_name=item.name %}">{% autoescape off %}{{ item.name|force_wrap:24 }}{% endautoescape %}</a>
       {% if allow_public_links and item.public_url and can_share_link %}
-        <a title="Public Link" href="{% url 'file_public_link' pk=item.pk project=item.project.pk %}" id="omics-ff-link-public-{{ item.pk }}" data-toggle="tooltip" data-placement="top">
+        <a title="Public Link" href="{% url 'filesfolders:file_public_link' file=item.omics_uuid %}" id="omics-ff-link-public-{{ item.omics_uuid }}" data-toggle="tooltip" data-placement="top">
           <i class="fa fa-link" aria-hidden="false"></i>
         </a>
       {% endif %}
@@ -51,7 +51,7 @@
     <td class="omics-ff-action-column">
       {% if can_update_all or item.owner == request.user and can_update_own %}
         {% if item|get_class == 'Folder' %}
-          {% include 'filesfolders/_folder_buttons.html' with pk=item.pk %}
+          {% include 'filesfolders/_folder_buttons.html' with item_uuid=item.uuid %}
         {% elif item|get_class == 'HyperLink' %}
           {% include 'filesfolders/_hyperlink_buttons.html' with link=item %}
         {% elif item|get_class == 'File' %}
@@ -62,7 +62,9 @@
     {# Checkbox column #}
     <td>
       {% if can_update_all or item.owner == request.user and can_update_own %}
-        <input class="omics-checkbox" type="checkbox" id="omics-ff-checkbox-{{ item|get_class }}-{{ item.pk }}" name="batch-item-{{ item|get_class }}-{{ item.pk }}" value="1" />
+        <input class="omics-checkbox" type="checkbox"
+               id="omics-ff-checkbox-{{ item|get_class }}-{{ item.omics_uuid }}"
+               name="batch_item_{{ item|get_class }}_{{ item.omics_uuid }}" value="1" />
       {% endif %}
     </td>
   {% endif %}

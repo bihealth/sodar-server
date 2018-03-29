@@ -1,6 +1,6 @@
 {% extends 'projectroles/project_base.html' %}
 {% load rules %}
-{% block title %}User Roles for {{ object.title }}{% endblock title %}
+{% block title %}Members of {{ project.title }}{% endblock title %}
 
 {% block css %}
   {{ block.super }}
@@ -34,18 +34,18 @@
 
 {% block projectroles_extend %}
 
-{% has_perm 'projectroles.update_project_members' request.user object as can_update_members %}
-{% has_perm 'projectroles.update_project_staff' request.user object as can_update_staff %}
-{% has_perm 'projectroles.update_project_delegate' request.user object as can_update_delegate %}
-{% has_perm 'projectroles.invite_users' request.user object as can_invite %}
-{% has_perm 'projectroles.import_roles' request.user object as can_import %}
+{% has_perm 'projectroles.update_project_members' request.user project as can_update_members %}
+{% has_perm 'projectroles.update_project_staff' request.user project as can_update_staff %}
+{% has_perm 'projectroles.update_project_delegate' request.user project as can_update_delegate %}
+{% has_perm 'projectroles.invite_users' request.user project as can_invite %}
+{% has_perm 'projectroles.import_roles' request.user project as can_import %}
 
-<div class="row omics-subtitle-container bg-white sticky-top">
+<div class="row omics-subtitle-container omics-subtitle-shadow bg-white sticky-top">
   <h3>
     <i class="fa fa-users"></i> Project Members
   </h3>
   {% if can_update_members or can_invite %}
-    {% include 'projectroles/_role_list_buttons.html' with object=object can_update_members=can_update_members can_invite=can_invite %}
+    {% include 'projectroles/_role_list_buttons.html' with project=project can_update_members=can_update_members can_invite=can_invite %}
   {% endif %}
 </div>
 
@@ -78,7 +78,7 @@
              <td><strong>project delegate <i class="fa fa-star-half-o" aria-hidden="true"></i></strong></td>
              <td>
                {% if can_update_delegate %}
-                 {% include 'projectroles/_project_roles_buttons.html' with pk=object.pk user=delegate.user assignment_id=delegate.pk %}
+                 {% include 'projectroles/_project_roles_buttons.html' with user=delegate.user assignment_id=delegate.omics_uuid %}
                {% endif %}
              </td>
            </tr>
@@ -91,7 +91,7 @@
              <td>{{ s_member.role.name }}</td>
              <td>
                {% if can_update_staff %}
-                 {% include 'projectroles/_project_roles_buttons.html' with pk=object.pk user=s_member.user assignment_id=s_member.id %}
+                 {% include 'projectroles/_project_roles_buttons.html' with user=s_member.user assignment_id=s_member.omics_uuid %}
                {% endif %}
              </td>
            </tr>
@@ -104,7 +104,7 @@
              <td>{{ member.role.name }}</td>
              <td>
                {% if can_update_members %}
-                 {% include 'projectroles/_project_roles_buttons.html' with pk=object.pk user=member.user assignment_id=member.id %}
+                 {% include 'projectroles/_project_roles_buttons.html' with user=member.user assignment_id=member.omics_uuid %}
                {% endif %}
              </td>
            </tr>

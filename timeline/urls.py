@@ -2,15 +2,18 @@ from django.conf.urls import url
 
 from . import views
 
+
+app_name = 'timeline'
+
 urlpatterns = [
     url(
-        regex=r'^(?P<project>\d+)$',
+        regex=r'^(?P<project>[0-9a-f-]+)$',
         view=views.ProjectTimelineView.as_view(),
         name='project_timeline',
     ),
-    url(
-        regex=r'^(?P<project>\d+)/(?P<object_model>[^\0]{0,256})/'
-              r'(?P<object_pk>\d+)$',
+    url(    # TODO: Refactor this to use the object ref model uuid?
+        regex=r'^(?P<project>[0-9a-f-]+)/(?P<object_model>[\w-]+)/'
+              r'(?P<object_uuid>[0-9a-f-]+)$',
         view=views.ObjectTimelineView.as_view(),
         name='object_timeline',
     ),

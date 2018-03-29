@@ -14,9 +14,9 @@
     {# Folder #}
     <a class="dropdown-item"
       {% if folder %}
-        href="{% url 'folder_create' project=project.pk folder=folder.pk %}">
+        href="{% url 'filesfolders:folder_create' folder=folder.omics_uuid %}">
       {% else %}
-        href="{% url 'folder_create' project=project.pk %}">
+        href="{% url 'filesfolders:folder_create' project=project.omics_uuid %}">
       {% endif %}
         <i class="fa fa-fw fa-folder-open"></i> Add Folder
       </a>
@@ -24,9 +24,9 @@
     {# Hyperlink #}
     <a class="dropdown-item"
       {% if folder %}
-        href="{% url 'hyperlink_create' project=project.pk folder=folder.pk %}">
+        href="{% url 'filesfolders:hyperlink_create' folder=folder.omics_uuid %}">
       {% else %}
-        href="{% url 'hyperlink_create' project=project.pk %}">
+        href="{% url 'filesfolders:hyperlink_create' project=project.omics_uuid %}">
       {% endif %}
         <i class="fa fa-fw fa-external-link"></i> Add Link
       </a>
@@ -34,9 +34,9 @@
     {# File #}
     <a class="dropdown-item"
       {% if folder %}
-        href="{% url 'file_create' project=project.pk folder=folder.pk %}">
+        href="{% url 'filesfolders:file_create' folder=folder.omics_uuid %}">
       {% else %}
-        href="{% url 'file_create' project=project.pk %}">
+        href="{% url 'filesfolders:file_create' project=project.omics_uuid %}">
       {% endif %}
         <i class="fa fa-fw fa-upload"></i> Upload File
       </a>

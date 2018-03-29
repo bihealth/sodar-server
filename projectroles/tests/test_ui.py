@@ -358,7 +358,7 @@ class TestProjectDetail(TestUIBase):
                 'omics-pr-link-project-star'])]
 
         url = reverse(
-            'project_detail', kwargs={'pk': self.project.pk})
+            'projectroles:detail', kwargs={'project': self.project.omics_uuid})
 
         self.assert_element_set(expected, PROJECT_LINK_IDS, url)
 
@@ -383,7 +383,8 @@ class TestProjectDetail(TestUIBase):
             (sub_user, [
                 'omics-pr-link-project-star'])]
         url = reverse(
-            'project_detail', kwargs={'pk': self.category.pk})
+            'projectroles:detail',
+            kwargs={'project': self.category.omics_uuid})
 
         self.assert_element_set(expected, PROJECT_LINK_IDS, url)
 
@@ -402,7 +403,9 @@ class TestProjectRoles(TestUIBase):
         expected_false = [
             self.as_contributor.user,
             self.as_guest.user]
-        url = reverse('project_roles', kwargs={'pk': self.project.pk})
+        url = reverse(
+            'projectroles:roles',
+            kwargs={'project': self.project.omics_uuid})
 
         self.assert_element_exists(
             expected_true, url, 'omics-pr-btn-role-list', True)
@@ -421,7 +424,9 @@ class TestProjectRoles(TestUIBase):
             self.as_staff.user,
             self.as_contributor.user,
             self.as_guest.user]
-        url = reverse('project_roles', kwargs={'pk': self.project.pk})
+        url = reverse(
+            'projectroles:roles',
+            kwargs={'project': self.project.omics_uuid})
 
         self.assert_element_exists(
             expected_true, url, 'omics-pr-btn-role-list-invite', True)
@@ -440,7 +445,9 @@ class TestProjectRoles(TestUIBase):
         expected_false = [
             self.as_contributor.user,
             self.as_guest.user]
-        url = reverse('project_roles', kwargs={'pk': self.project.pk})
+        url = reverse(
+            'projectroles:roles',
+            kwargs={'project': self.project.omics_uuid})
 
         self.assert_element_exists(
             expected_true, url, 'omics-pr-btn-role-list-create', True)
@@ -458,12 +465,16 @@ class TestProjectRoles(TestUIBase):
             (self.as_staff.user, 2),
             (self.as_contributor.user, 0),
             (self.as_guest.user, 0)]
-        url = reverse('project_roles', kwargs={'pk': self.project.pk})
+        url = reverse(
+            'projectroles:roles',
+            kwargs={'project': self.project.omics_uuid})
         self.assert_element_count(expected, url, 'omics-pr-btn-grp-role')
 
     def test_role_preview(self):
         """Test visibility of role preview popup"""
-        url = reverse('role_create', kwargs={'project': self.project.pk})
+        url = reverse(
+            'projectroles:role_create',
+            kwargs={'project': self.project.omics_uuid})
         self.login_and_redirect(self.as_owner.user, url)
 
         button = self.selenium.find_element_by_id('omics-pr-email-preview-link')
@@ -477,7 +488,9 @@ class TestProjectRoles(TestUIBase):
 
     def test_invite_preview(self):
         """Test visibility of invite preview popup"""
-        url = reverse('role_invite_create', kwargs={'project': self.project.pk})
+        url = reverse(
+            'projectroles:invite_create',
+            kwargs={'project': self.project.omics_uuid})
         self.login_and_redirect(self.as_owner.user, url)
 
         button = self.selenium.find_element_by_id(
@@ -501,7 +514,9 @@ class TestProjectInviteList(TestUIBase, ProjectInviteMixin):
             self.superuser,
             self.as_owner.user,
             self.as_delegate.user]
-        url = reverse('role_invites', kwargs={'project': self.project.pk})
+        url = reverse(
+            'projectroles:invites',
+            kwargs={'project': self.project.omics_uuid})
 
         self.assert_element_exists(
             expected_true, url, 'omics-pr-btn-role-list', True)
@@ -513,7 +528,9 @@ class TestProjectInviteList(TestUIBase, ProjectInviteMixin):
             self.superuser,
             self.as_owner.user,
             self.as_delegate.user]
-        url = reverse('role_invites', kwargs={'project': self.project.pk})
+        url = reverse(
+            'projectroles:invites',
+            kwargs={'project': self.project.omics_uuid})
 
         self.assert_element_exists(
             expected_true, url, 'omics-pr-btn-role-list-invite', True)
@@ -525,7 +542,9 @@ class TestProjectInviteList(TestUIBase, ProjectInviteMixin):
             self.superuser,
             self.as_owner.user,
             self.as_delegate.user]
-        url = reverse('role_invites', kwargs={'project': self.project.pk})
+        url = reverse(
+            'projectroles:invites',
+            kwargs={'project': self.project.omics_uuid})
 
         self.assert_element_exists(
             expected_true, url, 'omics-pr-btn-role-list-create', True)
@@ -545,7 +564,9 @@ class TestProjectInviteList(TestUIBase, ProjectInviteMixin):
             (self.superuser, 1),
             (self.as_owner.user, 1),
             (self.as_delegate.user, 1)]
-        url = reverse('role_invites', kwargs={'project': self.project.pk})
+        url = reverse(
+            'projectroles:invites',
+            kwargs={'project': self.project.omics_uuid})
         self.assert_element_count(expected, url, 'omics-pr-btn-grp-invite')
 
 
@@ -560,13 +581,17 @@ class TestPlugins(TestUIBase):
     def test_plugin_links(self):
         """Test visibility of app plugin links"""
         expected = [(self.superuser, self.plugin_count)]
-        url = reverse('project_detail', kwargs={'pk': self.project.pk})
+        url = reverse(
+            'projectroles:detail',
+            kwargs={'project': self.project.omics_uuid})
         self.assert_element_count(expected, url, 'omics-pr-link-app-plugin')
 
     def test_plugin_cards(self):
         """Test visibility of app plugin cards"""
         expected = [(self.superuser, self.plugin_count)]
-        url = reverse('project_detail', kwargs={'pk': self.project.pk})
+        url = reverse(
+            'projectroles:detail',
+            kwargs={'project': self.project.omics_uuid})
         self.assert_element_count(expected, url, 'omics-pr-app-item')
 
 
@@ -587,7 +612,9 @@ class TestProjectSidebar(TestUIBase, ProjectInviteMixin):
 
     def test_render_detail(self):
         """Test visibility of sidebar in the project_detail view"""
-        url = reverse('project_detail', kwargs={'pk': self.project.pk})
+        url = reverse(
+            'projectroles:detail',
+            kwargs={'project': self.project.omics_uuid})
 
         self.assert_element_exists(
             [self.superuser], url, 'omics-pr-sidebar', True)
@@ -601,7 +628,9 @@ class TestProjectSidebar(TestUIBase, ProjectInviteMixin):
 
     def test_app_links(self):
         """Test visibility of app links"""
-        url = reverse('project_detail', kwargs={'pk': self.project.pk})
+        url = reverse(
+            'projectroles:detail',
+            kwargs={'project': self.project.omics_uuid})
         expected = [(self.superuser, len(get_active_plugins()))]
 
         self.assert_element_count(
@@ -609,7 +638,9 @@ class TestProjectSidebar(TestUIBase, ProjectInviteMixin):
 
     def test_link_active_detail(self):
         """Test active status of link on the project_detail page"""
-        url = reverse('project_detail', kwargs={'pk': self.project.pk})
+        url = reverse(
+            'projectroles:detail',
+            kwargs={'project': self.project.omics_uuid})
 
         self.assert_element_active(
             self.superuser, 'omics-pr-nav-project-detail',
@@ -619,43 +650,49 @@ class TestProjectSidebar(TestUIBase, ProjectInviteMixin):
         """Test active status of link on the project roles page"""
         self.assert_element_active(
             self.superuser, 'omics-pr-nav-project-roles', self.sidebar_ids,
-            reverse('project_roles', kwargs={'pk': self.project.pk}))
+            reverse(
+                'projectroles:roles',
+                kwargs={'project': self.project.omics_uuid}))
 
     def test_link_active_role_create(self):
         """Test active status of link on the role creation page"""
         self.assert_element_active(
             self.superuser, 'omics-pr-nav-project-roles', self.sidebar_ids,
-            reverse('role_create', kwargs={'project': self.project.pk}))
+            reverse(
+                'projectroles:role_create',
+                kwargs={'project': self.project.omics_uuid}))
 
     def test_link_active_role_update(self):
         """Test active status of link on the role update page"""
         self.assert_element_active(
             self.superuser, 'omics-pr-nav-project-roles', self.sidebar_ids,
             reverse(
-                'role_update', kwargs={
-                    'project': self.project.pk,
-                    'pk': self.as_contributor.pk}))
+                'projectroles:role_update',
+                kwargs={'roleassignment': self.as_contributor.omics_uuid}))
 
     def test_link_active_role_delete(self):
         """Test active status of link on the role deletion page"""
         self.assert_element_active(
             self.superuser, 'omics-pr-nav-project-roles', self.sidebar_ids,
             reverse(
-                'role_delete', kwargs={
-                    'project': self.project.pk,
-                    'pk': self.as_contributor.pk}))
+                'projectroles:role_delete',
+                kwargs={'roleassignment': self.as_contributor.omics_uuid}))
 
     def test_link_active_role_invites(self):
         """Test active status of link on the invites page"""
         self.assert_element_active(
             self.superuser, 'omics-pr-nav-project-roles', self.sidebar_ids,
-            reverse('role_invites', kwargs={'project': self.project.pk}))
+            reverse(
+                'projectroles:invites',
+                kwargs={'project': self.project.omics_uuid}))
 
     def test_link_active_role_invite_create(self):
         """Test active status of link on the invite create page"""
         self.assert_element_active(
             self.superuser, 'omics-pr-nav-project-roles', self.sidebar_ids,
-            reverse('role_invite_create', kwargs={'project': self.project.pk}))
+            reverse(
+                'projectroles:invite_create',
+                kwargs={'project': self.project.omics_uuid}))
 
     def test_link_active_role_invite_resend(self):
         """Test active status of link on the invite resend page"""
@@ -669,9 +706,8 @@ class TestProjectSidebar(TestUIBase, ProjectInviteMixin):
         self.assert_element_active(
             self.superuser, 'omics-pr-nav-project-roles', self.sidebar_ids,
             reverse(
-                'role_invite_resend', kwargs={
-                    'project': self.project.pk,
-                    'pk': invite.pk}))
+                'projectroles:invite_resend',
+                kwargs={'projectinvite': invite.omics_uuid}))
 
     def test_link_active_role_invite_revoke(self):
         """Test active status of link on the invite revoke page"""
@@ -685,13 +721,14 @@ class TestProjectSidebar(TestUIBase, ProjectInviteMixin):
         self.assert_element_active(
             self.superuser, 'omics-pr-nav-project-roles', self.sidebar_ids,
             reverse(
-                'role_invite_revoke', kwargs={
-                    'project': self.project.pk,
-                    'pk': invite.pk}))
+                'projectroles:invite_revoke',
+                kwargs={'projectinvite': invite.omics_uuid}))
 
     def test_link_active_update(self):
         """Test active status of link on the project_update page"""
-        url = reverse('project_update', kwargs={'pk': self.project.pk})
+        url = reverse(
+            'projectroles:update',
+            kwargs={'project': self.project.omics_uuid})
 
         self.assert_element_active(
             self.superuser, 'omics-pr-nav-project-update',
@@ -711,7 +748,7 @@ class TestProjectSearch(TestUIBase):
             (self.as_staff.user, 1),
             (self.as_guest.user, 1),
             (self.user_no_roles, 0)]
-        url = reverse('project_search') + '?' + urlencode({'s': 'test'})
+        url = reverse('projectroles:search') + '?' + urlencode({'s': 'test'})
         self.assert_element_count(expected, url, 'omics-pr-project-search-item')
 
     def test_search_type_project(self):
@@ -724,7 +761,7 @@ class TestProjectSearch(TestUIBase):
             (self.as_staff.user, 1),
             (self.as_guest.user, 1),
             (self.user_no_roles, 0)]
-        url = reverse('project_search') + '?' + urlencode(
+        url = reverse('projectroles:search') + '?' + urlencode(
             {'s': 'test type:project'})
         self.assert_element_count(expected, url, 'omics-pr-project-search-item')
 
@@ -738,6 +775,6 @@ class TestProjectSearch(TestUIBase):
             (self.as_staff.user, 0),
             (self.as_guest.user, 0),
             (self.user_no_roles, 0)]
-        url = reverse('project_search') + '?' + urlencode(
+        url = reverse('projectroles:search') + '?' + urlencode(
             {'s': 'test type:Jaix1au'})
         self.assert_element_count(expected, url, 'omics-pr-project-search-item')

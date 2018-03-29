@@ -1,3 +1,5 @@
+import uuid
+
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
@@ -45,6 +47,12 @@ class AdminAlert(models.Model):
     active = models.BooleanField(
         default=True,
         help_text='Alert status (for disabling the alert before expiration)')
+
+    #: Adminalerts Omics UUID
+    omics_uuid = models.UUIDField(
+        default=uuid.uuid4,
+        unique=True,
+        help_text='Adminalerts Omics UUID')
 
     def __str__(self):
         return '{}{}'.format(

@@ -24,7 +24,7 @@ def get_history_dropdown(project, obj):
     if not timeline:
         return ''
 
-    url = timeline.get_object_url(project.pk, obj)
+    url = timeline.get_object_url(project.omics_uuid, obj)
     return '<a class="dropdown-item" href="{}">\n<i class="fa fa-fw ' \
            'fa-clock-o"></i> History</a>\n'.format(url)
 
@@ -81,5 +81,5 @@ def get_user_html(user):
 def get_project_link(project):
     """Return link to project with simple title"""
     return '<a href="{}">{}</a>'.format(
-        reverse('project_detail', kwargs={'pk': project.pk}),
+        reverse('projectroles:detail', kwargs={'project': project.omics_uuid}),
         project.title)

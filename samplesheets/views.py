@@ -12,7 +12,7 @@ from django.views.generic import TemplateView, FormView
 from projectroles.models import Project
 from projectroles.plugins import get_backend_api
 from projectroles.views import LoggedInPermissionMixin, \
-    ProjectContextMixin, ProjectPermissionObjectMixin
+    ProjectContextMixin, ProjectPermissionMixin
 
 from .forms import SampleSheetImportForm
 from .models import Investigation, Study, Assay, Protocol, Process, \
@@ -24,8 +24,8 @@ APP_NAME = 'samplesheets'
 
 
 class ProjectSheetsView(
-        LoginRequiredMixin, LoggedInPermissionMixin, ProjectContextMixin,
-        ProjectPermissionObjectMixin, TemplateView):
+        LoginRequiredMixin, LoggedInPermissionMixin, ProjectPermissionMixin,
+        ProjectContextMixin, TemplateView):
     """Main view for displaying sample sheets in a project"""
 
     # Projectroles dependency
@@ -78,7 +78,7 @@ class ProjectSheetsView(
             try:
                 if 'study' in self.kwargs and self.kwargs['study']:
                     study = Study.objects.get(
-                        pk=self.kwargs['study'])
+                        omics_uuid=self.kwargs['study'])
                 else:
                     study = Study.objects.filter(
                         investigation=investigation).first()
@@ -94,8 +94,8 @@ class ProjectSheetsView(
 
 
 class SampleSheetImportView(
-        LoginRequiredMixin, LoggedInPermissionMixin, ProjectContextMixin,
-        ProjectPermissionObjectMixin, FormView):
+        LoginRequiredMixin, LoggedInPermissionMixin, ProjectPermissionMixin,
+        ProjectContextMixin, FormView):
     """Sample sheet JSON import view"""
 
     permission_required = 'samplesheets.edit_sheet'
@@ -108,13 +108,14 @@ class SampleSheetImportView(
         kwargs = super(SampleSheetImportView, self).get_form_kwargs()
 
         if 'project' in self.kwargs:
-            kwargs.update({'project': self.kwargs['project']})
+            kwargs.update({'project': self._get_project(
+                self.kwargs, self.request).omics_uuid})
 
         return kwargs
 
     def form_valid(self, form):
         timeline = get_backend_api('timeline_backend')
-        project = Project.objects.get(pk=self.kwargs['project'])
+        project = self._get_project(self.kwargs, self.request)
 
         try:
             self.object = form.save()
@@ -140,20 +141,20 @@ class SampleSheetImportView(
             messages.error(self.request, str(ex))
 
         return redirect(
-            reverse('project_sheets', kwargs={
-                'project': project.pk}))
+            reverse('samplesheets:project_sheets', kwargs={
+                'project': project.omics_uuid}))
 
 
 class SampleSheetDeleteView(
         LoginRequiredMixin, LoggedInPermissionMixin, ProjectContextMixin,
-        ProjectPermissionObjectMixin, TemplateView):
+        ProjectPermissionMixin, TemplateView):
     """Sample sheet deletion view"""
     permission_required = 'samplesheets.delete_sheet'
     template_name = 'samplesheets/samplesheet_confirm_delete.html'
 
     def post(self, request, *args, **kwargs):
         timeline = get_backend_api('timeline_backend')
-        project = Project.objects.get(pk=self.kwargs['project'])
+        project = Project.objects.get(omics_uuid=kwargs['project'])
         investigation = Investigation.objects.get(project=project)
 
         # Add event in Timeline
@@ -176,5 +177,6 @@ class SampleSheetDeleteView(
         messages.success(
             self.request, 'Sample sheets deleted.')
 
-        return HttpResponseRedirect(reverse('project_sheets', kwargs={
-            'project': project.pk}))
+        return HttpResponseRedirect(reverse(
+            'samplesheets:project_sheets',
+            kwargs={'project': project.omics_uuid}))

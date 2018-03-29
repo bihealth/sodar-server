@@ -7,6 +7,7 @@ from django.urls import reverse
 from projectroles.models import OMICS_CONSTANTS
 from projectroles.plugins import get_backend_api
 
+
 from .test_models import TestProjectEventBase, ProjectEventMixin,\
     ProjectEventStatusMixin
 from ..models import ProjectEvent, ProjectEventStatus, ProjectEventObjectRef,\
@@ -195,7 +196,7 @@ class TestTimelineAPI(
             'label': 'obj',
             'name': 'assignment',
             'object_model': temp_obj.__class__.__name__,
-            'object_pk': temp_obj.pk,
+            'object_uuid': temp_obj.omics_uuid,
             'extra_data': {'test_key': 'test_val'}}
 
         self.assertEqual(model_to_dict(ref), expected)
@@ -237,24 +238,28 @@ class TestTimelineAPI(
     def test_get_object_url(self):
         """Test get_object_url()"""
 
-        expected_url = reverse('object_timeline', kwargs={
-            'project': self.project.pk,
-            'object_model': self.user_owner.__class__.__name__,
-            'object_pk': self.user_owner.pk})
+        expected_url = reverse(
+            'timeline:object_timeline',
+            kwargs={
+                'project': self.project.omics_uuid,
+                'object_model': self.user_owner.__class__.__name__,
+                'object_uuid': self.user_owner.omics_uuid})
         url = self.timeline.get_object_url(
-            self.project.pk, self.user_owner)
+            self.project.omics_uuid, self.user_owner)
 
         self.assertEqual(expected_url, url)
 
     def test_get_object_link(self):
         """Test get_object_link()"""
 
-        expected_url = reverse('object_timeline', kwargs={
-            'project': self.project.pk,
-            'object_model': self.user_owner.__class__.__name__,
-            'object_pk': self.user_owner.pk})
+        expected_url = reverse(
+            'timeline:object_timeline',
+            kwargs={
+                'project': self.project.omics_uuid,
+                'object_model': self.user_owner.__class__.__name__,
+                'object_uuid': self.user_owner.omics_uuid})
 
         link = self.timeline.get_object_link(
-            self.project.pk, self.user_owner)
+            self.project.omics_uuid, self.user_owner)
 
         self.assertIn(expected_url, link)

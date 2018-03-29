@@ -32,9 +32,9 @@
 
 {% has_perm 'projectroles.update_project_members' request.user project as can_update_members %}
 {% has_perm 'projectroles.invite_users' request.user project as can_invite %}
-{% has_perm 'projectroles.import_roles' request.user object as can_import %}
+{% has_perm 'projectroles.import_roles' request.user project as can_import %}
 
-<div class="row omics-subtitle-container bg-white sticky-top">
+<div class="row omics-subtitle-container omics-subtitle-shadow bg-white sticky-top">
   <h3><i class="fa fa-envelope"></i> Member Invites</h3>
   {% if can_invite %}
     {% include 'projectroles/_role_list_buttons.html' with project=project can_update_members=can_update_members can_invite=can_invite %}
@@ -64,7 +64,7 @@
                <td>{{ invite.date_expire|date:'Y-m-d H:i' }}</td>
                <td>
                  {% if can_invite %}
-                   {% include 'projectroles/_project_invites_buttons.html' with pk=project.pk invite_id=invite.id %}
+                   {% include 'projectroles/_project_invites_buttons.html' with project=project invite_uuid=invite.omics_uuid %}
                  {% endif %}
                </td>
              </tr>

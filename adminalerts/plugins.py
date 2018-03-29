@@ -28,7 +28,7 @@ class SiteAppPlugin(SiteAppPluginPoint):
     description = 'Administrator alerts to be shown for users'
 
     #: Entry point URL ID
-    entry_point_url_id = 'alert_list'
+    entry_point_url_id = 'adminalerts:list'
 
     #: Required permission for displaying the app
     app_permission = 'adminalerts.create_alert'
@@ -51,7 +51,9 @@ class SiteAppPlugin(SiteAppPluginPoint):
                     '<span class="pull-right"><a href="{}" class="text-info">' \
                     '<i class="fa fa-arrow-circle-right"></i> ' \
                     'Details</a>'.format(
-                        reverse('alert_detail', kwargs={'pk': a.pk}))
+                        reverse(
+                            'adminalerts:detail',
+                            kwargs={'uuid': a.omics_uuid}))
 
             messages.append({
                 'content': content,

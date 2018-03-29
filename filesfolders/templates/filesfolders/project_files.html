@@ -83,7 +83,7 @@
 {% allow_public_links project as allow_public_links %}
 
 {% if can_view_data %}
-  <div class="row omics-subtitle-container bg-white sticky-top">
+  <div class="row omics-subtitle-container omics-subtitle-shadow bg-white sticky-top">
     <h3><i class="fa fa-file"></i> Small Files</h3>
     {% if can_add_data %}
       {% include 'filesfolders/_list_buttons.html' with project=project folder=folder up=False %}
@@ -92,9 +92,9 @@
 
   <div class="container-fluid omics-page-container">
     {% if folder %}
-      <form method="post" action="{% url 'batch_edit' project=project.pk folder=folder.pk %}" id="omics-ff-batch-form">
+      <form method="post" action="{% url 'filesfolders:batch_edit' folder=folder.omics_uuid %}" id="omics-ff-batch-form">
     {% else %}
-      <form method="post" action="{% url 'batch_edit' project=project.pk %}" id="omics-ff-batch-form">
+      <form method="post" action="{% url 'filesfolders:batch_edit' project=project.omics_uuid %}" id="omics-ff-batch-form">
     {% endif %}
 
       {% csrf_token %}
@@ -114,11 +114,11 @@
             {% else %}
               <li class="breadcrumb-item">
                 <i class="fa fa-angle-right"></i>
-                <a href="{% url 'project_files' project=project.pk %}">root</a>
+                <a href="{% url 'filesfolders:list' project=project.omics_uuid %}">root</a>
               </li>
               {% for f in folder_breadcrumb %}
                 {% if f != folder %}
-                  <li class="breadcrumb-item"><a href="{% url 'project_files' project=project.pk folder=f.pk %}">{{ f.name }}</a></li>
+                  <li class="breadcrumb-item"><a href="{% url 'filesfolders:list' folder=f.omics_uuid %}">{{ f.name }}</a></li>
                 {% else %}
                   <li class="breadcrumb-item active">{{ f.name }}</li>
                 {% endif %}
@@ -145,9 +145,9 @@
                   </td>
                   <td>
                     {% if folder.folder %}
-                      <a href="{% url 'project_files' project=project.pk folder=folder.folder.pk %}">.. /</a>
+                      <a href="{% url 'filesfolders:list' project=project.omics_uuid folder=folder.folder.omics_uuid %}">.. /</a>
                     {% else %}
-                      <a href="{% url 'project_files' project=project.pk %}">.. /</a>
+                      <a href="{% url 'filesfolders:list' project=project.omics_uuid %}">.. /</a>
                     {% endif %}
                   </td>
                   <td></td>

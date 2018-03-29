@@ -43,13 +43,13 @@ class ProjectEventMixin:
 class ProjectEventObjectRefMixin:
     """Helper mixin for ProjectEventObjectRef creation"""
     @classmethod
-    def _make_object_ref(cls, event, obj, label, name, extra_data):
+    def _make_object_ref(cls, event, obj, label, name, uuid, extra_data):
         values = {
             'event': event,
             'label': label,
             'name': name,
             'object_model': obj.__class__.__name__,
-            'object_pk': obj.pk,
+            'object_uuid': uuid,
             'extra_data': extra_data}
         result = ProjectEventObjectRef(**values)
         result.save()
@@ -145,6 +145,7 @@ class TestProjectEventObjectRef(
             obj=self.assignment_owner,
             label='test_label',
             name='test_name',
+            uuid=self.assignment_owner.omics_uuid,
             extra_data={'test_key': 'test_val'})
 
     def test_initialization(self):
@@ -154,7 +155,7 @@ class TestProjectEventObjectRef(
             'label': 'test_label',
             'name': 'test_name',
             'object_model': 'RoleAssignment',
-            'object_pk': self.assignment_owner.pk,
+            'object_uuid': self.assignment_owner.omics_uuid,
             'extra_data': {'test_key': 'test_val'}}
 
         self.assertEqual(model_to_dict(self.obj_ref), expected)
@@ -186,7 +187,7 @@ class TestProjectEventObjectRef(
             'event': self.event.pk,
             'label': 'new_label',
             'name': 'new_name',
-            'object_pk': new_as.pk,
+            'object_uuid': new_as.omics_uuid,
             'object_model': 'RoleAssignment',
             'extra_data': {}}
 
@@ -195,9 +196,9 @@ class TestProjectEventObjectRef(
     def test_get_object_events(self):
         """Test get_object_events() in ProjectEventManager"""
         events = ProjectEvent.objects.get_object_events(
-            project_pk=self.project.pk,
+            project=self.project,
             object_model=self.obj_ref.object_model,
-            object_pk=self.obj_ref.object_pk)
+            object_uuid=self.obj_ref.object_uuid)
 
         self.assertEqual(events.count(), 1)
         self.assertEqual(events[0], self.event)
