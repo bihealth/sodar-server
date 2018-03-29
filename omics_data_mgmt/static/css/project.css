@@ -134,6 +134,10 @@ div.omics-subtitle-container {
   border-bottom: 1px solid #dfdfdf;
 }
 
+div.omics-subtitle-shadow {
+  box-shadow: 0 6px 6px -6px #909090;
+}
+
 .omics-pr-navbar {
   padding-left: 28px;
   padding-right: 38px;
