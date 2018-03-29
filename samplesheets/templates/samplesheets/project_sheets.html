@@ -23,16 +23,6 @@
       // border-bottom: 1px solid #dfdfdf;
     }
 
-    .omics-ss-nav-tabs {
-      border-bottom: 0;
-    }
-
-    .omics-ss-nav-tabs li a {
-      margin-bottom: -1px !important;
-      border-bottom: 0 !important;
-      height: 117%; /* HACK */
-    }
-
     .omics-ss-assay-info-popup {
       max-width: 800px;
     }
@@ -115,7 +105,7 @@
     }
 
     @media screen and (max-width: 1200px) {
-      .omics-ss-nav-tabs {
+      .omics-ss-nav {
         display: none;
       }
     }
@@ -131,11 +121,11 @@
   <h3><i class="fa fa-flask"></i> Sample Sheets</h3>
 
   {% if investigation %}
-    <ul class="nav nav-tabs omics-ss-nav-tabs ml-4 mr-auto">
+    <ul class="nav nav-pills omics-ss-nav ml-4 mr-auto">
       {% for s in investigation.studies.all %}
         {% get_study_title s as s_title %}
         <li class="nav-item">
-          <a class="nav-link {% if s == study %}bg-light active{% endif %}"
+          <a class="nav-link {% if s == study %}bg-success active{% endif %}"
              href="{% url 'samplesheets:project_sheets' study=s.omics_uuid %}"
              {% if s != study and s_title|length > 20 %}
                data-toggle="tooltip" data-placement="top" title="{{ s_title }}"
@@ -144,7 +134,7 @@
         </li>
       {% endfor %}
       <li class="nav-item">
-        <a class="nav-link {% if subpage == 'info' %}bg-light active{% endif %}"
+        <a class="nav-link {% if subpage == 'info' %}bg-success active{% endif %}"
            href="{% url 'samplesheets:project_sheets' project=project.omics_uuid subpage='info' %}">
             <i class="fa fa-sitemap"></i> Overview</a>
       </li>
@@ -187,11 +177,11 @@
       </div>
       {% endcomment %}
 
-      {# Study overview table #}
+      {# Study table #}
       <a class="omics-ss-anchor" id="{{ study.omics_uuid }}"></a>
       <div class="card omics-ss-data-card">
         <div class="card-header">
-            <h4><span class="font-weight-bold text-info">Study</span> <span class="text-muted">|</span> {% get_study_title study %}
+            <h4><i class="fa fa-fw fa-list-alt text-info"></i><span class="font-weight-bold text-info">Study</span> <span class="text-muted">|</span> {% get_study_title study %}
             <div class="input-group omics-header-input-group pull-right"
                  style="width: 320px;" table-id="{% get_table_id study %}">
               <div class="input-group-prepend">
@@ -221,7 +211,7 @@
         <a class="omics-ss-anchor" id="{{ assay.omics_uuid }}"></a>
         <div class="card omics-ss-data-card">
           <div class="card-header">
-              <h4><span class="font-weight-bold text-danger">Assay</span> <span class="text-muted">|</span> {% get_assay_title assay %}
+              <h4><i class="fa fa-fw fa-table text-danger"></i><span class="font-weight-bold text-danger">Assay</span> <span class="text-muted">|</span> {% get_assay_title assay %}
               <div class="input-group omics-header-input-group pull-right"
                    style="width: 400px;" table-id="{% get_table_id assay %}">
                 <div class="input-group-prepend">
