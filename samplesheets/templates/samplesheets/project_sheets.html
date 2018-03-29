@@ -188,10 +188,12 @@
                 {# TODO: Include buttons from a separate file #}
                 <button class="btn btn-secondary omics-ss-data-drag-toggle"
                         type="submit" id="omics-ss-data-drag-toggle-{{ study.omics_uuid }}"
-                        drag-mode="0"><i class="fa fa-mouse-pointer"></i> Drag</button>
+                        data-toggle="tooltip" data-placement="top" title="Enable/disable drag scroll"
+                        drag-mode="0"><i class="fa fa-mouse-pointer"></i></button>
                 <button class="btn btn-secondary omics-ss-data-excel"
+                        data-toggle="tooltip" data-placement="top" title="Download TSV file for Excel"
                         type="submit" id="omics-ss-data-drag-excel-{{ study.omics_uuid }}">
-                        <i class="fa fa-file-excel-o"></i> Excel</button>
+                        <i class="fa fa-file-excel-o"></i></button>
               </div>
               <input class="form-control omics-ss-data-filter"
                      type="text" placeholder="Filter" aria-label="Filter assay {{ assay.omics_uuid }}"
@@ -213,17 +215,20 @@
           <div class="card-header">
               <h4><i class="fa fa-fw fa-table text-danger"></i><span class="font-weight-bold text-danger">Assay</span> <span class="text-muted">|</span> {% get_assay_title assay %}
               <div class="input-group omics-header-input-group pull-right"
-                   style="width: 400px;" table-id="{% get_table_id assay %}">
+                   style="width: 360px;" table-id="{% get_table_id assay %}">
                 <div class="input-group-prepend">
-                  <button class="btn btn-secondary omics-ss-data-drag-toggle"
-                          type="submit" id="omics-ss-data-drag-toggle-{{ assay.omics_uuid }}"
-                          drag-mode="0"><i class="fa fa-mouse-pointer"></i> Drag</button>
                   <button class="btn btn-secondary omics-ss-assay-hide"
                           type="submit" id="omics-ss-assay-hide-{{ assay.omics_uuid }}"
-                          assay-hide-mode="1"><i class="fa fa-eye-slash"></i> Study</button>
+                          data-toggle="tooltip" data-placement="top" title="Show/hide study details"
+                          assay-hide-mode="1"><i class="fa fa-eye-slash"></i></button>
+                  <button class="btn btn-secondary omics-ss-data-drag-toggle"
+                          type="submit" id="omics-ss-data-drag-toggle-{{ assay.omics_uuid }}"
+                          data-toggle="tooltip" data-placement="top" title="Enable/disable drag scroll"
+                          drag-mode="0"><i class="fa fa-mouse-pointer"></i></button>
                   <button class="btn btn-secondary omics-ss-data-excel"
+                        data-toggle="tooltip" data-placement="top" title="Download TSV file for Excel"
                         type="submit" id="omics-ss-data-drag-excel-{{ study.omics_uuid }}">
-                        <i class="fa fa-file-excel-o"></i> Excel</button>
+                        <i class="fa fa-file-excel-o"></i></button>
                 </div>
                 <input class="form-control omics-ss-data-filter"
                        type="text" placeholder="Filter" aria-label="Filter assay {{ assay.omics_uuid }}"
