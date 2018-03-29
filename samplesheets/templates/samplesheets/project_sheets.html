@@ -183,7 +183,7 @@
         <div class="card-header">
             <h4><i class="fa fa-fw fa-list-alt text-info"></i><span class="font-weight-bold text-info">Study</span> <span class="text-muted">|</span> {% get_study_title study %}
             <div class="input-group omics-header-input-group pull-right"
-                 style="width: 320px;" table-id="{% get_table_id study %}">
+                 style="width: 280px;" table-id="{% get_table_id study %}">
               <div class="input-group-prepend">
                 {# TODO: Include buttons from a separate file #}
                 <button class="btn btn-secondary omics-ss-data-drag-toggle"
@@ -215,7 +215,7 @@
           <div class="card-header">
               <h4><i class="fa fa-fw fa-table text-danger"></i><span class="font-weight-bold text-danger">Assay</span> <span class="text-muted">|</span> {% get_assay_title assay %}
               <div class="input-group omics-header-input-group pull-right"
-                   style="width: 360px;" table-id="{% get_table_id assay %}">
+                   style="width: 320px;" table-id="{% get_table_id assay %}">
                 <div class="input-group-prepend">
                   <button class="btn btn-secondary omics-ss-assay-hide"
                           type="submit" id="omics-ss-assay-hide-{{ assay.omics_uuid }}"
