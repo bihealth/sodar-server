@@ -98,6 +98,9 @@ class ProjectForm(forms.ModelForm):
         if current_user:
             self.current_user = current_user
 
+        # Do not allow transfer under another parent
+        self.fields['parent'].disabled = True
+
         ####################
         # Form modifications
         ####################
@@ -144,8 +147,12 @@ class ProjectForm(forms.ModelForm):
                     self.fields['owner'],
                     (owner.omics_uuid, get_user_display_name(owner, True)))
 
-            # Do not allow transfer under another parent
-            self.fields['parent'].disabled = True
+            # Set initial value for parent
+            if parent_project:
+                self.initial['parent'] = parent_project.omics_uuid
+
+            else:
+                self.initial['parent'] = None
 
         # Project creation
         else:
@@ -165,6 +172,9 @@ class ProjectForm(forms.ModelForm):
                 parent_owner = parent_project.get_owner().user
                 self.initial['owner'] = parent_owner.omics_uuid
 
+                # Set up parent field
+                self.initial['parent'] = parent_project.omics_uuid
+
             # Creating a top level project
             else:
                 self.fields['owner'].choices = [
@@ -177,7 +187,8 @@ class ProjectForm(forms.ModelForm):
                     self.fields['type'],
                     (PROJECT_TYPE_CATEGORY, 'Category'))
 
-                self.fields['parent'].disabled = True
+                # Set up parent field
+                self.initial['parent'] = None
 
     def clean(self):
         """Function for custom form validation and cleanup"""
