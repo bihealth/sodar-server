@@ -136,10 +136,11 @@ def get_material_type(material):
 def get_material_link(material):
     """Return link to material"""
     url = reverse(
-        'samplesheets:project_sheets', kwargs={'study': material.study.pk})
+        'samplesheets:project_sheets', kwargs={
+            'study': material.study.omics_uuid})
 
     if material.assay:
-        url += '#assay{}'.format(material.assay.pk)
+        url += '#{}'.format(material.assay.omics_uuid)
 
     return url
 
