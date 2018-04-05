@@ -181,25 +181,7 @@
       <a class="omics-ss-anchor" id="{{ study.omics_uuid }}"></a>
       <div class="card omics-ss-data-card">
         <div class="card-header">
-            <h4><i class="fa fa-fw fa-list-alt text-info"></i><span class="font-weight-bold text-info">Study</span> <span class="text-muted">|</span> {% get_study_title study %}
-            <div class="input-group omics-header-input-group pull-right"
-                 style="width: 280px;" table-id="{% get_table_id study %}">
-              <div class="input-group-prepend">
-                {# TODO: Include buttons from a separate file #}
-                <button class="btn btn-secondary omics-ss-data-drag-toggle"
-                        type="submit" id="omics-ss-data-drag-toggle-{{ study.omics_uuid }}"
-                        data-toggle="tooltip" data-placement="top" title="Enable/disable drag scroll"
-                        drag-mode="0"><i class="fa fa-mouse-pointer"></i></button>
-                <button class="btn btn-secondary omics-ss-data-excel"
-                        data-toggle="tooltip" data-placement="top" title="Download TSV file for Excel"
-                        type="submit" id="omics-ss-data-drag-excel-{{ study.omics_uuid }}">
-                        <i class="fa fa-file-excel-o"></i></button>
-              </div>
-              <input class="form-control omics-ss-data-filter"
-                     type="text" placeholder="Filter" aria-label="Filter assay {{ assay.omics_uuid }}"
-                     id="omics-ss-data-filter-{{ study.omics_uuid }}">
-            </div>
-          </h4>
+          {% include 'samplesheets/_sheet_header.html' with table_type='study' item=study %}
         </div>
         <div class="card-body omics-card-body-table">
           <div class="table-responsive omics-ss-init-container">
@@ -213,28 +195,7 @@
         <a class="omics-ss-anchor" id="{{ assay.omics_uuid }}"></a>
         <div class="card omics-ss-data-card">
           <div class="card-header">
-              <h4><i class="fa fa-fw fa-table text-danger"></i><span class="font-weight-bold text-danger">Assay</span> <span class="text-muted">|</span> {% get_assay_title assay %}
-              <div class="input-group omics-header-input-group pull-right"
-                   style="width: 320px;" table-id="{% get_table_id assay %}">
-                <div class="input-group-prepend">
-                  <button class="btn btn-secondary omics-ss-assay-hide"
-                          type="submit" id="omics-ss-assay-hide-{{ assay.omics_uuid }}"
-                          data-toggle="tooltip" data-placement="top" title="Show/hide study details"
-                          assay-hide-mode="1"><i class="fa fa-eye-slash"></i></button>
-                  <button class="btn btn-secondary omics-ss-data-drag-toggle"
-                          type="submit" id="omics-ss-data-drag-toggle-{{ assay.omics_uuid }}"
-                          data-toggle="tooltip" data-placement="top" title="Enable/disable drag scroll"
-                          drag-mode="0"><i class="fa fa-mouse-pointer"></i></button>
-                  <button class="btn btn-secondary omics-ss-data-excel"
-                        data-toggle="tooltip" data-placement="top" title="Download TSV file for Excel"
-                        type="submit" id="omics-ss-data-drag-excel-{{ study.omics_uuid }}">
-                        <i class="fa fa-file-excel-o"></i></button>
-                </div>
-                <input class="form-control omics-ss-data-filter"
-                       type="text" placeholder="Filter" aria-label="Filter assay {{ assay.omics_uuid }}"
-                       id="omics-ss-data-filter-{{ assay.omics_uuid }}">
-              </div>
-            </h4>
+            {% include 'samplesheets/_sheet_header.html' with table_type='assay' item=assay %}
           </div>
           <div class="card-body omics-card-body-table">
             <div class="table-responsive omics-ss-init-container">

@@ -1,0 +1,30 @@
+{% load samplesheets_tags %}
+
+<h4>
+  {% if table_type == 'assay' %}
+    <i class="fa fa-fw fa-table text-danger"></i><span class="font-weight-bold text-danger">Assay</span> <span class="text-muted">|</span> {% get_assay_title item %}
+  {% else %}
+    <i class="fa fa-fw fa-list-alt text-info"></i><span class="font-weight-bold text-info">Study</span> <span class="text-muted">|</span> {% get_study_title item %}
+  {% endif %}
+  <div class="input-group omics-header-input-group pull-right" table-id="{% get_table_id item %}">
+  <div class="input-group-prepend">
+    {% if table_type == 'assay' %}
+    <button class="btn btn-secondary omics-ss-assay-hide"
+            type="submit" id="omics-ss-assay-hide-{{ item.omics_uuid }}"
+            data-toggle="tooltip" data-placement="top" title="Show/hide study details"
+            assay-hide-mode="1"><i class="fa fa-eye-slash"></i></button>
+    {% endif %}
+    <button class="btn btn-secondary omics-ss-data-drag-toggle"
+            type="submit" id="omics-ss-data-drag-toggle-{{ item.omics_uuid }}"
+            data-toggle="tooltip" data-placement="top" title="Enable/disable drag scroll"
+            drag-mode="0"><i class="fa fa-mouse-pointer"></i></button>
+    <button class="btn btn-secondary omics-ss-data-excel"
+            data-toggle="tooltip" data-placement="top" title="Download TSV file for Excel"
+            type="submit" id="omics-ss-data-excel-{{ item.omics_uuid }}">
+      <i class="fa fa-file-excel-o"></i></button>
+    </div>
+    <input class="form-control omics-ss-data-filter"
+           type="text" placeholder="Filter" aria-label="Filter {{ table_type }} {{ item.omics_uuid }}"
+           id="omics-ss-data-filter-{{ item.omics_uuid }}">
+  </div>
+</h4>
