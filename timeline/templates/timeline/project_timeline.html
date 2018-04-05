@@ -79,7 +79,7 @@
 
 {% has_perm 'timeline.view_timeline' request.user project as can_view_timeline %}
 
-<div class="row omics-subtitle-container omics-subtitle-shadow bg-white sticky-top">
+<div class="row omics-subtitle-container bg-white sticky-top">
   <h3><i class="fa fa-clock-o"></i> {{ timeline_title }}</h3>
   {% if timeline_mode == 'object' %}
     <div class="input-group omics-header-input-group ml-auto">

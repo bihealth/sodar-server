@@ -286,3 +286,21 @@ $(document).ready(function() {
         }
      });
  });
+
+// Enable/disable sticky subtitle container shadow when scrolling
+$(document).ready(function() {
+    $('.omics-app-container').scroll(function() {
+        var container = $('.omics-subtitle-container');
+        var scroll = $('.omics-app-container').scrollTop();
+
+        if (container != null && container.hasClass('sticky-top')) {
+            if (scroll >= 85) {
+                container.addClass('omics-subtitle-shadow');
+            }
+
+            else {
+                container.removeClass('omics-subtitle-shadow');
+            }
+        }
+    });
+});
