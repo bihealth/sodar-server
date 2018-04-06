@@ -62,6 +62,9 @@ class BaseSampleSheet(models.Model):
         elif hasattr(self, 'study') and self.study:
             return self.study
 
+        elif type(self) == Study:
+            return self
+
     def get_project(self):
         """Return associated project"""
         if type(self) == Investigation:
@@ -380,8 +383,8 @@ class Assay(BaseSampleSheet):
     # Custom row-level functions
 
     def get_name(self):
-        """Return simple printable name for Assay"""
-        return ''.join(str(self.file_name).split('.')[:-1])
+        """Return simple idenfitying name for Assay"""
+        return ''.join(str(self.file_name)[2:].split('.')[:-1])
 
 
 # Materials and data files -----------------------------------------------------
@@ -472,6 +475,8 @@ class GenericMaterial(BaseSampleSheet):
     #: Factor values for a sample (only for samples)
     factor_values = JSONField(
         default=list,
+        blank=True,
+        null=True,
         help_text='Factor values for a sample')
 
     #: Extract label
@@ -498,7 +503,7 @@ class GenericMaterial(BaseSampleSheet):
         return '{}: {}/{}/{}/{}'.format(
             self.get_project().title,
             self.get_study().title,
-            self.assay.file_name if self.assay else NOT_AVAILABLE_STR,
+            self.assay.get_name() if self.assay else NOT_AVAILABLE_STR,
             self.item_type,
             self.unique_name)
 
@@ -506,7 +511,7 @@ class GenericMaterial(BaseSampleSheet):
         values = (
             self.get_project().title,
             self.get_study().title,
-            self.assay.file_name if self.assay else NOT_AVAILABLE_STR,
+            self.assay.get_name() if self.assay else NOT_AVAILABLE_STR,
             self.item_type,
             self.unique_name)
 

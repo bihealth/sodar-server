@@ -23,8 +23,6 @@ class TestSampleSheetIO(TestCase, ProjectMixin, RoleAssignmentMixin):
             'TestProject', OMICS_CONSTANTS['PROJECT_TYPE_PROJECT'], None)
         self.role_owner = Role.objects.get_or_create(
             name=OMICS_CONSTANTS['PROJECT_ROLE_OWNER'])[0]
-        self.role_delegate = Role.objects.get_or_create(
-            name=OMICS_CONSTANTS['PROJECT_ROLE_DELEGATE'])[0]
         self.assignment_owner = self._make_assignment(
             self.project, self.user_owner, self.role_owner)
 
