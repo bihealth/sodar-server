@@ -48,47 +48,69 @@ class ProjectSheetsView(
             context['investigation'] = None
             return context
 
-        # Info page
-        if 'subpage' in self.kwargs and self.kwargs['subpage'] == 'info':
-            context['subpage'] = 'info'
+        try:
+            if 'study' in self.kwargs and self.kwargs['study']:
+                study = Study.objects.get(
+                    omics_uuid=self.kwargs['study'])
+            else:
+                study = Study.objects.filter(
+                    investigation=investigation).first()
 
-            def get_material_count(item_type):
-                return GenericMaterial.objects.filter(
-                    Q(item_type=item_type),
-                    Q(study__investigation=investigation) |
-                    Q(assay__study__investigation=investigation)).count()
+            context['study'] = study
+            tb = SampleSheetTableBuilder()
+            context['table_data'] = tb.build_study(study)
 
-            # Statistics
-            context['sheet_stats'] = {
-                'study_count': Study.objects.filter(
-                    investigation=investigation).count(),
-                'assay_count': Assay.objects.filter(
-                    study__investigation=investigation).count(),
-                'protocol_count': Protocol.objects.filter(
-                    study__investigation=investigation).count(),
-                'process_count': Process.objects.filter(
-                    protocol__study__investigation=investigation).count(),
-                'source_count': get_material_count('SOURCE'),
-                'material_count': get_material_count('MATERIAL'),
-                'sample_count': get_material_count('SAMPLE'),
-                'data_count': get_material_count('DATA')}
+        except Study.DoesNotExist:
+            return None
 
-        # Study view
-        else:
-            try:
-                if 'study' in self.kwargs and self.kwargs['study']:
-                    study = Study.objects.get(
-                        omics_uuid=self.kwargs['study'])
-                else:
-                    study = Study.objects.filter(
-                        investigation=investigation).first()
+        return context
 
-                context['study'] = study
-                tb = SampleSheetTableBuilder()
-                context['table_data'] = tb.build_study(study)
 
-            except Study.DoesNotExist:
-                return None
+class ProjectSheetsOverviewView(
+        LoginRequiredMixin, LoggedInPermissionMixin, ProjectPermissionMixin,
+        ProjectContextMixin, TemplateView):
+    """Main view for displaying information about project sheets"""
+
+    # Projectroles dependency
+    permission_required = 'samplesheets.view_sheet'
+    template_name = 'samplesheets/overview.html'
+
+    def get_context_data(self, *args, **kwargs):
+        context = super(ProjectSheetsOverviewView, self).get_context_data(
+            *args, **kwargs)
+
+        # Investigation
+        investigation = None
+
+        try:
+            investigation = Investigation.objects.get(
+                project=context['project'])
+            context['investigation'] = investigation
+
+        except Investigation.DoesNotExist:
+            context['investigation'] = None
+            return context
+
+        def get_material_count(item_type):
+            return GenericMaterial.objects.filter(
+                Q(item_type=item_type),
+                Q(study__investigation=investigation) |
+                Q(assay__study__investigation=investigation)).count()
+
+        # Statistics
+        context['sheet_stats'] = {
+            'study_count': Study.objects.filter(
+                investigation=investigation).count(),
+            'assay_count': Assay.objects.filter(
+                study__investigation=investigation).count(),
+            'protocol_count': Protocol.objects.filter(
+                study__investigation=investigation).count(),
+            'process_count': Process.objects.filter(
+                protocol__study__investigation=investigation).count(),
+            'source_count': get_material_count('SOURCE'),
+            'material_count': get_material_count('MATERIAL'),
+            'sample_count': get_material_count('SAMPLE'),
+            'data_count': get_material_count('DATA')}
 
         return context
 

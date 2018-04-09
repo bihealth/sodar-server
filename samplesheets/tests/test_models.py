@@ -80,7 +80,8 @@ DEFAULT_COMMENTS = {'comment': 'value'}
 # Helper mixins ----------------------------------------------------------------
 
 
-class SampleSheetMixin:
+class SampleSheetModelMixin:
+    """Helpers for samplesheets models creation"""
 
     @classmethod
     def _make_investigation(
@@ -199,7 +200,7 @@ class SampleSheetMixin:
 
 
 class TestSampleSheetBase(
-        TestCase, ProjectMixin, RoleAssignmentMixin, SampleSheetMixin):
+        TestCase, ProjectMixin, RoleAssignmentMixin, SampleSheetModelMixin):
     """Base class for Samplesheets tests"""
 
     def setUp(self):

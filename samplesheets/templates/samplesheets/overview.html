@@ -1,0 +1,65 @@
+{# Projectroles dependency #}
+{% extends 'projectroles/project_base.html' %}
+
+{% load static %}
+{% load rules %}
+{% load samplesheets_tags %}
+
+{% block title %}
+  Sample Sheet Overview for {{ project.title }}
+{% endblock title %}
+
+{% block projectroles_extend %}
+
+{% include 'samplesheets/_sheet_page_header.html' %}
+
+<div class="container-fluid omics-page-container"> {# Main container #}
+
+  {# Information #}
+  <div class="card">
+    <div class="card-header">
+      <h4>Investigation Details</h4>
+    </div>
+    {% include 'samplesheets/_investigation_info.html' with show_description=True %}
+  </div>
+
+  {# Statistics #}
+  <div class="card">
+    <div class="card-header">
+      <h4>Investigation Statistics</h4>
+    </div>
+    <div class="card-body omics-card-body-table">
+      <div class="table-responsive">
+        <table class="table omics-card-table">
+          <thead>
+            <tr>
+              <th>Studies</th>
+              <th>Assays</th>
+              <th>Protocols</th>
+              <th>Processes</th>
+              <th>Sources</th>
+              <th>Materials</th>
+              <th>Samples</th>
+              <th>Data&nbsp;Files</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>{{ sheet_stats.study_count }}</td>
+              <td>{{ sheet_stats.assay_count }}</td>
+              <td>{{ sheet_stats.protocol_count }}</td>
+              <td>{{ sheet_stats.process_count }}</td>
+              <td>{{ sheet_stats.source_count }}</td>
+              <td>{{ sheet_stats.material_count }}</td>
+              <td>{{ sheet_stats.sample_count }}</td>
+              <td>{{ sheet_stats.data_count }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div> {# card-body #}
+  </div> {# card #}
+
+</div> {# Main container #}
+
+{% endblock projectroles_extend %}

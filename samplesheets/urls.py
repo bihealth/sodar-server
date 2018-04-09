@@ -17,9 +17,9 @@ urlpatterns = [
         name='project_sheets',
     ),
     url(
-        regex=r'^(?P<project>[0-9a-f-]+)/meta/(?P<subpage>[\w-]+)$',
-        view=views.ProjectSheetsView.as_view(),
-        name='project_sheets',
+        regex=r'^overview/(?P<project>[0-9a-f-]+)$',
+        view=views.ProjectSheetsOverviewView.as_view(),
+        name='overview',
     ),
     url(
         regex=r'^import/(?P<project>[0-9a-f-]+)$',

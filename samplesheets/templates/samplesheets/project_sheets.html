@@ -115,42 +115,7 @@
 
 {% block projectroles_extend %}
 
-{% has_perm 'samplesheets.edit_sheet' request.user project as can_edit_sheet %}
-
-<div class="row omics-subtitle-container bg-white sticky-top">
-  <h3><i class="fa fa-flask"></i> Sample Sheets</h3>
-
-  {% if investigation %}
-    <ul class="nav nav-pills omics-ss-nav ml-4 mr-auto">
-      {% for s in investigation.studies.all %}
-        {% get_study_title s as s_title %}
-        <li class="nav-item">
-          <a class="nav-link {% if s == study %}bg-success active{% endif %}"
-             href="{% url 'samplesheets:project_sheets' study=s.omics_uuid %}"
-             {% if s != study and s_title|length > 20 %}
-               data-toggle="tooltip" data-placement="top" title="{{ s_title }}"
-             {% endif %}>
-            <i class="fa fa-list-alt"></i> {{ s_title|truncatechars:20 }}</a>
-        </li>
-      {% endfor %}
-      <li class="nav-item">
-        <a class="nav-link {% if subpage == 'info' %}bg-success active{% endif %}"
-           href="{% url 'samplesheets:project_sheets' project=project.omics_uuid subpage='info' %}">
-            <i class="fa fa-sitemap"></i> Overview</a>
-      </li>
-    </ul>
-  {% endif %}
-
-  <div class="ml-auto">
-    {% if investigation %}
-      {% include 'samplesheets/_nav_buttons.html' %}
-    {% endif %}
-    {% if can_edit_sheet %}
-      {% include 'samplesheets/_list_buttons.html' %}
-    {% endif %}
-  </div>
-
-</div>
+{% include 'samplesheets/_sheet_page_header.html' %}
 
 <div class="container-fluid omics-page-container"> {# Main container #}
 
@@ -168,20 +133,18 @@
     {% if table_data.study %}
 
       {# Details #}
-      {% comment %}
       <div class="card">
         <div class="card-header">
           <h4>Study Details</h4>
         </div>
         {% include 'samplesheets/_study_info.html' %}
       </div>
-      {% endcomment %}
 
       {# Study table #}
       <a class="omics-ss-anchor" id="{{ study.omics_uuid }}"></a>
       <div class="card omics-ss-data-card">
         <div class="card-header">
-          {% include 'samplesheets/_sheet_header.html' with table_type='study' item=study %}
+          {% include 'samplesheets/_sheet_table_header.html' with table_type='study' item=study %}
         </div>
         <div class="card-body omics-card-body-table">
           <div class="table-responsive omics-ss-init-container">
@@ -195,7 +158,7 @@
         <a class="omics-ss-anchor" id="{{ assay.omics_uuid }}"></a>
         <div class="card omics-ss-data-card">
           <div class="card-header">
-            {% include 'samplesheets/_sheet_header.html' with table_type='assay' item=assay %}
+            {% include 'samplesheets/_sheet_table_header.html' with table_type='assay' item=assay %}
           </div>
           <div class="card-body omics-card-body-table">
             <div class="table-responsive omics-ss-init-container">
@@ -208,50 +171,6 @@
 
     {% elif subpage == 'info' %}
 
-      {# Information #}
-      <div class="card">
-        <div class="card-header">
-          <h4>Investigation Details</h4>
-        </div>
-        {% include 'samplesheets/_investigation_info.html' with show_description=True %}
-      </div>
-
-      {# Statistics #}
-      <div class="card">
-        <div class="card-header">
-          <h4>Investigation Statistics</h4>
-        </div>
-        <div class="card-body omics-card-body-table">
-          <div class="table-responsive">
-            <table class="table omics-card-table">
-              <thead>
-                <tr>
-                  <th>Studies</th>
-                  <th>Assays</th>
-                  <th>Protocols</th>
-                  <th>Processes</th>
-                  <th>Sources</th>
-                  <th>Materials</th>
-                  <th>Samples</th>
-                  <th>Data&nbsp;Files</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>{{ sheet_stats.study_count }}</td>
-                  <td>{{ sheet_stats.assay_count }}</td>
-                  <td>{{ sheet_stats.protocol_count }}</td>
-                  <td>{{ sheet_stats.process_count }}</td>
-                  <td>{{ sheet_stats.source_count }}</td>
-                  <td>{{ sheet_stats.material_count }}</td>
-                  <td>{{ sheet_stats.sample_count }}</td>
-                  <td>{{ sheet_stats.data_count }}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
 
     {% endif %}
 

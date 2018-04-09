@@ -1,0 +1,37 @@
+{% load samplesheets_tags %}
+{% load rules %}
+{% has_perm 'samplesheets.edit_sheet' request.user project as can_edit_sheet %}
+
+<div class="row omics-subtitle-container bg-white sticky-top">
+  <h3><i class="fa fa-flask"></i> Sample Sheets</h3>
+
+  {% if investigation %}
+    <ul class="nav nav-pills omics-ss-nav ml-4 mr-auto">
+      {% for s in investigation.studies.all %}
+        {% get_study_title s as s_title %}
+        <li class="nav-item">
+          <a class="nav-link {% if s == study %}bg-success active{% endif %}"
+             href="{% url 'samplesheets:project_sheets' study=s.omics_uuid %}"
+             {% if s != study and s_title|length > 20 %}
+               data-toggle="tooltip" data-placement="top" title="{{ s_title }}"
+             {% endif %}>
+            <i class="fa fa-list-alt"></i> {{ s_title|truncatechars:20 }}</a>
+        </li>
+      {% endfor %}
+      <li class="nav-item">
+        <a class="nav-link {% if request.resolver_match.url_name == 'overview' %}bg-success active{% endif %}"
+           href="{% url 'samplesheets:overview' project=project.omics_uuid %}">
+            <i class="fa fa-sitemap"></i> Overview</a>
+      </li>
+    </ul>
+  {% endif %}
+
+  <div class="ml-auto">
+    {% if investigation %}
+      {% include 'samplesheets/_nav_buttons.html' %}
+    {% endif %}
+    {% if can_edit_sheet %}
+      {% include 'samplesheets/_list_buttons.html' %}
+    {% endif %}
+  </div>
+</div>
