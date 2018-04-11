@@ -29,7 +29,6 @@ PROJECT_ROLE_OWNER = OMICS_CONSTANTS['PROJECT_ROLE_OWNER']
 PROJECT_ROLE_DELEGATE = OMICS_CONSTANTS['PROJECT_ROLE_DELEGATE']
 PROJECT_ROLE_CONTRIBUTOR = OMICS_CONSTANTS['PROJECT_ROLE_CONTRIBUTOR']
 PROJECT_ROLE_GUEST = OMICS_CONSTANTS['PROJECT_ROLE_GUEST']
-PROJECT_ROLE_STAFF = OMICS_CONSTANTS['PROJECT_ROLE_STAFF']
 PROJECT_TYPE_CATEGORY = OMICS_CONSTANTS['PROJECT_TYPE_CATEGORY']
 PROJECT_TYPE_PROJECT = OMICS_CONSTANTS['PROJECT_TYPE_PROJECT']
 SUBMIT_STATUS_OK = OMICS_CONSTANTS['SUBMIT_STATUS_OK']
@@ -106,8 +105,6 @@ class TestViewsTaskflowBase(LiveServerTestCase, TestCase):
             name=PROJECT_ROLE_OWNER)[0]
         self.role_delegate = Role.objects.get_or_create(
             name=PROJECT_ROLE_DELEGATE)[0]
-        self.role_staff = Role.objects.get_or_create(
-            name=PROJECT_ROLE_STAFF)[0]
         self.role_contributor = Role.objects.get_or_create(
             name=PROJECT_ROLE_CONTRIBUTOR)[0]
         self.role_guest = Role.objects.get_or_create(

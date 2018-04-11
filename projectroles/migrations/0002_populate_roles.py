@@ -39,13 +39,6 @@ def populate_roles(apps, schema_editor):
         'Read-only access to a project. Can view data in project, can not add '
         'or edit.')
 
-    # Staff
-    save_role(
-        'project staff',
-        'Has full access to project data; can modify/remove any data, also '
-        'data submitted by others; can add contributors and guests to a '
-        'project.')
-
 
 class Migration(migrations.Migration):
 

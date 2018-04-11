@@ -5,7 +5,6 @@ from .models import RoleAssignment, OMICS_CONSTANTS
 # Omics constants
 PROJECT_ROLE_OWNER = OMICS_CONSTANTS['PROJECT_ROLE_OWNER']
 PROJECT_ROLE_DELEGATE = OMICS_CONSTANTS['PROJECT_ROLE_DELEGATE']
-PROJECT_ROLE_STAFF = OMICS_CONSTANTS['PROJECT_ROLE_STAFF']
 PROJECT_ROLE_CONTRIBUTOR = OMICS_CONSTANTS['PROJECT_ROLE_CONTRIBUTOR']
 PROJECT_ROLE_GUEST = OMICS_CONSTANTS['PROJECT_ROLE_GUEST']
 PROJECT_TYPE_CATEGORY = OMICS_CONSTANTS['PROJECT_TYPE_CATEGORY']
@@ -54,17 +53,6 @@ def is_project_guest(user, obj):
 
     if assignment:
         return assignment.role.name == PROJECT_ROLE_GUEST
-
-    return False
-
-
-@rules.predicate
-def is_project_staff(user, obj):
-    """Whether or not the user has the role of project staff"""
-    assignment = RoleAssignment.objects.get_assignment(user, obj)
-
-    if assignment:
-        return assignment.role.name == PROJECT_ROLE_STAFF
 
     return False
 
@@ -122,7 +110,7 @@ rules.add_perm(
 rules.add_perm(
     'projectroles.view_project_roles',
     rules.is_superuser | is_project_owner | is_project_delegate |
-    is_project_staff | is_project_contributor | is_project_guest)
+    is_project_contributor | is_project_guest)
 
 # Allow updating project owner
 rules.add_perm(
@@ -134,16 +122,10 @@ rules.add_perm(
     'projectroles.update_project_delegate',
     rules.is_superuser | is_project_owner)
 
-# Allow updating project staff
-rules.add_perm(
-    'projectroles.update_project_staff',
-    rules.is_superuser | is_project_owner | is_project_delegate)
-
 # Allow updating project members
 rules.add_perm(
     'projectroles.update_project_members',
-    rules.is_superuser | is_project_owner | is_project_delegate |
-    is_project_staff)
+    rules.is_superuser | is_project_owner | is_project_delegate)
 
 # Allow inviting users to project via email
 rules.add_perm(

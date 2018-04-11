@@ -44,7 +44,6 @@ PROJECT_TYPE_CATEGORY = OMICS_CONSTANTS['PROJECT_TYPE_CATEGORY']
 PROJECT_TYPE_CHOICES = OMICS_CONSTANTS['PROJECT_TYPE_CHOICES']
 PROJECT_ROLE_OWNER = OMICS_CONSTANTS['PROJECT_ROLE_OWNER']
 PROJECT_ROLE_DELEGATE = OMICS_CONSTANTS['PROJECT_ROLE_DELEGATE']
-PROJECT_ROLE_STAFF = OMICS_CONSTANTS['PROJECT_ROLE_STAFF']
 SUBMIT_STATUS_OK = OMICS_CONSTANTS['SUBMIT_STATUS_OK']
 SUBMIT_STATUS_PENDING = OMICS_CONSTANTS['SUBMIT_STATUS_PENDING']
 SUBMIT_STATUS_PENDING_TASKFLOW = OMICS_CONSTANTS['SUBMIT_STATUS_PENDING']
@@ -139,11 +138,6 @@ class RolePermissionMixin(LoggedInPermissionMixin, ProjectAccessMixin):
             elif obj.role.name == PROJECT_ROLE_DELEGATE:
                 return self.request.user.has_perm(
                     'projectroles.update_project_delegate',
-                    self.get_permission_object())
-
-            elif obj.role.name == PROJECT_ROLE_STAFF:
-                return self.request.user.has_perm(
-                    'projectroles.update_project_staff',
                     self.get_permission_object())
 
             else:
@@ -629,7 +623,6 @@ class ProjectRoleView(
             *args, **kwargs)
         context['owner'] = context['project'].get_owner()
         context['delegate'] = context['project'].get_delegate()
-        context['staff'] = context['project'].get_staff()
         context['members'] = context['project'].get_members()
         return context
 

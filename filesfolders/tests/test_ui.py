@@ -18,7 +18,6 @@ PROJECT_ROLE_OWNER = OMICS_CONSTANTS['PROJECT_ROLE_OWNER']
 PROJECT_ROLE_DELEGATE = OMICS_CONSTANTS['PROJECT_ROLE_DELEGATE']
 PROJECT_ROLE_CONTRIBUTOR = OMICS_CONSTANTS['PROJECT_ROLE_CONTRIBUTOR']
 PROJECT_ROLE_GUEST = OMICS_CONSTANTS['PROJECT_ROLE_GUEST']
-PROJECT_ROLE_STAFF = OMICS_CONSTANTS['PROJECT_ROLE_STAFF']
 PROJECT_TYPE_CATEGORY = OMICS_CONSTANTS['PROJECT_TYPE_CATEGORY']
 PROJECT_TYPE_PROJECT = OMICS_CONSTANTS['PROJECT_TYPE_PROJECT']
 
@@ -122,7 +121,6 @@ class TestListView(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
             self.superuser,
             self.as_owner.user,
             self.as_delegate.user,
-            self.as_staff.user,
             self.as_contributor.user,
             self.as_guest.user]
         url = reverse(
@@ -139,7 +137,6 @@ class TestListView(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
             self.superuser,
             self.as_owner.user,
             self.as_delegate.user,
-            self.as_staff.user,
             self.as_contributor.user]
         expected_false = [
             self.as_guest.user]
@@ -159,7 +156,6 @@ class TestListView(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
             (self.superuser, 2),
             (self.as_owner.user, 2),
             (self.as_delegate.user, 2),
-            (self.as_staff.user, 2),
             (self.as_contributor.user, 1),
             (self.as_guest.user, 0)]
         url = reverse(
@@ -174,7 +170,6 @@ class TestListView(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
             (self.superuser, 2),
             (self.as_owner.user, 2),
             (self.as_delegate.user, 2),
-            (self.as_staff.user, 2),
             (self.as_contributor.user, 1),
             (self.as_guest.user, 0)]
         url = reverse(
@@ -189,7 +184,6 @@ class TestListView(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
             (self.superuser, 2),
             (self.as_owner.user, 2),
             (self.as_delegate.user, 2),
-            (self.as_staff.user, 2),
             (self.as_contributor.user, 1),
             (self.as_guest.user, 0)]
         url = reverse(
@@ -204,7 +198,6 @@ class TestListView(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
             (self.superuser, 6),
             (self.as_owner.user, 6),
             (self.as_delegate.user, 6),
-            (self.as_staff.user, 6),
             (self.as_contributor.user, 3),
             (self.as_guest.user, 0)]
         url = reverse(
@@ -219,7 +212,6 @@ class TestListView(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
             (self.superuser, 1),
             (self.as_owner.user, 1),
             (self.as_delegate.user, 1),
-            (self.as_staff.user, 1),
             (self.as_contributor.user, 1),
             (self.as_guest.user, 0)]
         url = reverse(
@@ -240,7 +232,6 @@ class TestListView(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
             (self.superuser, 0),
             (self.as_owner.user, 0),
             (self.as_delegate.user, 0),
-            (self.as_staff.user, 0),
             (self.as_contributor.user, 0),
             (self.as_guest.user, 0)]
         url = reverse(
@@ -263,7 +254,6 @@ class TestListView(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
             (self.superuser, 3),
             (self.as_owner.user, 3),
             (self.as_delegate.user, 3),
-            (self.as_staff.user, 3),
             (self.as_contributor.user, 3),
             (self.as_guest.user, 3)]
         url = reverse(
@@ -354,7 +344,6 @@ class TestSearch(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
             (self.as_owner.user, 6),
             (self.as_delegate.user, 6),
             (self.as_contributor.user, 6),
-            (self.as_staff.user, 6),
             (self.as_guest.user, 6),
             (self.user_no_roles, 0)]
         url = reverse('projectroles:search') + '?' + urlencode(
@@ -368,7 +357,6 @@ class TestSearch(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
             (self.as_owner.user, 2),
             (self.as_delegate.user, 2),
             (self.as_contributor.user, 2),
-            (self.as_staff.user, 2),
             (self.as_guest.user, 2),
             (self.user_no_roles, 0)]
         url = reverse('projectroles:search') + '?' + urlencode({
@@ -382,7 +370,6 @@ class TestSearch(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
             (self.as_owner.user, 2),
             (self.as_delegate.user, 2),
             (self.as_contributor.user, 2),
-            (self.as_staff.user, 2),
             (self.as_guest.user, 2),
             (self.user_no_roles, 0)]
         url = reverse('projectroles:search') + '?' + urlencode({
@@ -396,7 +383,6 @@ class TestSearch(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
             (self.as_owner.user, 2),
             (self.as_delegate.user, 2),
             (self.as_contributor.user, 2),
-            (self.as_staff.user, 2),
             (self.as_guest.user, 2),
             (self.user_no_roles, 0)]
         url = reverse('projectroles:search') + '?' + urlencode({
@@ -410,7 +396,6 @@ class TestSearch(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
             (self.as_owner.user, 0),
             (self.as_delegate.user, 0),
             (self.as_contributor.user, 0),
-            (self.as_staff.user, 0),
             (self.as_guest.user, 0),
             (self.user_no_roles, 0)]
         url = reverse('projectroles:search') + '?' + urlencode({

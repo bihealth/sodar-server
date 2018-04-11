@@ -17,7 +17,6 @@ PROJECT_ROLE_OWNER = OMICS_CONSTANTS['PROJECT_ROLE_OWNER']
 PROJECT_ROLE_DELEGATE = OMICS_CONSTANTS['PROJECT_ROLE_DELEGATE']
 PROJECT_ROLE_CONTRIBUTOR = OMICS_CONSTANTS['PROJECT_ROLE_CONTRIBUTOR']
 PROJECT_ROLE_GUEST = OMICS_CONSTANTS['PROJECT_ROLE_GUEST']
-PROJECT_ROLE_STAFF = OMICS_CONSTANTS['PROJECT_ROLE_STAFF']
 PROJECT_TYPE_CATEGORY = OMICS_CONSTANTS['PROJECT_TYPE_CATEGORY']
 PROJECT_TYPE_PROJECT = OMICS_CONSTANTS['PROJECT_TYPE_PROJECT']
 SUBMIT_STATUS_OK = OMICS_CONSTANTS['SUBMIT_STATUS_OK']
@@ -285,8 +284,6 @@ class TestRoleAssignment(TestCase, ProjectMixin, RoleAssignmentMixin):
             name=PROJECT_ROLE_OWNER)[0]
         self.role_delegate = Role.objects.get_or_create(
             name=PROJECT_ROLE_DELEGATE)[0]
-        self.role_staff = Role.objects.get_or_create(
-            name=PROJECT_ROLE_STAFF)[0]
         self.role_contributor = Role.objects.get_or_create(
             name=PROJECT_ROLE_CONTRIBUTOR)[0]
         self.role_guest = Role.objects.get_or_create(
@@ -374,13 +371,6 @@ class TestRoleAssignment(TestCase, ProjectMixin, RoleAssignmentMixin):
         self.assertEqual(
             self.project_top.get_delegate().user, self.user_carol)
 
-    def test_get_project_staff(self):
-        """Test get_project_staff() results"""
-        assignment_staff = self._make_assignment(
-            self.project_top, self.user_dan, self.role_staff)
-        self.assertEqual(
-            self.project_top.get_staff()[0].user, self.user_dan)
-
     def test_get_project_members(self):
         """Test get_project_members() results"""
         assignment_c0 = self._make_assignment(
@@ -446,8 +436,6 @@ class TestProjectInvite(
             name=PROJECT_ROLE_OWNER)
         self.role_delegate = Role.objects.get(
             name=PROJECT_ROLE_DELEGATE)
-        self.role_staff = Role.objects.get(
-            name=PROJECT_ROLE_STAFF)
         self.role_contributor = Role.objects.get(
             name=PROJECT_ROLE_CONTRIBUTOR)
 

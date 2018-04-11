@@ -16,7 +16,6 @@ PROJECT_ROLE_OWNER = OMICS_CONSTANTS['PROJECT_ROLE_OWNER']
 PROJECT_ROLE_DELEGATE = OMICS_CONSTANTS['PROJECT_ROLE_DELEGATE']
 PROJECT_ROLE_CONTRIBUTOR = OMICS_CONSTANTS['PROJECT_ROLE_CONTRIBUTOR']
 PROJECT_ROLE_GUEST = OMICS_CONSTANTS['PROJECT_ROLE_GUEST']
-PROJECT_ROLE_STAFF = OMICS_CONSTANTS['PROJECT_ROLE_STAFF']
 PROJECT_TYPE_CATEGORY = OMICS_CONSTANTS['PROJECT_TYPE_CATEGORY']
 PROJECT_TYPE_PROJECT = OMICS_CONSTANTS['PROJECT_TYPE_PROJECT']
 
@@ -133,8 +132,6 @@ class TestProjectPermissionBase(
             name=PROJECT_ROLE_OWNER)[0]
         self.role_delegate = Role.objects.get_or_create(
             name=PROJECT_ROLE_DELEGATE)[0]
-        self.role_staff = Role.objects.get_or_create(
-            name=PROJECT_ROLE_STAFF)[0]
         self.role_contributor = Role.objects.get_or_create(
             name=PROJECT_ROLE_CONTRIBUTOR)[0]
         self.role_guest = Role.objects.get_or_create(
@@ -154,7 +151,6 @@ class TestProjectPermissionBase(
         # Users with role assignments
         self.user_owner = self.make_user('user_owner')
         self.user_delegate = self.make_user('user_delegate')
-        self.user_staff = self.make_user('user_staff')
         self.user_contributor = self.make_user('user_contributor')
         self.user_guest = self.make_user('user_guest')
 
@@ -183,8 +179,6 @@ class TestProjectPermissionBase(
             self.project, self.user_owner, self.role_owner)
         self.as_delegate = self._make_assignment(
             self.project, self.user_delegate, self.role_delegate)
-        self.as_staff = self._make_assignment(
-            self.project, self.user_staff, self.role_staff)
         self.as_contributor = self._make_assignment(
             self.project, self.user_contributor, self.role_contributor)
         self.as_guest = self._make_assignment(
@@ -200,7 +194,6 @@ class TestBaseViews(TestProjectPermissionBase):
             self.superuser,
             self.as_owner.user,
             self.as_delegate.user,
-            self.as_staff.user,
             self.as_contributor.user,
             self.as_guest.user,
             self.user_no_roles]
@@ -215,7 +208,6 @@ class TestBaseViews(TestProjectPermissionBase):
             self.superuser,
             self.as_owner.user,
             self.as_delegate.user,
-            self.as_staff.user,
             self.as_contributor.user,
             self.as_guest.user,
             self.user_no_roles]
@@ -231,7 +223,6 @@ class TestBaseViews(TestProjectPermissionBase):
             self.superuser,
             self.as_owner.user,
             self.as_delegate.user,
-            self.as_staff.user,
             self.as_contributor.user,
             self.as_guest.user,
             self.user_no_roles]
@@ -244,7 +235,6 @@ class TestBaseViews(TestProjectPermissionBase):
             self.superuser,
             self.as_owner.user,
             self.as_delegate.user,
-            self.as_staff.user,
             self.as_contributor.user,
             self.as_guest.user,
             self.user_no_roles]
@@ -261,7 +251,6 @@ class TestBaseViews(TestProjectPermissionBase):
             self.superuser,
             self.as_owner.user,
             self.as_delegate.user,
-            self.as_staff.user,
             self.as_contributor.user,
             self.as_guest.user,
             self.user_no_roles]
@@ -275,7 +264,6 @@ class TestBaseViews(TestProjectPermissionBase):
             self.anonymous,
             self.as_owner.user,
             self.as_delegate.user,
-            self.as_staff.user,
             self.as_contributor.user,
             self.as_guest.user,
             self.user_no_roles]
@@ -304,7 +292,6 @@ class TestProjectViews(TestProjectPermissionBase):
             self.superuser,
             self.as_owner.user,
             self.as_delegate.user,
-            self.as_staff.user,
             self.as_contributor.user,
             self.as_guest.user,
             new_user]
@@ -323,7 +310,6 @@ class TestProjectViews(TestProjectPermissionBase):
             self.superuser,
             self.as_owner.user,
             self.as_delegate.user,
-            self.as_staff.user,
             self.as_contributor.user,
             self.as_guest.user]
         bad_users = [
@@ -343,7 +329,6 @@ class TestProjectViews(TestProjectPermissionBase):
             self.as_delegate.user]
         bad_users = [
             self.anonymous,
-            self.as_staff.user,
             self.as_contributor.user,
             self.as_guest.user,
             self.user_no_roles]
@@ -359,7 +344,6 @@ class TestProjectViews(TestProjectPermissionBase):
             self.anonymous,
             self.as_owner.user,
             self.as_delegate.user,
-            self.as_staff.user,
             self.as_contributor.user,
             self.as_guest.user,
             self.user_no_roles]
@@ -377,7 +361,6 @@ class TestProjectViews(TestProjectPermissionBase):
         bad_users = [
             self.anonymous,
             self.as_delegate.user,
-            self.as_staff.user,
             self.as_contributor.user,
             self.as_guest.user,
             self.user_no_roles]
@@ -393,7 +376,6 @@ class TestProjectViews(TestProjectPermissionBase):
             self.superuser,
             self.as_owner.user,
             self.as_delegate.user,
-            self.as_staff.user,
             self.as_contributor.user,
             self.as_guest.user]
         bad_users = [
@@ -410,8 +392,7 @@ class TestProjectViews(TestProjectPermissionBase):
         good_users = [
             self.superuser,
             self.as_owner.user,
-            self.as_delegate.user,
-            self.as_staff.user]
+            self.as_delegate.user]
         bad_users = [
             self.anonymous,
             self.as_contributor.user,
@@ -428,8 +409,7 @@ class TestProjectViews(TestProjectPermissionBase):
         good_users = [
             self.superuser,
             self.as_owner.user,
-            self.as_delegate.user,
-            self.as_staff.user]
+            self.as_delegate.user]
         bad_users = [
             self.anonymous,
             self.as_contributor.user,
@@ -446,8 +426,7 @@ class TestProjectViews(TestProjectPermissionBase):
         good_users = [
             self.superuser,
             self.as_owner.user,
-            self.as_delegate.user,
-            self.as_staff.user]
+            self.as_delegate.user]
         bad_users = [
             self.anonymous,
             self.as_contributor.user,
@@ -466,7 +445,6 @@ class TestProjectViews(TestProjectPermissionBase):
             self.superuser,
             self.as_owner.user,
             self.as_delegate.user,
-            self.as_staff.user,
             self.as_contributor.user,
             self.as_guest.user,
             self.user_no_roles]
@@ -482,7 +460,6 @@ class TestProjectViews(TestProjectPermissionBase):
             self.superuser,
             self.as_owner.user,
             self.as_delegate.user,
-            self.as_staff.user,
             self.as_contributor.user,
             self.as_guest.user,
             self.user_no_roles]
@@ -499,7 +476,6 @@ class TestProjectViews(TestProjectPermissionBase):
         bad_users = [
             self.anonymous,
             self.as_delegate.user,
-            self.as_staff.user,
             self.as_contributor.user,
             self.as_guest.user,
             self.user_no_roles]
@@ -517,7 +493,6 @@ class TestProjectViews(TestProjectPermissionBase):
         bad_users = [
             self.anonymous,
             self.as_delegate.user,
-            self.as_staff.user,
             self.as_contributor.user,
             self.as_guest.user,
             self.user_no_roles]
@@ -535,7 +510,6 @@ class TestProjectViews(TestProjectPermissionBase):
         bad_users = [
             self.anonymous,
             self.as_delegate.user,
-            self.as_staff.user,
             self.as_contributor.user,
             self.as_guest.user,
             self.user_no_roles]
@@ -553,7 +527,6 @@ class TestProjectViews(TestProjectPermissionBase):
             self.as_delegate.user]
         bad_users = [
             self.anonymous,
-            self.as_staff.user,
             self.as_contributor.user,
             self.as_guest.user,
             self.user_no_roles]
@@ -571,7 +544,6 @@ class TestProjectViews(TestProjectPermissionBase):
             self.as_delegate.user]
         bad_users = [
             self.anonymous,
-            self.as_staff.user,
             self.as_contributor.user,
             self.as_guest.user,
             self.user_no_roles]
@@ -598,7 +570,6 @@ class TestProjectViews(TestProjectPermissionBase):
             self.as_delegate.user]
         bad_users = [
             self.anonymous,
-            self.as_staff.user,
             self.as_contributor.user,
             self.as_guest.user,
             self.user_no_roles]
@@ -630,7 +601,6 @@ class TestProjectViews(TestProjectPermissionBase):
             self.as_delegate.user]
         bad_users = [
             self.anonymous,
-            self.as_staff.user,
             self.as_contributor.user,
             self.as_guest.user,
             self.user_no_roles]
@@ -646,7 +616,6 @@ class TestProjectViews(TestProjectPermissionBase):
             self.superuser,
             self.as_owner.user,
             self.as_delegate.user,
-            self.as_staff.user,
             self.as_contributor.user,
             self.as_guest.user]
         bad_users = [

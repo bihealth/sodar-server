@@ -17,7 +17,6 @@ from projectroles.project_settings import validate_project_setting, \
 # Omics constants
 PROJECT_ROLE_OWNER = OMICS_CONSTANTS['PROJECT_ROLE_OWNER']
 PROJECT_ROLE_DELEGATE = OMICS_CONSTANTS['PROJECT_ROLE_DELEGATE']
-PROJECT_ROLE_STAFF = OMICS_CONSTANTS['PROJECT_ROLE_STAFF']
 PROJECT_TYPE_CHOICES = OMICS_CONSTANTS['PROJECT_TYPE_CHOICES']
 PROJECT_TYPE_PROJECT = OMICS_CONSTANTS['PROJECT_TYPE_PROJECT']
 PROJECT_TYPE_CATEGORY = OMICS_CONSTANTS['PROJECT_TYPE_CATEGORY']
@@ -471,12 +470,6 @@ def get_role_choices(project, current_user, allow_delegate=True):
             'projectroles.update_project_delegate',
             obj=project):
         role_excludes.append(PROJECT_ROLE_DELEGATE)
-
-    # Exclude staff if current user lacks perms
-    if not current_user.has_perm(
-            'projectroles.update_project_staff',
-            obj=project):
-        role_excludes.append(PROJECT_ROLE_STAFF)
 
     return [
         (role.pk, role.name) for role in Role.objects.exclude(

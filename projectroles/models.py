@@ -20,7 +20,6 @@ OMICS_CONSTANTS = {
     'PROJECT_ROLE_DELEGATE': 'project delegate',
     'PROJECT_ROLE_CONTRIBUTOR': 'project contributor',
     'PROJECT_ROLE_GUEST': 'project guest',
-    'PROJECT_ROLE_STAFF': 'project staff',
 
     # Project types
     'PROJECT_TYPE_CATEGORY': 'CATEGORY',
@@ -224,18 +223,12 @@ class Project(models.Model):
         except RoleAssignment.DoesNotExist:
             return None
 
-    def get_staff(self):
-        """Return RoleAssignments for staff"""
-        return self.roles.filter(
-            role__name=OMICS_CONSTANTS['PROJECT_ROLE_STAFF'])
-
     def get_members(self):
-        """Return RoleAssignments for members of project excluding owner,
-        delegate and staff"""
+        """Return RoleAssignments for members of project excluding owner and
+        delegate"""
         return self.roles.filter(
             ~Q(role__name=OMICS_CONSTANTS['PROJECT_ROLE_OWNER']) &
-            ~Q(role__name=OMICS_CONSTANTS['PROJECT_ROLE_DELEGATE']) &
-            ~Q(role__name=OMICS_CONSTANTS['PROJECT_ROLE_STAFF']))
+            ~Q(role__name=OMICS_CONSTANTS['PROJECT_ROLE_DELEGATE']))
 
     def has_role(self, user, include_children=False):
         """Return whether user has roles in Project. If include_children is

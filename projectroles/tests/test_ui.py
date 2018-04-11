@@ -24,7 +24,6 @@ PROJECT_ROLE_OWNER = OMICS_CONSTANTS['PROJECT_ROLE_OWNER']
 PROJECT_ROLE_DELEGATE = OMICS_CONSTANTS['PROJECT_ROLE_DELEGATE']
 PROJECT_ROLE_CONTRIBUTOR = OMICS_CONSTANTS['PROJECT_ROLE_CONTRIBUTOR']
 PROJECT_ROLE_GUEST = OMICS_CONSTANTS['PROJECT_ROLE_GUEST']
-PROJECT_ROLE_STAFF = OMICS_CONSTANTS['PROJECT_ROLE_STAFF']
 PROJECT_TYPE_CATEGORY = OMICS_CONSTANTS['PROJECT_TYPE_CATEGORY']
 PROJECT_TYPE_PROJECT = OMICS_CONSTANTS['PROJECT_TYPE_PROJECT']
 
@@ -84,8 +83,6 @@ class TestUIBase(
             name=PROJECT_ROLE_OWNER)[0]
         self.role_delegate = Role.objects.get_or_create(
             name=PROJECT_ROLE_DELEGATE)[0]
-        self.role_staff = Role.objects.get_or_create(
-            name=PROJECT_ROLE_STAFF)[0]
         self.role_contributor = Role.objects.get_or_create(
             name=PROJECT_ROLE_CONTRIBUTOR)[0]
         self.role_guest = Role.objects.get_or_create(
@@ -95,7 +92,6 @@ class TestUIBase(
         self.superuser = self._make_user('admin', True)
         self.user_owner = self._make_user('user_owner', False)
         self.user_delegate = self._make_user('user_delegate', False)
-        self.user_staff = self._make_user('user_staff', False)
         self.user_contributor = self._make_user('user_contributor', False)
         self.user_guest = self._make_user('user_guest', False)
         self.user_no_roles = self._make_user('user_no_roles', False)
@@ -125,8 +121,6 @@ class TestUIBase(
             self.project, self.user_owner, self.role_owner)
         self.as_delegate = self._make_assignment(
             self.project, self.user_delegate, self.role_delegate)
-        self.as_staff = self._make_assignment(
-            self.project, self.user_staff, self.role_staff)
         self.as_contributor = self._make_assignment(
             self.project, self.user_contributor, self.role_contributor)
         self.as_guest = self._make_assignment(
@@ -315,7 +309,6 @@ class TestProjectList(TestUIBase):
         expected_false = [
             self.as_owner.user,
             self.as_delegate.user,
-            self.as_staff.user,
             self.as_contributor.user,
             self.as_guest.user]
 
@@ -346,9 +339,6 @@ class TestProjectDetail(TestUIBase):
             (self.as_delegate.user, [
                 'omics-pr-link-project-roles',
                 'omics-pr-link-project-update',
-                'omics-pr-link-project-star']),
-            (self.as_staff.user, [
-                'omics-pr-link-project-roles',
                 'omics-pr-link-project-star']),
             (self.as_contributor.user, [
                 'omics-pr-link-project-roles',
@@ -398,8 +388,7 @@ class TestProjectRoles(TestUIBase):
         expected_true = [
             self.superuser,
             self.as_owner.user,
-            self.as_delegate.user,
-            self.as_staff.user]
+            self.as_delegate.user]
         expected_false = [
             self.as_contributor.user,
             self.as_guest.user]
@@ -421,7 +410,6 @@ class TestProjectRoles(TestUIBase):
             self.as_owner.user,
             self.as_delegate.user]
         expected_false = [
-            self.as_staff.user,
             self.as_contributor.user,
             self.as_guest.user]
         url = reverse(
@@ -440,8 +428,7 @@ class TestProjectRoles(TestUIBase):
         expected_true = [
             self.superuser,
             self.as_owner.user,
-            self.as_delegate.user,
-            self.as_staff.user]
+            self.as_delegate.user]
         expected_false = [
             self.as_contributor.user,
             self.as_guest.user]
@@ -459,10 +446,9 @@ class TestProjectRoles(TestUIBase):
         """Test visibility of role management buttons according to user
         permissions"""
         expected = [
-            (self.superuser, 4),
-            (self.as_owner.user, 4),
-            (self.as_delegate.user, 3),
-            (self.as_staff.user, 2),
+            (self.superuser, 3),
+            (self.as_owner.user, 3),
+            (self.as_delegate.user, 2),
             (self.as_contributor.user, 0),
             (self.as_guest.user, 0)]
         url = reverse(
@@ -745,7 +731,6 @@ class TestProjectSearch(TestUIBase):
             (self.as_owner.user, 1),
             (self.as_delegate.user, 1),
             (self.as_contributor.user, 1),
-            (self.as_staff.user, 1),
             (self.as_guest.user, 1),
             (self.user_no_roles, 0)]
         url = reverse('projectroles:search') + '?' + urlencode({'s': 'test'})
@@ -758,7 +743,6 @@ class TestProjectSearch(TestUIBase):
             (self.as_owner.user, 1),
             (self.as_delegate.user, 1),
             (self.as_contributor.user, 1),
-            (self.as_staff.user, 1),
             (self.as_guest.user, 1),
             (self.user_no_roles, 0)]
         url = reverse('projectroles:search') + '?' + urlencode(
@@ -772,7 +756,6 @@ class TestProjectSearch(TestUIBase):
             (self.as_owner.user, 0),
             (self.as_delegate.user, 0),
             (self.as_contributor.user, 0),
-            (self.as_staff.user, 0),
             (self.as_guest.user, 0),
             (self.user_no_roles, 0)]
         url = reverse('projectroles:search') + '?' + urlencode(

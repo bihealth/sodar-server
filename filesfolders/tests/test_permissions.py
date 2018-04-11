@@ -15,7 +15,6 @@ PROJECT_ROLE_OWNER = OMICS_CONSTANTS['PROJECT_ROLE_OWNER']
 PROJECT_ROLE_DELEGATE = OMICS_CONSTANTS['PROJECT_ROLE_DELEGATE']
 PROJECT_ROLE_CONTRIBUTOR = OMICS_CONSTANTS['PROJECT_ROLE_CONTRIBUTOR']
 PROJECT_ROLE_GUEST = OMICS_CONSTANTS['PROJECT_ROLE_GUEST']
-PROJECT_ROLE_STAFF = OMICS_CONSTANTS['PROJECT_ROLE_STAFF']
 PROJECT_TYPE_CATEGORY = OMICS_CONSTANTS['PROJECT_TYPE_CATEGORY']
 PROJECT_TYPE_PROJECT = OMICS_CONSTANTS['PROJECT_TYPE_PROJECT']
 
@@ -45,7 +44,6 @@ class TestFolderPermissions(TestProjectPermissionBase, FolderMixin):
             self.superuser,
             self.as_owner.user,
             self.as_delegate.user,
-            self.as_staff.user,
             self.as_contributor.user]
         bad_users = [
             self.anonymous,
@@ -61,8 +59,7 @@ class TestFolderPermissions(TestProjectPermissionBase, FolderMixin):
         good_users = [
             self.superuser,
             self.as_owner.user,
-            self.as_delegate.user,
-            self.as_staff.user]
+            self.as_delegate.user]
         bad_users = [
             self.as_contributor.user,   # NOTE: not the owner of the folder
             self.anonymous,
@@ -78,8 +75,7 @@ class TestFolderPermissions(TestProjectPermissionBase, FolderMixin):
         good_users = [
             self.superuser,
             self.as_owner.user,
-            self.as_delegate.user,
-            self.as_staff.user]
+            self.as_delegate.user]
         bad_users = [
             self.as_contributor.user,   # NOTE: not the owner of the folder
             self.anonymous,
@@ -121,7 +117,6 @@ class TestFilePermissions(TestProjectPermissionBase, FileMixin):
             self.superuser,
             self.as_owner.user,
             self.as_delegate.user,
-            self.as_staff.user,
             self.as_contributor.user]
         bad_users = [
             self.anonymous,
@@ -137,8 +132,7 @@ class TestFilePermissions(TestProjectPermissionBase, FileMixin):
         good_users = [
             self.superuser,
             self.as_owner.user,
-            self.as_delegate.user,
-            self.as_staff.user]
+            self.as_delegate.user]
         bad_users = [
             self.as_contributor.user,   # NOTE: not the owner of the file
             self.anonymous,
@@ -154,8 +148,7 @@ class TestFilePermissions(TestProjectPermissionBase, FileMixin):
         good_users = [
             self.superuser,
             self.as_owner.user,
-            self.as_delegate.user,
-            self.as_staff.user]
+            self.as_delegate.user]
         bad_users = [
             self.as_contributor.user,   # NOTE: not the owner of the file
             self.anonymous,
@@ -173,7 +166,6 @@ class TestFilePermissions(TestProjectPermissionBase, FileMixin):
             self.superuser,
             self.as_owner.user,
             self.as_delegate.user,
-            self.as_staff.user,
             self.as_contributor.user]
         bad_users = [
             self.anonymous,
@@ -193,7 +185,6 @@ class TestFilePermissions(TestProjectPermissionBase, FileMixin):
             self.superuser,
             self.as_owner.user,
             self.as_delegate.user,
-            self.as_staff.user,
             self.as_contributor.user,
             self.as_guest.user]
         bad_users = [
@@ -213,7 +204,6 @@ class TestFilePermissions(TestProjectPermissionBase, FileMixin):
             self.superuser,
             self.as_owner.user,
             self.as_delegate.user,
-            self.as_staff.user,
             self.as_contributor.user,
             self.as_guest.user,
             self.anonymous,
@@ -233,7 +223,6 @@ class TestFilePermissions(TestProjectPermissionBase, FileMixin):
             self.superuser,
             self.as_owner.user,
             self.as_delegate.user,
-            self.as_staff.user,
             self.as_contributor.user,
             self.as_guest.user,
             self.user_no_roles]
@@ -271,7 +260,6 @@ class TestHyperLinkPermissions(TestProjectPermissionBase, HyperLinkMixin):
             self.superuser,
             self.as_owner.user,
             self.as_delegate.user,
-            self.as_staff.user,
             self.as_contributor.user]
         bad_users = [
             self.anonymous,
@@ -287,8 +275,7 @@ class TestHyperLinkPermissions(TestProjectPermissionBase, HyperLinkMixin):
         good_users = [
             self.superuser,
             self.as_owner.user,
-            self.as_delegate.user,
-            self.as_staff.user]
+            self.as_delegate.user]
         bad_users = [
             self.as_contributor.user,   # NOTE: not the owner of the link
             self.anonymous,
@@ -304,8 +291,7 @@ class TestHyperLinkPermissions(TestProjectPermissionBase, HyperLinkMixin):
         good_users = [
             self.superuser,
             self.as_owner.user,
-            self.as_delegate.user,
-            self.as_staff.user]
+            self.as_delegate.user]
         bad_users = [
             self.as_contributor.user,   # NOTE: not the owner of the link
             self.anonymous,
@@ -339,7 +325,6 @@ class TestBatchPermissions(TestProjectPermissionBase, FolderMixin):
             self.superuser,
             self.as_owner.user,
             self.as_delegate.user,
-            self.as_staff.user,
             self.as_contributor.user]
         bad_users = [
             # self.anonymous,

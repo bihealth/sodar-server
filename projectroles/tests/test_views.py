@@ -24,7 +24,6 @@ PROJECT_ROLE_OWNER = OMICS_CONSTANTS['PROJECT_ROLE_OWNER']
 PROJECT_ROLE_DELEGATE = OMICS_CONSTANTS['PROJECT_ROLE_DELEGATE']
 PROJECT_ROLE_CONTRIBUTOR = OMICS_CONSTANTS['PROJECT_ROLE_CONTRIBUTOR']
 PROJECT_ROLE_GUEST = OMICS_CONSTANTS['PROJECT_ROLE_GUEST']
-PROJECT_ROLE_STAFF = OMICS_CONSTANTS['PROJECT_ROLE_STAFF']
 PROJECT_TYPE_CATEGORY = OMICS_CONSTANTS['PROJECT_TYPE_CATEGORY']
 PROJECT_TYPE_PROJECT = OMICS_CONSTANTS['PROJECT_TYPE_PROJECT']
 SUBMIT_STATUS_OK = OMICS_CONSTANTS['SUBMIT_STATUS_OK']
@@ -77,8 +76,6 @@ class TestViewsBase(TestCase):
             name=PROJECT_ROLE_OWNER)[0]
         self.role_delegate = Role.objects.get_or_create(
             name=PROJECT_ROLE_DELEGATE)[0]
-        self.role_staff = Role.objects.get_or_create(
-            name=PROJECT_ROLE_STAFF)[0]
         self.role_contributor = Role.objects.get_or_create(
             name=PROJECT_ROLE_CONTRIBUTOR)[0]
         self.role_guest = Role.objects.get_or_create(
@@ -483,11 +480,6 @@ class TestRoleAssignmentCreateView(
         self.owner_as = self._make_assignment(
             self.project, self.user, self.role_owner)
 
-        # Init staff user and role
-        self.user_staff = self.make_user('staff')
-        self.staff_as = self._make_assignment(
-            self.project, self.user_staff, self.role_staff)
-
         self.user_new = self.make_user('guest')
 
     def test_render(self):
@@ -523,37 +515,10 @@ class TestRoleAssignmentCreateView(
             (self.role_delegate.pk, self.role_delegate.name),
             form.fields['role'].choices)
 
-    def test_render_staff(self):
-        """Test rendering of form with a project staff role"""
-
-        with self.login(self.user_staff):
-            response = self.client.get(
-                reverse(
-                    'projectroles:role_create',
-                    kwargs={'project': self.project.omics_uuid}))
-
-            self.assertEqual(response.status_code, 200)
-
-            # Assert form field values
-            form = response.context['form']
-            self.assertIsNotNone(form)
-
-            # Assert delegate role is not selectable
-            self.assertNotIn([(
-                self.role_delegate.pk,
-                self.role_delegate.name)],
-                form.fields['role'].choices)
-
-            # Assert staff role is not selectable
-            self.assertNotIn([(
-                self.role_staff.pk,
-                self.role_staff.name)],
-                form.fields['role'].choices)
-
     def test_create_assignment(self):
         """Test RoleAssignment creation"""
         # Assert precondition
-        self.assertEqual(RoleAssignment.objects.all().count(), 2)
+        self.assertEqual(RoleAssignment.objects.all().count(), 1)
 
         # Issue POST request
         values = {
@@ -569,7 +534,7 @@ class TestRoleAssignmentCreateView(
                 values)
 
         # Assert RoleAssignment state after creation
-        self.assertEqual(RoleAssignment.objects.all().count(), 3)
+        self.assertEqual(RoleAssignment.objects.all().count(), 2)
         role_as = RoleAssignment.objects.get(
             project=self.project, user=self.user_new)
         self.assertIsNotNone(role_as)
@@ -603,11 +568,6 @@ class TestRoleAssignmentUpdateView(
             'TestProject', PROJECT_TYPE_PROJECT, None)
         self.owner_as = self._make_assignment(
             self.project, self.user, self.role_owner)
-
-        # Init staff user and role
-        self.user_staff = self.make_user('staff')
-        self.staff_as = self._make_assignment(
-            self.project, self.user_staff, self.role_staff)
 
         # Create guest user and role
         self.user_new = self.make_user('newuser')
@@ -645,38 +605,11 @@ class TestRoleAssignmentUpdateView(
             (self.role_delegate.pk, self.role_delegate.name),
             form.fields['role'].choices)
 
-    def test_render_staff(self):
-        """Test rendering of form with a project staff role"""
-
-        with self.login(self.user_staff):
-            response = self.client.get(
-                reverse(
-                    'projectroles:role_update',
-                    kwargs={'roleassignment': self.role_as.omics_uuid}))
-
-            self.assertEqual(response.status_code, 200)
-
-            # Assert form field values
-            form = response.context['form']
-            self.assertIsNotNone(form)
-
-            # Assert delegate role is not selectable
-            self.assertNotIn([(
-                self.role_delegate.pk,
-                self.role_delegate.name)],
-                form.fields['role'].choices)
-
-            # Assert staff role is not selectable
-            self.assertNotIn([(
-                self.role_staff.pk,
-                self.role_staff.name)],
-                form.fields['role'].choices)
-
     def test_update_assignment(self):
         """Test RoleAssignment updating"""
 
         # Assert precondition
-        self.assertEqual(RoleAssignment.objects.all().count(), 3)
+        self.assertEqual(RoleAssignment.objects.all().count(), 2)
 
         values = {
             'project': self.role_as.project.omics_uuid,
@@ -691,7 +624,7 @@ class TestRoleAssignmentUpdateView(
                 values)
 
         # Assert RoleAssignment state after update
-        self.assertEqual(RoleAssignment.objects.all().count(), 3)
+        self.assertEqual(RoleAssignment.objects.all().count(), 2)
         role_as = RoleAssignment.objects.get(
             project=self.project, user=self.user_new)
         self.assertIsNotNone(role_as)
@@ -1370,14 +1303,14 @@ class TestRoleAssignmentSetAPIView(
             data={
                 'project_pk': self.project.pk,
                 'user_pk': new_user.pk,
-                'role_pk': self.role_staff.pk})
+                'role_pk': self.role_contributor.pk})
 
         response = views.RoleAssignmentSetAPIView.as_view()(request)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(RoleAssignment.objects.all().count(), 2)
 
         new_as = RoleAssignment.objects.get(project=self.project, user=new_user)
-        self.assertEqual(new_as.role.pk, self.role_staff.pk)
+        self.assertEqual(new_as.role.pk, self.role_contributor.pk)
 
 
 class TestRoleAssignmentDeleteAPIView(

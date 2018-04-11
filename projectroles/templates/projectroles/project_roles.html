@@ -35,7 +35,6 @@
 {% block projectroles_extend %}
 
 {% has_perm 'projectroles.update_project_members' request.user project as can_update_members %}
-{% has_perm 'projectroles.update_project_staff' request.user project as can_update_staff %}
 {% has_perm 'projectroles.update_project_delegate' request.user project as can_update_delegate %}
 {% has_perm 'projectroles.invite_users' request.user project as can_invite %}
 {% has_perm 'projectroles.import_roles' request.user project as can_import %}
@@ -83,19 +82,6 @@
              </td>
            </tr>
          {% endif %}
-         {% for s_member in staff %}
-           <tr>
-             <td>{{ s_member.user.username }}</td>
-             <td>{{ s_member.user.name }}</td>
-             <td><a href="mailto:{{ s_member.user.email }}">{{ s_member.user.email }}</a></td>
-             <td>{{ s_member.role.name }}</td>
-             <td>
-               {% if can_update_staff %}
-                 {% include 'projectroles/_project_roles_buttons.html' with user=s_member.user assignment_id=s_member.omics_uuid %}
-               {% endif %}
-             </td>
-           </tr>
-         {%  endfor %}
          {% for member in members %}
            <tr>
              <td>{{ member.user.username }}</td>

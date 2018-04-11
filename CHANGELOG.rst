@@ -57,6 +57,12 @@ Fixed
 - **Filesfolders**
     - Public link form widget always disabled when updating a file (#102)
 
+Removed
+-----
+
+- **General**
+    - Role "project staff" removed (#121)
+
 
 v0.1 (2018-01-26)
 =================
