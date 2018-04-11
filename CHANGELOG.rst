@@ -40,6 +40,7 @@ Changed
     - Site-wide CSS tweaks
     - Rename ``details_position`` to ``plugin_ordering`` in plugins (#90)
     - Refactor app views with redundant ``SingleObjectMixin`` includes (#106)
+    - Squashed/recreated database migrations (#120) (Note: site must be deployed on a fresh database in this version)
 - **Projectroles**
     - Search view improvements
     - Refactor roles and invites views
