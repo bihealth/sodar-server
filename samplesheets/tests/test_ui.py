@@ -23,6 +23,8 @@ class TestProjectSheetsView(TestUIBase, SampleSheetIOMixin):
             SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
 
+    # TODO: Temporarily disabled, see issue #125
+    '''
     def test_tables(self):
         """Test existence of tables in the view after import"""
         expected = [
@@ -35,6 +37,7 @@ class TestProjectSheetsView(TestUIBase, SampleSheetIOMixin):
             'samplesheets:project_sheets',
             kwargs={'project': self.project.omics_uuid})
         self.assert_element_count(expected, url, 'omics-ss-data-table')
+    '''
 
     def test_nav(self):
         """Test existence of navigation menu items in the view"""

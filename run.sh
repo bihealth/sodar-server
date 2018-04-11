@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-./manage.py runserver
+./manage.py runserver --settings=config.settings.local
