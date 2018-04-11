@@ -294,7 +294,7 @@ $(document).ready(function() {
         var scroll = $('.omics-app-container').scrollTop();
 
         if (container != null && container.hasClass('sticky-top')) {
-            if (scroll >= 85) {
+            if (scroll >= 80) {
                 container.addClass('omics-subtitle-shadow');
             }
 
