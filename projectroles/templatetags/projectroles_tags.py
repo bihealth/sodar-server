@@ -116,6 +116,8 @@ def get_app_link_state(app_plugin, app_name, url_name):
             url_name in [u.name for u in app_plugin.urls]):
         return 'active'
 
+    return ''
+
 
 @register.simple_tag
 def get_pr_link_state(app_urls, url_name, link_names=None):
@@ -131,6 +133,8 @@ def get_pr_link_state(app_urls, url_name, link_names=None):
                 return ''
 
         return 'active'
+
+    return ''
 
 
 @register.simple_tag

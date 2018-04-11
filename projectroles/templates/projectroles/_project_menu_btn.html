@@ -8,7 +8,7 @@
   <div class="dropdown-menu">
 
     {# Home #}
-    <a class="dropdown-item {% get_pr_link_state projectroles_urls request.resolver_match.url_name 'home' %}"
+    <a class="dropdown-item{% if request.resolver_match.url_name == 'home' %} active{% endif %}"
         href="{% url 'home' %}"
         title="Home"
         id="omics-pr-alt-link-home">
@@ -19,7 +19,7 @@
     {% if project %}
 
       {# Overview #}
-      <a class="dropdown-item {% get_pr_link_state projectroles_urls request.resolver_match.url_name 'project_detail' %}"
+      <a class="dropdown-item {% get_pr_link_state projectroles_urls request.resolver_match.url_name 'detail' %}"
           href="{% url 'projectroles:detail' project=project.omics_uuid %}"
           title="Overview"
           id="omics-pr-alt-link-overview">
@@ -52,7 +52,7 @@
         </a>
       {% endif %}
       {% if can_update_project %}
-        <a class="dropdown-item {% get_pr_link_state projectroles_urls request.resolver_match.url_name 'project_update' %}"
+        <a class="dropdown-item {% get_pr_link_state projectroles_urls request.resolver_match.url_name 'update' %}"
            href="{% url 'projectroles:update' project=project.omics_uuid %}"
            title="Update Project"
            id="omics-pr-alt-link-project-update">
@@ -73,7 +73,7 @@
            <i class="fa fa-fw fa-plus"></i> Create Project or Category
          </a>
       {% endif %}
-    {% elif request.resolver_match.url_name == 'home' or request.resolver_match.url_name == 'project_create' and not project %}
+    {% elif request.resolver_match.url_name == 'home' or request.resolver_match.url_name == 'create' and not project %}
       {% has_perm 'projectroles.create_project' request.user as can_create_project %}
       {% if can_create_project %}
         <a class="dropdown-item"
