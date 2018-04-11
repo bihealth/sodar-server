@@ -1,8 +1,6 @@
 """Tests for samplesheets.rendering"""
 
-import os
-from zipfile import ZipFile
-
+from bs4 import BeautifulSoup
 from test_plus.test import TestCase
 
 # Projectroles dependency
@@ -10,12 +8,13 @@ from projectroles.models import Role, OMICS_CONSTANTS
 from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
 
 from ..models import Investigation, GenericMaterial
-from ..rendering import SampleSheetTableBuilder
+from ..rendering import SampleSheetTableBuilder, SampleSheetHTMLRenderer, \
+    EMPTY_VALUE
 from .test_io import SampleSheetIOMixin, SHEET_DIR
 
 
 # Local constants
-SHEET_PATH = SHEET_DIR + 'i_small.zip'
+SHEET_PATH = SHEET_DIR + 'test_cancer_02.zip'
 
 
 class TestRenderingBase(
@@ -44,7 +43,6 @@ class TestRenderingBase(
 class TestTableBuilder(TestRenderingBase):
     """Tests for SampleSheetTableBuilder"""
 
-    # TODO: Batch test?
     def test_build_study(self):
         """Test building tables for a study"""
 
@@ -94,7 +92,79 @@ class TestTableBuilder(TestRenderingBase):
         # Test assay tables
         for k, assay_table in tables['assays'].items():
             assert_row_length(assay_table)
-            # TODO: Assay sources and samples
 
 
-# TODO: Test HTML rendering
+class TestHTMLRenderer(TestRenderingBase):
+    """Tests for SampleSheetHTMLRenderer"""
+
+    def setUp(self):
+        super(TestHTMLRenderer, self).setUp()
+        self.tables = self.tb.build_study(self.study)
+
+    def test_render_top_header(self):
+        """Test render_top_header()"""
+
+        def check_top_headers(table):
+            for section in table['top_header']:
+                html = SampleSheetHTMLRenderer.render_top_header(section)
+                bs = BeautifulSoup(html, 'html.parser')
+                self.assertEqual(bs.getText().strip(), section['legend'])
+                self.assertEqual(
+                    int(bs.find('th')['colspan']), section['colspan'])
+                self.assertEqual(
+                    int(bs.find('th')['original-colspan']), section['colspan'])
+
+        check_top_headers(self.tables['study'])
+
+        for assay_table in self.tables['assays'].values():
+            check_top_headers(assay_table)
+
+    def test_render_header(self):
+        """Test render_header()"""
+
+        def check_headers(table):
+            for header in table['field_header']:
+                html = SampleSheetHTMLRenderer.render_header(header)
+                bs = BeautifulSoup(html, 'html.parser')
+                self.assertEqual(bs.getText().strip(), header['value'])
+
+        check_headers(self.tables['study'])
+
+        for assay_table in self.tables['assays'].values():
+            check_headers(assay_table)
+
+    def test_render_cell(self):
+        """Test render_cell()"""
+
+        def check_cell_content(cell):
+            html = SampleSheetHTMLRenderer.render_cell(cell)
+            bs = BeautifulSoup(html, 'html.parser')
+
+            text = bs.getText().strip()
+
+            if cell['unit']:
+                self.assertEqual(text, '{}\xa0{}'.format(
+                    cell['value'], cell['unit']))
+
+            elif not cell['value']:
+                self.assertEqual(text, EMPTY_VALUE)
+
+            else:
+                self.assertEqual(text, cell['value'])
+
+            if cell['tooltip']:
+                self.assertEqual(bs.find('td')['title'], cell['tooltip'])
+
+            if cell['link']:
+                self.assertTrue(bool(bs.find('td').find('a')))
+                self.assertEqual(bs.find('td').find('a')['href'], cell['link'])
+
+        def check_cells(table):
+            for row in table['table_data']:
+                for cell in row:
+                    check_cell_content(cell)
+
+        check_cells(self.tables['study'])
+
+        for assay_table in self.tables['assays'].values():
+            check_cells(assay_table)

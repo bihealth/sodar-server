@@ -20,6 +20,8 @@ HEADER_LEGEND = {
     'MATERIAL': 'Material',
     'DATA': 'Data File'}
 
+EMPTY_VALUE = '-'
+
 STUDY_HIDEABLE_CLASS = 'omics-ss-hideable-study'
 SOURCE_SEARCH_STR = '-source-'
 
@@ -529,7 +531,7 @@ class SampleSheetHTMLRenderer:
                     cell['unit'])
 
         else:   # Empty value
-            ret += '-'
+            ret += EMPTY_VALUE
 
         ret += '</td>\n'
         return ret
