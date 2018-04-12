@@ -159,6 +159,35 @@ class TestSampleSheetImportView(TestViewsBase):
     # TODO: Test import POST
 
 
+class TestSampleSheetTableExportView(TestViewsBase):
+    """Tests for the sample sheet TSV export view"""
+
+    def setUp(self):
+        super(TestSampleSheetTableExportView, self).setUp()
+
+        # Import investigation
+        self.investigation = self._import_isa_from_file(
+            SHEET_PATH, self.project)
+        self.study = self.investigation.studies.first()
+        self.assay = self.study.assays.first()
+
+    def test_render_study(self):
+        """Test rendering the TSV file for a study table"""
+        with self.login(self.user):
+            response = self.client.get(reverse(
+                'samplesheets:export_tsv',
+                kwargs={'study': self.study.omics_uuid}))
+            self.assertEqual(response.status_code, 200)
+
+    def test_render_assay(self):
+        """Test rendering the TSV file for a assay table"""
+        with self.login(self.user):
+            response = self.client.get(reverse(
+                'samplesheets:export_tsv',
+                kwargs={'assay': self.assay.omics_uuid}))
+            self.assertEqual(response.status_code, 200)
+
+
 class TestSampleSheetDeleteView(TestViewsBase):
     """Tests for the investigation delete view"""
 

@@ -1,12 +1,13 @@
+import csv
+
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q
-from django.http import HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import redirect
 from django.urls import reverse
-from django.views.generic import TemplateView, FormView
-
+from django.views.generic import TemplateView, FormView, View
 
 # Projectroles dependency
 from projectroles.models import Project
@@ -162,9 +163,88 @@ class SampleSheetImportView(
                 raise ex
             messages.error(self.request, str(ex))
 
-        return redirect(
-            reverse('samplesheets:project_sheets', kwargs={
-                'project': project.omics_uuid}))
+        return redirect(reverse(
+            'samplesheets:project_sheets',
+            kwargs={'project': project.omics_uuid}))
+
+
+class SampleSheetTableExportView(
+        LoginRequiredMixin, LoggedInPermissionMixin, ProjectPermissionMixin,
+        ProjectContextMixin, View):
+    """Sample sheet table TSV export view"""
+    permission_required = 'samplesheets.export_sheet'
+
+    def get(self, request, *args, **kwargs):
+        """Override get() to return TSV file"""
+
+        # Get the input study (we need study to build assay tables too)
+        assay = None
+        study = None
+
+        if 'assay' in self.kwargs:
+            try:
+                assay = Assay.objects.get(omics_uuid=self.kwargs['assay'])
+                study = assay.study
+
+            except Exception as ex:
+                pass
+
+        elif 'study' in self.kwargs:
+            try:
+                study = Study.objects.get(omics_uuid=self.kwargs['study'])
+
+            except Study.DoesNotExist:
+                pass
+
+        if not study:
+            messages.error(
+                self.request, 'Study not found, unable to render TSV')
+            return redirect(reverse(
+                'samplesheets:project_sheets',
+                kwargs={'project': self._get_project(
+                    self.request, self.kwargs).omics_uuid}))
+
+        # Build study tables
+        tb = SampleSheetTableBuilder()
+        tables = tb.build_study(study)
+
+        if 'assay' in self.kwargs:
+            table = tables['assays'][assay.get_name()]
+            input_name = assay.file_name
+
+        else:   # Study
+            table = tables['study']
+            input_name = study.file_name
+
+        # Set up response
+        response = HttpResponse(content_type='text/tab-separated-values')
+        response['Content-Disposition'] = \
+            'attachment; filename="{}.tsv"'.format(
+                input_name.split('.')[0])  # TODO: TBD: Output file name?
+
+        # Build TSV
+        writer = csv.writer(response, delimiter='\t')
+
+        # Top header
+        output_row = []
+
+        for c in table['top_header']:
+            output_row.append(c['legend'])
+
+            if c['colspan'] > 1:
+                output_row += [''] * (c['colspan'] - 1)
+
+        writer.writerow(output_row)
+
+        # Header
+        writer.writerow([c['value'] for c in table['field_header']])
+
+        # Data cells
+        for row in table['table_data']:
+            writer.writerow([c['value'] for c in row])
+
+        # Return file
+        return response
 
 
 class SampleSheetDeleteView(

@@ -71,3 +71,17 @@ class TestProjectSheetsView(TestUIBase, SampleSheetIOMixin):
 
         self.assert_element_exists(
             expected_false, url, 'omics-ss-buttons-op', False)
+
+    def test_export_button(self):
+        """Test existence of TSV export buttons in the view"""
+        expected = [
+            (self.superuser, 2),
+            (self.as_owner.user, 2),
+            (self.as_delegate.user, 2),
+            (self.as_contributor.user, 2),
+            (self.as_guest.user, 0)]
+        url = reverse(
+            'samplesheets:project_sheets',
+            kwargs={'project': self.project.omics_uuid})
+        self.assert_element_count(
+            expected, url, 'omics-ss-data-excel', attribute='class')

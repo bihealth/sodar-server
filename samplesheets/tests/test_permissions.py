@@ -20,6 +20,8 @@ class TestSampleSheetsPermissions(
         super(TestSampleSheetsPermissions, self).setUp()
         self.investigation = self._import_isa_from_file(
             SHEET_PATH, self.project)
+        self.study = self.investigation.studies.first()
+        self.assay = self.study.assays.first()
 
     def test_project_sheets(self):
         """Test the project sheets view"""
@@ -66,6 +68,40 @@ class TestSampleSheetsPermissions(
             self.as_delegate.user]
         bad_users = [
             self.as_contributor.user,
+            self.as_guest.user,
+            self.anonymous,
+            self.user_no_roles]
+        self.assert_render200_ok(url, good_users)
+        self.assert_redirect(url, bad_users)
+
+    def test_sheet_export_tsv_study(self):
+        """Test the project sheets TSV export view for study table"""
+        url = reverse(
+            'samplesheets:export_tsv',
+            kwargs={'study': self.study.omics_uuid})
+        good_users = [
+            self.superuser,
+            self.as_owner.user,
+            self.as_delegate.user,
+            self.as_contributor.user]
+        bad_users = [
+            self.as_guest.user,
+            self.anonymous,
+            self.user_no_roles]
+        self.assert_render200_ok(url, good_users)
+        self.assert_redirect(url, bad_users)
+
+    def test_sheet_export_tsv_assay(self):
+        """Test the project sheets TSV export view for assay table"""
+        url = reverse(
+            'samplesheets:export_tsv',
+            kwargs={'assay': self.assay.omics_uuid})
+        good_users = [
+            self.superuser,
+            self.as_owner.user,
+            self.as_delegate.user,
+            self.as_contributor.user]
+        bad_users = [
             self.as_guest.user,
             self.anonymous,
             self.user_no_roles]
