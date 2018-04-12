@@ -9,7 +9,7 @@ from projectroles.models import Project
 
 from .models import Investigation, Study, Assay, GenericMaterial, Protocol, \
     Process
-from .io import import_isa, get_inv_file_name
+from .io import import_isa, get_inv_paths
 
 
 class SampleSheetImportForm(forms.Form):
@@ -27,7 +27,6 @@ class SampleSheetImportForm(forms.Form):
         super(SampleSheetImportForm, self).__init__(*args, **kwargs)
         self.isa_zip = None
         self.project = None
-        self.inv_file_name = None
 
         if project:
             try:
@@ -47,16 +46,20 @@ class SampleSheetImportForm(forms.Form):
         # Validate zip file
         zip_file = ZipFile(file)
 
-        # Get investigation file name
-        self.inv_file_name = get_inv_file_name(zip_file)
+        # Get investigation file path(s)
+        i_paths = get_inv_paths(zip_file)
 
-        if not self.inv_file_name:
+        if len(i_paths) == 0:
             self.add_error(
                 'file_upload',
                 'Investigation file not found in archive')
             return self.cleaned_data
 
-        # TODO: Further validation
+        elif len(i_paths) > 1:
+            self.add_error(
+                'file_upload',
+                'Multiple investigation files found in archive')
+            return self.cleaned_data
 
         self.isa_zip = zip_file
 

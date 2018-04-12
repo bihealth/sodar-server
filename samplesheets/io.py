@@ -1,6 +1,7 @@
 """Import and export utilities for the samplesheets app"""
 
 from altamisa.isatab import InvestigationReader, StudyReader, AssayReader
+from fnmatch import fnmatch
 import io
 import logging
 import time
@@ -61,10 +62,15 @@ def import_isa(isa_zip, project):
         file = zip_file.open(str(file_name), 'r')
         return io.TextIOWrapper(file)
 
-    # Parse investigation
-    inv_file_name = get_inv_file_name(isa_zip)
+    def get_zip_path(inv_path, file_path):
+        return '{}{}{}'.format(
+            inv_path, '/' if inv_path else '', str(file_path))
 
-    input_file = get_file(isa_zip, inv_file_name)
+    # Parse investigation
+    inv_file_path = get_inv_paths(isa_zip)[0]
+    inv_dir = '/'.join(inv_file_path.split('/')[:-1])
+
+    input_file = get_file(isa_zip, inv_file_path)
     isa_inv = InvestigationReader.from_stream(
         input_file=input_file).read()
 
@@ -245,7 +251,7 @@ def import_isa(isa_zip, project):
         'identifier': isa_inv.info.identifier,
         'title': (isa_inv.info.title or project.title),
         'description': (isa_inv.info.description or project.description),
-        'file_name': inv_file_name,
+        'file_name': inv_file_path,
         'ontology_source_refs': get_tuple_list(isa_inv.ontology_source_refs),
         'comments': get_ontology_vals(isa_inv.info.comments)}
 
@@ -262,7 +268,7 @@ def import_isa(isa_zip, project):
         # Parse study file
         s = StudyReader.from_stream(
             isa_inv,
-            input_file=get_file(isa_zip, s_i.info.path),
+            input_file=get_file(isa_zip, get_zip_path(inv_dir, s_i.info.path)),
             study_id=study_id).read()
 
         values = {
@@ -319,7 +325,7 @@ def import_isa(isa_zip, project):
 
             a = AssayReader.from_stream(
                 isa_inv,
-                input_file=get_file(isa_zip, a_i.path),
+                input_file=get_file(isa_zip, get_zip_path(inv_dir, a_i.path)),
                 study_id=study_id,
                 assay_id=assay_id).read()
 
@@ -360,16 +366,21 @@ def import_isa(isa_zip, project):
     return db_investigation
 
 
-def get_inv_file_name(zip_file):
+def get_inv_paths(zip_file):
     """
-    Return investigation file name, or None if not found
+    Return investigation file paths from a zip file
     :param zip_file: ZipFile
-    :return: string or None
+    :return: List
+    :raise: ValueError if file_type is not valid
     """
-    # TODO: HACK: Quick and ugly way, improve
-    for file_name in zip_file.namelist():
-        if file_name.find('i_') == 0:
-            return file_name
+    # NOTE: There should not be multiple inv.:s in one file, but must check
+    ret = []
+
+    for f in zip_file.infolist():
+        if fnmatch(f.filename.split('/')[-1], 'i_*.txt'):
+            ret.append(f.filename)
+
+    return ret
 
 
 # Exporting --------------------------------------------------------------------
