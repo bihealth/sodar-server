@@ -29,6 +29,8 @@ Fixed
 
 - **Filesfolders**
     - Broken link for subfolders with depth >1 (#136)
+- **Samplesheets**
+    - Delete investigation if import fails (#138)
 
 
 Removed

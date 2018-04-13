@@ -159,8 +159,15 @@ class SampleSheetImportView(
                     name=self.object.title)
 
         except Exception as ex:
+            try:    # Remove broken investigation if import fails
+                Investigation.objects.get(project=project).delete()
+
+            except Investigation.DoesNotExist:
+                pass
+
             if settings.DEBUG:
                 raise ex
+
             messages.error(self.request, str(ex))
 
         return redirect(reverse(
