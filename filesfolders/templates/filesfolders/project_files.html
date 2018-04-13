@@ -145,7 +145,7 @@
                   </td>
                   <td>
                     {% if folder.folder %}
-                      <a href="{% url 'filesfolders:list' project=project.omics_uuid folder=folder.folder.omics_uuid %}">.. /</a>
+                      <a href="{% url 'filesfolders:list' folder=folder.folder.omics_uuid %}">.. /</a>
                     {% else %}
                       <a href="{% url 'filesfolders:list' project=project.omics_uuid %}">.. /</a>
                     {% endif %}
@@ -175,7 +175,7 @@
                 {% endfor %}
               {% endif %}
 
-              {% if links.count == 0 and files.count == 0 %}
+              {% if folders.count == 0 and links.count == 0 and files.count == 0 %}
                 <tr>
                   <td class="bg-faded font-italic text-center" colspan="8">Empty folder</td>
                 </tr>

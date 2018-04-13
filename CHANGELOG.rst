@@ -18,8 +18,17 @@ Added
 Changed
 -------
 
+- **Filesfolders**
+    - Don't show empty folder label if subfolders exist (#135)
 - **Samplesheets**
     - Rename top header "legend" to "value" (#129)
+
+Fixed
+-----
+
+- **Filesfolders**
+    - Broken link for subfolders with depth >1 (#136)
+
 
 Removed
 -------
