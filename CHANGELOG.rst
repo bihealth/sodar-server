@@ -7,17 +7,18 @@ guidelines.
 
 
 
-Unreleased
-==========
+v0.2.0 (2018-04-13)
+===================
 
 Added
 -----
 
 - **General**
-    - Graph output with pygraphviz for local development
+    - Automated version numbering in footer (#130)
     - ``ProjectPermissionMixin`` for project apps
     - ``ProjectAccessMixin`` for retrieving project from UUID URL kwargs
     - The ``omics_uuid`` field in models where it was missing (#97)
+    - Graph output with pygraphviz for local development
 - **Projectroles**
     - Add ``get_project_link()`` in templatetags
 - **Samplesheets**
@@ -37,6 +38,7 @@ Changed
     - Use ``omics_uuid`` instead of ``pk`` in URLs and templates (#97)
     - Rework URL scheme for consistency and compactness (#105)
     - Modify subtitle and page content containers for all apps
+    - Sticky subtitle nav menu for pages with operations menus or navigation
     - Site-wide CSS tweaks
     - Rename ``details_position`` to ``plugin_ordering`` in plugins (#90)
     - Refactor app views with redundant ``SingleObjectMixin`` includes (#106)
@@ -57,12 +59,13 @@ Fixed
     - Error template layout breaking (#108)
 - **Filesfolders**
     - Public link form widget always disabled when updating a file (#102)
+    - Content type correctly returned for uploaded files and folder READMEs (#131)
 
 Removed
 -----
 
 - **General**
-    - Role "project staff" removed (#121)
+    - Role "project staff" (#121)
 
 
 v0.1 (2018-01-26)
