@@ -33,17 +33,21 @@ psycopg2==2.7.3.2
 awesome-slugify==1.6.5
 
 # Time zones support
-pytz==2017.3
+pytz==2018.4
 
 # Redis support
 django-redis==4.8.0
 redis>=2.10.5
 
+# Profiling
 django-cprofile-middleware==1.0
 
+# Versioning
+versioneer==0.18
 
-# Project imports below
-
+######################
+# Project app imports
+######################
 
 # Packages for LDAP/AD authentication
 # We need our own fork of pyldap such that deployment to Flynn.io works
@@ -72,7 +76,7 @@ django-pagedown==0.1.3
 mistune==0.7.4
 
 # Database file storage
-django-db-file-storage==0.4.3
+django-db-file-storage==0.5.2
 
 # CUBI AltamISA parser
 # NOTE: Commented out for flynn workaround
