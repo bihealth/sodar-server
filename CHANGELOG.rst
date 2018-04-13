@@ -22,6 +22,7 @@ Changed
     - Don't show empty folder label if subfolders exist (#135)
 - **Samplesheets**
     - Rename top header "legend" to "value" (#129)
+    - Allow sample sheet upload for project contributor (#137)
 
 Fixed
 -----

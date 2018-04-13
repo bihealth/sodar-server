@@ -58,9 +58,9 @@ class TestProjectSheetsView(TestUIBase, SampleSheetIOMixin):
         expected_true = [
             self.superuser,
             self.as_owner.user,
-            self.as_delegate.user]
+            self.as_delegate.user,
+            self.as_contributor.user]
         expected_false = [
-            self.as_contributor.user,
             self.as_guest.user]
         url = reverse(
             'samplesheets:project_sheets',
