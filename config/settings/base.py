@@ -9,37 +9,6 @@ https://docs.djangoproject.com/en/dev/ref/settings/
 """
 import environ
 
-# FOR FLYNN ISSUE #3932 WORKAROUNDS
-'''
-import imp
-import pip
-
-
-# FLYNN WORKAROUND for altamisa
-try:
-    import altamisa
-
-except ImportError:
-    print('Flynn issue #3932 workaround: installing altamisa..')
-    pip.main([
-        'install',
-        '-e',
-        'git+git://github.com/bihealth/altamisa.git@'
-        '00e98d93dddd2e4c4e81fb09e16bc25a0986e2ae#egg=altamisa'])
-
-# FLYNN WORKAROUND ENDS
-
-# FLYNN WORKAROUND for django-plugins
-try:
-    imp.find_module('djangoplugins')
-
-except ImportError:
-    pip.main([
-        'install',
-        'git+git://github.com/mikkonie/django-plugins.git@'
-        '1bc07181e6ab68b0f9ed3a00382eb1f6519e1009#egg=django-plugins'])
-'''
-
 ROOT_DIR = environ.Path(__file__) - 3
 APPS_DIR = ROOT_DIR.path('omics_data_mgmt')
 

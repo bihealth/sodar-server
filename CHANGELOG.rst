@@ -6,6 +6,15 @@ Changelog for the Omics Data Management Web UI. Loosely follows the
 guidelines.
 
 
+Unreleased
+==========
+
+Removed
+-------
+
+- **General**
+    - Removed Flynn workarounds, developing on Flynn no longer supported (#133)
+
 
 v0.2.0 (2018-04-13)
 ===================
