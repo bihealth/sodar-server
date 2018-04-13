@@ -2,6 +2,7 @@ from django import template
 from django.conf import settings
 from django.utils import timezone
 
+import omics_data_mgmt
 from ..models import Project, RoleAssignment, OMICS_CONSTANTS, \
     PROJECT_TAG_STARRED
 from ..plugins import get_active_plugins
@@ -206,3 +207,8 @@ def get_role_import_action(source_as, dest_project):
 
     except RoleAssignment.DoesNotExist:
         return 'Import'
+
+
+@register.simple_tag
+def site_version():
+    return omics_data_mgmt.__version__

@@ -39,11 +39,15 @@ pytz==2018.4
 django-redis==4.8.0
 redis>=2.10.5
 
+# Profiling
 django-cprofile-middleware==1.0
 
+# Versioning
+versioneer==0.18
 
-# Project imports below
-
+######################
+# Project app imports
+######################
 
 # Packages for LDAP/AD authentication
 # We need our own fork of pyldap such that deployment to Flynn.io works
