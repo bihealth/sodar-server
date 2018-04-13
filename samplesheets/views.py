@@ -229,7 +229,7 @@ class SampleSheetTableExportView(
         output_row = []
 
         for c in table['top_header']:
-            output_row.append(c['legend'])
+            output_row.append(c['value'])
 
             if c['colspan'] > 1:
                 output_row += [''] * (c['colspan'] - 1)

@@ -6,14 +6,14 @@ import time
 from .models import Assay, Process, GenericMaterial
 
 
-HEADER_COLOURS = {
+TOP_HEADER_COLOURS = {
     'SOURCE': 'info',
     'SAMPLE': 'warning',
     'PROCESS': 'danger',
     'MATERIAL': 'success',
     'DATA': 'success'}
 
-HEADER_LEGEND = {
+TOP_HEADER_VALUES = {
     'SOURCE': 'Source',
     'SAMPLE': 'Sample',
     'PROCESS': 'Process',
@@ -27,9 +27,6 @@ SOURCE_SEARCH_STR = '-source-'
 
 
 logger = logging.getLogger(__name__)
-
-
-# TODO: Wrap rendering stuff in a class
 
 
 # Graph traversal / reference table building -----------------------------------
@@ -153,10 +150,6 @@ class RefTableBuilder:
 # Table building ---------------------------------------------------------------
 
 
-# TODO: Add repetition with full data but repeat=True so the values can be used
-#       in filtering (e.g. add as "hidden" attributes)
-
-
 class SampleSheetTableBuilder:
     """Class for building a dict table with table cells, their properties and
     headers, to be rendered as HTML on the site"""
@@ -171,8 +164,8 @@ class SampleSheetTableBuilder:
     def _add_top_header(self, item_type, colspan, hiding={}):
         """Append columns to top header"""
         self._top_header.append({
-            'legend': HEADER_LEGEND[item_type],
-            'colour': HEADER_COLOURS[item_type],
+            'value': TOP_HEADER_VALUES[item_type],
+            'colour': TOP_HEADER_COLOURS[item_type],
             'colspan': colspan,
             'hiding': hiding})
 
@@ -471,7 +464,7 @@ class SampleSheetHTMLRenderer:
                 section['colspan'],     # Original colspan
                 ''.join(['{}-cols="{}" '.format(k, v) for
                          k, v in section['hiding'].items()]),
-                section['legend'])
+                section['value'])
 
     @classmethod
     def render_header(cls, header):

@@ -77,7 +77,7 @@ class TestTableBuilder(TestRenderingBase):
         sample_pos = 0
 
         for c in tables['study']['top_header']:
-            if c['legend'] == 'Sample':
+            if c['value'] == 'Sample':
                 break
 
             else:
@@ -108,7 +108,7 @@ class TestHTMLRenderer(TestRenderingBase):
             for section in table['top_header']:
                 html = SampleSheetHTMLRenderer.render_top_header(section)
                 bs = BeautifulSoup(html, 'html.parser')
-                self.assertEqual(bs.getText().strip(), section['legend'])
+                self.assertEqual(bs.getText().strip(), section['value'])
                 self.assertEqual(
                     int(bs.find('th')['colspan']), section['colspan'])
                 self.assertEqual(

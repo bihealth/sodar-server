@@ -15,6 +15,12 @@ Added
 - **General**
     - Admin link for superuser (#134)
 
+Changed
+-------
+
+- **Samplesheets**
+    - Rename top header "legend" to "value" (#129)
+
 Removed
 -------
 
