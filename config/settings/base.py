@@ -10,6 +10,7 @@ https://docs.djangoproject.com/en/dev/ref/settings/
 import environ
 
 # FOR FLYNN ISSUE #3932 WORKAROUNDS
+'''
 import imp
 import pip
 
@@ -37,7 +38,7 @@ except ImportError:
         'install',
         'git+git://github.com/mikkonie/django-plugins.git@'
         '1bc07181e6ab68b0f9ed3a00382eb1f6519e1009#egg=django-plugins'])
-
+'''
 
 ROOT_DIR = environ.Path(__file__) - 3
 APPS_DIR = ROOT_DIR.path('omics_data_mgmt')
@@ -305,32 +306,8 @@ ADMIN_URL = r'^admin/'
 # Enable LDAP if configured
 if env.str('ENABLE_LDAP', None):
     import itertools
-
-    # FLYNN WORKAROUND
-    try:
-        import ldap
-
-    except ImportError:
-        print('Flynn issue #3932 workaround: installing ldap..')
-
-        pip.main([
-            'install',
-            'git+git://github.com/holtgrewe/pyldap.git@'
-            'fce3b934e9b2d7d1a538fc37d7c4ed4cfe18fae1#egg=pyldap'])
-
-        import ldap
-
-    try:
-        from django_auth_ldap.config import LDAPSearch
-
-    except ImportError:
-        print('Flynn issue #3932 workaround: installing django-auth-ldap..')
-        pip.main([
-            'install',
-            'django-auth-ldap==1.2.8'])
-
-        from django_auth_ldap.config import LDAPSearch
-    # FLYNN WORKAROUND ENDS
+    import ldap
+    from django_auth_ldap.config import LDAPSearch
 
     # Charite LDAP settings
     AUTH_CHARITE_LDAP_SERVER_URI = env.str('AUTH_CHARITE_LDAP_SERVER_URI')
