@@ -96,6 +96,16 @@
                   </li>
                 {% endif %}
 
+                {# Admin link #}
+                {% if request.user.is_superuser %}
+                    <li class="nav-item">
+                      <a class="nav-link"
+                         href="{% url 'admin:index' %}"
+                         id="omics-navbar-admin-link">
+                        <i class="fa fa-fw fa-gears"></i> Admin</a>
+                    </li>
+                {% endif %}
+
                 {# Site-wide apps #}
                 {% get_site_apps as site_apps %}
                 {% for plugin in site_apps %}

@@ -297,6 +297,30 @@ class TestUIBase(
             self.assertNotIn('active', element.get_attribute('class'))
 
 
+class TestBaseTemplate(TestUIBase):
+    """Tests for the base project template"""
+
+    def test_admin_link(self):
+        """Test admin site link visibility according to user permissions"""
+        expected_true = [
+            self.superuser]
+
+        expected_false = [
+            self.as_owner.user,
+            self.as_delegate.user,
+            self.as_contributor.user,
+            self.as_guest.user,
+            self.user_no_roles]
+
+        url = reverse('home')
+
+        self.assert_element_exists(
+            expected_true, url, 'omics-navbar-admin-link', True)
+
+        self.assert_element_exists(
+            expected_false, url, 'omics-navbar-admin-link', False)
+
+
 class TestProjectList(TestUIBase):
     """Tests for the project list UI functionalities"""
 

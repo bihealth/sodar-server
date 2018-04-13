@@ -9,6 +9,12 @@ guidelines.
 Unreleased
 ==========
 
+Added
+-----
+
+- **General**
+    - Admin link for superuser (#134)
+
 Removed
 -------
 
@@ -71,7 +77,7 @@ Fixed
     - Content type correctly returned for uploaded files and folder READMEs (#131)
 
 Removed
------
+-------
 
 - **General**
     - Role "project staff" (#121)
