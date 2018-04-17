@@ -30,6 +30,26 @@ def get_project_setting(project, app_name, setting_name):
                 setting_name, app_name))
 
 
+def get_all_settings(project):
+    """
+    Return all setting values for project. If some setting has not been set,
+    return the default.
+    :param project: Project object
+    :return: Dict
+    """
+    ret = {}
+    app_plugins = [
+        p for p in ProjectAppPluginPoint.get_plugins() if
+        p.project_settings]
+
+    for p in app_plugins:
+        for s_key in p.project_settings:
+            ret['settings.{}.{}'.format(p.name, s_key)] = get_project_setting(
+                project, p.name, s_key)
+
+    return ret
+
+
 def set_project_setting(project, app_name, setting_name, value, validate=True):
     """
     Set value of an existing project settings variable. Creates the object if

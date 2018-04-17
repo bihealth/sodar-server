@@ -67,6 +67,9 @@ LOCAL_APPS = [
     'filesfolders.apps.FilesfoldersConfig',
     'samplesheets.apps.SamplesheetsConfig',
 
+    # Backend apps
+    'taskflowbackend.apps.TaskflowbackendConfig',
+
     # General site apps
     'adminalerts.apps.AdminalertsConfig',
 ]
@@ -380,3 +383,8 @@ FILESFOLDERS_LINK_BAD_REQUEST_MSG = 'Invalid request'
 
 # Adminalerts app settings
 ADMINALERTS_PAGINATION = 15
+
+
+# Taskflow backend settings
+TASKFLOW_BACKEND_HOST = env.str('TASKFLOW_BACKEND_HOST', 'http://0.0.0.0')
+TASKFLOW_BACKEND_PORT = env.int('TASKFLOW_BACKEND_PORT', 5005)

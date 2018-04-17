@@ -108,6 +108,6 @@ ADMIN_URL = env('DJANGO_ADMIN_URL', default='admin')
 # Plugin settings
 ENABLED_BACKEND_PLUGINS = [
     'timeline_backend',
-    # 'taskflow',
+    'taskflow',
     # 'omics_irods',
 ]

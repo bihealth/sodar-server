@@ -14,15 +14,29 @@ Added
 
 - **General**
     - Admin link for superuser (#134)
+- **Projectroles**
+    - Settings updating to Taskflow for project creation and modification (#139)
+    -
+    - Add ``get_all_settings()`` in ``project_settings.py``
+- **Taskflowbackend**
+    - Add taskflowbackend app (#139)
 
 Changed
 -------
 
 - **Filesfolders**
     - Don't show empty folder label if subfolders exist (#135)
+- **Projectroles**
+    - Use Taskflowbackend only for creating and modifying ``PROJECT`` type projects
+    - Modify Taskflow API URLs
+    - Refactor ``get_active_plugins()``
 - **Samplesheets**
     - Rename top header "legend" to "value" (#129)
     - Allow sample sheet upload for project contributor (#137)
+    - In taskflow operations, use ``omics_uuid`` instead of ``pk`` (#99)
+- **Taskflowbackend**
+    - Use ``omics_uuid`` instead of ``pk`` (#139)
+    - Only set up ``PROJECT`` type projects in ``synctaskflow``
 
 Fixed
 -----
@@ -31,7 +45,6 @@ Fixed
     - Broken link for subfolders with depth >1 (#136)
 - **Samplesheets**
     - Delete investigation if import fails (#138)
-
 
 Removed
 -------
