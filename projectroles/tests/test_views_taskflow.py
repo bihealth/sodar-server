@@ -327,8 +327,6 @@ class TestRoleAssignmentUpdateView(TestViewsTaskflowBase, TaskflowMixin):
         self.role_as = self._make_assignment_taskflow(
             self.project, self.user_new, self.role_guest)
 
-    # TODO: FIX: behaviour works but testcase fails
-    '''
     @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_update_assignment(self):
         """Test RoleAssignment updating with taskflow"""
@@ -336,10 +334,11 @@ class TestRoleAssignmentUpdateView(TestViewsTaskflowBase, TaskflowMixin):
         # Assert precondition
         self.assertEqual(RoleAssignment.objects.all().count(), 3)
 
-        values = model_to_dict(self.role_as)
-        values['role'] = self.role_contributor.pk
-        values['user'] = self.user_new.omics_uuid
-        values['omics_url'] = self.live_server_url
+        values = {
+            'project': self.project.omics_uuid,
+            'user': self.user_new.omics_uuid,
+            'role': self.role_contributor.pk,
+            'omics_url': self.live_server_url}
 
         with self.login(self.user):
             response = self.client.post(
@@ -368,7 +367,6 @@ class TestRoleAssignmentUpdateView(TestViewsTaskflowBase, TaskflowMixin):
             self.assertRedirects(response, reverse(
                 'projectroles:roles',
                 kwargs={'project': self.project.omics_uuid}))
-    '''
 
 
 class TestRoleAssignmentDeleteView(TestViewsTaskflowBase, TaskflowMixin):
