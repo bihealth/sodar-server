@@ -407,7 +407,7 @@ class IrodsDirsView(
 
         try:
             taskflow.submit(
-                project_uuid=str(project.omics_uuid),
+                project_uuid=project.omics_uuid,
                 flow_name='sheet_dirs_create',
                 flow_data=flow_data,
                 request=self.request)

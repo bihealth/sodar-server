@@ -702,7 +702,7 @@ class RoleAssignmentModifyMixin(ModelFormMixin):
 
             try:
                 taskflow.submit(
-                    project_uuid=str(project.omics_uuid),
+                    project_uuid=project.omics_uuid,
                     flow_name='role_update',
                     flow_data=flow_data,
                     request=self.request)
@@ -834,7 +834,7 @@ class RoleAssignmentDeleteView(
 
             try:
                 taskflow.submit(
-                    project_uuid=str(project.omics_uuid),
+                    project_uuid=project.omics_uuid,
                     flow_name='role_delete',
                     flow_data=flow_data,
                     request=self.request)
