@@ -37,8 +37,29 @@ urlpatterns = [
         name='export_tsv',
     ),
     url(
+        regex=r'^dirs/(?P<project>[0-9a-f-]+)$',
+        view=views.IrodsDirsView.as_view(),
+        name='dirs',
+    ),
+    url(
         regex=r'^delete/(?P<project>[0-9a-f-]+)$',
         view=views.SampleSheetDeleteView.as_view(),
         name='delete',
+    ),
+    # Taskflow API views
+    url(
+        regex=r'^taskflow/dirs/get$',
+        view=views.SampleSheetDirStatusGetAPIView.as_view(),
+        name='taskflow_sheet_dirs_get',
+    ),
+    url(
+        regex=r'^taskflow/dirs/set$',
+        view=views.SampleSheetDirStatusSetAPIView.as_view(),
+        name='taskflow_sheet_dirs_set',
+    ),
+    url(
+        regex=r'^taskflow/delete$',
+        view=views.SampleSheetDeleteAPIView.as_view(),
+        name='taskflow_sheet_delete',
     ),
 ]

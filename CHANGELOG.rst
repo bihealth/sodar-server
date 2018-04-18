@@ -16,8 +16,9 @@ Added
     - Admin link for superuser (#134)
 - **Projectroles**
     - Settings updating to Taskflow for project creation and modification (#139)
-    -
     - Add ``get_all_settings()`` in ``project_settings.py``
+- **Samplesheets**
+    - iRODS directory creation (#139)
 - **Taskflowbackend**
     - Add taskflowbackend app (#139)
 

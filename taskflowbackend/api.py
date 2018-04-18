@@ -39,7 +39,7 @@ class TaskflowAPI:
             force_fail=False):
         """
         Submit taskflow for project data modification.
-        :param project_uuid: UUID of the project
+        :param project_uuid: UUID of the project (UUID object or string)
         :param flow_name: Name of flow to be executed (string)
         :param flow_data: Input data for flow execution (dict)
         :param request: Request object (optional)
@@ -52,7 +52,7 @@ class TaskflowAPI:
         url = TASKFLOW_URL + '/submit'
 
         data = {
-            'project_uuid': project_uuid,
+            'project_uuid': str(project_uuid),
             'flow_name': flow_name,
             'flow_data': flow_data,
             'request_mode': request_mode,

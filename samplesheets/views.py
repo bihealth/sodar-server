@@ -9,6 +9,9 @@ from django.shortcuts import redirect
 from django.urls import reverse
 from django.views.generic import TemplateView, FormView, View
 
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
 # Projectroles dependency
 from projectroles.models import Project
 from projectroles.plugins import get_backend_api
@@ -24,9 +27,26 @@ from .rendering import SampleSheetTableBuilder
 APP_NAME = 'samplesheets'
 
 
+class InvestigationContextMixin(ProjectContextMixin):
+    """Mixin for providing investigation for context if available"""
+    def get_context_data(self, *args, **kwargs):
+        context = super(InvestigationContextMixin, self).get_context_data(
+            *args, **kwargs)
+
+        try:
+            investigation = Investigation.objects.get(
+                project=context['project'])
+            context['investigation'] = investigation
+
+        except Investigation.DoesNotExist:
+            context['investigation'] = None
+
+        return context
+
+
 class ProjectSheetsView(
         LoginRequiredMixin, LoggedInPermissionMixin, ProjectPermissionMixin,
-        ProjectContextMixin, TemplateView):
+        InvestigationContextMixin, TemplateView):
     """Main view for displaying sample sheets in a project"""
 
     # Projectroles dependency
@@ -37,32 +57,21 @@ class ProjectSheetsView(
         context = super(ProjectSheetsView, self).get_context_data(
             *args, **kwargs)
 
-        # Investigation
-        investigation = None
+        if 'investigation' in context and context['investigation']:
+            try:
+                if 'study' in self.kwargs and self.kwargs['study']:
+                    study = Study.objects.get(
+                        omics_uuid=self.kwargs['study'])
+                else:
+                    study = Study.objects.filter(
+                        investigation=context['investigation']).first()
 
-        try:
-            investigation = Investigation.objects.get(
-                project=context['project'])
-            context['investigation'] = investigation
+                context['study'] = study
+                tb = SampleSheetTableBuilder()
+                context['table_data'] = tb.build_study(study)
 
-        except Investigation.DoesNotExist:
-            context['investigation'] = None
-            return context
-
-        try:
-            if 'study' in self.kwargs and self.kwargs['study']:
-                study = Study.objects.get(
-                    omics_uuid=self.kwargs['study'])
-            else:
-                study = Study.objects.filter(
-                    investigation=investigation).first()
-
-            context['study'] = study
-            tb = SampleSheetTableBuilder()
-            context['table_data'] = tb.build_study(study)
-
-        except Study.DoesNotExist:
-            return None
+            except Study.DoesNotExist:
+                pass
 
         return context
 
@@ -263,6 +272,8 @@ class SampleSheetDeleteView(
 
     def post(self, request, *args, **kwargs):
         timeline = get_backend_api('timeline_backend')
+        taskflow = get_backend_api('taskflow')
+        tl_event = None
         project = Project.objects.get(omics_uuid=kwargs['project'])
         investigation = Investigation.objects.get(project=project)
 
@@ -281,7 +292,23 @@ class SampleSheetDeleteView(
                 label='investigation',
                 name=investigation.title)
 
-        investigation.delete()
+        if taskflow and investigation.irods_status:
+            if tl_event:
+                tl_event.set_status('SUBMIT')
+
+            try:
+                taskflow.submit(
+                    project_uuid=project.omics_uuid,
+                    flow_name='sheet_delete',
+                    flow_data={},
+                    request=self.request)
+
+            except taskflow.FlowSubmitException as ex:
+                if tl_event:
+                    tl_event.set_status('FAILED', str(ex))
+
+        else:
+            investigation.delete()
 
         messages.success(
             self.request, 'Sample sheets deleted.')
@@ -289,3 +316,165 @@ class SampleSheetDeleteView(
         return HttpResponseRedirect(reverse(
             'samplesheets:project_sheets',
             kwargs={'project': project.omics_uuid}))
+
+
+class IrodsDirsView(
+        LoginRequiredMixin, LoggedInPermissionMixin, InvestigationContextMixin,
+        ProjectPermissionMixin, TemplateView):
+    """iRODS directory structure creation confirm view"""
+    template_name = 'samplesheets/irods_dirs_confirm.html'
+    # NOTE: minimum perm, all checked files will be tested in post()
+    permission_required = 'samplesheets.create_dirs'
+
+    def get_context_data(self, *args, **kwargs):
+        context = super(IrodsDirsView, self).get_context_data(
+            *args, **kwargs)
+
+        investigation = context['investigation']
+
+        if not investigation:
+            return context
+
+        # TODO: Get HTML from a template tag instead
+        dirs = []
+        dirs_html = '<ul><li>{}<ul>'.format(settings.TASKFLOW_SAMPLE_DIR)
+
+        for study in investigation.studies.all():
+            study_dir = 'study-' + str(study.omics_uuid)
+            dirs.append(study_dir)
+            dirs_html += '<li>study-{}'.format(study.omics_uuid)
+
+            if study.assays.all().count() > 0:
+                dirs_html += '<ul>'
+
+                for assay in study.assays.all():
+                    assay_dir = study_dir + '/assay-' + str(assay.omics_uuid)
+                    dirs.append(assay_dir)
+                    dirs_html += '<li>assay-{}</li>'.format(assay.omics_uuid)
+
+                dirs_html += '</ul>'
+
+            dirs_html += '</li>'
+
+        dirs_html += '</ul></li></ul>'
+
+        context['dirs'] = dirs
+        context['dirs_html'] = dirs_html
+        return context
+
+    def post(self, request, **kwargs):
+        timeline = get_backend_api('timeline_backend')
+        taskflow = get_backend_api('taskflow')
+        context = self.get_context_data(**kwargs)
+        project = context['project']
+        investigation = context['investigation']
+        tl_event = None
+
+        # Add event in Timeline
+        if timeline:
+            tl_event = timeline.add_event(
+                project=project,
+                app_name=APP_NAME,
+                user=self.request.user,
+                event_name='sheet_dirs_create',
+                description='create irods directory structure for '
+                            '{investigation}')
+
+            tl_event.add_object(
+                obj=investigation,
+                label='investigation',
+                name=investigation.title)
+
+        # Fail if tasflow is not available
+        if not taskflow:
+            if timeline:
+                tl_event.set_status(
+                    'FAILED', status_desc='Taskflow not enabled')
+
+            messages.error(
+                self.request, 'Unable to create dirs: taskflow not enabled!')
+
+            return redirect(reverse(
+                'samplesheets:project_sheets',
+                kwargs={'project': project.omics_uuid}))
+
+        # Else go on with the creation
+        if tl_event:
+            tl_event.set_status('SUBMIT')
+
+        flow_data = {
+            'dirs': context['dirs']}
+
+        try:
+            taskflow.submit(
+                project_uuid=str(project.omics_uuid),
+                flow_name='sheet_dirs_create',
+                flow_data=flow_data,
+                request=self.request)
+            messages.success(
+                self.request,
+                'Directory structure for sample data created in iRODS')
+
+            if tl_event:
+                tl_event.set_status('OK')
+
+        except taskflow.FlowSubmitException as ex:
+            if tl_event:
+                tl_event.set_status('FAILED', str(ex))
+
+            messages.error(self.request, str(ex))
+
+        return HttpResponseRedirect(reverse(
+            'samplesheets:project_sheets',
+            kwargs={'project': project.omics_uuid}))
+
+    def get(self, request, **kwargs):
+        return super(TemplateView, self).render_to_response(
+            self.get_context_data())
+
+
+# Taskflow API Views -----------------------------------------------------
+
+
+# TODO: Use GET instead of POST
+class SampleSheetDirStatusGetAPIView(APIView):
+    """View for getting the sample sheet iRODS dir status"""
+    def post(self, request):
+        try:
+            investigation = Investigation.objects.get(
+                project__omics_uuid=request.data['project_uuid'])
+
+        except Investigation.DoesNotExist as ex:
+            return Response(str(ex), status=404)
+
+        return Response({'dir_status': investigation.irods_status}, 200)
+
+
+class SampleSheetDirStatusSetAPIView(APIView):
+    """View for creating or updating a role assignment based on params"""
+    def post(self, request):
+        try:
+            investigation = Investigation.objects.get(
+                project__omics_uuid=request.data['project_uuid'])
+
+        except Investigation.DoesNotExist as ex:
+            return Response(str(ex), status=404)
+
+        investigation.irods_status = request.data['dir_status']
+        investigation.save()
+
+        return Response('ok', status=200)
+
+
+class SampleSheetDeleteAPIView(APIView):
+    """View for deleting the sample sheets of a project"""
+    def post(self, request):
+        try:
+            investigation = Investigation.objects.get(
+                project__omics_uuid=request.data['project_uuid'])
+
+        except Investigation.DoesNotExist as ex:
+            return Response(str(ex), status=404)
+
+        investigation.delete()
+        return Response('ok', status=200)

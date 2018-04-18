@@ -1,5 +1,6 @@
 {% load rules %}
 {% has_perm 'samplesheets.edit_sheet' request.user project as can_edit_sheet %}
+{% has_perm 'samplesheets.create_dirs' request.user project as can_create_dirs %}
 {% has_perm 'samplesheets.export_sheet' request.user project as can_export_sheet %}
 {% has_perm 'samplesheets.delete_sheet' request.user project as can_delete_sheet %}
 
@@ -32,6 +33,12 @@
       </a>
     {% endif %}
     {% endcomment %}
+
+    {% if investigation and not investigation.irods_status and can_create_dirs %}
+      <a class="dropdown-item" href="{% url 'samplesheets:dirs' project=project.omics_uuid %}">
+        <i class="fa fa-fw fa-database"></i> Create iRODS Directories
+      </a>
+    {% endif %}
 
     {# Delete #}
     {% if investigation and can_delete_sheet %}

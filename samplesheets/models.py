@@ -20,7 +20,7 @@ GENERIC_MATERIAL_TYPES = {
     'DATA': 'Data File'}
 
 GENERIC_MATERIAL_CHOICES = [(k, v) for k, v in GENERIC_MATERIAL_TYPES.items()]
-NOT_AVAILABLE_STR = ''
+NOT_AVAILABLE_STR = '(N/A)'
 
 
 # Abstract base class ----------------------------------------------------------
@@ -129,6 +129,11 @@ class Investigation(BaseSampleSheet):
     ontology_source_refs = JSONField(
         default=dict,
         help_text='Ontology source references')
+
+    #: Status of iRODS directory structure creation
+    irods_status = models.BooleanField(
+        default=False,
+        help_text='Status of iRODS directory structure creation')
 
     def __str__(self):
         return '{}: {}'.format(self.project.title, self.title)
