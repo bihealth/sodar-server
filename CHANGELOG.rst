@@ -19,6 +19,8 @@ Added
     - Add ``get_all_settings()`` in ``project_settings.py``
 - **Samplesheets**
     - iRODS directory creation (#139)
+    - iRODS link display (#139)
+    - Render optional hidden HTML attributes for cell meta data (#139)
 - **Taskflowbackend**
     - Add taskflowbackend app (#139)
 
@@ -35,6 +37,7 @@ Changed
     - Rename top header "legend" to "value" (#129)
     - Allow sample sheet upload for project contributor (#137)
     - In taskflow operations, use ``omics_uuid`` instead of ``pk`` (#99)
+    - Refactor table HTML rendering
 - **Taskflowbackend**
     - Use ``omics_uuid`` instead of ``pk`` (#139)
     - Only set up ``PROJECT`` type projects in ``synctaskflow``

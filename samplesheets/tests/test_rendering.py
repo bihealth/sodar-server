@@ -8,8 +8,7 @@ from projectroles.models import Role, OMICS_CONSTANTS
 from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
 
 from ..models import Investigation, GenericMaterial
-from ..rendering import SampleSheetTableBuilder, SampleSheetHTMLRenderer, \
-    EMPTY_VALUE
+from ..rendering import SampleSheetTableBuilder, EMPTY_VALUE
 from .test_io import SampleSheetIOMixin, SHEET_DIR
 
 
@@ -94,6 +93,10 @@ class TestTableBuilder(TestRenderingBase):
             assert_row_length(assay_table)
 
 
+# TODO: Move to test_templatetags
+
+
+'''
 class TestHTMLRenderer(TestRenderingBase):
     """Tests for SampleSheetHTMLRenderer"""
 
@@ -168,3 +171,4 @@ class TestHTMLRenderer(TestRenderingBase):
 
         for assay_table in self.tables['assays'].values():
             check_cells(assay_table)
+'''

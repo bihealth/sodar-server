@@ -181,7 +181,7 @@ class SampleSheetTableBuilder:
 
     def _add_cell(
             self, value=None, unit=None, repeat=False, link=None,
-            tooltip=None, classes=list()):
+            tooltip=None, attrs=None, classes=list()):
         """
         Add cell data
         :param value: Value to be displayed in the cell
@@ -189,7 +189,8 @@ class SampleSheetTableBuilder:
         :param repeat: Whether this is a repeating column (boolean)
         :param link: Link from the value (URL string)
         :param tooltip: Tooltip to be shown on mouse hover (string)
-        :param classes: Optional extra classes
+        :param attrs: Optional hidden HTML attributes (dict)
+        :param classes: Optional extra classes (list)
         """
         self._row.append({
             'value': value,
@@ -197,6 +198,7 @@ class SampleSheetTableBuilder:
             'repeat': repeat,
             'link': link,
             'tooltip': tooltip,
+            'attrs': attrs,
             'classes': classes})
 
     def _add_repetition(self, colspan, study_data_in_assay=False):
@@ -316,7 +318,12 @@ class SampleSheetTableBuilder:
 
         # Material data
         if type(obj) == GenericMaterial:
-            self._add_cell(obj.name)                            # Name
+            # Add material info for iRODS links Ajax querying
+            attrs = {
+                'isa-material': 1,
+                'isa-material-type': obj.item_type}
+            self._add_cell(obj.name, attrs=attrs)               # Name
+
             self._add_annotations(
                 obj.characteristics, hide_cls)                  # Character.
 
@@ -444,121 +451,3 @@ class SampleSheetTableBuilder:
                     time.time() - a_start))
 
         return ret
-
-
-# HTML rendering ---------------------------------------------------------------
-
-
-class SampleSheetHTMLRenderer:
-    @classmethod
-    def render_top_header(cls, section):
-        """
-        Render section of top header
-        :param section: Header section (dict)
-        :return: String (contains HTML)
-        """
-        return '<th class="bg-{} text-nowrap text-white omics-ss-top-header" ' \
-               'colspan="{}" original-colspan="{}" {}>{}</th>\n'.format(
-                section['colour'],
-                section['colspan'],     # Actual colspan
-                section['colspan'],     # Original colspan
-                ''.join(['{}-cols="{}" '.format(k, v) for
-                         k, v in section['hiding'].items()]),
-                section['value'])
-
-    @classmethod
-    def render_header(cls, header):
-        """
-        Render data table column header
-        :param header: Header dict
-        :return: String (contains HTML)
-        """
-        return '<th class="{}">{}</th>\n'.format(
-            ' '.join(header['classes']),
-            header['value'])
-
-    @classmethod
-    def render_cell(cls, cell):
-        """
-        Return data table cell as HTML
-        :param cell: Cell dict
-        :return: String (contains HTML)
-        """
-        td_class_str = ' '.join(cell['classes'])
-
-        # If repeating cell, return that
-        if cell['repeat']:
-            return '<td class="bg-light text-muted text-center {}">' \
-                   '"</td>\n'.format(td_class_str)
-
-        # Right aligning
-        def is_num(x):
-            try:
-                float(x)
-                return True
-
-            except ValueError:
-                return False
-
-        if cell['value'] and is_num(cell['value']):
-            td_class_str += ' text-right'
-
-        # Build <td>
-        if cell['tooltip']:
-            ret = '<td class="{}" title="{}" data-toggle="tooltip" ' \
-                  'data-placement="top">'.format(td_class_str, cell['tooltip'])
-
-        else:
-            ret = '<td class="{}">'.format(td_class_str)
-
-        if cell['value']:
-            if cell['link']:
-                ret += '<a href="{}" target="_blank">{}</a>'.format(
-                    cell['link'], cell['value'])
-
-            else:
-                ret += cell['value']
-
-            if cell['unit']:
-                ret += '&nbsp;<span class=" text-muted">{}</span>'.format(
-                    cell['unit'])
-
-        else:   # Empty value
-            ret += EMPTY_VALUE
-
-        ret += '</td>\n'
-        return ret
-
-    @classmethod
-    def render_links_top_header(cls):
-        return '<th class="bg-white ' \
-               'omics-ss-top-header omics-ss-data-links-header ' \
-               'omics-ss-data-cell-links">&nbsp;</th>\n'
-
-    @classmethod
-    def render_links_header(cls):
-        """
-        Render data table links column header
-        :return: String (contains HTML)
-        """
-        return '<th class="bg-white omics-ss-data-links-header">Links</th>\n'
-
-    @classmethod
-    def render_links_cell(cls):
-        """
-        Return links cell for row as HTML
-        :return: String (contains HTML)
-        """
-        # TODO: Add actual links
-        # TODO: Refactor/cleanup, this is a quick screenshot HACK
-
-        return '<td class="bg-light omics-ss-data-cell-links">\n' \
-               '  <div class="btn-group omics-ss-data-btn-group">\n' \
-               '    <button class="btn btn-secondary dropdown-toggle btn-sm ' \
-               '                   omics-ss-data-dropdown"' \
-               '                   type="button" data-toggle="dropdown" ' \
-               '                   aria-expanded="false">' \
-               '                   <i class="fa fa-external-link"></i>' \
-               '    </button>' \
-               '  </div>\n' \
-               '</td>\n'

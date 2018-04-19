@@ -9,34 +9,39 @@
           {% render_top_header section %}
         {% endautoescape %}
       {% endfor %}
-      {% autoescape off %}
-        {% render_links_top_header %}
-      {% endautoescape %}
+      <th class="bg-white omics-ss-top-header omics-ss-data-links-header omics-ss-data-cell-links">&nbsp;</th>
     </tr>
     {# Field header #}
     <tr>
       {% for header in table.field_header %}
-        {% autoescape off %}
-          {% render_header header %}
-        {% endautoescape %}
+        <th class="{{ header.classes|join:' ' }}">{{ header.value }}</th>
       {% endfor %}
-      {% autoescape off %}
-        {% render_links_header %}
-      {% endautoescape %}
-   </tr>
-   </thead>
+      <th class="bg-white omics-ss-data-links-header">Links</th>
+    </tr>
+  </thead>
   <tbody>
     {# Content #}
     {% for row in table.table_data %}
-      <tr>
+      {% get_random_id as random_id %}
+      <tr id="omics-ss-data-row-{{ random_id }}">
         {% for cell in row %}
           {% autoescape off %}
             {% render_cell cell %}
           {% endautoescape %}
         {% endfor %}
+        <td class="bg-light omics-ss-data-cell-links">
+          <button class="btn btn-secondary btn-sm omics-ss-link-btn"
+                  id="omics-ss-link-btn-{{ random_id }}"
+                  type="submit" {% if not investigation.irods_status %}disabled{% endif %}>
+            <i class="fa fa-external-link"></i>
+          </button>
+        </td>
+
+        {% comment %}
         {% autoescape off %}
           {% render_links_cell row %}
         {% endautoescape %}
+        {% endcomment %}
       </tr>
     {% endfor %}
    </tbody>

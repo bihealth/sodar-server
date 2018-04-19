@@ -94,8 +94,9 @@
       border-left: 3px solid #dfdfdf !important;
     }
 
-    .omics-ss-data-btn-group {
-      height: 1.25em;
+    .omics-ss-link-btn {
+      padding-top: 2px !important;
+      height: 1.75em;
     }
 
     .omics-ss-data-dropdown {
@@ -178,6 +179,8 @@
   {% endif %}
 
 </div> {# Main container #}
+
+<span id="omics-ss-link-popup" row-id=""></span>
 
 {% endblock projectroles_extend %}
 
@@ -277,6 +280,36 @@
                 dt.columns('.omics-ss-hideable-study').visible(true);
                 $(this).attr('assay-hide-mode', '0');
             }
+        });
+
+        /**************
+         * Links Popup
+         **************/
+        $('#omics-ss-link-popup').popup({
+            transition: 'all 0.2s',
+            beforeopen: function () {
+                var rowId = $(this).attr('row-id');
+                var row = $(document).find('#omics-ss-data-row-' + rowId);
+                var htmlHeader = '<div class="card"><div class="card-body"><h5>Files in iRODS</h5><hr />';
+                var htmlFooter = '</div></div>';
+                var htmlData = '';
+
+                row.find('td').each(function(i, obj) {
+                    if ($(obj).attr('isa-material') === '1' && $(obj).text() !== '{{ EMPTY_VALUE }}') {
+                        // This is just an example..
+                        htmlData += '<a href="#">' + $(obj).text() + '</a> (' + $(obj).attr('isa-material-type') +')<br />';
+                    }
+                });
+
+                // TODO: Determine proper folders/files, query from omics_irods_rest and display
+                // TODO: If study table, search for rows with material in assay table(s) and also add them
+                // TODO: TBD: Sources included?
+                $(this).html(htmlHeader + htmlData + htmlFooter);
+            }
+        });
+
+        $('.omics-ss-link-btn').click(function() {
+            $('#omics-ss-link-popup').attr('row-id', $(this).attr('id').split('-')[4]).popup('show');
         });
     });
   </script>

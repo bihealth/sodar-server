@@ -21,7 +21,7 @@ from projectroles.views import LoggedInPermissionMixin, \
 from .forms import SampleSheetImportForm
 from .models import Investigation, Study, Assay, Protocol, Process, \
     GenericMaterial
-from .rendering import SampleSheetTableBuilder
+from .rendering import SampleSheetTableBuilder, EMPTY_VALUE
 
 
 APP_NAME = 'samplesheets'
@@ -73,6 +73,7 @@ class ProjectSheetsView(
             except Study.DoesNotExist:
                 pass
 
+        context['EMPTY_VALUE'] = EMPTY_VALUE    # For JQuery
         return context
 
 
