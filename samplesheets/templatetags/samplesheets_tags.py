@@ -2,6 +2,7 @@ import random
 import string
 
 from django import template
+from django.conf import settings
 from django.urls import reverse
 
 from ..models import Investigation, Study, Assay, GenericMaterial, \
@@ -14,7 +15,7 @@ register = template.Library()
 EMPTY_VALUE = '-'
 
 
-# General tags -----------------------------------------------------------------
+# General ----------------------------------------------------------------------
 
 
 @register.simple_tag
@@ -35,7 +36,7 @@ def get_table_id(parent):
     :return: string
     """
     return 'omics-ss-data-table-{}-{}'.format(
-        parent.__class__.__name__.lower(), parent.pk)
+        parent.__class__.__name__.lower(), parent.omics_uuid)
 
 
 @register.simple_tag
@@ -137,7 +138,30 @@ def get_assay_info_html(assay):
     return ret
 
 
-# Rendering tags ---------------------------------------------------------------
+@register.simple_tag
+def get_irods_dirs(investigation):
+    """Return HTML for iRODS dirs"""
+    ret = '<ul><li>{}<ul>'.format(settings.TASKFLOW_SAMPLE_DIR)
+
+    for study in investigation.studies.all():
+        ret += '<li>study_{}'.format(study.omics_uuid)
+
+        if study.assays.all().count() > 0:
+            ret += '<ul>'
+
+            for assay in study.assays.all():
+                ret += '<li>assay_{}</li>'.format(assay.omics_uuid)
+
+            ret += '</ul>'
+
+        ret += '</li>'
+
+    ret += '</ul></li></ul>'
+
+    return ret
+
+
+# Table rendering --------------------------------------------------------------
 
 
 @register.simple_tag
@@ -158,7 +182,7 @@ def render_top_header(section):
 
 
 @register.simple_tag
-def get_random_id():
+def get_row_id():
     """
     Return random string for link ids
     :return: string
@@ -225,6 +249,7 @@ def render_cell(cell):
 
     ret += '</td>\n'
     return ret
+
 
 @register.simple_tag
 def render_links_cell(row):

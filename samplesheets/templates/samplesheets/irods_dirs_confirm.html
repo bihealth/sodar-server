@@ -1,6 +1,7 @@
 {# Projectroles dependency #}
 {% extends 'projectroles/project_base.html' %}
 {% load rules %}
+{% load samplesheets_tags %}
 
 {% block title %}
   Confirm Sample Sheet iRODS Directories Creation
@@ -25,7 +26,9 @@
     </div>
     <div class="card-body omics-card-body">
       <p>The following structure will be created:</p>
-      {{ dirs_html|safe }}
+      {% autoescape off %}
+        {% get_irods_dirs investigation %}
+      {% endautoescape %}
     </div>
   </div>
 

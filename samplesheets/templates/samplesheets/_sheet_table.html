@@ -22,26 +22,22 @@
   <tbody>
     {# Content #}
     {% for row in table.table_data %}
-      {% get_random_id as random_id %}
-      <tr id="omics-ss-data-row-{{ random_id }}">
+      {% get_row_id as row_id %}
+      <tr id="omics-ss-data-row-{{ row_id }}">
         {% for cell in row %}
           {% autoescape off %}
             {% render_cell cell %}
           {% endautoescape %}
         {% endfor %}
         <td class="bg-light omics-ss-data-cell-links">
+          {# File listing link #}
           <button class="btn btn-secondary btn-sm omics-ss-link-btn"
-                  id="omics-ss-link-btn-{{ random_id }}"
+                  id="omics-ss-link-btn-{{ row_id }}"
+                  title="List files in iRODS"
                   type="submit" {% if not investigation.irods_status %}disabled{% endif %}>
             <i class="fa fa-external-link"></i>
           </button>
         </td>
-
-        {% comment %}
-        {% autoescape off %}
-          {% render_links_cell row %}
-        {% endautoescape %}
-        {% endcomment %}
       </tr>
     {% endfor %}
    </tbody>

@@ -3,7 +3,6 @@
 import logging
 import time
 
-from .io import get_sample_dir
 from .models import Assay, Process, GenericMaterial
 
 
@@ -322,10 +321,10 @@ class SampleSheetTableBuilder:
             # Add material info for iRODS links Ajax querying
             attrs = {
                 'isa-material': 1,
-                'isa-material-type': obj.item_type}
+                'isa-material-type': obj.item_type,
+                'isa-unique-name': obj.unique_name}
 
-            if obj.item_type == 'SAMPLE':
-                attrs['irods-sample-dir'] = get_sample_dir(obj)
+            # TODO: Set material dir here (once we decide how to generate them)
 
             self._add_cell(obj.name, attrs=attrs)               # Name + attrs
 

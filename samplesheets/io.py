@@ -392,14 +392,22 @@ def get_inv_paths(zip_file):
 # iRODS Utils ------------------------------------------------------------------
 
 
-def get_sample_dir(sample):
+def get_irods_dirs(investigation):
     """
-    Return name of sample directory in iRODS
-    :param sample: GenericMaterial object of type SAMPLE
-    :return: string
+    Return iRODS directory structure for the sample repository of an
+    investigation.
+    :param investigation: Investigation object
+    :return: List
     """
-    if type(sample) != GenericMaterial or sample.item_type != 'SAMPLE':
-        raise ValueError('Object is not a GenericMaterial of type SAMPLE')
+    dirs = []
 
-    # Using the name attribute for now..
-    return sample.name
+    for study in investigation.studies.all():
+        study_dir = 'study_' + str(study.omics_uuid)
+        dirs.append(study_dir)
+
+        if study.assays.all().count() > 0:
+            for assay in study.assays.all():
+                assay_dir = study_dir + '/assay_' + str(assay.omics_uuid)
+                dirs.append(assay_dir)
+
+    return dirs

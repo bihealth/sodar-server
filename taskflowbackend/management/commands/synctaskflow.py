@@ -32,11 +32,13 @@ class Command(BaseCommand):
         def submit_sync(app_name, sync_data, raise_exception=False):
             """Submit flows found in an app's sync_data structure"""
             for item in sync_data:
-                print_msg('Syncing flow "{}" by {} for project {} ({})'.format(
+                project = Project.objects.get(omics_uuid=item['project_uuid'])
+
+                print_msg('Syncing flow "{}" by {} for "{}" ({})'.format(
                     item['flow_name'],
                     app_name,
-                    item['project_uuid'],
-                    item['project_title']))
+                    project.title,
+                    project.omics_uuid))
 
                 try:
                     taskflow.submit(

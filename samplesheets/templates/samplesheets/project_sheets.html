@@ -95,7 +95,7 @@
     }
 
     .omics-ss-link-btn {
-      padding-top: 2px !important;
+      padding-top: 1px !important;
       height: 1.75em;
     }
 
@@ -180,7 +180,7 @@
 
 </div> {# Main container #}
 
-<span id="omics-ss-link-popup" row-id=""></span>
+<span id="omics-ss-popup-list" row-id=""></span>
 
 {% endblock projectroles_extend %}
 
@@ -282,32 +282,42 @@
             }
         });
 
-        /**************
-         * Links Popup
-         **************/
-        $('#omics-ss-link-popup').popup({
+        /******************
+         * Link list Popup
+         ******************/
+        $('#omics-ss-popup-list').popup({
             transition: 'all 0.2s',
             beforeopen: function () {
-                // TODO: Get parent study/assay properties
-                // TODO: Find and store sample id
-                // TODO: Get/build base URL (maybe just get from context?)
-                // TODO: Display link(s) to sample dir(s) (NOTE: all assay dirs if currently in study)
-                // TODO: List data files under sample id (NOTE: also from assays if currently in study)
+                var currentDir = '{{ irods_study_dir }}';
                 var rowId = $(this).attr('row-id');
                 var row = $(document).find('#omics-ss-data-row-' + rowId);
+                var tableId = row.closest('table').attr('id');
+                var assayId = null;
+
+                if (tableId.split('-')[4] === 'assay') {
+                    assayId = tableId.split('-').slice(5).join('-');
+                    currentDir += 'assay_' + assayId + '/';
+                }
+
+                var davUrl = '{{ irods_webdav_url }}' + currentDir;
+
+                // TODO: Determine directories for this row (TBD: how?)
+                // TODO: Check existence of directories/files, display as found (NOTE: also from assays if currently in study)
                 var htmlHeader = '<div class="card"><div class="card-body"><h5>Files in iRODS</h5><hr />';
                 var htmlFooter = '</div></div>';
                 var htmlData = '';
 
-                // TODO: OLD TEST CODE BELOW
+                // TODO: TEST CODE BELOW
+                htmlData += '<p>WebDAV URL: ' + davUrl + '</p>';
+                htmlData += '<p>iRODS dir: ' + currentDir + '</p>';
+
+                htmlData += '<p>Found materials/files for this row:</p>';
+
                 row.find('td').each(function(i, obj) {
-                    // TODO: Simplify
                     if ($(obj).attr('isa-material') === '1' &&
-                        $(obj).attr('isa-material-type') !== 'SOURCE' &&
-                        $(obj).attr('isa-material-type') !== 'MATERIAL' &&
-                        $(obj).text() !== '{{ EMPTY_VALUE }}') {
+                        $(obj).attr('isa-material-type') !== 'SOURCE') {
                         // This is just an example..
-                        htmlData += '<a href="#">' + $(obj).text() + '</a> (' + $(obj).attr('isa-material-type') +')<br />';
+                        htmlData += $(obj).attr('isa-unique-name') + ' / ' + $(obj).text() + ' (' + $(obj).attr('isa-material-type') +')<br />';
                     }
                 });
 
@@ -317,7 +327,7 @@
         });
 
         $('.omics-ss-link-btn').click(function() {
-            $('#omics-ss-link-popup').attr('row-id', $(this).attr('id').split('-')[4]).popup('show');
+            $('#omics-ss-popup-list').attr('row-id', $(this).attr('id').split('-')[4]).popup('show');
         });
     });
   </script>

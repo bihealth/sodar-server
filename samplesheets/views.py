@@ -19,6 +19,7 @@ from projectroles.views import LoggedInPermissionMixin, \
     ProjectContextMixin, ProjectPermissionMixin
 
 from .forms import SampleSheetImportForm
+from .io import get_irods_dirs
 from .models import Investigation, Study, Assay, Protocol, Process, \
     GenericMaterial
 from .rendering import SampleSheetTableBuilder, EMPTY_VALUE
@@ -56,6 +57,7 @@ class ProjectSheetsView(
     def get_context_data(self, *args, **kwargs):
         context = super(ProjectSheetsView, self).get_context_data(
             *args, **kwargs)
+        project = context['project']
 
         if 'investigation' in context and context['investigation']:
             try:
@@ -70,8 +72,22 @@ class ProjectSheetsView(
                 tb = SampleSheetTableBuilder()
                 context['table_data'] = tb.build_study(study)
 
+                # iRODS links (TODO: Get these from iRODS backend instead?)
+                if settings.IRODS_WEBDAV_ENABLED:
+                    context['irods_webdav_enabled'] = True
+                    context['irods_webdav_url'] = \
+                        settings.IRODS_WEBDAV_URL.rstrip('/')
+
+                # TODO: TBD: Where to configure this?
+                context['irods_study_dir'] = \
+                    '/omicsZone/projects/{}/{}/{}/study_{}/'.format(
+                        str(project.omics_uuid)[:2],
+                        project.omics_uuid,
+                        settings.TASKFLOW_SAMPLE_DIR,
+                        study.omics_uuid)
+
             except Study.DoesNotExist:
-                pass
+                pass    # TODO: Show error message if study not found?
 
         context['EMPTY_VALUE'] = EMPTY_VALUE    # For JQuery
         return context
@@ -336,31 +352,7 @@ class IrodsDirsView(
         if not investigation:
             return context
 
-        # TODO: Get HTML from a template tag instead
-        dirs = []
-        dirs_html = '<ul><li>{}<ul>'.format(settings.TASKFLOW_SAMPLE_DIR)
-
-        for study in investigation.studies.all():
-            study_dir = 'study-' + str(study.omics_uuid)
-            dirs.append(study_dir)
-            dirs_html += '<li>study-{}'.format(study.omics_uuid)
-
-            if study.assays.all().count() > 0:
-                dirs_html += '<ul>'
-
-                for assay in study.assays.all():
-                    assay_dir = study_dir + '/assay-' + str(assay.omics_uuid)
-                    dirs.append(assay_dir)
-                    dirs_html += '<li>assay-{}</li>'.format(assay.omics_uuid)
-
-                dirs_html += '</ul>'
-
-            dirs_html += '</li>'
-
-        dirs_html += '</ul></li></ul>'
-
-        context['dirs'] = dirs
-        context['dirs_html'] = dirs_html
+        context['dirs'] = get_irods_dirs(investigation)
         return context
 
     def post(self, request, **kwargs):
