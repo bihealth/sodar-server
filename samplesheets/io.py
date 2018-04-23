@@ -387,3 +387,19 @@ def get_inv_paths(zip_file):
 
 
 # TODO: Export to ISAtab
+
+
+# iRODS Utils ------------------------------------------------------------------
+
+
+def get_sample_dir(sample):
+    """
+    Return name of sample directory in iRODS
+    :param sample: GenericMaterial object of type SAMPLE
+    :return: string
+    """
+    if type(sample) != GenericMaterial or sample.item_type != 'SAMPLE':
+        raise ValueError('Object is not a GenericMaterial of type SAMPLE')
+
+    # Using the name attribute for now..
+    return sample.name

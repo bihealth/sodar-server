@@ -288,22 +288,30 @@
         $('#omics-ss-link-popup').popup({
             transition: 'all 0.2s',
             beforeopen: function () {
+                // TODO: Get parent study/assay properties
+                // TODO: Find and store sample id
+                // TODO: Get/build base URL (maybe just get from context?)
+                // TODO: Display link(s) to sample dir(s) (NOTE: all assay dirs if currently in study)
+                // TODO: List data files under sample id (NOTE: also from assays if currently in study)
                 var rowId = $(this).attr('row-id');
                 var row = $(document).find('#omics-ss-data-row-' + rowId);
                 var htmlHeader = '<div class="card"><div class="card-body"><h5>Files in iRODS</h5><hr />';
                 var htmlFooter = '</div></div>';
                 var htmlData = '';
 
+                // TODO: OLD TEST CODE BELOW
                 row.find('td').each(function(i, obj) {
-                    if ($(obj).attr('isa-material') === '1' && $(obj).text() !== '{{ EMPTY_VALUE }}') {
+                    // TODO: Simplify
+                    if ($(obj).attr('isa-material') === '1' &&
+                        $(obj).attr('isa-material-type') !== 'SOURCE' &&
+                        $(obj).attr('isa-material-type') !== 'MATERIAL' &&
+                        $(obj).text() !== '{{ EMPTY_VALUE }}') {
                         // This is just an example..
                         htmlData += '<a href="#">' + $(obj).text() + '</a> (' + $(obj).attr('isa-material-type') +')<br />';
                     }
                 });
 
-                // TODO: Determine proper folders/files, query from omics_irods_rest and display
-                // TODO: If study table, search for rows with material in assay table(s) and also add them
-                // TODO: TBD: Sources included?
+                // Set popup html here
                 $(this).html(htmlHeader + htmlData + htmlFooter);
             }
         });

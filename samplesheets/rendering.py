@@ -3,6 +3,7 @@
 import logging
 import time
 
+from .io import get_sample_dir
 from .models import Assay, Process, GenericMaterial
 
 
@@ -322,7 +323,11 @@ class SampleSheetTableBuilder:
             attrs = {
                 'isa-material': 1,
                 'isa-material-type': obj.item_type}
-            self._add_cell(obj.name, attrs=attrs)               # Name
+
+            if obj.item_type == 'SAMPLE':
+                attrs['irods-sample-dir'] = get_sample_dir(obj)
+
+            self._add_cell(obj.name, attrs=attrs)               # Name + attrs
 
             self._add_annotations(
                 obj.characteristics, hide_cls)                  # Character.
