@@ -52,7 +52,7 @@ SUBMIT_STATUS_PENDING_TASKFLOW = OMICS_CONSTANTS['SUBMIT_STATUS_PENDING']
 APP_NAME = 'projectroles'
 
 
-# Mixins -----------------------------------------------------------------
+# General mixins ---------------------------------------------------------------
 
 
 class ProjectAccessMixin:
@@ -224,7 +224,7 @@ class APIPermissionMixin(PermissionRequiredMixin):
         return HttpResponseForbidden()
 
 
-# Base Project Views -----------------------------------------------------
+# Base Project Views -----------------------------------------------------------
 
 
 class HomeView(LoginRequiredMixin, PluginContextMixin, TemplateView):
@@ -360,7 +360,7 @@ class ProjectSearchView(LoginRequiredMixin, TemplateView):
         return context
 
 
-# Project Editing Views --------------------------------------------------
+# Project Editing Views --------------------------------------------------------
 
 
 class ProjectModifyMixin(ModelFormMixin):
@@ -607,7 +607,7 @@ class ProjectUpdateView(
         return kwargs
 
 
-# RoleAssignment Views ---------------------------------------------------
+# RoleAssignment Views ---------------------------------------------------------
 
 
 class ProjectRoleView(
@@ -1113,7 +1113,67 @@ class RoleAssignmentImportView(
             kwargs={'project': dest_project.omics_uuid}))
 
 
-# ProjectInvite Views ----------------------------------------------------
+# ProjectInvite Views ----------------------------------------------------------
+
+
+class ProjectInviteMixin:
+    """General utilities for mixins"""
+
+    @classmethod
+    def _handle_invite(
+            cls, invite, request, resend=False):
+        """
+        Handle invite creation, email sending/resending and logging to timeline
+        :param invite: ProjectInvite object
+        :param request: Django request object
+        :param resend: Send or resend (bool)
+        """
+        timeline = get_backend_api('timeline_backend')
+        send_str = 'resend' if resend else 'send'
+        status_type = 'OK'
+        status_desc = None
+
+        if SEND_EMAIL:
+            sent_mail = send_invite_mail(invite, request)
+
+            if sent_mail == 0:
+                status_type = 'FAILED'
+                status_desc = 'Email sending failed'
+
+        else:
+            status_type = 'FAILED'
+            status_desc = 'PROJECTROLES_SEND_EMAIL not True'
+
+        if status_type != 'OK' and not resend:
+            status_desc += ', invite not created'
+
+        # Add event in Timeline
+        if timeline:
+            timeline.add_event(
+                project=invite.project,
+                app_name=APP_NAME,
+                user=request.user,
+                event_name='invite_{}'.format(send_str),
+                description='{} project invite with role "{}" to {}'.format(
+                    send_str,
+                    invite.role.name,
+                    invite.email),
+                status_type=status_type,
+                status_desc=status_desc)
+
+        if status_type == 'OK':
+            messages.success(
+                request,
+                'Invite for "{}" role in {} sent to {}, expires on {}'.format(
+                    invite.role.name,
+                    invite.project.title,
+                    invite.email,
+                    timezone.localtime(
+                        invite.date_expire).strftime('%Y-%m-%d %H:%M')))
+
+        elif not resend:  # NOTE: Delete invite if send fails
+            invite.delete()
+            messages.error(request, status_desc)
 
 
 class ProjectInviteView(
@@ -1149,7 +1209,7 @@ class ProjectInviteView(
 
 class ProjectInviteCreateView(
         LoginRequiredMixin, LoggedInPermissionMixin, ProjectPermissionMixin,
-        ProjectContextMixin, CreateView):
+        ProjectContextMixin, ProjectInviteMixin, CreateView):
     """ProjectInvite creation view"""
     model = ProjectInvite
     form_class = ProjectInviteForm
@@ -1182,32 +1242,10 @@ class ProjectInviteCreateView(
         return kwargs
 
     def form_valid(self, form):
-        timeline = get_backend_api('timeline_backend')
         self.object = form.save()
 
-        if SEND_EMAIL:
-            send_invite_mail(self.object, self.request)
-
-        # Add event in Timeline
-        if timeline:
-            timeline.add_event(
-                project=self.object.project,
-                app_name=APP_NAME,
-                user=self.request.user,
-                event_name='invite_send',
-                description='send project invite with role "{}" to {}'.format(
-                    self.object.role.name,
-                    self.object.email),
-                status_type='OK')
-
-        messages.success(
-            self.request,
-            'Invite for "{}" role in {} sent to {}, expires on {}'.format(
-                self.object.role.name,
-                self.object.project.title,
-                self.object.email,
-                timezone.localtime(
-                    self.object.date_expire).strftime('%Y-%m-%d %H:%M')))
+        # Send mail and add to timeline
+        self._handle_invite(invite=self.object, request=self.request)
 
         return redirect(reverse(
             'projectroles:invites',
@@ -1359,13 +1397,11 @@ class ProjectInviteAcceptView(
 
 class ProjectInviteResendView(
         LoginRequiredMixin, LoggedInPermissionMixin, ProjectPermissionMixin,
-        View):
+        ProjectInviteMixin, View):
     """View to handle resending a project invite"""
     permission_required = 'projectroles.invite_users'
 
     def get(self, *args, **kwargs):
-        timeline = get_backend_api('timeline_backend')
-
         try:
             invite = ProjectInvite.objects.get(
                 omics_uuid=self.kwargs['projectinvite'],
@@ -1384,26 +1420,8 @@ class ProjectInviteResendView(
         invite.date_expire = get_expiry_date()
         invite.save()
 
-        # Resend mail
-        if SEND_EMAIL:
-            send_invite_mail(invite, self.request)
-
-        # Add event in Timeline
-        if timeline:
-            timeline.add_event(
-                project=invite.project,
-                app_name=APP_NAME,
-                user=self.request.user,
-                event_name='invite_resend',
-                description='resend invite to "{}"'.format(
-                    invite.email),
-                status_type='OK')
-
-        messages.success(
-            self.request,
-            'Invitation resent to {}, expires on {}.'.format(
-                invite.email,
-                localtime(invite.date_expire).strftime('%Y-%m-%d %H:%M')))
+        # Resend mail and add to timeline
+        self._handle_invite(invite=invite, request=self.request, resend=True)
 
         return redirect(reverse(
             'projectroles:invites',

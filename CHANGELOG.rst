@@ -20,6 +20,10 @@ Changed
 
 - **Filesfolders**
     - Don't show empty folder label if subfolders exist (#135)
+- **Projectroles**
+    - Refactor email sending
+    - Properly log and report errors in email sending (#151)
+    - Require email sending to succeed for creating invites (#149)
 - **Samplesheets**
     - Rename top header "legend" to "value" (#129)
     - Allow sample sheet upload for project contributor (#137)

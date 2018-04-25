@@ -337,6 +337,11 @@ def set_logging(debug):
             }
         },
         'loggers': {
+            'projectroles': {
+                'level': 'DEBUG' if debug else 'INFO',
+                'handlers': ['console', ],
+                'propagate': False,
+            },
             'samplesheets': {
                 'level': 'DEBUG' if debug else 'INFO',
                 'handlers': ['console', ],
