@@ -1,40 +1,27 @@
 {% load landingzones_tags %}
 {% load rules %}
 
-{# HACK #}
-
 <style type="text/css">
-    .table.details_zones th {
-      border-top: none !important;
-    }
+  .table.omics-lz-detail-table td:first-child {
+    border-left: 0;
+    white-space: nowrap;
+  }
 
-    .table.details_zones th {
-        border-top: none !important;
-        border-bottom: none !important;
-      }
+  .table.omics-lz-detail-table thead tr th:nth-child(6) {
+    width: 3em !important;
+ }
+</style>
 
-      .table.details_zones th:first-child {
-          border-left: 0;
-      }
-
-      .table.details_zones th:last-child {
-          border-right: 0;
-          border-bottom: 0;
-      }
-
-      .table.details_zones td:first-child {
-          border-left: 0;
-          white-space: nowrap;
-      }
-
-      .table.details_zones td:nth-child(4) {
-          width: 3em;
-      }
-  </style>
-
-<table class="table table-striped details-files details_zones" style="margin-bottom: 0;">
+<table class="table table-striped omics-card-table omics-lz-detail-table">
   <thead>
-    {% include 'landingzones/_zone_header.html' with details_card_mode=True %}
+    <tr>
+      <th>Zone</th>
+      <th>Study</th>
+      <th>Assay</th>
+      <th>Description</th>
+      <th id="omics-lz-list-header-info">Status&nbsp;Info</th>
+      <th id="omics-lz-list-header-status">Status</th>
+    </tr>
   </thead>
   <tbody>
     {% get_details_zones project request.user as zones %}
@@ -44,7 +31,7 @@
       {% endfor %}
     {% else %}
         <tr>
-          <td class="bg-faded font-italic text-xs-center" colspan="4">No available zones</td>
+          <td class="bg-faded font-italic text-center" colspan="6">No available zones</td>
         </tr>
     {% endif %}
   </tbody>

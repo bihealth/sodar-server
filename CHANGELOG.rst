@@ -14,6 +14,8 @@ Added
 
 - **General**
     - Admin link for superuser (#134)
+- **Landingzones**
+    - Add landingzones app (#139)
 - **Projectroles**
     - Settings updating to Taskflow for project creation and modification (#139)
     - Add ``get_all_settings()`` in ``project_settings.py``
@@ -21,6 +23,7 @@ Added
     - iRODS directory creation (#139)
     - iRODS link display (#139)
     - Render optional hidden HTML attributes for cell meta data (#139)
+    - Add ``get_dir()`` helpers to Study and Assay
 - **Taskflowbackend**
     - Add taskflowbackend app (#139)
 

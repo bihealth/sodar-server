@@ -12,6 +12,17 @@
 {% block css %}
   {{ block.super }}
   <style type="text/css">
+    #omics-lz-list-table td:first-child {
+      white-space: nowrap;
+    }
+
+    #omics-lz-list-table thead tr th:nth-child(7) {
+      width: 85px !important;
+    }
+
+    #omics-lz-list-table thead tr th:nth-child(8) {
+      width: 40px !important;
+    }
   </style>
 {% endblock css %}
 
@@ -57,6 +68,8 @@
           <thead>
             <tr>
               <th>Zone</th>
+              <th>Study</th>
+              <th>Assay</th>
               <th>User</th>
               <th>Description</th>
               <th id="omics-lz-list-header-info">Status&nbsp;Info</th>

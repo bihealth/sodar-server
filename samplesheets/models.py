@@ -239,6 +239,10 @@ class Study(BaseSampleSheet):
         """Return simple printable name for study"""
         return self.title if self.title else self.identifier
 
+    def get_dir(self):
+        """Return directory name for study"""
+        return 'study_' + str(self.omics_uuid)
+
 
 # Protocol ---------------------------------------------------------------------
 
@@ -390,6 +394,17 @@ class Assay(BaseSampleSheet):
     def get_name(self):
         """Return simple idenfitying name for Assay"""
         return ''.join(str(self.file_name)[2:].split('.')[:-1])
+
+    def get_dir(self, include_study=False):
+        """
+        Return directory name for assay
+        :param include_study: Include parent study directory in string (bool)
+        :return: String
+        """
+
+        return '{}assay_{}'.format(
+            (self.study.get_dir() + '/') if include_study else '',
+            self.omics_uuid)
 
 
 # Materials and data files -----------------------------------------------------

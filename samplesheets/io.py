@@ -392,23 +392,34 @@ def get_inv_paths(zip_file):
 # iRODS Utils ------------------------------------------------------------------
 
 
-# TODO: Allow getting assay urls separately
-def get_irods_dirs(investigation):
+def get_irods_dirs(container):
     """
-    Return iRODS directory structure for the sample repository of an
-    investigation.
-    :param investigation: Investigation object
+    Return iRODS directory structure for an Investigation or a part of it
+    :param container: an Investigation, Study or Assay object
     :return: List
     """
     dirs = []
 
-    for study in investigation.studies.all():
-        study_dir = 'study_' + str(study.omics_uuid)
-        dirs.append(study_dir)
+    if type(container) == Investigation:
+        studies = container.studies.all()
+        assays = Assay.objects.filter(study__in=studies)
 
-        if study.assays.all().count() > 0:
-            for assay in study.assays.all():
-                assay_dir = study_dir + '/assay_' + str(assay.omics_uuid)
-                dirs.append(assay_dir)
+    elif type(container) == Study:
+        studies = [container]
+        assays = container.assays.all()
+
+    elif type(container) == Assay:
+        studies = [container.study]
+        assays = [container]
+
+    else:
+        raise ValueError(
+            'Given object is not of type "Investigation", "Study" or "Assay"')
+
+    for study in studies:
+        dirs.append(study.get_dir())
+
+    for assay in assays:
+        dirs.append(assay.get_dir(include_study=True))
 
     return dirs

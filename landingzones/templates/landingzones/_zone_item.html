@@ -6,6 +6,8 @@
   {% else %}
     <td class="omics-lz-list-title">{{ zone.title }}</td>
   {% endif %}
+  <td class="omics-lz-list-study">{{ zone.assay.study.title }}</td>
+  <td class="omics-lz-list-assay">{{ zone.assay.get_name }}</td>
   {% if not details_card_mode %}
     <td class="omics-lz-list-email">
       <a href="mailto:{{ zone.user.email }}">{{ zone.user.username }}</a>
@@ -15,7 +17,7 @@
   <td class="omics-lz-list-status-info">
       {{ zone.status_info }}
       {% if zone.status == 'MOVED' %}
-        <br /><a href="{% url 'project_sheet' project=project.pk %}"><i class="fa fa-arrow-circle-right"></i> Browse files in sample sheet</a>
+        <br /><a href="{% url 'samplesheets:project_sheets' study=zone.assay.study.omics_uuid %}#{% zone.assay.omics_uuid %}"><i class="fa fa-arrow-circle-right"></i> Browse files in sample sheets</a>
       {% endif %}
   </td>
   <td id="omics-lz-list-status-{{ zone.omics_uuid }}" class="omics-lz-list-status {% get_status_style zone %}">{{ zone.status }}</td>

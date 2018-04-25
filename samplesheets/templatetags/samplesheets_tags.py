@@ -144,13 +144,13 @@ def get_irods_dirs(investigation):
     ret = '<ul><li>{}<ul>'.format(settings.TASKFLOW_SAMPLE_DIR)
 
     for study in investigation.studies.all():
-        ret += '<li>study_{}'.format(study.omics_uuid)
+        ret += '<li>{}'.format(study.get_dir())
 
         if study.assays.all().count() > 0:
             ret += '<ul>'
 
             for assay in study.assays.all():
-                ret += '<li>assay_{}</li>'.format(assay.omics_uuid)
+                ret += '<li>{}</li>'.format(assay.get_dir())
 
             ret += '</ul>'
 
