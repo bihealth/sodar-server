@@ -29,6 +29,8 @@ Fixed
 
 - **Filesfolders**
     - Broken link for subfolders with depth >1 (#136)
+- **General**
+    - Add missing email settings in production config (#149)
 - **Samplesheets**
     - Delete investigation if import fails (#138)
 
