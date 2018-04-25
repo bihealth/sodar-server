@@ -1,0 +1,38 @@
+{% load landingzones_tags %}
+
+<tr class="{% get_zone_row_class zone %}" id="omics-lz-list-row-{{ zone.omics_uuid }}" zone-uuid="{{ zone.omics_uuid }}" project-uuid="{{ project.omics_uuid }}" status-url="{% url 'zone_status' zone=zone.omics_uuid %}">
+  {% if details_card_mode %}
+    <td><a href="{% url 'landingzones:list' project=project.omics_uuid %}">{{ zone.title }}</a></td>
+  {% else %}
+    <td class="omics-lz-list-title">{{ zone.title }}</td>
+  {% endif %}
+  {% if not details_card_mode %}
+    <td class="omics-lz-list-email">
+      <a href="mailto:{{ zone.user.email }}">{{ zone.user.username }}</a>
+    </td>
+  {% endif %}
+  <td class="omics-lz-list-description">{{ zone.description }}</td>
+  <td class="omics-lz-list-status-info">
+      {{ zone.status_info }}
+      {% if zone.status == 'MOVED' %}
+        <br /><a href="{% url 'project_sheet' project=project.pk %}"><i class="fa fa-arrow-circle-right"></i> Browse files in sample sheet</a>
+      {% endif %}
+  </td>
+  <td id="omics-lz-list-status-{{ zone.omics_uuid }}" class="omics-lz-list-status {% get_status_style zone %}">{{ zone.status }}</td>
+  {% if not details_card_mode %}
+    <td class="omics-lz-list-links">
+      {% if zone.status != 'MOVED' %}
+        {% if irods_backend %}
+          <a role="button" class="btn btn-secondary btn-sm omics-lz-popup-link" irods-url="{% get_irods_url zone %}" zone-title="{{ zone.title }}">
+            <i class="fa fa-folder-open-o" aria-hidden="true"></i>
+          </a>
+        {% endif %}
+      {% endif %}
+    </td>
+    <td class="omics-lz-list-edit">
+      {% if zone.status != 'MOVED' %}
+        {% include 'landingzones/_zone_buttons.html' %}
+      {% endif %}
+    </td>
+  {% endif %}
+</tr>

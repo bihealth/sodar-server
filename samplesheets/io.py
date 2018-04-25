@@ -392,6 +392,7 @@ def get_inv_paths(zip_file):
 # iRODS Utils ------------------------------------------------------------------
 
 
+# TODO: Allow getting assay urls separately
 def get_irods_dirs(investigation):
     """
     Return iRODS directory structure for the sample repository of an

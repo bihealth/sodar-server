@@ -66,6 +66,7 @@ LOCAL_APPS = [
     'timeline.apps.TimelineConfig',
     'filesfolders.apps.FilesfoldersConfig',
     'samplesheets.apps.SamplesheetsConfig',
+    'landingzones.apps.LandingzonesConfig',
 
     # Backend apps
     'taskflowbackend.apps.TaskflowbackendConfig',
@@ -395,3 +396,8 @@ TASKFLOW_SAMPLE_DIR = 'sample_data'
 # TODO: TBD: Get these through iRODS backend instead?
 IRODS_WEBDAV_ENABLED = env.bool('IRODS_WEBDAV_ENABLED', True)
 IRODS_WEBDAV_URL = env.str('IRODS_WEBDAV_URL', 'https://0.0.0.0/')
+
+
+# Landingzones app settings
+# Status query interval in seconds
+LANDINGZONES_STATUS_INTERVAL = env.int('LANDINGZONES_STATUS_INTERVAL', 2)

@@ -1,0 +1,92 @@
+{# Projectroles dependency #}
+{% extends 'projectroles/project_base.html' %}
+
+{% load static %}
+{% load rules %}
+{% load landingzones_tags %}
+
+{% block title %}
+  Landing Zones for {{ project.title }}
+{% endblock title %}
+
+{% block css %}
+  {{ block.super }}
+  <style type="text/css">
+  </style>
+{% endblock css %}
+
+{% block projectroles_extend %}
+{% has_perm 'landingzones.update_zones_own' request.user project as can_update_zones_own %}
+{% has_perm 'landingzones.update_zones_all' request.user project as can_update_zones_all %}
+{% has_perm 'landingzones.add_zones' request.user project as can_add_zones %}
+
+<div class="row omics-subtitle-container bg-white sticky-top">
+  <h3><i class="fa fa-database"></i> Landing Zones</h3>
+  {% if can_add_data %}
+    {% include 'landingzones/_list_buttons.html' %}
+  {% endif %}
+</div>
+
+<div class="container-fluid omics-page-container"> {# Main container #}
+
+  {% if not investigation %}
+    <div class="alert alert-danger" role="alert">
+      <strong>Note:</strong> No sample sheets are currently available for this project.
+      To create landing zones, a person with sufficient project permissions must
+      import an ISAtab investigation and create the sample directory structure in iRODS
+      using the <a href="{% url 'samplesheets:project_sheets' project=project.omics_uuid %}">Samplesheets app</a>.
+    </div>
+
+  {% elif investigation and not investigation.irods_status %}
+    <div class="alert alert-danger" role="alert">
+      <strong>Note:</strong> The iRODS directory structure for the project sample
+      sheets is not available. A user authorized for sample sheet editing must
+      enable iRODS access by selecting <cite>"Create in iRODS"</cite> in the
+      <a href="{% url 'samplesheets:project_sheets' project=project.omics_uuid %}">Samplesheets app</a>.
+      After that landing zones can be created for the project.
+    </div>
+
+  {% else %}
+    {# Landing zone list #}
+    <div class="card omics-card-single" id="omics-lz-zone-list">
+      <div class="card-header">
+        <h4>{{ zone_list_title }}</h4>
+      </div>
+      <div class="card-body omics-card-body-table">
+        <table class="table table-striped omics-card-table" id="omics-lz-list-table">
+          <thead>
+            <tr>
+              <th>Zone</th>
+              <th>User</th>
+              <th>Description</th>
+              <th id="omics-lz-list-header-info">Status&nbsp;Info</th>
+              <th id="omics-lz-list-header-status">Status</th>
+              <th id="omics-lz-list-header-links">Links</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for zone in zones %}
+              {% include 'landingzones/_zone_item.html' %}
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  {% endif %}
+
+</div> {# Main container #}
+
+<span id="omics-lz-popup-list" row-id=""></span>
+
+{% endblock projectroles_extend %}
+
+{% block javascript %}
+  {{ block.super }}
+  {# Tour content #}
+  <script type="text/javascript">
+    tourEnabled = false;
+    {# TODO: Copy tour from omics_data_access #}
+  </script>
+{% endblock javascript %}

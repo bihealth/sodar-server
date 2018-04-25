@@ -1,0 +1,27 @@
+<div
+  {% if not up %}
+    class="btn-group pull-right" id="lz_buttons_list"
+  {% else %}
+    class="btn-group dropup pull-right" id="lz_buttons_list_up"
+  {% endif %}
+  style="margin-bottom: 12px;">
+    <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+      Zone Actions
+    </button>
+    <div class="dropdown-menu dropdown-menu-right">
+
+      {# Create zone #}
+      <a class="dropdown-item" href="{% url 'zone_create' project=project.pk %}">
+        <i class="fa fa-plus" aria-hidden="true"></i>
+          Create Zone
+      </a>
+
+      {# Clear Moved Zones #}
+      {# TODO #}
+      <a class="dropdown-item" href="{% url 'zones_clear' project=project.pk %}">
+        <i class="fa fa-magic" aria-hidden="true"></i>
+          Clear Moved Zones
+      </a>
+
+    </div>
+</div>

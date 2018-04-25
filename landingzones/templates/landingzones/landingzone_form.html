@@ -1,0 +1,32 @@
+{% extends 'projectroles/project_base.html' %}
+{% load rules %}
+{% load crispy_forms_filters %}
+
+{% block title %}
+    Create Landing Zone in {{ project.title }}
+{% endblock %}
+
+{% block projectroles_extend %}
+
+<div class="row" style="margin-bottom: 12px">
+  <h3>Create Landing Zone</h3>
+</div>
+
+<div class="row">
+  <form method="post">
+    {% csrf_token %}
+    {{ form | crispy }}
+    <div class="btn-group pull-right">
+      <a role="button" class="btn btn-secondary" href="{% url 'project_zones' project=project.pk %}">
+        <i class="fa fa-arrow-circle-left" aria-hidden="true"></i>
+        Cancel
+      </a>
+      <button type="submit" class="btn btn-primary">
+        <i class="fa fa-plus" aria-hidden="true"></i>
+          Create
+      </button>
+    </div>
+  </form>
+</div>
+
+{% endblock %}
