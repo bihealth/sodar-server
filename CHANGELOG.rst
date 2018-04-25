@@ -36,6 +36,9 @@ Changed
     - Use Taskflowbackend only for creating and modifying ``PROJECT`` type projects
     - Modify Taskflow API URLs
     - Refactor ``get_active_plugins()``
+    - Refactor email sending
+    - Properly log and report errors in email sending (#151)
+    - Require email sending to succeed for creating invites (#149)
 - **Samplesheets**
     - Rename top header "legend" to "value" (#129)
     - Allow sample sheet upload for project contributor (#137)
@@ -50,6 +53,10 @@ Fixed
 
 - **Filesfolders**
     - Broken link for subfolders with depth >1 (#136)
+- **General**
+    - Add missing email settings in production config (#149)
+- **Projectroles**
+    - Invalid URL in ``build_invite_url()`` caused a crash (#149)
 - **Samplesheets**
     - Delete investigation if import fails (#138)
 

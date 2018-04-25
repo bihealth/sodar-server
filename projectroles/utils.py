@@ -44,7 +44,7 @@ def build_invite_url(invite, request):
     :return: URL (string)
     """
     return request.build_absolute_uri(reverse(
-        'role_invite_accept',
+        'projectroles:invite_accept',
         kwargs={'secret': invite.secret}))
 
 

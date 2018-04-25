@@ -101,6 +101,17 @@ LOGGING['loggers']['django.security.DisallowedHost'] = {
 ADMIN_URL = env('DJANGO_ADMIN_URL', default='admin')
 
 
+# EMAIL CONFIGURATION
+# ------------------------------------------------------------------------------
+EMAIL_URL = env.email_url('EMAIL_URL')
+
+EMAIL_HOST = EMAIL_URL['EMAIL_HOST']
+EMAIL_PORT = EMAIL_URL['EMAIL_PORT']
+EMAIL_BACKEND = EMAIL_URL['EMAIL_BACKEND']
+EMAIL_HOST_USER = EMAIL_URL['EMAIL_HOST_USER']
+EMAIL_HOST_PASSWORD = EMAIL_URL['EMAIL_HOST_PASSWORD']
+
+
 # Local App Settings
 # ------------------------------------------------------------------------------
 
