@@ -42,7 +42,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
     app_permission = 'landingzones.view_zones_own'
 
     #: Enable or disable general search from project title bar
-    search_enable = True
+    search_enable = False   # TODO: Enable once implemented
 
     #: List of search object types for the app
     search_types = [
