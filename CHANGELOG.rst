@@ -65,6 +65,8 @@ Removed
 
 - **General**
     - Removed Flynn workarounds, deploying on Flynn no longer supported (#133)
+- **Projectroles**
+    - "View Details" link in details page, not needed thanks to project sidebar
 
 
 v0.2.0 (2018-04-13)

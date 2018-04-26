@@ -53,14 +53,6 @@
                 {% else %}
                   {{ plugin.title }}
                 {% endif %}
-                <div class="input-group omics-header-input-group pull-right">
-                  <a href="{% url plugin.entry_point_url_id project=project.omics_uuid %}"
-                     class="btn btn-secondary ml-auto omics-pr-app-details-link"
-                     role="button"
-                     id="omics-pr-app-details-link-{{ plugin.name }}">
-                     <i class="fa fa-arrow-circle-right"></i> View Details
-                  </a>
-                </div>
               </h4>
             </div>
             <div class="card-body omics-card-body omics-card-body-info">
