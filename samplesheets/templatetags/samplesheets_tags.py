@@ -40,23 +40,6 @@ def get_table_id(parent):
 
 
 @register.simple_tag
-def get_study_title(study):
-    """Return printable study title"""
-    if study.title:
-        return study.title.title()
-
-    else:
-        return ' '.join(
-            s for s in study.file_name[2:].split('.')[0]).title()
-
-
-@register.simple_tag
-def get_assay_title(assay):
-    """Return printable assy title"""
-    return ' '.join(s for s in assay.get_name().split('_')).title()
-
-
-@register.simple_tag
 def get_assay_table(table_data, assay):
     """
     Return assay table for rendering

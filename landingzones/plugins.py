@@ -4,7 +4,8 @@ from django.urls import reverse
 from projectroles.plugins import ProjectAppPluginPoint
 
 # Samplesheets dependency
-from samplesheets.io import get_irods_dirs
+from samplesheets.io import get_base_dirs, get_assay_dirs
+from samplesheets.models import Assay
 
 from .models import LandingZone
 from .urls import urlpatterns
@@ -95,25 +96,18 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
 
         # Only sync flows which are not yet moved
         for zone in LandingZone.objects.all().exclude(status='MOVED'):
-            assay = zone.assay
-
-            if assay:
-                flow = {
-                    'flow_name': 'landing_zone_create',
-                    'project_pk': zone.project.omics_uuid,
-                    'flow_data': {
-                        'zone_title': zone.title,
-                        'user_name': zone.user.username,
-                        'user_uuid': zone.user.omics_uuid,
-                        'description': zone.description,
-                        'dirs': get_irods_dirs(assay)}}
-                sync_flows.append(flow)
-
-            else:
-                print('ERROR: Unable to sync zone "{}" for project {}, '
-                      'sample sheet not available!'.format(
-                        zone.title,
-                        zone.project.pk))
+            flow = {
+                'flow_name': 'landing_zone_create',
+                'project_uuid': str(zone.project.omics_uuid),
+                'flow_data': {
+                    'zone_title': zone.title,
+                    'user_name': zone.user.username,
+                    'user_uuid': str(zone.user.omics_uuid),
+                    'study_uuid': str(zone.assay.study.omics_uuid),
+                    'assay_uuid': str(zone.assay.omics_uuid),
+                    'description': zone.description,
+                    'dirs': get_assay_dirs(zone.assay)}}
+            sync_flows.append(flow)
 
         return sync_flows
 
@@ -125,14 +119,16 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         :param uuid: omics_uuid of the referred object
         :return: Dict or None if not found
         """
-        obj = self.get_object(eval(model_str), uuid)
 
-        if not obj:
+        # The only possible model is Assay, directing to entry point
+        try:
+            assay = Assay.objects.get(omics_uuid=uuid)
+
+        except Assay.DoesNotExist:
             return None
 
-        # The only possible model is SampleSheet, directing to entry point
         return {
             'url': reverse(
                 'landingzones:list',
-                kwargs={'project': obj.project.omics_uuid}),
-            'label': obj.title}
+                kwargs={'project': assay.get_project().omics_uuid}),
+            'label': assay.get_display_name()}

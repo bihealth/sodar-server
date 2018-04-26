@@ -3,11 +3,11 @@
 {% has_perm 'landingzones.update_zones_own' request.user project as can_update_own %}
 {% has_perm 'landingzones.update_zones_all' request.user project as can_update_all %}
 
-<div class="btn-group lz_zone_buttons" id="lz_zone_buttons_{{ zone.pk }}">
-  <button class="btn btn-secondary btn-sm dropdown-toggle"
+<div class="btn-group omics-edit-button-group" id="omics-lz-zone-buttons-{{ zone.omics_uuid }}">
+  <button class="btn btn-secondary btn-sm dropdown-toggle omics-edit-dropdown"
       type="button" data-toggle="dropdown"
       aria-haspopup="true" aria-expanded="false">
-    <i class="fa fa-cog" aria-hidden="true"></i>
+    <i class="fa fa-cog"></i>
   </button>
   <div class="dropdown-menu dropdown-menu-right">
     {% if can_update_all or zone.user == request.user and can_update_own %}
@@ -17,6 +17,7 @@
         Update Zone
       </a>
       {% endcomment %}
+      {% comment TODO: Add these once the views are done %}
       {% if zone.status != 'MOVED' %}
         <a class="dropdown-item" href="{% url 'zone_move' pk=zone.pk project=project.pk %}">
       {% else %}
@@ -29,6 +30,7 @@
         <i class="fa fa-close" aria-hidden="true"></i>
         Delete Zone
       </a>
+      {% endcomment %}
     {% endif %}
   </div>
 </div>

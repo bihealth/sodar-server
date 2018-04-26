@@ -19,7 +19,7 @@ from projectroles.views import LoggedInPermissionMixin, \
     ProjectContextMixin, ProjectPermissionMixin
 
 from .forms import SampleSheetImportForm
-from .io import get_irods_dirs
+from .io import get_base_dirs
 from .models import Investigation, Study, Assay, Protocol, Process, \
     GenericMaterial
 from .rendering import SampleSheetTableBuilder, EMPTY_VALUE
@@ -352,7 +352,7 @@ class IrodsDirsView(
         if not investigation:
             return context
 
-        context['dirs'] = get_irods_dirs(investigation)
+        context['dirs'] = get_base_dirs(investigation)
         return context
 
     def post(self, request, **kwargs):

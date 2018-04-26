@@ -3,7 +3,7 @@ from django.urls import reverse
 # Projectroles dependency
 from projectroles.plugins import ProjectAppPluginPoint
 
-from .io import get_irods_dirs
+from .io import get_base_dirs
 from .models import Investigation
 from .urls import urlpatterns
 
@@ -101,7 +101,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
 
         # NOTE: This only syncs previously created dirs
         for investigation in Investigation.objects.filter(irods_status=True):
-            dirs = get_irods_dirs(investigation)
+            dirs = get_base_dirs(investigation)
             flow = {
                 'flow_name': 'sheet_dirs_create',
                 'project_uuid': investigation.project.omics_uuid,

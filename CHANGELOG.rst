@@ -23,13 +23,15 @@ Added
     - iRODS directory creation (#139)
     - iRODS link display (#139)
     - Render optional hidden HTML attributes for cell meta data (#139)
-    - Add ``get_dir()`` helpers to Study and Assay
+    - Add ``get_dir()`` and ``get_display_name()`` helpers to Study and Assay
 - **Taskflowbackend**
     - Add taskflowbackend app (#139)
 
 Changed
 -------
 
+- **General**
+    - Upgrade to django-crispy-forms 1.7.1 (#153)
 - **Filesfolders**
     - Don't show empty folder label if subfolders exist (#135)
 - **Projectroles**

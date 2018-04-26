@@ -3,7 +3,7 @@
 <div class="card-body omics-card-body">
   <dl class="row omics-dl">
     <dt class="col-md-3">Title</dt>
-    <dd class="col-md-9">{% get_study_title study %}</dd>
+    <dd class="col-md-9">{{ study.get_display_name }}</dd>
     <dt class="col-md-3">iRODS Repository</dt>
     <dd class="col-md-9">
       {% if investigation.irods_status %}
@@ -26,7 +26,7 @@
       <dt class="col-md-3">Assays</dt>
       <dd class="col-md-9">
         {% for assay in study.assays.all %}
-          <a href="#assay{{ assay.omics_uuid }}">{% get_assay_title assay %}</a>
+          <a href="#assay{{ assay.omics_uuid }}">{{ assay.get_display_name }}</a>
           {% if assay.comments %}
             <a class="omics-ss-assay-info-link" tabindex="0" data-toggle="popover"
                data-trigger="focus" data-placement="top" data-html="true"

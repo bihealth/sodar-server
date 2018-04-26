@@ -16,14 +16,32 @@ urlpatterns = [
         view=views.ProjectZoneView.as_view(),
         name='list',
     ),
-]
-
-'''    
     url(
-        regex=r'^(?P<project>\d+)/create$',
+        regex=r'^create/(?P<project>[0-9a-f-]+)$',
         view=views.ZoneCreateView.as_view(),
         name='create',
     ),
+    # Javascript API views
+    url(
+        regex=r'^status/(?P<landingzone>[0-9a-f-]+)$',
+        view=views.LandingZoneStatusGetAPIView.as_view(),
+        name='status',
+    ),
+    # Taskflow API views
+    url(
+        regex=r'^taskflow/create$',
+        view=views.ZoneCreateAPIView.as_view(),
+        name='taskflow_zone_create',
+    ),
+    url(
+        regex=r'^taskflow/status/set$',
+        view=views.ZoneStatusSetAPIView.as_view(),
+        name='taskflow_zone_status_set',
+    ),
+]
+
+'''    
+    
     url(
         regex=r'^(?P<project>\d+)/delete/(?P<pk>\d+)$',
         view=views.ZoneDeleteView.as_view(),
@@ -40,11 +58,7 @@ urlpatterns = [
         view=views.IrodsObjectListAPIView.as_view(),
         name='zone_irods_objects_list',
     ),
-    url(
-        regex=r'^(?P<project>\d+)/status/(?P<zone>\d+)$',
-        view=views.LandingZoneStatusGetAPIView.as_view(),
-        name='zone_status',
-    ),
+
     # Taskflow API views
     url(
         regex=r'^taskflow/zone/create$',
@@ -60,11 +74,6 @@ urlpatterns = [
         regex=r'^taskflow/status/get$',
         view=views.ZoneStatusGetAPIView.as_view(),
         name='taskflow_zone_status_get',
-    ),
-    url(
-        regex=r'^taskflow/status/set$',
-        view=views.ZoneStatusSetAPIView.as_view(),
-        name='taskflow_zone_status_set',
     ),
 ]
 '''

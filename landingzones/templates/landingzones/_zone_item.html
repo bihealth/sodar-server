@@ -1,26 +1,30 @@
 {% load landingzones_tags %}
 
-<tr class="{% get_zone_row_class zone %}" id="omics-lz-list-row-{{ zone.omics_uuid }}" zone-uuid="{{ zone.omics_uuid }}" project-uuid="{{ project.omics_uuid }}" status-url="{% url 'zone_status' zone=zone.omics_uuid %}">
+<tr class="{% get_zone_row_class zone %}" id="{{ zone.omics_uuid }}" zone-uuid="{{ zone.omics_uuid }}" project-uuid="{{ project.omics_uuid }}" status-url="{% url 'landingzones:status' landingzone=zone.omics_uuid %}">
   {% if details_card_mode %}
-    <td><a href="{% url 'landingzones:list' project=project.omics_uuid %}">{{ zone.title }}</a></td>
+    <td><a href="{% url 'landingzones:list' project=project.omics_uuid %}#{{ zone.omics_uuid }}">{{ zone.title }}</a></td>
   {% else %}
-    <td class="omics-lz-list-title">{{ zone.title }}</td>
+    <td class="omics-lz-list-title font-weight-bold">
+      {{ zone.title }}
+      {% if zone.description %}
+        {# TODO: Add description popover #}
+        <a href="#"><i class="fa fa-info-circle"></i></a>
+      {% endif %}
+    </td>
   {% endif %}
-  <td class="omics-lz-list-study">{{ zone.assay.study.title }}</td>
-  <td class="omics-lz-list-assay">{{ zone.assay.get_name }}</td>
+  <td class="omics-lz-list-assay">{{ zone.assay.get_display_name }}</td>
   {% if not details_card_mode %}
     <td class="omics-lz-list-email">
       <a href="mailto:{{ zone.user.email }}">{{ zone.user.username }}</a>
     </td>
   {% endif %}
-  <td class="omics-lz-list-description">{{ zone.description }}</td>
   <td class="omics-lz-list-status-info">
       {{ zone.status_info }}
       {% if zone.status == 'MOVED' %}
-        <br /><a href="{% url 'samplesheets:project_sheets' study=zone.assay.study.omics_uuid %}#{% zone.assay.omics_uuid %}"><i class="fa fa-arrow-circle-right"></i> Browse files in sample sheets</a>
+        <br /><a href="{% url 'samplesheets:project_sheets' study=zone.assay.study.omics_uuid %}#{{ zone.assay.omics_uuid }}"><i class="fa fa-arrow-circle-right"></i> Browse files in sample sheets</a>
       {% endif %}
   </td>
-  <td id="omics-lz-list-status-{{ zone.omics_uuid }}" class="omics-lz-list-status {% get_status_style zone %}">{{ zone.status }}</td>
+  <td id="omics-lz-list-status-{{ zone.omics_uuid }}" class="omics-lz-list-status text-white {% get_status_style zone %}">{{ zone.status }}</td>
   {% if not details_card_mode %}
     <td class="omics-lz-list-links">
       {% if zone.status != 'MOVED' %}

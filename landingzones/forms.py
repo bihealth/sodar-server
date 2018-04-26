@@ -21,7 +21,7 @@ class LandingZoneForm(forms.ModelForm):
 
     class Meta:
         model = LandingZone
-        fields = ['title_suffix', 'description']
+        fields = ['assay', 'title_suffix', 'description']
 
     def __init__(
             self, current_user=None, project=None, assay=None,
@@ -53,14 +53,29 @@ class LandingZoneForm(forms.ModelForm):
 
         # Form modifications
 
+        # Modify ModelChoiceFields to use omics_uuid
+        self.fields['assay'].to_field_name = 'omics_uuid'
+
+        # Set suffix
         self.fields['title_suffix'].label = 'Title suffix'
         self.fields['title_suffix'].help_text = \
             'Zone title suffix (optional, maximum 64 characters)'
 
+        # Creation
+        if not self.instance.pk:
+            self.fields['assay'].choices = [
+                (assay.omics_uuid, '{} / {}'.format(
+                    assay.study.get_display_name(),
+                    assay.get_display_name())) for
+                assay in Assay.objects.filter(
+                    study__investigation__project=self.project)]
+
         # Updating
-        if self.instance.pk:
+        else:
             # Don't allow modifying the title
             self.fields['title_suffix'].disabled = True
+
+            # TODO: Don't allow modifying the assay
 
     def clean(self):
         # Creation

@@ -12,11 +12,12 @@ from rest_framework.views import APIView
 
 # Projectroles dependency
 from projectroles.models import Project
-from projectroles.views import LoggedInPermissionMixin, ProjectPermissionMixin
+from projectroles.views import LoggedInPermissionMixin, \
+    ProjectPermissionMixin, ProjectContextMixin
 from projectroles.plugins import get_backend_api
 
 # Samplesheets dependency
-from samplesheets.io import get_irods_dirs
+from samplesheets.io import get_base_dirs, get_assay_dirs
 from samplesheets.models import Investigation, Assay
 from samplesheets.views import InvestigationContextMixin
 
@@ -91,46 +92,46 @@ class ProjectZoneView(
 
         return context
 
-'''
+
 class ZoneCreateView(
-        LoginRequiredMixin, LoggedInPermissionMixin, ProjectContextMixin,
+        LoginRequiredMixin, LoggedInPermissionMixin, InvestigationContextMixin,
         CreateView):
     """ProjectInvite creation view"""
     model = LandingZone
     form_class = LandingZoneForm
     permission_required = 'landingzones.add_zones'
 
-    def get_permission_object(self):
-        """Override get_permission_object for checking Project permission"""
-        try:
-            obj = Project.objects.get(pk=self.kwargs['project'])
-            return obj
-
-        except Project.DoesNotExist:
-            return None
-
     def get_form_kwargs(self):
         """Pass current user to form"""
         kwargs = super(ZoneCreateView, self).get_form_kwargs()
-        kwargs.update({'current_user': self.request.user})
-        kwargs.update(
-            {'project': Project.objects.get(pk=self.kwargs['project']).pk})
+        kwargs.update({
+            'current_user': self.request.user,
+            'project': self.kwargs['project']})
         return kwargs
 
     def form_valid(self, form):
         taskflow = get_backend_api('taskflow')
         timeline = get_backend_api('timeline_backend')
         tl_event = None
-        project = self.get_context_data()['project']
-        sheet = project.sheet if hasattr(project, 'sheet') else None
+        context = self.get_context_data()
+        project = context['project']
+        investigation = context['investigation']
+        assay = form.cleaned_data.get('assay')
+
+        error_msg = 'Unable to modify zone: '
 
         if not taskflow:
             messages.error(
-                self.request, 'Taskflow not enabled, unable to modify zone!')
+                self.request, error_msg + 'Taskflow not enabled')
 
-        elif not sheet:
+        elif not investigation:
             messages.error(
-                self.request, 'Sheet not available, unable to modify zone!')
+                self.request, error_msg + 'Sample sheets not available')
+
+        elif not investigation.irods_status:
+            messages.error(
+                self.request,
+                error_msg + 'Sample sheet directory structure not created')
 
         else:
             # Add event in Timeline
@@ -141,8 +142,9 @@ class ZoneCreateView(
                     user=self.request.user,
                     event_name='zone_create',
                     description='create landing zone '
-                                '{{{}}} for user {{{}}}'.format(
-                                    'zone', 'user'),
+                                '{{{}}} for user {{{}}} in '
+                                'assay {{{}}}'.format(
+                                    'zone', 'user', 'assay'),
                     status_type='SUBMIT')
 
                 tl_event.add_object(
@@ -150,16 +152,26 @@ class ZoneCreateView(
                     label='user',
                     name=self.request.user.username)
 
+                tl_event.add_object(
+                    obj=assay,
+                    label='assay',
+                    name=assay.get_name())
+
+            # Build assay dirs
+            dirs = get_assay_dirs(assay)
+
             flow_data = {
                 'zone_title': form.cleaned_data.get('title'),
                 'user_name': self.request.user.username,
-                'user_pk': self.request.user.pk,
+                'user_uuid': str(self.request.user.omics_uuid),
+                'study_uuid': str(assay.study.omics_uuid),
+                'assay_uuid': str(assay.omics_uuid),
                 'description': form.cleaned_data.get('description'),
-                'dirs': get_irods_dirs(sheet, dirs_only=True)}
+                'dirs': dirs}
 
             try:
                 taskflow.submit(
-                    project_pk=project.pk,
+                    project_uuid=project.omics_uuid,
                     flow_name='landing_zone_create',
                     flow_data=flow_data,
                     request=self.request)
@@ -182,10 +194,11 @@ class ZoneCreateView(
 
                 messages.success(
                     self.request,
-                    'Landing zone "{}/{}" created: see the zone list for URLs '
+                    'Landing zone "{}" for assay "{}" created: '
+                    'see the zone list for URLs '
                     'to access the zone'.format(
-                        self.request.user.username,
-                        form.cleaned_data.get('title')))
+                        form.cleaned_data.get('title'),
+                        assay.get_display_name()))
 
             except taskflow.FlowSubmitException as ex:
                 if tl_event:
@@ -193,11 +206,12 @@ class ZoneCreateView(
 
                 messages.error(self.request, str(ex))
 
-            return redirect(
-                reverse(
-                    'project_zones',
-                    kwargs={'project': project.pk}))
+            return redirect(reverse(
+                'landingzones:list',
+                kwargs={'project': project.omics_uuid}))
 
+
+'''
 
 class ZoneDeleteView(
         LoginRequiredMixin, LoggedInPermissionMixin, ProjectContextMixin,
@@ -518,33 +532,31 @@ class IrodsObjectListAPIView(
             return Response(ret_data, status=200)
 
         return Response('Not authorized', status=403)
+'''
 
 
 class LandingZoneStatusGetAPIView(
         LoginRequiredMixin, ProjectContextMixin, APIView):
     """View for returning landing zone status for the UI"""
 
-    def get(self, request, project, zone):
+    def get(self, *args, **kwargs):
+        zone_uuid = self.kwargs['landingzone']
+
         try:
-            zone_obj = LandingZone.objects.get(pk=zone)
+            zone = LandingZone.objects.get(
+                omics_uuid=zone_uuid)
 
         except LandingZone.DoesNotExist:
-            return Response('Zone not found', status=400)
+            return Response('LandingZone not found', status=404)
 
-        try:
-            project_obj = Project.objects.get(pk=project)
-
-        except Project.DoesNotExist:
-            return Response('Project not found', status=400)
-
-        # TODO: Repetition from previous view here, create mixin?
         perm = 'view_zones_own' if \
-            zone_obj.user == request.user else 'view_zones_all'
+            zone.user == self.request.user else 'view_zones_all'
 
-        if request.user.has_perm('landingzones.{}'.format(perm), project):
+        if self.request.user.has_perm(
+                'landingzones.{}'.format(perm), zone.project):
             ret_data = {
-                'status': zone_obj.status,
-                'status_info': zone_obj.status_info}
+                'status': zone.status,
+                'status_info': zone.status_info}
 
             return Response(ret_data, status=200)
 
@@ -557,23 +569,30 @@ class LandingZoneStatusGetAPIView(
 class ZoneCreateAPIView(APIView):
     def post(self, request):
         try:
-            user = User.objects.get(pk=request.data['user_pk'])
-            project = Project.objects.get(pk=request.data['project_pk'])
+            user = User.objects.get(omics_uuid=request.data['user_uuid'])
+            project = Project.objects.get(
+                omics_uuid=request.data['project_uuid'])
+            assay = Assay.objects.get(
+                omics_uuid=request.data['assay_uuid'])
 
-        except (User.DoesNotExist, Project.DoesNotExist) as ex:
+        except (
+                User.DoesNotExist,
+                Project.DoesNotExist,
+                Assay.DoesNotExist) as ex:
             return Response('Not found', status=404)
 
         zone = LandingZone(
+            assay=assay,
             title=request.data['title'],
             project=project,
             user=user,
-            sheet=project.sheet,
             description=request.data['description'])
         zone.save()
 
-        return Response({'zone_pk': zone.pk}, status=200)
+        return Response({'zone_uuid': zone.omics_uuid}, status=200)
 
 
+'''
 class ZoneDeleteAPIView(APIView):
     def post(self, request):
         try:
@@ -601,12 +620,15 @@ class ZoneStatusGetAPIView(APIView):
             'status_info': zone.status_info}
 
         return Response(ret_data, status=200)
+'''
 
 
 class ZoneStatusSetAPIView(APIView):
     def post(self, request):
         try:
-            zone = LandingZone.objects.get(omics_uuid=request.data['zone_uuid'])
+            zone = LandingZone.objects.get(
+                title=request.data['zone_title'],
+                user__omics_uuid=request.data['user_uuid'])
 
         except LandingZone.DoesNotExist:
             return Response('LandingZone not found', status=404)
@@ -621,4 +643,3 @@ class ZoneStatusSetAPIView(APIView):
             return Response('Invalid status type', status=400)
 
         return Response('ok', status=200)
-'''

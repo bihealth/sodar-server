@@ -23,6 +23,8 @@
     #omics-lz-list-table thead tr th:nth-child(8) {
       width: 40px !important;
     }
+
+    {# TODO: Add responsive hiding of columns #}
   </style>
 {% endblock css %}
 
@@ -33,7 +35,7 @@
 
 <div class="row omics-subtitle-container bg-white sticky-top">
   <h3><i class="fa fa-database"></i> Landing Zones</h3>
-  {% if can_add_data %}
+  {% if can_add_zones %}
     {% include 'landingzones/_list_buttons.html' %}
   {% endif %}
 </div>
@@ -68,10 +70,8 @@
           <thead>
             <tr>
               <th>Zone</th>
-              <th>Study</th>
               <th>Assay</th>
               <th>User</th>
-              <th>Description</th>
               <th id="omics-lz-list-header-info">Status&nbsp;Info</th>
               <th id="omics-lz-list-header-status">Status</th>
               <th id="omics-lz-list-header-links">Links</th>
@@ -82,6 +82,9 @@
             {% for zone in zones %}
               {% include 'landingzones/_zone_item.html' %}
             {% endfor %}
+            {% if zones.count == 0 %}
+                <td class="bg-faded font-italic text-center" colspan="7">No landing zones found</td>
+            {% endif %}
           </tbody>
         </table>
       </div>
