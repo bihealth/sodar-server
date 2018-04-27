@@ -74,3 +74,6 @@ ENABLED_BACKEND_PLUGINS = [
     # 'taskflow',
     # 'omics_irods',
 ]
+
+# Projectroles app settings
+PROJECTROLES_SEND_EMAIL = True
