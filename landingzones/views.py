@@ -188,11 +188,11 @@ class ZoneCreateView(
                     request_mode='async',
                     request=self.request)
 
-                messages.success(
+                messages.warning(
                     self.request,
                     'Landing zone "{}" creation initiated: '
-                    'see the zone list for URLs '
-                    'to access the zone'.format(zone.title))
+                    'see the zone list for the creation status'.format(
+                        zone.title))
 
             except taskflow.FlowSubmitException as ex:
                 if tl_event:

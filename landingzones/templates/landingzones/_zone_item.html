@@ -18,7 +18,7 @@
       <a href="mailto:{{ zone.user.email }}">{{ zone.user.username }}</a>
     </td>
   {% endif %}
-  <td class="omics-lz-zone-info">
+  <td class="omics-lz-zone-status-info">
       {{ zone.status_info }}
       {% if zone.status == 'MOVED' %}
         <br /><a href="{% url 'samplesheets:project_sheets' study=zone.assay.study.omics_uuid %}#{{ zone.assay.omics_uuid }}"><i class="fa fa-arrow-circle-right"></i> Browse files in sample sheets</a>
