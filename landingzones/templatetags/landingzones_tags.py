@@ -24,11 +24,10 @@ def get_status_style(zone):
         if zone.status in STATUS_STYLES else 'bg_faded'
 
 
-# TODO: Refactor/remove
 @register.simple_tag
 def get_zone_row_class(zone):
-    return 'zone-tr-moved text-muted' if \
-        zone.status == 'MOVED' else 'zone-tr-existing'
+    return 'omics-lz-zone-tr-moved text-muted' if \
+        zone.status == 'MOVED' else 'omics-lz-zone-tr-existing'
 
 
 # TODO: Refactor/remove

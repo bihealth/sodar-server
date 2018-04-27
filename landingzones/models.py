@@ -14,6 +14,8 @@ AUTH_USER_MODEL = getattr(settings, 'AUTH_USER_MODEL', 'auth.User')
 
 
 ZONE_STATUS_TYPES = [
+    'CREATING',
+    'NOT CREATED',
     'ACTIVE',
     'PREPARING',
     'VALIDATING',
@@ -22,6 +24,8 @@ ZONE_STATUS_TYPES = [
     'MOVED']
 
 DEFAULT_STATUS_INFO = {
+    'CREATING': 'Creating landing zone in iRODS',
+    'NOT CREATED': 'Creating landing zone in iRODS failed (unknown problem)',
     'ACTIVE': 'Available with write access for user',
     'PREPARING': 'Preparing transaction for validation and moving',
     'VALIDATING': 'Validation in progress, write access disabled',
@@ -62,7 +66,7 @@ class LandingZone(models.Model):
         max_length=64,
         null=False,
         blank=False,
-        default='ACTIVE',
+        default='CREATING',
         help_text='Status of landing zone')
 
     #: Additional status information
@@ -70,7 +74,7 @@ class LandingZone(models.Model):
         max_length=1024,
         null=True,
         blank=True,
-        default=DEFAULT_STATUS_INFO['ACTIVE'],
+        default=DEFAULT_STATUS_INFO['CREATING'],
         help_text='Additional status information')
 
     #: DateTime of last folder modification

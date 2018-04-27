@@ -81,7 +81,8 @@ class ObjectTimelineView(ProjectTimelineView):
 class TimelineEventStatusSetAPIView(APIView):
     def post(self, request):
         try:
-            tl_event = ProjectEvent.objects.get(pk=request.data['event_pk'])
+            tl_event = ProjectEvent.objects.get(
+                omics_uuid=request.data['event_uuid'])
 
         except ProjectEvent.DoesNotExist:
             return Response('Timeline event not found', status=404)

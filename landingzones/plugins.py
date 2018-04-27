@@ -119,16 +119,23 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         :param uuid: omics_uuid of the referred object
         :return: Dict or None if not found
         """
+        obj = self.get_object(eval(model_str), uuid)
 
-        # The only possible model is Assay, directing to entry point
-        try:
-            assay = Assay.objects.get(omics_uuid=uuid)
-
-        except Assay.DoesNotExist:
+        if not obj:
             return None
 
-        return {
-            'url': reverse(
-                'landingzones:list',
-                kwargs={'project': assay.get_project().omics_uuid}),
-            'label': assay.get_display_name()}
+        if obj.__class__ == LandingZone and obj.status != 'MOVED':
+            return {
+                'url': reverse(
+                    'landingzones:list',
+                    kwargs={'project': obj.project.omics_uuid}) +
+                            '#' + str(obj.omics_uuid),
+                'label': obj.title}
+
+        elif obj.__class__ == Assay:
+            return {
+                'url': reverse(
+                    'samplesheets:project_sheets',
+                    kwargs={'study': obj.study.omics_uuid}) +
+                            '#' + str(obj.omics_uuid),
+                'label': obj.get_display_name()}

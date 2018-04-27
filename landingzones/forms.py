@@ -89,3 +89,21 @@ class LandingZoneForm(forms.ModelForm):
             self.cleaned_data['title'] = title
 
         return self.cleaned_data
+
+    def save(self, *args, **kwargs):
+        """Override of form saving function"""
+        obj = super(LandingZoneForm, self).save(commit=False)
+        obj.title = self.cleaned_data['title']
+
+        # Updating
+        if self.instance.pk:
+            obj.user = self.instance.user
+            obj.project = self.instance.project
+
+        # Creation
+        else:
+            obj.user = self.current_user
+            obj.project = self.project
+
+        obj.save()
+        return obj

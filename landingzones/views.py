@@ -118,7 +118,7 @@ class ZoneCreateView(
         investigation = context['investigation']
         assay = form.cleaned_data.get('assay')
 
-        error_msg = 'Unable to modify zone: '
+        error_msg = 'Unable to create zone: '
 
         if not taskflow:
             messages.error(
@@ -134,6 +134,10 @@ class ZoneCreateView(
                 error_msg + 'Sample sheet directory structure not created')
 
         else:
+            # Create landing zone object in Django db
+            # NOTE: We have to do this beforehand to work properly as async
+            zone = form.save()
+
             # Add event in Timeline
             if timeline:
                 tl_event = timeline.add_event(
@@ -146,6 +150,11 @@ class ZoneCreateView(
                                 'assay {{{}}}'.format(
                                     'zone', 'user', 'assay'),
                     status_type='SUBMIT')
+
+                tl_event.add_object(
+                    obj=zone,
+                    label='zone',
+                    name=zone.title)
 
                 tl_event.add_object(
                     obj=self.request.user,
@@ -161,12 +170,13 @@ class ZoneCreateView(
             dirs = get_assay_dirs(assay)
 
             flow_data = {
-                'zone_title': form.cleaned_data.get('title'),
+                'zone_title': zone.title,
+                'zone_uuid': zone.omics_uuid,
                 'user_name': self.request.user.username,
-                'user_uuid': str(self.request.user.omics_uuid),
-                'study_uuid': str(assay.study.omics_uuid),
-                'assay_uuid': str(assay.omics_uuid),
-                'description': form.cleaned_data.get('description'),
+                'user_uuid': self.request.user.omics_uuid,
+                'study_uuid': assay.study.omics_uuid,
+                'assay_uuid': assay.omics_uuid,
+                'description': zone.description,
                 'dirs': dirs}
 
             try:
@@ -174,36 +184,21 @@ class ZoneCreateView(
                     project_uuid=project.omics_uuid,
                     flow_name='landing_zone_create',
                     flow_data=flow_data,
+                    timeline_uuid=tl_event.omics_uuid,
+                    request_mode='async',
                     request=self.request)
-
-                if tl_event:
-                    tl_event.set_status('OK')
-
-                    try:
-                        zone = LandingZone.objects.get(
-                            project=project,
-                            title=form.cleaned_data.get('title'))
-
-                        tl_event.add_object(
-                            obj=zone,
-                            label='zone',
-                            name=zone.title)
-
-                    except LandingZone.DoesNotExist:
-                        pass    # This should not happen..
 
                 messages.success(
                     self.request,
-                    'Landing zone "{}" for assay "{}" created: '
+                    'Landing zone "{}" creation initiated: '
                     'see the zone list for URLs '
-                    'to access the zone'.format(
-                        form.cleaned_data.get('title'),
-                        assay.get_display_name()))
+                    'to access the zone'.format(zone.title))
 
             except taskflow.FlowSubmitException as ex:
                 if tl_event:
                     tl_event.set_status('FAILED', str(ex))
 
+                zone.delete()
                 messages.error(self.request, str(ex))
 
             return redirect(reverse(
@@ -627,8 +622,7 @@ class ZoneStatusSetAPIView(APIView):
     def post(self, request):
         try:
             zone = LandingZone.objects.get(
-                title=request.data['zone_title'],
-                user__omics_uuid=request.data['user_uuid'])
+                omics_uuid=request.data['zone_uuid'])
 
         except LandingZone.DoesNotExist:
             return Response('LandingZone not found', status=404)

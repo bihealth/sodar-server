@@ -4,7 +4,7 @@
   {% if details_card_mode %}
     <td><a href="{% url 'landingzones:list' project=project.omics_uuid %}#{{ zone.omics_uuid }}">{{ zone.title }}</a></td>
   {% else %}
-    <td class="omics-lz-list-title font-weight-bold">
+    <td class="omics-lz-zone-title font-weight-bold">
       {{ zone.title }}
       {% if zone.description %}
         {# TODO: Add description popover #}
@@ -12,21 +12,21 @@
       {% endif %}
     </td>
   {% endif %}
-  <td class="omics-lz-list-assay">{{ zone.assay.get_display_name }}</td>
+  <td class="omics-lz-zone-assay">{{ zone.assay.get_display_name }}</td>
   {% if not details_card_mode %}
-    <td class="omics-lz-list-email">
+    <td class="omics-lz-zone-email">
       <a href="mailto:{{ zone.user.email }}">{{ zone.user.username }}</a>
     </td>
   {% endif %}
-  <td class="omics-lz-list-status-info">
+  <td class="omics-lz-zone-info">
       {{ zone.status_info }}
       {% if zone.status == 'MOVED' %}
         <br /><a href="{% url 'samplesheets:project_sheets' study=zone.assay.study.omics_uuid %}#{{ zone.assay.omics_uuid }}"><i class="fa fa-arrow-circle-right"></i> Browse files in sample sheets</a>
       {% endif %}
   </td>
-  <td id="omics-lz-list-status-{{ zone.omics_uuid }}" class="omics-lz-list-status text-white {% get_status_style zone %}">{{ zone.status }}</td>
+  <td id="omics-lz-zone-status-{{ zone.omics_uuid }}" class="omics-lz-zone-status text-white {% get_status_style zone %}">{{ zone.status }}</td>
   {% if not details_card_mode %}
-    <td class="omics-lz-list-links">
+    <td class="omics-lz-zone-links">
       {% if zone.status != 'MOVED' %}
         {% if irods_backend %}
           <a role="button" class="btn btn-secondary btn-sm omics-lz-popup-link" irods-url="{% get_irods_url zone %}" zone-title="{{ zone.title }}">
@@ -35,7 +35,7 @@
         {% endif %}
       {% endif %}
     </td>
-    <td class="omics-lz-list-edit">
+    <td class="omics-lz-zone-edit">
       {% if zone.status != 'MOVED' %}
         {% include 'landingzones/_zone_buttons.html' %}
       {% endif %}

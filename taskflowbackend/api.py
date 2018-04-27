@@ -1,5 +1,6 @@
 """Omics Taskflow API for Django apps"""
 import requests
+from uuid import UUID
 
 from django.conf import settings
 
@@ -51,6 +52,11 @@ class TaskflowAPI:
         """
         url = TASKFLOW_URL + '/submit'
 
+        # Format UUIDs in flow_data
+        for k, v in flow_data.items():
+            if type(v) == UUID:
+                flow_data[k] = str(v)
+
         data = {
             'project_uuid': str(project_uuid),
             'flow_name': flow_name,
@@ -58,7 +64,7 @@ class TaskflowAPI:
             'request_mode': request_mode,
             'targets': targets,
             'force_fail': force_fail,
-            'timeline_uuid': timeline_uuid}
+            'timeline_uuid': str(timeline_uuid)}
 
         # HACK: Add overriding URL for test server
         if request:
