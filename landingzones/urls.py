@@ -21,6 +21,11 @@ urlpatterns = [
         view=views.ZoneCreateView.as_view(),
         name='create',
     ),
+    url(
+        regex=r'^delete/(?P<landingzone>[0-9a-f-]+)$',
+        view=views.ZoneDeleteView.as_view(),
+        name='delete',
+    ),
     # Javascript API views
     url(
         regex=r'^status/(?P<landingzone>[0-9a-f-]+)$',
@@ -38,15 +43,14 @@ urlpatterns = [
         view=views.ZoneStatusSetAPIView.as_view(),
         name='taskflow_zone_status_set',
     ),
+    url(
+        regex=r'^taskflow/delete$',
+        view=views.ZoneDeleteAPIView.as_view(),
+        name='taskflow_zone_delete',
+    ),
 ]
 
-'''    
-    
-    url(
-        regex=r'^(?P<project>\d+)/delete/(?P<pk>\d+)$',
-        view=views.ZoneDeleteView.as_view(),
-        name='delete',
-    ),
+'''            
     url(
         regex=r'^(?P<project>\d+)/move/(?P<pk>\d+)$',
         view=views.ZoneMoveView.as_view(),
@@ -60,11 +64,6 @@ urlpatterns = [
     ),
 
     # Taskflow API views
-    url(
-        regex=r'^taskflow/zone/create$',
-        view=views.ZoneCreateAPIView.as_view(),
-        name='taskflow_zone_create',
-    ),
     url(
         regex=r'^taskflow/zone/delete$',
         view=views.ZoneDeleteAPIView.as_view(),

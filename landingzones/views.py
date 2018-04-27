@@ -206,30 +206,22 @@ class ZoneCreateView(
                 kwargs={'project': project.omics_uuid}))
 
 
-'''
-
 class ZoneDeleteView(
         LoginRequiredMixin, LoggedInPermissionMixin, ProjectContextMixin,
-        DeleteView):
+        ProjectPermissionMixin, DeleteView):
     """RoleAssignment deletion view"""
     model = LandingZone
+    slug_url_kwarg = 'landingzone'
+    slug_field = 'omics_uuid'
     permission_required = 'landingzones.update_zones_own'
-
-    def get_permission_object(self):
-        """Override get_permission_object for checking Project permission"""
-        try:
-            obj = Project.objects.get(pk=self.kwargs['project'])
-            return obj
-
-        except Project.DoesNotExist:
-            return None
 
     def has_permission(self):
         """Override has_permission to check perms depending on owner"""
         try:
-            obj = type(self.get_object()).objects.get(pk=self.kwargs['pk'])
+            zone = LandingZone.objects.get(
+                omics_uuid=self.kwargs['landingzone'])
 
-            if obj.user == self.request.user:
+            if zone.user == self.request.user:
                 return self.request.user.has_perm(
                     'landingzones.update_zones_own',
                     self.get_permission_object())
@@ -239,81 +231,90 @@ class ZoneDeleteView(
                     'landingzones.update_zones_all',
                     self.get_permission_object())
 
-        except type(self.get_object()).DoesNotExist:
+        except LandingZone.DoesNotExist:
             return False
 
     def post(self, *args, **kwargs):
         timeline = get_backend_api('timeline_backend')
         taskflow = get_backend_api('taskflow')
         tl_event = None
+        zone = LandingZone.objects.get(
+            omics_uuid=kwargs['landingzone'])
+        project = zone.project
+
+        redirect_url = reverse(
+            'landingzones:list',
+            kwargs={'project': project.omics_uuid})
 
         if not taskflow:
             messages.error(
                 self.request, 'Taskflow not enabled, unable to modify zone!')
+            return redirect(redirect_url)
 
-        else:
-            self.object = LandingZone.objects.get(pk=kwargs['pk'])
-            project = self.object.project
-            user = self.object.user
-            title = self.object.title
+        # Init Timeline event
+        if timeline:
+            tl_event = timeline.add_event(
+                project=project,
+                app_name=APP_NAME,
+                user=self.request.user,
+                event_name='zone_delete',
+                description='delete landing zone {{{}}} in {{{}}} '
+                            'from {{{}}}'.format(
+                    'zone', 'assay', 'user'))
 
-            # Init Timeline event
-            if timeline:
-                tl_event = timeline.add_event(
-                    project=project,
-                    app_name=APP_NAME,
-                    user=self.request.user,
-                    event_name='zone_delete',
-                    description='delete landing zone {{{}}} from {{{}}}'.format(
-                        'zone', 'user'))
+            tl_event.add_object(
+                obj=zone,
+                label='zone',
+                name=zone.title)
 
-                tl_event.add_object(
-                    obj=user,
-                    label='user',
-                    name=user.username)
+            tl_event.add_object(
+                obj=zone.assay,
+                label='assay',
+                name=zone.assay.get_display_name())
 
-                tl_event.add_object(
-                    obj=self.object,
-                    label='zone',
-                    name=self.object.title)
+            tl_event.add_object(
+                obj=zone.user,
+                label='user',
+                name=zone.user.username)
 
-            # Submit with taskflow
-            if taskflow:
-                if tl_event:
-                    tl_event.set_status('SUBMIT')
-
-                flow_data = {
-                    'zone_pk': self.object.pk,
-                    'zone_title': self.object.title,
-                    'user_name': user.username,
-                    'user_pk': user.pk}
-
-                try:
-                    taskflow.submit(
-                        project_pk=project.pk,
-                        flow_name='landing_zone_delete',
-                        flow_data=flow_data,
-                        request=self.request)
-                    self.object = None
-
-                except taskflow.FlowSubmitException as ex:
-                    if tl_event:
-                        tl_event.set_status('FAILED', str(ex))
-
-                    messages.error(self.request, str(ex))
-                    return HttpResponseRedirect(redirect(
-                        reverse(
-                            'project_zones', kwargs={'project': project.pk})))
-
+        # Submit with taskflow
+        if taskflow:
             if tl_event:
-                tl_event.set_status('OK')
+                tl_event.set_status('SUBMIT')
 
-            messages.success(
-                self.request, 'Landing zone "{}/{}" removed from {}.'.format(
-                    self.request.user.username, title, project.title))
+            flow_data = {
+                'zone_title': zone.title,
+                'zone_uuid': zone.omics_uuid,
+                'study_uuid': zone.assay.study.omics_uuid,
+                'assay_uuid': zone.assay.omics_uuid,
+                'user_name': zone.user.username}
 
-        return HttpResponseRedirect(reverse(
-            'project_zones', kwargs={'project': project.pk}))
+            try:
+                taskflow.submit(
+                    project_uuid=project.omics_uuid,
+                    flow_name='landing_zone_delete',
+                    flow_data=flow_data,
+                    request=self.request)
+                self.object = None
+
+            except taskflow.FlowSubmitException as ex:
+                if tl_event:
+                    tl_event.set_status('FAILED', str(ex))
+
+                messages.error(self.request, str(ex))
+                return redirect(redirect_url)
+
+        if tl_event:
+            tl_event.set_status('OK')
+
+        messages.success(
+            self.request,
+            'Landing zone "{}" for {} removed from assay {}.'.format(
+                zone.title,
+                self.request.user.username,
+                zone.assay.get_display_name()))
+
+        return redirect(redirect_url)
 
     def get_form_kwargs(self):
         """Pass current user to form"""
@@ -322,6 +323,7 @@ class ZoneDeleteView(
         return kwargs
 
 
+'''
 class ZoneMoveView(
         LoginRequiredMixin, LoggedInPermissionMixin, ProjectContextMixin,
         TemplateView):
@@ -587,7 +589,6 @@ class ZoneCreateAPIView(APIView):
         return Response({'zone_uuid': zone.omics_uuid}, status=200)
 
 
-'''
 class ZoneDeleteAPIView(APIView):
     def post(self, request):
         try:
@@ -597,10 +598,10 @@ class ZoneDeleteAPIView(APIView):
             return Response('Not found', status=404)
 
         zone.delete()
-
         return Response('ok', status=200)
 
 
+'''
 class ZoneStatusGetAPIView(APIView):
     def post(self, request):
         try:

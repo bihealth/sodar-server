@@ -3,34 +3,35 @@
 
 {% block title %}
   Confirm Landing Zone Deletion
-{% endblock %}
+{% endblock title %}
 
 {% block projectroles_extend %}
 
-<div class="row">
+<div class="row omics-subtitle-container">
   <h3>Confirm Landing Zone Deletion</h3>
+</div>
 
-  <div>
-    <p>
-      Do you really want to delete the landing zone "<strong>{{ object.title }}</strong>" in
-      the project "<strong>{{ object.project.title }}</strong>"? Note that this will also delete
-      <strong>all</strong> files stored under the landing zone in iRODS!
-    </p>
+<div class="container-fluid omics-page-container">
+  <div class="alert alert-warning" role="alert">
+    Do you really want to delete the landing zone "<strong>{{ object.title }}</strong>" from
+    the assay "<strong>{{ object.assay.get_display_name }}</strong>"? Note that this will also delete
+    <strong>all</strong> files stored under the landing zone in iRODS!
   </div>
 
   <form method="post">
     {% csrf_token %}
-    <div class="btn-group pull-right">
-      <a role="button" class="btn btn-secondary" href="{% url 'project_sheet' project=project.pk %}">
-        <i class="fa fa-arrow-circle-left" aria-hidden="true"></i>
-        Cancel
-      </a>
-     <button type="submit" class="btn btn-danger">
-        <i class="fa fa-close" aria-hidden="true"></i>
-          Delete
-      </button>
+    <div class="row">
+      <div class="btn-group ml-auto">
+        <a role="button" class="btn btn-secondary"
+           href="{% url 'landingzones:list' project=project.omics_uuid %}">
+          <i class="fa fa-arrow-circle-left"></i> Cancel
+        </a>
+        <button type="submit" class="btn btn-danger">
+          <i class="fa fa-close"></i> Delete
+        </button>
+      </div>
     </div>
   </form>
 </div>
 
-{% endblock %}
+{% endblock projectroles_extend %}
