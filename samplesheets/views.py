@@ -83,7 +83,7 @@ class ProjectSheetsView(
                     '/omicsZone/projects/{}/{}/{}/study_{}/'.format(
                         str(project.omics_uuid)[:2],
                         project.omics_uuid,
-                        settings.TASKFLOW_SAMPLE_DIR,
+                        settings.IRODS_SAMPLE_DIR,
                         study.omics_uuid)
 
             except Study.DoesNotExist:

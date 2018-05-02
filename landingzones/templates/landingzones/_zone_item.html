@@ -29,8 +29,24 @@
     <td class="omics-lz-zone-links">
       {% if zone.status != 'MOVED' %}
         {% if irods_backend %}
-          <a role="button" class="btn btn-secondary btn-sm omics-lz-popup-link" irods-url="{% get_irods_url zone %}" zone-title="{{ zone.title }}">
-            <i class="fa fa-folder-open-o" aria-hidden="true"></i>
+          <button class="btn btn-secondary omics-list-btn omics-lz-popup-link"
+                  irods-url="{% url 'landingzones:irods_list' landingzone=zone.omics_uuid %}"
+                  zone-title="{{ zone.title }}" role="submit"
+                  data-toggle="tooltip" data-placement="top" title="List files in landing zone">
+            <i class="fa fa-list"></i>
+          </button>
+        {% endif %}
+        <button class="btn btn-secondary omics-list-btn omics-lz-cmd-link"
+                irods-path="{{ zone.get_path }}"
+                zone-title="{{ zone.title }}" role="submit"
+                data-toggle="tooltip" data-placement="top" title="Get iCommands path to landing zone">
+          <i class="fa fa-terminal"></i>
+        </button>
+        {% if irods_webdav_enabled %}
+          <a class="btn btn-secondary omics-list-btn omics-lz-webdav-link"
+                  href="{% get_zone_dav_url zone %}" role="button"
+                  data-toggle="tooltip" data-placement="top" title="Browse files in WebDAV">
+            <i class="fa fa-folder-open-o"></i>
           </a>
         {% endif %}
       {% endif %}

@@ -125,3 +125,16 @@ class LandingZone(models.Model):
             self.user.username,
             self.title)
         return 'LandingZone({})'.format(', '.join(repr(v) for v in values))
+
+    # Custom row-level functions
+
+    def get_path(self):
+        """Return full iRODS path to the zone"""
+        return '/{}/projects/{}/{}/{}/{}/{}/{}'.format(
+            settings.IRODS_ZONE,
+            str(self.project.omics_uuid)[:2],
+            self.project.omics_uuid,
+            settings.IRODS_LANDING_ZONE_DIR,
+            self.user.username,
+            self.assay.get_dir(include_study=True, landing_zone=True),
+            self.title)

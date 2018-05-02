@@ -124,7 +124,7 @@ def get_assay_info_html(assay):
 @register.simple_tag
 def get_irods_dirs(investigation):
     """Return HTML for iRODS dirs"""
-    ret = '<ul><li>{}<ul>'.format(settings.TASKFLOW_SAMPLE_DIR)
+    ret = '<ul><li>{}<ul>'.format(settings.IRODS_SAMPLE_DIR)
 
     for study in investigation.studies.all():
         ret += '<li>{}'.format(study.get_dir())

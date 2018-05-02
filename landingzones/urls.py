@@ -32,6 +32,11 @@ urlpatterns = [
         view=views.LandingZoneStatusGetAPIView.as_view(),
         name='status',
     ),
+    url(
+        regex=r'^irods/list/(?P<landingzone>[0-9a-f-]+)$',
+        view=views.LandingZoneObjectListAPIView.as_view(),
+        name='irods_list',
+    ),
     # Taskflow API views
     url(
         regex=r'^taskflow/create$',
@@ -55,12 +60,6 @@ urlpatterns = [
         regex=r'^(?P<project>\d+)/move/(?P<pk>\d+)$',
         view=views.ZoneMoveView.as_view(),
         name='move',
-    ),
-    # Javascript API views
-    url(
-        regex=r'^(?P<project>\d+)/irods/objects/list/(?P<zone>\d+)\?path=(?P<path>[/\w._-]{0,256})$',
-        view=views.IrodsObjectListAPIView.as_view(),
-        name='zone_irods_objects_list',
     ),
 
     # Taskflow API views

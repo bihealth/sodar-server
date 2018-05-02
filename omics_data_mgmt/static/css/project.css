@@ -358,6 +358,13 @@ dl.omics-dl dd {
   height: 1.75em;
 }
 
+.omics-list-btn {
+  padding-top: 1px !important;
+  padding-left: 5px !important;
+  padding-right: 5px !important;
+  height: 1.75em;
+}
+
 .omics-pr-btn-star {
   height: 30px;
   margin-right: 12px;

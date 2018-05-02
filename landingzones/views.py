@@ -67,7 +67,6 @@ class ProjectZoneView(
             context['irods_webdav_url'] = settings.IRODS_WEBDAV_URL
 
         # Add iRODS query API
-        # TODO: Add api backend app
         context['irods_backend'] = get_backend_api('omics_irods')
 
         # Zones and title according to user perms
@@ -94,8 +93,8 @@ class ProjectZoneView(
 
 
 class ZoneCreateView(
-        LoginRequiredMixin, LoggedInPermissionMixin, InvestigationContextMixin,
-        CreateView):
+        LoginRequiredMixin, LoggedInPermissionMixin, ProjectPermissionMixin,
+        InvestigationContextMixin, CreateView):
     """ProjectInvite creation view"""
     model = LandingZone
     form_class = LandingZoneForm
@@ -493,45 +492,40 @@ class ZoneClearView(
     def get(self, request, **kwargs):
         return super(TemplateView, self).render_to_response(
             self.get_context_data())
-
+'''
 
 # Javascript API Views ---------------------------------------------------
 
 
-class IrodsObjectListAPIView(
-        LoginRequiredMixin,
-        # LoggedInPermissionMixin,  # NOTE: This doesn't work with APIView
-        ProjectContextMixin,
-        APIView):
-    # permission_required = 'landingzones.view_zones_own'
+class LandingZoneObjectListAPIView(
+        LoginRequiredMixin, ProjectContextMixin, APIView):
+    """View for listing landing zone objects in iRODS via Ajax"""
 
-    def get(self, request, path, project, zone):
+    def get(self, request, landingzone, **kwargs):
         irods_backend = get_backend_api('omics_irods')
 
         if not irods_backend:
             return Response('Backend not enabled', status=500)
 
         try:
-            zone_obj = LandingZone.objects.get(pk=zone)
+            zone = LandingZone.objects.get(omics_uuid=landingzone)
 
         except LandingZone.DoesNotExist:
             return Response('Zone not found', status=400)
 
-        try:
-            project_obj = Project.objects.get(pk=project)
-
-        except Project.DoesNotExist:
-            return Response('Project not found', status=400)
-
         perm = 'view_zones_own' if \
-            zone_obj.user == request.user else 'view_zones_all'
+            zone.user == request.user else 'view_zones_all'
 
-        if request.user.has_perm('landingzones.{}'.format(perm), project):
-            ret_data = irods_backend.list_objects(path)
+        if request.user.has_perm('landingzones.{}'.format(perm), zone.project):
+            try:
+                ret_data = irods_backend.list_objects(zone.get_path())
+
+            except Exception as ex:     # TODO: 404 if dir not found
+                return Response(ex, status=500)
+
             return Response(ret_data, status=200)
 
         return Response('Not authorized', status=403)
-'''
 
 
 class LandingZoneStatusGetAPIView(

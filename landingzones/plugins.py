@@ -101,6 +101,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                 'project_uuid': str(zone.project.omics_uuid),
                 'flow_data': {
                     'zone_title': zone.title,
+                    'zone_uuid': zone.omics_uuid,
                     'user_name': zone.user.username,
                     'user_uuid': str(zone.user.omics_uuid),
                     'study_dir': zone.assay.study.get_dir(landing_zone=True),
