@@ -14,6 +14,8 @@ Added
 
 - **General**
     - Admin link for superuser (#134)
+- **Irodsbackend**
+    - Add irodsbackend app (#139)
 - **Landingzones**
     - Add landingzones app (#139)
 - **Projectroles**
@@ -31,9 +33,12 @@ Changed
 -------
 
 - **General**
+    - Upgrade to Django 1.11.12
     - Upgrade to django-crispy-forms 1.7.1 (#153)
 - **Filesfolders**
     - Don't show empty folder label if subfolders exist (#135)
+- **Irodsbackend**
+    - Implement functionality of omics_irods_rest directly in the app
 - **Projectroles**
     - Use Taskflowbackend only for creating and modifying ``PROJECT`` type projects
     - Modify Taskflow API URLs

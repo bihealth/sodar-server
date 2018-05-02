@@ -89,5 +89,5 @@ TEST_RUNNER = 'django.test.runner.DiscoverRunner'
 ENABLED_BACKEND_PLUGINS = [
     'timeline_backend',
     'taskflow',
-    # 'omics_irods',
+    'omics_irods',
 ]
