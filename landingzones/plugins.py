@@ -103,8 +103,9 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                     'zone_title': zone.title,
                     'user_name': zone.user.username,
                     'user_uuid': str(zone.user.omics_uuid),
-                    'study_uuid': str(zone.assay.study.omics_uuid),
-                    'assay_uuid': str(zone.assay.omics_uuid),
+                    'study_dir': zone.assay.study.get_dir(landing_zone=True),
+                    'assay_dir': zone.assay.get_dir(
+                        include_study=False, landing_zone=True),
                     'description': zone.description,
                     'dirs': get_assay_dirs(zone.assay)}}
             sync_flows.append(flow)

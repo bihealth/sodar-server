@@ -5,6 +5,7 @@ from django.contrib.postgres.fields import ArrayField, JSONField
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
+from django.utils.text import slugify
 
 # Projectroles dependency
 from projectroles.models import Project
@@ -241,11 +242,17 @@ class Study(BaseSampleSheet):
 
     def get_display_name(self):
         """Return display name for study"""
-        # return self.title
         return self.title.strip('.').title() if self.title else self.identifier
 
-    def get_dir(self):
-        """Return directory name for study"""
+    def get_dir(self, landing_zone=False):
+        """
+        Return directory name for study
+        :param landing_zone: Return dir for landing zone if True (bool)
+        :return: String
+        """
+        if landing_zone:
+            return slugify(self.get_display_name())
+
         return 'study_' + str(self.omics_uuid)
 
 
@@ -404,15 +411,20 @@ class Assay(BaseSampleSheet):
         """Return display name for assay"""
         return ' '.join(s for s in self.get_name().split('_')).title()
 
-    def get_dir(self, include_study=False):
+    def get_dir(self, include_study=False, landing_zone=False):
         """
         Return directory name for assay
         :param include_study: Include parent study directory in string (bool)
+        :param landing_zone: Return dir for landing zone if True (bool)
         :return: String
         """
-        return '{}assay_{}'.format(
-            (self.study.get_dir() + '/') if include_study else '',
-            self.omics_uuid)
+        study_dir = (self.study.get_dir(landing_zone=landing_zone) + '/') if \
+            include_study else ''
+
+        if landing_zone:
+            return '{}{}'.format(study_dir, slugify(self.get_display_name()))
+
+        return '{}assay_{}'.format(study_dir, self.omics_uuid)
 
 
 # Materials and data files -----------------------------------------------------
