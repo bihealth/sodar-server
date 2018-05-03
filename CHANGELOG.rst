@@ -14,6 +14,9 @@ Added
 
 - **General**
     - Admin link for superuser (#134)
+    - Common ``popupWaitHtml`` and ``popupNoFilesHtml`` Javascript variables
+    - Clipboard.js for helping clipboard operations
+    - CSS styling for `.omics-code-input`
 - **Irodsbackend**
     - Add irodsbackend app (#139)
 - **Landingzones**

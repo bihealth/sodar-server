@@ -64,7 +64,7 @@ class ProjectZoneView(
 
         # WebDAV URL for JQuery
         if settings.IRODS_WEBDAV_ENABLED:
-            context['irods_webdav_url'] = settings.IRODS_WEBDAV_URL
+            context['irods_webdav_url'] = settings.IRODS_WEBDAV_URL.rstrip('/')
 
         # Add iRODS query API
         context['irods_backend'] = get_backend_api('omics_irods')

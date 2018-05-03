@@ -196,9 +196,9 @@
   <script type="text/javascript">
     $(document).ready(function() {
 
-        /************************
-         * Initialize DataTables
-         ************************/
+        /*********************
+         Initialize DataTables
+         *********************/
         $('.omics-ss-data-table').DataTable({
             scrollY: 400,
             scrollX: true,
@@ -228,9 +228,9 @@
         // Once initialized, remove temporary init classes
         $('.omics-ss-init-container').removeClass('table-responsive').removeClass('omics-ss-init-container');
 
-        /****************************
-         * Enable/disable dragscroll
-         ***************************/
+        /*************************
+         Enable/disable dragscroll
+         *************************/
         $('.omics-ss-data-drag-toggle').click(function() {
             if ($(this).attr('drag-mode') === '0') {
                 $(this).find('i').addClass('text-warning');
@@ -247,9 +247,9 @@
             }
         });
 
-        /**********************
-         * Filtering
-         **********************/
+        /*********
+         Filtering
+         *********/
 
         $('.omics-ss-data-filter').keyup(function () {
             var tableId = $(this).closest('.input-group').attr('table-id');
@@ -258,9 +258,9 @@
             dt.fnFilter(v);
         });
 
-        /**********************
-         * Study column hiding
-        ***********************/
+        /*******************
+         Study column hiding
+         *******************/
 
         // Hide/show study columns when clicked
         $('.omics-ss-assay-hide').click(function () {
@@ -282,9 +282,9 @@
             }
         });
 
-        /******************
-         * Link list Popup
-         ******************/
+        /***************
+         Link list Popup
+         ***************/
         $('#omics-ss-popup-list').popup({
             transition: 'all 0.2s',
             beforeopen: function () {
