@@ -24,6 +24,19 @@ GENERIC_MATERIAL_CHOICES = [(k, v) for k, v in GENERIC_MATERIAL_TYPES.items()]
 NOT_AVAILABLE_STR = '(N/A)'
 
 
+# Utils ------------------------------------------------------------------------
+
+def get_zone_dir(obj):
+    """
+    Return iRODS dir friendly name for a study or an assay to be used in landing
+    zones. Used because Django's slugify uses hyphens which get confusing as
+    UUIDs are used elsewhere
+    :param obj: Study or Assay
+    :return: String
+    """
+    return slugify(obj.get_display_name()).replace('-', '_')
+
+
 # Abstract base class ----------------------------------------------------------
 
 
@@ -251,7 +264,7 @@ class Study(BaseSampleSheet):
         :return: String
         """
         if landing_zone:
-            return slugify(self.get_display_name())
+            return get_zone_dir(self)
 
         return 'study_' + str(self.omics_uuid)
 
@@ -422,7 +435,7 @@ class Assay(BaseSampleSheet):
             include_study else ''
 
         if landing_zone:
-            return '{}{}'.format(study_dir, slugify(self.get_display_name()))
+            return '{}{}'.format(study_dir, get_zone_dir(self))
 
         return '{}assay_{}'.format(study_dir, self.omics_uuid)
 

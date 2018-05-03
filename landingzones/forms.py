@@ -81,10 +81,10 @@ class LandingZoneForm(forms.ModelForm):
         # Creation
         if not self.instance.pk:
             # Set full title
-            title = dt.now().strftime('%Y%m%d-%H%M%S')
+            title = dt.now().strftime('%Y%m%d_%H%M%S')
 
             if self.cleaned_data.get('title_suffix') != '':
-                title += '-' + slugify(self.cleaned_data.get('title_suffix'))
+                title += '_' + slugify(self.cleaned_data.get('title_suffix'))
 
             self.cleaned_data['title'] = title
 
