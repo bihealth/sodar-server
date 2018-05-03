@@ -93,12 +93,7 @@
     .omics-ss-data-links-header {
       border-left: 3px solid #dfdfdf !important;
     }
-
-    .omics-ss-link-btn {
-      padding-top: 1px !important;
-      height: 1.75em;
-    }
-
+    
     .omics-ss-data-dropdown {
       margin-top: -3px !important; /* Force dropdown position */
       padding-top: 2px !important;
@@ -326,7 +321,7 @@
             }
         });
 
-        $('.omics-ss-link-btn').click(function() {
+        $('.omics-list-btn').click(function() {
             $('#omics-ss-popup-list').attr('row-id', $(this).attr('id').split('-')[4]).popup('show');
         });
     });
