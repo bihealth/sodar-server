@@ -99,20 +99,6 @@ class LandingZone(models.Model):
         # Ensure name is unique within project and user
         unique_together = ('title', 'project', 'user')
 
-    def set_status(self, status, status_info=None):
-        if status not in ZONE_STATUS_TYPES:
-            raise TypeError
-
-        self.status = status
-
-        if status_info:
-            self.status_info = status_info
-
-        else:
-            self.status_info = DEFAULT_STATUS_INFO['status'][:1024]
-
-        self.save()
-
     def __str__(self):
         return '{}: {}/{}'.format(
             self.project.title,
@@ -127,6 +113,20 @@ class LandingZone(models.Model):
         return 'LandingZone({})'.format(', '.join(repr(v) for v in values))
 
     # Custom row-level functions
+
+    def set_status(self, status, status_info=None):
+        if status not in ZONE_STATUS_TYPES:
+            raise TypeError('Unknown status "{}"'.format(status))
+
+        self.status = status
+
+        if status_info:
+            self.status_info = status_info
+
+        else:
+            self.status_info = DEFAULT_STATUS_INFO[status][:1024]
+
+        self.save()
 
     def get_path(self):
         """Return full iRODS path to the zone"""
