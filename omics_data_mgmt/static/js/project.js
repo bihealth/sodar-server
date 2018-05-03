@@ -62,7 +62,8 @@ $('[data-toggle="popover"]').popover({
 // Set up Bootstrap tooltip
 $(function(){
     $('[data-toggle="tooltip"]').tooltip({
-        trigger : 'hover'
+        trigger : 'hover',
+        container: 'body'
     });
 });
 

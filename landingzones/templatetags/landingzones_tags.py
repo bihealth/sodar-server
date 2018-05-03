@@ -50,3 +50,10 @@ def get_zone_dav_url(zone):
     return '{}{}'.format(
         settings.IRODS_WEBDAV_URL.rstrip('/'),
         zone.get_path())
+
+
+@register.simple_tag
+def get_zone_desc_html(zone):
+    """Return zone description as HTML"""
+    return '<div><strong>Description</strong><br />{}</div>'.format(
+        zone.description)

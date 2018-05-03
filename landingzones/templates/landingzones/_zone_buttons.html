@@ -11,12 +11,6 @@
   </button>
   <div class="dropdown-menu dropdown-menu-right">
     {% if can_update_all or zone.user == request.user and can_update_own %}
-      {% comment %}
-      <a class="dropdown-item" href="#">
-        <i class="fa fa-pencil" aria-hidden="true"></i>
-        Update Zone
-      </a>
-      {% endcomment %}
       {% comment TODO: Add these once the views are done %}
       {% if zone.status != 'MOVED' %}
         <a class="dropdown-item" href="{% url 'zone_move' pk=zone.pk project=project.pk %}">
