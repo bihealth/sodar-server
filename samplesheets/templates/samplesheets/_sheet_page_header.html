@@ -11,7 +11,7 @@
         <li class="nav-item">
           <a class="nav-link {% if s == study %}bg-success active{% endif %}"
              href="{% url 'samplesheets:project_sheets' study=s.omics_uuid %}"
-             {% if s != study and s_title|length > 20 %}
+             {% if s.get_display_name|length > 20 %}
                data-toggle="tooltip" data-placement="top" title="{{ s.get_display_name }}"
              {% endif %}>
             <i class="fa fa-list-alt"></i> {{ s.get_display_name|truncatechars:20 }}</a>
