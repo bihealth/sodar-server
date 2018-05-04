@@ -234,6 +234,10 @@ class Study(BaseSampleSheet):
         """Return simple printable name for study"""
         return self.title if self.title else self.identifier
 
+    def get_display_name(self):
+        """Return display name for study"""
+        return self.title.strip('.').title() if self.title else self.identifier
+
 
 # Protocol ---------------------------------------------------------------------
 
@@ -383,8 +387,12 @@ class Assay(BaseSampleSheet):
     # Custom row-level functions
 
     def get_name(self):
-        """Return simple idenfitying name for Assay"""
+        """Return simple idenfitying name for assay"""
         return ''.join(str(self.file_name)[2:].split('.')[:-1])
+
+    def get_display_name(self):
+        """Return display name for assay"""
+        return ' '.join(s for s in self.get_name().split('_')).title()
 
 
 # Materials and data files -----------------------------------------------------
