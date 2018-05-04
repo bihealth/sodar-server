@@ -11,16 +11,13 @@
   </button>
   <div class="dropdown-menu dropdown-menu-right">
     {% if can_update_all or zone.user == request.user and can_update_own %}
-      {% comment TODO: Add these once the views are done %}
       {% if zone.status != 'MOVED' %}
-        <a class="dropdown-item" href="{% url 'zone_move' pk=zone.pk project=project.pk %}">
+        <a class="dropdown-item" href="{% url 'landingzones:move' landingzone=zone.omics_uuid %}">
       {% else %}
         <a class="dropdown-item disabled" href="#">
       {% endif %}
-        <i class="fa fa-copy" aria-hidden="true"></i>
-        Validate and Move
+        <i class="fa fa-copy"></i> Validate and Move
       </a>
-     {% endcomment %}
       <a class="dropdown-item" href="{% url 'landingzones:delete' landingzone=zone.omics_uuid %}">
         <i class="fa fa-close"></i> Delete Zone
       </a>

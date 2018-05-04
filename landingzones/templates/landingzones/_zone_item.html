@@ -30,34 +30,38 @@
   <td id="omics-lz-zone-status-{{ zone.omics_uuid }}" class="omics-lz-zone-status text-white {% get_status_style zone %}">{{ zone.status }}</td>
   {% if not details_card_mode %}
     <td class="omics-lz-zone-links">
-      {% if zone.status != 'MOVED' %}
-        {% if irods_backend %}
-          <button class="btn btn-secondary omics-list-btn omics-lz-popup-list-btn"
-                  list-url="{% url 'landingzones:irods_list' landingzone=zone.omics_uuid %}"
+      <span class="omics-lz-control">
+        {% if zone.status != 'MOVED' %}
+          {% if irods_backend %}
+            <button class="btn btn-secondary omics-list-btn omics-lz-popup-list-btn"
+                    list-url="{% url 'landingzones:irods_list' landingzone=zone.omics_uuid %}"
+                    zone-title="{{ zone.title }}" role="submit"
+                    data-toggle="tooltip" data-placement="top" title="List files in landing zone">
+              <i class="fa fa-external-link"></i>
+            </button>
+          {% endif %}
+          <button class="btn btn-secondary omics-list-btn omics-lz-popup-cmd-btn"
+                  irods-path="{{ zone.get_path }}"
                   zone-title="{{ zone.title }}" role="submit"
-                  data-toggle="tooltip" data-placement="top" title="List files in landing zone">
-            <i class="fa fa-external-link"></i>
+                  data-toggle="tooltip" data-placement="top" title="Get iCommands path to landing zone">
+            <i class="fa fa-terminal"></i>
           </button>
+          {% if irods_webdav_enabled %}
+            <a class="btn btn-secondary omics-list-btn omics-lz-dav-btn"
+               href="{% get_zone_dav_url zone %}" role="button"
+               data-toggle="tooltip" data-placement="top" title="Browse files in WebDAV">
+              <i class="fa fa-folder-open-o"></i>
+            </a>
+          {% endif %}
         {% endif %}
-        <button class="btn btn-secondary omics-list-btn omics-lz-popup-cmd-btn"
-                irods-path="{{ zone.get_path }}"
-                zone-title="{{ zone.title }}" role="submit"
-                data-toggle="tooltip" data-placement="top" title="Get iCommands path to landing zone">
-          <i class="fa fa-terminal"></i>
-        </button>
-        {% if irods_webdav_enabled %}
-          <a class="btn btn-secondary omics-list-btn omics-lz-dav-btn"
-                  href="{% get_zone_dav_url zone %}" role="button"
-                  data-toggle="tooltip" data-placement="top" title="Browse files in WebDAV">
-            <i class="fa fa-folder-open-o"></i>
-          </a>
-        {% endif %}
-      {% endif %}
+      </span>
     </td>
     <td class="omics-lz-zone-edit">
-      {% if zone.status != 'MOVED' %}
-        {% include 'landingzones/_zone_buttons.html' %}
-      {% endif %}
+      <span class="omics-lz-control">
+        {% if zone.status != 'MOVED' %}
+          {% include 'landingzones/_zone_buttons.html' %}
+        {% endif %}
+      </span>
     </td>
   {% endif %}
 </tr>

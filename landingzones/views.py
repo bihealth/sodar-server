@@ -330,38 +330,31 @@ class ZoneDeleteView(
         return kwargs
 
 
-'''
 class ZoneMoveView(
         LoginRequiredMixin, LoggedInPermissionMixin, ProjectContextMixin,
-        TemplateView):
+        ProjectPermissionMixin, TemplateView):
     """Zone validation and moving triggering view"""
     http_method_names = ['get', 'post']
     template_name = 'landingzones/zone_move_confirm.html'
     # NOTE: minimum perm, all checked files will be tested in post()
     permission_required = 'landingzones.update_zones_own'
 
-    def get_permission_object(self):
-        """Override get_permission_object for checking Project permission"""
-        try:
-            obj = Project.objects.get(id=self.kwargs['project'])
-            return obj
-
-        except Project.DoesNotExist:
-            return None
-
     def get_context_data(self, *args, **kwargs):
         context = super(ZoneMoveView, self).get_context_data(
             *args, **kwargs)
 
-        context['zone'] = LandingZone.objects.get(pk=self.kwargs['pk'])
+        context['zone'] = LandingZone.objects.get(
+            omics_uuid=self.kwargs['landingzone'])
+
+        context['sample_dir'] = settings.IRODS_SAMPLE_DIR
 
         return context
 
     def post(self, request, **kwargs):
         timeline = get_backend_api('timeline_backend')
         taskflow = get_backend_api('taskflow')
-        project = Project.objects.get(pk=self.kwargs['project'])
-        zone = LandingZone.objects.get(pk=self.kwargs['pk'])
+        zone = LandingZone.objects.get(omics_uuid=self.kwargs['landingzone'])
+        project = zone.project
         tl_event = None
 
         # Add event in Timeline
@@ -372,17 +365,22 @@ class ZoneMoveView(
                 user=self.request.user,
                 event_name='zone_move',
                 description='validate and move files from landing zone '
-                            '{zone_user}/{zone}')
-
-            tl_event.add_object(
-                obj=zone.user,
-                label='zone_user',
-                name=zone.user.username)
+                            '{zone} from {user} in {assay}')
 
             tl_event.add_object(
                 obj=zone,
                 label='zone',
                 name=zone.title)
+
+            tl_event.add_object(
+                obj=zone.user,
+                label='user',
+                name=zone.user.username)
+
+            tl_event.add_object(
+                obj=zone.assay,
+                label='assay',
+                name=zone.assay.get_display_name())
 
         # Fail if tasflow is not available
         if not taskflow:
@@ -394,7 +392,7 @@ class ZoneMoveView(
                 self.request, 'Unable to create dirs: taskflow not enabled!')
 
             return redirect(reverse(
-                'project_zones', kwargs={'project': project.pk}))
+                'landingzones:list', kwargs={'project': project.omics_uuid}))
 
         # Else go on with the creation
         if tl_event:
@@ -402,17 +400,20 @@ class ZoneMoveView(
 
         flow_data = {
             'zone_title': str(zone.title),
-            'zone_pk': zone.pk,
+            'zone_uuid': zone.omics_uuid,
+            'study_dir': zone.assay.study.get_dir(landing_zone=True),
+            'assay_dir': zone.assay.get_dir(
+                include_study=False, landing_zone=True),
             'user_name': str(zone.user.username)}
 
         try:
             taskflow.submit(
-                project_pk=project.pk,
+                project_uuid=project.omics_uuid,
                 flow_name='landing_zone_move',
                 flow_data=flow_data,
                 request=self.request,
                 request_mode='async',
-                timeline_pk=tl_event.pk)
+                timeline_uuid=tl_event.omics_uuid)
 
             messages.warning(
                 self.request,
@@ -428,14 +429,14 @@ class ZoneMoveView(
             messages.error(self.request, str(ex))
 
         return HttpResponseRedirect(
-            reverse('project_zones', kwargs={
-                'project': project.pk}))
+            reverse('landingzones:list', kwargs={
+                'project': project.omics_uuid}))
 
-    def get(self, request, **kwargs):
+    def get(self, request, **kwargs):   # TODO: Why do we require this?
         return super(TemplateView, self).render_to_response(
             self.get_context_data())
 
-
+'''
 class ZoneClearView(
         LoginRequiredMixin, LoggedInPermissionMixin, ProjectContextMixin,
         TemplateView):

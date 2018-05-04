@@ -26,12 +26,12 @@
     }
 
     .omics-lz-table thead tr th:nth-child(6) {
-      min-width: 120px !important;
+      width: 120px !important;
       white-space: nowrap !important;
     }
 
     .omics-lz-table thead tr th:nth-child(7) {
-      width: 60px !important;
+      width: 70px !important;
     }
 
     /* Responsive modifications */
@@ -113,38 +113,6 @@
     {% if zones_other.count > 0 %}
       {% include 'landingzones/_zone_list.html' with zones=zones_other list_title='Other Zones' list_icon='fa-users' %}
     {% endif %}
-
-    {% comment %}
-    <div class="card omics-card-single" id="omics-lz-zone-list">
-      <div class="card-header">
-        <h4>{{ zone_list_title }}</h4>
-      </div>
-      <div class="card-body omics-card-body-table">
-        <table class="table table-striped omics-card-table" id="omics-lz-table">
-          <thead>
-            <tr>
-              <th>Zone</th>
-              <th>Assay</th>
-              <th>User</th>
-              <th id="omics-lz-list-header-info">Status&nbsp;Info</th>
-              <th id="omics-lz-list-header-status">Status</th>
-              <th id="omics-lz-list-header-links">Links</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for zone in zones %}
-              {% include 'landingzones/_zone_item.html' %}
-            {% endfor %}
-            {% if zones.count == 0 %}
-                <td class="bg-faded font-italic text-center" colspan="7">No landing zones found</td>
-            {% endif %}
-          </tbody>
-        </table>
-      </div>
-    </div>
-    {% endcomment %}
-
   {% endif %}
 
 </div> {# Main container #}
@@ -206,8 +174,10 @@
                             zoneTr.find('td.omics-lz-zone-title').addClass('text-muted');
                             zoneTr.find('td.omics-lz-zone-assay').addClass('text-muted');
                             zoneTr.find('td.omics-lz-zone-status-info').addClass('text-muted');
-                            zoneTr.find('td.omics-lz-zone-links').find('span.zone-td-control').hide();
-                            zoneTr.find('td.omics-lz-zone-edit').find('span.zone-td-control').hide();
+
+                            // TODO: Disable buttons instead
+                            zoneTr.find('td.omics-lz-zone-links').find('span.omics-lz-control').hide();
+                            zoneTr.find('td.omics-lz-zone-edit').find('span.omics-lz-control').hide();
                             if (data['status'] === 'MOVED') {
                                 zoneTr.find('td.omics-lz-zone-status-info').append('<br /><a href="/sheets/' + projectUuid + '"><i class="fa fa-arrow-circle-right"></i> Browse files in sample sheet</a>');
                             }
@@ -217,8 +187,10 @@
                             zoneTr.find('td.omics-lz-zone-title').removeClass('text-muted');
                             zoneTr.find('td.omics-lz-zone-assay').removeClass('text-muted');
                             zoneTr.find('td.omics-lz-zone-status-info').removeClass('text-muted');
-                            zoneTr.find('td.omics-lz-zone-links').find('span.zone-td-control').show();
-                            zoneTr.find('td.omics-lz-zone-edit').find('span.zone-td-control').show();
+
+                            // TODO: Disable buttons instead
+                            zoneTr.find('td.omics-lz-zone-links').find('span.omics-lz-control').show();
+                            zoneTr.find('td.omics-lz-zone-edit').find('span.omics-lz-control').show();
                         }
                     }
                 });

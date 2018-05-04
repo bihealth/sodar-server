@@ -12,7 +12,7 @@ urlpatterns = [
         name='list',
     ),
     url(
-        regex=r'^assay/(?P<assay>[0-9a-f-]+)$',
+        regex=r'^assay/(?P<assay>[0-9a-f-]+)$',     # TODO: TBD: Is this needed?
         view=views.ProjectZoneView.as_view(),
         name='list',
     ),
@@ -20,6 +20,11 @@ urlpatterns = [
         regex=r'^create/(?P<project>[0-9a-f-]+)$',
         view=views.ZoneCreateView.as_view(),
         name='create',
+    ),
+    url(
+        regex=r'^move/(?P<landingzone>[0-9a-f-]+)$',
+        view=views.ZoneMoveView.as_view(),
+        name='move',
     ),
     url(
         regex=r'^delete/(?P<landingzone>[0-9a-f-]+)$',
@@ -56,11 +61,6 @@ urlpatterns = [
 ]
 
 '''            
-    url(
-        regex=r'^(?P<project>\d+)/move/(?P<pk>\d+)$',
-        view=views.ZoneMoveView.as_view(),
-        name='move',
-    ),
 
     # Taskflow API views
     url(

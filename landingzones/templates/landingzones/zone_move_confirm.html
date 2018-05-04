@@ -4,35 +4,37 @@
 {% load rules %}
 {% load landingzones_tags %}
 
-{% block title %}Confirm iRODS File Validation and Moving{% endblock %}
+{% block title %}
+  Confirm iRODS File Validation and Moving
+{% endblock title %}
 
 {% block projectroles_extend %}
 
-<div class="row">
+<div class="row omics-subtitle-container">
   <h3>Confirm iRODS File Validation and Moving</h3>
+</div>
 
+<div class="container-fluid omics-page-container">
   <div class="alert alert-warning" role="alert">
-    <p>
-      <strong>Warning:</strong> Are you sure you want to initiate the file
-      validation and moving project in iRODS? After checking, all files from
-      the landing zone
-      "<strong>{{ zone.user.username }}/{{ zone.title }}</strong>"
-      will be copied into the <cite>bio_samples</cite> collection of
-      project "<strong>{{ project.title }}</strong>" with read-only access.
-    </p>
+    <strong>Warning:</strong> Are you sure you want to initiate the file
+    validation and moving project in iRODS? After checking, all files from
+    the landing zone
+    "<strong>{{ zone.title }}</strong>"
+    will be copied into the <cite>{{ sample_dir }}</cite> collection of
+    project "<strong>{{ project.title }}</strong>" with read-only access.
   </div>
 
   <form method="post">
     {% csrf_token %}
-    <div class="btn-group pull-right">
-      <a role="button" class="btn btn-secondary" href="{% url 'project_zones' project=project.pk %}">
-        <i class="fa fa-arrow-circle-left" aria-hidden="true"></i>
-        Cancel
-      </a>
-     <button type="submit" class="btn btn-danger">
-        <i class="fa fa-copy" aria-hidden="true"></i>
-          Validate and Move
-      </button>
+    <div class="row">
+      <div class="btn-group ml-auto">
+        <a role="button" class="btn btn-secondary" href="{% url 'landingzones:list' project=project.omics_uuid %}">
+          <i class="fa fa-arrow-circle-left"></i> Cancel
+        </a>
+        <button type="submit" class="btn btn-danger">
+          <i class="fa fa-copy"></i> Validate and Move
+        </button>
+      </div>
     </div>
   </form>
 </div>
