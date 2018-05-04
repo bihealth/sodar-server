@@ -69,22 +69,29 @@ class ProjectZoneView(
         # Add iRODS query API
         context['irods_backend'] = get_backend_api('omics_irods')
 
-        # Zones and title according to user perms
-        zone_query = {'project': context['project']}
+        def get_zone_query(user=None, assay=None):
+            zone_query = {
+                'project': context['project']}
 
-        if assay:
-            zone_query['assay'] = assay
+            if user:
+                zone_query['user'] = self.request.user
 
+            if assay:
+                zone_query['assay'] = assay
+
+            return zone_query
+
+        # User zones
+        context['zones_own'] = LandingZone.objects.filter(**get_zone_query(
+            user=self.request.user, assay=assay)).order_by('-pk')
+
+        # Other zones
+        # TODO: Add individual zone perm check if/when we implement issue #57
         if self.request.user.has_perm(
                 'landingzones.view_zones_all', context['project']):
-            context['zone_list_title'] = 'All Zones'
-
-        else:
-            zone_query['user'] = self.request.user
-            context['zone_list_title'] = 'Your Zones'
-
-        context['zones'] = LandingZone.objects.filter(
-            **zone_query).order_by('-pk')
+            context['zones_other'] = LandingZone.objects.filter(
+                **get_zone_query(user=None, assay=assay)).exclude(
+                user=self.request.user).exclude(status='MOVED').order_by('-pk')
 
         # Status query interval
         context['zone_status_interval'] = settings.LANDINGZONES_STATUS_INTERVAL
@@ -144,9 +151,8 @@ class ZoneCreateView(
                     app_name=APP_NAME,
                     user=self.request.user,
                     event_name='zone_create',
-                    description='create landing zone '
-                                '{{{}}} for user {{{}}} in '
-                                'assay {{{}}}'.format(
+                    description='create landing zone {{{}}} for {{{}}} in '
+                                '{{{}}}'.format(
                                     'zone', 'user', 'assay'),
                     status_type='SUBMIT')
 

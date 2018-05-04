@@ -95,7 +95,7 @@ class LandingZone(models.Model):
         help_text='Landing zone Omics UUID')
 
     class Meta:
-        ordering = ['project', 'title']
+        ordering = ['project', 'assay__file_name', 'title']
         # Ensure name is unique within project and user
         unique_together = ('title', 'project', 'user')
 

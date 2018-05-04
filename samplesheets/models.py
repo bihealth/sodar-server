@@ -400,6 +400,7 @@ class Assay(BaseSampleSheet):
 
     class Meta:
         unique_together = ('study', 'file_name')
+        ordering = ['study__file_name', 'file_name']
 
     def __str__(self):
         return '{}: {}/{}'.format(

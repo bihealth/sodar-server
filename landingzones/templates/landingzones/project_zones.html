@@ -13,60 +13,60 @@
 {% block css %}
   {{ block.super }}
   <style type="text/css">
-    #omics-lz-table td:first-child {
+    .omics-lz-table td:first-child {
       white-space: nowrap;
     }
 
-    #omics-lz-table thead tr th:nth-child(4) {
+    .omics-lz-table thead tr th:nth-child(4) {
       width: 300px !important;
     }
 
-    #omics-lz-table thead tr th:nth-child(5) {
+    .omics-lz-table thead tr th:nth-child(5) {
       width: 120px !important;
     }
 
-    #omics-lz-table thead tr th:nth-child(6) {
+    .omics-lz-table thead tr th:nth-child(6) {
       min-width: 120px !important;
       white-space: nowrap !important;
     }
 
-    #omics-lz-table thead tr th:nth-child(7) {
+    .omics-lz-table thead tr th:nth-child(7) {
       width: 60px !important;
     }
 
     /* Responsive modifications */
     @media screen and (max-width: 1300px) {
-      .table#omics-lz-table tr th:nth-child(4) {
+      .table.omics-lz-table tr th:nth-child(4) {
         display: none;
       }
-      .table#omics-lz-table tr td:nth-child(4) {
+      .table.omics-lz-table tr td:nth-child(4) {
         display: none;
       }
     }
 
     @media screen and (max-width: 1000px) {
-      .table#omics-lz-table tr th:nth-child(3) {
+      .table.omics-lz-table tr th:nth-child(3) {
         display: none;
       }
-      .table#omics-lz-table tr td:nth-child(3) {
+      .table.omics-lz-table tr td:nth-child(3) {
         display: none;
       }
     }
 
     @media screen and (max-width: 650px) {
-      .table#omics-lz-table tr th:nth-child(2) {
+      .table.omics-lz-table tr th:nth-child(2) {
         display: none;
       }
-      .table#omics-lz-table tr td:nth-child(2) {
+      .table.omics-lz-table tr td:nth-child(2) {
         display: none;
       }
     }
 
     @media screen and (max-width: 500px) {
-      .table#omics-lz-table tr th:nth-child(5) {
+      .table.omics-lz-table tr th:nth-child(5) {
         display: none;
       }
-      .table#omics-lz-table tr td:nth-child(5) {
+      .table.omics-lz-table tr td:nth-child(5) {
         display: none;
       }
     }
@@ -106,7 +106,15 @@
     </div>
 
   {% else %}
-    {# Landing zone list #}
+    {# User zones #}
+    {% if zones_own.count > 0 %}
+      {% include 'landingzones/_zone_list.html' with zones=zones_own list_title='Your Zones' list_icon='fa-user' %}
+    {% endif %}
+    {% if zones_other.count > 0 %}
+      {% include 'landingzones/_zone_list.html' with zones=zones_other list_title='Other Zones' list_icon='fa-users' %}
+    {% endif %}
+
+    {% comment %}
     <div class="card omics-card-single" id="omics-lz-zone-list">
       <div class="card-header">
         <h4>{{ zone_list_title }}</h4>
@@ -135,6 +143,7 @@
         </table>
       </div>
     </div>
+    {% endcomment %}
 
   {% endif %}
 
