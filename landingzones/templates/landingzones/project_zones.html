@@ -14,37 +14,28 @@
   {{ block.super }}
   <style type="text/css">
     .omics-lz-table td:first-child {
-      white-space: nowrap;
+      // white-space: nowrap;
+    }
+
+    .omics-lz-table thead tr th:nth-child(3) {
+      width: 350px !important;
     }
 
     .omics-lz-table thead tr th:nth-child(4) {
-      width: 300px !important;
+      width: 120px !important;
     }
 
     .omics-lz-table thead tr th:nth-child(5) {
       width: 120px !important;
-    }
-
-    .omics-lz-table thead tr th:nth-child(6) {
-      width: 120px !important;
       white-space: nowrap !important;
     }
 
-    .omics-lz-table thead tr th:nth-child(7) {
+    .omics-lz-table thead tr th:nth-child(6) {
       width: 70px !important;
     }
 
     /* Responsive modifications */
     @media screen and (max-width: 1300px) {
-      .table.omics-lz-table tr th:nth-child(4) {
-        display: none;
-      }
-      .table.omics-lz-table tr td:nth-child(4) {
-        display: none;
-      }
-    }
-
-    @media screen and (max-width: 1000px) {
       .table.omics-lz-table tr th:nth-child(3) {
         display: none;
       }
@@ -53,7 +44,7 @@
       }
     }
 
-    @media screen and (max-width: 650px) {
+    @media screen and (max-width: 800px) {
       .table.omics-lz-table tr th:nth-child(2) {
         display: none;
       }
@@ -62,7 +53,16 @@
       }
     }
 
-    @media screen and (max-width: 500px) {
+    @media screen and (max-width: 600px) {
+      .table.omics-lz-table tr th:nth-child(4) {
+        display: none;
+      }
+      .table.omics-lz-table tr td:nth-child(4) {
+        display: none;
+      }
+    }
+
+    @media screen and (max-width: 450px) {
       .table.omics-lz-table tr th:nth-child(5) {
         display: none;
       }
@@ -170,14 +170,25 @@
                         statusTd.removeClass();
                         statusTd.addClass(statusStyles[data['status']] + ' text-white');
 
-                        if (data['status'] === 'MOVED' || data['status'] === 'CREATING') {
+                        if (data['status'] !== 'ACTIVE' && data['status'] !== 'FAILED' && data['status'] !== 'NOT CREATED') {
                             zoneTr.find('td.omics-lz-zone-title').addClass('text-muted');
                             zoneTr.find('td.omics-lz-zone-assay').addClass('text-muted');
                             zoneTr.find('td.omics-lz-zone-status-info').addClass('text-muted');
 
-                            // TODO: Disable buttons instead
-                            zoneTr.find('td.omics-lz-zone-links').find('span.omics-lz-control').hide();
-                            zoneTr.find('td.omics-lz-zone-edit').find('span.omics-lz-control').hide();
+                            zoneTr.find('.btn').each(function() {
+                               if ($(this).is('button')) {
+                                   $(this).attr('disabled', 'disabled');
+                               }
+
+                               else if ($(this).is('a')) {
+                                   $(this).addClass('disabled');
+                               }
+
+                               $(this).tooltip('disable');
+                            });
+
+                            zoneTr.find('.omics-edit-dropdown').addClass('disabled');
+
                             if (data['status'] === 'MOVED') {
                                 zoneTr.find('td.omics-lz-zone-status-info').append('<br /><a href="/sheets/' + projectUuid + '"><i class="fa fa-arrow-circle-right"></i> Browse files in sample sheet</a>');
                             }
@@ -188,9 +199,19 @@
                             zoneTr.find('td.omics-lz-zone-assay').removeClass('text-muted');
                             zoneTr.find('td.omics-lz-zone-status-info').removeClass('text-muted');
 
-                            // TODO: Disable buttons instead
-                            zoneTr.find('td.omics-lz-zone-links').find('span.omics-lz-control').show();
-                            zoneTr.find('td.omics-lz-zone-edit').find('span.omics-lz-control').show();
+                            zoneTr.find('.btn').each(function() {
+                               if ($(this).is('button')) {
+                                   $(this).removeAttr('disabled');
+                               }
+
+                               else if ($(this).is('a')) {
+                                   $(this).removeClass('disabled');
+                               }
+
+                               $(this).tooltip('enable');
+                            });
+
+                            zoneTr.find('.omics-edit-dropdown').removeClass('disabled');
                         }
                     }
                 });
@@ -272,9 +293,11 @@
         });
 
         $('.omics-lz-popup-list-btn').click(function() {
-            $('#omics-lz-popup-list').attr(
-                'list-url', $(this).attr('list-url')).attr(
-                    'zone-title', $(this).attr('zone-title')).popup('show');
+            if ($(this).closest('tr').find('td.omics-lz-zone-status').text() !== 'MOVED') {
+                $('#omics-lz-popup-list').attr(
+                    'list-url', $(this).attr('list-url')).attr(
+                      'zone-title', $(this).attr('zone-title')).popup('show');
+            }
         });
 
         /**************
@@ -299,9 +322,11 @@
         });
 
         $('.omics-lz-popup-cmd-btn').click(function() {
-            $('#omics-lz-popup-cmd').attr(
-                'irods-path', $(this).attr('irods-path')).attr(
-                    'zone-title', $(this).attr('zone-title')).popup('show');
+            if ($(this).closest('tr').find('td.omics-lz-zone-status').text() !== 'MOVED') {
+                $('#omics-lz-popup-cmd').attr(
+                    'irods-path', $(this).attr('irods-path')).attr(
+                        'zone-title', $(this).attr('zone-title')).popup('show');
+            }
         });
     });
   </script>

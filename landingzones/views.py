@@ -335,7 +335,7 @@ class ZoneMoveView(
         ProjectPermissionMixin, TemplateView):
     """Zone validation and moving triggering view"""
     http_method_names = ['get', 'post']
-    template_name = 'landingzones/zone_move_confirm.html'
+    template_name = 'landingzones/landingzone_confirm_move.html'
     # NOTE: minimum perm, all checked files will be tested in post()
     permission_required = 'landingzones.update_zones_own'
 
@@ -432,32 +432,19 @@ class ZoneMoveView(
             reverse('landingzones:list', kwargs={
                 'project': project.omics_uuid}))
 
-    def get(self, request, **kwargs):   # TODO: Why do we require this?
-        return super(TemplateView, self).render_to_response(
-            self.get_context_data())
 
-'''
 class ZoneClearView(
         LoginRequiredMixin, LoggedInPermissionMixin, ProjectContextMixin,
-        TemplateView):
+        ProjectPermissionMixin, TemplateView):
     """Zone validation and moving triggering view"""
     http_method_names = ['get', 'post']
-    template_name = 'landingzones/zone_clear_confirm.html'
+    template_name = 'landingzones/landingzone_confirm_clear.html'
     # NOTE: minimum perm, all checked files will be tested in post()
     permission_required = 'landingzones.update_zones_own'
 
-    def get_permission_object(self):
-        """Override get_permission_object for checking Project permission"""
-        try:
-            obj = Project.objects.get(id=self.kwargs['project'])
-            return obj
-
-        except Project.DoesNotExist:
-            return None
-
     def post(self, request, **kwargs):
         timeline = get_backend_api('timeline_backend')
-        project = Project.objects.get(pk=self.kwargs['project'])
+        project = Project.objects.get(omics_uuid=self.kwargs['project'])
         tl_event = None
 
         # Add event in Timeline
@@ -467,7 +454,7 @@ class ZoneClearView(
                 app_name=APP_NAME,
                 user=self.request.user,
                 event_name='zones_clear',
-                description='Clear moved zones from user {user}')
+                description='clear inactive landing zones from {user}')
 
             tl_event.add_object(
                 obj=self.request.user,
@@ -475,11 +462,16 @@ class ZoneClearView(
                 name=self.request.user.username)
 
         try:
-            LandingZone.objects.filter(
-                user=self.request.user, status='MOVED').delete()
+            inactive_zones = LandingZone.objects.filter(
+                user=self.request.user, status__in=['MOVED', 'NOT CREATED'])
+            zone_count = inactive_zones.count()
+            inactive_zones.delete()
+
             messages.success(
                 self.request,
-                'Landing zones cleared for user "{}"'.format(
+                'Cleared {} inactive landing zone{} for user {}'.format(
+                    zone_count,
+                    's' if zone_count != 1 else '',
                     self.request.user.username))
 
             if tl_event:
@@ -487,19 +479,16 @@ class ZoneClearView(
 
         except Exception as ex:
             messages.error(
-                self.request, 'Unable to clear landing zones: {}'.format(ex))
+                self.request,
+                'Unable to clear inactive landing zones: {}'.format(ex))
 
             if tl_event:
                 tl_event.set_status('FAILED', str(ex))
 
         return HttpResponseRedirect(
-            reverse('project_zones', kwargs={
-                'project': project.pk}))
+            reverse('landingzones:list', kwargs={
+                'project': project.omics_uuid}))
 
-    def get(self, request, **kwargs):
-        return super(TemplateView, self).render_to_response(
-            self.get_context_data())
-'''
 
 # Javascript API Views ---------------------------------------------------
 

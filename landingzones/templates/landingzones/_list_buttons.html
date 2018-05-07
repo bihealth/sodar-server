@@ -9,8 +9,15 @@
     {# Create zone #}
     <a class="dropdown-item"
        href="{% url 'landingzones:create' project=project.omics_uuid %}">
-      <i class="fa fa-fw fa-plus" aria-hidden="true"></i> Create Zone
+      <i class="fa fa-fw fa-plus"></i> Create Zone
     </a>
 
+    {# Clear inactive zones #}
+    {% if zones_own.count > 0 %}
+    <a class="dropdown-item"
+       href="{% url 'landingzones:clear' project=project.omics_uuid %}">
+      <i class="fa fa-fw fa-trash"></i> Clear Inactive Zones
+    </a>
+    {% endif %}
   </div>
 </div>

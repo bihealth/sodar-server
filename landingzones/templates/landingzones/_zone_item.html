@@ -1,10 +1,18 @@
 {% load landingzones_tags %}
 
+{# Projectroles dependency #}
+{% load projectroles_common_tags %}
+
 <tr class="{% get_zone_row_class zone %}" id="{{ zone.omics_uuid }}" zone-uuid="{{ zone.omics_uuid }}" project-uuid="{{ project.omics_uuid }}" status-url="{% url 'landingzones:status' landingzone=zone.omics_uuid %}">
   {% if details_card_mode %}
     <td><a href="{% url 'landingzones:list' project=project.omics_uuid %}#{{ zone.omics_uuid }}">{{ zone.title }}</a></td>
   {% else %}
     <td class="omics-lz-zone-title font-weight-bold">
+      {% if zone.user != request.user %}
+        {% autoescape off %}
+          {% get_user_html request.user %} /
+        {% endautoescape %}
+      {% endif %}
       {{ zone.title }}
       {% if zone.description %}
         <a class="omics-ss-assay-info-link" tabindex="0" data-toggle="popover"
@@ -16,11 +24,6 @@
     </td>
   {% endif %}
   <td class="omics-lz-zone-assay">{{ zone.assay.get_display_name }}</td>
-  {% if not details_card_mode %}
-    <td class="omics-lz-zone-email">
-      <a href="mailto:{{ zone.user.email }}">{{ zone.user.username }}</a>
-    </td>
-  {% endif %}
   <td class="omics-lz-zone-status-info">
       {{ zone.status_info }}
       {% if zone.status == 'MOVED' %}
@@ -31,36 +34,36 @@
   {% if not details_card_mode %}
     <td class="omics-lz-zone-links">
       <span class="omics-lz-control">
-        {% if zone.status != 'MOVED' %}
-          {% if irods_backend %}
-            <button class="btn btn-secondary omics-list-btn omics-lz-popup-list-btn"
-                    list-url="{% url 'landingzones:irods_list' landingzone=zone.omics_uuid %}"
-                    zone-title="{{ zone.title }}" role="submit"
-                    data-toggle="tooltip" data-placement="top" title="List files in landing zone">
-              <i class="fa fa-external-link"></i>
-            </button>
-          {% endif %}
-          <button class="btn btn-secondary omics-list-btn omics-lz-popup-cmd-btn"
-                  irods-path="{{ zone.get_path }}"
+        {# TODO: Refactor this #}
+        {% if irods_backend %}
+          <button class="btn btn-secondary omics-list-btn omics-lz-popup-list-btn"
+                  list-url="{% url 'landingzones:irods_list' landingzone=zone.omics_uuid %}"
                   zone-title="{{ zone.title }}" role="submit"
-                  data-toggle="tooltip" data-placement="top" title="Get iCommands path to landing zone">
-            <i class="fa fa-terminal"></i>
+                  {% if zone.status != 'MOVED' and zone.status != 'CREATING' %}data-toggle="tooltip" data-placement="top" title="List files in landing zone"{% endif %}
+                  {% if zone.status == 'MOVED' or zone.status == 'CREATING' %} disabled{% endif %}>
+            <i class="fa fa-external-link"></i>
           </button>
-          {% if irods_webdav_enabled %}
-            <a class="btn btn-secondary omics-list-btn omics-lz-dav-btn"
-               href="{% get_zone_dav_url zone %}" role="button"
-               data-toggle="tooltip" data-placement="top" title="Browse files in WebDAV">
-              <i class="fa fa-folder-open-o"></i>
-            </a>
-          {% endif %}
+        {% endif %}
+        <button class="btn btn-secondary omics-list-btn omics-lz-popup-cmd-btn"
+                irods-path="{{ zone.get_path }}"
+                zone-title="{{ zone.title }}" role="submit"
+                {% if zone.status != 'MOVED' and zone.status != 'CREATING' %}data-toggle="tooltip" data-placement="top" title="Get iCommands path to landing zone"{% endif %}
+                {% if zone.status == 'MOVED' or zone.status == 'CREATING' %} disabled{% endif %}>
+          <i class="fa fa-terminal"></i>
+         </button>
+        {% if irods_webdav_enabled %}
+          <a class="btn btn-secondary omics-list-btn omics-lz-dav-btn
+             {% if zone.status == 'MOVED' or zone.status == 'CREATING' %} disabled{% endif %}"
+             href="{% get_zone_dav_url zone %}" role="button"
+             {% if zone.status != 'MOVED' and zone.status != 'CREATING' %}data-toggle="tooltip" data-placement="top" title="Browse files in WebDAV"{% endif %}>
+            <i class="fa fa-folder-open-o"></i>
+          </a>
         {% endif %}
       </span>
     </td>
     <td class="omics-lz-zone-edit">
       <span class="omics-lz-control">
-        {% if zone.status != 'MOVED' %}
-          {% include 'landingzones/_zone_buttons.html' %}
-        {% endif %}
+        {% include 'landingzones/_zone_buttons.html' %}
       </span>
     </td>
   {% endif %}

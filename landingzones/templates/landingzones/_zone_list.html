@@ -9,7 +9,6 @@
         <tr>
           <th>Zone</th>
           <th>Assay</th>
-          <th>User</th>
           <th id="omics-lz-list-header-info">Status&nbsp;Info</th>
           <th id="omics-lz-list-header-status">Status</th>
           <th id="omics-lz-list-header-links">Links</th>
@@ -21,7 +20,7 @@
           {% include 'landingzones/_zone_item.html' %}
         {% endfor %}
         {% if zones.count == 0 %}
-           <td class="bg-faded font-italic text-center" colspan="7">No landing zones found</td>
+           <td class="bg-faded font-italic text-center" colspan="6">No landing zones found</td>
         {% endif %}
       </tbody>
     </table>

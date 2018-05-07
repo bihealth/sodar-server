@@ -11,11 +11,11 @@ urlpatterns = [
         view=views.ProjectZoneView.as_view(),
         name='list',
     ),
-    url(
-        regex=r'^assay/(?P<assay>[0-9a-f-]+)$',     # TODO: TBD: Is this needed?
-        view=views.ProjectZoneView.as_view(),
-        name='list',
-    ),
+    # url(
+    #     regex=r'^assay/(?P<assay>[0-9a-f-]+)$',     # TODO: TBD: Is this needed?
+    #     view=views.ProjectZoneView.as_view(),
+    #     name='list',
+    # ),
     url(
         regex=r'^create/(?P<project>[0-9a-f-]+)$',
         view=views.ZoneCreateView.as_view(),
@@ -30,6 +30,11 @@ urlpatterns = [
         regex=r'^delete/(?P<landingzone>[0-9a-f-]+)$',
         view=views.ZoneDeleteView.as_view(),
         name='delete',
+    ),
+    url(
+        regex=r'^clear/(?P<project>[0-9a-f-]+)$',
+        view=views.ZoneClearView.as_view(),
+        name='clear',
     ),
     # Javascript API views
     url(

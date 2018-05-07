@@ -69,6 +69,7 @@ Fixed
     - Invalid URL in ``build_invite_url()`` caused a crash (#149)
 - **Samplesheets**
     - Delete investigation if import fails (#138)
+    - Assay sorting was not defined
 - **Timeline**
     - Fix event id parameter in Taskflow view
 

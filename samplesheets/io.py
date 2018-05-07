@@ -432,31 +432,5 @@ def get_assay_dirs(assay):
     :param assay: Assay object
     :return: List
     """
-    # TODO: This is just an example, implement this for real
-
-    # NOTE: This is still the best and fastest way to figure out which samples
-    #       belong in a study
-
-    tb = SampleSheetTableBuilder()
-    tables = tb.build_study(assay.study)
-
-    # TODO: Add common helpers for getting sample column / position
-    sample_pos = 0
-
-    for c in tables['study']['top_header']:
-        if c['value'] == 'Sample':
-            break
-
-        else:
-            sample_pos += c['colspan']
-
-    assay_table = tables['assays'][assay.get_name()]
-    ret = []
-
-    for row in assay_table['table_data']:
-        val = row[sample_pos]['value']
-
-        if val not in ret:
-            ret.append(val)
-
-    return ret
+    # TODO: Currently just an empty dir, this needs to be implemented for real
+    return []
