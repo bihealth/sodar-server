@@ -179,9 +179,8 @@ class ZoneCreateView(
                 'zone_uuid': zone.omics_uuid,
                 'user_name': self.request.user.username,
                 'user_uuid': self.request.user.omics_uuid,
-                'study_dir': assay.study.get_dir(landing_zone=True),
-                'assay_dir': assay.get_dir(
-                    include_study=False, landing_zone=True),
+                'assay_path': assay.get_dir(
+                    include_study=True, landing_zone=True),
                 'description': zone.description,
                 'dirs': dirs}
 
@@ -291,9 +290,8 @@ class ZoneDeleteView(
             flow_data = {
                 'zone_title': zone.title,
                 'zone_uuid': zone.omics_uuid,
-                'study_dir': zone.assay.study.get_dir(landing_zone=True),
-                'assay_dir': zone.assay.get_dir(
-                    include_study=False, landing_zone=True),
+                'assay_path': zone.assay.get_dir(
+                    include_study=True, landing_zone=True),
                 'user_name': zone.user.username}
 
             try:
@@ -401,9 +399,10 @@ class ZoneMoveView(
         flow_data = {
             'zone_title': str(zone.title),
             'zone_uuid': zone.omics_uuid,
-            'study_dir': zone.assay.study.get_dir(landing_zone=True),
-            'assay_dir': zone.assay.get_dir(
-                include_study=False, landing_zone=True),
+            'assay_path_samples': zone.assay.get_dir(
+                include_study=True, landing_zone=False),
+            'assay_path_zone': zone.assay.get_dir(
+                include_study=True, landing_zone=True),
             'user_name': str(zone.user.username)}
 
         try:

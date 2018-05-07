@@ -7,7 +7,7 @@
   {% if details_card_mode %}
     <td><a href="{% url 'landingzones:list' project=project.omics_uuid %}#{{ zone.omics_uuid }}">{{ zone.title }}</a></td>
   {% else %}
-    <td class="omics-lz-zone-title font-weight-bold">
+    <td class="omics-lz-zone-title">
       {% if zone.user != request.user %}
         {% autoescape off %}
           {% get_user_html request.user %} /
