@@ -554,6 +554,9 @@ class LandingZoneStatusGetAPIView(
 # Taskflow API Views -----------------------------------------------------
 
 
+# TODO: Limit access to localhost
+
+
 class ZoneCreateAPIView(APIView):
     def post(self, request):
         try:
@@ -608,7 +611,6 @@ class ZoneStatusGetAPIView(APIView):
 
         return Response(ret_data, status=200)
 '''
-
 
 class ZoneStatusSetAPIView(APIView):
     def post(self, request):
