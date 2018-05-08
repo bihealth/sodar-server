@@ -1,5 +1,10 @@
 {% load samplesheets_tags %}
 
+{# Projectroles  #}
+{% load projectroles_common_tags %}
+
+{% get_class parent lower=True as parent_class %}
+
 <table class="table cell-border order-column omics-ss-data-table" id="{% get_table_id parent %}">
   <thead>
     {# Top header #}
@@ -23,6 +28,8 @@
     {# Content #}
     {% for row in table.table_data %}
       {% get_row_id as row_id %}
+      {% get_irods_path parent irods_base_dir as irods_path %}
+
       <tr id="omics-ss-data-row-{{ row_id }}">
         {% for cell in row %}
           {% autoescape off %}
@@ -30,13 +37,32 @@
           {% endautoescape %}
         {% endfor %}
         <td class="bg-light omics-ss-data-cell-links">
-          {# File listing link #}
-          <button class="btn btn-secondary btn-sm omics-list-btn"
-                  id="omics-ss-link-btn-{{ row_id }}"
-                  title="List files in iRODS"
-                  type="submit" {% if not investigation.irods_status %}disabled{% endif %}>
-            <i class="fa fa-external-link"></i>
-          </button>
+          {# TODO: Refactor this #}
+          {% if irods_backend %}
+            <button class="btn btn-secondary omics-list-btn omics-ss-popup-list-btn"
+                    {# TODO: Add other required parameters #}
+                   {% if parent_class == 'assay' %}
+                       list-url="{% url 'samplesheets:irods_list' assay=parent.omics_uuid %}"
+                    {% elif parent_class == 'study' %}
+                       list-url="{% url 'samplesheets:irods_list' study=parent.omics_uuid %}"
+                    {% endif %}
+                    role="submit" title="List files for row">
+              <i class="fa fa-external-link"></i>
+            </button>
+          {% endif %}
+          <button class="btn btn-secondary omics-list-btn omics-ss-popup-cmd-btn"
+                  {# TODO: Add other required parameters #}
+                  irods-path="{{ irods_path }}"
+                  role="submit" title="Get iCommands path to files for row">
+            <i class="fa fa-terminal"></i>
+           </button>
+          {% if irods_webdav_enabled %}
+            <a class="btn btn-secondary omics-list-btn omics-ss-dav-btn"
+               href="{{ irods_webdav_url }}{{ irods_path }}" role="button"
+               title="Browse files in WebDAV">
+              <i class="fa fa-folder-open-o"></i>
+            </a>
+          {% endif %}
         </td>
       </tr>
     {% endfor %}

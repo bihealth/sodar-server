@@ -16,7 +16,7 @@ from rest_framework.views import APIView
 from projectroles.models import Project
 from projectroles.plugins import get_backend_api
 from projectroles.views import LoggedInPermissionMixin, \
-    ProjectContextMixin, ProjectPermissionMixin
+    ProjectContextMixin, ProjectPermissionMixin, APIPermissionMixin
 
 from .forms import SampleSheetImportForm
 from .io import get_base_dirs
@@ -72,19 +72,21 @@ class ProjectSheetsView(
                 tb = SampleSheetTableBuilder()
                 context['table_data'] = tb.build_study(study)
 
-                # iRODS links (TODO: Get these from iRODS backend instead?)
+                # iRODS backend
+                context['irods_backend'] = get_backend_api('omics_irods')
+
+                # iRODS WebDAV
                 if settings.IRODS_WEBDAV_ENABLED:
                     context['irods_webdav_enabled'] = True
                     context['irods_webdav_url'] = \
                         settings.IRODS_WEBDAV_URL.rstrip('/')
 
-                # TODO: TBD: Where to configure this?
-                context['irods_study_dir'] = \
-                    '/omicsZone/projects/{}/{}/{}/study_{}/'.format(
+                # TODO: TBD: Get from irodsbackend instead?
+                context['irods_base_dir'] = \
+                    '/omicsZone/projects/{}/{}/{}'.format(
                         str(project.omics_uuid)[:2],
                         project.omics_uuid,
-                        settings.IRODS_SAMPLE_DIR,
-                        study.omics_uuid)
+                        settings.IRODS_SAMPLE_DIR)
 
             except Study.DoesNotExist:
                 pass    # TODO: Show error message if study not found?
@@ -426,7 +428,42 @@ class IrodsDirsView(
             self.get_context_data())
 
 
+# Javascript API Views ---------------------------------------------------
+
+
+class IrodsObjectListAPIView(
+        LoginRequiredMixin, ProjectContextMixin, ProjectPermissionMixin,
+        APIPermissionMixin, APIView):
+    """View for listing relevant sample dataobjects in iRODS via Ajax"""
+    permission_required = 'samplesheets.view_sheet'
+
+    def get(self, request, **kwargs):
+        irods_backend = get_backend_api('omics_irods')
+
+        if not irods_backend:
+            return Response('Backend not enabled', status=500)
+
+        if 'assay' in kwargs:
+            assay = Assay.objects.get(omics_uuid=kwargs['assay'])
+            study = assay.study
+            project = assay.get_project()
+
+        else:   # study
+            assay = None
+            study = Study.objects.get(omics_uuid=kwargs['study'])
+            project = study.get_project()
+
+        # TODO: Determine collection/collections to query based on input
+        # TODO: Query for data
+        ret_data = {}
+
+        return Response(ret_data, status=200)
+
+
 # Taskflow API Views -----------------------------------------------------
+
+
+# TODO: Limit access to localhost
 
 
 # TODO: Use GET instead of POST

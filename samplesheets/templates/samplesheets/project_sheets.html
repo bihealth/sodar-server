@@ -80,6 +80,7 @@
 
     .omics-ss-data-links-header {
       border-right: 0 !important;
+      width: 85px !important;
     }
 
     .DTFC_Cloned thead tr:first-child th {
@@ -175,7 +176,8 @@
 
 </div> {# Main container #}
 
-<span id="omics-ss-popup-list" row-id=""></span>
+<span id="omics-ss-popup-list" list-url="" row-id=""></span>
+<span id="omics-ss-popup-cmd" row-id=""></span>
 
 {% endblock projectroles_extend %}
 
@@ -283,46 +285,28 @@
         $('#omics-ss-popup-list').popup({
             transition: 'all 0.2s',
             beforeopen: function () {
-                var currentDir = '{{ irods_study_dir }}';
-                var rowId = $(this).attr('row-id');
-                var row = $(document).find('#omics-ss-data-row-' + rowId);
-                var tableId = row.closest('table').attr('id');
-                var assayId = null;
+                var listUrl = $(this).attr('list-url');  // TODO: This should already contain all we need to know
+                // var rowId = $(this).attr('row-id');  // TODO: TBD: Needed?
+                // var row = $(document).find('#omics-ss-data-row-' + rowId);  // TODO: TBD: Needed?
 
-                if (tableId.split('-')[4] === 'assay') {
-                    assayId = tableId.split('-').slice(5).join('-');
-                    currentDir += 'assay_' + assayId + '/';
-                }
-
-                var davUrl = '{{ irods_webdav_url }}' + currentDir;
-
-                // TODO: Determine directories for this row (TBD: how?)
-                // TODO: Check existence of directories/files, display as found (NOTE: also from assays if currently in study)
                 var htmlHeader = '<div class="card"><div class="card-body"><h5>Files in iRODS</h5><hr />';
                 var htmlFooter = '</div></div>';
                 var htmlData = '';
 
-                // TODO: TEST CODE BELOW
-                htmlData += '<p>WebDAV URL: ' + davUrl + '</p>';
-                htmlData += '<p>iRODS dir: ' + currentDir + '</p>';
+                htmlData += 'List URL: ' + listUrl;
 
-                htmlData += '<p>Found materials/files for this row:</p>';
-
-                row.find('td').each(function(i, obj) {
-                    if ($(obj).attr('isa-material') === '1' &&
-                        $(obj).attr('isa-material-type') !== 'SOURCE') {
-                        // This is just an example..
-                        htmlData += $(obj).attr('isa-unique-name') + ' / ' + $(obj).text() + ' (' + $(obj).attr('isa-material-type') +')<br />';
-                    }
-                });
+                // TODO: Build listUrl accordingly
+                // TODO: Call IrodsObjectListAPIView via ajax
+                // TODO: Add results to htmlData here
 
                 // Set popup html here
                 $(this).html(htmlHeader + htmlData + htmlFooter);
             }
         });
 
-        $('.omics-list-btn').click(function() {
-            $('#omics-ss-popup-list').attr('row-id', $(this).attr('id').split('-')[4]).popup('show');
+        $('.omics-ss-popup-list-btn').click(function() {
+            $('#omics-ss-popup-list').attr(
+                'list-url', $(this).attr('list-url')).popup('show');
         });
     });
   </script>

@@ -46,6 +46,17 @@ urlpatterns = [
         view=views.SampleSheetDeleteView.as_view(),
         name='delete',
     ),
+    # Javascript API views
+    url(
+        regex=r'^irods/list/study/(?P<study>[0-9a-f-]+)$',
+        view=views.IrodsObjectListAPIView.as_view(),
+        name='irods_list',
+    ),
+    url(
+        regex=r'^irods/list/assay/(?P<assay>[0-9a-f-]+)$',
+        view=views.IrodsObjectListAPIView.as_view(),
+        name='irods_list',
+    ),
     # Taskflow API views
     url(
         regex=r'^taskflow/dirs/get$',

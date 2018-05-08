@@ -1501,18 +1501,10 @@ class ProjectInviteRevokeView(
 
 
 class ProjectStarringAPIView(
-        LoginRequiredMixin, APIPermissionMixin, APIView):
+        LoginRequiredMixin, ProjectPermissionMixin, APIPermissionMixin,
+        APIView):
     """View to handle starring and unstarring a project via AJAX"""
     permission_required = 'projectroles.view_project'
-
-    def get_permission_object(self):
-        """Override get_permission_object for checking Project permission"""
-        try:
-            obj = Project.objects.get(omics_uuid=self.kwargs['project'])
-            return obj
-
-        except Project.DoesNotExist:
-            return None
 
     def post(self, request, *args, **kwargs):
         project = self.get_permission_object()
@@ -1539,6 +1531,9 @@ class ProjectStarringAPIView(
 
 
 # Taskflow API Views -----------------------------------------------------
+
+
+# TODO: Limit access to localhost
 
 
 # TODO: Use GET instead of POST

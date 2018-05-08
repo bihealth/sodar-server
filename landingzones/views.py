@@ -62,12 +62,12 @@ class ProjectZoneView(
         context['irods_webdav_enabled'] = \
             settings.IRODS_WEBDAV_ENABLED
 
-        # WebDAV URL for JQuery
+        # iRODS backend
+        context['irods_backend'] = get_backend_api('omics_irods')
+
+        # iRODS WebDAV
         if settings.IRODS_WEBDAV_ENABLED:
             context['irods_webdav_url'] = settings.IRODS_WEBDAV_URL.rstrip('/')
-
-        # Add iRODS query API
-        context['irods_backend'] = get_backend_api('omics_irods')
 
         def get_zone_query(user=None, assay=None):
             zone_query = {

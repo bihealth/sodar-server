@@ -16,14 +16,15 @@ Added
     - Admin link for superuser (#134)
     - Common ``popupWaitHtml`` and ``popupNoFilesHtml`` Javascript variables
     - Clipboard.js for helping clipboard operations
-    - CSS styling for `.omics-code-input`
+    - CSS styling for ``.omics-code-input``
 - **Irodsbackend**
     - Add irodsbackend app (#139)
 - **Landingzones**
     - Add landingzones app (#139)
 - **Projectroles**
     - Settings updating to Taskflow for project creation and modification (#139)
-    - Add ``get_all_settings()`` in ``project_settings.py``
+    - Add ``get_all_settings()`` in ``project_settings``
+    - Add ``get_class()`` in ``projectroles_common_tags``
 - **Samplesheets**
     - iRODS directory creation (#139)
     - iRODS link display (#139)
@@ -49,6 +50,7 @@ Changed
     - Refactor email sending
     - Properly log and report errors in email sending (#151)
     - Require email sending to succeed for creating invites (#149)
+    - Modify ProjectStarringAPIView to use common permission mixins
 - **Samplesheets**
     - Rename top header "legend" to "value" (#129)
     - Allow sample sheet upload for project contributor (#137)

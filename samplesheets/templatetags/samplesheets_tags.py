@@ -122,7 +122,7 @@ def get_assay_info_html(assay):
 
 
 @register.simple_tag
-def get_irods_dirs(investigation):
+def get_irods_tree(investigation):
     """Return HTML for iRODS dirs"""
     ret = '<ul><li>{}<ul>'.format(settings.IRODS_SAMPLE_DIR)
 
@@ -142,6 +142,18 @@ def get_irods_dirs(investigation):
     ret += '</ul></li></ul>'
 
     return ret
+
+
+@register.simple_tag
+def get_irods_path(parent, base_dir):
+    """
+    Return full iRODS path
+    :param parent: Parent Study or Assay
+    :param base_dir: Base iRODS directory
+    return: String
+    """
+    params = {} if type(parent) == Study else {'include_study': True}
+    return base_dir + '/' + parent.get_dir(params)
 
 
 # Table rendering --------------------------------------------------------------
