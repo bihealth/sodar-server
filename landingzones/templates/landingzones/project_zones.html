@@ -170,7 +170,7 @@
                         statusTd.removeClass();
                         statusTd.addClass(statusStyles[data['status']] + ' text-white');
 
-                        if (data['status'] !== 'ACTIVE' && data['status'] !== 'FAILED' && data['status'] !== 'NOT CREATED') {
+                        if (data['status'] !== 'ACTIVE' && data['status'] !== 'FAILED') {
                             zoneTr.find('td.omics-lz-zone-title').addClass('text-muted');
                             zoneTr.find('td.omics-lz-zone-assay').addClass('text-muted');
                             zoneTr.find('td.omics-lz-zone-status-info').addClass('text-muted');
