@@ -57,3 +57,13 @@ def get_zone_desc_html(zone):
     """Return zone description as HTML"""
     return '<div><strong>Description</strong><br />{}</div>'.format(
         zone.description)
+
+
+@register.simple_tag
+def get_zone_samples_url(zone):
+    """Return URL for samples related to zone"""
+    # TODO: TBD: Inherit this from samplesheets instead?
+    return reverse(
+        'samplesheets:project_sheets',
+        kwargs={'study': zone.assay.study.omics_uuid}) + \
+        '#' + str(zone.assay.omics_uuid)

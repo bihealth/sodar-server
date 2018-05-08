@@ -3,7 +3,11 @@
 {# Projectroles dependency #}
 {% load projectroles_common_tags %}
 
-<tr class="{% get_zone_row_class zone %}" id="{{ zone.omics_uuid }}" zone-uuid="{{ zone.omics_uuid }}" project-uuid="{{ project.omics_uuid }}" status-url="{% url 'landingzones:status' landingzone=zone.omics_uuid %}">
+<tr class="{% get_zone_row_class zone %}"
+    id="{{ zone.omics_uuid }}"
+    zone-uuid="{{ zone.omics_uuid }}"
+    sample-url="{% get_zone_samples_url zone %}"
+    status-url="{% url 'landingzones:status' landingzone=zone.omics_uuid %}">
   {% if details_card_mode %}
     <td><a href="{% url 'landingzones:list' project=project.omics_uuid %}#{{ zone.omics_uuid }}">{{ zone.title }}</a></td>
   {% else %}
@@ -27,7 +31,7 @@
   <td class="omics-lz-zone-status-info">
       {{ zone.status_info }}
       {% if zone.status == 'MOVED' %}
-        <br /><a href="{% url 'samplesheets:project_sheets' study=zone.assay.study.omics_uuid %}#{{ zone.assay.omics_uuid }}"><i class="fa fa-arrow-circle-right"></i> Browse files in sample sheets</a>
+        <br /><a href="{% get_zone_samples_url zone %}"><i class="fa fa-arrow-circle-right"></i> Browse files in sample sheets</a>
       {% endif %}
   </td>
   <td id="omics-lz-zone-status-{{ zone.omics_uuid }}" class="omics-lz-zone-status text-white {% get_status_style zone %}">{{ zone.status }}</td>

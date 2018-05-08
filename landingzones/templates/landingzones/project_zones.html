@@ -141,7 +141,7 @@
         $('.omics-lz-zone-tr-existing').each(function(){
             var trId = $(this).attr('id');
             var zoneUuid = $(this).attr('zone-uuid');
-            var projectUuid = $(this).attr('project-uuid');
+            var sampleUrl = $(this).attr('sample-url');
 
             if ($(this).find('td.omics-lz-zone-status').text() !== 'MOVED') {
                 $.ajax({
@@ -190,7 +190,9 @@
                             zoneTr.find('.omics-edit-dropdown').addClass('disabled');
 
                             if (data['status'] === 'MOVED') {
-                                zoneTr.find('td.omics-lz-zone-status-info').append('<br /><a href="/sheets/' + projectUuid + '"><i class="fa fa-arrow-circle-right"></i> Browse files in sample sheet</a>');
+                                zoneTr.find('td.omics-lz-zone-status-info').append(
+                                    '<br /><a href="' + sampleUrl + '"><i class="fa fa-arrow-circle-right"></i> ' +
+                                    'Browse files in sample sheet</a>');
                             }
                         }
 
