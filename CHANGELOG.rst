@@ -19,6 +19,7 @@ Added
     - CSS styling for ``.omics-code-input``
 - **Irodsbackend**
     - Add irodsbackend app (#139)
+    - Add ``get_path()`` for retrieving iRODS paths for Django objects
 - **Landingzones**
     - Add landingzones app (#139)
 - **Projectroles**
@@ -27,7 +28,7 @@ Added
     - Add ``get_class()`` in ``projectroles_common_tags``
 - **Samplesheets**
     - iRODS directory creation (#139)
-    - iRODS link display (#139)
+    - iRODS link and iCommands display (#139)
     - Render optional hidden HTML attributes for cell meta data (#139)
     - Add ``get_dir()`` and ``get_display_name()`` helpers to Study and Assay
 - **Taskflowbackend**
@@ -63,10 +64,11 @@ Changed
 Fixed
 -----
 
-- **Filesfolders**
-    - Broken link for subfolders with depth >1 (#136)
 - **General**
     - Add missing email settings in production config (#149)
+    - Add ``python3-distutils`` to Xenial requirements to fix failing tests caused by recent updates
+- **Filesfolders**
+    - Broken link for subfolders with depth >1 (#136)
 - **Projectroles**
     - Invalid URL in ``build_invite_url()`` caused a crash (#149)
 - **Samplesheets**
