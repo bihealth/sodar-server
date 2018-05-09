@@ -114,6 +114,10 @@ class LandingZone(models.Model):
 
     # Custom row-level functions
 
+    def get_project(self):
+        """Get project in cases where multiple object types may be included"""
+        return self.project
+
     def set_status(self, status, status_info=None):
         if status not in ZONE_STATUS_TYPES:
             raise TypeError('Unknown status "{}"'.format(status))
@@ -128,6 +132,7 @@ class LandingZone(models.Model):
 
         self.save()
 
+    # TODO: Remove and call get_path in irodsbackend instead
     def get_path(self):
         """Return full iRODS path to the zone"""
         return '/{}/projects/{}/{}/{}/{}/{}/{}'.format(

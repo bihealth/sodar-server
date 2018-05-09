@@ -513,7 +513,8 @@ class LandingZoneObjectListAPIView(
 
         if request.user.has_perm('landingzones.{}'.format(perm), zone.project):
             try:
-                ret_data = irods_backend.list_objects(zone.get_path())
+                ret_data = irods_backend.list_objects(
+                    irods_backend.get_path(zone))
 
             except Exception as ex:     # TODO: 404 if dir not found
                 return Response(ex, status=500)

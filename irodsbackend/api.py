@@ -1,10 +1,48 @@
 """iRODS REST API for Omics Data Management Django apps"""
 
+from functools import wraps
 from irods.session import iRODSSession
 from pytz import timezone
 
 from django.conf import settings
+from django.utils.text import slugify
 
+
+# Local constants
+ACCEPTED_PATH_TYPES = [
+    'Assay',
+    'LandingZone',
+    'Project',
+    'Study']
+
+
+# Irods init decorator ---------------------------------------------------------
+
+
+def init_irods(func):
+    @wraps(func)
+    def _decorator(self, *args, **kwargs):
+        try:
+            self.irods = iRODSSession(
+                host=settings.IRODS_HOST,
+                port=settings.IRODS_PORT,
+                user=settings.IRODS_USER,
+                password=settings.IRODS_PASS,
+                zone=settings.IRODS_ZONE)
+
+            # Ensure we have a connection
+            self.irods.collections.exists('/{}/home/{}'.format(
+                settings.IRODS_ZONE, settings.IRODS_USER))
+
+        except Exception as ex:
+            pass    # TODO: Handle exceptions, add logging
+
+        return func(self, *args, **kwargs)
+
+    return _decorator
+
+
+# API class --------------------------------------------------------------------
 
 class IrodsAPI:
     """iRODS API to be used by Django apps"""
@@ -14,16 +52,11 @@ class IrodsAPI:
         pass
 
     def __init__(self):
-        self.irods = iRODSSession(
-            host=settings.IRODS_HOST,
-            port=settings.IRODS_PORT,
-            user=settings.IRODS_USER,
-            password=settings.IRODS_PASS,
-            zone=settings.IRODS_ZONE)
+        self.irods = None
 
-        # Ensure we have a connection
-        self.irods.collections.exists('/{}/home/{}'.format(
-            settings.IRODS_ZONE, settings.IRODS_USER))
+    #####################
+    # Internal functions
+    #####################
 
     @classmethod
     def _get_datetime(cls, naive_dt):
@@ -33,6 +66,77 @@ class IrodsAPI:
         dt = dt.astimezone(timezone('Europe/Berlin'))
         return dt.strftime('%Y-%m-%d %H:%M')
 
+    ##########
+    # Helpers
+    ##########
+
+    @classmethod
+    def get_path(cls, obj):
+        """
+        Return path for object
+        :param obj: Django model object
+        :return: String
+        :raise: TypeError if obj is not of supported type
+        :raise: ValueError if project is not found
+        """
+        obj_class = obj.__class__.__name__
+
+        if obj_class not in ACCEPTED_PATH_TYPES:
+            raise TypeError(
+                'Object of type "{}" not supported! Accepted models: {}',
+                format(obj_class, ', '.join(ACCEPTED_PATH_TYPES)))
+
+        if obj_class == 'Project':
+            project = obj
+
+        else:
+            project = obj.get_project()
+
+        if not project:
+            raise ValueError('Project not found for given object!')
+
+        # Base path (project)
+        path = '/{}/projects/{}/{}'.format(
+            settings.IRODS_ZONE,
+            str(project.omics_uuid)[:2],
+            project.omics_uuid)
+
+        # Project
+        if obj_class == 'Project':
+            return path
+
+        # Study (in sample data)
+        if obj_class == 'Study':
+            path += '/{}/{}'.format(
+                settings.IRODS_SAMPLE_DIR,
+                'study_' + str(obj.omics_uuid))
+
+        # Assay (in sample data)
+        elif obj_class == 'Assay':
+            path += '/{}/{}/{}'.format(
+                settings.IRODS_SAMPLE_DIR,
+                'study_' + str(obj.study.omics_uuid),
+                'assay_' + str(obj.omics_uuid))
+
+        # LandingZone
+        elif obj_class == 'LandingZone':
+            def get_zone_dir(obj):
+                return slugify(obj.get_display_name()).replace('-', '_')
+
+            path += '/{}/{}/{}/{}/{}'.format(
+                settings.IRODS_LANDING_ZONE_DIR,
+                obj.user.username,
+                get_zone_dir(obj.assay.study),
+                get_zone_dir(obj.assay),
+                obj.title)
+
+        return path
+
+    ###################
+    # iRODS Operations
+    ###################
+
+    @init_irods
     def get_info(self):
         """Return iRODS server info"""
         ret = {}
@@ -50,6 +154,7 @@ class IrodsAPI:
 
         return ret
 
+    @init_irods
     def list_objects(self, path):
         """Return iRODS object list"""
 
