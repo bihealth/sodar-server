@@ -5,8 +5,14 @@ from django import template
 from django.conf import settings
 from django.urls import reverse
 
+# Projectroles dependency
+from projectroles.plugins import get_backend_api
+
 from ..models import Investigation, Study, Assay, GenericMaterial, \
     GENERIC_MATERIAL_TYPES
+
+
+irods_backend = get_backend_api('omics_irods')
 
 register = template.Library()
 
@@ -144,16 +150,11 @@ def get_irods_tree(investigation):
     return ret
 
 
+# TODO: Unify with similar function in landingzones_tags
 @register.simple_tag
-def get_irods_path(parent, base_dir):
-    """
-    Return full iRODS path
-    :param parent: Parent Study or Assay
-    :param base_dir: Base iRODS directory
-    return: String
-    """
-    params = {} if type(parent) == Study else {'include_study': True}
-    return base_dir + '/' + parent.get_dir(params)
+def get_irods_path(obj):
+    if irods_backend:
+        return irods_backend.get_path(obj)
 
 
 # Table rendering --------------------------------------------------------------

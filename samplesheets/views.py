@@ -444,18 +444,18 @@ class IrodsObjectListAPIView(
             return Response('Backend not enabled', status=500)
 
         if 'assay' in kwargs:
-            assay = Assay.objects.get(omics_uuid=kwargs['assay'])
-            study = assay.study
-            project = assay.get_project()
+            parent = Assay.objects.get(omics_uuid=kwargs['assay'])
 
         else:   # study
-            assay = None
-            study = Study.objects.get(omics_uuid=kwargs['study'])
-            project = study.get_project()
+            parent = Study.objects.get(omics_uuid=kwargs['study'])
 
-        # TODO: Determine collection/collections to query based on input
-        # TODO: Query for data
-        ret_data = {}
+        # TODO: Determine specific collections/files to query for based on input
+        try:
+            ret_data = irods_backend.list_objects(
+                irods_backend.get_path(parent))
+
+        except Exception as ex:  # TODO: 404 if dir not found
+            return Response(ex, status=500)
 
         return Response(ret_data, status=200)
 

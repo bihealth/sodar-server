@@ -253,7 +253,7 @@
                     // console.log(data);  // DEBUG
 
                     if (data['data_objects'].length > 0) {
-                        htmlData = '<table class="table omics-card-table table-striped zone-obj-list">';
+                        htmlData = '<table class="table omics-card-table table-striped omics-irods-obj-list">';
                         htmlData += '<thead><th>File</th><th>Size</th><th>Modified</th><th>MD5</th></thead><tbody>';
 
                         $.each(data['data_objects'], function (i, obj) {
@@ -285,9 +285,9 @@
 
                     // Set success html
                     $('#omics-lz-popup-list').html(htmlHeader + htmlData + htmlFooter);
+                }).fail(function () {
+                    $('#omics-lz-popup-list').html(htmlHeader + '<span class="text-danger font-italic">Failed to query data</span>' + htmlFooter);
                 });
-
-                // TODO: Failure (see prototype)
 
             // Set default loading html
             $(this).html(popupWaitHtml);
@@ -305,6 +305,7 @@
         /**************
          iCommand Popup
          **************/
+        // TODO: Unify this with the landingzones iCommand popup
         $('#omics-lz-popup-cmd').popup({
             transition: 'all 0.2s',
             beforeopen: function () {

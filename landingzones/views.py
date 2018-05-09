@@ -63,6 +63,7 @@ class ProjectZoneView(
             settings.IRODS_WEBDAV_ENABLED
 
         # iRODS backend
+        # TODO: This can be just bool
         context['irods_backend'] = get_backend_api('omics_irods')
 
         # iRODS WebDAV
@@ -496,14 +497,15 @@ class LandingZoneObjectListAPIView(
         LoginRequiredMixin, ProjectContextMixin, APIView):
     """View for listing landing zone objects in iRODS via Ajax"""
 
-    def get(self, request, landingzone, **kwargs):
+    def get(self, request, **kwargs):
         irods_backend = get_backend_api('omics_irods')
 
         if not irods_backend:
             return Response('Backend not enabled', status=500)
 
         try:
-            zone = LandingZone.objects.get(omics_uuid=landingzone)
+            zone = LandingZone.objects.get(
+                omics_uuid=kwargs['landingzone'])
 
         except LandingZone.DoesNotExist:
             return Response('Zone not found', status=400)

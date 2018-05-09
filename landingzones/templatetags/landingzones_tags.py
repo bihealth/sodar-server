@@ -3,6 +3,10 @@ from django.conf import settings
 from django.urls import reverse
 
 
+# Projectroles dependency
+from projectroles.plugins import get_backend_api
+
+
 from ..models import LandingZone
 
 
@@ -14,6 +18,8 @@ STATUS_STYLES = {
     'MOVED': 'bg-success',
     'FAILED': 'bg-danger'}
 
+
+irods_backend = get_backend_api('omics_irods')
 
 register = template.Library()
 
@@ -45,11 +51,11 @@ def get_details_zones(project, user):
         project=project, user=user).exclude(status='MOVED').order_by('-pk')
 
 
+# TODO: Unify this with a similar function in samplesheets_tags
 @register.simple_tag
-def get_zone_dav_url(zone):
-    return '{}{}'.format(
-        settings.IRODS_WEBDAV_URL.rstrip('/'),
-        zone.get_path())
+def get_zone_path(zone):
+    if irods_backend:
+        return irods_backend.get_path(zone)
 
 
 @register.simple_tag

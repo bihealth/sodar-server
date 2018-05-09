@@ -28,8 +28,7 @@
     {# Content #}
     {% for row in table.table_data %}
       {% get_row_id as row_id %}
-      {% get_irods_path parent irods_base_dir as irods_path %}
-
+      {% get_irods_path parent as irods_path %}
       <tr id="omics-ss-data-row-{{ row_id }}">
         {% for cell in row %}
           {% autoescape off %}
@@ -40,7 +39,7 @@
           {# TODO: Refactor this #}
           {% if irods_backend %}
             <button class="btn btn-secondary omics-list-btn omics-ss-popup-list-btn"
-                    {# TODO: Add other required parameters #}
+                    {# TODO: Add row-specific parameters #}
                    {% if parent_class == 'assay' %}
                        list-url="{% url 'samplesheets:irods_list' assay=parent.omics_uuid %}"
                     {% elif parent_class == 'study' %}
@@ -51,18 +50,17 @@
             </button>
           {% endif %}
           <button class="btn btn-secondary omics-list-btn omics-ss-popup-cmd-btn"
-                  {# TODO: Add other required parameters #}
+                  {# TODO: Add row-specific parameters #}
                   irods-path="{{ irods_path }}"
                   role="submit" title="Get iCommands path to files for row">
             <i class="fa fa-terminal"></i>
            </button>
-          {% if irods_webdav_enabled %}
-            <a class="btn btn-secondary omics-list-btn omics-ss-dav-btn"
-               href="{{ irods_webdav_url }}{{ irods_path }}" role="button"
-               title="Browse files in WebDAV">
-              <i class="fa fa-folder-open-o"></i>
-            </a>
-          {% endif %}
+           <a class="btn btn-secondary omics-list-btn omics-ss-dav-btn
+              {% if not irods_webdav_enabled %} disabled{% endif %}"
+              href="{{ irods_webdav_url }}{{ irods_path }}" role="button"
+              title="Browse files in WebDAV">
+            <i class="fa fa-folder-open-o"></i>
+          </a>
         </td>
       </tr>
     {% endfor %}
