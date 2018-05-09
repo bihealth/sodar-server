@@ -1,7 +1,12 @@
 {% load samplesheets_tags %}
 
-{# Projectroles  #}
+{# Projectroles dependency #}
 {% load projectroles_common_tags %}
+
+{# Load irodsbackend tags if backend is active #}
+{% if irods_backend %}
+  {% load irodsbackend_tags %}
+{% endif %}
 
 {% get_class parent lower=True as parent_class %}
 

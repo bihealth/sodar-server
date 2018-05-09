@@ -150,13 +150,6 @@ def get_irods_tree(investigation):
     return ret
 
 
-# TODO: Unify with similar function in landingzones_tags
-@register.simple_tag
-def get_irods_path(obj):
-    if irods_backend:
-        return irods_backend.get_path(obj)
-
-
 # Table rendering --------------------------------------------------------------
 
 

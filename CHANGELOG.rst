@@ -20,6 +20,7 @@ Added
 - **Irodsbackend**
     - Add irodsbackend app (#139)
     - Add ``get_path()`` for retrieving iRODS paths for Django objects
+    - Template tag ``get_irods_path()`` to get object iRODS path in template
 - **Landingzones**
     - Add landingzones app (#139)
 - **Projectroles**

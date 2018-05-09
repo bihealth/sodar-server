@@ -3,6 +3,11 @@
 {# Projectroles dependency #}
 {% load projectroles_common_tags %}
 
+{# Load irodsbackend tags if backend is active #}
+{% if irods_backend %}
+  {% load irodsbackend_tags %}
+{% endif %}
+
 <tr class="{% get_zone_row_class zone %}"
     id="{{ zone.omics_uuid }}"
     zone-uuid="{{ zone.omics_uuid }}"
@@ -39,7 +44,7 @@
     <td class="omics-lz-zone-links">
       <span class="omics-lz-control">
         {# TODO: Refactor this #}
-        {% get_zone_path zone as zone_irods_path %}
+        {% get_irods_path zone as zone_irods_path %}
 
         {% if irods_backend %}
           <button class="btn btn-secondary omics-list-btn omics-lz-popup-list-btn"

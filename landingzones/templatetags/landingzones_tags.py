@@ -51,13 +51,6 @@ def get_details_zones(project, user):
         project=project, user=user).exclude(status='MOVED').order_by('-pk')
 
 
-# TODO: Unify this with a similar function in samplesheets_tags
-@register.simple_tag
-def get_zone_path(zone):
-    if irods_backend:
-        return irods_backend.get_path(zone)
-
-
 @register.simple_tag
 def get_zone_desc_html(zone):
     """Return zone description as HTML"""
