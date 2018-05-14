@@ -42,6 +42,7 @@ Changed
 - **General**
     - Upgrade to Django 1.11.12
     - Upgrade to django-crispy-forms 1.7.1 (#153)
+    - Upgrade to Boostrap 4.1.1 (#144)
 - **Filesfolders**
     - Don't show empty folder label if subfolders exist (#135)
 - **Irodsbackend**
