@@ -406,11 +406,15 @@ class ProjectModifyMixin(ModelFormMixin):
         if form_action == 'create':
             project.submit_status = SUBMIT_STATUS_PENDING_TASKFLOW if \
                 use_taskflow else SUBMIT_STATUS_PENDING
+            project.save()  # Always save locally if creating (to get uuid)
 
         else:
             project.submit_status = SUBMIT_STATUS_OK
 
-        project.save()  # Got to save Project in order to refer to it
+        # Save project with changes if updating without taskflow
+        if form_action == 'update' and not use_taskflow:
+            project.save()
+
         owner = form.cleaned_data.get('owner')
         extra_data = {}
         type_str = 'Project' if project.type == PROJECT_TYPE_PROJECT else \
@@ -517,14 +521,21 @@ class ProjectModifyMixin(ModelFormMixin):
 
                 messages.error(self.request, str(ex))
 
-                # TODO: Make this into a common mixin function?
-                if project.parent:
-                    return HttpResponseRedirect(reverse(
-                        'projectroles:detail',
-                        kwargs={'project': project.parent.omics_uuid}))
+                if form_action == 'create':
+                    if project.parent:
+                        redirect_url = reverse(
+                            'projectroles:detail',
+                            kwargs={'project': project.parent.omics_uuid})
 
-                else:
-                    return HttpResponseRedirect(reverse('home'))
+                    else:
+                        redirect_url = reverse('home')
+
+                else:   # Update
+                    redirect_url = reverse(
+                        'projectroles:detail',
+                        kwargs={'project': project.omics_uuid})
+
+                return HttpResponseRedirect(redirect_url)
 
         # Local save without Taskflow
         else:

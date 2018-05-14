@@ -74,6 +74,7 @@ Fixed
     - Invalid URL in ``build_invite_url()`` caused a crash (#149)
     - Project creation failure using taskflow caused database corruption (#162)
     - Proper redirect from failed project creation to home or parent category
+    - Project partially modified instead of rollback if update with taskflow failed (#163)
 - **Samplesheets**
     - Delete investigation if import fails (#138)
     - Assay sorting was not defined
