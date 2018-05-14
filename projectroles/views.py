@@ -1,5 +1,6 @@
 import json
 import re
+import requests
 
 from django.apps import apps
 from django.conf import settings
@@ -11,7 +12,6 @@ from django.http import HttpResponseRedirect, HttpResponseForbidden
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils import timezone
-from django.utils.timezone import localtime
 from django.views.generic import TemplateView, DetailView, UpdateView,\
     CreateView, DeleteView, View
 from django.views.generic.edit import ModelFormMixin
@@ -371,8 +371,7 @@ class ProjectModifyMixin(ModelFormMixin):
         taskflow = get_backend_api('taskflow')
         timeline = get_backend_api('timeline_backend')
 
-        use_taskflow = True if \
-            taskflow and \
+        use_taskflow = True if taskflow and \
             form.cleaned_data.get('type') == PROJECT_TYPE_PROJECT else False
 
         tl_event = None
@@ -505,7 +504,9 @@ class ProjectModifyMixin(ModelFormMixin):
                     flow_data=flow_data,
                     request=self.request)
 
-            except taskflow.FlowSubmitException as ex:
+            except (
+                    requests.exceptions.ConnectionError,
+                    taskflow.FlowSubmitException) as ex:
                 # NOTE: No need to update status as project will be deleted
                 if form_action == 'create':
                     project.delete()
@@ -515,7 +516,15 @@ class ProjectModifyMixin(ModelFormMixin):
                         tl_event.set_status('FAILED', str(ex))
 
                 messages.error(self.request, str(ex))
-                return HttpResponseRedirect(reverse('home'))
+
+                # TODO: Make this into a common mixin function?
+                if project.parent:
+                    return HttpResponseRedirect(reverse(
+                        'projectroles:detail',
+                        kwargs={'project': project.parent.omics_uuid}))
+
+                else:
+                    return HttpResponseRedirect(reverse('home'))
 
         # Local save without Taskflow
         else:
