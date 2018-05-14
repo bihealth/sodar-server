@@ -545,7 +545,7 @@ pre {
   display: none;
 }
 
-/* Navbar */
+/* Navbar (width) */
 /* Note: 767px is where navbar-expand-md is triggered in Bootstrap 4 */
 @media screen and (max-width: 767px) {
   .omics-navbar-user-dropdown {
@@ -564,6 +564,17 @@ pre {
 
 /* Sidebar */
 @media screen and (max-width: 1000px) {
+  .omics-content-left {
+    display: none !important;
+  }
+
+  .omics-sidebar-alt-btn {
+    display: inherit !important;
+  }
+}
+
+/* Sidebar (height) */
+@media screen and (max-height: 650px) {
   .omics-content-left {
     display: none !important;
   }

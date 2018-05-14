@@ -17,6 +17,7 @@ Added
     - Common ``popupWaitHtml`` and ``popupNoFilesHtml`` Javascript variables
     - Clipboard.js for helping clipboard operations
     - CSS styling for ``.omics-code-input``
+    - Height check for project sidebar and dropdown menu switching (#156)
 - **Irodsbackend**
     - Add irodsbackend app (#139)
     - Add ``get_path()`` for retrieving iRODS paths for Django objects
