@@ -105,12 +105,18 @@
       After that landing zones can be created for the project.
     </div>
 
+  {% elif zones_own.count == 0 and not zones_other %}
+    <div class="alert alert-info" role="alert">
+      No landing zones are currently available for you in this project. Please
+      create a landing zone for a desired assay using the "Zone Operations" menu.
+    </div>
+
   {% else %}
     {# User zones #}
     {% if zones_own.count > 0 %}
       {% include 'landingzones/_zone_list.html' with zones=zones_own list_title='Your Zones' list_icon='fa-user' %}
     {% endif %}
-    {% if zones_other.count > 0 %}
+    {% if zones_other %}
       {% include 'landingzones/_zone_list.html' with zones=zones_other list_title='Other Zones' list_icon='fa-users' %}
     {% endif %}
   {% endif %}

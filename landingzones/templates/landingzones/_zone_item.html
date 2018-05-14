@@ -19,7 +19,7 @@
     <td class="omics-lz-zone-title">
       {% if zone.user != request.user %}
         {% autoescape off %}
-          {% get_user_html request.user %} /
+          {% get_user_html zone.user %} /
         {% endautoescape %}
       {% endif %}
       {{ zone.title }}
