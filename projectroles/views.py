@@ -1,4 +1,6 @@
+import json
 import re
+import requests
 
 from django.apps import apps
 from django.conf import settings
@@ -10,7 +12,6 @@ from django.http import HttpResponseRedirect, HttpResponseForbidden
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils import timezone
-from django.utils.timezone import localtime
 from django.views.generic import TemplateView, DetailView, UpdateView,\
     CreateView, DeleteView, View
 from django.views.generic.edit import ModelFormMixin
@@ -27,7 +28,8 @@ from .forms import ProjectForm, RoleAssignmentForm, ProjectInviteForm
 from .models import Project, Role, RoleAssignment, ProjectInvite, \
     OMICS_CONSTANTS, PROJECT_TAG_STARRED
 from .plugins import ProjectAppPluginPoint, get_active_plugins, get_backend_api
-from .project_settings import set_project_setting, get_project_setting
+from .project_settings import set_project_setting, get_project_setting, \
+    get_all_settings
 from .project_tags import get_tag_state, set_tag_state, remove_tag
 from .utils import get_expiry_date
 
@@ -46,7 +48,8 @@ PROJECT_ROLE_OWNER = OMICS_CONSTANTS['PROJECT_ROLE_OWNER']
 PROJECT_ROLE_DELEGATE = OMICS_CONSTANTS['PROJECT_ROLE_DELEGATE']
 SUBMIT_STATUS_OK = OMICS_CONSTANTS['SUBMIT_STATUS_OK']
 SUBMIT_STATUS_PENDING = OMICS_CONSTANTS['SUBMIT_STATUS_PENDING']
-SUBMIT_STATUS_PENDING_TASKFLOW = OMICS_CONSTANTS['SUBMIT_STATUS_PENDING']
+SUBMIT_STATUS_PENDING_TASKFLOW = OMICS_CONSTANTS[
+    'SUBMIT_STATUS_PENDING_TASKFLOW']
 
 # Local constants
 APP_NAME = 'projectroles'
@@ -367,6 +370,10 @@ class ProjectModifyMixin(ModelFormMixin):
     def form_valid(self, form):
         taskflow = get_backend_api('taskflow')
         timeline = get_backend_api('timeline_backend')
+
+        use_taskflow = True if taskflow and \
+            form.cleaned_data.get('type') == PROJECT_TYPE_PROJECT else False
+
         tl_event = None
         form_action = 'update' if self.object else 'create'
         old_data = {}
@@ -397,17 +404,29 @@ class ProjectModifyMixin(ModelFormMixin):
                 readme=form.cleaned_data.get('readme'))
 
         if form_action == 'create':
-            project.submit_status = SUBMIT_STATUS_PENDING_TASKFLOW if taskflow \
-                else SUBMIT_STATUS_PENDING
+            project.submit_status = SUBMIT_STATUS_PENDING_TASKFLOW if \
+                use_taskflow else SUBMIT_STATUS_PENDING
+            project.save()  # Always save locally if creating (to get uuid)
 
         else:
             project.submit_status = SUBMIT_STATUS_OK
 
-        project.save()  # Got to save Project in order to refer to it
+        # Save project with changes if updating without taskflow
+        if form_action == 'update' and not use_taskflow:
+            project.save()
+
         owner = form.cleaned_data.get('owner')
         extra_data = {}
         type_str = 'Project' if project.type == PROJECT_TYPE_PROJECT else \
             'Category'
+
+        # Get settings
+        project_settings = {}
+
+        for p in app_plugins:
+            for s_key in p.project_settings:
+                s_name = 'settings.{}.{}'.format(p.name, s_key)
+                project_settings[s_name] = form.cleaned_data.get(s_name)
 
         if timeline:
             if form_action == 'create':
@@ -440,17 +459,12 @@ class ProjectModifyMixin(ModelFormMixin):
                     upd_fields.append('readme')
 
                 # Settings
-                for p in app_plugins:
-                    for s_key in p.project_settings:
-                        s_title = '{}.{}'.format(p.name, s_key)
-                        old_val = get_project_setting(
-                            project, p.name, s_key)
-                        s_val = form.cleaned_data.get(
-                            'settings.{}'.format(s_title))
-
-                        if old_val != s_val:
-                            extra_data[s_title] = s_val
-                            upd_fields.append(s_title)
+                for k, v in project_settings.items():
+                    old_v = get_project_setting(
+                        project, k.split('.')[1], k.split('.')[2])
+                    if old_v != v:
+                        extra_data[k] = v
+                        upd_fields.append(k)
 
                 if len(upd_fields) > 0:
                     tl_desc += ' (' + ', '.join(x for x in upd_fields) + ')'
@@ -467,34 +481,36 @@ class ProjectModifyMixin(ModelFormMixin):
                 tl_event.add_object(owner, 'owner', owner.username)
 
         # Submit with taskflow
-        if taskflow:
+        if use_taskflow:
             if tl_event:
                 tl_event.set_status('SUBMIT')
-
-            # TODO: Add settings saving to taskflow once we use it
 
             flow_data = {
                 'project_title': project.title,
                 'project_description': project.description,
-                'parent_pk': project.parent.pk if project.parent else 0,
+                'parent_uuid': str(project.parent.omics_uuid) if
+                project.parent else 0,
                 'owner_username': owner.username,
-                'owner_pk': owner.pk,
+                'owner_uuid': str(owner.omics_uuid),
                 'owner_role_pk': Role.objects.get(
-                    name='project owner').pk}
+                    name=PROJECT_ROLE_OWNER).pk,
+                'settings': project_settings}
 
             if form_action == 'update':
                 old_owner = project.get_owner().user
-                flow_data['old_owner_pk'] = old_owner.pk
+                flow_data['old_owner_uuid'] = str(old_owner.omics_uuid)
                 flow_data['old_owner_username'] = old_owner.username
 
             try:
                 taskflow.submit(
-                    project_pk=project.pk,
+                    project_uuid=str(project.omics_uuid),
                     flow_name='project_{}'.format(form_action),
                     flow_data=flow_data,
                     request=self.request)
 
-            except taskflow.FlowSubmitException as ex:
+            except (
+                    requests.exceptions.ConnectionError,
+                    taskflow.FlowSubmitException) as ex:
                 # NOTE: No need to update status as project will be deleted
                 if form_action == 'create':
                     project.delete()
@@ -504,7 +520,22 @@ class ProjectModifyMixin(ModelFormMixin):
                         tl_event.set_status('FAILED', str(ex))
 
                 messages.error(self.request, str(ex))
-                return HttpResponseRedirect(reverse('home'))
+
+                if form_action == 'create':
+                    if project.parent:
+                        redirect_url = reverse(
+                            'projectroles:detail',
+                            kwargs={'project': project.parent.omics_uuid})
+
+                    else:
+                        redirect_url = reverse('home')
+
+                else:   # Update
+                    redirect_url = reverse(
+                        'projectroles:detail',
+                        kwargs={'project': project.omics_uuid})
+
+                return HttpResponseRedirect(redirect_url)
 
         # Local save without Taskflow
         else:
@@ -524,18 +555,13 @@ class ProjectModifyMixin(ModelFormMixin):
                 assignment.save()
 
             # Modify settings
-            for p in app_plugins:
-                for s_key in p.project_settings:
-                    s = p.project_settings[s_key]
-                    s_val = form.cleaned_data.get(
-                        'settings.{}.{}'.format(p.name, s_key))
-
-                    set_project_setting(
-                        project=project,
-                        app_name=p.name,
-                        setting_name=s_key,
-                        value=s_val,
-                        validate=False)     # Already validated in form
+            for k, v in project_settings.items():
+                set_project_setting(
+                    project=project,
+                    app_name=k.split('.')[1],
+                    setting_name=k.split('.')[2],
+                    value=v,
+                    validate=False)     # Already validated in form
 
         # Post submit/save
         if form_action == 'create':
@@ -654,12 +680,15 @@ class RoleAssignmentModifyMixin(ModelFormMixin):
     def form_valid(self, form):
         timeline = get_backend_api('timeline_backend')
         taskflow = get_backend_api('taskflow')
+
         form_action = 'update' if self.object else 'create'
         tl_event = None
 
         project = self.get_context_data()['project']
         user = form.cleaned_data.get('user')
         role = form.cleaned_data.get('role')
+
+        use_taskflow = taskflow.use_taskflow(project) if taskflow else False
 
         # Init Timeline event
         if timeline:
@@ -682,18 +711,18 @@ class RoleAssignmentModifyMixin(ModelFormMixin):
                 name=user.username)
 
         # Submit with taskflow
-        if taskflow:
+        if use_taskflow:
             if tl_event:
                 tl_event.set_status('SUBMIT')
 
             flow_data = {
                 'username': user.username,
-                'user_pk': user.pk,
+                'user_uuid': str(user.omics_uuid),
                 'role_pk': role.pk}
 
             try:
                 taskflow.submit(
-                    project_pk=project.pk,
+                    project_uuid=project.omics_uuid,
                     flow_name='role_update',
                     flow_data=flow_data,
                     request=self.request)
@@ -796,6 +825,8 @@ class RoleAssignmentDeleteView(
         user = self.object.user
         role = self.object.role
 
+        use_taskflow = taskflow.use_taskflow(project) if taskflow else False
+
         # Init Timeline event
         if timeline:
             tl_event = timeline.add_event(
@@ -812,18 +843,18 @@ class RoleAssignmentDeleteView(
                 name=user.username)
 
         # Submit with taskflow
-        if taskflow:
+        if use_taskflow:
             if tl_event:
                 tl_event.set_status('SUBMIT')
 
             flow_data = {
                 'username': user.username,
-                'user_pk': user.pk,
+                'user_uuid': str(user.omics_uuid),
                 'role_pk': role.pk}
 
             try:
                 taskflow.submit(
-                    project_pk=project.pk,
+                    project_uuid=project.omics_uuid,
                     flow_name='role_delete',
                     flow_data=flow_data,
                     request=self.request)
@@ -906,6 +937,7 @@ class RoleAssignmentImportView(
         return super(TemplateView, self).render_to_response(context)
 
     def post(self, request, **kwargs):
+        taskflow = get_backend_api('taskflow')
         timeline = get_backend_api('timeline_backend')
         context = self.get_context_data()
         post_data = request.POST
@@ -916,6 +948,9 @@ class RoleAssignmentImportView(
         dest_project = self.get_permission_object()
         source_project = Project.objects.get(
             omics_uuid=post_data['source-project'])
+
+        use_taskflow = taskflow.use_taskflow(dest_project) if \
+            taskflow else False
 
         ######################
         # Confirmation needed
@@ -961,95 +996,94 @@ class RoleAssignmentImportView(
         import_count = len(import_keys)
 
         # Import/update
-        if import_count > 0:
-            import_users = []
+        import_users = []
 
-            for key in import_keys:
-                source_as = RoleAssignment.objects.get(
-                    omics_uuid=key.split('_')[2])
+        for key in import_keys:
+            source_as = RoleAssignment.objects.get(
+                omics_uuid=key.split('_')[2])
 
-                try:
-                    old_as = RoleAssignment.objects.get(
-                        project=dest_project, user=source_as.user)
+            try:
+                old_as = RoleAssignment.objects.get(
+                    project=dest_project, user=source_as.user)
 
-                except RoleAssignment.DoesNotExist:
-                    old_as = None
+            except RoleAssignment.DoesNotExist:
+                old_as = None
 
-                # Save new
-                if import_mode == 'append' or not old_as:
-                    dest_as = RoleAssignment(
-                        project=dest_project,
-                        role=source_as.role,
-                        user=source_as.user)
-                    dest_as.save()
-
-                    if SEND_EMAIL:
-                        send_role_change_mail(
-                            'create', dest_project, dest_as.user, dest_as.role,
-                            self.request)
-
-                    import_users.append(dest_as.user)
-
-                # Update role
-                elif old_as and source_as.role != old_as.role:
-                    old_as.role = source_as.role
-                    old_as.save()
-
-                    if SEND_EMAIL:
-                        send_role_change_mail(
-                            'update', dest_project, old_as.user, old_as.role,
-                            self.request)
-
-                    import_users.append(old_as.user)
-
-            final_count = len(import_users)
-
-            # Add Timeline event for import
-            if timeline:
-                tl_users = []
-
-                for i in range(0, final_count):
-                    tl_users.append('{user' + str(i) + '}')
-
-                tl_desc = 'import {} role{} from {{{}}}{}'.format(
-                    final_count,
-                    's' if final_count != 1 else '',
-                    'project',
-                    ' ({})'.format(', '.join(tl_users)) if
-                    final_count > 0 else '')
-
-                tl_event = timeline.add_event(
+            # Save new
+            if import_mode == 'append' or not old_as:
+                dest_as = RoleAssignment(
                     project=dest_project,
-                    app_name=APP_NAME,
-                    user=self.request.user,
-                    event_name='role_import',
-                    description=tl_desc,
-                    status_type='OK')
+                    role=source_as.role,
+                    user=source_as.user)
+                dest_as.save()
 
+                if SEND_EMAIL:
+                    send_role_change_mail(
+                        'create', dest_project, dest_as.user, dest_as.role,
+                        self.request)
+
+                import_users.append(dest_as.user)
+
+            # Update role
+            elif old_as and source_as.role != old_as.role:
+                old_as.role = source_as.role
+                old_as.save()
+
+                if SEND_EMAIL:
+                    send_role_change_mail(
+                        'update', dest_project, old_as.user, old_as.role,
+                        self.request)
+
+                import_users.append(old_as.user)
+
+        final_count = len(import_users)
+
+        # Add Timeline event for import
+        if timeline:
+            tl_users = []
+
+            for i in range(0, final_count):
+                tl_users.append('{user' + str(i) + '}')
+
+            tl_desc = 'import {} role{} from {{{}}}{}'.format(
+                final_count,
+                's' if final_count != 1 else '',
+                'project',
+                ' ({})'.format(', '.join(tl_users)) if
+                final_count > 0 else '')
+
+            tl_event = timeline.add_event(
+                project=dest_project,
+                app_name=APP_NAME,
+                user=self.request.user,
+                event_name='role_import',
+                description=tl_desc,
+                status_type='OK')
+
+            tl_event.add_object(
+                obj=source_project,
+                label='project',
+                name=source_project.title)
+
+            for i in range(0, final_count):
                 tl_event.add_object(
-                    obj=source_project,
-                    label='project',
-                    name=source_project.title)
+                    obj=import_users[i],
+                    label='user{}'.format(i),
+                    name=import_users[i].username)
 
-                for i in range(0, final_count):
-                    tl_event.add_object(
-                        obj=import_users[i],
-                        label='user{}'.format(i),
-                        name=import_users[i].username)
+        msg = 'Imported {} member{} from project "{}"{}.'.format(
+                final_count,
+                's' if final_count != 1 else '',
+                source_project.title,
+                ' ({})'.format(
+                    ', '.join([u.username for u in import_users])) if
+                import_users else '')
 
-            msg = 'Imported {} member{} from project "{}"{}.'.format(
-                    final_count,
-                    's' if final_count != 1 else '',
-                    source_project.title,
-                    ' ({})'.format(
-                        ', '.join([u.username for u in import_users])) if
-                    import_users else '')
+        if final_count > 0:
+            messages.success(self.request, msg)
 
-            if final_count > 0:
-                messages.success(self.request, msg)
-
-            else:
-                messages.warning(self.request, msg)
+        else:
+            messages.warning(self.request, msg)
 
         # Delete
         del_keys = [
@@ -1341,12 +1375,12 @@ class ProjectInviteAcceptView(
 
             flow_data = {
                 'username': self.request.user.username,
-                'user_pk': self.request.user.pk,
+                'user_uuid': str(self.request.user.omics_uuid),
                 'role_pk': invite.role.pk}
 
             try:
                 taskflow.submit(
-                    project_pk=invite.project.pk,
+                    project_uuid=str(invite.project.omics_uuid),
                     flow_name='role_update',
                     flow_data=flow_data,
                     request=self.request)
@@ -1487,18 +1521,10 @@ class ProjectInviteRevokeView(
 
 
 class ProjectStarringAPIView(
-        LoginRequiredMixin, APIPermissionMixin, APIView):
+        LoginRequiredMixin, ProjectPermissionMixin, APIPermissionMixin,
+        APIView):
     """View to handle starring and unstarring a project via AJAX"""
     permission_required = 'projectroles.view_project'
-
-    def get_permission_object(self):
-        """Override get_permission_object for checking Project permission"""
-        try:
-            obj = Project.objects.get(omics_uuid=self.kwargs['project'])
-            return obj
-
-        except Project.DoesNotExist:
-            return None
 
     def post(self, request, *args, **kwargs):
         project = self.get_permission_object()
@@ -1527,21 +1553,23 @@ class ProjectStarringAPIView(
 # Taskflow API Views -----------------------------------------------------
 
 
+# TODO: Limit access to localhost
+
+
+# TODO: Use GET instead of POST
 class ProjectGetAPIView(APIView):
     """API view for getting a project"""
     def post(self, request):
         try:
             project = Project.objects.get(
-                pk=request.data['project_pk'],
+                omics_uuid=request.data['project_uuid'],
                 submit_status=SUBMIT_STATUS_OK)
 
         except Project.DoesNotExist as ex:
             return Response(str(ex), status=404)
 
-        # Could also use a generic serializer
-        # Add more fields from Project here if needed..
         ret_data = {
-            'project_pk': project.pk,    # Always define what object pk is for
+            'project_uuid': str(project.omics_uuid),
             'title': project.title,
             'description': project.description}
 
@@ -1552,7 +1580,8 @@ class ProjectUpdateAPIView(APIView):
     """API view for updating a project"""
     def post(self, request):
         try:
-            project = Project.objects.get(pk=request.data['project_pk'])
+            project = Project.objects.get(
+                omics_uuid=request.data['project_uuid'])
             project.title = request.data['title']
             project.description = request.data['description']
             project.save()
@@ -1563,12 +1592,14 @@ class ProjectUpdateAPIView(APIView):
         return Response('ok', status=200)
 
 
+# TODO: Use GET instead of POST
 class RoleAssignmentGetAPIView(APIView):
     """API view for getting a role assignment for user and project"""
     def post(self, request):
         try:
-            project = Project.objects.get(pk=request.data['project_pk'])
-            user = User.objects.get(pk=request.data['user_pk'])
+            project = Project.objects.get(
+                omics_uuid=request.data['project_uuid'])
+            user = User.objects.get(omics_uuid=request.data['user_uuid'])
 
         except (Project.DoesNotExist, User.DoesNotExist) as ex:
             return Response(str(ex), status=404)
@@ -1577,9 +1608,9 @@ class RoleAssignmentGetAPIView(APIView):
             role_as = RoleAssignment.objects.get(
                 project=project, user=user)
             ret_data = {
-                'assignment_pk': role_as.pk,
-                'project_pk': role_as.project.pk,
-                'user_pk': role_as.user.pk,
+                'assignment_uuid': str(role_as.omics_uuid),
+                'project_uuid': str(role_as.project.omics_uuid),
+                'user_uuid': str(role_as.user.omics_uuid),
                 'role_pk': role_as.role.pk,
                 'role_name': role_as.role.name}
             return Response(ret_data, status=200)
@@ -1592,8 +1623,9 @@ class RoleAssignmentSetAPIView(APIView):
     """View for creating or updating a role assignment based on params"""
     def post(self, request):
         try:
-            project = Project.objects.get(pk=request.data['project_pk'])
-            user = User.objects.get(pk=request.data['user_pk'])
+            project = Project.objects.get(
+                omics_uuid=request.data['project_uuid'])
+            user = User.objects.get(omics_uuid=request.data['user_uuid'])
             role = Role.objects.get(pk=request.data['role_pk'])
 
         except (Project.DoesNotExist, User.DoesNotExist,
@@ -1601,8 +1633,7 @@ class RoleAssignmentSetAPIView(APIView):
             return Response(str(ex), status=404)
 
         try:
-            role_as = RoleAssignment.objects.get(
-                project=project, user=user)
+            role_as = RoleAssignment.objects.get(project=project, user=user)
             role_as.role = role
             role_as.save()
 
@@ -1616,18 +1647,52 @@ class RoleAssignmentSetAPIView(APIView):
 class RoleAssignmentDeleteAPIView(APIView):
     def post(self, request):
         try:
-            project = Project.objects.get(pk=request.data['project_pk'])
-            user = User.objects.get(pk=request.data['user_pk'])
+            project = Project.objects.get(
+                omics_uuid=request.data['project_uuid'])
+            user = User.objects.get(omics_uuid=request.data['user_uuid'])
 
         except (Project.DoesNotExist, User.DoesNotExist) as ex:
             return Response(str(ex), status=404)
 
         try:
-            role_as = RoleAssignment.objects.get(
-                project=project, user=user)
+            role_as = RoleAssignment.objects.get(project=project, user=user)
             role_as.delete()
 
         except RoleAssignment.DoesNotExist as ex:
             return Response(str(ex), status=404)
+
+        return Response('ok', status=200)
+
+
+# TODO: Use GET instead of POST
+class ProjectSettingsGetAPIView(APIView):
+    """API view for getting project settings"""
+    def post(self, request):
+        try:
+            project = Project.objects.get(
+                omics_uuid=request.data['project_uuid'])
+
+        except Project.DoesNotExist as ex:
+            return Response(str(ex), status=404)
+
+        ret_data = {
+            'project_uuid': project.omics_uuid,
+            'settings': get_all_settings(project)}
+
+        return Response(ret_data, status=200)
+
+
+class ProjectSettingsSetAPIView(APIView):
+    """API view for updating project settings"""
+    def post(self, request):
+        try:
+            project = Project.objects.get(
+                omics_uuid=request.data['project_uuid'])
+
+        except Project.DoesNotExist as ex:
+            return Response(str(ex), status=404)
+
+        for k, v in json.loads(request.data['settings']).items():
+            set_project_setting(project, k.split('.')[1], k.split('.')[2], v)
 
         return Response('ok', status=200)

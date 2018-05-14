@@ -46,8 +46,13 @@
     {% endif %}
 
     {# Import Roles #}
+    {# TODO: Disabled until issue #152 is done #}
     {% if can_import %}
-      <a class="dropdown-item" href="{% url 'projectroles:role_import' project=project.omics_uuid %}"
+      <a class="dropdown-item disabled"
+         href="#"
+         {% comment %}
+         href="{% url 'projectroles:role_import' project=project.omics_uuid %}"
+         {% endcomment %}
          title="Import Members"
          id="omics-pr-btn-role-list-import">
         <i class="fa fa-fw fa-copy"></i> Import Members

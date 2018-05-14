@@ -1,9 +1,15 @@
 """Plugin point definitions for other apps which depend on projectroles"""
 
 from django.conf import settings
-
 from djangoplugins.point import PluginPoint
 
+
+# Local costants
+
+PLUGIN_TYPES = {
+    'project_app': 'ProjectAppPluginPoint',
+    'backend': 'BackendPluginPoint',
+    'site_app': 'SiteAppPluginPoint'}
 
 # From djangoplugins
 ENABLED = 0
@@ -186,17 +192,12 @@ def get_active_plugins(plugin_type='project_app'):
     :raise: ValueError if plugin_type is not recognized
     """
     # TODO: Replace code doing this same thing in views
-    if plugin_type == 'project_app':
-        plugins = ProjectAppPluginPoint.get_plugins()
+    if plugin_type not in PLUGIN_TYPES.keys():
+        raise ValueError(
+            'Invalid value for plugin_type. Accepted values: {}'.format(
+                ', '.join(PLUGIN_TYPES.keys())))
 
-    elif plugin_type == 'backend':
-        plugins = BackendPluginPoint.get_plugins()
-
-    elif plugin_type == 'site_app':
-        plugins = SiteAppPluginPoint.get_plugins()
-
-    else:
-        raise ValueError('Invalid value for plugin_type')
+    plugins = eval(PLUGIN_TYPES[plugin_type]).get_plugins()
 
     if plugins:
         return sorted([

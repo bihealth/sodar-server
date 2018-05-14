@@ -14,38 +14,80 @@ Added
 
 - **General**
     - Admin link for superuser (#134)
+    - Common ``popupWaitHtml`` and ``popupNoFilesHtml`` Javascript variables
+    - Clipboard.js for helping clipboard operations
+    - CSS styling for ``.omics-code-input``
+- **Irodsbackend**
+    - Add irodsbackend app (#139)
+    - Add ``get_path()`` for retrieving iRODS paths for Django objects
+    - Template tag ``get_irods_path()`` to get object iRODS path in template
+- **Landingzones**
+    - Add landingzones app (#139)
+- **Projectroles**
+    - Settings updating to Taskflow for project creation and modification (#139)
+    - Add ``get_all_settings()`` in ``project_settings``
+    - Add ``get_class()`` in ``projectroles_common_tags``
+- **Samplesheets**
+    - iRODS directory creation (#139)
+    - iRODS link and iCommands display (#139)
+    - Render optional hidden HTML attributes for cell meta data (#139)
+    - Add ``get_dir()`` and ``get_display_name()`` helpers to Study and Assay
+- **Taskflowbackend**
+    - Add taskflowbackend app (#139)
 
 Changed
 -------
 
+- **General**
+    - Upgrade to Django 1.11.12
+    - Upgrade to django-crispy-forms 1.7.1 (#153)
 - **Filesfolders**
     - Don't show empty folder label if subfolders exist (#135)
+- **Irodsbackend**
+    - Implement functionality of omics_irods_rest directly in the app
 - **Projectroles**
+    - Use Taskflowbackend only for creating and modifying ``PROJECT`` type projects
+    - Modify Taskflow API URLs
+    - Refactor ``get_active_plugins()``
     - Refactor email sending
     - Properly log and report errors in email sending (#151)
     - Require email sending to succeed for creating invites (#149)
+    - Modify ProjectStarringAPIView to use common permission mixins
 - **Samplesheets**
     - Rename top header "legend" to "value" (#129)
     - Allow sample sheet upload for project contributor (#137)
+    - In taskflow operations, use ``omics_uuid`` instead of ``pk`` (#99)
+    - Refactor table HTML rendering
+- **Taskflowbackend**
+    - Use ``omics_uuid`` instead of ``pk`` (#139)
+    - Only set up ``PROJECT`` type projects in ``synctaskflow``
 
 Fixed
 -----
 
-- **Filesfolders**
-    - Broken link for subfolders with depth >1 (#136)
 - **General**
     - Add missing email settings in production config (#149)
+    - Add ``python3-distutils`` to Xenial requirements to fix failing tests caused by recent updates
+- **Filesfolders**
+    - Broken link for subfolders with depth >1 (#136)
 - **Projectroles**
     - Invalid URL in ``build_invite_url()`` caused a crash (#149)
+    - Project creation failure using taskflow caused database corruption (#162)
+    - Proper redirect from failed project creation to home or parent category
+    - Project partially modified instead of rollback if update with taskflow failed (#163)
 - **Samplesheets**
     - Delete investigation if import fails (#138)
-
+    - Assay sorting was not defined
+- **Timeline**
+    - Fix event id parameter in Taskflow view
 
 Removed
 -------
 
 - **General**
     - Removed Flynn workarounds, deploying on Flynn no longer supported (#133)
+- **Projectroles**
+    - "View Details" link in details page, not needed thanks to project sidebar
 
 
 v0.2.0 (2018-04-13)

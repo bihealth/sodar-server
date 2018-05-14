@@ -15,6 +15,6 @@ from .test import *  # noqa
 # Plugin settings
 ENABLED_BACKEND_PLUGINS = [
     'timeline_backend',
-    # 'taskflow',
-    # 'omics_irods',
+    'taskflow',
+    'omics_irods',
 ]

@@ -1,11 +1,27 @@
+import random
+import string
+
 from django import template
+from django.conf import settings
 from django.urls import reverse
+
+# Projectroles dependency
+from projectroles.plugins import get_backend_api
 
 from ..models import Investigation, Study, Assay, GenericMaterial, \
     GENERIC_MATERIAL_TYPES
-from ..rendering import SampleSheetHTMLRenderer as Renderer
+
+
+irods_backend = get_backend_api('omics_irods')
 
 register = template.Library()
+
+
+# Local constants
+EMPTY_VALUE = '-'
+
+
+# General ----------------------------------------------------------------------
 
 
 @register.simple_tag
@@ -19,42 +35,6 @@ def get_investigation(project):
 
 
 @register.simple_tag
-def render_cell(cell):
-    """Return assay table cell as HTML"""
-    return Renderer.render_cell(cell)
-
-
-@register.simple_tag
-def render_links_cell(row):
-    """Render iRODS/IGV links cell"""
-    return Renderer.render_links_cell()
-
-
-@register.simple_tag
-def render_top_header(section):
-    """Render section of top header"""
-    return Renderer.render_top_header(section)
-
-
-@register.simple_tag
-def render_links_top_header():
-    """Render top links header"""
-    return Renderer.render_links_top_header()
-
-
-@register.simple_tag
-def render_header(header):
-    """Render section of top header"""
-    return Renderer.render_header(header)
-
-
-@register.simple_tag
-def render_links_header():
-    """Render links column header"""
-    return Renderer.render_links_header()
-
-
-@register.simple_tag
 def get_table_id(parent):
     """
     Return table id for DataTable reference
@@ -62,24 +42,7 @@ def get_table_id(parent):
     :return: string
     """
     return 'omics-ss-data-table-{}-{}'.format(
-        parent.__class__.__name__.lower(), parent.pk)
-
-
-@register.simple_tag
-def get_study_title(study):
-    """Return printable study title"""
-    if study.title:
-        return study.title.title()
-
-    else:
-        return ' '.join(
-            s for s in study.file_name[2:].split('.')[0]).title()
-
-
-@register.simple_tag
-def get_assay_title(assay):
-    """Return printable assy title"""
-    return ' '.join(s for s in assay.get_name().split('_')).title()
+        parent.__class__.__name__.lower(), parent.omics_uuid)
 
 
 @register.simple_tag
@@ -162,3 +125,137 @@ def get_assay_info_html(assay):
 
     ret += '</div>\n'
     return ret
+
+
+@register.simple_tag
+def get_irods_tree(investigation):
+    """Return HTML for iRODS dirs"""
+    ret = '<ul><li>{}<ul>'.format(settings.IRODS_SAMPLE_DIR)
+
+    for study in investigation.studies.all():
+        ret += '<li>{}'.format(study.get_dir())
+
+        if study.assays.all().count() > 0:
+            ret += '<ul>'
+
+            for assay in study.assays.all():
+                ret += '<li>{}</li>'.format(assay.get_dir())
+
+            ret += '</ul>'
+
+        ret += '</li>'
+
+    ret += '</ul></li></ul>'
+
+    return ret
+
+
+# Table rendering --------------------------------------------------------------
+
+
+@register.simple_tag
+def render_top_header(section):
+    """
+    Render section of top header
+    :param section: Header section (dict)
+    :return: String (contains HTML)
+    """
+    return '<th class="bg-{} text-nowrap text-white omics-ss-top-header" ' \
+           'colspan="{}" original-colspan="{}" {}>{}</th>\n'.format(
+            section['colour'],
+            section['colspan'],     # Actual colspan
+            section['colspan'],     # Original colspan
+            ''.join(['{}-cols="{}" '.format(k, v) for
+                     k, v in section['hiding'].items()]),
+            section['value'])
+
+
+@register.simple_tag
+def get_row_id():
+    """
+    Return random string for link ids
+    :return: string
+    """
+    return ''.join(random.SystemRandom().choice(
+        string.ascii_lowercase + string.digits) for x in range(16))
+
+
+@register.simple_tag
+def render_cell(cell):
+    """
+    Return data table cell as HTML
+    :param cell: Cell dict
+    :return: String (contains HTML)
+    """
+    td_class_str = ' '.join(cell['classes'])
+
+    # If repeating cell, return that
+    if cell['repeat']:
+        return '<td class="bg-light text-muted text-center {}">' \
+               '"</td>\n'.format(td_class_str)
+
+    # Right aligning
+    def is_num(x):
+        try:
+            float(x)
+            return True
+
+        except ValueError:
+            return False
+
+    if cell['value'] and is_num(cell['value']):
+        td_class_str += ' text-right'
+
+    # Build <td>
+    ret = '<td '
+
+    # Add extra attrs if present
+    if cell['attrs']:
+        for k, v in cell['attrs'].items():
+            ret += '{}="{}" '.format(k, v)
+
+    if cell['tooltip']:
+        ret += 'class="{}" title="{}" data-toggle="tooltip" ' \
+               'data-placement="top">'.format(td_class_str, cell['tooltip'])
+
+    else:
+        ret += 'class="{}">'.format(td_class_str)
+
+    if cell['value']:
+        if cell['link']:
+            ret += '<a href="{}" target="_blank">{}</a>'.format(
+                cell['link'], cell['value'])
+
+        else:
+            ret += cell['value']
+
+        if cell['unit']:
+            ret += '&nbsp;<span class=" text-muted">{}</span>'.format(
+                cell['unit'])
+
+    else:   # Empty value
+        ret += EMPTY_VALUE
+
+    ret += '</td>\n'
+    return ret
+
+
+@register.simple_tag
+def render_links_cell(row):
+    """
+    Return links cell for row as HTML
+    :return: String (contains HTML)
+    """
+    # TODO: Add actual links
+    # TODO: Refactor/cleanup, this is a quick screenshot HACK
+
+    return '<td class="bg-light omics-ss-data-cell-links">\n' \
+           '  <div class="btn-group omics-ss-data-btn-group">\n' \
+           '    <button class="btn btn-secondary dropdown-toggle btn-sm ' \
+           '                   omics-ss-data-dropdown"' \
+           '                   type="button" data-toggle="dropdown" ' \
+           '                   aria-expanded="false">' \
+           '                   <i class="fa fa-external-link"></i>' \
+           '    </button>' \
+           '  </div>\n' \
+           '</td>\n'

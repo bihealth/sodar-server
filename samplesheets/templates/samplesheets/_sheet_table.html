@@ -1,5 +1,15 @@
 {% load samplesheets_tags %}
 
+{# Projectroles dependency #}
+{% load projectroles_common_tags %}
+
+{# Load irodsbackend tags if backend is active #}
+{% if irods_backend %}
+  {% load irodsbackend_tags %}
+{% endif %}
+
+{% get_class parent lower=True as parent_class %}
+
 <table class="table cell-border order-column omics-ss-data-table" id="{% get_table_id parent %}">
   <thead>
     {# Top header #}
@@ -9,34 +19,54 @@
           {% render_top_header section %}
         {% endautoescape %}
       {% endfor %}
-      {% autoescape off %}
-        {% render_links_top_header %}
-      {% endautoescape %}
+      <th class="bg-white omics-ss-top-header omics-ss-data-links-header omics-ss-data-cell-links">&nbsp;</th>
     </tr>
     {# Field header #}
     <tr>
       {% for header in table.field_header %}
-        {% autoescape off %}
-          {% render_header header %}
-        {% endautoescape %}
+        <th class="{{ header.classes|join:' ' }}">{{ header.value }}</th>
       {% endfor %}
-      {% autoescape off %}
-        {% render_links_header %}
-      {% endautoescape %}
-   </tr>
-   </thead>
+      <th class="bg-white omics-ss-data-links-header">Links</th>
+    </tr>
+  </thead>
   <tbody>
     {# Content #}
     {% for row in table.table_data %}
-      <tr>
+      {% get_row_id as row_id %}
+      {% get_irods_path parent as irods_path %}
+      <tr id="omics-ss-data-row-{{ row_id }}">
         {% for cell in row %}
           {% autoescape off %}
             {% render_cell cell %}
           {% endautoescape %}
         {% endfor %}
-        {% autoescape off %}
-          {% render_links_cell row %}
-        {% endautoescape %}
+        <td class="bg-light omics-ss-data-cell-links">
+          {# TODO: Refactor this #}
+          {% if irods_backend %}
+            <button class="btn btn-secondary omics-list-btn omics-ss-popup-list-btn"
+                    {# TODO: Add row-specific parameters #}
+                   {% if parent_class == 'assay' %}
+                       list-url="{% url 'samplesheets:irods_list' assay=parent.omics_uuid %}"
+                    {% elif parent_class == 'study' %}
+                       list-url="{% url 'samplesheets:irods_list' study=parent.omics_uuid %}"
+                    {% endif %}
+                    role="submit" title="List files for row">
+              <i class="fa fa-external-link"></i>
+            </button>
+          {% endif %}
+          <button class="btn btn-secondary omics-list-btn omics-ss-popup-cmd-btn"
+                  {# TODO: Add row-specific parameters #}
+                  irods-path="{{ irods_path }}"
+                  role="submit" title="Get iCommands path to files for row">
+            <i class="fa fa-terminal"></i>
+           </button>
+           <a class="btn btn-secondary omics-list-btn omics-ss-dav-btn
+              {% if not irods_webdav_enabled %} disabled{% endif %}"
+              href="{{ irods_webdav_url }}{{ irods_path }}" role="button"
+              title="Browse files in WebDAV">
+            <i class="fa fa-folder-open-o"></i>
+          </a>
+        </td>
       </tr>
     {% endfor %}
    </tbody>

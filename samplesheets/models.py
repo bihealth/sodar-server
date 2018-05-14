@@ -5,6 +5,7 @@ from django.contrib.postgres.fields import ArrayField, JSONField
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
+from django.utils.text import slugify
 
 # Projectroles dependency
 from projectroles.models import Project
@@ -20,7 +21,20 @@ GENERIC_MATERIAL_TYPES = {
     'DATA': 'Data File'}
 
 GENERIC_MATERIAL_CHOICES = [(k, v) for k, v in GENERIC_MATERIAL_TYPES.items()]
-NOT_AVAILABLE_STR = ''
+NOT_AVAILABLE_STR = '(N/A)'
+
+
+# Utils ------------------------------------------------------------------------
+
+def get_zone_dir(obj):
+    """
+    Return iRODS dir friendly name for a study or an assay to be used in landing
+    zones. Used because Django's slugify uses hyphens which get confusing as
+    UUIDs are used elsewhere
+    :param obj: Study or Assay
+    :return: String
+    """
+    return slugify(obj.get_display_name()).replace('-', '_')
 
 
 # Abstract base class ----------------------------------------------------------
@@ -130,6 +144,11 @@ class Investigation(BaseSampleSheet):
         default=dict,
         help_text='Ontology source references')
 
+    #: Status of iRODS directory structure creation
+    irods_status = models.BooleanField(
+        default=False,
+        help_text='Status of iRODS directory structure creation')
+
     def __str__(self):
         return '{}: {}'.format(self.project.title, self.title)
 
@@ -237,6 +256,17 @@ class Study(BaseSampleSheet):
     def get_display_name(self):
         """Return display name for study"""
         return self.title.strip('.').title() if self.title else self.identifier
+
+    def get_dir(self, landing_zone=False):
+        """
+        Return directory name for study
+        :param landing_zone: Return dir for landing zone if True (bool)
+        :return: String
+        """
+        if landing_zone:
+            return get_zone_dir(self)
+
+        return 'study_' + str(self.omics_uuid)
 
 
 # Protocol ---------------------------------------------------------------------
@@ -370,6 +400,7 @@ class Assay(BaseSampleSheet):
 
     class Meta:
         unique_together = ('study', 'file_name')
+        ordering = ['study__file_name', 'file_name']
 
     def __str__(self):
         return '{}: {}/{}'.format(
@@ -393,6 +424,21 @@ class Assay(BaseSampleSheet):
     def get_display_name(self):
         """Return display name for assay"""
         return ' '.join(s for s in self.get_name().split('_')).title()
+
+    def get_dir(self, include_study=False, landing_zone=False):
+        """
+        Return directory name for assay
+        :param include_study: Include parent study directory in string (bool)
+        :param landing_zone: Return dir for landing zone if True (bool)
+        :return: String
+        """
+        study_dir = (self.study.get_dir(landing_zone=landing_zone) + '/') if \
+            include_study else ''
+
+        if landing_zone:
+            return '{}{}'.format(study_dir, get_zone_dir(self))
+
+        return '{}assay_{}'.format(study_dir, self.omics_uuid)
 
 
 # Materials and data files -----------------------------------------------------

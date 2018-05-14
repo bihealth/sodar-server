@@ -83,3 +83,10 @@ def get_project_link(project):
     return '<a href="{}">{}</a>'.format(
         reverse('projectroles:detail', kwargs={'project': project.omics_uuid}),
         project.title)
+
+
+@register.simple_tag
+def get_class(obj, lower=False):
+    """Return object class as string"""
+    c = obj.__class__.__name__
+    return c.lower() if lower else c

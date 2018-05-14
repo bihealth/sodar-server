@@ -3,9 +3,9 @@ from django.urls import reverse
 # Projectroles dependency
 from projectroles.plugins import ProjectAppPluginPoint
 
+from .io import get_base_dirs
 from .models import Investigation
 from .urls import urlpatterns
-# from .utils import get_irods_dirs
 
 
 class ProjectAppPlugin(ProjectAppPluginPoint):
@@ -92,25 +92,23 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         '''
         return []
 
-    '''
     def get_taskflow_sync_data(self):
         """
         Return data for syncing taskflow operations
-        :return: List of dicts or None.
+        :return: List of dicts or None
         """
         sync_flows = []
 
         # NOTE: This only syncs previously created dirs
-        for sheet in SampleSheet.objects.filter(irods_dirs=True):
-            dirs, dirs_html = get_irods_dirs(sheet)
+        for investigation in Investigation.objects.filter(irods_status=True):
+            dirs = get_base_dirs(investigation)
             flow = {
                 'flow_name': 'sheet_dirs_create',
-                'project_pk': sheet.project.pk,
+                'project_uuid': investigation.project.omics_uuid,
                 'flow_data': {'dirs': dirs}}
             sync_flows.append(flow)
 
         return sync_flows
-    '''
 
     def get_object_link(self, model_str, uuid):
         """

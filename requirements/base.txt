@@ -8,14 +8,14 @@ setuptools==39.0.1
 wheel==0.30.0
 
 # Conservative Django
-django==1.11.11 # pyup: <2.0
+django==1.11.12 # pyup: <2.0
 
 # Configuration
 django-environ==0.4.4
 whitenoise==3.3.1
 
 # Forms
-django-crispy-forms==1.7.0
+django-crispy-forms==1.7.1
 
 # Models
 django-model-utils==3.0.0
@@ -75,3 +75,6 @@ django-db-file-storage==0.5.2
 
 # CUBI AltamISA parser
 -e git://github.com/bihealth/altamisa.git@00e98d93dddd2e4c4e81fb09e16bc25a0986e2ae#egg=altamisa
+
+# Python iRODS client for irodsbackend
+python-irodsclient==0.7.0

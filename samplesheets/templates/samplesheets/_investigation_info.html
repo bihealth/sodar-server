@@ -6,6 +6,14 @@
       <dt class="col-md-3">Title</dt>
       <dd class="col-md-9">{{ investigation.title }}</dd>
     {% endif %}
+    <dt class="col-md-3">iRODS Repository</dt>
+    <dd class="col-md-9">
+      {% if investigation.irods_status %}
+        <span class="text-success">Available</span>
+      {% else %}
+        <span class="text-danger">Not available</span>
+      {% endif %}
+    </dd>
     {% if show_description and investigation.description != project.description %}
       <dt class="col-md-3">Description</dt>
       <dd class="col-md-9">{{ investigation.description }}</dd>

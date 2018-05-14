@@ -260,7 +260,8 @@ class TestInvestigation(TestSampleSheetBase):
             'omics_uuid': self.investigation.omics_uuid,
             'sharing_data': {},
             'retraction_data': {},
-            'comments': DEFAULT_COMMENTS}
+            'comments': DEFAULT_COMMENTS,
+            'irods_status': False}
         self.assertEqual(model_to_dict(self.investigation), expected)
 
     def test__str__(self):

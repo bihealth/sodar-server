@@ -94,10 +94,6 @@
       border-left: 3px solid #dfdfdf !important;
     }
 
-    .omics-ss-data-btn-group {
-      height: 1.25em;
-    }
-
     .omics-ss-data-dropdown {
       margin-top: -3px !important; /* Force dropdown position */
       padding-top: 2px !important;
@@ -179,6 +175,9 @@
 
 </div> {# Main container #}
 
+<span id="omics-ss-popup-list" list-url="" row-id=""></span>
+<span id="omics-ss-popup-cmd" row-id=""></span>
+
 {% endblock projectroles_extend %}
 
 {% block javascript %}
@@ -190,12 +189,15 @@
   <!-- Dragscroll for tables -->
   <script type="text/javascript" src="{% static 'js/dragscroll.js' %}"></script>
 
+  <!-- Clipboard helper -->
+  <script type="text/javascript" src="{% static 'js/clipboard.min.js' %}"></script>
+
   <script type="text/javascript">
     $(document).ready(function() {
 
-        /************************
-         * Initialize DataTables
-         ************************/
+        /*********************
+         Initialize DataTables
+         *********************/
         $('.omics-ss-data-table').DataTable({
             scrollY: 400,
             scrollX: true,
@@ -225,9 +227,9 @@
         // Once initialized, remove temporary init classes
         $('.omics-ss-init-container').removeClass('table-responsive').removeClass('omics-ss-init-container');
 
-        /****************************
-         * Enable/disable dragscroll
-         ***************************/
+        /*************************
+         Enable/disable dragscroll
+         *************************/
         $('.omics-ss-data-drag-toggle').click(function() {
             if ($(this).attr('drag-mode') === '0') {
                 $(this).find('i').addClass('text-warning');
@@ -244,9 +246,9 @@
             }
         });
 
-        /**********************
-         * Filtering
-         **********************/
+        /*********
+         Filtering
+         *********/
 
         $('.omics-ss-data-filter').keyup(function () {
             var tableId = $(this).closest('.input-group').attr('table-id');
@@ -255,9 +257,9 @@
             dt.fnFilter(v);
         });
 
-        /**********************
-         * Study column hiding
-        ***********************/
+        /*******************
+         Study column hiding
+         *******************/
 
         // Hide/show study columns when clicked
         $('.omics-ss-assay-hide').click(function () {
@@ -277,6 +279,109 @@
                 dt.columns('.omics-ss-hideable-study').visible(true);
                 $(this).attr('assay-hide-mode', '0');
             }
+        });
+
+        /**************
+         Init clipboard
+        **************/
+        new ClipboardJS('.omics-copy-btn');
+
+        /***************
+         Link list Popup
+         ***************/
+        $('#omics-ss-popup-list').popup({
+            transition: 'all 0.2s',
+            beforeopen: function () {
+                var listUrl = $(this).attr('list-url');
+                var htmlHeader = '<div class="card"><div class="card-body"><h5>Files in iRODS</h5><hr />';
+                var htmlFooter = '</div></div>';
+                var htmlData = '';
+
+                console.log('listUrl=' + listUrl);  // DEBUG
+
+                $.ajax({
+                    url: listUrl,
+                    method: 'GET',
+                    dataType: 'json'
+                }).done(function (data) {
+                    if (data['data_objects'].length > 0) {
+                        // TODO: temporary HACK
+                        var pathRootDepth = 7;
+
+                        if (listUrl.indexOf('assay') !== -1) {
+                            pathRootDepth = 8;
+                        }
+
+                        htmlData = '<table class="table omics-card-table table-striped omics-irods-obj-list">';
+                        htmlData += '<thead><th>File</th><th>Size</th><th>Modified</th><th>MD5</th></thead><tbody>';
+
+                        $.each(data['data_objects'], function (i, obj) {
+                            var objNameSplit = obj['path'].split('/');
+                            var objLink = '<a href="{{ irods_webdav_url }}' + obj['path'] + '"><span class="text-muted">';
+                            objLink += objNameSplit.slice(pathRootDepth, objNameSplit.length - 1).join('/');
+                            objLink += '/</span>' + obj['name'] + '</a>';
+                            htmlData += '<tr><td>' + objLink + '</td>';
+                            htmlData += '<td>' + humanFileSize(obj['size'], true) + '</td>';
+                            htmlData += '<td>' + obj['modify_time'] + '</td>';
+                            htmlData += '<td>';
+
+                            if (obj['md5_file'] === true) {
+                                htmlData += '<span class="text-success"><i class="fa fa-check"></i></span>';
+                            }
+
+                            else {
+                                htmlData += '<span class="text-danger"><i class="fa fa-close"></i></span>';
+                            }
+
+                            htmlData += '</td></tr>';
+                        });
+                    }
+
+                    else {
+                        htmlData = popupNoFilesHtml;
+                    }
+
+                    // Set success html
+                    $('#omics-ss-popup-list').html(htmlHeader + htmlData + htmlFooter);
+                }).fail(function () {
+                    $('#omics-ss-popup-list').html(htmlHeader + '<span class="text-danger font-italic">Failed to query data</span>' + htmlFooter);
+                });
+
+                // Set default loading html
+                $(this).html(popupWaitHtml);
+            }
+        });
+
+        $('.omics-ss-popup-list-btn').click(function() {
+            $('#omics-ss-popup-list').attr(
+                'list-url', $(this).attr('list-url')).popup('show');
+        });
+
+        /**************
+         iCommand Popup
+         **************/
+        // TODO: Unify this with the landingzones iCommand popup
+        // TODO: Set width
+        $('#omics-ss-popup-cmd').popup({
+            transition: 'all 0.2s',
+            beforeopen: function () {
+                var irodsPath = $(this).attr('irods-path');
+                var htmlHeader = '<div class="card"><div class="card-body"><h5>iRODS iCommands Access</h5><hr />';
+                var htmlFooter = '</div></div>';
+                var htmlData = '<div class="input-group">' +
+                    '<input id="omics-copy-field" class="form-control omics-code-input" type="text" value="icd ' + irodsPath + '" readonly/>' +
+                    '<div class="input-group-append">' +
+                    '<button class="btn btn-secondary omics-copy-btn" role="submit" data-clipboard-target="#omics-copy-field"><i class="fa fa-clipboard"></i> Copy</button></div>' +
+                    '</div>';
+
+                // Set html
+                $('#omics-ss-popup-cmd').html(htmlHeader + htmlData + htmlFooter);
+            }
+        });
+
+        $('.omics-ss-popup-cmd-btn').click(function() {
+            $('#omics-ss-popup-cmd').attr(
+                'irods-path', $(this).attr('irods-path')).popup('show');
         });
     });
   </script>

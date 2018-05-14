@@ -54,6 +54,7 @@ THIRD_PARTY_APPS = [
     'pagedown',  # For markdown
     'markupfield',  # For markdown
     'db_file_storage',  # For storing files in database
+    'rest_framework',   # For API views
 ]
 
 # Project apps
@@ -66,6 +67,11 @@ LOCAL_APPS = [
     'timeline.apps.TimelineConfig',
     'filesfolders.apps.FilesfoldersConfig',
     'samplesheets.apps.SamplesheetsConfig',
+    'landingzones.apps.LandingzonesConfig',
+
+    # Backend apps
+    'taskflowbackend.apps.TaskflowbackendConfig',
+    'irodsbackend.apps.IrodsbackendConfig',
 
     # General site apps
     'adminalerts.apps.AdminalertsConfig',
@@ -385,3 +391,28 @@ FILESFOLDERS_LINK_BAD_REQUEST_MSG = 'Invalid request'
 
 # Adminalerts app settings
 ADMINALERTS_PAGINATION = 15
+
+
+# Taskflow backend settings
+TASKFLOW_BACKEND_HOST = env.str('TASKFLOW_BACKEND_HOST', 'http://0.0.0.0')
+TASKFLOW_BACKEND_PORT = env.int('TASKFLOW_BACKEND_PORT', 5005)
+
+
+# Samplesheets and Landingzones link settings
+IRODS_WEBDAV_ENABLED = env.bool('IRODS_WEBDAV_ENABLED', True)
+IRODS_WEBDAV_URL = env.str('IRODS_WEBDAV_URL', 'https://0.0.0.0')
+
+
+# Landingzones app settings
+# Status query interval in seconds
+LANDINGZONES_STATUS_INTERVAL = env.int('LANDINGZONES_STATUS_INTERVAL', 2)
+
+
+# Omics iRODS REST service backend settings
+IRODS_HOST = env.str('OMICS_IRODS_HOST', '0.0.0.0')
+IRODS_PORT = env.int('OMICS_IRODS_PORT', 1247)
+IRODS_ZONE = env.str('OMICS_IRODS_ZONE', 'omicsZone')
+IRODS_USER = env.str('OMICS_IRODS_USER', 'rods')
+IRODS_PASS = env.str('OMICS_IRODS_PASS', 'rods')
+IRODS_SAMPLE_DIR = 'sample_data'
+IRODS_LANDING_ZONE_DIR = 'landing_zones'

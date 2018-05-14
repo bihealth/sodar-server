@@ -1,4 +1,5 @@
 """Tests for views in the timeline app"""
+import uuid
 
 from django.core.urlresolvers import reverse
 
@@ -118,12 +119,12 @@ class TestTaskflowSetStatusAPIView(TestViewsBase):
     def test_set_status(self):
         """Test setting the status of the event"""
         values = {
-            'event_pk': self.event_init.pk,
+            'event_uuid': self.event_init.omics_uuid,
             'status_type': 'OK',
             'status_desc': ''}
 
         response = self.client.post(
-            reverse('timeline:taskflow_timeline_event_status_set'),
+            reverse('timeline:taskflow_status_set'),
             values)
 
         self.assertEqual(response.status_code, 200)
@@ -131,12 +132,12 @@ class TestTaskflowSetStatusAPIView(TestViewsBase):
     def test_set_invalid_event(self):
         """Test setting the status of the event with an invalid event pk"""
         values = {
-            'event_pk': self.event_init.pk + 1,
+            'event_uuid': uuid.uuid4(),
             'status_type': 'OK',
             'status_desc': ''}
 
         response = self.client.post(
-            reverse('timeline:taskflow_timeline_event_status_set'),
+            reverse('timeline:taskflow_status_set'),
             values)
 
         self.assertEqual(response.status_code, 404)
@@ -144,12 +145,12 @@ class TestTaskflowSetStatusAPIView(TestViewsBase):
     def test_set_invalid_status(self):
         """Test setting the status of the event with an invalid status type"""
         values = {
-            'event_pk': self.event_init.pk,
+            'event_uuid': self.event_init.omics_uuid,
             'status_type': 'ahL4VeerAeth4ohh',
             'status_desc': ''}
 
         response = self.client.post(
-            reverse('timeline:taskflow_timeline_event_status_set'),
+            reverse('timeline:taskflow_status_set'),
             values)
 
         self.assertEqual(response.status_code, 400)

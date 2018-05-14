@@ -1,0 +1,51 @@
+{# Projectroles dependency #}
+{% extends 'projectroles/project_base.html' %}
+{% load rules %}
+{% load samplesheets_tags %}
+
+{% block title %}
+  Confirm Sample Sheet iRODS Directories Creation
+{% endblock title %}
+
+{% block projectroles_extend %}
+
+<div class="row omics-subtitle-container">
+  <h3>Confirm Sample Sheet iRODS Directories Creation</h3>
+</div>
+
+<div class="container-fluid omics-page-container">
+  <div class="alert alert-warning" role="alert">
+    <strong>Warning:</strong> Are you sure you want to create a sample data
+    directory structure in iRODS for the studies and assays under this project?
+  </div>
+
+  {# Details #}
+  <div class="card">
+    <div class="card-header">
+      <h4>Sample Data Directory Structure</h4>
+    </div>
+    <div class="card-body omics-card-body">
+      <p>The following structure will be created:</p>
+      {% autoescape off %}
+        {% get_irods_tree investigation %}
+      {% endautoescape %}
+    </div>
+  </div>
+
+  <form method="post">
+    {% csrf_token %}
+    <div class="row">
+      <div class="btn-group ml-auto">
+        <a role="button" class="btn btn-secondary"
+            href="{{ request.session.real_referer }}">
+          <i class="fa fa-arrow-circle-left"></i> Cancel
+        </a>
+       <button type="submit" class="btn btn-primary">
+          <i class="fa fa-database"></i> Create
+        </button>
+      </div>
+    </div>
+  </form>
+</div>
+
+{% endblock projectroles_extend %}

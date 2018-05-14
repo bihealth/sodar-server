@@ -1,0 +1,27 @@
+{% load rules %}
+
+{% has_perm 'landingzones.update_zones_own' request.user project as can_update_own %}
+{% has_perm 'landingzones.update_zones_all' request.user project as can_update_all %}
+
+<div class="btn-group omics-edit-button-group" id="omics-lz-zone-buttons-{{ zone.omics_uuid }}">
+  <button class="btn btn-secondary btn-sm dropdown-toggle omics-edit-dropdown
+      {% if zone.status == 'MOVED' or zone.status == 'NOT CREATED' %} disabled{% endif %}"
+      type="button" data-toggle="dropdown"
+      aria-haspopup="true" aria-expanded="false">
+    <i class="fa fa-cog"></i>
+  </button>
+  <div class="dropdown-menu dropdown-menu-right">
+    {% if can_update_all or zone.user == request.user and can_update_own %}
+      {% if zone.status != 'MOVED' %}
+        <a class="dropdown-item" href="{% url 'landingzones:move' landingzone=zone.omics_uuid %}">
+      {% else %}
+        <a class="dropdown-item disabled" href="#">
+      {% endif %}
+        <i class="fa fa-copy"></i> Validate and Move
+      </a>
+      <a class="dropdown-item" href="{% url 'landingzones:delete' landingzone=zone.omics_uuid %}">
+        <i class="fa fa-close"></i> Delete Zone
+      </a>
+    {% endif %}
+  </div>
+</div>
