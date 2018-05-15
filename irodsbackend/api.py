@@ -66,6 +66,15 @@ class IrodsAPI:
         dt = dt.astimezone(timezone('Europe/Berlin'))
         return dt.strftime('%Y-%m-%d %H:%M')
 
+    @classmethod
+    def _get_zone_dir(cls, obj):
+        """
+        Return a directory name for a study or assay under a landing zone
+        :param obj: Study or Assay object
+        :return: String
+        """
+        return slugify(obj.get_display_name()).replace('-', '_')
+
     ##########
     # Helpers
     ##########
@@ -96,10 +105,10 @@ class IrodsAPI:
             raise ValueError('Project not found for given object!')
 
         # Base path (project)
-        path = '/{}/projects/{}/{}'.format(
-            settings.IRODS_ZONE,
-            str(project.omics_uuid)[:2],
-            project.omics_uuid)
+        path = '/{zone}/projects/{uuid_prefix}/{uuid}'.format(
+            zone=settings.IRODS_ZONE,
+            uuid_prefix=str(project.omics_uuid)[:2],
+            uuid=project.omics_uuid)
 
         # Project
         if obj_class == 'Project':
@@ -107,28 +116,25 @@ class IrodsAPI:
 
         # Study (in sample data)
         if obj_class == 'Study':
-            path += '/{}/{}'.format(
-                settings.IRODS_SAMPLE_DIR,
-                'study_' + str(obj.omics_uuid))
+            path += '/{sample_dir}/{study}'.format(
+                sample_dir=settings.IRODS_SAMPLE_DIR,
+                study='study_' + str(obj.omics_uuid))
 
         # Assay (in sample data)
         elif obj_class == 'Assay':
-            path += '/{}/{}/{}'.format(
-                settings.IRODS_SAMPLE_DIR,
-                'study_' + str(obj.study.omics_uuid),
-                'assay_' + str(obj.omics_uuid))
+            path += '/{sample_dir}/{study}/{assay}'.format(
+                sample_dir=settings.IRODS_SAMPLE_DIR,
+                study='study_' + str(obj.study.omics_uuid),
+                assay='assay_' + str(obj.omics_uuid))
 
         # LandingZone
         elif obj_class == 'LandingZone':
-            def get_zone_dir(obj):
-                return slugify(obj.get_display_name()).replace('-', '_')
-
-            path += '/{}/{}/{}/{}/{}'.format(
-                settings.IRODS_LANDING_ZONE_DIR,
-                obj.user.username,
-                get_zone_dir(obj.assay.study),
-                get_zone_dir(obj.assay),
-                obj.title)
+            path += '/{zone_dir}/{user}/{study}/{assay}/{zone_title}'.format(
+                zone_dir=settings.IRODS_LANDING_ZONE_DIR,
+                user=obj.user.username,
+                study=cls._get_zone_dir(obj.assay.study),
+                assay=cls._get_zone_dir(obj.assay),
+                zone_title=obj.title)
 
         return path
 
@@ -155,7 +161,7 @@ class IrodsAPI:
         return ret
 
     @init_irods
-    def list_objects(self, path):
+    def get_objects(self, path):
         """Return iRODS object list"""
 
         def get_obj_list(coll, data):

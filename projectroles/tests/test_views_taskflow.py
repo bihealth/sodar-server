@@ -44,6 +44,7 @@ TASKFLOW_ENABLED = True if \
 TASKFLOW_SKIP_MSG = 'Taskflow not enabled in settings'
 
 
+# TODO: Shouldn't this just be combined with TestTaskflowBase?
 class TaskflowMixin:
     def _make_project_taskflow(
             self, title, type, parent, owner, description):
@@ -94,8 +95,8 @@ class TaskflowMixin:
         return role_as
 
 
-class TestViewsTaskflowBase(LiveServerTestCase, TestCase):
-    """Base class for view testing with taskflow"""
+class TestTaskflowBase(LiveServerTestCase, TestCase):
+    """Base class for testing views and APIs with taskflow"""
 
     def setUp(self):
         # Get taskflow plugin (or None if taskflow not enabled)
@@ -115,13 +116,14 @@ class TestViewsTaskflowBase(LiveServerTestCase, TestCase):
         self.role_guest = Role.objects.get_or_create(
             name=PROJECT_ROLE_GUEST)[0]
 
-        # Init superuser
+        # Init user
         self.user = self.make_user('superuser')
         self.user.is_staff = True
         self.user.is_superuser = True
         self.user.save()
 
         # Create category
+        # TODO: Create locally, categories no longer created in iRODS
         values = {
             'title': 'TestCategory',
             'type': PROJECT_TYPE_CATEGORY,
@@ -140,7 +142,7 @@ class TestViewsTaskflowBase(LiveServerTestCase, TestCase):
         self.taskflow.cleanup()
 
 
-class TestProjectCreateView(TestViewsTaskflowBase, TaskflowMixin):
+class TestProjectCreateView(TestTaskflowBase, TaskflowMixin):
     """Tests for Project creation view with taskflow"""
 
     @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
@@ -190,7 +192,7 @@ class TestProjectCreateView(TestViewsTaskflowBase, TaskflowMixin):
         self.assertEqual(model_to_dict(owner_as), expected)
 
 
-class TestProjectUpdateView(TestViewsTaskflowBase, TaskflowMixin):
+class TestProjectUpdateView(TestTaskflowBase, TaskflowMixin):
     """Tests for Project updating view"""
 
     def setUp(self):
@@ -250,7 +252,7 @@ class TestProjectUpdateView(TestViewsTaskflowBase, TaskflowMixin):
                     kwargs={'project': project.omics_uuid}))
 
 
-class TestRoleAssignmentCreateView(TestViewsTaskflowBase, TaskflowMixin):
+class TestRoleAssignmentCreateView(TestTaskflowBase, TaskflowMixin):
     """Tests for RoleAssignment creation view"""
 
     def setUp(self):
@@ -308,7 +310,7 @@ class TestRoleAssignmentCreateView(TestViewsTaskflowBase, TaskflowMixin):
                 kwargs={'project': self.project.omics_uuid}))
 
 
-class TestRoleAssignmentUpdateView(TestViewsTaskflowBase, TaskflowMixin):
+class TestRoleAssignmentUpdateView(TestTaskflowBase, TaskflowMixin):
     """Tests for RoleAssignment update view with taskflow"""
 
     def setUp(self):
@@ -369,7 +371,7 @@ class TestRoleAssignmentUpdateView(TestViewsTaskflowBase, TaskflowMixin):
                 kwargs={'project': self.project.omics_uuid}))
 
 
-class TestRoleAssignmentDeleteView(TestViewsTaskflowBase, TaskflowMixin):
+class TestRoleAssignmentDeleteView(TestTaskflowBase, TaskflowMixin):
     """Tests for RoleAssignment delete view """
 
     def setUp(self):
@@ -413,7 +415,7 @@ class TestRoleAssignmentDeleteView(TestViewsTaskflowBase, TaskflowMixin):
 
 
 class TestProjectInviteAcceptView(
-        TestViewsTaskflowBase, TaskflowMixin, ProjectInviteMixin):
+        TestTaskflowBase, TaskflowMixin, ProjectInviteMixin):
     """Tests for ProjectInvite accepting view with taskflow"""
 
     def setUp(self):

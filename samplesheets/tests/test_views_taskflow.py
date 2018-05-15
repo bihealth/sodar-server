@@ -9,7 +9,7 @@ from django.core.urlresolvers import reverse
 # Projectroles dependency
 from projectroles.models import OMICS_CONSTANTS
 from projectroles.tests.test_views_taskflow import TaskflowMixin, \
-    TestViewsTaskflowBase
+    TestTaskflowBase
 
 from unittest import skipIf     # Could also use tags..
 
@@ -40,7 +40,7 @@ TASKFLOW_SKIP_MSG = 'Taskflow not enabled in settings'
 
 
 class TestIrodsDirView(
-        TestViewsTaskflowBase, TaskflowMixin, SampleSheetIOMixin):
+        TestTaskflowBase, TaskflowMixin, SampleSheetIOMixin):
     """Tests for iRODS directory structure creation view with taskflow"""
 
     def setUp(self):
@@ -90,7 +90,7 @@ class TestIrodsDirView(
 
 
 class TestSampleSheetDeleteView(
-        TestViewsTaskflowBase, TaskflowMixin, SampleSheetIOMixin):
+        TestTaskflowBase, TaskflowMixin, SampleSheetIOMixin):
     """Tests for sample sheet deletion with taskflow"""
 
     def setUp(self):

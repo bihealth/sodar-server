@@ -451,7 +451,7 @@ class IrodsObjectListAPIView(
 
         # TODO: Determine specific collections/files to query for based on input
         try:
-            ret_data = irods_backend.list_objects(
+            ret_data = irods_backend.get_objects(
                 irods_backend.get_path(parent))
 
         except Exception as ex:  # TODO: 404 if dir not found
