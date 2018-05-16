@@ -37,7 +37,7 @@ class TaskflowAPI:
     def submit(
             self, project_uuid, flow_name, flow_data, request=None,
             targets=TARGETS, request_mode='sync', timeline_uuid=None,
-            force_fail=False):
+            force_fail=False, omics_url=None):
         """
         Submit taskflow for project data modification.
         :param project_uuid: UUID of the project (UUID object or string)
@@ -48,6 +48,7 @@ class TaskflowAPI:
         :param request_mode: "sync" or "async"
         :param timeline_uuid: UUID of corresponding timeline event (optional)
         :param force_fail: Make flow fail on purpose (boolean, default False)
+        :param omics_url: URL of omics_data_mgmt server (optional, for testing)
         :return: Boolean, status info if failure (string)
         """
         url = TASKFLOW_URL + '/submit'
@@ -73,6 +74,9 @@ class TaskflowAPI:
 
             elif request.GET and 'omics_url' in request.GET:
                 data['omics_url'] = request.GET['omics_url']
+
+        elif omics_url:
+            data['omics_url'] = omics_url
 
         # print('DATA: {}'.format(data))  # DEBUG
         response = requests.post(url, json=data, headers=HEADERS)

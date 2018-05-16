@@ -77,4 +77,4 @@ django-db-file-storage==0.5.2
 -e git://github.com/bihealth/altamisa.git@00e98d93dddd2e4c4e81fb09e16bc25a0986e2ae#egg=altamisa
 
 # Python iRODS client for irodsbackend
-python-irodsclient==0.7.0
+python-irodsclient==0.8.0

@@ -8,11 +8,11 @@ from django.core.urlresolvers import reverse
 
 # Projectroles dependency
 from projectroles.models import OMICS_CONSTANTS
-from projectroles.tests.test_views_taskflow import TaskflowMixin, \
-    TestTaskflowBase
+from projectroles.tests.test_views_taskflow import TestTaskflowBase
 
-from unittest import skipIf     # Could also use tags..
+from unittest import skipIf
 
+from ..io import get_base_dirs
 from ..models import Investigation
 from .test_io import SampleSheetIOMixin, SHEET_DIR
 
@@ -39,8 +39,35 @@ TASKFLOW_ENABLED = True if \
 TASKFLOW_SKIP_MSG = 'Taskflow not enabled in settings'
 
 
+class SampleSheetTaskflowMixin:
+    """Taskflow helpers for samplesheets tests"""
+
+    def _make_irods_dirs(self, investigation, request=None):
+        """
+        Create iRODS directory structure for investigation
+        :param investigation: Investigation object
+        :param request: HTTP request object (optional, default=None)
+        :raise taskflow.FlowSubmitException if submit fails
+        """
+        self.assertEqual(investigation.irods_status, False)
+
+        values = {
+            'project_uuid': investigation.project.omics_uuid,
+            'flow_name': 'sheet_dirs_create',
+            'flow_data': {'dirs': get_base_dirs(investigation)},
+            'request': request}
+
+        if not request:
+            values['omics_url'] = self.live_server_url
+
+        self.taskflow.submit(**values)
+
+        investigation.refresh_from_db()
+        self.assertEqual(investigation.irods_status, True)
+
+
 class TestIrodsDirView(
-        TestTaskflowBase, TaskflowMixin, SampleSheetIOMixin):
+        TestTaskflowBase, SampleSheetIOMixin):
     """Tests for iRODS directory structure creation view with taskflow"""
 
     def setUp(self):
@@ -90,7 +117,7 @@ class TestIrodsDirView(
 
 
 class TestSampleSheetDeleteView(
-        TestTaskflowBase, TaskflowMixin, SampleSheetIOMixin):
+        TestTaskflowBase, SampleSheetIOMixin):
     """Tests for sample sheet deletion with taskflow"""
 
     def setUp(self):

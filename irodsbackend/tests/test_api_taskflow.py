@@ -3,15 +3,15 @@
 from unittest import skipIf
 
 from django.conf import settings
-from django.urls import reverse
 
 # Projectroles dependency
-from projectroles.models import Role, OMICS_CONSTANTS
+from projectroles.models import OMICS_CONSTANTS
 from projectroles.tests.test_views_taskflow import TestTaskflowBase, \
-    TaskflowMixin, TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG
+    TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG
 
 # Samplesheets dependency
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
+from samplesheets.tests.test_views_taskflow import SampleSheetTaskflowMixin
 
 # Landingzones dependency
 from landingzones.tests.test_models import LandingZoneMixin
@@ -38,11 +38,12 @@ SERVER_AVAILABLE = 'available'
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
 ZONE_TITLE = '20180503_1724_test_zone'
 ZONE_DESC = 'description'
+TEST_FILE_NAME = 'test1'
 
 
 class TestIrodsBackendAPITaskflow(
         TestTaskflowBase, SampleSheetIOMixin,
-        LandingZoneMixin, TaskflowMixin):
+        LandingZoneMixin, SampleSheetTaskflowMixin):
     """Tests for the API in the irodsbackend app with Taskflow and iRODS"""
 
     def setUp(self):
@@ -76,24 +77,50 @@ class TestIrodsBackendAPITaskflow(
         self.assertEqual(info['server_zone'], IRODS_ZONE)
 
     @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
+    def test_get_objects(self):
+        """Test get_info() with files in a sample dir"""
+
+        # Create iRODS directories
+        self._make_irods_dirs(self.investigation)
+
+        path = self.irods_backend.get_path(self.assay)
+
+        # Create objects
+        # TODO: Test with actual files and put() instead
+        irods = self.irods_backend.get_session()
+        irods.data_objects.create(path + '/' + TEST_FILE_NAME)
+        irods.data_objects.create(path + '/{}.md5'.format(TEST_FILE_NAME))
+
+        obj_list = self.irods_backend.get_objects(path)
+        self.assertIsNotNone(obj_list)
+        self.assertEqual(len(obj_list['data_objects']), 1)  # md5 not listed
+
+        obj = obj_list['data_objects'][0]
+        expected = {
+            'name': TEST_FILE_NAME,
+            'path': path + '/' + TEST_FILE_NAME,
+            'size': 0,
+            'md5_file': False,  # Size of md5 file is 0 -> not true
+            'modify_time': obj['modify_time']}
+        self.assertEqual(obj, expected)
+
+    @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_get_objects_empty_dir(self):
         """Test get_info() with an empty sample directory"""
 
         # Create iRODS directories
-        # TODO: Make this a helper in a samplesheets mixin
-        values = {
-            'omics_url': self.live_server_url}
-
-        with self.login(self.user):
-            response = self.client.post(reverse(
-                'samplesheets:dirs',
-                kwargs={'project': self.project.omics_uuid}),
-                values)
+        self._make_irods_dirs(self.investigation)
 
         path = self.irods_backend.get_path(self.project) + '/' + SAMPLE_DIR
         obj_list = self.irods_backend.get_objects(path)
         self.assertIsNotNone(obj_list)
         self.assertEqual(len(obj_list['data_objects']), 0)
 
-    # TODO: Put test files in iRODS using python-irodsclient and test
-    # TODO: Test without creating dirs
+    @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
+    def test_get_objects_no_dir(self):
+        """Test get_info() with no created directories"""
+
+        path = self.irods_backend.get_path(self.project) + '/' + SAMPLE_DIR
+
+        with self.assertRaises(FileNotFoundError):
+            obj_list = self.irods_backend.get_objects(path)

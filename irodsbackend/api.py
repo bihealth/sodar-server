@@ -1,6 +1,7 @@
 """iRODS REST API for Omics Data Management Django apps"""
 
 from functools import wraps
+from irods.exception import CollectionDoesNotExist
 from irods.session import iRODSSession
 from pytz import timezone
 
@@ -143,6 +144,14 @@ class IrodsAPI:
     ###################
 
     @init_irods
+    def get_session(self):
+        """
+        Get iRODS session object (for direct API access)
+        :return: iRODSSession object (already initialized)
+        """
+        return self.irods
+
+    @init_irods
     def get_info(self):
         """Return iRODS server info"""
         ret = {}
@@ -162,7 +171,12 @@ class IrodsAPI:
 
     @init_irods
     def get_objects(self, path):
-        """Return iRODS object list"""
+        """
+        Return iRODS object list
+        :param path: Full path to iRODS collection
+        :return: Dict
+        :raise: FileNotFoundError if collection is not found
+        """
 
         def get_obj_list(coll, data):
             real_objects = [
@@ -187,7 +201,11 @@ class IrodsAPI:
 
             return data
 
-        coll = self.irods.collections.get(path)
+        try:
+            coll = self.irods.collections.get(path)
+
+        except CollectionDoesNotExist:
+            raise FileNotFoundError('iRODS collection not found')
 
         ret = {
             'data_objects': []}

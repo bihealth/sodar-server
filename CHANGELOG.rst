@@ -22,6 +22,7 @@ Added
     - Add irodsbackend app (#139)
     - Add ``get_path()`` for retrieving iRODS paths for Django objects
     - Template tag ``get_irods_path()`` to get object iRODS path in template
+    - Add ``get_session()`` for direct iRODS API access
 - **Landingzones**
     - Add landingzones app (#139)
 - **Projectroles**
@@ -33,8 +34,10 @@ Added
     - iRODS link and iCommands display (#139)
     - Render optional hidden HTML attributes for cell meta data (#139)
     - Add ``get_dir()`` and ``get_display_name()`` helpers to Study and Assay
+    - Add ``SampleSheetTaskflowMixin`` for Taskflow test helpers
 - **Taskflowbackend**
     - Add taskflowbackend app (#139)
+    - Add optional ``omics_url`` kwarg to ``submit()``
 
 Changed
 -------
@@ -47,6 +50,8 @@ Changed
     - Don't show empty folder label if subfolders exist (#135)
 - **Irodsbackend**
     - Implement functionality of omics_irods_rest directly in the app
+    - Rename ``get_object_list()`` into ``get_objects()``
+    - Improved error handling in ``get_objects()``
 - **Projectroles**
     - Use Taskflowbackend only for creating and modifying ``PROJECT`` type projects
     - Modify Taskflow API URLs
@@ -55,6 +60,8 @@ Changed
     - Properly log and report errors in email sending (#151)
     - Require email sending to succeed for creating invites (#149)
     - Modify ProjectStarringAPIView to use common permission mixins
+    - Rename ``TestTaskflowViewBase`` to ``TestTaskflowBase``
+    - Integrate ``TaskflowMixin`` into ``TestTaskflowBase``
 - **Samplesheets**
     - Rename top header "legend" to "value" (#129)
     - Allow sample sheet upload for project contributor (#137)
