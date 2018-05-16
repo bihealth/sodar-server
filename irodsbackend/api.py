@@ -67,23 +67,50 @@ class IrodsAPI:
         dt = dt.astimezone(timezone('Europe/Berlin'))
         return dt.strftime('%Y-%m-%d %H:%M')
 
-    @classmethod
-    def _get_zone_dir(cls, obj):
-        """
-        Return a directory name for a study or assay under a landing zone
-        :param obj: Study or Assay object
-        :return: String
-        """
-        return slugify(obj.get_display_name()).replace('-', '_')
-
     ##########
     # Helpers
     ##########
 
     @classmethod
+    def get_subdir(cls, obj, landing_zone=False):
+        """
+        Get the directory name for a stuy or assay under the sample data
+        collection
+        :param obj: Study or Assay object
+        :param landing_zone: Return dir for landing zone if True (bool)
+        :return: String
+        :raise: TypeError if obj type is not correct
+        """
+        ret = ''
+        obj_class = obj.__class__.__name__
+
+        if obj_class not in ['Assay', 'Study']:
+            raise TypeError('Object of type "{}" not supported')
+
+        if not hasattr(obj, 'get_display_name'):
+            raise NotImplementedError(
+                'Function get_display_name() not implemented')
+
+        def get_dir(obj):
+            if not landing_zone:
+                return '{}_{}'.format(
+                    obj.__class__.__name__.lower(),
+                    obj.omics_uuid)
+
+            else:
+                return slugify(obj.get_display_name()).replace('-', '_')
+
+        # If assay, add study first
+        if obj_class == 'Assay':
+            ret += get_dir(obj.study) + '/'
+
+        ret += get_dir(obj)
+        return ret
+
+    @classmethod
     def get_path(cls, obj):
         """
-        Return path for object
+        Get the path for object
         :param obj: Django model object
         :return: String
         :raise: TypeError if obj is not of supported type
@@ -103,7 +130,7 @@ class IrodsAPI:
             project = obj.get_project()
 
         if not project:
-            raise ValueError('Project not found for given object!')
+            raise ValueError('Project not found for given object')
 
         # Base path (project)
         path = '/{zone}/projects/{uuid_prefix}/{uuid}'.format(
@@ -119,22 +146,20 @@ class IrodsAPI:
         if obj_class == 'Study':
             path += '/{sample_dir}/{study}'.format(
                 sample_dir=settings.IRODS_SAMPLE_DIR,
-                study='study_' + str(obj.omics_uuid))
+                study=cls.get_subdir(obj))
 
         # Assay (in sample data)
         elif obj_class == 'Assay':
-            path += '/{sample_dir}/{study}/{assay}'.format(
+            path += '/{sample_dir}/{study_assay}'.format(
                 sample_dir=settings.IRODS_SAMPLE_DIR,
-                study='study_' + str(obj.study.omics_uuid),
-                assay='assay_' + str(obj.omics_uuid))
+                study_assay=cls.get_subdir(obj))
 
         # LandingZone
         elif obj_class == 'LandingZone':
-            path += '/{zone_dir}/{user}/{study}/{assay}/{zone_title}'.format(
+            path += '/{zone_dir}/{user}/{study_assay}/{zone_title}'.format(
                 zone_dir=settings.IRODS_LANDING_ZONE_DIR,
                 user=obj.user.username,
-                study=cls._get_zone_dir(obj.assay.study),
-                assay=cls._get_zone_dir(obj.assay),
+                study_assay=cls.get_subdir(obj.assay, landing_zone=True),
                 zone_title=obj.title)
 
         return path

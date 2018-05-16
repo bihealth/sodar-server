@@ -113,16 +113,14 @@ class TestIrodsBackendAPI(
     def test_get_path_zone(self):
         """Test get_path() with a LandingZone object"""
         expected = '/{zone}/projects/{uuid_prefix}/{uuid}/{zone_dir}' \
-                   '/{user}/{study}/{assay}/{zone_title}'.format(
+                   '/{user}/{study_assay}/{zone_title}'.format(
                     zone=IRODS_ZONE,
                     uuid_prefix=str(self.project.omics_uuid)[:2],
                     uuid=str(self.project.omics_uuid),
                     zone_dir=LANDING_ZONE_DIR,
                     user=self.user.username,
-                    study=self.irods_backend._get_zone_dir(
-                        self.landing_zone.assay.study),
-                    assay=self.irods_backend._get_zone_dir(
-                        self.landing_zone.assay),
+                    study_assay=self.irods_backend.get_subdir(
+                        self.landing_zone.assay, landing_zone=True),
                     zone_title=ZONE_TITLE)
         path = self.irods_backend.get_path(self.landing_zone)
         self.assertEqual(expected, path)

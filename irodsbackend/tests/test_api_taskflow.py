@@ -78,7 +78,7 @@ class TestIrodsBackendAPITaskflow(
 
     @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_get_objects(self):
-        """Test get_info() with files in a sample dir"""
+        """Test get_objects() with files in a sample dir"""
 
         # Create iRODS directories
         self._make_irods_dirs(self.investigation)
@@ -106,7 +106,7 @@ class TestIrodsBackendAPITaskflow(
 
     @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_get_objects_empty_dir(self):
-        """Test get_info() with an empty sample directory"""
+        """Test get_objects() with an empty sample directory"""
 
         # Create iRODS directories
         self._make_irods_dirs(self.investigation)
@@ -118,7 +118,7 @@ class TestIrodsBackendAPITaskflow(
 
     @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_get_objects_no_dir(self):
-        """Test get_info() with no created directories"""
+        """Test get_objects() with no created directories"""
 
         path = self.irods_backend.get_path(self.project) + '/' + SAMPLE_DIR
 
