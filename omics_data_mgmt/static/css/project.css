@@ -325,6 +325,7 @@ table.omics-irods-obj-table tbody tr td:nth-child(2) {
 
 /* Date column */
 table.omics-irods-obj-table tbody tr td:nth-child(3) {
+  width: 85px;
   white-space: nowrap;
 }
 
