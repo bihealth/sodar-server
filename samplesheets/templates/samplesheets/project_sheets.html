@@ -175,8 +175,8 @@
 
 </div> {# Main container #}
 
-<span id="omics-ss-popup-list" list-url="" row-id=""></span>
-<span id="omics-ss-popup-cmd" row-id=""></span>
+<span class="omics-popup-overlay" id="omics-ss-popup-list" list-url="" row-id=""></span>
+<span class="omics-popup-overlay" id="omics-ss-popup-cmd" row-id=""></span>
 
 {% endblock projectroles_extend %}
 
@@ -312,7 +312,7 @@
                             pathRootDepth = 8;
                         }
 
-                        htmlData = '<table class="table omics-card-table table-striped omics-irods-obj-list">';
+                        htmlData = '<table class="table omics-card-table table-striped omics-irods-obj-table">';
                         htmlData += '<thead><th>File</th><th>Size</th><th>Modified</th><th>MD5</th></thead><tbody>';
 
                         $.each(data['data_objects'], function (i, obj) {

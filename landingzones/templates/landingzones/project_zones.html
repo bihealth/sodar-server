@@ -123,8 +123,8 @@
 
 </div> {# Main container #}
 
-<span id="omics-lz-popup-list" list-url="" zone-title=""></span>
-<span id="omics-lz-popup-cmd" irods-path="" zone-title=""></span>
+<span class="omics-popup-overlay" id="omics-lz-popup-list" list-url="" zone-title=""></span>
+<span class="omics-popup-overlay" id="omics-lz-popup-cmd" irods-path="" zone-title=""></span>
 
 {% endblock projectroles_extend %}
 
@@ -259,7 +259,7 @@
                     // console.log(data);  // DEBUG
 
                     if (data['data_objects'].length > 0) {
-                        htmlData = '<table class="table omics-card-table table-striped omics-irods-obj-list">';
+                        htmlData = '<table class="table omics-card-table table-striped omics-irods-obj-table">';
                         htmlData += '<thead><th>File</th><th>Size</th><th>Modified</th><th>MD5</th></thead><tbody>';
 
                         $.each(data['data_objects'], function (i, obj) {
