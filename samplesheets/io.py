@@ -393,39 +393,6 @@ def get_inv_paths(zip_file):
 # iRODS Utils ------------------------------------------------------------------
 
 
-def get_base_dirs(container):
-    """
-    Return iRODS directory structure for an Investigation or a part of it
-    :param container: an Investigation, Study or Assay object
-    :return: List
-    """
-    dirs = []
-
-    if type(container) == Investigation:
-        studies = container.studies.all()
-        assays = Assay.objects.filter(study__in=studies)
-
-    elif type(container) == Study:
-        studies = [container]
-        assays = container.assays.all()
-
-    elif type(container) == Assay:
-        studies = [container.study]
-        assays = [container]
-
-    else:
-        raise ValueError(
-            'Given object is not of type "Investigation", "Study" or "Assay"')
-
-    for study in studies:
-        dirs.append(study.get_dir())
-
-    for assay in assays:
-        dirs.append(assay.get_dir(include_study=True))
-
-    return dirs
-
-
 def get_assay_dirs(assay):
     """
     Return iRODS directory structure under an assay

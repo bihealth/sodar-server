@@ -3,9 +3,9 @@ from django.urls import reverse
 # Projectroles dependency
 from projectroles.plugins import ProjectAppPluginPoint
 
-from .io import get_base_dirs
 from .models import Investigation
 from .urls import urlpatterns
+from .utils import get_sample_dirs
 
 
 class ProjectAppPlugin(ProjectAppPluginPoint):
@@ -101,11 +101,10 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
 
         # NOTE: This only syncs previously created dirs
         for investigation in Investigation.objects.filter(irods_status=True):
-            dirs = get_base_dirs(investigation)
             flow = {
                 'flow_name': 'sheet_dirs_create',
                 'project_uuid': investigation.project.omics_uuid,
-                'flow_data': {'dirs': dirs}}
+                'flow_data': {'dirs': get_sample_dirs(investigation)}}
             sync_flows.append(flow)
 
         return sync_flows

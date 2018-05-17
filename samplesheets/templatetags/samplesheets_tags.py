@@ -133,13 +133,15 @@ def get_irods_tree(investigation):
     ret = '<ul><li>{}<ul>'.format(settings.IRODS_SAMPLE_DIR)
 
     for study in investigation.studies.all():
-        ret += '<li>{}'.format(study.get_dir())
+        ret += '<li>{}'.format(
+            irods_backend.get_subdir(study, include_parent=False))
 
         if study.assays.all().count() > 0:
             ret += '<ul>'
 
             for assay in study.assays.all():
-                ret += '<li>{}</li>'.format(assay.get_dir())
+                ret += '<li>{}</li>'.format(
+                    irods_backend.get_subdir(assay, include_parent=False))
 
             ret += '</ul>'
 

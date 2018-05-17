@@ -72,14 +72,16 @@ class IrodsAPI:
     ##########
 
     @classmethod
-    def get_subdir(cls, obj, landing_zone=False):
+    def get_subdir(cls, obj, landing_zone=False, include_parent=True):
         """
         Get the directory name for a stuy or assay under the sample data
         collection
         :param obj: Study or Assay object
         :param landing_zone: Return dir for landing zone if True (bool)
+        :param include_parent: Include parent dir if True (bool)
         :return: String
         :raise: TypeError if obj type is not correct
+        :raise: NotImplementedError if get_display_name() is not found in obj
         """
         ret = ''
         obj_class = obj.__class__.__name__
@@ -87,7 +89,7 @@ class IrodsAPI:
         if obj_class not in ['Assay', 'Study']:
             raise TypeError('Object of type "{}" not supported')
 
-        if not hasattr(obj, 'get_display_name'):
+        if landing_zone and not hasattr(obj, 'get_display_name'):
             raise NotImplementedError(
                 'Function get_display_name() not implemented')
 
@@ -101,7 +103,7 @@ class IrodsAPI:
                 return slugify(obj.get_display_name()).replace('-', '_')
 
         # If assay, add study first
-        if obj_class == 'Assay':
+        if obj_class == 'Assay' and include_parent:
             ret += get_dir(obj.study) + '/'
 
         ret += get_dir(obj)

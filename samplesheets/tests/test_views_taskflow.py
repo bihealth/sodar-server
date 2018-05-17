@@ -12,8 +12,8 @@ from projectroles.tests.test_views_taskflow import TestTaskflowBase
 
 from unittest import skipIf
 
-from ..io import get_base_dirs
 from ..models import Investigation
+from ..utils import get_sample_dirs
 from .test_io import SampleSheetIOMixin, SHEET_DIR
 
 
@@ -54,7 +54,7 @@ class SampleSheetTaskflowMixin:
         values = {
             'project_uuid': investigation.project.omics_uuid,
             'flow_name': 'sheet_dirs_create',
-            'flow_data': {'dirs': get_base_dirs(investigation)},
+            'flow_data': {'dirs': get_sample_dirs(investigation)},
             'request': request}
 
         if not request:

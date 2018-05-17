@@ -17,7 +17,7 @@ from projectroles.views import LoggedInPermissionMixin, \
 from projectroles.plugins import get_backend_api
 
 # Samplesheets dependency
-from samplesheets.io import get_base_dirs, get_assay_dirs
+from samplesheets.io import get_assay_dirs
 from samplesheets.models import Investigation, Assay
 from samplesheets.views import InvestigationContextMixin
 
@@ -119,6 +119,7 @@ class ZoneCreateView(
     def form_valid(self, form):
         taskflow = get_backend_api('taskflow')
         timeline = get_backend_api('timeline_backend')
+        irods_backend = get_backend_api('omics_irods')
         tl_event = None
         context = self.get_context_data()
         project = context['project']
@@ -180,8 +181,8 @@ class ZoneCreateView(
                 'zone_uuid': zone.omics_uuid,
                 'user_name': self.request.user.username,
                 'user_uuid': self.request.user.omics_uuid,
-                'assay_path': assay.get_dir(
-                    include_study=True, landing_zone=True),
+                'assay_path': irods_backend.get_subdir(
+                    assay, landing_zone=True),
                 'description': zone.description,
                 'dirs': dirs}
 
@@ -243,6 +244,7 @@ class ZoneDeleteView(
     def post(self, *args, **kwargs):
         timeline = get_backend_api('timeline_backend')
         taskflow = get_backend_api('taskflow')
+        irods_backend = get_backend_api('omics_irods')  # TODO: Ensure it exists
         tl_event = None
         zone = LandingZone.objects.get(
             omics_uuid=kwargs['landingzone'])
@@ -291,8 +293,8 @@ class ZoneDeleteView(
             flow_data = {
                 'zone_title': zone.title,
                 'zone_uuid': zone.omics_uuid,
-                'assay_path': zone.assay.get_dir(
-                    include_study=True, landing_zone=True),
+                'assay_path': irods_backend.get_subdir(
+                    zone.assay, landing_zone=True),
                 'user_name': zone.user.username}
 
             try:
@@ -352,6 +354,8 @@ class ZoneMoveView(
     def post(self, request, **kwargs):
         timeline = get_backend_api('timeline_backend')
         taskflow = get_backend_api('taskflow')
+        irods_backend = get_backend_api('omics_irods')  # TODO: Ensure it exists
+
         zone = LandingZone.objects.get(omics_uuid=self.kwargs['landingzone'])
         project = zone.project
         tl_event = None
@@ -400,10 +404,10 @@ class ZoneMoveView(
         flow_data = {
             'zone_title': str(zone.title),
             'zone_uuid': zone.omics_uuid,
-            'assay_path_samples': zone.assay.get_dir(
-                include_study=True, landing_zone=False),
-            'assay_path_zone': zone.assay.get_dir(
-                include_study=True, landing_zone=True),
+            'assay_path_samples': irods_backend.get_subdir(
+                zone.assay, landing_zone=False),
+            'assay_path_zone': irods_backend.get_subdir(
+                zone.assay, landing_zone=True),
             'user_name': str(zone.user.username)}
 
         try:

@@ -257,17 +257,6 @@ class Study(BaseSampleSheet):
         """Return display name for study"""
         return self.title.strip('.').title() if self.title else self.identifier
 
-    def get_dir(self, landing_zone=False):
-        """
-        Return directory name for study
-        :param landing_zone: Return dir for landing zone if True (bool)
-        :return: String
-        """
-        if landing_zone:
-            return get_zone_dir(self)
-
-        return 'study_' + str(self.omics_uuid)
-
 
 # Protocol ---------------------------------------------------------------------
 
@@ -424,21 +413,6 @@ class Assay(BaseSampleSheet):
     def get_display_name(self):
         """Return display name for assay"""
         return ' '.join(s for s in self.get_name().split('_')).title()
-
-    def get_dir(self, include_study=False, landing_zone=False):
-        """
-        Return directory name for assay
-        :param include_study: Include parent study directory in string (bool)
-        :param landing_zone: Return dir for landing zone if True (bool)
-        :return: String
-        """
-        study_dir = (self.study.get_dir(landing_zone=landing_zone) + '/') if \
-            include_study else ''
-
-        if landing_zone:
-            return '{}{}'.format(study_dir, get_zone_dir(self))
-
-        return '{}assay_{}'.format(study_dir, self.omics_uuid)
 
 
 # Materials and data files -----------------------------------------------------

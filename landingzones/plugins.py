@@ -1,10 +1,10 @@
 from django.urls import reverse
 
 # Projectroles dependency
-from projectroles.plugins import ProjectAppPluginPoint
+from projectroles.plugins import ProjectAppPluginPoint, get_backend_api
 
 # Samplesheets dependency
-from samplesheets.io import get_base_dirs, get_assay_dirs
+from samplesheets.io import get_assay_dirs
 from samplesheets.models import Assay
 
 from .models import LandingZone
@@ -93,22 +93,24 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         :return: List of dicts or None.
         """
         sync_flows = []
+        irods_backend = get_backend_api('omics_irods')
 
-        # Only sync flows which are not yet moved
-        for zone in LandingZone.objects.all().exclude(status='MOVED'):
-            flow = {
-                'flow_name': 'landing_zone_create',
-                'project_uuid': str(zone.project.omics_uuid),
-                'flow_data': {
-                    'zone_title': zone.title,
-                    'zone_uuid': zone.omics_uuid,
-                    'user_name': zone.user.username,
-                    'user_uuid': str(zone.user.omics_uuid),
-                    'assay_path': zone.assay.get_dir(
-                        include_study=True, landing_zone=True),
-                    'description': zone.description,
-                    'dirs': get_assay_dirs(zone.assay)}}
-            sync_flows.append(flow)
+        if irods_backend:
+            # Only sync flows which are not yet moved
+            for zone in LandingZone.objects.all().exclude(status='MOVED'):
+                flow = {
+                    'flow_name': 'landing_zone_create',
+                    'project_uuid': str(zone.project.omics_uuid),
+                    'flow_data': {
+                        'zone_title': zone.title,
+                        'zone_uuid': zone.omics_uuid,
+                        'user_name': zone.user.username,
+                        'user_uuid': str(zone.user.omics_uuid),
+                        'assay_path': irods_backend.get_subdir(
+                            zone.assay, landing_zone=True),
+                        'description': zone.description,
+                        'dirs': get_assay_dirs(zone.assay)}}
+                sync_flows.append(flow)
 
         return sync_flows
 
