@@ -120,5 +120,5 @@ EMAIL_HOST_PASSWORD = EMAIL_URL['EMAIL_HOST_PASSWORD']
 ENABLED_BACKEND_PLUGINS = [
     'timeline_backend',
     'taskflow',
-    # 'omics_irods',
+    'omics_irods',
 ]
