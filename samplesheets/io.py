@@ -320,8 +320,12 @@ def import_isa(isa_zip, project):
         import_arcs(s.arcs, db_study)
 
         assay_count = 0
+        assay_paths = sorted([a_i.path for a_i in s_i.assays.values()])
 
-        for a_i in s_i.assays.values():
+        for assay_path in assay_paths:
+            a_i = next((
+                a_i for a_i in s_i.assays.values() if a_i.path == assay_path),
+                None)
             assay_id = 'a{}'.format(assay_count)
 
             a = AssayReader.from_stream(

@@ -409,7 +409,7 @@ class SampleSheetTableBuilder:
         # TODO: Onelinerize this
         arcs = study.arcs
 
-        for a in study.assays.all():
+        for a in study.assays.all().order_by('file_name'):
             arcs += a.arcs
 
         tb = RefTableBuilder(nodes, arcs)
@@ -433,7 +433,7 @@ class SampleSheetTableBuilder:
         # Assay tables
         assay_count = 0
 
-        for assay in study.assays.all():
+        for assay in study.assays.all().order_by('file_name'):
             a_start = time.time()
             logger.debug('Building assay "{}" (pk={})..'.format(
                 assay.get_name(), assay.pk))
