@@ -116,9 +116,9 @@ class TestSampleSheetsPermissions(
         good_users = [
             self.superuser,
             self.as_owner.user,
-            self.as_delegate.user]
+            self.as_delegate.user,
+            self.as_contributor.user]
         bad_users = [
-            self.as_contributor.user,
             self.as_guest.user,
             self.anonymous,
             self.user_no_roles]

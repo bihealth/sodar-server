@@ -48,4 +48,4 @@ rules.add_perm(
 rules.add_perm(
     'samplesheets.delete_sheet',
     rules.is_superuser | pr_rules.is_project_owner |
-    pr_rules.is_project_delegate)
+    pr_rules.is_project_delegate | pr_rules.is_project_contributor)

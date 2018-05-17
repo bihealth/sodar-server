@@ -65,6 +65,7 @@ Changed
 - **Samplesheets**
     - Rename top header "legend" to "value" (#129)
     - Allow sample sheet upload for project contributor (#137)
+    - Allow sample sheet deletion for project contributor (#168)
     - In taskflow operations, use ``omics_uuid`` instead of ``pk`` (#99)
     - Refactor table HTML rendering
 - **Taskflowbackend**
@@ -87,6 +88,7 @@ Fixed
 - **Samplesheets**
     - Delete investigation if import fails (#138)
     - Assay sorting was not defined
+    - Assay data could end up in the wrong table with multiple assays under a study (#169)
 - **Timeline**
     - Fix event id parameter in Taskflow view
 
