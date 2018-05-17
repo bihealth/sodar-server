@@ -103,7 +103,7 @@ ADMIN_URL = env('DJANGO_ADMIN_URL', default='admin')
 
 # EMAIL CONFIGURATION
 # ------------------------------------------------------------------------------
-EMAIL_URL = env.email_url('EMAIL_URL')
+EMAIL_URL = env.email_url('EMAIL_URL', 'smtp://0.0.0.0')
 
 EMAIL_HOST = EMAIL_URL['EMAIL_HOST']
 EMAIL_PORT = EMAIL_URL['EMAIL_PORT']
