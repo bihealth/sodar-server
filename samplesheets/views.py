@@ -454,8 +454,11 @@ class IrodsObjectListAPIView(
             ret_data = irods_backend.get_objects(
                 irods_backend.get_path(parent))
 
-        except Exception as ex:  # TODO: 404 if dir not found
-            return Response(ex, status=500)
+        except FileNotFoundError:
+            return Response('Collection not found', status=404)
+
+        except Exception as ex:
+            return Response(str(ex), status=500)
 
         return Response(ret_data, status=200)
 

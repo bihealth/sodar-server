@@ -521,11 +521,13 @@ class LandingZoneObjectListAPIView(
             try:
                 ret_data = irods_backend.get_objects(
                     irods_backend.get_path(zone))
+                return Response(ret_data, status=200)
 
-            except Exception as ex:     # TODO: 404 if dir not found
-                return Response(ex, status=500)
+            except FileNotFoundError:
+                return Response('Collection not found', status=404)
 
-            return Response(ret_data, status=200)
+            except Exception as ex:
+                return Response(str(ex), status=500)
 
         return Response('Not authorized', status=403)
 
@@ -618,6 +620,7 @@ class ZoneStatusGetAPIView(APIView):
 
         return Response(ret_data, status=200)
 '''
+
 
 class ZoneStatusSetAPIView(APIView):
     def post(self, request):
