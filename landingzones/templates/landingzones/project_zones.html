@@ -203,18 +203,23 @@
                         }
 
                         else {
+                            var webDavEnabled = {{ irods_webdav_enabled }};
+
                             zoneTr.find('td.omics-lz-zone-title').removeClass('text-muted');
                             zoneTr.find('td.omics-lz-zone-assay').removeClass('text-muted');
                             zoneTr.find('td.omics-lz-zone-status-info').removeClass('text-muted');
 
+                            // TODO: Enable/disable individually instead of looping..
                             zoneTr.find('.btn').each(function() {
-                               if ($(this).is('button')) {
-                                   $(this).removeAttr('disabled');
-                               }
+                                if ($(this).is('button')) {
+                                    $(this).removeAttr('disabled');
+                                }
 
-                               else if ($(this).is('a')) {
-                                   $(this).removeClass('disabled');
-                               }
+                                // TODO: ..because this is rather ugly
+                                else if ($(this).is('a') &&
+                                        (!$(this).hasClass('omics-lz-dav-btn') || webDavEnabled === true)) {
+                                    $(this).removeClass('disabled');
+                                }
 
                                $(this).tooltip('enable');
                             });
