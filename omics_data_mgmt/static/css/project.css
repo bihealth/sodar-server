@@ -286,29 +286,30 @@ table.omics-card-table-bordered tr td:last-child {
   border-right: 0;
 }
 
-tr.omics-pr-project-list-header th:first-child {
-  width: 50%;
+/* Project list table */
+
+table.omics-pr-project-list-table {
+  table-layout: fixed;
 }
 
-tr.omics-pr-project-list-header th:nth-child(2) {
-  width: 35%;
+tr.omics-pr-project-list-header th:nth-child(1) {
+  width: 40%;
 }
 
 tr.omics-pr-project-list-header th:nth-child(3) {
-  width: 15%;
+  width: 120px;
 }
 
-tr.omics-pr-project-list-item td:first-child {
-  width: 50%;
+tr.omics-pr-project-list-item td:nth-child(1) {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 tr.omics-pr-project-list-item td:nth-child(2) {
-  width: 35%;
-}
-
-tr.omics-pr-project-list-item td:nth-child(3) {
   white-space: nowrap;
-  width: 15%;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* iRODS table */
@@ -325,7 +326,7 @@ table.omics-irods-obj-table tbody tr td:nth-child(2) {
 
 /* Date column */
 table.omics-irods-obj-table tbody tr td:nth-child(3) {
-  width: 85px;
+  width: 5%;
   white-space: nowrap;
 }
 
@@ -613,22 +614,23 @@ pre {
 }
 
 /* Project list */
+
 @media screen and (max-width: 1000px) {
-  .table#omics-pr-project-list-table tr th:nth-child(3) {
+  .table.omics-pr-project-list-table tr th:nth-child(3) {
     display: none;
   }
 
-  .table#omics-pr-project-list-table tr td:nth-child(3) {
+  .table.omics-pr-project-list-table tr td:nth-child(3) {
     display: none;
   }
 }
 
 @media screen and (max-width: 800px) {
-  .table#omics-pr-project-list-table tr th:nth-child(2) {
+  .table.omics-pr-project-list-table tr th:nth-child(2) {
     display: none;
   }
 
-  .table#omics-pr-project-list-table tr td:nth-child(2) {
+  .table.omics-pr-project-list-table tr td:nth-child(2) {
     display: none;
   }
 }
