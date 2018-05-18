@@ -409,10 +409,10 @@ LANDINGZONES_STATUS_INTERVAL = env.int('LANDINGZONES_STATUS_INTERVAL', 2)
 
 
 # Omics iRODS REST service backend settings
-IRODS_HOST = env.str('OMICS_IRODS_HOST', '0.0.0.0')
-IRODS_PORT = env.int('OMICS_IRODS_PORT', 1247)
-IRODS_ZONE = env.str('OMICS_IRODS_ZONE', 'omicsZone')
-IRODS_USER = env.str('OMICS_IRODS_USER', 'rods')
-IRODS_PASS = env.str('OMICS_IRODS_PASS', 'rods')
+IRODS_HOST = env.str('IRODS_HOST', '0.0.0.0')
+IRODS_PORT = env.int('IRODS_PORT', 1247)
+IRODS_ZONE = env.str('IRODS_ZONE', 'omicsZone')
+IRODS_USER = env.str('IRODS_USER', 'rods')
+IRODS_PASS = env.str('IRODS_PASS', 'rods')
 IRODS_SAMPLE_DIR = 'sample_data'
 IRODS_LANDING_ZONE_DIR = 'landing_zones'
