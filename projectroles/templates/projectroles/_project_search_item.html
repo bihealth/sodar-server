@@ -18,9 +18,8 @@
     </a>
   </td>
   <td>
-    {% get_description p as description %}
     {% autoescape off %}
-      {% highlight_search_term description search_term %}
+      {% highlight_search_term p.description search_term %}
     {% endautoescape %}
   </td>
   <td>

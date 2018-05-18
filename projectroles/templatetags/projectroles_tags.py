@@ -85,18 +85,6 @@ def omics_constant(value):
 
 
 @register.simple_tag
-def get_description(project):
-    """Return description, truncate if needed"""
-    max_len = 128
-    ret = project.description[:max_len]
-
-    if len(project.description) > max_len:
-        ret += '...'
-
-    return ret
-
-
-@register.simple_tag
 def get_user_role_str(project, user):
     if user.is_superuser:
         return '<span class="text-danger">Superuser</span>'

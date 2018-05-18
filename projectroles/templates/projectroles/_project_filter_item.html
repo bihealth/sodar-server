@@ -20,8 +20,8 @@
     {% get_star p request.user as project_star %}
     {{ project_star|safe }}
   </td>
-  <td orig-txt="{% get_description p %}">
-    {% get_description p %}
+  <td orig-txt="{{ p.description }}">
+    {{ p.description }}
   </td>
   <td>
     {% autoescape off %}

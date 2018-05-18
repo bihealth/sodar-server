@@ -62,6 +62,7 @@ Changed
     - Modify ProjectStarringAPIView to use common permission mixins
     - Rename ``TestTaskflowViewBase`` to ``TestTaskflowBase``
     - Integrate ``TaskflowMixin`` into ``TestTaskflowBase``
+    - Improve project list layout (#171)
 - **Samplesheets**
     - Rename top header "legend" to "value" (#129)
     - Allow sample sheet upload for project contributor (#137)
@@ -99,6 +100,7 @@ Removed
     - Removed Flynn workarounds, deploying on Flynn no longer supported (#133)
 - **Projectroles**
     - "View Details" link in details page, not needed thanks to project sidebar
+    - ``get_description()`` templatetag
 
 
 v0.2.0 (2018-04-13)
