@@ -50,7 +50,7 @@
                     {% elif parent_class == 'study' %}
                        list-url="{% url 'samplesheets:irods_list' study=parent.omics_uuid %}"
                     {% endif %}
-                    role="submit" title="List files for row"
+                    role="submit" title="List files"
                     {% if not investigation.irods_status %} disabled{% endif %}>
               <i class="fa fa-external-link"></i>
             </button>
@@ -58,7 +58,7 @@
           <button class="btn btn-secondary omics-list-btn omics-ss-popup-cmd-btn"
                   {# TODO: Add row-specific parameters #}
                   irods-path="{{ irods_path }}"
-                  role="submit" title="Get iCommands path to files for row"
+                  role="submit" title="Get iCommands path to files"
                   {% if not investigation.irods_status %} disabled{% endif %}>
             <i class="fa fa-terminal"></i>
            </button>

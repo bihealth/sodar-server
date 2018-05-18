@@ -343,8 +343,8 @@
 
                     // Set success html
                     $('#omics-ss-popup-list').html(htmlHeader + htmlData + htmlFooter);
-                }).fail(function () {
-                    $('#omics-ss-popup-list').html(htmlHeader + '<span class="text-danger font-italic">Failed to query data</span>' + htmlFooter);
+                }).fail(function (response) {
+                    $('#omics-ss-popup-list').html(htmlHeader + '<span class="text-danger font-italic">Failed to query data (' + response.status + ')</span>' + htmlFooter);
                 });
 
                 // Set default loading html
