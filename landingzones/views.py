@@ -60,7 +60,7 @@ class ProjectZoneView(
 
         # Flags for links
         context['irods_webdav_enabled'] = \
-            settings.IRODS_WEBDAV_ENABLED
+            int(settings.IRODS_WEBDAV_ENABLED)
 
         # iRODS backend
         # TODO: This can be just bool

@@ -7,16 +7,7 @@ from django.urls import reverse
 from projectroles.plugins import get_backend_api
 
 
-from ..models import LandingZone
-
-
-STATUS_STYLES = {
-    'ACTIVE': 'bg-info',
-    'PREPARING': 'bg-warning',
-    'VALIDATING': 'bg-warning',
-    'MOVING': 'bg-warning',
-    'MOVED': 'bg-success',
-    'FAILED': 'bg-danger'}
+from ..models import LandingZone, STATUS_STYLES
 
 
 irods_backend = get_backend_api('omics_irods')

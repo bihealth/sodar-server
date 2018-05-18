@@ -158,6 +158,8 @@
                     // console.log(trId + ': ' + data['status']);  // DEBUG
                     zoneTr = $('#' + trId);
                     statusTd = zoneTr.find('td#omics-lz-zone-status-' + zoneUuid);
+
+                    // TODO: Should somehow get these from STATUS_STYLES instead
                     var statusStyles = {
                         'CREATING': 'bg-warning',
                         'NOT CREATED': 'bg-danger',

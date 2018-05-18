@@ -39,7 +39,10 @@
         <br /><a href="{% get_zone_samples_url zone %}"><i class="fa fa-arrow-circle-right"></i> Browse files in sample sheets</a>
       {% endif %}
   </td>
-  <td id="omics-lz-zone-status-{{ zone.omics_uuid }}" class="omics-lz-zone-status text-white {% get_status_style zone %}">{{ zone.status }}</td>
+  <td id="omics-lz-zone-status-{{ zone.omics_uuid }}"
+      class="omics-lz-zone-status text-white {% get_status_style zone %}">
+    {{ zone.status }}
+  </td>
   {% if not details_card_mode %}
     <td class="omics-lz-zone-links">
       <span class="omics-lz-control">

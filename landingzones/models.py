@@ -33,6 +33,16 @@ DEFAULT_STATUS_INFO = {
     'MOVED': 'Files moved successfully, landing zone removed',
     'FAILED': 'Validation/moving failed (unknown problem)'}
 
+STATUS_STYLES = {
+    'CREATING': 'bg-warning',
+    'NOT CREATED': 'bg-danger',
+    'ACTIVE': 'bg-info',
+    'PREPARING': 'bg-warning',
+    'VALIDATING': 'bg-warning',
+    'MOVING': 'bg-warning',
+    'MOVED': 'bg-success',
+    'FAILED': 'bg-danger'}
+
 
 class LandingZone(models.Model):
     """Class representing an user's iRODS landing zone for an assay"""
