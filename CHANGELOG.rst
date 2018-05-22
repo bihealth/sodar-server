@@ -91,6 +91,7 @@ Fixed
     - Delete investigation if import fails (#138)
     - Assay sorting was not defined
     - Assay data could end up in the wrong table with multiple assays under a study (#169)
+    - Correctly use ``request.session.real_referer`` for back/cancel links (#175)
 - **Timeline**
     - Fix event id parameter in Taskflow view
 
