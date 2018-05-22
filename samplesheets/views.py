@@ -263,7 +263,7 @@ class SampleSheetTableExportView(
         # Top header
         output_row = []
 
-        for c in table['top_header']:
+        for c in table['top_header'][1:]:
             output_row.append(c['value'])
 
             if c['colspan'] > 1:
@@ -272,11 +272,11 @@ class SampleSheetTableExportView(
         writer.writerow(output_row)
 
         # Header
-        writer.writerow([c['value'] for c in table['field_header']])
+        writer.writerow([c['value'] for c in table['field_header'][1:]])
 
         # Data cells
         for row in table['table_data']:
-            writer.writerow([c['value'] for c in row])
+            writer.writerow([c['value'] for c in row[1:]])
 
         # Return file
         return response
