@@ -11,14 +11,16 @@ TOP_HEADER_COLOURS = {
     'SAMPLE': 'warning',
     'PROCESS': 'danger',
     'MATERIAL': 'success',
-    'DATA': 'success'}
+    'DATA': 'success',
+    'TABLE_ROW': 'secondary'}
 
 TOP_HEADER_VALUES = {
     'SOURCE': 'Source',
     'SAMPLE': 'Sample',
     'PROCESS': 'Process',
     'MATERIAL': 'Material',
-    'DATA': 'Data File'}
+    'DATA': 'Data File',
+    'TABLE_ROW': 'Row'}
 
 EMPTY_VALUE = '-'
 
@@ -385,9 +387,18 @@ class SampleSheetTableBuilder:
         self._table_data = []
         self._first_row = True
 
+        # Add row column headers
+        self._add_top_header('TABLE_ROW', 1)
+        self._add_header('#')
+        row_id = 1
+
         for input_row in table_refs:
             col_pos = 0
 
+            # Add row column cell
+            self._add_cell(str(row_id))
+
+            # Add elements on row
             for col in input_row:
                 obj = node_lookup[col]
                 study_data_in_assay = True if \
@@ -397,6 +408,7 @@ class SampleSheetTableBuilder:
                 col_pos += 1
 
             self._append_row()
+            row_id += 1
 
         return {
             'top_header': self._top_header,

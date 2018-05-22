@@ -35,6 +35,7 @@ Added
     - Render optional hidden HTML attributes for cell meta data (#139)
     - Add ``get_dir()`` and ``get_display_name()`` helpers to Study and Assay
     - Add ``SampleSheetTaskflowMixin`` for Taskflow test helpers
+    - Row numbers for sample sheet tables (#155)
 - **Taskflowbackend**
     - Add taskflowbackend app (#139)
     - Add optional ``omics_url`` kwarg to ``submit()``

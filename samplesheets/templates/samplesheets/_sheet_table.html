@@ -22,7 +22,7 @@
       <th class="bg-white omics-ss-top-header omics-ss-data-links-header omics-ss-data-cell-links">&nbsp;</th>
     </tr>
     {# Field header #}
-    <tr>
+    <tr class="omics-ss-header-row">
       {% for header in table.field_header %}
         <th class="{{ header.classes|join:' ' }}">{{ header.value }}</th>
       {% endfor %}
