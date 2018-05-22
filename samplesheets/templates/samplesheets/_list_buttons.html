@@ -4,13 +4,8 @@
 {% has_perm 'samplesheets.export_sheet' request.user project as can_export_sheet %}
 {% has_perm 'samplesheets.delete_sheet' request.user project as can_delete_sheet %}
 
-{% if up %}
-  <div class="row">
-    <div class="btn-group dropup ml-auto" id="omics-ss-buttons-op-up">
-{% else %}
-  <div class="btn-group ml-auto" id="omics-ss-buttons-op">
-{% endif %}
 
+<div class="btn-group ml-auto" id="omics-ss-buttons-op">
   <button class="btn btn-primary dropdown-toggle"
           type="button" data-toggle="dropdown"
           aria-haspopup="true" aria-expanded="false">

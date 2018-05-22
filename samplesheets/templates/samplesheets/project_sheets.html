@@ -122,7 +122,7 @@
 
   {% if not investigation %}
 
-    <div class="alert alert-info" role="alert">
+    <div class="alert alert-info" role="alert" id="omics-ss-alert-no-sheets">
       No sample sheets are currently available for this project.
       {% if can_edit_sheet %}
         To add sample sheets, please import it from ab existing ISAtab investigation.
@@ -143,7 +143,7 @@
 
       {# Study table #}
       <a class="omics-ss-anchor" id="{{ study.omics_uuid }}"></a>
-      <div class="card omics-ss-data-card">
+      <div class="card omics-ss-data-card omics-ss-data-card-study">
         <div class="card-header">
           {% include 'samplesheets/_sheet_table_header.html' with table_type='study' item=study %}
         </div>
@@ -157,7 +157,7 @@
       {# Assay tables #}
       {% for assay in study.assays.all %}
         <a class="omics-ss-anchor" id="{{ assay.omics_uuid }}"></a>
-        <div class="card omics-ss-data-card">
+        <div class="card omics-ss-data-card omics-ss-data-card-assay">
           <div class="card-header">
             {% include 'samplesheets/_sheet_table_header.html' with table_type='assay' item=assay %}
           </div>
@@ -169,9 +169,6 @@
           </div>
         </div>
       {% endfor %}
-
-    {% elif subpage == 'info' %}
-
 
     {% endif %}
 
@@ -394,6 +391,113 @@
 
   {# Tour content #}
   <script type="text/javascript">
-    tourEnabled = false;
+    tourEnabled = true;
+
+    tour.addStep('sheet_info', {
+        title: 'Sample Sheets',
+        text: 'In this app you are able to access meta data regarding ' +
+              'project samples, along with links to sample file mass storage ' +
+              'in iRODS.',
+        advanceOn: '.docs-link click',
+        showCancelLink: true
+    });
+
+    // No sheets
+    if ($('#omics-ss-alert-no-sheets').length) {
+        tour.addStep('no_sheets', {
+            title: 'No Sample Sheets Available',
+            text: 'No sample sheets have been imported for the project. ' +
+                  'Users with sufficient permissions can import an ISA ' +
+                  'investigation using the Sheet Operations menu.',
+            attachTo: '#omics-ss-buttons-op left',
+            advanceOn: '.docs-link click',
+            showCancelLink: true
+        });
+    }
+
+    // Sheets available
+    else {
+        tour.addStep('sheet_isa', {
+            title: 'ISA Model',
+            text: 'Sample data is represented according to the ISA ' +
+                  '(Investigation/Study/Assay) specification. One project is ' +
+                  'expected to contain one investigation, which contains one ' +
+                  'or more studies, which in turn can consist of one or more ' +
+                  'assays. One study and its assays are visualized per page ' +
+                  'in this application.',
+            advanceOn: '.docs-link click',
+            showCancelLink: true
+        });
+
+        tour.addStep('sheet_navigation', {
+            title: 'Sample Sheet Navigation',
+            text: 'Navigate between studies and data overview using this ' +
+                  'navigation bar.',
+            attachTo: '.omics-subtitle-container bottom',
+            advanceOn: '.docs-link click',
+            showCancelLink: true
+        });
+
+        tour.addStep('sheet_navigation_dropdown', {
+            title: 'Sample Sheet Shortcuts',
+            text: 'Shortcuts to project studies and assays can be accessed ' +
+                  'in this dropdown menu.',
+            attachTo: '#omics-ss-nav-dropdown bottom',
+            advanceOn: '.docs-link click',
+            showCancelLink: true
+        });
+
+        if ($('#omics-ss-buttons-op').length) {
+            tour.addStep('sheet_operations', {
+                title: 'Sheet Operations',
+                text: 'Authorized users can perform sheet-wide operations ' +
+                      'such as iRODS directory creation in this menu.',
+                attachTo: '#omics-ss-buttons-op left',
+                advanceOn: '.docs-link click',
+                showCancelLink: true
+            });
+        }
+    }
+
+    if ($('.omics-ss-data-card').length) {
+        tour.addStep('study_data', {
+            title: 'Study Data',
+            text: 'This is a data table listing all the sources and samples ' +
+                  'in the currently selected study.',
+            attachTo: '.omics-ss-data-card-study top',
+            advanceOn: '.docs-link click',
+            showCancelLink: true
+        });
+
+        tour.addStep('assay_data', {
+            title: 'Assay Data',
+            text: 'Assay-specific processed and materials are described in ' +
+                  'assay tables.',
+            attachTo: '.omics-ss-data-card-assay top',
+            advanceOn: '.docs-link click',
+            showCancelLink: true
+        });
+
+        tour.addStep('data_controls', {
+            title: 'Data Table Controls',
+            text: 'Access data table controls in the table header.',
+            attachTo: '.omics-header-input-group top',
+            advanceOn: '.docs-link click',
+            showCancelLink: true
+        });
+
+        tour.addStep('data_links', {
+            title: 'iRODS Links',
+            text: 'Links to sample data files in iRODS can be accessed in ' +
+                  'this column. Note that an authorized user must first ' +
+                  'create the iRODS directories for the project for these ' +
+                  'controls to be enabled. Uploading new data is done using ' +
+                  'the Landing Zones app.',
+            attachTo: '.omics-ss-popup-list-btn left',
+            advanceOn: '.docs-link click',
+            showCancelLink: true
+        });
+    }
+
   </script>
 {% endblock javascript %}

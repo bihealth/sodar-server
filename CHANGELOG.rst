@@ -36,6 +36,7 @@ Added
     - Add ``get_dir()`` and ``get_display_name()`` helpers to Study and Assay
     - Add ``SampleSheetTaskflowMixin`` for Taskflow test helpers
     - Row numbers for sample sheet tables (#155)
+    - Tour help (#145)
 - **Taskflowbackend**
     - Add taskflowbackend app (#139)
     - Add optional ``omics_url`` kwarg to ``submit()``
@@ -47,6 +48,7 @@ Changed
     - Upgrade to Django 1.11.12
     - Upgrade to django-crispy-forms 1.7.1 (#153)
     - Upgrade to Boostrap 4.1.1 (#144)
+    - Improve tour help layout
 - **Filesfolders**
     - Don't show empty folder label if subfolders exist (#135)
 - **Irodsbackend**

@@ -9,7 +9,7 @@
     <ul class="nav nav-pills omics-ss-nav ml-4 mr-auto">
       {% for s in investigation.studies.all %}
         <li class="nav-item">
-          <a class="nav-link {% if s == study %}bg-success active{% endif %}"
+          <a class="nav-link omics-ss-nav-btn {% if s == study %}bg-success active{% endif %}"
              href="{% url 'samplesheets:project_sheets' study=s.omics_uuid %}"
              {% if s.get_display_name|length > 20 %}
                data-toggle="tooltip" data-placement="top" title="{{ s.get_display_name }}"

@@ -89,24 +89,24 @@
 <div class="container-fluid omics-page-container"> {# Main container #}
 
   {% if not investigation %}
-    <div class="alert alert-danger" role="alert">
+    <div class="alert alert-danger" role="alert" id="omics-lz-alert-no-zones">
       <strong>Note:</strong> No sample sheets are currently available for this project.
       To create landing zones, a person with sufficient project permissions must
       import an ISAtab investigation and create the sample directory structure in iRODS
-      using the <a href="{% url 'samplesheets:project_sheets' project=project.omics_uuid %}">Samplesheets app</a>.
+      using the <a href="{% url 'samplesheets:project_sheets' project=project.omics_uuid %}">Sample Sheets</a> app.
     </div>
 
   {% elif investigation and not investigation.irods_status %}
-    <div class="alert alert-danger" role="alert">
+    <div class="alert alert-danger" role="alert" id="omics-lz-alert-no-zones">
       <strong>Note:</strong> The iRODS directory structure for the project sample
       sheets is not available. A user authorized for sample sheet editing must
       enable iRODS access by selecting <cite>"Create in iRODS"</cite> in the
-      <a href="{% url 'samplesheets:project_sheets' project=project.omics_uuid %}">Samplesheets app</a>.
+      <a href="{% url 'samplesheets:project_sheets' project=project.omics_uuid %}">Sample Sheets</a> app.
       After that landing zones can be created for the project.
     </div>
 
   {% elif zones_own.count == 0 and not zones_other %}
-    <div class="alert alert-info" role="alert">
+    <div class="alert alert-info" role="alert" id="omics-lz-alert-no-zones">
       No landing zones are currently available for you in this project. Please
       create a landing zone for a desired assay using the "Zone Operations" menu.
     </div>
@@ -114,10 +114,10 @@
   {% else %}
     {# User zones #}
     {% if zones_own.count > 0 %}
-      {% include 'landingzones/_zone_list.html' with zones=zones_own list_title='Your Zones' list_icon='fa-user' %}
+      {% include 'landingzones/_zone_list.html' with zones=zones_own list_title='Your Zones' list_icon='fa-user' list_type='own' %}
     {% endif %}
     {% if zones_other %}
-      {% include 'landingzones/_zone_list.html' with zones=zones_other list_title='Other Zones' list_icon='fa-users' %}
+      {% include 'landingzones/_zone_list.html' with zones=zones_other list_title='Other Zones' list_icon='fa-users' list_type='other' %}
     {% endif %}
   {% endif %}
 
@@ -351,7 +351,112 @@
 
   {# Tour content #}
   <script type="text/javascript">
-    tourEnabled = false;
-    {# TODO: Copy tour from omics_data_access #}
+    tourEnabled = true;
+
+    tour.addStep('zone_info', {
+        title: 'Landing Zones',
+        text: 'In this app you are able to create and manage personal ' +
+              'landing zones for uploading data to the project sample ' +
+              'repository in iRODS.',
+        advanceOn: '.docs-link click',
+        showCancelLink: true
+    });
+
+    // No zones
+    if ($('#omics-lz-alert-no-zones').length) {
+        tour.addStep('no_zones', {
+            title: 'No Landing Zones Available',
+            text: 'No landing zones are currently available. See the alert ' +
+                  'box for instruction on how to proceed.',
+            attachTo: '#omics-lz-alert-no-zones top',
+            advanceOn: '.docs-link click',
+            showCancelLink: true
+        });
+    }
+
+    if ($('#omics-lz-zone-list-own').length) {
+        tour.addStep('own_zones', {
+            title: 'Your Own Zones',
+            text: 'Your own landing zones are listed in this table.',
+            attachTo: '#omics-lz-zone-list-own top',
+            advanceOn: '.docs-link click',
+            showCancelLink: true
+        });
+    }
+
+    if ($('#omics-lz-zone-list-other').length) {
+        tour.addStep('other_zones', {
+            title: 'Zones of Other Users',
+            text: 'This table lists zones of other users to which you have ' +
+                  'been given access.',
+            attachTo: '#omics-lz-zone-list-other top',
+            advanceOn: '.docs-link click',
+            showCancelLink: true
+        });
+    }
+
+    if ($('#omics-lz-buttons-list').length) {
+        tour.addStep('zone_operations', {
+            title: 'Zone Operations',
+            text: 'Create new zones or clear existing moved zones from this ' +
+                  'menu.',
+            attachTo: '#omics-lz-buttons-list left',
+            advanceOn: '.docs-link click',
+            showCancelLink: true
+        });
+    }
+
+    // Table data
+    if ($('.omics-lz-table').length) {
+        tour.addStep('zone_title', {
+            title: 'Zone Title',
+            text: 'The title of each stone is shown in this column. This ' +
+                  'takes the form of a timestamp and an arbitrary suffix.',
+            attachTo: '.omics-lz-list-header-title top',
+            advanceOn: '.docs-link click',
+            showCancelLink: true
+        });
+
+        tour.addStep('zone_assay', {
+            title: 'Zone Assay',
+            text: 'Each landing zone is specific to one assay within the ' +
+                  'project studies.',
+            attachTo: '.omics-lz-list-header-assay top',
+            advanceOn: '.docs-link click',
+            showCancelLink: true
+        });
+
+        tour.addStep('zone_status', {
+            title: 'Zone Status',
+            text: 'The status of each landing zone can be seen in this ' +
+                  'column. Available actions depend on the current status. ' +
+                  '"ACTIVE" zones are ones in which you can freely upload ' +
+                  'and modify files.',
+            attachTo: '.omics-lz-list-header-status top',
+            advanceOn: '.docs-link click',
+            showCancelLink: true
+        });
+
+        tour.addStep('zone_links', {
+            title: 'iRODS Links for Zone',
+            text: 'Links for iRODS access for available zone are presented ' +
+                  'in this column.',
+            attachTo: '.omics-lz-zone-links left',
+            advanceOn: '.docs-link click',
+            showCancelLink: true
+        });
+
+        tour.addStep('zone_edit', {
+            title: 'Zone Specific Operations',
+            text: 'In this column, you can trigger the data validation and ' +
+                  'moving operation for moving your landing zone content ' +
+                  'into the project sample repository. Here you can also ' +
+                  'delete unwanted landing zones.',
+            attachTo: '.omics-lz-zone-edit left',
+            advanceOn: '.docs-link click',
+            showCancelLink: true
+        });
+    }
+
   </script>
 {% endblock javascript %}
