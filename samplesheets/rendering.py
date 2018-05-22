@@ -24,6 +24,8 @@ EMPTY_VALUE = '-'
 
 STUDY_HIDEABLE_CLASS = 'omics-ss-hideable-study'
 SOURCE_SEARCH_STR = '-source-'
+ONTOLOGY_URL_TEMPLATE = 'https://bioportal.bioontology.org/ontologies/' \
+                        '{ontology_name}/?p=classes&conceptid={accession}'
 
 
 logger = logging.getLogger(__name__)
@@ -161,6 +163,18 @@ class SampleSheetTableBuilder:
         self._table_data = []
         self._first_row = True
 
+    @classmethod
+    def _get_ontology_link(cls, ontology_name, accession):
+        """
+        Build ontology link.
+        :param name: Ontology name
+        :param accession: Ontology accession URL
+        :return: String
+        """
+        return ONTOLOGY_URL_TEMPLATE.format(
+                ontology_name=ontology_name,
+                accession=accession)
+
     def _add_top_header(self, item_type, colspan, hiding={}):
         """Append columns to top header"""
         self._top_header.append({
@@ -236,7 +250,8 @@ class SampleSheetTableBuilder:
                     tooltip = v['value']['ontology_name']
 
                 val += v['value']['name']
-                link = v['value']['accession']
+                link = self._get_ontology_link(
+                    v['value']['ontology_name'], v['value']['accession'])
 
             else:
                 val = v['value']

@@ -69,6 +69,7 @@ Changed
     - Allow sample sheet deletion for project contributor (#168)
     - In taskflow operations, use ``omics_uuid`` instead of ``pk`` (#99)
     - Refactor table HTML rendering
+    - Improve URLs for ontology linking (#170)
 - **Taskflowbackend**
     - Use ``omics_uuid`` instead of ``pk`` (#139)
     - Only set up ``PROJECT`` type projects in ``synctaskflow``
