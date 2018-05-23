@@ -94,7 +94,7 @@
     .DTFC_Cloned tbody tr td:first-child {
       border-left: 3px solid #dfdfdf !important;
     }
-    
+
     .omics-ss-data-links-header {
       border-left: 3px solid #dfdfdf !important;
     }
@@ -132,7 +132,14 @@
 
   {% else %}
 
-    {% if table_data.study %}
+    {% if render_error %}
+
+      <div class="alert alert-danger" role="alert" id="omics-ss-alert-render-error">
+        Error rendering sample sheets, please check your ISAtab files. Exception:
+        {{ render_error|truncatechars:512 }}
+      </div>
+
+    {% elif table_data.study %}
 
       {# Details #}
       <div class="card">

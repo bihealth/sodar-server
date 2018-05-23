@@ -70,7 +70,13 @@ class ProjectSheetsView(
 
                 context['study'] = study
                 tb = SampleSheetTableBuilder()
-                context['table_data'] = tb.build_study(study)
+
+                try:
+                    context['table_data'] = tb.build_study(study)
+
+                except Exception as ex:
+                    # TODO: Log error
+                    context['render_error'] = str(ex)
 
                 # iRODS backend
                 context['irods_backend'] = get_backend_api('omics_irods')
@@ -231,17 +237,27 @@ class SampleSheetTableExportView(
             except Study.DoesNotExist:
                 pass
 
+        redirect_url = reverse(
+            'samplesheets:project_sheets',
+            kwargs={'project': self._get_project(
+                self.kwargs, self.request).omics_uuid})
+
         if not study:
             messages.error(
                 self.request, 'Study not found, unable to render TSV')
-            return redirect(reverse(
-                'samplesheets:project_sheets',
-                kwargs={'project': self._get_project(
-                    self.request, self.kwargs).omics_uuid}))
+            return redirect(redirect_url)
 
         # Build study tables
         tb = SampleSheetTableBuilder()
-        tables = tb.build_study(study)
+
+        try:
+            tables = tb.build_study(study)
+
+        except Exception as ex:
+            messages.error(
+                self.request,
+                'Unable to render table for export: {}'.format(ex))
+            return redirect(redirect_url)
 
         if 'assay' in self.kwargs:
             table = tables['assays'][assay.get_name()]
