@@ -259,28 +259,6 @@ class HomeView(LoginRequiredMixin, PluginContextMixin, TemplateView):
         return context
 
 
-class IrodsInfoView(LoginRequiredMixin, TemplateView):
-    """iRODS server info and guide view"""
-    template_name = 'projectroles/irods_info.html'
-
-    def get_context_data(self, *args, **kwargs):
-        context = super(IrodsInfoView, self).get_context_data(*args, **kwargs)
-
-        # Add iRODS query API
-        irods_backend = get_backend_api('omics_irods')
-
-        if irods_backend:
-            try:
-                context['server_info'] = irods_backend.get_info()
-
-            except irods_backend.IrodsQueryException:
-                context['server_info'] = None
-
-        context['irods_backend'] = get_backend_api('omics_irods')
-
-        return context
-
-
 class ProjectDetailView(
         LoginRequiredMixin, LoggedInPermissionMixin, ProjectContextMixin,
         DetailView):

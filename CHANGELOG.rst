@@ -23,6 +23,8 @@ Added
     - Add ``get_path()`` for retrieving iRODS paths for Django objects
     - Template tag ``get_irods_path()`` to get object iRODS path in template
     - Add ``get_session()`` for direct iRODS API access
+- **Irodsinfo**
+    - Add irodsinfo site app (#183)
 - **Landingzones**
     - Add landingzones app (#139)
 - **Projectroles**
@@ -66,6 +68,7 @@ Changed
     - Rename ``TestTaskflowViewBase`` to ``TestTaskflowBase``
     - Integrate ``TaskflowMixin`` into ``TestTaskflowBase``
     - Improve project list layout (#171)
+    - Move iRODS info page into the irodsinfo app (#183)
 - **Samplesheets**
     - Rename top header "legend" to "value" (#129)
     - Allow sample sheet upload for project contributor (#137)

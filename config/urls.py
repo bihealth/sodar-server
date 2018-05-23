@@ -28,6 +28,7 @@ urlpatterns = [
 
     # General site apps
     url(r'^alerts/', include('adminalerts.urls')),
+    url(r'^irods/', include('irodsinfo.urls')),
 
     # Projectroles URLs
     url(r'^project/', include('projectroles.urls')),

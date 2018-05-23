@@ -75,6 +75,7 @@ LOCAL_APPS = [
 
     # General site apps
     'adminalerts.apps.AdminalertsConfig',
+    'irodsinfo.apps.IrodsinfoConfig',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -408,7 +409,7 @@ IRODS_WEBDAV_URL = env.str('IRODS_WEBDAV_URL', 'https://0.0.0.0')
 LANDINGZONES_STATUS_INTERVAL = env.int('LANDINGZONES_STATUS_INTERVAL', 2)
 
 
-# Omics iRODS REST service backend settings
+# iRODS settings shared by iRODS using apps
 IRODS_HOST = env.str('IRODS_HOST', '0.0.0.0')
 IRODS_PORT = env.int('IRODS_PORT', 1247)
 IRODS_ZONE = env.str('IRODS_ZONE', 'omicsZone')
@@ -416,3 +417,4 @@ IRODS_USER = env.str('IRODS_USER', 'rods')
 IRODS_PASS = env.str('IRODS_PASS', 'rods')
 IRODS_SAMPLE_DIR = 'sample_data'
 IRODS_LANDING_ZONE_DIR = 'landing_zones'
+IRODS_CERT_PATH = STATIC_ROOT + '/irods/irods_server.crt'

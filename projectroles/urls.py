@@ -123,9 +123,4 @@ urlpatterns = [
         view=views.ProjectSettingsSetAPIView.as_view(),
         name='taskflow_settings_set',
     ),
-    url(
-        regex=r'^irods-info',
-        view=views.IrodsInfoView.as_view(),
-        name='irods_info',
-    ),
 ]
