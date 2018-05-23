@@ -31,24 +31,24 @@
       <div class="card-body omics-card-body">
         <h4 class="card-title">Accessing iRODS</h4>
         <p>
-          Large scale omics project data is stored under a distributed iRODS
-          system. You can access the iRODS data storage with your Charité or
-          MDC credentials. For accessing project data, membership in respective
-          projects must be granted to you on this web site.
+          Experiment data for omics project data is stored under a distributed
+          iRODS server, which you can log on to with your Charité or MDC
+          credentials. For accessing project data, membership in respective
+          projects must be granted to you by a project owner or delegate.
         </p>
         <p>
           For each project, sample data repository is located in the
-          read-only <code>{{ irods_sample_dir }}</code> collection. For uploading new
-          files, you must create a landing zone as a temporary workspace.
-          These are placed under the <code>{{ irods_landing_zone_dir }}</code>
-          collection. For more instructions, see the Landing Zones app under
-          the project you are working on.
+          read-only <code>{{ irods_sample_dir }}</code> collection. For
+          uploading new files, you must create a landing zone as a temporary
+          workspace. These are placed under the <code>{{ irods_landing_zone_dir }}</code>
+          collection. For more instructions, see the Landing Zones application
+          under the project you are working on.
         </p>
 
         {% if can_get_config %}
           <h4 class="card-title">Command Line Access (Ubuntu/CentOS)</h4>
           <p>
-            For command line access to iRODS, you need to install the <code>irods-icommands</code>
+            For command line access to iRODS, you first need to install the <code>irods-icommands</code>
             package. Below is an installation example for Ubuntu.
           </p>
           <pre class="m-3 p-2 bg-light"><code>wget -qO - https://packages.irods.org/irods-signing-key.asc | sudo apt-key add -
@@ -56,15 +56,15 @@ echo "deb [arch=amd64] https://packages.irods.org/apt/ $(lsb_release -sc) main" 
 sudo apt-get update
 sudo apt-get install irods-icommands</code></pre>
           <p>
-            To configure iCommands connection, first
-            <a href="{% url 'irodsinfo:config' %}">download the configuration files</a>.
-            The archive contains the <code>irods_environment.json</code>
-            configuration pre-configured with user and server details, as well as
-            the iRODS server certificate.
+            To configure your iCommands connection,
+            <a href="{% url 'irodsinfo:config' %}">download this configuration file archive</a>.
+            This archive contains the <code>irods_environment.json</code>
+            file pre-configured for your user account. A server certificate
+            file for secure connections is also included.
           </p>
           <p>
-            Enter the directory where you saved the downloaded configuration file
-            and enter the following commands:
+            Enter the directory where you saved the downloaded archive and enter
+            the following commands:
           </p>
           <pre class="m-3 p-2 bg-light"><code>mkdir -p ~/.irods
 unzip irods_config.zip -d ~/.irods

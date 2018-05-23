@@ -575,8 +575,8 @@ pre {
 }
 
 /* Navbar (width) */
-/* Note: 767px is where navbar-expand-md is triggered in Bootstrap 4 */
-@media screen and (max-width: 767px) {
+/* Note: 1200px is where navbar-expand-lg is triggered in Bootstrap 4 */
+@media screen and (max-width: 1200px) {
   .omics-navbar-user-dropdown {
     display: none;
   }
@@ -636,7 +636,7 @@ pre {
 }
 
 /* Navbar site app links */
-@media screen and (min-width: 767px) {
+@media screen and (min-width: 1200px) {
   /* Notch visualizaton for top bar */
   .omics-navbar-siteapp-item {
     text-align: center;
