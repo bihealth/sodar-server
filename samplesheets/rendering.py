@@ -225,8 +225,8 @@ class SampleSheetTableBuilder:
         if self._first_row:
             self._col_values.append(col_value)
 
-        else:
-            self._col_values[self._col_idx] = col_value
+        elif col_value == 1 and self._col_values[self._col_idx] == 0:
+            self._col_values[self._col_idx] = 1
 
         self._col_idx += 1
 
