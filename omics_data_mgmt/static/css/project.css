@@ -322,6 +322,7 @@ table.omics-irods-obj-table thead tr th:nth-child(2) {
 
 table.omics-irods-obj-table tbody tr td:nth-child(2) {
   text-align: right;
+  white-space: nowrap;
 }
 
 /* Date column */
