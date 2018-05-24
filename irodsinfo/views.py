@@ -3,7 +3,6 @@ import json
 import zipfile
 
 from django.conf import settings
-from django.contrib.staticfiles.storage import staticfiles_storage
 from django.http import HttpResponse
 from django.views.generic import TemplateView, View
 

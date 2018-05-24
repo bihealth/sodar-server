@@ -62,7 +62,7 @@ class ProjectAccessMixin:
     """Mixin for providing access to a Project object from request kwargs"""
 
     @classmethod
-    def _get_project(cls, kwargs, request):
+    def _get_project(cls, request, kwargs):
         # "project" kwarg is a special case
         if 'project' in kwargs:
             try:
@@ -106,7 +106,7 @@ class ProjectAccessMixin:
 class ProjectPermissionMixin(PermissionRequiredMixin, ProjectAccessMixin):
     """Mixin for providing a Project object for permission checking"""
     def get_permission_object(self):
-        return self._get_project(self.kwargs, self.request)
+        return self._get_project(self.request, self.kwargs)
 
 
 class LoggedInPermissionMixin(PermissionRequiredMixin):
@@ -153,7 +153,7 @@ class RolePermissionMixin(LoggedInPermissionMixin, ProjectAccessMixin):
 
     def get_permission_object(self):
         """Override get_permission_object for checking Project permission"""
-        return self._get_project(self.kwargs, self.request)
+        return self._get_project(self.request, self.kwargs)
 
 
 class HTTPRefererMixin:
@@ -186,7 +186,7 @@ class ProjectContextMixin(HTTPRefererMixin, ContextMixin, ProjectAccessMixin):
             context['project'] = self.object.project
 
         else:
-            context['project'] = self._get_project(self.kwargs, self.request)
+            context['project'] = self._get_project(self.request, self.kwargs)
 
         # Plugins stuff
         plugins = ProjectAppPluginPoint.get_plugins()
@@ -637,7 +637,7 @@ class RoleAssignmentModifyMixin(ModelFormMixin):
             *args, **kwargs)
 
         change_type = self.request.resolver_match.url_name.split('_')[1]
-        project = self._get_project(self.kwargs, self.request)
+        project = self._get_project(self.request, self.kwargs)
 
         if change_type != 'delete':
             context['preview_subject'] = get_role_change_subject(
@@ -1426,7 +1426,7 @@ class ProjectInviteResendView(
             return redirect(reverse(
                 'projectroles:invites',
                 kwargs={'project': self._get_project(
-                    self.kwargs, self.request)}))
+                    self.request, self.kwargs)}))
 
         # Reset invite expiration date
         invite.date_expire = get_expiry_date()
@@ -1450,7 +1450,7 @@ class ProjectInviteRevokeView(
     def get_context_data(self, *args, **kwargs):
         context = super(ProjectInviteRevokeView, self).get_context_data(
             *args, **kwargs)
-        context['project'] = self._get_project(self.kwargs, self.request)
+        context['project'] = self._get_project(self.request, self.kwargs)
 
         if 'projectinvite' in self.kwargs:
             try:
@@ -1466,7 +1466,7 @@ class ProjectInviteRevokeView(
         """Override post() to handle POST from confirmation template"""
         timeline = get_backend_api('timeline_backend')
         invite = None
-        project = self._get_project(self.kwargs, self.request)
+        project = self._get_project(self.request, self.kwargs)
 
         try:
             invite = ProjectInvite.objects.get(

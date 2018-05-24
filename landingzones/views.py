@@ -18,7 +18,7 @@ from projectroles.plugins import get_backend_api
 
 # Samplesheets dependency
 from samplesheets.io import get_assay_dirs
-from samplesheets.models import Investigation, Assay
+from samplesheets.models import Assay
 from samplesheets.views import InvestigationContextMixin
 
 from .forms import LandingZoneForm
@@ -43,17 +43,6 @@ class ProjectZoneView(
         context = super(ProjectZoneView, self).get_context_data(
             *args, **kwargs)
 
-        # Assay context (optional)
-        assay = None
-
-        if 'assay' in self.kwargs:
-            try:
-                assay = Assay.objects.get(omics_uuid=self.kwargs['assay'])
-                context['assay'] = assay
-
-            except Assay.DoesNotExist:
-                pass
-
         # Add flag for taskflow
         context['taskflow_enabled'] = True if \
             get_backend_api('taskflow') else False
@@ -70,28 +59,16 @@ class ProjectZoneView(
         if settings.IRODS_WEBDAV_ENABLED:
             context['irods_webdav_url'] = settings.IRODS_WEBDAV_URL.rstrip('/')
 
-        def get_zone_query(user=None, assay=None):
-            zone_query = {
-                'project': context['project']}
-
-            if user:
-                zone_query['user'] = self.request.user
-
-            if assay:
-                zone_query['assay'] = assay
-
-            return zone_query
-
         # User zones
-        context['zones_own'] = LandingZone.objects.filter(**get_zone_query(
-            user=self.request.user, assay=assay)).order_by('-pk')
+        context['zones_own'] = LandingZone.objects.filter(
+            project=context['project'], user=self.request.user).order_by('-pk')
 
         # Other zones
         # TODO: Add individual zone perm check if/when we implement issue #57
         if self.request.user.has_perm(
                 'landingzones.view_zones_all', context['project']):
             context['zones_other'] = LandingZone.objects.filter(
-                **get_zone_query(user=None, assay=assay)).exclude(
+                project=context['project']).exclude(
                 user=self.request.user).exclude(status='MOVED').order_by('-pk')
 
         # Status query interval

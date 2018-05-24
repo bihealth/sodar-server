@@ -166,13 +166,13 @@ class SampleSheetImportView(
 
         if 'project' in self.kwargs:
             kwargs.update({'project': self._get_project(
-                self.kwargs, self.request).omics_uuid})
+                self.request, self.kwargs).omics_uuid})
 
         return kwargs
 
     def form_valid(self, form):
         timeline = get_backend_api('timeline_backend')
-        project = self._get_project(self.kwargs, self.request)
+        project = self._get_project(self.request, self.kwargs)
 
         try:
             self.object = form.save()
@@ -240,7 +240,7 @@ class SampleSheetTableExportView(
         redirect_url = reverse(
             'samplesheets:project_sheets',
             kwargs={'project': self._get_project(
-                self.kwargs, self.request).omics_uuid})
+                self.request, self.kwargs).omics_uuid})
 
         if not study:
             messages.error(

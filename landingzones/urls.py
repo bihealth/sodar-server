@@ -11,11 +11,6 @@ urlpatterns = [
         view=views.ProjectZoneView.as_view(),
         name='list',
     ),
-    # url(
-    #     regex=r'^assay/(?P<assay>[0-9a-f-]+)$',     # TODO: TBD: Is this needed?
-    #     view=views.ProjectZoneView.as_view(),
-    #     name='list',
-    # ),
     url(
         regex=r'^create/(?P<project>[0-9a-f-]+)$',
         view=views.ZoneCreateView.as_view(),
@@ -64,19 +59,3 @@ urlpatterns = [
         name='taskflow_zone_delete',
     ),
 ]
-
-'''            
-
-    # Taskflow API views
-    url(
-        regex=r'^taskflow/zone/delete$',
-        view=views.ZoneDeleteAPIView.as_view(),
-        name='taskflow_zone_delete',
-    ),
-    url(
-        regex=r'^taskflow/status/get$',
-        view=views.ZoneStatusGetAPIView.as_view(),
-        name='taskflow_zone_status_get',
-    ),
-]
-'''

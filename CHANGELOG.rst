@@ -69,6 +69,7 @@ Changed
     - Integrate ``TaskflowMixin`` into ``TestTaskflowBase``
     - Improve project list layout (#171)
     - Move iRODS info page into the irodsinfo app (#183)
+    - Modify signature of ``_get_project()`` in ``ProjectAccessMixin``
 - **Samplesheets**
     - Rename top header "legend" to "value" (#129)
     - Allow sample sheet upload for project contributor (#137)

@@ -8,7 +8,7 @@ from django.urls import reverse
 # Projectroles dependency
 from projectroles.plugins import get_backend_api
 
-from ..models import Investigation, Study, Assay, GenericMaterial, \
+from ..models import Investigation, GenericMaterial, \
     GENERIC_MATERIAL_TYPES
 
 
