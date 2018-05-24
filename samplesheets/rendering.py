@@ -164,12 +164,14 @@ class SampleSheetTableBuilder:
         self._field_header = []
         self._table_data = []
         self._first_row = True
+        self._col_values = []
+        self._col_idx = 0
 
     @classmethod
     def _get_ontology_link(cls, ontology_name, accession):
         """
         Build ontology link.
-        :param name: Ontology name
+        :param ontology_name: Ontology name
         :param accession: Ontology accession URL
         :return: String
         """
@@ -216,6 +218,17 @@ class SampleSheetTableBuilder:
             'tooltip': tooltip,
             'attrs': attrs,
             'classes': classes})
+
+        # Store value for detecting unfilled columns
+        col_value = 0 if not value else 1
+
+        if self._first_row:
+            self._col_values.append(col_value)
+
+        else:
+            self._col_values[self._col_idx] = col_value
+
+        self._col_idx += 1
 
     def _add_repetition(self, colspan, study_data_in_assay=False):
         """Append repetition columns"""
@@ -371,6 +384,7 @@ class SampleSheetTableBuilder:
         self._table_data.append(self._row)
         self._row = []
         self._first_row = False
+        self._col_idx = 0
 
     def _build_table(self, table_refs, node_lookup, sample_pos, table_parent):
         """
@@ -386,6 +400,8 @@ class SampleSheetTableBuilder:
         self._field_header = []
         self._table_data = []
         self._first_row = True
+        self._col_values = []
+        self._col_idx = 0
 
         # Add row column headers
         self._add_top_header('TABLE_ROW', 1)
@@ -413,7 +429,8 @@ class SampleSheetTableBuilder:
         return {
             'top_header': self._top_header,
             'field_header': self._field_header,
-            'table_data': self._table_data}
+            'table_data': self._table_data,
+            'col_values': self._col_values}
 
     def build_study(self, study):
         """

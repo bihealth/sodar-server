@@ -14,18 +14,16 @@
   <thead>
     {# Top header #}
     <tr>
-      {% for section in table.top_header %}
-        {% autoescape off %}
-          {% render_top_header section %}
-        {% endautoescape %}
-      {% endfor %}
+      {% autoescape off %}
+        {% render_top_headers table.top_header table.col_values %}
+      {% endautoescape %}
       <th class="bg-white omics-ss-top-header omics-ss-data-links-header omics-ss-data-cell-links">&nbsp;</th>
     </tr>
     {# Field header #}
     <tr class="omics-ss-header-row">
-      {% for header in table.field_header %}
-        <th class="{{ header.classes|join:' ' }}">{{ header.value }}</th>
-      {% endfor %}
+      {% autoescape off %}
+        {% render_field_headers table.field_header table.col_values %}
+      {% endautoescape %}
       <th class="bg-white omics-ss-data-links-header">Links</th>
     </tr>
   </thead>
@@ -35,11 +33,9 @@
       {% get_row_id as row_id %}
       {% get_irods_path parent as irods_path %}
       <tr id="omics-ss-data-row-{{ row_id }}">
-        {% for cell in row %}
-          {% autoescape off %}
-            {% render_cell cell %}
-          {% endautoescape %}
-        {% endfor %}
+        {% autoescape off %}
+          {% render_cells row table.col_values %}
+        {% endautoescape %}
         <td class="bg-light omics-ss-data-cell-links">
           {# TODO: Refactor this #}
           {% if irods_backend %}

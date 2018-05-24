@@ -76,6 +76,7 @@ Changed
     - In taskflow operations, use ``omics_uuid`` instead of ``pk`` (#99)
     - Refactor table HTML rendering
     - Improve URLs for ontology linking (#170)
+    - Hide columns with no data (#184)
 - **Taskflowbackend**
     - Use ``omics_uuid`` instead of ``pk`` (#139)
     - Only set up ``PROJECT`` type projects in ``synctaskflow``

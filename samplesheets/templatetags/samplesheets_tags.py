@@ -156,20 +156,54 @@ def get_irods_tree(investigation):
 
 
 @register.simple_tag
-def render_top_header(section):
+def render_top_headers(top_header, col_values):
     """
-    Render section of top header
-    :param section: Header section (dict)
+    Render the top header row
+    :param top_header: Top header row (list)
+    :param col_values: True/False values for column data (list)
     :return: String (contains HTML)
     """
-    return '<th class="bg-{} text-nowrap text-white omics-ss-top-header" ' \
-           'colspan="{}" original-colspan="{}" {}>{}</th>\n'.format(
-            section['colour'],
-            section['colspan'],     # Actual colspan
-            section['colspan'],     # Original colspan
-            ''.join(['{}-cols="{}" '.format(k, v) for
-                     k, v in section['hiding'].items()]),
-            section['value'])
+    ret = ''
+    col_idx = 0     # Index in original (non-hidden) columns
+
+    for section in top_header:
+        final_colspan = sum(col_values[col_idx:col_idx + section['colspan']])
+
+        if final_colspan > 0:
+            ret += '<th class="bg-{} text-nowrap text-white ' \
+                   'omics-ss-top-header" colspan="{}" original-colspan="{}" ' \
+                   '{}>{}</th>\n'.format(
+                    section['colour'],
+                    final_colspan,     # Actual colspan
+                    final_colspan,     # Original colspan
+                    ''.join(['{}-cols="{}" '.format(k, v) for
+                             k, v in section['hiding'].items()]),
+                    section['value'])
+
+        col_idx += section['colspan']
+
+    return ret
+
+
+@register.simple_tag
+def render_field_headers(field_header, col_values):
+    """
+    Render field header row for a table
+    :param field_header: Field header row (list)
+    :param col_values: True/False values for column data (list)
+    :return: String (contains HTML)
+    """
+    ret = ''
+
+    # Iterate through header row, render only if there is data in column
+    for i in range(0, len(field_header)):
+        header = field_header[i]
+
+        if col_values[i]:
+            ret += '<th class="{}">{}</th>\n'.format(
+                ' '.join(header['classes']), header['value'])
+
+    return ret
 
 
 @register.simple_tag
@@ -183,18 +217,14 @@ def get_row_id():
 
 
 @register.simple_tag
-def render_cell(cell):
+def render_cells(row, col_values):
     """
-    Return data table cell as HTML
-    :param cell: Cell dict
+    Render cells of a table row
+    :param row: Row of cells (list)
+    :param col_values: True/False values for column data (list)
     :return: String (contains HTML)
     """
-    td_class_str = ' '.join(cell['classes'])
-
-    # If repeating cell, return that
-    if cell['repeat']:
-        return '<td class="bg-light text-muted text-center {}">' \
-               '"</td>\n'.format(td_class_str)
+    ret = ''
 
     # Right aligning
     def is_num(x):
@@ -205,40 +235,47 @@ def render_cell(cell):
         except ValueError:
             return False
 
-    if cell['value'] and is_num(cell['value']):
-        td_class_str += ' text-right'
+    # Iterate through row, render only if there is data in column
+    for i in range(0, len(row)):
+        cell = row[i]
 
-    # Build <td>
-    ret = '<td '
+        if col_values[i]:
+            td_class_str = ' '.join(cell['classes'])
 
-    # Add extra attrs if present
-    if cell['attrs']:
-        for k, v in cell['attrs'].items():
-            ret += '{}="{}" '.format(k, v)
+            ret += '<td '
 
-    if cell['tooltip']:
-        ret += 'class="{}" title="{}" data-toggle="tooltip" ' \
-               'data-placement="top">'.format(td_class_str, cell['tooltip'])
+            if cell['value'] and is_num(cell['value']):
+                td_class_str += 'text-right'
 
-    else:
-        ret += 'class="{}">'.format(td_class_str)
+            # Add extra attrs if present
+            if cell['attrs']:
+                for k, v in cell['attrs'].items():
+                    ret += '{}="{}" '.format(k, v)
 
-    if cell['value']:
-        if cell['link']:
-            ret += '<a href="{}" target="_blank">{}</a>'.format(
-                cell['link'], cell['value'])
+            if cell['tooltip']:
+                ret += 'class="{}" title="{}" data-toggle="tooltip" ' \
+                       'data-placement="top">'.format(
+                        td_class_str, cell['tooltip'])
 
-        else:
-            ret += cell['value']
+            else:
+                ret += 'class="{}">'.format(td_class_str)
 
-        if cell['unit']:
-            ret += '&nbsp;<span class=" text-muted">{}</span>'.format(
-                cell['unit'])
+            if cell['value']:
+                if cell['link']:
+                    ret += '<a href="{}" target="_blank">{}</a>'.format(
+                        cell['link'], cell['value'])
 
-    else:   # Empty value
-        ret += EMPTY_VALUE
+                else:
+                    ret += cell['value']
 
-    ret += '</td>\n'
+                if cell['unit']:
+                    ret += '&nbsp;<span class=" text-muted">{}</span>'.format(
+                        cell['unit'])
+
+            else:  # Empty value
+                ret += EMPTY_VALUE
+
+            ret += '</td>\n'
     return ret
 
 
