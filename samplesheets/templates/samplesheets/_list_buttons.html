@@ -29,7 +29,7 @@
     {% endif %}
     {% endcomment %}
 
-    {% if investigation and not investigation.irods_status and can_create_dirs %}
+    {% if investigation and not investigation.irods_status and can_create_dirs and not render_error %}
       <a class="dropdown-item" href="{% url 'samplesheets:dirs' project=project.omics_uuid %}">
         <i class="fa fa-fw fa-database"></i> Create iRODS Directories
       </a>

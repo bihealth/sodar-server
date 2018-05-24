@@ -39,6 +39,7 @@ Added
     - Add ``SampleSheetTaskflowMixin`` for Taskflow test helpers
     - Row numbers for sample sheet tables (#155)
     - Tour help (#145)
+    - Row limit to prevent import and rendering of huge data (#192)
 - **Taskflowbackend**
     - Add taskflowbackend app (#139)
     - Add optional ``omics_url`` kwarg to ``submit()``
@@ -78,6 +79,7 @@ Changed
     - Refactor table HTML rendering
     - Improve URLs for ontology linking (#170)
     - Hide columns with no data (#184)
+    - Do not allow creating iRODS dirs if rendering fails (#192)
 - **Taskflowbackend**
     - Use ``omics_uuid`` instead of ``pk`` (#139)
     - Only set up ``PROJECT`` type projects in ``synctaskflow``

@@ -459,6 +459,17 @@ class SampleSheetTableBuilder:
         tb = RefTableBuilder(nodes, arcs)
         all_refs = tb.run()  # All rows within a study
 
+        # Ensure the study does not exceed project limitations
+        # TODO: Get limit from project settings
+        # TODO: Define a RenderingException
+        # TODO: Test rendering already during import and reject if invalid
+        row_limit = 2500
+
+        if len(all_refs) > row_limit:
+            raise Exception(
+                'Row limit reached ({}), unable to render study'.format(
+                    len(all_refs)))
+
         sample_pos = [
             i for i, col in enumerate(all_refs[0]) if
             '-sample-' in col][0]
