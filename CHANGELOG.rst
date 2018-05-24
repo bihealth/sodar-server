@@ -102,6 +102,7 @@ Fixed
     - Correctly use ``request.session.real_referer`` for back/cancel links (#175)
     - Error rendering sheet tables caused app to crash (#182)
     - Building a redirect URL in export view caused a crash
+    - Prevent double importing of Investigation (#189)
 - **Timeline**
     - Fix event id parameter in Taskflow view
 

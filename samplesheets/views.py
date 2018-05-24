@@ -174,6 +174,20 @@ class SampleSheetImportView(
         timeline = get_backend_api('timeline_backend')
         project = self._get_project(self.request, self.kwargs)
 
+        redirect_url = reverse(
+            'samplesheets:project_sheets',
+            kwargs={'project': project.omics_uuid})
+
+        # Additional check in case the user uses the browser back button (#189)
+        try:
+            Investigation.objects.get(project=project)
+            messages.error(
+                self.request, 'Investigation for project already exists')
+            return redirect(redirect_url)
+
+        except Investigation.DoesNotExist:
+            pass    # This is fine
+
         try:
             self.object = form.save()
 
@@ -204,9 +218,7 @@ class SampleSheetImportView(
 
             messages.error(self.request, str(ex))
 
-        return redirect(reverse(
-            'samplesheets:project_sheets',
-            kwargs={'project': project.omics_uuid}))
+        return redirect(redirect_url)
 
 
 class SampleSheetTableExportView(
