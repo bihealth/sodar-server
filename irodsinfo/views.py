@@ -79,10 +79,13 @@ class IrodsConfigView(LoggedInPermissionMixin, HTTPRefererMixin, View):
         zip_file.writestr(
             'irods_environment.json', env_json)
 
-        # Write cert file
-        with open(settings.IRODS_CERT_PATH) as cert_file:
-            zip_file.writestr(
-                cert_file_name, cert_file.read())
+        # Write cert file if it exists
+        try:
+            with open(settings.IRODS_CERT_PATH) as cert_file:
+                zip_file.writestr(cert_file_name, cert_file.read())
+
+        except FileNotFoundError as ex:
+            pass
 
         zip_file.close()
 
