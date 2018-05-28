@@ -38,6 +38,11 @@ urlpatterns = [
         name='status',
     ),
     url(
+        regex=r'^statistics/(?P<landingzone>[0-9a-f-]+)$',
+        view=views.LandingZoneStatisticsGetAPIView.as_view(),
+        name='statistics',
+    ),
+    url(
         regex=r'^irods/list/(?P<landingzone>[0-9a-f-]+)$',
         view=views.LandingZoneObjectListAPIView.as_view(),
         name='irods_list',

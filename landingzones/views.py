@@ -515,6 +515,35 @@ class LandingZoneStatusGetAPIView(
 
     def get(self, *args, **kwargs):
         zone_uuid = self.kwargs['landingzone']
+
+        try:
+            zone = LandingZone.objects.get(
+                omics_uuid=zone_uuid)
+
+        except LandingZone.DoesNotExist:
+            return Response('LandingZone not found', status=404)
+
+        perm = 'view_zones_own' if \
+            zone.user == self.request.user else 'view_zones_all'
+
+        if self.request.user.has_perm(
+                'landingzones.{}'.format(perm), zone.project):
+
+            ret_data = {
+                'status': zone.status,
+                'status_info': zone.status_info}
+
+            return Response(ret_data, status=200)
+
+        return Response('Not authorized', status=403)
+
+
+class LandingZoneStatisticsGetAPIView(
+        LoginRequiredMixin, ProjectContextMixin, APIView):
+    """View for returning landing zone statistics for the UI"""
+
+    def get(self, *args, **kwargs):
+        zone_uuid = self.kwargs['landingzone']
         irods_backend = get_backend_api('omics_irods')
 
         try:
@@ -533,20 +562,13 @@ class LandingZoneStatusGetAPIView(
             try:
                 stats = irods_backend.get_object_stats(
                     irods_backend.get_path(zone))
-                file_count = stats['file_count']
-                total_size = stats['total_size']
+                ret_data = {
+                    'file_count': stats['file_count'],
+                    'total_size': stats['total_size']}
+                return Response(ret_data, status=200)
 
             except FileNotFoundError:
-                file_count = 0
-                total_size = 0
-
-            ret_data = {
-                'status': zone.status,
-                'status_info': zone.status_info,
-                'file_count': file_count,
-                'total_size': total_size}
-
-            return Response(ret_data, status=200)
+                return Response('Not found', status=404)
 
         return Response('Not authorized', status=403)
 

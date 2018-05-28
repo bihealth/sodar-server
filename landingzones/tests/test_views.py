@@ -133,7 +133,8 @@ class TestLandingZoneCreateView(TestViewsBase):
             self.assertIsNotNone(form.fields['description'])
 
 
-class TestLandingStoneSatusGetAPIView(TestViewsBase):
+# TODO: Test with taskflow instead
+class TestLandingStoneStatusGetAPIView(TestViewsBase):
     """Tests for the landing zone status getting API view"""
 
     def test_get(self):
@@ -147,7 +148,20 @@ class TestLandingStoneSatusGetAPIView(TestViewsBase):
 
             expected = {
                 'status': self.landing_zone.status,
-                'status_info': self.landing_zone.status_info,
-                'file_count': 0,
-                'total_size': 0}
+                'status_info': self.landing_zone.status_info}
             self.assertEquals(response.data, expected)
+
+
+# TODO: Test with taskflow instead
+class TestLandingStoneStatisticsGetAPIView(TestViewsBase):
+    """Tests for the landing zone file statistics API view"""
+
+    def test_get_not_created(self):
+        """Test GET request for getting a landing zone's file statistics with
+        nothing added in iRODS"""
+        with self.login(self.user):
+            response = self.client.get(reverse(
+                'landingzones:statistics',
+                kwargs={'landingzone': self.landing_zone.omics_uuid}))
+
+            self.assertEqual(response.status_code, 404)

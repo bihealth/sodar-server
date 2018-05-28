@@ -156,8 +156,9 @@
                     dataType: 'json'
                 }).done(function (data) {
                     // console.log(trId + ': ' + data['status']);  // DEBUG
-                    zoneTr = $('#' + trId);
-                    statusTd = zoneTr.find('td#omics-lz-zone-status-' + zoneUuid);
+                    var zoneTr = $('#' + trId);
+                    var statusTd = zoneTr.find('td#omics-lz-zone-status-' + zoneUuid);
+                    var statusInfoSpan = zoneTr.find('span#omics-lz-zone-status-info-' + zoneUuid);
 
                     // TODO: Should somehow get these from STATUS_STYLES instead
                     var statusStyles = {
@@ -172,27 +173,14 @@
                     };
 
                     if (statusTd.text() !== data['status'] ||
-                            zoneTr.find('td.omics-lz-zone-status-info').text() !== data['status_info']) {
-                        zoneTr.find('td.omics-lz-zone-status-info').text(data['status_info']);
+                            statusInfoSpan.text() !== data['status_info']) {
                         statusTd.text(data['status']);
                         statusTd.removeClass();
                         statusTd.addClass(statusStyles[data['status']] + ' text-white');
+                        statusInfoSpan.text(data['status_info']);
 
-                        // Status info modification
-                        if (data['status'] !== 'NOT CREATED' && data['status'] !== 'CREATING' && data['status'] !== 'MOVED') {
-                            var fileSuffix = 's';
-
-                            if (data['file_count'] === 1) {
-                                fileSuffix = '';
-                            }
-
-                        zoneTr.find('td.omics-lz-zone-status-info').append(
-                            '<br /><span class="badge badge-info">' + data['file_count'] +
-                            ' data file' + fileSuffix +
-                            ' ('+ humanFileSize(data['total_size'], true) + ')</span>');
-                        }
-
-                        else if (data['status'] === 'MOVED') {
+                        if (data['status'] === 'MOVED') {
+                            zoneTr.find('p#omics-lz-zone-stats-container-' + zoneUuid).hide();
                             zoneTr.find('td.omics-lz-zone-status-info').append(
                                 '<br /><a href="' + sampleUrl + '"><i class="fa fa-arrow-circle-right"></i> ' +
                                 'Browse files in sample sheet</a>');
@@ -249,6 +237,37 @@
         });
     };
 
+    /***************************************
+     Zone file statistics updating function
+     ***************************************/
+    var updateZoneFileStats = function() {
+        $('.omics-lz-zone-tr-existing').each(function () {
+            var zoneTr = $(this);
+            var zoneUuid = $(this).attr('zone-uuid');
+            var statusText = zoneTr.find('td#omics-lz-zone-status-' + zoneUuid).text();
+            var statusOmit = ['NOT CREATED', 'CREATING', 'MOVED'];
+
+            if (statusOmit.indexOf(statusText) === -1) {
+                $.ajax({
+                    url: $(this).attr('file-stats-url'),
+                    method: 'GET',
+                    dataType: 'json'
+                }).done(function (data) {
+                    var statsSpan = zoneTr.find('span#omics-lz-zone-stats-' + zoneUuid);
+                    var fileSuffix = 's';
+
+                    if (data['file_count'] === 1) {
+                        fileSuffix = '';
+                    }
+
+                    statsSpan.text(
+                         + data['file_count'] + ' data file' + fileSuffix +
+                        ' ('+ humanFileSize(data['total_size'], true) + ')');
+                });
+            }
+        });
+    };
+
     $(document).ready(function() {
         /******************
          Update zone status
@@ -257,8 +276,18 @@
         var statusInterval = {{ zone_status_interval }} * 1000;
 
         // Poll and update active zones
-        var interval = setInterval(function () {
+        setInterval(function () {
             updateZoneStatus();
+        }, statusInterval);
+
+        /************************
+         * Update zone file stats
+         ************************/
+        updateZoneFileStats();
+
+        // Poll and update active zones
+        setInterval(function () {
+            updateZoneFileStats();
         }, statusInterval);
 
         /***************

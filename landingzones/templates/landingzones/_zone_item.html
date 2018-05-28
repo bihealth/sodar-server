@@ -12,7 +12,8 @@
     id="{{ zone.omics_uuid }}"
     zone-uuid="{{ zone.omics_uuid }}"
     sample-url="{% get_zone_samples_url zone %}"
-    status-url="{% url 'landingzones:status' landingzone=zone.omics_uuid %}">
+    status-url="{% url 'landingzones:status' landingzone=zone.omics_uuid %}"
+    file-stats-url="{% url 'landingzones:statistics' landingzone=zone.omics_uuid %}">
   {% if details_card_mode %}
     <td><a href="{% url 'landingzones:list' project=project.omics_uuid %}#{{ zone.omics_uuid }}">{{ zone.title }}</a></td>
   {% else %}
@@ -22,23 +23,31 @@
           {% get_user_html zone.user %} /
         {% endautoescape %}
       {% endif %}
-      {{ zone.title }}
-      {% if zone.description %}
-        <a class="omics-ss-assay-info-link" tabindex="0" data-toggle="popover"
-           data-trigger="focus" data-placement="top" data-html="true"
-           data-content="{% get_zone_desc_html zone %}">
-          <i class="fa fa-info-circle text-info"></i>
-        </a>
+      <span class="text-nowrap">
+        {{ zone.title }}
+        {% if zone.description %}
+          <a class="omics-ss-assay-info-link" tabindex="0" data-toggle="popover"
+             data-trigger="focus" data-placement="top" data-html="true"
+             data-content="{% get_zone_desc_html zone %}">
+            <i class="fa fa-info-circle text-info"></i>
+          </a>
+        </span>
       {% endif %}
     </td>
   {% endif %}
   <td class="omics-lz-zone-assay">{{ zone.assay.get_display_name }}</td>
   <td class="omics-lz-zone-status-info">
-      {{ zone.status_info }}
+      <span id="omics-lz-zone-status-info-{{ zone.omics_uuid }}">
+        {{ zone.status_info }}
+      </span>
       {% if zone.status == 'MOVED' %}
-        <br /><a href="{% get_zone_samples_url zone %}"><i class="fa fa-arrow-circle-right"></i> Browse files in sample sheets</a>
+        <p class="mb-0">
+          <a href="{% get_zone_samples_url zone %}"><i class="fa fa-arrow-circle-right"></i> Browse files in sample sheets</a>
+        </p>
       {% elif irods_backend and zone.status != 'NOT CREATED' and zone.status != 'CREATING' %}
-        <br /><span class="badge badge-info"><i class="fa fa-spin fa-circle-o-notch"></i> Updating stats..</span>
+        <p class="mb-0" id="omics-lz-zone-stats-container-{{ zone.omics_uuid }}">
+          <span class="badge badge-info" id="omics-lz-zone-stats-{{ zone.omics_uuid }}"><i class="fa fa-spin fa-circle-o-notch"></i> Updating stats..</span>
+        </p>
       {% endif %}
   </td>
   <td id="omics-lz-zone-status-{{ zone.omics_uuid }}"
