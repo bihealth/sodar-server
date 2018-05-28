@@ -515,6 +515,7 @@ class LandingZoneStatusGetAPIView(
 
     def get(self, *args, **kwargs):
         zone_uuid = self.kwargs['landingzone']
+        irods_backend = get_backend_api('omics_irods')
 
         try:
             zone = LandingZone.objects.get(
@@ -528,9 +529,22 @@ class LandingZoneStatusGetAPIView(
 
         if self.request.user.has_perm(
                 'landingzones.{}'.format(perm), zone.project):
+
+            try:
+                stats = irods_backend.get_object_stats(
+                    irods_backend.get_path(zone))
+                file_count = stats['file_count']
+                total_size = stats['total_size']
+
+            except FileNotFoundError:
+                file_count = 0
+                total_size = 0
+
             ret_data = {
                 'status': zone.status,
-                'status_info': zone.status_info}
+                'status_info': zone.status_info,
+                'file_count': file_count,
+                'total_size': total_size}
 
             return Response(ret_data, status=200)
 

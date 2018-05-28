@@ -178,6 +178,27 @@
                         statusTd.removeClass();
                         statusTd.addClass(statusStyles[data['status']] + ' text-white');
 
+                        // Status info modification
+                        if (data['status'] !== 'NOT CREATED' && data['status'] !== 'CREATING' && data['status'] !== 'MOVED') {
+                            var fileSuffix = 's';
+
+                            if (data['file_count'] === 1) {
+                                fileSuffix = '';
+                            }
+
+                        zoneTr.find('td.omics-lz-zone-status-info').append(
+                            '<br /><span class="badge badge-info">' + data['file_count'] +
+                            ' data file' + fileSuffix +
+                            ' ('+ humanFileSize(data['total_size'], true) + ')</span>');
+                        }
+
+                        else if (data['status'] === 'MOVED') {
+                            zoneTr.find('td.omics-lz-zone-status-info').append(
+                                '<br /><a href="' + sampleUrl + '"><i class="fa fa-arrow-circle-right"></i> ' +
+                                'Browse files in sample sheet</a>');
+                        }
+
+                        // Button modification
                         if (data['status'] !== 'ACTIVE' && data['status'] !== 'FAILED') {
                             zoneTr.find('td.omics-lz-zone-title').addClass('text-muted');
                             zoneTr.find('td.omics-lz-zone-assay').addClass('text-muted');
@@ -196,12 +217,6 @@
                             });
 
                             zoneTr.find('.omics-edit-dropdown').addClass('disabled');
-
-                            if (data['status'] === 'MOVED') {
-                                zoneTr.find('td.omics-lz-zone-status-info').append(
-                                    '<br /><a href="' + sampleUrl + '"><i class="fa fa-arrow-circle-right"></i> ' +
-                                    'Browse files in sample sheet</a>');
-                            }
                         }
 
                         else {

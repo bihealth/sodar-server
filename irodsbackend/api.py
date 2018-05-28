@@ -67,6 +67,42 @@ class IrodsAPI:
         dt = dt.astimezone(timezone('Europe/Berlin'))
         return dt.strftime('%Y-%m-%d %H:%M')
 
+    @classmethod
+    def _get_obj_list(cls, coll, data=None, recurse=True):
+        """
+        Return a list of data objects within an iRODS collection
+        :param coll: iRODS collection path
+        :param data: Optional data to append to in case of recursion (dict)
+        :param recurse: Recurse subcollections if True (bool)
+        :return: Dict
+        """
+        if not data:
+            data = {'data_objects': []}
+
+        real_objects = [
+            o for o in coll.data_objects
+            if o.name.split('.')[-1].lower() != 'md5']
+
+        md5_available = [
+            '.'.join(o.path.split('.')[:-1]) for o in coll.data_objects
+            if o.name.split('.')[-1].lower() == 'md5' and o.size > 0]
+
+        for data_obj in real_objects:
+            data['data_objects'].append({
+                'name': data_obj.name,
+                'path': data_obj.path,
+                'size': data_obj.size,
+                'md5_file': True if
+                data_obj.path in md5_available else False,
+                'modify_time': cls._get_datetime(data_obj.modify_time)})
+
+        if recurse:
+            for sub_coll in coll.subcollections:
+                data = cls._get_obj_list(sub_coll, data)
+
+        return data
+
+
     ##########
     # Helpers
     ##########
@@ -204,38 +240,28 @@ class IrodsAPI:
         :return: Dict
         :raise: FileNotFoundError if collection is not found
         """
-
-        def get_obj_list(coll, data):
-            real_objects = [
-                o for o in coll.data_objects
-                if o.name.split('.')[-1].lower() != 'md5']
-
-            md5_available = [
-                '.'.join(o.path.split('.')[:-1]) for o in coll.data_objects
-                if o.name.split('.')[-1].lower() == 'md5' and o.size > 0]
-
-            for data_obj in real_objects:
-                data['data_objects'].append({
-                    'name': data_obj.name,
-                    'path': data_obj.path,
-                    'size': data_obj.size,
-                    'md5_file': True if
-                    data_obj.path in md5_available else False,
-                    'modify_time': self._get_datetime(data_obj.modify_time)})
-
-            for sub_coll in coll.subcollections:
-                data = get_obj_list(sub_coll, data)
-
-            return data
-
         try:
             coll = self.irods.collections.get(path)
 
         except CollectionDoesNotExist:
             raise FileNotFoundError('iRODS collection not found')
 
-        ret = {
-            'data_objects': []}
+        ret = self._get_obj_list(coll)
+        return ret
 
-        ret = get_obj_list(coll, ret)
+    def get_object_stats(self, path):
+        """
+        Return file count and total file size for all files within a path.
+        :param path: Full path to iRODS collection
+        :return: Dict
+        """
+        data = self.get_objects(path)
+        ret = {
+            'file_count': 0,
+            'total_size': 0}
+
+        for obj in data['data_objects']:
+            ret['file_count'] += 1
+            ret['total_size'] += obj['size']
+
         return ret

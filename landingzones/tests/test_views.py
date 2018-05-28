@@ -147,5 +147,7 @@ class TestLandingStoneSatusGetAPIView(TestViewsBase):
 
             expected = {
                 'status': self.landing_zone.status,
-                'status_info': self.landing_zone.status_info}
+                'status_info': self.landing_zone.status_info,
+                'file_count': 0,
+                'total_size': 0}
             self.assertEquals(response.data, expected)

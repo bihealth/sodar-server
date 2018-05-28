@@ -37,6 +37,8 @@
       {{ zone.status_info }}
       {% if zone.status == 'MOVED' %}
         <br /><a href="{% get_zone_samples_url zone %}"><i class="fa fa-arrow-circle-right"></i> Browse files in sample sheets</a>
+      {% elif irods_backend and zone.status != 'NOT CREATED' and zone.status != 'CREATING' %}
+        <br /><span class="badge badge-info"><i class="fa fa-spin fa-circle-o-notch"></i> Updating stats..</span>
       {% endif %}
   </td>
   <td id="omics-lz-zone-status-{{ zone.omics_uuid }}"
