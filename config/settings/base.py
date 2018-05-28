@@ -333,7 +333,7 @@ def set_logging(debug):
         'disable_existing_loggers': False,
         'formatters': {
             'simple': {
-                'format': '%(levelname)s | %(name)s: %(message)s'
+                'format': '%(asctime)s [%(levelname)s] %(name)s: %(message)s'
             }
         },
         'handlers': {
