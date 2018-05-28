@@ -102,6 +102,33 @@ class IrodsAPI:
 
         return data
 
+    @classmethod
+    def _get_obj_stats(cls, coll, data=None, recurse=True):
+        """
+        Return statistics for data objects within an iRODS collection
+        :param coll: iRODS collection path
+        :param data: Optional data to append to in case of recursion (dict)
+        :param recurse: Recurse subcollections if True (bool)
+        :return: Dict
+        """
+        if not data:
+            data = {
+                'file_count': 0,
+                'total_size': 0}
+
+        real_objects = [
+            o for o in coll.data_objects
+            if o.name.split('.')[-1].lower() != 'md5']
+
+        for data_obj in real_objects:
+            data['file_count'] += 1
+            data['total_size'] += data_obj.size
+
+        if recurse:
+            for sub_coll in coll.subcollections:
+                data = cls._get_obj_stats(sub_coll, data)
+
+        return data
 
     ##########
     # Helpers
@@ -249,19 +276,18 @@ class IrodsAPI:
         ret = self._get_obj_list(coll)
         return ret
 
+    @init_irods
     def get_object_stats(self, path):
         """
         Return file count and total file size for all files within a path.
         :param path: Full path to iRODS collection
         :return: Dict
         """
-        data = self.get_objects(path)
-        ret = {
-            'file_count': 0,
-            'total_size': 0}
+        try:
+            coll = self.irods.collections.get(path)
 
-        for obj in data['data_objects']:
-            ret['file_count'] += 1
-            ret['total_size'] += obj['size']
+        except CollectionDoesNotExist:
+            raise FileNotFoundError('iRODS collection not found')
 
+        ret = self._get_obj_stats(coll)
         return ret
