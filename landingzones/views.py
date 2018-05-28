@@ -546,6 +546,9 @@ class LandingZoneStatisticsGetAPIView(
         zone_uuid = self.kwargs['landingzone']
         irods_backend = get_backend_api('omics_irods')
 
+        if not irods_backend:
+            return Response('iRODS backend not enabled', status=500)
+
         try:
             zone = LandingZone.objects.get(
                 omics_uuid=zone_uuid)

@@ -1,6 +1,7 @@
 """Tests for views in the landingzones app"""
 
 from test_plus.test import TestCase
+from unittest import skipIf
 
 from django.conf import settings
 from django.core.urlresolvers import reverse
@@ -10,6 +11,7 @@ from django.test import RequestFactory
 # Projectroles dependency
 from projectroles.models import Role, OMICS_CONSTANTS
 from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
+from projectroles.plugins import get_backend_api, change_plugin_status
 
 # Samplesheets dependency
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
@@ -17,7 +19,6 @@ from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 from .. import views
 from ..models import LandingZone, DEFAULT_STATUS_INFO
 from .test_models import LandingZoneMixin, ZONE_TITLE, ZONE_DESC
-
 
 # Global constants
 PROJECT_ROLE_OWNER = OMICS_CONSTANTS['PROJECT_ROLE_OWNER']
@@ -31,6 +32,11 @@ PROJECT_TYPE_PROJECT = OMICS_CONSTANTS['PROJECT_TYPE_PROJECT']
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
 ZONE_STATUS = 'VALIDATING'
 ZONE_STATUS_INFO = 'Testing'
+
+
+IRODS_BACKEND_ENABLED = True if \
+    'omics_irods' in settings.ENABLED_BACKEND_PLUGINS else False
+IRODS_BACKEND_SKIP_MSG = 'iRODS backend not enabled in settings'
 
 
 class TestViewsBase(
@@ -133,7 +139,6 @@ class TestLandingZoneCreateView(TestViewsBase):
             self.assertIsNotNone(form.fields['description'])
 
 
-# TODO: Test with taskflow instead
 class TestLandingStoneStatusGetAPIView(TestViewsBase):
     """Tests for the landing zone status getting API view"""
 
@@ -152,13 +157,12 @@ class TestLandingStoneStatusGetAPIView(TestViewsBase):
             self.assertEquals(response.data, expected)
 
 
-# TODO: Test with taskflow instead
+@skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
 class TestLandingStoneStatisticsGetAPIView(TestViewsBase):
     """Tests for the landing zone file statistics API view"""
 
     def test_get_not_created(self):
-        """Test GET request for getting a landing zone's file statistics with
-        nothing added in iRODS"""
+        """Test GET request for landing zone file stats with no dirs in iRODS"""
         with self.login(self.user):
             response = self.client.get(reverse(
                 'landingzones:statistics',
