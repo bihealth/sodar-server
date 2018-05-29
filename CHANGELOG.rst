@@ -91,6 +91,7 @@ Fixed
 - **General**
     - Add missing email settings in production config (#149)
     - Add ``python3-distutils`` to Xenial requirements to fix failing tests caused by recent updates
+    - User links visible when logged out on low resolutions (#197)
 - **Filesfolders**
     - Broken link for subfolders with depth >1 (#136)
 - **Projectroles**
@@ -106,6 +107,7 @@ Fixed
     - Error rendering sheet tables caused app to crash (#182)
     - Building a redirect URL in export view caused a crash
     - Prevent double importing of Investigation (#189)
+    - Zip file upload failed on Windows browsers (#198)
 - **Timeline**
     - Fix event id parameter in Taskflow view
 

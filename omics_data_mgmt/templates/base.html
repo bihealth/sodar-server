@@ -127,17 +127,19 @@
                </li>
 
                 {# Hidden user menu options for responsive menu #}
-                <li class="nav-item omics-navbar-alt-item">
-                  <a class="nav-link"
-                     href="{{ request.user.get_absolute_url }}"
-                     id="omics-alt-navbar-link-user-details"><i class="fa fa-fw fa-user-circle-o"></i> User Profile</a>
-                </li>
+                {% if request.user.is_authenticated %}
+                  <li class="nav-item omics-navbar-alt-item">
+                    <a class="nav-link"
+                       href="{{ request.user.get_absolute_url }}"
+                       id="omics-alt-navbar-link-user-details"><i class="fa fa-fw fa-user-circle-o"></i> User Profile</a>
+                  </li>
 
-                <li class="nav-item omics-navbar-alt-item">
-                  <a class="nav-link text-danger"
-                     href="{% url 'account_logout' %}"
-                     id="omics-alt-nav-link-sign-out"><i class="fa fa-fw fa-sign-out"></i> Sign Out</a>
-                </li>
+                  <li class="nav-item omics-navbar-alt-item">
+                    <a class="nav-link text-danger"
+                       href="{% url 'account_logout' %}"
+                       id="omics-alt-nav-link-sign-out"><i class="fa fa-fw fa-sign-out"></i> Sign Out</a>
+                  </li>
+                {% endif %}
 
                 {# Normal user menu #}
                 <li class="nav-item omics-navbar-user-dropdown">
