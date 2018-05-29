@@ -81,7 +81,7 @@
 
 <div class="row omics-subtitle-container bg-white sticky-top">
   <h3><i class="fa fa-database"></i> Landing Zones</h3>
-  {% if can_add_zones %}
+  {% if investigation and can_add_zones %}
     {% include 'landingzones/_list_buttons.html' %}
   {% endif %}
 </div>
