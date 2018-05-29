@@ -80,6 +80,7 @@ Changed
     - Improve URLs for ontology linking (#170)
     - Hide columns with no data (#184)
     - Do not allow creating iRODS dirs if rendering fails (#192)
+    - Upgraded altamISA to commit ``ddf54e9ab9b47d2b5a7d54ce65ea8aa673375f87`` (#191)
 - **Taskflowbackend**
     - Use ``omics_uuid`` instead of ``pk`` (#139)
     - Only set up ``PROJECT`` type projects in ``synctaskflow``

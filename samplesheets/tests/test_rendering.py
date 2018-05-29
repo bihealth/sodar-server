@@ -13,7 +13,7 @@ from .test_io import SampleSheetIOMixin, SHEET_DIR
 
 
 # Local constants
-SHEET_PATH = SHEET_DIR + 'test_cancer_02.zip'
+SHEET_PATH = SHEET_DIR + 'i_small2.zip'
 
 
 class TestRenderingBase(

@@ -269,6 +269,7 @@ def import_isa(isa_zip, project):
         # Parse study file
         s = StudyReader.from_stream(
             isa_inv,
+            s_i,
             input_file=get_file(isa_zip, get_zip_path(inv_dir, s_i.info.path)),
             study_id=study_id).read()
 
@@ -330,9 +331,11 @@ def import_isa(isa_zip, project):
 
             a = AssayReader.from_stream(
                 isa_inv,
-                input_file=get_file(isa_zip, get_zip_path(inv_dir, a_i.path)),
+                s_i,
                 study_id=study_id,
-                assay_id=assay_id).read()
+                assay_id=assay_id,
+                input_file=get_file(
+                    isa_zip, get_zip_path(inv_dir, a_i.path))).read()
 
             values = {
                 'file_name': a_i.path,

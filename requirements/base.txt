@@ -74,7 +74,7 @@ mistune==0.7.4
 django-db-file-storage==0.5.2
 
 # CUBI AltamISA parser
--e git://github.com/bihealth/altamisa.git@00e98d93dddd2e4c4e81fb09e16bc25a0986e2ae#egg=altamisa
+-e git://github.com/bihealth/altamisa.git@ddf54e9ab9b47d2b5a7d54ce65ea8aa673375f87#egg=altamisa
 
 # Python iRODS client for irodsbackend
 python-irodsclient==0.8.0
