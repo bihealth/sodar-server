@@ -7,21 +7,17 @@ import time
 from .models import Assay, Process, GenericMaterial
 
 
-TOP_HEADER_COLOURS = {
+TOP_HEADER_MATERIAL_COLOURS = {
     'SOURCE': 'info',
     'SAMPLE': 'warning',
-    'PROCESS': 'danger',
     'MATERIAL': 'success',
-    'DATA': 'success',
-    'TABLE_ROW': 'secondary'}
+    'DATA': 'success'}
 
-TOP_HEADER_VALUES = {
+TOP_HEADER_MATERIAL_VALUES = {
     'SOURCE': 'Source',
     'SAMPLE': 'Sample',
-    'PROCESS': 'Process',
     'MATERIAL': 'Material',
-    'DATA': 'Data File',
-    'TABLE_ROW': 'Row'}
+    'DATA': 'Data File'}
 
 EMPTY_VALUE = '-'
 
@@ -180,11 +176,20 @@ class SampleSheetTableBuilder:
                 ontology_name=ontology_name,
                 accession=accession)
 
-    def _add_top_header(self, item_type, colspan, hiding={}):
+    def _add_top_header(self, obj, colspan, hiding={}):
         """Append columns to top header"""
+        if type(obj) == GenericMaterial:    # Material
+            colour = TOP_HEADER_MATERIAL_COLOURS[obj.item_type]
+            value = obj.material_type if obj.material_type else \
+                TOP_HEADER_MATERIAL_VALUES[obj.item_type]
+
+        else:   # Process
+            colour = 'danger'
+            value = 'Process'
+
         self._top_header.append({
-            'value': TOP_HEADER_VALUES[item_type],
-            'colour': TOP_HEADER_COLOURS[item_type],
+            'value': value,
+            'colour': colour,
             'colspan': colspan,
             'hiding': hiding})
 
@@ -307,6 +312,11 @@ class SampleSheetTableBuilder:
                     ['DATA', 'MATERIAL'] else list())           # Name
                 field_count += 1
 
+                if (obj.material_type == 'Labeled Extract Name' and
+                        obj.extract_label):
+                    self._add_header('Label', hide_cls)         # Extract label
+                    field_count += 1
+
                 a_header_count = self._add_annotation_headers(
                     obj.characteristics, hide_cls)              # Character.
                 field_count += a_header_count
@@ -318,7 +328,11 @@ class SampleSheetTableBuilder:
                     field_count += a_header_count
                     hideable_count += a_header_count
 
-                top_header_type = obj.item_type
+                if obj.material_type:
+                    top_header_type = obj.material_type
+
+                else:
+                    top_header_type = obj.item_type
 
             # Process headers
             else:   # type(obj) == Process
@@ -343,7 +357,7 @@ class SampleSheetTableBuilder:
             hideable_count += a_header_count
 
             self._add_top_header(
-                top_header_type, field_count, hiding={
+                obj, field_count, hiding={
                     STUDY_HIDEABLE_CLASS: hideable_count if
                     study_data_in_assay else 0})
 
@@ -358,6 +372,10 @@ class SampleSheetTableBuilder:
             # TODO: Set material dir here (once we decide how to generate them)
 
             self._add_cell(obj.name, attrs=attrs)               # Name + attrs
+
+            if (obj.material_type == 'Labeled Extract Name' and
+                    obj.extract_label):
+                self._add_cell(obj.extract_label)               # Extract label
 
             self._add_annotations(
                 obj.characteristics, hide_cls)                  # Character.
@@ -405,7 +423,11 @@ class SampleSheetTableBuilder:
         self._col_idx = 0
 
         # Add row column headers
-        self._add_top_header('TABLE_ROW', 1)
+        self._top_header.append({
+            'value': 'Row',
+            'colour': 'secondary',
+            'colspan': 1,
+            'hiding': {}})
         self._add_header('#')
         row_id = 1
 

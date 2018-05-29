@@ -40,6 +40,7 @@ Added
     - Row numbers for sample sheet tables (#155)
     - Tour help (#145)
     - Row limit to prevent import and rendering of huge data (#192)
+    - Render extract label column
 - **Taskflowbackend**
     - Add taskflowbackend app (#139)
     - Add optional ``omics_url`` kwarg to ``submit()``
@@ -81,6 +82,7 @@ Changed
     - Hide columns with no data (#184)
     - Do not allow importing sheet or creating iRODS dirs if rendering fails (#192)
     - Upgrade altamISA to commit ``ddf54e9ab9b47d2b5a7d54ce65ea8aa673375f87`` (#191)
+    - Display material subtype in top column (#200)
 - **Taskflowbackend**
     - Use ``omics_uuid`` instead of ``pk`` (#139)
     - Only set up ``PROJECT`` type projects in ``synctaskflow``
@@ -109,6 +111,7 @@ Fixed
     - Prevent double importing of Investigation (#189)
     - Zip file upload failed on Windows browsers (#198)
     - Remove possible duplicate sample rows from study tables (#199)
+    - Extract label not correctly parsed
 - **Timeline**
     - Fix event id parameter in Taskflow view
 

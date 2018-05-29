@@ -155,8 +155,7 @@ def import_isa(isa_zip, project):
             # HACK since file/extract subtype is in .type
             if item_type in ['DATA', 'MATERIAL'] or m.material_type:
                 values['material_type'] = m.type
-
-            elif m.extract_label:
+            if m.extract_label:
                 values['extract_label'] = m.extract_label
 
             if m.characteristics:
