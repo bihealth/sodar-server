@@ -48,7 +48,7 @@ Changed
 -------
 
 - **General**
-    - Upgrade to Django 1.11.12
+    - Upgrade to Django 1.11.13
     - Upgrade to django-crispy-forms 1.7.1 (#153)
     - Upgrade to Boostrap 4.1.1 (#144)
     - Improve tour help layout
