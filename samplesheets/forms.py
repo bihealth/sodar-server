@@ -39,16 +39,20 @@ class SampleSheetImportForm(forms.Form):
         file = self.cleaned_data.get('file_upload')
 
         # Ensure file type
-        if file.content_type not in [
-                'application/zip', 'application/octet-stream']:
-            self.add_error(
-                'file_upload',
-                'The file is not a Zip archive (content type = {}'.format(
-                    file.content_type))
+        if file and file.content_type not in [
+                'application/zip',
+                'application/x-zip-compressed']:
+            self.add_error('file_upload', 'The file is not a Zip archive')
             return self.cleaned_data
 
         # Validate zip file
-        zip_file = ZipFile(file)
+        try:
+            zip_file = ZipFile(file)
+
+        except Exception as ex:
+            self.add_error(
+                'file_upload', 'Unable to open zip file: {}'.format(ex))
+            return self.cleaned_data
 
         # Get investigation file path(s)
         i_paths = get_inv_paths(zip_file)
