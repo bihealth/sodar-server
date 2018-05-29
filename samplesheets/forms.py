@@ -41,7 +41,10 @@ class SampleSheetImportForm(forms.Form):
         # Ensure file type
         if file.content_type not in [
                 'application/zip', 'application/octet-stream']:
-            self.add_error('file_upload', 'The file is not a Zip archive')
+            self.add_error(
+                'file_upload',
+                'The file is not a Zip archive (content type = {}'.format(
+                    file.content_type))
             return self.cleaned_data
 
         # Validate zip file
