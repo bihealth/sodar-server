@@ -108,6 +108,7 @@ Fixed
     - Building a redirect URL in export view caused a crash
     - Prevent double importing of Investigation (#189)
     - Zip file upload failed on Windows browsers (#198)
+    - Remove possible duplicate sample rows from study tables (#199)
 - **Timeline**
     - Fix event id parameter in Taskflow view
 

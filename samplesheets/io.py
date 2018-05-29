@@ -375,12 +375,12 @@ def import_isa(isa_zip, project):
     logger.debug('Ensuring studies can be rendered..')
 
     for study in db_studies:
-        study_refs = SampleSheetTableBuilder.build_study_reference(study)
+        all_refs = SampleSheetTableBuilder.build_study_reference(study)
 
-        if len(study_refs) > 2500:  # TODO: Get this from settings
+        if len(all_refs) > 2500:  # TODO: Get this from settings
             raise Exception(
                 'Row limit reached ({}), unable to render study'.format(
-                    len(study_refs)))
+                    len(all_refs)))
 
     logger.info('Import of investigation "{}" OK ({:.1f}s)'.format(
         db_investigation.title, time.time() - t_start))

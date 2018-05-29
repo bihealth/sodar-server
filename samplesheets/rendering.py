@@ -1,5 +1,6 @@
 """Rendering utilities for samplesheets"""
 
+import itertools
 import logging
 import time
 
@@ -484,9 +485,9 @@ class SampleSheetTableBuilder:
             '-sample-' in col][0]
         node_lookup = {n.unique_name: n for n in nodes}
 
-        # Study table
-        study_refs = [
-            row[:sample_pos + 1] for row in all_refs]
+        # Study ref table without duplicates
+        sr = [row[:sample_pos + 1] for row in all_refs]
+        study_refs = list(sr for sr, _ in itertools.groupby(sr))
 
         ret['study'] = self._build_table(
             study_refs, node_lookup, sample_pos, study)
