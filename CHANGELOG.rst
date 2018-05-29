@@ -57,7 +57,7 @@ Changed
 - **Irodsbackend**
     - Implement functionality of omics_irods_rest directly in the app
     - Rename ``get_object_list()`` into ``get_objects()``
-    - Improved error handling in ``get_objects()``
+    - Improve error handling in ``get_objects()``
 - **Projectroles**
     - Use Taskflowbackend only for creating and modifying ``PROJECT`` type projects
     - Modify Taskflow API URLs
@@ -79,8 +79,8 @@ Changed
     - Refactor table HTML rendering
     - Improve URLs for ontology linking (#170)
     - Hide columns with no data (#184)
-    - Do not allow creating iRODS dirs if rendering fails (#192)
-    - Upgraded altamISA to commit ``ddf54e9ab9b47d2b5a7d54ce65ea8aa673375f87`` (#191)
+    - Do not allow importing sheet or creating iRODS dirs if rendering fails (#192)
+    - Upgrade altamISA to commit ``ddf54e9ab9b47d2b5a7d54ce65ea8aa673375f87`` (#191)
 - **Taskflowbackend**
     - Use ``omics_uuid`` instead of ``pk`` (#139)
     - Only set up ``PROJECT`` type projects in ``synctaskflow``

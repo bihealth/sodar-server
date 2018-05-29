@@ -72,7 +72,7 @@ class ProjectSheetsView(
                 tb = SampleSheetTableBuilder()
 
                 try:
-                    context['table_data'] = tb.build_study(study)
+                    context['table_data'] = tb.build_study_tables(study)
 
                 except Exception as ex:
                     # TODO: Log error
@@ -263,7 +263,7 @@ class SampleSheetTableExportView(
         tb = SampleSheetTableBuilder()
 
         try:
-            tables = tb.build_study(study)
+            tables = tb.build_study_tables(study)
 
         except Exception as ex:
             messages.error(

@@ -54,7 +54,7 @@ class TestTableBuilder(TestRenderingBase):
             """Return set of distinct values for a column at pos"""
             return set([r[pos]['value'] for r in table['table_data']])
 
-        tables = self.tb.build_study(self.study)
+        tables = self.tb.build_study_tables(self.study)
         self.assertIsNotNone(tables)
 
         # Assert tables
@@ -102,7 +102,7 @@ class TestHTMLRenderer(TestRenderingBase):
 
     def setUp(self):
         super(TestHTMLRenderer, self).setUp()
-        self.tables = self.tb.build_study(self.study)
+        self.tables = self.tb.build_study_tables(self.study)
 
     def test_render_top_header(self):
         """Test render_top_header()"""

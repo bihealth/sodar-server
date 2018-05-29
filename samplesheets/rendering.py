@@ -432,7 +432,26 @@ class SampleSheetTableBuilder:
             'table_data': self._table_data,
             'col_values': self._col_values}
 
-    def build_study(self, study):
+    @classmethod
+    def build_study_reference(cls, study, nodes=None):
+        """
+        Get study reference table for building final table data
+        :param study: Study object
+        :param nodes: Study nodes (optional)
+        :return: Nodes (list), table (list)
+        """
+        if not nodes:
+            nodes = study.get_nodes()
+
+        arcs = study.arcs
+
+        for a in study.assays.all().order_by('file_name'):
+            arcs += a.arcs
+
+        tb = RefTableBuilder(nodes, arcs)
+        return tb.run()
+
+    def build_study_tables(self, study):
         """
         Build study table and associated assay tables for rendering
         :param study: Study object
@@ -446,18 +465,8 @@ class SampleSheetTableBuilder:
             'study': None,
             'assays': {}}
 
-        nodes = list(GenericMaterial.objects.filter(study=study)) + \
-            list(Process.objects.filter(
-                study=study).prefetch_related('protocol'))
-
-        # TODO: Onelinerize this
-        arcs = study.arcs
-
-        for a in study.assays.all().order_by('file_name'):
-            arcs += a.arcs
-
-        tb = RefTableBuilder(nodes, arcs)
-        all_refs = tb.run()  # All rows within a study
+        nodes = study.get_nodes()
+        all_refs = self.build_study_reference(study, nodes)
 
         # Ensure the study does not exceed project limitations
         # TODO: Get limit from project settings

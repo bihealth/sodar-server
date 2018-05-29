@@ -260,6 +260,7 @@ def import_isa(isa_zip, project):
     db_investigation.save()
     logger.debug('Created investigation "{}"'.format(db_investigation.title))
     study_count = 0
+    db_studies = []
 
     # Create studies
     for s_i in isa_inv.studies:
@@ -287,6 +288,7 @@ def import_isa(isa_zip, project):
 
         db_study = Study(**values)
         db_study.save()
+        db_studies.append(db_study)
         logger.debug('Added study "{}"'.format(db_study.title))
 
         # Create protocols
@@ -368,6 +370,17 @@ def import_isa(isa_zip, project):
             assay_count += 1
 
         study_count += 1
+
+    # Ensure we can build the table reference, if not then fail
+    logger.debug('Ensuring studies can be rendered..')
+
+    for study in db_studies:
+        study_refs = SampleSheetTableBuilder.build_study_reference(study)
+
+        if len(study_refs) > 2500:  # TODO: Get this from settings
+            raise Exception(
+                'Row limit reached ({}), unable to render study'.format(
+                    len(study_refs)))
 
     logger.info('Import of investigation "{}" OK ({:.1f}s)'.format(
         db_investigation.title, time.time() - t_start))

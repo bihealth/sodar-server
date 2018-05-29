@@ -257,6 +257,12 @@ class Study(BaseSampleSheet):
         """Return display name for study"""
         return self.title.strip('.').title() if self.title else self.identifier
 
+    def get_nodes(self):
+        """Return list of all nodes (materials and processes) for study"""
+        return list(GenericMaterial.objects.filter(study=self)) + \
+            list(Process.objects.filter(
+                study=self).prefetch_related('protocol'))
+
 
 # Protocol ---------------------------------------------------------------------
 
