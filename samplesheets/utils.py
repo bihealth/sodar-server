@@ -3,6 +3,8 @@
 # Projectroles dependency
 from projectroles.plugins import get_backend_api
 
+from .models import Investigation
+
 
 def get_sample_dirs(investigation):
     """
@@ -23,3 +25,23 @@ def get_sample_dirs(investigation):
                 ret.append(irods_backend.get_subdir(assay))
 
     return ret
+
+
+def compare_inv_replace(inv1, inv2):
+    """
+    Compare investigations for critical differences for replacing
+    :param inv1: Investigation object
+    :param inv2: Investigation object
+    :raise: ValueError if a problem is detected
+    """
+    try:
+        for study1 in inv1.studies.all():
+            study2 = inv2.studies.get(file_name=study1.file_name)
+
+            for assay1 in study1.assays.all():
+                assay2 = study2.assays.get(file_name=assay1.file_name)
+
+    except Exception as ex:
+        raise ValueError(
+            'iRODS directories created, studies and assays '
+            'do not match: unable to replace investigation')

@@ -29,7 +29,10 @@ class SampleSheetIOMixin:
         :return: Investigation object
         """
         zf = ZipFile(os.fsdecode(path))
-        return import_isa(zf, project)
+        investigation = import_isa(zf, project)
+        investigation.active = True     # Must set this explicitly
+        investigation.save()
+        return investigation
 
 
 class TestSampleSheetIO(

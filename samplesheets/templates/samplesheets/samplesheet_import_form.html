@@ -3,18 +3,36 @@
 {% load crispy_forms_filters %}
 
 {% block title %}
-  Import Sample Sheets from ISAtab into {{ project.title }}
+  {% if request.resolver_match.url_name == 'replace' %}
+    Replace Current Sample Sheets with ISAtab
+  {% else %}
+    Import Sample Sheets from ISAtab
+  {% endif %}
+  into {{ project.title }}
 {% endblock title %}
 
 {% block projectroles_extend %}
 
 <div class="row omics-subtitle-container">
-    <h3>
+  <h3>
+    {% if request.resolver_match.url_name == 'replace' %}
+      Replace Current Sample Sheets with ISAtab
+    {% else %}
       Import Sample Sheets from ISAtab
-    </h3>
+    {% endif %}
+  </h3>
 </div>
 
 <div class="container-fluid omics-page-container">
+  {% if request.resolver_match.url_name == 'replace' and irods_status %}
+    <div class="alert alert-warning">
+      <strong>Warning:</strong> because iRODS directories have already been
+      created, replacing the ISAtab will only be accepted if studies and assays
+      have not been added or removed. Modifying content within existing studies
+      and assays is accepted.
+    </div>
+  {% endif %}
+
   <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
     {{ form | crispy }}
@@ -26,7 +44,11 @@
           <i class="fa fa-arrow-circle-left"></i> Cancel
         </a>
         <button type="submit" class="btn btn-primary">
-          <i class="fa fa-upload"></i> Import
+          {% if request.resolver_match.url_name == 'replace' %}
+            <i class="fa fa-refresh"></i> Replace
+          {% else %}
+            <i class="fa fa-upload"></i> Import
+          {% endif %}
         </button>
       </div>
     </div>

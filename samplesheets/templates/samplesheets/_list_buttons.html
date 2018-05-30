@@ -19,6 +19,12 @@
       <a class="dropdown-item" href="{% url 'samplesheets:import' project=project.omics_uuid %}">
         <i class="fa fa-fw fa-upload"></i> Import ISAtab
       </a>
+
+    {# Replace #}
+    {% elif investigation and can_edit_sheet %}
+      <a class="dropdown-item" href="{% url 'samplesheets:replace' project=project.omics_uuid %}">
+        <i class="fa fa-fw fa-refresh"></i> Replace ISAtab
+      </a>
     {% endif %}
 
     {# Export #}
@@ -39,7 +45,7 @@
     {# Delete #}
     {% if investigation and can_delete_sheet %}
       <a class="dropdown-item" href="{% url 'samplesheets:delete' project=project.omics_uuid %}">
-        <i class="fa fa-fw fa-close"></i> Delete Sheets
+        <i class="fa fa-fw fa-close"></i> Delete Sheets and Data
       </a>
     {% endif %}
 

@@ -22,7 +22,7 @@ from .forms import SampleSheetImportForm
 from .models import Investigation, Study, Assay, Protocol, Process, \
     GenericMaterial
 from .rendering import SampleSheetTableBuilder, EMPTY_VALUE
-from .utils import get_sample_dirs
+from .utils import get_sample_dirs, compare_inv_replace
 
 
 APP_NAME = 'samplesheets'
@@ -36,7 +36,7 @@ class InvestigationContextMixin(ProjectContextMixin):
 
         try:
             investigation = Investigation.objects.get(
-                project=context['project'])
+                project=context['project'], active=True)
             context['investigation'] = investigation
 
         except Investigation.DoesNotExist:
@@ -119,7 +119,7 @@ class ProjectSheetsOverviewView(
 
         try:
             investigation = Investigation.objects.get(
-                project=context['project'])
+                project=context['project'], active=True)
             context['investigation'] = investigation
 
         except Investigation.DoesNotExist:
@@ -160,6 +160,20 @@ class SampleSheetImportView(
     form_class = SampleSheetImportForm
     template_name = 'samplesheets/samplesheet_import_form.html'
 
+    def get_context_data(self, *args, **kwargs):
+        context = super(SampleSheetImportView, self).get_context_data(
+            *args, **kwargs)
+        project = self._get_project(self.request, self.kwargs)
+
+        try:
+            old_inv = Investigation.objects.get(project=project, active=True)
+            context['irods_status'] = old_inv.irods_status
+
+        except Investigation.DoesNotExist:
+            pass
+
+        return context
+
     def get_form_kwargs(self):
         """Pass URL kwargs to form"""
         kwargs = super(SampleSheetImportView, self).get_form_kwargs()
@@ -170,10 +184,10 @@ class SampleSheetImportView(
 
         # If investigation for project already exists, set replace=True
         try:
-            Investigation.objects.get(project=project)
+            Investigation.objects.get(project=project, active=True)
             kwargs.update({'replace': True})
 
-        except Project.DoesNotExist:
+        except Investigation.DoesNotExist:
             kwargs.update({'replace': False})
 
         return kwargs
@@ -181,32 +195,57 @@ class SampleSheetImportView(
     def form_valid(self, form):
         timeline = get_backend_api('timeline_backend')
         project = self._get_project(self.request, self.kwargs)
+        form_kwargs = self.get_form_kwargs()
+        form_action = 'replace' if form_kwargs['replace'] else 'create'
 
         redirect_url = reverse(
             'samplesheets:project_sheets',
             kwargs={'project': project.omics_uuid})
 
-        # Additional check in case the user uses the browser back button (#189)
-        try:
-            Investigation.objects.get(project=project)
-            messages.error(
-                self.request, 'Investigation for project already exists')
-            return redirect(redirect_url)
-
-        except Investigation.DoesNotExist:
-            pass    # This is fine
-
         try:
             self.object = form.save()
+            old_inv = None
+
+            # Check for existing investigation
+            try:
+                old_inv = Investigation.objects.get(
+                    project=project, active=True)
+
+            except Investigation.DoesNotExist:
+                pass    # This is fine
+
+            if old_inv:
+                if old_inv.irods_status:
+                    # Ensure study and assay structure is the same
+                    # (raises ValueError if this fails at any point)
+                    compare_inv_replace(old_inv, self.object)
+                    compare_inv_replace(self.object, old_inv)
+
+                # Set irods_status to our previous sheet's state
+                self.object.irods_status = old_inv.irods_status
+                self.object.save()
+
+                # Delete old investigation
+                old_inv.delete()
+
+            # Set current import active status to True
+            self.object.active = True
+            self.object.save()
 
             # Add event in Timeline
             if timeline:
+                if form_action == 'replace':
+                    desc = 'replace previous investigation with '
+
+                else:
+                    desc = 'create investigation '
+
                 tl_event = timeline.add_event(
                     project=project,
                     app_name=APP_NAME,
                     user=self.request.user,
-                    event_name='sheet_create',
-                    description='create investigation {investigation}',
+                    event_name='sheet_' + form_action,
+                    description=desc + ' {investigation}',
                     status_type='OK')
 
                 tl_event.add_object(
@@ -214,12 +253,31 @@ class SampleSheetImportView(
                     label='investigation',
                     name=self.object.title)
 
-        except Exception as ex:
-            try:    # Remove broken investigation if import fails
-                Investigation.objects.get(project=project).delete()
+                messages.success(
+                    self.request,
+                    form_action.capitalize() +
+                    'd sample sheets from ISAtab import')
 
-            except Investigation.DoesNotExist:
-                pass
+        except Exception as ex:
+            # Get existing investigations under project
+            invs = Investigation.objects.filter(
+                project=project).order_by('-pk')
+            old_inv = None
+
+            if invs:
+                # Activate previous invite
+                if invs.count() > 1:
+                    invs[1].active = True
+                    invs[1].save()
+                    old_inv = invs[1]
+
+                # Delete failed import
+                invs[0].delete()
+
+            # Just in case, delete remaining ones from the db
+            if old_inv:
+                Investigation.objects.filter(project=project).exclude(
+                    pk=old_inv.pk).delete()
 
             if settings.DEBUG:
                 raise ex
@@ -330,7 +388,7 @@ class SampleSheetDeleteView(
         taskflow = get_backend_api('taskflow')
         tl_event = None
         project = Project.objects.get(omics_uuid=kwargs['project'])
-        investigation = Investigation.objects.get(project=project)
+        investigation = Investigation.objects.get(project=project, active=True)
 
         # Add event in Timeline
         if timeline:
@@ -511,7 +569,7 @@ class SampleSheetDirStatusGetAPIView(APIView):
     def post(self, request):
         try:
             investigation = Investigation.objects.get(
-                project__omics_uuid=request.data['project_uuid'])
+                project__omics_uuid=request.data['project_uuid'], active=True)
 
         except Investigation.DoesNotExist as ex:
             return Response(str(ex), status=404)
@@ -524,7 +582,7 @@ class SampleSheetDirStatusSetAPIView(APIView):
     def post(self, request):
         try:
             investigation = Investigation.objects.get(
-                project__omics_uuid=request.data['project_uuid'])
+                project__omics_uuid=request.data['project_uuid'], active=True)
 
         except Investigation.DoesNotExist as ex:
             return Response(str(ex), status=404)
@@ -540,7 +598,7 @@ class SampleSheetDeleteAPIView(APIView):
     def post(self, request):
         try:
             investigation = Investigation.objects.get(
-                project__omics_uuid=request.data['project_uuid'])
+                project__omics_uuid=request.data['project_uuid'], active=True)
 
         except Investigation.DoesNotExist as ex:
             return Response(str(ex), status=404)

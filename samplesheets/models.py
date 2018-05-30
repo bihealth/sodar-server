@@ -145,7 +145,6 @@ class Investigation(BaseSampleSheet):
         help_text='Ontology source references')
 
     #: Active status of investigation (only one active per project)
-    
     active = models.BooleanField(
         default=False,
         help_text='Active status of investigation (one active per project)')

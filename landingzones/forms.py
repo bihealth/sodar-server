@@ -68,7 +68,8 @@ class LandingZoneForm(forms.ModelForm):
                     assay.study.get_display_name(),
                     assay.get_display_name())) for
                 assay in Assay.objects.filter(
-                    study__investigation__project=self.project)]
+                    study__investigation__project=self.project,
+                    study__investigation__active=True)]
 
         # Updating
         else:

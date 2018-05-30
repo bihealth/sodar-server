@@ -22,7 +22,7 @@ class SampleSheetImportForm(forms.Form):
     class Meta:
         fields = ['file_upload']
 
-    def __init__(self, project=None, *args, **kwargs):
+    def __init__(self, project=None, replace=False, *args, **kwargs):
         """Override form initialization"""
         super(SampleSheetImportForm, self).__init__(*args, **kwargs)
         self.isa_zip = None

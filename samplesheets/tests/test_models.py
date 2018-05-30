@@ -94,7 +94,8 @@ class SampleSheetModelMixin:
             'project': project,
             'title': title,
             'description': description,
-            'comments': comments}
+            'comments': comments,
+            'active': True}     # NOTE: Must explicitly set active to True
         obj = Investigation(**values)
         obj.save()
         return obj
@@ -261,7 +262,8 @@ class TestInvestigation(TestSampleSheetBase):
             'sharing_data': {},
             'retraction_data': {},
             'comments': DEFAULT_COMMENTS,
-            'irods_status': False}
+            'irods_status': False,
+            'active': True}
         self.assertEqual(model_to_dict(self.investigation), expected)
 
     def test__str__(self):

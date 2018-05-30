@@ -42,6 +42,7 @@ Added
     - Row limit to prevent import and rendering of huge data (#192)
     - Render extract label column
     - Project setting ``study_row_limit`` (#192)
+    - Replacing sample sheets for limited modifications (#195)
 - **Taskflowbackend**
     - Add taskflowbackend app (#139)
     - Add optional ``omics_url`` kwarg to ``submit()``
