@@ -5,6 +5,14 @@ from __future__ import unicode_literals
 from django.db import migrations, models
 
 
+def set_investigations_active(apps, schema_editor):
+    Investigation = apps.get_model('samplesheets', 'Investigation')
+
+    for investigation in Investigation.objects.all():
+        investigation.active = True
+        investigation.save()
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -21,4 +29,6 @@ class Migration(migrations.Migration):
             name='active',
             field=models.BooleanField(default=False, help_text='Active status of investigation (one active per project)'),
         ),
+        # Activate existing investigations even if the new default is False
+        migrations.RunPython(set_investigations_active),
     ]
