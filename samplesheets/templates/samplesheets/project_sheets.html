@@ -62,16 +62,33 @@
     }
 
     .DTFC_RightBodyLiner {
-      overflow-x: hidden;
+      overflow-x: hidden !important;
+      overflow-y: hidden !important;
+    }
+
+    .DTFC_RightBodyWrapper {
+      background-color: #ffffff;
     }
 
     .omics-ss-data-table tbody tr:last-child td {
       border-bottom: 0;
     }
 
+    .omics-ss-data-table-study thead tr th:first-child {
+      border-left: 0 !important;
+    }
+
+    .omics-ss-data-table-study thead tr th:last-child {
+      border-right: 0 !important;
+    }
+
     .omics-ss-data-table tbody tr td:first-child {
       border-left: 0 !important;
       color: #6c757d;
+    }
+
+    .omics-ss-data-table tbody tr td:last-child {
+      border-right: 0 !important;
     }
 
     .DTFC_RightHeadBlocker {
@@ -207,7 +224,20 @@
         /*********************
          Initialize DataTables
          *********************/
-        $('.omics-ss-data-table').DataTable({
+        $('.omics-ss-data-table-study').DataTable({
+            scrollY: 400,
+            scrollX: true,
+            paging: false,
+            scrollCollapse: true,
+            info: false,
+            fixedColumns: {
+                leftColumns: 0,
+                rightColumns: 0
+            },
+            dom: 't' // Disable toolbar
+        });
+
+        $('.omics-ss-data-table-assay').DataTable({
             scrollY: 400,
             scrollX: true,
             paging: false,
