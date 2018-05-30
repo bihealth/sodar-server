@@ -9,7 +9,7 @@
   <button class="btn btn-primary dropdown-toggle"
           type="button" data-toggle="dropdown"
           aria-haspopup="true" aria-expanded="false"
-          {% if not study %}disabled{% endif %}>
+          {% if request.resolver_match.url_name == 'overview' %}disabled{% endif %}>
     Sheet Operations
   </button>
   <div class="dropdown-menu dropdown-menu-right">
