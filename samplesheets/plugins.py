@@ -25,7 +25,11 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
     # Properties defined in ProjectAppPluginPoint -----------------------
 
     #: Project settings definition
-    project_settings = {}
+    project_settings = {
+        'study_row_limit': {
+            'type': 'INTEGER',
+            'default': 5000,
+            'description': 'Limit sample sheet rows per study'}}
 
     #: FontAwesome icon ID string
     icon = 'flask'

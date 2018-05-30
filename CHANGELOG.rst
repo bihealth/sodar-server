@@ -29,7 +29,7 @@ Added
     - Add landingzones app (#139)
 - **Projectroles**
     - Settings updating to Taskflow for project creation and modification (#139)
-    - Add ``get_all_settings()`` in ``project_settings``
+    - Add ``get_all_settings()`` and ``get_default_setting()`` in ``project_settings``
     - Add ``get_class()`` in ``projectroles_common_tags``
 - **Samplesheets**
     - iRODS directory creation (#139)
@@ -41,6 +41,7 @@ Added
     - Tour help (#145)
     - Row limit to prevent import and rendering of huge data (#192)
     - Render extract label column
+    - Project setting ``study_row_limit`` (#192)
 - **Taskflowbackend**
     - Add taskflowbackend app (#139)
     - Add optional ``omics_url`` kwarg to ``submit()``
@@ -72,6 +73,7 @@ Changed
     - Improve project list layout (#171)
     - Move iRODS info page into the irodsinfo app (#183)
     - Modify signature of ``_get_project()`` in ``ProjectAccessMixin``
+    - Allow ``get_all_settings()`` and ``get_project_setting()`` with no project in ``project_settings``
 - **Samplesheets**
     - Rename top header "legend" to "value" (#129)
     - Allow sample sheet upload for project contributor (#137)
@@ -101,6 +103,7 @@ Fixed
     - Project creation failure using taskflow caused database corruption (#162)
     - Proper redirect from failed project creation to home or parent category
     - Project partially modified instead of rollback if update with taskflow failed (#163)
+    - Project settings not correctly populated in ``TestTaskflowBase``
 - **Samplesheets**
     - Delete investigation if import fails (#138)
     - Assay sorting was not defined

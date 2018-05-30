@@ -12,7 +12,7 @@ from .models import Project, Role, RoleAssignment, ProjectInvite, \
 from .plugins import ProjectAppPluginPoint
 from .utils import get_user_display_name, build_secret
 from projectroles.project_settings import validate_project_setting, \
-    get_project_setting
+    get_project_setting, get_default_setting
 
 # Omics constants
 PROJECT_ROLE_OWNER = OMICS_CONSTANTS['PROJECT_ROLE_OWNER']
@@ -78,10 +78,16 @@ class ProjectForm(forms.ModelForm):
                         **setting_kwargs)
 
                 # Set initial value
-                self.initial[s_field] = get_project_setting(
-                    project=self.instance,
-                    app_name=p.name,
-                    setting_name=s_key)
+                if self.instance.pk:
+                    self.initial[s_field] = get_project_setting(
+                        project=self.instance,
+                        app_name=p.name,
+                        setting_name=s_key)
+
+                else:
+                    self.initial[s_field] = get_default_setting(
+                        app_name=p.name,
+                        setting_name=s_key)
 
         # Access parent project if present
         parent_project = None

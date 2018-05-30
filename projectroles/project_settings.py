@@ -4,37 +4,50 @@ from projectroles.models import ProjectSetting, PROJECT_SETTING_TYPES, Project
 from projectroles.plugins import ProjectAppPluginPoint, get_app_plugin
 
 
+def get_default_setting(app_name, setting_name):
+    """
+    Get default setting value from an app plugin
+    :param app_name: App name (string, must correspond to "name" in app plugin)
+    :param setting_name: Setting name (string)
+    :return: Setting value (string, integer or boolean)
+    :raise: KeyError if nothing is found with setting_name
+    """
+    app_plugin = get_app_plugin(app_name)
+
+    if (app_plugin.project_settings and
+            setting_name in app_plugin.project_settings):
+        return app_plugin.project_settings[setting_name]['default']
+
+    raise KeyError(
+        'Setting "{}" not found in app plugin "{}"'.format(
+            setting_name, app_name))
+
+
 def get_project_setting(project, app_name, setting_name):
     """
     Return setting value for a project and an app. If not set, return default.
-    :param project: Project object
+    :param project: Project object (can be None)
     :param app_name: App name (string, must correspond to "name" in app plugin)
     :param setting_name: Setting name (string)
     :return: String or None
     :raise: KeyError if nothing is found with setting_name
     """
-    try:
-        return ProjectSetting.objects.get_setting_value(
-            project, app_name, setting_name)
+    if project:
+        try:
+            return ProjectSetting.objects.get_setting_value(
+                project, app_name, setting_name)
 
-    except ProjectSetting.DoesNotExist:
-        # Get default
-        app_plugin = get_app_plugin(app_name)
+        except ProjectSetting.DoesNotExist:
+            pass
 
-        if (app_plugin.project_settings and
-                setting_name in app_plugin.project_settings):
-            return app_plugin.project_settings[setting_name]['default']
-
-        raise KeyError(
-            'Setting "{}" not found in app plugin "{}"'.format(
-                setting_name, app_name))
+    return get_default_setting(app_name, setting_name)
 
 
-def get_all_settings(project):
+def get_all_settings(project=None):
     """
-    Return all setting values for project. If some setting has not been set,
-    return the default.
-    :param project: Project object
+    Return all setting values for project. If the project or some setting has
+    not been set, return the default.
+    :param project: Project object (can be None)
     :return: Dict
     """
     ret = {}
@@ -110,11 +123,13 @@ def validate_project_setting(setting_type, setting_value):
         raise ValueError('Invalid setting type')
 
     if setting_type == 'BOOLEAN' and not isinstance(setting_value, bool):
-        raise ValueError('Please enter a valid boolean value')
+        raise ValueError('Please enter a valid boolean value ({})'.format(
+            setting_value))
 
     if setting_type == 'INTEGER' and (
             not isinstance(setting_value, int) and
             not str(setting_value).isdigit()):
-        raise ValueError('Please enter a valid integer value')
+        raise ValueError('Please enter a valid integer value ({})'.format(
+            setting_value))
 
     return True

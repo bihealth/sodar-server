@@ -4,6 +4,9 @@ import itertools
 import logging
 import time
 
+# Projectroles dependency
+from projectroles.project_settings import get_project_setting
+
 from .models import Assay, Process, GenericMaterial
 
 
@@ -149,6 +152,11 @@ class RefTableBuilder:
 
 
 # Table building ---------------------------------------------------------------
+
+
+class SampleSheetRenderingException(Exception):
+    """Sample sheet rendering exception"""
+    pass
 
 
 class SampleSheetTableBuilder:
@@ -472,7 +480,19 @@ class SampleSheetTableBuilder:
             arcs += a.arcs
 
         tb = RefTableBuilder(nodes, arcs)
-        return tb.run()
+        all_refs = tb.run()
+
+        # Ensure the study does not exceed project limitations
+        row_limit = get_project_setting(
+            study.get_project(), 'samplesheets', 'study_row_limit')
+
+        if len(all_refs) > row_limit:
+            raise SampleSheetRenderingException(
+                'Row limit set in samplesheets.study_row_limit reached ({}), '
+                'unable to render study'.format(
+                    len(all_refs)))
+
+        return all_refs
 
     def build_study_tables(self, study):
         """
@@ -490,17 +510,6 @@ class SampleSheetTableBuilder:
 
         nodes = study.get_nodes()
         all_refs = self.build_study_reference(study, nodes)
-
-        # Ensure the study does not exceed project limitations
-        # TODO: Get limit from project settings
-        # TODO: Define a RenderingException
-        # TODO: Test rendering already during import and reject if invalid
-        row_limit = 2500
-
-        if len(all_refs) > row_limit:
-            raise Exception(
-                'Row limit reached ({}), unable to render study'.format(
-                    len(all_refs)))
 
         sample_pos = [
             i for i, col in enumerate(all_refs[0]) if

@@ -8,7 +8,8 @@
 <div class="btn-group ml-auto" id="omics-ss-buttons-op">
   <button class="btn btn-primary dropdown-toggle"
           type="button" data-toggle="dropdown"
-          aria-haspopup="true" aria-expanded="false">
+          aria-haspopup="true" aria-expanded="false"
+          {% if not study %}disabled{% endif %}>
     Sheet Operations
   </button>
   <div class="dropdown-menu dropdown-menu-right">

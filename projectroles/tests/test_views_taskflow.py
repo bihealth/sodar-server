@@ -17,8 +17,9 @@ from unittest import skipIf     # Could also use tags..
 
 from ..models import Project, Role, RoleAssignment, ProjectInvite, \
     OMICS_CONSTANTS
+from ..plugins import get_backend_api, change_plugin_status
+from ..project_settings import get_all_settings
 from .test_models import ProjectInviteMixin
-from projectroles.plugins import get_backend_api, change_plugin_status
 
 
 User = auth.get_user_model()
@@ -56,6 +57,7 @@ class TestTaskflowBase(LiveServerTestCase, TestCase):
             'owner': owner.omics_uuid,
             'description': description,
             'omics_url': self.live_server_url}  # HACK: Override callback URL
+        values.update(get_all_settings())   # Add default settings
 
         post_kwargs = {'project': parent.omics_uuid} if parent else {}
 
@@ -127,6 +129,7 @@ class TestTaskflowBase(LiveServerTestCase, TestCase):
             'parent': None,
             'owner': self.user.omics_uuid,
             'description': 'description'}
+        values.update(get_all_settings())  # Add default settings
 
         with self.login(self.user):
             response = self.client.post(
@@ -214,6 +217,7 @@ class TestProjectUpdateView(TestTaskflowBase):
         values['title'] = 'updated title'
         values['description'] = 'updated description'
         values['owner'] = self.user.omics_uuid  # NOTE: Must add owner
+        values.update(get_all_settings())  # Add default settings
         values['omics_url'] = self.live_server_url  # HACK
 
         with self.login(self.user):
