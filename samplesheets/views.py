@@ -163,10 +163,18 @@ class SampleSheetImportView(
     def get_form_kwargs(self):
         """Pass URL kwargs to form"""
         kwargs = super(SampleSheetImportView, self).get_form_kwargs()
+        project = self._get_project(self.request, self.kwargs)
 
         if 'project' in self.kwargs:
-            kwargs.update({'project': self._get_project(
-                self.request, self.kwargs).omics_uuid})
+            kwargs.update({'project': project.omics_uuid})
+
+        # If investigation for project already exists, set replace=True
+        try:
+            Investigation.objects.get(project=project)
+            kwargs.update({'replace': True})
+
+        except Project.DoesNotExist:
+            kwargs.update({'replace': False})
 
         return kwargs
 

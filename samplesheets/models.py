@@ -144,6 +144,12 @@ class Investigation(BaseSampleSheet):
         default=dict,
         help_text='Ontology source references')
 
+    #: Active status of investigation (only one active per project)
+    
+    active = models.BooleanField(
+        default=False,
+        help_text='Active status of investigation (one active per project)')
+
     #: Status of iRODS directory structure creation
     irods_status = models.BooleanField(
         default=False,

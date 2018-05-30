@@ -75,9 +75,10 @@ class SampleSheetImportForm(forms.Form):
 
     def save(self, *args, **kwargs):
         try:
-            return import_isa(
+            investigation = import_isa(
                 isa_zip=self.isa_zip,
                 project=self.project)
+            return investigation
 
         except Exception as ex:
             raise Exception('Django import failed: {}'.format(ex))
