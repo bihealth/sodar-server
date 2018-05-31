@@ -22,6 +22,7 @@ GENERIC_MATERIAL_TYPES = {
 
 GENERIC_MATERIAL_CHOICES = [(k, v) for k, v in GENERIC_MATERIAL_TYPES.items()]
 NOT_AVAILABLE_STR = '(N/A)'
+CONFIG_LABEL = 'Created With Configuration'
 
 
 # Utils ------------------------------------------------------------------------
@@ -162,6 +163,24 @@ class Investigation(BaseSampleSheet):
             self.project.title,
             self.title)
         return 'Investigation({})'.format(', '.join(repr(v) for v in values))
+
+    # Custom row-level functions
+
+    def get_configuration(self):
+        """Return used configuration as string if found"""
+        # TODO: Do this with a nice regex instead, too tired now
+        if CONFIG_LABEL not in self.comments:
+            return None
+
+        conf = self.comments[CONFIG_LABEL]['value']
+
+        if conf.find('/') == -1 and conf.find('\\') == -1:
+            return conf
+
+        elif conf.find('\\') != -1:
+            conf = conf.replace('\\', '/')
+
+        return conf.split('/')[-1]
 
 
 # Study ------------------------------------------------------------------------
