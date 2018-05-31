@@ -22,7 +22,7 @@
 
     {# Replace #}
     {% elif investigation and can_edit_sheet %}
-      <a class="dropdown-item" href="{% url 'samplesheets:replace' project=project.omics_uuid %}">
+      <a class="dropdown-item" href="{% url 'samplesheets:import' project=project.omics_uuid %}">
         <i class="fa fa-fw fa-refresh"></i> Replace ISAtab
       </a>
     {% endif %}
@@ -36,9 +36,9 @@
     {% endif %}
     {% endcomment %}
 
-    {% if investigation and not investigation.irods_status and can_create_dirs and not render_error %}
+    {% if investigation and can_create_dirs and not render_error %}
       <a class="dropdown-item" href="{% url 'samplesheets:dirs' project=project.omics_uuid %}">
-        <i class="fa fa-fw fa-database"></i> Create iRODS Directories
+        <i class="fa fa-fw fa-database"></i> {% if investigation.irods_status %}Update{% else %}Create{% endif %} iRODS Directories
       </a>
     {% endif %}
 

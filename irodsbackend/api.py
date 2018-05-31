@@ -291,3 +291,12 @@ class IrodsAPI:
 
         ret = self._get_obj_stats(coll)
         return ret
+
+    @init_irods
+    def collection_exists(self, path):
+        """
+        Return True/False depending if the collection defined in path exists
+        :param path: Full path to iRODS collection
+        :return: Boolean
+        """
+        return self.irods.collections.exists(path)

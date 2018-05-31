@@ -5,6 +5,7 @@ from django.utils.text import slugify
 
 # Projectroles dependency
 from projectroles.models import Project
+from projectroles.plugins import get_backend_api
 
 # Samplesheets dependency
 from samplesheets.models import Assay
@@ -28,6 +29,7 @@ class LandingZoneForm(forms.ModelForm):
             *args, **kwargs):
         """Override for form initialization"""
         super(LandingZoneForm, self).__init__(*args, **kwargs)
+        irods_backend = get_backend_api('omics_irods')
 
         self.current_user = None
         self.project = None
@@ -63,13 +65,18 @@ class LandingZoneForm(forms.ModelForm):
 
         # Creation
         if not self.instance.pk:
-            self.fields['assay'].choices = [
-                (assay.omics_uuid, '{} / {}'.format(
-                    assay.study.get_display_name(),
-                    assay.get_display_name())) for
-                assay in Assay.objects.filter(
+            self.fields['assay'].choices = []
+            # Only show choices for assays which are in iRODS
+            for assay in Assay.objects.filter(
                     study__investigation__project=self.project,
-                    study__investigation__active=True)]
+                    study__investigation__active=True):
+
+                if irods_backend.collection_exists(
+                        irods_backend.get_path(assay)):
+                    self.fields['assay'].choices.append(
+                        (assay.omics_uuid, '{} / {}'.format(
+                            assay.study.get_display_name(),
+                            assay.get_display_name())))
 
         # Updating
         else:

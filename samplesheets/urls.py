@@ -27,11 +27,6 @@ urlpatterns = [
         name='import',
     ),
     url(
-        regex=r'^replace/(?P<project>[0-9a-f-]+)$',
-        view=views.SampleSheetImportView.as_view(),
-        name='replace',
-    ),
-    url(
         regex=r'^export/study/(?P<study>[0-9a-f-]+)$',
         view=views.SampleSheetTableExportView.as_view(),
         name='export_tsv',

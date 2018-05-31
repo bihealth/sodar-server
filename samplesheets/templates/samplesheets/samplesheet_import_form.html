@@ -3,7 +3,7 @@
 {% load crispy_forms_filters %}
 
 {% block title %}
-  {% if request.resolver_match.url_name == 'replace' %}
+  {% if replace_sheets %}
     Replace Current Sample Sheets with ISAtab
   {% else %}
     Import Sample Sheets from ISAtab
@@ -15,7 +15,7 @@
 
 <div class="row omics-subtitle-container">
   <h3>
-    {% if request.resolver_match.url_name == 'replace' %}
+    {% if replace_sheets %}
       Replace Current Sample Sheets with ISAtab
     {% else %}
       Import Sample Sheets from ISAtab
@@ -24,12 +24,17 @@
 </div>
 
 <div class="container-fluid omics-page-container">
-  {% if request.resolver_match.url_name == 'replace' and irods_status %}
+  {% if replace_sheets and irods_status %}
     <div class="alert alert-warning">
       <strong>Warning:</strong> because iRODS directories have already been
       created, replacing the ISAtab will only be accepted if studies and assays
-      have not been added or removed. Modifying content within existing studies
-      and assays is accepted.
+      have not been removed. Adding new studies or assays or modifying content
+      within existing studies and assays is accepted.
+    </div>
+    <div class="alert alert-warning">
+      <strong>Note:</strong> If you have added new studies or assays, you must
+      select <strong>Update iRODS Directories</strong> from the Zone Operations
+      menu after replace has completed.
     </div>
   {% endif %}
 
@@ -44,7 +49,7 @@
           <i class="fa fa-arrow-circle-left"></i> Cancel
         </a>
         <button type="submit" class="btn btn-primary">
-          {% if request.resolver_match.url_name == 'replace' %}
+          {% if replace_sheets %}
             <i class="fa fa-refresh"></i> Replace
           {% else %}
             <i class="fa fa-upload"></i> Import

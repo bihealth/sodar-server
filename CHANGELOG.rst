@@ -23,6 +23,7 @@ Added
     - Add ``get_path()`` for retrieving iRODS paths for Django objects
     - Template tag ``get_irods_path()`` to get object iRODS path in template
     - Add ``get_session()`` for direct iRODS API access
+    - Add ``collection_exists()`` to check collection availability
 - **Irodsinfo**
     - Add irodsinfo site app (#183)
 - **Landingzones**
@@ -116,6 +117,7 @@ Fixed
     - Zip file upload failed on Windows browsers (#198)
     - Remove possible duplicate sample rows from study tables (#199)
     - Extract label not correctly parsed
+    - Back link not working in ``IrodsDirView`` (#206)
 - **Timeline**
     - Fix event id parameter in Taskflow view
 

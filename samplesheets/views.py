@@ -16,7 +16,8 @@ from rest_framework.views import APIView
 from projectroles.models import Project
 from projectroles.plugins import get_backend_api
 from projectroles.views import LoggedInPermissionMixin, \
-    ProjectContextMixin, ProjectPermissionMixin, APIPermissionMixin
+    ProjectContextMixin, ProjectPermissionMixin, APIPermissionMixin, \
+    HTTPRefererMixin
 
 from .forms import SampleSheetImportForm
 from .models import Investigation, Study, Assay, Protocol, Process, \
@@ -167,6 +168,7 @@ class SampleSheetImportView(
 
         try:
             old_inv = Investigation.objects.get(project=project, active=True)
+            context['replace_sheets'] = True
             context['irods_status'] = old_inv.irods_status
 
         except Investigation.DoesNotExist:
@@ -175,7 +177,7 @@ class SampleSheetImportView(
         return context
 
     def get_form_kwargs(self):
-        """Pass URL kwargs to form"""
+        """Pass kwargs to form"""
         kwargs = super(SampleSheetImportView, self).get_form_kwargs()
         project = self._get_project(self.request, self.kwargs)
 
@@ -216,10 +218,8 @@ class SampleSheetImportView(
 
             if old_inv:
                 if old_inv.irods_status:
-                    # Ensure study and assay structure is the same
-                    # (raises ValueError if this fails at any point)
+                    # Ensure existing studies and assays are found in new inv
                     compare_inv_replace(old_inv, self.object)
-                    compare_inv_replace(self.object, old_inv)
 
                 # Set irods_status to our previous sheet's state
                 self.object.irods_status = old_inv.irods_status
@@ -449,6 +449,7 @@ class IrodsDirsView(
             return context
 
         context['dirs'] = get_sample_dirs(investigation)
+        context['update_dirs'] = True if investigation.irods_status else False
         return context
 
     def post(self, request, **kwargs):
@@ -458,6 +459,7 @@ class IrodsDirsView(
         project = context['project']
         investigation = context['investigation']
         tl_event = None
+        action = 'update' if context['update_dirs'] else 'create'
 
         # Add event in Timeline
         if timeline:
@@ -465,9 +467,9 @@ class IrodsDirsView(
                 project=project,
                 app_name=APP_NAME,
                 user=self.request.user,
-                event_name='sheet_dirs_create',
-                description='create irods directory structure for '
-                            '{investigation}')
+                event_name='sheet_dirs_' + action,
+                description=action + ' irods directory structure for '
+                                     '{investigation}')
 
             tl_event.add_object(
                 obj=investigation,
@@ -481,7 +483,8 @@ class IrodsDirsView(
                     'FAILED', status_desc='Taskflow not enabled')
 
             messages.error(
-                self.request, 'Unable to create dirs: taskflow not enabled!')
+                self.request,
+                'Unable to {} dirs: taskflow not enabled!'.format(action))
 
             return redirect(reverse(
                 'samplesheets:project_sheets',
@@ -502,7 +505,8 @@ class IrodsDirsView(
                 request=self.request)
             messages.success(
                 self.request,
-                'Directory structure for sample data created in iRODS')
+                'Directory structure for sample data {}d in iRODS'.format(
+                    action))
 
             if tl_event:
                 tl_event.set_status('OK')
@@ -517,8 +521,9 @@ class IrodsDirsView(
             'samplesheets:project_sheets',
             kwargs={'project': project.omics_uuid}))
 
-    def get(self, request, **kwargs):
-        return super(TemplateView, self).render_to_response(
+    def get(self, request, *args, **kwargs):
+        super(IrodsDirsView, self).get(request, *args, **kwargs)
+        return super(IrodsDirsView, self).render_to_response(
             self.get_context_data())
 
 
