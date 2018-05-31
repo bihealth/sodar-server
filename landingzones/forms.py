@@ -71,7 +71,7 @@ class LandingZoneForm(forms.ModelForm):
                     study__investigation__project=self.project,
                     study__investigation__active=True):
 
-                if irods_backend.collection_exists(
+                if not irods_backend or irods_backend.collection_exists(
                         irods_backend.get_path(assay)):
                     self.fields['assay'].choices.append(
                         (assay.omics_uuid, '{} / {}'.format(
