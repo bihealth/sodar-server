@@ -21,7 +21,7 @@ class SampleSheetConfigPlugin(SampleSheetConfigPluginPoint):
     description = 'TODO: Write a description for your config plugin'
 
     #: Template for study addition (Study object as "study" in context)
-    study_template = '_study.html'
+    study_template = 'samplesheets_config_bih_germline/_study.html'
 
     #: Required permission for accessing the plugin
     permission = None
