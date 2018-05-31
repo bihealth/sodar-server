@@ -44,6 +44,9 @@ Added
     - Render extract label column
     - Project setting ``study_row_limit`` (#192)
     - Replacing sample sheets for limited modifications (#195)
+    - ``SampleSheetConfigPlugin`` for sheet configuration specific sub-apps (#201)
+    - Config app ``bih_generic`` as an example (#201)
+    - Add ``get_configuration()`` in the ``Investigation`` model (#201)
 - **Taskflowbackend**
     - Add taskflowbackend app (#139)
     - Add optional ``omics_url`` kwarg to ``submit()``

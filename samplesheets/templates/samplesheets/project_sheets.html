@@ -166,6 +166,19 @@
         {% include 'samplesheets/_study_info.html' %}
       </div>
 
+      {# Configuration app #}
+      {% get_config_plugin study as config_plugin %}
+      {% if config_plugin %}
+        <div class="card">
+          <div class="card-header">
+            <h4>{{ config_plugin.title }}</h4>
+          </div>
+          <div class="card-body">
+            {% include 'samplesheets_config_bih_germline/_study.html' %}
+          </div>
+        </div>
+      {% endif %}
+
       {# Study table #}
       <a class="omics-ss-anchor" id="{{ study.omics_uuid }}"></a>
       <div class="card omics-ss-data-card omics-ss-data-card-study">

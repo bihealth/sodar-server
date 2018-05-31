@@ -8,8 +8,9 @@ from django.urls import reverse
 # Projectroles dependency
 from projectroles.plugins import get_backend_api
 
-from ..models import Investigation, GenericMaterial, \
+from ..models import Investigation, Study, GenericMaterial, \
     GENERIC_MATERIAL_TYPES
+from ..plugins import get_config_plugin as get_cnf
 
 
 irods_backend = get_backend_api('omics_irods')
@@ -32,6 +33,22 @@ def get_investigation(project):
 
     except Investigation.DoesNotExist:
         return None
+
+
+@register.simple_tag
+def get_config_plugin(obj):
+    """Return configuration app plugin or None if not found"""
+    if type(obj) == Investigation:
+        inv = obj
+
+    elif type(obj) == Study:
+        inv = obj.investigation
+
+    if not inv:
+        return None
+
+    return get_cnf('samplesheets_config_{}'.format(
+        inv.get_configuration()))
 
 
 @register.simple_tag

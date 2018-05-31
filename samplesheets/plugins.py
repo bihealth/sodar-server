@@ -1,11 +1,16 @@
 from django.urls import reverse
 
+from djangoplugins.point import PluginPoint
+
 # Projectroles dependency
 from projectroles.plugins import ProjectAppPluginPoint
 
 from .models import Investigation
 from .urls import urlpatterns
 from .utils import get_sample_dirs
+
+
+# Samplesheets project app plugin ----------------------------------------------
 
 
 class ProjectAppPlugin(ProjectAppPluginPoint):
@@ -132,3 +137,53 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                 'samplesheets:project_sheets',
                 kwargs={'project': obj.project.omics_uuid}),
             'label': obj.title}
+
+
+# Samplesheets config sub-app plugin -------------------------------------------
+
+
+class SampleSheetConfigPluginPoint(PluginPoint):
+    """Plugin point for registering samplesheet configuration sub-apps"""
+
+    # Properties required by django-plugins ------------------------------
+
+    #: Name (used in code and as unique idenfitier)
+    # TODO: Implement this in your config plugin
+    # TODO: Recommended in form of samplesheets_config_configname
+    # name = 'samplesheets_config_'
+
+    #: Title (used in templates)
+    # TODO: Implement this in your config plugin
+    # title = ''
+
+    # Properties defined in ProjectAppPluginPoint -----------------------
+
+    #: Configuration name
+    # TODO: Implement this in your config plugin
+    config_name = ''
+
+    #: Description string
+    # TODO: Implement this in your config plugin
+    description = 'TODO: Write a description for your config plugin'
+
+    #: Template for study addition (Study object as "study" in context)
+    # TODO: Rename this in your config plugin if not default
+    study_template = '_study.html'
+
+    #: Required permission for accessing the plugin
+    # TODO: Implement this in your config plugin (can be None)
+    # TODO: TBD: Do we need this?
+    permission = None
+
+
+def get_config_plugin(plugin_name):
+    """
+    Return active config plugin
+    :param plugin_name: Plugin name (string)
+    :return: SampleSheetConfigPlugin object or None if not found
+    """
+    try:
+        return SampleSheetConfigPluginPoint.get_plugin(plugin_name)
+
+    except SampleSheetConfigPluginPoint.DoesNotExist:
+        return None
