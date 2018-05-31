@@ -167,8 +167,8 @@ class SampleSheetConfigPluginPoint(PluginPoint):
     description = 'TODO: Write a description for your config plugin'
 
     #: Template for study addition (Study object as "study" in context)
-    # TODO: Rename this in your config plugin if not default
-    study_template = '_study.html'
+    # TODO: Rename this in your config plugin
+    study_template = 'samplesheets_config_configname/_study.html'
 
     #: Required permission for accessing the plugin
     # TODO: Implement this in your config plugin (can be None)
