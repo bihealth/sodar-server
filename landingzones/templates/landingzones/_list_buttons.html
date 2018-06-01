@@ -1,7 +1,8 @@
 <div class="btn-group ml-auto" id="omics-lz-buttons-list">
   <button class="btn btn-primary dropdown-toggle"
           type="button" data-toggle="dropdown"
-          aria-haspopup="true" aria-expanded="false">
+          aria-haspopup="true" aria-expanded="false"
+          {% if not investigation.irods_status %}disabled{% endif %}>
     Zone Operations
   </button>
   <div class="dropdown-menu dropdown-menu-right">

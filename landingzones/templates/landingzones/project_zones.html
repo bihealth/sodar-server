@@ -284,11 +284,12 @@
          * Update zone file stats
          ************************/
         updateZoneFileStats();
+        var statsInterval = {{ zone_statistics_interval }} * 1000;
 
         // Poll and update active zones
         setInterval(function () {
             updateZoneFileStats();
-        }, statusInterval);
+        }, statsInterval);
 
         /***************
          Link list Popup
