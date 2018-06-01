@@ -71,7 +71,7 @@ class IrodsAPI:
     def _get_obj_list(cls, coll, data=None, recurse=True):
         """
         Return a list of data objects within an iRODS collection
-        :param coll: iRODS collection path
+        :param coll: iRODS collection object
         :param data: Optional data to append to in case of recursion (dict)
         :param recurse: Recurse subcollections if True (bool)
         :return: Dict
@@ -106,7 +106,7 @@ class IrodsAPI:
     def _get_obj_stats(cls, coll, data=None, recurse=True):
         """
         Return statistics for data objects within an iRODS collection
-        :param coll: iRODS collection path
+        :param coll: iRODS collection object
         :param data: Optional data to append to in case of recursion (dict)
         :param recurse: Recurse subcollections if True (bool)
         :return: Dict

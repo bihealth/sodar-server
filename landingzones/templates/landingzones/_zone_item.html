@@ -79,7 +79,7 @@
 
         <a class="btn btn-secondary omics-list-btn omics-lz-dav-btn
            {% if zone.status == 'MOVED' or zone.status == 'CREATING' or not irods_webdav_enabled or not irods_backend %} disabled{% endif %}"
-           href="{{ irods_webdav_url }}/{{ zone_irods_path }}" role="button"
+           href="{{ irods_webdav_url }}{{ zone_irods_path }}" role="button"
            {% if zone.status != 'MOVED' and zone.status != 'CREATING' %}data-toggle="tooltip" data-placement="top" title="Browse files in WebDAV"{% endif %}>
           <i class="fa fa-folder-open-o"></i>
         </a>
