@@ -57,6 +57,7 @@ class ProjectZoneView(
 
         # iRODS WebDAV
         if settings.IRODS_WEBDAV_ENABLED:
+            context['irods_webdav_enabled'] = True
             context['irods_webdav_url'] = settings.IRODS_WEBDAV_URL.rstrip('/')
 
         # User zones
