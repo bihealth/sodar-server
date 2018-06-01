@@ -120,6 +120,7 @@ Fixed
     - Remove possible duplicate sample rows from study tables (#199)
     - Extract label not correctly parsed
     - Back link not working in ``IrodsDirView`` (#206)
+    - Correctly parse study description (#208)
 - **Timeline**
     - Fix event id parameter in Taskflow view
 

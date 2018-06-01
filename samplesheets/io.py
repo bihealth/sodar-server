@@ -278,6 +278,7 @@ def import_isa(isa_zip, project):
             'file_name': s_i.info.path,
             'investigation': db_investigation,
             'title': s_i.info.title,
+            'description': s_i.info.description,
             'study_design': s_i.designs,        # TODO
             'factors': s_i.factors,             # TODO
             'characteristic_cat': [],           # TODO: TBD: Implement or omit?
