@@ -56,6 +56,7 @@ Changed
     - Upgrade to django-crispy-forms 1.7.1 (#153)
     - Upgrade to Boostrap 4.1.1 (#144)
     - Improve tour help layout
+    - Upgrade to Gunicorn 19.8.1
 - **Filesfolders**
     - Don't show empty folder label if subfolders exist (#135)
 - **Irodsbackend**
