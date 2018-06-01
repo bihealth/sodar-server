@@ -1211,19 +1211,22 @@ class TestProjectUpdateAPIView(
         # NOTE: Duplicate titles not checked here, not allowed in the form
         title = 'New title'
         desc = 'New desc'
+        readme = 'New readme'
 
         request = self.req_factory.post(
             reverse('projectroles:taskflow_project_update'),
             data={
                 'project_uuid': str(self.project.omics_uuid),
                 'title': title,
-                'description': desc})
+                'description': desc,
+                'readme': readme})
         response = views.ProjectUpdateAPIView.as_view()(request)
         self.assertEqual(response.status_code, 200)
 
         self.project.refresh_from_db()
         self.assertEqual(self.project.title, title)
         self.assertEqual(self.project.description, desc)
+        self.assertEqual(self.project.readme.raw, readme)
 
 
 class TestRoleAssignmentGetAPIView(

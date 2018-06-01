@@ -478,6 +478,7 @@ class ProjectModifyMixin(ModelFormMixin):
                 old_owner = project.get_owner().user
                 flow_data['old_owner_uuid'] = str(old_owner.omics_uuid)
                 flow_data['old_owner_username'] = old_owner.username
+                flow_data['project_readme'] = project.readme.raw
 
             try:
                 taskflow.submit(
@@ -1562,6 +1563,7 @@ class ProjectUpdateAPIView(APIView):
                 omics_uuid=request.data['project_uuid'])
             project.title = request.data['title']
             project.description = request.data['description']
+            project.readme.raw = request.data['readme']
             project.save()
 
         except Project.DoesNotExist as ex:

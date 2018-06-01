@@ -217,6 +217,7 @@ class TestProjectUpdateView(TestTaskflowBase):
         values['title'] = 'updated title'
         values['description'] = 'updated description'
         values['owner'] = self.user.omics_uuid  # NOTE: Must add owner
+        values['readme'] = 'updated readme'
         values.update(get_all_settings())  # Add default settings
         values['omics_url'] = self.live_server_url  # HACK
 
@@ -229,28 +230,28 @@ class TestProjectUpdateView(TestTaskflowBase):
 
         # Assert Project state after update
         self.assertEqual(Project.objects.all().count(), 2)
-        project = Project.objects.all()[0]
-        self.assertIsNotNone(project)
+        self.project.refresh_from_db()
 
         expected = {
-            'id': project.pk,
+            'id': self.project.pk,
             'title': 'updated title',
             'type': PROJECT_TYPE_PROJECT,
             'parent': self.category.pk,
             'submit_status': SUBMIT_STATUS_OK,
             'description': 'updated description',
-            'omics_uuid': project.omics_uuid}
+            'omics_uuid': self.project.omics_uuid}
 
-        model_dict = model_to_dict(project)
+        model_dict = model_to_dict(self.project)
         model_dict.pop('readme', None)
         self.assertEqual(model_dict, expected)
+        self.assertEqual(self.project.readme.raw, 'updated readme')
 
         # Assert redirect
         with self.login(self.user):
             self.assertRedirects(
                 response, reverse(
                     'projectroles:detail',
-                    kwargs={'project': project.omics_uuid}))
+                    kwargs={'project': self.project.omics_uuid}))
 
 
 class TestRoleAssignmentCreateView(TestTaskflowBase):

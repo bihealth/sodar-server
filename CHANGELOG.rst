@@ -106,6 +106,7 @@ Fixed
     - Proper redirect from failed project creation to home or parent category
     - Project partially modified instead of rollback if update with taskflow failed (#163)
     - Project settings not correctly populated in ``TestTaskflowBase``
+    - README not modified when updating project with Taskflow enabled (#209)
 - **Samplesheets**
     - Delete investigation if import fails (#138)
     - Assay sorting was not defined
