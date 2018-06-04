@@ -175,9 +175,11 @@ class SampleSheetConfigPluginPoint(PluginPoint):
     # TODO: TBD: Do we need this?
     permission = None
 
-    def get_row_path(self, row):
+    def get_row_path(self, assay, table, row):
         """Return iRODS path for an assay row in a sample sheet. If None,
         display default directory.
+        :param assay: Assay object
+        :param table: List of lists (table returned by SampleSheetTableBuilder)
         :param row: List of dicts (a row returned by SampleSheetTableBuilder)
         :return: String with full iRODS path or None
         """

@@ -542,16 +542,16 @@ class IrodsObjectListAPIView(
         if not irods_backend:
             return Response('Backend not enabled', status=500)
 
-        if 'assay' in kwargs:
-            parent = Assay.objects.get(omics_uuid=kwargs['assay'])
+        try:
+            assay = Assay.objects.get(omics_uuid=kwargs['assay'])
 
-        else:   # study
-            parent = Study.objects.get(omics_uuid=kwargs['study'])
+        except Assay.DoesNotExist:
+            return Response('Assay not found', status=500)
 
-        # TODO: Determine specific collections/files to query for based on input
+        # TODO: Search by irods-path
         try:
             ret_data = irods_backend.get_objects(
-                irods_backend.get_path(parent))
+                irods_backend.get_path(assay))
 
         except FileNotFoundError:
             return Response('Collection not found', status=404)

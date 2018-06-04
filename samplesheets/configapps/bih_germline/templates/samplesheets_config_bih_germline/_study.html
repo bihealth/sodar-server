@@ -1,1 +1,37 @@
-<p>Hello world from <code>samplesheets_config_bih_germline</code>!</p>
+{% load samplesheets_tags %}
+
+<div class="card">
+  <div class="card-header">
+    <h4>Pedigree Files</h4>
+  </div>
+  <div class="card-body omics-card-body-table">
+    <div class="table-responsive omics-ss-config-app-table-div">
+    <table class="table omics-ss-data-table">
+      <thead>
+        <tr>
+          <th>Family</th>
+          <th>BAM files</th>
+          <th>VCF file</th>
+          <th>IGV session file</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% get_families study as families %}
+        {% for fam_id in families %}
+          <tr>
+            <td>{{ fam_id }}</td>
+            <td>
+              {% get_family_sources study fam_id as fam_sources %}
+              {% for fam_source in fam_sources %}
+                <a href="{% url 'samplesheets.configapps.bih_germline:bam' genericmaterial=fam_source.omics_uuid %}">{{ fam_source.name }}</a>
+              {% endfor %}
+            </td>
+            <td><a href="#">Pedigree VCF file</a></td>
+            <td><a href="#">Pedigree IGV session file</a></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  </div>
+</div>
