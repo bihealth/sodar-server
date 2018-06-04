@@ -78,7 +78,7 @@ LOCAL_APPS = [
     'irodsinfo.apps.IrodsinfoConfig',
 
     # Samplesheets config sub-apps
-    'samplesheets.configapps.bih_generic.apps.BihGenericConfig',
+    'samplesheets.configapps.bih_germline.apps.BihGermlineConfig',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS

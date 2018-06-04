@@ -2,20 +2,20 @@ from samplesheets.plugins import SampleSheetConfigPluginPoint
 
 
 class SampleSheetConfigPlugin(SampleSheetConfigPluginPoint):
-    """Plugin for the bih_generic sample sheet configuration"""
+    """Plugin for the bih_germline sample sheet configuration"""
 
     # Properties required by django-plugins ------------------------------
 
     #: Name (used in code and as unique idenfitier)
-    name = 'samplesheets_config_bih_generic'
+    name = 'samplesheets_config_bih_genmline'
 
     #: Title (used in templates)
-    title = 'Generic Sample Sheet Configuration'
+    title = 'Germline Sample Sheet Configuration'
 
     # Properties defined in ProjectAppPluginPoint -----------------------
 
     #: Configuration name
-    config_name = 'bih_generic'
+    config_name = 'bih_germline'
 
     #: Description string
     description = 'TODO: Write a description for your config plugin'
