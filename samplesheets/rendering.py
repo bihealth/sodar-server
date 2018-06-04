@@ -348,9 +348,8 @@ class SampleSheetTableBuilder:
                     self._add_header('Protocol', hide_cls)      # Protocol
                     field_count += 1
 
-                else:
-                    self._add_header('Name', hide_cls)          # Name
-                    field_count += 1
+                self._add_header('Name', hide_cls)              # Name
+                field_count += 1
 
                 a_header_count = self._add_annotation_headers(
                     obj.parameter_values, hide_cls)             # Param values
@@ -398,13 +397,12 @@ class SampleSheetTableBuilder:
                 self._add_cell(
                     obj.protocol.name, classes=hide_cls)        # Protocol
 
-            else:
-                self._add_cell(obj.name, classes=hide_cls)      # Name
+            self._add_cell(obj.name, classes=hide_cls)          # Name
 
             self._add_annotations(
-                obj.parameter_values, hide_cls)             # Param values
+                obj.parameter_values, hide_cls)                 # Param values
 
-        self._add_annotations(obj.comments, hide_cls)       # Comments
+        self._add_annotations(obj.comments, hide_cls)           # Comments
 
     def _append_row(self):
         """Append current row to table data and cleanup"""

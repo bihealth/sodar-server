@@ -88,6 +88,7 @@ Changed
     - Do not allow importing sheet or creating iRODS dirs if rendering fails (#192)
     - Upgrade altamISA to commit ``ddf54e9ab9b47d2b5a7d54ce65ea8aa673375f87`` (#191)
     - Display material subtype in top column (#200)
+    - Display Process name if set (#207)
 - **Taskflowbackend**
     - Use ``omics_uuid`` instead of ``pk`` (#139)
     - Only set up ``PROJECT`` type projects in ``synctaskflow``
