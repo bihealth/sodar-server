@@ -213,13 +213,16 @@ class SampleSheetTableBuilder:
 
     def _add_cell(
             self, value=None, unit=None, repeat=False, link=None,
-            tooltip=None, attrs=None, classes=list()):
+            obj_type=None, field_name=None, tooltip=None, attrs=None,
+            classes=list()):
         """
         Add cell data
         :param value: Value to be displayed in the cell
         :param unit: Unit to be displayed in the cell
         :param repeat: Whether this is a repeating column (boolean)
         :param link: Link from the value (URL string)
+        :param obj_type: HACK: Original object type (string)
+        :param field_name: HACK: Field name (string)
         :param tooltip: Tooltip to be shown on mouse hover (string)
         :param attrs: Optional hidden HTML attributes (dict)
         :param classes: Optional extra classes (list)
@@ -229,6 +232,8 @@ class SampleSheetTableBuilder:
             'unit': unit,
             'repeat': repeat,
             'link': link,
+            'obj_type': obj_type,
+            'field_name': field_name,
             'tooltip': tooltip,
             'attrs': attrs,
             'classes': classes})
@@ -371,14 +376,15 @@ class SampleSheetTableBuilder:
         # Material data
         if type(obj) == GenericMaterial:
             # Add material info for iRODS links Ajax querying
+            # TODO: These can probably be removed
             attrs = {
                 'isa-material': 1,
                 'isa-material-type': obj.item_type,
                 'isa-unique-name': obj.unique_name}
 
-            # TODO: Set material dir here (once we decide how to generate them)
-
-            self._add_cell(obj.name, attrs=attrs)               # Name + attrs
+            self._add_cell(
+                obj.name, obj_type=obj.item_type, field_name='name',
+                attrs=attrs)                                    # Name + attrs
 
             if (obj.material_type == 'Labeled Extract Name' and
                     obj.extract_label):
@@ -441,7 +447,7 @@ class SampleSheetTableBuilder:
             col_pos = 0
 
             # Add row column cell
-            self._add_cell(str(row_id))
+            self._add_cell(str(row_id), classes=['text-muted'])
 
             # Add elements on row
             for col in input_row:

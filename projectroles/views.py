@@ -78,7 +78,12 @@ class ProjectAccessMixin:
         for k, v in kwargs.items():
             if re.match(r'[0-9a-f-]+', v):
                 try:
-                    model = apps.get_model(resolve(request.path).app_name, k)
+                    app_name = resolve(request.path).app_name
+
+                    if app_name.find('.') != -1:
+                        app_name = app_name.split('.')[0]
+
+                    model = apps.get_model(app_name, k)
                     uuid_kwarg = k
                     break
 

@@ -45,3 +45,22 @@ def compare_inv_replace(inv1, inv2):
         raise ValueError(
             'iRODS directories created, studies and assays '
             'do not match: unable to replace investigation')
+
+
+def get_last_material_index(render_table):
+    """
+    Return the column index for the last material in a rendered ISA table
+    :param render_table: Table returned by SampleSheetTableBuilder
+    :return: int
+    """
+    idx = 0
+    row = render_table['table_data'][0]
+
+    for i in range(0, len(row)):
+        cell = row[i]
+
+        if cell['field_name'] == 'name' and cell['obj_type'] == 'MATERIAL':
+            idx = i
+
+    return idx
+
