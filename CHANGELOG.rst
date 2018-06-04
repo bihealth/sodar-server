@@ -57,6 +57,7 @@ Changed
     - Upgrade to Boostrap 4.1.1 (#144)
     - Improve tour help layout
     - Upgrade to Gunicorn 19.8.1
+    - Switch ordering of Filesfolders and Landingzones in project menu (#217)
 - **Filesfolders**
     - Don't show empty folder label if subfolders exist (#135)
 - **Irodsbackend**

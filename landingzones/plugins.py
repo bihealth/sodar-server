@@ -63,7 +63,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
     details_title = 'Landing Zones Overview'
 
     #: Position in plugin ordering
-    plugin_ordering = 30
+    plugin_ordering = 20
 
     '''
     def get_info(self, pk):
