@@ -415,7 +415,7 @@
         $('#omics-ss-popup-cmd').popup({
             transition: 'all 0.2s',
             beforeopen: function () {
-                var irodsPath = $(this).attr('irods-path');
+                var irodsPath = $(this).closest('td').attr('irods-path');
                 var htmlHeader = '<div class="card"><div class="card-body"><h5>iRODS iCommands Access</h5><hr />';
                 var htmlFooter = '</div></div>';
                 var htmlData = '<div class="input-group">' +

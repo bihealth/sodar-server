@@ -548,10 +548,14 @@ class IrodsObjectListAPIView(
         except Assay.DoesNotExist:
             return Response('Assay not found', status=500)
 
-        # TODO: Search by irods-path
+        # Ensure path corresponds to assay
+        assay_path = irods_backend.get_path(assay)
+
+        if assay_path not in kwargs['path']:
+            return Response('Invalid path', status=400)
+
         try:
-            ret_data = irods_backend.get_objects(
-                irods_backend.get_path(assay))
+            ret_data = irods_backend.get_objects(kwargs['path'])
 
         except FileNotFoundError:
             return Response('Collection not found', status=404)

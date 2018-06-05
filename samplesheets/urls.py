@@ -48,7 +48,7 @@ urlpatterns = [
     ),
     # Javascript API views
     url(
-        regex=r'^irods/list/assay/(?P<assay>[0-9a-f-]+)$',
+        regex=r'^irods/list/assay/(?P<assay>[0-9a-f-]+)?path=(?P<path>[\w\-_/]+)$',
         view=views.IrodsObjectListAPIView.as_view(),
         name='irods_list',
     ),
