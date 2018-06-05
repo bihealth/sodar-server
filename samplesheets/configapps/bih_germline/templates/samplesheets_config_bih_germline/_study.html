@@ -24,11 +24,11 @@
                 <td>
                   {% get_family_sources study fam_id as fam_sources %}
                   {% for fam_source in fam_sources %}
-                    <a href="{% url 'samplesheets.configapps.bih_germline:file' file_type='bam' family_id=fam_id genericmaterial=fam_source.omics_uuid %}">{{ fam_source.name }}</a>
+                    <a href="{% url 'samplesheets.configapps.bih_germline:file' file_type='bam' genericmaterial=fam_source.omics_uuid %}">{{ fam_source.name }}</a>
                   {% endfor %}
                 </td>
-                <td><a href="{% url 'samplesheets.configapps.bih_germline:file' file_type='vcf' family_id=fam_id genericmaterial=fam_sources.0.omics_uuid %}">Pedigree VCF file</a></td>
-                <td><a href="#">Pedigree IGV session file</a></td>
+                <td><a href="{% url 'samplesheets.configapps.bih_germline:file' file_type='vcf' genericmaterial=fam_sources.0.omics_uuid %}">Pedigree VCF file</a></td>
+                <td><a href="{% url 'samplesheets.configapps.bih_germline:igv' genericmaterial=fam_sources.0.omics_uuid %}">Pedigree IGV session file</a></td>
               </tr>
             {% endfor %}
           </tbody>

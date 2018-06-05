@@ -7,9 +7,13 @@ app_name = 'samplesheets.configapps.bih_germline'
 
 urlpatterns = [
     url(
-        regex=r'^(?P<file_type>[a-z]+)/family/'
-              r'(?P<family_id>[\w\-_]+)/(?P<genericmaterial>[0-9a-f-]+)$',
+        regex=r'^file/(?P<file_type>[a-z]+)/(?P<genericmaterial>[0-9a-f-]+)$',
         view=views.FileRedirectView.as_view(),
         name='file',
+    ),
+    url(
+        regex=r'^render/igv/(?P<genericmaterial>[0-9a-f-]+)$',
+        view=views.IGVSessionFileRenderView.as_view(),
+        name='igv',
     ),
 ]
