@@ -23,11 +23,16 @@ from samplesheets.models import Investigation, Study, Assay, Protocol, Process, 
 from samplesheets.plugins import get_config_plugin
 from samplesheets.rendering import SampleSheetTableBuilder
 
+# Local constants
+FILE_TYPE_SUFFIX = {
+    'bam': '.bam',
+    'vcf': '.vcf.gz'}
 
-class BamFileRedirectView(
+
+class FileRedirectView(
         LoginRequiredMixin, LoggedInPermissionMixin, ProjectPermissionMixin,
         ProjectContextMixin, View):
-    """Source material BAM file link view"""
+    """BAM/VCF file link view"""
     permission_required = 'samplesheets.view_sheet'
 
     def get(self, request, *args, **kwargs):
@@ -35,6 +40,8 @@ class BamFileRedirectView(
         config_plugin = get_config_plugin('samplesheets_config_bih_germline')
         irods_backend = get_backend_api('omics_irods')
         study = None
+        file_type = kwargs['file_type']
+        family_id = kwargs['family_id']
 
         redirect_url = reverse(
             'samplesheets:project_sheets',
@@ -47,9 +54,15 @@ class BamFileRedirectView(
 
         if not settings.IRODS_WEBDAV_ENABLED or not settings.IRODS_WEBDAV_URL:
             messages.error(self.request, 'iRODS WebDAV not available')
+            return redirect(redirect_url)
 
         if 'genericmaterial' not in self.kwargs:
             messages.error(self.request, 'No Source material given for linking')
+            return redirect(redirect_url)
+
+        if file_type not in FILE_TYPE_SUFFIX.keys():
+            messages.error(
+                self.request, 'Unsupported file type "{}"'.format(file_type))
             return redirect(redirect_url)
 
         try:
@@ -60,7 +73,7 @@ class BamFileRedirectView(
         except GenericMaterial.DoesNotExist:
             messages.error(
                 self.request,
-                'Source not found, unable to redirect to BAM file')
+                'Source not found, unable to redirect to file')
             return redirect(redirect_url)
 
         # Build render table
@@ -72,33 +85,48 @@ class BamFileRedirectView(
         for assay in source.study.assays.all():
             assay_table = study_tables['assays'][assay.get_name()]
 
+            # Get family index
+            try:
+                fam_idx = assay_table['field_header'].index('Family')
+
+            except ValueError:
+                fam_idx = None
+
             for row in assay_table['table_data']:
-                if row[1]['value'] == source.name:
+                # TODO: Refactor after vacation because well, just look at this
+                if ((file_type == 'bam' and row[1]['value'] == source.name) or (
+                        file_type == 'vcf' and ((
+                            fam_idx and row[fam_idx]['value'] ==
+                            source.characteristics['Family']['value']) or
+                        row[1]['value'] == source.name))):
                     path = config_plugin.get_row_path(assay, assay_table, row)
                     query_paths.append(path)
 
-        bam_paths = []
+        file_paths = []
 
         for query_path in query_paths:
             try:
                 obj_list = irods_backend.get_objects(query_path)
 
                 for obj in obj_list['data_objects']:
-                    if obj['name'].lower().find('.bam') != -1:
-                        bam_paths.append(obj['path'])
+                    if obj['name'].lower().find(
+                            FILE_TYPE_SUFFIX[file_type]) != -1:
+                        file_paths.append(obj['path'])
 
             except FileNotFoundError:
                 pass
 
-        if not bam_paths:
+        if not file_paths:
             messages.warning(
-                self.request, 'No BAM file found for {}'.format(source.name))
+                self.request, 'No {} file found for {}'.format(
+                    file_type.upper(), source.name))
             return redirect(redirect_url)
 
-        # Get the last bam file by file name
-        bam_path = sorted(bam_paths, key=lambda x: x.split('/')[-1])[-1]
-        bam_url = '{}{}'.format(
-            settings.IRODS_WEBDAV_URL, bam_path)
+        # Get the last file of type by file name
+        file_path = sorted(file_paths, key=lambda x: x.split('/')[-1])[-1]
+        file_url = '{}{}'.format(
+            settings.IRODS_WEBDAV_URL, file_path)
 
         # Return with link to file in DavRods
-        return redirect(bam_url)
+        return redirect(file_url)
+
