@@ -130,6 +130,7 @@ Fixed
     - Back link not working in ``IrodsDirView`` (#206)
     - Invalid HTML from rendering extra cell classes together with ``text-right``
     - Correctly parse study description (#208)
+    - Numerical value check for right-aligning (#218)
 - **Timeline**
     - Fix event id parameter in Taskflow view
 

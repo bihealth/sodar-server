@@ -1,4 +1,5 @@
 import random
+import re
 import string
 
 from django import template
@@ -14,6 +15,7 @@ from ..plugins import get_config_plugin as get_cnf
 
 
 irods_backend = get_backend_api('omics_irods')
+num_re = re.compile('^(?=.)([+-]?([0-9]*)(\.([0-9]+))?)$')
 
 register = template.Library()
 
@@ -291,15 +293,6 @@ def render_cells(row, col_values):
     """
     ret = ''
 
-    # Right aligning
-    def is_num(x):
-        try:
-            float(x)
-            return True
-
-        except ValueError:
-            return False
-
     # Iterate through row, render only if there is data in column
     for i in range(0, len(row)):
         cell = row[i]
@@ -309,7 +302,8 @@ def render_cells(row, col_values):
 
             ret += '<td '
 
-            if cell['value'] and is_num(cell['value']):
+            # Right aligning
+            if cell['value'] and num_re.match(cell['value']):
                 td_class_str += ' text-right'
 
             # Add extra attrs if present
