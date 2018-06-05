@@ -24,11 +24,11 @@
                 <td>
                   {% get_family_sources study fam_id as fam_sources %}
                   {% for fam_source in fam_sources %}
-                    <a class="mr-2" href="{% url 'samplesheets.configapps.bih_germline:file' file_type='bam' genericmaterial=fam_source.omics_uuid %}">{{ fam_source.name }} <i class="fa fa-folder-open"></i></a>
+                    <a class="mr-3 text-nowrap" href="{% url 'samplesheets.configapps.bih_germline:file' file_type='bam' genericmaterial=fam_source.omics_uuid %}">{{ fam_source.name }} <i class="fa fa-folder-open"></i></a>
                   {% endfor %}
                 </td>
-                <td><a href="{% url 'samplesheets.configapps.bih_germline:file' file_type='vcf' genericmaterial=fam_sources.0.omics_uuid %}">Pedigree VCF file <i class="fa fa-folder-open"></i></a></td>
-                <td><a href="{% url 'samplesheets.configapps.bih_germline:igv' genericmaterial=fam_sources.0.omics_uuid %}">Pedigree IGV session file <i class="fa fa-file-text"></i></a></td>
+                <td><a class="text-nowrap" href="{% url 'samplesheets.configapps.bih_germline:file' file_type='vcf' genericmaterial=fam_sources.0.omics_uuid %}">Pedigree VCF file <i class="fa fa-folder-open"></i></a></td>
+                <td><a class="text-nowrap" href="{% url 'samplesheets.configapps.bih_germline:igv' genericmaterial=fam_sources.0.omics_uuid %}">Pedigree IGV session file <i class="fa fa-file-text"></i></a></td>
               </tr>
             {% endfor %}
           </tbody>
