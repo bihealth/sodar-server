@@ -105,6 +105,7 @@ Fixed
     - Add missing email settings in production config (#149)
     - Add ``python3-distutils`` to Xenial requirements to fix failing tests caused by recent updates
     - User links visible when logged out on low resolutions (#197)
+    - Fix ``omics-card-table-bordered`` CSS
 - **Filesfolders**
     - Broken link for subfolders with depth >1 (#136)
 - **Projectroles**
