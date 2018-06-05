@@ -44,6 +44,10 @@ Added
     - Render extract label column
     - Project setting ``study_row_limit`` (#192)
     - Replacing sample sheets for limited modifications (#195)
+    - ``SampleSheetConfigPlugin`` for sheet configuration specific sub-apps (#201)
+    - Config app ``bih_germline`` as an example (#201)
+    - Add ``get_configuration()`` in the ``Investigation`` model (#201)
+    - Add ``get_irods_row_path()`` to iRODS path to sample sheet row (#172)
 - **Taskflowbackend**
     - Add taskflowbackend app (#139)
     - Add optional ``omics_url`` kwarg to ``submit()``
@@ -101,6 +105,7 @@ Fixed
     - Add missing email settings in production config (#149)
     - Add ``python3-distutils`` to Xenial requirements to fix failing tests caused by recent updates
     - User links visible when logged out on low resolutions (#197)
+    - Fix ``omics-card-table-bordered`` CSS
 - **Filesfolders**
     - Broken link for subfolders with depth >1 (#136)
 - **Projectroles**
@@ -109,6 +114,7 @@ Fixed
     - Proper redirect from failed project creation to home or parent category
     - Project partially modified instead of rollback if update with taskflow failed (#163)
     - Project settings not correctly populated in ``TestTaskflowBase``
+    - Allow ``_get_project()`` with top level app models from nested apps (#201)
     - README not modified when updating project with Taskflow enabled (#209)
 - **Samplesheets**
     - Delete investigation if import fails (#138)
@@ -122,6 +128,7 @@ Fixed
     - Remove possible duplicate sample rows from study tables (#199)
     - Extract label not correctly parsed
     - Back link not working in ``IrodsDirView`` (#206)
+    - Invalid HTML from rendering extra cell classes together with ``text-right``
     - Correctly parse study description (#208)
 - **Timeline**
     - Fix event id parameter in Taskflow view

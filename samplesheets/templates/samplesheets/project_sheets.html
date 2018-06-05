@@ -38,6 +38,10 @@
       height: 470px;
     }
 
+    .omics-ss-config-app-table-div {
+      max-height: 300px;
+    }
+
     .omics-ss-data-table {
       border: 0 !important;
       min-width: 100%;
@@ -84,7 +88,6 @@
 
     .omics-ss-data-table tbody tr td:first-child {
       border-left: 0 !important;
-      color: #6c757d;
     }
 
     .omics-ss-data-table tbody tr td:last-child {
@@ -165,6 +168,12 @@
         </div>
         {% include 'samplesheets/_study_info.html' %}
       </div>
+
+      {# Configuration app #}
+      {% get_config_plugin study as config_plugin %}
+      {% if config_plugin %}
+        {% include config_plugin.study_template %}
+      {% endif %}
 
       {# Study table #}
       <a class="omics-ss-anchor" id="{{ study.omics_uuid }}"></a>
@@ -406,7 +415,7 @@
         $('#omics-ss-popup-cmd').popup({
             transition: 'all 0.2s',
             beforeopen: function () {
-                var irodsPath = $(this).attr('irods-path');
+                var irodsPath = $(this).closest('td').attr('irods-path');
                 var htmlHeader = '<div class="card"><div class="card-body"><h5>iRODS iCommands Access</h5><hr />';
                 var htmlFooter = '</div></div>';
                 var htmlData = '<div class="input-group">' +

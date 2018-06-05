@@ -76,6 +76,9 @@ LOCAL_APPS = [
     # General site apps
     'adminalerts.apps.AdminalertsConfig',
     'irodsinfo.apps.IrodsinfoConfig',
+
+    # Samplesheets config sub-apps
+    'samplesheets.configapps.bih_germline.apps.BihGermlineConfig',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS

@@ -1,0 +1,45 @@
+{% load samplesheets_tags %}
+
+<div class="card">
+  <div class="card-header">
+    <h4>Pedigree Files</h4>
+  </div>
+  {% if investigation.irods_status %}
+    <div class="card-body omics-card-body-table">
+      <div class="table-responsive omics-ss-config-app-table-div">
+        <table class="table omics-card-table-bordered omics-ss-data-table">
+          <thead>
+            <tr>
+              <th>Family</th>
+              <th>BAM files</th>
+              <th>VCF file</th>
+              <th>IGV session file</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% get_families study as families %}
+            {% for fam_id in families %}
+              <tr>
+                <td>{{ fam_id }}</td>
+                <td>
+                  {% get_family_sources study fam_id as fam_sources %}
+                  {% for fam_source in fam_sources %}
+                    <a href="{% url 'samplesheets.configapps.bih_germline:file' file_type='bam' genericmaterial=fam_source.omics_uuid %}">{{ fam_source.name }}</a>
+                  {% endfor %}
+                </td>
+                <td><a href="{% url 'samplesheets.configapps.bih_germline:file' file_type='vcf' genericmaterial=fam_sources.0.omics_uuid %}">Pedigree VCF file</a></td>
+                <td><a href="{% url 'samplesheets.configapps.bih_germline:igv' genericmaterial=fam_sources.0.omics_uuid %}">Pedigree IGV session file</a></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  {% else %}
+    <div class="card-body omics-card-body text-center">
+    <p class="font-italic">
+      iRODS directories not created, file listing disabled
+    </p>
+    </div>
+  {% endif %}
+</div>

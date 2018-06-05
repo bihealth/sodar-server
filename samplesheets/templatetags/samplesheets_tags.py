@@ -8,8 +8,9 @@ from django.urls import reverse
 # Projectroles dependency
 from projectroles.plugins import get_backend_api
 
-from ..models import Investigation, GenericMaterial, \
+from ..models import Investigation, Study, Assay, GenericMaterial, \
     GENERIC_MATERIAL_TYPES
+from ..plugins import get_config_plugin as get_cnf
 
 
 irods_backend = get_backend_api('omics_irods')
@@ -35,6 +36,25 @@ def get_investigation(project):
 
 
 @register.simple_tag
+def get_config_plugin(obj):
+    """Return configuration app plugin or None if not found"""
+    if type(obj) == Investigation:
+        inv = obj
+
+    elif type(obj) == Study:
+        inv = obj.investigation
+
+    elif type(obj) == Assay:
+        inv = obj.study.investigation
+
+    if not inv:
+        return None
+
+    return get_cnf('samplesheets_config_{}'.format(
+        inv.get_configuration()))
+
+
+@register.simple_tag
 def get_table_id(parent):
     """
     Return table id for DataTable reference
@@ -43,6 +63,7 @@ def get_table_id(parent):
     """
     return 'omics-ss-data-table-{}-{}'.format(
         parent.__class__.__name__.lower(), parent.omics_uuid)
+
 
 
 @register.simple_tag
@@ -152,6 +173,50 @@ def get_irods_tree(investigation):
     return ret
 
 
+# TODO: This should be in bih_germline app template tags
+@register.simple_tag
+def get_families(study):
+    """
+    Return list of families
+    :param study: Study object
+    :return: List of strings
+    """
+    # TODO: Quick HACK, un-hackify
+    ret = sorted(list(set([
+        m.characteristics['Family']['value'] for m in
+        GenericMaterial.objects.filter(study=study, item_type='SOURCE')])))
+
+    if not ret or ret[0] == None:
+        ret = GenericMaterial.objects.filter(
+            study=study, item_type='SOURCE').values_list(
+            'name', flat=True).order_by('name')
+
+    return ret
+
+
+# TODO: This should be in bih_germline app template tags
+@register.simple_tag
+def get_family_sources(study, family_id):
+    """
+    Return sources for a family in a study
+    :param study: Study object
+    :param family_id: String
+    :return: QuerySet of GenericMaterial objects
+    """
+    ret = GenericMaterial.objects.filter(
+        study=study,
+        item_type='SOURCE',
+        characteristics__Family__value=family_id)
+
+    if ret.count() == 0:
+        ret = GenericMaterial.objects.filter(
+            study=study,
+            item_type='SOURCE',
+            name=family_id)
+
+    return ret
+
+
 # Table rendering --------------------------------------------------------------
 
 
@@ -245,7 +310,7 @@ def render_cells(row, col_values):
             ret += '<td '
 
             if cell['value'] and is_num(cell['value']):
-                td_class_str += 'text-right'
+                td_class_str += ' text-right'
 
             # Add extra attrs if present
             if cell['attrs']:
@@ -280,21 +345,21 @@ def render_cells(row, col_values):
 
 
 @register.simple_tag
-def render_links_cell(row):
+def get_irods_row_path(assay, assay_table, row):
     """
-    Return links cell for row as HTML
-    :return: String (contains HTML)
+    Return iRODS path for an assay row. If the configuration is not recognized,
+    Returns a link for the whole assay
+    :param assay: Assay object
+    :param assay_table: Assay table from SampleSheetTableBuilder
+    :param row: Row from SampleSheetTableBuilder
+    :return: String
     """
-    # TODO: Add actual links
-    # TODO: Refactor/cleanup, this is a quick screenshot HACK
+    config_plugin = get_config_plugin(assay)
 
-    return '<td class="bg-light omics-ss-data-cell-links">\n' \
-           '  <div class="btn-group omics-ss-data-btn-group">\n' \
-           '    <button class="btn btn-secondary dropdown-toggle btn-sm ' \
-           '                   omics-ss-data-dropdown"' \
-           '                   type="button" data-toggle="dropdown" ' \
-           '                   aria-expanded="false">' \
-           '                   <i class="fa fa-external-link"></i>' \
-           '    </button>' \
-           '  </div>\n' \
-           '</td>\n'
+    if not config_plugin:
+        if irods_backend:
+            return irods_backend.get_path(assay)
+
+        return None
+
+    return config_plugin.get_row_path(assay, assay_table, row)
