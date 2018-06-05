@@ -65,6 +65,7 @@ def get_table_id(parent):
         parent.__class__.__name__.lower(), parent.omics_uuid)
 
 
+
 @register.simple_tag
 def get_assay_table(table_data, assay):
     """
@@ -356,6 +357,9 @@ def get_irods_row_path(assay, assay_table, row):
     config_plugin = get_config_plugin(assay)
 
     if not config_plugin:
-        return irods_backend.get_path(assay)
+        if irods_backend:
+            return irods_backend.get_path(assay)
+
+        return None
 
     return config_plugin.get_row_path(assay, assay_table, row)
