@@ -59,7 +59,7 @@
                   {% endfor %}
                 </td>
                 <td><a class="text-nowrap" href="{% url 'samplesheets.configapps.bih_germline:file' file_type='vcf' genericmaterial=fam_sources.0.omics_uuid %}">Pedigree VCF file <i class="fa fa-external-link"></i></a></td>
-                <td><a class="" href="{% url 'samplesheets.configapps.bih_germline:igv' genericmaterial=fam_sources.0.omics_uuid %}">Pedigree IGV session file <i class="fa fa-file-text"></i></a></td>
+                <td><a class="text-nowrap" href="{% url 'samplesheets.configapps.bih_germline:igv' genericmaterial=fam_sources.0.omics_uuid %}">Pedigree IGV session file <i class="fa fa-file-text"></i></a></td>
               </tr>
             {% endfor %}
           </tbody>
