@@ -78,3 +78,6 @@ django-db-file-storage==0.5.2
 
 # Python iRODS client for irodsbackend
 python-irodsclient==0.8.0
+
+# XML generating
+lxml==4.2.1
