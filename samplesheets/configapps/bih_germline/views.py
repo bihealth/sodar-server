@@ -80,8 +80,8 @@ class BaseGermlineConfigView(
                 obj_list = irods_backend.get_objects(query_path)
 
                 for obj in obj_list['data_objects']:
-                    if obj['name'].lower().find(
-                            FILE_TYPE_SUFFIX[file_type]) != -1:
+                    if obj['name'].lower().endswith(
+                            FILE_TYPE_SUFFIX[file_type]):
                         file_paths.append(obj['path'])
 
             except FileNotFoundError:
