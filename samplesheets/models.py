@@ -5,6 +5,7 @@ from django.contrib.postgres.fields import ArrayField, JSONField
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
+from django.utils.text import slugify
 
 # Projectroles dependency
 from projectroles.models import Project
@@ -20,7 +21,21 @@ GENERIC_MATERIAL_TYPES = {
     'DATA': 'Data File'}
 
 GENERIC_MATERIAL_CHOICES = [(k, v) for k, v in GENERIC_MATERIAL_TYPES.items()]
-NOT_AVAILABLE_STR = ''
+NOT_AVAILABLE_STR = '(N/A)'
+CONFIG_LABEL = 'Created With Configuration'
+
+
+# Utils ------------------------------------------------------------------------
+
+def get_zone_dir(obj):
+    """
+    Return iRODS dir friendly name for a study or an assay to be used in landing
+    zones. Used because Django's slugify uses hyphens which get confusing as
+    UUIDs are used elsewhere
+    :param obj: Study or Assay
+    :return: String
+    """
+    return slugify(obj.get_display_name()).replace('-', '_')
 
 
 # Abstract base class ----------------------------------------------------------
@@ -130,6 +145,16 @@ class Investigation(BaseSampleSheet):
         default=dict,
         help_text='Ontology source references')
 
+    #: Active status of investigation (only one active per project)
+    active = models.BooleanField(
+        default=False,
+        help_text='Active status of investigation (one active per project)')
+
+    #: Status of iRODS directory structure creation
+    irods_status = models.BooleanField(
+        default=False,
+        help_text='Status of iRODS directory structure creation')
+
     def __str__(self):
         return '{}: {}'.format(self.project.title, self.title)
 
@@ -138,6 +163,24 @@ class Investigation(BaseSampleSheet):
             self.project.title,
             self.title)
         return 'Investigation({})'.format(', '.join(repr(v) for v in values))
+
+    # Custom row-level functions
+
+    def get_configuration(self):
+        """Return used configuration as string if found"""
+        # TODO: Do this with a nice regex instead, too tired now
+        if CONFIG_LABEL not in self.comments:
+            return None
+
+        conf = self.comments[CONFIG_LABEL]['value']
+
+        if conf.find('/') == -1 and conf.find('\\') == -1:
+            return conf
+
+        elif conf.find('\\') != -1:
+            conf = conf.replace('\\', '/')
+
+        return conf.split('/')[-1]
 
 
 # Study ------------------------------------------------------------------------
@@ -233,6 +276,16 @@ class Study(BaseSampleSheet):
     def get_name(self):
         """Return simple printable name for study"""
         return self.title if self.title else self.identifier
+
+    def get_display_name(self):
+        """Return display name for study"""
+        return self.title.strip('.').title() if self.title else self.identifier
+
+    def get_nodes(self):
+        """Return list of all nodes (materials and processes) for study"""
+        return list(GenericMaterial.objects.filter(study=self)) + \
+            list(Process.objects.filter(
+                study=self).prefetch_related('protocol'))
 
 
 # Protocol ---------------------------------------------------------------------
@@ -366,6 +419,7 @@ class Assay(BaseSampleSheet):
 
     class Meta:
         unique_together = ('study', 'file_name')
+        ordering = ['study__file_name', 'file_name']
 
     def __str__(self):
         return '{}: {}/{}'.format(
@@ -383,8 +437,12 @@ class Assay(BaseSampleSheet):
     # Custom row-level functions
 
     def get_name(self):
-        """Return simple idenfitying name for Assay"""
+        """Return simple idenfitying name for assay"""
         return ''.join(str(self.file_name)[2:].split('.')[:-1])
+
+    def get_display_name(self):
+        """Return display name for assay"""
+        return ' '.join(s for s in self.get_name().split('_')).title()
 
 
 # Materials and data files -----------------------------------------------------

@@ -89,12 +89,12 @@ urlpatterns = [
     ),
     # Taskflow API Views
     url(
-        regex=r'^taskflow/project/get$',
+        regex=r'^taskflow/get$',
         view=views.ProjectGetAPIView.as_view(),
         name='taskflow_project_get',
     ),
     url(
-        regex=r'^taskflow/project/update$',
+        regex=r'^taskflow/update$',
         view=views.ProjectUpdateAPIView.as_view(),
         name='taskflow_project_update',
     ),
@@ -114,8 +114,13 @@ urlpatterns = [
         name='taskflow_role_delete',
     ),
     url(
-        regex=r'^irods-info',
-        view=views.IrodsInfoView.as_view(),
-        name='irods_info',
+        regex=r'^taskflow/settings/get$',
+        view=views.ProjectSettingsGetAPIView.as_view(),
+        name='taskflow_settings_get',
+    ),
+    url(
+        regex=r'^taskflow/settings/set$',
+        view=views.ProjectSettingsSetAPIView.as_view(),
+        name='taskflow_settings_set',
     ),
 ]

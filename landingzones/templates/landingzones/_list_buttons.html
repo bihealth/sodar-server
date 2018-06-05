@@ -1,0 +1,24 @@
+<div class="btn-group ml-auto" id="omics-lz-buttons-list">
+  <button class="btn btn-primary dropdown-toggle"
+          type="button" data-toggle="dropdown"
+          aria-haspopup="true" aria-expanded="false"
+          {% if not investigation.irods_status %}disabled{% endif %}>
+    Zone Operations
+  </button>
+  <div class="dropdown-menu dropdown-menu-right">
+
+    {# Create zone #}
+    <a class="dropdown-item"
+       href="{% url 'landingzones:create' project=project.omics_uuid %}">
+      <i class="fa fa-fw fa-plus"></i> Create Zone
+    </a>
+
+    {# Clear inactive zones #}
+    {% if zones_own.count > 0 %}
+    <a class="dropdown-item"
+       href="{% url 'landingzones:clear' project=project.omics_uuid %}">
+      <i class="fa fa-fw fa-trash"></i> Clear Inactive Zones
+    </a>
+    {% endif %}
+  </div>
+</div>

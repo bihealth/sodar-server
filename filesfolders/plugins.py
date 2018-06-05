@@ -65,7 +65,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
     details_title = 'Small Files Overview'
 
     #: Position in plugin ordering
-    plugin_ordering = 20
+    plugin_ordering = 30
 
     def get_taskflow_sync_data(self):
         """

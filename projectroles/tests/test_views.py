@@ -1166,12 +1166,12 @@ class TestProjectGetAPIView(TestViewsBase, ProjectMixin, RoleAssignmentMixin):
         request = self.req_factory.post(
             reverse('projectroles:taskflow_project_get'),
             data={
-                'project_pk': self.project.pk})
+                'project_uuid': str(self.project.omics_uuid)})
         response = views.ProjectGetAPIView.as_view()(request)
         self.assertEqual(response.status_code, 200)
 
         expected = {
-            'project_pk': self.project.pk,
+            'project_uuid': str(self.project.omics_uuid),
             'title': self.project.title,
             'description': self.project.description}
 
@@ -1188,7 +1188,7 @@ class TestProjectGetAPIView(TestViewsBase, ProjectMixin, RoleAssignmentMixin):
         request = self.req_factory.post(
             reverse('projectroles:taskflow_project_get'),
             data={
-                'project_pk': pd_project.pk})
+                'project_uuid': str(pd_project.omics_uuid)})
         response = views.ProjectGetAPIView.as_view()(request)
         self.assertEqual(response.status_code, 404)
 
@@ -1211,19 +1211,22 @@ class TestProjectUpdateAPIView(
         # NOTE: Duplicate titles not checked here, not allowed in the form
         title = 'New title'
         desc = 'New desc'
+        readme = 'New readme'
 
         request = self.req_factory.post(
             reverse('projectroles:taskflow_project_update'),
             data={
-                'project_pk': self.project.pk,
+                'project_uuid': str(self.project.omics_uuid),
                 'title': title,
-                'description': desc})
+                'description': desc,
+                'readme': readme})
         response = views.ProjectUpdateAPIView.as_view()(request)
         self.assertEqual(response.status_code, 200)
 
         self.project.refresh_from_db()
         self.assertEqual(self.project.title, title)
         self.assertEqual(self.project.description, desc)
+        self.assertEqual(self.project.readme.raw, readme)
 
 
 class TestRoleAssignmentGetAPIView(
@@ -1243,15 +1246,15 @@ class TestRoleAssignmentGetAPIView(
         request = self.req_factory.post(
             reverse('projectroles:taskflow_role_get'),
             data={
-                'project_pk': self.project.pk,
-                'user_pk': self.user.pk})
+                'project_uuid': str(self.project.omics_uuid),
+                'user_uuid': str(self.user.omics_uuid)})
         response = views.RoleAssignmentGetAPIView.as_view()(request)
         self.assertEqual(response.status_code, 200)
 
         expected = {
-            'assignment_pk': self.owner_as.pk,
-            'project_pk': self.project.pk,
-            'user_pk': self.user.pk,
+            'assignment_uuid': str(self.owner_as.omics_uuid),
+            'project_uuid': str(self.project.omics_uuid),
+            'user_uuid': str(self.user.omics_uuid),
             'role_pk': self.role_owner.pk,
             'role_name': self.role_owner.name}
         self.assertEqual(response.data, expected)
@@ -1279,8 +1282,8 @@ class TestRoleAssignmentSetAPIView(
         request = self.req_factory.post(
             reverse('projectroles:taskflow_role_set'),
             data={
-                'project_pk': self.project.pk,
-                'user_pk': new_user.pk,
+                'project_uuid': str(self.project.omics_uuid),
+                'user_uuid': str(new_user.omics_uuid),
                 'role_pk': self.role_contributor.pk})
 
         response = views.RoleAssignmentSetAPIView.as_view()(request)
@@ -1301,8 +1304,8 @@ class TestRoleAssignmentSetAPIView(
         request = self.req_factory.post(
             reverse('projectroles:taskflow_role_set'),
             data={
-                'project_pk': self.project.pk,
-                'user_pk': new_user.pk,
+                'project_uuid': str(self.project.omics_uuid),
+                'user_uuid': str(new_user.omics_uuid),
                 'role_pk': self.role_contributor.pk})
 
         response = views.RoleAssignmentSetAPIView.as_view()(request)
@@ -1336,8 +1339,8 @@ class TestRoleAssignmentDeleteAPIView(
         request = self.req_factory.post(
             reverse('projectroles:taskflow_role_delete'),
             data={
-                'project_pk': self.project.pk,
-                'user_pk': new_user.pk})
+                'project_uuid': str(self.project.omics_uuid),
+                'user_uuid': str(new_user.omics_uuid)})
 
         response = views.RoleAssignmentDeleteAPIView.as_view()(request)
         self.assertEqual(response.status_code, 200)
@@ -1353,8 +1356,8 @@ class TestRoleAssignmentDeleteAPIView(
         request = self.req_factory.post(
             reverse('projectroles:taskflow_role_delete'),
             data={
-                'project_pk': self.project.pk,
-                'user_pk': new_user.pk})
+                'project_uuid': str(self.project.omics_uuid),
+                'user_uuid': str(new_user.omics_uuid)})
 
         response = views.RoleAssignmentDeleteAPIView.as_view()(request)
         self.assertEqual(response.status_code, 404)

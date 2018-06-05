@@ -1,18 +1,15 @@
 {% load rules %}
 {% has_perm 'samplesheets.edit_sheet' request.user project as can_edit_sheet %}
+{% has_perm 'samplesheets.create_dirs' request.user project as can_create_dirs %}
 {% has_perm 'samplesheets.export_sheet' request.user project as can_export_sheet %}
 {% has_perm 'samplesheets.delete_sheet' request.user project as can_delete_sheet %}
 
-{% if up %}
-  <div class="row">
-    <div class="btn-group dropup ml-auto" id="omics-ss-buttons-op-up">
-{% else %}
-  <div class="btn-group ml-auto" id="omics-ss-buttons-op">
-{% endif %}
 
+<div class="btn-group ml-auto" id="omics-ss-buttons-op">
   <button class="btn btn-primary dropdown-toggle"
           type="button" data-toggle="dropdown"
-          aria-haspopup="true" aria-expanded="false">
+          aria-haspopup="true" aria-expanded="false"
+          {% if request.resolver_match.url_name == 'overview' %}disabled{% endif %}>
     Sheet Operations
   </button>
   <div class="dropdown-menu dropdown-menu-right">
@@ -21,6 +18,12 @@
     {% if not investigation and can_edit_sheet %}
       <a class="dropdown-item" href="{% url 'samplesheets:import' project=project.omics_uuid %}">
         <i class="fa fa-fw fa-upload"></i> Import ISAtab
+      </a>
+
+    {# Replace #}
+    {% elif investigation and can_edit_sheet %}
+      <a class="dropdown-item" href="{% url 'samplesheets:import' project=project.omics_uuid %}">
+        <i class="fa fa-fw fa-refresh"></i> Replace ISAtab
       </a>
     {% endif %}
 
@@ -33,10 +36,16 @@
     {% endif %}
     {% endcomment %}
 
+    {% if investigation and can_create_dirs and not render_error %}
+      <a class="dropdown-item" href="{% url 'samplesheets:dirs' project=project.omics_uuid %}">
+        <i class="fa fa-fw fa-database"></i> {% if investigation.irods_status %}Update{% else %}Create{% endif %} iRODS Directories
+      </a>
+    {% endif %}
+
     {# Delete #}
     {% if investigation and can_delete_sheet %}
       <a class="dropdown-item" href="{% url 'samplesheets:delete' project=project.omics_uuid %}">
-        <i class="fa fa-fw fa-close"></i> Delete Sheets
+        <i class="fa fa-fw fa-close"></i> Delete Sheets and Data
       </a>
     {% endif %}
 

@@ -4,10 +4,11 @@
 
 <h4>
   {% if table_type == 'assay' %}
-    <i class="fa fa-fw fa-table text-danger"></i><span class="font-weight-bold text-danger">Assay</span> <span class="text-muted">|</span> {% get_assay_title item %}
+    <i class="fa fa-fw fa-table text-danger"></i><span class="font-weight-bold text-danger">Assay</span> <span class="text-muted">|</span>
   {% else %}
-    <i class="fa fa-fw fa-list-alt text-info"></i><span class="font-weight-bold text-info">Study</span> <span class="text-muted">|</span> {% get_study_title item %}
+    <i class="fa fa-fw fa-list-alt text-info"></i><span class="font-weight-bold text-info">Study</span> <span class="text-muted">|</span>
   {% endif %}
+  {{ item.get_display_name }}
   <div class="input-group omics-header-input-group pull-right" table-id="{% get_table_id item %}">
     <div class="input-group-prepend">
       {% if table_type == 'assay' %}

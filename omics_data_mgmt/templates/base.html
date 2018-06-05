@@ -68,7 +68,7 @@
     <div class="omics-base-container">
       <div class="omics-top-container">
         <div class="m-b-1 omics-titlebar-container">
-          <nav class="navbar navbar-expand-md navbar-dark bg-dark omics-base-navbar" id="omics-base-navbar">
+          <nav class="navbar navbar-expand-lg navbar-dark bg-dark omics-base-navbar" id="omics-base-navbar">
             <a class="navbar-brand" id="omics-base-navbar-brand" href="/">Omics Data Management</a>
             <button class="navbar-toggler" type="button" data-toggle="collapse"
                     data-target="#navbarSupportedContent"
@@ -96,6 +96,16 @@
                   </li>
                 {% endif %}
 
+                {# Admin link #}
+                {% if request.user.is_superuser %}
+                    <li class="nav-item">
+                      <a class="nav-link"
+                         href="{% url 'admin:index' %}" target="_blank"
+                         id="omics-navbar-admin-link">
+                        <i class="fa fa-fw fa-gears"></i> Admin</a>
+                    </li>
+                {% endif %}
+
                 {# Site-wide apps #}
                 {% get_site_apps as site_apps %}
                 {% for plugin in site_apps %}
@@ -117,17 +127,19 @@
                </li>
 
                 {# Hidden user menu options for responsive menu #}
-                <li class="nav-item omics-navbar-alt-item">
-                  <a class="nav-link"
-                     href="{{ request.user.get_absolute_url }}"
-                     id="omics-alt-navbar-link-user-details"><i class="fa fa-fw fa-user-circle-o"></i> User Profile</a>
-                </li>
+                {% if request.user.is_authenticated %}
+                  <li class="nav-item omics-navbar-alt-item">
+                    <a class="nav-link"
+                       href="{{ request.user.get_absolute_url }}"
+                       id="omics-alt-navbar-link-user-details"><i class="fa fa-fw fa-user-circle-o"></i> User Profile</a>
+                  </li>
 
-                <li class="nav-item omics-navbar-alt-item">
-                  <a class="nav-link text-danger"
-                     href="{% url 'account_logout' %}"
-                     id="omics-alt-nav-link-sign-out"><i class="fa fa-fw fa-sign-out"></i> Sign Out</a>
-                </li>
+                  <li class="nav-item omics-navbar-alt-item">
+                    <a class="nav-link text-danger"
+                       href="{% url 'account_logout' %}"
+                       id="omics-alt-nav-link-sign-out"><i class="fa fa-fw fa-sign-out"></i> Sign Out</a>
+                  </li>
+                {% endif %}
 
                 {# Normal user menu #}
                 <li class="nav-item omics-navbar-user-dropdown">
@@ -197,7 +209,6 @@
             text: 'The tour help describes key elements on the currently opened ' +
                   'page and aids you in using available features. Advance on ' +
                   'the tour by clicking "Next".',
-            attachTo: '.omics-titlebar-container bottom',
             advanceOn: '.docs-link click',
             showCancelLink: true
         });

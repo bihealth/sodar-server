@@ -39,6 +39,11 @@ function humanFileSize(bytes, si) {
 }
 
 
+// Define common HTML for Ajax popups
+var popupWaitHtml = '<div class="display-3 w-100 text-center"><i class="fa fa-spin fa-circle-o-notch text-white"></i></div>';
+var popupNoFilesHtml = '<span class="text-muted"><em>No files found</em></span>';
+
+
 // Initialize Shepherd Tour
 var tourEnabled = false;  // Needs to set true if there is content
     tour = new Shepherd.Tour({

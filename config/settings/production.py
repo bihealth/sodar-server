@@ -37,6 +37,9 @@ SECURE_BROWSER_XSS_FILTER = True
 SESSION_COOKIE_SECURE = True
 SESSION_COOKIE_HTTPONLY = True
 SECURE_SSL_REDIRECT = env.bool('DJANGO_SECURE_SSL_REDIRECT', default=True)
+SECURE_REDIRECT_EXEMPT = [
+    '/taskflow/'
+]
 CSRF_COOKIE_SECURE = True
 CSRF_COOKIE_HTTPONLY = True
 X_FRAME_OPTIONS = 'DENY'
@@ -101,6 +104,17 @@ LOGGING['loggers']['django.security.DisallowedHost'] = {
 ADMIN_URL = env('DJANGO_ADMIN_URL', default='admin')
 
 
+# EMAIL CONFIGURATION
+# ------------------------------------------------------------------------------
+EMAIL_URL = env.email_url('EMAIL_URL', 'smtp://0.0.0.0')
+
+EMAIL_HOST = EMAIL_URL['EMAIL_HOST']
+EMAIL_PORT = EMAIL_URL['EMAIL_PORT']
+EMAIL_BACKEND = EMAIL_URL['EMAIL_BACKEND']
+EMAIL_HOST_USER = EMAIL_URL['EMAIL_HOST_USER']
+EMAIL_HOST_PASSWORD = EMAIL_URL['EMAIL_HOST_PASSWORD']
+
+
 # Local App Settings
 # ------------------------------------------------------------------------------
 
@@ -108,6 +122,6 @@ ADMIN_URL = env('DJANGO_ADMIN_URL', default='admin')
 # Plugin settings
 ENABLED_BACKEND_PLUGINS = [
     'timeline_backend',
-    # 'taskflow',
-    # 'omics_irods',
+    'taskflow',
+    'omics_irods',
 ]

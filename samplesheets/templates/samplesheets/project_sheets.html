@@ -38,6 +38,10 @@
       height: 470px;
     }
 
+    .omics-ss-config-app-table-div {
+      max-height: 300px;
+    }
+
     .omics-ss-data-table {
       border: 0 !important;
       min-width: 100%;
@@ -46,10 +50,13 @@
     .omics-ss-data-table thead tr th {
       white-space: nowrap;
       padding: 5px;
-      padding-right: 22px; /* Avoid covering sort icons */
       border-top: 0;
       border-right: 1px solid #dfdfdf;
       border-bottom: 1px solid #dfdfdf;
+    }
+
+    .omics-ss-data-table thead tr.omics-ss-header-row th {
+      padding-right: 22px; /* Avoid covering sort icons */
     }
 
     .omics-ss-data-table tbody tr td {
@@ -58,16 +65,43 @@
       margin: 0 !important;
     }
 
+    .omics-ss-data-table-configapp tbody tr td {
+      vertical-align: top !important;
+      white-space: normal !important;
+    }
+
+    .DTFC_LeftBodyLiner {
+      overflow-x: hidden !important;
+      overflow-y: hidden !important;
+    }
+
     .DTFC_RightBodyLiner {
-      overflow-x: hidden;
+      overflow-x: hidden !important;
+      overflow-y: hidden !important;
+    }
+
+    .DTFC_RightBodyWrapper {
+      background-color: #ffffff;
     }
 
     .omics-ss-data-table tbody tr:last-child td {
       border-bottom: 0;
     }
 
+    .omics-ss-data-table-study thead tr th:first-child {
+      border-left: 0 !important;
+    }
+
+    .omics-ss-data-table-study thead tr th:last-child {
+      border-right: 0 !important;
+    }
+
     .omics-ss-data-table tbody tr td:first-child {
       border-left: 0 !important;
+    }
+
+    .omics-ss-data-table tbody tr td:last-child {
+      border-right: 0 !important;
     }
 
     .DTFC_RightHeadBlocker {
@@ -76,6 +110,7 @@
 
     .DTFC_Cloned {
       border-left: 3px solid #dfdfdf !important;
+      border-right: 1px solid #dfdfdf !important;
     }
 
     .omics-ss-data-links-header {
@@ -92,10 +127,6 @@
 
     .omics-ss-data-links-header {
       border-left: 3px solid #dfdfdf !important;
-    }
-
-    .omics-ss-data-btn-group {
-      height: 1.25em;
     }
 
     .omics-ss-data-dropdown {
@@ -122,7 +153,7 @@
 
   {% if not investigation %}
 
-    <div class="alert alert-info" role="alert">
+    <div class="alert alert-info" role="alert" id="omics-ss-alert-no-sheets">
       No sample sheets are currently available for this project.
       {% if can_edit_sheet %}
         To add sample sheets, please import it from ab existing ISAtab investigation.
@@ -131,7 +162,14 @@
 
   {% else %}
 
-    {% if table_data.study %}
+    {% if render_error %}
+
+      <div class="alert alert-danger" role="alert" id="omics-ss-alert-render-error">
+        Error rendering sample sheets, please check your ISAtab files. Exception:
+        {{ render_error|truncatechars:512 }}
+      </div>
+
+    {% elif table_data.study %}
 
       {# Details #}
       <div class="card">
@@ -141,9 +179,15 @@
         {% include 'samplesheets/_study_info.html' %}
       </div>
 
+      {# Configuration app #}
+      {% get_config_plugin study as config_plugin %}
+      {% if config_plugin %}
+        {% include config_plugin.study_template %}
+      {% endif %}
+
       {# Study table #}
       <a class="omics-ss-anchor" id="{{ study.omics_uuid }}"></a>
-      <div class="card omics-ss-data-card">
+      <div class="card omics-ss-data-card omics-ss-data-card-study">
         <div class="card-header">
           {% include 'samplesheets/_sheet_table_header.html' with table_type='study' item=study %}
         </div>
@@ -157,7 +201,7 @@
       {# Assay tables #}
       {% for assay in study.assays.all %}
         <a class="omics-ss-anchor" id="{{ assay.omics_uuid }}"></a>
-        <div class="card omics-ss-data-card">
+        <div class="card omics-ss-data-card omics-ss-data-card-assay">
           <div class="card-header">
             {% include 'samplesheets/_sheet_table_header.html' with table_type='assay' item=assay %}
           </div>
@@ -170,14 +214,14 @@
         </div>
       {% endfor %}
 
-    {% elif subpage == 'info' %}
-
-
     {% endif %}
 
   {% endif %}
 
 </div> {# Main container #}
+
+<span class="omics-popup-overlay" id="omics-ss-popup-list" list-url="" row-id=""></span>
+<span class="omics-popup-overlay" id="omics-ss-popup-cmd" row-id=""></span>
 
 {% endblock projectroles_extend %}
 
@@ -190,13 +234,29 @@
   <!-- Dragscroll for tables -->
   <script type="text/javascript" src="{% static 'js/dragscroll.js' %}"></script>
 
+  <!-- Clipboard helper -->
+  <script type="text/javascript" src="{% static 'js/clipboard.min.js' %}"></script>
+
   <script type="text/javascript">
     $(document).ready(function() {
 
-        /************************
-         * Initialize DataTables
-         ************************/
-        $('.omics-ss-data-table').DataTable({
+        /*********************
+         Initialize DataTables
+         *********************/
+        $('.omics-ss-data-table-study').DataTable({
+            scrollY: 400,
+            scrollX: true,
+            paging: false,
+            scrollCollapse: true,
+            info: false,
+            fixedColumns: {
+                leftColumns: 0,
+                rightColumns: 0
+            },
+            dom: 't' // Disable toolbar
+        });
+
+        $('.omics-ss-data-table-assay').DataTable({
             scrollY: 400,
             scrollX: true,
             paging: false,
@@ -225,9 +285,9 @@
         // Once initialized, remove temporary init classes
         $('.omics-ss-init-container').removeClass('table-responsive').removeClass('omics-ss-init-container');
 
-        /****************************
-         * Enable/disable dragscroll
-         ***************************/
+        /*************************
+         Enable/disable dragscroll
+         *************************/
         $('.omics-ss-data-drag-toggle').click(function() {
             if ($(this).attr('drag-mode') === '0') {
                 $(this).find('i').addClass('text-warning');
@@ -244,9 +304,9 @@
             }
         });
 
-        /**********************
-         * Filtering
-         **********************/
+        /*********
+         Filtering
+         *********/
 
         $('.omics-ss-data-filter').keyup(function () {
             var tableId = $(this).closest('.input-group').attr('table-id');
@@ -255,9 +315,9 @@
             dt.fnFilter(v);
         });
 
-        /**********************
-         * Study column hiding
-        ***********************/
+        /*******************
+         Study column hiding
+         *******************/
 
         // Hide/show study columns when clicked
         $('.omics-ss-assay-hide').click(function () {
@@ -278,11 +338,223 @@
                 $(this).attr('assay-hide-mode', '0');
             }
         });
+
+        /**************
+         Init clipboard
+        **************/
+        new ClipboardJS('.omics-copy-btn');
+
+        /***************
+         Link list Popup
+         ***************/
+        $('#omics-ss-popup-list').popup({
+            transition: 'all 0.2s',
+            beforeopen: function () {
+                var listUrl = $(this).attr('list-url');
+                var htmlHeader = '<div class="card"><div class="card-body"><h5>Files in iRODS</h5><hr />';
+                var htmlFooter = '</div></div>';
+                var htmlData = '';
+
+                console.log('listUrl=' + listUrl);  // DEBUG
+
+                $.ajax({
+                    url: listUrl,
+                    method: 'GET',
+                    dataType: 'json'
+                }).done(function (data) {
+                    if (data['data_objects'].length > 0) {
+                        // TODO: temporary HACK
+                        var pathRootDepth = 7;
+
+                        if (listUrl.indexOf('assay') !== -1) {
+                            pathRootDepth = 8;
+                        }
+
+                        htmlData = '<table class="table omics-card-table table-striped omics-irods-obj-table">';
+                        htmlData += '<thead><th>File</th><th>Size</th><th>Modified</th><th>MD5</th></thead><tbody>';
+
+                        $.each(data['data_objects'], function (i, obj) {
+                            var objNameSplit = obj['path'].split('/');
+                            var objLink = '<a href="{{ irods_webdav_url }}' + obj['path'] + '"><span class="text-muted">';
+                            objLink += objNameSplit.slice(pathRootDepth, objNameSplit.length - 1).join('/');
+                            objLink += '/</span>' + obj['name'] + '</a>';
+                            htmlData += '<tr><td>' + objLink + '</td>';
+                            htmlData += '<td>' + humanFileSize(obj['size'], true) + '</td>';
+                            htmlData += '<td>' + obj['modify_time'] + '</td>';
+                            htmlData += '<td>';
+
+                            if (obj['md5_file'] === true) {
+                                htmlData += '<span class="text-success"><i class="fa fa-check"></i></span>';
+                            }
+
+                            else {
+                                htmlData += '<span class="text-danger"><i class="fa fa-close"></i></span>';
+                            }
+
+                            htmlData += '</td></tr>';
+                        });
+                    }
+
+                    else {
+                        htmlData = popupNoFilesHtml;
+                    }
+
+                    // Set success html
+                    $('#omics-ss-popup-list').html(htmlHeader + htmlData + htmlFooter);
+                }).fail(function (response) {
+                    $('#omics-ss-popup-list').html(htmlHeader +
+                        '<span class="text-danger font-italic">Failed to query data (' +
+                        response.status + ': ' + response.responseText + ')</span>' + htmlFooter);
+                });
+
+                // Set default loading html
+                $(this).html(popupWaitHtml);
+            }
+        });
+
+        $('.omics-ss-popup-list-btn').click(function() {
+            $('#omics-ss-popup-list').attr(
+                'list-url', $(this).attr('list-url')).popup('show');
+        });
+
+        /**************
+         iCommand Popup
+         **************/
+        // TODO: Unify this with the landingzones iCommand popup
+        // TODO: Set width
+        $('#omics-ss-popup-cmd').popup({
+            transition: 'all 0.2s',
+            beforeopen: function () {
+                var irodsPath = $(this).closest('td').attr('irods-path');
+                var htmlHeader = '<div class="card"><div class="card-body"><h5>iRODS iCommands Access</h5><hr />';
+                var htmlFooter = '</div></div>';
+                var htmlData = '<div class="input-group">' +
+                    '<input id="omics-copy-field" class="form-control omics-code-input" type="text" value="icd ' + irodsPath + '" readonly/>' +
+                    '<div class="input-group-append">' +
+                    '<button class="btn btn-secondary omics-copy-btn" role="submit" data-clipboard-target="#omics-copy-field"><i class="fa fa-clipboard"></i> Copy</button></div>' +
+                    '</div>';
+
+                // Set html
+                $('#omics-ss-popup-cmd').html(htmlHeader + htmlData + htmlFooter);
+            }
+        });
+
+        $('.omics-ss-popup-cmd-btn').click(function() {
+            $('#omics-ss-popup-cmd').attr(
+                'irods-path', $(this).attr('irods-path')).popup('show');
+        });
     });
   </script>
 
   {# Tour content #}
   <script type="text/javascript">
-    tourEnabled = false;
+    tourEnabled = true;
+
+    tour.addStep('sheet_info', {
+        title: 'Sample Sheets',
+        text: 'In this app you are able to access meta data regarding ' +
+              'project samples, along with links to sample file mass storage ' +
+              'in iRODS.',
+        advanceOn: '.docs-link click',
+        showCancelLink: true
+    });
+
+    // No sheets
+    if ($('#omics-ss-alert-no-sheets').length) {
+        tour.addStep('no_sheets', {
+            title: 'No Sample Sheets Available',
+            text: 'No sample sheets have been imported for the project. ' +
+                  'Users with sufficient permissions can import an ISA ' +
+                  'investigation using the Sheet Operations menu.',
+            attachTo: '#omics-ss-buttons-op left',
+            advanceOn: '.docs-link click',
+            showCancelLink: true
+        });
+    }
+
+    // Sheets available
+    else {
+        tour.addStep('sheet_isa', {
+            title: 'ISA Model',
+            text: 'Sample data is represented according to the ISA ' +
+                  '(Investigation/Study/Assay) specification. One project is ' +
+                  'expected to contain one investigation, which contains one ' +
+                  'or more studies, which in turn can consist of one or more ' +
+                  'assays. One study and its assays are visualized per page ' +
+                  'in this application.',
+            advanceOn: '.docs-link click',
+            showCancelLink: true
+        });
+
+        tour.addStep('sheet_navigation', {
+            title: 'Sample Sheet Navigation',
+            text: 'Navigate between studies and data overview using this ' +
+                  'navigation bar.',
+            attachTo: '.omics-subtitle-container bottom',
+            advanceOn: '.docs-link click',
+            showCancelLink: true
+        });
+
+        tour.addStep('sheet_navigation_dropdown', {
+            title: 'Sample Sheet Shortcuts',
+            text: 'Shortcuts to project studies and assays can be accessed ' +
+                  'in this dropdown menu.',
+            attachTo: '#omics-ss-nav-dropdown bottom',
+            advanceOn: '.docs-link click',
+            showCancelLink: true
+        });
+
+        if ($('#omics-ss-buttons-op').length) {
+            tour.addStep('sheet_operations', {
+                title: 'Sheet Operations',
+                text: 'Authorized users can perform sheet-wide operations ' +
+                      'such as iRODS directory creation in this menu.',
+                attachTo: '#omics-ss-buttons-op left',
+                advanceOn: '.docs-link click',
+                showCancelLink: true
+            });
+        }
+    }
+
+    if ($('.omics-ss-data-card').length) {
+        tour.addStep('study_data', {
+            title: 'Study Data',
+            text: 'This is a data table listing all the sources and samples ' +
+                  'in the currently selected study.',
+            attachTo: '.omics-ss-data-card-study top',
+            advanceOn: '.docs-link click',
+            showCancelLink: true
+        });
+
+        tour.addStep('assay_data', {
+            title: 'Assay Data',
+            text: 'Assay-specific processed and materials are described in ' +
+                  'assay tables.',
+            attachTo: '.omics-ss-data-card-assay top',
+            advanceOn: '.docs-link click',
+            showCancelLink: true
+        });
+
+        tour.addStep('data_controls', {
+            title: 'Data Table Controls',
+            text: 'Access data table controls in the table header.',
+            attachTo: '.omics-header-input-group top',
+            advanceOn: '.docs-link click',
+            showCancelLink: true
+        });
+
+        tour.addStep('data_links', {
+            title: 'iRODS Links',
+            text: 'Links to sample data files in iRODS can be accessed in ' +
+                  'this column. Note that an authorized user must first ' +
+                  'create the iRODS directories for the project for these ' +
+                  'controls to be enabled. Uploading new data is done using ' +
+                  'the Landing Zones app.',
+            attachTo: '.omics-ss-popup-list-btn left',
+            advanceOn: '.docs-link click',
+            showCancelLink: true
+        });
+    }
+
   </script>
 {% endblock javascript %}

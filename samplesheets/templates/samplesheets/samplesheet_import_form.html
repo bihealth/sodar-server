@@ -3,18 +3,41 @@
 {% load crispy_forms_filters %}
 
 {% block title %}
-  Import Sample Sheets from ISAtab into {{ project.title }}
+  {% if replace_sheets %}
+    Replace Current Sample Sheets with ISAtab
+  {% else %}
+    Import Sample Sheets from ISAtab
+  {% endif %}
+  into {{ project.title }}
 {% endblock title %}
 
 {% block projectroles_extend %}
 
 <div class="row omics-subtitle-container">
-    <h3>
+  <h3>
+    {% if replace_sheets %}
+      Replace Current Sample Sheets with ISAtab
+    {% else %}
       Import Sample Sheets from ISAtab
-    </h3>
+    {% endif %}
+  </h3>
 </div>
 
 <div class="container-fluid omics-page-container">
+  {% if replace_sheets and irods_status %}
+    <div class="alert alert-warning">
+      <strong>Warning:</strong> because iRODS directories have already been
+      created, replacing the ISAtab will only be accepted if studies and assays
+      have not been removed. Adding new studies or assays or modifying content
+      within existing studies and assays is accepted.
+    </div>
+    <div class="alert alert-warning">
+      <strong>Note:</strong> If you have added new studies or assays, you must
+      select <strong>Update iRODS Directories</strong> from the Zone Operations
+      menu after replace has completed.
+    </div>
+  {% endif %}
+
   <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
     {{ form | crispy }}
@@ -22,11 +45,15 @@
     <div class="row">
       <div class="btn-group ml-auto">
         <a role="button" class="btn btn-secondary"
-           href="{% url 'samplesheets:project_sheets' project=project.omics_uuid %}">
+           href="{{ request.session.real_referer }}">
           <i class="fa fa-arrow-circle-left"></i> Cancel
         </a>
         <button type="submit" class="btn btn-primary">
-          <i class="fa fa-upload"></i> Import
+          {% if replace_sheets %}
+            <i class="fa fa-refresh"></i> Replace
+          {% else %}
+            <i class="fa fa-upload"></i> Import
+          {% endif %}
         </button>
       </div>
     </div>

@@ -1,7 +1,9 @@
 """Email creation and sending for the projectroles app"""
+import logging
 
 from django.conf import settings
-from django.core.mail import send_mail
+from django.contrib import messages
+from django.core.mail import send_mail as _send_mail
 from django.urls import reverse
 from django.utils.timezone import localtime
 
@@ -12,6 +14,9 @@ from .utils import build_invite_url
 SUBJECT_PREFIX = settings.EMAIL_SUBJECT_PREFIX
 EMAIL_SENDER = settings.EMAIL_SENDER
 DEBUG = settings.DEBUG
+
+
+logger = logging.getLogger(__name__)
 
 
 # Generic Elements -------------------------------------------------------
@@ -240,6 +245,39 @@ def get_role_change_body(
 # Sending functions ------------------------------------------------------
 
 
+def send_mail(subject, message, recipient_list, request, fail_silently=False):
+    """
+    Wrapper for send_mail() with logging and error messaging
+    :param subject: String
+    :param message: String
+    :param recipient_list: List
+    :return: send_mail() (int)
+    """
+    try:
+        ret = _send_mail(
+            subject=subject,
+            message=message,
+            from_email=EMAIL_SENDER,
+            recipient_list=recipient_list,
+            fail_silently=False)
+        logger.debug(
+            '{} email{} sent to {}'.format(
+                ret,
+                's' if ret != 1 else '',
+                ', '.join(recipient_list)))
+        return ret
+
+    except Exception as ex:
+        error_msg = 'Error sending email: {}'.format(str(ex))
+        logger.error(error_msg)
+
+        if DEBUG:
+            raise ex
+
+        messages.error(request, error_msg)
+        return 0
+
+
 def send_role_change_mail(change_type, project, user, role, request):
     """
     Send email to user when their role in a project has been changed.
@@ -255,7 +293,7 @@ def send_role_change_mail(change_type, project, user, role, request):
         kwargs={'project': project.omics_uuid}))
 
     subject = get_role_change_subject(change_type, project)
-    body = get_role_change_body(
+    message = get_role_change_body(
         change_type=change_type,
         project=project,
         user_name=user.name,
@@ -263,12 +301,7 @@ def send_role_change_mail(change_type, project, user, role, request):
         issuer=request.user,
         project_url=project_url)
 
-    return send_mail(
-        subject,
-        body,
-        EMAIL_SENDER,
-        [user.email],
-        fail_silently=not DEBUG)
+    return send_mail(subject, message, [user.email], request)
 
 
 def send_invite_mail(invite, request):
@@ -280,24 +313,19 @@ def send_invite_mail(invite, request):
     """
     invite_url = build_invite_url(invite, request)
 
-    body = get_invite_body(
+    message = get_invite_body(
         project=invite.project,
         issuer=invite.issuer,
         role_name=invite.role.name,
         invite_url=invite_url,
         date_expire_str=localtime(
             invite.date_expire).strftime('%Y-%m-%d %H:%M'))
-    body += get_invite_message(invite.message)
-    body += get_email_footer()
+    message += get_invite_message(invite.message)
+    message += get_email_footer()
 
     subject = get_invite_subject(invite.project)
 
-    return send_mail(
-        subject,
-        body,
-        EMAIL_SENDER,
-        [invite.email],
-        fail_silently=not DEBUG)
+    return send_mail(subject, message, [invite.email], request)
 
 
 def send_accept_note(invite, request):
@@ -314,21 +342,14 @@ def send_accept_note(invite, request):
 
     message = MESSAGE_HEADER.format(
         recipient=invite.issuer.name)
-
     message += MESSAGE_ACCEPT_BODY.format(
         role=invite.role.name,
         project=invite.project.title,
         user_name=request.user.name,
         user_email=request.user.email)
-
     message += MESSAGE_FOOTER
 
-    return send_mail(
-        subject,
-        message,
-        EMAIL_SENDER,
-        [invite.issuer.email],
-        fail_silently=not DEBUG)
+    return send_mail(subject, message, [invite.issuer.email], request)
 
 
 def send_expiry_note(invite, request):
@@ -343,21 +364,14 @@ def send_expiry_note(invite, request):
         user_name=request.user.name,
         project=invite.project.title)
 
-    body = MESSAGE_HEADER.format(
+    message = MESSAGE_HEADER.format(
         recipient=invite.issuer.name)
-
-    body += MESSAGE_EXPIRY_BODY.format(
+    message += MESSAGE_EXPIRY_BODY.format(
         role=invite.role.name,
         project=invite.project.title,
         user_name=request.user.name,
         user_email=request.user.email,
         date_expire=localtime(invite.date_expire).strftime('%Y-%m-%d %H:%M'))
+    message += MESSAGE_FOOTER
 
-    body += MESSAGE_FOOTER
-
-    return send_mail(
-        subject,
-        body,
-        EMAIL_SENDER,
-        [invite.issuer.email],
-        fail_silently=not DEBUG)
+    return send_mail(subject, message, [invite.issuer.email], request)

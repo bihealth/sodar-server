@@ -6,6 +6,143 @@ Changelog for the Omics Data Management Web UI. Loosely follows the
 guidelines.
 
 
+Unreleased
+==========
+
+Added
+-----
+
+- **General**
+    - Admin link for superuser (#134)
+    - Common ``popupWaitHtml`` and ``popupNoFilesHtml`` Javascript variables
+    - Clipboard.js for helping clipboard operations
+    - CSS styling for ``.omics-code-input``
+    - Height check for project sidebar and dropdown menu switching (#156)
+- **Irodsbackend**
+    - Add irodsbackend app (#139)
+    - Add ``get_path()`` for retrieving iRODS paths for Django objects
+    - Template tag ``get_irods_path()`` to get object iRODS path in template
+    - Add ``get_session()`` for direct iRODS API access
+    - Add ``collection_exists()`` to check collection availability
+- **Irodsinfo**
+    - Add irodsinfo site app (#183)
+- **Landingzones**
+    - Add landingzones app (#139)
+- **Projectroles**
+    - Settings updating to Taskflow for project creation and modification (#139)
+    - Add ``get_all_settings()`` and ``get_default_setting()`` in ``project_settings``
+    - Add ``get_class()`` in ``projectroles_common_tags``
+- **Samplesheets**
+    - iRODS directory creation (#139)
+    - iRODS link and iCommands display (#139)
+    - Render optional hidden HTML attributes for cell meta data (#139)
+    - Add ``get_dir()`` and ``get_display_name()`` helpers to Study and Assay
+    - Add ``SampleSheetTaskflowMixin`` for Taskflow test helpers
+    - Row numbers for sample sheet tables (#155)
+    - Tour help (#145)
+    - Row limit to prevent import and rendering of huge data (#192)
+    - Render extract label column
+    - Project setting ``study_row_limit`` (#192)
+    - Replacing sample sheets for limited modifications (#195)
+    - ``SampleSheetConfigPlugin`` for sheet configuration specific sub-apps (#201)
+    - Config app ``bih_germline`` as an example (#201)
+    - Add ``get_configuration()`` in the ``Investigation`` model (#201)
+    - Add ``get_irods_row_path()`` to iRODS path to sample sheet row (#172)
+- **Taskflowbackend**
+    - Add taskflowbackend app (#139)
+    - Add optional ``omics_url`` kwarg to ``submit()``
+
+Changed
+-------
+
+- **General**
+    - Upgrade to Django 1.11.13
+    - Upgrade to django-crispy-forms 1.7.1 (#153)
+    - Upgrade to Boostrap 4.1.1 (#144)
+    - Improve tour help layout
+    - Upgrade to Gunicorn 19.8.1
+    - Switch ordering of Filesfolders and Landingzones in project menu (#217)
+- **Filesfolders**
+    - Don't show empty folder label if subfolders exist (#135)
+- **Irodsbackend**
+    - Implement functionality of omics_irods_rest directly in the app
+    - Rename ``get_object_list()`` into ``get_objects()``
+    - Improve error handling in ``get_objects()``
+- **Projectroles**
+    - Use Taskflowbackend only for creating and modifying ``PROJECT`` type projects
+    - Modify Taskflow API URLs
+    - Refactor ``get_active_plugins()``
+    - Refactor email sending
+    - Properly log and report errors in email sending (#151)
+    - Require email sending to succeed for creating invites (#149)
+    - Modify ProjectStarringAPIView to use common permission mixins
+    - Rename ``TestTaskflowViewBase`` to ``TestTaskflowBase``
+    - Integrate ``TaskflowMixin`` into ``TestTaskflowBase``
+    - Improve project list layout (#171)
+    - Move iRODS info page into the irodsinfo app (#183)
+    - Modify signature of ``_get_project()`` in ``ProjectAccessMixin``
+    - Allow ``get_all_settings()`` and ``get_project_setting()`` with no project in ``project_settings``
+- **Samplesheets**
+    - Rename top header "legend" to "value" (#129)
+    - Allow sample sheet upload for project contributor (#137)
+    - Allow sample sheet deletion for project contributor (#168)
+    - In taskflow operations, use ``omics_uuid`` instead of ``pk`` (#99)
+    - Refactor table HTML rendering
+    - Improve URLs for ontology linking (#170)
+    - Hide columns with no data (#184)
+    - Do not allow importing sheet or creating iRODS dirs if rendering fails (#192)
+    - Upgrade altamISA to commit ``ddf54e9ab9b47d2b5a7d54ce65ea8aa673375f87`` (#191)
+    - Display material subtype in top column (#200)
+    - Display Process name if set (#207)
+- **Taskflowbackend**
+    - Use ``omics_uuid`` instead of ``pk`` (#139)
+    - Only set up ``PROJECT`` type projects in ``synctaskflow``
+
+Fixed
+-----
+
+- **General**
+    - Add missing email settings in production config (#149)
+    - Add ``python3-distutils`` to Xenial requirements to fix failing tests caused by recent updates
+    - User links visible when logged out on low resolutions (#197)
+    - Fix ``omics-card-table-bordered`` CSS
+- **Filesfolders**
+    - Broken link for subfolders with depth >1 (#136)
+- **Projectroles**
+    - Invalid URL in ``build_invite_url()`` caused a crash (#149)
+    - Project creation failure using taskflow caused database corruption (#162)
+    - Proper redirect from failed project creation to home or parent category
+    - Project partially modified instead of rollback if update with taskflow failed (#163)
+    - Project settings not correctly populated in ``TestTaskflowBase``
+    - Allow ``_get_project()`` with top level app models from nested apps (#201)
+    - README not modified when updating project with Taskflow enabled (#209)
+- **Samplesheets**
+    - Delete investigation if import fails (#138)
+    - Assay sorting was not defined
+    - Assay data could end up in the wrong table with multiple assays under a study (#169)
+    - Correctly use ``request.session.real_referer`` for back/cancel links (#175)
+    - Error rendering sheet tables caused app to crash (#182)
+    - Building a redirect URL in export view caused a crash
+    - Prevent double importing of Investigation (#189)
+    - Zip file upload failed on Windows browsers (#198)
+    - Remove possible duplicate sample rows from study tables (#199)
+    - Extract label not correctly parsed
+    - Back link not working in ``IrodsDirView`` (#206)
+    - Invalid HTML from rendering extra cell classes together with ``text-right``
+    - Correctly parse study description (#208)
+    - Numerical value check for right-aligning (#218)
+- **Timeline**
+    - Fix event id parameter in Taskflow view
+
+Removed
+-------
+
+- **General**
+    - Removed Flynn workarounds, deploying on Flynn no longer supported (#133)
+- **Projectroles**
+    - "View Details" link in details page, not needed thanks to project sidebar
+    - ``get_description()`` templatetag
+
 
 v0.2.0 (2018-04-13)
 ===================
@@ -62,7 +199,7 @@ Fixed
     - Content type correctly returned for uploaded files and folder READMEs (#131)
 
 Removed
------
+-------
 
 - **General**
     - Role "project staff" (#121)

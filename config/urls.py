@@ -28,6 +28,7 @@ urlpatterns = [
 
     # General site apps
     url(r'^alerts/', include('adminalerts.urls')),
+    url(r'^irods/', include('irodsinfo.urls')),
 
     # Projectroles URLs
     url(r'^project/', include('projectroles.urls')),
@@ -39,6 +40,12 @@ urlpatterns = [
     url(r'^timeline/', include('timeline.urls')),
     url(r'^files/', include('filesfolders.urls')),
     url(r'^samplesheets/', include('samplesheets.urls')),
+    url(r'^landingzones/', include('landingzones.urls')),
+
+    # Samplesheets configapp URLs
+    url(
+        r'^samplesheets/bih-germline/',
+        include('samplesheets.configapps.bih_germline.urls')),
 
     # django-db-file-storage URLs (needed for admin, obfuscated for users)
     url(r'^xu7in5zs9lylar0n/', include('db_file_storage.urls')),

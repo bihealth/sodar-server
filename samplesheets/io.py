@@ -8,6 +8,7 @@ import time
 
 from .models import Investigation, Study, Assay, GenericMaterial, Protocol, \
     Process
+from .rendering import SampleSheetTableBuilder
 
 
 # Local constants
@@ -154,8 +155,7 @@ def import_isa(isa_zip, project):
             # HACK since file/extract subtype is in .type
             if item_type in ['DATA', 'MATERIAL'] or m.material_type:
                 values['material_type'] = m.type
-
-            elif m.extract_label:
+            if m.extract_label:
                 values['extract_label'] = m.extract_label
 
             if m.characteristics:
@@ -259,6 +259,7 @@ def import_isa(isa_zip, project):
     db_investigation.save()
     logger.debug('Created investigation "{}"'.format(db_investigation.title))
     study_count = 0
+    db_studies = []
 
     # Create studies
     for s_i in isa_inv.studies:
@@ -268,6 +269,7 @@ def import_isa(isa_zip, project):
         # Parse study file
         s = StudyReader.from_stream(
             isa_inv,
+            s_i,
             input_file=get_file(isa_zip, get_zip_path(inv_dir, s_i.info.path)),
             study_id=study_id).read()
 
@@ -276,6 +278,7 @@ def import_isa(isa_zip, project):
             'file_name': s_i.info.path,
             'investigation': db_investigation,
             'title': s_i.info.title,
+            'description': s_i.info.description,
             'study_design': s_i.designs,        # TODO
             'factors': s_i.factors,             # TODO
             'characteristic_cat': [],           # TODO: TBD: Implement or omit?
@@ -285,6 +288,7 @@ def import_isa(isa_zip, project):
 
         db_study = Study(**values)
         db_study.save()
+        db_studies.append(db_study)
         logger.debug('Added study "{}"'.format(db_study.title))
 
         # Create protocols
@@ -319,15 +323,21 @@ def import_isa(isa_zip, project):
         import_arcs(s.arcs, db_study)
 
         assay_count = 0
+        assay_paths = sorted([a_i.path for a_i in s_i.assays.values()])
 
-        for a_i in s_i.assays.values():
+        for assay_path in assay_paths:
+            a_i = next((
+                a_i for a_i in s_i.assays.values() if a_i.path == assay_path),
+                None)
             assay_id = 'a{}'.format(assay_count)
 
             a = AssayReader.from_stream(
                 isa_inv,
-                input_file=get_file(isa_zip, get_zip_path(inv_dir, a_i.path)),
+                s_i,
                 study_id=study_id,
-                assay_id=assay_id).read()
+                assay_id=assay_id,
+                input_file=get_file(
+                    isa_zip, get_zip_path(inv_dir, a_i.path))).read()
 
             values = {
                 'file_name': a_i.path,
@@ -361,6 +371,13 @@ def import_isa(isa_zip, project):
 
         study_count += 1
 
+    # Ensure we can build the table reference, if not then fail
+    logger.debug('Ensuring studies can be rendered..')
+
+    for study in db_studies:
+        # Throws an exception if we are unable to build this
+        SampleSheetTableBuilder.build_study_reference(study)
+
     logger.info('Import of investigation "{}" OK ({:.1f}s)'.format(
         db_investigation.title, time.time() - t_start))
     return db_investigation
@@ -387,3 +404,16 @@ def get_inv_paths(zip_file):
 
 
 # TODO: Export to ISAtab
+
+
+# iRODS Utils ------------------------------------------------------------------
+
+
+def get_assay_dirs(assay):
+    """
+    Return iRODS directory structure under an assay
+    :param assay: Assay object
+    :return: List
+    """
+    # TODO: Currently just an empty dir, this needs to be implemented for real
+    return []

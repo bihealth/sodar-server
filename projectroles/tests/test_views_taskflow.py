@@ -17,8 +17,9 @@ from unittest import skipIf     # Could also use tags..
 
 from ..models import Project, Role, RoleAssignment, ProjectInvite, \
     OMICS_CONSTANTS
+from ..plugins import get_backend_api, change_plugin_status
+from ..project_settings import get_all_settings
 from .test_models import ProjectInviteMixin
-from projectroles.plugins import get_backend_api, change_plugin_status
 
 
 User = auth.get_user_model()
@@ -33,7 +34,7 @@ PROJECT_TYPE_CATEGORY = OMICS_CONSTANTS['PROJECT_TYPE_CATEGORY']
 PROJECT_TYPE_PROJECT = OMICS_CONSTANTS['PROJECT_TYPE_PROJECT']
 SUBMIT_STATUS_OK = OMICS_CONSTANTS['SUBMIT_STATUS_OK']
 SUBMIT_STATUS_PENDING = OMICS_CONSTANTS['SUBMIT_STATUS_PENDING']
-SUBMIT_STATUS_PENDING_TASKFLOW = OMICS_CONSTANTS['SUBMIT_STATUS_PENDING']
+SUBMIT_STATUS_PENDING_TASKFLOW = OMICS_CONSTANTS['SUBMIT_STATUS_PENDING_TASKFLOW']
 
 
 # Local constants
@@ -44,24 +45,32 @@ TASKFLOW_ENABLED = True if \
 TASKFLOW_SKIP_MSG = 'Taskflow not enabled in settings'
 
 
-class TaskflowMixin:
+class TestTaskflowBase(LiveServerTestCase, TestCase):
+    """Base class for testing views and APIs with taskflow"""
+
     def _make_project_taskflow(
             self, title, type, parent, owner, description):
         values = {
             'title': title,
             'type': type,
-            'parent': None,
-            'owner': owner.pk,
-            'description': 'description',
+            'parent': parent.omics_uuid if parent else None,
+            'owner': owner.omics_uuid,
+            'description': description,
             'omics_url': self.live_server_url}  # HACK: Override callback URL
+        values.update(get_all_settings())   # Add default settings
+
+        post_kwargs = {'project': parent.omics_uuid} if parent else {}
 
         with self.login(self.user):
             response = self.client.post(
-                reverse('projectroles:create'),
+                reverse('projectroles:create', kwargs=post_kwargs),
                 values)
+            self.assertEqual(response.status_code, 302)
             project = Project.objects.get(title=title)
             self.assertRedirects(
-                response, reverse('projectroles:detail', kwargs={'pk': project.omics_uuid}))
+                response, reverse(
+                    'projectroles:detail',
+                    kwargs={'project': project.omics_uuid}))
 
         project = Project.objects.get(title=title)
         owner_as = project.get_owner()
@@ -70,27 +79,23 @@ class TaskflowMixin:
     def _make_assignment_taskflow(
             self, project, user, role):
         values = {
-            'project': project.pk,
-            'user': user.pk,
+            'project': project.omics_uuid,
+            'user': user.omics_uuid,
             'role': role.pk,
             'omics_url': self.live_server_url}
 
         with self.login(self.user):
             response = self.client.post(
-                reverse('projectroles:create', kwargs={
+                reverse('projectroles:role_create', kwargs={
                     'project': project.omics_uuid}),
                 values)
             role_as = RoleAssignment.objects.get(
                 project=project, user=user)
             self.assertRedirects(response, reverse(
-                'project_roles', kwargs={'pk': project.omics_uuid}))
+                'projectroles:roles', kwargs={'project': project.omics_uuid}))
 
         role_as = RoleAssignment.objects.get(project=project, user=user)
         return role_as
-
-
-class TestViewsTaskflowBase(LiveServerTestCase, TestCase):
-    """Base class for view testing with taskflow"""
 
     def setUp(self):
         # Get taskflow plugin (or None if taskflow not enabled)
@@ -110,17 +115,34 @@ class TestViewsTaskflowBase(LiveServerTestCase, TestCase):
         self.role_guest = Role.objects.get_or_create(
             name=PROJECT_ROLE_GUEST)[0]
 
-        # Init superuser
+        # Init user
         self.user = self.make_user('superuser')
         self.user.is_staff = True
         self.user.is_superuser = True
         self.user.save()
 
+        # Create category
+        # TODO: Create locally, categories no longer created in iRODS
+        values = {
+            'title': 'TestCategory',
+            'type': PROJECT_TYPE_CATEGORY,
+            'parent': None,
+            'owner': self.user.omics_uuid,
+            'description': 'description'}
+        values.update(get_all_settings())  # Add default settings
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse('projectroles:create'),
+                values)
+
+        self.category = Project.objects.get(title='TestCategory')
+
     def tearDown(self):
         self.taskflow.cleanup()
 
 
-class TestProjectCreateView(TestViewsTaskflowBase, TaskflowMixin):
+class TestProjectCreateView(TestTaskflowBase):
     """Tests for Project creation view with taskflow"""
 
     @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
@@ -128,24 +150,18 @@ class TestProjectCreateView(TestViewsTaskflowBase, TaskflowMixin):
         """Test Project creation with taskflow"""
 
         # Assert precondition
-        self.assertEqual(Project.objects.all().count(), 0)
+        self.assertEqual(Project.objects.all().count(), 1)
 
-        # Issue POST request
-        values = {
-            'title': 'TestProject',
-            'type': PROJECT_TYPE_PROJECT,
-            'parent': None,
-            'owner': self.user.pk,
-            'description': 'description',
-            'omics_url': self.live_server_url}  # HACK: Override callback URL
-
-        with self.login(self.user):
-            response = self.client.post(
-                reverse('projectroles:create'),
-                values)
+        # Make project with owner in Taskflow and Django
+        self.project, self.owner_as = self._make_project_taskflow(
+            title='TestProject',
+            type=PROJECT_TYPE_PROJECT,
+            parent=self.category,
+            owner=self.user,
+            description='description')
 
         # Assert Project state after creation
-        self.assertEqual(Project.objects.all().count(), 1)
+        self.assertEqual(Project.objects.all().count(), 2)
         project = Project.objects.all()[0]
         self.assertIsNotNone(project)
 
@@ -153,9 +169,10 @@ class TestProjectCreateView(TestViewsTaskflowBase, TaskflowMixin):
             'id': project.pk,
             'title': 'TestProject',
             'type': PROJECT_TYPE_PROJECT,
-            'parent': None,
+            'parent': self.category.pk,
             'submit_status': SUBMIT_STATUS_OK,
-            'description': 'description'}
+            'description': 'description',
+            'omics_uuid': project.omics_uuid}
 
         model_dict = model_to_dict(project)
         model_dict.pop('readme', None)
@@ -169,19 +186,13 @@ class TestProjectCreateView(TestViewsTaskflowBase, TaskflowMixin):
             'id': owner_as.pk,
             'project': project.pk,
             'role': self.role_owner.pk,
-            'user': self.user.pk}
+            'user': self.user.pk,
+            'omics_uuid': owner_as.omics_uuid}
 
         self.assertEqual(model_to_dict(owner_as), expected)
 
-        # Assert redirect
-        with self.login(self.user):
-            self.assertRedirects(
-                response, reverse(
-                    'projectroles:detail',
-                    kwargs={'project': project.omics_uuid}))
 
-
-class TestProjectUpdateView(TestViewsTaskflowBase, TaskflowMixin):
+class TestProjectUpdateView(TestTaskflowBase):
     """Tests for Project updating view"""
 
     def setUp(self):
@@ -191,7 +202,7 @@ class TestProjectUpdateView(TestViewsTaskflowBase, TaskflowMixin):
         self.project, self.owner_as = self._make_project_taskflow(
             title='TestProject',
             type=PROJECT_TYPE_PROJECT,
-            parent=None,
+            parent=self.category,
             owner=self.user,
             description='description')
 
@@ -200,12 +211,14 @@ class TestProjectUpdateView(TestViewsTaskflowBase, TaskflowMixin):
         """Test Project updating with taskflow"""
 
         # Assert precondition
-        self.assertEqual(Project.objects.all().count(), 1)
+        self.assertEqual(Project.objects.all().count(), 2)
 
         values = model_to_dict(self.project)
         values['title'] = 'updated title'
         values['description'] = 'updated description'
-        values['owner'] = self.user.pk  # NOTE: Must add owner
+        values['owner'] = self.user.omics_uuid  # NOTE: Must add owner
+        values['readme'] = 'updated readme'
+        values.update(get_all_settings())  # Add default settings
         values['omics_url'] = self.live_server_url  # HACK
 
         with self.login(self.user):
@@ -216,31 +229,32 @@ class TestProjectUpdateView(TestViewsTaskflowBase, TaskflowMixin):
                 values)
 
         # Assert Project state after update
-        self.assertEqual(Project.objects.all().count(), 1)
-        project = Project.objects.all()[0]
-        self.assertIsNotNone(project)
+        self.assertEqual(Project.objects.all().count(), 2)
+        self.project.refresh_from_db()
 
         expected = {
-            'id': project.pk,
+            'id': self.project.pk,
             'title': 'updated title',
             'type': PROJECT_TYPE_PROJECT,
-            'parent': None,
+            'parent': self.category.pk,
             'submit_status': SUBMIT_STATUS_OK,
-            'description': 'updated description'}
+            'description': 'updated description',
+            'omics_uuid': self.project.omics_uuid}
 
-        model_dict = model_to_dict(project)
+        model_dict = model_to_dict(self.project)
         model_dict.pop('readme', None)
         self.assertEqual(model_dict, expected)
+        self.assertEqual(self.project.readme.raw, 'updated readme')
 
         # Assert redirect
         with self.login(self.user):
             self.assertRedirects(
                 response, reverse(
                     'projectroles:detail',
-                    kwargs={'project': project.omics_uuid}))
+                    kwargs={'project': self.project.omics_uuid}))
 
 
-class TestRoleAssignmentCreateView(TestViewsTaskflowBase, TaskflowMixin):
+class TestRoleAssignmentCreateView(TestTaskflowBase):
     """Tests for RoleAssignment creation view"""
 
     def setUp(self):
@@ -250,7 +264,7 @@ class TestRoleAssignmentCreateView(TestViewsTaskflowBase, TaskflowMixin):
         self.project, self.owner_as = self._make_project_taskflow(
             title='TestProject',
             type=PROJECT_TYPE_PROJECT,
-            parent=None,
+            parent=self.category,
             owner=self.user,
             description='description')
 
@@ -260,12 +274,12 @@ class TestRoleAssignmentCreateView(TestViewsTaskflowBase, TaskflowMixin):
     def test_create_assignment(self):
         """Test RoleAssignment creation with taskflow"""
         # Assert precondition
-        self.assertEqual(RoleAssignment.objects.all().count(), 1)
+        self.assertEqual(RoleAssignment.objects.all().count(), 2)
 
         # Issue POST request
         values = {
-            'project': self.project.pk,
-            'user': self.user_new.pk,
+            'project': self.project.omics_uuid,
+            'user': self.user_new.omics_uuid,
             'role': self.role_guest.pk,
             'omics_url': self.live_server_url}
 
@@ -277,7 +291,7 @@ class TestRoleAssignmentCreateView(TestViewsTaskflowBase, TaskflowMixin):
                 values)
 
         # Assert RoleAssignment state after creation
-        self.assertEqual(RoleAssignment.objects.all().count(), 2)
+        self.assertEqual(RoleAssignment.objects.all().count(), 3)
         role_as = RoleAssignment.objects.get(
             project=self.project, user=self.user_new)
         self.assertIsNotNone(role_as)
@@ -286,7 +300,8 @@ class TestRoleAssignmentCreateView(TestViewsTaskflowBase, TaskflowMixin):
             'id': role_as.pk,
             'project': self.project.pk,
             'user': self.user_new.pk,
-            'role': self.role_guest.pk}
+            'role': self.role_guest.pk,
+            'omics_uuid': role_as.omics_uuid}
 
         self.assertEqual(model_to_dict(role_as), expected)
 
@@ -297,7 +312,7 @@ class TestRoleAssignmentCreateView(TestViewsTaskflowBase, TaskflowMixin):
                 kwargs={'project': self.project.omics_uuid}))
 
 
-class TestRoleAssignmentUpdateView(TestViewsTaskflowBase, TaskflowMixin):
+class TestRoleAssignmentUpdateView(TestTaskflowBase):
     """Tests for RoleAssignment update view with taskflow"""
 
     def setUp(self):
@@ -307,7 +322,7 @@ class TestRoleAssignmentUpdateView(TestViewsTaskflowBase, TaskflowMixin):
         self.project, self.owner_as = self._make_project_taskflow(
             title='TestProject',
             type=PROJECT_TYPE_PROJECT,
-            parent=None,
+            parent=self.category,
             owner=self.user,
             description='description')
 
@@ -321,11 +336,13 @@ class TestRoleAssignmentUpdateView(TestViewsTaskflowBase, TaskflowMixin):
         """Test RoleAssignment updating with taskflow"""
 
         # Assert precondition
-        self.assertEqual(RoleAssignment.objects.all().count(), 2)
+        self.assertEqual(RoleAssignment.objects.all().count(), 3)
 
-        values = model_to_dict(self.role_as)
-        values['role'] = self.role_contributor.pk
-        values['omics_url'] = self.live_server_url
+        values = {
+            'project': self.project.omics_uuid,
+            'user': self.user_new.omics_uuid,
+            'role': self.role_contributor.pk,
+            'omics_url': self.live_server_url}
 
         with self.login(self.user):
             response = self.client.post(
@@ -335,7 +352,7 @@ class TestRoleAssignmentUpdateView(TestViewsTaskflowBase, TaskflowMixin):
                 values)
 
         # Assert RoleAssignment state after update
-        self.assertEqual(RoleAssignment.objects.all().count(), 2)
+        self.assertEqual(RoleAssignment.objects.all().count(), 3)
         role_as = RoleAssignment.objects.get(
             project=self.project, user=self.user_new)
         self.assertIsNotNone(role_as)
@@ -344,7 +361,8 @@ class TestRoleAssignmentUpdateView(TestViewsTaskflowBase, TaskflowMixin):
             'id': role_as.pk,
             'project': self.project.pk,
             'user': self.user_new.pk,
-            'role': self.role_contributor.pk}
+            'role': self.role_contributor.pk,
+            'omics_uuid': role_as.omics_uuid}
 
         self.assertEqual(model_to_dict(role_as), expected)
 
@@ -355,7 +373,7 @@ class TestRoleAssignmentUpdateView(TestViewsTaskflowBase, TaskflowMixin):
                 kwargs={'project': self.project.omics_uuid}))
 
 
-class TestRoleAssignmentDeleteView(TestViewsTaskflowBase, TaskflowMixin):
+class TestRoleAssignmentDeleteView(TestTaskflowBase):
     """Tests for RoleAssignment delete view """
 
     def setUp(self):
@@ -365,7 +383,7 @@ class TestRoleAssignmentDeleteView(TestViewsTaskflowBase, TaskflowMixin):
         self.project, self.owner_as = self._make_project_taskflow(
             title='TestProject',
             type=PROJECT_TYPE_PROJECT,
-            parent=None,
+            parent=self.category,
             owner=self.user,
             description='description')
 
@@ -379,7 +397,7 @@ class TestRoleAssignmentDeleteView(TestViewsTaskflowBase, TaskflowMixin):
         """Test RoleAssignment deleting with taskflow"""
 
         # Assert precondition
-        self.assertEqual(RoleAssignment.objects.all().count(), 2)
+        self.assertEqual(RoleAssignment.objects.all().count(), 3)
 
         with self.login(self.user):
             response = self.client.post(
@@ -389,7 +407,7 @@ class TestRoleAssignmentDeleteView(TestViewsTaskflowBase, TaskflowMixin):
                 {'omics_url': self.live_server_url})
 
         # Assert RoleAssignment state after update
-        self.assertEqual(RoleAssignment.objects.all().count(), 1)
+        self.assertEqual(RoleAssignment.objects.all().count(), 2)
 
         # Assert redirect
         with self.login(self.user):
@@ -399,7 +417,7 @@ class TestRoleAssignmentDeleteView(TestViewsTaskflowBase, TaskflowMixin):
 
 
 class TestProjectInviteAcceptView(
-        TestViewsTaskflowBase, TaskflowMixin, ProjectInviteMixin):
+        TestTaskflowBase, ProjectInviteMixin):
     """Tests for ProjectInvite accepting view with taskflow"""
 
     def setUp(self):
@@ -409,7 +427,7 @@ class TestProjectInviteAcceptView(
         self.project, self.owner_as = self._make_project_taskflow(
             title='TestProject',
             type=PROJECT_TYPE_PROJECT,
-            parent=None,
+            parent=self.category,
             owner=self.user,
             description='description')
 

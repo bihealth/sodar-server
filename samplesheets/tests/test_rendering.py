@@ -8,13 +8,12 @@ from projectroles.models import Role, OMICS_CONSTANTS
 from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
 
 from ..models import Investigation, GenericMaterial
-from ..rendering import SampleSheetTableBuilder, SampleSheetHTMLRenderer, \
-    EMPTY_VALUE
+from ..rendering import SampleSheetTableBuilder, EMPTY_VALUE
 from .test_io import SampleSheetIOMixin, SHEET_DIR
 
 
 # Local constants
-SHEET_PATH = SHEET_DIR + 'test_cancer_02.zip'
+SHEET_PATH = SHEET_DIR + 'i_small2.zip'
 
 
 class TestRenderingBase(
@@ -55,7 +54,7 @@ class TestTableBuilder(TestRenderingBase):
             """Return set of distinct values for a column at pos"""
             return set([r[pos]['value'] for r in table['table_data']])
 
-        tables = self.tb.build_study(self.study)
+        tables = self.tb.build_study_tables(self.study)
         self.assertIsNotNone(tables)
 
         # Assert tables
@@ -67,7 +66,7 @@ class TestTableBuilder(TestRenderingBase):
         assert_row_length(tables['study'])
 
         # Sources
-        table_sources = get_column_set(tables['study'], 0)
+        table_sources = get_column_set(tables['study'], 1)
         db_sources = set(GenericMaterial.objects.filter(
             study=self.study, item_type='SOURCE').values_list(
             'name', flat=True))
@@ -77,7 +76,7 @@ class TestTableBuilder(TestRenderingBase):
         sample_pos = 0
 
         for c in tables['study']['top_header']:
-            if c['legend'] == 'Sample':
+            if c['value'] == 'Sample':
                 break
 
             else:
@@ -94,12 +93,16 @@ class TestTableBuilder(TestRenderingBase):
             assert_row_length(assay_table)
 
 
+# TODO: Move to test_templatetags
+
+
+'''
 class TestHTMLRenderer(TestRenderingBase):
     """Tests for SampleSheetHTMLRenderer"""
 
     def setUp(self):
         super(TestHTMLRenderer, self).setUp()
-        self.tables = self.tb.build_study(self.study)
+        self.tables = self.tb.build_study_tables(self.study)
 
     def test_render_top_header(self):
         """Test render_top_header()"""
@@ -108,7 +111,7 @@ class TestHTMLRenderer(TestRenderingBase):
             for section in table['top_header']:
                 html = SampleSheetHTMLRenderer.render_top_header(section)
                 bs = BeautifulSoup(html, 'html.parser')
-                self.assertEqual(bs.getText().strip(), section['legend'])
+                self.assertEqual(bs.getText().strip(), section['value'])
                 self.assertEqual(
                     int(bs.find('th')['colspan']), section['colspan'])
                 self.assertEqual(
@@ -168,3 +171,4 @@ class TestHTMLRenderer(TestRenderingBase):
 
         for assay_table in self.tables['assays'].values():
             check_cells(assay_table)
+'''

@@ -8,14 +8,14 @@ setuptools==39.0.1
 wheel==0.30.0
 
 # Conservative Django
-django==1.11.11 # pyup: <2.0
+django==1.11.13 # pyup: <2.0
 
 # Configuration
 django-environ==0.4.4
 whitenoise==3.3.1
 
 # Forms
-django-crispy-forms==1.7.0
+django-crispy-forms==1.7.1
 
 # Models
 django-model-utils==3.0.0
@@ -49,16 +49,11 @@ versioneer==0.18
 # Project app imports
 ######################
 
-# Packages for LDAP/AD authentication
-# We need our own fork of pyldap such that deployment to Flynn.io works
-# Depends on https://github.com/pyldap/pyldap/pull/40
-# NOTE: Commented out for flynn workaround
-# django-auth-ldap==1.2.8
-# -e git://github.com/holtgrewe/pyldap.git@fce3b934e9b2d7d1a538fc37d7c4ed4cfe18fae1#egg=pyldap
+django-auth-ldap==1.2.8
+pyldap==2.4.25.1
 
 # Django-plugins (with self-made Django 1.10 support)
-# NOTE: Commented out for flynn workaround
-# -e git://github.com/mikkonie/django-plugins.git@1bc07181e6ab68b0f9ed3a00382eb1f6519e1009#egg=django-plugins
+-e git://github.com/mikkonie/django-plugins.git@1bc07181e6ab68b0f9ed3a00382eb1f6519e1009#egg=django-plugins
 
 # Rules for permissions
 rules==1.2.1
@@ -79,5 +74,10 @@ mistune==0.7.4
 django-db-file-storage==0.5.2
 
 # CUBI AltamISA parser
-# NOTE: Commented out for flynn workaround
-# -e git://github.com/bihealth/altamisa.git@00e98d93dddd2e4c4e81fb09e16bc25a0986e2ae#egg=altamisa
+-e git://github.com/bihealth/altamisa.git@ddf54e9ab9b47d2b5a7d54ce65ea8aa673375f87#egg=altamisa
+
+# Python iRODS client for irodsbackend
+python-irodsclient==0.8.0
+
+# XML generating
+lxml==4.2.1

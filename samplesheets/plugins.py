@@ -1,11 +1,16 @@
 from django.urls import reverse
 
+from djangoplugins.point import PluginPoint
+
 # Projectroles dependency
 from projectroles.plugins import ProjectAppPluginPoint
 
 from .models import Investigation
 from .urls import urlpatterns
-# from .utils import get_irods_dirs
+from .utils import get_sample_dirs
+
+
+# Samplesheets project app plugin ----------------------------------------------
 
 
 class ProjectAppPlugin(ProjectAppPluginPoint):
@@ -25,7 +30,11 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
     # Properties defined in ProjectAppPluginPoint -----------------------
 
     #: Project settings definition
-    project_settings = {}
+    project_settings = {
+        'study_row_limit': {
+            'type': 'INTEGER',
+            'default': 5000,
+            'description': 'Limit sample sheet rows per study'}}
 
     #: FontAwesome icon ID string
     icon = 'flask'
@@ -92,25 +101,22 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         '''
         return []
 
-    '''
     def get_taskflow_sync_data(self):
         """
         Return data for syncing taskflow operations
-        :return: List of dicts or None.
+        :return: List of dicts or None
         """
         sync_flows = []
 
         # NOTE: This only syncs previously created dirs
-        for sheet in SampleSheet.objects.filter(irods_dirs=True):
-            dirs, dirs_html = get_irods_dirs(sheet)
+        for investigation in Investigation.objects.filter(irods_status=True):
             flow = {
                 'flow_name': 'sheet_dirs_create',
-                'project_pk': sheet.project.pk,
-                'flow_data': {'dirs': dirs}}
+                'project_uuid': investigation.project.omics_uuid,
+                'flow_data': {'dirs': get_sample_dirs(investigation)}}
             sync_flows.append(flow)
 
         return sync_flows
-    '''
 
     def get_object_link(self, model_str, uuid):
         """
@@ -131,3 +137,64 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                 'samplesheets:project_sheets',
                 kwargs={'project': obj.project.omics_uuid}),
             'label': obj.title}
+
+
+# Samplesheets config sub-app plugin -------------------------------------------
+
+
+class SampleSheetConfigPluginPoint(PluginPoint):
+    """Plugin point for registering samplesheet configuration sub-apps"""
+
+    # Properties required by django-plugins ------------------------------
+
+    #: Name (used in code and as unique idenfitier)
+    # TODO: Implement this in your config plugin
+    # TODO: Recommended in form of samplesheets_config_configname
+    # name = 'samplesheets_config_'
+
+    #: Title (used in templates)
+    # TODO: Implement this in your config plugin
+    # title = ''
+
+    # Properties defined in ProjectAppPluginPoint -----------------------
+
+    #: Configuration name
+    # TODO: Implement this in your config plugin
+    config_name = ''
+
+    #: Description string
+    # TODO: Implement this in your config plugin
+    description = 'TODO: Write a description for your config plugin'
+
+    #: Template for study addition (Study object as "study" in context)
+    # TODO: Rename this in your config plugin
+    study_template = 'samplesheets_config_configname/_study.html'
+
+    #: Required permission for accessing the plugin
+    # TODO: Implement this in your config plugin (can be None)
+    # TODO: TBD: Do we need this?
+    permission = None
+
+    def get_row_path(self, assay, table, row):
+        """Return iRODS path for an assay row in a sample sheet. If None,
+        display default directory.
+        :param assay: Assay object
+        :param table: List of lists (table returned by SampleSheetTableBuilder)
+        :param row: List of dicts (a row returned by SampleSheetTableBuilder)
+        :return: String with full iRODS path or None
+        """
+        # TODO: Implement this in your config plugin
+        raise NotImplementedError('Implement get_row_path() in your plugin')
+
+
+def get_config_plugin(plugin_name):
+    """
+    Return active config plugin
+    :param plugin_name: Plugin name (string)
+    :return: SampleSheetConfigPlugin object or None if not found
+    """
+    try:
+        return SampleSheetConfigPluginPoint.get_plugin(plugin_name)
+
+    except SampleSheetConfigPluginPoint.DoesNotExist:
+        return None

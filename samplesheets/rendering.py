@@ -1,22 +1,24 @@
 """Rendering utilities for samplesheets"""
 
+import itertools
 import logging
 import time
+
+# Projectroles dependency
+from projectroles.project_settings import get_project_setting
 
 from .models import Assay, Process, GenericMaterial
 
 
-HEADER_COLOURS = {
+TOP_HEADER_MATERIAL_COLOURS = {
     'SOURCE': 'info',
     'SAMPLE': 'warning',
-    'PROCESS': 'danger',
     'MATERIAL': 'success',
     'DATA': 'success'}
 
-HEADER_LEGEND = {
+TOP_HEADER_MATERIAL_VALUES = {
     'SOURCE': 'Source',
     'SAMPLE': 'Sample',
-    'PROCESS': 'Process',
     'MATERIAL': 'Material',
     'DATA': 'Data File'}
 
@@ -24,12 +26,11 @@ EMPTY_VALUE = '-'
 
 STUDY_HIDEABLE_CLASS = 'omics-ss-hideable-study'
 SOURCE_SEARCH_STR = '-source-'
+ONTOLOGY_URL_TEMPLATE = 'https://bioportal.bioontology.org/ontologies/' \
+                        '{ontology_name}/?p=classes&conceptid={accession}'
 
 
 logger = logging.getLogger(__name__)
-
-
-# TODO: Wrap rendering stuff in a class
 
 
 # Graph traversal / reference table building -----------------------------------
@@ -153,8 +154,9 @@ class RefTableBuilder:
 # Table building ---------------------------------------------------------------
 
 
-# TODO: Add repetition with full data but repeat=True so the values can be used
-#       in filtering (e.g. add as "hidden" attributes)
+class SampleSheetRenderingException(Exception):
+    """Sample sheet rendering exception"""
+    pass
 
 
 class SampleSheetTableBuilder:
@@ -167,12 +169,35 @@ class SampleSheetTableBuilder:
         self._field_header = []
         self._table_data = []
         self._first_row = True
+        self._col_values = []
+        self._col_idx = 0
 
-    def _add_top_header(self, item_type, colspan, hiding={}):
+    @classmethod
+    def _get_ontology_link(cls, ontology_name, accession):
+        """
+        Build ontology link.
+        :param ontology_name: Ontology name
+        :param accession: Ontology accession URL
+        :return: String
+        """
+        return ONTOLOGY_URL_TEMPLATE.format(
+                ontology_name=ontology_name,
+                accession=accession)
+
+    def _add_top_header(self, obj, colspan, hiding={}):
         """Append columns to top header"""
+        if type(obj) == GenericMaterial:    # Material
+            colour = TOP_HEADER_MATERIAL_COLOURS[obj.item_type]
+            value = obj.material_type if obj.material_type else \
+                TOP_HEADER_MATERIAL_VALUES[obj.item_type]
+
+        else:   # Process
+            colour = 'danger'
+            value = 'Process'
+
         self._top_header.append({
-            'legend': HEADER_LEGEND[item_type],
-            'colour': HEADER_COLOURS[item_type],
+            'value': value,
+            'colour': colour,
             'colspan': colspan,
             'hiding': hiding})
 
@@ -188,23 +213,41 @@ class SampleSheetTableBuilder:
 
     def _add_cell(
             self, value=None, unit=None, repeat=False, link=None,
-            tooltip=None, classes=list()):
+            obj_type=None, field_name=None, tooltip=None, attrs=None,
+            classes=list()):
         """
         Add cell data
         :param value: Value to be displayed in the cell
         :param unit: Unit to be displayed in the cell
         :param repeat: Whether this is a repeating column (boolean)
         :param link: Link from the value (URL string)
+        :param obj_type: HACK: Original object type (string)
+        :param field_name: HACK: Field name (string)
         :param tooltip: Tooltip to be shown on mouse hover (string)
-        :param classes: Optional extra classes
+        :param attrs: Optional hidden HTML attributes (dict)
+        :param classes: Optional extra classes (list)
         """
         self._row.append({
             'value': value,
             'unit': unit,
             'repeat': repeat,
             'link': link,
+            'obj_type': obj_type,
+            'field_name': field_name,
             'tooltip': tooltip,
+            'attrs': attrs,
             'classes': classes})
+
+        # Store value for detecting unfilled columns
+        col_value = 0 if not value else 1
+
+        if self._first_row:
+            self._col_values.append(col_value)
+
+        elif col_value == 1 and self._col_values[self._col_idx] == 0:
+            self._col_values[self._col_idx] = 1
+
+        self._col_idx += 1
 
     def _add_repetition(self, colspan, study_data_in_assay=False):
         """Append repetition columns"""
@@ -241,7 +284,8 @@ class SampleSheetTableBuilder:
                     tooltip = v['value']['ontology_name']
 
                 val += v['value']['name']
-                link = v['value']['accession']
+                link = self._get_ontology_link(
+                    v['value']['ontology_name'], v['value']['accession'])
 
             else:
                 val = v['value']
@@ -281,6 +325,11 @@ class SampleSheetTableBuilder:
                     ['DATA', 'MATERIAL'] else list())           # Name
                 field_count += 1
 
+                if (obj.material_type == 'Labeled Extract Name' and
+                        obj.extract_label):
+                    self._add_header('Label', hide_cls)         # Extract label
+                    field_count += 1
+
                 a_header_count = self._add_annotation_headers(
                     obj.characteristics, hide_cls)              # Character.
                 field_count += a_header_count
@@ -292,7 +341,11 @@ class SampleSheetTableBuilder:
                     field_count += a_header_count
                     hideable_count += a_header_count
 
-                top_header_type = obj.item_type
+                if obj.material_type:
+                    top_header_type = obj.material_type
+
+                else:
+                    top_header_type = obj.item_type
 
             # Process headers
             else:   # type(obj) == Process
@@ -300,9 +353,8 @@ class SampleSheetTableBuilder:
                     self._add_header('Protocol', hide_cls)      # Protocol
                     field_count += 1
 
-                else:
-                    self._add_header('Name', hide_cls)          # Name
-                    field_count += 1
+                self._add_header('Name', hide_cls)              # Name
+                field_count += 1
 
                 a_header_count = self._add_annotation_headers(
                     obj.parameter_values, hide_cls)             # Param values
@@ -317,13 +369,27 @@ class SampleSheetTableBuilder:
             hideable_count += a_header_count
 
             self._add_top_header(
-                top_header_type, field_count, hiding={
+                obj, field_count, hiding={
                     STUDY_HIDEABLE_CLASS: hideable_count if
                     study_data_in_assay else 0})
 
         # Material data
         if type(obj) == GenericMaterial:
-            self._add_cell(obj.name)                            # Name
+            # Add material info for iRODS links Ajax querying
+            # TODO: These can probably be removed
+            attrs = {
+                'isa-material': 1,
+                'isa-material-type': obj.item_type,
+                'isa-unique-name': obj.unique_name}
+
+            self._add_cell(
+                obj.name, obj_type=obj.item_type, field_name='name',
+                attrs=attrs)                                    # Name + attrs
+
+            if (obj.material_type == 'Labeled Extract Name' and
+                    obj.extract_label):
+                self._add_cell(obj.extract_label)               # Extract label
+
             self._add_annotations(
                 obj.characteristics, hide_cls)                  # Character.
 
@@ -337,19 +403,19 @@ class SampleSheetTableBuilder:
                 self._add_cell(
                     obj.protocol.name, classes=hide_cls)        # Protocol
 
-            else:
-                self._add_cell(obj.name, classes=hide_cls)      # Name
+            self._add_cell(obj.name, classes=hide_cls)          # Name
 
             self._add_annotations(
-                obj.parameter_values, hide_cls)             # Param values
+                obj.parameter_values, hide_cls)                 # Param values
 
-        self._add_annotations(obj.comments, hide_cls)       # Comments
+        self._add_annotations(obj.comments, hide_cls)           # Comments
 
     def _append_row(self):
         """Append current row to table data and cleanup"""
         self._table_data.append(self._row)
         self._row = []
         self._first_row = False
+        self._col_idx = 0
 
     def _build_table(self, table_refs, node_lookup, sample_pos, table_parent):
         """
@@ -365,10 +431,25 @@ class SampleSheetTableBuilder:
         self._field_header = []
         self._table_data = []
         self._first_row = True
+        self._col_values = []
+        self._col_idx = 0
+
+        # Add row column headers
+        self._top_header.append({
+            'value': 'Row',
+            'colour': 'secondary',
+            'colspan': 1,
+            'hiding': {}})
+        self._add_header('#')
+        row_id = 1
 
         for input_row in table_refs:
             col_pos = 0
 
+            # Add row column cell
+            self._add_cell(str(row_id), classes=['text-muted'])
+
+            # Add elements on row
             for col in input_row:
                 obj = node_lookup[col]
                 study_data_in_assay = True if \
@@ -378,13 +459,46 @@ class SampleSheetTableBuilder:
                 col_pos += 1
 
             self._append_row()
+            row_id += 1
 
         return {
             'top_header': self._top_header,
             'field_header': self._field_header,
-            'table_data': self._table_data}
+            'table_data': self._table_data,
+            'col_values': self._col_values}
 
-    def build_study(self, study):
+    @classmethod
+    def build_study_reference(cls, study, nodes=None):
+        """
+        Get study reference table for building final table data
+        :param study: Study object
+        :param nodes: Study nodes (optional)
+        :return: Nodes (list), table (list)
+        """
+        if not nodes:
+            nodes = study.get_nodes()
+
+        arcs = study.arcs
+
+        for a in study.assays.all().order_by('file_name'):
+            arcs += a.arcs
+
+        tb = RefTableBuilder(nodes, arcs)
+        all_refs = tb.run()
+
+        # Ensure the study does not exceed project limitations
+        row_limit = get_project_setting(
+            study.get_project(), 'samplesheets', 'study_row_limit')
+
+        if len(all_refs) > row_limit:
+            raise SampleSheetRenderingException(
+                'Row limit set in samplesheets.study_row_limit reached ({}), '
+                'unable to render study'.format(
+                    len(all_refs)))
+
+        return all_refs
+
+    def build_study_tables(self, study):
         """
         Build study table and associated assay tables for rendering
         :param study: Study object
@@ -398,27 +512,17 @@ class SampleSheetTableBuilder:
             'study': None,
             'assays': {}}
 
-        nodes = list(GenericMaterial.objects.filter(study=study)) + \
-            list(Process.objects.filter(
-                study=study).prefetch_related('protocol'))
-
-        # TODO: Onelinerize this
-        arcs = study.arcs
-
-        for a in study.assays.all():
-            arcs += a.arcs
-
-        tb = RefTableBuilder(nodes, arcs)
-        all_refs = tb.run()  # All rows within a study
+        nodes = study.get_nodes()
+        all_refs = self.build_study_reference(study, nodes)
 
         sample_pos = [
             i for i, col in enumerate(all_refs[0]) if
             '-sample-' in col][0]
         node_lookup = {n.unique_name: n for n in nodes}
 
-        # Study table
-        study_refs = [
-            row[:sample_pos + 1] for row in all_refs]
+        # Study ref table without duplicates
+        sr = [row[:sample_pos + 1] for row in all_refs]
+        study_refs = list(sr for sr, _ in itertools.groupby(sr))
 
         ret['study'] = self._build_table(
             study_refs, node_lookup, sample_pos, study)
@@ -429,7 +533,7 @@ class SampleSheetTableBuilder:
         # Assay tables
         assay_count = 0
 
-        for assay in study.assays.all():
+        for assay in study.assays.all().order_by('file_name'):
             a_start = time.time()
             logger.debug('Building assay "{}" (pk={})..'.format(
                 assay.get_name(), assay.pk))
@@ -451,121 +555,3 @@ class SampleSheetTableBuilder:
                     time.time() - a_start))
 
         return ret
-
-
-# HTML rendering ---------------------------------------------------------------
-
-
-class SampleSheetHTMLRenderer:
-    @classmethod
-    def render_top_header(cls, section):
-        """
-        Render section of top header
-        :param section: Header section (dict)
-        :return: String (contains HTML)
-        """
-        return '<th class="bg-{} text-nowrap text-white omics-ss-top-header" ' \
-               'colspan="{}" original-colspan="{}" {}>{}</th>\n'.format(
-                section['colour'],
-                section['colspan'],     # Actual colspan
-                section['colspan'],     # Original colspan
-                ''.join(['{}-cols="{}" '.format(k, v) for
-                         k, v in section['hiding'].items()]),
-                section['legend'])
-
-    @classmethod
-    def render_header(cls, header):
-        """
-        Render data table column header
-        :param header: Header dict
-        :return: String (contains HTML)
-        """
-        return '<th class="{}">{}</th>\n'.format(
-            ' '.join(header['classes']),
-            header['value'])
-
-    @classmethod
-    def render_cell(cls, cell):
-        """
-        Return data table cell as HTML
-        :param cell: Cell dict
-        :return: String (contains HTML)
-        """
-        td_class_str = ' '.join(cell['classes'])
-
-        # If repeating cell, return that
-        if cell['repeat']:
-            return '<td class="bg-light text-muted text-center {}">' \
-                   '"</td>\n'.format(td_class_str)
-
-        # Right aligning
-        def is_num(x):
-            try:
-                float(x)
-                return True
-
-            except ValueError:
-                return False
-
-        if cell['value'] and is_num(cell['value']):
-            td_class_str += ' text-right'
-
-        # Build <td>
-        if cell['tooltip']:
-            ret = '<td class="{}" title="{}" data-toggle="tooltip" ' \
-                  'data-placement="top">'.format(td_class_str, cell['tooltip'])
-
-        else:
-            ret = '<td class="{}">'.format(td_class_str)
-
-        if cell['value']:
-            if cell['link']:
-                ret += '<a href="{}" target="_blank">{}</a>'.format(
-                    cell['link'], cell['value'])
-
-            else:
-                ret += cell['value']
-
-            if cell['unit']:
-                ret += '&nbsp;<span class=" text-muted">{}</span>'.format(
-                    cell['unit'])
-
-        else:   # Empty value
-            ret += EMPTY_VALUE
-
-        ret += '</td>\n'
-        return ret
-
-    @classmethod
-    def render_links_top_header(cls):
-        return '<th class="bg-white ' \
-               'omics-ss-top-header omics-ss-data-links-header ' \
-               'omics-ss-data-cell-links">&nbsp;</th>\n'
-
-    @classmethod
-    def render_links_header(cls):
-        """
-        Render data table links column header
-        :return: String (contains HTML)
-        """
-        return '<th class="bg-white omics-ss-data-links-header">Links</th>\n'
-
-    @classmethod
-    def render_links_cell(cls):
-        """
-        Return links cell for row as HTML
-        :return: String (contains HTML)
-        """
-        # TODO: Add actual links
-        # TODO: Refactor/cleanup, this is a quick screenshot HACK
-
-        return '<td class="bg-light omics-ss-data-cell-links">\n' \
-               '  <div class="btn-group omics-ss-data-btn-group">\n' \
-               '    <button class="btn btn-secondary dropdown-toggle btn-sm ' \
-               '                   omics-ss-data-dropdown"' \
-               '                   type="button" data-toggle="dropdown" ' \
-               '                   aria-expanded="false">' \
-               '                   <i class="fa fa-external-link"></i>' \
-               '    </button>' \
-               '  </div>\n' \
-               '</td>\n'

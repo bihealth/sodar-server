@@ -53,14 +53,6 @@
                 {% else %}
                   {{ plugin.title }}
                 {% endif %}
-                <div class="input-group omics-header-input-group pull-right">
-                  <a href="{% url plugin.entry_point_url_id project=project.omics_uuid %}"
-                     class="btn btn-secondary ml-auto omics-pr-app-details-link"
-                     role="button"
-                     id="omics-pr-app-details-link-{{ plugin.name }}">
-                     <i class="fa fa-arrow-circle-right"></i> View Details
-                  </a>
-                </div>
               </h4>
             </div>
             <div class="card-body omics-card-body omics-card-body-info">
@@ -89,7 +81,7 @@
           <h4><i class="fa fa-globe"></i> Subprojects</h4>
         </div>
         <div class="card-body omics-card-body-table">
-          <table class="table table-hover omics-card-table omics-card-table-borderless" id="omics-pr-project-list-table">
+          <table class="table table-hover omics-card-table omics-card-table-borderless omics-pr-project-list-table" id="omics-pr-project-list-table">
            <thead>
              {% include 'projectroles/_project_list_header.html' %}
            </thead>

@@ -1,11 +1,30 @@
+import random
+import re
+import string
+
 from django import template
+from django.conf import settings
 from django.urls import reverse
+
+# Projectroles dependency
+from projectroles.plugins import get_backend_api
 
 from ..models import Investigation, Study, Assay, GenericMaterial, \
     GENERIC_MATERIAL_TYPES
-from ..rendering import SampleSheetHTMLRenderer as Renderer
+from ..plugins import get_config_plugin as get_cnf
+
+
+irods_backend = get_backend_api('omics_irods')
+num_re = re.compile('^(?=.)([+-]?([0-9]*)(\.([0-9]+))?)$')
 
 register = template.Library()
+
+
+# Local constants
+EMPTY_VALUE = '-'
+
+
+# General ----------------------------------------------------------------------
 
 
 @register.simple_tag
@@ -19,39 +38,22 @@ def get_investigation(project):
 
 
 @register.simple_tag
-def render_cell(cell):
-    """Return assay table cell as HTML"""
-    return Renderer.render_cell(cell)
+def get_config_plugin(obj):
+    """Return configuration app plugin or None if not found"""
+    if type(obj) == Investigation:
+        inv = obj
 
+    elif type(obj) == Study:
+        inv = obj.investigation
 
-@register.simple_tag
-def render_links_cell(row):
-    """Render iRODS/IGV links cell"""
-    return Renderer.render_links_cell()
+    elif type(obj) == Assay:
+        inv = obj.study.investigation
 
+    if not inv:
+        return None
 
-@register.simple_tag
-def render_top_header(section):
-    """Render section of top header"""
-    return Renderer.render_top_header(section)
-
-
-@register.simple_tag
-def render_links_top_header():
-    """Render top links header"""
-    return Renderer.render_links_top_header()
-
-
-@register.simple_tag
-def render_header(header):
-    """Render section of top header"""
-    return Renderer.render_header(header)
-
-
-@register.simple_tag
-def render_links_header():
-    """Render links column header"""
-    return Renderer.render_links_header()
+    return get_cnf('samplesheets_config_{}'.format(
+        inv.get_configuration()))
 
 
 @register.simple_tag
@@ -62,24 +64,8 @@ def get_table_id(parent):
     :return: string
     """
     return 'omics-ss-data-table-{}-{}'.format(
-        parent.__class__.__name__.lower(), parent.pk)
+        parent.__class__.__name__.lower(), parent.omics_uuid)
 
-
-@register.simple_tag
-def get_study_title(study):
-    """Return printable study title"""
-    if study.title:
-        return study.title.title()
-
-    else:
-        return ' '.join(
-            s for s in study.file_name[2:].split('.')[0]).title()
-
-
-@register.simple_tag
-def get_assay_title(assay):
-    """Return printable assy title"""
-    return ' '.join(s for s in assay.get_name().split('_')).title()
 
 
 @register.simple_tag
@@ -162,3 +148,212 @@ def get_assay_info_html(assay):
 
     ret += '</div>\n'
     return ret
+
+
+@register.simple_tag
+def get_irods_tree(investigation):
+    """Return HTML for iRODS dirs"""
+    ret = '<ul><li>{}<ul>'.format(settings.IRODS_SAMPLE_DIR)
+
+    for study in investigation.studies.all():
+        ret += '<li>{}'.format(
+            irods_backend.get_subdir(study, include_parent=False))
+
+        if study.assays.all().count() > 0:
+            ret += '<ul>'
+
+            for assay in study.assays.all():
+                ret += '<li>{}</li>'.format(
+                    irods_backend.get_subdir(assay, include_parent=False))
+
+            ret += '</ul>'
+
+        ret += '</li>'
+
+    ret += '</ul></li></ul>'
+
+    return ret
+
+
+# TODO: This should be in bih_germline app template tags
+@register.simple_tag
+def get_families(study):
+    """
+    Return list of families
+    :param study: Study object
+    :return: List of strings
+    """
+    # TODO: Quick HACK, un-hackify
+    ret = sorted(list(set([
+        m.characteristics['Family']['value'] for m in
+        GenericMaterial.objects.filter(study=study, item_type='SOURCE')])))
+
+    if not ret or ret[0] == None:
+        ret = GenericMaterial.objects.filter(
+            study=study, item_type='SOURCE').values_list(
+            'name', flat=True).order_by('name')
+
+    return ret
+
+
+# TODO: This should be in bih_germline app template tags
+@register.simple_tag
+def get_family_sources(study, family_id):
+    """
+    Return sources for a family in a study
+    :param study: Study object
+    :param family_id: String
+    :return: QuerySet of GenericMaterial objects
+    """
+    ret = GenericMaterial.objects.filter(
+        study=study,
+        item_type='SOURCE',
+        characteristics__Family__value=family_id)
+
+    if ret.count() == 0:
+        ret = GenericMaterial.objects.filter(
+            study=study,
+            item_type='SOURCE',
+            name=family_id)
+
+    return ret
+
+
+# Table rendering --------------------------------------------------------------
+
+
+@register.simple_tag
+def render_top_headers(top_header, col_values):
+    """
+    Render the top header row
+    :param top_header: Top header row (list)
+    :param col_values: True/False values for column data (list)
+    :return: String (contains HTML)
+    """
+    ret = ''
+    col_idx = 0     # Index in original (non-hidden) columns
+
+    for section in top_header:
+        final_colspan = sum(col_values[col_idx:col_idx + section['colspan']])
+
+        if final_colspan > 0:
+            ret += '<th class="bg-{} text-nowrap text-white ' \
+                   'omics-ss-top-header" colspan="{}" original-colspan="{}" ' \
+                   '{}>{}</th>\n'.format(
+                    section['colour'],
+                    final_colspan,     # Actual colspan
+                    final_colspan,     # Original colspan
+                    ''.join(['{}-cols="{}" '.format(k, v) for
+                             k, v in section['hiding'].items()]),
+                    section['value'])
+
+        col_idx += section['colspan']
+
+    return ret
+
+
+@register.simple_tag
+def render_field_headers(field_header, col_values):
+    """
+    Render field header row for a table
+    :param field_header: Field header row (list)
+    :param col_values: True/False values for column data (list)
+    :return: String (contains HTML)
+    """
+    ret = ''
+
+    # Iterate through header row, render only if there is data in column
+    for i in range(0, len(field_header)):
+        header = field_header[i]
+
+        if col_values[i]:
+            ret += '<th class="{}">{}</th>\n'.format(
+                ' '.join(header['classes']), header['value'])
+
+    return ret
+
+
+@register.simple_tag
+def get_row_id():
+    """
+    Return random string for link ids
+    :return: string
+    """
+    return ''.join(random.SystemRandom().choice(
+        string.ascii_lowercase + string.digits) for x in range(16))
+
+
+@register.simple_tag
+def render_cells(row, col_values):
+    """
+    Render cells of a table row
+    :param row: Row of cells (list)
+    :param col_values: True/False values for column data (list)
+    :return: String (contains HTML)
+    """
+    ret = ''
+
+    # Iterate through row, render only if there is data in column
+    for i in range(0, len(row)):
+        cell = row[i]
+
+        if col_values[i]:
+            td_class_str = ' '.join(cell['classes'])
+
+            ret += '<td '
+
+            # Right aligning
+            if cell['value'] and num_re.match(cell['value']):
+                td_class_str += ' text-right'
+
+            # Add extra attrs if present
+            if cell['attrs']:
+                for k, v in cell['attrs'].items():
+                    ret += '{}="{}" '.format(k, v)
+
+            if cell['tooltip']:
+                ret += 'class="{}" title="{}" data-toggle="tooltip" ' \
+                       'data-placement="top">'.format(
+                        td_class_str, cell['tooltip'])
+
+            else:
+                ret += 'class="{}">'.format(td_class_str)
+
+            if cell['value']:
+                if cell['link']:
+                    ret += '<a href="{}" target="_blank">{}</a>'.format(
+                        cell['link'], cell['value'])
+
+                else:
+                    ret += cell['value']
+
+                if cell['unit']:
+                    ret += '&nbsp;<span class=" text-muted">{}</span>'.format(
+                        cell['unit'])
+
+            else:  # Empty value
+                ret += EMPTY_VALUE
+
+            ret += '</td>\n'
+    return ret
+
+
+@register.simple_tag
+def get_irods_row_path(assay, assay_table, row):
+    """
+    Return iRODS path for an assay row. If the configuration is not recognized,
+    Returns a link for the whole assay
+    :param assay: Assay object
+    :param assay_table: Assay table from SampleSheetTableBuilder
+    :param row: Row from SampleSheetTableBuilder
+    :return: String
+    """
+    config_plugin = get_config_plugin(assay)
+
+    if not config_plugin:
+        if irods_backend:
+            return irods_backend.get_path(assay)
+
+        return None
+
+    return config_plugin.get_row_path(assay, assay_table, row)

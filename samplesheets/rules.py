@@ -30,7 +30,7 @@ rules.add_perm(
 rules.add_perm(
     'samplesheets.edit_sheet',
     rules.is_superuser | pr_rules.is_project_owner |
-    pr_rules.is_project_delegate)
+    pr_rules.is_project_delegate | pr_rules.is_project_contributor)
 
 # Allow exporting a JSON sample sheet from project
 rules.add_perm(
@@ -42,10 +42,10 @@ rules.add_perm(
 rules.add_perm(
     'samplesheets.create_dirs',
     rules.is_superuser | pr_rules.is_project_owner |
-    pr_rules.is_project_delegate)
+    pr_rules.is_project_delegate | pr_rules.is_project_contributor)
 
 # Allow deleting the project sample sheet
 rules.add_perm(
     'samplesheets.delete_sheet',
     rules.is_superuser | pr_rules.is_project_owner |
-    pr_rules.is_project_delegate)
+    pr_rules.is_project_delegate | pr_rules.is_project_contributor)

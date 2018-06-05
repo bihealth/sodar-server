@@ -22,7 +22,7 @@ class SampleSheetImportForm(forms.Form):
     class Meta:
         fields = ['file_upload']
 
-    def __init__(self, project=None, *args, **kwargs):
+    def __init__(self, project=None, replace=False, *args, **kwargs):
         """Override form initialization"""
         super(SampleSheetImportForm, self).__init__(*args, **kwargs)
         self.isa_zip = None
@@ -39,12 +39,20 @@ class SampleSheetImportForm(forms.Form):
         file = self.cleaned_data.get('file_upload')
 
         # Ensure file type
-        if file.content_type != 'application/zip':
+        if file and file.content_type not in [
+                'application/zip',
+                'application/x-zip-compressed']:
             self.add_error('file_upload', 'The file is not a Zip archive')
             return self.cleaned_data
 
         # Validate zip file
-        zip_file = ZipFile(file)
+        try:
+            zip_file = ZipFile(file)
+
+        except Exception as ex:
+            self.add_error(
+                'file_upload', 'Unable to open zip file: {}'.format(ex))
+            return self.cleaned_data
 
         # Get investigation file path(s)
         i_paths = get_inv_paths(zip_file)
@@ -67,9 +75,10 @@ class SampleSheetImportForm(forms.Form):
 
     def save(self, *args, **kwargs):
         try:
-            return import_isa(
+            investigation = import_isa(
                 isa_zip=self.isa_zip,
                 project=self.project)
+            return investigation
 
         except Exception as ex:
             raise Exception('Django import failed: {}'.format(ex))

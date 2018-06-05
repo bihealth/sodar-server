@@ -1,0 +1,76 @@
+{% load samplesheets_tags %}
+
+<script type="text/javascript">
+    $(document).ready(function() {
+
+        /********************
+         Initialize DataTable
+         ********************/
+        $('#omics-ss-germline-table').DataTable({
+            scrollY: 300,
+            scrollX: true,
+            paging: false,
+            scrollCollapse: true,
+            info: false,
+            fixedHeader: true,
+            fixedColumns: {
+                leftColumns: 0,
+                rightColumns: 0
+            },
+            dom: 't' // Disable toolbar
+        });
+
+    });
+</script>
+
+<div class="card">
+  <div class="card-header">
+    <h4>
+      Pedigree-Wise iRODS and IGV Shortcuts
+
+      <div class="input-group omics-header-input-group pull-right" table-id="omics-ss-germline-table">
+      <input class="form-control omics-ss-data-filter"
+           type="text" placeholder="Filter" aria-label="Filter Pedigree Data"
+           id="omics-ss-germline-filter">
+      </div>
+    </h4>
+  </div>
+  {% if investigation.irods_status %}
+    <div class="card-body omics-card-body-table">
+      <div class="table-responsive omics-ss-init-container">
+        <table class="table cell-border order-column omics-ss-data-table omics-ss-data-table-configapp" id="omics-ss-germline-table">
+          <thead>
+            <tr>
+              <th>Family</th>
+              <th>BAM files</th>
+              <th>VCF file</th>
+              <th>IGV session file</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% get_families study as families %}
+            {% for fam_id in families %}
+              <tr>
+                <td>{{ fam_id }}</td>
+                <td>
+                  {% get_family_sources study fam_id as fam_sources %}
+                  {% for fam_source in fam_sources %}
+                    <a class="mr-3 text-nowrap" href="{% url 'samplesheets.configapps.bih_germline:file' file_type='bam' genericmaterial=fam_source.omics_uuid %}">{{ fam_source.name }} <i class="fa fa-external-link"></i></a>
+                  {% endfor %}
+                </td>
+                <td><a class="text-nowrap" href="{% url 'samplesheets.configapps.bih_germline:file' file_type='vcf' genericmaterial=fam_sources.0.omics_uuid %}">Pedigree VCF file <i class="fa fa-external-link"></i></a></td>
+                <td><a class="text-nowrap" href="{% url 'samplesheets.configapps.bih_germline:igv' genericmaterial=fam_sources.0.omics_uuid %}">Pedigree IGV session file <i class="fa fa-file-text"></i></a></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  {% else %}
+    <div class="card-body omics-card-body text-center">
+    <p class="font-italic">
+      iRODS directories not created, file listing disabled
+    </p>
+    </div>
+  {% endif %}
+</div>

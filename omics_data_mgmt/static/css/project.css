@@ -278,6 +278,10 @@ table.omics-card-table-bordered tr th:last-child {
   border-right: 0;
 }
 
+table.omics-card-table-bordered tr td {
+  border: 1px solid #dfdfdf;
+}
+
 table.omics-card-table-bordered tr td:first-child {
   border-left: 0;
 }
@@ -286,29 +290,67 @@ table.omics-card-table-bordered tr td:last-child {
   border-right: 0;
 }
 
-tr.omics-pr-project-list-header th:first-child {
-  width: 50%;
+table.omics-card-table-bordered tr:first-child td {
+  border-top: 0;
 }
 
-tr.omics-pr-project-list-header th:nth-child(2) {
-  width: 35%;
+table.omics-card-table-bordered tr:last-child td {
+  border-bottom: 0;
+}
+
+/* Project list table */
+
+table.omics-pr-project-list-table {
+  table-layout: fixed;
+}
+
+tr.omics-pr-project-list-header th:nth-child(1) {
+  width: 40%;
 }
 
 tr.omics-pr-project-list-header th:nth-child(3) {
-  width: 15%;
+  width: 120px;
 }
 
-tr.omics-pr-project-list-item td:first-child {
-  width: 50%;
+tr.omics-pr-project-list-item td:nth-child(1) {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 tr.omics-pr-project-list-item td:nth-child(2) {
-  width: 35%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-tr.omics-pr-project-list-item td:nth-child(3) {
+/* iRODS table */
+
+/* Size column */
+table.omics-irods-obj-table thead tr th:nth-child(2) {
+  min-width: 60px;
+  text-align: right;
+}
+
+table.omics-irods-obj-table tbody tr td:nth-child(2) {
+  text-align: right;
   white-space: nowrap;
-  width: 15%;
+}
+
+/* Date column */
+table.omics-irods-obj-table tbody tr td:nth-child(3) {
+  width: 5%;
+  white-space: nowrap;
+}
+
+/* MD5 column */
+table.omics-irods-obj-table thead tr th:nth-child(4) {
+  width: 40px;
+  text-align: center;
+}
+
+table.omics-irods-obj-table tbody tr td:nth-child(4) {
+  text-align: center;
 }
 
 /* Popups */
@@ -355,6 +397,13 @@ dl.omics-dl dd {
 }
 
 .omics-edit-button-group {
+  height: 1.75em;
+}
+
+.omics-list-btn {
+  padding-top: 1px !important;
+  padding-left: 5px !important;
+  padding-right: 5px !important;
   height: 1.75em;
 }
 
@@ -480,7 +529,7 @@ a.omics-nav-link-last {
 }
 
 .popover{
-  max-width: 100%;
+  max-width: 600px;
 }
 
 .omics-breadcrumb-table {
@@ -527,15 +576,19 @@ pre {
   font-size: 85%;
 }
 
+.omics-code-input {
+  font-family: monospace;
+  font-size: 85%;
+}
+
 /* Responsive modifications */
 
 .omics-navbar-alt-item {
   display: none;
 }
 
-/* Navbar */
-/* Note: 767px is where navbar-expand-md is triggered in Bootstrap 4 */
-@media screen and (max-width: 767px) {
+/* Navbar (width) */
+@media screen and (max-width: 990px) {
   .omics-navbar-user-dropdown {
     display: none;
   }
@@ -561,29 +614,41 @@ pre {
   }
 }
 
+/* Sidebar (height) */
+@media screen and (max-height: 650px) {
+  .omics-content-left {
+    display: none !important;
+  }
+
+  .omics-sidebar-alt-btn {
+    display: inherit !important;
+  }
+}
+
 /* Project list */
+
 @media screen and (max-width: 1000px) {
-  .table#omics-pr-project-list-table tr th:nth-child(3) {
+  .table.omics-pr-project-list-table tr th:nth-child(3) {
     display: none;
   }
 
-  .table#omics-pr-project-list-table tr td:nth-child(3) {
+  .table.omics-pr-project-list-table tr td:nth-child(3) {
     display: none;
   }
 }
 
 @media screen and (max-width: 800px) {
-  .table#omics-pr-project-list-table tr th:nth-child(2) {
+  .table.omics-pr-project-list-table tr th:nth-child(2) {
     display: none;
   }
 
-  .table#omics-pr-project-list-table tr td:nth-child(2) {
+  .table.omics-pr-project-list-table tr td:nth-child(2) {
     display: none;
   }
 }
 
 /* Navbar site app links */
-@media screen and (min-width: 767px) {
+@media screen and (min-width: 1200px) {
   /* Notch visualizaton for top bar */
   .omics-navbar-siteapp-item {
     text-align: center;

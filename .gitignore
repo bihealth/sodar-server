@@ -81,3 +81,7 @@ staticfiles/
 
 # Flamegraph
 flamegraph.pl
+
+# Certificate files
+*.crt
+*.pem

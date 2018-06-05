@@ -9,36 +9,6 @@ https://docs.djangoproject.com/en/dev/ref/settings/
 """
 import environ
 
-# FOR FLYNN ISSUE #3932 WORKAROUNDS
-import imp
-import pip
-
-
-# FLYNN WORKAROUND for altamisa
-try:
-    import altamisa
-
-except ImportError:
-    print('Flynn issue #3932 workaround: installing altamisa..')
-    pip.main([
-        'install',
-        '-e',
-        'git+git://github.com/bihealth/altamisa.git@'
-        '00e98d93dddd2e4c4e81fb09e16bc25a0986e2ae#egg=altamisa'])
-
-# FLYNN WORKAROUND ENDS
-
-# FLYNN WORKAROUND for django-plugins
-try:
-    imp.find_module('djangoplugins')
-
-except ImportError:
-    pip.main([
-        'install',
-        'git+git://github.com/mikkonie/django-plugins.git@'
-        '1bc07181e6ab68b0f9ed3a00382eb1f6519e1009#egg=django-plugins'])
-
-
 ROOT_DIR = environ.Path(__file__) - 3
 APPS_DIR = ROOT_DIR.path('omics_data_mgmt')
 
@@ -84,6 +54,7 @@ THIRD_PARTY_APPS = [
     'pagedown',  # For markdown
     'markupfield',  # For markdown
     'db_file_storage',  # For storing files in database
+    'rest_framework',   # For API views
 ]
 
 # Project apps
@@ -96,9 +67,18 @@ LOCAL_APPS = [
     'timeline.apps.TimelineConfig',
     'filesfolders.apps.FilesfoldersConfig',
     'samplesheets.apps.SamplesheetsConfig',
+    'landingzones.apps.LandingzonesConfig',
+
+    # Backend apps
+    'taskflowbackend.apps.TaskflowbackendConfig',
+    'irodsbackend.apps.IrodsbackendConfig',
 
     # General site apps
     'adminalerts.apps.AdminalertsConfig',
+    'irodsinfo.apps.IrodsinfoConfig',
+
+    # Samplesheets config sub-apps
+    'samplesheets.configapps.bih_germline.apps.BihGermlineConfig',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -305,32 +285,8 @@ ADMIN_URL = r'^admin/'
 # Enable LDAP if configured
 if env.str('ENABLE_LDAP', None):
     import itertools
-
-    # FLYNN WORKAROUND
-    try:
-        import ldap
-
-    except ImportError:
-        print('Flynn issue #3932 workaround: installing ldap..')
-
-        pip.main([
-            'install',
-            'git+git://github.com/holtgrewe/pyldap.git@'
-            'fce3b934e9b2d7d1a538fc37d7c4ed4cfe18fae1#egg=pyldap'])
-
-        import ldap
-
-    try:
-        from django_auth_ldap.config import LDAPSearch
-
-    except ImportError:
-        print('Flynn issue #3932 workaround: installing django-auth-ldap..')
-        pip.main([
-            'install',
-            'django-auth-ldap==1.2.8'])
-
-        from django_auth_ldap.config import LDAPSearch
-    # FLYNN WORKAROUND ENDS
+    import ldap
+    from django_auth_ldap.config import LDAPSearch
 
     # Charite LDAP settings
     AUTH_CHARITE_LDAP_SERVER_URI = env.str('AUTH_CHARITE_LDAP_SERVER_URI')
@@ -380,7 +336,7 @@ def set_logging(debug):
         'disable_existing_loggers': False,
         'formatters': {
             'simple': {
-                'format': '%(levelname)s | %(name)s: %(message)s'
+                'format': '%(asctime)s [%(levelname)s] %(name)s: %(message)s'
             }
         },
         'handlers': {
@@ -391,6 +347,11 @@ def set_logging(debug):
             }
         },
         'loggers': {
+            'projectroles': {
+                'level': 'DEBUG' if debug else 'INFO',
+                'handlers': ['console', ],
+                'propagate': False,
+            },
             'samplesheets': {
                 'level': 'DEBUG' if debug else 'INFO',
                 'handlers': ['console', ],
@@ -434,3 +395,30 @@ FILESFOLDERS_LINK_BAD_REQUEST_MSG = 'Invalid request'
 
 # Adminalerts app settings
 ADMINALERTS_PAGINATION = 15
+
+
+# Taskflow backend settings
+TASKFLOW_BACKEND_HOST = env.str('TASKFLOW_BACKEND_HOST', 'http://0.0.0.0')
+TASKFLOW_BACKEND_PORT = env.int('TASKFLOW_BACKEND_PORT', 5005)
+
+
+# Samplesheets and Landingzones link settings
+IRODS_WEBDAV_ENABLED = env.bool('IRODS_WEBDAV_ENABLED', True)
+IRODS_WEBDAV_URL = env.str('IRODS_WEBDAV_URL', 'https://0.0.0.0')
+
+
+# Landingzones app settings
+# Status query interval in seconds
+LANDINGZONES_STATUS_INTERVAL = env.int('LANDINGZONES_STATUS_INTERVAL', 3)
+LANDINGZONES_STATISTICS_INTERVAL = env.int('LANDINGZONES_STATUS_INTERVAL', 10)
+
+
+# iRODS settings shared by iRODS using apps
+IRODS_HOST = env.str('IRODS_HOST', '0.0.0.0')
+IRODS_PORT = env.int('IRODS_PORT', 1247)
+IRODS_ZONE = env.str('IRODS_ZONE', 'omicsZone')
+IRODS_USER = env.str('IRODS_USER', 'rods')
+IRODS_PASS = env.str('IRODS_PASS', 'rods')
+IRODS_SAMPLE_DIR = 'sample_data'
+IRODS_LANDING_ZONE_DIR = 'landing_zones'
+IRODS_CERT_PATH = STATIC_ROOT + '/irods/irods_server.crt'

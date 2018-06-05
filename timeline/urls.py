@@ -21,6 +21,6 @@ urlpatterns = [
     url(
         regex=r'^taskflow/status/set$',
         view=views.TimelineEventStatusSetAPIView.as_view(),
-        name='taskflow_timeline_event_status_set',
+        name='taskflow_status_set',
     ),
 ]

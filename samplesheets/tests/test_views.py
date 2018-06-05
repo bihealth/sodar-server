@@ -21,11 +21,16 @@ PROJECT_TYPE_CATEGORY = OMICS_CONSTANTS['PROJECT_TYPE_CATEGORY']
 PROJECT_TYPE_PROJECT = OMICS_CONSTANTS['PROJECT_TYPE_PROJECT']
 SUBMIT_STATUS_OK = OMICS_CONSTANTS['SUBMIT_STATUS_OK']
 SUBMIT_STATUS_PENDING = OMICS_CONSTANTS['SUBMIT_STATUS_PENDING']
-SUBMIT_STATUS_PENDING_TASKFLOW = OMICS_CONSTANTS['SUBMIT_STATUS_PENDING']
+SUBMIT_STATUS_PENDING_TASKFLOW = OMICS_CONSTANTS['SUBMIT_STATUS_PENDING_TASKFLOW']
 
 
 # Local constants
-SHEET_PATH = SHEET_DIR + 'i_small.zip'
+SHEET_NAME = 'i_small.zip'
+SHEET_PATH = SHEET_DIR + SHEET_NAME
+SHEET_NAME_SMALL2 = 'i_small2.zip'
+SHEET_PATH_SMALL2 = SHEET_DIR + SHEET_NAME_SMALL2
+SHEET_NAME_MINIMAL = 'i_minimal.zip'
+SHEET_PATH_MINIMAL = SHEET_DIR + SHEET_NAME_MINIMAL
 
 
 class TestViewsBase(
@@ -156,7 +161,66 @@ class TestSampleSheetImportView(TestViewsBase):
                 kwargs={'project': self.project.omics_uuid}))
             self.assertEqual(response.status_code, 200)
 
-    # TODO: Test import POST
+    def test_post(self):
+        """Test posting an ISAtab zip file in the import form"""
+
+        # Assert precondition
+        self.assertEqual(Investigation.objects.all().count(), 0)
+
+        with open(SHEET_PATH, 'rb') as file:
+            with self.login(self.user):
+                values = {'file_upload': file}
+                response = self.client.post(reverse(
+                    'samplesheets:import',
+                    kwargs={'project': self.project.omics_uuid}), values)
+
+        # Assert postconditions
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Investigation.objects.all().count(), 1)
+
+    def test_post_replace(self):
+        """Test replacing an existing investigation by posting"""
+        inv = self._import_isa_from_file(SHEET_PATH, self.project)
+        uuid = inv.omics_uuid
+
+        # Assert precondition
+        self.assertEqual(Investigation.objects.all().count(), 1)
+
+        with open(SHEET_PATH_SMALL2, 'rb') as file:
+            with self.login(self.user):
+                values = {'file_upload': file}
+                response = self.client.post(reverse(
+                    'samplesheets:import',
+                    kwargs={'project': self.project.omics_uuid}), values)
+
+        # Assert postconditions
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Investigation.objects.all().count(), 1)
+        new_inv = Investigation.objects.first()
+        self.assertNotEqual(uuid, new_inv.omics_uuid)
+
+    def test_post_replace_not_allowed(self):
+        """Test replacing an iRODS-enabled investigation with missing studies or assays"""
+        inv = self._import_isa_from_file(SHEET_PATH, self.project)
+        inv.irods_status = True
+        inv.save()
+        uuid = inv.omics_uuid
+
+        # Assert precondition
+        self.assertEqual(Investigation.objects.all().count(), 1)
+
+        with open(SHEET_PATH_MINIMAL, 'rb') as file:
+            with self.login(self.user):
+                values = {'file_upload': file}
+                response = self.client.post(reverse(
+                    'samplesheets:import',
+                    kwargs={'project': self.project.omics_uuid}), values)
+
+        # Assert postconditions
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Investigation.objects.all().count(), 1)
+        new_inv = Investigation.objects.first()
+        self.assertEqual(uuid, new_inv.omics_uuid)  # Should not have changed
 
 
 class TestSampleSheetTableExportView(TestViewsBase):

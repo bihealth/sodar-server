@@ -1,0 +1,29 @@
+{# Landing zone list #}
+<div class="card omics-card omics-lz-zone-list"
+     id="omics-lz-zone-list-{{ list_type }}">
+  <div class="card-header">
+    <h4><i class="fa {{ list_icon }}"></i> {{ list_title }}</h4>
+  </div>
+  <div class="card-body omics-card-body-table">
+    <table class="table table-striped omics-card-table omics-lz-table">
+      <thead>
+        <tr>
+          <th class="omics-lz-list-header-title">Zone</th>
+          <th class="omics-lz-list-header-assay">Assay</th>
+          <th class="omics-lz-list-header-info">Status&nbsp;Info</th>
+          <th class="omics-lz-list-header-status">Status</th>
+          <th class="omics-lz-list-header-links">Links</th>
+          <th class="omics-lz-list-header-edit"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for zone in zones %}
+          {% include 'landingzones/_zone_item.html' %}
+        {% endfor %}
+        {% if zones.count == 0 %}
+           <td class="bg-faded font-italic text-center" colspan="6">No landing zones found</td>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>

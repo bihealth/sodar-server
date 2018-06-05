@@ -326,7 +326,7 @@ class ProjectFileView(
         context = super(ProjectFileView, self).get_context_data(
             *args, **kwargs)
 
-        project = self._get_project(self.kwargs, self.request)
+        project = self._get_project(self.request, self.kwargs)
         context['project'] = project
 
         # Get folder and file data
@@ -587,7 +587,7 @@ class BatchEditView(
 
     def post(self, request, **kwargs):
         post_data = request.POST
-        project = self._get_project(kwargs, request)
+        project = self._get_project(request, kwargs)
 
         #: Items we will delete
         items = []

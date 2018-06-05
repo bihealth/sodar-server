@@ -9,24 +9,46 @@ from django.shortcuts import redirect
 from django.urls import reverse
 from django.views.generic import TemplateView, FormView, View
 
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
 # Projectroles dependency
 from projectroles.models import Project
 from projectroles.plugins import get_backend_api
 from projectroles.views import LoggedInPermissionMixin, \
-    ProjectContextMixin, ProjectPermissionMixin
+    ProjectContextMixin, ProjectPermissionMixin, APIPermissionMixin, \
+    HTTPRefererMixin
 
 from .forms import SampleSheetImportForm
 from .models import Investigation, Study, Assay, Protocol, Process, \
     GenericMaterial
-from .rendering import SampleSheetTableBuilder
+from .rendering import SampleSheetTableBuilder, EMPTY_VALUE
+from .utils import get_sample_dirs, compare_inv_replace
 
 
 APP_NAME = 'samplesheets'
 
 
+class InvestigationContextMixin(ProjectContextMixin):
+    """Mixin for providing investigation for context if available"""
+    def get_context_data(self, *args, **kwargs):
+        context = super(InvestigationContextMixin, self).get_context_data(
+            *args, **kwargs)
+
+        try:
+            investigation = Investigation.objects.get(
+                project=context['project'], active=True)
+            context['investigation'] = investigation
+
+        except Investigation.DoesNotExist:
+            context['investigation'] = None
+
+        return context
+
+
 class ProjectSheetsView(
         LoginRequiredMixin, LoggedInPermissionMixin, ProjectPermissionMixin,
-        ProjectContextMixin, TemplateView):
+        InvestigationContextMixin, TemplateView):
     """Main view for displaying sample sheets in a project"""
 
     # Projectroles dependency
@@ -36,34 +58,47 @@ class ProjectSheetsView(
     def get_context_data(self, *args, **kwargs):
         context = super(ProjectSheetsView, self).get_context_data(
             *args, **kwargs)
+        project = context['project']
 
-        # Investigation
-        investigation = None
+        if 'investigation' in context and context['investigation']:
+            try:
+                if 'study' in self.kwargs and self.kwargs['study']:
+                    study = Study.objects.get(
+                        omics_uuid=self.kwargs['study'])
+                else:
+                    study = Study.objects.filter(
+                        investigation=context['investigation']).first()
 
-        try:
-            investigation = Investigation.objects.get(
-                project=context['project'])
-            context['investigation'] = investigation
+                context['study'] = study
+                tb = SampleSheetTableBuilder()
 
-        except Investigation.DoesNotExist:
-            context['investigation'] = None
-            return context
+                try:
+                    context['table_data'] = tb.build_study_tables(study)
 
-        try:
-            if 'study' in self.kwargs and self.kwargs['study']:
-                study = Study.objects.get(
-                    omics_uuid=self.kwargs['study'])
-            else:
-                study = Study.objects.filter(
-                    investigation=investigation).first()
+                except Exception as ex:
+                    # TODO: Log error
+                    context['render_error'] = str(ex)
 
-            context['study'] = study
-            tb = SampleSheetTableBuilder()
-            context['table_data'] = tb.build_study(study)
+                # iRODS backend
+                context['irods_backend'] = get_backend_api('omics_irods')
 
-        except Study.DoesNotExist:
-            return None
+                # iRODS WebDAV
+                if settings.IRODS_WEBDAV_ENABLED:
+                    context['irods_webdav_enabled'] = True
+                    context['irods_webdav_url'] = \
+                        settings.IRODS_WEBDAV_URL.rstrip('/')
 
+                # TODO: TBD: Get from irodsbackend instead?
+                context['irods_base_dir'] = \
+                    '/omicsZone/projects/{}/{}/{}'.format(
+                        str(project.omics_uuid)[:2],
+                        project.omics_uuid,
+                        settings.IRODS_SAMPLE_DIR)
+
+            except Study.DoesNotExist:
+                pass    # TODO: Show error message if study not found?
+
+        context['EMPTY_VALUE'] = EMPTY_VALUE    # For JQuery
         return context
 
 
@@ -85,7 +120,7 @@ class ProjectSheetsOverviewView(
 
         try:
             investigation = Investigation.objects.get(
-                project=context['project'])
+                project=context['project'], active=True)
             context['investigation'] = investigation
 
         except Investigation.DoesNotExist:
@@ -126,31 +161,91 @@ class SampleSheetImportView(
     form_class = SampleSheetImportForm
     template_name = 'samplesheets/samplesheet_import_form.html'
 
+    def get_context_data(self, *args, **kwargs):
+        context = super(SampleSheetImportView, self).get_context_data(
+            *args, **kwargs)
+        project = self._get_project(self.request, self.kwargs)
+
+        try:
+            old_inv = Investigation.objects.get(project=project, active=True)
+            context['replace_sheets'] = True
+            context['irods_status'] = old_inv.irods_status
+
+        except Investigation.DoesNotExist:
+            pass
+
+        return context
+
     def get_form_kwargs(self):
-        """Pass URL kwargs to form"""
+        """Pass kwargs to form"""
         kwargs = super(SampleSheetImportView, self).get_form_kwargs()
+        project = self._get_project(self.request, self.kwargs)
 
         if 'project' in self.kwargs:
-            kwargs.update({'project': self._get_project(
-                self.kwargs, self.request).omics_uuid})
+            kwargs.update({'project': project.omics_uuid})
+
+        # If investigation for project already exists, set replace=True
+        try:
+            Investigation.objects.get(project=project, active=True)
+            kwargs.update({'replace': True})
+
+        except Investigation.DoesNotExist:
+            kwargs.update({'replace': False})
 
         return kwargs
 
     def form_valid(self, form):
         timeline = get_backend_api('timeline_backend')
-        project = self._get_project(self.kwargs, self.request)
+        project = self._get_project(self.request, self.kwargs)
+        form_kwargs = self.get_form_kwargs()
+        form_action = 'replace' if form_kwargs['replace'] else 'create'
+
+        redirect_url = reverse(
+            'samplesheets:project_sheets',
+            kwargs={'project': project.omics_uuid})
 
         try:
             self.object = form.save()
+            old_inv = None
+
+            # Check for existing investigation
+            try:
+                old_inv = Investigation.objects.get(
+                    project=project, active=True)
+
+            except Investigation.DoesNotExist:
+                pass    # This is fine
+
+            if old_inv:
+                if old_inv.irods_status:
+                    # Ensure existing studies and assays are found in new inv
+                    compare_inv_replace(old_inv, self.object)
+
+                # Set irods_status to our previous sheet's state
+                self.object.irods_status = old_inv.irods_status
+                self.object.save()
+
+                # Delete old investigation
+                old_inv.delete()
+
+            # Set current import active status to True
+            self.object.active = True
+            self.object.save()
 
             # Add event in Timeline
             if timeline:
+                if form_action == 'replace':
+                    desc = 'replace previous investigation with '
+
+                else:
+                    desc = 'create investigation '
+
                 tl_event = timeline.add_event(
                     project=project,
                     app_name=APP_NAME,
                     user=self.request.user,
-                    event_name='sheet_create',
-                    description='create investigation {investigation}',
+                    event_name='sheet_' + form_action,
+                    description=desc + ' {investigation}',
                     status_type='OK')
 
                 tl_event.add_object(
@@ -158,14 +253,38 @@ class SampleSheetImportView(
                     label='investigation',
                     name=self.object.title)
 
+                messages.success(
+                    self.request,
+                    form_action.capitalize() +
+                    'd sample sheets from ISAtab import')
+
         except Exception as ex:
+            # Get existing investigations under project
+            invs = Investigation.objects.filter(
+                project=project).order_by('-pk')
+            old_inv = None
+
+            if invs:
+                # Activate previous invite
+                if invs.count() > 1:
+                    invs[1].active = True
+                    invs[1].save()
+                    old_inv = invs[1]
+
+                # Delete failed import
+                invs[0].delete()
+
+            # Just in case, delete remaining ones from the db
+            if old_inv:
+                Investigation.objects.filter(project=project).exclude(
+                    pk=old_inv.pk).delete()
+
             if settings.DEBUG:
                 raise ex
+
             messages.error(self.request, str(ex))
 
-        return redirect(reverse(
-            'samplesheets:project_sheets',
-            kwargs={'project': project.omics_uuid}))
+        return redirect(redirect_url)
 
 
 class SampleSheetTableExportView(
@@ -196,17 +315,27 @@ class SampleSheetTableExportView(
             except Study.DoesNotExist:
                 pass
 
+        redirect_url = reverse(
+            'samplesheets:project_sheets',
+            kwargs={'project': self._get_project(
+                self.request, self.kwargs).omics_uuid})
+
         if not study:
             messages.error(
                 self.request, 'Study not found, unable to render TSV')
-            return redirect(reverse(
-                'samplesheets:project_sheets',
-                kwargs={'project': self._get_project(
-                    self.request, self.kwargs).omics_uuid}))
+            return redirect(redirect_url)
 
         # Build study tables
         tb = SampleSheetTableBuilder()
-        tables = tb.build_study(study)
+
+        try:
+            tables = tb.build_study_tables(study)
+
+        except Exception as ex:
+            messages.error(
+                self.request,
+                'Unable to render table for export: {}'.format(ex))
+            return redirect(redirect_url)
 
         if 'assay' in self.kwargs:
             table = tables['assays'][assay.get_name()]
@@ -228,8 +357,8 @@ class SampleSheetTableExportView(
         # Top header
         output_row = []
 
-        for c in table['top_header']:
-            output_row.append(c['legend'])
+        for c in table['top_header'][1:]:
+            output_row.append(c['value'])
 
             if c['colspan'] > 1:
                 output_row += [''] * (c['colspan'] - 1)
@@ -237,11 +366,11 @@ class SampleSheetTableExportView(
         writer.writerow(output_row)
 
         # Header
-        writer.writerow([c['value'] for c in table['field_header']])
+        writer.writerow([c['value'] for c in table['field_header'][1:]])
 
         # Data cells
         for row in table['table_data']:
-            writer.writerow([c['value'] for c in row])
+            writer.writerow([c['value'] for c in row[1:]])
 
         # Return file
         return response
@@ -256,8 +385,10 @@ class SampleSheetDeleteView(
 
     def post(self, request, *args, **kwargs):
         timeline = get_backend_api('timeline_backend')
+        taskflow = get_backend_api('taskflow')
+        tl_event = None
         project = Project.objects.get(omics_uuid=kwargs['project'])
-        investigation = Investigation.objects.get(project=project)
+        investigation = Investigation.objects.get(project=project, active=True)
 
         # Add event in Timeline
         if timeline:
@@ -274,7 +405,23 @@ class SampleSheetDeleteView(
                 label='investigation',
                 name=investigation.title)
 
-        investigation.delete()
+        if taskflow and investigation.irods_status:
+            if tl_event:
+                tl_event.set_status('SUBMIT')
+
+            try:
+                taskflow.submit(
+                    project_uuid=project.omics_uuid,
+                    flow_name='sheet_delete',
+                    flow_data={},
+                    request=self.request)
+
+            except taskflow.FlowSubmitException as ex:
+                if tl_event:
+                    tl_event.set_status('FAILED', str(ex))
+
+        else:
+            investigation.delete()
 
         messages.success(
             self.request, 'Sample sheets deleted.')
@@ -282,3 +429,188 @@ class SampleSheetDeleteView(
         return HttpResponseRedirect(reverse(
             'samplesheets:project_sheets',
             kwargs={'project': project.omics_uuid}))
+
+
+class IrodsDirsView(
+        LoginRequiredMixin, LoggedInPermissionMixin, InvestigationContextMixin,
+        ProjectPermissionMixin, TemplateView):
+    """iRODS directory structure creation confirm view"""
+    template_name = 'samplesheets/irods_dirs_confirm.html'
+    # NOTE: minimum perm, all checked files will be tested in post()
+    permission_required = 'samplesheets.create_dirs'
+
+    def get_context_data(self, *args, **kwargs):
+        context = super(IrodsDirsView, self).get_context_data(
+            *args, **kwargs)
+
+        investigation = context['investigation']
+
+        if not investigation:
+            return context
+
+        context['dirs'] = get_sample_dirs(investigation)
+        context['update_dirs'] = True if investigation.irods_status else False
+        return context
+
+    def post(self, request, **kwargs):
+        timeline = get_backend_api('timeline_backend')
+        taskflow = get_backend_api('taskflow')
+        context = self.get_context_data(**kwargs)
+        project = context['project']
+        investigation = context['investigation']
+        tl_event = None
+        action = 'update' if context['update_dirs'] else 'create'
+
+        # Add event in Timeline
+        if timeline:
+            tl_event = timeline.add_event(
+                project=project,
+                app_name=APP_NAME,
+                user=self.request.user,
+                event_name='sheet_dirs_' + action,
+                description=action + ' irods directory structure for '
+                                     '{investigation}')
+
+            tl_event.add_object(
+                obj=investigation,
+                label='investigation',
+                name=investigation.title)
+
+        # Fail if tasflow is not available
+        if not taskflow:
+            if timeline:
+                tl_event.set_status(
+                    'FAILED', status_desc='Taskflow not enabled')
+
+            messages.error(
+                self.request,
+                'Unable to {} dirs: taskflow not enabled!'.format(action))
+
+            return redirect(reverse(
+                'samplesheets:project_sheets',
+                kwargs={'project': project.omics_uuid}))
+
+        # Else go on with the creation
+        if tl_event:
+            tl_event.set_status('SUBMIT')
+
+        flow_data = {
+            'dirs': context['dirs']}
+
+        try:
+            taskflow.submit(
+                project_uuid=project.omics_uuid,
+                flow_name='sheet_dirs_create',
+                flow_data=flow_data,
+                request=self.request)
+            messages.success(
+                self.request,
+                'Directory structure for sample data {}d in iRODS'.format(
+                    action))
+
+            if tl_event:
+                tl_event.set_status('OK')
+
+        except taskflow.FlowSubmitException as ex:
+            if tl_event:
+                tl_event.set_status('FAILED', str(ex))
+
+            messages.error(self.request, str(ex))
+
+        return HttpResponseRedirect(reverse(
+            'samplesheets:project_sheets',
+            kwargs={'project': project.omics_uuid}))
+
+    def get(self, request, *args, **kwargs):
+        super(IrodsDirsView, self).get(request, *args, **kwargs)
+        return super(IrodsDirsView, self).render_to_response(
+            self.get_context_data())
+
+
+# Javascript API Views ---------------------------------------------------
+
+
+class IrodsObjectListAPIView(
+        LoginRequiredMixin, ProjectContextMixin, ProjectPermissionMixin,
+        APIPermissionMixin, APIView):
+    """View for listing relevant sample dataobjects in iRODS via Ajax"""
+    permission_required = 'samplesheets.view_sheet'
+
+    def get(self, request, **kwargs):
+        irods_backend = get_backend_api('omics_irods')
+
+        if not irods_backend:
+            return Response('Backend not enabled', status=500)
+
+        try:
+            assay = Assay.objects.get(omics_uuid=kwargs['assay'])
+
+        except Assay.DoesNotExist:
+            return Response('Assay not found', status=500)
+
+        # Ensure path corresponds to assay
+        assay_path = irods_backend.get_path(assay)
+
+        if assay_path not in kwargs['path']:
+            return Response('Invalid path', status=400)
+
+        try:
+            ret_data = irods_backend.get_objects(kwargs['path'])
+
+        except FileNotFoundError:
+            return Response('Collection not found', status=404)
+
+        except Exception as ex:
+            return Response(str(ex), status=500)
+
+        return Response(ret_data, status=200)
+
+
+# Taskflow API Views -----------------------------------------------------
+
+
+# TODO: Limit access to localhost
+
+
+# TODO: Use GET instead of POST
+class SampleSheetDirStatusGetAPIView(APIView):
+    """View for getting the sample sheet iRODS dir status"""
+    def post(self, request):
+        try:
+            investigation = Investigation.objects.get(
+                project__omics_uuid=request.data['project_uuid'], active=True)
+
+        except Investigation.DoesNotExist as ex:
+            return Response(str(ex), status=404)
+
+        return Response({'dir_status': investigation.irods_status}, 200)
+
+
+class SampleSheetDirStatusSetAPIView(APIView):
+    """View for creating or updating a role assignment based on params"""
+    def post(self, request):
+        try:
+            investigation = Investigation.objects.get(
+                project__omics_uuid=request.data['project_uuid'], active=True)
+
+        except Investigation.DoesNotExist as ex:
+            return Response(str(ex), status=404)
+
+        investigation.irods_status = request.data['dir_status']
+        investigation.save()
+
+        return Response('ok', status=200)
+
+
+class SampleSheetDeleteAPIView(APIView):
+    """View for deleting the sample sheets of a project"""
+    def post(self, request):
+        try:
+            investigation = Investigation.objects.get(
+                project__omics_uuid=request.data['project_uuid'], active=True)
+
+        except Investigation.DoesNotExist as ex:
+            return Response(str(ex), status=404)
+
+        investigation.delete()
+        return Response('ok', status=200)
