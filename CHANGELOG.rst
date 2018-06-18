@@ -13,6 +13,8 @@ Unreleased
 Changed
 -------
 
+- **General**
+    - Update installation and development documentation (#237)
 - **Samplesheets**
     - Clarify ISA parsing error message (#236)
 
