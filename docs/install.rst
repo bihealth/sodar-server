@@ -78,7 +78,7 @@ Options for setting up an iRODS server:
 - Run server as a Docker image
 - Install on a VM using e.g. Vagrant and the `CUBI Ansible Playbooks <https://cubi-gitlab.bihealth.org/CUBI_Operations/Ansible_Playbooks/>`_
 
-**TODO:** Point to ``omics_docker_env`` once it has been retooled.
+A Docker environment containing a basic iRODS setup: `omics_docker_env <https://cubi-gitlab.bihealth.org/CUBI_Engineering/CUBI_Data_Mgmt/omics_docker_env>`_
 
 The server must be configured with the `omics.re <https://cubi-gitlab.bihealth.org/CUBI_Operations/Ansible_Playbooks/blob/master/roles/cubi.irods-setup/files/etc/irods/omics.re>`_
 rule set file and MD5 as the default hash scheme. In the Docker setup and the
@@ -99,6 +99,9 @@ First, clone the `Omics Taskflow repository <https://cubi-gitlab.bihealth.org/CU
 Follow the installation instructions in the ``README.rst`` file. Make sure to
 configure environment variables to point to the Redis and iRODS servers you are
 using.
+
+The `omics_docker_env <https://cubi-gitlab.bihealth.org/CUBI_Engineering/CUBI_Data_Mgmt/omics_docker_env>`_
+environment also contains a Redis server for omics_taskflow use.
 
 
 4. Run the Components
