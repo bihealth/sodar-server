@@ -200,6 +200,11 @@ class SampleSheetImportView(
         form_kwargs = self.get_form_kwargs()
         form_action = 'replace' if form_kwargs['replace'] else 'create'
 
+        old_inv_found = False
+        old_inv_uuid = None
+        old_study_uuids = {}
+        old_assay_uuids = {}
+
         redirect_url = reverse(
             'samplesheets:project_sheets',
             kwargs={'project': project.omics_uuid})
@@ -212,14 +217,23 @@ class SampleSheetImportView(
             try:
                 old_inv = Investigation.objects.get(
                     project=project, active=True)
-
+                old_inv_found = True
             except Investigation.DoesNotExist:
                 pass    # This is fine
 
             if old_inv:
+                # Ensure existing studies and assays are found in new inv
                 if old_inv.irods_status:
-                    # Ensure existing studies and assays are found in new inv
                     compare_inv_replace(old_inv, self.object)
+
+                # Save UUIDs
+                old_inv_uuid = old_inv.omics_uuid
+
+                for study in old_inv.studies.all():
+                    old_study_uuids[study.get_name()] = study.omics_uuid
+
+                    for assay in study.assays.all():
+                        old_assay_uuids[assay.get_name()] = assay.omics_uuid
 
                 # Set irods_status to our previous sheet's state
                 self.object.irods_status = old_inv.irods_status
@@ -228,36 +242,6 @@ class SampleSheetImportView(
                 # Delete old investigation
                 old_inv.delete()
 
-            # Set current import active status to True
-            self.object.active = True
-            self.object.save()
-
-            # Add event in Timeline
-            if timeline:
-                if form_action == 'replace':
-                    desc = 'replace previous investigation with '
-
-                else:
-                    desc = 'create investigation '
-
-                tl_event = timeline.add_event(
-                    project=project,
-                    app_name=APP_NAME,
-                    user=self.request.user,
-                    event_name='sheet_' + form_action,
-                    description=desc + ' {investigation}',
-                    status_type='OK')
-
-                tl_event.add_object(
-                    obj=self.object,
-                    label='investigation',
-                    name=self.object.title)
-
-                messages.success(
-                    self.request,
-                    form_action.capitalize() +
-                    'd sample sheets from ISAtab import')
-
         except Exception as ex:
             # Get existing investigations under project
             invs = Investigation.objects.filter(
@@ -265,7 +249,7 @@ class SampleSheetImportView(
             old_inv = None
 
             if invs:
-                # Activate previous invite
+                # Activate previous investigation
                 if invs.count() > 1:
                     invs[1].active = True
                     invs[1].save()
@@ -283,6 +267,54 @@ class SampleSheetImportView(
                 raise ex
 
             messages.error(self.request, str(ex))
+            return redirect(redirect_url)   # NOTE: Return here with failure
+
+        # If all went well..
+
+        # Update UUIDs
+        if old_inv_found:
+            self.object.omics_uuid = old_inv_uuid
+            self.object.save()
+
+            for study in self.object.studies.all():
+                if study.get_name() in old_study_uuids:
+                    study.omics_uuid = old_study_uuids[study.get_name()]
+                    study.save()
+
+                for assay in study.assays.all():
+                    if assay.get_name() in old_assay_uuids:
+                        assay.omics_uuid = old_assay_uuids[assay.get_name()]
+                        assay.save()
+
+        # Set current import active status to True
+        self.object.active = True
+        self.object.save()
+
+        # Add event in Timeline
+        if timeline:
+            if form_action == 'replace':
+                desc = 'replace previous investigation with '
+
+            else:
+                desc = 'create investigation '
+
+            tl_event = timeline.add_event(
+                project=project,
+                app_name=APP_NAME,
+                user=self.request.user,
+                event_name='sheet_' + form_action,
+                description=desc + ' {investigation}',
+                status_type='OK')
+
+            tl_event.add_object(
+                obj=self.object,
+                label='investigation',
+                name=self.object.title)
+
+            messages.success(
+                self.request,
+                form_action.capitalize() +
+                'd sample sheets from ISAtab import')
 
         return redirect(redirect_url)
 

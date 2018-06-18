@@ -21,7 +21,8 @@ PROJECT_TYPE_CATEGORY = OMICS_CONSTANTS['PROJECT_TYPE_CATEGORY']
 PROJECT_TYPE_PROJECT = OMICS_CONSTANTS['PROJECT_TYPE_PROJECT']
 SUBMIT_STATUS_OK = OMICS_CONSTANTS['SUBMIT_STATUS_OK']
 SUBMIT_STATUS_PENDING = OMICS_CONSTANTS['SUBMIT_STATUS_PENDING']
-SUBMIT_STATUS_PENDING_TASKFLOW = OMICS_CONSTANTS['SUBMIT_STATUS_PENDING_TASKFLOW']
+SUBMIT_STATUS_PENDING_TASKFLOW = OMICS_CONSTANTS[
+    'SUBMIT_STATUS_PENDING_TASKFLOW']
 
 
 # Local constants
@@ -197,7 +198,7 @@ class TestSampleSheetImportView(TestViewsBase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(Investigation.objects.all().count(), 1)
         new_inv = Investigation.objects.first()
-        self.assertNotEqual(uuid, new_inv.omics_uuid)
+        self.assertEqual(uuid, new_inv.omics_uuid)
 
     def test_post_replace_not_allowed(self):
         """Test replacing an iRODS-enabled investigation with missing studies or assays"""

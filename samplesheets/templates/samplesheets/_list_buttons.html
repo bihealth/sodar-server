@@ -22,11 +22,9 @@
 
     {# Replace #}
     {% elif investigation and can_edit_sheet %}
-      {% comment TEMP HIDDEN BEFORE FIXING #234 %}
       <a class="dropdown-item" href="{% url 'samplesheets:import' project=project.omics_uuid %}">
         <i class="fa fa-fw fa-refresh"></i> Replace ISAtab
       </a>
-      {% endcomment %}
     {% endif %}
 
     {# Export #}

@@ -43,7 +43,7 @@ def compare_inv_replace(inv1, inv2):
 
     except Exception as ex:
         raise ValueError(
-            'iRODS directories created, studies and assays '
+            'iRODS directories exist but studies and assays '
             'do not match: unable to replace investigation')
 
 

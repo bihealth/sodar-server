@@ -21,6 +21,7 @@ Fixed
 
 - **Samplesheets**
     - Escape cell values (#233)
+    - Study and Assay UUIDs changed during replace (#234)
 
 
 v0.3.0b (2018-06-05)
