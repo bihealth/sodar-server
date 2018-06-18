@@ -5,6 +5,7 @@ import string
 from django import template
 from django.conf import settings
 from django.urls import reverse
+from django.utils.html import escape
 
 # Projectroles dependency
 from projectroles.plugins import get_backend_api
@@ -320,12 +321,14 @@ def render_cells(row, col_values):
                 ret += 'class="{}">'.format(td_class_str)
 
             if cell['value']:
+                value = escape(cell['value'])
+
                 if cell['link']:
                     ret += '<a href="{}" target="_blank">{}</a>'.format(
-                        cell['link'], cell['value'])
+                        cell['link'], value)
 
                 else:
-                    ret += cell['value']
+                    ret += value
 
                 if cell['unit']:
                     ret += '&nbsp;<span class=" text-muted">{}</span>'.format(

@@ -81,4 +81,4 @@ class SampleSheetImportForm(forms.Form):
             return investigation
 
         except Exception as ex:
-            raise Exception('Django import failed: {}'.format(ex))
+            raise Exception('ISAtab parsing failed: {}'.format(ex))

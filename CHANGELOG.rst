@@ -6,6 +6,23 @@ Changelog for the Omics Data Management Web UI. Loosely follows the
 guidelines.
 
 
+
+Unreleased
+==========
+
+Changed
+-------
+
+- **Samplesheets**
+    - Clarify ISA parsing error message (#236)
+
+Fixed
+-----
+
+- **Samplesheets**
+    - Escape cell values (#233)
+
+
 v0.3.0b (2018-06-05)
 ====================
 
