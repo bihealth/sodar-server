@@ -143,12 +143,14 @@
     /*****************************
      Zone status updating function
      *****************************/
+    // TODO: Refactor this entirely
     var updateZoneStatus = function() {
         $('.omics-lz-zone-tr-existing').each(function(){
             var trId = $(this).attr('id');
+            var zoneTr = $('#' + trId);
             var zoneUuid = $(this).attr('zone-uuid');
             var sampleUrl = $(this).attr('sample-url');
-            var statusTd = $(this).find('td.omics-lz-zone-status');
+            var statusTd = zoneTr.find('td#omics-lz-zone-status-' + zoneUuid);
 
             if (statusTd.text() !== 'MOVED' && statusTd.text() !== 'DELETED') {
                 $.ajax({
@@ -157,7 +159,6 @@
                     dataType: 'json'
                 }).done(function (data) {
                     // console.log(trId + ': ' + data['status']);  // DEBUG
-                    var zoneTr = $('#' + trId);
                     var statusInfoSpan = zoneTr.find('span#omics-lz-zone-status-info-' + zoneUuid);
 
                     // TODO: Should somehow get these from STATUS_STYLES instead

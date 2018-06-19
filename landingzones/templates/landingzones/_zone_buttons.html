@@ -5,7 +5,7 @@
 
 <div class="btn-group omics-edit-button-group" id="omics-lz-zone-buttons-{{ zone.omics_uuid }}">
   <button class="btn btn-secondary btn-sm dropdown-toggle omics-edit-dropdown
-      {% if zone.status == 'MOVED' or zone.status == 'NOT CREATED' %} disabled{% endif %}"
+      {% if not zone_enabled %} disabled{% endif %}"
       type="button" data-toggle="dropdown"
       aria-haspopup="true" aria-expanded="false">
     <i class="fa fa-cog"></i>

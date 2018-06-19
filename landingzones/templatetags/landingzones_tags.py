@@ -26,7 +26,7 @@ def get_status_style(zone):
 @register.simple_tag
 def get_zone_row_class(zone):
     return 'omics-lz-zone-tr-moved text-muted' if \
-        zone.status == 'MOVED' else 'omics-lz-zone-tr-existing'
+        zone.status in DISABLED_STATES else 'omics-lz-zone-tr-existing'
 
 
 # TODO: Refactor/remove
