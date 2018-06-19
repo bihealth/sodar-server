@@ -6,6 +6,9 @@ Installation for Development
 
 This document describes how to install the system for local development.
 
+NB: the display of this document in Gitlab is incomplete and all listings will be missing.
+Please rather click "view source" if you want to read this in Gitlab.
+
 **NOTE:** If you want to develop without iRODS and Omics Taskflow, you can skip
 the steps related to their installation and set the environment variable
 ``ENABLED_BACKEND_PLUGINS='timeline_backend'``.
