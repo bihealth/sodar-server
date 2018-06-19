@@ -8,6 +8,8 @@
   {% load irodsbackend_tags %}
 {% endif %}
 
+{% is_zone_enabled zone as zone_enabled %}
+
 <tr class="{% get_zone_row_class zone %}"
     id="{{ zone.omics_uuid }}"
     zone-uuid="{{ zone.omics_uuid }}"
@@ -40,11 +42,14 @@
       <span id="omics-lz-zone-status-info-{{ zone.omics_uuid }}">
         {{ zone.status_info }}
       </span>
+      <span id="omics-lz-zone-status-moved-{{ zone.omics_uuid }}">
       {% if zone.status == 'MOVED' %}
         <p class="mb-0">
           <a href="{% get_zone_samples_url zone %}"><i class="fa fa-arrow-circle-right"></i> Browse files in sample sheets</a>
         </p>
-      {% elif irods_backend and zone.status != 'NOT CREATED' and zone.status != 'CREATING' %}
+      </span>
+      {% endif %}
+      {% if zone_enabled and irods_backend %}
         <p class="mb-0" id="omics-lz-zone-stats-container-{{ zone.omics_uuid }}">
           <span class="badge badge-info" id="omics-lz-zone-stats-{{ zone.omics_uuid }}"><i class="fa fa-spin fa-circle-o-notch"></i> Updating stats..</span>
         </p>
@@ -57,30 +62,33 @@
   {% if not details_card_mode %}
     <td class="omics-lz-zone-links">
       <span class="omics-lz-control">
-        {# TODO: Refactor this #}
         {% get_irods_path zone as zone_irods_path %}
 
         {% if irods_backend %}
           <button class="btn btn-secondary omics-list-btn omics-lz-popup-list-btn"
                   list-url="{% url 'landingzones:irods_list' landingzone=zone.omics_uuid %}"
                   zone-title="{{ zone.title }}" role="submit"
-                  {% if zone.status != 'MOVED' and zone.status != 'CREATING' %}data-toggle="tooltip" data-placement="top" title="List files in landing zone"{% endif %}
-                  {% if zone.status == 'MOVED' or zone.status == 'CREATING' %} disabled{% endif %}>
+                  data-toggle="tooltip" data-placement="top" title="List files in landing zone"
+                  {% if not zone_enabled %}
+                    disabled
+                  {% endif %}>
             <i class="fa fa-folder-open-o"></i>
           </button>
         {% endif %}
         <button class="btn btn-secondary omics-list-btn omics-lz-popup-cmd-btn"
                 irods-path="{{ zone_irods_path }}"
                 zone-title="{{ zone.title }}" role="submit"
-                {% if zone.status != 'MOVED' and zone.status != 'CREATING' %}data-toggle="tooltip" data-placement="top" title="Get iCommands path to landing zone"{% endif %}
-                {% if zone.status == 'MOVED' or zone.status == 'CREATING' %} disabled{% endif %}>
+                data-toggle="tooltip" data-placement="top" title="Get iCommands path to landing zone"
+                {% if not zone_enabled %}
+                  disabled
+                {% endif %}>
           <i class="fa fa-terminal"></i>
          </button>
 
         <a class="btn btn-secondary omics-list-btn omics-lz-dav-btn
-           {% if zone.status == 'MOVED' or zone.status == 'CREATING' or not irods_webdav_enabled or not irods_backend %} disabled{% endif %}"
+           {% if not zone_enabled or not irods_webdav_enabled or not irods_backend %} disabled{% endif %}"
            href="{{ irods_webdav_url }}{{ zone_irods_path }}" role="button"
-           {% if zone.status != 'MOVED' and zone.status != 'CREATING' %}data-toggle="tooltip" data-placement="top" title="Browse files in WebDAV"{% endif %}>
+           data-toggle="tooltip" data-placement="top" title="Browse files in WebDAV">
           <i class="fa fa-external-link"></i>
         </a>
       </span>

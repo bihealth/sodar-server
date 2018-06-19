@@ -2,13 +2,15 @@ from django import template
 from django.conf import settings
 from django.urls import reverse
 
-
 # Projectroles dependency
 from projectroles.plugins import get_backend_api
 
-
 from ..models import LandingZone, STATUS_STYLES
 
+DISABLED_STATES = [
+    'NOT CREATED',
+    'MOVED',
+    'DELETED']
 
 irods_backend = get_backend_api('omics_irods')
 
@@ -57,3 +59,9 @@ def get_zone_samples_url(zone):
         'samplesheets:project_sheets',
         kwargs={'study': zone.assay.study.omics_uuid}) + \
         '#' + str(zone.assay.omics_uuid)
+
+
+@register.simple_tag
+def is_zone_enabled(zone):
+    """Return True/False if the zone can be enabled in the UI"""
+    return True if zone.status not in DISABLED_STATES else False

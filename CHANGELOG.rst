@@ -10,20 +10,37 @@ guidelines.
 Unreleased
 ==========
 
+Added
+-----
+
+- **Landingzones**
+    - Status types ``DELETING`` and ``DELETED`` (#228)
+
 Changed
 -------
 
 - **General**
     - Update installation and development documentation (#237)
+- **Landingzones**
+    - Make landing zone deletion async (#228)
+    - Refactor zone list item rendering
 - **Samplesheets**
     - Clarify ISA parsing error message (#236)
 
 Fixed
 -----
 
+- **Landingzones**
+    - Buttons not correctly activated during status update (#215)
 - **Samplesheets**
     - Escape cell values (#233)
     - Study and Assay UUIDs changed during replace (#234)
+
+Removed
+-------
+
+- **Landingzones**
+    - ZoneDeleteAPIView as it's not needed anymore due to async deletion (#228)
 
 
 v0.3.0b (2018-06-05)

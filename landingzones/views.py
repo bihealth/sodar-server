@@ -5,7 +5,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponseRedirect
 from django.shortcuts import redirect
 from django.urls import reverse
-from django.views.generic import TemplateView, CreateView, DeleteView
+from django.views.generic import TemplateView, CreateView
 
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -197,11 +197,11 @@ class ZoneCreateView(
 
 class ZoneDeleteView(
         LoginRequiredMixin, LoggedInPermissionMixin, ProjectContextMixin,
-        ProjectPermissionMixin, DeleteView):
+        ProjectPermissionMixin, TemplateView):
     """RoleAssignment deletion view"""
-    model = LandingZone
-    slug_url_kwarg = 'landingzone'
-    slug_field = 'omics_uuid'
+    # NOTE: Not using DeleteView here as we don't delete the object in async
+    http_method_names = ['get', 'post']
+    template_name = 'landingzones/landingzone_confirm_delete.html'
     permission_required = 'landingzones.update_zones_own'
 
     def has_permission(self):
@@ -228,8 +228,8 @@ class ZoneDeleteView(
         taskflow = get_backend_api('taskflow')
         irods_backend = get_backend_api('omics_irods')  # TODO: Ensure it exists
         tl_event = None
-        zone = LandingZone.objects.get(
-            omics_uuid=kwargs['landingzone'])
+
+        zone = LandingZone.objects.get(omics_uuid=self.kwargs['landingzone'])
         project = zone.project
 
         redirect_url = reverse(
@@ -284,7 +284,9 @@ class ZoneDeleteView(
                     project_uuid=project.omics_uuid,
                     flow_name='landing_zone_delete',
                     flow_data=flow_data,
-                    request=self.request)
+                    request=self.request,
+                    request_mode='async',
+                    timeline_uuid=tl_event.omics_uuid)
                 self.object = None
 
             except taskflow.FlowSubmitException as ex:
@@ -294,14 +296,11 @@ class ZoneDeleteView(
                 messages.error(self.request, str(ex))
                 return redirect(redirect_url)
 
-        if tl_event:
-            tl_event.set_status('OK')
-
-        messages.success(
+        messages.warning(
             self.request,
-            'Landing zone "{}" for {} removed from assay {}.'.format(
-                zone.title,
+            'Landing zone deletion initiated for "{}/{}" in assay {}.'.format(
                 self.request.user.username,
+                zone.title,
                 zone.assay.get_display_name()))
 
         return redirect(redirect_url)
@@ -449,7 +448,8 @@ class ZoneClearView(
 
         try:
             inactive_zones = LandingZone.objects.filter(
-                user=self.request.user, status__in=['MOVED', 'NOT CREATED'])
+                user=self.request.user, status__in=[
+                    'MOVED', 'NOT CREATED', 'DELETED'])
             zone_count = inactive_zones.count()
             inactive_zones.delete()
 
@@ -611,18 +611,6 @@ class ZoneCreateAPIView(APIView):
         zone.save()
 
         return Response({'zone_uuid': zone.omics_uuid}, status=200)
-
-
-class ZoneDeleteAPIView(APIView):
-    def post(self, request):
-        try:
-            zone = LandingZone.objects.get(omics_uuid=request.data['zone_uuid'])
-
-        except (LandingZone.DoesNotExist, User.DoesNotExist) as ex:
-            return Response('Not found', status=404)
-
-        zone.delete()
-        return Response('ok', status=200)
 
 
 '''

@@ -148,8 +148,9 @@
             var trId = $(this).attr('id');
             var zoneUuid = $(this).attr('zone-uuid');
             var sampleUrl = $(this).attr('sample-url');
+            var statusTd = $(this).find('td.omics-lz-zone-status');
 
-            if ($(this).find('td.omics-lz-zone-status').text() !== 'MOVED') {
+            if (statusTd.text() !== 'MOVED' && statusTd.text() !== 'DELETED') {
                 $.ajax({
                     url: $(this).attr('status-url'),
                     method: 'GET',
@@ -157,7 +158,6 @@
                 }).done(function (data) {
                     // console.log(trId + ': ' + data['status']);  // DEBUG
                     var zoneTr = $('#' + trId);
-                    var statusTd = zoneTr.find('td#omics-lz-zone-status-' + zoneUuid);
                     var statusInfoSpan = zoneTr.find('span#omics-lz-zone-status-info-' + zoneUuid);
 
                     // TODO: Should somehow get these from STATUS_STYLES instead
@@ -169,7 +169,9 @@
                         'VALIDATING': 'bg-warning',
                         'MOVING': 'bg-warning',
                         'MOVED': 'bg-success',
-                        'FAILED': 'bg-danger'
+                        'FAILED': 'bg-danger',
+                        'DELETING': 'bg-warning',
+                        'DELETED': 'bg-secondary'
                     };
 
                     if (statusTd.text() !== data['status'] ||
@@ -179,11 +181,14 @@
                         statusTd.addClass(statusStyles[data['status']] + ' text-white');
                         statusInfoSpan.text(data['status_info']);
 
-                        if (data['status'] === 'MOVED') {
+                        if (data['status'] === 'MOVED' || data['status'] === 'DELETED') {
                             zoneTr.find('p#omics-lz-zone-stats-container-' + zoneUuid).hide();
-                            zoneTr.find('td.omics-lz-zone-status-info').append(
-                                '<br /><a href="' + sampleUrl + '"><i class="fa fa-arrow-circle-right"></i> ' +
-                                'Browse files in sample sheet</a>');
+
+                            if (data['status'] === 'MOVED') {
+                                var statusMovedSpan = zoneTr.find('span#omics-lz-zone-status-moved-' + zoneUuid);
+                                statusMovedSpan.html('<p class="mb-0"><a href="' + sampleUrl + '"><i class="fa fa-arrow-circle-right"></i> ' +
+                                    'Browse files in sample sheet</a></p>');
+                            }
                         }
 
                         // Button modification
@@ -213,18 +218,14 @@
                             zoneTr.find('td.omics-lz-zone-title').removeClass('text-muted');
                             zoneTr.find('td.omics-lz-zone-assay').removeClass('text-muted');
                             zoneTr.find('td.omics-lz-zone-status-info').removeClass('text-muted');
+                            zoneTr.find('p#omics-lz-zone-stats-container-' + zoneUuid).show();
 
-                            // TODO: Enable/disable individually instead of looping..
                             zoneTr.find('.btn').each(function() {
                                 if ($(this).is('button')) {
                                     $(this).removeAttr('disabled');
                                 }
 
-                                // TODO: ..because this is rather ugly
-                                else if ($(this).is('a') &&
-                                        (!$(this).hasClass('omics-lz-dav-btn') || webDavEnabled === true)) {
-                                    $(this).removeClass('disabled');
-                                }
+                                $(this).removeClass('disabled');
 
                                $(this).tooltip('enable');
                             });
@@ -245,7 +246,7 @@
             var zoneTr = $(this);
             var zoneUuid = $(this).attr('zone-uuid');
             var statusText = zoneTr.find('td#omics-lz-zone-status-' + zoneUuid).text();
-            var statusOmit = ['NOT CREATED', 'CREATING', 'MOVED'];
+            var statusOmit = ['NOT CREATED', 'CREATING', 'MOVED', 'DELETED'];
 
             if (statusOmit.indexOf(statusText) === -1) {
                 $.ajax({

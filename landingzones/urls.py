@@ -58,9 +58,4 @@ urlpatterns = [
         view=views.ZoneStatusSetAPIView.as_view(),
         name='taskflow_zone_status_set',
     ),
-    url(
-        regex=r'^taskflow/delete$',
-        view=views.ZoneDeleteAPIView.as_view(),
-        name='taskflow_zone_delete',
-    ),
 ]

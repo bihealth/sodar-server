@@ -21,7 +21,9 @@ ZONE_STATUS_TYPES = [
     'VALIDATING',
     'MOVING',
     'FAILED',
-    'MOVED']
+    'MOVED',
+    'DELETING',
+    'DELETED']
 
 DEFAULT_STATUS_INFO = {
     'CREATING': 'Creating landing zone in iRODS',
@@ -31,7 +33,9 @@ DEFAULT_STATUS_INFO = {
     'VALIDATING': 'Validation in progress, write access disabled',
     'MOVING': 'Validation OK, moving files into bio_samples',
     'MOVED': 'Files moved successfully, landing zone removed',
-    'FAILED': 'Validation/moving failed (unknown problem)'}
+    'FAILED': 'Validation/moving failed (unknown problem)',
+    'DELETING': 'Deleting landing zone',
+    'DELETED': 'Landing zone deleted'}
 
 STATUS_STYLES = {
     'CREATING': 'bg-warning',
@@ -41,7 +45,9 @@ STATUS_STYLES = {
     'VALIDATING': 'bg-warning',
     'MOVING': 'bg-warning',
     'MOVED': 'bg-success',
-    'FAILED': 'bg-danger'}
+    'FAILED': 'bg-danger',
+    'DELETING': 'bg-warning',
+    'DELETED': 'bg-secondary'}
 
 
 class LandingZone(models.Model):
