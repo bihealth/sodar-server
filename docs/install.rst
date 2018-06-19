@@ -42,6 +42,8 @@ set ``DJANGO_READ_DOT_ENV_FILE`` true in your actual environment. See
 Clone the repository and setup the virtual environment inside:
 
 .. code-block:: shell
+    $ git clone git@cubi-gitlab.bihealth.org:CUBI_Engineering/CUBI_Data_Mgmt/omics_data_mgmt.git
+    $ cd omics_data_mgmt
     $ virtualenv -p python3.6 .venv
     $ source .venv/bin/activate
 
