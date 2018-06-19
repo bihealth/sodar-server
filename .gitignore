@@ -1,3 +1,6 @@
+### Virtualenv ###
+.venv/
+
 ### OSX ###
 .DS_Store
 .AppleDouble
