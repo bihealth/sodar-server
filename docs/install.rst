@@ -67,6 +67,11 @@ Create Django superuser, needed to create initial project(s) on the site
 .. code-block:: shell
     $ ./manage.py createsuperuser
 
+If you are running the Docker environment then modify ``config/settings/test_local.py`` and add the following line.
+
+.. code-block:: python
+    IRODS_PORT = env.int('IRODS_PORT', 4477)
+
 
 2. Set Up a Development iRODS Server
 ====================================
