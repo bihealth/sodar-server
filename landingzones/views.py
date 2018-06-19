@@ -223,6 +223,15 @@ class ZoneDeleteView(
         except LandingZone.DoesNotExist:
             return False
 
+    def get_context_data(self, *args, **kwargs):
+        context = super(ZoneDeleteView, self).get_context_data(
+            *args, **kwargs)
+
+        context['zone'] = LandingZone.objects.get(
+            omics_uuid=self.kwargs['landingzone'])
+
+        return context
+
     def post(self, *args, **kwargs):
         timeline = get_backend_api('timeline_backend')
         taskflow = get_backend_api('taskflow')
