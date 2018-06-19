@@ -1,8 +1,10 @@
 """API for the timeline app, used by other apps to add and update events"""
 
 import re
+from textwrap import shorten
 
 from django.urls import reverse
+from django.utils.text import Truncator
 
 # Access Django user model
 from omics_data_mgmt.users.models import User
@@ -18,6 +20,7 @@ from timeline.models import ProjectEvent, ProjectEventObjectRef, \
 
 
 APP_NAMES = get_app_names()
+LABEL_MAX_WIDTH = 32
 
 
 class TimelineAPI:
@@ -105,6 +108,13 @@ class TimelineAPI:
 
         refs = {}
 
+        def get_label(label):
+            """Format label to be displayed"""
+            if not {' ', '-'}.intersection(label):
+                return Truncator(label).chars(LABEL_MAX_WIDTH)
+            return label
+
+        # TODO: Spaghetti much? Refactor
         for r in ref_ids:
             try:
                 ref_obj = ProjectEventObjectRef.objects.get(
@@ -142,11 +152,12 @@ class TimelineAPI:
                                 reverse(
                                     'projetroles:detail',
                                     kwargs={'project': project.omics_uuid}),
-                                project.title)
+                                get_label(project.title))
 
                         else:
                             refs[r] = '<span class="text-danger">' \
-                                      '{}</span>'.format(project.title)
+                                      '{}</span>'.format(
+                                get_label(project.title))
 
                     except Project.DoesNotExist:
                         refs[r] = ref_obj.name
@@ -154,7 +165,7 @@ class TimelineAPI:
                 # Special case: projectroles app
                 elif event.app == 'projectroles':
                     refs[r] = not_found_label.format(
-                        ref_obj.name, history_link)
+                        get_label(ref_obj.name), history_link)
 
                 # Apps with plugins
                 else:
@@ -170,12 +181,12 @@ class TimelineAPI:
                             ('target="_blank"'
                              if 'blank' in link_data and
                                 link_data['blank'] is True else ''),
-                            link_data['label'],
+                            get_label(link_data['label']),
                             history_link)
 
                     else:
                         refs[r] = not_found_label.format(
-                            ref_obj.name, history_link)
+                            get_label(ref_obj.name), history_link)
 
             except ProjectEventObjectRef.DoesNotExist:
                 refs[r] = unknown_label
