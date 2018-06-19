@@ -32,9 +32,12 @@ Fixed
 
 - **Landingzones**
     - Buttons not correctly activated during status update (#215)
+    - Long landing zone names broke zone list table
 - **Samplesheets**
     - Escape cell values (#233)
     - Study and Assay UUIDs changed during replace (#234)
+- **Timeline**
+    - Long labels broke timeline table (#225)
 
 Removed
 -------
