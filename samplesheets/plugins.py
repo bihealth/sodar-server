@@ -154,9 +154,9 @@ class SampleSheetStudyPluginPoint(PluginPoint):
 
     #: Title (used in templates)
     # TODO: Implement this in your study plugin
-    # title = ''
+    # title = 'Sample Sheets X Study App'
 
-    # Properties defined in ProjectAppPluginPoint -----------------------
+    # Properties defined in SampleSheetStudyPluginPoint ------------------
 
     #: Configuration name (used to identify plugin by study)
     # TODO: Implement this in your study plugin
@@ -212,3 +212,54 @@ def find_study_plugin(config_name):
             return plugin
 
     return None
+
+
+# Samplesheets assay sub-app plugin --------------------------------------------
+
+
+class SampleSheetAssayPluginPoint(PluginPoint):
+    """Plugin point for registering assay-level samplesheet sub-apps"""
+
+    # Properties required by django-plugins ------------------------------
+
+    #: Name (used in code and as unique idenfitier)
+    # TODO: Implement this in your assay plugin
+    # TODO: Recommended in form of samplesheets_assay_name
+    # name = 'samplesheets_assay_'
+
+    #: Title (used in templates)
+    # TODO: Implement this in your assay plugin
+    # title = 'Sample Sheets X Assay App'
+
+    # Properties defined in SampleSheetAssayPluginPoint ------------------
+
+    #: Identifying assay fields (used to identify plugin by assay)
+    # TODO: Implement these in your assay plugin
+    measurement_type = None
+    technology_type = None
+
+    #: Description string
+    # TODO: Implement this in your assay plugin
+    description = 'TODO: Write a description for your assay plugin'
+
+    #: Template for assay addition (Study object as "study" in context)
+    # TODO: Rename this in your assay plugin (can be None)
+    assay_template = 'samplesheets_assay_name/_assay.html'
+
+    #: Required permission for accessing the plugin
+    # TODO: Implement this in your assay plugin (can be None)
+    # TODO: TBD: Do we need this?
+    permission = None
+
+    # TODO: Move this into assayapp
+    def get_row_path(self, assay, table, row):
+        """Return iRODS path for an assay row in a sample sheet. If None,
+        display default directory.
+        :param assay: Assay object
+        :param table: List of lists (table returned by SampleSheetTableBuilder)
+        :param row: List of dicts (a row returned by SampleSheetTableBuilder)
+        :return: String with full iRODS path or None
+        """
+        # TODO: Implement this in your assay plugin
+        raise NotImplementedError(
+            'Implement get_row_path() in your assay plugin')
