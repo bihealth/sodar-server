@@ -179,10 +179,10 @@
         {% include 'samplesheets/_study_info.html' %}
       </div>
 
-      {# Configuration app #}
-      {% get_config_plugin study as config_plugin %}
-      {% if config_plugin %}
-        {% include config_plugin.study_template %}
+      {# Study app #}
+      {% get_study_plugin study as study_plugin %}
+      {% if study_plugin %}
+        {% include study_plugin.study_template %}
       {% endif %}
 
       {# Study table #}
@@ -221,7 +221,7 @@
 </div> {# Main container #}
 
 <span class="omics-popup-overlay" id="omics-ss-popup-list" list-url="" row-id=""></span>
-<span class="omics-popup-overlay" id="omics-ss-popup-cmd" row-id=""></span>
+<span class="omics-popup-overlay" id="omics-ss-popup-cmd" irods-path="" row-id=""></span>
 
 {% endblock projectroles_extend %}
 
@@ -425,7 +425,7 @@
         $('#omics-ss-popup-cmd').popup({
             transition: 'all 0.2s',
             beforeopen: function () {
-                var irodsPath = $(this).closest('td').attr('irods-path');
+                var irodsPath = $(this).attr('irods-path');
                 var htmlHeader = '<div class="card"><div class="card-body"><h5>iRODS iCommands Access</h5><hr />';
                 var htmlFooter = '</div></div>';
                 var htmlData = '<div class="input-group">' +
@@ -440,8 +440,9 @@
         });
 
         $('.omics-ss-popup-cmd-btn').click(function() {
+            var irodsPath = $(this).closest('td').attr('irods-path');
             $('#omics-ss-popup-cmd').attr(
-                'irods-path', $(this).attr('irods-path')).popup('show');
+                'irods-path', irodsPath).popup('show');
         });
     });
   </script>

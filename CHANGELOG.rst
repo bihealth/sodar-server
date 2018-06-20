@@ -28,6 +28,7 @@ Changed
     - Refactor zone list item rendering
 - **Samplesheets**
     - Clarify ISA parsing error message (#236)
+    - Separate configapps into study and assay apps (#249)
 
 Fixed
 -----
@@ -39,6 +40,7 @@ Fixed
 - **Samplesheets**
     - Escape cell values (#233)
     - Study and Assay UUIDs changed during replace (#234)
+    - Missing iCommands path in popup (#250)
 - **Timeline**
     - Long labels broke timeline table (#225)
 

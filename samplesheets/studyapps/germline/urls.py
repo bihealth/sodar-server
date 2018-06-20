@@ -3,7 +3,7 @@ from django.conf.urls import url
 from . import views
 
 
-app_name = 'samplesheets.configapps.bih_germline'
+app_name = 'samplesheets.studyapps.germline'
 
 urlpatterns = [
     url(

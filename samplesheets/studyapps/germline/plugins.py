@@ -1,19 +1,19 @@
 from projectroles.plugins import get_backend_api
 
-from samplesheets.plugins import SampleSheetConfigPluginPoint
+from samplesheets.plugins import SampleSheetStudyPluginPoint
 from samplesheets.utils import get_last_material_index
 
 
-class SampleSheetConfigPlugin(SampleSheetConfigPluginPoint):
-    """Plugin for the bih_germline sample sheet configuration"""
+class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
+    """Plugin for germline studies in sample sheets"""
 
     # Properties required by django-plugins ------------------------------
 
     #: Name (used in code and as unique idenfitier)
-    name = 'samplesheets_config_bih_germline'
+    name = 'samplesheets_study_germline'
 
     #: Title (used in templates)
-    title = 'Germline Sample Sheet Configuration'
+    title = 'Sample Sheets Germline Study App'
 
     # Properties defined in ProjectAppPluginPoint -----------------------
 
@@ -21,14 +21,15 @@ class SampleSheetConfigPlugin(SampleSheetConfigPluginPoint):
     config_name = 'bih_germline'
 
     #: Description string
-    description = 'TODO: Write a description for your config plugin'
+    description = 'TODO: Write a description for your study plugin'
 
     #: Template for study addition (Study object as "study" in context)
-    study_template = 'samplesheets_config_bih_germline/_study.html'
+    study_template = 'samplesheets_study_germline/_study.html'
 
     #: Required permission for accessing the plugin
     permission = None
 
+    # TODO: Move this into assayapp
     def get_row_path(self, assay, table, row):
         """Return iRODS path for an assay row in a sample sheet. If None,
         display default directory.

@@ -139,42 +139,43 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
             'label': obj.title}
 
 
-# Samplesheets config sub-app plugin -------------------------------------------
+# Samplesheets study sub-app plugin --------------------------------------------
 
 
-class SampleSheetConfigPluginPoint(PluginPoint):
-    """Plugin point for registering samplesheet configuration sub-apps"""
+class SampleSheetStudyPluginPoint(PluginPoint):
+    """Plugin point for registering study-level samplesheet sub-apps"""
 
     # Properties required by django-plugins ------------------------------
 
     #: Name (used in code and as unique idenfitier)
-    # TODO: Implement this in your config plugin
-    # TODO: Recommended in form of samplesheets_config_configname
-    # name = 'samplesheets_config_'
+    # TODO: Implement this in your study plugin
+    # TODO: Recommended in form of samplesheets_study_configname
+    # name = 'samplesheets_study_'
 
     #: Title (used in templates)
-    # TODO: Implement this in your config plugin
+    # TODO: Implement this in your study plugin
     # title = ''
 
     # Properties defined in ProjectAppPluginPoint -----------------------
 
-    #: Configuration name
-    # TODO: Implement this in your config plugin
+    #: Configuration name (used to identify plugin by study)
+    # TODO: Implement this in your study plugin
     config_name = ''
 
     #: Description string
-    # TODO: Implement this in your config plugin
-    description = 'TODO: Write a description for your config plugin'
+    # TODO: Implement this in your study plugin
+    description = 'TODO: Write a description for your study plugin'
 
     #: Template for study addition (Study object as "study" in context)
-    # TODO: Rename this in your config plugin
-    study_template = 'samplesheets_config_configname/_study.html'
+    # TODO: Rename this in your study plugin
+    study_template = 'samplesheets_study_configname/_study.html'
 
     #: Required permission for accessing the plugin
-    # TODO: Implement this in your config plugin (can be None)
+    # TODO: Implement this in your study plugin (can be None)
     # TODO: TBD: Do we need this?
     permission = None
 
+    # TODO: Move this into assayapp
     def get_row_path(self, assay, table, row):
         """Return iRODS path for an assay row in a sample sheet. If None,
         display default directory.
@@ -183,18 +184,31 @@ class SampleSheetConfigPluginPoint(PluginPoint):
         :param row: List of dicts (a row returned by SampleSheetTableBuilder)
         :return: String with full iRODS path or None
         """
-        # TODO: Implement this in your config plugin
+        # TODO: Implement this in your study plugin
         raise NotImplementedError('Implement get_row_path() in your plugin')
 
 
-def get_config_plugin(plugin_name):
+def get_study_plugin(plugin_name):
     """
-    Return active config plugin
+    Return active study plugin
     :param plugin_name: Plugin name (string)
-    :return: SampleSheetConfigPlugin object or None if not found
+    :return: SampleSheetStudyPlugin object or None if not found
     """
     try:
-        return SampleSheetConfigPluginPoint.get_plugin(plugin_name)
+        return SampleSheetStudyPluginPoint.get_plugin(plugin_name)
 
-    except SampleSheetConfigPluginPoint.DoesNotExist:
+    except SampleSheetStudyPluginPoint.DoesNotExist:
         return None
+
+
+def find_study_plugin(config_name):
+    """
+    Find active study plugin with a config name
+    :param config_name: Configuration name (string)
+    :return: SampleSheetStudyPlugin object or None if not found
+    """
+    for plugin in SampleSheetStudyPluginPoint.get_plugins():
+        if plugin.config_name == config_name:
+            return plugin
+
+    return None

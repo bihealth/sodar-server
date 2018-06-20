@@ -16,7 +16,7 @@ from projectroles.views import LoggedInPermissionMixin, \
 
 # Samplesheets dependency
 from samplesheets.models import GenericMaterial
-from samplesheets.plugins import get_config_plugin
+from samplesheets.plugins import get_study_plugin
 from samplesheets.rendering import SampleSheetTableBuilder
 
 # Local constants
@@ -47,7 +47,7 @@ class BaseGermlineConfigView(
         :param study_tables: Render study tables
         :return: String
         """
-        config_plugin = get_config_plugin('samplesheets_config_bih_germline')
+        config_plugin = get_study_plugin('samplesheets_study_germline')
         irods_backend = get_backend_api('omics_irods')
         query_paths = []
 

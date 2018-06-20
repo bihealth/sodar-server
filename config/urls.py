@@ -34,18 +34,17 @@ urlpatterns = [
     url(r'^project/', include('projectroles.urls')),
 
     # App plugin URLs
-    # TODO: Test if this can be made to work on Flynn and without the extra
-    # TODO:     "plugin" kwarg for the API view classes
+    # TODO: See if plugin URLs can be made to work now (Flynn no longer used)
     # url(r'^', include_plugins(ProjectAppPluginPoint)),
     url(r'^timeline/', include('timeline.urls')),
     url(r'^files/', include('filesfolders.urls')),
     url(r'^samplesheets/', include('samplesheets.urls')),
     url(r'^landingzones/', include('landingzones.urls')),
 
-    # Samplesheets configapp URLs
+    # Samplesheets study app URLs
     url(
-        r'^samplesheets/bih-germline/',
-        include('samplesheets.configapps.bih_germline.urls')),
+        r'^samplesheets/study/germline/',
+        include('samplesheets.studyapps.germline.urls')),
 
     # django-db-file-storage URLs (needed for admin, obfuscated for users)
     url(r'^xu7in5zs9lylar0n/', include('db_file_storage.urls')),

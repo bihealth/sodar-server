@@ -12,7 +12,8 @@ from projectroles.plugins import get_backend_api
 
 from ..models import Investigation, Study, Assay, GenericMaterial, \
     GENERIC_MATERIAL_TYPES
-from ..plugins import get_config_plugin as get_cnf
+from ..plugins import get_study_plugin as get_study_p, \
+    find_study_plugin as find_study_p
 
 
 irods_backend = get_backend_api('omics_irods')
@@ -39,8 +40,10 @@ def get_investigation(project):
 
 
 @register.simple_tag
-def get_config_plugin(obj):
-    """Return configuration app plugin or None if not found"""
+def get_study_plugin(obj):
+    """Return study app plugin or None if not found"""
+    inv = None
+
     if type(obj) == Investigation:
         inv = obj
 
@@ -53,8 +56,7 @@ def get_config_plugin(obj):
     if not inv:
         return None
 
-    return get_cnf('samplesheets_config_{}'.format(
-        inv.get_configuration()))
+    return find_study_p(inv.get_configuration())
 
 
 @register.simple_tag
@@ -66,7 +68,6 @@ def get_table_id(parent):
     """
     return 'omics-ss-data-table-{}-{}'.format(
         parent.__class__.__name__.lower(), parent.omics_uuid)
-
 
 
 @register.simple_tag
@@ -176,7 +177,7 @@ def get_irods_tree(investigation):
     return ret
 
 
-# TODO: This should be in bih_germline app template tags
+# TODO: This should be in germline app template tags
 @register.simple_tag
 def get_families(study):
     """
@@ -197,7 +198,7 @@ def get_families(study):
     return ret
 
 
-# TODO: This should be in bih_germline app template tags
+# TODO: This should be in germline app template tags
 @register.simple_tag
 def get_family_sources(study, family_id):
     """
@@ -341,6 +342,7 @@ def render_cells(row, col_values):
     return ret
 
 
+# TODO: Use assay plugin instead, once created
 @register.simple_tag
 def get_irods_row_path(assay, assay_table, row):
     """
@@ -351,12 +353,12 @@ def get_irods_row_path(assay, assay_table, row):
     :param row: Row from SampleSheetTableBuilder
     :return: String
     """
-    config_plugin = get_config_plugin(assay)
+    study_plugin = get_study_plugin(assay)
 
-    if not config_plugin:
+    if not study_plugin:
         if irods_backend:
             return irods_backend.get_path(assay)
 
         return None
 
-    return config_plugin.get_row_path(assay, assay_table, row)
+    return study_plugin.get_row_path(assay, assay_table, row)
