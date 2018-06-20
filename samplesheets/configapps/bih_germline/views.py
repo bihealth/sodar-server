@@ -19,6 +19,9 @@ from samplesheets.models import GenericMaterial
 from samplesheets.plugins import get_config_plugin
 from samplesheets.rendering import SampleSheetTableBuilder
 
+# Local helper for authenticating with auth basic.
+from .auth import fallback_to_auth_basic
+
 # Local constants
 FILE_TYPE_SUFFIX = {
     'bam': '.bam',
@@ -163,6 +166,7 @@ class FileRedirectView(BaseGermlineConfigView):
         return redirect(file_url)
 
 
+@fallback_to_auth_basic
 class IGVSessionFileRenderView(BaseGermlineConfigView):
     """IGV session file rendering view"""
     permission_required = 'samplesheets.view_sheet'
