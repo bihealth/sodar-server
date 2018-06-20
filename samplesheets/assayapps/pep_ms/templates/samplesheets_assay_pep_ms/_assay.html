@@ -1,0 +1,16 @@
+{% load samplesheets_tags %}
+
+{# TODO: How to define if we have MaxQuant data or is that assumed? #}
+
+{% if investigation.irods_status %}
+  <div class="card">
+    <div class="card-header">
+      <h4>Shortcuts for Raw Data and MaxQuant Results</h4>
+    </div>
+    <div class="card-body omics-card-body">
+      <p>
+        TODO: Links here!
+      </p>
+    </div>
+  </div>
+{% endif %}

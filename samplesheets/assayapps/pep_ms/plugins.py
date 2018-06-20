@@ -5,30 +5,30 @@ from samplesheets.utils import get_last_material_index
 
 
 class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
-    """Plugin for genome sequencing / nucleotide sequencing assays in sample
+    """Plugin for protein expression profiling / mass spectrometry in sample
     sheets"""
 
     # Properties required by django-plugins ------------------------------
 
     #: Name (used in code and as unique idenfitier)
-    name = 'samplesheets_assay_genome_seq_nucleotide_seq'
+    name = 'samplesheets_assay_pep_ms'
 
     #: Title
-    title = 'Sample Sheets Genome Sequencing / Nucleotide Sequencing Assay ' \
-            'Plugin'
+    title = 'Sample Sheets Protein Expression Profiling / Mass Spectrometry ' \
+            'Assay Plugin'
 
     # Properties defined in SampleSheetAssayPluginPoint ------------------
 
     #: Identifying assay fields (used to identify plugin by assay)
-    measurement_type = 'genome sequencing'
-    technology_type = 'nucleotide sequencing'
+    measurement_type = 'protein expression profiling'
+    technology_type = 'mass spectrometry'
 
     #: Description string
-    description = 'Sample sheets genome sequencing / nucleotide sequencing ' \
-                  'assay app'
+    description = 'Sample sheets protein expression profiling / mass ' \
+                  'spectrometry assay plugin'
 
     #: Template for assay addition (Assay object as "assay" in context)
-    assay_template = None
+    assay_template = 'samplesheets_assay_pep_ms/_assay.html'
 
     #: Required permission for accessing the plugin
     # TODO: TBD: Do we need this?
@@ -47,10 +47,8 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
         if not irods_backend:
             return None
 
-        # Get index of last material's name column
-        idx = get_last_material_index(table)
-        material_name = row[idx]['value']
-        return irods_backend.get_path(assay) + '/' + material_name
+        # TODO: Alternatives for RawData?
+        return irods_backend.get_path(assay) + '/RawData'
 
     def get_file_path(self, assay, table, row, file_name):
         """Return iRODS path for a data file or None if not available.
@@ -60,4 +58,12 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
         :param file_name: File name
         :return: String with full iRODS path or None
         """
-        return None
+        irods_backend = get_backend_api('omics_irods')
+
+        if not irods_backend:
+            return None
+
+        # Raw file
+        if file_name.split('.')[-1] == 'raw':
+            return irods_backend.get_path(assay) + '/RawData/' + file_name
+

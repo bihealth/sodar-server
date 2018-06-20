@@ -251,6 +251,18 @@ class SampleSheetAssayPluginPoint(PluginPoint):
         raise NotImplementedError(
             'Implement get_row_path() in your assay plugin')
 
+    def get_file_path(self, assay, table, row, file_name):
+        """Return iRODS path for a data file or None if not available.
+        :param assay: Assay object
+        :param table: List of lists (table returned by SampleSheetTableBuilder)
+        :param row: List of dicts (a row returned by SampleSheetTableBuilder)
+        :param file_name: File name
+        :return: String with full iRODS path or None
+        """
+        # TODO: Implement this in your assay plugin
+        raise NotImplementedError(
+            'Implement get_file_path() in your assay plugin')
+
 
 def get_assay_plugin(plugin_name):
     """

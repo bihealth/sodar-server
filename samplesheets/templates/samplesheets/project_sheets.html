@@ -189,7 +189,7 @@
       </div>
 
       {# Include study template #}
-      {% if study_plugin %}
+      {% if study_plugin and study_plugin.study_template %}
         {% include study_plugin.study_template %}
       {% endif %}
 
@@ -216,6 +216,11 @@
 
         {# Assay title #}
         {% include 'samplesheets/_section_title.html' with item=assay section_type='assay' content_plugin=assay_plugin %}
+
+        {# Include study template #}
+        {% if assay_plugin and assay_plugin.assay_template %}
+          {% include assay_plugin.assay_template %}
+        {% endif %}
 
         <div class="card omics-ss-data-card omics-ss-data-card-assay">
           <div class="card-header">

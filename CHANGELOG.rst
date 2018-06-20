@@ -18,6 +18,7 @@ Added
     - Status types ``DELETING`` and ``DELETED`` (#228)
 - **Samplesheets**
     - Add genome_seq_nucleotide_seq assay app (#249)
+    - Add pep_ms assay app (#245)
 
 Changed
 -------

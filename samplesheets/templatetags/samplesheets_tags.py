@@ -278,11 +278,13 @@ def get_row_id():
 
 
 @register.simple_tag
-def render_cells(row, col_values):
+def render_cells(row, table, assay=None, assay_plugin=None):
     """
     Render cells of a table row
     :param row: Row of cells (list)
-    :param col_values: True/False values for column data (list)
+    :param table: The full table (dict)
+    :param assay: Assay object (optional)
+    :param assay_plugin: SampleSheetAssayPlugin object (optional)
     :return: String (contains HTML)
     """
     ret = ''
@@ -291,7 +293,7 @@ def render_cells(row, col_values):
     for i in range(0, len(row)):
         cell = row[i]
 
-        if col_values[i]:
+        if table['col_values'][i]:
             td_class_str = ' '.join(cell['classes'])
 
             ret += '<td '
@@ -313,16 +315,30 @@ def render_cells(row, col_values):
             else:
                 ret += 'class="{}">'.format(td_class_str)
 
+            # Add cell value
             if cell['value']:
                 value = escape(cell['value'])
 
+                # Ontology link
                 if cell['link']:
                     ret += '<a href="{}" target="_blank">{}</a>'.format(
                         cell['link'], value)
 
+                # File iRODS link
+                elif (cell['obj_type'] == 'DATA' and
+                      settings.IRODS_WEBDAV_ENABLED and assay and assay_plugin):
+                    file_path = assay_plugin.get_file_path(
+                        assay, table, row, file_name=value)
+
+                    if file_path:
+                        ret += '<a href="{}{}">{}</a>'.format(
+                            settings.IRODS_WEBDAV_URL, file_path, value)
+
+                # Text
                 else:
                     ret += value
 
+                # Unit if present
                 if cell['unit']:
                     ret += '&nbsp;<span class=" text-muted">{}</span>'.format(
                         cell['unit'])
@@ -334,7 +350,6 @@ def render_cells(row, col_values):
     return ret
 
 
-# TODO: Use assay plugin instead, once created
 @register.simple_tag
 def get_irods_row_path(assay, assay_table, row, assay_plugin):
     """
@@ -346,10 +361,14 @@ def get_irods_row_path(assay, assay_table, row, assay_plugin):
     :param assay_plugin: SampleSheetAssayPlugin object
     :return: String
     """
-    if not assay_plugin:
-        if irods_backend:
-            return irods_backend.get_path(assay)
+    if assay_plugin:
+        path = assay_plugin.get_row_path(assay, assay_table, row)
 
-        return None
+        if path:
+            return path
 
-    return assay_plugin.get_row_path(assay, assay_table, row)
+    # If path was not returned by plugin, get detaulf path
+    if irods_backend:
+        return irods_backend.get_path(assay)
+
+    return None

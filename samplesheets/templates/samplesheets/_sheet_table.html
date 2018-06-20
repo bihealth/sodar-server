@@ -37,7 +37,11 @@
       {% get_row_id as row_id %}
       <tr id="omics-ss-data-row-{{ row_id }}">
         {% autoescape off %}
-          {% render_cells row table.col_values %}
+          {% if parent_class == 'assay' %}
+            {% render_cells row table parent assay_plugin %}
+          {% else %}
+            {% render_cells row table %}
+          {% endif %}
         {% endautoescape %}
         {% if parent_class == 'assay' %}
           {% get_irods_row_path parent table row assay_plugin as row_irods_path %}
