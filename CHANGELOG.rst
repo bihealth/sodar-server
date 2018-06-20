@@ -6,7 +6,6 @@ Changelog for the Omics Data Management Web UI. Loosely follows the
 guidelines.
 
 
-
 Unreleased
 ==========
 
@@ -17,6 +16,8 @@ Added
     - Sphinx-based online user manual (#50)
 - **Landingzones**
     - Status types ``DELETING`` and ``DELETED`` (#228)
+- **Samplesheets**
+    - Add nucleotide_sequencing assay app (#249)
 
 Changed
 -------
@@ -29,6 +30,7 @@ Changed
 - **Samplesheets**
     - Clarify ISA parsing error message (#236)
     - Separate configapps into study and assay apps (#249)
+    - Move ``get_row_path()`` to assay app (#249)
 
 Fixed
 -----

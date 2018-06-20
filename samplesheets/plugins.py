@@ -7,7 +7,7 @@ from projectroles.plugins import ProjectAppPluginPoint
 
 from .models import Investigation
 from .urls import urlpatterns
-from .utils import get_sample_dirs
+from .utils import get_sample_dirs, get_isa_field_name
 
 
 # Samplesheets project app plugin ----------------------------------------------
@@ -175,18 +175,6 @@ class SampleSheetStudyPluginPoint(PluginPoint):
     # TODO: TBD: Do we need this?
     permission = None
 
-    # TODO: Move this into assayapp
-    def get_row_path(self, assay, table, row):
-        """Return iRODS path for an assay row in a sample sheet. If None,
-        display default directory.
-        :param assay: Assay object
-        :param table: List of lists (table returned by SampleSheetTableBuilder)
-        :param row: List of dicts (a row returned by SampleSheetTableBuilder)
-        :return: String with full iRODS path or None
-        """
-        # TODO: Implement this in your study plugin
-        raise NotImplementedError('Implement get_row_path() in your plugin')
-
 
 def get_study_plugin(plugin_name):
     """
@@ -227,7 +215,7 @@ class SampleSheetAssayPluginPoint(PluginPoint):
     # TODO: Recommended in form of samplesheets_assay_name
     # name = 'samplesheets_assay_'
 
-    #: Title (used in templates)
+    #: Title
     # TODO: Implement this in your assay plugin
     # title = 'Sample Sheets X Assay App'
 
@@ -251,7 +239,6 @@ class SampleSheetAssayPluginPoint(PluginPoint):
     # TODO: TBD: Do we need this?
     permission = None
 
-    # TODO: Move this into assayapp
     def get_row_path(self, assay, table, row):
         """Return iRODS path for an assay row in a sample sheet. If None,
         display default directory.
@@ -263,3 +250,31 @@ class SampleSheetAssayPluginPoint(PluginPoint):
         # TODO: Implement this in your assay plugin
         raise NotImplementedError(
             'Implement get_row_path() in your assay plugin')
+
+
+def get_assay_plugin(plugin_name):
+    """
+    Return active assay plugin
+    :param plugin_name: Plugin name (string)
+    :return: SampleSheetAssayPlugin object or None if not found
+    """
+    try:
+        return SampleSheetAssayPluginPoint.get_plugin(plugin_name)
+
+    except SampleSheetAssayPluginPoint.DoesNotExist:
+        return None
+
+
+def find_assay_plugin(measurement_type, technology_type):
+    """
+    Find active assay plugin with a measurement type and technology type
+    :param measurement_type: Measurement type (string or ontology dict)
+    :param technology_type: Technology type (string or ontology dict)
+    :return: SampleSheetAssayPlugin object or None if not found
+    """
+    for plugin in SampleSheetAssayPluginPoint.get_plugins():
+        if (plugin.measurement_type == get_isa_field_name(measurement_type) and
+                plugin.technology_type == get_isa_field_name(technology_type)):
+            return plugin
+
+    return None

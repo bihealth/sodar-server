@@ -12,8 +12,8 @@ from projectroles.plugins import get_backend_api
 
 from ..models import Investigation, Study, Assay, GenericMaterial, \
     GENERIC_MATERIAL_TYPES
-from ..plugins import get_study_plugin as get_study_p, \
-    find_study_plugin as find_study_p
+from ..plugins import find_study_plugin as find_study_p, \
+    find_assay_plugin as find_assay_p
 
 
 irods_backend = get_backend_api('omics_irods')
@@ -40,23 +40,15 @@ def get_investigation(project):
 
 
 @register.simple_tag
-def get_study_plugin(obj):
+def get_study_plugin(study):
     """Return study app plugin or None if not found"""
-    inv = None
+    return find_study_p(study.investigation.get_configuration())
 
-    if type(obj) == Investigation:
-        inv = obj
 
-    elif type(obj) == Study:
-        inv = obj.investigation
-
-    elif type(obj) == Assay:
-        inv = obj.study.investigation
-
-    if not inv:
-        return None
-
-    return find_study_p(inv.get_configuration())
+@register.simple_tag
+def get_assay_plugin(assay):
+    """Return assay app plugin or None if not found"""
+    return find_assay_p(assay.measurement_type, assay.technology_type)
 
 
 @register.simple_tag
@@ -344,21 +336,20 @@ def render_cells(row, col_values):
 
 # TODO: Use assay plugin instead, once created
 @register.simple_tag
-def get_irods_row_path(assay, assay_table, row):
+def get_irods_row_path(assay, assay_table, row, assay_plugin):
     """
     Return iRODS path for an assay row. If the configuration is not recognized,
     Returns a link for the whole assay
     :param assay: Assay object
     :param assay_table: Assay table from SampleSheetTableBuilder
     :param row: Row from SampleSheetTableBuilder
+    :param assay_plugin: SampleSheetAssayPlugin object
     :return: String
     """
-    study_plugin = get_study_plugin(assay)
-
-    if not study_plugin:
+    if not assay_plugin:
         if irods_backend:
             return irods_backend.get_path(assay)
 
         return None
 
-    return study_plugin.get_row_path(assay, assay_table, row)
+    return assay_plugin.get_row_path(assay, assay_table, row)

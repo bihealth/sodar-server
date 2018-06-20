@@ -78,8 +78,12 @@ LOCAL_APPS = [
     'adminalerts.apps.AdminalertsConfig',
     'irodsinfo.apps.IrodsinfoConfig',
 
-    # Samplesheets config sub-apps
+    # Samplesheets study sub-apps
     'samplesheets.studyapps.germline.apps.GermlineConfig',
+
+    # Samplesheets assay sub-apps
+    'samplesheets.assayapps.nucleotide_sequencing.'
+    'apps.NucleotideSequencingConfig',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS

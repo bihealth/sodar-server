@@ -189,7 +189,7 @@
       <a class="omics-ss-anchor" id="{{ study.omics_uuid }}"></a>
       <div class="card omics-ss-data-card omics-ss-data-card-study">
         <div class="card-header">
-          {% include 'samplesheets/_sheet_table_header.html' with table_type='study' item=study %}
+          {% include 'samplesheets/_sheet_table_header.html' with table_type='study' item=study content_plugin=study_plugin %}
         </div>
         <div class="card-body omics-card-body-table">
           <div class="table-responsive omics-ss-init-container">
@@ -200,10 +200,13 @@
 
       {# Assay tables #}
       {% for assay in study.assays.all %}
+        {# Get assay app plugin #}
+        {% get_assay_plugin assay as assay_plugin %}
+
         <a class="omics-ss-anchor" id="{{ assay.omics_uuid }}"></a>
         <div class="card omics-ss-data-card omics-ss-data-card-assay">
           <div class="card-header">
-            {% include 'samplesheets/_sheet_table_header.html' with table_type='assay' item=assay %}
+            {% include 'samplesheets/_sheet_table_header.html' with table_type='assay' item=assay content_plugin=assay_plugin %}
           </div>
           <div class="card-body omics-card-body-table">
             <div class="table-responsive omics-ss-init-container">

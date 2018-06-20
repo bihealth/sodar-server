@@ -64,3 +64,15 @@ def get_last_material_index(render_table):
 
     return idx
 
+
+def get_isa_field_name(field):
+    """
+    Return the name of an ISA field. In case of an ontology reference, returns
+    field['name'].
+    :param field: Field of an ISA Django model
+    :return: String
+    """
+    if type(field) == dict:
+        return field['name']
+
+    return field
