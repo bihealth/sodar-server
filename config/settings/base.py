@@ -82,8 +82,8 @@ LOCAL_APPS = [
     'samplesheets.studyapps.germline.apps.GermlineConfig',
 
     # Samplesheets assay sub-apps
-    'samplesheets.assayapps.nucleotide_sequencing.'
-    'apps.NucleotideSequencingConfig',
+    'samplesheets.assayapps.genome_seq_nucleotide_seq.'
+    'apps.GenomeSeqNucleotideSeqConfig',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS

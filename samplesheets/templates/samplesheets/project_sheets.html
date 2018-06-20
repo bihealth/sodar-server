@@ -171,6 +171,15 @@
 
     {% elif table_data.study %}
 
+      {# Study plugin #}
+      {% get_study_plugin study as study_plugin %}
+
+      {# Study anchor #}
+      <a class="omics-ss-anchor" id="{{ study.omics_uuid }}"></a>
+
+      {# Study title #}
+      {% include 'samplesheets/_section_title.html' with item=study section_type='study' content_plugin=study_plugin %}
+
       {# Details #}
       <div class="card">
         <div class="card-header">
@@ -179,14 +188,13 @@
         {% include 'samplesheets/_study_info.html' %}
       </div>
 
-      {# Study app #}
-      {% get_study_plugin study as study_plugin %}
+      {# Include study template #}
       {% if study_plugin %}
         {% include study_plugin.study_template %}
       {% endif %}
 
       {# Study table #}
-      <a class="omics-ss-anchor" id="{{ study.omics_uuid }}"></a>
+
       <div class="card omics-ss-data-card omics-ss-data-card-study">
         <div class="card-header">
           {% include 'samplesheets/_sheet_table_header.html' with table_type='study' item=study content_plugin=study_plugin %}
@@ -203,7 +211,12 @@
         {# Get assay app plugin #}
         {% get_assay_plugin assay as assay_plugin %}
 
+        {# Assay anchor #}
         <a class="omics-ss-anchor" id="{{ assay.omics_uuid }}"></a>
+
+        {# Assay title #}
+        {% include 'samplesheets/_section_title.html' with item=assay section_type='assay' content_plugin=assay_plugin %}
+
         <div class="card omics-ss-data-card omics-ss-data-card-assay">
           <div class="card-header">
             {% include 'samplesheets/_sheet_table_header.html' with table_type='assay' item=assay content_plugin=assay_plugin %}

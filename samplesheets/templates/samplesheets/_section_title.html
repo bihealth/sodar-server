@@ -1,0 +1,15 @@
+<div class="row mb-4">
+  <h4 class="font-weight-bold {% if section_type == 'assay' %}text-danger{% else %}text-info{% endif %}">
+    {% if section_type == 'assay' %}
+      <i class="fa fa-fw fa-table"></i>Assay:
+    {% else %}
+      <i class="fa fa-fw fa-list-alt"></i>Study:
+    {% endif %}
+    {{ item.get_display_name }}
+  </h4>
+    {% if content_plugin %}
+      <div class="ml-auto">
+        <i class="fa fa-puzzle-piece fa-2x text-secondary ml-1" data-toggle="tooltip" data-placement="left" title="Using {{ section_type }} plugin: {{ content_plugin.title }}"></i>
+      </div>
+    {% endif %}
+</div>

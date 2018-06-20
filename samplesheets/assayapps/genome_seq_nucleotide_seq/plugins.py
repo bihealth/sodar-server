@@ -5,15 +5,17 @@ from samplesheets.utils import get_last_material_index
 
 
 class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
-    """Plugin for nucleotide sequencing assays in sample sheets"""
+    """Plugin for genome sequencing / nucleotide sequencing assays in sample
+    sheets"""
 
     # Properties required by django-plugins ------------------------------
 
     #: Name (used in code and as unique idenfitier)
-    name = 'samplesheets_assay_nucleotide_sequencing'
+    name = 'samplesheets_assay_genome_seq_nucleotide_seq'
 
     #: Title
-    title = 'Sample Sheets Nucleotide Sequencing Assay Plugin'
+    title = 'Sample Sheets Genome Sequencing / Nucleotide Sequencing Assay ' \
+            'Plugin'
 
     # Properties defined in SampleSheetAssayPluginPoint ------------------
 
@@ -22,7 +24,8 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
     technology_type = 'nucleotide sequencing'
 
     #: Description string
-    description = 'Sample sheets nucleotide sequencing assay app'
+    description = 'Sample sheets genome sequencing / nucleotide sequencing ' \
+                  'assay app'
 
     #: Template for assay addition (Assay object as "assay" in context)
     assay_template = None

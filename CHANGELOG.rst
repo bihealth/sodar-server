@@ -17,7 +17,7 @@ Added
 - **Landingzones**
     - Status types ``DELETING`` and ``DELETED`` (#228)
 - **Samplesheets**
-    - Add nucleotide_sequencing assay app (#249)
+    - Add genome_seq_nucleotide_seq assay app (#249)
 
 Changed
 -------
@@ -43,6 +43,7 @@ Fixed
     - Escape cell values (#233)
     - Study and Assay UUIDs changed during replace (#234)
     - Missing iCommands path in popup (#250)
+    - Improve study and assay layout
 - **Timeline**
     - Long labels broke timeline table (#225)
 
