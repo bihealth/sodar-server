@@ -239,7 +239,7 @@ class SampleSheetAssayPluginPoint(PluginPoint):
     # TODO: TBD: Do we need this?
     permission = None
 
-    def get_row_path(self, assay, table, row):
+    def get_row_path(self, row, table, assay):
         """Return iRODS path for an assay row in a sample sheet. If None,
         display default directory.
         :param assay: Assay object
@@ -251,17 +251,17 @@ class SampleSheetAssayPluginPoint(PluginPoint):
         raise NotImplementedError(
             'Implement get_row_path() in your assay plugin')
 
-    def get_file_path(self, assay, table, row, file_name):
-        """Return iRODS path for a data file or None if not available.
+    def update_row(self, row, table, assay):
+        """
+        Update render table row with e.g. links. Return the modified row
+        :param row: Original row (list of dicts)
+        :param table: Full table (list of lists)
         :param assay: Assay object
-        :param table: List of lists (table returned by SampleSheetTableBuilder)
-        :param row: List of dicts (a row returned by SampleSheetTableBuilder)
-        :param file_name: File name
-        :return: String with full iRODS path or None
+        :return: List of dicts
         """
         # TODO: Implement this in your assay plugin
         raise NotImplementedError(
-            'Implement get_file_path() in your assay plugin')
+            'Implement update_row() in your assay plugin')
 
 
 def get_assay_plugin(plugin_name):

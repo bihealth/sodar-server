@@ -213,15 +213,16 @@ class SampleSheetTableBuilder:
 
     def _add_cell(
             self, value=None, unit=None, link=None,
-            obj_type=None, field_name=None, tooltip=None, attrs=None,
-            classes=list()):
+            obj_cls=None, item_type=None, field_name=None, tooltip=None,
+            attrs=None, classes=list()):
         """
         Add cell data
         :param value: Value to be displayed in the cell
         :param unit: Unit to be displayed in the cell
         :param link: Link from the value (URL string)
-        :param obj_type: HACK: Original object type (string)
-        :param field_name: HACK: Field name (string)
+        :param obj_cls: Original object class (object model)
+        :param item_type: Object subtype (for Materials) (string)
+        :param field_name: Field name (string)
         :param tooltip: Tooltip to be shown on mouse hover (string)
         :param attrs: Optional attributes (dict)
         :param classes: Optional extra classes (list)
@@ -230,8 +231,10 @@ class SampleSheetTableBuilder:
             'value': value,
             'unit': unit,
             'link': link,
-            'obj_type': obj_type,
-            'field_name': field_name,
+            'link_file': False,
+            'obj_cls': obj_cls,
+            'item_type': item_type,
+            'field_name': field_name.lower() if field_name else None,
             'tooltip': tooltip,
             'attrs': attrs,
             'classes': classes})
@@ -257,7 +260,8 @@ class SampleSheetTableBuilder:
 
         return a_count
 
-    def _add_annotations(self, annotations, classes=list()):
+    def _add_annotations(
+            self, annotations, obj_cls=None, item_type=None, classes=list()):
         """Append annotations to row columns"""
         if not annotations:
             return None
@@ -279,7 +283,6 @@ class SampleSheetTableBuilder:
             else:
                 val = v['value']
 
-            # TODO: Test unit
             if 'unit' in v:
                 if type(v['unit']) == dict:
                     unit = v['unit']['name']
@@ -288,7 +291,8 @@ class SampleSheetTableBuilder:
                     unit = v['unit']
 
             self._add_cell(
-                val, unit=unit, link=link, tooltip=tooltip,
+                val, unit=unit, link=link, obj_cls=obj_cls,
+                item_type=item_type, field_name=k, tooltip=tooltip,
                 classes=classes)
 
     def _add_element(self, obj, study_data_in_assay=False):
@@ -301,6 +305,7 @@ class SampleSheetTableBuilder:
         """
         # TODO: Contains repetition, refactor
         hide_cls = [STUDY_HIDEABLE_CLASS] if study_data_in_assay else list()
+        obj_type = type(obj)
 
         # Headers
         if self._first_row:
@@ -308,7 +313,7 @@ class SampleSheetTableBuilder:
             hideable_count = 0
 
             # Material headers
-            if type(obj) == GenericMaterial:
+            if obj_type == GenericMaterial:
                 self._add_header(
                     'Name', hide_cls if obj.item_type in
                     ['DATA', 'MATERIAL'] else list())           # Name
@@ -330,14 +335,8 @@ class SampleSheetTableBuilder:
                     field_count += a_header_count
                     hideable_count += a_header_count
 
-                if obj.material_type:
-                    top_header_type = obj.material_type
-
-                else:
-                    top_header_type = obj.item_type
-
             # Process headers
-            else:   # type(obj) == Process
+            else:   # obj_type == Process
                 if obj.protocol and obj.protocol.name:
                     self._add_header('Protocol', hide_cls)      # Protocol
                     field_count += 1
@@ -350,8 +349,6 @@ class SampleSheetTableBuilder:
                 field_count += a_header_count
                 hideable_count += a_header_count
 
-                top_header_type = 'PROCESS'
-
             a_header_count = self._add_annotation_headers(
                 obj.comments, hide_cls)                         # Comments
             field_count += a_header_count
@@ -363,36 +360,46 @@ class SampleSheetTableBuilder:
                     study_data_in_assay else 0})
 
         # Material data
-        if type(obj) == GenericMaterial:
+        if obj_type == GenericMaterial:
             # Add material info for iRODS links Ajax querying
 
             self._add_cell(
-                obj.name, obj_type=obj.item_type,
-                field_name='name')                              # Name + attrs
+                obj.name, obj_cls=obj_type,
+                item_type=obj.item_type, field_name='name')     # Name + attrs
 
             if (obj.material_type == 'Labeled Extract Name' and
                     obj.extract_label):
-                self._add_cell(obj.extract_label)               # Extract label
+                self._add_cell(
+                    obj.extract_label, obj_cls=obj_type,
+                    item_type=obj.item_type,
+                    field_name='label')                         # Extract label
 
             self._add_annotations(
-                obj.characteristics, hide_cls)                  # Character.
+                obj.characteristics, obj_cls=obj_type,
+                item_type=obj.item_type, classes=hide_cls)      # Character.
 
             if obj.item_type == 'SAMPLE':
                 self._add_annotations(
-                    obj.factor_values, hide_cls)                # Factor values
+                    obj.factor_values, obj_cls=obj_type,
+                    item_type=obj.item_type, classes=hide_cls)  # Factor values
 
         # Process data
-        elif type(obj) == Process:
+        elif obj_type == Process:
             if obj.protocol and obj.protocol.name:
                 self._add_cell(
-                    obj.protocol.name, classes=hide_cls)        # Protocol
+                    obj.protocol.name, obj_cls=obj_type,
+                    field_name='protocol', classes=hide_cls)    # Protocol
 
-            self._add_cell(obj.name, classes=hide_cls)          # Name
+            self._add_cell(
+                obj.name, obj_cls=obj_type, field_name='name',
+                classes=hide_cls)                               # Name
 
             self._add_annotations(
-                obj.parameter_values, hide_cls)                 # Param values
+                obj.parameter_values, obj_cls=obj_type,
+                classes=hide_cls)                               # Param values
 
-        self._add_annotations(obj.comments, hide_cls)           # Comments
+        self._add_annotations(
+            obj.comments, obj_cls=obj_type, classes=hide_cls)  # Comments
 
     def _append_row(self):
         """Append current row to table data and cleanup"""
@@ -431,7 +438,8 @@ class SampleSheetTableBuilder:
             col_pos = 0
 
             # Add row column cell
-            self._add_cell(str(row_id), classes=['text-muted'])
+            self._add_cell(
+                str(row_id), field_name='row', classes=['text-muted'])
 
             # Add elements on row
             for col in input_row:

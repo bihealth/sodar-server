@@ -289,6 +289,10 @@ def render_cells(row, table, assay=None, assay_plugin=None):
     """
     ret = ''
 
+    # Update row through the assay plugin
+    if assay and assay_plugin:
+        row = assay_plugin.update_row(row, table, assay)
+
     # Iterate through row, render only if there is data in column
     for i in range(0, len(row)):
         cell = row[i]
@@ -321,18 +325,10 @@ def render_cells(row, table, assay=None, assay_plugin=None):
 
                 # Ontology link
                 if cell['link']:
-                    ret += '<a href="{}" target="_blank">{}</a>'.format(
-                        cell['link'], value)
-
-                # File iRODS link
-                elif (cell['obj_type'] == 'DATA' and
-                      settings.IRODS_WEBDAV_ENABLED and assay and assay_plugin):
-                    file_path = assay_plugin.get_file_path(
-                        assay, table, row, file_name=value)
-
-                    if file_path:
-                        ret += '<a href="{}{}">{}</a>'.format(
-                            settings.IRODS_WEBDAV_URL, file_path, value)
+                    ret += '<a href="{}" {}>{}</a>'.format(
+                        cell['link'],
+                        'target="_blank"' if not cell['link_file'] else '',
+                        value)
 
                 # Text
                 else:
@@ -362,7 +358,7 @@ def get_irods_row_path(assay, assay_table, row, assay_plugin):
     :return: String
     """
     if assay_plugin:
-        path = assay_plugin.get_row_path(assay, assay_table, row)
+        path = assay_plugin.get_row_path(row, assay_table, assay)
 
         if path:
             return path

@@ -1,7 +1,15 @@
+from django.conf import settings
+
 from projectroles.plugins import get_backend_api
 
+from samplesheets.models import GenericMaterial, Process
 from samplesheets.plugins import SampleSheetAssayPluginPoint
 from samplesheets.utils import get_last_material_index
+
+
+# Local constants
+RAW_DATA_COLL = 'RawData'
+MAX_QUANT_COLL = 'MaxQuantResults'
 
 
 class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
@@ -34,7 +42,7 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
     # TODO: TBD: Do we need this?
     permission = None
 
-    def get_row_path(self, assay, table, row):
+    def get_row_path(self, row, table, assay):
         """Return iRODS path for an assay row in a sample sheet. If None,
         display default directory.
         :param assay: Assay object
@@ -48,22 +56,53 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
             return None
 
         # TODO: Alternatives for RawData?
-        return irods_backend.get_path(assay) + '/RawData'
+        return irods_backend.get_path(assay) + '/' + RAW_DATA_COLL
 
-    def get_file_path(self, assay, table, row, file_name):
-        """Return iRODS path for a data file or None if not available.
-        :param assay: Assay object
-        :param table: List of lists (table returned by SampleSheetTableBuilder)
-        :param row: List of dicts (a row returned by SampleSheetTableBuilder)
-        :param file_name: File name
-        :return: String with full iRODS path or None
+    def update_row(self, row, table, assay):
         """
+        Update render table row with e.g. links. Return the modified row
+        :param row: Original row (list of dicts)
+        :param table: Full table (list of lists)
+        :param assay: Assay object
+        :return: List of dicts
+        """
+        if not settings.IRODS_WEBDAV_ENABLED or not assay:
+            return row
+
         irods_backend = get_backend_api('omics_irods')
 
         if not irods_backend:
-            return None
+            return row
 
-        # Raw file
-        if file_name.split('.')[-1] == 'raw':
-            return irods_backend.get_path(assay) + '/RawData/' + file_name
+        base_url = settings.IRODS_WEBDAV_URL + irods_backend.get_path(assay)
 
+        # Check if MaxQuant is found
+        max_quant_found = False
+
+        for cell in row:
+            if (cell['obj_cls'] == Process and
+                    cell['field_name'] == 'analysis software name' and
+                    cell['value'] == 'MaxQuant'):
+                max_quant_found = True
+                break
+
+        for cell in row:
+            # Data files
+            if (cell['obj_cls'] == GenericMaterial and
+                    cell['item_type'] == 'DATA' and
+                    cell['field_name'] == 'name'):
+                # .raw files
+                if cell['value'].split('.')[-1].lower() == 'raw':
+                    cell['link'] = \
+                        base_url + '/' + RAW_DATA_COLL + '/' + cell['value']
+                    cell['link_file'] = True
+
+            # Process parameter files
+            elif (max_quant_found and
+                  cell['obj_cls'] == Process and
+                  cell['field_name'] == 'analysis database file'):
+                cell['link'] = \
+                    base_url + '/' + MAX_QUANT_COLL + '/' + cell['value']
+                cell['link_file'] = True
+
+        return row

@@ -16,7 +16,7 @@ from projectroles.views import LoggedInPermissionMixin, \
 
 # Samplesheets dependency
 from samplesheets.models import GenericMaterial
-from samplesheets.plugins import get_study_plugin
+from samplesheets.plugins import find_assay_plugin
 from samplesheets.rendering import SampleSheetTableBuilder
 
 # Local constants
@@ -47,13 +47,13 @@ class BaseGermlineConfigView(
         :param study_tables: Render study tables
         :return: String
         """
-        config_plugin = get_study_plugin('samplesheets_study_germline')
         irods_backend = get_backend_api('omics_irods')
         query_paths = []
 
-        # Get material names for linking
         for assay in source.study.assays.all():
             assay_table = study_tables['assays'][assay.get_name()]
+            assay_plugin = find_assay_plugin(
+                assay.measurement_type, assay.technology_type)
 
             # Get family index
             try:
@@ -63,15 +63,16 @@ class BaseGermlineConfigView(
                 fam_idx = None
 
             for row in assay_table['table_data']:
-                # TODO: Refactor after vacation because well, just look at this
                 if ((file_type == 'bam' and row[1]['value'] == source.name) or (
                         file_type == 'vcf' and ((
                             fam_idx and
                             row[fam_idx]['value'] ==
                             source.characteristics['Family']['value']) or
                             row[1]['value'] == source.name))):
-                    path = config_plugin.get_row_path(assay, assay_table, row)
-                    query_paths.append(path)
+                    if assay_plugin:
+                        path = assay_plugin.get_row_path(
+                            row, assay_table, assay)
+                        query_paths.append(path)
 
         file_paths = []
 

@@ -1,5 +1,6 @@
 from projectroles.plugins import get_backend_api
 
+from samplesheets.models import GenericMaterial
 from samplesheets.plugins import SampleSheetAssayPluginPoint
 from samplesheets.utils import get_last_material_index
 
@@ -34,7 +35,7 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
     # TODO: TBD: Do we need this?
     permission = None
 
-    def get_row_path(self, assay, table, row):
+    def get_row_path(self, row, table, assay):
         """Return iRODS path for an assay row in a sample sheet. If None,
         display default directory.
         :param assay: Assay object
@@ -47,17 +48,27 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
         if not irods_backend:
             return None
 
-        # Get index of last material's name column
-        idx = get_last_material_index(table)
-        material_name = row[idx]['value']
-        return irods_backend.get_path(assay) + '/' + material_name
+        # Get the name of the last material
+        last_material_name = None
 
-    def get_file_path(self, assay, table, row, file_name):
-        """Return iRODS path for a data file or None if not available.
-        :param assay: Assay object
-        :param table: List of lists (table returned by SampleSheetTableBuilder)
-        :param row: List of dicts (a row returned by SampleSheetTableBuilder)
-        :param file_name: File name
-        :return: String with full iRODS path or None
-        """
+        for cell in row:
+            if (cell['obj_cls'] == GenericMaterial and
+                    cell['item_type'] != 'DATA' and
+                    cell['field_name'] == 'name' and
+                    cell['value']):
+                last_material_name = cell['value']
+
+        if last_material_name:
+            return irods_backend.get_path(assay) + '/' + last_material_name
+
         return None
+
+    def update_row(self, row, table, assay):
+        """
+        Update render table row with e.g. links. Return the modified row
+        :param row: Original row (list of dicts)
+        :param table: Full table (list of lists)
+        :param assay: Assay object
+        :return: List of dicts
+        """
+        return row
