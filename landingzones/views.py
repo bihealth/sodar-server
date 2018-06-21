@@ -587,6 +587,9 @@ class LandingZoneStatisticsGetAPIView(
             except FileNotFoundError:
                 return Response('Not found', status=404)
 
+            except Exception as ex:
+                return Response(str(ex), status=500)
+
         return Response('Not authorized', status=403)
 
 

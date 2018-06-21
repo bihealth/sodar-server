@@ -13,6 +13,8 @@ Unreleased
 Added
 -----
 
+- **General**
+    - Sphinx-based online user manual (#50)
 - **Landingzones**
     - Status types ``DELETING`` and ``DELETED`` (#228)
 
@@ -33,6 +35,7 @@ Fixed
 - **Landingzones**
     - Buttons not correctly activated during status update (#215)
     - Long landing zone names broke zone list table
+    - iRODS client ``NetworkException`` not caught by ``LandingZoneStatisticsGetAPIView`` (#255)
 - **Samplesheets**
     - Escape cell values (#233)
     - Study and Assay UUIDs changed during replace (#234)
