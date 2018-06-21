@@ -45,6 +45,10 @@ django-cprofile-middleware==1.0
 # Versioning
 versioneer==0.18
 
+# Online documentation via django-docs.
+django-docs==0.3.0
+sphinx-rtd-theme==0.4.0
+
 ######################
 # Project app imports
 ######################

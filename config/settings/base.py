@@ -55,6 +55,7 @@ THIRD_PARTY_APPS = [
     'markupfield',  # For markdown
     'db_file_storage',  # For storing files in database
     'rest_framework',   # For API views
+    'docs',  # For the online user documentation/manual
 ]
 
 # Project apps
@@ -363,6 +364,12 @@ def set_logging(debug):
 
 LOGGING = set_logging(DEBUG)
 
+# Django-docs Settings
+# ------------------------------------------------------------------------------
+
+# Note: for serving to work, the docs have to be built after deployment.
+DOCS_ROOT = ROOT_DIR.path('docs_manual/build/html/')
+# DOCS_ACCESS = 'public'  # default
 
 # Local App Settings
 # ------------------------------------------------------------------------------
