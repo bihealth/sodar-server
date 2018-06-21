@@ -239,6 +239,10 @@ class SampleSheetAssayPluginPoint(PluginPoint):
     # TODO: TBD: Do we need this?
     permission = None
 
+    #: Toggle displaying of row-based iRODS links in the assay table
+    # TODO: Implement this in your assay plugin
+    display_row_links = True
+
     def get_assay_path(self, assay):
         """
         Helper for getting the assay path
@@ -260,9 +264,8 @@ class SampleSheetAssayPluginPoint(PluginPoint):
         :param row: List of dicts (a row returned by SampleSheetTableBuilder)
         :return: String with full iRODS path or None
         """
-        # TODO: Implement this in your assay plugin
-        raise NotImplementedError(
-            'Implement get_row_path() in your assay plugin')
+        # TODO: Implement this in your assay plugin if display_row_links=True
+        return None
 
     def update_row(self, row, table, assay):
         """

@@ -35,6 +35,9 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
     # TODO: TBD: Do we need this?
     permission = None
 
+    #: Toggle displaying of row-based iRODS links in the assay table
+    display_row_links = True
+
     def get_row_path(self, row, table, assay):
         """Return iRODS path for an assay row in a sample sheet. If None,
         display default directory.

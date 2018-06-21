@@ -32,7 +32,13 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
     # TODO: TBD: Do we need this?
     permission = None
 
+    #: Toggle displaying of row-based iRODS links in the assay table
+    display_row_links = False
+
+    #: Raw data collection name
     raw_data_coll = 'RawData'
+
+    #: MaxQuant results collection name
     max_quant_coll = 'MaxQuantResults'
 
     def get_row_path(self, row, table, assay):

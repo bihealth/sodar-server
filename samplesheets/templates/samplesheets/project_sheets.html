@@ -273,30 +273,38 @@
             dom: 't' // Disable toolbar
         });
 
-        $('.omics-ss-data-table-assay').DataTable({
-            scrollY: 400,
-            scrollX: true,
-            paging: false,
-            scrollCollapse: true,
-            info: false,
-            fixedColumns: {
-                leftColumns: 0,
-                rightColumns: 1
-            },
-            columnDefs: [
-                {
-                    // Disable sorting from links column
-                    targets: [
-                        'omics-ss-data-cell-links',
-                        'omics-ss-data-links-header'],
-                    orderable: false
+        $('.omics-ss-data-table-assay').each(function() {
+            var rightCols = 1;
+
+            if ($(this).hasClass('omics-ss-data-hide-links')) {
+                rightCols = 0;
+            }
+
+            $(this).DataTable({
+                scrollY: 400,
+                scrollX: true,
+                paging: false,
+                scrollCollapse: true,
+                info: false,
+                fixedColumns: {
+                    leftColumns: 0,
+                    rightColumns: rightCols
                 },
-                {
-                    targets: 'omics-ss-hideable-study',
-                    visible: false
-                }
-                ],
-            dom: 't' // Disable toolbar
+                columnDefs: [
+                    {
+                        // Disable sorting from links column
+                        targets: [
+                            'omics-ss-data-cell-links',
+                            'omics-ss-data-links-header'],
+                        orderable: false
+                    },
+                    {
+                        targets: 'omics-ss-hideable-study',
+                        visible: false
+                    }
+                    ],
+                dom: 't' // Disable toolbar
+            });
         });
 
         // Once initialized, remove temporary init classes
