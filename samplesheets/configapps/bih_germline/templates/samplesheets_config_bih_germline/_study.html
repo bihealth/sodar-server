@@ -55,11 +55,64 @@
                 <td>
                   {% get_family_sources study fam_id as fam_sources %}
                   {% for fam_source in fam_sources %}
-                    <a class="mr-3 text-nowrap" href="{% url 'samplesheets.configapps.bih_germline:file' file_type='bam' genericmaterial=fam_source.omics_uuid %}">{{ fam_source.name }} <i class="fa fa-external-link"></i></a>
+                    <div class="btn-group">
+                      <a role="button" class="btn btn-sm btn-secondary" href="{% url 'samplesheets.configapps.bih_germline:file' file_type='bam' genericmaterial=fam_source.omics_uuid %}" title="Download {{ fam_source.name }} BAM file">
+                        <i class="fa fa-download"></i> {{ fam_source.name }}
+                      </a>
+                      <!-- TODO: btn-sm does not work here :( -->
+                      <button type="button" class="btn btn-sm btn-secondary dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <span class="sr-only">Toggle Dropdown</span>
+                      </button>
+                      <div class="dropdown-menu">
+                        <a class="dropdown-item" href="{% url 'samplesheets.configapps.bih_germline:file' file_type='bam' genericmaterial=fam_source.omics_uuid %}" title="Download {{ fam_source.name }} BAM file">
+                          <i class="fa fa-download"></i> download
+                        </a>
+                        <!-- TODO: (1) not full URL, (2) configure genome build in project config, (3) get port from user profile -->
+                        <a class="dropdown-item" href="http://127.0.0.1:60151/load?genome=b37&merge=true&file=http://localhost:8000{% url 'samplesheets.configapps.bih_germline:file' file_type='bam' genericmaterial=fam_source.omics_uuid %}" title="Open {{ fam_source.name }} BAM file in IGV">
+                          <i class="fa fa-share-square-o"></i> open in IGV
+                        </a>
+                      </div>
+                    </div>
                   {% endfor %}
                 </td>
-                <td><a class="text-nowrap" href="{% url 'samplesheets.configapps.bih_germline:file' file_type='vcf' genericmaterial=fam_sources.0.omics_uuid %}">Pedigree VCF file <i class="fa fa-external-link"></i></a></td>
-                <td><a class="text-nowrap" href="{% url 'samplesheets.configapps.bih_germline:igv' genericmaterial=fam_sources.0.omics_uuid %}">Pedigree IGV session file <i class="fa fa-file-text"></i></a></td>
+                <td>
+                  <div class="btn-group">
+                    <a role="button" class="btn btn-sm btn-secondary" href="{% url 'samplesheets.configapps.bih_germline:file' file_type='vcf' genericmaterial=fam_sources.0.omics_uuid %}" title="Download pedigree VCF file">
+                      <i class="fa fa-download"></i> download
+                    </a>
+                    <!-- TODO: btn-sm does not work here :( -->
+                    <button type="button" class="btn btn-sm btn-secondary dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                      <span class="sr-only">Toggle Dropdown</span>
+                    </button>
+                    <div class="dropdown-menu">
+                      <a class="dropdown-item" href="{% url 'samplesheets.configapps.bih_germline:file' file_type='vcf' genericmaterial=fam_sources.0.omics_uuid %}" title="Download pedigree VCF file">
+                        <i class="fa fa-download"></i> download
+                      </a>
+                      <!-- TODO: (1) not full URL, (2) configure genome build in project config, (3) get port from user profile -->
+                      <a class="dropdown-item" href="http://127.0.0.1:60151/load?genome=b37&merge=true&file=http://localhost:8000{% url 'samplesheets.configapps.bih_germline:file' file_type='vcf' genericmaterial=fam_sources.0.omics_uuid %}" title="Open pedigree VCF file in IGV">
+                        <i class="fa fa-share-square-o"></i> open in IGV
+                      </a>
+                    </div>
+                  <td>
+                  <div class="btn-group">
+                    <a role="button" class="btn btn-sm btn-secondary" href="{% url 'samplesheets.configapps.bih_germline:igv' genericmaterial=fam_sources.0.omics_uuid %}" title="Download IGV ession file for full pedigree">
+                      <i class="fa fa-download"></i> download
+                    </a>
+                    <!-- TODO: btn-sm does not work here :( -->
+                    <button type="button" class="btn btn-sm btn-secondary dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                      <span class="sr-only">Toggle Dropdown</span>
+                    </button>
+                    <div class="dropdown-menu">
+                      <a class="dropdown-item" href="{% url 'samplesheets.configapps.bih_germline:igv' genericmaterial=fam_sources.0.omics_uuid %}" title="Download IGV ession file for full pedigree">
+                        <i class="fa fa-download"></i> download
+                      </a>
+                      <!-- TODO: (1) not full URL, (2) configure genome build in project config, (3) get port from user profile -->
+                      <a class="dropdown-item" href="http://127.0.0.1:60151/load?genome=b37&merge=false&file=http://localhost:8000{% url 'samplesheets.configapps.bih_germline:igv' genericmaterial=fam_sources.0.omics_uuid %}" title="Open IGV session file for full pedigree in IGV">
+                        <i class="fa fa-share-square-o"></i> open in IGV
+                      </a>
+                    </div>
+                  </div>
+                </td>
               </tr>
             {% endfor %}
           </tbody>
