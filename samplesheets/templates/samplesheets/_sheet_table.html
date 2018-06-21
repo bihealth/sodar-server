@@ -46,7 +46,6 @@
         {% if parent_class == 'assay' %}
           {% get_irods_row_path parent table row assay_plugin as row_irods_path %}
           <td class="bg-light omics-ss-data-cell-links" irods-path="{{ row_irods_path }}">
-            {# TODO: Refactor this #}
             {% if irods_backend %}
               <button class="btn btn-secondary omics-list-btn omics-ss-popup-list-btn"
                       list-url="{% url 'samplesheets:irods_list' assay=parent.omics_uuid path=row_irods_path %}"
@@ -56,7 +55,6 @@
               </button>
             {% endif %}
             <button class="btn btn-secondary omics-list-btn omics-ss-popup-cmd-btn"
-                    {# TODO: Add row-specific parameters #}
                     role="submit" title="Get iCommands path to files"
                     {% if not investigation.irods_status %} disabled{% endif %}>
               <i class="fa fa-terminal"></i>
