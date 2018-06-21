@@ -46,25 +46,7 @@
         {% if parent_class == 'assay' %}
           {% get_irods_row_path parent table row assay_plugin as row_irods_path %}
           <td class="bg-light omics-ss-data-cell-links" irods-path="{{ row_irods_path }}">
-            {% if irods_backend %}
-              <button class="btn btn-secondary omics-list-btn omics-ss-popup-list-btn"
-                      list-url="{% url 'samplesheets:irods_list' assay=parent.omics_uuid path=row_irods_path %}"
-                      role="submit" title="List files"
-                      {% if not investigation.irods_status %} disabled{% endif %}>
-                <i class="fa fa-folder-open-o"></i>
-              </button>
-            {% endif %}
-            <button class="btn btn-secondary omics-list-btn omics-ss-popup-cmd-btn"
-                    role="submit" title="Get iCommands path to files"
-                    {% if not investigation.irods_status %} disabled{% endif %}>
-              <i class="fa fa-terminal"></i>
-             </button>
-             <a class="btn btn-secondary omics-list-btn omics-ss-dav-btn mr-1
-                {% if not irods_webdav_enabled or not investigation.irods_status %} disabled{% endif %}"
-                href="{{ irods_webdav_url }}{{ row_irods_path }}" role="button"
-                title="Browse files in WebDAV">
-              <i class="fa fa-external-link"></i>
-            </a>
+            {% include 'samplesheets/_irods_buttons.html' with irods_path=row_irods_path %}
           </td>
         {% endif %}
       </tr>

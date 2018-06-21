@@ -367,7 +367,7 @@ class SampleSheetTableBuilder:
             if (obj.material_type == 'Labeled Extract Name' and
                     obj.extract_label):
                 self._add_cell(
-                    obj.extract_label, obj,
+                    obj.extract_label, obj=obj,
                     field_name='label')                         # Extract label
 
             self._add_annotations(

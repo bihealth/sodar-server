@@ -1,16 +1,42 @@
 {% load samplesheets_tags %}
 
-{# TODO: How to define if we have MaxQuant data or is that assumed? #}
+{# TODO: Path generation is hacky, improve (try to get subapp templatetags working) #}
+{% get_assay_path assay as assay_path %}
 
-{% if investigation.irods_status %}
+<style type="text/css">
+  table#omics-ss-pep-ms-table thead tr th:nth-child(2) {
+    width: 100px;
+  }
+</style>
+
+{% if investigation.irods_status and assay_path %}
   <div class="card">
     <div class="card-header">
       <h4>Shortcuts for Raw Data and MaxQuant Results</h4>
     </div>
-    <div class="card-body omics-card-body">
-      <p>
-        TODO: Links here!
-      </p>
+    <div class="card-body omics-card-body-table">
+      <table class="table cell-border omics-card-table-bordered omics-ss-data-table omics-ss-data-table-contentapp" id="omics-ss-pep-ms-table">
+        <thead>
+          <tr>
+            <th>Directory</th>
+            <th>Links</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Raw Data</td>
+            <td>
+              {% include 'samplesheets/_irods_buttons.html' with irods_path=assay_path|add:'/'|add:assay_plugin.raw_data_coll %}
+            </td>
+          </tr>
+          <tr>
+            <td>MaxQuant Results</td>
+            <td>
+              {% include 'samplesheets/_irods_buttons.html' with irods_path=assay_path|add:'/'|add:assay_plugin.max_quant_coll %}
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </div>
 {% endif %}

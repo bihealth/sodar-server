@@ -38,10 +38,6 @@
       height: 470px;
     }
 
-    .omics-ss-config-app-table-div {
-      max-height: 300px;
-    }
-
     .omics-ss-data-table {
       border: 0 !important;
       min-width: 100%;
@@ -65,7 +61,7 @@
       margin: 0 !important;
     }
 
-    .omics-ss-data-table-configapp tbody tr td {
+    .omics-ss-data-table-contentapp tbody tr td {
       vertical-align: top !important;
       white-space: normal !important;
     }
@@ -461,7 +457,7 @@
         });
 
         $('.omics-ss-popup-cmd-btn').click(function() {
-            var irodsPath = $(this).closest('td').attr('irods-path');
+            var irodsPath = $(this).attr('irods-path');
             $('#omics-ss-popup-cmd').attr(
                 'irods-path', irodsPath).popup('show');
         });

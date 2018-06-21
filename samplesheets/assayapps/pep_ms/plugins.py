@@ -4,19 +4,11 @@ from projectroles.plugins import get_backend_api
 
 from samplesheets.models import GenericMaterial, Process
 from samplesheets.plugins import SampleSheetAssayPluginPoint
-from samplesheets.utils import get_last_material_index
-
-
-# Local constants
-RAW_DATA_COLL = 'RawData'
-MAX_QUANT_COLL = 'MaxQuantResults'
 
 
 class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
     """Plugin for protein expression profiling / mass spectrometry in sample
     sheets"""
-
-    # Properties required by django-plugins ------------------------------
 
     #: Name (used in code and as unique idenfitier)
     name = 'samplesheets_assay_pep_ms'
@@ -24,8 +16,6 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
     #: Title
     title = 'Sample Sheets Protein Expression Profiling / Mass Spectrometry ' \
             'Assay Plugin'
-
-    # Properties defined in SampleSheetAssayPluginPoint ------------------
 
     #: Identifying assay fields (used to identify plugin by assay)
     measurement_type = 'protein expression profiling'
@@ -42,6 +32,9 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
     # TODO: TBD: Do we need this?
     permission = None
 
+    raw_data_coll = 'RawData'
+    max_quant_coll = 'MaxQuantResults'
+
     def get_row_path(self, row, table, assay):
         """Return iRODS path for an assay row in a sample sheet. If None,
         display default directory.
@@ -50,13 +43,13 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
         :param row: List of dicts (a row returned by SampleSheetTableBuilder)
         :return: String with full iRODS path or None
         """
-        irods_backend = get_backend_api('omics_irods')
+        assay_path = self.get_assay_path(assay)
 
-        if not irods_backend:
+        if not assay_path:
             return None
 
         # TODO: Alternatives for RawData?
-        return irods_backend.get_path(assay) + '/' + RAW_DATA_COLL
+        return assay_path + '/' + self.raw_data_coll
 
     def update_row(self, row, table, assay):
         """
@@ -69,12 +62,12 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
         if not settings.IRODS_WEBDAV_ENABLED or not assay:
             return row
 
-        irods_backend = get_backend_api('omics_irods')
+        assay_path = self.get_assay_path(assay)
 
-        if not irods_backend:
+        if not assay_path:
             return row
 
-        base_url = settings.IRODS_WEBDAV_URL + irods_backend.get_path(assay)
+        base_url = settings.IRODS_WEBDAV_URL + assay_path
 
         # Check if MaxQuant is found
         max_quant_found = False
@@ -94,7 +87,8 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
                 # .raw files
                 if cell['value'].split('.')[-1].lower() == 'raw':
                     cell['link'] = \
-                        base_url + '/' + RAW_DATA_COLL + '/' + cell['value']
+                        base_url + '/' + self.raw_data_coll + '/' + \
+                        cell['value']
                     cell['link_file'] = True
 
             # Process parameter files
@@ -102,7 +96,7 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
                   cell['obj_cls'] == Process and
                   cell['field_name'] == 'analysis database file'):
                 cell['link'] = \
-                    base_url + '/' + MAX_QUANT_COLL + '/' + cell['value']
+                    base_url + '/' + self.max_quant_coll + '/' + cell['value']
                 cell['link_file'] = True
 
         return row

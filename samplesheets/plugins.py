@@ -3,7 +3,7 @@ from django.urls import reverse
 from djangoplugins.point import PluginPoint
 
 # Projectroles dependency
-from projectroles.plugins import ProjectAppPluginPoint
+from projectroles.plugins import ProjectAppPluginPoint, get_backend_api
 
 from .models import Investigation
 from .urls import urlpatterns
@@ -238,6 +238,19 @@ class SampleSheetAssayPluginPoint(PluginPoint):
     # TODO: Implement this in your assay plugin (can be None)
     # TODO: TBD: Do we need this?
     permission = None
+
+    def get_assay_path(self, assay):
+        """
+        Helper for getting the assay path
+        :param assay: Assay object
+        :return: Full iRODS path for the assay
+        """
+        irods_backend = get_backend_api('omics_irods')
+
+        if not irods_backend:
+            return None
+
+        return irods_backend.get_path(assay)
 
     def get_row_path(self, row, table, assay):
         """Return iRODS path for an assay row in a sample sheet. If None,
