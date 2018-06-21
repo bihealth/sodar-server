@@ -212,25 +212,23 @@ class SampleSheetTableBuilder:
             'classes': classes})
 
     def _add_cell(
-            self, value=None, unit=None, repeat=False, link=None,
+            self, value=None, unit=None, link=None,
             obj_type=None, field_name=None, tooltip=None, attrs=None,
             classes=list()):
         """
         Add cell data
         :param value: Value to be displayed in the cell
         :param unit: Unit to be displayed in the cell
-        :param repeat: Whether this is a repeating column (boolean)
         :param link: Link from the value (URL string)
         :param obj_type: HACK: Original object type (string)
         :param field_name: HACK: Field name (string)
         :param tooltip: Tooltip to be shown on mouse hover (string)
-        :param attrs: Optional hidden HTML attributes (dict)
+        :param attrs: Optional attributes (dict)
         :param classes: Optional extra classes (list)
         """
         self._row.append({
             'value': value,
             'unit': unit,
-            'repeat': repeat,
             'link': link,
             'obj_type': obj_type,
             'field_name': field_name,
@@ -248,15 +246,6 @@ class SampleSheetTableBuilder:
             self._col_values[self._col_idx] = 1
 
         self._col_idx += 1
-
-    def _add_repetition(self, colspan, study_data_in_assay=False):
-        """Append repetition columns"""
-        for i in range(0, colspan):
-            self._add_cell(
-                repeat=True,
-                classes=[STUDY_HIDEABLE_CLASS] if (
-                        i > 0 and study_data_in_assay) else list())
-            # NOTE: First field is not hidden
 
     def _add_annotation_headers(self, annotations, classes=list()):
         """Append annotation columns to field header"""
@@ -376,15 +365,10 @@ class SampleSheetTableBuilder:
         # Material data
         if type(obj) == GenericMaterial:
             # Add material info for iRODS links Ajax querying
-            # TODO: These can probably be removed
-            attrs = {
-                'isa-material': 1,
-                'isa-material-type': obj.item_type,
-                'isa-unique-name': obj.unique_name}
 
             self._add_cell(
-                obj.name, obj_type=obj.item_type, field_name='name',
-                attrs=attrs)                                    # Name + attrs
+                obj.name, obj_type=obj.item_type,
+                field_name='name')                              # Name + attrs
 
             if (obj.material_type == 'Labeled Extract Name' and
                     obj.extract_label):
