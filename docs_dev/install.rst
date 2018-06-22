@@ -16,8 +16,8 @@ the steps related to their installation and set the environment variable
 ``ENABLED_BACKEND_PLUGINS='timeline_backend'``.
 
 
-Install Omics Data Management
-=============================
+Install SODAR
+=============
 
 First, create a postgresql users and a database for your application.
 For example, ``omics_data_mgmt`` with password ``omics_data_mgmt`` and a database called ``omics_data_mgmt``.
@@ -96,7 +96,7 @@ The server must be configured with the `omics.re <https://cubi-gitlab.bihealth.o
 rule set file and MD5 as the default hash scheme. In the Docker setup and the
 Ansible playbooks, this is already pre-configured.
 
-In the Omics Data Management environment variables (preferably in the ``.env``
+In the SODAR environment variables (preferably in the ``.env``
 file), set up iRODS variables to point to your server. See
 ``config/settings/base.py`` for the variables and their default values.
 
@@ -130,7 +130,7 @@ In the Omics Taskflow root directory, start the Taskflow service:
 .. code-block:: shell
     $ utility/run_dev.sh
 
-In the Omics Data Management root directory, start the site in debug mode with
+In the SODAR root directory, start the site in debug mode with
 ``local`` settings. After this you can access the site at
 ``http://localhost:8080``.
 

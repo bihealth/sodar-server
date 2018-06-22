@@ -17,7 +17,7 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     license='MIT License',
-    description='Web GUI for BIH CUBI Omics Data Management',
+    description='Web GUI for BIH CUBI SODAR system',
     long_description=README,
     url='https://bihealth.org',
     author='Mikko Nieminen, Manuel Holtgrewe',

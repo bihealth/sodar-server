@@ -1,4 +1,4 @@
-"""iRODS REST API for Omics Data Management Django apps"""
+"""iRODS REST API for SODAR Django apps"""
 
 from functools import wraps
 from irods.exception import CollectionDoesNotExist

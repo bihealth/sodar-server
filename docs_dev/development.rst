@@ -1,5 +1,5 @@
-Omics Data Management Development Guidelines
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+SODAR Development Guidelines
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. warning::
    Under construction!

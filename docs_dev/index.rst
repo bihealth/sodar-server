@@ -1,10 +1,10 @@
-.. Omics Data Management documentation master file, created by
+.. SODAR documentation master file, created by
    sphinx-quickstart.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to Omics Data Management's documentation!
-====================================================================
+Welcome to the SODAR documentation!
+===================================
 
 Contents:
 

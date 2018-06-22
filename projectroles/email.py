@@ -26,17 +26,17 @@ MESSAGE_HEADER = r'''
 Dear {recipient},
 
 This email has been automatically sent to you by the
-CUBI Omics Data Management system.
+CUBI SODAR system.
 
 '''.lstrip()
 
 MESSAGE_HEADER_NO_RECIPIENT = r'''
 This email has been automatically sent to you by the
-CUBI Omics Data Management system.
+CUBI SODAR system.
 '''.lstrip()
 
 MESSAGE_FOOTER = r'''
-For support or reporting issues regarding the CUBI Omics Data Management
+For support or reporting issues regarding the CUBI SODAR
 system, contact Mikko Nieminen (mikko.nieminen@bihealth.de).
 '''
 
@@ -52,8 +52,8 @@ MESSAGE_ROLE_CREATE = r'''
 {issuer_name} ({issuer_email}) has granted you the membership
 in project "{project}" with the role of "{role}".
 
-To access the project in the CUBI Omics Data Management
-system, please click on the following link:
+To access the project in the CUBI SODAR system, please click on
+the following link:
 {project_url}
 '''.lstrip()
 
@@ -61,8 +61,8 @@ MESSAGE_ROLE_UPDATE = r'''
 {issuer_name} ({issuer_email}) has changed your membership
 role in project "{project}" into "{role}".
 
-To access the project in the CUBI Omics Data Management system,
-please click on the following link:
+To access the project in the CUBI SODAR system, please click on
+the following link:
 {project_url}
 '''.lstrip()
 
@@ -79,10 +79,11 @@ SUBJECT_INVITE = 'Invitation for project "{}"'
 
 MESSAGE_INVITE_BODY = r'''
 You have been invited by {issuer_name} ({issuer_email})
-to share data in the project "{project}" with the role of "{role}".
+to share data in the project "{project}" with the
+role of "{role}".
 
 To accept the invitation and access the project in the
-Omics Data Management system, please click on the following link:
+CUBI SODAR system, please click on the following link:
 {invite_url}
 
 This invitation will expire on {date_expire}.

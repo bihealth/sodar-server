@@ -1,4 +1,4 @@
-# Omics Data Management documentation build configuration file, created by
+# SODAR documentation build configuration file, created by
 # sphinx-quickstart.
 #
 # This file is execfile()d with the current directory set to its containing dir.
@@ -39,7 +39,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = 'Omics Data Management'
+project = 'SODAR'
 copyright = """2017, Mikko Nieminen"""
 
 # The version info for the project you're documenting, acts as replacement for
@@ -184,7 +184,7 @@ latex_elements = {
 latex_documents = [
     ('index',
      'omics_data_mgmt.tex',
-     'Omics Data Management Documentation',
+     'SODAR Documentation',
      """Mikko Nieminen""", 'manual'),
 ]
 
@@ -214,7 +214,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'omics_data_mgmt', 'Omics Data Management Documentation',
+    ('index', 'omics_data_mgmt', 'SODAR Documentation',
      ["""Mikko Nieminen"""], 1)
 ]
 
@@ -228,9 +228,9 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    ('index', 'omics_data_mgmt', 'Omics Data Management Documentation',
-     """Mikko Nieminen""", 'Omics Data Management',
-     """Omics Data Management Web UI""", 'Miscellaneous'),
+    ('index', 'omics_data_mgmt', 'SODAR Documentation',
+     """Mikko Nieminen""", 'SODAR',
+     """SODAR Web UI""", 'Miscellaneous'),
 ]
 
 # Documents to append as an appendix to all manuals.

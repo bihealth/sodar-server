@@ -1,5 +1,5 @@
 """
-Django settings for Omics Data Management project.
+Django settings for the SODAR project.
 
 For more information on this file, see
 https://docs.djangoproject.com/en/dev/topics/settings/

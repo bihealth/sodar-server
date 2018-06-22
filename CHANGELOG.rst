@@ -1,7 +1,7 @@
-Omics Data Management Changelog
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+SODAR Changelog
+^^^^^^^^^^^^^^^
 
-Changelog for the Omics Data Management Web UI. Loosely follows the
+Changelog for the SODAR Web UI. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/0.3.0/>`_
 guidelines.
 

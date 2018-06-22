@@ -1,7 +1,7 @@
-Omics Data Management
-=====================
+SODAR
+=====
 
-Omics Data Management Web UI
+SODAR (System for Omics Data Access and Retrieval)
 
 .. image:: https://img.shields.io/badge/built%20with-Cookiecutter%20Django-ff69b4.svg
      :target: https://github.com/pydanny/cookiecutter-django/
