@@ -511,6 +511,12 @@ a.omics-nav-link-last {
 
 /* Misc */
 
+img.omics-navbar-logo {
+  height: 42px;
+  padding-bottom: 10px;
+  padding-right: 3px;
+}
+
 .omics-alert-top {
   padding-left: 28px;
   padding-right: 28px;
