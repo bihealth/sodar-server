@@ -7,7 +7,7 @@
     {% endif %}
     {{ item.get_display_name }}
   </h4>
-    {% if content_plugin %}
+    {% if request.user.is_superuser and content_plugin %}
       <div class="ml-auto">
         <i class="fa fa-puzzle-piece fa-2x text-secondary ml-1"
            data-toggle="tooltip" data-placement="left"
