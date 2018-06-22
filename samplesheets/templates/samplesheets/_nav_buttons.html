@@ -9,7 +9,7 @@
   <div class="dropdown-menu dropdown-menu-right">
 
     {% for s in investigation.studies.all %}
-      <a class="dropdown-item omics-ss-nav-item" href="{% if s != study %}{% url 'samplesheets:project_sheets' study=s.omics_uuid %}{% endif %}#{{ s.omics_uuid }}">
+      <a class="dropdown-item omics-ss-nav-item" href="{% if s != study %}{% url 'samplesheets:project_sheets' study=s.omics_uuid %}{% endif %}">
           <i class="fa fa-fw fa-list-alt text-info"></i> {{ s.get_display_name }}
       </a>
 
