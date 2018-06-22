@@ -46,6 +46,7 @@ django-cprofile-middleware==1.0
 versioneer==0.18
 
 # Online documentation via django-docs.
+Sphinx==1.6.5
 django-docs==0.3.0
 sphinx-rtd-theme==0.4.0
 
