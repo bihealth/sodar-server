@@ -14,17 +14,21 @@ Added
 
 - **General**
     - Sphinx-based online user manual (#50)
+    - Site favicon (#166)
 - **Landingzones**
     - Status types ``DELETING`` and ``DELETED`` (#228)
 - **Samplesheets**
     - Add genome_seq_nucleotide_seq assay app (#249)
     - Add pep_ms assay app (#245)
+    - Object metadata in sample sheet table rendering (#254)
 
 Changed
 -------
 
 - **General**
     - Update installation and development documentation (#237)
+    - Rebrand site as SODAR (#166)
+    - Separate manual from development docs (#50, #237)
 - **Landingzones**
     - Make landing zone deletion async (#228)
     - Refactor zone list item rendering
@@ -32,6 +36,8 @@ Changed
     - Clarify ISA parsing error message (#236)
     - Separate configapps into study and assay apps (#249)
     - Move ``get_row_path()`` to assay app (#249)
+    - Make links column hideable by assay app (#249)
+    - Move iRODS buttons in separate template for including
 
 Fixed
 -----
