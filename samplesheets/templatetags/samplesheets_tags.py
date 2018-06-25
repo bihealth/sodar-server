@@ -369,14 +369,15 @@ def get_irods_row_path(assay, assay_table, row, assay_plugin):
 
     return None
 
+
 @register.simple_tag
-def get_assay_path(assay):
+def get_irods_path(obj):
     """
-    Return iRODS path for an assay or None if not found
-    :param assay: Assay object
+    Return iRODS path for an object or None if not found
+    :param obj: Study, Assay etc. type object
     :return: String or none
     """
     if irods_backend:
-        return irods_backend.get_path(assay)
+        return irods_backend.get_path(obj)
 
     return None

@@ -160,11 +160,11 @@ class TestFolder(TestCase, FolderMixin, ProjectMixin, HyperLinkMixin):
         self.assertEqual(model_to_dict(subfolder), expected)
 
     def test_get_path(self):
-        """Test the get_path() function in Folder"""
+        """Test the get_irods_path() function in Folder"""
         self.assertEqual(self.folder.get_path(), 'root/folder/')
 
     def test_get_path_subfolder(self):
-        """Test the get_path() function in Folder for a subfolder"""
+        """Test the get_irods_path() function in Folder for a subfolder"""
 
         # Make subfolder
         subfolder = self._make_folder(

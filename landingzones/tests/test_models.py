@@ -155,4 +155,4 @@ class TestLandingZone(TestLandingZoneBase):
         with self.assertRaises(TypeError):
             self.landing_zone.set_status(status)
 
-    # TODO: test get_path() once it's finalized
+    # TODO: test get_irods_path() once it's finalized

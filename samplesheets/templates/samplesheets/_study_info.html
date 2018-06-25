@@ -4,24 +4,26 @@
   <dl class="row omics-dl">
     <dt class="col-md-3">Title</dt>
     <dd class="col-md-9">{{ study.get_display_name }}</dd>
-    <dt class="col-md-3">iRODS Repository</dt>
-    <dd class="col-md-9">
-      {% if investigation.irods_status %}
-        <span class="text-success">Available</span>
-      {% else %}
-        <span class="text-danger">Not available</span>
-      {% endif %}
-    </dd>
     {% if study.description %}
       <dt class="col-md-3">Description</dt>
       <dd class="col-md-9">{{ study.description }}</dd>
     {% endif %}
+    <dt class="col-md-3">Configuration</dt>
+    <dd class="col-md-9">{{ study.investigation.get_configuration }}</dd>
     {% for comment_k, comment_v in study.comments.items %}
       {% if comment_v.value %}
         <dt class="col-md-3">{{ comment_k }}</dt>
         <dd class="col-md-9">{{ comment_v.value }}</dd>
       {% endif %}
     {% endfor %}
+    <dt class="col-md-3">iRODS Repository</dt>
+    <dd class="col-md-9">
+      {% if investigation.irods_status %}
+        <span class="badge badge-pill badge-success">Available</span>
+      {% else %}
+        <span class="badge badge-pill badge-danger">Not available</span>
+      {% endif %}
+    </dd>
     {% if study.assays %}
       <dt class="col-md-3">Assays</dt>
       <dd class="col-md-9">

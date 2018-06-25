@@ -77,7 +77,7 @@ class TestIrodsBackendAPI(
         self.irods_backend = IrodsAPI()
 
     def test_get_path_project(self):
-        """Test get_path() with a Project object"""
+        """Test get_irods_path() with a Project object"""
         expected = '/{zone}/projects/{uuid_prefix}/{uuid}'.format(
             zone=IRODS_ZONE,
             uuid_prefix=str(self.project.omics_uuid)[:2],
@@ -86,7 +86,7 @@ class TestIrodsBackendAPI(
         self.assertEqual(expected, path)
 
     def test_get_path_study(self):
-        """Test get_path() with a Study object"""
+        """Test get_irods_path() with a Study object"""
         expected = '/{zone}/projects/{uuid_prefix}/{uuid}/{sample_dir}' \
                    '/{study}'.format(
                     zone=IRODS_ZONE,
@@ -98,7 +98,7 @@ class TestIrodsBackendAPI(
         self.assertEqual(expected, path)
 
     def test_get_path_assay(self):
-        """Test get_path() with an Assay object"""
+        """Test get_irods_path() with an Assay object"""
         expected = '/{zone}/projects/{uuid_prefix}/{uuid}/{sample_dir}' \
                    '/{study}/{assay}'.format(
                     zone=IRODS_ZONE,
@@ -111,7 +111,7 @@ class TestIrodsBackendAPI(
         self.assertEqual(expected, path)
 
     def test_get_path_zone(self):
-        """Test get_path() with a LandingZone object"""
+        """Test get_irods_path() with a LandingZone object"""
         expected = '/{zone}/projects/{uuid_prefix}/{uuid}/{zone_dir}' \
                    '/{user}/{study_assay}/{zone_title}'.format(
                     zone=IRODS_ZONE,

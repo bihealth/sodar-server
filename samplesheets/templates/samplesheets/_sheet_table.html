@@ -50,7 +50,7 @@
         {% if parent_class == 'assay' and not assay_plugin or assay_plugin.display_row_links %}
           {% get_irods_row_path parent table row assay_plugin as row_irods_path %}
           <td class="bg-light omics-ss-data-cell-links" irods-path="{{ row_irods_path }}">
-            {% include 'samplesheets/_irods_buttons.html' with irods_path=row_irods_path %}
+            {% include 'samplesheets/_irods_buttons.html' with irods_path=row_irods_path data_table=True show_file_list=True %}
           </td>
         {% endif %}
       </tr>

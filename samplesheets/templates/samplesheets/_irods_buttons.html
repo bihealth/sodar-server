@@ -1,22 +1,38 @@
+{# Parameters #}
+{# investigation: Investigation object #}
+{# irods_path: full iRODS path to link to #}
+{# data_table: Whether the file is included within a data table (boolean) #}
+{# show_file_list: Whether to show the file list popup (boolean) #}
+
 <span class="text-nowrap">
-  {% if irods_backend %}
+  {% if show_file_list and irods_backend %}
     <button class="btn btn-secondary omics-list-btn omics-ss-popup-list-btn"
             irods-path="{{ irods_path }}"
             list-url="{% url 'samplesheets:irods_list' assay=assay.omics_uuid path=irods_path %}"
-            role="submit" title="List files"
+            role="submit"
+            {% if not data_table %}
+              data-toggle="tooltip" data-placement="top"
+            {% endif %}
+            title="List files"
             {% if not investigation.irods_status %} disabled{% endif %}>
       <i class="fa fa-folder-open-o"></i>
     </button>
   {% endif %}
   <button class="btn btn-secondary omics-list-btn omics-ss-popup-cmd-btn"
-          irods-path="{{ irods_path }}"
-          role="submit" title="Get iCommands path to files"
+          irods-path="{{ irods_path }}" role="submit"
+          {% if not data_table %}
+            data-toggle="tooltip" data-placement="top"
+          {% endif %}
+          title="Get iCommands path to files"
           {% if not investigation.irods_status %} disabled{% endif %}>
     <i class="fa fa-terminal"></i>
   </button>
   <a class="btn btn-secondary omics-list-btn omics-ss-dav-btn mr-1
      {% if not irods_webdav_enabled or not investigation.irods_status %} disabled{% endif %}"
      href="{{ irods_webdav_url }}{{ irods_path }}" role="button"
+     {% if not data_table %}
+       data-toggle="tooltip" data-placement="top"
+     {% endif %}
      title="Browse files in WebDAV">
     <i class="fa fa-external-link"></i>
   </a>

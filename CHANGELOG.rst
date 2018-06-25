@@ -21,6 +21,7 @@ Added
     - Add genome_seq_nucleotide_seq assay app (#249)
     - Add pep_ms assay app (#245)
     - Object metadata in sample sheet table rendering (#254)
+    - Show investigation configuration in study details table
 
 Changed
 -------
@@ -38,6 +39,7 @@ Changed
     - Move ``get_row_path()`` to assay app (#249)
     - Make links column hideable by assay app (#249)
     - Move iRODS buttons in separate template for including
+    - Change ``get_assay_path()`` into a more general ``get_irods_path()`` in template tags (#257)
 
 Fixed
 -----
