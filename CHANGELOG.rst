@@ -30,7 +30,7 @@ Changed
     - Update installation and development documentation (#237)
     - Rebrand site as SODAR (#166)
     - Separate manual from development docs (#50, #237)
-    - Use Bootstrap4 modal instead of jQuerypopup (#180)
+    - Use Bootstrap4 modal instead of jquery.popupoverlay (#180)
 - **Landingzones**
     - Make landing zone deletion async (#228)
     - Refactor zone list item rendering
@@ -61,6 +61,8 @@ Fixed
 Removed
 -------
 
+- **General**
+    - jquery.popupoverlay dependencies (#180)
 - **Landingzones**
     - ZoneDeleteAPIView as it's not needed anymore due to async deletion (#228)
 
