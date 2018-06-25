@@ -491,10 +491,10 @@ class TestProjectRoles(TestUIBase):
         button.click()
 
         WebDriverWait(self.selenium, self.wait_time).until(
-            ec.presence_of_element_located((By.ID, 'omics-popup-content')))
+            ec.presence_of_element_located((By.ID, 'omics-email-body')))
 
         self.assertIsNotNone(
-            self.selenium.find_element_by_id('omics-popup-content'))
+            self.selenium.find_element_by_id('omics-email-body'))
 
     def test_invite_preview(self):
         """Test visibility of invite preview popup"""
@@ -508,10 +508,10 @@ class TestProjectRoles(TestUIBase):
         button.click()
 
         WebDriverWait(self.selenium, self.wait_time).until(
-            ec.presence_of_element_located((By.ID, 'omics-popup-content')))
+            ec.presence_of_element_located((By.ID, 'omics-email-body')))
 
         self.assertIsNotNone(
-            self.selenium.find_element_by_id('omics-popup-content'))
+            self.selenium.find_element_by_id('omics-email-body'))
 
 
 class TestProjectInviteList(TestUIBase, ProjectInviteMixin):

@@ -35,6 +35,8 @@ Changed
     - Make landing zone deletion async (#228)
     - Refactor zone list item rendering
     - Include iRODS buttons from ``_irods_buttons.html``
+- **Projectroles**
+    - Use modal for email preview popups (#180)
 - **Samplesheets**
     - Clarify ISA parsing error message (#236)
     - Separate configapps into study and assay apps (#249)

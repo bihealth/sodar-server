@@ -31,7 +31,8 @@
           <i class="fa fa-arrow-circle-left"></i> Cancel
         </a>
         <a role="button" class="btn btn-primary text-light"
-           id="omics-pr-email-preview-link">
+           id="omics-pr-email-preview-link"
+           data-toggle="modal" data-target="#omics-modal">
           <i class="fa fa-eye"></i> Preview
         </a>
         <button type="submit" class="btn btn-primary">
@@ -55,29 +56,25 @@
   {{ block.super }}
   <script type="text/javascript">
       $(document).ready(function() {
-          $('#omics-pr-email-preview-link').click(function() {
-            $('#omics-pr-email-preview-popup').popup('show');
-      });
+          $('#omics-pr-email-preview-link').click(function () {
+              $('.modal-title').text('Email Preview');
 
-          $('#omics-pr-email-preview-popup').popup({
-              transition: 'all 0.2s',
-              beforeopen: function () {
-                  var body = '{{ preview_body }}';
-                  var userName = $('#id_user').find('option:selected').text();
-                  var userDisplayName = userName.substr(0, userName.indexOf('(') - 1);
-                  var roleName = $('#id_role').find('option:selected').text();
-                  body = body.replace('{role_name}', roleName);
-                  body = body.replace('{user_name}', userDisplayName);
+              var body = '{{ preview_body }}';
+              var userName = $('#id_user').find('option:selected').text();
+              var userDisplayName = userName.substr(0, userName.indexOf('(') - 1);
+              var roleName = $('#id_role').find('option:selected').text();
+              body = body.replace('{role_name}', roleName);
+              body = body.replace('{user_name}', userDisplayName);
 
-                  var htmlData = '<div class="card" id="omics-popup-content"><div class="card-body"><h5>Email Preview</h5><hr>';
-                  htmlData += '<strong>Subject:</strong><pre>{{ preview_subject }}</pre>';
-                  htmlData += '<strong>Body:</strong>';
-                  htmlData += '<pre>' + body;
-                  htmlData += '</pre></div></div>';
-                  $(this).html(htmlData);
-              }
+              var htmlData = '<strong>Subject:</strong><pre>{{ preview_subject }}</pre>';
+              htmlData += '<strong>Body:</strong>';
+              htmlData += '<pre id="omics-email-body">' + body;
+              htmlData += '</pre>';
+
+              $('.modal-body').html(htmlData);
           });
       });
+
   </script>
 
 {% endblock javascript %}
