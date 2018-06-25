@@ -251,6 +251,9 @@
   <!-- Clipboard helper -->
   <script type="text/javascript" src="{% static 'js/clipboard.min.js' %}"></script>
 
+  <!-- Samplesheets common Javascript -->
+  <script type="text/javascript" src="{% static 'samplesheets/js/samplesheets_common.js' %}"></script>
+
   <script type="text/javascript">
     $(document).ready(function() {
 
@@ -361,11 +364,6 @@
             }
         });
 
-        /**************
-         Init clipboard
-        **************/
-        new ClipboardJS('.omics-copy-btn');
-
         /***************
          Link list Popup
          ***************/
@@ -435,6 +433,7 @@
         /**************
          iCommand Popup
          **************/
+        /*
         $('.omics-irods-popup-cmd-btn').click(function() {
             var irodsPath = $(this).attr('irods-path');
             $('.modal-title').text('iRODS iCommands Access');
@@ -447,6 +446,7 @@
 
              $('.modal-body').html(htmlData);
         });
+        */
     });
   </script>
 

@@ -213,6 +213,16 @@ def get_family_sources(study, family_id):
     return ret
 
 
+@register.simple_tag
+def is_webdav_enabled():
+    return settings.IRODS_WEBDAV_ENABLED
+
+
+@register.simple_tag
+def get_webdav_url():
+    return settings.IRODS_WEBDAV_URL.rstrip('/')
+
+
 # Table rendering --------------------------------------------------------------
 
 
@@ -396,3 +406,17 @@ def get_assay_list_url(assay, path):
         kwargs={
             'assay': assay.omics_uuid,
             'path': path})
+
+
+@register.simple_tag
+def get_icon(obj):
+    """
+    Get Study or Assay icon
+    :param obj: Study or Assay object
+    :return: String (contains HTML)
+    """
+    if type(obj) == Study:
+        return '<i class="fa fa-fw fa-list-alt text-info"></i>'
+
+    elif type(obj) == Assay:
+        return '<i class="fa fa-fw fa-table text-danger"></i>'

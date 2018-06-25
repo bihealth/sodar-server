@@ -1,14 +1,72 @@
 {% load rules %}
+{% load staticfiles %}
 {% load samplesheets_tags %}
-
 {% has_perm 'samplesheets.view_sheet' request.user project as can_view_sheet %}
 
 {% get_investigation project as investigation %}
 
-{% if investigation and can_view_sheet %}
-  {% include 'samplesheets/_investigation_info.html' with show_description=False %}
-{% else %}
+<!-- Clipboard helper -->
+<script type="text/javascript" src="{% static 'js/clipboard.min.js' %}"></script>
+
+<!-- Samplesheets common Javascript -->
+<script type="text/javascript" src="{% static 'samplesheets/js/samplesheets_common.js' %}"></script>
+
+<style type="text/css">
+  /* Main table */
+  table#omics-ss-details-table tr td:nth-child(2) {
+    width: 110px;
+  }
+</style>
+
+{% if not investigation %}
   <div class="card-body omics-card-body bg-faded font-italic text-center">
     <p>No sample sheets available</p>
   </div>
+{% elif investigation and not investigation.irods_status %}
+  <div class="card-body omics-card-body bg-faded font-italic text-center">
+    <p>Sample directories not created in iRODS</p>
+  </div>
+{% elif investigation and can_view_sheet %}
+  <table class="table omics-card-table" id="omics-ss-details-table">
+    <thead>
+      <tr>
+        <th>Study/Assay</th>
+        <th>Links</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><i class="fa fa-fw fa-cube"></i> Project root</td>
+        <td>
+          {% get_irods_path project as root_irods_path %}
+          {% include 'samplesheets/_irods_buttons.html' with investigation=investigation irods_path=root_irods_path list_url=None data_table=False show_file_list=False %}
+        </td>
+      </tr>
+      {% for study in investigation.studies.all %}
+        <tr>
+          <td class="pl-4">
+            {% autoescape off %}{% get_icon study %}{% endautoescape %}
+             <a href="{% url 'samplesheets:project_sheets' study=study.omics_uuid %}">{{ study.get_display_name }}</a>
+          </td>
+          <td>
+            {% get_irods_path study as study_irods_path %}
+            {% include 'samplesheets/_irods_buttons.html' with investigation=investigation irods_path=study_irods_path list_url=None data_table=False show_file_list=False %}
+          </td>
+        {% for assay in study.assays.all %}
+          <tr>
+            <td class="pl-5">
+              {% autoescape off %}{% get_icon assay %}{% endautoescape %}
+               <a href="{% url 'samplesheets:project_sheets' study=study.omics_uuid %}#{{ assay.omics_uuid }}">{{ assay.get_display_name }}</a>
+            </td>
+            <td>
+              {% get_irods_path assay as assay_irods_path %}
+              {% include 'samplesheets/_irods_buttons.html' with investigation=investigation irods_path=assay_irods_path list_url=None data_table=False show_file_list=False %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tr>
+
+      {% endfor %}
+    </tbody>
+  </table>
 {% endif %}

@@ -1,3 +1,5 @@
+{% load samplesheets_tags %}
+
 {# Parameters #}
 {# investigation: Investigation object #}
 {# irods_path: full iRODS path to link to #}
@@ -5,6 +7,9 @@
 {# data_table: Whether the file is included within a data table (boolean) #}
 {# show_file_list: Whether to show the file list popup (boolean) #}
 {# disable_all: Show but disable buttons if True (boolean) #}
+
+{% is_webdav_enabled as irods_webdav_enabled %}
+{% get_webdav_url as irods_webdav_url %}
 
 <span class="text-nowrap">
   {% if show_file_list and irods_backend %}

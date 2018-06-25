@@ -42,6 +42,8 @@ Changed
     - Make links column hideable by assay app (#249)
     - Move iRODS buttons in separate template for including
     - Change ``get_assay_path()`` into a more general ``get_irods_path()`` in template tags (#257)
+    - Display study and assay links on the project details page (#257)
+    - Move commonly used javascript to ``samplesheets_common.js`` (#181)
 
 Fixed
 -----
