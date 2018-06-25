@@ -17,6 +17,8 @@ Added
     - Site favicon (#166)
 - **Landingzones**
     - Status types ``DELETING`` and ``DELETED`` (#228)
+- **Projectroles**
+    - Tag ``force_wrap()`` in common template tags
 - **Samplesheets**
     - Add genome_seq_nucleotide_seq assay app (#249)
     - Add pep_ms assay app (#245)

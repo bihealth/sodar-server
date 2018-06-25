@@ -90,3 +90,13 @@ def get_class(obj, lower=False):
     """Return object class as string"""
     c = obj.__class__.__name__
     return c.lower() if lower else c
+
+
+@register.filter
+def force_wrap(s, length):
+    # If string contains spaces or hyphens, leave wrapping to browser
+    if not {' ', '-'}.intersection(s) and len(s) > length:
+        return '<wbr />'.join(
+            [s[i:i + length] for i in range(0, len(s), length)])
+
+    return s

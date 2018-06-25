@@ -25,15 +25,13 @@
           {% get_user_html zone.user %} /
         {% endautoescape %}
       {% endif %}
-      <span class="text-nowrap">
-        {{ zone.title }}
+        {{ zone.title|force_wrap:16|safe }}
         {% if zone.description %}
           <a class="omics-ss-assay-info-link" tabindex="0" data-toggle="popover"
              data-trigger="focus" data-placement="top" data-html="true"
              data-content="{% get_zone_desc_html zone %}">
             <i class="fa fa-info-circle text-info"></i>
           </a>
-        </span>
       {% endif %}
     </td>
   {% endif %}
