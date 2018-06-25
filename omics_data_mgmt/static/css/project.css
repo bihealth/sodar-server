@@ -535,7 +535,8 @@ img.omics-navbar-logo {
 }
 
 .modal-dialog{
-  max-width: 800px;
+  min-width: 600px;
+  max-width: 85%;
 }
 
 .omics-breadcrumb-table {
