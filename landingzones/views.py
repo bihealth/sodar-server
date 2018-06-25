@@ -47,17 +47,15 @@ class ProjectZoneView(
         context['taskflow_enabled'] = True if \
             get_backend_api('taskflow') else False
 
-        # Flags for links
-        context['irods_webdav_enabled'] = \
-            int(settings.IRODS_WEBDAV_ENABLED)
-
         # iRODS backend
         # TODO: This can be just bool
         context['irods_backend'] = get_backend_api('omics_irods')
 
         # iRODS WebDAV
+        context['irods_webdav_enabled'] = \
+            int(settings.IRODS_WEBDAV_ENABLED)
+
         if settings.IRODS_WEBDAV_ENABLED:
-            context['irods_webdav_enabled'] = True
             context['irods_webdav_url'] = settings.IRODS_WEBDAV_URL.rstrip('/')
 
         # User zones

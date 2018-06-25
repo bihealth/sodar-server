@@ -30,9 +30,11 @@ Changed
     - Update installation and development documentation (#237)
     - Rebrand site as SODAR (#166)
     - Separate manual from development docs (#50, #237)
+    - Use Bootstrap4 modal instead of jQuerypopup (#180)
 - **Landingzones**
     - Make landing zone deletion async (#228)
     - Refactor zone list item rendering
+    - Include iRODS buttons from ``_irods_buttons.html``
 - **Samplesheets**
     - Clarify ISA parsing error message (#236)
     - Separate configapps into study and assay apps (#249)

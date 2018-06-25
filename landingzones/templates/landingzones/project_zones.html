@@ -214,8 +214,6 @@
                         }
 
                         else {
-                            var webDavEnabled = {{ irods_webdav_enabled }};
-
                             zoneTr.find('td.omics-lz-zone-title').removeClass('text-muted');
                             zoneTr.find('td.omics-lz-zone-assay').removeClass('text-muted');
                             zoneTr.find('td.omics-lz-zone-status-info').removeClass('text-muted');
@@ -296,102 +294,81 @@
         /***************
          Link list Popup
          ***************/
-        $('#omics-lz-popup-list').popup({
-            transition: 'all 0.2s',
-            beforeopen: function () {
-                var listUrl = $(this).attr('list-url');
-                var zoneTitle = $(this).attr('zone-title');
-                var htmlHeader = '<div class="card"><div class="card-body"><h5>iRODS File List for Zone "' + zoneTitle + '"</h5><hr />';
-                var htmlFooter = '</div></div>';
-                var htmlData = '';
+        // TODO: Unify with samplesheets, still lots of repetition here
+        $('.omics-irods-popup-list-btn').click(function() {
+            var listUrl = $(this).attr('list-url');
+            var htmlData = '';
 
-                $.ajax({
+            $.ajax({
                     url: listUrl,
                     method: 'GET',
                     dataType: 'json'
                 }).done(function (data) {
-                    // console.log(data);  // DEBUG
+                // console.log(data);  // DEBUG
 
-                    if (data['data_objects'].length > 0) {
-                        htmlData = '<table class="table omics-card-table table-striped omics-irods-obj-table">';
-                        htmlData += '<thead><th>File</th><th>Size</th><th>Modified</th><th>MD5</th></thead><tbody>';
+                if (data['data_objects'].length > 0) {
+                    htmlData = '<table class="table omics-card-table table-striped omics-irods-obj-table">';
+                    htmlData += '<thead><th>File</th><th>Size</th><th>Modified</th><th>MD5</th></thead><tbody>';
 
-                        $.each(data['data_objects'], function (i, obj) {
-                            var objNameSplit = obj['path'].split('/');
-                            var objLink = '<a href="{{ irods_webdav_url }}' + obj['path'] + '"><span class="text-muted">';
-                            // TODO: Find by zoneTitle instead of directly splicing
-                            objLink += objNameSplit.slice(10, objNameSplit.length - 1).join('/');
-                            objLink += '/</span>' + obj['name'] + '</a>';
-                            htmlData += '<tr><td>' + objLink + '</td>';
-                            htmlData += '<td>' + humanFileSize(obj['size'], true) + '</td>';
-                            htmlData += '<td>' + obj['modify_time'] + '</td>';
-                            htmlData += '<td>';
+                    $.each(data['data_objects'], function (i, obj) {
+                        var objNameSplit = obj['path'].split('/');
+                        var objLink = '<a href="{{ irods_webdav_url }}' + obj['path'] + '"><span class="text-muted">';
+                        // TODO: Find by zoneTitle instead of directly splicing
+                        objLink += objNameSplit.slice(10, objNameSplit.length - 1).join('/');
+                        objLink += '/</span>' + obj['name'] + '</a>';
+                        htmlData += '<tr><td>' + objLink + '</td>';
+                        htmlData += '<td>' + humanFileSize(obj['size'], true) + '</td>';
+                        htmlData += '<td>' + obj['modify_time'] + '</td>';
+                        htmlData += '<td>';
 
-                            if (obj['md5_file'] === true) {
-                                htmlData += '<span class="text-muted"><i class="fa fa-check"></i></span>';
-                            }
+                        if (obj['md5_file'] === true) {
+                            htmlData += '<span class="text-muted"><i class="fa fa-check"></i></span>';
+                        }
 
-                            else {
-                                htmlData += '<span class="text-danger"><i class="fa fa-close"></i></span>';
-                            }
+                        else {
+                            htmlData += '<span class="text-danger"><i class="fa fa-close"></i></span>';
+                        }
 
-                            htmlData += '</td></tr>';
-                        });
-                    }
+                        htmlData += '</td></tr>';
+                    });
+                }
 
-                    else {
-                        htmlData = popupNoFilesHtml;
-                    }
+                else {
+                    htmlData = popupNoFilesHtml;
+                }
 
-                    // Set success html
-                    $('#omics-lz-popup-list').html(htmlHeader + htmlData + htmlFooter);
-                }).fail(function (response) {
-                    $('#omics-ss-popup-list').html(htmlHeader +
-                        '<span class="text-danger font-italic">Failed to query data (' +
-                        response.status + ': ' + response.responseText + ')</span>' + htmlFooter);
-                });
+                // Set success content and toggle modal
+                $('.modal-body').html(htmlData);
+                $('#omics-modal-wait').modal('hide');
+                $('#omics-modal').modal('show');
+            }).fail(function (response) {
+                // Set failure content and toggle modal
+                $('.modal-body').html(
+                    '<span class="text-danger font-italic">Failed to query data (' +
+                    response.status + ': ' + response.responseText + ')</span>');
+                $('#omics-modal-wait').modal('hide');
+                $('#omics-modal').modal('show');
+            });
 
-            // Set default loading html
-            $(this).html(popupWaitHtml);
-            }
-        });
-
-        $('.omics-lz-popup-list-btn').click(function() {
-            if ($(this).closest('tr').find('td.omics-lz-zone-status').text() !== 'MOVED') {
-                $('#omics-lz-popup-list').attr(
-                    'list-url', $(this).attr('list-url')).attr(
-                      'zone-title', $(this).attr('zone-title')).popup('show');
-            }
+            // Set waiting content and toggle modal
+            $('#omics-modal-wait').modal('show');
         });
 
         /**************
          iCommand Popup
          **************/
-        // TODO: Unify this with the landingzones iCommand popup
-        $('#omics-lz-popup-cmd').popup({
-            transition: 'all 0.2s',
-            beforeopen: function () {
-                var irodsPath = $(this).attr('irods-path');
-                var zoneTitle = $(this).attr('zone-title');
-                var htmlHeader = '<div class="card"><div class="card-body"><h5>iRODS iCommands Access to Zone "' + zoneTitle + '"</h5><hr />';
-                var htmlFooter = '</div></div>';
-                var htmlData = '<div class="input-group">' +
-                    '<input id="omics-copy-field" class="form-control omics-code-input" type="text" value="icd ' + irodsPath + '" readonly/>' +
-                    '<div class="input-group-append">' +
-                    '<button class="btn btn-secondary omics-copy-btn" role="submit" data-clipboard-target="#omics-copy-field"><i class="fa fa-clipboard"></i> Copy</button></div>' +
-                    '</div>';
+        // TODO: Import this from samplesheets instead of repetition
+        $('.omics-irods-popup-cmd-btn').click(function() {
+            var irodsPath = $(this).attr('irods-path');
+            $('.modal-title').text('iRODS iCommands Access');
 
-                // Set html
-                $('#omics-lz-popup-cmd').html(htmlHeader + htmlData + htmlFooter);
-            }
-        });
+            var htmlData = '<div class="input-group">' +
+                '<input id="omics-copy-field" class="form-control omics-code-input" type="text" value="icd ' + irodsPath + '" readonly/>' +
+                '<div class="input-group-append">' +
+                '<button class="btn btn-secondary omics-copy-btn" role="submit" data-clipboard-target="#omics-copy-field"><i class="fa fa-clipboard"></i> Copy</button></div>' +
+                '</div>';
 
-        $('.omics-lz-popup-cmd-btn').click(function() {
-            if ($(this).closest('tr').find('td.omics-lz-zone-status').text() !== 'MOVED') {
-                $('#omics-lz-popup-cmd').attr(
-                    'irods-path', $(this).attr('irods-path')).attr(
-                        'zone-title', $(this).attr('zone-title')).popup('show');
-            }
+             $('.modal-body').html(htmlData);
         });
     });
   </script>

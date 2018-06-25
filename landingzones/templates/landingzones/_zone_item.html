@@ -63,34 +63,9 @@
     <td class="omics-lz-zone-links">
       <span class="omics-lz-control">
         {% get_irods_path zone as zone_irods_path %}
-
-        {% if irods_backend %}
-          <button class="btn btn-secondary omics-list-btn omics-lz-popup-list-btn"
-                  list-url="{% url 'landingzones:irods_list' landingzone=zone.omics_uuid %}"
-                  zone-title="{{ zone.title }}" role="submit"
-                  data-toggle="tooltip" data-placement="top" title="List files in landing zone"
-                  {% if not zone_enabled %}
-                    disabled
-                  {% endif %}>
-            <i class="fa fa-folder-open-o"></i>
-          </button>
-        {% endif %}
-        <button class="btn btn-secondary omics-list-btn omics-lz-popup-cmd-btn"
-                irods-path="{{ zone_irods_path }}"
-                zone-title="{{ zone.title }}" role="submit"
-                data-toggle="tooltip" data-placement="top" title="Get iCommands path to landing zone"
-                {% if not zone_enabled %}
-                  disabled
-                {% endif %}>
-          <i class="fa fa-terminal"></i>
-         </button>
-
-        <a class="btn btn-secondary omics-list-btn omics-lz-dav-btn
-           {% if not zone_enabled or not irods_webdav_enabled or not irods_backend %} disabled{% endif %}"
-           href="{{ irods_webdav_url }}{{ zone_irods_path }}" role="button"
-           data-toggle="tooltip" data-placement="top" title="Browse files in WebDAV">
-          <i class="fa fa-external-link"></i>
-        </a>
+        {% get_zone_list_url zone as zone_list_url %}
+        {% is_zone_disabled zone as disable_all %}
+        {% include 'samplesheets/_irods_buttons.html' with investigation=zone.assay.study.investigation irods_path=zone_irods_path list_url=zone_list_url data_table=False show_file_list=True disable_all=disable_all%}
       </span>
     </td>
     <td class="omics-lz-zone-edit">

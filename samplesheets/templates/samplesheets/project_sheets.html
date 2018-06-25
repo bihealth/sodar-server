@@ -369,7 +369,7 @@
         /***************
          Link list Popup
          ***************/
-        $('.omics-ss-popup-list-btn').click(function() {
+        $('.omics-irods-popup-list-btn').click(function() {
             $('.modal-title').text('Files in iRODS');
             var listUrl = $(this).attr('list-url');
             var htmlData = '';
@@ -416,7 +416,7 @@
                 }
 
                 // Set success content and toggle modal
-                $('#omics-modal.modal-body').html(htmlData);
+                $('.modal-body').html(htmlData);
                 $('#omics-modal-wait').modal('hide');
                 $('#omics-modal').modal('show');
             }).fail(function (response) {
@@ -430,13 +430,12 @@
 
             // Set waiting content and toggle modal
             $('#omics-modal-wait').modal('show');
-            $('.modal-body').html(popupWaitHtml);
         });
 
         /**************
          iCommand Popup
          **************/
-        $('.omics-ss-popup-cmd-btn').click(function() {
+        $('.omics-irods-popup-cmd-btn').click(function() {
             var irodsPath = $(this).attr('irods-path');
             $('.modal-title').text('iRODS iCommands Access');
 

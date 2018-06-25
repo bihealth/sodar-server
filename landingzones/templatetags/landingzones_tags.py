@@ -65,3 +65,19 @@ def get_zone_samples_url(zone):
 def is_zone_enabled(zone):
     """Return True/False if the zone can be enabled in the UI"""
     return True if zone.status not in DISABLED_STATES else False
+
+
+@register.simple_tag
+def is_zone_disabled(zone):
+    """Return True/False if the zone can be enabled in the UI"""
+    # NOTE: Have to do this silly hack because limitations of Django templates
+    return False if zone.status not in DISABLED_STATES else True
+
+
+@register.simple_tag
+def get_zone_list_url(zone):
+    """Return iRODS file list querying URL for landing zone"""
+    return reverse(
+        'landingzones:irods_list',
+        kwargs={
+            'landingzone': zone.omics_uuid})

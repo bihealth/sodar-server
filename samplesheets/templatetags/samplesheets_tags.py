@@ -381,3 +381,18 @@ def get_irods_path(obj):
         return irods_backend.get_path(obj)
 
     return None
+
+
+@register.simple_tag
+def get_assay_list_url(assay, path):
+    """
+    Return iRODS file list querying URL for assay
+    :param assay: Assay object
+    :param path: iRODS path
+    :return: String
+    """
+    return reverse(
+        'samplesheets:irods_list',
+        kwargs={
+            'assay': assay.omics_uuid,
+            'path': path})
