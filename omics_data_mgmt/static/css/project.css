@@ -534,8 +534,8 @@ img.omics-navbar-logo {
   padding-left: 16px;
 }
 
-.popover{
-  max-width: 600px;
+.modal-dialog{
+  max-width: 800px;
 }
 
 .omics-breadcrumb-table {

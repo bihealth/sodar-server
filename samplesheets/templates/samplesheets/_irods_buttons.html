@@ -10,8 +10,9 @@
             irods-path="{{ irods_path }}"
             list-url="{% url 'samplesheets:irods_list' assay=assay.omics_uuid path=irods_path %}"
             role="submit"
+            {# NOTE: Modal not triggered here as data is async, see JQuery #}
             {% if not data_table %}
-              data-toggle="tooltip" data-placement="top"
+              data-tooltip="tooltip" data-placement="top"
             {% endif %}
             title="List files"
             {% if not investigation.irods_status %} disabled{% endif %}>
@@ -20,8 +21,9 @@
   {% endif %}
   <button class="btn btn-secondary omics-list-btn omics-ss-popup-cmd-btn"
           irods-path="{{ irods_path }}" role="submit"
+          data-toggle="modal" data-target="#omics-modal"
           {% if not data_table %}
-            data-toggle="tooltip" data-placement="top"
+            data-tooltip="tooltip" data-placement="top"
           {% endif %}
           title="Get iCommands path to files"
           {% if not investigation.irods_status %} disabled{% endif %}>
@@ -31,7 +33,7 @@
      {% if not irods_webdav_enabled or not investigation.irods_status %} disabled{% endif %}"
      href="{{ irods_webdav_url }}{{ irods_path }}" role="button"
      {% if not data_table %}
-       data-toggle="tooltip" data-placement="top"
+       data-tooltip="tooltip" data-placement="top"
      {% endif %}
      title="Browse files in WebDAV">
     <i class="fa fa-external-link"></i>

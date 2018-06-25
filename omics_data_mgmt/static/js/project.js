@@ -40,7 +40,8 @@ function humanFileSize(bytes, si) {
 
 
 // Define common HTML for Ajax popups
-var popupWaitHtml = '<div class="display-3 w-100 text-center"><i class="fa fa-spin fa-circle-o-notch text-white"></i></div>';
+var popupWaitHtml = '<div class="display-3 w-100 text-center">' +
+    '<i class="fa fa-spin fa-circle-o-notch text-white"></i></div>';
 var popupNoFilesHtml = '<span class="text-muted"><em>No files found</em></span>';
 
 
@@ -61,7 +62,7 @@ $('[data-toggle="popover"]').popover({
 
 // Set up Bootstrap tooltip
 $(function(){
-    $('[data-toggle="tooltip"]').tooltip({
+    $('[data-tooltip="tooltip"]').tooltip({
         trigger : 'hover'
     });
 });
