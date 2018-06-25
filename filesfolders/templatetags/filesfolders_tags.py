@@ -17,16 +17,6 @@ def get_class(obj):
     return obj.__class__.__name__
 
 
-@register.filter
-def force_wrap(obj, length):
-    # If string contains spaces, leave wrapping to browser
-    if obj.find(' ') == -1 and len(obj) > length:
-        return '<wbr />'.join(
-            [obj[i:i + length] for i in range(0, len(obj), length)])
-
-    return obj
-
-
 @register.simple_tag
 def get_details_items(project):
     """Return recent files/links for card on project details page"""

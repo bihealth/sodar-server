@@ -17,11 +17,11 @@
   {# Name/link column #}
   <td>
     {% if item|get_class == 'Folder' %}
-      <a href="{% url 'filesfolders:list' folder=item.omics_uuid %}">{% autoescape off %}{{ item.name|force_wrap:24 }}{% endautoescape %}</a>
+      <a href="{% url 'filesfolders:list' folder=item.omics_uuid %}">{{ item.name|force_wrap:24|safe }}</a>
     {% elif item|get_class == 'HyperLink' %}
-      <a href="{{ item.url }}" target="_blank">{% autoescape off %}{{ item.name|force_wrap:24 }}{% endautoescape %}</a>
+      <a href="{{ item.url }}" target="_blank">{{ item.name|force_wrap:24|safe }}</a>
     {% elif item|get_class == 'File' %}
-      <a href="{% url 'filesfolders:file_serve' file=item.omics_uuid file_name=item.name %}">{% autoescape off %}{{ item.name|force_wrap:24 }}{% endautoescape %}</a>
+      <a href="{% url 'filesfolders:file_serve' file=item.omics_uuid file_name=item.name %}">{{ item.name|force_wrap:24|safe }}</a>
       {% if allow_public_links and item.public_url and can_share_link %}
         <a title="Public Link" href="{% url 'filesfolders:file_public_link' file=item.omics_uuid %}" id="omics-ff-link-public-{{ item.omics_uuid }}" data-toggle="tooltip" data-placement="top">
           <i class="fa fa-link" aria-hidden="false"></i>
