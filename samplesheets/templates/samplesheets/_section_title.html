@@ -8,14 +8,14 @@
       <i class="fa fa-fw fa-list-alt"></i>Study:
     {% endif %}
     {{ item.get_display_name }}
+    {% if request.user.is_superuser and content_plugin %}
+        <i class="fa fa-puzzle-piece {% if section_type == 'assay' %}text-danger{% else %}text-info{% endif %} ml-1"
+           data-toggle="tooltip" data-placement="left"
+           title="Using: {{ content_plugin.title }}"></i>
+    {% endif %}
   </h4>
     <div class="ml-auto">
       {% get_irods_path item as section_irods_path %}
       {% include 'samplesheets/_irods_buttons.html' with irods_path=section_irods_path data_table=False show_file_list=False %}
-      {% if request.user.is_superuser and content_plugin %}
-        <i class="fa fa-puzzle-piece fa-2x text-secondary ml-1"
-           data-toggle="tooltip" data-placement="left"
-           title="Using: {{ content_plugin.title }}"></i>
-      {% endif %}
     </div>
 </div>
