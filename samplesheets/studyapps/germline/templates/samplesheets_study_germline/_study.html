@@ -1,5 +1,3 @@
-{# TODO: Get app name dynamically #}
-
 {% load samplesheets_tags %}
 
 <script type="text/javascript">
@@ -40,7 +38,7 @@
   {% if investigation.irods_status %}
     <div class="card-body omics-card-body-table">
       <div class="table-responsive omics-ss-init-container">
-        <table class="table cell-border order-column omics-card-table omics-ss-data-table omics-ss-data-table-contentapp" id="omics-ss-germline-table">
+        <table class="table cell-border order-column omics-ss-data-table omics-ss-data-table-configapp" id="omics-ss-germline-table">
           <thead>
             <tr>
               <th>Family</th>
@@ -57,72 +55,65 @@
                 <td>
                   {% get_family_sources study fam_id as fam_sources %}
                   {% for fam_source in fam_sources %}
-<<<<<<< HEAD:samplesheets/studyapps/germline/templates/samplesheets_study_germline/_study.html
-                    <a class="mr-3 text-nowrap" href="{% url 'samplesheets.studyapps.germline:file' file_type='bam' genericmaterial=fam_source.omics_uuid %}">{{ fam_source.name }} <i class="fa fa-external-link"></i></a>
-                  {% endfor %}
-                </td>
-                <td><a class="text-nowrap" href="{% url 'samplesheets.studyapps.germline:file' file_type='vcf' genericmaterial=fam_sources.0.omics_uuid %}">Pedigree VCF file <i class="fa fa-external-link"></i></a></td>
-                <td><a class="text-nowrap" href="{% url 'samplesheets.studyapps.germline:igv' genericmaterial=fam_sources.0.omics_uuid %}">Pedigree IGV session file <i class="fa fa-file-text-o"></i></a></td>
-=======
-                    <div class="btn-group">
-                      <a role="button" class="btn btn-sm btn-secondary" href="{% url 'samplesheets.configapps.bih_germline:file' file_type='bam' genericmaterial=fam_source.omics_uuid %}" title="Download {{ fam_source.name }} BAM file">
+                    {% url 'samplesheets.studyapps.germline:file' file_type='bam' genericmaterial=fam_source.omics_uuid as bam_url %}
+                    <div class="btn-group omics-edit-button-group">
+                      <a role="button" class="btn omics-list-btn btn-secondary" href="{{ bam_url }}" title="Download {{ fam_source.name }} BAM file">
                         <i class="fa fa-download"></i> {{ fam_source.name }}
                       </a>
-                      <!-- TODO: btn-sm does not work here :( -->
-                      <button type="button" class="btn btn-sm btn-secondary dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                      <button type="button" class="btn omics-list-btn btn-secondary dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                         <span class="sr-only">Toggle Dropdown</span>
                       </button>
-                      <div class="dropdown-menu">
-                        <a class="dropdown-item" href="{% url 'samplesheets.configapps.bih_germline:file' file_type='bam' genericmaterial=fam_source.omics_uuid %}" title="Download {{ fam_source.name }} BAM file">
-                          <i class="fa fa-download"></i> download
+                      <div class="dropdown-menu dropdown-menu-right">
+                        <a class="dropdown-item" href="{{ bam_url }}" title="Download {{ fam_source.name }} BAM file">
+                          <i class="fa fa-download"></i> Download
                         </a>
                         <!-- TODO: (1) not full URL, (2) configure genome build in project config, (3) get port from user profile -->
-                        <a class="dropdown-item" href="http://127.0.0.1:60151/load?genome=b37&merge=true&file=http://localhost:8000{% url 'samplesheets.configapps.bih_germline:file' file_type='bam' genericmaterial=fam_source.omics_uuid %}" title="Open {{ fam_source.name }} BAM file in IGV">
-                          <i class="fa fa-share-square-o"></i> open in IGV
+                        <a class="dropdown-item" href="http://127.0.0.1:60151/load?genome=b37&merge=true&file=http://localhost:8000{{ bam_url }}" title="Open {{ fam_source.name }} BAM file in IGV">
+                          <i class="fa fa-share-square-o"></i> Open in IGV
                         </a>
                       </div>
                     </div>
                   {% endfor %}
                 </td>
                 <td>
-                  <div class="btn-group">
-                    <a role="button" class="btn btn-sm btn-secondary" href="{% url 'samplesheets.configapps.bih_germline:file' file_type='vcf' genericmaterial=fam_sources.0.omics_uuid %}" title="Download pedigree VCF file">
-                      <i class="fa fa-download"></i> download
+                  {% url 'samplesheets.studyapps.germline:file' file_type='vcf' genericmaterial=fam_sources.0.omics_uuid as vcf_url %}
+                  <div class="btn-group omics-edit-button-group">
+                    <a role="button" class="btn omics-list-btn btn-secondary" href="" title="Download pedigree VCF file">
+                      <i class="fa fa-download"></i> Download
                     </a>
-                    <!-- TODO: btn-sm does not work here :( -->
-                    <button type="button" class="btn btn-sm btn-secondary dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <button type="button" class="btn omics-list-btn btn-secondary dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                       <span class="sr-only">Toggle Dropdown</span>
                     </button>
-                    <div class="dropdown-menu">
-                      <a class="dropdown-item" href="{% url 'samplesheets.configapps.bih_germline:file' file_type='vcf' genericmaterial=fam_sources.0.omics_uuid %}" title="Download pedigree VCF file">
-                        <i class="fa fa-download"></i> download
+                    <div class="dropdown-menu dropdown-menu-right">
+                      <a class="dropdown-item" href="{{ vcf_url }}" title="Download pedigree VCF file">
+                        <i class="fa fa-download"></i> Download
                       </a>
                       <!-- TODO: (1) not full URL, (2) configure genome build in project config, (3) get port from user profile -->
-                      <a class="dropdown-item" href="http://127.0.0.1:60151/load?genome=b37&merge=true&file=http://localhost:8000{% url 'samplesheets.configapps.bih_germline:file' file_type='vcf' genericmaterial=fam_sources.0.omics_uuid %}" title="Open pedigree VCF file in IGV">
-                        <i class="fa fa-share-square-o"></i> open in IGV
+                      <a class="dropdown-item" href="http://127.0.0.1:60151/load?genome=b37&merge=true&file=http://localhost:8000{{ vcf_url }}" title="Open pedigree VCF file in IGV">
+                        <i class="fa fa-share-square-o"></i> Open in IGV
                       </a>
                     </div>
-                  <td>
-                  <div class="btn-group">
-                    <a role="button" class="btn btn-sm btn-secondary" href="{% url 'samplesheets.configapps.bih_germline:igv' genericmaterial=fam_sources.0.omics_uuid %}" title="Download IGV ession file for full pedigree">
-                      <i class="fa fa-download"></i> download
+                  </div>
+                <td>
+                    {% url 'samplesheets.studyapps.germline:igv' genericmaterial=fam_sources.0.omics_uuid as igv_url %}
+                    <div class="btn-group omics-edit-button-group">
+                    <a role="button" class="btn omics-list-btn btn-secondary" href="{{ igv_url }}" title="Download IGV session file for full pedigree">
+                      <i class="fa fa-download"></i> Download
                     </a>
-                    <!-- TODO: btn-sm does not work here :( -->
-                    <button type="button" class="btn btn-sm btn-secondary dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <button type="button" class="btn omics-list-btn btn-secondary dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                       <span class="sr-only">Toggle Dropdown</span>
                     </button>
-                    <div class="dropdown-menu">
-                      <a class="dropdown-item" href="{% url 'samplesheets.configapps.bih_germline:igv' genericmaterial=fam_sources.0.omics_uuid %}" title="Download IGV ession file for full pedigree">
-                        <i class="fa fa-download"></i> download
+                    <div class="dropdown-menu dropdown-menu-right">
+                      <a class="dropdown-item" href="{{ igv_url }}" title="Download IGV session file for full pedigree">
+                        <i class="fa fa-download"></i> Download
                       </a>
                       <!-- TODO: (1) not full URL, (2) configure genome build in project config, (3) get port from user profile -->
-                      <a class="dropdown-item" href="http://127.0.0.1:60151/load?genome=b37&merge=false&file=http://localhost:8000{% url 'samplesheets.configapps.bih_germline:igv' genericmaterial=fam_sources.0.omics_uuid %}" title="Open IGV session file for full pedigree in IGV">
-                        <i class="fa fa-share-square-o"></i> open in IGV
+                      <a class="dropdown-item" href="http://127.0.0.1:60151/load?genome=b37&merge=false&file=http://localhost:8000{{ igv_url }}" title="Open IGV session file for full pedigree in IGV">
+                        <i class="fa fa-share-square-o"></i> Open in IGV
                       </a>
                     </div>
                   </div>
                 </td>
->>>>>>> 75cd154c32453ae206ff5294cca18db45d87eb97:samplesheets/configapps/bih_germline/templates/samplesheets_config_bih_germline/_study.html
               </tr>
             {% endfor %}
           </tbody>
