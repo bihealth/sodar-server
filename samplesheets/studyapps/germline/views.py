@@ -47,6 +47,9 @@ class BaseGermlineConfigView(
         :param study_tables: Render study tables
         :return: String
         """
+
+        # TODO: Refactor this horrible mess
+
         irods_backend = get_backend_api('omics_irods')
         query_paths = []
 
@@ -57,10 +60,14 @@ class BaseGermlineConfigView(
 
             # Get family index
             try:
-                fam_idx = assay_table['field_header'].index('Family')
+                fam_idx = next((
+                    i for (i, x) in enumerate(assay_table['field_header']) if
+                    x['value'] == 'Family'), None) - 1
+                print('fam_idx={}'.format(fam_idx))     # DEBUG
 
             except ValueError:
                 fam_idx = None
+                print('fam_idx not found')  # DEBUG
 
             for row in assay_table['table_data']:
                 if ((file_type == 'bam' and row[1]['value'] == source.name) or (
@@ -72,6 +79,11 @@ class BaseGermlineConfigView(
                     if assay_plugin:
                         path = assay_plugin.get_row_path(
                             row, assay_table, assay)
+
+                    else:
+                        path = irods_backend.get_path(assay)
+
+                    if path not in query_paths:
                         query_paths.append(path)
 
         file_paths = []
@@ -81,8 +93,10 @@ class BaseGermlineConfigView(
                 obj_list = irods_backend.get_objects(query_path)
 
                 for obj in obj_list['data_objects']:
-                    if obj['name'].lower().endswith(
-                            FILE_TYPE_SUFFIX[file_type]):
+                    # NOTE: We expect the source name to appear in filenames
+                    if (obj['name'].lower().endswith(
+                            FILE_TYPE_SUFFIX[file_type]) and
+                            source.name in obj['name']):
                         file_paths.append(obj['path'])
 
             except FileNotFoundError:

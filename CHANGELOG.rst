@@ -64,6 +64,7 @@ Fixed
     - Study and Assay UUIDs changed during replace (#234)
     - Missing iCommands path in popup (#250)
     - Improve study and assay layout
+    - Linking of BAM and VCF files if no assay plugin was found (#264)
 - **Timeline**
     - Long labels broke timeline table (#225)
 
