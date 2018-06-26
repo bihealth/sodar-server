@@ -4,6 +4,7 @@ import mistune
 
 from django import template
 from django.urls import reverse
+from django.utils.http import urlquote
 
 from projectroles.plugins import get_backend_api
 
@@ -100,3 +101,9 @@ def force_wrap(s, length):
             [s[i:i + length] for i in range(0, len(s), length)])
 
     return s
+
+
+@register.simple_tag
+def get_full_url(request, url):
+    """Get full URL based on a local URL"""
+    return request.scheme + '://' + request.get_host() + url

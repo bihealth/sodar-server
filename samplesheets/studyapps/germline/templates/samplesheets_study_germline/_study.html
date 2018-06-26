@@ -1,4 +1,8 @@
+{# Samplesheets dependence #}
 {% load samplesheets_tags %}
+
+{# Projectroles dependence #}
+{% load projectroles_common_tags %}
 
 <script type="text/javascript">
     $(document).ready(function() {
@@ -36,9 +40,9 @@
     </h4>
   </div>
   {% if investigation.irods_status %}
-    <div class="card-body omics-card-body-table">
+    <div class="card-body omics-card-body-table omics-ss-contentapp-container">
       <div class="table-responsive omics-ss-init-container">
-        <table class="table cell-border order-column omics-ss-data-table omics-ss-data-table-configapp" id="omics-ss-germline-table">
+        <table class="table cell-border order-column omics-ss-data-table omics-ss-data-table-contentapp" id="omics-ss-germline-table">
           <thead>
             <tr>
               <th>Family</th>
@@ -54,6 +58,7 @@
                 <td>{{ fam_id }}</td>
                 <td>
                   {% get_family_sources study fam_id as fam_sources %}
+                  {% get_full_url request bam_url as full_bam_url %}
                   {% for fam_source in fam_sources %}
                     {% url 'samplesheets.studyapps.germline:file' file_type='bam' genericmaterial=fam_source.omics_uuid as bam_url %}
                     <div class="btn-group omics-edit-button-group">
@@ -68,7 +73,7 @@
                           <i class="fa fa-download"></i> Download
                         </a>
                         <!-- TODO: (1) not full URL, (2) configure genome build in project config, (3) get port from user profile -->
-                        <a class="dropdown-item" href="http://127.0.0.1:60151/load?genome=b37&merge=true&file=http://localhost:8000{{ bam_url }}" title="Open {{ fam_source.name }} BAM file in IGV">
+                        <a class="dropdown-item" href="http://127.0.0.1:60151/load?genome=b37&merge=true&file={{ full_bam_url }}" title="Open {{ fam_source.name }} BAM file in IGV">
                           <i class="fa fa-share-square-o"></i> Open in IGV
                         </a>
                       </div>
@@ -77,8 +82,9 @@
                 </td>
                 <td>
                   {% url 'samplesheets.studyapps.germline:file' file_type='vcf' genericmaterial=fam_sources.0.omics_uuid as vcf_url %}
+                  {% get_full_url request vcf_url as full_vcf_url %}
                   <div class="btn-group omics-edit-button-group">
-                    <a role="button" class="btn omics-list-btn btn-secondary" href="" title="Download pedigree VCF file">
+                    <a role="button" class="btn omics-list-btn btn-secondary" href="{{ vcf_url }}" title="Download pedigree VCF file">
                       <i class="fa fa-download"></i> Download
                     </a>
                     <button type="button" class="btn omics-list-btn btn-secondary dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -89,14 +95,15 @@
                         <i class="fa fa-download"></i> Download
                       </a>
                       <!-- TODO: (1) not full URL, (2) configure genome build in project config, (3) get port from user profile -->
-                      <a class="dropdown-item" href="http://127.0.0.1:60151/load?genome=b37&merge=true&file=http://localhost:8000{{ vcf_url }}" title="Open pedigree VCF file in IGV">
+                      <a class="dropdown-item" href="http://127.0.0.1:60151/load?genome=b37&merge=true&file={{ full_vcf_url }}" title="Open pedigree VCF file in IGV">
                         <i class="fa fa-share-square-o"></i> Open in IGV
                       </a>
                     </div>
                   </div>
                 <td>
-                    {% url 'samplesheets.studyapps.germline:igv' genericmaterial=fam_sources.0.omics_uuid as igv_url %}
-                    <div class="btn-group omics-edit-button-group">
+                  {% url 'samplesheets.studyapps.germline:igv' genericmaterial=fam_sources.0.omics_uuid as igv_url %}
+                  {% get_full_url request igv_url as full_igv_url %}
+                  <div class="btn-group omics-edit-button-group">
                     <a role="button" class="btn omics-list-btn btn-secondary" href="{{ igv_url }}" title="Download IGV session file for full pedigree">
                       <i class="fa fa-download"></i> Download
                     </a>
@@ -108,7 +115,7 @@
                         <i class="fa fa-download"></i> Download
                       </a>
                       <!-- TODO: (1) not full URL, (2) configure genome build in project config, (3) get port from user profile -->
-                      <a class="dropdown-item" href="http://127.0.0.1:60151/load?genome=b37&merge=false&file=http://localhost:8000{{ igv_url }}" title="Open IGV session file for full pedigree in IGV">
+                      <a class="dropdown-item" href="http://127.0.0.1:60151/load?genome=b37&merge=false&file={{ full_igv_url }}" title="Open IGV session file for full pedigree in IGV">
                         <i class="fa fa-share-square-o"></i> Open in IGV
                       </a>
                     </div>
