@@ -44,7 +44,7 @@
           {% if not investigation.irods_status or disable_all %} disabled{% endif %}>
     <i class="fa fa-clipboard"></i>
   </button>
-  <a class="btn btn-secondary omics-list-btn omics-irods-dav-btn mr-1
+  <a class="btn btn-secondary omics-list-btn omics-irods-dav-btn {% if data_table %}mr-1{% endif %}
      {% if not irods_webdav_enabled or not investigation.irods_status or disable_all %} disabled{% endif %}"
      href="{{ irods_webdav_url }}{{ irods_path }}" role="button"
      data-table="{% if data_table %}1{% else %}0{% endif %}"
