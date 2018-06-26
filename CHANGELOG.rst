@@ -33,6 +33,7 @@ Changed
     - Rebrand site as SODAR (#166)
     - Separate manual from development docs (#50, #237)
     - Use Bootstrap4 modal instead of jquery.popupoverlay (#180)
+    - Improve login user experience (#229)
 - **Landingzones**
     - Make landing zone deletion async (#228)
     - Refactor zone list item rendering
