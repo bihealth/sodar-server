@@ -24,6 +24,7 @@ Added
     - Add pep_ms assay app (#245)
     - Object metadata in sample sheet table rendering (#254)
     - Show investigation configuration in study details table
+    - WebDAV clipboard copying links (#257)
 
 Changed
 -------
@@ -49,6 +50,7 @@ Changed
     - Change ``get_assay_path()`` into a more general ``get_irods_path()`` in template tags (#257)
     - Display study and assay links on the project details page (#257)
     - Move commonly used javascript to ``samplesheets_common.js`` (#181)
+    - iCommands button copies link to clipboard without popup (#257)
 
 Fixed
 -----

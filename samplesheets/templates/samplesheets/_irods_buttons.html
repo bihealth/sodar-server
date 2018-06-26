@@ -26,19 +26,28 @@
       <i class="fa fa-folder-open-o"></i>
     </button>
   {% endif %}
-  <button class="btn btn-secondary omics-list-btn omics-irods-popup-cmd-btn"
-          irods-path="{{ irods_path }}" role="submit"
-          data-toggle="modal" data-target="#omics-modal"
+  <button class="btn btn-secondary omics-list-btn omics-irods-copy-btn"
+          data-clipboard-text="icd {{ irods_path }}" role="submit"
+          data-table="{% if data_table %}1{% else %}0{% endif %}"
           {% if not data_table %}
             data-tooltip="tooltip" data-placement="top"
           {% endif %}
-          title="Get iCommands path to files"
+          title="Copy icd iCommand into clipboard"
           {% if not investigation.irods_status or disable_all %} disabled{% endif %}>
     <i class="fa fa-terminal"></i>
+  </button>
+  <button class="btn btn-secondary omics-list-btn omics-irods-copy-btn
+          {% if not irods_webdav_enabled or not investigation.irods_status or disable_all %} disabled{% endif %}"
+          data-clipboard-text="{{ irods_webdav_url }}{{ irods_path }}" role="submit"
+          data-tooltip="tooltip" data-placement="top"
+          title="Copy WebDAV URL into clipboard"
+          {% if not investigation.irods_status or disable_all %} disabled{% endif %}>
+    <i class="fa fa-clipboard"></i>
   </button>
   <a class="btn btn-secondary omics-list-btn omics-irods-dav-btn mr-1
      {% if not irods_webdav_enabled or not investigation.irods_status or disable_all %} disabled{% endif %}"
      href="{{ irods_webdav_url }}{{ irods_path }}" role="button"
+     data-table="{% if data_table %}1{% else %}0{% endif %}"
      {% if not data_table %}
        data-tooltip="tooltip" data-placement="top"
      {% endif %}
