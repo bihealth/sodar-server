@@ -433,3 +433,7 @@ IRODS_PASS = env.str('IRODS_PASS', 'rods')
 IRODS_SAMPLE_DIR = 'sample_data'
 IRODS_LANDING_ZONE_DIR = 'landing_zones'
 IRODS_CERT_PATH = STATIC_ROOT + '/irods/irods_server.crt'
+
+# Settings for HTTP AuthBasic
+BASICAUTH_REALM = 'Login with user@CHARITE or user@MDC-BERLIN and your password.'
+BASICAUTH_DISABLE = False
