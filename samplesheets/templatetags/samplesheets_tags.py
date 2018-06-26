@@ -381,26 +381,35 @@ def get_irods_row_path(assay, assay_table, row, assay_plugin):
 
 
 @register.simple_tag
-def get_irods_path(obj):
+def get_irods_path(obj, sub_path=None):
     """
     Return iRODS path for an object or None if not found
     :param obj: Study, Assay etc. type object
+    :param sub_path: If defined, add a sub path below object
     :return: String or none
     """
     if irods_backend:
-        return irods_backend.get_path(obj)
+        path = irods_backend.get_path(obj)
+
+        if sub_path:
+            path += '/' + sub_path
+
+        return path
 
     return None
 
 
 @register.simple_tag
-def get_assay_list_url(assay, path):
+def get_assay_list_url(assay, path=None):
     """
     Return iRODS file list querying URL for assay
     :param assay: Assay object
-    :param path: iRODS path
+    :param path: iRODS path: if None, default path for assay will be used
     :return: String
     """
+    if not path and irods_backend:
+        path = irods_backend.get_path(assay)
+
     return reverse(
         'samplesheets:irods_list',
         kwargs={

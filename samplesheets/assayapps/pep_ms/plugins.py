@@ -1,7 +1,5 @@
 from django.conf import settings
 
-from projectroles.plugins import get_backend_api
-
 from samplesheets.models import GenericMaterial, Process
 from samplesheets.plugins import SampleSheetAssayPluginPoint
 

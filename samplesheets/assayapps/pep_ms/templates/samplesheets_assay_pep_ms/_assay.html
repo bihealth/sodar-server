@@ -26,13 +26,17 @@
           <tr>
             <td>Raw Data</td>
             <td>
-              {% include 'samplesheets/_irods_buttons.html' with irods_path=assay_path|add:'/'|add:assay_plugin.raw_data_coll %}
+              {% get_irods_path assay assay_plugin.raw_data_coll as raw_data_path %}
+              {% get_assay_list_url assay raw_data_path as raw_data_url %}
+              {% include 'samplesheets/_irods_buttons.html' with irods_path=raw_data_path investigation=assay.study.investigation show_file_list=True list_url=raw_data_url %}
             </td>
           </tr>
           <tr>
             <td>MaxQuant Results</td>
             <td>
-              {% include 'samplesheets/_irods_buttons.html' with irods_path=assay_path|add:'/'|add:assay_plugin.max_quant_coll %}
+              {% get_irods_path assay assay_plugin.max_quant_coll as max_quant_path %}
+              {% get_assay_list_url assay max_quant_path as max_quant_url %}
+              {% include 'samplesheets/_irods_buttons.html' with irods_path=max_quant_path investigation=assay.study.investigation show_file_list=True list_url=max_quant_url %}
             </td>
           </tr>
         </tbody>
