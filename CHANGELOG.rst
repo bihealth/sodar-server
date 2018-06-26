@@ -25,6 +25,7 @@ Added
     - Object metadata in sample sheet table rendering (#254)
     - Show investigation configuration in study details table
     - WebDAV clipboard copying links (#257)
+    - IGV integration and auth-basic support for germline study app
 
 Changed
 -------
