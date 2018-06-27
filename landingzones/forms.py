@@ -10,7 +10,7 @@ from projectroles.plugins import get_backend_api
 # Samplesheets dependency
 from samplesheets.models import Assay
 
-from .models import LandingZone
+from .models import LandingZone, ZONE_CONFIGURATIONS
 
 
 class LandingZoneForm(forms.ModelForm):
@@ -22,7 +22,7 @@ class LandingZoneForm(forms.ModelForm):
 
     class Meta:
         model = LandingZone
-        fields = ['assay', 'title_suffix', 'description']
+        fields = ['assay', 'title_suffix', 'description', 'configuration']
 
     def __init__(
             self, current_user=None, project=None, assay=None,
@@ -62,6 +62,13 @@ class LandingZoneForm(forms.ModelForm):
         self.fields['title_suffix'].label = 'Title suffix'
         self.fields['title_suffix'].help_text = \
             'Zone title suffix (optional, maximum 64 characters)'
+
+        # Get options for configuration
+        self.fields['configuration'].widget = forms.Select()
+        # TODO: Get choices from landingzones config app plugins
+        self.fields['configuration'].widget.choices = [(None, '--------------')]
+        self.fields['configuration'].widget.choices += [
+            (k, v) for k, v in ZONE_CONFIGURATIONS.items()]  # TODO: Sort
 
         # Creation
         if not self.instance.pk:

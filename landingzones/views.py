@@ -125,6 +125,8 @@ class ZoneCreateView(
             # Create landing zone object in Django db
             # NOTE: We have to do this beforehand to work properly as async
             zone = form.save()
+            config_str = ' with configuration "{}"'.format(
+                zone.configuration) if zone.configuration else ''
 
             # Add event in Timeline
             if timeline:
@@ -133,9 +135,9 @@ class ZoneCreateView(
                     app_name=APP_NAME,
                     user=self.request.user,
                     event_name='zone_create',
-                    description='create landing zone {{{}}} for {{{}}} in '
+                    description='create landing zone {{{}}}{} for {{{}}} in '
                                 '{{{}}}'.format(
-                                    'zone', 'user', 'assay'),
+                                    'zone', config_str, 'user', 'assay'),
                     status_type='SUBMIT')
 
                 tl_event.add_object(
@@ -164,6 +166,7 @@ class ZoneCreateView(
                 'assay_path': irods_backend.get_subdir(
                     assay, landing_zone=True),
                 'description': zone.description,
+                'zone_config': zone.configuration,
                 'dirs': dirs}
 
             try:
@@ -177,9 +180,9 @@ class ZoneCreateView(
 
                 messages.warning(
                     self.request,
-                    'Landing zone "{}" creation initiated: '
+                    'Landing zone "{}" creation initiated{}: '
                     'see the zone list for the creation status'.format(
-                        zone.title))
+                        zone.title, config_str))
 
             except taskflow.FlowSubmitException as ex:
                 if tl_event:
@@ -282,6 +285,7 @@ class ZoneDeleteView(
             flow_data = {
                 'zone_title': zone.title,
                 'zone_uuid': zone.omics_uuid,
+                'zone_config': zone.configuration,
                 'assay_path': irods_backend.get_subdir(
                     zone.assay, landing_zone=True),
                 'user_name': zone.user.username}
@@ -392,6 +396,7 @@ class ZoneMoveView(
         flow_data = {
             'zone_title': str(zone.title),
             'zone_uuid': zone.omics_uuid,
+            'zone_config': zone.configuration,
             'assay_path_samples': irods_backend.get_subdir(
                 zone.assay, landing_zone=False),
             'assay_path_zone': irods_backend.get_subdir(

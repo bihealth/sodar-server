@@ -50,6 +50,12 @@ STATUS_STYLES = {
     'DELETED': 'bg-secondary'}
 
 
+# TODO: These should come from landing zone configapp plugins
+ZONE_CONFIGURATIONS = {
+    'bih_genomics_smb': 'BIH Genomics SMB'
+}
+
+
 class LandingZone(models.Model):
     """Class representing an user's iRODS landing zone for an assay"""
 
@@ -103,6 +109,15 @@ class LandingZone(models.Model):
         unique=False,
         blank=True,
         help_text='Landing zone description (optional)')
+
+    #: Special configuration
+    configuration = models.CharField(
+        max_length=64,
+        unique=False,
+        blank=True,
+        null=True,
+        help_text='Special configuration (optional, leave blank for a '
+                  'standard landing zone)')
 
     #: Landing zone Omics UUID
     omics_uuid = models.UUIDField(

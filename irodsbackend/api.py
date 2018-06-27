@@ -221,11 +221,14 @@ class IrodsAPI:
 
         # LandingZone
         elif obj_class == 'LandingZone':
-            path += '/{zone_dir}/{user}/{study_assay}/{zone_title}'.format(
+            path += '/{zone_dir}/{user}/{study_assay}/{zone_title}' \
+                    '{zone_config}'.format(
                 zone_dir=settings.IRODS_LANDING_ZONE_DIR,
                 user=obj.user.username,
                 study_assay=cls.get_subdir(obj.assay, landing_zone=True),
-                zone_title=obj.title)
+                zone_title=obj.title,
+                zone_config='_' + obj.configuration if
+                obj.configuration else '')
 
         return path
 
