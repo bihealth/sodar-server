@@ -109,6 +109,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                         'assay_path': irods_backend.get_subdir(
                             zone.assay, landing_zone=True),
                         'description': zone.description,
+                        'zone_config': zone.configuration,
                         'dirs': get_assay_dirs(zone.assay)}}
                 sync_flows.append(flow)
 

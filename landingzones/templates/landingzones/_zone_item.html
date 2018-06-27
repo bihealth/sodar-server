@@ -33,6 +33,9 @@
             <i class="fa fa-info-circle text-info"></i>
           </a>
       {% endif %}
+      {% if zone.configuration %}
+        <span class="badge badge-pill badge-success">{% get_configuration_legend zone %}</span>
+      {% endif %}
     </td>
   {% endif %}
   <td class="omics-lz-zone-assay">{{ zone.assay.get_display_name }}</td>
@@ -49,7 +52,7 @@
       {% endif %}
       {% if zone_enabled and irods_backend %}
         <p class="mb-0" id="omics-lz-zone-stats-container-{{ zone.omics_uuid }}">
-          <span class="badge badge-info" id="omics-lz-zone-stats-{{ zone.omics_uuid }}"><i class="fa fa-spin fa-circle-o-notch"></i> Updating stats..</span>
+          <span class="badge badge-pill badge-info" id="omics-lz-zone-stats-{{ zone.omics_uuid }}"><i class="fa fa-spin fa-circle-o-notch"></i> Updating stats..</span>
         </p>
       {% endif %}
   </td>
