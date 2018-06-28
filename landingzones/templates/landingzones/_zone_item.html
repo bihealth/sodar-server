@@ -16,28 +16,31 @@
     sample-url="{% get_zone_samples_url zone %}"
     status-url="{% url 'landingzones:status' landingzone=zone.omics_uuid %}"
     file-stats-url="{% url 'landingzones:statistics' landingzone=zone.omics_uuid %}">
-  {% if details_card_mode %}
-    <td><a href="{% url 'landingzones:list' project=project.omics_uuid %}#{{ zone.omics_uuid }}">{{ zone.title }}</a></td>
-  {% else %}
-    <td class="omics-lz-zone-title">
-      {% if zone.user != request.user %}
-        {% autoescape off %}
-          {% get_user_html zone.user %} /
-        {% endautoescape %}
+  <td class="omics-lz-zone-title">
+    {% if zone.user != request.user %}
+      {% autoescape off %}
+        {% get_user_html zone.user %} /
+      {% endautoescape %}
+    {% endif %}
+      {% if details_card_mode %}
+        <a href="{% url 'landingzones:list' project=project.omics_uuid %}#{{ zone.omics_uuid }}">
       {% endif %}
-        {{ zone.title|force_wrap:16|safe }}
-        {% if zone.description %}
-          <a class="omics-ss-assay-info-link" tabindex="0" data-toggle="popover"
-             data-trigger="focus" data-placement="top" data-html="true"
-             data-content="{% get_zone_desc_html zone %}">
-            <i class="fa fa-info-circle text-info"></i>
-          </a>
+      {{ zone.title|force_wrap:16|safe }}
+      {% if details_card_mode %}
+        </a>
       {% endif %}
-      {% if zone.configuration %}
-        <span class="badge badge-pill badge-success">{% get_config_legend zone %}</span>
-      {% endif %}
-    </td>
-  {% endif %}
+      {% if zone.description %}
+        <a class="omics-ss-assay-info-link" tabindex="0" data-toggle="popover"
+           data-trigger="focus" data-placement="top" data-html="true"
+           data-content="{% get_zone_desc_html zone %}">
+          <i class="fa fa-info-circle text-info"></i>
+        </a>
+    {% endif %}
+    {% if zone.configuration %}
+      <span class="badge badge-pill badge-success">{% get_config_legend zone %}</span>
+    {% endif %}
+  </td>
+
   <td class="omics-lz-zone-assay">{{ zone.assay.get_display_name }}</td>
   <td class="omics-lz-zone-status-info">
       <span id="omics-lz-zone-status-info-{{ zone.omics_uuid }}">
