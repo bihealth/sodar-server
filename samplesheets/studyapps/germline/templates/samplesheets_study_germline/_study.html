@@ -99,18 +99,17 @@
                   </div>
                 <td>
                   {% url 'samplesheets.studyapps.germline:igv' genericmaterial=fam_sources.0.omics_uuid as igv_url %}
-                  {% get_full_url request igv_url as full_igv_url %}
                   <div class="btn-group omics-edit-button-group">
                     <a role="button" class="btn omics-list-btn btn-secondary"
                        href="{{ igv_url }}" title="Download IGV session file for full pedigree">
                       <i class="fa fa-download"></i> Download
                     </a>
                     <!-- TODO: (1) not full URL, (2) configure genome build in project config, (3) get port from user profile -->
-                    <a role="button" class="btn omics-list-btn btn-secondary"
-                       href="http://127.0.0.1:60151/load?genome=b37&merge=false&file={{ full_igv_url }}"
+                    <button type="button" class="btn omics-list-btn btn-secondary"
+                       onclick="javascript:$.ajax({url: 'http://127.0.0.1:60151/load?genome=b37&merge=false&file=https://cubi-omics-davrods-beta.bihealth.org/__sodar{{ igv_url }}.xml'})"
                        title="Open IGV session file for full pedigree in IGV">
                       <i class="fa fa-share-square-o"></i> IGV
-                    </a>
+                    </button>
                   </div>
                 </td>
               </tr>
