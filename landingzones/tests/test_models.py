@@ -36,13 +36,14 @@ class LandingZoneMixin:
 
     @classmethod
     def _make_landing_zone(
-            cls, title, project, user, assay, description):
+            cls, title, project, user, assay, description, configuration):
         values = {
             'title': title,
             'project': project,
             'user': user,
             'assay': assay,
-            'description': description}
+            'description': description,
+            'configuration': configuration}
         result = LandingZone(**values)
         result.save()
         return result
@@ -77,7 +78,8 @@ class TestLandingZoneBase(
             project=self.project,
             user=self.user_owner,
             assay=self.assay,
-            description=ZONE_DESC)
+            description=ZONE_DESC,
+            configuration=None)
 
 
 class TestLandingZone(TestLandingZoneBase):
@@ -95,6 +97,7 @@ class TestLandingZone(TestLandingZoneBase):
             'user': self.user_owner.pk,
             'assay': self.assay.pk,
             'description': ZONE_DESC,
+            'configuration': None,
             'status': ZONE_STATUS_INIT,
             'status_info': ZONE_STATUS_INFO_INIT,
             'omics_uuid': self.landing_zone.omics_uuid}
@@ -154,5 +157,3 @@ class TestLandingZone(TestLandingZoneBase):
 
         with self.assertRaises(TypeError):
             self.landing_zone.set_status(status)
-
-    # TODO: test get_irods_path() once it's finalized

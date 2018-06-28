@@ -86,7 +86,8 @@ class TestViewsBase(
             project=self.project,
             user=self.as_owner.user,
             assay=self.assay,
-            description=ZONE_DESC)
+            description=ZONE_DESC,
+            configuration=None)
 
 
 class TestProjectZonesView(TestViewsBase):
@@ -137,6 +138,7 @@ class TestLandingZoneCreateView(TestViewsBase):
             self.assertIsNotNone(form.fields['title_suffix'])
             self.assertIsNotNone(form.fields['assay'])
             self.assertIsNotNone(form.fields['description'])
+            self.assertIsNotNone(form.fields['configuration'])
 
 
 class TestLandingStoneStatusGetAPIView(TestViewsBase):
