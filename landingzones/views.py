@@ -504,10 +504,10 @@ class ZoneClearView(
                 'project': project.omics_uuid}))
 
 
-# Javascript API Views ---------------------------------------------------
+# General API Views ------------------------------------------------------------
 
 
-class LandingZoneObjectListAPIView(
+class LandingZoneIrodsObjectListAPIView(
         LoginRequiredMixin, ProjectContextMixin, APIView):
     """View for listing landing zone objects in iRODS via Ajax"""
 
@@ -571,7 +571,40 @@ class LandingZoneStatusGetAPIView(
         return Response('Not authorized', status=403)
 
 
-class LandingZoneStatisticsGetAPIView(
+class LandingZoneListAPIView(APIView):
+    """View for returning a landing zone list based on its configuration"""
+
+    # NOTE: No auth or perms!
+    # TODO: TBD: Do we also need this to work without a configuration param?
+
+    def get(self, *args, **kwargs):
+        irods_backend = get_backend_api('omics_irods')
+
+        if not irods_backend:
+            return Response('iRODS backend not enabled', status=500)
+
+        zone_config = self.kwargs['configuration']
+        zones = LandingZone.objects.filter(configuration=zone_config)
+
+        if zones.count() == 0:
+            return Response('LandingZone not found', status=404)
+
+        ret_data = {}
+
+        for zone in zones:
+            # TODO: TBD: What exactly to return? Add/remove fields as needed
+            ret_data[str(zone.omics_uuid)] = {
+                'title': zone.title,
+                'assay': zone.assay.get_name(),
+                'user': zone.user.username,
+                'status': zone.status,
+                'configuration': zone.configuration,
+                'irods_path': irods_backend.get_path(zone)}
+
+        return Response(ret_data, status=200)
+
+
+class LandingZoneIrodsStatisticsGetAPIView(
         LoginRequiredMixin, ProjectContextMixin, APIView):
     """View for returning landing zone statistics for the UI"""
 

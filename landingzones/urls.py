@@ -31,7 +31,13 @@ urlpatterns = [
         view=views.ZoneClearView.as_view(),
         name='clear',
     ),
-    # Javascript API views
+    # General API views
+    # TODO: Refactor urls to have e.g. /api/ in them
+    url(
+        regex=r'^api/list/(?P<configuration>[\w\-_/]+)$',
+        view=views.LandingZoneListAPIView.as_view(),
+        name='api_list',
+    ),
     url(
         regex=r'^status/(?P<landingzone>[0-9a-f-]+)$',
         view=views.LandingZoneStatusGetAPIView.as_view(),
@@ -39,12 +45,12 @@ urlpatterns = [
     ),
     url(
         regex=r'^statistics/(?P<landingzone>[0-9a-f-]+)$',
-        view=views.LandingZoneStatisticsGetAPIView.as_view(),
+        view=views.LandingZoneIrodsStatisticsGetAPIView.as_view(),
         name='statistics',
     ),
     url(
         regex=r'^irods/list/(?P<landingzone>[0-9a-f-]+)$',
-        view=views.LandingZoneObjectListAPIView.as_view(),
+        view=views.LandingZoneIrodsObjectListAPIView.as_view(),
         name='irods_list',
     ),
     # Taskflow API views
