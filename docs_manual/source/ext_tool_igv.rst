@@ -59,7 +59,7 @@ Proxy Configuration
 - Enter the following values:
     - ``Proxy host``: ``proxy.charite.de``
     - ``Proxy port``: ``8080``
-    - ``Whitelist``: ``cubi-omics-davrods-beta.bihealth.org``
+    - ``Whitelist``: ``cubi-omics-davrods-beta.bihealth.org,cubi-omics-beta.bihealth.org``
 
 .. image:: _static/ext_tool_igv/IGV_Proxy_Settings.png
 

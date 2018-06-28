@@ -20,29 +20,11 @@ Prelude: Files in your Web Browser
 To just browse the files and downloading single files, you do not need to have any special program installed.
 
 First, go to your project that has file access enabled.
-You can theck this on the "Project Overview" page, the key "iRODS Repository" has to be set to "Available".
-
 All files of your project are associated with assay results.
-Thus, go to the "Sample Sheets" page of your project and scroll to the assay for which you want to access the files.
-On the right side of the assay, you will see the column "Links".
+In the "Sample Sheets Overview", you can copy the URL to the WebDAV server to your clipboard.
+For this, use the corresponding button next to the assay or project that you want to get data from.
 
 .. image:: _static/ext_tool_winscp/SODAR_Assay_Links.png
-
-These icons have the following meaning:
-
-- Folder icon - display files within the SODAR page.
-- ``>_`` - show iRODS command line to access sample data
-- Link icon - Display the iRODS location in your browser.
-
-Click on the "Link icon".
-You will be taken to another server that displays the files in your sample in your web browser.
-You will have to login again using your login ``user@CHARITE`` or ``user@MDC-BERLIN``.
-You will see a listing similar to the following:
-
-.. image:: _static/ext_tool_winscp/Browser_WebDAV.png
-
-Below, we will refer to the **full URL/address** of the locations in the SODAR file access system.
-You can get the address from this screen either from the address bar of your browser or by right-clicking on the the link after "Index of" and copying the link location into the clipboard.
 
 -----------------
 Installing WinSCP
@@ -72,9 +54,9 @@ Using WinSCP
 
     .. image:: _static/ext_tool_winscp/WinSCP_Login.png
 
-    - Set "File Protocol" to "WebDAV"
-    - Set "Encryption" to "TLS/SSL Implicit encryption"
-    - Paste the full URL/address (see above) into "Host name"
+    - Paste the full URL to the WebDAV server (see above) into the "Host" section.
+    - The "File Protocol" field will be automatically updated to "WebDAV".
+    - The "Encryption" field will be set to "TLS/SSL Implicit encryption".
     - Enter your user name into "User name"
     - Next, check that the correct path to the directory is used for connecting. Click "Advanced".
 
