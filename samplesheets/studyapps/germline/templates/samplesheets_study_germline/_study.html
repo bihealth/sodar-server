@@ -69,12 +69,14 @@
                          href="{{ bam_url }}" title="Download {{ fam_source.name }} BAM file">
                         <i class="fa fa-download"></i> Download
                       </a>
+                      {% comment %}
                       <!-- TODO: (1) not full URL, (2) configure genome build in project config, (3) get port from user profile -->
                       <a role="button" class="btn omics-list-btn btn-secondary"
                          href="http://127.0.0.1:60151/load?genome=b37&merge=true&file={{ full_bam_url }}"
                          title="Open {{ fam_source.name }} BAM file in IGV">
                         <i class="fa fa-share-square-o"></i> IGV
                       </a>
+                      {% endcomment %}
                     </div>
                   {% endfor %}
                 </td>
@@ -86,12 +88,14 @@
                        href="{{ vcf_url }}" title="Download pedigree VCF file">
                       <i class="fa fa-download"></i> Download
                     </a>
+                    {% comment %}
                     <!-- TODO: (1) not full URL, (2) configure genome build in project config, (3) get port from user profile -->
                     <a role="button" class="btn omics-list-btn btn-secondary"
                        href="http://127.0.0.1:60151/load?genome=b37&merge=true&file={{ full_vcf_url }}"
                        title="Open pedigree VCF file in IGV">
                       <i class="fa fa-share-square-o"></i> IGV
                     </a>
+                    {% endcomment %}
                   </div>
                 <td>
                   {% url 'samplesheets.studyapps.germline:igv' genericmaterial=fam_sources.0.omics_uuid as igv_url %}
