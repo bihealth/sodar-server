@@ -1,0 +1,23 @@
+{# Projectroles dependency #}
+{% extends 'projectroles/project_base.html' %}
+
+{% load rules %}
+{% load landingzones_tags %}
+
+{% block title %}
+  Get Landing Zone Access Ticket
+{% endblock title %}
+
+{% block projectroles_extend %}
+
+<div class="row omics-subtitle-container">
+  <h3>Get Landing Zone Access Ticket</h3>
+</div>
+
+<div class="container-fluid omics-page-container">
+  <div class="alert alert-danger" role="alert">
+    <strong>TODO:</strong> Provide ticket here for zone "{{ zone.title }}"...
+  </div>
+</div>
+
+{% endblock %}

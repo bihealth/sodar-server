@@ -1,4 +1,5 @@
 {% load rules %}
+{% load landingzones_tags %}
 
 {% has_perm 'landingzones.update_zones_own' request.user project as can_update_own %}
 {% has_perm 'landingzones.update_zones_all' request.user project as can_update_all %}
@@ -12,16 +13,29 @@
   </button>
   <div class="dropdown-menu dropdown-menu-right">
     {% if can_update_all or zone.user == request.user and can_update_own %}
+
+      {# Landing zone config plugin links #}
+      {% get_config_plugin zone as zone_plugin %}
+      {% if zone_plugin %}
+        {% for zone_link in zone_plugin.menu_items %}
+          <a class="dropdown-item" href="{% get_config_link_url zone zone_link.url_name %}">
+            <i class="fa fa-fw fa-{{ zone_link.icon }}"></i> {{ zone_link.label }}
+          </a>
+        {% endfor %}
+      {% endif %}
+
+      {# Normal links #}
       {% if zone.status != 'MOVED' %}
         <a class="dropdown-item" href="{% url 'landingzones:move' landingzone=zone.omics_uuid %}">
       {% else %}
         <a class="dropdown-item disabled" href="#">
       {% endif %}
-        <i class="fa fa-copy"></i> Validate and Move
+        <i class="fa fa-fw fa-copy"></i> Validate and Move
       </a>
       <a class="dropdown-item" href="{% url 'landingzones:delete' landingzone=zone.omics_uuid %}">
-        <i class="fa fa-close"></i> Delete Zone
+        <i class="fa fa-fw fa-close"></i> Delete Zone
       </a>
+
     {% endif %}
   </div>
 </div>

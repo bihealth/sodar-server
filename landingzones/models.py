@@ -1,6 +1,7 @@
 import uuid
 
 from django.conf import settings
+from django.contrib.postgres.fields import ArrayField, JSONField
 from django.db import models
 
 # Projectroles dependency
@@ -48,12 +49,6 @@ STATUS_STYLES = {
     'FAILED': 'bg-danger',
     'DELETING': 'bg-warning',
     'DELETED': 'bg-secondary'}
-
-
-# TODO: These should come from landing zone configapp plugins
-ZONE_CONFIGURATIONS = {
-    'bih_genomics_smb': 'BIH Genomics SMB'
-}
 
 
 class LandingZone(models.Model):
@@ -118,6 +113,11 @@ class LandingZone(models.Model):
         null=True,
         help_text='Special configuration (optional, leave blank for a '
                   'standard landing zone)')
+
+    #: Configuration data (for storing plugin-specific settings)
+    config_data = JSONField(
+        default=dict,
+        help_text='Configuration data (for storing plugin-specific settings)')
 
     #: Landing zone Omics UUID
     omics_uuid = models.UUIDField(

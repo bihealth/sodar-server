@@ -31,6 +31,22 @@ User = auth.get_user_model()
 APP_NAME = 'landingzones'
 
 
+class LandingZoneContextMixin:
+    """Context mixing for LandingZones"""
+    def get_context_data(self, *args, **kwargs):
+        context = super(LandingZoneContextMixin, self).get_context_data(
+            *args, **kwargs)
+
+        try:
+            context['zone'] = LandingZone.objects.get(
+                omics_uuid=self.kwargs['landingzone'])
+
+        except LandingZone.DoesNotExist:
+            context['zone'] = None
+
+        return context
+
+
 class ProjectZoneView(
         LoginRequiredMixin, LoggedInPermissionMixin, ProjectPermissionMixin,
         InvestigationContextMixin, TemplateView):

@@ -36,14 +36,16 @@ class LandingZoneMixin:
 
     @classmethod
     def _make_landing_zone(
-            cls, title, project, user, assay, description, configuration):
+            cls, title, project, user, assay, description, configuration,
+            config_data):
         values = {
             'title': title,
             'project': project,
             'user': user,
             'assay': assay,
             'description': description,
-            'configuration': configuration}
+            'configuration': configuration,
+            'config_data': config_data}
         result = LandingZone(**values)
         result.save()
         return result
@@ -79,7 +81,8 @@ class TestLandingZoneBase(
             user=self.user_owner,
             assay=self.assay,
             description=ZONE_DESC,
-            configuration=None)
+            configuration=None,
+            config_data={})
 
 
 class TestLandingZone(TestLandingZoneBase):
@@ -98,6 +101,7 @@ class TestLandingZone(TestLandingZoneBase):
             'assay': self.assay.pk,
             'description': ZONE_DESC,
             'configuration': None,
+            'config_data': {},
             'status': ZONE_STATUS_INIT,
             'status_info': ZONE_STATUS_INFO_INIT,
             'omics_uuid': self.landing_zone.omics_uuid}

@@ -87,7 +87,8 @@ class TestViewsBase(
             user=self.as_owner.user,
             assay=self.assay,
             description=ZONE_DESC,
-            configuration=None)
+            configuration=None,
+            config_data={})
 
 
 class TestProjectZonesView(TestViewsBase):
