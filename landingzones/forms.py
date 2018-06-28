@@ -10,7 +10,7 @@ from projectroles.plugins import get_backend_api
 # Samplesheets dependency
 from samplesheets.models import Assay
 
-from .models import LandingZone, ZONE_CONFIGURATIONS
+from .models import LandingZone
 
 
 class LandingZoneForm(forms.ModelForm):
@@ -30,6 +30,10 @@ class LandingZoneForm(forms.ModelForm):
         """Override for form initialization"""
         super(LandingZoneForm, self).__init__(*args, **kwargs)
         irods_backend = get_backend_api('omics_irods')
+
+        # NOTE: Can't import in root of module because of urlpatterns conflict?
+        from .plugins import LandingZoneConfigPluginPoint
+        config_plugins = LandingZoneConfigPluginPoint.get_plugins()
 
         self.current_user = None
         self.project = None
@@ -65,10 +69,11 @@ class LandingZoneForm(forms.ModelForm):
 
         # Get options for configuration
         self.fields['configuration'].widget = forms.Select()
-        # TODO: Get choices from landingzones config app plugins
         self.fields['configuration'].widget.choices = [(None, '--------------')]
-        self.fields['configuration'].widget.choices += [
-            (k, v) for k, v in ZONE_CONFIGURATIONS.items()]  # TODO: Sort
+
+        for plugin in config_plugins:
+            self.fields['configuration'].widget.choices.append((
+                plugin.config_name, plugin.config_display_name))  # TODO: Sort
 
         # Creation
         if not self.instance.pk:

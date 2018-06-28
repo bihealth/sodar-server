@@ -5,7 +5,9 @@ from django.urls import reverse
 # Projectroles dependency
 from projectroles.plugins import get_backend_api
 
-from ..models import LandingZone, STATUS_STYLES, ZONE_CONFIGURATIONS
+from ..models import LandingZone, STATUS_STYLES
+from ..plugins import get_zone_config_plugin
+
 
 DISABLED_STATES = [
     'NOT CREATED',
@@ -84,8 +86,24 @@ def get_zone_list_url(zone):
 
 
 @register.simple_tag
-def get_configuration_legend(zone):
+def get_config_legend(zone):
     """Return printable legend for zone configuration"""
-    # TODO: Get this from landingzones configapp plugin
-    if zone.configuration:
-        return ZONE_CONFIGURATIONS[zone.configuration]
+    if not zone.configuration:
+        return None
+
+    zone_plugin = get_zone_config_plugin(zone)
+
+    if zone_plugin:
+        return zone_plugin.config_display_name
+
+
+@register.simple_tag
+def get_config_plugin(zone):
+    """Retrieve landing zone configuration sub-app plugin"""
+    return get_zone_config_plugin(zone)
+
+
+@register.simple_tag
+def get_config_link_url(zone, url_name):
+    """Return URL for a config plugin link"""
+    return reverse(url_name, kwargs={'landingzone': zone.omics_uuid})
