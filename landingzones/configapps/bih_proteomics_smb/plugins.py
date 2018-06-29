@@ -29,10 +29,15 @@ class LandingZoneConfigPlugin(LandingZoneConfigPluginPoint):
     description = 'BIH Proteomics SMB file server config plugin'
 
     #: Additional zone menu items
-    menu_items = [{
+    menu_items = []
+    '''
+    menu_items = [    
+        {
         'label': 'Get Access Ticket',
         'icon': 'key',
-        'url_name': 'landingzones.configapps.bih_proteomics_smb:ticket_get'}]
+        'url_name': 'landingzones.configapps.bih_proteomics_smb:ticket_get'}
+     ]
+     '''
 
     #: Required permission for accessing the plugin
     # TODO: TBD: Do we need this?
