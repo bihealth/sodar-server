@@ -17,6 +17,9 @@ Added
     - Site favicon (#166)
 - **Landingzones**
     - Status types ``DELETING`` and ``DELETED`` (#228)
+    - Landing zone special configurations (#240)
+    - Configapp sub-app plugin point (#240)
+    - Configapp plugin for ``bih_proteomics_smb`` (#240)
 - **Projectroles**
     - Tag ``force_wrap()`` in common template tags
 - **Samplesheets**
@@ -40,6 +43,7 @@ Changed
     - Make landing zone deletion async (#228)
     - Refactor zone list item rendering
     - Include iRODS buttons from ``_irods_buttons.html``
+    - Display full zone title in project overview
 - **Projectroles**
     - Use modal for email preview popups (#180)
 - **Samplesheets**
@@ -52,6 +56,7 @@ Changed
     - Display study and assay links on the project details page (#257)
     - Move commonly used javascript to ``samplesheets_common.js`` (#181)
     - iCommands button copies link to clipboard without popup (#257)
+    - Improve germline study app layout
 
 Fixed
 -----
