@@ -201,14 +201,18 @@ class SampleSheetTableBuilder:
             'colspan': colspan,
             'hiding': hiding})
 
-    def _add_header(self, value, classes=list()):
+    def _add_header(self, value, obj=None, classes=list()):
         """
-        Add column header value
+        Add column field header value
         :param value: Value to be displayed
+        :param obj: Original Django model object
         :param classes: Optional extra classes
         """
         self._field_header.append({
             'value': value,
+            'obj_cls': type(obj),
+            'item_type': obj.item_type if
+            type(obj) == GenericMaterial else None,
             'classes': classes})
 
     def _add_cell(
@@ -313,13 +317,13 @@ class SampleSheetTableBuilder:
             # Material headers
             if obj_type == GenericMaterial:
                 self._add_header(
-                    'Name', hide_cls if obj.item_type in
+                    'Name', obj, hide_cls if obj.item_type in
                     ['DATA', 'MATERIAL'] else list())           # Name
                 field_count += 1
 
                 if (obj.material_type == 'Labeled Extract Name' and
                         obj.extract_label):
-                    self._add_header('Label', hide_cls)         # Extract label
+                    self._add_header('Label', obj, hide_cls)    # Extract label
                     field_count += 1
 
                 a_header_count = self._add_annotation_headers(
@@ -336,10 +340,11 @@ class SampleSheetTableBuilder:
             # Process headers
             else:   # obj_type == Process
                 if obj.protocol and obj.protocol.name:
-                    self._add_header('Protocol', hide_cls)      # Protocol
+                    self._add_header(
+                        'Protocol', obj, hide_cls)              # Protocol
                     field_count += 1
 
-                self._add_header('Name', hide_cls)              # Name
+                self._add_header('Name', obj, hide_cls)         # Name
                 field_count += 1
 
                 a_header_count = self._add_annotation_headers(

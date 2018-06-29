@@ -18,6 +18,7 @@ from projectroles.views import LoggedInPermissionMixin, \
 from samplesheets.models import GenericMaterial
 from samplesheets.plugins import find_assay_plugin
 from samplesheets.rendering import SampleSheetTableBuilder
+from samplesheets.utils import get_index_by_header
 
 # Local helper for authenticating with auth basic.
 from .auth import fallback_to_auth_basic
@@ -51,44 +52,62 @@ class BaseGermlineConfigView(
         :return: String
         """
 
-        # TODO: Refactor this horrible mess
-
         irods_backend = get_backend_api('omics_irods')
         query_paths = []
+        sample_names = []
 
         for assay in source.study.assays.all():
             assay_table = study_tables['assays'][assay.get_name()]
             assay_plugin = find_assay_plugin(
                 assay.measurement_type, assay.technology_type)
 
-            # Get family index
-            try:
-                fam_idx = next((
-                    i for (i, x) in enumerate(assay_table['field_header']) if
-                    x['value'] == 'Family'), None) - 1
-                print('fam_idx={}'.format(fam_idx))     # DEBUG
+            source_fam = source.characteristics['Family']['value']
 
-            except ValueError:
-                fam_idx = None
-                print('fam_idx not found')  # DEBUG
+            # Get family index
+            fam_idx = get_index_by_header(assay_table, 'family')
+
+            # Get sample index
+            sample_idx = get_index_by_header(
+                assay_table, 'name',
+                obj_cls=GenericMaterial, item_type='SAMPLE')
+
+            # Get source sample (only one per source/assay in germline cases?)
+            if sample_idx:
+                sn = assay_table['table_data'][0][sample_idx]['value']
+
+            def get_val_by_index(row, idx):
+                if not idx:
+                    return None
+                return row[idx]['value']
 
             for row in assay_table['table_data']:
-                if ((file_type == 'bam' and row[1]['value'] == source.name) or (
-                        file_type == 'vcf' and ((
-                            fam_idx and
-                            row[fam_idx]['value'] ==
-                            source.characteristics['Family']['value']) or
-                            row[1]['value'] == source.name))):
-                    if assay_plugin:
+                row_name = row[1]['value']
+                row_fam = get_val_by_index(row, fam_idx)
+
+                # Add sample names for source
+                if row_name == source.name:
+                    sn = row[sample_idx]['value']
+
+                    if sn not in sample_names:
+                        sample_names.append(sn)
+
+                # Get query path from assay_plugin
+                if assay_plugin:
+                    if (row_name == source.name or (
+                            source_fam and row_fam == source_fam)):
                         path = assay_plugin.get_row_path(
                             row, assay_table, assay)
+                        if path not in query_paths:
+                            query_paths.append(path)
 
-                    else:
-                        path = irods_backend.get_path(assay)
+            # If not assay_plugin, just search from assay path
+            if not assay_plugin:
+                path = irods_backend.get_path(assay)
 
-                    if path not in query_paths:
-                        query_paths.append(path)
+                if path not in query_paths:
+                    query_paths.append(path)
 
+        # Get paths to relevant files
         file_paths = []
 
         for query_path in query_paths:
@@ -96,10 +115,10 @@ class BaseGermlineConfigView(
                 obj_list = irods_backend.get_objects(query_path)
 
                 for obj in obj_list['data_objects']:
-                    # NOTE: We expect the source name to appear in filenames
+                    # NOTE: We expect the SAMPLE name to appear in filenames
                     if (obj['name'].lower().endswith(
                             FILE_TYPE_SUFFIX[file_type]) and
-                            source.name in obj['name']):
+                            any(x in obj['name'] for x in sample_names)):
                         file_paths.append(obj['path'])
 
             except FileNotFoundError:
