@@ -1,5 +1,7 @@
 from django.urls import reverse
 
+from djangoplugins.point import PluginPoint
+
 # Projectroles dependency
 from projectroles.plugins import ProjectAppPluginPoint, get_backend_api
 
@@ -8,7 +10,10 @@ from samplesheets.io import get_assay_dirs
 from samplesheets.models import Assay
 
 from .models import LandingZone
-from .urls import urlpatterns
+from landingzones.urls import urlpatterns
+
+
+# Landingzones project app plugin ----------------------------------------------
 
 
 class ProjectAppPlugin(ProjectAppPluginPoint):
@@ -109,6 +114,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                         'assay_path': irods_backend.get_subdir(
                             zone.assay, landing_zone=True),
                         'description': zone.description,
+                        'zone_config': zone.configuration,
                         'dirs': get_assay_dirs(zone.assay)}}
                 sync_flows.append(flow)
 
@@ -142,3 +148,65 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                     kwargs={'study': obj.study.omics_uuid}) +
                             '#' + str(obj.omics_uuid),
                 'label': obj.get_display_name()}
+
+
+# Landingzones configuration sub-app plugin ------------------------------------
+
+
+class LandingZoneConfigPluginPoint(PluginPoint):
+    """Plugin point for registering landingzones configuration sub-apps"""
+
+    # Properties required by django-plugins ------------------------------
+
+    #: Name (used in code and as unique idenfitier)
+    # TODO: Implement this in your config plugin
+    # TODO: Recommended in form of landingzones_config_name
+    # name = 'landingzones_config_name'
+
+    #: Title (used in templates)
+    # TODO: Implement this in your config plugin
+    # title = 'Landing Zones X Config App'
+
+    # Properties defined in LandingZoneConfigPluginPoint ------------------
+
+    #: Configuration name (used to identify plugin by configuration string)
+    # TODO: Implement this in your config plugin
+    config_name = ''
+
+    #: Configuration display name (to be visible in GUI)
+    # TODO: Implement this in your config plugin
+    config_display_name = 'BIH Proteomics SMB Server'
+
+    #: Description string
+    # TODO: Implement this in your config plugin
+    description = 'TODO: Write a description for your config plugin'
+
+    #: Additional zone menu items
+    # TODO: Implement this in your config plugin
+    menu_items = [{
+        'label': '',     # Label to be displayed in menu
+        'icon': '',      # Icon name without the fa-* prefix
+        'url_name': ''}  # URL name, will receive zone as "landingzone" kwarg
+    ]
+
+    #: Required permission for accessing the plugin
+    # TODO: Implement this in your config plugin (can be None)
+    # TODO: TBD: Do we need this?
+    permission = None
+
+
+def get_zone_config_plugin(zone):
+    """
+    Return active landing zone configuration plugin
+    :param zone: LandingZone object
+    :return: LandingZoneConfigPlugin object or None if not found
+    """
+    if not zone.configuration:
+        return None
+
+    try:
+        return LandingZoneConfigPluginPoint.get_plugin(
+            'landingzones_config_' + zone.configuration)
+
+    except LandingZoneConfigPluginPoint.DoesNotExist:
+        return None

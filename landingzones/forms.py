@@ -22,7 +22,7 @@ class LandingZoneForm(forms.ModelForm):
 
     class Meta:
         model = LandingZone
-        fields = ['assay', 'title_suffix', 'description']
+        fields = ['assay', 'title_suffix', 'description', 'configuration']
 
     def __init__(
             self, current_user=None, project=None, assay=None,
@@ -30,6 +30,10 @@ class LandingZoneForm(forms.ModelForm):
         """Override for form initialization"""
         super(LandingZoneForm, self).__init__(*args, **kwargs)
         irods_backend = get_backend_api('omics_irods')
+
+        # NOTE: Can't import in root of module because of urlpatterns conflict?
+        from .plugins import LandingZoneConfigPluginPoint
+        config_plugins = LandingZoneConfigPluginPoint.get_plugins()
 
         self.current_user = None
         self.project = None
@@ -62,6 +66,14 @@ class LandingZoneForm(forms.ModelForm):
         self.fields['title_suffix'].label = 'Title suffix'
         self.fields['title_suffix'].help_text = \
             'Zone title suffix (optional, maximum 64 characters)'
+
+        # Get options for configuration
+        self.fields['configuration'].widget = forms.Select()
+        self.fields['configuration'].widget.choices = [(None, '--------------')]
+
+        for plugin in config_plugins:
+            self.fields['configuration'].widget.choices.append((
+                plugin.config_name, plugin.config_display_name))  # TODO: Sort
 
         # Creation
         if not self.instance.pk:

@@ -1,6 +1,7 @@
 import uuid
 
 from django.conf import settings
+from django.contrib.postgres.fields import ArrayField, JSONField
 from django.db import models
 
 # Projectroles dependency
@@ -103,6 +104,20 @@ class LandingZone(models.Model):
         unique=False,
         blank=True,
         help_text='Landing zone description (optional)')
+
+    #: Special configuration
+    configuration = models.CharField(
+        max_length=64,
+        unique=False,
+        blank=True,
+        null=True,
+        help_text='Special configuration (optional, leave blank for a '
+                  'standard landing zone)')
+
+    #: Configuration data (for storing plugin-specific settings)
+    config_data = JSONField(
+        default=dict,
+        help_text='Configuration data (for storing plugin-specific settings)')
 
     #: Landing zone Omics UUID
     omics_uuid = models.UUIDField(

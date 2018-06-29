@@ -84,6 +84,9 @@ LOCAL_APPS = [
     # Samplesheets assay sub-apps
     'samplesheets.assayapps.genome_seq_nucleotide_seq.apps.GenomeSeqNucleotideSeqConfig',   # noqa
     'samplesheets.assayapps.pep_ms.apps.PepMsConfig',
+
+    # Landingzones config sub-apps
+    'landingzones.configapps.bih_proteomics_smb.apps.BihProteomicsSmbConfig',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS

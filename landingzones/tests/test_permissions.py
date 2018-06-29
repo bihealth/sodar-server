@@ -44,7 +44,9 @@ class TestLandingZonePermissions(
             project=self.project,
             user=self.as_owner.user,
             assay=self.assay,
-            description=ZONE_DESC)
+            description=ZONE_DESC,
+            configuration=None,
+            config_data={})
 
     def test_zone_list(self):
         """Test permissions for the project landing zone list"""

@@ -31,6 +31,22 @@ User = auth.get_user_model()
 APP_NAME = 'landingzones'
 
 
+class LandingZoneContextMixin:
+    """Context mixing for LandingZones"""
+    def get_context_data(self, *args, **kwargs):
+        context = super(LandingZoneContextMixin, self).get_context_data(
+            *args, **kwargs)
+
+        try:
+            context['zone'] = LandingZone.objects.get(
+                omics_uuid=self.kwargs['landingzone'])
+
+        except LandingZone.DoesNotExist:
+            context['zone'] = None
+
+        return context
+
+
 class ProjectZoneView(
         LoginRequiredMixin, LoggedInPermissionMixin, ProjectPermissionMixin,
         InvestigationContextMixin, TemplateView):
@@ -125,6 +141,8 @@ class ZoneCreateView(
             # Create landing zone object in Django db
             # NOTE: We have to do this beforehand to work properly as async
             zone = form.save()
+            config_str = ' with configuration "{}"'.format(
+                zone.configuration) if zone.configuration else ''
 
             # Add event in Timeline
             if timeline:
@@ -133,9 +151,9 @@ class ZoneCreateView(
                     app_name=APP_NAME,
                     user=self.request.user,
                     event_name='zone_create',
-                    description='create landing zone {{{}}} for {{{}}} in '
+                    description='create landing zone {{{}}}{} for {{{}}} in '
                                 '{{{}}}'.format(
-                                    'zone', 'user', 'assay'),
+                                    'zone', config_str, 'user', 'assay'),
                     status_type='SUBMIT')
 
                 tl_event.add_object(
@@ -164,6 +182,7 @@ class ZoneCreateView(
                 'assay_path': irods_backend.get_subdir(
                     assay, landing_zone=True),
                 'description': zone.description,
+                'zone_config': zone.configuration,
                 'dirs': dirs}
 
             try:
@@ -177,9 +196,9 @@ class ZoneCreateView(
 
                 messages.warning(
                     self.request,
-                    'Landing zone "{}" creation initiated: '
+                    'Landing zone "{}" creation initiated{}: '
                     'see the zone list for the creation status'.format(
-                        zone.title))
+                        zone.title, config_str))
 
             except taskflow.FlowSubmitException as ex:
                 if tl_event:
@@ -282,6 +301,7 @@ class ZoneDeleteView(
             flow_data = {
                 'zone_title': zone.title,
                 'zone_uuid': zone.omics_uuid,
+                'zone_config': zone.configuration,
                 'assay_path': irods_backend.get_subdir(
                     zone.assay, landing_zone=True),
                 'user_name': zone.user.username}
@@ -392,6 +412,7 @@ class ZoneMoveView(
         flow_data = {
             'zone_title': str(zone.title),
             'zone_uuid': zone.omics_uuid,
+            'zone_config': zone.configuration,
             'assay_path_samples': irods_backend.get_subdir(
                 zone.assay, landing_zone=False),
             'assay_path_zone': irods_backend.get_subdir(
@@ -483,10 +504,10 @@ class ZoneClearView(
                 'project': project.omics_uuid}))
 
 
-# Javascript API Views ---------------------------------------------------
+# General API Views ------------------------------------------------------------
 
 
-class LandingZoneObjectListAPIView(
+class LandingZoneIrodsObjectListAPIView(
         LoginRequiredMixin, ProjectContextMixin, APIView):
     """View for listing landing zone objects in iRODS via Ajax"""
 
@@ -550,7 +571,40 @@ class LandingZoneStatusGetAPIView(
         return Response('Not authorized', status=403)
 
 
-class LandingZoneStatisticsGetAPIView(
+class LandingZoneListAPIView(APIView):
+    """View for returning a landing zone list based on its configuration"""
+
+    # NOTE: No auth or perms!
+    # TODO: TBD: Do we also need this to work without a configuration param?
+
+    def get(self, *args, **kwargs):
+        irods_backend = get_backend_api('omics_irods')
+
+        if not irods_backend:
+            return Response('iRODS backend not enabled', status=500)
+
+        zone_config = self.kwargs['configuration']
+        zones = LandingZone.objects.filter(configuration=zone_config)
+
+        if zones.count() == 0:
+            return Response('LandingZone not found', status=404)
+
+        ret_data = {}
+
+        for zone in zones:
+            # TODO: TBD: What exactly to return? Add/remove fields as needed
+            ret_data[str(zone.omics_uuid)] = {
+                'title': zone.title,
+                'assay': zone.assay.get_name(),
+                'user': zone.user.username,
+                'status': zone.status,
+                'configuration': zone.configuration,
+                'irods_path': irods_backend.get_path(zone)}
+
+        return Response(ret_data, status=200)
+
+
+class LandingZoneIrodsStatisticsGetAPIView(
         LoginRequiredMixin, ProjectContextMixin, APIView):
     """View for returning landing zone statistics for the UI"""
 

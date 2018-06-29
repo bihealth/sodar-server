@@ -9,9 +9,6 @@ from django.views.generic import TemplateView
 
 from projectroles.views import HomeView
 
-# from djangoplugins.utils import include_plugins
-# from projectroles.plugins import ProjectAppPluginPoint
-
 urlpatterns = [
     url(r'^$', HomeView.as_view(), name='home'),
     url(r'^about/$', TemplateView.as_view(template_name='pages/about.html'),
@@ -42,10 +39,15 @@ urlpatterns = [
     url(r'^samplesheets/', include('samplesheets.urls')),
     url(r'^landingzones/', include('landingzones.urls')),
 
-    # Samplesheets study app URLs
+    # Samplesheets study sub-app URLs
     url(
         r'^samplesheets/study/germline/',
         include('samplesheets.studyapps.germline.urls')),
+
+    # Landingzones config sub-app URLs
+    url(
+        r'^landingzones/config/bih-proteomics-smb/',
+        include('landingzones.configapps.bih_proteomics_smb.urls')),
 
     # django-db-file-storage URLs (needed for admin, obfuscated for users)
     url(r'^xu7in5zs9lylar0n/', include('db_file_storage.urls')),
