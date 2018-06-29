@@ -75,19 +75,24 @@ class BaseGermlineConfigView(
             if sample_idx:
                 sn = assay_table['table_data'][0][sample_idx]['value']
 
-                if sn not in sample_names:
-                    sample_names.append(sn)
-
             def get_val_by_index(row, idx):
                 if not idx:
                     return None
                 return row[idx]['value']
 
-            if assay_plugin:
-                for row in assay_table['table_data']:
-                    row_name = row[1]['value']
-                    row_fam = get_val_by_index(row, fam_idx)
+            for row in assay_table['table_data']:
+                row_name = row[1]['value']
+                row_fam = get_val_by_index(row, fam_idx)
 
+                # Add sample names for source
+                if row_name == source.name:
+                    sn = row[sample_idx]['value']
+
+                    if sn not in sample_names:
+                        sample_names.append(sn)
+
+                # Get query path from assay_plugin
+                if assay_plugin:
                     if (row_name == source.name or (
                             source_fam and row_fam == source_fam)):
                         path = assay_plugin.get_row_path(
@@ -95,12 +100,14 @@ class BaseGermlineConfigView(
                         if path not in query_paths:
                             query_paths.append(path)
 
-            else:
+            # If not assay_plugin, just search from assay path
+            if not assay_plugin:
                 path = irods_backend.get_path(assay)
 
                 if path not in query_paths:
                     query_paths.append(path)
 
+        # Get paths to relevant files
         file_paths = []
 
         for query_path in query_paths:
