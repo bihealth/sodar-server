@@ -72,7 +72,9 @@ class TestIrodsBackendAPI(
             project=self.project,
             user=self.as_owner.user,
             assay=self.assay,
-            description=ZONE_DESC)
+            description=ZONE_DESC,
+            configuration=None,
+            config_data={})
 
         self.irods_backend = IrodsAPI()
 
