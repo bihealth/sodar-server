@@ -15,6 +15,8 @@ Added
 - **General**
     - Sphinx-based online user manual (#50)
     - Site favicon (#166)
+- **Irodsbackend**
+    - Proper cleanup of iRODS session on API deletion
 - **Landingzones**
     - Status types ``DELETING`` and ``DELETED`` (#228)
     - Landing zone special configurations (#240)

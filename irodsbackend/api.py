@@ -55,6 +55,10 @@ class IrodsAPI:
     def __init__(self):
         self.irods = None
 
+    def __del__(self):
+        if self.irods:
+            self.irods.cleanup()
+
     #####################
     # Internal functions
     #####################
