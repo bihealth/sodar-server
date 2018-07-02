@@ -114,7 +114,11 @@ class TestHomeView(TestViewsBase, ProjectMixin, RoleAssignmentMixin):
         # Assert statistics values
         self.assertEqual(response.context['count_categories'], 1)
         self.assertEqual(response.context['count_projects'], 1)
-        self.assertEqual(response.context['count_users'], 1)
+        
+        # NOTE: The bih_proteomics_smb user is counted here
+        # TODO: Create some kind of a special category for this user?
+        self.assertEqual(response.context['count_users'], 2)
+
         self.assertEqual(response.context['count_assignments'], 1)
 
 
