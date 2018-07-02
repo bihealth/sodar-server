@@ -66,6 +66,7 @@ class ZoneTicketGetView(
             omics_uuid=self.kwargs['landingzone'])
         redirect_url = reverse(
             'landingzones:list', kwargs={'project': zone.project.omics_uuid})
+        expiry_days = settings.LZ_BIH_PROTEOMICS_SMB_EXPIRY_DAYS
         error = False
         ex_msg = None
 
@@ -79,7 +80,7 @@ class ZoneTicketGetView(
                 ex_msg = str(ex)
 
         if not error:
-            expiry_date = dt.now() + timedelta(days=14)
+            expiry_date = dt.now() + timedelta(days=expiry_days)
 
             try:
                 ticket = irods_backend.issue_ticket(
