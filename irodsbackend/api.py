@@ -1,8 +1,12 @@
 """iRODS REST API for SODAR Django apps"""
 
 from functools import wraps
+from irods.api_number import api_number
 from irods.exception import CollectionDoesNotExist
+from irods.message import TicketAdminRequest, iRODSMessage
 from irods.session import iRODSSession
+from irods.ticket import Ticket
+
 from pytz import timezone
 
 from django.conf import settings
@@ -133,6 +137,28 @@ class IrodsAPI:
                 data = cls._get_obj_stats(sub_coll, data)
 
         return data
+
+    # TODO: Fork python-irodsclient and implement ticket functionality there
+    def _send_request(self, api_id, *args):
+        """
+        Temporary function for sending a raw API request using
+        python-irodsclient
+        :param *args: Arguments for the request body
+        :return: Response
+        :raise: Exception if iRODS is not initialized
+        """
+        if not self.irods:
+            raise Exception('iRODS session not initialized')
+
+        msg_body = TicketAdminRequest(*args)
+        msg = iRODSMessage(
+            'RODS_API_REQ', msg=msg_body, int_info=api_number[api_id])
+
+        with self.irods.pool.get_connection() as conn:
+            conn.send(msg)
+            response = conn.recv()
+
+        return response
 
     ##########
     # Helpers
@@ -307,3 +333,38 @@ class IrodsAPI:
         :return: Boolean
         """
         return self.irods.collections.exists(path)
+
+    # TODO: Fork python-irodsclient and implement ticket functionality there
+
+    @init_irods
+    def issue_ticket(self, mode, path, expiry_date=None):
+        """
+        Issue ticket for a specific iRODS collection
+        :param mode: "read" or "write"
+        :param path: iRODS path for creating the ticket
+        :param expiry_date: Expiry date (DateTime object, optional)
+        :return: irods client Ticket object
+        """
+        ticket = Ticket(self.irods)
+        ticket.issue(mode, path)
+
+        # Remove default file writing limitation
+        self._send_request(
+            'TICKET_ADMIN_AN', 'mod', ticket._ticket, 'write-file', '0')
+
+        # Set expiration
+        if expiry_date:
+            exp_str = expiry_date.strftime('%Y-%m-%d.%H:%M:%S')
+            self._send_request(
+                'TICKET_ADMIN_AN', 'mod', ticket._ticket, 'expire', exp_str)
+
+        return ticket
+
+    @init_irods
+    def delete_ticket(self, ticket):
+        """
+        Delete ticket
+        :param ticket: Ticket object
+        """
+        self._send_request('TICKET_ADMIN_AN', 'delete', ticket._ticket)
+

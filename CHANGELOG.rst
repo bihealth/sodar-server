@@ -17,6 +17,7 @@ Added
     - Site favicon (#166)
 - **Irodsbackend**
     - Proper cleanup of iRODS session on API deletion
+    - Temporary iRODS ticket operations (#240)
 - **Landingzones**
     - Status types ``DELETING`` and ``DELETED`` (#228)
     - Landing zone special configurations (#240)
