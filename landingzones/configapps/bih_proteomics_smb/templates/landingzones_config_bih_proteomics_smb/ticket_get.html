@@ -5,19 +5,46 @@
 {% load landingzones_tags %}
 
 {% block title %}
-  Get Landing Zone Access Ticket
+  Generate or Refresh Landing Zone Access Ticket
 {% endblock title %}
 
 {% block projectroles_extend %}
 
 <div class="row omics-subtitle-container">
-  <h3>Get Landing Zone Access Ticket</h3>
+  <h3>Generate or Refresh Landing Zone Access Ticket</h3>
 </div>
 
 <div class="container-fluid omics-page-container">
-  <div class="alert alert-danger" role="alert">
-    <strong>TODO:</strong> Provide ticket here for zone "{{ zone.title }}"...
+  <div class="alert alert-info" role="alert">
+    {% if not ticket %}
+      No ticket currently exists for zone "{{ zone.title }}".
+    {% elif ticket and ticket_expired %}
+      Ticket <strong>"{{ ticket }}"</strong> for zone "{{ zone.title }}" has
+      expired on {{ ticket_expire_date | date:'Y-m-d H:i' }}.
+    {% else %}
+      Ticket <strong>"{{ ticket }}"</strong> for zone "{{ zone.title }}" is set
+      and valid until {{ ticket_expire_date | date:'Y-m-d H:i' }}
+    {% endif %}
   </div>
+
+  <form method="post">
+    {% csrf_token %}
+    <div class="row">
+      <div class="btn-group ml-auto">
+        <a role="button" class="btn btn-secondary" href="{{ request.session.real_referer }}">
+          <i class="fa fa-arrow-circle-left"></i> Cancel
+        </a>
+        <button type="submit" class="btn btn-primary">
+          {% if ticket %}
+            <i class="fa fa-refresh"></i> Refresh
+          {% else %}
+            <i class="fa fa-key"></i> Generate
+          {% endif %}
+        </button>
+      </div>
+    </div>
+  </form>
+</div>
 </div>
 
 {% endblock %}

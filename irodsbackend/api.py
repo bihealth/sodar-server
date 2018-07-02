@@ -337,15 +337,16 @@ class IrodsAPI:
     # TODO: Fork python-irodsclient and implement ticket functionality there
 
     @init_irods
-    def issue_ticket(self, mode, path, expiry_date=None):
+    def issue_ticket(self, mode, path, ticket_str=None, expiry_date=None):
         """
         Issue ticket for a specific iRODS collection
         :param mode: "read" or "write"
         :param path: iRODS path for creating the ticket
+        :param ticket_str: String to use as the ticket
         :param expiry_date: Expiry date (DateTime object, optional)
         :return: irods client Ticket object
         """
-        ticket = Ticket(self.irods)
+        ticket = Ticket(self.irods, ticket=ticket_str)
         ticket.issue(mode, path)
 
         # Remove default file writing limitation
@@ -361,10 +362,10 @@ class IrodsAPI:
         return ticket
 
     @init_irods
-    def delete_ticket(self, ticket):
+    def delete_ticket(self, ticket_str):
         """
         Delete ticket
-        :param ticket: Ticket object
+        :param ticket_str: String
         """
-        self._send_request('TICKET_ADMIN_AN', 'delete', ticket._ticket)
+        self._send_request('TICKET_ADMIN_AN', 'delete', ticket_str)
 
