@@ -427,6 +427,13 @@ LANDINGZONES_STATUS_INTERVAL = env.int('LANDINGZONES_STATUS_INTERVAL', 3)
 LANDINGZONES_STATISTICS_INTERVAL = env.int('LANDINGZONES_STATUS_INTERVAL', 10)
 
 
+# Landingzones configplugins settings
+LZ_BIH_PROTEOMICS_SMB_USER = env.str(
+    'LZ_BIH_PROTEOMICS_SMB_USER', 'bih_proteomics_smb')
+LZ_BIH_PROTEOMICS_SMB_PASS = env.str(
+    'LZ_BIH_PROTEOMICS_SMB_PASS', 'eech1Iekvaivai6A')
+
+
 # iRODS settings shared by iRODS using apps
 IRODS_HOST = env.str('IRODS_HOST', '0.0.0.0')
 IRODS_PORT = env.int('IRODS_PORT', 1247)

@@ -20,8 +20,8 @@ from samplesheets.plugins import find_assay_plugin
 from samplesheets.rendering import SampleSheetTableBuilder
 from samplesheets.utils import get_index_by_header
 
-# Local helper for authenticating with auth basic.
-from .auth import fallback_to_auth_basic
+# Local helper for authenticating with auth basic
+from omics_data_mgmt.users.auth import fallback_to_auth_basic
 
 # Local constants
 FILE_TYPE_SUFFIX = {

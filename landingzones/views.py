@@ -21,6 +21,9 @@ from samplesheets.io import get_assay_dirs
 from samplesheets.models import Assay
 from samplesheets.views import InvestigationContextMixin
 
+# Local helper for authenticating with auth basic
+from omics_data_mgmt.users.auth import fallback_to_auth_basic
+
 from .forms import LandingZoneForm
 from .models import LandingZone
 
@@ -571,10 +574,10 @@ class LandingZoneStatusGetAPIView(
         return Response('Not authorized', status=403)
 
 
+@fallback_to_auth_basic
 class LandingZoneListAPIView(APIView):
     """View for returning a landing zone list based on its configuration"""
 
-    # NOTE: No auth or perms!
     # TODO: TBD: Do we also need this to work without a configuration param?
 
     def get(self, *args, **kwargs):
