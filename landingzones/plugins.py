@@ -198,6 +198,14 @@ class LandingZoneConfigPluginPoint(PluginPoint):
     # TODO: TBD: Do we need this?
     permission = None
 
+    # TODO: Implement this in your config plugin if needed
+    def cleanup_zone(self, zone):
+        """
+        Perform actions before landing zone deletion.
+        :param zone: LandingZone object
+        """
+        pass
+
 
 def get_zone_config_plugin(zone):
     """

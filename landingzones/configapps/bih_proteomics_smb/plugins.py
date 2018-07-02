@@ -1,6 +1,15 @@
+from datetime import datetime as dt
+
+# Projectroles dependency
+from projectroles.plugins import get_backend_api
+
 from landingzones.plugins import LandingZoneConfigPluginPoint
 
 from landingzones.configapps.bih_proteomics_smb.urls import urlpatterns
+
+
+# Local constants
+TICKET_DATE_FORMAT = '%Y-%m-%d.%H:%M:%S'
 
 
 class LandingZoneConfigPlugin(LandingZoneConfigPluginPoint):
@@ -44,3 +53,19 @@ class LandingZoneConfigPlugin(LandingZoneConfigPluginPoint):
     #: Required permission for accessing the plugin
     # TODO: TBD: Do we need this?
     permission = None
+
+    def cleanup_zone(self, zone):
+        """
+        Perform actions before landing zone deletion.
+        :param zone: LandingZone object
+        """
+        irods_backend = get_backend_api('omics_irods')
+
+        if not irods_backend:
+            return
+
+        if ('ticket' in zone.config_data and
+                dt.strptime(
+                    zone.config_data['ticket_expire_date'],
+                    TICKET_DATE_FORMAT) > dt.now()):
+            irods_backend.delete_ticket(zone.config_data['ticket'])

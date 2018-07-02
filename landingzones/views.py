@@ -723,4 +723,16 @@ class ZoneStatusSetAPIView(APIView):
         except TypeError:
             return Response('Invalid status type', status=400)
 
+        # If zone is deleted, call plugin function
+        if request.data['status'] in ['MOVED', 'DELETED']:
+            from .plugins import get_zone_config_plugin  # See issue #269
+            config_plugin = get_zone_config_plugin(zone)
+
+            if config_plugin:
+                try:
+                    config_plugin.cleanup_zone(zone)
+
+                except Exception as ex:
+                    return Response(str(ex), status=500)
+
         return Response('ok', status=200)

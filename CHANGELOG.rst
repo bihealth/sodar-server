@@ -47,6 +47,7 @@ Changed
     - Refactor zone list item rendering
     - Include iRODS buttons from ``_irods_buttons.html``
     - Display full zone title in project overview
+    - Call ``cleanup_zone()`` in configapps when setting status to MOVED or DELETED (#240)
 - **Projectroles**
     - Use modal for email preview popups (#180)
 - **Samplesheets**
