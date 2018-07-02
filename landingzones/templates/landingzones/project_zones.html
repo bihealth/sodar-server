@@ -290,6 +290,7 @@
          ***************/
         // TODO: Unify with samplesheets, still lots of repetition here
         $('.omics-irods-popup-list-btn').click(function() {
+            $('.modal-title').text('Files in iRODS');
             var listUrl = $(this).attr('list-url');
             var htmlData = '';
 
