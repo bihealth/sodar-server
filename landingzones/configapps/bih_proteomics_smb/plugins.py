@@ -36,6 +36,11 @@ class LandingZoneConfigPlugin(LandingZoneConfigPluginPoint):
         'url_name': 'landingzones.configapps.bih_proteomics_smb:ticket_get'}
      ]
 
+    #: Fields from LandingZone.config_data to be displayed in zone list API
+    api_config_data = [
+        'ticket',
+        'ticket_expire_date']
+
     #: Required permission for accessing the plugin
     # TODO: TBD: Do we need this?
     permission = None

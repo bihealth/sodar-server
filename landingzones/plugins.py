@@ -189,6 +189,10 @@ class LandingZoneConfigPluginPoint(PluginPoint):
         'url_name': ''}  # URL name, will receive zone as "landingzone" kwarg
     ]
 
+    #: Fields from LandingZone.config_data to be displayed in zone list API
+    # TODO: Implement this in your config plugin
+    api_config_data = []
+
     #: Required permission for accessing the plugin
     # TODO: Implement this in your config plugin (can be None)
     # TODO: TBD: Do we need this?
