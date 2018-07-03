@@ -61,6 +61,7 @@ Changed
     - Move commonly used javascript to ``samplesheets_common.js`` (#181)
     - iCommands button copies link to clipboard without popup (#257)
     - Improve germline study app layout
+    - General table layout updates
 
 Fixed
 -----
