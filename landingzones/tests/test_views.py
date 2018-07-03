@@ -142,6 +142,42 @@ class TestLandingZoneCreateView(TestViewsBase):
             self.assertIsNotNone(form.fields['configuration'])
 
 
+class TestLandingZoneClearView(TestViewsBase):
+    """Tests for the landing zone clearing view"""
+
+    def setUp(self):
+        super(TestLandingZoneClearView, self).setUp()
+        self.landing_zone.status = 'DELETED'
+        self.landing_zone.save()
+
+    def test_render(self):
+        """Test rendering of the landing zone clearing view"""
+        with self.login(self.user):
+            response = self.client.get(reverse(
+                'landingzones:clear',
+                kwargs={'project': self.project.omics_uuid}))
+            self.assertEqual(response.status_code, 200)
+
+    def test_post(self):
+        """Test POST on the landing zone clearing view"""
+
+        # Assert precondition
+        self.assertEqual(LandingZone.objects.all().count(), 1)
+
+        with self.login(self.user):
+            response = self.client.post(reverse(
+                'landingzones:clear',
+                kwargs={'project': self.project.omics_uuid}))
+
+            # Assert redirect
+            self.assertRedirects(response, reverse(
+                'landingzones:list',
+                kwargs={'project': self.project.omics_uuid}))
+
+        # Assert postcondition
+        self.assertEqual(LandingZone.objects.all().count(), 0)
+
+
 class TestLandingStoneStatusGetAPIView(TestViewsBase):
     """Tests for the landing zone status getting API view"""
 

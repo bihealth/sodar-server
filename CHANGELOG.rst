@@ -23,6 +23,7 @@ Added
     - Landing zone special configurations (#240)
     - Configapp sub-app plugin point (#240)
     - Configapp plugin for ``bih_proteomics_smb`` (#240)
+    - More unit tests for views (#248)
 - **Projectroles**
     - Tag ``force_wrap()`` in common template tags
 - **Samplesheets**

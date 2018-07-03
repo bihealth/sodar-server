@@ -46,6 +46,7 @@ class LandingZoneMixin:
             'description': description,
             'configuration': configuration,
             'config_data': config_data}
+
         result = LandingZone(**values)
         result.save()
         return result
