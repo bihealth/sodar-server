@@ -76,6 +76,7 @@ Fixed
     - Missing iCommands path in popup (#250)
     - Improve study and assay layout
     - Linking of BAM and VCF files if no assay plugin was found (#264)
+    - Incorrectly filled ``Family`` field broke germline study rendering (#270)
 - **Timeline**
     - Long labels broke timeline table (#225)
 

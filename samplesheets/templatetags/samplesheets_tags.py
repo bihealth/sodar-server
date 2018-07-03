@@ -177,12 +177,14 @@ def get_families(study):
     :param study: Study object
     :return: List of strings
     """
-    # TODO: Quick HACK, un-hackify
+    sources = GenericMaterial.objects.filter(study=study, item_type='SOURCE')
     ret = sorted(list(set([
-        m.characteristics['Family']['value'] for m in
-        GenericMaterial.objects.filter(study=study, item_type='SOURCE')])))
+        s.characteristics['Family']['value'] for s in sources if (
+            'Family' in s.characteristics and
+            'value' in s.characteristics['Family'] and
+            s.characteristics['Family']['value'])])))
 
-    if not ret or ret[0] == None:
+    if not ret or not ret[0]:
         ret = GenericMaterial.objects.filter(
             study=study, item_type='SOURCE').values_list(
             'name', flat=True).order_by('name')
