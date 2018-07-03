@@ -243,12 +243,10 @@ def render_top_headers(top_header, col_values):
         if final_colspan > 0:
             ret += '<th class="bg-{} text-nowrap text-white ' \
                    'omics-ss-top-header" colspan="{}" original-colspan="{}" ' \
-                   '{}>{}</th>\n'.format(
+                   '>{}</th>\n'.format(
                     section['colour'],
                     final_colspan,     # Actual colspan
                     final_colspan,     # Original colspan
-                    ''.join(['{}-cols="{}" '.format(k, v) for
-                             k, v in section['hiding'].items()]),
                     section['value'])
 
         col_idx += section['colspan']
