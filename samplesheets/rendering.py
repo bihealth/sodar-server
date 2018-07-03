@@ -208,6 +208,12 @@ class SampleSheetTableBuilder:
         :param obj: Original Django model object
         :param classes: Optional extra classes
         """
+        print('obj={}/{}/{}, value={}, classes={}'.format(
+            obj.__class__.__name__, (obj.item_type if
+            hasattr(obj, 'item_type') else None),
+            obj.name if hasattr(obj, 'name') else None,
+            value, classes))  # DEBUG
+
         self._field_header.append({
             'value': value,
             'obj_cls': type(obj),
@@ -253,12 +259,12 @@ class SampleSheetTableBuilder:
 
         self._col_idx += 1
 
-    def _add_annotation_headers(self, annotations, classes=list()):
+    def _add_annotation_headers(self, annotations, obj, classes=list()):
         """Append annotation columns to field header"""
         a_count = 0
 
         for a in annotations:
-            self._add_header(a.capitalize(), classes)
+            self._add_header(a.capitalize(), obj, classes)
             a_count += 1
 
         return a_count
@@ -327,13 +333,13 @@ class SampleSheetTableBuilder:
                     field_count += 1
 
                 a_header_count = self._add_annotation_headers(
-                    obj.characteristics, hide_cls)              # Character.
+                    obj.characteristics, obj, hide_cls)         # Character.
                 field_count += a_header_count
                 hideable_count += a_header_count
 
                 if obj.item_type == 'SAMPLE':
                     a_header_count = self._add_annotation_headers(
-                        obj.factor_values, hide_cls)            # Factor values
+                        obj.factor_values, obj, hide_cls)       # Factor values
                     field_count += a_header_count
                     hideable_count += a_header_count
 
@@ -348,12 +354,12 @@ class SampleSheetTableBuilder:
                 field_count += 1
 
                 a_header_count = self._add_annotation_headers(
-                    obj.parameter_values, hide_cls)             # Param values
+                    obj.parameter_values, obj, hide_cls)        # Param values
                 field_count += a_header_count
                 hideable_count += a_header_count
 
             a_header_count = self._add_annotation_headers(
-                obj.comments, hide_cls)                         # Comments
+                obj.comments, obj, hide_cls)                    # Comments
             field_count += a_header_count
             hideable_count += a_header_count
 
