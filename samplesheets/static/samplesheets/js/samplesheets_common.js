@@ -8,6 +8,8 @@ $(document).ready(function() {
      Copy link handling
      ******************/
     $('.omics-irods-copy-btn').click(function () {
+        $(this).addClass('text-warning');
+
         if ($(this).attr('data-table') !== '1') {
             var realTitle = $(this).tooltip().attr('data-original-title');
             $(this).attr('title', 'Copied!')
@@ -16,5 +18,9 @@ $(document).ready(function() {
                 .attr('title', realTitle)
                 .tooltip('_fixTitle');
         }
+
+        $(this).delay(250).queue(function() {
+            $(this).removeClass('text-warning').dequeue();
+        });
     });
 });
