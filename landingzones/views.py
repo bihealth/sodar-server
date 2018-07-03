@@ -1,3 +1,5 @@
+import logging
+
 from django.conf import settings
 from django.contrib import auth
 from django.contrib import messages
@@ -29,6 +31,9 @@ from .models import LandingZone
 
 # Access Django user model
 User = auth.get_user_model()
+
+# Get logger
+logger = logging.getLogger(__name__)
 
 
 APP_NAME = 'landingzones'
@@ -733,6 +738,8 @@ class ZoneStatusSetAPIView(APIView):
                     config_plugin.cleanup_zone(zone)
 
                 except Exception as ex:
-                    return Response(str(ex), status=500)
+                    logger.error(
+                        'Unable to cleanup zone "{}" with plugin '
+                        '"{}": {}'.format(zone.title, config_plugin.name, ex))
 
         return Response('ok', status=200)

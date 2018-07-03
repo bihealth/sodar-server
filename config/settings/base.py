@@ -355,6 +355,11 @@ def set_logging(debug):
             }
         },
         'loggers': {
+            'landingzones': {
+                'level': 'DEBUG' if debug else 'INFO',
+                'handlers': ['console', ],
+                'propagate': False,
+            },
             'projectroles': {
                 'level': 'DEBUG' if debug else 'INFO',
                 'handlers': ['console', ],
