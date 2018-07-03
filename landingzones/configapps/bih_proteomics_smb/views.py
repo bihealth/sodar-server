@@ -1,28 +1,17 @@
 from datetime import datetime as dt, timedelta
 
 from django.conf import settings
-from django.contrib import auth
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import HttpResponseRedirect
 from django.shortcuts import redirect
 from django.urls import reverse
-from django.views.generic import TemplateView, CreateView
-
-from rest_framework.response import Response
-from rest_framework.views import APIView
+from django.views.generic import TemplateView
 
 # Projectroles dependency
-from projectroles.models import Project
 from projectroles.views import LoggedInPermissionMixin, \
     ProjectPermissionMixin, ProjectContextMixin
 from projectroles.plugins import get_backend_api
 from projectroles.utils import build_secret
-
-# Samplesheets dependency
-from samplesheets.io import get_assay_dirs
-from samplesheets.models import Assay
-from samplesheets.views import InvestigationContextMixin
 
 # Landingzones dependency
 from landingzones.models import LandingZone
