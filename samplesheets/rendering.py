@@ -208,12 +208,6 @@ class SampleSheetTableBuilder:
         :param obj: Original Django model object
         :param classes: Optional extra classes
         """
-        print('obj={}/{}/{}, value={}, classes={}'.format(
-            obj.__class__.__name__, (obj.item_type if
-            hasattr(obj, 'item_type') else None),
-            obj.name if hasattr(obj, 'name') else None,
-            value, classes))  # DEBUG
-
         self._field_header.append({
             'value': value,
             'obj_cls': type(obj),
