@@ -3,9 +3,9 @@
 <div class="row mb-4">
   <h4 class="font-weight-bold {% if section_type == 'assay' %}text-danger{% else %}text-info{% endif %}">
     {% if section_type == 'assay' %}
-      <i class="fa fa-fw fa-table"></i>Assay:
+      <i class="fa fa-fw fa-table" data-toggle="tooltip" data-placement="top" title="{{ item.file_name }}"></i>Assay:
     {% else %}
-      <i class="fa fa-fw fa-list-alt"></i>Study:
+      <i class="fa fa-fw fa-list-alt" data-toggle="tooltip" data-placement="top" title="{{ item.file_name }}"></i>Study:
     {% endif %}
     {{ item.get_display_name }}
     {% if request.user.is_superuser and content_plugin %}
