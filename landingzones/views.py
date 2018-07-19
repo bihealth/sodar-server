@@ -538,7 +538,7 @@ class LandingZoneIrodsObjectListAPIView(
         if request.user.has_perm('landingzones.{}'.format(perm), zone.project):
             try:
                 ret_data = irods_backend.get_objects(
-                    irods_backend.get_path(zone))
+                    irods_backend.get_path(zone), check_md5=True)
                 return Response(ret_data, status=200)
 
             except FileNotFoundError:

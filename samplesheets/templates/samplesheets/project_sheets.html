@@ -390,7 +390,7 @@
                     }
 
                     htmlData = '<table class="table omics-card-table table-striped omics-irods-obj-table">';
-                    htmlData += '<thead><th>File</th><th>Size</th><th>Modified</th><th>MD5</th></thead><tbody>';
+                    htmlData += '<thead><th>File</th><th>Size</th><th>Modified</th></thead><tbody>';
                     $.each(data['data_objects'], function (i, obj) {
                         var objNameSplit = obj['path'].split('/');
                         var objLink = '<a href="{{ irods_webdav_url }}' + obj['path'] + '"><span class="text-muted">';
@@ -399,17 +399,7 @@
                         htmlData += '<tr><td>' + objLink + '</td>';
                         htmlData += '<td>' + humanFileSize(obj['size'], true) + '</td>';
                         htmlData += '<td>' + obj['modify_time'] + '</td>';
-                        htmlData += '<td>';
-
-                        if (obj['md5_file'] === true) {
-                            htmlData += '<span class="text-success"><i class="fa fa-check"></i></span>';
-                        }
-
-                        else {
-                            htmlData += '<span class="text-danger"><i class="fa fa-close"></i></span>';
-                        }
-
-                        htmlData += '</td></tr>';
+                        htmlData += '</tr>';
                     });
                 }
 

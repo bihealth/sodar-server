@@ -91,7 +91,7 @@ class TestIrodsBackendAPITaskflow(
         irods.data_objects.create(path + '/' + TEST_FILE_NAME)
         irods.data_objects.create(path + '/{}.md5'.format(TEST_FILE_NAME))
 
-        obj_list = self.irods_backend.get_objects(path)
+        obj_list = self.irods_backend.get_objects(path, check_md5=True)
         self.assertIsNotNone(obj_list)
         self.assertEqual(len(obj_list['data_objects']), 1)  # md5 not listed
 

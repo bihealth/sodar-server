@@ -12,6 +12,8 @@ Unreleased
 Changed
 -------
 
+- **Irodsbackend**
+   - Refactor ``_get_obj_list()`` and ``_get_obj_stats()`` for performance (#242)
 - **Samplesheets**
    - Search for VCF files under all family members in germline app (#275)
 
@@ -20,6 +22,12 @@ Fixed
 
 - **Samplesheets**
     - Show correct target in germline app ``FileRedirectView`` message (#275)
+
+Removed
+-------
+
+- **Samplesheets**
+    - MD5 display from file list view
 
 
 v0.3.0 (2018-07-03)

@@ -76,65 +76,56 @@ class IrodsAPI:
         return dt.strftime('%Y-%m-%d %H:%M')
 
     @classmethod
-    def _get_obj_list(cls, coll, data=None, recurse=True):
+    def _get_obj_list(cls, coll, check_md5=False):
         """
         Return a list of data objects within an iRODS collection
         :param coll: iRODS collection object
-        :param data: Optional data to append to in case of recursion (dict)
-        :param recurse: Recurse subcollections if True (bool)
+        :param check_md5: Whether to add md5 checksum file info (bool)
         :return: Dict
         """
-        if not data:
-            data = {'data_objects': []}
+        data = {'data_objects': []}
 
-        real_objects = [
-            o for o in coll.data_objects
-            if o.name.split('.')[-1].lower() != 'md5']
+        for current_coll, sub_colls, objects in coll.walk():
+            obj_names = []
 
-        md5_available = [
-            '.'.join(o.path.split('.')[:-1]) for o in coll.data_objects
-            if o.name.split('.')[-1].lower() == 'md5' and o.size > 0]
+            if check_md5:
+                obj_names = [o.name for o in current_coll.data_objects]
 
-        for data_obj in real_objects:
-            data['data_objects'].append({
-                'name': data_obj.name,
-                'path': data_obj.path,
-                'size': data_obj.size,
-                'md5_file': True if
-                data_obj.path in md5_available else False,
-                'modify_time': cls._get_datetime(data_obj.modify_time)})
+            for obj in objects:
+                if obj.name[-4:] != '.md5':
+                    obj_info = {
+                        'name': obj.name,
+                        'path': obj.path,
+                        'size': obj.size,
+                        'modify_time': cls._get_datetime(obj.modify_time)}
 
-        if recurse:
-            for sub_coll in coll.subcollections:
-                data = cls._get_obj_list(sub_coll, data)
+                    if check_md5:
+                        if obj.name + '.md5' in obj_names:
+                            obj_info['md5_file'] = True
+
+                        else:
+                            obj_info['md5_file'] = False
+
+                    data['data_objects'].append(obj_info)
 
         return data
 
     @classmethod
-    def _get_obj_stats(cls, coll, data=None, recurse=True):
+    def _get_obj_stats(cls, coll):
         """
         Return statistics for data objects within an iRODS collection
         :param coll: iRODS collection object
-        :param data: Optional data to append to in case of recursion (dict)
-        :param recurse: Recurse subcollections if True (bool)
         :return: Dict
         """
-        if not data:
-            data = {
-                'file_count': 0,
-                'total_size': 0}
+        data = {
+            'file_count': 0,
+            'total_size': 0}
 
-        real_objects = [
-            o for o in coll.data_objects
-            if o.name.split('.')[-1].lower() != 'md5']
-
-        for data_obj in real_objects:
-            data['file_count'] += 1
-            data['total_size'] += data_obj.size
-
-        if recurse:
-            for sub_coll in coll.subcollections:
-                data = cls._get_obj_stats(sub_coll, data)
+        for current_coll, sub_colls, objects in coll.walk():
+            for obj in objects:
+                if obj.name[-4:] != '.md5':
+                    data['file_count'] += 1
+                    data['total_size'] += obj.size
 
         return data
 
@@ -293,10 +284,11 @@ class IrodsAPI:
         return ret
 
     @init_irods
-    def get_objects(self, path):
+    def get_objects(self, path, check_md5=False):
         """
         Return iRODS object list
         :param path: Full path to iRODS collection
+        :param check_md5: Whether to add md5 checksum file info (bool)
         :return: Dict
         :raise: FileNotFoundError if collection is not found
         """
@@ -306,7 +298,7 @@ class IrodsAPI:
         except CollectionDoesNotExist:
             raise FileNotFoundError('iRODS collection not found')
 
-        ret = self._get_obj_list(coll)
+        ret = self._get_obj_list(coll, check_md5)
         return ret
 
     @init_irods
