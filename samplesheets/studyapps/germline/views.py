@@ -51,7 +51,6 @@ class BaseGermlineConfigView(
         :param study_tables: Render study tables
         :return: String
         """
-
         irods_backend = get_backend_api('omics_irods')
         query_paths = []
         sample_names = []
@@ -60,8 +59,10 @@ class BaseGermlineConfigView(
             assay_table = study_tables['assays'][assay.get_name()]
             assay_plugin = find_assay_plugin(
                 assay.measurement_type, assay.technology_type)
+            source_fam = None
 
-            source_fam = source.characteristics['Family']['value']
+            if 'Family' in source.characteristics:
+                source_fam = source.characteristics['Family']['value']
 
             # Get family index
             fam_idx = get_index_by_header(assay_table, 'family')
@@ -70,10 +71,6 @@ class BaseGermlineConfigView(
             sample_idx = get_index_by_header(
                 assay_table, 'name',
                 obj_cls=GenericMaterial, item_type='SAMPLE')
-
-            # Get source sample (only one per source/assay in germline cases?)
-            if sample_idx:
-                sn = assay_table['table_data'][0][sample_idx]['value']
 
             def get_val_by_index(row, idx):
                 if not idx:
@@ -84,8 +81,14 @@ class BaseGermlineConfigView(
                 row_name = row[1]['value']
                 row_fam = get_val_by_index(row, fam_idx)
 
+                # For VCF files, also search through other samples in family
+                vcf_search = False
+
+                if file_type == 'vcf' and source_fam and row_fam == source_fam:
+                    vcf_search = True
+
                 # Add sample names for source
-                if row_name == source.name:
+                if row_name == source.name or vcf_search:
                     sn = row[sample_idx]['value']
 
                     if sn not in sample_names:
@@ -93,8 +96,7 @@ class BaseGermlineConfigView(
 
                 # Get query path from assay_plugin
                 if assay_plugin:
-                    if (row_name == source.name or (
-                            source_fam and row_fam == source_fam)):
+                    if row_name == source.name or vcf_search:
                         path = assay_plugin.get_row_path(
                             row, assay_table, assay)
                         if path not in query_paths:
@@ -191,9 +193,15 @@ class FileRedirectView(BaseGermlineConfigView):
             study_tables=self.study_tables)
 
         if not file_url:
+            if file_type != 'bam' and 'Family' in self.source.characteristics:
+                target_name = self.source.characteristics['Family']['value']
+
+            else:
+                target_name = self.source.name
+
             messages.warning(
                 self.request, 'No {} file found for {}'.format(
-                    file_type.upper(), self.source.name))
+                    file_type.upper(), target_name))
             return redirect(self.redirect_url)
 
         # Return with link to file in DavRods

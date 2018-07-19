@@ -6,6 +6,22 @@ Changelog for the SODAR Web UI. Loosely follows the
 guidelines.
 
 
+Unreleased
+==========
+
+Changed
+-------
+
+- **Samplesheets**
+   - Search for VCF files under all family members in germline app (#275)
+
+Fixed
+-----
+
+- **Samplesheets**
+    - Show correct target in germline app ``FileRedirectView`` message (#275)
+
+
 v0.3.0 (2018-07-03)
 ===================
 
