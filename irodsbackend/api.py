@@ -5,11 +5,12 @@ import itertools
 import operator
 
 from irods.api_number import api_number
+from irods.collection import iRODSCollection
 from irods.column import Criterion
 from irods.data_object import iRODSDataObject
 from irods.exception import CollectionDoesNotExist
 from irods.message import TicketAdminRequest, iRODSMessage
-from irods.models import DataObject
+from irods.models import Collection, DataObject
 from irods.session import iRODSSession
 from irods.ticket import Ticket
 
@@ -87,6 +88,18 @@ class IrodsAPI:
         return '%/' + '/'.join(coll.path.split('/')[2:]) + '/%'
 
     @classmethod
+    def _get_colls_recursively(cls, coll):
+        """
+        Return all subcollections for a coll efficiently (without multiple
+        queries)
+        :param coll: Collection object
+        :return: List
+        """
+        query = coll.manager.sess.query(Collection).filter(
+            Criterion('like', Collection.parent_name, coll.path + '%'))
+        return [iRODSCollection(coll.manager, row) for row in query]
+
+    @classmethod
     def _get_objs_recursively(cls, coll, md5=False):
         """
         Return objects below a coll recursively (replacement for the
@@ -104,11 +117,25 @@ class IrodsAPI:
 
         results = query.get_results()
         grouped = itertools.groupby(results, operator.itemgetter(DataObject.id))
+        ret = []
 
-        return [
-            iRODSDataObject(
-                coll.manager.sess.data_objects, coll, list(replicas)) for
-            _, replicas in grouped]
+        # HACK: Must build the symbolic paths manually here, a better way?
+        #       With the query, only physical replica paths are returned..
+        path_prefix = '/{}/'.format(settings.IRODS_ZONE)
+        symb_colls = {c.path: c for c in cls._get_colls_recursively(coll)}
+        symb_colls[coll.path] = coll    # Files can also be in root :)
+
+        for _, replicas in grouped:
+            r_list = list(replicas)
+            r_path = r_list[0][DataObject.path].split('/')
+            parent_path = path_prefix + '/'.join(
+                r_path[r_path.index('projects'):-1])
+            parent_coll = symb_colls[parent_path]
+
+            ret.append(
+                iRODSDataObject(
+                    coll.manager.sess.data_objects, parent_coll, r_list))
+        return ret
 
     @classmethod
     def _get_obj_list(cls, coll, check_md5=False):
