@@ -146,13 +146,13 @@ class IrodsAPI:
         :return: Dict
         """
         data = {'data_objects': []}
-        md5_names = None
+        md5_paths = None
 
         data_objs = cls._get_objs_recursively(coll)
 
         if check_md5:
-            md5_names = [
-                o.name for o in cls._get_objs_recursively(coll, md5=True)]
+            md5_paths = [
+                o.path for o in cls._get_objs_recursively(coll, md5=True)]
 
         for obj in data_objs:
             obj_info = {
@@ -162,7 +162,7 @@ class IrodsAPI:
                 'modify_time': cls._get_datetime(obj.modify_time)}
 
             if check_md5:
-                if obj.name + '.md5' in md5_names:
+                if obj.path + '.md5' in md5_paths:
                     obj_info['md5_file'] = True
 
                 else:
