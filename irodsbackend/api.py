@@ -1,9 +1,15 @@
 """iRODS REST API for SODAR Django apps"""
 
 from functools import wraps
+import itertools
+import operator
+
 from irods.api_number import api_number
+from irods.column import Criterion
+from irods.data_object import iRODSDataObject
 from irods.exception import CollectionDoesNotExist
 from irods.message import TicketAdminRequest, iRODSMessage
+from irods.models import DataObject
 from irods.session import iRODSSession
 from irods.ticket import Ticket
 
@@ -76,6 +82,35 @@ class IrodsAPI:
         return dt.strftime('%Y-%m-%d %H:%M')
 
     @classmethod
+    def _get_search_path(cls, coll):
+        """Return a search path string for a collection"""
+        return '%/' + '/'.join(coll.path.split('/')[2:]) + '/%'
+
+    @classmethod
+    def _get_objs_recursively(cls, coll, md5=False):
+        """
+        Return objects below a coll recursively (replacement for the
+        non-scalable walk() function in the API)
+        :param coll: Collection object
+        :param md5: if True, return .md5 files, otherwise anything but them
+        :return: List
+        """
+        search_path = cls._get_search_path(coll)
+        obj_filter = 'like' if md5 else 'not like'
+
+        query = coll.manager.sess.query(DataObject).filter(
+            Criterion('like', DataObject.path, search_path)).filter(
+            Criterion(obj_filter, DataObject.name, '%.md5'))
+
+        results = query.get_results()
+        grouped = itertools.groupby(results, operator.itemgetter(DataObject.id))
+
+        return [
+            iRODSDataObject(
+                coll.manager.sess.data_objects, coll, list(replicas)) for
+            _, replicas in grouped]
+
+    @classmethod
     def _get_obj_list(cls, coll, check_md5=False):
         """
         Return a list of data objects within an iRODS collection
@@ -84,29 +119,29 @@ class IrodsAPI:
         :return: Dict
         """
         data = {'data_objects': []}
+        md5_names = None
 
-        for current_coll, sub_colls, objects in coll.walk():
-            obj_names = []
+        data_objs = cls._get_objs_recursively(coll)
+
+        if check_md5:
+            md5_names = [
+                o.name for o in cls._get_objs_recursively(coll, md5=True)]
+
+        for obj in data_objs:
+            obj_info = {
+                'name': obj.name,
+                'path': obj.path,
+                'size': obj.size,
+                'modify_time': cls._get_datetime(obj.modify_time)}
 
             if check_md5:
-                obj_names = [o.name for o in current_coll.data_objects]
+                if obj.name + '.md5' in md5_names:
+                    obj_info['md5_file'] = True
 
-            for obj in objects:
-                if obj.name[-4:] != '.md5':
-                    obj_info = {
-                        'name': obj.name,
-                        'path': obj.path,
-                        'size': obj.size,
-                        'modify_time': cls._get_datetime(obj.modify_time)}
+                else:
+                    obj_info['md5_file'] = False
 
-                    if check_md5:
-                        if obj.name + '.md5' in obj_names:
-                            obj_info['md5_file'] = True
-
-                        else:
-                            obj_info['md5_file'] = False
-
-                    data['data_objects'].append(obj_info)
+            data['data_objects'].append(obj_info)
 
         return data
 
@@ -121,11 +156,20 @@ class IrodsAPI:
             'file_count': 0,
             'total_size': 0}
 
-        for current_coll, sub_colls, objects in coll.walk():
-            for obj in objects:
-                if obj.name[-4:] != '.md5':
-                    data['file_count'] += 1
-                    data['total_size'] += obj.size
+        search_path = cls._get_search_path(coll)
+
+        query = coll.manager.sess.query().filter(
+            Criterion('like', DataObject.path, search_path)).filter(
+            Criterion('not like', DataObject.name, '%.md5')).count(
+                DataObject.id).sum(DataObject.size)
+
+        try:
+            result = query.first()
+            data['file_count'] += result[DataObject.id]
+            data['total_size'] += result[DataObject.size]
+
+        except Exception:
+            pass
 
         return data
 
