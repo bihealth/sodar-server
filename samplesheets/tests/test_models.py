@@ -14,6 +14,7 @@ from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
 
 from ..models import Investigation, Study, Assay, Protocol, Process, \
     GenericMaterial, NOT_AVAILABLE_STR
+from ..utils import get_alt_names
 
 
 # Local constants --------------------------------------------------------------
@@ -470,6 +471,7 @@ class TestSource(TestSampleSheetBase):
             'item_type': 'SOURCE',
             'name': SOURCE_NAME,
             'unique_name': SOURCE_UNIQUE_NAME,
+            'alt_names': get_alt_names(SOURCE_NAME),
             'characteristics': SOURCE_CHARACTERISTICS,
             'study': self.study.pk,
             'assay': None,
@@ -535,6 +537,7 @@ class TestSample(TestSampleSheetBase):
             'item_type': 'SAMPLE',
             'name': SAMPLE_NAME,
             'unique_name': SAMPLE_UNIQUE_NAME,
+            'alt_names': get_alt_names(SAMPLE_NAME),
             'characteristics': SAMPLE_CHARACTERISTICS,
             'study': self.study.pk,
             'assay': None,
@@ -600,6 +603,7 @@ class TestMaterial(TestSampleSheetBase):
             'item_type': 'MATERIAL',
             'name': MATERIAL_NAME,
             'unique_name': MATERIAL_UNIQUE_NAME,
+            'alt_names': get_alt_names(MATERIAL_NAME),
             'characteristics': {},
             'study': self.study.pk,
             'assay': self.assay.pk,
@@ -665,6 +669,7 @@ class TestDataFile(TestSampleSheetBase):
             'item_type': 'DATA',
             'name': DATA_NAME,
             'unique_name': DATA_UNIQUE_NAME,
+            'alt_names': get_alt_names(DATA_NAME),
             'characteristics': {},
             'study': self.study.pk,
             'assay': self.assay.pk,

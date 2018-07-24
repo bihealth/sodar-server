@@ -1,9 +1,20 @@
 """Utilities for the samplesheets app"""
 
+import re
+
 # Projectroles dependency
 from projectroles.plugins import get_backend_api
 
-from .models import Investigation
+
+def get_alt_names(name):
+    """
+    Return list of alternative names for an object
+    :param name: Original name/ID (string)
+    :return: List
+    """
+    return [
+        name.replace('_', '-'),
+        re.sub(r'[^a-zA-Z0-9]', '', name)]
 
 
 def get_sample_dirs(investigation):

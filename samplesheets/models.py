@@ -10,6 +10,8 @@ from django.utils.text import slugify
 # Projectroles dependency
 from projectroles.models import Project
 
+from .utils import get_alt_names
+
 
 # Local constants
 DEFAULT_LENGTH = 255
@@ -466,7 +468,8 @@ class GenericMaterialManager(models.Manager):
             item_type='MATERIAL').order_by('name')
 
         objects = objects.filter(
-            Q(name__icontains=search_term))     # TODO: TBD: Other fields?
+            Q(name__icontains=search_term) |
+            Q(alt_names__icontains=search_term))
 
         if item_type:
             objects = objects.filter(item_type=item_type)
@@ -502,6 +505,13 @@ class GenericMaterial(BaseSampleSheet):
         blank=True,
         null=True,
         help_text='Unique material name')
+
+    #: Alternative names to aid lookup
+    alt_names = ArrayField(
+        ArrayField(
+            models.CharField(max_length=DEFAULT_LENGTH, blank=True)),
+        default=list,
+        help_text='Alternative names')
 
     #: Material characteristics (NOT needed for DataFile)
     characteristics = JSONField(
@@ -582,6 +592,10 @@ class GenericMaterial(BaseSampleSheet):
         self._validate_parent()
         self._validate_item_fields()
         super(GenericMaterial, self).save(*args, **kwargs)
+
+        if not self.alt_names:
+            self.alt_names = get_alt_names(self.name)
+            self.save()
 
     def _validate_parent(self):
         """Validate the existence of a parent assay or study"""

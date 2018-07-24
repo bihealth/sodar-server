@@ -16,6 +16,7 @@ Added
     - Display original study/assay filenames as tooltips (#283)
     - Display assays for samples in search results (#157)
     - Helper function ``GenericMaterial.get_sample_assays()`` (#157)
+    - Auto-populated field ``alt_names`` in the ``GenericMaterial`` model (#285)
 
 Changed
 -------
@@ -24,6 +25,7 @@ Changed
     - Optimized iRODS queries for increased performance (#242)
 - **Samplesheets**
     - Search for VCF files under all family members in germline app (#275)
+    - Include ``alt_name`` in GenericMaterial search (#285)
 
 Fixed
 -----
