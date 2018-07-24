@@ -14,6 +14,7 @@ Added
 
 - **Samplesheets**
     - Display original study/assay filenames as tooltips (#283)
+    - Display assays for samples in search results (#157)
 
 Changed
 -------

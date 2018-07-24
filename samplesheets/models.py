@@ -611,6 +611,16 @@ class GenericMaterial(BaseSampleSheet):
 
         return None  # This should not happen and is caught during validation
 
+    def get_sample_assays(self):
+        """If the material is a SAMPLE, return assays where it is used, else
+        None"""
+        if self.item_type != 'SAMPLE':
+            return None
+
+        return Assay.objects.filter(
+            study=self.study, arcs__contains=[self.unique_name]).order_by(
+            'file_name')
+
 
 # Process ----------------------------------------------------------------------
 

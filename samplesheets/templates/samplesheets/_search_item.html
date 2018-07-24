@@ -20,7 +20,14 @@
     {% endif %}
   </td>
   <td>
-    {% if item.assay %}
+    {% if item.item_type == 'SAMPLE' %}
+      {% for assay in item.get_sample_assays %}
+        <a href="{% url 'samplesheets:project_sheets' study=item.study.omics_uuid %}#assay{{ assay.omics_uuid }}">
+          {{ assay.get_display_name }}
+        </a>
+        <br />
+      {% endfor %}
+    {% elif item.assay %}
       <a href="{% url 'samplesheets:project_sheets' study=item.study.omics_uuid %}#assay{{ item.assay.omics_uuid }}">
         {{ item.assay.get_display_name }}
       </a>
