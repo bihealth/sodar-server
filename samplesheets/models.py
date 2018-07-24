@@ -591,11 +591,11 @@ class GenericMaterial(BaseSampleSheet):
         """Override save() to include custom validation functions"""
         self._validate_parent()
         self._validate_item_fields()
-        super(GenericMaterial, self).save(*args, **kwargs)
 
         if not self.alt_names:
             self.alt_names = get_alt_names(self.name)
-            self.save()
+
+        super(GenericMaterial, self).save(*args, **kwargs)
 
     def _validate_parent(self):
         """Validate the existence of a parent assay or study"""

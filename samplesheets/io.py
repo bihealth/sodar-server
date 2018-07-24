@@ -9,6 +9,7 @@ import time
 from .models import Investigation, Study, Assay, GenericMaterial, Protocol, \
     Process
 from .rendering import SampleSheetTableBuilder
+from .utils import get_alt_names
 
 
 # Local constants
@@ -146,6 +147,7 @@ def import_isa(isa_zip, project):
                 'item_type': item_type,
                 'name': m.name,
                 'unique_name': m.unique_name,
+                'alt_names': get_alt_names(m.name),
                 'study': study}
 
             if type(db_parent) == Assay:
