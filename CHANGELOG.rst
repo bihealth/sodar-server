@@ -28,6 +28,7 @@ Fixed
 
 - **Samplesheets**
     - Show correct target in germline app ``FileRedirectView`` message (#275)
+    - Source/sample name search resulted in a template crash (#287)
 
 Removed
 -------

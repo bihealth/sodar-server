@@ -13,7 +13,7 @@
   <td>
     {% if item.study %}
       <a href="{% url 'samplesheets:project_sheets' study=item.study.omics_uuid %}">
-        {% get_study_title item.study %}
+        {{ item.study.get_display_name }}
       </a>
     {% else %}
       N/A
@@ -22,7 +22,7 @@
   <td>
     {% if item.assay %}
       <a href="{% url 'samplesheets:project_sheets' study=item.study.omics_uuid %}#assay{{ item.assay.omics_uuid }}">
-        {% get_assay_title item.assay %}
+        {{ item.assay.get_display_name }}
       </a>
     {% else %}
       N/A
