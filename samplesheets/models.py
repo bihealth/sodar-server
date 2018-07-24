@@ -10,7 +10,7 @@ from django.utils.text import slugify
 # Projectroles dependency
 from projectroles.models import Project
 
-from .utils import get_alt_names
+from .utils import get_alt_names, ALT_NAMES_COUNT
 
 
 # Local constants
@@ -467,9 +467,13 @@ class GenericMaterialManager(models.Manager):
             GenericMaterialManager, self).get_queryset().exclude(
             item_type='MATERIAL').order_by('name')
 
-        objects = objects.filter(
-            Q(name__icontains=search_term) |
-            Q(alt_names__icontains=search_term))
+        q_filters = Q(name__iexact=search_term)
+
+        # HACK for ArrayField
+        for i in range(0, ALT_NAMES_COUNT):
+            q_filters |= Q(**{'alt_names__{}__iexact'.format(i): search_term})
+
+        objects = objects.filter(q_filters)
 
         if item_type:
             objects = objects.filter(item_type=item_type)

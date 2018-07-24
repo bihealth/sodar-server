@@ -6,6 +6,9 @@ import re
 from projectroles.plugins import get_backend_api
 
 
+ALT_NAMES_COUNT = 2     # Needed for ArrayField hack
+
+
 def get_alt_names(name):
     """
     Return list of alternative names for an object
