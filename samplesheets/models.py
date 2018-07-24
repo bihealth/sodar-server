@@ -508,9 +508,9 @@ class GenericMaterial(BaseSampleSheet):
 
     #: Alternative names to aid lookup
     alt_names = ArrayField(
-        ArrayField(
-            models.CharField(max_length=DEFAULT_LENGTH, blank=True)),
+        models.CharField(max_length=DEFAULT_LENGTH, blank=True),
         default=list,
+        db_index=True,
         help_text='Alternative names')
 
     #: Material characteristics (NOT needed for DataFile)
