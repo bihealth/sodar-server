@@ -9,13 +9,19 @@ guidelines.
 Unreleased
 ==========
 
+Added
+-----
+
+- **Samplesheets**
+    - Display original study/assay filenames as tooltips (#283)
+
 Changed
 -------
 
 - **Irodsbackend**
-   - Refactor ``_get_obj_list()`` and ``_get_obj_stats()`` for performance (#242)
+    - Optimized iRODS queries for increased performance (#242)
 - **Samplesheets**
-   - Search for VCF files under all family members in germline app (#275)
+    - Search for VCF files under all family members in germline app (#275)
 
 Fixed
 -----
