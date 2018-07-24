@@ -27,6 +27,7 @@ Changed
 - **Samplesheets**
     - Search for VCF files under all family members in germline app (#275)
     - Include ``alt_name`` in GenericMaterial search (#285)
+    - Improve search results layout
 
 Fixed
 -----

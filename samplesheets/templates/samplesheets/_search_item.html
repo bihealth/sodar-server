@@ -3,8 +3,8 @@
 {% load projectroles_common_tags %}
 
 <tr class="omics-ss-search-list-item" id="omics-ss-project-search-item-{{ item.omics_uuid }}">
-  <td><a href="{% get_material_link item %}">{{ item.name }}</a></td>
-  <td>{% get_material_type item %}</td>
+  <td class="text-nowrap"><a href="{% get_material_link item %}">{{ item.name }}</a></td>
+  <td class="text-nowrap">{% get_material_type item %}</td>
   <td>
     {% autoescape off %}
       {% get_project_link item.get_project %}
