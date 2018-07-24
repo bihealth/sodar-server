@@ -15,6 +15,7 @@ Added
 - **Samplesheets**
     - Display original study/assay filenames as tooltips (#283)
     - Display assays for samples in search results (#157)
+    - Helper function ``GenericMaterial.get_sample_assays()`` (#157)
 
 Changed
 -------
@@ -27,6 +28,8 @@ Changed
 Fixed
 -----
 
+- **Projectroles**
+    - Extra spaces and tabs broke search (#290)
 - **Samplesheets**
     - Show correct target in germline app ``FileRedirectView`` message (#275)
     - Source/sample name search resulted in a template crash (#287)

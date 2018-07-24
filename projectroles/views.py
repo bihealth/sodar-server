@@ -303,17 +303,16 @@ class ProjectSearchView(LoginRequiredMixin, TemplateView):
 
         plugins = get_active_plugins(plugin_type='project_app')
 
-        search_input = self.request.GET.get('s')
+        search_input = self.request.GET.get('s').strip()
         context['search_input'] = search_input
 
         search_split = search_input.split(' ')
-        search_term = search_split[0]
+        search_term = search_split[0].strip()
         search_type = None
         search_keywords = {}
 
         for i in range(1, len(search_split)):
-            s = search_split[i]
-
+            s = search_split[i].strip()
             if ':' in s:
                 kw = s.split(':')[0].lower().strip()
                 val = s.split(':')[1].lower().strip()
@@ -324,7 +323,7 @@ class ProjectSearchView(LoginRequiredMixin, TemplateView):
                 else:
                     search_keywords[kw] = val
 
-            else:
+            elif s != '':
                 search_term += ' ' + s
 
         context['search_term'] = search_term
