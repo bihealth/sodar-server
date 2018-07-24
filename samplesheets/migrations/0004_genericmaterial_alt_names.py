@@ -3,7 +3,8 @@
 from __future__ import unicode_literals
 
 import django.contrib.postgres.fields
-from django.db import migrations, models
+from django.db import migrations, models, transaction
+
 
 from samplesheets.utils import get_alt_names
 
@@ -11,9 +12,10 @@ from samplesheets.utils import get_alt_names
 def populate_alt_names(apps, schema_editor):
     GenericMaterial = apps.get_model('samplesheets', 'GenericMaterial')
 
-    for m in GenericMaterial.objects.all():
-        if not m.alt_names:
-            m.save()
+    with transaction.atomic():
+        for m in GenericMaterial.objects.all():
+            if not m.alt_names:
+                m.save()
 
 
 class Migration(migrations.Migration):

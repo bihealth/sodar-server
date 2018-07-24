@@ -17,6 +17,7 @@ Added
     - Display assays for samples in search results (#157)
     - Helper function ``GenericMaterial.get_sample_assays()`` (#157)
     - Auto-populated field ``alt_names`` in the ``GenericMaterial`` model (#285)
+    - Management command ``syncnames`` to update ``alt_names`` (#285)
 
 Changed
 -------
