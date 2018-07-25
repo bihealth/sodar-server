@@ -355,6 +355,10 @@ table.omics-irods-obj-table tbody tr td:nth-child(4) {
 
 /* Popups */
 
+.popover {
+  max-width: 600px;
+}
+
 .omics-popup-overlay {
   background: transparent;
   min-width: 50%;

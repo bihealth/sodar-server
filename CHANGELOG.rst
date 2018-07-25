@@ -39,6 +39,8 @@ Changed
 Fixed
 -----
 
+- **General**
+    - Popover width in CSS (#291)
 - **Projectroles**
     - Extra spaces and tabs broke search (#290)
 - **Samplesheets**
