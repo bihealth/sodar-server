@@ -41,7 +41,7 @@ CUBI SODAR system.
 
 MESSAGE_FOOTER = r'''
 
-For support or reporting issues regarding the CUBI SODAR
+For support and reporting issues regarding the CUBI SODAR
 system, contact Mikko Nieminen (mikko.nieminen@bihealth.de).
 '''
 

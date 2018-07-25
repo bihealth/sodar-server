@@ -12,6 +12,8 @@ Unreleased
 Added
 -----
 
+- **Landingzones**
+    - Send email when zone status is set as ``MOVED`` or ``FAILED`` (#280)
 - **Projectroles**
     - Helper ``email.send_generic_mail()`` (#280)
 - **Samplesheets**

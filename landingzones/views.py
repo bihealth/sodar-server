@@ -13,6 +13,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 # Projectroles dependency
+from projectroles.email import send_generic_mail
 from projectroles.models import Project
 from projectroles.views import LoggedInPermissionMixin, \
     ProjectPermissionMixin, ProjectContextMixin
@@ -37,6 +38,35 @@ logger = logging.getLogger(__name__)
 
 
 APP_NAME = 'landingzones'
+
+
+EMAIL_MESSAGE_MOVED = r'''
+Data was successfully validated and moved into the project
+sample data repository from your landing zone.
+
+Project: {project}
+Assay: {assay}
+Landing zone: {zone}
+Zone owner: {user} <{user_email}>
+Zone UUID: {zone_uuid}
+
+Status message:
+"{status_info}"'''.lstrip()
+
+
+EMAIL_MESSAGE_FAILED = r'''
+Validating and moving data from your landing zone into the
+project sample data repository has failed. Please verify your
+data and request for support if the problem persists.
+
+Project: {project}
+Assay: {assay}
+Landing zone: {zone}
+Zone owner: {user} <{user_email}>
+Zone UUID: {zone_uuid}
+
+Status message:
+"{status_info}"'''.lstrip()
 
 
 class LandingZoneContextMixin:
@@ -727,6 +757,28 @@ class ZoneStatusSetAPIView(APIView):
 
         except TypeError:
             return Response('Invalid status type', status=400)
+
+        zone.refresh_from_db()
+
+        # Send email
+        if zone.status in ['MOVED', 'FAILED']:
+            subject_body = 'Landing zone {}: {} / {}'.format(
+                zone.status.lower(), zone.project.title, zone.title)
+
+            message_body = EMAIL_MESSAGE_MOVED if \
+                zone.status == 'MOVED' else EMAIL_MESSAGE_FAILED
+
+            message_body = message_body.format(
+                zone=zone.title,
+                project=zone.project.title,
+                assay=zone.assay.get_display_name(),
+                user=zone.user.username,
+                user_email=zone.user.email,
+                zone_uuid=str(zone.omics_uuid),
+                status_info=zone.status_info)
+
+            send_generic_mail(
+                subject_body, message_body, [zone.user], request)
 
         # If zone is deleted, call plugin function
         if request.data['status'] in ['MOVED', 'DELETED']:
