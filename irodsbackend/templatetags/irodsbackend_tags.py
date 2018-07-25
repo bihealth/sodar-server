@@ -16,16 +16,20 @@ def get_irods_path(obj):
 
 
 @register.simple_tag
-def get_stats_html(irods_path, classes='badge-success'):
+def get_stats_html(irods_path, project=None):
     """
     Return collection stats badge element into a template
     :param irods_path: Full iRODS path (string)
-    :param classes: Extra classes (string)
+    :param project: Project object (optional)
     :return: String (contains HTML)
     """
+    url_kwargs = {'path': irods_path}
+
+    if project:
+        url_kwargs['project'] = project.omics_uuid
+
     return '<span class="badge badge-pill badge-info omics-irods-stats"' \
            'stats-url="{url}">' \
            '<i class="fa fa-spin fa-circle-o-notch"></i> Updating stats..' \
            '</span>'.format(
-            classes=classes,
-            url=reverse('irodsbackend:stats', kwargs={'path': irods_path}))
+            url=reverse('irodsbackend:stats', kwargs=url_kwargs))

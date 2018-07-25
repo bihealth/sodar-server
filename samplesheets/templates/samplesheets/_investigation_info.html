@@ -23,7 +23,7 @@
         {% if irods_backend %}
           {% get_irods_path investigation as irods_inv_path %}
           {% autoescape off %}
-            {% get_stats_html irods_inv_path %}
+            {% get_stats_html irods_inv_path project %}
           {% endautoescape %}
         {% endif %}
       {% else %}
