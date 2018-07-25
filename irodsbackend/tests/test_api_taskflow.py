@@ -100,7 +100,7 @@ class TestIrodsBackendAPITaskflow(
             'name': TEST_FILE_NAME,
             'path': path + '/' + TEST_FILE_NAME,
             'size': 0,
-            'md5_file': False,  # Size of md5 file is 0 -> not true
+            'md5_file': True,
             'modify_time': obj['modify_time']}
         self.assertEqual(obj, expected)
 
