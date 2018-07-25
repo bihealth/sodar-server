@@ -14,8 +14,10 @@
       </a>
 
       {% for a in s.assays.all %}
-        <a class="dropdown-item omics-ss-nav-item ml-4" href="{% if s != study %}{% url 'samplesheets:project_sheets' study=s.omics_uuid %}{% endif %}#{{ a.omics_uuid }}">
-           {% autoescape off %}{% get_icon a %}{% endautoescape %} {{ a.get_display_name }}
+        <a class="dropdown-item omics-ss-nav-item" href="{% if s != study %}{% url 'samplesheets:project_sheets' study=s.omics_uuid %}{% endif %}#{{ a.omics_uuid }}">
+          <span class="ml-4">
+            {% autoescape off %}{% get_icon a %}{% endautoescape %} {{ a.get_display_name }}
+          </span>
         </a>
       {% endfor %}
     {% endfor %}
