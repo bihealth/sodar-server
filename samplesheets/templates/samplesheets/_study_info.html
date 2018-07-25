@@ -1,5 +1,9 @@
 {% load samplesheets_tags %}
 
+{% if irods_backend %}
+  {% load irodsbackend_tags %}
+{% endif %}
+
 <div class="card-body omics-card-body">
   <dl class="row omics-dl">
     <dt class="col-md-3">Title</dt>
@@ -20,6 +24,12 @@
     <dd class="col-md-9">
       {% if investigation.irods_status %}
         <span class="badge badge-pill badge-success">Available</span>
+        {% if irods_backend %}
+          {% get_irods_path study as irods_study_path %}
+          {% autoescape off %}
+            {% get_stats_html irods_study_path %}
+          {% endautoescape %}
+        {% endif %}
       {% else %}
         <span class="badge badge-pill badge-danger">Not Created</span>
       {% endif %}

@@ -39,6 +39,9 @@ urlpatterns = [
     url(r'^samplesheets/', include('samplesheets.urls')),
     url(r'^landingzones/', include('landingzones.urls')),
 
+    # Backend apps with API URLs
+    url(r'^irodsbackend/', include('irodsbackend.urls')),
+
     # Samplesheets study sub-app URLs
     url(
         r'^samplesheets/study/germline/',

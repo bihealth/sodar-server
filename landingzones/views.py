@@ -649,6 +649,7 @@ class LandingZoneListAPIView(APIView):
         return Response(ret_data, status=200)
 
 
+# TODO: Use the new generic view in irodsbackend instead
 class LandingZoneIrodsStatisticsGetAPIView(
         LoginRequiredMixin, ProjectContextMixin, APIView):
     """View for returning landing zone statistics for the UI"""

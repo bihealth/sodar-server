@@ -234,6 +234,7 @@
     /***************************************
      Zone file statistics updating function
      ***************************************/
+    // TODO: Use the new generic function in irodsbackend instead
     var updateZoneFileStats = function() {
         $('.omics-lz-zone-tr-existing').each(function () {
             var zoneTr = $(this);
@@ -255,7 +256,7 @@
                     }
 
                     statsSpan.text(
-                         + data['file_count'] + ' data file' + fileSuffix +
+                        data['file_count'] + ' data file' + fileSuffix +
                         ' ('+ humanFileSize(data['total_size'], true) + ')');
                 });
             }

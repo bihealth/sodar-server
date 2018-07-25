@@ -25,6 +25,7 @@ ACCEPTED_PATH_TYPES = [
     'Assay',
     'LandingZone',
     'Project',
+    'Investigation',
     'Study']
 
 
@@ -299,8 +300,12 @@ class IrodsAPI:
         if obj_class == 'Project':
             return path
 
+        elif obj_class == 'Investigation':
+            path += '/{sample_dir}'.format(
+                sample_dir=settings.IRODS_SAMPLE_DIR)
+
         # Study (in sample data)
-        if obj_class == 'Study':
+        elif obj_class == 'Study':
             path += '/{sample_dir}/{study}'.format(
                 sample_dir=settings.IRODS_SAMPLE_DIR,
                 study=cls.get_subdir(obj))

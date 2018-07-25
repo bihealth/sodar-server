@@ -12,6 +12,9 @@ Unreleased
 Added
 -----
 
+- **Irodsbackend**
+    - Generic iRODS file statistics view, template tags and Javascript (#181, #188)
+    - Missing support for Investigation objects in ``get_path()`` (#292)
 - **Landingzones**
     - Send email when zone status is set as ``MOVED`` or ``FAILED`` (#280)
     - Unit tests for ``ZoneStatusSetAPIView``
@@ -23,6 +26,7 @@ Added
     - Helper function ``GenericMaterial.get_sample_assays()`` (#157)
     - Auto-populated field ``alt_names`` in the ``GenericMaterial`` model (#285)
     - Management command ``syncnames`` to update ``alt_names`` (#285)
+    - Display project/study file statistics using irodsbackend (#188)
 
 Changed
 -------

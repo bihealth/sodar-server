@@ -63,3 +63,12 @@
 </div> {# Main container #}
 
 {% endblock projectroles_extend %}
+
+{% block javascript %}
+    {{ block.super }}
+
+    {% if irods_backend %}
+      <!-- iRODS backend Javascript -->
+      <script type="text/javascript" src="{% static 'irodsbackend/js/irodsbackend.js' %}"></script>
+    {% endif %}
+{% endblock javascript %}
