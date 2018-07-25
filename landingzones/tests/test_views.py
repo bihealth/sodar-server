@@ -4,6 +4,7 @@ from test_plus.test import TestCase
 from unittest import skipIf
 
 from django.conf import settings
+from django.core import mail
 from django.core.urlresolvers import reverse
 from django.forms.models import model_to_dict
 from django.test import RequestFactory
@@ -178,7 +179,7 @@ class TestLandingZoneClearView(TestViewsBase):
         self.assertEqual(LandingZone.objects.all().count(), 0)
 
 
-class TestLandingStoneStatusGetAPIView(TestViewsBase):
+class TestLandingZoneStatusGetAPIView(TestViewsBase):
     """Tests for the landing zone status getting API view"""
 
     def test_get(self):
@@ -196,8 +197,58 @@ class TestLandingStoneStatusGetAPIView(TestViewsBase):
             self.assertEquals(response.data, expected)
 
 
+# NOTE: Taskflow actually not required for this view
+class TestLandingZoneStatusSetAPIView(TestViewsBase):
+    """Tests for the landing zone status setting API view"""
+
+    def test_post_status_active(self):
+        """Test POST request for setting a landing zone status into ACTIVE"""
+        with self.login(self.user):
+            values = {
+                'zone_uuid': str(self.landing_zone.omics_uuid),
+                'status': 'ACTIVE',
+                'status_info': DEFAULT_STATUS_INFO['ACTIVE']}
+
+            response = self.client.post(
+                reverse('landingzones:taskflow_zone_status_set'),
+                values)
+
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(len(mail.outbox), 0)   # No mail sent for ACTIVE
+
+    def test_post_status_moved(self):
+        """Test POST request for setting a landing zone status into MOVED"""
+        with self.login(self.user):
+            values = {
+                'zone_uuid': str(self.landing_zone.omics_uuid),
+                'status': 'MOVED',
+                'status_info': DEFAULT_STATUS_INFO['MOVED']}
+
+            response = self.client.post(
+                reverse('landingzones:taskflow_zone_status_set'),
+                values)
+
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(len(mail.outbox), 1)   # Mail should be sent
+
+    def test_post_status_failed(self):
+        """Test POST request for setting a landing zone status into FAILED"""
+        with self.login(self.user):
+            values = {
+                'zone_uuid': str(self.landing_zone.omics_uuid),
+                'status': 'FAILED',
+                'status_info': DEFAULT_STATUS_INFO['FAILED']}
+
+            response = self.client.post(
+                reverse('landingzones:taskflow_zone_status_set'),
+                values)
+
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(len(mail.outbox), 1)   # Mail should be sent
+
+
 @skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
-class TestLandingStoneStatisticsGetAPIView(TestViewsBase):
+class TestLandingZoneStatisticsGetAPIView(TestViewsBase):
     """Tests for the landing zone file statistics API view"""
 
     def test_get_not_created(self):
