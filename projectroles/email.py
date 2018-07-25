@@ -2,12 +2,16 @@
 import logging
 
 from django.conf import settings
-from django.contrib import messages
+from django.contrib import auth, messages
 from django.core.mail import send_mail as _send_mail
 from django.urls import reverse
 from django.utils.timezone import localtime
 
 from .utils import build_invite_url
+
+
+# Access Django user model
+User = auth.get_user_model()
 
 
 # Settings
@@ -36,6 +40,7 @@ CUBI SODAR system.
 '''.lstrip()
 
 MESSAGE_FOOTER = r'''
+
 For support or reporting issues regarding the CUBI SODAR
 system, contact Mikko Nieminen (mikko.nieminen@bihealth.de).
 '''
@@ -243,9 +248,6 @@ def get_role_change_body(
     return body
 
 
-# Sending functions ------------------------------------------------------
-
-
 def send_mail(subject, message, recipient_list, request, fail_silently=False):
     """
     Wrapper for send_mail() with logging and error messaging
@@ -277,6 +279,9 @@ def send_mail(subject, message, recipient_list, request, fail_silently=False):
 
         messages.error(request, error_msg)
         return 0
+
+
+# Sending functions ------------------------------------------------------
 
 
 def send_role_change_mail(change_type, project, user, role, request):
@@ -376,3 +381,34 @@ def send_expiry_note(invite, request):
     message += MESSAGE_FOOTER
 
     return send_mail(subject, message, [invite.issuer.email], request)
+
+
+def send_generic_mail(subject_body, message_body, recipient_list, request):
+    """
+    Send a notification email to the issuer of an invitation when a user
+    attempts to accept an expired invitation.
+    :param subject_body: Subject body without prefix (string)
+    :param message_body: Message body before header or footer (string)
+    :param recipient_list: Recipients (list of User objects or email strings)
+    :param request: HTTP request
+    :return: Amount of mail sent (int)
+    """
+    subject = SUBJECT_PREFIX + ' ' + subject_body
+    ret = 0
+
+    for recipient in recipient_list:
+        if type(recipient) == User:
+            recp_name = recipient.name
+            recp_email = recipient.email
+
+        else:
+            recp_name = 'recipient'
+            recp_email = recipient
+
+        message = MESSAGE_HEADER.format(recipient=recp_name)
+        message += message_body
+        message += MESSAGE_FOOTER
+
+        ret += send_mail(subject, message, [recp_email], request)
+
+    return ret

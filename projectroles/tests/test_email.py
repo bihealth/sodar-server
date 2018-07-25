@@ -6,7 +6,7 @@ from django.urls import reverse
 from test_plus.test import TestCase, RequestFactory
 
 from ..models import Role, OMICS_CONSTANTS
-from ..email import send_role_change_mail
+from ..email import send_role_change_mail, send_generic_mail
 from .test_models import ProjectMixin, RoleAssignmentMixin
 
 
@@ -17,6 +17,12 @@ PROJECT_ROLE_CONTRIBUTOR = OMICS_CONSTANTS['PROJECT_ROLE_CONTRIBUTOR']
 PROJECT_ROLE_GUEST = OMICS_CONSTANTS['PROJECT_ROLE_GUEST']
 PROJECT_TYPE_CATEGORY = OMICS_CONSTANTS['PROJECT_TYPE_CATEGORY']
 PROJECT_TYPE_PROJECT = OMICS_CONSTANTS['PROJECT_TYPE_PROJECT']
+
+
+# Local constants
+SUBJECT_BODY = 'Test subject'
+MESSAGE_BODY = 'Test message'
+INVALID_EMAIL = 'ahch0La8lo0eeT8u'
 
 
 class TestEmailSending(TestCase, ProjectMixin, RoleAssignmentMixin):
@@ -88,3 +94,46 @@ class TestEmailSending(TestCase, ProjectMixin, RoleAssignmentMixin):
                 request=request)
             self.assertEqual(email_sent, 1)
             self.assertEqual(len(mail.outbox), 1)
+
+    def test_generic_mail_user(self):
+        """Test send_generic_mail() with a User recipient"""
+        with self.login(self.user_owner):
+            request = self.factory.get(reverse('home'))
+            request.user = self.user_owner
+            email_sent = send_generic_mail(
+                subject_body=SUBJECT_BODY,
+                message_body=MESSAGE_BODY,
+                recipient_list=[self.user_owner],
+                request=request)
+            self.assertEqual(email_sent, 1)
+            self.assertEqual(len(mail.outbox), 1)
+
+    def test_generic_mail_str(self):
+        """Test send_generic_mail() with an email string recipient"""
+        with self.login(self.user_owner):
+            request = self.factory.get(reverse('home'))
+            request.user = self.user_owner
+            email_sent = send_generic_mail(
+                subject_body=SUBJECT_BODY,
+                message_body=MESSAGE_BODY,
+                recipient_list=[self.user_owner.email],
+                request=request)
+            self.assertEqual(email_sent, 1)
+            self.assertEqual(len(mail.outbox), 1)
+
+    def test_generic_mail_multiple(self):
+        """Test send_generic_mail() with multiple recipients"""
+
+        # Init new user
+        user_new = self.make_user('newuser')
+
+        with self.login(self.user_owner):
+            request = self.factory.get(reverse('home'))
+            request.user = self.user_owner
+            email_sent = send_generic_mail(
+                subject_body=SUBJECT_BODY,
+                message_body=MESSAGE_BODY,
+                recipient_list=[self.user_owner, user_new],
+                request=request)
+            self.assertEqual(email_sent, 2)
+            self.assertEqual(len(mail.outbox), 2)
