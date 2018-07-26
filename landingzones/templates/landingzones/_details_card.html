@@ -13,14 +13,27 @@
 {% load rules %}
 
 <style type="text/css">
-  .table.omics-lz-detail-table td:first-child {
+  .omics-lz-detail-table td:first-child {
     border-left: 0;
-    word-break: break-all;
   }
 
-  .table.omics-lz-detail-table thead tr th:nth-child(6) {
-    width: 3em !important;
- }
+  .omics-lz-detail-table thead tr th:nth-child(3) {
+    width: 350px !important;
+  }
+
+  .omics-lz-detail-table thead tr th:nth-child(4) {
+    width: 130px !important;
+  }
+
+  /* Responsive modifications */
+  @media screen and (max-width: 1000px) {
+    .table.omics-lz-detail-table tr th:nth-child(2) {
+      display: none;
+    }
+    .table.omics-lz-detail-table tr td:nth-child(2) {
+      display: none;
+    }
+  }
 </style>
 
 <!-- Landingzones Javascript -->
