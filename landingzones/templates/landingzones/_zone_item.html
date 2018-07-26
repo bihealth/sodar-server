@@ -52,7 +52,7 @@
         </p>
       </span>
       {% endif %}
-      {% if irods_backend_enabled %}
+      {% if zone_enabled and irods_backend_enabled %}
         <p class="mb-0" id="omics-lz-zone-stats-container-{{ zone.omics_uuid }}">
           {% get_irods_path zone as zone_irods_path %}
           {% autoescape off %}
