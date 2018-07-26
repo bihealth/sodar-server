@@ -12,10 +12,11 @@
 {% get_webdav_url as irods_webdav_url %}
 
 <span class="text-nowrap">
-  {% if show_file_list and irods_backend_enabled %}
+  {% if show_file_list and irods_backend_enabled and irods_webdav_enabled %}
     <button class="btn btn-secondary omics-list-btn omics-irods-popup-list-btn"
             irods-path="{{ irods_path }}"
             list-url="{{ list_url }}"
+            webdav-url="{{ irods_webdav_url }}"
             role="submit"
             {# NOTE: Modal not triggered here as data is async, see JQuery #}
             {% if not data_table %}
