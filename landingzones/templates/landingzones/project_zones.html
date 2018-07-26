@@ -133,11 +133,15 @@
   <!-- Samplesheets common Javascript -->
   <script type="text/javascript" src="{% static 'samplesheets/js/samplesheets_common.js' %}"></script>
 
+  {% if irods_backend %}
+    <!-- iRODS backend Javascript -->
+    <script type="text/javascript" src="{% static 'irodsbackend/js/irodsbackend.js' %}"></script>
+  {% endif %}
+
   <script type="text/javascript">
     /*****************************
      Zone status updating function
      *****************************/
-    // TODO: Refactor this entirely
     var updateZoneStatus = function() {
         $('.omics-lz-zone-tr-existing').each(function(){
             var trId = $(this).attr('id');
@@ -231,38 +235,6 @@
         });
     };
 
-    /***************************************
-     Zone file statistics updating function
-     ***************************************/
-    // TODO: Use the new generic function in irodsbackend instead
-    var updateZoneFileStats = function() {
-        $('.omics-lz-zone-tr-existing').each(function () {
-            var zoneTr = $(this);
-            var zoneUuid = $(this).attr('zone-uuid');
-            var statusText = zoneTr.find('td#omics-lz-zone-status-' + zoneUuid).text();
-            var statusOmit = ['NOT CREATED', 'CREATING', 'MOVED', 'DELETED'];
-
-            if (statusOmit.indexOf(statusText) === -1) {
-                $.ajax({
-                    url: $(this).attr('file-stats-url'),
-                    method: 'GET',
-                    dataType: 'json'
-                }).done(function (data) {
-                    var statsSpan = zoneTr.find('span#omics-lz-zone-stats-' + zoneUuid);
-                    var fileSuffix = 's';
-
-                    if (data['file_count'] === 1) {
-                        fileSuffix = '';
-                    }
-
-                    statsSpan.text(
-                        data['file_count'] + ' data file' + fileSuffix +
-                        ' ('+ humanFileSize(data['total_size'], true) + ')');
-                });
-            }
-        });
-    };
-
     $(document).ready(function() {
         /******************
          Update zone status
@@ -274,17 +246,6 @@
         setInterval(function () {
             updateZoneStatus();
         }, statusInterval);
-
-        /************************
-         * Update zone file stats
-         ************************/
-        updateZoneFileStats();
-        var statsInterval = {{ zone_statistics_interval }} * 1000;
-
-        // Poll and update active zones
-        setInterval(function () {
-            updateZoneFileStats();
-        }, statsInterval);
 
         /***************
          Link list Popup
