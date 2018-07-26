@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.contrib.staticfiles.templatetags.staticfiles import static
 
 # Projectroles dependency
 from projectroles.plugins import BackendPluginPoint
@@ -20,6 +21,9 @@ class BackendPlugin(BackendPluginPoint):
 
     #: Description string
     description = 'iRODS backend for queries via the Omics iRODS REST Service'
+
+    #: URL of optional javascript file to be included
+    javascript_url = static('irodsbackend/js/irodsbackend.js')
 
     def get_api(self):
         """Return API entry point object."""

@@ -23,11 +23,6 @@
 <!-- Samplesheets common Javascript -->
 <script type="text/javascript" src="{% static 'samplesheets/js/samplesheets_common.js' %}"></script>
 
-{% if irods_backend_enabled %}
-  <!-- iRODS backend Javascript -->
-  <script type="text/javascript" src="{% static 'irodsbackend/js/irodsbackend.js' %}"></script>
-{% endif %}
-
 <style type="text/css">
   /* Main table */
   table#omics-ss-details-table tr td:nth-child(3) {

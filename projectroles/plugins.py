@@ -140,6 +140,10 @@ class BackendPluginPoint(PluginPoint):
     # TODO: Implement this in your backend plugin
     description = 'TODO: Write a description for your plugin'
 
+    #: URL of optional javascript file to be included
+    # TODO: Implement this in your backend plugin if applicable
+    javascript_url = None
+
     def get_api(self):
         """Return API entry point object."""
         # TODO: Implement this in your backend plugin

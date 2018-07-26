@@ -78,3 +78,17 @@
   </div>
 
 {% endblock content %}
+
+{% block javascript %}
+  {{ block.super }}
+
+  {# Add javascript from enabled backend plugins #}
+  {% get_backend_plugins as backend_plugins %}
+  {% for plugin in backend_plugins %}
+    {% if plugin.javascript_url %}
+      <!-- {{ plugin.title }} backend plugin Javascript -->
+      <script type="text/javascript" src="{{ plugin.javascript_url }}"></script>
+    {% endif %}
+  {% endfor %}
+
+{% endblock javascript %}

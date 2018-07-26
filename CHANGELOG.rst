@@ -22,6 +22,7 @@ Added
 - **Projectroles**
     - Helper ``email.send_generic_mail()`` (#280)
     - Common template tag ``check_backend()``
+    - Define backend app javascript include in plugin (#300)
 - **Samplesheets**
     - Display original study/assay filenames as tooltips (#283)
     - Display assays for samples in search results (#157)

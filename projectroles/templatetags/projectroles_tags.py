@@ -163,6 +163,14 @@ def get_help_highlight(user):
     return ''
 
 
+# TODO: Refactor into get_plugins(type)
+@register.simple_tag
+def get_backend_plugins():
+    """Get active backend plugins"""
+    return get_active_plugins('backend')
+
+
+# TODO: Refactor into get_plugins(type)
 @register.simple_tag
 def get_site_apps():
     """Get active site apps"""
