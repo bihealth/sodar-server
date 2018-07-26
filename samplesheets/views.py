@@ -143,7 +143,7 @@ class ProjectSheetsOverviewView(
             'data_count': get_material_count('DATA')}
 
         # iRODS backend
-        context['irods_backend'] = get_backend_api('omics_irods')
+        context['irods_backend_enabled'] = get_backend_api('omics_irods')
 
         return context
 
