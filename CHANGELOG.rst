@@ -20,6 +20,7 @@ Added
     - Unit tests for ``ZoneStatusSetAPIView``
 - **Projectroles**
     - Helper ``email.send_generic_mail()`` (#280)
+    - Common template tag ``get_backend_api()``
 - **Samplesheets**
     - Display original study/assay filenames as tooltips (#283)
     - Display assays for samples in search results (#157)
@@ -27,6 +28,7 @@ Added
     - Auto-populated field ``alt_names`` in the ``GenericMaterial`` model (#285)
     - Management command ``syncnames`` to update ``alt_names`` (#285)
     - Display project/study file statistics using irodsbackend (#188)
+    - Display stats on the project details page card (#188)
 
 Changed
 -------
@@ -41,6 +43,7 @@ Changed
     - Search for VCF files under all family members in germline app (#275)
     - Include ``alt_name`` in GenericMaterial search (#285)
     - Improve search results layout
+    - Display investigation title on project card (#293)
 
 Fixed
 -----

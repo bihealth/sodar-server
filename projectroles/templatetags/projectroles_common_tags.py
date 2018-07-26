@@ -6,7 +6,7 @@ from django import template
 from django.urls import reverse
 from django.utils.http import urlquote
 
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import get_backend_api as p_get_backend_api
 
 
 register = template.Library()
@@ -20,7 +20,7 @@ def render_markdown(raw_markdown):
 @register.simple_tag
 def get_history_dropdown(project, obj):
     """Return link to object timeline events within project"""
-    timeline = get_backend_api('timeline_backend')
+    timeline = p_get_backend_api('timeline_backend')
 
     if not timeline:
         return ''
@@ -107,3 +107,9 @@ def force_wrap(s, length):
 def get_full_url(request, url):
     """Get full URL based on a local URL"""
     return request.scheme + '://' + request.get_host() + url
+
+
+@register.simple_tag
+def get_backend_api(name):
+    """Return backend API or None"""
+    return p_get_backend_api(name)

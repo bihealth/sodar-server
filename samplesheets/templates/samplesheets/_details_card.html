@@ -1,6 +1,18 @@
+{# TODO: Some repetition here, refactor #}
+
 {% load rules %}
 {% load staticfiles %}
 {% load samplesheets_tags %}
+
+{# Projectroles dependency #}
+{% load projectroles_common_tags %}
+
+{% get_backend_api 'omics_irods' as irods_backend %}
+
+{% if irods_backend %}
+  {% load irodsbackend_tags %}
+{% endif %}
+
 {% has_perm 'samplesheets.view_sheet' request.user project as can_view_sheet %}
 
 {% get_investigation project as investigation %}
@@ -11,10 +23,25 @@
 <!-- Samplesheets common Javascript -->
 <script type="text/javascript" src="{% static 'samplesheets/js/samplesheets_common.js' %}"></script>
 
+{% if irods_backend %}
+  <!-- iRODS backend Javascript -->
+  <script type="text/javascript" src="{% static 'irodsbackend/js/irodsbackend.js' %}"></script>
+{% endif %}
+
 <style type="text/css">
   /* Main table */
-  table#omics-ss-details-table tr td:nth-child(2) {
+  table#omics-ss-details-table tr td:nth-child(3) {
     width: 110px;
+  }
+
+  /* Responsive modifications */
+  @media screen and (max-width: 800px) {
+    .table.omics-lz-table tr th:nth-child(2) {
+      display: none;
+    }
+    .table.omics-lz-table tr td:nth-child(2) {
+      display: none;
+    }
   }
 </style>
 
@@ -30,13 +57,20 @@
   <table class="table omics-card-table" id="omics-ss-details-table">
     <thead>
       <tr>
-        <th>Study/Assay</th>
+        <th>Investigation/Study/Assay</th>
+        <th>Statistics</th>
         <th>Links</th>
       </tr>
     </thead>
     <tbody>
       <tr>
-        <td><i class="fa fa-fw fa-cube"></i> Project root</td>
+        <td><i class="fa fa-fw fa-cube"></i> {{ investigation.title }}</td>
+        <td>
+          {% get_irods_path investigation as irods_inv_path %}
+          {% autoescape off %}
+            {% get_stats_html irods_inv_path project %}
+          {% endautoescape %}
+        </td>
         <td>
           {% get_irods_path project as root_irods_path %}
           {% include 'samplesheets/_irods_buttons.html' with investigation=investigation irods_path=root_irods_path list_url=None data_table=False show_file_list=False %}
@@ -49,6 +83,12 @@
              <a href="{% url 'samplesheets:project_sheets' study=study.omics_uuid %}">{{ study.get_display_name }}</a>
           </td>
           <td>
+            {% get_irods_path study as irods_study_path %}
+            {% autoescape off %}
+              {% get_stats_html irods_study_path project %}
+            {% endautoescape %}
+          </td>
+          <td>
             {% get_irods_path study as study_irods_path %}
             {% include 'samplesheets/_irods_buttons.html' with investigation=investigation irods_path=study_irods_path list_url=None data_table=False show_file_list=False %}
           </td>
@@ -57,6 +97,13 @@
             <td class="pl-5">
               {% autoescape off %}{% get_icon assay %}{% endautoescape %}
                <a href="{% url 'samplesheets:project_sheets' study=study.omics_uuid %}#{{ assay.omics_uuid }}">{{ assay.get_display_name }}</a>
+              {% get_irods_path assay as irods_assay_path %}
+            </td>
+            <td>
+              {% get_irods_path assay as irods_assay_path %}
+              {% autoescape off %}
+                {% get_stats_html irods_assay_path project %}
+              {% endautoescape %}
             </td>
             <td>
               {% get_irods_path assay as assay_irods_path %}
