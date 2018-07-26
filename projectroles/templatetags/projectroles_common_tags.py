@@ -6,7 +6,7 @@ from django import template
 from django.urls import reverse
 from django.utils.http import urlquote
 
-from projectroles.plugins import get_backend_api as p_get_backend_api
+from projectroles.plugins import get_backend_api
 
 
 register = template.Library()
@@ -110,6 +110,7 @@ def get_full_url(request, url):
 
 
 @register.simple_tag
-def get_backend_api(name):
-    """Return backend API or None"""
-    return p_get_backend_api(name)
+def check_backend(name):
+    """Return True if backend app is available, else False"""
+    return True if get_backend_api(name) else False
+

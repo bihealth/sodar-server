@@ -1,6 +1,6 @@
 {% load samplesheets_tags %}
 
-{% if irods_backend %}
+{% if irods_backend_enabled %}
   {% load irodsbackend_tags %}
 {% endif %}
 
@@ -20,7 +20,7 @@
     <dd class="col-md-9">
       {% if investigation.irods_status %}
         <span class="badge badge-pill badge-success">Available</span>
-        {% if irods_backend %}
+        {% if irods_backend_enabled %}
           {% get_irods_path investigation as irods_inv_path %}
           {% autoescape off %}
             {% get_stats_html irods_inv_path project %}

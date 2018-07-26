@@ -80,7 +80,8 @@ class ProjectSheetsView(
                     context['render_error'] = str(ex)
 
                 # iRODS backend
-                context['irods_backend'] = get_backend_api('omics_irods')
+                context['irods_backend_enabled'] = True if \
+                    get_backend_api('omics_irods') else False
 
                 # iRODS WebDAV
                 if settings.IRODS_WEBDAV_ENABLED:
@@ -88,7 +89,7 @@ class ProjectSheetsView(
                     context['irods_webdav_url'] = \
                         settings.IRODS_WEBDAV_URL.rstrip('/')
 
-                # TODO: TBD: Get from irodsbackend instead?
+                # TODO: TBD: Get from irodsbackend instead
                 context['irods_base_dir'] = \
                     '/omicsZone/projects/{}/{}/{}'.format(
                         str(project.omics_uuid)[:2],

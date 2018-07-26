@@ -1,5 +1,22 @@
 {% load landingzones_tags %}
+
+{# Projectroles dependency #}
+{% load projectroles_common_tags %}
+
+{% check_backend 'omics_irods' as irods_backend_enabled %}
+
+{% if irods_backend_enabled %}
+  {% load irodsbackend_tags %}
+{% endif %}
+
 {% load rules %}
+
+{% comment TODO: Generalize instead %}
+{% if irods_backend_enabled %}
+  <!-- iRODS backend Javascript -->
+  <script type="text/javascript" src="{% static 'irodsbackend/js/irodsbackend.js' %}"></script>
+{% endif %}
+{% endcomment %}
 
 <style type="text/css">
   .table.omics-lz-detail-table td:first-child {

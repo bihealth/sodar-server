@@ -7,9 +7,9 @@
 {# Projectroles dependency #}
 {% load projectroles_common_tags %}
 
-{% get_backend_api 'omics_irods' as irods_backend %}
+{% check_backend 'omics_irods' as irods_backend_enabled %}
 
-{% if irods_backend %}
+{% if irods_backend_enabled %}
   {% load irodsbackend_tags %}
 {% endif %}
 
@@ -23,7 +23,7 @@
 <!-- Samplesheets common Javascript -->
 <script type="text/javascript" src="{% static 'samplesheets/js/samplesheets_common.js' %}"></script>
 
-{% if irods_backend %}
+{% if irods_backend_enabled %}
   <!-- iRODS backend Javascript -->
   <script type="text/javascript" src="{% static 'irodsbackend/js/irodsbackend.js' %}"></script>
 {% endif %}

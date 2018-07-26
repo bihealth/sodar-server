@@ -12,7 +12,7 @@
 {% get_webdav_url as irods_webdav_url %}
 
 <span class="text-nowrap">
-  {% if show_file_list and irods_backend %}
+  {% if show_file_list and irods_backend_enabled %}
     <button class="btn btn-secondary omics-list-btn omics-irods-popup-list-btn"
             irods-path="{{ irods_path }}"
             list-url="{{ list_url }}"

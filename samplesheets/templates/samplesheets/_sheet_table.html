@@ -4,7 +4,7 @@
 {% load projectroles_common_tags %}
 
 {# Load irodsbackend tags if backend is active #}
-{% if irods_backend %}
+{% if irods_backend_enabled %}
   {% load irodsbackend_tags %}
 {% endif %}
 

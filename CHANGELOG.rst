@@ -18,9 +18,10 @@ Added
 - **Landingzones**
     - Send email when zone status is set as ``MOVED`` or ``FAILED`` (#280)
     - Unit tests for ``ZoneStatusSetAPIView``
+    - Display iRODS stats in details card (#188)
 - **Projectroles**
     - Helper ``email.send_generic_mail()`` (#280)
-    - Common template tag ``get_backend_api()``
+    - Common template tag ``check_backend()``
 - **Samplesheets**
     - Display original study/assay filenames as tooltips (#283)
     - Display assays for samples in search results (#157)
@@ -37,6 +38,7 @@ Changed
     - Optimized iRODS queries for increased performance (#242)
 - **Landingzones**
     - Use irodsbackend code for statistics queries (#188)
+    - Refactor ``irods_backend`` references in templates
 - **Projectroles**
     - Minor email refactoring (#280)
 - **Samplesheets**
@@ -44,6 +46,7 @@ Changed
     - Include ``alt_name`` in GenericMaterial search (#285)
     - Improve search results layout
     - Display investigation title on project card (#293)
+    - Refactor ``irods_backend`` references in templates
 
 Fixed
 -----

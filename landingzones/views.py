@@ -102,8 +102,8 @@ class ProjectZoneView(
             get_backend_api('taskflow') else False
 
         # iRODS backend
-        # TODO: This can be just bool
-        context['irods_backend'] = get_backend_api('omics_irods')
+        context['irods_backend_enabled'] = True if \
+            get_backend_api('omics_irods') else False
 
         # iRODS WebDAV
         context['irods_webdav_enabled'] = \
