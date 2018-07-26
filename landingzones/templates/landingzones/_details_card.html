@@ -1,4 +1,5 @@
 {% load landingzones_tags %}
+{% load static %}
 
 {# Projectroles dependency #}
 {% load projectroles_common_tags %}
@@ -22,6 +23,9 @@
  }
 </style>
 
+<!-- Landingzones Javascript -->
+<script type="text/javascript" src="{% static 'landingzones/js/landingzones.js' %}"></script>
+
 <table class="table table-striped omics-card-table omics-lz-detail-table">
   <thead>
     <tr>
@@ -44,3 +48,4 @@
     {% endif %}
   </tbody>
 </table>
+
