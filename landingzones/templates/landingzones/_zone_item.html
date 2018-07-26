@@ -14,8 +14,7 @@
     id="{{ zone.omics_uuid }}"
     zone-uuid="{{ zone.omics_uuid }}"
     sample-url="{% get_zone_samples_url zone %}"
-    status-url="{% url 'landingzones:status' landingzone=zone.omics_uuid %}"
-    file-stats-url="{% url 'landingzones:statistics' landingzone=zone.omics_uuid %}">
+    status-url="{% url 'landingzones:status' landingzone=zone.omics_uuid %}">
   <td class="omics-lz-zone-title">
     {% if zone.user != request.user %}
       {% autoescape off %}
@@ -59,9 +58,6 @@
           {% autoescape off %}
             {% get_stats_html zone_irods_path project %}
           {% endautoescape %}
-          {% comment %}
-          <span class="badge badge-pill badge-info" id="omics-lz-zone-stats-{{ zone.omics_uuid }}"><i class="fa fa-spin fa-circle-o-notch"></i> Updating stats..</span>
-          {% endcomment %}
         </p>
       {% endif %}
   </td>

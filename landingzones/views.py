@@ -649,48 +649,6 @@ class LandingZoneListAPIView(APIView):
         return Response(ret_data, status=200)
 
 
-# TODO: Use the new generic view in irodsbackend instead
-class LandingZoneIrodsStatisticsGetAPIView(
-        LoginRequiredMixin, ProjectContextMixin, APIView):
-    """View for returning landing zone statistics for the UI"""
-
-    def get(self, *args, **kwargs):
-        zone_uuid = self.kwargs['landingzone']
-        irods_backend = get_backend_api('omics_irods')
-
-        if not irods_backend:
-            return Response('iRODS backend not enabled', status=500)
-
-        try:
-            zone = LandingZone.objects.get(
-                omics_uuid=zone_uuid)
-
-        except LandingZone.DoesNotExist:
-            return Response('LandingZone not found', status=404)
-
-        perm = 'view_zones_own' if \
-            zone.user == self.request.user else 'view_zones_all'
-
-        if self.request.user.has_perm(
-                'landingzones.{}'.format(perm), zone.project):
-
-            try:
-                stats = irods_backend.get_object_stats(
-                    irods_backend.get_path(zone))
-                ret_data = {
-                    'file_count': stats['file_count'],
-                    'total_size': stats['total_size']}
-                return Response(ret_data, status=200)
-
-            except FileNotFoundError:
-                return Response('Not found', status=404)
-
-            except Exception as ex:
-                return Response(str(ex), status=500)
-
-        return Response('Not authorized', status=403)
-
-
 # Taskflow API Views -----------------------------------------------------
 
 

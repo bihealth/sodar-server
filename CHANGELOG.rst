@@ -33,6 +33,8 @@ Changed
 
 - **Irodsbackend**
     - Optimized iRODS queries for increased performance (#242)
+- **Landingzones**
+    - Use irodsbackend code for statistics queries (#188)
 - **Projectroles**
     - Minor email refactoring (#280)
 - **Samplesheets**
@@ -55,6 +57,8 @@ Fixed
 Removed
 -------
 
+- **Landingzones**
+    - ``LandingZoneIrodsStatisticsGetAPIView`` and related redundant JQuery scripts
 - **Samplesheets**
     - MD5 display from file list view
 

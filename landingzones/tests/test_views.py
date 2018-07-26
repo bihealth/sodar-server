@@ -1,23 +1,19 @@
 """Tests for views in the landingzones app"""
 
 from test_plus.test import TestCase
-from unittest import skipIf
 
 from django.conf import settings
 from django.core import mail
 from django.core.urlresolvers import reverse
-from django.forms.models import model_to_dict
 from django.test import RequestFactory
 
 # Projectroles dependency
 from projectroles.models import Role, OMICS_CONSTANTS
 from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
-from projectroles.plugins import get_backend_api, change_plugin_status
 
 # Samplesheets dependency
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 
-from .. import views
 from ..models import LandingZone, DEFAULT_STATUS_INFO
 from .test_models import LandingZoneMixin, ZONE_TITLE, ZONE_DESC
 
@@ -245,17 +241,3 @@ class TestLandingZoneStatusSetAPIView(TestViewsBase):
 
             self.assertEqual(response.status_code, 200)
             self.assertEqual(len(mail.outbox), 1)   # Mail should be sent
-
-
-@skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
-class TestLandingZoneStatisticsGetAPIView(TestViewsBase):
-    """Tests for the landing zone file statistics API view"""
-
-    def test_get_not_created(self):
-        """Test GET request for landing zone file stats with no dirs in iRODS"""
-        with self.login(self.user):
-            response = self.client.get(reverse(
-                'landingzones:statistics',
-                kwargs={'landingzone': self.landing_zone.omics_uuid}))
-
-            self.assertEqual(response.status_code, 404)
