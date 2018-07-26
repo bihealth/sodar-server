@@ -19,8 +19,6 @@ var updateCollectionStats = function() {
             statsSpan.text(
                 data['file_count'] + ' data file' + fileSuffix +
                 ' ('+ humanFileSize(data['total_size'], true) + ')');
-        }).fail(function (response) {
-            statsSpan.text('Stats unavailable');
         });
     });
 };
