@@ -89,13 +89,6 @@ class ProjectSheetsView(
                     context['irods_webdav_url'] = \
                         settings.IRODS_WEBDAV_URL.rstrip('/')
 
-                # TODO: TBD: Get from irodsbackend instead
-                context['irods_base_dir'] = \
-                    '/omicsZone/projects/{}/{}/{}'.format(
-                        str(project.omics_uuid)[:2],
-                        project.omics_uuid,
-                        settings.IRODS_SAMPLE_DIR)
-
             except Study.DoesNotExist:
                 pass    # TODO: Show error message if study not found?
 

@@ -68,6 +68,7 @@ Removed
     - ``LANDINGZONES_STATISTICS_INTERVAL`` settings variable
 - **Samplesheets**
     - MD5 display from file list view
+    - Deprecated ``irods_base_dir`` from views
 
 
 v0.3.0 (2018-07-03)
