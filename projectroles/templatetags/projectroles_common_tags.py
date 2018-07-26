@@ -20,7 +20,7 @@ def render_markdown(raw_markdown):
 @register.simple_tag
 def get_history_dropdown(project, obj):
     """Return link to object timeline events within project"""
-    timeline = p_get_backend_api('timeline_backend')
+    timeline = get_backend_api('timeline_backend')
 
     if not timeline:
         return ''
