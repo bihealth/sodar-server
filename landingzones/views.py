@@ -127,10 +127,6 @@ class ProjectZoneView(
         # Status query interval
         context['zone_status_interval'] = settings.LANDINGZONES_STATUS_INTERVAL
 
-        # Statistics query interval
-        context['zone_statistics_interval'] = \
-            settings.LANDINGZONES_STATISTICS_INTERVAL
-
         return context
 
 

@@ -59,6 +59,7 @@ Removed
 
 - **Landingzones**
     - ``LandingZoneIrodsStatisticsGetAPIView`` and related redundant JQuery scripts
+    - ``LANDINGZONES_STATISTICS_INTERVAL`` settings variable
 - **Samplesheets**
     - MD5 display from file list view
 
