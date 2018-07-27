@@ -3,6 +3,7 @@
 import mistune
 
 from django import template
+from django.conf import settings
 from django.urls import reverse
 from django.utils.http import urlquote
 
@@ -114,3 +115,8 @@ def check_backend(name):
     """Return True if backend app is available, else False"""
     return True if get_backend_api(name) else False
 
+
+@register.simple_tag
+def get_setting(name):
+    """Return value of Django setting by name or None if it is not found"""
+    return getattr(settings, name) if hasattr(settings, name) else None

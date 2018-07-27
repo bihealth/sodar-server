@@ -99,7 +99,7 @@ $(document).ready(function() {
      Update zone status
      ******************/
     updateZoneStatus();
-    var statusInterval = 5 * 1000;  // TODO: Get interval from settings?
+    var statusInterval = window.statusInterval;
 
     // Poll and update active zones
     setInterval(function () {

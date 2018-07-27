@@ -127,6 +127,11 @@
 {% block javascript %}
   {{ block.super }}
 
+  <!-- Settings for Javascript -->
+  <script type="text/javascript">
+    window.statusInterval = {{ zone_status_interval }} * 5000;
+  </script>
+
   <!-- Clipboard helper -->
   <script type="text/javascript" src="{% static 'js/clipboard.min.js' %}"></script>
 

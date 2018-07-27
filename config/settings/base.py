@@ -428,7 +428,6 @@ IRODS_WEBDAV_URL = env.str('IRODS_WEBDAV_URL', 'https://0.0.0.0')
 
 # Landingzones app settings
 # Status query interval in seconds
-# TODO: Pass this to JQuery somehow, currently not used
 LANDINGZONES_STATUS_INTERVAL = env.int('LANDINGZONES_STATUS_INTERVAL', 3)
 
 
