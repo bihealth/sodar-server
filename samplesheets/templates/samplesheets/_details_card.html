@@ -22,17 +22,20 @@
 <script type="text/javascript" src="{% static 'samplesheets/js/samplesheets_common.js' %}"></script>
 
 <style type="text/css">
-  /* Main table */
+  table#omics-ss-details-table tr td:nth-child(2) {
+    width: 220px;
+  }
+
   table#omics-ss-details-table tr td:nth-child(3) {
     width: 110px;
   }
 
   /* Responsive modifications */
   @media screen and (max-width: 800px) {
-    .table.omics-lz-table tr th:nth-child(2) {
+    table#omics-ss-details-table tr th:nth-child(2) {
       display: none;
     }
-    .table.omics-lz-table tr td:nth-child(2) {
+    table#omics-ss-details-table tr td:nth-child(2) {
       display: none;
     }
   }
