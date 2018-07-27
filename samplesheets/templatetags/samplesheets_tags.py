@@ -215,16 +215,6 @@ def get_family_sources(study, family_id):
     return ret
 
 
-@register.simple_tag
-def is_webdav_enabled():
-    return settings.IRODS_WEBDAV_ENABLED
-
-
-@register.simple_tag
-def get_webdav_url():
-    return settings.IRODS_WEBDAV_URL.rstrip('/')
-
-
 # Table rendering --------------------------------------------------------------
 
 

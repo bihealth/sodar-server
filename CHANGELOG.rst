@@ -56,6 +56,7 @@ Changed
     - Display investigation title on project card (#293)
     - Refactor ``irods_backend`` references in templates
     - Use irodsbackend code for collection listing (#295)
+    - Move irods buttons to irodsbackend (#301)
 
 Fixed
 -----

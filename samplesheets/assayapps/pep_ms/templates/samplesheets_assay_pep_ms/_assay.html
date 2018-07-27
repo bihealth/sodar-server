@@ -1,7 +1,9 @@
 {% load samplesheets_tags %}
+{% load projectroles_common_tags %}
 
-{# TODO: Path generation is hacky, improve (try to get subapp templatetags working) #}
+{# Local variables #}
 {% get_irods_path assay as assay_path %}
+{% check_backend 'omics_irods' as irods_backend_enabled %}
 
 <style type="text/css">
   table#omics-ss-pep-ms-table thead tr th:nth-child(2) {
@@ -15,32 +17,36 @@
       <h4>Shortcuts for Raw Data and MaxQuant Results</h4>
     </div>
     <div class="card-body omics-card-body-table">
-      <table class="table cell-border omics-card-table-bordered omics-ss-data-table omics-ss-data-table-contentapp" id="omics-ss-pep-ms-table">
-        <thead>
-          <tr>
-            <th>Directory</th>
-            <th>Links</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>Raw Data</td>
-            <td>
-              {% get_irods_path assay assay_plugin.raw_data_coll as raw_data_path %}
-              {% get_assay_list_url assay raw_data_path as raw_data_url %}
-              {% include 'samplesheets/_irods_buttons.html' with irods_path=raw_data_path investigation=assay.study.investigation show_file_list=True list_url=raw_data_url %}
-            </td>
-          </tr>
-          <tr>
-            <td>MaxQuant Results</td>
-            <td>
-              {% get_irods_path assay assay_plugin.max_quant_coll as max_quant_path %}
-              {% get_assay_list_url assay max_quant_path as max_quant_url %}
-              {% include 'samplesheets/_irods_buttons.html' with irods_path=max_quant_path investigation=assay.study.investigation show_file_list=True list_url=max_quant_url %}
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      {% if irods_backend_enabled %}
+        <table class="table cell-border omics-card-table-bordered omics-ss-data-table omics-ss-data-table-contentapp" id="omics-ss-pep-ms-table">
+          <thead>
+            <tr>
+              <th>Directory</th>
+              <th>Links</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Raw Data</td>
+              <td>
+                {% get_irods_path assay assay_plugin.raw_data_coll as raw_data_path %}
+                {% get_assay_list_url assay raw_data_path as raw_data_url %}
+                {% include 'irodsbackend/_irods_buttons.html' with irods_dirs=investigation.irods_status irods_path=raw_data_path investigation=assay.study.investigation show_file_list=True list_url=raw_data_url %}
+              </td>
+            </tr>
+            <tr>
+              <td>MaxQuant Results</td>
+              <td>
+                {% get_irods_path assay assay_plugin.max_quant_coll as max_quant_path %}
+                {% get_assay_list_url assay max_quant_path as max_quant_url %}
+                {% include 'irodsbackend/_irods_buttons.html' with irods_dirs=investigation.irods_status irods_path=max_quant_path investigation=assay.study.investigation show_file_list=True list_url=max_quant_url %}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      {% else %}
+        <div class="text-center text-muted text-italic">iRODS backend not enabled</div>
+      {% endif %}
     </div>
   </div>
 {% endif %}

@@ -1,7 +1,7 @@
-{% load samplesheets_tags %}
+{% load irodsbackend_tags %}
 
 {# Parameters #}
-{# investigation: Investigation object #}
+{# irods_dirs: Whether iRODS dirs exist (boolean) #}
 {# irods_path: full iRODS path to link to #}
 {# list_url: SODAR URL for querying file list #}
 {# data_table: Whether the file is included within a data table (boolean) #}
@@ -23,7 +23,7 @@
               data-tooltip="tooltip" data-placement="top"
             {% endif %}
             title="List files"
-            {% if not investigation.irods_status or disable_all %} disabled{% endif %}>
+            {% if not irods_dirs or disable_all %} disabled{% endif %}>
       <i class="fa fa-folder-open-o"></i>
     </button>
   {% endif %}
@@ -34,19 +34,19 @@
             data-tooltip="tooltip" data-placement="top"
           {% endif %}
           title="Copy icd iCommand into clipboard"
-          {% if not investigation.irods_status or disable_all %} disabled{% endif %}>
+          {% if not irods_dirs or disable_all %} disabled{% endif %}>
     <i class="fa fa-terminal"></i>
   </button>
   <button class="btn btn-secondary omics-list-btn omics-irods-copy-btn
-          {% if not irods_webdav_enabled or not investigation.irods_status or disable_all %} disabled{% endif %}"
+          {% if not irods_webdav_enabled or not irods_dirs or disable_all %} disabled{% endif %}"
           data-clipboard-text="{{ irods_webdav_url }}{{ irods_path }}" role="submit"
           data-tooltip="tooltip" data-placement="top"
           title="Copy WebDAV URL into clipboard"
-          {% if not investigation.irods_status or disable_all %} disabled{% endif %}>
+          {% if not irods_dirs or disable_all %} disabled{% endif %}>
     <i class="fa fa-clipboard"></i>
   </button>
   <a class="btn btn-secondary omics-list-btn omics-irods-dav-btn {% if data_table %}mr-1{% endif %}
-     {% if not irods_webdav_enabled or not investigation.irods_status or disable_all %} disabled{% endif %}"
+     {% if not irods_webdav_enabled or not irods_dirs or disable_all %} disabled{% endif %}"
      href="{{ irods_webdav_url }}{{ irods_path }}" role="button"
      data-table="{% if data_table %}1{% else %}0{% endif %}"
      {% if not data_table %}

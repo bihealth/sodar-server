@@ -51,7 +51,9 @@
           {% get_irods_row_path parent table row assay_plugin as row_irods_path %}
           {% get_assay_list_url parent row_irods_path as assay_list_url %}
           <td class="bg-light omics-ss-data-cell-links" irods-path="{{ row_irods_path }}">
-            {% include 'samplesheets/_irods_buttons.html' with investigation=investigation irods_path=row_irods_path list_url=assay_list_url data_table=True show_file_list=True %}
+            {% if irods_backend_enabled %}
+              {% include 'irodsbackend/_irods_buttons.html' with irods_dirs=investigation.irods_status irods_path=row_irods_path list_url=assay_list_url data_table=True show_file_list=True %}
+            {% endif %}
           </td>
         {% endif %}
       </tr>

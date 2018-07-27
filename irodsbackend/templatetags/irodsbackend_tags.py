@@ -1,4 +1,5 @@
 from django import template
+from django.conf import settings
 from django.urls import reverse
 
 from ..api import IrodsAPI
@@ -33,3 +34,13 @@ def get_stats_html(irods_path, project=None):
            '<i class="fa fa-spin fa-circle-o-notch"></i> Updating stats..' \
            '</span>'.format(
             url=reverse('irodsbackend:stats', kwargs=url_kwargs))
+
+
+@register.simple_tag
+def is_webdav_enabled():
+    return settings.IRODS_WEBDAV_ENABLED
+
+
+@register.simple_tag
+def get_webdav_url():
+    return settings.IRODS_WEBDAV_URL.rstrip('/')

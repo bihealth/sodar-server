@@ -65,8 +65,10 @@
           {% endautoescape %}
         </td>
         <td>
-          {% get_irods_path project as root_irods_path %}
-          {% include 'samplesheets/_irods_buttons.html' with investigation=investigation irods_path=root_irods_path list_url=None data_table=False show_file_list=False %}
+          {% if irods_backend_enabled %}
+            {% get_irods_path project as root_irods_path %}
+            {% include 'irodsbackend/_irods_buttons.html' with irods_dirs=investigation.irods_status irods_path=root_irods_path list_url=None data_table=False show_file_list=False %}
+          {% endif %}
         </td>
       </tr>
       {% for study in investigation.studies.all %}
@@ -82,8 +84,10 @@
             {% endautoescape %}
           </td>
           <td>
-            {% get_irods_path study as study_irods_path %}
-            {% include 'samplesheets/_irods_buttons.html' with investigation=investigation irods_path=study_irods_path list_url=None data_table=False show_file_list=False %}
+            {% if irods_backend_enabled %}
+              {% get_irods_path study as study_irods_path %}
+              {% include 'irodsbackend/_irods_buttons.html' with irods_dirs=investigation.irods_status irods_path=study_irods_path list_url=None data_table=False show_file_list=False %}
+            {% endif %}
           </td>
         </tr>
         {% for assay in study.assays.all %}
@@ -100,8 +104,10 @@
               {% endautoescape %}
             </td>
             <td>
-              {% get_irods_path assay as assay_irods_path %}
-              {% include 'samplesheets/_irods_buttons.html' with investigation=investigation irods_path=assay_irods_path list_url=None data_table=False show_file_list=False %}
+              {% if irods_backend_enabled %}
+                {% get_irods_path assay as assay_irods_path %}
+                {% include 'irodsbackend/_irods_buttons.html' with irods_dirs=investigation.irods_status irods_path=assay_irods_path list_url=None data_table=False show_file_list=False %}
+              {% endif %}
             </td>
           </tr>
         {% endfor %}
