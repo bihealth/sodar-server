@@ -16,6 +16,7 @@ Added
     - Generic iRODS file statistics view, template tags and Javascript (#181, #188)
     - Missing support for Investigation objects in ``get_path()`` (#292)
     - iRODS collection query Javascript (#295)
+    - Display collection name in iRODS collection list
 - **Landingzones**
     - Send email when zone status is set as ``MOVED`` or ``FAILED`` (#280)
     - Unit tests for ``ZoneStatusSetAPIView``

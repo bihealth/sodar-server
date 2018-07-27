@@ -39,7 +39,6 @@ $(document).ready(function() {
      Link list Popup
      ***************/
     $('.omics-irods-popup-list-btn').click(function() {
-        $('.modal-title').text('Files in iRODS');
         var listUrl = $(this).attr('list-url');
         var irodsPath = $(this).attr('irods-path');
         var irodsPathLength = irodsPath.split('/').length;
@@ -51,6 +50,8 @@ $(document).ready(function() {
             showChecksumCol = window.irodsShowChecksumCol;
         }
 
+        $('.modal-title').text('Files in iRODS: ' + irodsPath.split('/').pop());
+
         $.ajax({
                 url: listUrl,
                 method: 'GET',
@@ -59,7 +60,7 @@ $(document).ready(function() {
             // console.log(data);  // DEBUG
 
             if (data['data_objects'].length > 0) {
-                htmlData = '<table class="table omics-card-table table-striped omics-irods-obj-table">';
+                htmlData += '<table class="table omics-card-table table-striped omics-irods-obj-table">';
                 htmlData += '<thead><th>File</th><th>Size</th><th>Modified</th>';
 
                 if (showChecksumCol === true) {
@@ -93,7 +94,7 @@ $(document).ready(function() {
             }
 
             else {
-                htmlData = popupNoFilesHtml;
+                htmlData += popupNoFilesHtml;
             }
 
             // Set success content and toggle modal
