@@ -42,6 +42,7 @@ Changed
     - Use irodsbackend code for statistics queries (#188)
     - Refactor ``irods_backend`` references in templates
     - Move javascript to separate file (#181)
+    - Hide deleted zones from "other zones" (#302)
 - **Projectroles**
     - Minor email refactoring (#280)
 - **Samplesheets**
