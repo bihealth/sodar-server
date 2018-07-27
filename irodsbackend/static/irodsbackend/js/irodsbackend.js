@@ -102,9 +102,17 @@ $(document).ready(function() {
             $('#omics-modal').modal('show');
         }).fail(function (response) {
             // Set failure content and toggle modal
-            $('.modal-body').html(
-                '<span class="text-danger font-italic">Failed to query data (' +
-                response.status + ': ' + response.responseText + ')</span>');
+            if (response.status === 404) {
+                $('.modal-body').html(
+                    '<span class="text-muted font-italic">Collection not found</span>');
+            }
+
+            else {
+                $('.modal-body').html(
+                    '<span class="text-danger font-italic">Failed to query data (' +
+                    response.status + ': ' + response.responseText + ')</span>');
+            }
+
             $('#omics-modal-wait').modal('hide');
             $('#omics-modal').modal('show');
         });

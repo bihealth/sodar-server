@@ -39,6 +39,7 @@ Changed
 
 - **Irodsbackend**
     - Optimized iRODS queries for increased performance (#242)
+    - Improve collection listing popup layout
 - **Landingzones**
     - Use irodsbackend code for statistics queries (#188)
     - Refactor ``irods_backend`` references in templates
