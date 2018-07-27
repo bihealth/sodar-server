@@ -66,7 +66,7 @@
         </td>
         <td>
           {% if irods_backend_enabled %}
-            {% get_irods_path project as root_irods_path %}
+            {% get_irods_path investigation as root_irods_path %}
             {% include 'irodsbackend/_irods_buttons.html' with irods_dirs=investigation.irods_status irods_path=root_irods_path list_url=None data_table=False show_file_list=False %}
           {% endif %}
         </td>
