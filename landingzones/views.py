@@ -122,7 +122,8 @@ class ProjectZoneView(
                 'landingzones.view_zones_all', context['project']):
             context['zones_other'] = LandingZone.objects.filter(
                 project=context['project']).exclude(
-                user=self.request.user).exclude(status='MOVED').order_by('-pk')
+                user=self.request.user).exclude(
+                    status__in=['MOVED', 'DELETED']).order_by('-pk')
 
         # Status query interval
         context['zone_status_interval'] = settings.LANDINGZONES_STATUS_INTERVAL
