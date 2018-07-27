@@ -44,6 +44,10 @@ EMAIL_MESSAGE_MOVED = r'''
 Data was successfully validated and moved into the project
 sample data repository from your landing zone.
 
+You can browse the assay metadata and related files at
+the following URL:
+{url} 
+
 Project: {project}
 Assay: {assay}
 Landing zone: {zone}
@@ -58,6 +62,9 @@ EMAIL_MESSAGE_FAILED = r'''
 Validating and moving data from your landing zone into the
 project sample data repository has failed. Please verify your
 data and request for support if the problem persists.
+
+Manage your landing zone at the following URL:
+{url}
 
 Project: {project}
 Assay: {assay}
@@ -724,6 +731,18 @@ class ZoneStatusSetAPIView(APIView):
             message_body = EMAIL_MESSAGE_MOVED if \
                 zone.status == 'MOVED' else EMAIL_MESSAGE_FAILED
 
+            if zone.status == 'MOVED':
+                email_url = request.build_absolute_uri(reverse(
+                    'samplesheets:project_sheets',
+                    kwargs={'study': zone.assay.study.omics_uuid}) + \
+                            '#' + str(zone.assay.omics_uuid))
+
+            else:   # FAILED
+                email_url = request.build_absolute_uri(reverse(
+                    'landingzones:list',
+                    kwargs={'project': zone.project.omics_uuid}) + \
+                            '#' + str(zone.omics_uuid))
+
             message_body = message_body.format(
                 zone=zone.title,
                 project=zone.project.title,
@@ -731,7 +750,8 @@ class ZoneStatusSetAPIView(APIView):
                 user=zone.user.username,
                 user_email=zone.user.email,
                 zone_uuid=str(zone.omics_uuid),
-                status_info=zone.status_info)
+                status_info=zone.status_info,
+                url=email_url)
 
             send_generic_mail(
                 subject_body, message_body, [zone.user], request)
