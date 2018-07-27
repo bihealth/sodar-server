@@ -15,6 +15,7 @@ Added
 - **Irodsbackend**
     - Generic iRODS file statistics view, template tags and Javascript (#181, #188)
     - Missing support for Investigation objects in ``get_path()`` (#292)
+    - iRODS collection query Javascript (#295)
 - **Landingzones**
     - Send email when zone status is set as ``MOVED`` or ``FAILED`` (#280)
     - Unit tests for ``ZoneStatusSetAPIView``
@@ -43,6 +44,7 @@ Changed
     - Refactor ``irods_backend`` references in templates
     - Move javascript to separate file (#181)
     - Hide deleted zones from "other zones" (#302)
+    - Use irodsbackend code for collection listing (#295)
 - **Projectroles**
     - Minor email refactoring (#280)
 - **Samplesheets**
@@ -51,6 +53,7 @@ Changed
     - Improve search results layout
     - Display investigation title on project card (#293)
     - Refactor ``irods_backend`` references in templates
+    - Use irodsbackend code for collection listing (#295)
 
 Fixed
 -----
