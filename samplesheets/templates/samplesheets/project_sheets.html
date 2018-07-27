@@ -264,8 +264,21 @@
         /*********************
          Initialize DataTables
          *********************/
+        $('.omics-ss-data-table-contentapp').DataTable({
+            scrollY: 300,
+            scrollX: true,
+            paging: false,
+            scrollCollapse: true,
+            info: false,
+            fixedColumns: {
+                leftColumns: 0,
+                rightColumns: 0
+            },
+            dom: 't' // Disable toolbar
+        });
+
         $('.omics-ss-data-table-study').DataTable({
-            scrollY: 400,
+            scrollY: 300,
             scrollX: true,
             paging: false,
             scrollCollapse: true,

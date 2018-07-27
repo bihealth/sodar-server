@@ -4,29 +4,6 @@
 {# Projectroles dependence #}
 {% load projectroles_common_tags %}
 
-<script type="text/javascript">
-    $(document).ready(function() {
-
-        /********************
-         Initialize DataTable
-         ********************/
-        $('#omics-ss-germline-table').DataTable({
-            scrollY: 300,
-            scrollX: true,
-            paging: false,
-            scrollCollapse: true,
-            info: false,
-            fixedHeader: true,
-            fixedColumns: {
-                leftColumns: 0,
-                rightColumns: 0
-            },
-            dom: 't' // Disable toolbar
-        });
-
-    });
-</script>
-
 <div class="card">
   <div class="card-header">
     <h4>
