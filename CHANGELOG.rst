@@ -19,6 +19,8 @@ Added
     - Missing support for Investigation objects in ``get_path()`` (#292)
     - iRODS collection query Javascript (#295)
     - Display collection name in iRODS collection list
+    - ``IrodsObjectListAPIView``for iRODS collection list queries (#308)
+    - ``BaseIrodsAPIView`` for implementing views
 - **Landingzones**
     - Send email when zone status is set as ``MOVED`` or ``FAILED`` (#280)
     - Unit tests for ``ZoneStatusSetAPIView``
@@ -45,6 +47,7 @@ Changed
 - **Irodsbackend**
     - Optimized iRODS queries for increased performance (#242)
     - Improve collection listing popup layout
+    - Check user perms for iRODS collection when performing queries
 - **Landingzones**
     - Use irodsbackend code for statistics queries (#188)
     - Refactor ``irods_backend`` references in templates
@@ -82,9 +85,11 @@ Removed
 - **Landingzones**
     - ``LandingZoneIrodsStatisticsGetAPIView`` and related redundant JQuery scripts
     - ``LANDINGZONES_STATISTICS_INTERVAL`` settings variable
+    - ``LandingZoneIrodsObjectListAPIView``, use view in irodsbackend instead (#308)
 - **Samplesheets**
     - MD5 display from file list view
     - Deprecated ``irods_base_dir`` from views
+    - ``IrodsObjectListAPIView``, use view in irodsbackend instead (#308)
 
 
 v0.3.0 (2018-07-03)

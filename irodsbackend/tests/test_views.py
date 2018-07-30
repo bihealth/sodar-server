@@ -158,6 +158,7 @@ class TestIrodsStatisticsGetAPIView(TestViewsBase):
 
             self.assertEqual(response.status_code, 404)
 
+    # TODO: Fix this
     def test_get_coll_not_in_project(self):
         """Test GET request for stats on a collection not belonging to project"""
         self.assertEqual(

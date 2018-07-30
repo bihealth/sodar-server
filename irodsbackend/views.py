@@ -11,42 +11,88 @@ from projectroles.models import Project
 from projectroles.plugins import get_backend_api
 
 
-class IrodsStatisticsGetAPIView(
+class BaseIrodsAPIView(
         LoginRequiredMixin, APIView):
-    """View for returning collection file statistics for the UI"""
+    """Base iRODS API View"""
+
+    def __init__(self, *args, **kwargs):
+        super(BaseIrodsAPIView, self).__init__(*args, **kwargs)
+        self.project = None
+        self.irods_backend = get_backend_api('omics_irods')
 
     def get(self, *args, **kwargs):
-        irods_backend = get_backend_api('omics_irods')
-        project = None
-
+        """Setup get() function"""
         if 'project' in self.kwargs:
             try:
-                project = Project.objects.get(omics_uuid=self.kwargs['project'])
+                self.project = Project.objects.get(
+                    omics_uuid=self.kwargs['project'])
 
             except Project.DoesNotExist:
                 return Response('Project not found', status=400)
 
-        if not irods_backend:
+        if not self.irods_backend:
             return Response('iRODS backend not enabled', status=500)
 
         if 'path' not in self.kwargs:
             return Response('Path not set', status=400)
 
         # Ensure the given path belongs in the project
-        if (project and
-                irods_backend.get_path(project) not in self.kwargs['path']):
+        # TODO: Fix this
+        if (self.project and
+                self.irods_backend.get_path(
+                    self.project) not in self.kwargs['path']):
             return Response('Path does not belong to project', status=400)
 
-        # Check perms
+        # Check site perms
         if (not self.request.user.is_superuser and (
-                project and not self.request.user.has_perm(
-                    'projectroles.view_project', project))):
-            return Response('Not authorized', status=403)
+                self.project and not self.request.user.has_perm(
+                    'projectroles.view_project', self.project))):
+            return Response('User not authorized for project', status=403)
 
-        # Get stats
+        # Check iRODS perms
+        irods_session = self.irods_backend.get_session()
+
         try:
-            stats = irods_backend.get_object_stats(self.kwargs['path'])
+            coll = irods_session.collections.get(self.kwargs['path'])
+
+        except Exception:
+            return Response('Not found', status=404)
+
+        perms = irods_session.permissions.get(coll)
+
+        if (not self.request.user.is_superuser and
+                self.request.user.username not in [p.user_name for p in perms]):
+            return Response(
+                'User not authorized for iRODS collection', status=403)
+
+
+class IrodsStatisticsAPIView(BaseIrodsAPIView):
+    """View for returning collection file statistics for the UI"""
+
+    def get(self, *args, **kwargs):
+        super(IrodsStatisticsAPIView, self).get(*args, **kwargs)
+
+        try:
+            stats = self.irods_backend.get_object_stats(self.kwargs['path'])
             return Response(stats, status=200)
+
+        except FileNotFoundError:
+            return Response('Not found', status=404)
+
+        except Exception as ex:
+            return Response(str(ex), status=500)
+
+
+class IrodsObjectListAPIView(BaseIrodsAPIView):
+    """View for listing data objects in iRODS recursively"""
+
+    def get(self, *args, **kwargs):
+        super(IrodsObjectListAPIView, self).get(*args, **kwargs)
+
+        # Get files
+        try:
+            ret_data = self.irods_backend.get_objects(self.kwargs['path'])
+            return Response(ret_data, status=200)
 
         except FileNotFoundError:
             return Response('Not found', status=404)

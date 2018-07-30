@@ -397,13 +397,16 @@ def get_assay_list_url(assay, path=None):
     :param path: iRODS path: if None, default path for assay will be used
     :return: String
     """
-    if not path and irods_backend:
+    if not irods_backend:
+        return None
+
+    if not path:
         path = irods_backend.get_path(assay)
 
     return reverse(
-        'samplesheets:irods_list',
+        'irodsbackend:list',
         kwargs={
-            'assay': assay.omics_uuid,
+            'project': assay.get_project().omics_uuid,
             'path': path})
 
 

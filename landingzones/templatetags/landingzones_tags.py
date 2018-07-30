@@ -79,10 +79,16 @@ def is_zone_disabled(zone):
 @register.simple_tag
 def get_zone_list_url(zone):
     """Return iRODS file list querying URL for landing zone"""
+    if not irods_backend:
+        return None
+
+    path = irods_backend.get_path(zone)
+
     return reverse(
-        'landingzones:irods_list',
+        'irodsbackend:list',
         kwargs={
-            'landingzone': zone.omics_uuid})
+            'project': zone.project.omics_uuid,
+            'path': path})
 
 
 @register.simple_tag

@@ -43,11 +43,6 @@ urlpatterns = [
         view=views.LandingZoneStatusGetAPIView.as_view(),
         name='status',
     ),
-    url(
-        regex=r'^irods/list/(?P<landingzone>[0-9a-f-]+)$',
-        view=views.LandingZoneIrodsObjectListAPIView.as_view(),
-        name='irods_list',
-    ),
     # Taskflow API views
     url(
         regex=r'^taskflow/create$',

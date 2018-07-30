@@ -580,41 +580,6 @@ class ZoneClearView(
 # General API Views ------------------------------------------------------------
 
 
-class LandingZoneIrodsObjectListAPIView(
-        LoginRequiredMixin, ProjectContextMixin, APIView):
-    """View for listing landing zone objects in iRODS via Ajax"""
-
-    def get(self, request, **kwargs):
-        irods_backend = get_backend_api('omics_irods')
-
-        if not irods_backend:
-            return Response('Backend not enabled', status=500)
-
-        try:
-            zone = LandingZone.objects.get(
-                omics_uuid=kwargs['landingzone'])
-
-        except LandingZone.DoesNotExist:
-            return Response('Zone not found', status=400)
-
-        perm = 'view_zones_own' if \
-            zone.user == request.user else 'view_zones_all'
-
-        if request.user.has_perm('landingzones.{}'.format(perm), zone.project):
-            try:
-                ret_data = irods_backend.get_objects(
-                    irods_backend.get_path(zone), check_md5=True)
-                return Response(ret_data, status=200)
-
-            except FileNotFoundError:
-                return Response('Collection not found', status=404)
-
-            except Exception as ex:
-                return Response(str(ex), status=500)
-
-        return Response('Not authorized', status=403)
-
-
 class LandingZoneStatusGetAPIView(
         LoginRequiredMixin, ProjectContextMixin, APIView):
     """View for returning landing zone status for the UI"""

@@ -556,45 +556,6 @@ class IrodsDirsView(
             self.get_context_data())
 
 
-# Javascript API Views ---------------------------------------------------
-
-
-class IrodsObjectListAPIView(
-        LoginRequiredMixin, ProjectContextMixin, ProjectPermissionMixin,
-        APIPermissionMixin, APIView):
-    """View for listing relevant sample dataobjects in iRODS via Ajax"""
-    permission_required = 'samplesheets.view_sheet'
-
-    def get(self, request, **kwargs):
-        irods_backend = get_backend_api('omics_irods')
-
-        if not irods_backend:
-            return Response('Backend not enabled', status=500)
-
-        try:
-            assay = Assay.objects.get(omics_uuid=kwargs['assay'])
-
-        except Assay.DoesNotExist:
-            return Response('Assay not found', status=500)
-
-        # Ensure path corresponds to assay
-        assay_path = irods_backend.get_path(assay)
-
-        if assay_path not in kwargs['path']:
-            return Response('Invalid path', status=400)
-
-        try:
-            ret_data = irods_backend.get_objects(kwargs['path'])
-
-        except FileNotFoundError:
-            return Response('Collection not found', status=404)
-
-        except Exception as ex:
-            return Response(str(ex), status=500)
-
-        return Response(ret_data, status=200)
-
-
 # Taskflow API Views -----------------------------------------------------
 
 
