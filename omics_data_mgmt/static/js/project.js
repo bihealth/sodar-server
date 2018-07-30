@@ -73,18 +73,24 @@ $(function(){
 
 // Disable nav project search until 3+ characters have been input
 // (not counting keyword)
+function modifySearch() {
+    v = $('#omics-nav-search-input').val();
+
+    if(v.length > 2) {
+       $('#omics-nav-search-submit').attr('disabled', false);
+    }
+
+    else {
+       $('#omics-nav-search-submit').attr('disabled', true);
+    }
+}
+
 $(document).ready(function() {
      $('#omics-nav-search-submit').attr('disabled', 'disabled');
      $('#omics-nav-search-input').keyup(function() {
-        v = $(this).val();
-
-        if(v.length > 2) {
-           $('#omics-nav-search-submit').attr('disabled', false);
-        }
-
-        else {
-           $('#omics-nav-search-submit').attr('disabled', true);
-        }
+        modifySearch();
+     }).on('input', function() {
+        modifySearch();
      });
  });
 

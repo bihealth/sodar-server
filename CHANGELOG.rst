@@ -67,6 +67,7 @@ Fixed
     - Popover width in CSS (#291)
 - **Projectroles**
     - Extra spaces and tabs broke search (#290)
+    - Search not enabled if selecting previous input with mouse (#307)
 - **Samplesheets**
     - Show correct target in germline app ``FileRedirectView`` message (#275)
     - Source/sample name search resulted in a template crash (#287)
