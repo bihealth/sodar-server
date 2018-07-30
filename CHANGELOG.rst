@@ -12,6 +12,8 @@ Unreleased
 Added
 -----
 
+- **Filesfolders**
+    - Text style depending on item flag (#303)
 - **Irodsbackend**
     - Generic iRODS file statistics view, template tags and Javascript (#181, #188)
     - Missing support for Investigation objects in ``get_path()`` (#292)

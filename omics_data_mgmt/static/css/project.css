@@ -513,6 +513,12 @@ a.omics-nav-link-last {
   border-bottom-left-radius: 0;
 }
 
+/* Text */
+
+.text-strikethrough {
+  text-decoration: line-through;
+}
+
 /* Misc */
 
 img.omics-navbar-logo {

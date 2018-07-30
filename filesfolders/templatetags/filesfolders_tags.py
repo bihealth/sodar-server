@@ -115,3 +115,9 @@ def get_flag_status(val, choice):
         return 'checked="checked"'
 
     return ''
+
+
+@register.simple_tag
+def get_flag_classes(flag_name):
+    """Return CSS classes for item link based on flag name"""
+    return FILESFOLDERS_FLAGS[flag_name]['text_classes']

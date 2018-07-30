@@ -19,23 +19,28 @@ FILESFOLDERS_FLAGS = {
     'IMPORTANT': {
         'icon': 'exclamation-circle',
         'label': 'Important',
-        'color': 'warning'},
+        'color': 'warning',
+        'text_classes': 'font-weight-bold'},
     'FLAG': {
         'icon': 'flag',
         'label': 'Flagged',
-        'color': 'info'},
+        'color': 'info',
+        'text_classes': 'font-weight-bold'},
     'FLAG_HEART': {
         'icon': 'heart',
         'label': 'Flagged (Heart)',
-        'color': 'danger'},
+        'color': 'danger',
+        'text_classes': 'font-weight-bold'},
     'REVOKED': {
         'icon': 'undo',
         'label': 'Revoked',
-        'color': 'secondary'},
+        'color': 'secondary',
+        'text_classes': 'text-strikethrough'},
     'SUPERSEDED': {
         'icon': 'history',
         'label': 'Superseded',
-        'color': 'dark'}}
+        'color': 'dark',
+        'text_classes': 'text-muted'}}
 
 FLAG_CHOICES = [
     (k, FILESFOLDERS_FLAGS[k]['label']) for k in sorted(FILESFOLDERS_FLAGS)]
