@@ -23,6 +23,8 @@ Added
     - Send email when zone status is set as ``MOVED`` or ``FAILED`` (#280)
     - Unit tests for ``ZoneStatusSetAPIView``
     - Display iRODS stats in details card (#188)
+    - Ability to add extra flow parameters with ``get_extra_flow_data()`` (#297)
+    - Script user workaround for non-working tickets in the proteomics use case (#297)
 - **Projectroles**
     - Helper ``email.send_generic_mail()`` (#280)
     - Common template tag ``check_backend()``

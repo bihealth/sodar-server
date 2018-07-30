@@ -92,6 +92,29 @@ class LandingZoneContextMixin:
         return context
 
 
+class LandingZoneConfigPluginMixin:
+    """Landing zone configuration plugin operations"""
+
+    def get_flow_data(self, zone, flow_name, data):
+        """
+        Update flow data parameters according to config
+        :param zone: LandingZone object
+        :param flow_name: Name of flow (string)
+        :param data: Flow data parameters (dict)
+        :return: dict
+        """
+        if zone.configuration:
+            from .plugins import get_zone_config_plugin
+            config_plugin = get_zone_config_plugin(zone)
+
+            if config_plugin:
+                data = {
+                    **data,
+                    **config_plugin.get_extra_flow_data(zone, flow_name)}
+
+        return data
+
+
 class ProjectZoneView(
         LoginRequiredMixin, LoggedInPermissionMixin, ProjectPermissionMixin,
         InvestigationContextMixin, TemplateView):
@@ -140,7 +163,7 @@ class ProjectZoneView(
 
 class ZoneCreateView(
         LoginRequiredMixin, LoggedInPermissionMixin, ProjectPermissionMixin,
-        InvestigationContextMixin, CreateView):
+        InvestigationContextMixin, LandingZoneConfigPluginMixin, CreateView):
     """ProjectInvite creation view"""
     model = LandingZone
     form_class = LandingZoneForm
@@ -215,22 +238,24 @@ class ZoneCreateView(
 
             # Build assay dirs
             dirs = get_assay_dirs(assay)
+            flow_name = 'landing_zone_create'
 
-            flow_data = {
-                'zone_title': zone.title,
-                'zone_uuid': zone.omics_uuid,
-                'user_name': self.request.user.username,
-                'user_uuid': self.request.user.omics_uuid,
-                'assay_path': irods_backend.get_subdir(
-                    assay, landing_zone=True),
-                'description': zone.description,
-                'zone_config': zone.configuration,
-                'dirs': dirs}
+            flow_data = self.get_flow_data(
+                zone, flow_name, {
+                    'zone_title': zone.title,
+                    'zone_uuid': zone.omics_uuid,
+                    'user_name': self.request.user.username,
+                    'user_uuid': self.request.user.omics_uuid,
+                    'assay_path': irods_backend.get_subdir(
+                        assay, landing_zone=True),
+                    'description': zone.description,
+                    'zone_config': zone.configuration,
+                    'dirs': dirs})
 
             try:
                 taskflow.submit(
                     project_uuid=project.omics_uuid,
-                    flow_name='landing_zone_create',
+                    flow_name=flow_name,
                     flow_data=flow_data,
                     timeline_uuid=tl_event.omics_uuid,
                     request_mode='async',
@@ -256,7 +281,7 @@ class ZoneCreateView(
 
 class ZoneDeleteView(
         LoginRequiredMixin, LoggedInPermissionMixin, ProjectContextMixin,
-        ProjectPermissionMixin, TemplateView):
+        ProjectPermissionMixin, LandingZoneConfigPluginMixin, TemplateView):
     """RoleAssignment deletion view"""
     # NOTE: Not using DeleteView here as we don't delete the object in async
     http_method_names = ['get', 'post']
@@ -340,18 +365,21 @@ class ZoneDeleteView(
             if tl_event:
                 tl_event.set_status('SUBMIT')
 
-            flow_data = {
-                'zone_title': zone.title,
-                'zone_uuid': zone.omics_uuid,
-                'zone_config': zone.configuration,
-                'assay_path': irods_backend.get_subdir(
-                    zone.assay, landing_zone=True),
-                'user_name': zone.user.username}
+            flow_name = 'landing_zone_delete'
+
+            flow_data = self.get_flow_data(
+                zone, flow_name, {
+                    'zone_title': zone.title,
+                    'zone_uuid': zone.omics_uuid,
+                    'zone_config': zone.configuration,
+                    'assay_path': irods_backend.get_subdir(
+                        zone.assay, landing_zone=True),
+                    'user_name': zone.user.username})
 
             try:
                 taskflow.submit(
                     project_uuid=project.omics_uuid,
-                    flow_name='landing_zone_delete',
+                    flow_name=flow_name,
                     flow_data=flow_data,
                     request=self.request,
                     request_mode='async',
@@ -383,7 +411,7 @@ class ZoneDeleteView(
 
 class ZoneMoveView(
         LoginRequiredMixin, LoggedInPermissionMixin, ProjectContextMixin,
-        ProjectPermissionMixin, TemplateView):
+        ProjectPermissionMixin, LandingZoneConfigPluginMixin, TemplateView):
     """Zone validation and moving triggering view"""
     http_method_names = ['get', 'post']
     template_name = 'landingzones/landingzone_confirm_move.html'
@@ -451,15 +479,18 @@ class ZoneMoveView(
         if tl_event:
             tl_event.set_status('SUBMIT')
 
-        flow_data = {
-            'zone_title': str(zone.title),
-            'zone_uuid': zone.omics_uuid,
-            'zone_config': zone.configuration,
-            'assay_path_samples': irods_backend.get_subdir(
-                zone.assay, landing_zone=False),
-            'assay_path_zone': irods_backend.get_subdir(
-                zone.assay, landing_zone=True),
-            'user_name': str(zone.user.username)}
+        flow_name = 'landing_zone_move'
+
+        flow_data = self.get_flow_data(
+            zone, flow_name, {
+                'zone_title': str(zone.title),
+                'zone_uuid': zone.omics_uuid,
+                'zone_config': zone.configuration,
+                'assay_path_samples': irods_backend.get_subdir(
+                    zone.assay, landing_zone=False),
+                'assay_path_zone': irods_backend.get_subdir(
+                    zone.assay, landing_zone=True),
+                'user_name': str(zone.user.username)})
 
         try:
             taskflow.submit(

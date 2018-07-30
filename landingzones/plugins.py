@@ -103,19 +103,29 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         if irods_backend:
             # Only sync flows which are not yet moved
             for zone in LandingZone.objects.all().exclude(status='MOVED'):
+                flow_name = 'landing_zone_create'
+                flow_data = {
+                    'zone_title': zone.title,
+                    'zone_uuid': zone.omics_uuid,
+                    'user_name': zone.user.username,
+                    'user_uuid': str(zone.user.omics_uuid),
+                    'assay_path': irods_backend.get_subdir(
+                        zone.assay, landing_zone=True),
+                    'description': zone.description,
+                    'zone_config': zone.configuration,
+                    'dirs': get_assay_dirs(zone.assay)}
+
+                config_plugin = get_zone_config_plugin(zone)
+
+                if config_plugin:
+                    flow_data = {
+                        **flow_data,
+                        **config_plugin.get_extra_zone_data(zone, flow_name)}
+
                 flow = {
-                    'flow_name': 'landing_zone_create',
+                    'flow_name': flow_name,
                     'project_uuid': str(zone.project.omics_uuid),
-                    'flow_data': {
-                        'zone_title': zone.title,
-                        'zone_uuid': zone.omics_uuid,
-                        'user_name': zone.user.username,
-                        'user_uuid': str(zone.user.omics_uuid),
-                        'assay_path': irods_backend.get_subdir(
-                            zone.assay, landing_zone=True),
-                        'description': zone.description,
-                        'zone_config': zone.configuration,
-                        'dirs': get_assay_dirs(zone.assay)}}
+                    'flow_data': flow_data}
                 sync_flows.append(flow)
 
         return sync_flows
@@ -203,6 +213,16 @@ class LandingZoneConfigPluginPoint(PluginPoint):
         """
         Perform actions before landing zone deletion.
         :param zone: LandingZone object
+        """
+        pass
+
+    # TODO: Implement this in your config plugin if needed
+    def get_extra_flow_data(self, zone, flow_name):
+        """
+        Return extra zone data parameters
+        :param zone: LandingZone object
+        :param flow_name: Name of flow (string)
+        :return: dict or None
         """
         pass
 

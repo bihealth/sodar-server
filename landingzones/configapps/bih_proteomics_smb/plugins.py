@@ -54,6 +54,15 @@ class LandingZoneConfigPlugin(LandingZoneConfigPluginPoint):
     # TODO: TBD: Do we need this?
     permission = None
 
+    def get_extra_flow_data(self, zone, flow_name):
+        """
+        Return extra zone data parameters
+        :param zone: LandingZone object
+        :param flow_name: Name of flow (string)
+        :return: dict or None
+        """
+        return {'script_user': 'bih_proteomics_smb'}    # Workaround for #297
+
     def cleanup_zone(self, zone):
         """
         Perform actions before landing zone deletion.
