@@ -37,7 +37,6 @@ class BaseIrodsAPIView(
             return Response('Path not set', status=400)
 
         # Ensure the given path belongs in the project
-        # TODO: Fix this
         if (self.project and
                 self.irods_backend.get_path(
                     self.project) not in self.kwargs['path']):
@@ -65,12 +64,17 @@ class BaseIrodsAPIView(
             return Response(
                 'User not authorized for iRODS collection', status=403)
 
+        return None     # Better way to do this?
+
 
 class IrodsStatisticsAPIView(BaseIrodsAPIView):
     """View for returning collection file statistics for the UI"""
 
     def get(self, *args, **kwargs):
-        super(IrodsStatisticsAPIView, self).get(*args, **kwargs)
+        response = super(IrodsStatisticsAPIView, self).get(*args, **kwargs)
+
+        if response:
+            return response
 
         try:
             stats = self.irods_backend.get_object_stats(self.kwargs['path'])
@@ -87,7 +91,10 @@ class IrodsObjectListAPIView(BaseIrodsAPIView):
     """View for listing data objects in iRODS recursively"""
 
     def get(self, *args, **kwargs):
-        super(IrodsObjectListAPIView, self).get(*args, **kwargs)
+        response = super(IrodsObjectListAPIView, self).get(*args, **kwargs)
+
+        if response:
+            return response
 
         # Get files
         try:
