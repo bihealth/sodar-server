@@ -355,6 +355,11 @@ def set_logging(debug):
             }
         },
         'loggers': {
+            'irodsbackend': {
+                'level': 'DEBUG' if debug else 'INFO',
+                'handlers': ['console', ],
+                'propagate': False,
+            },
             'landingzones': {
                 'level': 'DEBUG' if debug else 'INFO',
                 'handlers': ['console', ],

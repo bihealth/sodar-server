@@ -21,6 +21,7 @@ Added
     - Display collection name in iRODS collection list
     - ``IrodsObjectListAPIView``for iRODS collection list queries (#308)
     - ``BaseIrodsAPIView`` for implementing views
+    - Logging for error cases (#310)
 - **Landingzones**
     - Send email when zone status is set as ``MOVED`` or ``FAILED`` (#280)
     - Unit tests for ``ZoneStatusSetAPIView``

@@ -2,6 +2,7 @@
 
 from functools import wraps
 import itertools
+import logging
 import operator
 
 from irods.api_number import api_number
@@ -27,6 +28,9 @@ ACCEPTED_PATH_TYPES = [
     'Project',
     'Investigation',
     'Study']
+
+
+logger = logging.getLogger(__name__)
 
 
 # Irods init decorator ---------------------------------------------------------
@@ -131,11 +135,19 @@ class IrodsAPI:
             r_path = r_list[0][DataObject.path].split('/')
             parent_path = path_prefix + '/'.join(
                 r_path[r_path.index('projects'):-1])
-            parent_coll = symb_colls[parent_path]
 
-            ret.append(
-                iRODSDataObject(
-                    coll.manager.sess.data_objects, parent_coll, r_list))
+            try:
+                parent_coll = symb_colls[parent_path]
+                ret.append(
+                    iRODSDataObject(
+                        coll.manager.sess.data_objects, parent_coll, r_list))
+
+            except KeyError:    # This should not happen, see issue #310
+                logger.error(
+                    'Collection specified in iRODS iCAT database for '
+                    'DataObject.id={} not found: path={}'.format(
+                        r_list[0][DataObject.id], parent_path))
+
         return ret
 
     @classmethod
