@@ -17,12 +17,12 @@ urlpatterns = [
         name='stats',
     ),
     url(
-        regex=r'^api/list/(?P<project>[0-9a-f-]+)\?path=(?P<path>[\w\-_/@]+)$',
+        regex=r'^api/list/(?P<project>[0-9a-f-]+)\?path=(?P<path>[\w\-_/@]+)&md5=(?P<md5>[01])$',
         view=views.IrodsObjectListAPIView.as_view(),
         name='list',
     ),
     url(
-        regex=r'^api/list\?path=(?P<path>[\w\-_/@]+)$',
+        regex=r'^api/list\?path=(?P<path>[\w\-_/@]+)&md5=(?P<md5>[01])$',
         view=views.IrodsObjectListAPIView.as_view(),
         name='list',
     ),

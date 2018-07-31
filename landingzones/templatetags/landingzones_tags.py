@@ -88,7 +88,8 @@ def get_zone_list_url(zone):
         'irodsbackend:list',
         kwargs={
             'project': zone.project.omics_uuid,
-            'path': path})
+            'path': path,
+            'md5': 1})
 
 
 @register.simple_tag

@@ -231,7 +231,8 @@ class TestIrodsObjectListAPIView(TestViewsBase):
                 'irodsbackend:list',
                 kwargs={
                     'project': self.project.omics_uuid,
-                    'path': self.irods_path}))
+                    'path': self.irods_path,
+                    'md5': 0}))
 
             self.assertEqual(response.status_code, 200)
             self.assertEqual(len(response.data['data_objects']), 0)
@@ -249,11 +250,62 @@ class TestIrodsObjectListAPIView(TestViewsBase):
                 'irodsbackend:list',
                 kwargs={
                     'project': self.project.omics_uuid,
-                    'path': self.irods_path}))
+                    'path': self.irods_path,
+                    'md5': 0}))
 
             self.assertEqual(response.status_code, 200)
             self.assertEqual(len(response.data['data_objects']), 1)
-            # TODO: Assert file data
+
+            list_obj = response.data['data_objects'][0]
+            self.assertNotIn('md5_file', list_obj)
+            self.assertEqual(data_obj.name, list_obj['name'])
+            self.assertEqual(data_obj.path, list_obj['path'])
+            self.assertEqual(data_obj.size, IRODS_OBJ_SIZE)
+
+    def test_get_coll_md5(self):
+        """Test GET request for listing a collection with a data object and md5"""
+
+        # Put data object in iRODS
+        obj_path = self.irods_path + '/' + IRODS_OBJ_NAME
+        data_obj = make_object(
+            self.irods_session, obj_path, IRODS_OBJ_CONTENT)
+
+        # Put MD5 data object in iRODS
+        md5_path = self.irods_path + '/' + IRODS_MD5_NAME
+        md5_obj = make_object(
+            self.irods_session, md5_path, IRODS_OBJ_CONTENT)  # Not actual md5
+
+        with self.login(self.user):
+            response = self.client.get(reverse(
+                'irodsbackend:list',
+                kwargs={
+                    'project': self.project.omics_uuid,
+                    'path': self.irods_path,
+                    'md5': 1}))
+
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(len(response.data['data_objects']), 1)  # Still 1
+            self.assertEqual(response.data['data_objects'][0]['md5_file'], True)
+
+    def test_get_coll_md5_no_file(self):
+        """Test GET request with md5 set True but no md5 file"""
+
+        # Put data object in iRODS
+        obj_path = self.irods_path + '/' + IRODS_OBJ_NAME
+        data_obj = make_object(
+            self.irods_session, obj_path, IRODS_OBJ_CONTENT)
+
+        with self.login(self.user):
+            response = self.client.get(reverse(
+                'irodsbackend:list',
+                kwargs={
+                    'project': self.project.omics_uuid,
+                    'path': self.irods_path,
+                    'md5': 1}))
+
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(len(response.data['data_objects']), 1)
+            self.assertEqual(response.data['data_objects'][0]['md5_file'], False)
 
     def test_get_coll_not_found(self):
         """Test GET request for listing a collection which doesn't exist"""
@@ -266,7 +318,8 @@ class TestIrodsObjectListAPIView(TestViewsBase):
                 'irodsbackend:list',
                 kwargs={
                     'project': self.project.omics_uuid,
-                    'path': fail_path}))
+                    'path': fail_path,
+                    'md5': 0}))
 
             self.assertEqual(response.status_code, 404)
 
@@ -280,7 +333,8 @@ class TestIrodsObjectListAPIView(TestViewsBase):
                 'irodsbackend:list',
                 kwargs={
                     'project': self.project.omics_uuid,
-                    'path': IRODS_NON_PROJECT_PATH}))
+                    'path': IRODS_NON_PROJECT_PATH,
+                    'md5': 0}))
 
             self.assertEqual(response.status_code, 400)
 
@@ -290,7 +344,8 @@ class TestIrodsObjectListAPIView(TestViewsBase):
             response = self.client.get(reverse(
                 'irodsbackend:list',
                 kwargs={
-                    'path': self.irods_path}))
+                    'path': self.irods_path,
+                    'md5': 0}))
 
             self.assertEqual(response.status_code, 200)
 
@@ -302,7 +357,8 @@ class TestIrodsObjectListAPIView(TestViewsBase):
             response = self.client.get(reverse(
                 'irodsbackend:list',
                 kwargs={
-                    'path': self.irods_path}))
+                    'path': self.irods_path,
+                    'md5': 0}))
 
             self.assertEqual(response.status_code, 403)
 
@@ -317,6 +373,7 @@ class TestIrodsObjectListAPIView(TestViewsBase):
                 'irodsbackend:list',
                 kwargs={
                     'project': self.project.omics_uuid,
-                    'path': self.irods_path}))
+                    'path': self.irods_path,
+                    'md5': 0}))
 
             self.assertEqual(response.status_code, 403)

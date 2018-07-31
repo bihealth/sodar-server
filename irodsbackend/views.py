@@ -98,7 +98,8 @@ class IrodsObjectListAPIView(BaseIrodsAPIView):
 
         # Get files
         try:
-            ret_data = self.irods_backend.get_objects(self.kwargs['path'])
+            ret_data = self.irods_backend.get_objects(
+                self.kwargs['path'], check_md5=bool(int(self.kwargs['md5'])))
             return Response(ret_data, status=200)
 
         except FileNotFoundError:

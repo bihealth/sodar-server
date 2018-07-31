@@ -407,7 +407,8 @@ def get_assay_list_url(assay, path=None):
         'irodsbackend:list',
         kwargs={
             'project': assay.get_project().omics_uuid,
-            'path': path})
+            'path': path,
+            'md5': 0})
 
 
 @register.simple_tag
