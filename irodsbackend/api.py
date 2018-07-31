@@ -90,7 +90,8 @@ class IrodsAPI:
     @classmethod
     def _get_search_path(cls, coll):
         """Return a search path string for a collection"""
-        return '%/' + '/'.join(coll.path.split('/')[2:]) + '/%'
+        # NOTE: We assume all our resource paths end with */Vault/
+        return '%/Vault/' + '/'.join(coll.path.split('/')[2:]) + '/%'
 
     @classmethod
     def _get_colls_recursively(cls, coll):
@@ -197,7 +198,6 @@ class IrodsAPI:
             'total_size': 0}
 
         search_path = cls._get_search_path(coll)
-
         query = coll.manager.sess.query().filter(
             Criterion('like', DataObject.path, search_path)).filter(
             Criterion('not like', DataObject.name, '%.md5')).count(
