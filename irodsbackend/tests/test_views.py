@@ -74,11 +74,11 @@ class TestViewsBase(
 
 
 @skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
-class TestIrodsStatisticsGetAPIView(TestViewsBase):
-    """Tests for the landing zone file statistics API view"""
+class TestIrodsStatisticsAPIView(TestViewsBase):
+    """Tests for the landing zone collection statistics API view"""
 
     def setUp(self):
-        super(TestIrodsStatisticsGetAPIView, self).setUp()
+        super(TestIrodsStatisticsAPIView, self).setUp()
 
         # Build path for test collection
         self.irods_path = self.irods_backend.get_path(
@@ -152,6 +152,81 @@ class TestIrodsStatisticsGetAPIView(TestViewsBase):
         with self.login(self.user):
             response = self.client.get(reverse(
                 'irodsbackend:stats',
+                kwargs={
+                    'project': self.project.omics_uuid,
+                    'path': fail_path}))
+
+            self.assertEqual(response.status_code, 404)
+
+    def test_get_coll_not_in_project(self):
+        """Test GET request for stats on a collection not belonging to project"""
+        self.assertEqual(
+            self.irods_session.collections.exists(IRODS_NON_PROJECT_PATH), True)
+
+        with self.login(self.user):
+            response = self.client.get(reverse(
+                'irodsbackend:stats',
+                kwargs={
+                    'project': self.project.omics_uuid,
+                    'path': IRODS_NON_PROJECT_PATH}))
+
+            self.assertEqual(response.status_code, 400)
+
+
+@skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
+class TestIrodsObjectListAPIView(TestViewsBase):
+    """Tests for the landing zone data object listing API view"""
+
+    def setUp(self):
+        super(TestIrodsObjectListAPIView, self).setUp()
+
+        # Build path for test collection
+        self.irods_path = self.irods_backend.get_path(
+            self.project) + '/' + IRODS_TEMP_COLL
+
+        # Create test collection in iRODS
+        self.irods_coll = self.irods_session.collections.create(self.irods_path)
+
+    def test_get_empty_coll(self):
+        """Test GET request for listing an empty collection in iRODS"""
+        with self.login(self.user):
+            response = self.client.get(reverse(
+                'irodsbackend:list',
+                kwargs={
+                    'project': self.project.omics_uuid,
+                    'path': self.irods_path}))
+
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(len(response.data['data_objects']), 0)
+
+    def test_get_coll_obj(self):
+        """Test GET request for listing a collection with a data object"""
+
+        # Put data object in iRODS
+        obj_path = self.irods_path + '/' + IRODS_OBJ_NAME
+        data_obj = make_object(
+            self.irods_session, obj_path, IRODS_OBJ_CONTENT)
+
+        with self.login(self.user):
+            response = self.client.get(reverse(
+                'irodsbackend:list',
+                kwargs={
+                    'project': self.project.omics_uuid,
+                    'path': self.irods_path}))
+
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(len(response.data['data_objects']), 1)
+            # TODO: Assert file data
+
+    def test_get_coll_not_found(self):
+        """Test GET request for stats on a collection which doesn't exist"""
+        fail_path = self.irods_path + '/' + IRODS_FAIL_COLL
+        self.assertEqual(
+            self.irods_session.collections.exists(fail_path), False)
+
+        with self.login(self.user):
+            response = self.client.get(reverse(
+                'irodsbackend:list',
                 kwargs={
                     'project': self.project.omics_uuid,
                     'path': fail_path}))
