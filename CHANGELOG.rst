@@ -64,6 +64,7 @@ Changed
     - Refactor ``irods_backend`` references in templates
     - Use irodsbackend code for collection listing (#295)
     - Move irods buttons to irodsbackend (#301)
+    - Move irods clipboard javascript to irodsbackend (#301)
 
 Fixed
 -----
@@ -90,6 +91,7 @@ Removed
     - MD5 display from file list view
     - Deprecated ``irods_base_dir`` from views
     - ``IrodsObjectListAPIView``, use view in irodsbackend instead (#308)
+    - ``samplesheets_common.js``, functionality now in irodsbackend (#301)
 
 
 v0.3.0 (2018-07-03)
