@@ -120,7 +120,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                 if config_plugin:
                     flow_data = {
                         **flow_data,
-                        **config_plugin.get_extra_zone_data(zone, flow_name)}
+                        **config_plugin.get_extra_flow_data(zone, flow_name)}
 
                 flow = {
                     'flow_name': flow_name,
