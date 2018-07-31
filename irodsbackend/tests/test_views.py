@@ -172,6 +172,43 @@ class TestIrodsStatisticsAPIView(TestViewsBase):
 
             self.assertEqual(response.status_code, 400)
 
+    def test_get_no_project_superuser(self):
+        """Test GET request for stats without a project and a superuser"""
+        with self.login(self.user):
+            response = self.client.get(reverse(
+                'irodsbackend:stats',
+                kwargs={
+                    'path': self.irods_path}))
+
+            self.assertEqual(response.status_code, 200)
+
+    def test_get_no_project_user(self):
+        """Test GET request for stats without a project and a regular user"""
+        new_user = self.make_user('new_user')
+
+        with self.login(new_user):
+            response = self.client.get(reverse(
+                'irodsbackend:stats',
+                kwargs={
+                    'path': self.irods_path}))
+
+            self.assertEqual(response.status_code, 403)
+
+    def test_get_no_access(self):
+        """Test GET request for stats with no acces for the iRODS folder"""
+        new_user = self.make_user('new_user')
+        self._make_assignment(
+            self.project, new_user, self.role_contributor)  # No taskflow
+
+        with self.login(new_user):
+            response = self.client.get(reverse(
+                'irodsbackend:stats',
+                kwargs={
+                    'project': self.project.omics_uuid,
+                    'path': self.irods_path}))
+
+            self.assertEqual(response.status_code, 403)
+
 
 @skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
 class TestIrodsObjectListAPIView(TestViewsBase):
@@ -219,7 +256,7 @@ class TestIrodsObjectListAPIView(TestViewsBase):
             # TODO: Assert file data
 
     def test_get_coll_not_found(self):
-        """Test GET request for stats on a collection which doesn't exist"""
+        """Test GET request for listing a collection which doesn't exist"""
         fail_path = self.irods_path + '/' + IRODS_FAIL_COLL
         self.assertEqual(
             self.irods_session.collections.exists(fail_path), False)
@@ -234,15 +271,52 @@ class TestIrodsObjectListAPIView(TestViewsBase):
             self.assertEqual(response.status_code, 404)
 
     def test_get_coll_not_in_project(self):
-        """Test GET request for stats on a collection not belonging to project"""
+        """Test GET request for listing a collection not belonging to project"""
         self.assertEqual(
             self.irods_session.collections.exists(IRODS_NON_PROJECT_PATH), True)
 
         with self.login(self.user):
             response = self.client.get(reverse(
-                'irodsbackend:stats',
+                'irodsbackend:list',
                 kwargs={
                     'project': self.project.omics_uuid,
                     'path': IRODS_NON_PROJECT_PATH}))
 
             self.assertEqual(response.status_code, 400)
+
+    def test_get_no_project_superuser(self):
+        """Test GET request for listing without a project and a superuser"""
+        with self.login(self.user):
+            response = self.client.get(reverse(
+                'irodsbackend:list',
+                kwargs={
+                    'path': self.irods_path}))
+
+            self.assertEqual(response.status_code, 200)
+
+    def test_get_no_project_user(self):
+        """Test GET request for listing without a project and a regular user"""
+        new_user = self.make_user('new_user')
+
+        with self.login(new_user):
+            response = self.client.get(reverse(
+                'irodsbackend:list',
+                kwargs={
+                    'path': self.irods_path}))
+
+            self.assertEqual(response.status_code, 403)
+
+    def test_get_no_access(self):
+        """Test GET request for listing with no acces for the iRODS folder"""
+        new_user = self.make_user('new_user')
+        self._make_assignment(
+            self.project, new_user, self.role_contributor)  # No taskflow
+
+        with self.login(new_user):
+            response = self.client.get(reverse(
+                'irodsbackend:list',
+                kwargs={
+                    'project': self.project.omics_uuid,
+                    'path': self.irods_path}))
+
+            self.assertEqual(response.status_code, 403)
