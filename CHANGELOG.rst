@@ -65,6 +65,7 @@ Changed
     - Use irodsbackend code for collection listing (#295)
     - Move irods buttons to irodsbackend (#301)
     - Move irods clipboard javascript to irodsbackend (#301)
+    - Move javascript to separate file (#181)
 
 Fixed
 -----
