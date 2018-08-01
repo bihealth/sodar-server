@@ -21,8 +21,8 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
     # Properties defined in SampleSheetAssayPluginPoint ------------------
 
     #: Identifying assay fields (used to identify plugin by assay)
-    measurement_type = 'genome sequencing'
-    technology_type = 'nucleotide sequencing'
+    measurement_types = 'genome sequencing'
+    technology_types = 'nucleotide sequencing'
 
     #: Description string
     description = 'Sample sheets genome sequencing / nucleotide sequencing ' \
