@@ -302,8 +302,7 @@ def find_assay_plugin(measurement_type, technology_type):
     """
 
     # Temporary HACK for medical genetics demo
-    if (get_isa_field_name(measurement_type) in [
-            'genome sequencing', 'exome sequencing'] and
+    if (get_isa_field_name(measurement_type) == 'exome sequencing' and
             get_isa_field_name(technology_type) == 'nucleotide sequencing'):
         return SampleSheetAssayPluginPoint.get_plugin(
             'samplesheets_assay_genome_seq_nucleotide_seq')
