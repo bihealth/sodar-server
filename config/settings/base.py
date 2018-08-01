@@ -55,6 +55,7 @@ THIRD_PARTY_APPS = [
     'markupfield',  # For markdown
     'db_file_storage',  # For storing files in database
     'rest_framework',   # For API views
+    'knox',  # For token auth
     'docs',  # For the online user documentation/manual
 ]
 
@@ -286,6 +287,16 @@ AUTOSLUG_SLUGIFY_FUNCTION = 'slugify.slugify'
 
 # Location of root django.contrib.admin URL, use {% url 'admin:index' %}
 ADMIN_URL = r'^admin/'
+
+# Django REST framework default auth classes
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.BasicAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+        'knox.auth.TokenAuthentication',
+    ),
+}
+
 
 # LDAP configuration
 # ------------------------------------------------------------------------------

@@ -9,8 +9,10 @@ from django.shortcuts import redirect
 from django.urls import reverse
 from django.views.generic import TemplateView, FormView, View
 
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from knox.auth import TokenAuthentication
 
 # Projectroles dependency
 from projectroles.models import Project
@@ -561,12 +563,17 @@ class IrodsDirsView(
 
 # TODO: Knox token auth
 class SourceIDQueryAPIView(APIView):
-    # Proof-of-concept source ID querying view for BeLOVE integration
+    """Proof-of-concept source ID querying view for BeLOVE integration"""
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (IsAuthenticated,)
+
     def get(self, *args, **kwargs):
         source_id = self.kwargs['source_id']
+
         source_count = GenericMaterial.objects.find(
             search_term=source_id,
             item_type='SOURCE',).count()
+
         ret_data = {'id_found': True if source_count > 0 else False}
         return Response(ret_data, status=200)
 

@@ -66,6 +66,9 @@ rules==1.2.1
 # REST framework
 djangorestframework==3.7.0
 
+# Token authentication
+django-rest-knox==3.1.5
+
 # Extra views for formset helping
 django-extra-views==0.9.0
 

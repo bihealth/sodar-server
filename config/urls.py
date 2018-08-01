@@ -24,6 +24,9 @@ urlpatterns = [
     url(r'^login/$', auth_views.login, name='account_login'),
     url(r'^logout/$', auth_views.logout_then_login, name='account_logout'),
 
+    # Auth
+    url(r'api/auth/', include('knox.urls')),
+
     # General site apps
     url(r'^alerts/', include('adminalerts.urls')),
     url(r'^irods/', include('irodsinfo.urls')),
