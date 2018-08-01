@@ -12,6 +12,8 @@ Unreleased
 Added
 -----
 
+- **General**
+    - ``SITE_SUBTITLE`` setting to show beta status or something similar (#311)
 - **Filesfolders**
     - Text style depending on item flag (#303)
 - **Irodsbackend**
