@@ -46,6 +46,12 @@ urlpatterns = [
         view=views.SampleSheetDeleteView.as_view(),
         name='delete',
     ),
+    # General API views
+    url(
+        regex=r'^api/source/get/(?P<source_id>[\w\-_/]+)$',
+        view=views.SourceIDQueryAPIView.as_view(),
+        name='source_get',
+    ),
     # Taskflow API views
     url(
         regex=r'^taskflow/dirs/get$',

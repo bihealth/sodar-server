@@ -556,6 +556,21 @@ class IrodsDirsView(
             self.get_context_data())
 
 
+# General API Views ------------------------------------------------------
+
+
+# TODO: Knox token auth
+class SourceIDQueryAPIView(APIView):
+    # Proof-of-concept source ID querying view for BeLOVE integration
+    def get(self, *args, **kwargs):
+        source_id = self.kwargs['source_id']
+        source_count = GenericMaterial.objects.find(
+            search_term=source_id,
+            item_type='SOURCE',).count()
+        ret_data = {'id_found': True if source_count > 0 else False}
+        return Response(ret_data, status=200)
+
+
 # Taskflow API Views -----------------------------------------------------
 
 
