@@ -144,7 +144,8 @@ class ProjectZoneView(
 
         # User zones
         context['zones_own'] = LandingZone.objects.filter(
-            project=context['project'], user=self.request.user).order_by('-pk')
+            project=context['project'],
+            user=self.request.user).order_by('title')
 
         # Other zones
         # TODO: Add individual zone perm check if/when we implement issue #57
@@ -153,7 +154,8 @@ class ProjectZoneView(
             context['zones_other'] = LandingZone.objects.filter(
                 project=context['project']).exclude(
                 user=self.request.user).exclude(
-                    status__in=['MOVED', 'DELETED']).order_by('-pk')
+                    status__in=['MOVED', 'DELETED']).order_by(
+                        'user__username', 'title')
 
         # Status query interval
         context['zone_status_interval'] = settings.LANDINGZONES_STATUS_INTERVAL

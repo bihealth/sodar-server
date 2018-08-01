@@ -57,6 +57,7 @@ Changed
     - Move javascript to separate file (#181)
     - Hide deleted zones from "other zones" (#302)
     - Use irodsbackend code for collection listing (#295)
+    - Sort zones in list by zone tiele (#312)
 - **Projectroles**
     - Minor email refactoring (#280)
 - **Samplesheets**
