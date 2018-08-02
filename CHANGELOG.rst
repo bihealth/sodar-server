@@ -100,6 +100,7 @@ Removed
     - Deprecated ``irods_base_dir`` from views
     - ``IrodsObjectListAPIView``, use view in irodsbackend instead (#308)
     - ``samplesheets_common.js``, functionality now in irodsbackend (#301)
+    - ``utils.get_last_material_index()``, no longer used (#317)
 
 
 v0.3.0 (2018-07-03)

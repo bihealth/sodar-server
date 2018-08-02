@@ -1,7 +1,4 @@
-from projectroles.plugins import get_backend_api
-
 from samplesheets.plugins import SampleSheetStudyPluginPoint
-from samplesheets.utils import get_last_material_index
 
 
 class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):

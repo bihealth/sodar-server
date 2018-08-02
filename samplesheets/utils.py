@@ -92,24 +92,6 @@ def get_index_by_header(
     return None
 
 
-def get_last_material_index(render_table):
-    """
-    Return the column index for the last material in a rendered ISA table
-    :param render_table: Table returned by SampleSheetTableBuilder
-    :return: int
-    """
-    idx = 0
-    row = render_table['table_data'][0]
-
-    for i in range(0, len(row)):
-        cell = row[i]
-
-        if cell['field_name'] == 'name' and cell['obj_type'] == 'MATERIAL':
-            idx = i
-
-    return idx
-
-
 def get_isa_field_name(field):
     """
     Return the name of an ISA field. In case of an ontology reference, returns
