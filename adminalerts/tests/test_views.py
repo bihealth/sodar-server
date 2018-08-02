@@ -79,7 +79,6 @@ class TestAdminAlertCreateView(TestViewsBase):
 
         post_data = {
             'message': 'new alert',
-            'user': self.superuser.pk,
             'description': 'description',
             'date_expire': self.expiry_str,
             'active': 1}
@@ -104,7 +103,6 @@ class TestAdminAlertCreateView(TestViewsBase):
 
         post_data = {
             'message': 'new alert',
-            'user': self.superuser.pk,
             'description': 'description',
             'date_expire': expiry_fail,
             'active': 1}
@@ -138,7 +136,6 @@ class TestAdminAlertUpdateView(TestViewsBase):
 
         post_data = {
             'message': 'updated alert',
-            'user': self.superuser.pk,
             'description': 'updated description',
             'date_expire': self.expiry_str,
             'active': ''}
@@ -158,6 +155,30 @@ class TestAdminAlertUpdateView(TestViewsBase):
         self.assertEqual(self.alert.message, 'updated alert')
         self.assertEqual(self.alert.description.raw, 'updated description')
         self.assertEqual(self.alert.active, False)
+
+    def test_update_user(self):
+        """Test updating an admin alert with a different user"""
+        superuser2 = self.make_user('superuser2')
+        superuser2.is_superuser = True
+        superuser2.save()
+
+        post_data = {
+            'message': 'updated alert',
+            'description': 'updated description',
+            'date_expire': self.expiry_str,
+            'active': ''}
+
+        with self.login(superuser2):
+            response = self.client.post(
+                reverse(
+                    'adminalerts:update',
+                    kwargs={'uuid': self.alert.omics_uuid}),
+                post_data)
+            self.assertEqual(response.status_code, 302)
+            self.assertEqual(response.url, reverse('adminalerts:list'))
+
+        self.alert.refresh_from_db()
+        self.assertEqual(self.alert.user, superuser2)
 
 
 class TestAdminAlertDeleteView(TestViewsBase):
