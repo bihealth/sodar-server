@@ -2,31 +2,35 @@ from projectroles.plugins import get_backend_api
 
 from samplesheets.models import GenericMaterial
 from samplesheets.plugins import SampleSheetAssayPluginPoint
-from samplesheets.utils import get_last_material_index
 
 
 class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
-    """Plugin for genome sequencing / nucleotide sequencing assays in sample
-    sheets"""
+    """Plugin for DNA sequencing assays in sample sheets"""
 
     # Properties required by django-plugins ------------------------------
 
     #: Name (used in code and as unique idenfitier)
-    name = 'samplesheets_assay_genome_seq_nucleotide_seq'
+    name = 'samplesheets_assay_dna_sequencing'
 
     #: Title
-    title = 'Sample Sheets Genome Sequencing / Nucleotide Sequencing Assay ' \
-            'Plugin'
+    title = 'DNA Sequencing Assay Plugin'
 
     # Properties defined in SampleSheetAssayPluginPoint ------------------
 
     #: Identifying assay fields (used to identify plugin by assay)
-    measurement_type = 'genome sequencing'
-    technology_type = 'nucleotide sequencing'
+    assay_fields = [
+        {
+            'measurement_type': 'genome sequencing',
+            'technology_type': 'nucleotide sequencing'
+        },
+        {
+            'measurement_type': 'exome sequencing',
+            'technology_type': 'nucleotide sequencing'
+        }
+    ]
 
     #: Description string
-    description = 'Sample sheets genome sequencing / nucleotide sequencing ' \
-                  'assay app'
+    description = 'Sample sheets DNA sequencing assay app'
 
     #: Template for assay addition (Assay object as "assay" in context)
     assay_template = None

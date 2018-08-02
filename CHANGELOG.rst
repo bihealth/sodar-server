@@ -70,6 +70,9 @@ Changed
     - Move irods buttons to irodsbackend (#301)
     - Move irods clipboard javascript to irodsbackend (#301)
     - Move javascript to separate file (#181)
+    - Allow multiple assay field combinations for selecting assay plugin (#315)
+    - Enable genome_seq_nucleotide_seq app also for exomes (#315)
+    - Rename genome_seq_nucleotide_seq into dna_sequencing (#315)
 
 Fixed
 -----

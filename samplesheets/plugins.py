@@ -222,9 +222,13 @@ class SampleSheetAssayPluginPoint(PluginPoint):
     # Properties defined in SampleSheetAssayPluginPoint ------------------
 
     #: Identifying assay fields (used to identify plugin by assay)
-    # TODO: Implement these in your assay plugin
-    measurement_type = None
-    technology_type = None
+    # TODO: Implement this in your assay plugin, example below
+    assay_fields = [
+        {
+            'measurement_type': 'x',
+            'technology_type': 'y'
+        }
+    ]
 
     #: Description string
     # TODO: Implement this in your assay plugin
@@ -301,15 +305,14 @@ def find_assay_plugin(measurement_type, technology_type):
     :return: SampleSheetAssayPlugin object or None if not found
     """
 
-    # Temporary HACK for medical genetics demo
-    if (get_isa_field_name(measurement_type) == 'exome sequencing' and
-            get_isa_field_name(technology_type) == 'nucleotide sequencing'):
-        return SampleSheetAssayPluginPoint.get_plugin(
-            'samplesheets_assay_genome_seq_nucleotide_seq')
+    # TODO: Log warning if there are multiple plugins found?
+
+    search_fields = {
+        'measurement_type': get_isa_field_name(measurement_type),
+        'technology_type': get_isa_field_name(technology_type)}
 
     for plugin in SampleSheetAssayPluginPoint.get_plugins():
-        if (plugin.measurement_type == get_isa_field_name(measurement_type) and
-                plugin.technology_type == get_isa_field_name(technology_type)):
+        if search_fields in plugin.assay_fields:
             return plugin
 
     return None

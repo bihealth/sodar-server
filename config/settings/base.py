@@ -82,7 +82,7 @@ LOCAL_APPS = [
     'samplesheets.studyapps.germline.apps.GermlineConfig',
 
     # Samplesheets assay sub-apps
-    'samplesheets.assayapps.genome_seq_nucleotide_seq.apps.GenomeSeqNucleotideSeqConfig',   # noqa
+    'samplesheets.assayapps.dna_sequencing.apps.DnaSequencingConfig',   # noqa
     'samplesheets.assayapps.pep_ms.apps.PepMsConfig',
 
     # Landingzones config sub-apps

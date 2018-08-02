@@ -16,8 +16,9 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
             'Assay Plugin'
 
     #: Identifying assay fields (used to identify plugin by assay)
-    measurement_type = 'protein expression profiling'
-    technology_type = 'mass spectrometry'
+    assay_fields = [{
+        'measurement_type': 'protein expression profiling',
+        'technology_type': 'mass spectrometry'}]
 
     #: Description string
     description = 'Sample sheets protein expression profiling / mass ' \
