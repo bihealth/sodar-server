@@ -149,7 +149,7 @@ class IrodsAPI:
                     'DataObject.id={} not found: path={}'.format(
                         r_list[0][DataObject.id], parent_path))
 
-        return ret
+        return sorted(ret, key=lambda x: x.path)
 
     @classmethod
     def _get_obj_list(cls, coll, check_md5=False):
