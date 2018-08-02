@@ -51,6 +51,7 @@ Changed
     - Optimized iRODS queries for increased performance (#242)
     - Improve collection listing popup layout
     - Check user perms for iRODS collection when performing queries
+    - Omit ``icp`` from iRODS path when copying to clipboard (#319)
 - **Landingzones**
     - Use irodsbackend code for statistics queries (#188)
     - Refactor ``irods_backend`` references in templates

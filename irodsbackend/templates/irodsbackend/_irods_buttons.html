@@ -28,12 +28,12 @@
     </button>
   {% endif %}
   <button class="btn btn-secondary omics-list-btn omics-irods-copy-btn"
-          data-clipboard-text="icd {{ irods_path }}" role="submit"
+          data-clipboard-text="{{ irods_path }}" role="submit"
           data-table="{% if data_table %}1{% else %}0{% endif %}"
           {% if not data_table %}
             data-tooltip="tooltip" data-placement="top"
           {% endif %}
-          title="Copy icd iCommand into clipboard"
+          title="Copy iRODS path into clipboard"
           {% if not irods_dirs or disable_all %} disabled{% endif %}>
     <i class="fa fa-terminal"></i>
   </button>
