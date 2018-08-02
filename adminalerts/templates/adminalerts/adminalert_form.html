@@ -5,6 +5,22 @@
 
 {% block title %}{% if object.pk %}Update{% else %}Create{% endif %} Admin Alert{% endblock %}
 
+{% block head_extend %}
+  {{ form.media }}
+{% endblock head_extend %}
+
+{% block css %}
+  {{ block.super }}
+  <style type="text/css">
+    /* Fix for default pagedown css */
+    div.wmd-panel {
+      margin-left: 0;
+      margin-right: 0;
+      width: 100%;
+    }
+  </style>
+{% endblock css %}
+
 {% block projectroles %}
 
 <div class="row omics-subtitle-container">

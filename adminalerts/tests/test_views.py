@@ -156,7 +156,7 @@ class TestAdminAlertUpdateView(TestViewsBase):
         self.assertEqual(AdminAlert.objects.all().count(), 1)
         self.alert.refresh_from_db()
         self.assertEqual(self.alert.message, 'updated alert')
-        self.assertEqual(self.alert.description, 'updated description')
+        self.assertEqual(self.alert.description.raw, 'updated description')
         self.assertEqual(self.alert.active, False)
 
 

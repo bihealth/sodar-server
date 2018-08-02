@@ -1,6 +1,8 @@
 from django import forms
 from django.utils import timezone
 
+from pagedown.widgets import PagedownWidget
+
 from .models import AdminAlert
 
 
@@ -9,7 +11,7 @@ class AdminAlertForm(forms.ModelForm):
 
     class Meta:
         model = AdminAlert
-        fields = ['message', 'date_expire', 'description', 'active']
+        fields = ['message', 'date_expire', 'active', 'description']
 
     def __init__(self, current_user=None, *args, **kwargs):
         """Override for form initialization"""
@@ -24,10 +26,18 @@ class AdminAlertForm(forms.ModelForm):
             attrs={'type': 'date'},
             format='%Y-%m-%d')
 
-        # Set initial values if creating
+        # Set description widget with preview
+        self.fields['description'].widget = PagedownWidget(show_preview=True)
+
+        # Creation
         if not self.instance.pk:
             self.fields['date_expire'].initial = timezone.now() + \
                 timezone.timedelta(days=1)
+
+        # Updating
+        else:   # self.instance.pk
+            # Set description value as raw markdown
+            self.initial['description'] = self.instance.description.raw
 
     def clean(self):
         """Custom form validation and cleanup"""

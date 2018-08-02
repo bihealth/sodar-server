@@ -50,6 +50,7 @@ Changed
 
 - **Adminalerts**
     - Update user when updating alert (#179)
+    - Enable markdown in alert description (#196)
 - **Irodsbackend**
     - Optimized iRODS queries for increased performance (#242)
     - Improve collection listing popup layout

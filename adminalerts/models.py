@@ -4,6 +4,8 @@ from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
+from markupfield.fields import MarkupField
+
 # Access Django user model
 AUTH_USER_MODEL = getattr(settings, 'AUTH_USER_MODEL', 'auth.User')
 
@@ -25,10 +27,11 @@ class AdminAlert(models.Model):
         help_text='Superuser who has set the alert')
 
     #: Full description (optional, will be shown on a separate page)
-    description = models.TextField(
+    description = MarkupField(
         unique=False,
         blank=True,
         null=True,
+        markup_type='markdown',
         help_text='Full description of alert '
                   '(optional, will be shown on a separate page)')
 
