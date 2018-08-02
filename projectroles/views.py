@@ -232,6 +232,14 @@ class APIPermissionMixin(PermissionRequiredMixin):
         return HttpResponseForbidden()
 
 
+class CurrentUserFormMixin(ModelFormMixin):
+    """Mixin for passing current user to form as current_user"""
+    def get_form_kwargs(self):
+        kwargs = super(CurrentUserFormMixin, self).get_form_kwargs()
+        kwargs.update({'current_user': self.request.user})
+        return kwargs
+
+
 # Base Project Views -----------------------------------------------------------
 
 

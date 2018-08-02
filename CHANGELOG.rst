@@ -35,6 +35,7 @@ Added
     - Common template tag ``check_backend()``
     - Define backend app javascript include in plugin (#300)
     - Common template tag ``get_setting()``
+    - ``CurrentUserFormMixin`` for providing current using to forms as ``current_user``
 - **Samplesheets**
     - Display original study/assay filenames as tooltips (#283)
     - Display assays for samples in search results (#157)
@@ -47,6 +48,8 @@ Added
 Changed
 -------
 
+- **Adminalerts**
+    - Update user when updating alert (#179)
 - **Irodsbackend**
     - Optimized iRODS queries for increased performance (#242)
     - Improve collection listing popup layout

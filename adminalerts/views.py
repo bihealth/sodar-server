@@ -8,7 +8,8 @@ from django.views.generic.edit import ModelFormMixin
 
 # Projectroles dependency
 # TBD: Ok to depend on Projectroles here even though this is not a project app?
-from projectroles.views import LoggedInPermissionMixin, HTTPRefererMixin
+from projectroles.views import LoggedInPermissionMixin, HTTPRefererMixin, \
+    CurrentUserFormMixin
 
 from .forms import AdminAlertForm
 from .models import AdminAlert
@@ -53,23 +54,16 @@ class AdminAlertModifyMixin(ModelFormMixin):
 
 class AdminAlertCreateView(
         LoggedInPermissionMixin, AdminAlertModifyMixin, HTTPRefererMixin,
-        CreateView):
+        CurrentUserFormMixin, CreateView):
     """AdminAlert creation view"""
     model = AdminAlert
     form_class = AdminAlertForm
     permission_required = 'adminalerts.create_alert'
 
-    def get_form_kwargs(self):
-        """Override passing arguments to form"""
-        kwargs = super(AdminAlertCreateView, self).get_form_kwargs()
-        kwargs.update(self.kwargs)
-        kwargs.update({'current_user': self.request.user})
-        return kwargs
-
 
 class AdminAlertUpdateView(
         LoggedInPermissionMixin, AdminAlertModifyMixin, HTTPRefererMixin,
-        UpdateView):
+        CurrentUserFormMixin, UpdateView):
     """AdminAlert updating view"""
     model = AdminAlert
     form_class = AdminAlertForm
