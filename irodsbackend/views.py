@@ -7,8 +7,13 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 # Projectroles dependency
-from projectroles.models import Project
+from projectroles.models import Project, RoleAssignment, OMICS_CONSTANTS
 from projectroles.plugins import get_backend_api
+
+
+# Omics constants
+PROJECT_ROLE_OWNER = OMICS_CONSTANTS['PROJECT_ROLE_OWNER']
+PROJECT_ROLE_DELEGATE = OMICS_CONSTANTS['PROJECT_ROLE_DELEGATE']
 
 
 class BaseIrodsAPIView(
@@ -57,9 +62,22 @@ class BaseIrodsAPIView(
         except Exception:
             return Response('Not found', status=404)
 
+        # TODO: Are there cases where we should also check group membership?
         perms = irods_session.permissions.get(coll)
 
+        # Quick fix for issue #324
+        owner_or_delegate = False
+
+        if self.project:
+            user_as = RoleAssignment.objects.get_assignment(
+                self.request.user, self.project)
+
+            if user_as and user_as.role.name in [
+                    PROJECT_ROLE_OWNER, PROJECT_ROLE_DELEGATE]:
+                owner_or_delegate = True
+
         if (not self.request.user.is_superuser and
+                not owner_or_delegate and
                 self.request.user.username not in [p.user_name for p in perms]):
             return Response(
                 'User not authorized for iRODS collection', status=403)
