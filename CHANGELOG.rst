@@ -6,8 +6,8 @@ Changelog for the SODAR Web UI. Loosely follows the
 guidelines.
 
 
-Unreleased
-==========
+v0.3.1 (2018-08-03)
+===================
 
 Added
 -----
