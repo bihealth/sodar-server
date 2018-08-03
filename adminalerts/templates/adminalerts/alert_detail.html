@@ -1,5 +1,8 @@
 {% extends "projectroles/base.html" %}
 
+{# Projectroles dependency #}
+{% load projectroles_common_tags %}
+
 {% load rules %}
 
 {% block title %}Admin Alert{% endblock %}
@@ -22,7 +25,11 @@
         <dd class="col-md-10">{{ object.date_expire|date:'Y-m-d' }}</dd>
         {% if object.description %}
           <dt class="col-md-2">Description</dt>
-          <dd class="col-md-10">{{ object.description }}</dd>
+          <dd class="col-md-10">
+            {% autoescape off %}
+              {% render_markdown object.description.raw %}
+            {% endautoescape %}
+          </dd>
         {% endif %}
       </dl>
     </div>
