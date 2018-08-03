@@ -92,6 +92,7 @@ Fixed
     - Source/sample name search resulted in a template crash (#287)
     - CSS highlight bug in nav dropdown
     - Content app DataTable header broke layout if following assay anchor (#224)
+    - Wrong CSS class in pep_ms (#318)
 
 Removed
 -------
