@@ -411,7 +411,13 @@ ENABLED_BACKEND_PLUGINS = env.list('ENABLED_BACKEND_PLUGINS', None, [
 ])
 
 
+# General site settings
 SITE_SUBTITLE = env.str('SITE_SUBTITLE', 'Beta')
+
+
+# General API settings
+SODAR_API_DEFAULT_VERSION = '0.1'
+SODAR_API_MEDIA_TYPE = 'application/vnd.bihealth.sodar+json'
 
 
 # Projectroles app settings

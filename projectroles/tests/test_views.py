@@ -1,7 +1,9 @@
 """Tests for views in the projectroles Django app"""
 
+import base64
 from urllib.parse import urlencode
 
+from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.forms.models import model_to_dict
 from django.test import RequestFactory
@@ -56,6 +58,63 @@ class ProjectSettingMixin:
                     p.project_settings[s_key]['default']
 
         return ret
+
+
+class KnoxAuthMixin:
+    """Helper mixin for API views with Knox token authorization"""
+
+    # Copied from Knox tests
+    @classmethod
+    def _get_basic_auth_header(cls, username, password):
+        return 'Basic %s' % base64.b64encode(
+            ('%s:%s' % (username, password)).encode('ascii')).decode()
+
+    @classmethod
+    def get_token_header(cls, token):
+        """
+        Return auth header based on token
+        :param token: Token string
+        :return: Dict
+        """
+        return {'HTTP_AUTHORIZATION': 'token {}'.format(token)}
+
+    @classmethod
+    def get_accept_header(cls, version=settings.SODAR_API_DEFAULT_VERSION):
+        """
+        Return version accept header based on version string
+        :param version: String
+        :return: Dict
+        """
+        return {'HTTP_ACCEPT': '{}; version={}'.format(
+            settings.SODAR_API_MEDIA_TYPE, version)}
+
+    def knox_login(self, user, password):
+        """
+        Login with Knox
+        :param user: User object
+        :param password: Password (string)
+        :return: Token returned by Knox on successful login
+        """
+        response = self.client.post(
+            reverse('knox_login'),
+            HTTP_AUTHORIZATION=self._get_basic_auth_header(
+                user.username, password),
+            format='json')
+        self.assertEqual(response.status_code, 200)
+        return response.data['token']
+
+    def knox_get(self, url, token, version=settings.SODAR_API_DEFAULT_VERSION):
+        """
+        Perform a HTTP GET request with Knox token auth
+        :param url: URL for getting
+        :param token: String
+        :param version: String
+        :return: Response object
+        """
+        return self.client.get(
+            url,
+            **self.get_accept_header(version),
+            **self.get_token_header(token))
 
 
 class TestViewsBase(TestCase):
@@ -114,7 +173,7 @@ class TestHomeView(TestViewsBase, ProjectMixin, RoleAssignmentMixin):
         # Assert statistics values
         self.assertEqual(response.context['count_categories'], 1)
         self.assertEqual(response.context['count_projects'], 1)
-        
+
         # NOTE: The bih_proteomics_smb user is counted here
         # TODO: Create some kind of a special category for this user?
         self.assertEqual(response.context['count_users'], 2)

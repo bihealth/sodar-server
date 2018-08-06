@@ -565,8 +565,8 @@ class IrodsDirsView(
 
 # NOTE: Using a specific versioner for the query API, to be generalized..
 class SourceIDAPIVersioning(AcceptHeaderVersioning):
-    default_version = '0.1'
-    allowed_versions = ['0.1']
+    default_version = settings.SODAR_API_DEFAULT_VERSION
+    allowed_versions = [settings.SODAR_API_DEFAULT_VERSION]
     version_param = 'version'
 
 
@@ -586,7 +586,7 @@ class SourceIDQueryAPIView(APIView):
 
         source_count = GenericMaterial.objects.find(
             search_term=source_id,
-            item_type='SOURCE',).count()
+            item_type='SOURCE').count()
 
         ret_data = {'id_found': True if source_count > 0 else False}
         return Response(ret_data, status=200)

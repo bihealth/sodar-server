@@ -7,6 +7,7 @@ from django.urls import reverse
 # Projectroles dependency
 from projectroles.models import Role, OMICS_CONSTANTS
 from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
+from projectroles.tests.test_views import KnoxAuthMixin
 
 from ..models import Investigation
 from .test_io import SampleSheetIOMixin, SHEET_DIR
@@ -32,6 +33,10 @@ SHEET_NAME_SMALL2 = 'i_small2.zip'
 SHEET_PATH_SMALL2 = SHEET_DIR + SHEET_NAME_SMALL2
 SHEET_NAME_MINIMAL = 'i_minimal.zip'
 SHEET_PATH_MINIMAL = SHEET_DIR + SHEET_NAME_MINIMAL
+SOURCE_NAME = '0815'
+SOURCE_NAME_FAIL = 'oop5Choo'
+USER_PASSWORD = 'password'
+API_INVALID_VERSION = '5.0'
 
 
 class TestViewsBase(
@@ -50,7 +55,7 @@ class TestViewsBase(
             name=PROJECT_ROLE_GUEST)[0]
 
         # Init superuser
-        self.user = self.make_user('superuser')
+        self.user = self.make_user('superuser', password=USER_PASSWORD)
         self.user.is_staff = True
         self.user.is_superuser = True
         self.user.save()
@@ -288,3 +293,65 @@ class TestSampleSheetDeleteView(TestViewsBase):
                 kwargs={'project': self.project.omics_uuid}))
 
         self.assertEqual(Investigation.objects.all().count(), 0)
+
+
+class TestSourceIDQueryAPIView(KnoxAuthMixin, TestViewsBase):
+    """Tests for SourceIDQueryAPIView"""
+
+    def setUp(self):
+        super(TestSourceIDQueryAPIView, self).setUp()
+
+        # Import investigation
+        self.investigation = self._import_isa_from_file(
+            SHEET_PATH, self.project)
+
+        # Login with Knox
+        self.token = self.knox_login(self.user, USER_PASSWORD)
+
+    def test_get(self):
+        """Test HTTP GET request with an existing ID"""
+        response = self.knox_get(
+            reverse(
+                'samplesheets:source_get',
+                kwargs={'source_id': SOURCE_NAME}),
+            token=self.token)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['id_found'], True)
+
+    def test_get_not_found(self):
+        """Test HTTP GET request with a non-existing ID"""
+        response = self.knox_get(
+            reverse(
+                'samplesheets:source_get',
+                kwargs={'source_id': SOURCE_NAME_FAIL}),
+            token=self.token)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['id_found'], False)
+
+    def test_get_partial_id(self):
+        """Test HTTP GET request with a partial ID (should fail)"""
+        response = self.knox_get(
+            reverse(
+                'samplesheets:source_get',
+                kwargs={'source_id': SOURCE_NAME[:-1]}),
+            token=self.token)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['id_found'], False)
+
+    def test_get_unauthorized(self):
+        """Test HTTP GET request without a token (should fail)"""
+        response = self.client.get(
+            reverse(
+                'samplesheets:source_get',
+                kwargs={'source_id': SOURCE_NAME[:-1]}))
+        self.assertEqual(response.status_code, 401)
+
+    def test_get_wrong_version(self):
+        """Test HTTP GET request with an unaccepted API version (should fail)"""
+        response = self.knox_get(
+            reverse(
+                'samplesheets:source_get',
+                kwargs={'source_id': SOURCE_NAME}),
+            token=self.token,
+            version=API_INVALID_VERSION)
+        self.assertEqual(response.status_code, 406)

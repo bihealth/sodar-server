@@ -14,6 +14,7 @@ Added
 
 - **General**
     - ``SITE_SUBTITLE`` setting to show beta status or something similar (#311)
+    - API settings ``SODAR_API_DEFAULT_VERSION`` and ``SODAR_API_MEDIA_TYPE``
 - **Filesfolders**
     - Text style depending on item flag (#303)
 - **Irodsbackend**
@@ -36,6 +37,7 @@ Added
     - Define backend app javascript include in plugin (#300)
     - Common template tag ``get_setting()``
     - ``CurrentUserFormMixin`` for providing current using to forms as ``current_user``
+    - Helper mixin ``KnoxAuthMixin`` for views testing
 - **Samplesheets**
     - Display original study/assay filenames as tooltips (#283)
     - Display assays for samples in search results (#157)
