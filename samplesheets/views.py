@@ -10,8 +10,10 @@ from django.urls import reverse
 from django.views.generic import TemplateView, FormView, View
 
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.versioning import AcceptHeaderVersioning
 from knox.auth import TokenAuthentication
 
 # Projectroles dependency
@@ -561,11 +563,23 @@ class IrodsDirsView(
 # General API Views ------------------------------------------------------
 
 
-# TODO: Knox token auth
+# NOTE: Using a specific versioner for the query API, to be generalized..
+class SourceIDAPIVersioning(AcceptHeaderVersioning):
+    default_version = '0.1'
+    allowed_versions = ['0.1']
+    version_param = 'version'
+
+
+class SourceIDAPIRenderer(JSONRenderer):
+    media_type = 'application/vnd.bihealth.sodar+json'
+
+
 class SourceIDQueryAPIView(APIView):
     """Proof-of-concept source ID querying view for BeLOVE integration"""
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated,)
+    versioning_class = SourceIDAPIVersioning
+    renderer_classes = [SourceIDAPIRenderer]
 
     def get(self, *args, **kwargs):
         source_id = self.kwargs['source_id']

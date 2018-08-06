@@ -6,7 +6,7 @@ Changelog for the SODAR Web UI. Loosely follows the
 guidelines.
 
 
-v0.3.1 (2018-08-03)
+v0.3.1 (2018-08-XX)
 ===================
 
 Added
@@ -44,6 +44,7 @@ Added
     - Management command ``syncnames`` to update ``alt_names`` (#285)
     - Display project/study file statistics using irodsbackend (#188)
     - Display stats on the project details page card (#188)
+    - Proof-of-concept ID Querying API with token authentication
 
 Changed
 -------
