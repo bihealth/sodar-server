@@ -2,12 +2,32 @@
 {% load samplesheets_tags %}
 {% load projectroles_common_tags %}
 
+{% check_backend 'omics_irods' as irods_backend_enabled %}
+
+{% if irods_backend_enabled %}
+  {% load irodsbackend_tags %}
+  {% get_webdav_url as webdav_url %}
+{% endif %}
+
 <tr class="omics-ss-search-list-item" id="omics-ss-project-search-item-{{ item.omics_uuid }}">
-  <td class="text-nowrap"><a href="{% get_material_link item %}">{{ item.name }}</a></td>
-  <td class="text-nowrap">{% get_material_type item %}</td>
+  <td class="text-nowrap">
+    {% if item.type != 'file' %}
+      <a href="{% url 'samplesheets:project_sheets' study=item.study.omics_uuid %}">{{ item.name }}</a>
+    {% else %}
+      {% if webdav_url %}
+        <a href="{{ webdav_url }}{{ item.irods_path }}">{{ item.name }}</a>
+      {% else %}
+        {{ item.name }}
+      {% endif %}
+      {# TODO: Add irods buttons #}
+    {% endif %}
+  </td>
+  <td class="text-nowrap">
+    {% get_search_item_type item %}
+  </td>
   <td>
     {% autoescape off %}
-      {% get_project_link item.get_project %}
+      {% get_project_link item.project %}
     {% endautoescape %}
   </td>
   <td>
@@ -20,17 +40,13 @@
     {% endif %}
   </td>
   <td>
-    {% if item.item_type == 'SAMPLE' %}
-      {% for assay in item.get_sample_assays %}
+    {% if item.assays %}
+      {% for assay in item.assays %}
         <a href="{% url 'samplesheets:project_sheets' study=item.study.omics_uuid %}#assay{{ assay.omics_uuid }}">
           {{ assay.get_display_name }}
         </a>
         <br />
       {% endfor %}
-    {% elif item.assay %}
-      <a href="{% url 'samplesheets:project_sheets' study=item.study.omics_uuid %}#assay{{ item.assay.omics_uuid }}">
-        {{ item.assay.get_display_name }}
-      </a>
     {% else %}
       N/A
     {% endif %}

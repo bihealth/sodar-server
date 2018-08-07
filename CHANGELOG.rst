@@ -25,6 +25,8 @@ Added
     - ``IrodsObjectListAPIView``for iRODS collection list queries (#308)
     - ``BaseIrodsAPIView`` for implementing views
     - Logging for error cases (#310)
+    - ``get_uuid_from_path()`` helper (#289)
+    - Param ``like_name`` into data object querying (#289)
 - **Landingzones**
     - Send email when zone status is set as ``MOVED`` or ``FAILED`` (#280)
     - Unit tests for ``ZoneStatusSetAPIView``
@@ -47,6 +49,7 @@ Added
     - Display project/study file statistics using irodsbackend (#188)
     - Display stats on the project details page card (#188)
     - Proof-of-concept ID Querying API with token authentication
+    - iRODS files searchable in site search (#289)
 
 Changed
 -------
@@ -81,6 +84,7 @@ Changed
     - Allow multiple assay field combinations for selecting assay plugin (#315)
     - Enable genome_seq_nucleotide_seq app also for exomes (#315)
     - Rename genome_seq_nucleotide_seq into dna_sequencing (#315)
+    - Refactor site search (#289)
 
 Fixed
 -----

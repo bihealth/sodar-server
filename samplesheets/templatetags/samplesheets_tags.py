@@ -8,6 +8,7 @@ from django.urls import reverse
 from django.utils.html import escape
 
 # Projectroles dependency
+from projectroles.models import RoleAssignment, OMICS_CONSTANTS
 from projectroles.plugins import get_backend_api
 
 from ..models import Investigation, Study, Assay, GenericMaterial, \
@@ -21,6 +22,9 @@ num_re = re.compile('^(?=.)([+-]?([0-9]*)(\.([0-9]+))?)$')
 
 register = template.Library()
 
+
+# Omics constants
+PROJECT_TYPE_PROJECT = OMICS_CONSTANTS['PROJECT_TYPE_PROJECT']
 
 # Local constants
 EMPTY_VALUE = '-'
@@ -77,57 +81,82 @@ def get_assay_table(table_data, assay):
 def find_samplesheets_items(search_term, user, search_type, keywords):
     """Return samplesheets items based on a search term, user and
     possible type/keywords"""
-    ret = None
 
-    # TODO: Refactor, add different types, etc.
+    def get_materials(materials):
+        ret = []
+        assays = []
 
-    if not search_type:
-        sources = GenericMaterial.objects.find(
-            search_term, keywords, item_type='SOURCE')
-        samples = GenericMaterial.objects.find(
-            search_term, keywords, item_type='SAMPLE')
-        data_files = GenericMaterial.objects.find(
-            search_term, keywords, item_type='DATA')
-        ret = list(sources) + list(samples) + list(data_files)
-        ret.sort(key=lambda x: x.name.lower())
+        for m in materials:
+            if user.has_perm('samplesheets.view_sheet', m.get_project()):
+                if m.item_type == 'SAMPLE':
+                    assays += m.get_sample_assays()
 
-    elif search_type == 'source':
-        ret = GenericMaterial.objects.find(
-            search_term, keywords, item_type='SOURCE').order_by('name')
+                else:
+                    assays = [m.assay]
 
-    elif search_type == 'sample':
-        ret = GenericMaterial.objects.find(
-            search_term, keywords, item_type='SAMPLE').order_by('name')
+                ret.append({
+                    'name': m.name,
+                    'type': m.item_type,
+                    'project': m.get_project(),
+                    'study': m.study,
+                    'assays': assays})
 
-    elif search_type == 'file':
-        ret = GenericMaterial.objects.find(
-            search_term, keywords, item_type='DATA').order_by('name')
-
-    if ret:
-        ret = [x for x in ret if
-               user.has_perm('samplesheets.view_sheet', x.get_project())]
         return ret
 
-    return None
+    ret = []
+
+    if not search_type or search_type == 'source':
+        ret += get_materials(GenericMaterial.objects.find(
+            search_term, keywords, item_type='SOURCE'))
+
+    if not search_type or search_type == 'sample':
+        ret += get_materials(GenericMaterial.objects.find(
+            search_term, keywords, item_type='SAMPLE'))
+
+    if not search_type or search_type == 'file':
+        for role_as in RoleAssignment.objects.filter(
+                user=user, project__type=PROJECT_TYPE_PROJECT):
+            project = role_as.project
+
+            if user.has_perm('samplesheets.view_sheet', project):
+                objs = irods_backend.get_objects(
+                    irods_backend.get_path(project), name_like=search_term)
+
+                for o in objs['data_objects']:
+                    study = None
+                    assay = None
+
+                    # Get study
+                    try:
+                        study = Study.objects.get(
+                            omics_uuid=irods_backend.get_uuid_from_path(
+                                o['path'], obj_type='study'))
+                        assay = Assay.objects.get(
+                            omics_uuid=irods_backend.get_uuid_from_path(
+                                o['path'], obj_type='assay'))
+
+                    except Exception as ex:
+                        pass
+
+                    ret.append({
+                        'name': o['name'],
+                        'type': 'file',
+                        'project': project,
+                        'study': study,
+                        'assays': [assay] if Assay else None,
+                        'irods_path': o['path']})
+
+    ret.sort(key=lambda x: x['name'].lower())
+    return ret
 
 
 @register.simple_tag
-def get_material_type(material):
-    """Return printable version of material item_type"""
-    return GENERIC_MATERIAL_TYPES[material.item_type]
+def get_search_item_type(item):
+    """Return printable version of search item type"""
+    if item['type'] == 'file':
+        return 'Data File'
 
-
-@register.simple_tag
-def get_material_link(material):
-    """Return link to material"""
-    url = reverse(
-        'samplesheets:project_sheets', kwargs={
-            'study': material.study.omics_uuid})
-
-    if material.assay:
-        url += '#{}'.format(material.assay.omics_uuid)
-
-    return url
+    return GENERIC_MATERIAL_TYPES[item['type']]
 
 
 @register.simple_tag

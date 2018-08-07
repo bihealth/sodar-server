@@ -43,4 +43,5 @@ def is_webdav_enabled():
 
 @register.simple_tag
 def get_webdav_url():
-    return settings.IRODS_WEBDAV_URL.rstrip('/')
+    if settings.IRODS_WEBDAV_ENABLED:
+        return settings.IRODS_WEBDAV_URL.rstrip('/')

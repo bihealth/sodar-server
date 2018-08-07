@@ -1,13 +1,14 @@
-"""iRODS REST API for SODAR Django apps"""
+"""iRODS backend API for SODAR Django apps"""
 
 from functools import wraps
 import itertools
 import logging
 import operator
+import re
 
 from irods.api_number import api_number
 from irods.collection import iRODSCollection
-from irods.column import Criterion
+from irods.column import Criterion, Like
 from irods.data_object import iRODSDataObject
 from irods.exception import CollectionDoesNotExist
 from irods.message import TicketAdminRequest, iRODSMessage
@@ -28,6 +29,10 @@ ACCEPTED_PATH_TYPES = [
     'Project',
     'Investigation',
     'Study']
+
+PATH_REGEX = {
+    'study': '/study_(.+?)(?:/|$)',
+    'assay': '/assay_(.+?)(?:/|$)'}
 
 
 logger = logging.getLogger(__name__)
@@ -106,20 +111,27 @@ class IrodsAPI:
         return [iRODSCollection(coll.manager, row) for row in query]
 
     @classmethod
-    def _get_objs_recursively(cls, coll, md5=False):
+    def _get_objs_recursively(cls, coll, md5=False, name_like=None):
         """
         Return objects below a coll recursively (replacement for the
         non-scalable walk() function in the API)
         :param coll: Collection object
         :param md5: if True, return .md5 files, otherwise anything but them
+        :name_like: Optional filtering of file names (string with "%" wildcards)
         :return: List
         """
         search_path = cls._get_search_path(coll)
-        obj_filter = 'like' if md5 else 'not like'
+        # md5_filter = 'like' if md5 else 'not like'
 
-        query = coll.manager.sess.query(DataObject).filter(
-            Criterion('like', DataObject.path, search_path)).filter(
-            Criterion(obj_filter, DataObject.name, '%.md5'))
+        filters = [
+            Criterion('like', DataObject.path, search_path)]
+
+        if name_like:
+            filters.append(
+                Criterion('like', DataObject.name, '%' + name_like + '%'))
+
+        query = coll.manager.sess.query(DataObject).filter(*filters)
+        # query = query.filter(Criterion(md5_filter, DataObject.name, '%.md5'))
 
         results = query.get_results()
         grouped = itertools.groupby(results, operator.itemgetter(DataObject.id))
@@ -133,40 +145,47 @@ class IrodsAPI:
 
         for _, replicas in grouped:
             r_list = list(replicas)
-            r_path = r_list[0][DataObject.path].split('/')
-            parent_path = path_prefix + '/'.join(
-                r_path[r_path.index('projects'):-1])
 
-            try:
-                parent_coll = symb_colls[parent_path]
-                ret.append(
-                    iRODSDataObject(
-                        coll.manager.sess.data_objects, parent_coll, r_list))
+            # HACK: Workaround for issue #326
+            if ((not md5 and '.md5' not in r_list[0][DataObject.path]) or (
+                    md5 and '.md5' in r_list[0][DataObject.path])):
+                r_path = r_list[0][DataObject.path].split('/')
+                parent_path = path_prefix + '/'.join(
+                    r_path[r_path.index('projects'):-1])
 
-            except KeyError:    # This should not happen, see issue #310
-                logger.error(
-                    'Collection specified in iRODS iCAT database for '
-                    'DataObject.id={} not found: path={}'.format(
-                        r_list[0][DataObject.id], parent_path))
+                try:
+                    parent_coll = symb_colls[parent_path]
+                    ret.append(
+                        iRODSDataObject(
+                            coll.manager.sess.data_objects, parent_coll,
+                            r_list))
+
+                except KeyError:    # This should not happen, see issue #310
+                    logger.error(
+                        'Collection specified in iRODS iCAT database for '
+                        'DataObject.id={} not found: path={}'.format(
+                            r_list[0][DataObject.id], parent_path))
 
         return sorted(ret, key=lambda x: x.path)
 
     @classmethod
-    def _get_obj_list(cls, coll, check_md5=False):
+    def _get_obj_list(cls, coll, check_md5=False, name_like=None):
         """
         Return a list of data objects within an iRODS collection
         :param coll: iRODS collection object
         :param check_md5: Whether to add md5 checksum file info (bool)
+        :name_like: Optional filtering of file names (string with "%" wildcards)
         :return: Dict
         """
         data = {'data_objects': []}
         md5_paths = None
 
-        data_objs = cls._get_objs_recursively(coll)
+        data_objs = cls._get_objs_recursively(coll, name_like=name_like)
 
         if check_md5:
             md5_paths = [
-                o.path for o in cls._get_objs_recursively(coll, md5=True)]
+                o.path for o in cls._get_objs_recursively(
+                    coll, md5=True, name_like=name_like)]
 
         for obj in data_objs:
             obj_info = {
@@ -341,6 +360,24 @@ class IrodsAPI:
 
         return path
 
+    # TODO: Add tests
+    @classmethod
+    def get_uuid_from_path(cls, path, obj_type):
+        """
+        Return study UUID from iRODS path or None if not found
+        :param path: Full iRODS path (string)
+        :param obj_type: Type of object (study or assay)
+        :return: String or None
+        :raise: ValueError if obj_type is not accepted
+        """
+        if obj_type.lower() not in PATH_REGEX.keys():
+            raise ValueError('Invalid argument "obj_type"')
+
+        s = re.search(PATH_REGEX[obj_type.lower()], path)
+
+        if s:
+            return s.group(1)
+
     ###################
     # iRODS Operations
     ###################
@@ -372,11 +409,12 @@ class IrodsAPI:
         return ret
 
     @init_irods
-    def get_objects(self, path, check_md5=False):
+    def get_objects(self, path, check_md5=False, name_like=None):
         """
         Return iRODS object list
         :param path: Full path to iRODS collection
         :param check_md5: Whether to add md5 checksum file info (bool)
+        :name_like: Optional filtering of file names (string with "%" wildcards)
         :return: Dict
         :raise: FileNotFoundError if collection is not found
         """
@@ -386,7 +424,7 @@ class IrodsAPI:
         except CollectionDoesNotExist:
             raise FileNotFoundError('iRODS collection not found')
 
-        ret = self._get_obj_list(coll, check_md5)
+        ret = self._get_obj_list(coll, check_md5, name_like=name_like)
         return ret
 
     @init_irods

@@ -462,10 +462,10 @@ class GenericMaterialManager(models.Manager):
         :return: Python list of GenericMaterial objects
         """
 
-        # NOTE: Exlude intermediate materials, at least for now
+        # NOTE: Exlude intermediate materials and data files, at least for now
         objects = super(
             GenericMaterialManager, self).get_queryset().exclude(
-            item_type='MATERIAL').order_by('name')
+            item_type__in=['DATA', 'MATERIAL']).order_by('name')
 
         q_filters = Q(name__iexact=search_term)
 
