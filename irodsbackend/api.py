@@ -92,13 +92,6 @@ class IrodsAPI:
         dt = dt.astimezone(timezone('Europe/Berlin'))
         return dt.strftime('%Y-%m-%d %H:%M')
 
-    # HACK which should be removable once doing #329
-    @classmethod
-    def _get_search_path(cls, coll):
-        """Return a search path string for a collection"""
-        # NOTE: We assume all our resource paths end with */Vault/
-        return '%/Vault/' + '/'.join(coll.path.split('/')[2:]) + '/%'
-
     @classmethod
     def _get_query_alias(cls):
         """Return a random iCAT SQL query alias"""
