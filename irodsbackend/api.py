@@ -127,7 +127,8 @@ class IrodsAPI:
         sql = 'SELECT data_name, data_size, ' \
               'r_data_main.modify_ts as modify_ts, coll_name ' \
               'FROM r_data_main JOIN r_coll_main USING (coll_id)' \
-              'WHERE coll_name LIKE \'{coll_path}%\' ' \
+              'WHERE (coll_name = \'{coll_path}\' ' \
+              'OR coll_name LIKE \'{coll_path}/%\') ' \
               'AND data_name {md5_filter} \'%.md5\''.format(
                 coll_path=coll.path,
                 md5_filter=md5_filter)
@@ -204,10 +205,21 @@ class IrodsAPI:
             'file_count': 0,
             'total_size': 0}
 
+        '''
+                sql = 'SELECT COUNT(data_id) as file_count, ' \
+              'SUM(data_size) as total_size ' \
+              'FROM r_data_main JOIN r_coll_main USING (coll_id) ' \
+              'WHERE (coll_name IS \'{coll_path}\' ' \
+              'OR coll_name LIKE \'{coll_path}/%\') ' \
+              'AND data_name NOT LIKE \'%.md5\''.format(
+                coll_path=coll.path)
+        '''
+
         sql = 'SELECT COUNT(data_id) as file_count, ' \
               'SUM(data_size) as total_size ' \
-              'FROM r_data_main JOIN r_coll_main USING (coll_id)' \
-              'WHERE coll_name LIKE \'{coll_path}%\' ' \
+              'FROM r_data_main JOIN r_coll_main USING (coll_id) ' \
+              'WHERE (coll_name = \'{coll_path}\' ' \
+              'OR coll_name LIKE \'{coll_path}/%\') ' \
               'AND data_name NOT LIKE \'%.md5\''.format(
                 coll_path=coll.path)
 
@@ -224,8 +236,8 @@ class IrodsAPI:
 
         except Exception as ex:
             logger.error(
-                'iRODS exception in _get_obj_stats(): {}'.format(
-                    ex.__class__.__name__))
+                'iRODS exception in _get_obj_stats(): {}; SQL = "{}"'.format(
+                    ex.__class__.__name__, sql))
 
         _ = query.remove()
         return ret
