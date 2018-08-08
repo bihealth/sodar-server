@@ -112,13 +112,15 @@ class IrodsAPI:
             Criterion('like', Collection.parent_name, coll.path + '%'))
         return [iRODSCollection(coll.manager, row) for row in query]
 
-    def _get_objs_recursively(self, coll, md5=False, name_like=None):
+    def _get_objs_recursively(
+            self, coll, md5=False, name_like=None, limit=None):
         """
         Return objects below a coll recursively (replacement for the
         non-scalable walk() function in the API)
         :param coll: Collection object
         :param md5: if True, return .md5 files, otherwise anything but them
-        :param name_like: Filtering of file names (string with "%" wildcards)
+        :param name_like: Filtering of file names (string)
+        :param limit: Limit search to n rows (int)
         :return: List
         """
         ret = []
@@ -135,6 +137,10 @@ class IrodsAPI:
 
         if name_like:
             sql += ' AND data_name LIKE \'%{}%\''.format(name_like)
+
+        # TODO: Add tests for limit
+        if not md5 and limit:
+            sql += ' LIMIT {}'.format(limit)
 
         columns = [
             DataObject.name, DataObject.size, DataObject.modify_time,
@@ -165,18 +171,20 @@ class IrodsAPI:
         _ = query.remove()
         return sorted(ret, key=lambda x: x['path'])
 
-    def _get_obj_list(self, coll, check_md5=False, name_like=None):
+    def _get_obj_list(self, coll, check_md5=False, name_like=None, limit=None):
         """
         Return a list of data objects within an iRODS collection
         :param coll: iRODS collection object
         :param check_md5: Whether to add md5 checksum file info (bool)
-        :name_like: Optional filtering of file names (string with "%" wildcards)
+        :param name_like: Filtering of file names (string)
+        :param limit: Limit search to n rows (int)
         :return: Dict
         """
         data = {'data_objects': []}
         md5_paths = None
 
-        data_objs = self._get_objs_recursively(coll, name_like=name_like)
+        data_objs = self._get_objs_recursively(
+            coll, name_like=name_like, limit=limit)
 
         if data_objs and check_md5:
             md5_paths = [
@@ -204,16 +212,6 @@ class IrodsAPI:
         ret = {
             'file_count': 0,
             'total_size': 0}
-
-        '''
-                sql = 'SELECT COUNT(data_id) as file_count, ' \
-              'SUM(data_size) as total_size ' \
-              'FROM r_data_main JOIN r_coll_main USING (coll_id) ' \
-              'WHERE (coll_name IS \'{coll_path}\' ' \
-              'OR coll_name LIKE \'{coll_path}/%\') ' \
-              'AND data_name NOT LIKE \'%.md5\''.format(
-                coll_path=coll.path)
-        '''
 
         sql = 'SELECT COUNT(data_id) as file_count, ' \
               'SUM(data_size) as total_size ' \
@@ -433,12 +431,13 @@ class IrodsAPI:
         return ret
 
     @init_irods
-    def get_objects(self, path, check_md5=False, name_like=None):
+    def get_objects(self, path, check_md5=False, name_like=None, limit=None):
         """
         Return iRODS object list
         :param path: Full path to iRODS collection
         :param check_md5: Whether to add md5 checksum file info (bool)
-        :name_like: Optional filtering of file names (string with "%" wildcards)
+        :param name_like: Filtering of file names (string)
+        :param limit: Limit search to n rows (int)
         :return: Dict
         :raise: FileNotFoundError if collection is not found
         """
@@ -448,7 +447,8 @@ class IrodsAPI:
         except CollectionDoesNotExist:
             raise FileNotFoundError('iRODS collection not found')
 
-        ret = self._get_obj_list(coll, check_md5, name_like=name_like)
+        ret = self._get_obj_list(
+            coll, check_md5, name_like=name_like, limit=limit)
         return ret
 
     @init_irods

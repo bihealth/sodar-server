@@ -451,6 +451,10 @@ IRODS_WEBDAV_ENABLED = env.bool('IRODS_WEBDAV_ENABLED', True)
 IRODS_WEBDAV_URL = env.str('IRODS_WEBDAV_URL', 'https://0.0.0.0')
 
 
+# Samplesheets settings
+SHEETS_IRODS_QUERY_LIMIT = 100  # File query limit by project
+
+
 # Landingzones app settings
 # Status query interval in seconds
 LANDINGZONES_STATUS_INTERVAL = env.int('LANDINGZONES_STATUS_INTERVAL', 3)

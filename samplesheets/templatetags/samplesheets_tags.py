@@ -8,7 +8,7 @@ from django.urls import reverse
 from django.utils.html import escape
 
 # Projectroles dependency
-from projectroles.models import RoleAssignment, OMICS_CONSTANTS
+from projectroles.models import Project, RoleAssignment, OMICS_CONSTANTS
 from projectroles.plugins import get_backend_api
 
 from ..models import Investigation, Study, Assay, GenericMaterial, \
@@ -114,42 +114,50 @@ def find_samplesheets_items(search_term, user, search_type, keywords):
             search_term, keywords, item_type='SAMPLE'))
 
     if irods_backend and (not search_type or search_type == 'file'):
-        for role_as in RoleAssignment.objects.filter(
-                user=user, project__type=PROJECT_TYPE_PROJECT):
-            project = role_as.project
+        if user.is_superuser:
+            projects = Project.objects.filter(type=PROJECT_TYPE_PROJECT)
 
-            if user.has_perm('samplesheets.view_sheet', project):
+        else:
+            projects = [a.project for a in RoleAssignment.objects.filter(
+                user=user, project__type=PROJECT_TYPE_PROJECT)]
+
+        for project in projects:
+            if (not user.is_superuser and
+                    not user.has_perm('samplesheets.view_sheet', project)):
+                continue    # Skip rest if user has no perms for project
+
+            try:
+                objs = irods_backend.get_objects(
+                    path=irods_backend.get_sample_path(project),
+                    name_like=search_term,
+                    limit=settings.SHEETS_IRODS_QUERY_LIMIT)
+
+            except FileNotFoundError:
+                continue    # Skip rest if no data objects were found
+
+            for o in objs['data_objects']:
+                study = None
+                assay = None
+
+                # Get study
                 try:
-                    objs = irods_backend.get_objects(
-                        irods_backend.get_sample_path(project),
-                        name_like=search_term)
+                    study = Study.objects.get(
+                        omics_uuid=irods_backend.get_uuid_from_path(
+                            o['path'], obj_type='study'))
+                    assay = Assay.objects.get(
+                        omics_uuid=irods_backend.get_uuid_from_path(
+                            o['path'], obj_type='assay'))
 
-                except FileNotFoundError:
-                    continue
+                except Exception as ex:
+                    pass
 
-                for o in objs['data_objects']:
-                    study = None
-                    assay = None
-
-                    # Get study
-                    try:
-                        study = Study.objects.get(
-                            omics_uuid=irods_backend.get_uuid_from_path(
-                                o['path'], obj_type='study'))
-                        assay = Assay.objects.get(
-                            omics_uuid=irods_backend.get_uuid_from_path(
-                                o['path'], obj_type='assay'))
-
-                    except Exception as ex:
-                        pass
-
-                    ret.append({
-                        'name': o['name'],
-                        'type': 'file',
-                        'project': project,
-                        'study': study,
-                        'assays': [assay] if Assay else None,
-                        'irods_path': o['path']})
+                ret.append({
+                    'name': o['name'],
+                    'type': 'file',
+                    'project': project,
+                    'study': study,
+                    'assays': [assay] if Assay else None,
+                    'irods_path': o['path']})
 
     ret.sort(key=lambda x: x['name'].lower())
     return ret
