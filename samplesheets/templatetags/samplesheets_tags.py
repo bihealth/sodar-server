@@ -113,7 +113,7 @@ def find_samplesheets_items(search_term, user, search_type, keywords):
         ret += get_materials(GenericMaterial.objects.find(
             search_term, keywords, item_type='SAMPLE'))
 
-    if not search_type or search_type == 'file':
+    if not search_type or search_type == 'file' and irods_backend:
         for role_as in RoleAssignment.objects.filter(
                 user=user, project__type=PROJECT_TYPE_PROJECT):
             project = role_as.project
