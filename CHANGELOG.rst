@@ -25,7 +25,7 @@ Added
     - ``IrodsObjectListAPIView``for iRODS collection list queries (#308)
     - ``BaseIrodsAPIView`` for implementing views
     - Logging for error cases (#310)
-    - ``get_uuid_from_path()`` helper (#289)
+    - ``get_sample_path()`` and ``get_uuid_from_path()`` helpers (#289)
     - Param ``like_name`` into data object querying (#289)
 - **Landingzones**
     - Send email when zone status is set as ``MOVED`` or ``FAILED`` (#280)

@@ -140,7 +140,7 @@ class IrodsAPI:
                 md5_filter=md5_filter)
 
         if name_like:
-            sql += ' AND data_name LIKE \'{}\''.format(name_like)
+            sql += ' AND data_name LIKE \'%{}%\''.format(name_like)
 
         columns = [
             DataObject.name, DataObject.size, DataObject.modify_time,
@@ -353,6 +353,20 @@ class IrodsAPI:
                 obj.configuration else '')
 
         return path
+
+    # TODO: Add tests
+    @classmethod
+    def get_sample_path(cls, project):
+        """
+        Return project sample data path
+        :param project: Project object
+        :return: String
+        :raise: ValueError if "project" is not a valid Project object
+        """
+        if project.__class__.__name__ != 'Project':
+            raise ValueError('Argument "project" is not a Project object')
+
+        return cls.get_path(project) + '/' + settings.IRODS_SAMPLE_DIR
 
     # TODO: Add tests
     @classmethod

@@ -119,8 +119,13 @@ def find_samplesheets_items(search_term, user, search_type, keywords):
             project = role_as.project
 
             if user.has_perm('samplesheets.view_sheet', project):
-                objs = irods_backend.get_objects(
-                    irods_backend.get_path(project), name_like=search_term)
+                try:
+                    objs = irods_backend.get_objects(
+                        irods_backend.get_sample_path(project),
+                        name_like=search_term)
+
+                except FileNotFoundError:
+                    continue
 
                 for o in objs['data_objects']:
                     study = None
