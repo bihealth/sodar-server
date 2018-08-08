@@ -157,7 +157,8 @@ class IrodsAPI:
                     'name': row[DataObject.name],
                     'path': row[Collection.name] + '/' + row[DataObject.name],
                     'size': row[DataObject.size],
-                    'modify_time': row[DataObject.modify_time]})
+                    'modify_time': self._get_datetime(
+                        row[DataObject.modify_time])})
 
         except CAT_NO_ROWS_FOUND:
             pass
