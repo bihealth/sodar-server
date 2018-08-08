@@ -206,25 +206,35 @@ class IrodsAPI:
         :param coll: iRODS collection object
         :return: Dict
         """
-        data = {
+        ret = {
             'file_count': 0,
             'total_size': 0}
 
-        search_path = self._get_search_path(coll)
-        query = coll.manager.sess.query().filter(
-            Criterion('like', DataObject.path, search_path)).filter(
-            Criterion('not like', DataObject.name, '%.md5')).count(
-                DataObject.id).sum(DataObject.size)
+        sql = 'SELECT COUNT(data_id) as file_count, ' \
+              'SUM(data_size) as total_size ' \
+              'FROM r_data_main JOIN r_coll_main USING (coll_id)' \
+              'WHERE coll_name LIKE \'{coll_path}/%\' ' \
+              'AND data_name NOT LIKE \'%.md5\''.format(
+                coll_path=coll.path)
+
+        query = SpecificQuery(self.irods, sql, self._get_query_alias())
+        _ = query.register()
 
         try:
-            result = query.first()
-            data['file_count'] += result[DataObject.id]
-            data['total_size'] += result[DataObject.size]
+            result = next(query.get_results())
+            ret['file_count'] = result[0]
+            ret['total_size'] = result[1]
 
-        except Exception:
+        except CAT_NO_ROWS_FOUND:
             pass
 
-        return data
+        except Exception as ex:
+            logger.error(
+                'iRODS exception in _get_obj_stats(): {}'.format(
+                    ex.__class__.__name__))
+
+        _ = query.remove()
+        return ret
 
     # TODO: Fork python-irodsclient and implement ticket functionality there
     def _send_request(self, api_id, *args):
