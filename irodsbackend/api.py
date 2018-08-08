@@ -1,18 +1,18 @@
 """iRODS backend API for SODAR Django apps"""
 
 from functools import wraps
-import itertools
 import logging
-import operator
+import random
 import re
+import string
 
 from irods.api_number import api_number
 from irods.collection import iRODSCollection
-from irods.column import Criterion, Like
-from irods.data_object import iRODSDataObject
-from irods.exception import CollectionDoesNotExist
+from irods.column import Criterion
+from irods.exception import CollectionDoesNotExist, CAT_NO_ROWS_FOUND
 from irods.message import TicketAdminRequest, iRODSMessage
 from irods.models import Collection, DataObject
+from irods.query import SpecificQuery
 from irods.session import iRODSSession
 from irods.ticket import Ticket
 
@@ -92,11 +92,20 @@ class IrodsAPI:
         dt = dt.astimezone(timezone('Europe/Berlin'))
         return dt.strftime('%Y-%m-%d %H:%M')
 
+    # HACK which should be removable once doing #329
     @classmethod
     def _get_search_path(cls, coll):
         """Return a search path string for a collection"""
         # NOTE: We assume all our resource paths end with */Vault/
         return '%/Vault/' + '/'.join(coll.path.split('/')[2:]) + '/%'
+
+    @classmethod
+    def _get_query_alias(cls):
+        """Return a random iCAT SQL query alias"""
+        return 'sodar_query_{}'.format(''.join(
+            random.SystemRandom().choice(
+                string.ascii_lowercase + string.ascii_uppercase) for
+            _ in range(16)))
 
     @classmethod
     def _get_colls_recursively(cls, coll):
@@ -110,66 +119,58 @@ class IrodsAPI:
             Criterion('like', Collection.parent_name, coll.path + '%'))
         return [iRODSCollection(coll.manager, row) for row in query]
 
-    @classmethod
-    def _get_objs_recursively(cls, coll, md5=False, name_like=None):
+    def _get_objs_recursively(self, coll, md5=False, name_like=None):
         """
         Return objects below a coll recursively (replacement for the
         non-scalable walk() function in the API)
         :param coll: Collection object
         :param md5: if True, return .md5 files, otherwise anything but them
-        :name_like: Optional filtering of file names (string with "%" wildcards)
+        :param name_like: Filtering of file names (string with "%" wildcards)
         :return: List
         """
-        search_path = cls._get_search_path(coll)
-        # md5_filter = 'like' if md5 else 'not like'
+        ret = []
+        md5_filter = 'LIKE' if md5 else 'NOT LIKE'
 
-        filters = [
-            Criterion('like', DataObject.path, search_path)]
+        sql = 'SELECT data_name, data_size, ' \
+              'r_data_main.modify_ts as modify_ts, coll_name ' \
+              'FROM r_data_main JOIN r_coll_main USING (coll_id)' \
+              'WHERE coll_name LIKE \'{coll_path}/%\' ' \
+              'AND data_name {md5_filter} \'%.md5\''.format(
+                coll_path=coll.path,
+                md5_filter=md5_filter)
 
         if name_like:
-            filters.append(
-                Criterion('like', DataObject.name, '%' + name_like + '%'))
+            sql += ' AND data_name LIKE \'{}\''.format(name_like)
 
-        query = coll.manager.sess.query(DataObject).filter(*filters)
-        # query = query.filter(Criterion(md5_filter, DataObject.name, '%.md5'))
+        columns = [
+            DataObject.name, DataObject.size, DataObject.modify_time,
+            Collection.name]
 
-        results = query.get_results()
-        grouped = itertools.groupby(results, operator.itemgetter(DataObject.id))
-        ret = []
+        query = SpecificQuery(self.irods, sql, self._get_query_alias(), columns)
+        _ = query.register()
 
-        # HACK: Must build the symbolic paths manually here, a better way?
-        #       With the query, only physical replica paths are returned..
-        path_prefix = '/{}/'.format(settings.IRODS_ZONE)
-        symb_colls = {c.path: c for c in cls._get_colls_recursively(coll)}
-        symb_colls[coll.path] = coll    # Files can also be in root :)
+        try:
+            results = query.get_results()
 
-        for _, replicas in grouped:
-            r_list = list(replicas)
+            for row in results:
+                ret.append({
+                    'name': row[DataObject.name],
+                    'path': row[Collection.name] + '/' + row[DataObject.name],
+                    'size': row[DataObject.size],
+                    'modify_time': row[DataObject.modify_time]})
 
-            # HACK: Workaround for issue #326
-            if ((not md5 and '.md5' not in r_list[0][DataObject.path]) or (
-                    md5 and '.md5' in r_list[0][DataObject.path])):
-                r_path = r_list[0][DataObject.path].split('/')
-                parent_path = path_prefix + '/'.join(
-                    r_path[r_path.index('projects'):-1])
+        except CAT_NO_ROWS_FOUND:
+            pass
 
-                try:
-                    parent_coll = symb_colls[parent_path]
-                    ret.append(
-                        iRODSDataObject(
-                            coll.manager.sess.data_objects, parent_coll,
-                            r_list))
+        except Exception as ex:
+            logger.error(
+                'iRODS exception in _get_objs_recursively(): {}'.format(
+                    ex.__class__.__name__))
 
-                except KeyError:    # This should not happen, see issue #310
-                    logger.error(
-                        'Collection specified in iRODS iCAT database for '
-                        'DataObject.id={} not found: path={}'.format(
-                            r_list[0][DataObject.id], parent_path))
+        _ = query.remove()
+        return sorted(ret, key=lambda x: x['path'])
 
-        return sorted(ret, key=lambda x: x.path)
-
-    @classmethod
-    def _get_obj_list(cls, coll, check_md5=False, name_like=None):
+    def _get_obj_list(self, coll, check_md5=False, name_like=None):
         """
         Return a list of data objects within an iRODS collection
         :param coll: iRODS collection object
@@ -180,33 +181,26 @@ class IrodsAPI:
         data = {'data_objects': []}
         md5_paths = None
 
-        data_objs = cls._get_objs_recursively(coll, name_like=name_like)
+        data_objs = self._get_objs_recursively(coll, name_like=name_like)
 
-        if check_md5:
+        if data_objs and check_md5:
             md5_paths = [
-                o.path for o in cls._get_objs_recursively(
+                o['path'] for o in self._get_objs_recursively(
                     coll, md5=True, name_like=name_like)]
 
-        for obj in data_objs:
-            obj_info = {
-                'name': obj.name,
-                'path': obj.path,
-                'size': obj.size,
-                'modify_time': cls._get_datetime(obj.modify_time)}
-
+        for o in data_objs:
             if check_md5:
-                if obj.path + '.md5' in md5_paths:
-                    obj_info['md5_file'] = True
+                if o['path'] + '.md5' in md5_paths:
+                    o['md5_file'] = True
 
                 else:
-                    obj_info['md5_file'] = False
+                    o['md5_file'] = False
 
-            data['data_objects'].append(obj_info)
+            data['data_objects'].append(o)
 
         return data
 
-    @classmethod
-    def _get_obj_stats(cls, coll):
+    def _get_obj_stats(self, coll):
         """
         Return statistics for data objects within an iRODS collection
         :param coll: iRODS collection object
@@ -216,7 +210,7 @@ class IrodsAPI:
             'file_count': 0,
             'total_size': 0}
 
-        search_path = cls._get_search_path(coll)
+        search_path = self._get_search_path(coll)
         query = coll.manager.sess.query().filter(
             Criterion('like', DataObject.path, search_path)).filter(
             Criterion('not like', DataObject.name, '%.md5')).count(
