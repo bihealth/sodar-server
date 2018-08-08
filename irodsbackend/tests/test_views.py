@@ -72,20 +72,21 @@ class TestViewsBase(
         self.as_owner = self._make_assignment(
             self.project, self.user, self.role_owner)
 
+        # Build path for test collection
+        self.project_path = self.irods_backend.get_path(self.project)
+        self.irods_path = self.project_path + '/' + IRODS_TEMP_COLL
+
+        # Create test collection in iRODS
+        self.irods_coll = self.irods_session.collections.create(self.irods_path)
+
+    def tearDown(self):
+        if self.irods_session.collections.exists(self.project_path):
+            self.irods_session.collections.get(self.project_path).remove()
+
 
 @skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
 class TestIrodsStatisticsAPIView(TestViewsBase):
     """Tests for the landing zone collection statistics API view"""
-
-    def setUp(self):
-        super(TestIrodsStatisticsAPIView, self).setUp()
-
-        # Build path for test collection
-        self.irods_path = self.irods_backend.get_path(
-            self.project) + '/' + IRODS_TEMP_COLL
-
-        # Create test collection in iRODS
-        self.irods_coll = self.irods_session.collections.create(self.irods_path)
 
     def test_get_empty_coll(self):
         """Test GET request for stats on an empty collection in iRODS"""

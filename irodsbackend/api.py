@@ -127,7 +127,7 @@ class IrodsAPI:
         sql = 'SELECT data_name, data_size, ' \
               'r_data_main.modify_ts as modify_ts, coll_name ' \
               'FROM r_data_main JOIN r_coll_main USING (coll_id)' \
-              'WHERE coll_name LIKE \'{coll_path}/%\' ' \
+              'WHERE coll_name LIKE \'{coll_path}%\' ' \
               'AND data_name {md5_filter} \'%.md5\''.format(
                 coll_path=coll.path,
                 md5_filter=md5_filter)
@@ -207,7 +207,7 @@ class IrodsAPI:
         sql = 'SELECT COUNT(data_id) as file_count, ' \
               'SUM(data_size) as total_size ' \
               'FROM r_data_main JOIN r_coll_main USING (coll_id)' \
-              'WHERE coll_name LIKE \'{coll_path}/%\' ' \
+              'WHERE coll_name LIKE \'{coll_path}%\' ' \
               'AND data_name NOT LIKE \'%.md5\''.format(
                 coll_path=coll.path)
 
@@ -216,8 +216,8 @@ class IrodsAPI:
 
         try:
             result = next(query.get_results())
-            ret['file_count'] = result[0]
-            ret['total_size'] = result[1]
+            ret['file_count'] = int(result[0]) if result[0] else 0
+            ret['total_size'] = int(result[1]) if result[1] else 0
 
         except CAT_NO_ROWS_FOUND:
             pass
