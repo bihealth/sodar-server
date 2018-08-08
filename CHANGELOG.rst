@@ -40,6 +40,7 @@ Added
     - Common template tag ``get_setting()``
     - ``CurrentUserFormMixin`` for providing current using to forms as ``current_user``
     - Helper mixin ``KnoxAuthMixin`` for views testing
+    - Sanitize search input (#332)
 - **Samplesheets**
     - Display original study/assay filenames as tooltips (#283)
     - Display assays for samples in search results (#157)

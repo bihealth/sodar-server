@@ -53,6 +53,7 @@ SUBMIT_STATUS_PENDING_TASKFLOW = OMICS_CONSTANTS[
 
 # Local constants
 APP_NAME = 'projectroles'
+SEARCH_REGEX = re.compile(r'^[a-zA-Z0-9.:\-_\s\t]+$')
 
 
 # General mixins ---------------------------------------------------------------
@@ -351,6 +352,16 @@ class ProjectSearchView(LoginRequiredMixin, TemplateView):
                 key=lambda x: x.plugin_ordering)
 
         return context
+
+    def get(self, request, *args, **kwargs):
+        context = self.get_context_data(*args, **kwargs)
+
+        # Check input, redirect if unwanted characters are found
+        if not bool(re.match(SEARCH_REGEX, context['search_input'])):
+            messages.error(self.request, 'Please check your search input')
+            return redirect('home')
+
+        return super(TemplateView, self).render_to_response(context)
 
 
 # Project Editing Views --------------------------------------------------------

@@ -230,6 +230,15 @@ class TestProjectSearchView(TestViewsBase, ProjectMixin, RoleAssignmentMixin):
                 p.search_enable and
                 response.context['search_type'] in p.search_types)]))
 
+    def test_redirect_invalid_input(self):
+        """Test to ensure the project search view redirects if input is not valid"""
+        with self.login(self.user):
+            response = self.client.get(
+                reverse('projectroles:search') + '?' + urlencode(
+                    {'s': 'test\'"%,'}))
+            self.assertRedirects(
+                response, reverse('home'))
+
 
 class TestProjectDetailView(TestViewsBase, ProjectMixin, RoleAssignmentMixin):
     """Tests for Project detail view"""
