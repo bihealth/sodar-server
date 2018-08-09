@@ -118,8 +118,8 @@ def find_samplesheets_items(search_term, user, search_type, keywords):
             projects = Project.objects.filter(type=PROJECT_TYPE_PROJECT)
 
         else:
-            projects = [a.project for a in RoleAssignment.objects.filter(
-                user=user, project__type=PROJECT_TYPE_PROJECT)]
+            projects = Project.objects.filter(
+                roles__user=user, type=PROJECT_TYPE_PROJECT)
 
         for project in projects:
             if (not user.is_superuser and
