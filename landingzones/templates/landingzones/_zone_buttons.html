@@ -26,12 +26,21 @@
 
       {# Normal links #}
       {% if zone.status != 'MOVED' %}
+        <a class="dropdown-item" href="{% url 'landingzones:validate' landingzone=zone.omics_uuid %}">
+      {% else %}
+        <a class="dropdown-item disabled" href="#">
+      {% endif %}
+        <i class="fa fa-fw fa-check"></i> Validate Files
+      </a>
+
+      {% if zone.status != 'MOVED' %}
         <a class="dropdown-item" href="{% url 'landingzones:move' landingzone=zone.omics_uuid %}">
       {% else %}
         <a class="dropdown-item disabled" href="#">
       {% endif %}
-        <i class="fa fa-fw fa-copy"></i> Validate and Move
+        <i class="fa fa-fw fa-arrow-right"></i> Validate and Move
       </a>
+
       <a class="dropdown-item" href="{% url 'landingzones:delete' landingzone=zone.omics_uuid %}">
         <i class="fa fa-fw fa-close"></i> Delete Zone
       </a>

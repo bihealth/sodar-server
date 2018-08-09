@@ -5,23 +5,21 @@
 {% load landingzones_tags %}
 
 {% block title %}
-  Confirm iRODS File Validation and Moving
+  Confirm iRODS File Validation {% if not validate_only %}and Moving{% endif %}
 {% endblock title %}
 
 {% block projectroles_extend %}
 
 <div class="row omics-subtitle-container">
-  <h3>Confirm iRODS File Validation and Moving</h3>
+  <h3>Confirm iRODS File Validation {% if not validate_only %}and Moving{% endif %}</h3>
 </div>
 
 <div class="container-fluid omics-page-container">
   <div class="alert alert-warning" role="alert">
-    <strong>Warning:</strong> Are you sure you want to initiate the file
-    validation and moving process in iRODS? After checking, all files from
-    the landing zone
-    "<strong>{{ zone.title }}</strong>"
-    will be copied into the <cite>{{ sample_dir }}</cite> collection of
-    project "<strong>{{ project.title }}</strong>" with read-only access.
+    <strong>Note:</strong> You are initiating validation of your landing zone
+    "<strong>{{ zone.title }}</strong>". Files will not be moved upon successful
+    validation. Please see the landing zone list for the validation result once
+    you have confirmed the validation.
   </div>
 
   <form method="post">
@@ -31,9 +29,15 @@
         <a role="button" class="btn btn-secondary" href="{{ request.session.real_referer }}">
           <i class="fa fa-arrow-circle-left"></i> Cancel
         </a>
-        <button type="submit" class="btn btn-danger">
-          <i class="fa fa-copy"></i> Validate and Move
-        </button>
+        {% if validate_only %}
+          <button type="submit" class="btn btn-primary">
+            <i class="fa fa-check"></i> Validate
+          </button>
+        {% else %}
+          <button type="submit" class="btn btn-danger">
+            <i class="fa fa-arrow-right"></i> Validate and Move
+          </button>
+        {% endif %}
       </div>
     </div>
   </form>

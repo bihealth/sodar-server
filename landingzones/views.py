@@ -427,6 +427,12 @@ class ZoneMoveView(
         context['zone'] = LandingZone.objects.get(
             omics_uuid=self.kwargs['landingzone'])
 
+        # Validate only mode
+        if self.request.get_full_path() == reverse(
+                'landingzones:validate',
+                kwargs={'landingzone': context['zone'].omics_uuid}):
+            context['validate_only'] = True
+
         context['sample_dir'] = settings.IRODS_SAMPLE_DIR
 
         return context
@@ -439,16 +445,32 @@ class ZoneMoveView(
         zone = LandingZone.objects.get(omics_uuid=self.kwargs['landingzone'])
         project = zone.project
         tl_event = None
+        validate_only = False
+        event_name = 'zone_move'
+
+        # Validate only mode
+        if self.request.get_full_path() == reverse(
+                'landingzones:validate',
+                kwargs={'landingzone': zone.omics_uuid}):
+            validate_only = True
+            event_name = 'zone_validate'
 
         # Add event in Timeline
         if timeline:
+            desc = 'validate '
+
+            if not validate_only:
+                desc += 'and move '
+
+            desc += 'validate {}files from landing zone {zone} from ' \
+                    '{user} in {assay}'
+
             tl_event = timeline.add_event(
                 project=project,
                 app_name=APP_NAME,
                 user=self.request.user,
-                event_name='zone_move',
-                description='validate and move files from landing zone '
-                            '{zone} from {user} in {assay}')
+                event_name=event_name,
+                description=desc)
 
             tl_event.add_object(
                 obj=zone,
@@ -472,7 +494,7 @@ class ZoneMoveView(
                     'FAILED', status_desc='Taskflow not enabled')
 
             messages.error(
-                self.request, 'Unable to create dirs: taskflow not enabled!')
+                self.request, 'Unable to process zone: taskflow not enabled!')
 
             return redirect(reverse(
                 'landingzones:list', kwargs={'project': project.omics_uuid}))
@@ -494,6 +516,9 @@ class ZoneMoveView(
                     zone.assay, landing_zone=True),
                 'user_name': str(zone.user.username)})
 
+        if validate_only:
+            flow_data['validate_only'] = True
+
         try:
             taskflow.submit(
                 project_uuid=project.omics_uuid,
@@ -505,8 +530,9 @@ class ZoneMoveView(
 
             messages.warning(
                 self.request,
-                'Validating and moving landing zone, see job progress in the '
-                'zone list')
+                'Validating {}landing zone, see job progress in the '
+                'zone list'.format(
+                    'and moving ' if not validate_only else ''))
 
         except taskflow.FlowSubmitException as ex:
             zone.set_status('FAILED', str(ex))

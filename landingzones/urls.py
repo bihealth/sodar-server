@@ -22,6 +22,11 @@ urlpatterns = [
         name='move',
     ),
     url(
+        regex=r'^validate/(?P<landingzone>[0-9a-f-]+)$',
+        view=views.ZoneMoveView.as_view(),
+        name='validate',
+    ),
+    url(
         regex=r'^delete/(?P<landingzone>[0-9a-f-]+)$',
         view=views.ZoneDeleteView.as_view(),
         name='delete',
