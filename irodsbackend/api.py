@@ -138,7 +138,6 @@ class IrodsAPI:
         if name_like:
             sql += ' AND data_name LIKE \'%{}%\''.format(name_like)
 
-        # TODO: Add tests for limit
         if not md5 and limit:
             sql += ' LIMIT {}'.format(limit)
 

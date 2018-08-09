@@ -39,6 +39,7 @@ SHEET_PATH = SHEET_DIR + 'i_small.zip'
 ZONE_TITLE = '20180503_1724_test_zone'
 ZONE_DESC = 'description'
 TEST_FILE_NAME = 'test1'
+TEST_FILE_NAME2 = 'test2'
 
 
 class TestIrodsBackendAPITaskflow(
@@ -124,3 +125,22 @@ class TestIrodsBackendAPITaskflow(
 
         with self.assertRaises(FileNotFoundError):
             obj_list = self.irods_backend.get_objects(path)
+
+    @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
+    def test_get_objects_limit(self):
+        """Test get_objects() with a limit applied"""
+
+        # Create iRODS directories
+        self._make_irods_dirs(self.investigation)
+
+        path = self.irods_backend.get_path(self.assay)
+
+        # Create objects
+        irods = self.irods_backend.get_session()
+        irods.data_objects.create(path + '/' + TEST_FILE_NAME)
+        irods.data_objects.create(path + '/' + TEST_FILE_NAME2)
+
+        obj_list = self.irods_backend.get_objects(
+            path, check_md5=False, limit=1)
+        self.assertIsNotNone(obj_list)
+        self.assertEqual(len(obj_list['data_objects']), 1)  # Limited to 1
