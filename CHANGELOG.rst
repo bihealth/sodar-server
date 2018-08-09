@@ -15,6 +15,9 @@ Added
 - **General**
     - ``SITE_SUBTITLE`` setting to show beta status or something similar (#311)
     - API settings ``SODAR_API_DEFAULT_VERSION`` and ``SODAR_API_MEDIA_TYPE``
+- **Adminalerts**
+    - Enable Markdown in alert description (#196)
+    - Display user in alert details (#330)
 - **Filesfolders**
     - Text style depending on item flag (#303)
 - **Irodsbackend**
@@ -57,7 +60,6 @@ Changed
 
 - **Adminalerts**
     - Update user when updating alert (#179)
-    - Enable markdown in alert description (#196)
 - **Irodsbackend**
     - Optimized iRODS queries for increased performance (#242)
     - Improve collection listing popup layout
