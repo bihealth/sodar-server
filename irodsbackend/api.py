@@ -368,7 +368,6 @@ class IrodsAPI:
 
         return path
 
-    # TODO: Add tests
     @classmethod
     def get_sample_path(cls, project):
         """
@@ -382,11 +381,10 @@ class IrodsAPI:
 
         return cls.get_path(project) + '/' + settings.IRODS_SAMPLE_DIR
 
-    # TODO: Add tests
     @classmethod
     def get_uuid_from_path(cls, path, obj_type):
         """
-        Return study UUID from iRODS path or None if not found
+        Return study or assay UUID from iRODS path or None if not found
         :param path: Full iRODS path (string)
         :param obj_type: Type of object (study or assay)
         :return: String or None

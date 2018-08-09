@@ -126,3 +126,43 @@ class TestIrodsBackendAPI(
                     zone_title=ZONE_TITLE)
         path = self.irods_backend.get_path(self.landing_zone)
         self.assertEqual(expected, path)
+
+    def test_get_sample_path(self):
+        """Test get_sample_path() with a Project object"""
+        expected = '/{zone}/projects/{uuid_prefix}/{uuid}/{sample_dir}'.format(
+            zone=IRODS_ZONE,
+            uuid_prefix=str(self.project.omics_uuid)[:2],
+            uuid=str(self.project.omics_uuid),
+            sample_dir=SAMPLE_DIR)
+        path = self.irods_backend.get_sample_path(self.project)
+        self.assertEqual(expected, path)
+
+    def test_get_sample_path_no_project(self):
+        """Test get_sample_path() with a wrong type of object (should fail)"""
+        with self.assertRaises(ValueError):
+            self.irods_backend.get_sample_path(self.study)
+
+    def test_get_uuid_from_path_assay(self):
+        """Test get_uuid_from_path() with an assay path"""
+        path = self.irods_backend.get_path(self.assay)
+        uuid = self.irods_backend.get_uuid_from_path(path, 'assay')
+        self.assertEqual(uuid, str(self.assay.omics_uuid))
+
+    def test_get_uuid_from_path_study(self):
+        """Test get_uuid_from_path() with a study path"""
+        path = self.irods_backend.get_path(self.study)
+        uuid = self.irods_backend.get_uuid_from_path(path, 'study')
+        self.assertEqual(uuid, str(self.study.omics_uuid))
+
+    def test_get_uuid_from_path_wrong_type(self):
+        """Test get_uuid_from_path() with a path not containing the uuid (should fail)"""
+        path = self.irods_backend.get_path(self.study)
+
+        with self.assertRaises(ValueError):
+            self.irods_backend.get_uuid_from_path(path, 'project')
+
+    def test_get_uuid_from_path_wrong_path(self):
+        """Test get_uuid_from_path() with a path not containing the uuid (should fail)"""
+        path = self.irods_backend.get_path(self.project)
+        uuid = self.irods_backend.get_uuid_from_path(path, 'study')
+        self.assertIsNone(uuid)
