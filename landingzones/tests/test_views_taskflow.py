@@ -264,6 +264,7 @@ class TestLandingZoneMoveView(
         self.assay_coll = self.irods_session.collections.get(
             self.irods_backend.get_path(self.assay))
 
+    @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_move(self):
         """Test validating and moving a landing zone with objects"""
 
@@ -306,6 +307,7 @@ class TestLandingZoneMoveView(
         self.assertEqual(len(self.zone_coll.data_objects), 0)
         self.assertEqual(len(self.assay_coll.data_objects), 2)
 
+    @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_move_no_md5(self):
         """Test validating and moving a landing zone without checksum (should fail)"""
 
@@ -348,6 +350,7 @@ class TestLandingZoneMoveView(
         self.assertEqual(len(self.zone_coll.data_objects), 1)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
 
+    @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_validate(self):
         """Test validating a landing zone with objects without moving"""
 
@@ -390,6 +393,7 @@ class TestLandingZoneMoveView(
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
 
+    @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_validate_no_md5(self):
         """Test validating a landing zone without checksum (should fail)"""
 
