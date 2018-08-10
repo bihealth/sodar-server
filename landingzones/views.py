@@ -462,7 +462,7 @@ class ZoneMoveView(
             if not validate_only:
                 desc += 'and move '
 
-            desc += 'validate {}files from landing zone {zone} from ' \
+            desc += 'files from landing zone {zone} from ' \
                     '{user} in {assay}'
 
             tl_event = timeline.add_event(
