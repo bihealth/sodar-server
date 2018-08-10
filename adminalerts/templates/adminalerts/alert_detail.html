@@ -29,7 +29,7 @@
             {% get_user_html object.user %}
           {% endautoescape %}
         </dd>
-        {% if object.description %}
+        {% if object.description.raw %}
           <dt class="col-md-2">Description</dt>
           <dd class="col-md-10">
             {% autoescape off %}

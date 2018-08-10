@@ -46,7 +46,7 @@ class SiteAppPlugin(SiteAppPluginPoint):
         for a in alerts:
             content = '<i class="fa fa-exclamation-triangle"></i> ' + a.message
 
-            if a.description:
+            if a.description.raw:
                 content += \
                     '<span class="pull-right"><a href="{}" class="text-info">' \
                     '<i class="fa fa-arrow-circle-right"></i> ' \
