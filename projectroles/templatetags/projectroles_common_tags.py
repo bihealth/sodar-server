@@ -36,7 +36,7 @@ def highlight_search_term(item, term):
     """Return string with search term highlighted"""
 
     def get_highlights(item):
-        pos = item.lower().find(term)
+        pos = item.lower().find(term.lower())
         tl = len(term)
 
         if pos == -1:

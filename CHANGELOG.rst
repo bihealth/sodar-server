@@ -56,6 +56,7 @@ Added
     - Display stats on the project details page card (#188)
     - Proof-of-concept ID Querying API with token authentication
     - iRODS files searchable in site search (#289)
+    - Highlighting of search strings (#341)
 
 Changed
 -------
@@ -99,6 +100,7 @@ Fixed
 - **Projectroles**
     - Extra spaces and tabs broke search (#290)
     - Search not enabled if selecting previous input with mouse (#307)
+    - Case conversion issue caused ``highlight_search_term()`` to fail (#341)
 - **Samplesheets**
     - Show correct target in germline app ``FileRedirectView`` message (#275)
     - Source/sample name search resulted in a template crash (#287)
