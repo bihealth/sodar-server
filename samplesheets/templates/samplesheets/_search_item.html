@@ -10,15 +10,15 @@
 {% endif %}
 
 <tr class="omics-ss-search-list-item" id="omics-ss-project-search-item-{{ item.omics_uuid }}">
-  <td class="text-nowrap">
+  <td>
     {% highlight_search_term item.name search_term as item_display_name %}
     {% if item.type != 'file' %}
-      <a href="{% url 'samplesheets:project_sheets' study=item.study.omics_uuid %}">{{ item_display_name |safe }}</a>
+      <a href="{% url 'samplesheets:project_sheets' study=item.study.omics_uuid %}">{{ item_display_name | safe }}</a>
     {% else %}
       {% if webdav_url %}
         <a href="{{ webdav_url }}{{ item.irods_path }}">{{ item_display_name | safe }}</a>
       {% else %}
-        {{ item.name }}
+        {{ item_display_name }}
       {% endif %}
     {% endif %}
   </td>
