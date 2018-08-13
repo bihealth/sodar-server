@@ -155,9 +155,15 @@ class FolderForm(FilesfoldersItemForm):
 class FileForm(FilesfoldersItemForm):
     """Form for File creation/updating"""
 
+    unpack_archive = forms.BooleanField(
+        required=False,
+        label='Unpack archive')
+
     class Meta:
         model = File
-        fields = ['file', 'folder', 'description', 'flag', 'public_url']
+        fields = [
+            'file', 'unpack_archive', 'folder', 'description', 'flag',
+            'public_url']
         widgets = {'file': DBClearableFileInput}
         help_texts = {
             'file': 'Uploaded file (maximum size: {})'.format(
