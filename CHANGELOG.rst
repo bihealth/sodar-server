@@ -20,6 +20,7 @@ Added
     - Display user in alert details (#330)
 - **Filesfolders**
     - Text style depending on item flag (#303)
+    - Optional automated unpacking for uploaded zip files (#327)
 - **Irodsbackend**
     - Generic iRODS file statistics view, template tags and Javascript (#181, #188)
     - Missing support for Investigation objects in ``get_path()`` (#292)

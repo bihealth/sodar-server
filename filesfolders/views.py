@@ -1,9 +1,11 @@
 from wsgiref.util import FileWrapper    # For db files
+from zipfile import ZipFile
 
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import ImproperlyConfigured
+from django.core.files.base import ContentFile
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.shortcuts import redirect
 from django.urls import reverse
@@ -21,6 +23,7 @@ from .utils import build_public_url
 from projectroles.models import Project
 from projectroles.plugins import get_backend_api
 from projectroles.project_settings import get_project_setting
+from projectroles.utils import build_secret
 from projectroles.views import LoggedInPermissionMixin, \
     ProjectContextMixin, HTTPRefererMixin, ProjectPermissionMixin
 
@@ -147,6 +150,7 @@ class FormValidMixin(ModelFormMixin):
                 self.object.name,
                 view_action))
 
+        # TODO: Repetition, put this in a mixin?
         if type(self.object) == Folder and self.object.folder:
             re_kwargs = {'folder': self.object.folder.omics_uuid}
 
@@ -191,6 +195,7 @@ class DeleteSuccessMixin(DeletionMixin):
                 self.object.__class__.__name__,
                 self.object.name))
 
+        # TODO: Repetition, put this in a mixin?
         if type(self.object) == Folder and self.object.folder:
             re_kwargs = {'folder': self.object.folder.omics_uuid}
 
@@ -434,6 +439,80 @@ class FileCreateView(ViewActionMixin, BaseCreateView):
     model = File
     form_class = FileForm
     view_action = 'create'
+
+    def form_valid(self, form):
+        """Override form_valid() for zip file unpacking"""
+
+        ######################
+        # Regular file upload
+        ######################
+
+        if not form.cleaned_data.get('unpack_archive'):
+            return super(FileCreateView, self).form_valid(form)
+
+        #####################
+        # Zip file unpacking
+        #####################
+
+        # TODO: Add Timeline event
+
+        file = form.cleaned_data.get('file')
+        folder = form.cleaned_data.get('folder')
+        project = self._get_project(self.request, self.kwargs)
+
+        # Build redirect URL
+        # TODO: Repetition, put this in a mixin?
+        if folder:
+            re_kwargs = {'folder': folder.omics_uuid}
+
+        else:
+            re_kwargs = {'project': project.omics_uuid}
+
+        redirect_url = reverse('filesfolders:list', kwargs=re_kwargs)
+
+        try:
+            zip_file = ZipFile(file)
+
+        except Exception as ex:
+            messages.error(
+                self.request,
+                'Unable to unpack zip file: {}'.format(ex))
+            return redirect(redirect_url)
+
+        for f in [f for f in zip_file.infolist() if not f.is_dir()]:
+            print('Packed file: {}'.format(f.filename))    # DEBUG
+
+            # Create subfolders if any
+            current_folder = folder
+
+            for zip_folder in f.filename.split('/')[:-1]:
+                try:
+                    current_folder = Folder.objects.get(
+                        name=zip_folder,
+                        project=project,
+                        folder=current_folder)
+
+                except Folder.DoesNotExist:
+                    current_folder = Folder.objects.create(
+                        name=zip_folder,
+                        project=project,
+                        folder=current_folder,
+                        owner=self.request.user)
+
+            # Save file
+            file_name_nopath = f.filename.split('/')[-1]
+
+            unpacked_file = File(
+                name=file_name_nopath,
+                project=project,
+                folder=current_folder,
+                owner=self.request.user,
+                secret=build_secret())
+            content_file = ContentFile(zip_file.read(f.filename))
+            unpacked_file.file.save(file_name_nopath, content_file)
+            unpacked_file.save()
+
+        return redirect(redirect_url)
 
 
 class FileUpdateView(

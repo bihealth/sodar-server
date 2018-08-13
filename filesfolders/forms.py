@@ -1,3 +1,5 @@
+from zipfile import ZipFile
+
 from django import forms
 from django.conf import settings
 from django.template.defaultfilters import filesizeformat
@@ -210,34 +212,97 @@ class FileForm(FilesfoldersItemForm):
         project = self.instance.project if self.instance.pk else self.project
         folder = self.cleaned_data.get('folder')
         file = self.cleaned_data.get('file')
+        unpack_archive = self.cleaned_data.get('unpack_archive')
         new_filename = file.name.split('/')[-1]
 
-        # Ensure max file size is not exceeded
-        try:
-            size = file.size
+        def check_size(file_size):
+            if file_size > MAX_UPLOAD_SIZE:
+                self.add_error(
+                    'file',
+                    'File too large, maximum size is {} bytes '
+                    '(file size is {} bytes)'.format(
+                        MAX_UPLOAD_SIZE, file_size))
+                return False
 
-        except NotImplementedError:
-            size = file.file.size
+            return True
 
-        if size > MAX_UPLOAD_SIZE:
-            self.add_error(
-                'file',
-                'File too large, maximum size is {} bytes '
-                '(file size is {} bytes)'.format(
-                    MAX_UPLOAD_SIZE,
-                    file.size))
+        # Normal file handling
+        if (file and (not hasattr(file, 'content_type') or
+                file.content_type not in [
+                    'application/zip', 'application/x-zip-compressed'])):
+            # Ensure max file size is not exceeded
+            try:
+                size = file.size
+
+            except NotImplementedError:
+                size = file.file.size
+
+            if not check_size(size):
+                return self.cleaned_data
+
+            # Attempting to unpack a non-zip file
+            if unpack_archive:
+                self.add_error(
+                    'unpack_archive',
+                    'Attempting to unpack a file that is not a Zip archive')
+                return self.cleaned_data
+
+        # Zip archive handling
+        else:
+            try:
+                zip_file = ZipFile(file)
+
+            except Exception as ex:
+                self.add_error(
+                    'file', 'Unable to open zip file: {}'.format(ex))
+                return self.cleaned_data
+
+            for f in [f for f in zip_file.infolist() if not f.is_dir()]:
+                # Ensure file size
+                if not check_size(f.file_size):
+                    return self.cleaned_data
+
+                # Check if any of the files exist
+                path_split = f.filename.split('/')
+                check_folder = folder
+                file_error = False
+
+                for f in path_split[:-1]:
+                    # Check if file exists in current folder
+                    try:
+                        File.objects.get(
+                            name=path_split[-1], folder=check_folder)
+                        self.add_error(
+                            'file',
+                            'File already exists: {}'.format(f.filename))
+                        file_error = True
+
+                    except File.DoesNotExist:
+                        pass
+
+                    # Advance in path
+                    try:
+                        check_folder = Folder.objects.get(
+                            name=f, folder=check_folder)
+
+                    except Folder.DoesNotExist:
+                        break
+
+                if file_error:
+                    return self.cleaned_data
 
         # Creation
         if not self.instance.pk:
-            try:
-                File.objects.get(
-                    project=project,
-                    folder=self.folder,
-                    name=file.name)
-                self.add_error('file', 'File already exists')
+            if not unpack_archive:
+                try:
+                    File.objects.get(
+                        project=project,
+                        folder=self.folder,
+                        name=file.name)
+                    self.add_error('file', 'File already exists')
 
-            except File.DoesNotExist:
-                pass
+                except File.DoesNotExist:
+                    pass
 
         # Updating
         else:
