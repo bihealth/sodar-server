@@ -81,7 +81,8 @@ class TestViewsBase(
 
     def tearDown(self):
         if self.irods_session.collections.exists(self.project_path):
-            self.irods_session.collections.get(self.project_path).remove()
+            self.irods_session.collections.get(self.project_path).remove(
+                force=True)
 
 
 @skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
