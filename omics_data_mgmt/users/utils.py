@@ -18,5 +18,4 @@ def set_user_group(user):
 
     if group not in user.groups.all():
         group.user_set.add(user)
-        print('Added user "{}" in group "{}"'.format(
-            user.username, group_name))  # DEBUG
+        return group_name

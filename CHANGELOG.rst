@@ -15,7 +15,7 @@ Added
 - **General**
     - ``SITE_SUBTITLE`` setting to show beta status or something similar (#311)
     - API settings ``SODAR_API_DEFAULT_VERSION`` and ``SODAR_API_MEDIA_TYPE``
-    - Domain/system user groups set on login (#313)
+    - Domain/system user groups set on login or by management command ``syncgroups`` (#313)
 - **Adminalerts**
     - Enable Markdown in alert description (#196)
     - Display user in alert details (#330)
