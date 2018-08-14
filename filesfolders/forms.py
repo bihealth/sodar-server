@@ -265,31 +265,27 @@ class FileForm(FilesfoldersItemForm):
                 # Check if any of the files exist
                 path_split = f.filename.split('/')
                 check_folder = folder
-                file_error = False
 
-                for f in path_split[:-1]:
-                    # Check if file exists in current folder
-                    try:
-                        File.objects.get(
-                            name=path_split[-1], folder=check_folder)
-                        self.add_error(
-                            'file',
-                            'File already exists: {}'.format(f.filename))
-                        file_error = True
-
-                    except File.DoesNotExist:
-                        pass
-
+                for p in path_split[:-1]:
                     # Advance in path
                     try:
                         check_folder = Folder.objects.get(
-                            name=f, folder=check_folder)
+                            name=p, folder=check_folder)
 
                     except Folder.DoesNotExist:
                         break
 
-                if file_error:
+                # Once reached the correct path, check if file exists
+                try:
+                    File.objects.get(
+                        name=path_split[-1], folder=check_folder)
+                    self.add_error(
+                        'file',
+                        'File already exists: {}'.format(f.filename))
                     return self.cleaned_data
+
+                except File.DoesNotExist:
+                    pass
 
         # Creation
         if not self.instance.pk:
