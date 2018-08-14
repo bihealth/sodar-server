@@ -7,6 +7,9 @@ from django.db import models
 from django.utils.encoding import python_2_unicode_compatible
 from django.utils.translation import ugettext_lazy as _
 
+from .utils import set_user_group
+
+
 
 @python_2_unicode_compatible
 class User(AbstractUser):
@@ -49,4 +52,10 @@ def handle_ldap_login(sender, user, **kwargs):
                 user.save()
 
 
+def assign_user_group(sender, user, **kwargs):
+    """Assign user to group if not yet set"""
+    set_user_group(user)
+
+
 user_logged_in.connect(handle_ldap_login)
+user_logged_in.connect(assign_user_group)
