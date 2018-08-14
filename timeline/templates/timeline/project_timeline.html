@@ -146,7 +146,8 @@
 {% else %}
   <div class="container-fluid">
     <div class="alert alert-info my-3" role="alert">
-      No timeline events found for this project.
+      No timeline events found for this
+      {% if timeline_mode == 'project' %}project{% else %}object{% endif %}.
     </div>
   </div>
 {% endif %}
