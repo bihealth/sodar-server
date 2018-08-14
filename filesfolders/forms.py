@@ -263,7 +263,14 @@ class FileForm(FilesfoldersItemForm):
                     'file', 'Unable to open zip file: {}'.format(ex))
                 return self.cleaned_data
 
-            for f in [f for f in zip_file.infolist() if not f.is_dir()]:
+            archive_files = [f for f in zip_file.infolist() if not f.is_dir()]
+
+            if len(archive_files) == 0:
+                self.add_error(
+                    'file', 'Found nothing to extract from zip archive')
+                return self.cleaned_data
+
+            for f in archive_files:
                 # Ensure file size
                 if not check_size(f.file_size, MAX_UPLOAD_SIZE):
                     return self.cleaned_data

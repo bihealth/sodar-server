@@ -1,4 +1,5 @@
 """Tests for views in the filesfolders app"""
+import os
 
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.urlresolvers import reverse
@@ -27,6 +28,10 @@ PROJECT_TYPE_PROJECT = OMICS_CONSTANTS['PROJECT_TYPE_PROJECT']
 # Local constants
 APP_NAME = 'filesfolders'
 SECRET = '7dqq83clo2iyhg29hifbor56og6911r5'
+
+TEST_DATA_PATH = os.path.dirname(__file__) + '/data/'
+ZIP_PATH = TEST_DATA_PATH + 'unpack_test.zip'
+ZIP_PATH_NO_FILES = TEST_DATA_PATH + 'no_files.zip'
 
 
 class TestViewsBase(
@@ -253,6 +258,118 @@ class TestFileCreateView(TestViewsBase):
             self.assertEqual(response.status_code, 200)
 
         self.assertEqual(File.objects.all().count(), 1)
+
+    def test_unpack_archive(self):
+        """Test uploading a zip file to be unpacked"""
+
+        # Assert preconditions
+        self.assertEqual(File.objects.all().count(), 1)
+        self.assertEqual(Folder.objects.all().count(), 1)
+
+        with open(ZIP_PATH, 'rb') as zip_file:
+            post_data = {
+                'name': 'unpack_test.zip',
+                'file': zip_file,
+                'folder': '',
+                'description': '',
+                'flag': '',
+                'public_url': False,
+                'unpack_archive': True}
+
+            with self.login(self.user):
+                response = self.client.post(
+                    reverse(
+                        'filesfolders:file_create',
+                        kwargs={'project': self.project.omics_uuid}),
+                    post_data)
+
+                self.assertEqual(response.status_code, 302)
+                self.assertEqual(response.url, reverse(
+                    'filesfolders:list',
+                    kwargs={'project': self.project.omics_uuid}))
+
+        # Assert postconditions
+        self.assertEqual(File.objects.all().count(), 3)
+        self.assertEqual(Folder.objects.all().count(), 3)
+
+        new_file1 = File.objects.get(name='zip_test1.txt')
+        new_file2 = File.objects.get(name='zip_test2.txt')
+        new_folder1 = Folder.objects.get(name='dir1')
+        new_folder2 = Folder.objects.get(name='dir2')
+
+        self.assertEqual(new_file1.folder, new_folder1)
+        self.assertEqual(new_file2.folder, new_folder2)
+        self.assertEqual(new_folder2.folder, new_folder1)
+
+    def test_unpack_archive_overwrite(self):
+        """Test uploading a zip file with existing file (should fail)"""
+
+        ow_folder = self._make_folder(
+            name='dir1',
+            project=self.project,
+            folder=None,
+            owner=self.user,
+            description='')
+
+        ow_file = self._make_file(
+            name='zip_test1.txt',
+            file_name='zip_test1.txt',
+            file_content=self.file_content,
+            project=self.project,
+            folder=ow_folder,
+            owner=self.user,
+            description='',
+            public_url=False,
+            secret='xxxxxxxxx')
+
+        # Assert preconditions
+        self.assertEqual(File.objects.all().count(), 2)
+        self.assertEqual(Folder.objects.all().count(), 2)
+
+        with open(ZIP_PATH, 'rb') as zip_file:
+            post_data = {
+                'name': 'unpack_test.zip',
+                'file': zip_file,
+                'folder': '',
+                'description': '',
+                'flag': '',
+                'public_url': False,
+                'unpack_archive': True}
+
+            with self.login(self.user):
+                response = self.client.post(
+                    reverse(
+                        'filesfolders:file_create',
+                        kwargs={'project': self.project.omics_uuid}),
+                    post_data)
+
+                self.assertEqual(response.status_code, 200)
+
+        # Assert postconditions
+        self.assertEqual(File.objects.all().count(), 2)
+        self.assertEqual(Folder.objects.all().count(), 2)
+
+    def test_unpack_archive_empty(self):
+        """Test uploading a zip file with an empty archive (should fail)"""
+
+        with open(ZIP_PATH_NO_FILES, 'rb') as zip_file:
+            post_data = {
+                'name': 'no_files.zip',
+                'file': zip_file,
+                'folder': '',
+                'description': '',
+                'flag': '',
+                'public_url': False,
+                'unpack_archive': True}
+
+            with self.login(self.user):
+                response = self.client.post(
+                    reverse(
+                        'filesfolders:file_create',
+                        kwargs={'project': self.project.omics_uuid}),
+                    post_data)
+
+                self.assertEqual(response.status_code, 200)
 
 
 class TestFileUpdateView(TestViewsBase):
