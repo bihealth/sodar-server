@@ -51,7 +51,7 @@ Added
     - Display original study/assay filenames as tooltips (#283)
     - Display assays for samples in search results (#157)
     - Helper function ``GenericMaterial.get_sample_assays()`` (#157)
-    - Auto-populated field ``alt_names`` in the ``GenericMaterial`` model (#285)
+    - Auto-populate field ``alt_names`` in the ``GenericMaterial`` model (#285)
     - Management command ``syncnames`` to update ``alt_names`` (#285)
     - Display project/study file statistics using irodsbackend (#188)
     - Display stats on the project details page card (#188)
@@ -64,8 +64,10 @@ Changed
 
 - **Adminalerts**
     - Update user when updating alert (#179)
+- **Filesfolders**
+    - Refactor timeline event creation for object modification
 - **Irodsbackend**
-    - Optimized iRODS queries for increased performance (#242)
+    - Optimize iRODS queries for increased performance (#242)
     - Improve collection listing popup layout
     - Check user perms for iRODS collection when performing queries
     - Omit ``icp`` from iRODS path when copying to clipboard (#319)

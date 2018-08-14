@@ -35,6 +35,7 @@ TL_OBJ_TYPES = {
     'Folder': 'folder',
     'File': 'file',
     'HyperLink': 'hyperlink'}
+DEFAULT_UPDATE_ATTRS = ['name', 'folder', 'description', 'flag']
 
 LINK_BAD_REQUEST_MSG = settings.FILESFOLDERS_LINK_BAD_REQUEST_MSG
 SERVE_AS_ATTACHMENT = settings.FILESFOLDERS_SERVE_AS_ATTACHMENT
@@ -75,6 +76,57 @@ class ObjectPermissionMixin(LoggedInPermissionMixin):
         return None
 
 
+class FilesfoldersTimelineMixin:
+    """Mixin for filesfolders specific timeline helpers"""
+
+    @classmethod
+    def _add_item_modify_event(
+            cls, obj, request, view_action, update_attrs=DEFAULT_UPDATE_ATTRS,
+            old_data=None):
+        """
+        Add filesfolders item create/update event to timeline
+        :param obj: Filesfolders object being created or updated
+        :param request: Request object
+        :param view_action: "create" or "update" (string)
+        :param update_attrs: List of attribute names to include in extra_data
+        :param old_data: Data from existing object in case of update (dict)
+        """
+        timeline = get_backend_api('timeline_backend')
+
+        if not timeline:
+            return
+
+        obj_type = TL_OBJ_TYPES[obj.__class__.__name__]
+        extra_data = {}
+        tl_desc = '{} {} {{{}}}'.format(
+            view_action, obj_type, obj_type)
+
+        if view_action == 'create':
+            for a in update_attrs:
+                extra_data[a] = str(getattr(obj, a))
+
+        elif old_data:  # Update
+            for a in update_attrs:
+                if old_data[a] != getattr(obj, a):
+                    extra_data[a] = str(getattr(obj, a))
+
+            tl_desc += ' (' + ', '.join(a for a in extra_data) + ')'
+
+        tl_event = timeline.add_event(
+            project=obj.project,
+            app_name=APP_NAME,
+            user=request.user,
+            event_name='{}_{}'.format(obj_type, view_action),
+            description=tl_desc,
+            extra_data=extra_data,
+            status_type='OK')
+
+        tl_event.add_object(
+            obj=obj,
+            label=obj_type,
+            name=obj.get_path() if isinstance(obj, Folder) else obj.name)
+
+
 class ViewActionMixin(object):
     """Mixin for retrieving form action type"""
 
@@ -86,7 +138,7 @@ class ViewActionMixin(object):
         return self.view_action if self.view_action else None
 
 
-class FormValidMixin(ModelFormMixin):
+class FormValidMixin(ModelFormMixin, FilesfoldersTimelineMixin):
     """Mixin for overriding form_valid in form views for creation/updating"""
 
     def form_valid(self, form):
@@ -112,37 +164,12 @@ class FormValidMixin(ModelFormMixin):
         self.object = form.save()
 
         # Add event in Timeline
-        if timeline:
-            obj_type = TL_OBJ_TYPES[self.object.__class__.__name__]
-            extra_data = {}
-            tl_desc = '{} {} {{{}}}'.format(
-                view_action, obj_type, obj_type)
-
-            if view_action == 'create':
-                for a in update_attrs:
-                    extra_data[a] = str(getattr(self.object, a))
-
-            else:   # Update
-                for a in update_attrs:
-                    if old_data[a] != getattr(self.object, a):
-                        extra_data[a] = str(getattr(self.object, a))
-
-                tl_desc += ' (' + ', '.join(a for a in extra_data) + ')'
-
-            tl_event = timeline.add_event(
-                project=self.object.project,
-                app_name=APP_NAME,
-                user=self.request.user,
-                event_name='{}_{}'.format(obj_type, view_action),
-                description=tl_desc,
-                extra_data=extra_data,
-                status_type='OK')
-
-            tl_event.add_object(
-                obj=self.object,
-                label=obj_type,
-                name=self.object.get_path()
-                if isinstance(self.object, Folder) else self.object.name)
+        self._add_item_modify_event(
+            obj=self.object,
+            request=self.request,
+            view_action=view_action,
+            update_attrs=update_attrs,
+            old_data=old_data)
 
         messages.success(
             self.request,
@@ -434,7 +461,8 @@ class FolderDeleteView(
 # File Views -------------------------------------------------------------
 
 
-class FileCreateView(ViewActionMixin, BaseCreateView):
+class FileCreateView(
+        ViewActionMixin, BaseCreateView):
     """File creation view"""
     permission_required = 'filesfolders.add_data'
     model = File
@@ -443,6 +471,7 @@ class FileCreateView(ViewActionMixin, BaseCreateView):
 
     def form_valid(self, form):
         """Override form_valid() for zip file unpacking"""
+        timeline = get_backend_api('timeline_backend')
 
         ######################
         # Regular file upload
@@ -454,8 +483,6 @@ class FileCreateView(ViewActionMixin, BaseCreateView):
         #####################
         # Zip file unpacking
         #####################
-
-        # TODO: Add Timeline event
 
         file = form.cleaned_data.get('file')
         folder = form.cleaned_data.get('folder')
@@ -480,6 +507,9 @@ class FileCreateView(ViewActionMixin, BaseCreateView):
                 'Unable to unpack zip file: {}'.format(ex))
             return redirect(redirect_url)
 
+        new_folders = []
+        new_files = []
+
         with transaction.atomic():
             for f in [f for f in zip_file.infolist() if not f.is_dir()]:
                 # Create subfolders if any
@@ -498,6 +528,7 @@ class FileCreateView(ViewActionMixin, BaseCreateView):
                             project=project,
                             folder=current_folder,
                             owner=self.request.user)
+                        new_folders.append(current_folder)
 
                 # Save file
                 file_name_nopath = f.filename.split('/')[-1]
@@ -511,7 +542,40 @@ class FileCreateView(ViewActionMixin, BaseCreateView):
                 content_file = ContentFile(zip_file.read(f.filename))
                 unpacked_file.file.save(file_name_nopath, content_file)
                 unpacked_file.save()
+                new_files.append(unpacked_file)
 
+        # Add timeline events
+        for new_folder in new_folders:
+            self._add_item_modify_event(
+                obj=new_folder,
+                request=self.request,
+                view_action='create')
+
+        for new_file in new_files:
+            self._add_item_modify_event(
+                obj=new_file,
+                request=self.request,
+                view_action='create')
+
+        if timeline:
+            tl_event = timeline.add_event(
+                project=project,
+                app_name=APP_NAME,
+                user=self.request.user,
+                event_name='unpack_archive',
+                description='unpack archive "{}", create {} folders '
+                            'and {} files'.format(
+                                file.name, len(new_folders), len(new_files)),
+                extra_data={
+                    'new_folders': [f.name for f in new_folders],
+                    'new_files': [f.name for f in new_files]},
+                status_type='OK')
+
+        messages.success(
+            self.request,
+            'Unpacked {} files in folder "{}" from archive "{}"'.format(
+                len([f for f in zip_file.infolist() if not f.is_dir()]),
+                folder.name, file.name))
         return redirect(redirect_url)
 
 
