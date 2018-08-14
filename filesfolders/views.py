@@ -504,7 +504,7 @@ class FileCreateView(
         except Exception as ex:
             messages.error(
                 self.request,
-                'Unable to unpack zip file: {}'.format(ex))
+                'Unable to extract zip file: {}'.format(ex))
             return redirect(redirect_url)
 
         new_folders = []
@@ -562,8 +562,8 @@ class FileCreateView(
                 project=project,
                 app_name=APP_NAME,
                 user=self.request.user,
-                event_name='unpack_archive',
-                description='unpack archive "{}", create {} folders '
+                event_name='extract_archive',
+                description='Extract from archive "{}", create {} folders '
                             'and {} files'.format(
                                 file.name, len(new_folders), len(new_files)),
                 extra_data={
@@ -573,9 +573,9 @@ class FileCreateView(
 
         messages.success(
             self.request,
-            'Unpacked {} files in folder "{}" from archive "{}"'.format(
+            'Extracted {} files in folder "{}" from archive "{}"'.format(
                 len([f for f in zip_file.infolist() if not f.is_dir()]),
-                folder.name, file.name))
+                folder.name if folder else 'root', file.name))
         return redirect(redirect_url)
 
 

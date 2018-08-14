@@ -160,7 +160,7 @@ class FileForm(FilesfoldersItemForm):
 
     unpack_archive = forms.BooleanField(
         required=False,
-        label='Unpack archive')
+        label='Extract files from archive')
 
     class Meta:
         model = File
@@ -245,7 +245,8 @@ class FileForm(FilesfoldersItemForm):
             if unpack_archive:
                 self.add_error(
                     'unpack_archive',
-                    'Attempting to unpack a file that is not a Zip archive')
+                    'Attempting to extract from a file that is not a '
+                    'Zip archive')
                 return self.cleaned_data
 
         # Zip archive handling
