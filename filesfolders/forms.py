@@ -16,6 +16,7 @@ from .models import File, Folder, HyperLink
 
 # Settings
 MAX_UPLOAD_SIZE = settings.FILESFOLDERS_MAX_UPLOAD_SIZE
+MAX_ARCHIVE_SIZE = settings.FILESFOLDERS_MAX_ARCHIVE_SIZE
 
 # Local constants
 APP_NAME = 'filesfolders'
@@ -215,29 +216,29 @@ class FileForm(FilesfoldersItemForm):
         unpack_archive = self.cleaned_data.get('unpack_archive')
         new_filename = file.name.split('/')[-1]
 
-        def check_size(file_size):
-            if file_size > MAX_UPLOAD_SIZE:
+        def check_size(file_size, limit):
+            if file_size > limit:
                 self.add_error(
                     'file',
                     'File too large, maximum size is {} bytes '
                     '(file size is {} bytes)'.format(
-                        MAX_UPLOAD_SIZE, file_size))
+                        limit, file_size))
                 return False
 
             return True
+
+        try:
+            size = file.size
+
+        except NotImplementedError:
+            size = file.file.size
 
         # Normal file handling
         if (file and (not hasattr(file, 'content_type') or
                 file.content_type not in [
                     'application/zip', 'application/x-zip-compressed'])):
             # Ensure max file size is not exceeded
-            try:
-                size = file.size
-
-            except NotImplementedError:
-                size = file.file.size
-
-            if not check_size(size):
+            if not check_size(size, MAX_UPLOAD_SIZE):
                 return self.cleaned_data
 
             # Attempting to unpack a non-zip file
@@ -249,6 +250,10 @@ class FileForm(FilesfoldersItemForm):
 
         # Zip archive handling
         else:
+            # Ensure max archive size is not exceeded
+            if not check_size(size, MAX_ARCHIVE_SIZE):
+                return self.cleaned_data
+
             try:
                 zip_file = ZipFile(file)
 
@@ -259,7 +264,7 @@ class FileForm(FilesfoldersItemForm):
 
             for f in [f for f in zip_file.infolist() if not f.is_dir()]:
                 # Ensure file size
-                if not check_size(f.file_size):
+                if not check_size(f.file_size, MAX_UPLOAD_SIZE):
                     return self.cleaned_data
 
                 # Check if any of the files exist
