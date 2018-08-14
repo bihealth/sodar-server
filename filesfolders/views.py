@@ -562,7 +562,7 @@ class FileCreateView(
                 project=project,
                 app_name=APP_NAME,
                 user=self.request.user,
-                event_name='extract_archive',
+                event_name='archive_extract',
                 description='Extract from archive "{}", create {} folders '
                             'and {} files'.format(
                                 file.name, len(new_folders), len(new_files)),
