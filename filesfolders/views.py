@@ -6,6 +6,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import ImproperlyConfigured
 from django.core.files.base import ContentFile
+from django.db import transaction
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.shortcuts import redirect
 from django.urls import reverse
@@ -479,38 +480,37 @@ class FileCreateView(ViewActionMixin, BaseCreateView):
                 'Unable to unpack zip file: {}'.format(ex))
             return redirect(redirect_url)
 
-        for f in [f for f in zip_file.infolist() if not f.is_dir()]:
-            print('Packed file: {}'.format(f.filename))    # DEBUG
+        with transaction.atomic():
+            for f in [f for f in zip_file.infolist() if not f.is_dir()]:
+                # Create subfolders if any
+                current_folder = folder
 
-            # Create subfolders if any
-            current_folder = folder
+                for zip_folder in f.filename.split('/')[:-1]:
+                    try:
+                        current_folder = Folder.objects.get(
+                            name=zip_folder,
+                            project=project,
+                            folder=current_folder)
 
-            for zip_folder in f.filename.split('/')[:-1]:
-                try:
-                    current_folder = Folder.objects.get(
-                        name=zip_folder,
-                        project=project,
-                        folder=current_folder)
+                    except Folder.DoesNotExist:
+                        current_folder = Folder.objects.create(
+                            name=zip_folder,
+                            project=project,
+                            folder=current_folder,
+                            owner=self.request.user)
 
-                except Folder.DoesNotExist:
-                    current_folder = Folder.objects.create(
-                        name=zip_folder,
-                        project=project,
-                        folder=current_folder,
-                        owner=self.request.user)
+                # Save file
+                file_name_nopath = f.filename.split('/')[-1]
 
-            # Save file
-            file_name_nopath = f.filename.split('/')[-1]
-
-            unpacked_file = File(
-                name=file_name_nopath,
-                project=project,
-                folder=current_folder,
-                owner=self.request.user,
-                secret=build_secret())
-            content_file = ContentFile(zip_file.read(f.filename))
-            unpacked_file.file.save(file_name_nopath, content_file)
-            unpacked_file.save()
+                unpacked_file = File(
+                    name=file_name_nopath,
+                    project=project,
+                    folder=current_folder,
+                    owner=self.request.user,
+                    secret=build_secret())
+                content_file = ContentFile(zip_file.read(f.filename))
+                unpacked_file.file.save(file_name_nopath, content_file)
+                unpacked_file.save()
 
         return redirect(redirect_url)
 
