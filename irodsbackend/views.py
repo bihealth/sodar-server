@@ -16,8 +16,7 @@ PROJECT_ROLE_OWNER = OMICS_CONSTANTS['PROJECT_ROLE_OWNER']
 PROJECT_ROLE_DELEGATE = OMICS_CONSTANTS['PROJECT_ROLE_DELEGATE']
 
 
-class BaseIrodsAPIView(
-        LoginRequiredMixin, APIView):
+class BaseIrodsAPIView(APIView):
     """Base iRODS API View"""
 
     def __init__(self, *args, **kwargs):
@@ -27,6 +26,11 @@ class BaseIrodsAPIView(
 
     def get(self, *args, **kwargs):
         """Setup get() function"""
+
+        # Fail gracefully if not authenticated
+        if not self.request.user.is_authenticated:
+            return Response('User not authenticated', status=401)
+
         if 'project' in self.kwargs:
             try:
                 self.project = Project.objects.get(
