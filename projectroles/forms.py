@@ -29,13 +29,16 @@ APP_NAME = 'projectroles'
 INVITE_EXPIRY_DAYS = settings.PROJECTROLES_INVITE_EXPIRY_DAYS
 
 
+User = auth.get_user_model()
+
+
 # Project form -----------------------------------------------------------
 
 
 class ProjectForm(forms.ModelForm):
     """Form for Project creation/updating"""
     owner = forms.ModelChoiceField(
-        auth.get_user_model().objects.all(),
+        User.objects.all(),
         required=True,
         to_field_name='omics_uuid',
         label='Owner',
@@ -138,7 +141,7 @@ class ProjectForm(forms.ModelForm):
                 # Get owner choices
                 self.fields['owner'].choices = [
                     (user.omics_uuid, get_user_display_name(user, True)) for
-                    user in auth.get_user_model().objects.exclude(
+                    user in get_selectable_users(current_user).exclude(
                         pk__in=project_users).order_by('name')]
 
                 # Set current owner as initial value
@@ -164,7 +167,7 @@ class ProjectForm(forms.ModelForm):
             # Common stuff
             self.fields['owner'].choices = [
                 (user.omics_uuid, get_user_display_name(user, True)) for user in
-                auth.get_user_model().objects.all().order_by('username')]
+                get_selectable_users(current_user).order_by('username')]
 
             # Creating a subproject
             if parent_project:
@@ -184,7 +187,7 @@ class ProjectForm(forms.ModelForm):
             else:
                 self.fields['owner'].choices = [
                     (user.omics_uuid, get_user_display_name(user, True)) for
-                    user in auth.get_user_model().objects.all().order_by(
+                    user in get_selectable_users(current_user).order_by(
                         'username')]
 
                 # Limit project type choice to category
@@ -307,7 +310,7 @@ class RoleAssignmentForm(forms.ModelForm):
 
             self.fields['user'].choices = [
                 (user.omics_uuid, get_user_display_name(user, True)) for user in
-                auth.get_user_model().objects.exclude(
+                get_selectable_users(current_user).exclude(
                     pk__in=project_users).order_by('name')]
 
     def clean(self):
@@ -397,8 +400,6 @@ class ProjectInviteForm(forms.ModelForm):
 
     def clean(self):
         # Check if user email is already in users
-        User = auth.get_user_model()
-
         try:
             existing_user = User.objects.get(
                 email=self.cleaned_data.get('email'))
@@ -480,3 +481,17 @@ def get_role_choices(project, current_user, allow_delegate=True):
     return [
         (role.pk, role.name) for role in Role.objects.exclude(
             name__in=role_excludes)]
+
+
+# TODO: TBD: Needed by other apps than projectroles? Move e.g. to utils?
+def get_selectable_users(current_user):
+    """
+    Return selectable users according to current user level: only show
+    non-system users for non-superusers
+    :param current_user: User object
+    :return: QuerySet
+    """
+    if not current_user.is_superuser:
+        return User.objects.exclude(groups__name='system')
+
+    return User.objects.all()

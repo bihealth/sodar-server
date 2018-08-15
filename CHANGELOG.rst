@@ -82,6 +82,7 @@ Changed
     - Sort zones in list by zone tiele (#312)
 - **Projectroles**
     - Minor email refactoring (#280)
+    - Hide system users from normal users' UI in member selection (#347)
 - **Samplesheets**
     - Search for VCF files under all family members in germline app (#275)
     - Include ``alt_name`` in GenericMaterial search (#285)
