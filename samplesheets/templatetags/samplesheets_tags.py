@@ -314,7 +314,7 @@ def render_field_headers(field_header, col_values):
         header = field_header[i]
 
         if col_values[i]:
-            ret += '<th class="{}">{}</th>\n'.format(
+            ret += '<th class="omics-ss-data-header {}">{}</th>\n'.format(
                 ' '.join(header['classes']), header['value'])
 
     return ret

@@ -455,6 +455,7 @@ IRODS_WEBDAV_URL = env.str('IRODS_WEBDAV_URL', 'https://0.0.0.0')
 
 # Samplesheets settings
 SHEETS_IRODS_QUERY_LIMIT = 100  # File query limit by project
+SHEETS_MAX_COLUMN_WIDTH = 350   # Max column width for content overflow
 
 SHEETS_EXTERNAL_LINK_LABELS = {
     'x-bih-buch-genomics-wetlab-id': 'Wetlab-ID assigned by BIH genomics unit '

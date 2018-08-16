@@ -1,5 +1,6 @@
 {# Projectroles dependency #}
 {% extends 'projectroles/project_base.html' %}
+{% load projectroles_common_tags %}
 
 {% load static %}
 {% load rules %}
@@ -8,6 +9,8 @@
 {% block title %}
   Sample Sheets for {{ project.title }}
 {% endblock title %}
+
+{% get_setting 'SHEETS_MAX_COLUMN_WIDTH' %}
 
 {% block css %}
   {{ block.super }}
@@ -49,13 +52,16 @@
       border-top: 0;
       border-right: 1px solid #dfdfdf;
       border-bottom: 1px solid #dfdfdf;
-      max-width: 350px;
+
+    }
+
+    th.omics-ss-data-header {
+      max-width: {% get_setting 'SHEETS_MAX_COLUMN_WIDTH' %}px;
     }
 
     td.omics-ss-data-cell {
-      max-width: 350px;
+      max-width: {% get_setting 'SHEETS_MAX_COLUMN_WIDTH' %}px;
       padding: 2px;
-      // max-height: 26px;
     }
 
     .omics-ss-data-table thead tr th:last-child {
@@ -156,7 +162,7 @@
     .omics-ss-overflow:hover {
       z-index: 1;
       width: auto;
-      background-color: #ffffcc;
+      background-color: #ffffe0;
       border: 1px solid #dfdfdf;
       box-shadow: 0 3px 3px -3px #909090;
     }
@@ -271,6 +277,11 @@
 
 {% block javascript %}
   {{ block.super }}
+
+  <!-- Settings for Javascript -->
+  <script type="text/javascript">
+    window.maxSheetColumnWidth = parseInt({% get_setting 'SHEETS_MAX_COLUMN_WIDTH' %}, 10);
+  </script>
 
   <!-- DataTables -->
   <script type="text/javascript" src="{% static 'datatables/datatables.min.js'%}"></script>

@@ -65,6 +65,7 @@ Added
     - Settings value ``SHEETS_EXTERNAL_LINK_LABELS`` (#349)
     - Custom display for different "contact" fields
     - Handle sheet table cell overflow
+    - Settings value ``SHEETS_MAX_COLUMN_WIDTH``
 
 Changed
 -------
