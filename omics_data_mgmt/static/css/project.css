@@ -456,6 +456,32 @@ dl.omics-dl dd {
   position: relative;
 }
 
+/* Badge group */
+.badge-group {
+    padding: 2px;
+}
+
+.badge-group > .badge:not(:first-child):not(:last-child) {
+	border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+	border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    margin-left: 0;
+    margin-right: 0;
+}
+
+.badge-group > .badge:first-child {
+	border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    margin-right: 0;
+}
+
+.badge-group > .badge:last-child {
+	border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    margin-left: 0;
+}
+
 /* Notch visualizaton for sidebar */
 .omics-pr-sidebar-nav-ul li.active:after {
     content: "";

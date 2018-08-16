@@ -27,7 +27,13 @@ register = template.Library()
 PROJECT_TYPE_PROJECT = OMICS_CONSTANTS['PROJECT_TYPE_PROJECT']
 
 # Local constants
+
 EMPTY_VALUE = '-'
+
+# TODO: Add a more dynamic way to render special fields (e.g. a plugin)
+SPECIAL_FIELDS = ['external links']
+
+EXTERNAL_LINK_LABELS = settings.SHEETS_EXTERNAL_LINK_LABELS
 
 
 # General ----------------------------------------------------------------------
@@ -363,29 +369,62 @@ def render_cells(row, table, assay=None, assay_plugin=None):
 
             # Add cell value
             if cell['value']:
-                value = escape(cell['value'])
+                # Special cases
+                if cell['field_name'] in SPECIAL_FIELDS:
+                    ret += render_special_field(cell)
 
-                # Ontology link
-                if cell['link']:
-                    ret += '<a href="{}" {}>{}</a>'.format(
-                        cell['link'],
-                        'target="_blank"' if not cell['link_file'] else '',
-                        value)
-
-                # Text
                 else:
-                    ret += value
+                    value = escape(cell['value'])
 
-                # Unit if present
-                if cell['unit']:
-                    ret += '&nbsp;<span class=" text-muted">{}</span>'.format(
-                        cell['unit'])
+                    # Ontology link
+                    if cell['link']:
+                        ret += '<a href="{}" {}>{}</a>'.format(
+                            cell['link'],
+                            'target="_blank"' if not cell['link_file'] else '',
+                            value)
+
+                    # Text
+                    else:
+                        ret += value
+
+                    # Unit if present
+                    if cell['unit']:
+                        ret += '&nbsp;<span class="text-muted">' \
+                               '{}</span>'.format(
+                                cell['unit'])
 
             else:  # Empty value
                 ret += EMPTY_VALUE
 
             ret += '</td>\n'
     return ret
+
+
+def render_special_field(cell):
+    """
+    Render the value of a special cell
+    :param cell: Dict
+    :return: String (contains HTML)
+    """
+    field_name = cell['field_name'].lower()
+    ret = ''
+
+    # External links
+    if field_name == 'external links':
+        print(cell['value'])    # DEBUG
+
+        for v in cell['value'].split(';'):
+            link = v.split(':')[0]
+            id = v.split(':')[1]
+
+            if link in EXTERNAL_LINK_LABELS:
+                ret += '<span class="badge-group" data-toggle="tooltip" ' \
+                       'data-placement="top" title="{}">' \
+                       '<span class="badge badge-secondary">ID</span>' \
+                       '<span class="badge badge-info">{}</span></span>'.format(
+                        EXTERNAL_LINK_LABELS[link], id)
+
+    return ret if ret != '' else EMPTY_VALUE
 
 
 @register.simple_tag

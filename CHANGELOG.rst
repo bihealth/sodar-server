@@ -16,6 +16,7 @@ Added
     - ``SITE_SUBTITLE`` setting to show beta status or something similar (#311)
     - API settings ``SODAR_API_DEFAULT_VERSION`` and ``SODAR_API_MEDIA_TYPE``
     - Domain/system user groups set on login or by management command ``syncgroups`` (#313)
+    - CSS classes for ``badge-group`` (#349)
 - **Adminalerts**
     - Enable Markdown in alert description (#196)
     - Display user in alert details (#330)
@@ -60,6 +61,8 @@ Added
     - Proof-of-concept ID Querying API with token authentication
     - iRODS files searchable in site search (#289)
     - Highlighting of search strings (#341)
+    - Custom display for "external links" fields (#349)
+    - Settings value ``SHEETS_EXTERNAL_LINK_LABELS`` (#349)
 
 Changed
 -------
