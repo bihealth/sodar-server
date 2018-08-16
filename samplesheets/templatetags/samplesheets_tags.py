@@ -8,7 +8,7 @@ from django.urls import reverse
 from django.utils.html import escape
 
 # Projectroles dependency
-from projectroles.models import Project, RoleAssignment, OMICS_CONSTANTS
+from projectroles.models import Project, OMICS_CONSTANTS
 from projectroles.plugins import get_backend_api
 
 from ..models import Investigation, Study, Assay, GenericMaterial, \
@@ -418,14 +418,14 @@ def render_special_field(cell):
     if field_name == 'external links':
         for v in cell['value'].split(';'):
             link = v.split(':')[0]
-            id = v.split(':')[1]
+            id_val = v.split(':')[1]
 
             if link in EXTERNAL_LINK_LABELS:
                 ret += '<span class="badge-group" data-toggle="tooltip" ' \
                        'data-placement="top" title="{}">' \
                        '<span class="badge badge-secondary">ID</span>' \
                        '<span class="badge badge-info">{}</span></span>'.format(
-                        EXTERNAL_LINK_LABELS[link], id)
+                        EXTERNAL_LINK_LABELS[link], id_val)
 
     # Contact field
     elif field_name in [
