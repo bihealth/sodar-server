@@ -364,18 +364,19 @@ def render_cells(row, table, assay=None, assay_plugin=None):
                 for k, v in cell['attrs'].items():
                     ret += '{}="{}" '.format(k, v)
 
-            if cell['tooltip']:
-                ret += 'class="{}" title="{}" data-toggle="tooltip" ' \
-                       'data-placement="top">'.format(
-                        td_class_str, cell['tooltip'])
-
-            else:
-                ret += 'class="{}">'.format(td_class_str)
+            ret += 'class="{}">'.format(td_class_str)
 
             # Add cell value
             if cell['value']:
                 ret += '<div class="omics-ss-data-cell-content ' \
-                       'omics-ss-overflow" >'
+                       'omics-ss-overflow"'
+
+                # Tooltip
+                if cell['tooltip']:
+                    ret += ' title="{}" data-toggle="tooltip" ' \
+                           'data-placement="top"'.format(cell['tooltip'])
+
+                ret += '>'
 
                 # Special cases
                 if cell['field_name'] in SPECIAL_FIELDS:
