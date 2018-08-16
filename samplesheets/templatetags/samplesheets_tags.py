@@ -351,7 +351,7 @@ def render_cells(row, table, assay=None, assay_plugin=None):
         cell = row[i]
 
         if table['col_values'][i]:
-            td_class_str = ' '.join(cell['classes'])
+            td_class_str = 'omics-ss-data-cell ' + ' '.join(cell['classes'])
 
             ret += '<td '
 
@@ -374,6 +374,9 @@ def render_cells(row, table, assay=None, assay_plugin=None):
 
             # Add cell value
             if cell['value']:
+                ret += '<div class="omics-ss-data-cell-content ' \
+                       'omics-ss-overflow" >'
+
                 # Special cases
                 if cell['field_name'] in SPECIAL_FIELDS:
                     ret += render_special_field(cell)
@@ -388,7 +391,6 @@ def render_cells(row, table, assay=None, assay_plugin=None):
                             'target="_blank"' if not cell['link_file'] else '',
                             value)
 
-                    # Text
                     else:
                         ret += value
 
@@ -397,6 +399,8 @@ def render_cells(row, table, assay=None, assay_plugin=None):
                         ret += '&nbsp;<span class="text-muted">' \
                                '{}</span>'.format(
                                 cell['unit'])
+
+                ret += '</div>'
 
             else:  # Empty value
                 ret += EMPTY_VALUE

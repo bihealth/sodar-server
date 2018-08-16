@@ -49,6 +49,13 @@
       border-top: 0;
       border-right: 1px solid #dfdfdf;
       border-bottom: 1px solid #dfdfdf;
+      max-width: 350px;
+    }
+
+    td.omics-ss-data-cell {
+      max-width: 350px;
+      padding: 2px;
+      // max-height: 26px;
     }
 
     .omics-ss-data-table thead tr th:last-child {
@@ -133,6 +140,25 @@
       margin-top: -3px !important; /* Force dropdown position */
       padding-top: 2px !important;
       height: 1.75em;
+    }
+
+    .omics-ss-data-cell-content {
+      display: inline-block;
+      position: relative;
+      width: 100%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      border: 1px solid transparent;
+      margin-bottom: -5px;  /* HACK for div/span expanding table cell */
+    }
+
+    .omics-ss-overflow:hover {
+      z-index: 1;
+      width: auto;
+      background-color: #ffffcc;
+      border: 1px solid #dfdfdf;
+      box-shadow: 0 3px 3px -3px #909090;
     }
 
     @media screen and (max-width: 1200px) {

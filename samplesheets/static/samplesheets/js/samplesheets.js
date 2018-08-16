@@ -118,4 +118,10 @@ $(document).ready(function() {
             $(this).attr('assay-hide-mode', '0');
         }
     });
+
+    $('.omics-ss-data-cell-content').each(function() {
+        if ($(this).prop('scrollWidth') <= 350) {
+            $(this).removeClass('omics-ss-overflow');
+        }
+    });
 });
