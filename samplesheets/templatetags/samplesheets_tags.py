@@ -31,7 +31,12 @@ PROJECT_TYPE_PROJECT = OMICS_CONSTANTS['PROJECT_TYPE_PROJECT']
 EMPTY_VALUE = '-'
 
 # TODO: Add a more dynamic way to render special fields (e.g. a plugin)
-SPECIAL_FIELDS = ['external links']
+SPECIAL_FIELDS = [
+    'external links',
+    'primary contact',
+    'provider contact',
+    'requestor contact',
+    'center contact']
 
 EXTERNAL_LINK_LABELS = settings.SHEETS_EXTERNAL_LINK_LABELS
 
@@ -411,8 +416,6 @@ def render_special_field(cell):
 
     # External links
     if field_name == 'external links':
-        print(cell['value'])    # DEBUG
-
         for v in cell['value'].split(';'):
             link = v.split(':')[0]
             id = v.split(':')[1]
@@ -423,6 +426,19 @@ def render_special_field(cell):
                        '<span class="badge badge-secondary">ID</span>' \
                        '<span class="badge badge-info">{}</span></span>'.format(
                         EXTERNAL_LINK_LABELS[link], id)
+
+    # Contact field
+    elif field_name in [
+            'primary contact', 'provider contact', 'requestor contact',
+            'center contact']:
+        email_result = re.findall(r'<(.+?)>', cell['value'])
+
+        if len(email_result) > 0:
+            ret += '<a href="mailto:{}">{}</a>'.format(
+                email_result[0], cell['value'].split('<')[0].strip())
+
+        else:
+            ret += cell['value']
 
     return ret if ret != '' else EMPTY_VALUE
 

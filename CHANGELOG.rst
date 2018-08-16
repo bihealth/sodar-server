@@ -63,6 +63,7 @@ Added
     - Highlighting of search strings (#341)
     - Custom display for "external links" fields (#349)
     - Settings value ``SHEETS_EXTERNAL_LINK_LABELS`` (#349)
+    - Custom display for different "contact" fields
 
 Changed
 -------
