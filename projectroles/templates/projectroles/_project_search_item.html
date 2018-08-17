@@ -2,20 +2,23 @@
 {% load projectroles_tags %}
 {% load projectroles_common_tags %}
 
+{# TODO: Why not get this from _project_filter_item.html? #}
 <tr class="omics-pr-project-list-item" id="omics-pr-project-search-item-{{ p.omics_uuid }}">
   <td>
-    {% if p.type == 'CATEGORY' %}
-      <i class="fa fa-fw fa-cubes"></i>
-    {% else %}
-      <i class="fa fa-fw fa-cube"></i>
-    {% endif %}
-    <a href="{% url 'projectroles:detail' project=p.omics_uuid %}">
-      {% get_project_title_html p as project_title %}
-      {% autoescape off %}
-        {% highlight_search_term project_title search_term %}
-        {% get_star p request.user %}
-      {% endautoescape %}
-    </a>
+    <div class="omics-overflow-container omics-overflow-hover">
+      {% if p.type == 'CATEGORY' %}
+        <i class="fa fa-fw fa-cubes"></i>
+      {% else %}
+        <i class="fa fa-fw fa-cube"></i>
+      {% endif %}
+      <a href="{% url 'projectroles:detail' project=p.omics_uuid %}">
+        {% get_project_title_html p as project_title %}
+        {% autoescape off %}
+          {% highlight_search_term project_title search_term %}
+          {% get_star p request.user %}
+        {% endautoescape %}
+      </a>
+    </div>
   </td>
   <td>
     {% autoescape off %}
