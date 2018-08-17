@@ -105,6 +105,7 @@ Changed
     - Enable genome_seq_nucleotide_seq app also for exomes (#315)
     - Rename genome_seq_nucleotide_seq into dna_sequencing (#315)
     - Refactor site search (#289)
+    - Exclude "name" column from automated aligning (#350)
 
 Fixed
 -----

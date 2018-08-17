@@ -356,7 +356,8 @@ def render_cells(row, table, assay=None, assay_plugin=None):
             ret += '<td '
 
             # Right aligning
-            if cell['value'] and num_re.match(cell['value']):
+            if (cell['field_name'] != 'name' and cell['value'] and
+                    num_re.match(cell['value'])):
                 td_class_str += ' text-right'
 
             # Add extra attrs if present
