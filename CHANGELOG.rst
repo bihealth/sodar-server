@@ -111,6 +111,8 @@ Fixed
     - Popover width in CSS (#291)
 - **Irodsbackend**
     - Handle missing user auth in API views without raising an exception (#337)
+- **Landingzones**
+    - Incorrectly calculated ``LANDINGZONES_STATUS_INTERVAL`` (#305)
 - **Projectroles**
     - Extra spaces and tabs broke search (#290)
     - Search not enabled if selecting previous input with mouse (#307)
