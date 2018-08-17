@@ -360,8 +360,9 @@ table.omics-irods-obj-table tbody tr td:nth-child(4) {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  border: 1px solid transparent;
-  margin-bottom: -5px;  /* HACK for div/span expanding table cell */
+  padding-right: 3px;
+  border: 1px solid transparent; /* HACK for expanding table cell */
+  margin-bottom: -5px;  /* HACK for expanding table cell */
 }
 
 .omics-overflow-hover:hover {
