@@ -6,7 +6,7 @@ Changelog for the SODAR Web UI. Loosely follows the
 guidelines.
 
 
-v0.3.1 (2018-08-17)
+v0.3.1 (2018-08-XX)
 ===================
 
 Added
@@ -70,6 +70,8 @@ Added
 Changed
 -------
 
+- **General**
+    - Search button CSS (#351)
 - **Adminalerts**
     - Update user when updating alert (#179)
 - **Filesfolders**
