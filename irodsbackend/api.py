@@ -444,6 +444,8 @@ class IrodsAPI:
         except CollectionDoesNotExist:
             raise FileNotFoundError('iRODS collection not found')
 
+        name_like = name_like.replace('_', '\_')
+
         ret = self._get_obj_list(
             coll, check_md5, name_like=name_like, limit=limit)
         return ret
