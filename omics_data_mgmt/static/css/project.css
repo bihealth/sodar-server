@@ -314,7 +314,6 @@ tr.omics-pr-project-list-header th:nth-child(3) {
 
 tr.omics-pr-project-list-item td:nth-child(1) {
   white-space: nowrap;
-  overflow: hidden;
   text-overflow: ellipsis;
 }
 
@@ -351,6 +350,26 @@ table.omics-irods-obj-table thead tr th:nth-child(4) {
 
 table.omics-irods-obj-table tbody tr td:nth-child(4) {
   text-align: center;
+}
+
+/* Container for overflowing table data */
+.omics-overflow-container {
+  display: inline-block;
+  position: relative;
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border: 1px solid transparent;
+  margin-bottom: -5px;  /* HACK for div/span expanding table cell */
+}
+
+.omics-overflow-hover:hover {
+  z-index: 1100;
+  width: auto;
+  background-color: #ffffe0;
+  border: 1px solid #dfdfdf;
+  box-shadow: 0 3px 3px -3px #909090;
 }
 
 /* Popups */

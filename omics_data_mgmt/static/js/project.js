@@ -21,6 +21,9 @@ Issues with the above approach:
 $('.form-group').removeClass('row');
 
 
+// TODO: Cleanup and refactor
+
+
 // From: https://stackoverflow.com/a/14919494
 function humanFileSize(bytes, si) {
     var thresh = si ? 1000 : 1024;
@@ -74,7 +77,7 @@ $(function(){
 // Disable nav project search until 3+ characters have been input
 // (not counting keyword)
 function modifySearch() {
-    v = $('#omics-nav-search-input').val();
+    var v = $('#omics-nav-search-input').val();
 
     if(v.length > 2) {
        $('#omics-nav-search-submit').attr('disabled', false);
@@ -93,6 +96,34 @@ $(document).ready(function() {
         modifySearch();
      });
  });
+
+
+// Function for enabling/disabling table cell overflow hover
+function modifyCellOverflow() {
+  $('.omics-overflow-container').each(function() {
+      var parentWidth = $(this).closest('td').width();
+
+      if ($(this).prop('scrollWidth') <= parentWidth &&
+              $(this).hasClass('omics-overflow-hover')) {
+          $(this).removeClass('omics-overflow-hover');
+      }
+
+      else if ($(this).prop('scrollWidth') > parentWidth &&
+              !$(this).hasClass('omics-overflow-hover')) {
+          $(this).addClass('omics-overflow-hover');
+      }
+  });
+}
+
+// On document load, enable/disable all overflow containers
+$(document).ready(function() {
+    modifyCellOverflow();
+});
+
+// On window resize, enable/disable all overflow containers
+$(window).resize(function() {
+    modifyCellOverflow();
+});
 
 
 // Home page project list filtering
@@ -116,10 +147,10 @@ $(document).ready(function() {
                 var titleTxt = $(this).find('td:nth-child(1)').attr('orig-txt');
                 var descTxt = $(this).find('td:nth-child(2)').attr('orig-txt');
 
-                if ($(this).find('td:nth-child(1) a').text().toLowerCase().indexOf(v) !== -1 ||
+                if ($(this).find('td:nth-child(1) div a').text().toLowerCase().indexOf(v) !== -1 ||
                     $(this).find('td:nth-child(2)').text().toLowerCase().indexOf(v) !== -1) {
                     // Reset content for updating the highlight
-                    $(this).find('td:nth-child(1) a').html(titleTxt);
+                    $(this).find('td:nth-child(1) div a').html(titleTxt);
                     $(this).find('td:nth-child(2)').html(descTxt);
 
                     // Highlight
@@ -129,7 +160,7 @@ $(document).ready(function() {
 
                     if (titlePos !== -1) {
                         var titleVal = titleTxt.substring(titlePos, titlePos + v.length);
-                        $(this).find('td:nth-child(1) a').html(titleTxt.replace(pattern, '<span class="omics-search-highlight">' + titleVal + '</span>'));
+                        $(this).find('td:nth-child(1) div a').html(titleTxt.replace(pattern, '<span class="omics-search-highlight">' + titleVal + '</span>'));
                     }
 
                     if (descPos !== -1) {
@@ -159,6 +190,9 @@ $(document).ready(function() {
             $('#omics-pr-project-list-filter').addClass('text-danger').removeClass('text-success');
             $('#omics-pr-project-list-link-star').attr('filter-mode', '0');
         }
+
+        // Update overflow status
+        modifyCellOverflow();
     });
 
     // Filter by starred
@@ -193,6 +227,9 @@ $(document).ready(function() {
             $('#omics-pr-project-list-link-star').html('<i class="fa fa-star-o"></i> Starred');
             $(this).attr('filter-mode', '0');
         }
+
+        // Update overflow status
+        modifyCellOverflow();
     });
 });
 

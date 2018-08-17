@@ -7,18 +7,20 @@
 <tr class="omics-pr-project-list-item omics-pr-home-display-filtered {% if is_starred %}omics-pr-home-display-starred{% endif %}"
     id="omics-pr-project-search-item-{{ p.omics_uuid }}">
   <td orig-txt="{{ p.get_full_title }}">
-    {% if p.type == 'CATEGORY' %}
-      <i class="fa fa-fw fa-cubes"></i>
-    {% else %}
-      <i class="fa fa-fw fa-cube"></i>
-    {% endif %}
-    <a href="{% url 'projectroles:detail' project=p.omics_uuid %}">
-      {% autoescape off %}
-        {% get_project_title_html p %}
-      {% endautoescape %}
-    </a>
-    {% get_star p request.user as project_star %}
-    {{ project_star|safe }}
+    <div class="omics-overflow-container omics-overflow-hover">
+      {% if p.type == 'CATEGORY' %}
+        <i class="fa fa-fw fa-cubes"></i>
+      {% else %}
+        <i class="fa fa-fw fa-cube"></i>
+      {% endif %}
+      <a href="{% url 'projectroles:detail' project=p.omics_uuid %}">
+        {% autoescape off %}
+          {% get_project_title_html p %}
+        {% endautoescape %}
+      </a>
+      {% get_star p request.user as project_star %}
+      {{ project_star|safe }}
+    </div>
   </td>
   <td orig-txt="{{ p.description }}">
     {{ p.description }}
