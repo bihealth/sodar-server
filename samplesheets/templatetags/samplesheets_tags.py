@@ -369,8 +369,8 @@ def render_cells(row, table, assay=None, assay_plugin=None):
 
             # Add cell value
             if cell['value']:
-                ret += '<div class="omics-ss-data-cell-content ' \
-                       'omics-ss-overflow"'
+                ret += '<div class="omics-overflow-container ' \
+                       'omics-overflow-hover"'
 
                 # Tooltip
                 if cell['tooltip']:

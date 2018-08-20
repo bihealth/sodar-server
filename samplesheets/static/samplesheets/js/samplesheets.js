@@ -118,15 +118,4 @@ $(document).ready(function() {
             $(this).attr('assay-hide-mode', '0');
         }
     });
-
-    /***************************************
-     Disable hover for non-overflowing cells
-     ***************************************/
-
-    $('.omics-ss-data-cell-content').each(function() {
-        if ($(this).prop('scrollWidth') <= window.maxSheetColumnWidth) {
-            $(this).removeClass('omics-ss-overflow');
-        }
-    });
-
 });

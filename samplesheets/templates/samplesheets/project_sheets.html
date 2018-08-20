@@ -148,25 +148,6 @@
       height: 1.75em;
     }
 
-    .omics-ss-data-cell-content {
-      display: inline-block;
-      position: relative;
-      width: 100%;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      border: 1px solid transparent;
-      margin-bottom: -5px;  /* HACK for div/span expanding table cell */
-    }
-
-    .omics-ss-overflow:hover {
-      z-index: 1;
-      width: auto;
-      background-color: #ffffe0;
-      border: 1px solid #dfdfdf;
-      box-shadow: 0 3px 3px -3px #909090;
-    }
-
     @media screen and (max-width: 1200px) {
       .omics-ss-nav {
         display: none;
@@ -277,11 +258,6 @@
 
 {% block javascript %}
   {{ block.super }}
-
-  <!-- Settings for Javascript -->
-  <script type="text/javascript">
-    window.maxSheetColumnWidth = parseInt({% get_setting 'SHEETS_MAX_COLUMN_WIDTH' %}, 10);
-  </script>
 
   <!-- DataTables -->
   <script type="text/javascript" src="{% static 'datatables/datatables.min.js'%}"></script>
