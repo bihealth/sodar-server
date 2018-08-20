@@ -60,8 +60,7 @@ def get_project_title_html(project):
     ret = ''
 
     if project.get_parents():
-        ret += '<span class="text-muted">{}</span>'.format(
-            ' / '.join(project.get_full_title().split(' / ')[:-1]) + ' / ')
+        ret += ' / '.join(project.get_full_title().split(' / ')[:-1]) + ' / '
 
     ret += project.title
     return ret
