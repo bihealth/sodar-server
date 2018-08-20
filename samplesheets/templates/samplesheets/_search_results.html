@@ -48,19 +48,25 @@
   }
 </style>
 
-<table class="table table-striped omics-card-table" id="omics-ss-search-table">
-  <thead>
-    <tr>
-      <th>Name</th>
-      <th>Type</th>
-      <th>Project</th>
-      <th>Study</th>
-      <th>Assay(s)</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% find_samplesheets_items search_term request.user search_type search_keywords as items %}
-    {% if items|length > 0 %}
+{% find_samplesheets_items search_term request.user search_type search_keywords as items %}
+
+{% if items|length > 0 %}
+
+  {% autoescape off %}
+    {% get_search_header plugin=plugin title='Sample Sheet Sources, Samples and iRODS Files' %}
+  {% endautoescape %}
+
+  <table class="table table-striped omics-card-table" id="omics-ss-search-table">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Project</th>
+        <th>Study</th>
+        <th>Assay(s)</th>
+      </tr>
+    </thead>
+    <tbody>
       {% for item in items %}
         {% include 'samplesheets/_search_item.html' with item=item %}
       {% endfor %}
@@ -69,10 +75,11 @@
           <td class="font-italic text-center" colspan="5">Some iRODS results may be omitted, please narrow down your search</td>
         </tr>
       {% endif %}
-    {% else %}
-      <tr>
-        <td class="font-italic text-center text-danger" colspan="5">No items found</td>
-      </tr>
-    {% endif %}
-  </tbody>
-</table>
+    </tbody>
+  </table>
+
+  {% autoescape off %}
+    {% get_search_footer %}
+  {% endautoescape %}
+
+{% endif %}

@@ -62,9 +62,6 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
     #: Search results template
     search_template = 'samplesheets/_search_results.html'
 
-    #: App card title for the main search page
-    search_title = 'Sample Sheet Sources, Samples and iRODS Files'
-
     #: App card template for the project details page
     details_template = 'samplesheets/_details_card.html'
 

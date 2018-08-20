@@ -61,10 +61,6 @@ class ProjectAppPluginPoint(PluginPoint):
     # TODO: Implement this in your app plugin
     search_template = None
 
-    #: App card title for the main search page
-    # TODO: Implement this in your app plugin
-    search_title = None
-
     #: App card template for the project details page
     # TODO: Implement this in your app plugin
     details_template = None

@@ -58,9 +58,6 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
     #: Search results template
     search_template = 'landingzones/_search_results.html'
 
-    #: App card title for the main search page
-    search_title = 'Landing Zones and Zone Files'
-
     #: App card template for the project details page
     details_template = 'landingzones/_details_card.html'
 

@@ -73,6 +73,7 @@ Changed
 
 - **General**
     - Search button CSS (#351)
+    - Refactor search views to allow multiple result sets from apps (#335)
 - **Adminalerts**
     - Update user when updating alert (#179)
 - **Filesfolders**
@@ -133,6 +134,8 @@ Fixed
 Removed
 -------
 
+- **General**
+    - Unused ``ProjectAppPluginPoint.search_title`` attribute (#335)
 - **Landingzones**
     - ``LandingZoneIrodsStatisticsGetAPIView`` and related redundant JQuery scripts
     - ``LANDINGZONES_STATISTICS_INTERVAL`` settings variable
