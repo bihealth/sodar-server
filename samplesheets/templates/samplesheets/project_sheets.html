@@ -259,6 +259,11 @@
 {% block javascript %}
   {{ block.super }}
 
+  <!-- Settings for Javascript -->
+  <script type="text/javascript">
+    window.refreshCellOverflow = false;
+  </script>
+
   <!-- DataTables -->
   <script type="text/javascript" src="{% static 'datatables/datatables.min.js'%}"></script>
 

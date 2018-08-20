@@ -122,7 +122,10 @@ $(document).ready(function() {
 
 // On window resize, enable/disable all overflow containers
 $(window).resize(function() {
-    modifyCellOverflow();
+    if (typeof(window.refreshCellOverflow) === 'undefined' ||
+            window.refreshCellOverflow !== false) {
+        modifyCellOverflow();
+    }
 });
 
 
