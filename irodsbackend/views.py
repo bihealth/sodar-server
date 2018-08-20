@@ -52,9 +52,15 @@ class BaseIrodsAPIView(APIView):
             return Response('Path does not belong to project', status=400)
 
         # Check site perms
+        try:
+            project_perm = self.request.user.has_perm(
+                'projectroles.view_project', self.project)
+
+        except Exception as ex:     # Catch INVALID_CREDENTIALS
+            return Response('Error checking permission', status=403)
+
         if (not self.request.user.is_superuser and (
-                self.project and not self.request.user.has_perm(
-                    'projectroles.view_project', self.project))):
+                self.project and not project_perm)):
             return Response('User not authorized for project', status=403)
 
         # Check iRODS perms
