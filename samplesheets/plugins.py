@@ -1,13 +1,19 @@
+from django.conf import settings
 from django.urls import reverse
 
 from djangoplugins.point import PluginPoint
 
 # Projectroles dependency
+from projectroles.models import Project, OMICS_CONSTANTS
 from projectroles.plugins import ProjectAppPluginPoint, get_backend_api
 
-from .models import Investigation
+from .models import Investigation, Study, Assay, GenericMaterial
 from .urls import urlpatterns
 from .utils import get_sample_dirs, get_isa_field_name
+
+
+# Omics constants
+PROJECT_TYPE_PROJECT = OMICS_CONSTANTS['PROJECT_TYPE_PROJECT']
 
 
 # Samplesheets project app plugin ----------------------------------------------
@@ -134,6 +140,102 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                 'samplesheets:project_sheets',
                 kwargs={'project': obj.project.omics_uuid}),
             'label': obj.title}
+
+    def search(self, search_term, user, search_type=None, keywords=None):
+        """
+        Return app items based on a search term, user, optional type and
+        optional keywords
+        :param search_term: String
+        :param user: User object for user initiating the search
+        :param search_type: String
+        :param keywords: List (optional)
+        :return: Dict
+        """
+        irods_backend = get_backend_api('omics_irods')
+
+        def get_materials(materials):
+            ret = []
+            assays = []
+
+            for m in materials:
+                if user.has_perm('samplesheets.view_sheet', m.get_project()):
+                    if m.item_type == 'SAMPLE':
+                        assays += m.get_sample_assays()
+
+                    else:
+                        assays = [m.assay]
+
+                    ret.append({
+                        'name': m.name,
+                        'type': m.item_type,
+                        'project': m.get_project(),
+                        'study': m.study,
+                        'assays': assays})
+
+            return ret
+
+        items = []
+
+        if not search_type or search_type == 'source':
+            items += get_materials(GenericMaterial.objects.find(
+                search_term, keywords, item_type='SOURCE'))
+
+        if not search_type or search_type == 'sample':
+            items += get_materials(GenericMaterial.objects.find(
+                search_term, keywords, item_type='SAMPLE'))
+
+        if irods_backend and (not search_type or search_type == 'file'):
+            if user.is_superuser:
+                projects = Project.objects.filter(type=PROJECT_TYPE_PROJECT)
+
+            else:
+                projects = Project.objects.filter(
+                    roles__user=user, type=PROJECT_TYPE_PROJECT)
+
+            for project in projects:
+                if (not user.is_superuser and
+                        not user.has_perm('samplesheets.view_sheet', project)):
+                    continue  # Skip rest if user has no perms for project
+
+                try:
+                    objs = irods_backend.get_objects(
+                        path=irods_backend.get_sample_path(project),
+                        name_like=search_term,
+                        limit=settings.SHEETS_IRODS_QUERY_LIMIT)
+
+                except FileNotFoundError:
+                    continue  # Skip rest if no data objects were found
+
+                for o in objs['data_objects']:
+                    study = None
+                    assay = None
+
+                    # Get study
+                    try:
+                        study = Study.objects.get(
+                            omics_uuid=irods_backend.get_uuid_from_path(
+                                o['path'], obj_type='study'))
+                        assay = Assay.objects.get(
+                            omics_uuid=irods_backend.get_uuid_from_path(
+                                o['path'], obj_type='assay'))
+
+                    except Exception as ex:
+                        pass
+
+                    items.append({
+                        'name': o['name'],
+                        'type': 'file',
+                        'project': project,
+                        'study': study,
+                        'assays': [assay] if Assay else None,
+                        'irods_path': o['path']})
+
+        items.sort(key=lambda x: x['name'].lower())
+
+        return {
+            'all': {
+                'title': 'Sample Sheet Sources, Samples and iRODS Files',
+                'items': items}}
 
 
 # Samplesheets study sub-app plugin --------------------------------------------

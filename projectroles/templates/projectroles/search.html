@@ -24,53 +24,47 @@
 </div>
 
 <div class="container-fluid omics-page-container">
-  {% if search_type and search_type != 'project' and search_apps|length == 0 %}
+  {% if search_type and search_type != 'project' and app_search_data|length == 0 %}
     <div class="alert alert-danger" role="alert">
       <strong>Error:</strong> Search type "{{ search_type }}" not recognized!
     </div>
-  {% else %}
 
+  {% else %}
     {# Project Search #}
 
     {% if not search_type or search_type == 'project' %}
-      <div class="card omics-card" id="omics-pr-search-project-list">
-        <div class="card-header">
-          <h4><i class="fa fa-cube"></i> Projects</h4>
+
+      {% if project_results|length > 0 %}
+        <div class="card omics-card" id="omics-pr-search-project-list">
+          <div class="card-header">
+            <h4><i class="fa fa-cube"></i> Projects</h4>
+          </div>
+          <div class="card-body omics-card-body-table">
+           <table class="table table-hover omics-card-table omics-card-table-borderless omics-pr-project-list-table" id="omics-pr-project-list-table">
+             <thead>
+               {% include 'projectroles/_project_list_header.html' %}
+             </thead>
+             <tbody>
+               {% for p in project_results %}
+                 {% include 'projectroles/_project_search_item.html' %}
+               {% endfor %}
+             </tbody>
+           </table>
+          </div>
         </div>
-        <div class="card-body omics-card-body-table">
-         <table class="table table-hover omics-card-table omics-card-table-borderless omics-pr-project-list-table" id="omics-pr-project-list-table">
-           <thead>
-             {% include 'projectroles/_project_list_header.html' %}
-           </thead>
-           <tbody>
-             {% find_projects search_term request.user as projects %}
-             {% for p in projects %}
-               {% include 'projectroles/_project_search_item.html' %}
-             {% endfor %}
-             {% if projects|length == 0 %}
-               <tr>
-                 <td class="bg-faded font-italic text-center text-danger" colspan="3">No projects found</td>
-               </tr>
-             {% endif %}
-           </tbody>
-         </table>
-        </div>
-      </div>
+      {% endif %}
+
     {% endif %}
 
     {# App Search #}
-    {% for plugin in search_apps %}
-        {% if plugin.search_template %}
-          <div class="card-body omics-card-body-table">
-            <div class="table-responsive omics-pr-app-search-container">
-              {% include plugin.search_template %}
-            </div>
+    {% for app in app_search_data %}
+      {% if app.plugin.search_template %}
+        <div class="card-body omics-card-body-table">
+          <div class="table-responsive omics-pr-app-search-container">
+            {% include app.plugin.search_template with plugin=app.plugin search_results=app.results %}
           </div>
-         {% else %}
-          <div class="card-body omics-card-body text-center">
-            <p class="text-danger"><em>No search template found</em></p>
-          </div>
-        {% endif %}
+        </div>
+      {% endif %}
     {% endfor %}
 
   {% endif %}

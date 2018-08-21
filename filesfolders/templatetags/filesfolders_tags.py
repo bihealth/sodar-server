@@ -36,37 +36,6 @@ def allow_public_links(project):
 
 
 @register.simple_tag
-def find_filesfolders_items(search_term, user, search_type, keywords):
-    """Return files, folders and/or links based on a search term, user and
-    possible type/keywords"""
-    ret = None
-
-    if not search_type:
-        files = File.objects.find(search_term, keywords)
-        folders = Folder.objects.find(search_term, keywords)
-        links = HyperLink.objects.find(search_term, keywords)
-        ret = list(files) + list(folders) + list(links)
-        ret.sort(key=lambda x: x.name.lower())
-
-    elif search_type == 'file':
-        ret = File.objects.find(search_term, keywords).order_by('name')
-
-    elif search_type == 'folder':
-        ret = Folder.objects.find(search_term, keywords).order_by('name')
-
-    elif search_type == 'link':
-        ret = HyperLink.objects.find(search_term, keywords).order_by('name')
-
-    if ret:
-        ret = [
-            x for x in ret if
-                user.has_perm('filesfolders.view_data', x.project)]
-        return ret
-
-    return None
-
-
-@register.simple_tag
 def get_file_icon(file):
     mt = file.file.file.mimetype
 

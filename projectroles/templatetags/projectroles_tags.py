@@ -69,6 +69,7 @@ def get_project_list_indent(project, list_parent):
     return project_depth * INDENT_PX
 
 
+# TODO: No longer used, remove
 @register.simple_tag
 def find_projects(search_term, user):
     """Return flat project list based on a search term and user permissions"""

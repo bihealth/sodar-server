@@ -124,6 +124,25 @@ class ProjectAppPluginPoint(PluginPoint):
         # TODO: Implement this in your app plugin
         return None
 
+    def search(self, search_term, user, search_type=None, keywords=None):
+        """
+        Return app items based on a search term, user, optional type and
+        optional keywords
+        :param search_term: String
+        :param user: User object for user initiating the search
+        :param search_type: String
+        :param keywords: List (optional)
+        :return: Dict
+        """
+        # TODO: Implement this in your app plugin
+        # TODO: Implement display of results in the app's search template
+        return {
+            'all': {    # You can add 1-N lists of result items
+                'title': 'Title to be displayed',
+                'items': []
+            }
+        }
+
 
 class BackendPluginPoint(PluginPoint):
     """Projectroles plugin point for registering backend apps"""

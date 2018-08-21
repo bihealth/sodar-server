@@ -339,17 +339,36 @@ class ProjectSearchView(LoginRequiredMixin, TemplateView):
         context['search_type'] = search_type
         context['search_keywords'] = search_keywords
 
+        # Get project results
+        if not search_type or search_type == 'project':
+            context['project_results'] = [
+                p for p in Project.objects.find(
+                    search_term, project_type='PROJECT') if
+                self.request.user.has_perm('projectroles.view_project', p)]
+
+        # Get app results
         if search_type:
-            context['search_apps'] = sorted([
+            search_apps = sorted([
                 p for p in plugins if (
                     p.search_enable and
                     search_type in p.search_types)],
                 key=lambda x: x.plugin_ordering)
 
         else:
-            context['search_apps'] = sorted(
+            search_apps = sorted(
                 [p for p in plugins if p.search_enable],
                 key=lambda x: x.plugin_ordering)
+
+        context['app_search_data'] = []
+
+        for plugin in search_apps:
+            context['app_search_data'].append({
+                'plugin': plugin,
+                'results': plugin.search(
+                    search_term,
+                    self.request.user,
+                    search_type,
+                    search_keywords)})
 
         return context
 

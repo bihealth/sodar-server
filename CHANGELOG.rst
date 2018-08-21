@@ -24,6 +24,7 @@ Added
     - Text style depending on item flag (#303)
     - Optional automated unpacking for uploaded zip files (#327)
     - Setting ``FILESFOLDERS_MAX_ARCHIVE_SIZE`` (#327)
+    - ``search()`` function in plugin (#335)
 - **Irodsbackend**
     - Generic iRODS file statistics view, template tags and Javascript (#181, #188)
     - Missing support for Investigation objects in ``get_path()`` (#292)
@@ -67,6 +68,7 @@ Added
     - Custom display for different "contact" fields
     - Handle sheet table cell overflow
     - Settings value ``SHEETS_MAX_COLUMN_WIDTH``
+    - ``search()`` function in plugin (#335)
 
 Changed
 -------
@@ -74,6 +76,7 @@ Changed
 - **General**
     - Search button CSS (#351)
     - Refactor search views to allow multiple result sets from apps (#335)
+    - Implement search in ``ProjectAppPlugin.search()`` instead of template tags (#335)
 - **Adminalerts**
     - Update user when updating alert (#179)
 - **Filesfolders**
@@ -93,6 +96,7 @@ Changed
 - **Projectroles**
     - Minor email refactoring (#280)
     - Hide system users from normal users' UI in member selection (#347)
+    - Hide search elements if no results are found (#288)
 - **Samplesheets**
     - Search for VCF files under all family members in germline app (#275)
     - Include ``alt_name`` in GenericMaterial search (#285)
@@ -136,16 +140,21 @@ Removed
 
 - **General**
     - Unused ``ProjectAppPluginPoint.search_title`` attribute (#335)
+- **Filesfolders**
+    - ``find_filesfolders_items()`` template tag (#335)
 - **Landingzones**
     - ``LandingZoneIrodsStatisticsGetAPIView`` and related redundant JQuery scripts
     - ``LANDINGZONES_STATISTICS_INTERVAL`` settings variable
     - ``LandingZoneIrodsObjectListAPIView``, use view in irodsbackend instead (#308)
+- **Projectroles**
+    - ``find_projects()`` template tag (#335)
 - **Samplesheets**
     - MD5 display from file list view
     - Deprecated ``irods_base_dir`` from views
     - ``IrodsObjectListAPIView``, use view in irodsbackend instead (#308)
     - ``samplesheets_common.js``, functionality now in irodsbackend (#301)
     - ``utils.get_last_material_index()``, no longer used (#317)
+    - ``find_samplesheets_items()`` template tag (#335)
 
 
 v0.3.0 (2018-07-03)

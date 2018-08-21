@@ -46,12 +46,10 @@
   }
 </style>
 
-{% find_filesfolders_items search_term request.user search_type search_keywords as items %}
-
-{% if items|length > 0 %}
+{% if search_results.all.items|length > 0 %}
 
   {% autoescape off %}
-    {% get_search_header plugin=plugin title='Small Files, Folders and Links' %}
+    {% get_search_header plugin=plugin title=search_results.all.title %}
   {% endautoescape %}
 
   <table class="table table-striped omics-card-table" id="omics-ff-search-table">
@@ -64,7 +62,7 @@
       </tr>
     </thead>
     <tbody>
-      {% for item in items %}
+      {% for item in search_results.all.items %}
         {% has_perm 'filesfolders.share_public_link' request.user item.project as can_share_link %}
         {% allow_public_links item.project as allow_public_links %}
         {% include 'filesfolders/_search_item.html' with item=item can_share_link=can_share_link %}

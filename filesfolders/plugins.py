@@ -108,3 +108,41 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                 'blank': True}
 
         return None
+
+    def search(self, search_term, user, search_type=None, keywords=None):
+        """
+        Return app items based on a search term, user, optional type and
+        optional keywords
+        :param search_term: String
+        :param user: User object for user initiating the search
+        :param search_type: String
+        :param keywords: List (optional)
+        :return: Dict
+        """
+        items = []
+
+        if not search_type:
+            files = File.objects.find(search_term, keywords)
+            folders = Folder.objects.find(search_term, keywords)
+            links = HyperLink.objects.find(search_term, keywords)
+            items = list(files) + list(folders) + list(links)
+            items.sort(key=lambda x: x.name.lower())
+
+        elif search_type == 'file':
+            items = File.objects.find(search_term, keywords).order_by('name')
+
+        elif search_type == 'folder':
+            items = Folder.objects.find(search_term, keywords).order_by('name')
+
+        elif search_type == 'link':
+            items = HyperLink.objects.find(
+                search_term, keywords).order_by('name')
+
+        if items:
+            items = [
+                x for x in items if
+                user.has_perm('filesfolders.view_data', x.project)]
+            return {
+                'all': {
+                    'title': 'Small Files, Folders and Links',
+                    'items': items}}
