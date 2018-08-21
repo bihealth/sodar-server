@@ -82,6 +82,7 @@ Changed
     - Update user when updating alert (#179)
 - **Filesfolders**
     - Refactor timeline event creation for object modification
+    - Unify project title printing in search with other apps (#335)
 - **Irodsbackend**
     - Optimize iRODS queries for increased performance (#242)
     - Improve collection listing popup layout

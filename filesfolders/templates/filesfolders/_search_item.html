@@ -37,7 +37,6 @@
   </td>
   {# Project column #}
   <td>
-    {% get_project_title_html item.project as project_title %}
     {% if item.folder %}
       <a href="{% url 'filesfolders:list' folder=item.folder.omics_uuid %}">
     {% else %}
@@ -45,7 +44,7 @@
     {% endif %}
       {% autoescape off %}
         {# NOTE: No highlight here as project is not searched for here #}
-        {% get_project_title_html item.project %}
+        {{ item.project.title }}
       {% endautoescape %}
     </a>
   </td>
