@@ -69,13 +69,31 @@ def get_project_list_indent(project, list_parent):
     return project_depth * INDENT_PX
 
 
-# TODO: No longer used, remove
 @register.simple_tag
-def find_projects(search_term, user):
-    """Return flat project list based on a search term and user permissions"""
-    return [p for p in Project.objects.find(
-        search_term, project_type='PROJECT') if
-            user.has_perm('projectroles.view_project', p)]
+def print_not_found_alert(project_results, app_search_data, search_type):
+    """Print out alert for data which was not found during search, if any"""
+    not_found = []
+
+    if (len(project_results) == 0 and (
+            not search_type or search_type == 'project')):
+        not_found.append('Projects'),
+
+    for results in [a['results'] for a in app_search_data]:
+        if results:
+            for k, result in results.items():
+                print('result={}'.format(result))   # DEBUG
+                if not result['items'] or len(result['items']) == 0:
+                    not_found.append(result['title'])
+
+    if not_found:
+        ret = '<div class="alert alert-info pb-0">\n' \
+              'No results found:\n<ul>\n' \
+
+        for n in not_found:
+            ret += '<li>{}</li>\n'.format(n)
+
+        ret += '</ul>\n</div>\n'
+        return ret
 
 
 @register.simple_tag

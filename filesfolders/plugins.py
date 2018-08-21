@@ -142,7 +142,8 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
             items = [
                 x for x in items if
                 user.has_perm('filesfolders.view_data', x.project)]
-            return {
-                'all': {
-                    'title': 'Small Files, Folders and Links',
-                    'items': items}}
+
+        return {
+            'all': {
+                'title': 'Small Files, Folders and Links',
+                'items': items}}

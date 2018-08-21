@@ -69,6 +69,10 @@
 
   {% endif %}
 
+  {% autoescape off %}
+    {% print_not_found_alert project_results app_search_data search_type %}
+  {% endautoescape %}
+
 </div>
 
 {% endblock projectroles %}

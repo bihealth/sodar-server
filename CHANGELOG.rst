@@ -52,6 +52,7 @@ Added
     - Helper mixin ``KnoxAuthMixin`` for views testing
     - Sanitize search input (#332)
     - Handle project list title cell overflow (#306)
+    - No results alert for search (#288)
 - **Samplesheets**
     - Display original study/assay filenames as tooltips (#283)
     - Display assays for samples in search results (#157)
