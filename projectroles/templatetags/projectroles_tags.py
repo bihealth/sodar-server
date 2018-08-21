@@ -81,7 +81,6 @@ def print_not_found_alert(project_results, app_search_data, search_type):
     for results in [a['results'] for a in app_search_data]:
         if results:
             for k, result in results.items():
-                print('result={}'.format(result))   # DEBUG
                 if not result['items'] or len(result['items']) == 0:
                     not_found.append(result['title'])
 

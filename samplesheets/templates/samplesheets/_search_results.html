@@ -48,13 +48,13 @@
   }
 </style>
 
-{% if search_results.all.items|length > 0 %}
+{% if search_results.materials.items|length > 0 %}
 
   {% autoescape off %}
-    {% get_search_header plugin=plugin title=search_results.all.title %}
+    {% get_search_header plugin=plugin title=search_results.materials.title id_suffix='materials' %}
   {% endautoescape %}
 
-  <table class="table table-striped omics-card-table" id="omics-ss-search-table">
+  <table class="table table-striped omics-card-table" id="omics-ss-search-table-materials">
     <thead>
       <tr>
         <th>Name</th>
@@ -65,12 +65,41 @@
       </tr>
     </thead>
     <tbody>
-      {% for item in search_results.all.items %}
+      {% for item in search_results.materials.items %}
         {% include 'samplesheets/_search_item.html' with item=item %}
       {% endfor %}
-      {% if search_results.all.items|length >= irods_query_limit %}
+    </tbody>
+  </table>
+
+  {% autoescape off %}
+    {% get_search_footer %}
+  {% endautoescape %}
+
+{% endif %}
+
+
+{% if search_results.files.items|length > 0 %}
+
+  {% autoescape off %}
+    {% get_search_header plugin=plugin title=search_results.files.title id_suffix='files' %}
+  {% endautoescape %}
+
+  <table class="table table-striped omics-card-table" id="omics-ss-search-table-files">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Project</th>
+        <th>Study</th>
+        <th>Assay(s)</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in search_results.files.items %}
+        {% include 'samplesheets/_search_item.html' with item=item %}
+      {% endfor %}
+      {% if search_results.files.items|length >= irods_query_limit %}
         <tr>
-          <td class="font-italic text-center" colspan="5">Some iRODS results may be omitted, please narrow down your search</td>
+          <td class="font-italic text-center" colspan="5">Some results may be omitted, please narrow down your search</td>
         </tr>
       {% endif %}
     </tbody>

@@ -152,7 +152,9 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         :return: Dict
         """
         irods_backend = get_backend_api('omics_irods')
+        results = {}
 
+        # Materials
         def get_materials(materials):
             ret = []
             assays = []
@@ -174,15 +176,25 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
 
             return ret
 
-        items = []
+        material_items = []
 
         if not search_type or search_type == 'source':
-            items += get_materials(GenericMaterial.objects.find(
+            material_items += get_materials(GenericMaterial.objects.find(
                 search_term, keywords, item_type='SOURCE'))
 
         if not search_type or search_type == 'sample':
-            items += get_materials(GenericMaterial.objects.find(
+            material_items += get_materials(GenericMaterial.objects.find(
                 search_term, keywords, item_type='SAMPLE'))
+
+        if material_items:
+            material_items.sort(key=lambda x: x['name'].lower())
+
+        results['materials'] = {
+            'title': 'Sample Sheet Sources and Samples',
+            'items': material_items}
+
+        # iRODS files
+        file_items = []
 
         if irods_backend and (not search_type or search_type == 'file'):
             if user.is_superuser:
@@ -222,7 +234,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                     except Exception as ex:
                         pass
 
-                    items.append({
+                    file_items.append({
                         'name': o['name'],
                         'type': 'file',
                         'project': project,
@@ -230,12 +242,14 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                         'assays': [assay] if Assay else None,
                         'irods_path': o['path']})
 
-        items.sort(key=lambda x: x['name'].lower())
+        if file_items:
+            file_items.sort(key=lambda x: x['name'].lower())
 
-        return {
-            'all': {
-                'title': 'Sample Sheet Sources, Samples and iRODS Files',
-                'items': items}}
+        results['files'] = {
+            'title': 'Sample Files in iRODS',
+            'items': file_items}
+
+        return results
 
 
 # Samplesheets study sub-app plugin --------------------------------------------

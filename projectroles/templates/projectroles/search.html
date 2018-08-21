@@ -59,11 +59,7 @@
     {# App Search #}
     {% for app in app_search_data %}
       {% if app.plugin.search_template %}
-        <div class="card-body omics-card-body-table">
-          <div class="table-responsive omics-pr-app-search-container">
-            {% include app.plugin.search_template with plugin=app.plugin search_results=app.results %}
-          </div>
-        </div>
+        {% include app.plugin.search_template with plugin=app.plugin search_results=app.results %}
       {% endif %}
     {% endfor %}
 

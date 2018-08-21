@@ -22,9 +22,11 @@
       {% endif %}
     {% endif %}
   </td>
-  <td class="text-nowrap">
-    {% get_search_item_type item %}
-  </td>
+  {% if item.type != 'file' %}
+    <td class="text-nowrap">
+      {% get_search_item_type item %}
+    </td>
+  {% endif %}
   <td>
     {% autoescape off %}
       {% get_project_link item.project %}
