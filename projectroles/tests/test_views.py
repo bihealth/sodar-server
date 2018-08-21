@@ -208,7 +208,7 @@ class TestProjectSearchView(TestViewsBase, ProjectMixin, RoleAssignmentMixin):
         self.assertEqual(response.context['search_type'], None)
         self.assertEqual(response.context['search_input'], 'test')
         self.assertEqual(
-            len(response.context['search_apps']),
+            len(response.context['app_search_data']),
             len([p for p in self.plugins if p.search_enable]))
 
     def test_render_search_type(self):
@@ -225,7 +225,7 @@ class TestProjectSearchView(TestViewsBase, ProjectMixin, RoleAssignmentMixin):
         self.assertEqual(response.context['search_type'], 'file')
         self.assertEqual(response.context['search_input'], 'test type:file')
         self.assertEqual(
-            len(response.context['search_apps']),
+            len(response.context['app_search_data']),
             len([p for p in self.plugins if (
                 p.search_enable and
                 response.context['search_type'] in p.search_types)]))
