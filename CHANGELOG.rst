@@ -134,6 +134,7 @@ Fixed
     - CSS highlight bug in nav dropdown
     - Content app DataTable header broke layout if following assay anchor (#224)
     - Wrong CSS class in pep_ms (#318)
+    - Assays not filtered by project in sample search (#358)
 - **Timeline**
     - Not found label did not reflect timeline_mode (#346)
 

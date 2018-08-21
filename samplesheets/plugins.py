@@ -157,12 +157,12 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         # Materials
         def get_materials(materials):
             ret = []
-            assays = []
 
             for m in materials:
                 if user.has_perm('samplesheets.view_sheet', m.get_project()):
                     if m.item_type == 'SAMPLE':
-                        assays += m.get_sample_assays()
+                        assays = m.get_sample_assays()
+                        print('assays: {}'.format(len(assays)))  # DEBUG
 
                     else:
                         assays = [m.assay]
