@@ -12,36 +12,36 @@
 <tr class="omics-ss-search-list-item" id="omics-ss-project-search-item-{{ item.omics_uuid }}">
   <td>
     <div class="omics-overflow-container omics-overflow-hover">
-    {% highlight_search_term item.name search_term as item_display_name %}
-    {% if item.type != 'file' %}
-      <a href="{% url 'samplesheets:project_sheets' study=item.study.omics_uuid %}">{{ item_display_name | safe }}</a>
-    {% else %}
-      {% if webdav_url %}
-        <a href="{{ webdav_url }}{{ item.irods_path }}">{{ item_display_name | safe }}</a>
+      {% highlight_search_term item.name search_term as item_display_name %}
+      {% if item.type != 'file' %}
+        <a href="{% url 'samplesheets:project_sheets' study=item.study.omics_uuid %}">{{ item_display_name | safe }}</a>
       {% else %}
-        {{ item_display_name }}
+        {% if webdav_url %}
+          <a href="{{ webdav_url }}{{ item.irods_path }}">{{ item_display_name | safe }}</a>
+        {% else %}
+          {{ item_display_name }}
+        {% endif %}
       {% endif %}
+    </div>
+  </td>
+    {% if item.type != 'file' %}
+      <td class="text-nowrap">
+        {% get_search_item_type item %}
+      </td>
     {% endif %}
-    </div>
-  </td>
-  {% if item.type != 'file' %}
-    <td class="text-nowrap">
-      {% get_search_item_type item %}
-    </td>
-  {% endif %}
   <td>
     <div class="omics-overflow-container omics-overflow-hover">
-    {% autoescape off %}
-      {% get_project_link item.project %}
-    {% endautoescape %}
+      {% autoescape off %}
+        {% get_project_link item.project %}
+      {% endautoescape %}
     </div>
   </td>
   <td>
     <div class="omics-overflow-container omics-overflow-hover">
-    {% if item.study %}
-      <a href="{% url 'samplesheets:project_sheets' study=item.study.omics_uuid %}">
-        {{ item.study.get_display_name }}
-      </a>
+      {% if item.study %}
+        <a href="{% url 'samplesheets:project_sheets' study=item.study.omics_uuid %}">
+          {{ item.study.get_display_name }}
+        </a>
     {% else %}
       N/A
     {% endif %}
@@ -51,10 +51,10 @@
     {% if item.assays %}
       {% for assay in item.assays %}
         <div class="omics-overflow-container omics-overflow-hover-disable">
-        <a href="{% url 'samplesheets:project_sheets' study=item.study.omics_uuid %}#assay{{ assay.omics_uuid }}">
-          {{ assay.get_display_name }}
-        </a>
-        <br />
+          <a href="{% url 'samplesheets:project_sheets' study=item.study.omics_uuid %}#assay{{ assay.omics_uuid }}">
+            {{ assay.get_display_name }}
+          </a>
+          <br />
         </div>
       {% endfor %}
     {% else %}
