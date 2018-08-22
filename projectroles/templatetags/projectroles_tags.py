@@ -85,7 +85,8 @@ def print_not_found_alert(project_results, app_search_data, search_type):
                     not_found.append(result['title'])
 
     if not_found:
-        ret = '<div class="alert alert-info pb-0">\n' \
+        ret = '<div class="alert alert-info pb-0 d-none" ' \
+              'id="omics-search-not-found-alert">\n' \
               'No results found:\n<ul>\n' \
 
         for n in not_found:

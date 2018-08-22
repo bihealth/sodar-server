@@ -142,21 +142,26 @@ $(document).ready(function() {
     $.fn.dataTable.ext.classes.sPageButton =
         'btn btn-secondary omics-list-btn ml-1 omics-paginate-button';
 
-    $('.omics-search-table').DataTable({
-        // scrollY: 300,
-        scrollX: false,
-        paging: true,
-        pageLength: 5,
-        scrollCollapse: true,
-        info: false,
-        language: {
-            paginate: {
-                previous: '<i class="fa fa-arrow-circle-left"></i> Previous',
-                next: '<i class="fa fa-arrow-circle-right"></i> Next'
-            }
-        },
-        dom: 'tp'
+    $('.omics-search-table').each(function() {
+        $(this).DataTable({
+            scrollX: false,
+            paging: true,
+            pageLength: 10,
+            scrollCollapse: true,
+            info: false,
+            language: {
+                paginate: {
+                    previous: '<i class="fa fa-arrow-circle-left"></i> Previous',
+                    next: '<i class="fa fa-arrow-circle-right"></i> Next'
+                }
+            },
+            dom: 'tp'
+        });
+
+        $(this).closest('div.omics-search-card').show();
     });
+
+    $('div#omics-search-not-found-alert').removeClass('d-none');
 });
 
 
