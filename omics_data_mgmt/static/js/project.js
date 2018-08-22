@@ -162,6 +162,9 @@ $(document).ready(function() {
     });
 
     $('div#omics-search-not-found-alert').removeClass('d-none');
+
+    // Update overflow status
+    modifyCellOverflow();
 });
 
 

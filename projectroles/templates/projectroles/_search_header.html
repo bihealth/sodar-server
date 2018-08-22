@@ -1,7 +1,8 @@
 <div class="card omics-card omics-search-card">
   <div class="card-header">
     <h4>
-      <i class="fa fa-{{ plugin.icon }}"></i> {{ search_title }}
+      <i class="fa fa-{% if icon %}{{ icon }}{% else %}{{ plugin.icon }}{% endif %}"></i>
+      {{ search_title }}
       {% if result_count %}
        ({{ result_count }})
       {% endif %}

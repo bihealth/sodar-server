@@ -31,10 +31,12 @@
     }
 
     .table.omics-search-table thead tr th {
+      padding: 12px !important;
       max-width: 250px !important;
     }
 
     .table.omics-search-table tbody tr td {
+      padding: 12px !important;
       max-width: 250px !important;
     }
 
@@ -100,6 +102,25 @@
     {% if not search_type or search_type == 'project' %}
 
       {% if project_results|length > 0 %}
+        {% include 'projectroles/_search_header.html' with search_title='Projects' result_count=project_results|length icon='cube' %}
+
+        <table class="table table-striped omics-card-table omics-search-table" id="omics-ff-search-table">
+          <thead>
+            <tr>
+              <th>Project</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in project_results %}
+              {% include 'projectroles/_project_search_item.html' %}
+            {% endfor %}
+          </tbody>
+        </table>
+
+        {% include 'projectroles/_search_footer.html' %}
+
+        {% comment %}
         <div class="card omics-card" id="omics-pr-search-project-list">
           <div class="card-header">
             <h4><i class="fa fa-cube"></i> Projects</h4>
@@ -117,6 +138,7 @@
            </table>
           </div>
         </div>
+        {% endcomment %}
       {% endif %}
 
     {% endif %}

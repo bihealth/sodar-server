@@ -50,7 +50,7 @@
   <td>
     {% if item.assays %}
       {% for assay in item.assays %}
-        <div class="omics-overflow-container omics-overflow-hover-disable">
+        <div class="omics-overflow-container">
           <a href="{% url 'samplesheets:project_sheets' study=item.study.omics_uuid %}#assay{{ assay.omics_uuid }}">
             {{ assay.get_display_name }}
           </a>

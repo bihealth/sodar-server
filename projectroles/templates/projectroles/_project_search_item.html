@@ -2,7 +2,6 @@
 {% load projectroles_tags %}
 {% load projectroles_common_tags %}
 
-{# TODO: Why not get this from _project_filter_item.html? #}
 <tr class="omics-pr-project-list-item" id="omics-pr-project-search-item-{{ p.omics_uuid }}">
   <td>
     <div class="omics-overflow-container omics-overflow-hover">
@@ -21,13 +20,10 @@
     </div>
   </td>
   <td>
-    {% autoescape off %}
-      {% highlight_search_term p.description search_term %}
-    {% endautoescape %}
-  </td>
-  <td>
-    {% autoescape off %}
-      {% get_user_role_str p request.user %}
-    {% endautoescape %}
+    <div class="omics-overflow-container">
+      {% autoescape off %}
+        {% highlight_search_term p.description search_term %}
+      {% endautoescape %}
+    </div>
   </td>
 </tr>
