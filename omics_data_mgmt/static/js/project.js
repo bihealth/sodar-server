@@ -102,15 +102,22 @@ $(document).ready(function() {
 function modifyCellOverflow() {
   $('.omics-overflow-container').each(function() {
       var parentWidth = $(this).closest('td').width();
+      var lastVisibleTd = false;
 
-      if ($(this).prop('scrollWidth') <= parentWidth &&
-              $(this).hasClass('omics-overflow-hover')) {
+      // Don't allow adding hover to last visible td for now
+      if ($(this).closest('td').is($(this).closest('tr').find('td:visible:last'))) {
+          lastVisibleTd = true;
+      }
+
+      if ($(this).hasClass('omics-overflow-hover') && (
+            lastVisibleTd === true || $(this).prop('scrollWidth') <= parentWidth)) {
           $(this).removeClass('omics-overflow-hover');
       }
 
       else if ($(this).prop('scrollWidth') > parentWidth &&
               !$(this).hasClass('omics-overflow-hover') &&
-              !$(this).hasClass('omics-overflow-hover-disable')) {
+              !$(this).hasClass('omics-overflow-hover-disable') &&
+              lastVisibleTd === false) {
           $(this).addClass('omics-overflow-hover');
       }
   });

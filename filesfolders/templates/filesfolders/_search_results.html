@@ -47,9 +47,7 @@
 
 {% if search_results.all.items|length > 0 %}
 
-  {% autoescape off %}
-    {% get_search_header plugin=plugin title=search_results.all.title %}
-  {% endautoescape %}
+  {% include 'projectroles/_search_header.html' with search_title=search_results.all.title %}
 
   <table class="table table-striped omics-card-table omics-search-table" id="omics-ff-search-table">
     <thead>
@@ -69,8 +67,6 @@
     </tbody>
   </table>
 
-  {% autoescape off %}
-    {% get_search_footer %}
-  {% endautoescape %}
+  {% include 'projectroles/_search_footer.html' %}
 
 {% endif %}

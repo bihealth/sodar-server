@@ -119,34 +119,3 @@ def check_backend(name):
 def get_setting(name):
     """Return value of Django setting by name or None if it is not found"""
     return getattr(settings, name) if hasattr(settings, name) else None
-
-
-# TODO: Add this as a template instead?
-@register.simple_tag
-def get_search_header(plugin, title, id_suffix=None):
-    """
-    Return header for search results
-    :param plugin: ProjectAppPlugin object
-    :param title: Result element title
-    :param id_suffix: Optional suffix for the element HTML ID
-    :return: String (contains HTML)
-    """
-    ret = '<div class="card omics-card omics-pr-app-card" ' \
-          'id="omics-pr-search-app-item-{}{}">\n'.format(
-            plugin.name,
-            ('-' + id_suffix) if id_suffix else '')
-
-    ret += '<div class="card-header">' \
-           '<h4><i class="fa fa-{}"></i> {}</h4></div>\n'.format(
-            plugin.icon, title)
-
-    ret += '<div class="card-body omics-card-body-table">' \
-           '\n'
-
-    return ret
-
-
-@register.simple_tag
-def get_search_footer():
-    """Return search element footer"""
-    return '\n</div>\n</div>\n'

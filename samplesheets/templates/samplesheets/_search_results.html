@@ -91,9 +91,7 @@
 
 {% if search_results.materials.items|length > 0 %}
 
-  {% autoescape off %}
-    {% get_search_header plugin=plugin title=search_results.materials.title id_suffix='materials' %}
-  {% endautoescape %}
+  {% include 'projectroles/_search_header.html' with search_title=search_results.materials.title %}
 
   <table class="table table-striped omics-card-table omics-search-table" id="omics-ss-search-table-materials">
     <thead>
@@ -112,18 +110,14 @@
     </tbody>
   </table>
 
-  {% autoescape off %}
-    {% get_search_footer %}
-  {% endautoescape %}
+  {% include 'projectroles/_search_footer.html' %}
 
 {% endif %}
 
 
 {% if search_results.files.items|length > 0 %}
 
-  {% autoescape off %}
-    {% get_search_header plugin=plugin title=search_results.files.title id_suffix='files' %}
-  {% endautoescape %}
+  {% include 'projectroles/_search_header.html' with search_title=search_results.files.title %}
 
   <table class="table table-striped omics-card-table omics-search-table" id="omics-ss-search-table-files">
     <thead>
@@ -146,8 +140,6 @@
     </tbody>
   </table>
 
-  {% autoescape off %}
-    {% get_search_footer %}
-  {% endautoescape %}
+  {% include 'projectroles/_search_footer.html' %}
 
 {% endif %}
