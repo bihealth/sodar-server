@@ -13,21 +13,64 @@
 {% block css %}
   {{ block.super }}
 
+  <!-- DataTables -->
+  <link rel="stylesheet" type="text/css" href="{% static 'datatables/datatables.min.css' %}"/>
+  <link rel="stylesheet" type="text/css" href="{% static 'datatables/DataTables-1.10.16/integration/dataTables.fontAwesome.css' %}"/>
+
   <style type="text/css">
     table.omics-search-table {
-      table-layout: fixed;
+      display: inline-table;
       min-width: 100%;
       max-width: 100%;
+      width: 100%;
+      border-bottom: 1px solid #dfdfdf !important;
     }
+
+    .table.omics-search-table thead tr th {
+      max-width: 250px !important;
+    }
+
+    .table.omics-search-table tbody tr td {
+      max-width: 250px !important;
+    }
+
+    .table.omics-search-table thead tr th:first-child {
+      width: 40% !important;
+    }
+
+    .table.omics-search-table tbody tr td:first-child {
+      width: 40% !important;
+    }
+
+    /* DataTables HACKS */
 
     .dataTables_paginate {
       padding: 10px;
+      margin-top: 5px;
       text-align: right;
+    }
+
+    th.sorting {
+      padding-left: 10px !important;
+      border-bottom: 0 !important;
+    }
+
+    th.sorting::after {
+      padding-top: 4px !important;
     }
 
     .omics-paginate-button .current {
       color: #FFFF00 !important;
     }
+
+    .previous::before {
+        display: none !important;
+    }
+
+    .next::after {
+        display: none !important;
+    }
+
   </style>
 {% endblock css %}
 
@@ -97,6 +140,11 @@
 
 {% block javascript %}
   {{ block.super }}
+
+  <!-- Settings for Javascript -->
+  <script type="text/javascript">
+    window.refreshCellOverflow = true;
+  </script>
 
   <!-- DataTables -->
   <script type="text/javascript" src="{% static 'datatables/datatables.min.js'%}"></script>

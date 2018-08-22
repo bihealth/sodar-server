@@ -38,16 +38,20 @@
   </td>
   {# Project column #}
   <td>
+    <div class="omics-overflow-container omics-overflow-hover">
+    <a
     {% if item.folder %}
-      <a href="{% url 'filesfolders:list' folder=item.folder.omics_uuid %}">
+      href="{% url 'filesfolders:list' folder=item.folder.omics_uuid %}"
     {% else %}
-      <a href="{% url 'filesfolders:list' project=item.project.omics_uuid %}">
+      href="{% url 'filesfolders:list' project=item.project.omics_uuid %}"
     {% endif %}
+    >
       {% autoescape off %}
         {# NOTE: No highlight here as project is not searched for here #}
         {{ item.project.title }}
       {% endautoescape %}
     </a>
+    </div>
   </td>
   {# File size column (only for files) #}
   <td class="text-right text-nowrap">

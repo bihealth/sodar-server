@@ -222,6 +222,7 @@ div.omics-card-body {
 
 div.omics-card-body-table {
   padding: 0;
+  overflow-x: hidden; /* Fix possible overflow when resizing window */
 }
 
 div.omics-card-body-info {

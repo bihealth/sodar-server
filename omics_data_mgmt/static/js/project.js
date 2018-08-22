@@ -139,7 +139,6 @@ $(document).ready(function() {
         // scrollY: 300,
         scrollX: false,
         paging: true,
-        pagingType: 'simple_numbers',
         pageLength: 5,
         scrollCollapse: true,
         info: false,
