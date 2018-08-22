@@ -54,6 +54,7 @@ Added
     - Handle project list title cell overflow (#306)
     - No results alert for search (#288)
     - DataTables rendering for search results (#328)
+    - Result count in search results (#338)
 - **Samplesheets**
     - Display original study/assay filenames as tooltips (#283)
     - Display assays for samples in search results (#157)

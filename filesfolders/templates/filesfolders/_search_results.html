@@ -47,7 +47,7 @@
 
 {% if search_results.all.items|length > 0 %}
 
-  {% include 'projectroles/_search_header.html' with search_title=search_results.all.title %}
+  {% include 'projectroles/_search_header.html' with search_title=search_results.all.title result_count=search_results.all.items|length %}
 
   <table class="table table-striped omics-card-table omics-search-table" id="omics-ff-search-table">
     <thead>
