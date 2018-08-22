@@ -53,6 +53,7 @@ Added
     - Sanitize search input (#332)
     - Handle project list title cell overflow (#306)
     - No results alert for search (#288)
+    - DataTables rendering for search results (#328)
 - **Samplesheets**
     - Display original study/assay filenames as tooltips (#283)
     - Display assays for samples in search results (#157)
