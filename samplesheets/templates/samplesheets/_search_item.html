@@ -11,6 +11,7 @@
 
 <tr class="omics-ss-search-list-item" id="omics-ss-project-search-item-{{ item.omics_uuid }}">
   <td>
+    <div class="omics-overflow-container omics-overflow-hover">
     {% highlight_search_term item.name search_term as item_display_name %}
     {% if item.type != 'file' %}
       <a href="{% url 'samplesheets:project_sheets' study=item.study.omics_uuid %}">{{ item_display_name | safe }}</a>
@@ -21,6 +22,7 @@
         {{ item_display_name }}
       {% endif %}
     {% endif %}
+    </div>
   </td>
   {% if item.type != 'file' %}
     <td class="text-nowrap">
@@ -28,11 +30,14 @@
     </td>
   {% endif %}
   <td>
+    <div class="omics-overflow-container omics-overflow-hover">
     {% autoescape off %}
       {% get_project_link item.project %}
     {% endautoescape %}
+    </div>
   </td>
   <td>
+    <div class="omics-overflow-container omics-overflow-hover">
     {% if item.study %}
       <a href="{% url 'samplesheets:project_sheets' study=item.study.omics_uuid %}">
         {{ item.study.get_display_name }}
@@ -40,14 +45,17 @@
     {% else %}
       N/A
     {% endif %}
+    </div>
   </td>
   <td>
     {% if item.assays %}
       {% for assay in item.assays %}
+        <div class="omics-overflow-container omics-overflow-hover-disable">
         <a href="{% url 'samplesheets:project_sheets' study=item.study.omics_uuid %}#assay{{ assay.omics_uuid }}">
           {{ assay.get_display_name }}
         </a>
         <br />
+        </div>
       {% endfor %}
     {% else %}
       N/A

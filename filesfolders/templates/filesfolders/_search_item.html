@@ -5,35 +5,36 @@
 <tr class="omics-ff-search-item" id="omics-ff-search-item-{{ item.omics_uuid }}">
   {# Icon & name column #}
   <td>
+    <div class="omics-overflow-container omics-overflow-hover">
     {% if item|get_class == 'Folder' %}
-      <i class="fa fa-folder"></i>
+      <i class="fa fa-fw fa-folder"></i>
     {% elif item|get_class == 'HyperLink' %}
-      <i class="fa fa-external-link"></i>
+      <i class="fa fa-fw fa-external-link"></i>
     {% elif item|get_class == 'File' %}
-        <i class="fa fa-{% get_file_icon item %}"></i>
+        <i class="fa fa-fw fa-{% get_file_icon item %}"></i>
     {% endif %}
-  </td>
-  {# Name/link column #}
-  <td>
     {% highlight_search_term item.name search_term as item_display_name %}
-    {% if item|get_class == 'HyperLink' %}
-      <a href="{{ item.url }}" target="_blank">
-    {% elif item|get_class == 'Folder' %}
-      <a href="{% url 'filesfolders:list' folder=item.omics_uuid %}">
-    {% elif item|get_class == 'File' %}
-      <a href="{% url 'filesfolders:file_serve' file=item.omics_uuid file_name=item.name %}">
-    {% endif %}
-    {% autoescape off %}{{ item_display_name }}{% endautoescape %}</a>
+    <a
+      {% if item|get_class == 'HyperLink' %}
+        href="{{ item.url }}" target="_blank"
+      {% elif item|get_class == 'Folder' %}
+        href="{% url 'filesfolders:list' folder=item.omics_uuid %}"
+      {% elif item|get_class == 'File' %}
+        href="{% url 'filesfolders:file_serve' file=item.omics_uuid file_name=item.name %}"
+      {% endif %}
+    >
+      {% autoescape off %}{{ item_display_name }}{% endautoescape %}
+    </a>
     {% if item|get_class == 'File' and allow_public_links and item.public_url and can_share_link %}
       <a title="Public Link" href="{% url 'filesfolders:file_public_link' file=item.omics_uuid %}" id="omics-ff-link-public-{{ item.omics_uuid }}">
         <i class="fa fa-link" aria-hidden="false"></i>
       </a>
     {% endif %}
-    </a>
     {% if item.flag %}
       {% get_flag item.flag as item_flag %}
       {{ item_flag|safe }}
     {% endif %}
+    </div>
   </td>
   {# Project column #}
   <td>
@@ -49,15 +50,17 @@
     </a>
   </td>
   {# File size column (only for files) #}
-  <td class="text-right">
+  <td class="text-right text-nowrap">
     {% if item|get_class == 'File' %}
       {{ item.file.file.size|filesizeformat }}
     {% endif %}
   </td>
   {# Description column #}
   <td>
+    <div class="omics-overflow-container omics-overflow-hover-disable">
     {% autoescape off %}
       {% highlight_search_term item.description search_term %}
     {% endautoescape %}
+    </div>
   </td>
 </tr>

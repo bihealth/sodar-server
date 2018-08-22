@@ -109,7 +109,8 @@ function modifyCellOverflow() {
       }
 
       else if ($(this).prop('scrollWidth') > parentWidth &&
-              !$(this).hasClass('omics-overflow-hover')) {
+              !$(this).hasClass('omics-overflow-hover') &&
+              !$(this).hasClass('omics-overflow-hover-disable')) {
           $(this).addClass('omics-overflow-hover');
       }
   });
@@ -126,6 +127,30 @@ $(window).resize(function() {
             window.refreshCellOverflow !== false) {
         modifyCellOverflow();
     }
+});
+
+
+// Set up DataTables for search tables
+$(document).ready(function() {
+    $.fn.dataTable.ext.classes.sPageButton =
+        'btn btn-secondary omics-list-btn ml-1 omics-paginate-button';
+
+    $('.omics-search-table').DataTable({
+        // scrollY: 300,
+        scrollX: false,
+        paging: true,
+        pagingType: 'simple_numbers',
+        pageLength: 5,
+        scrollCollapse: true,
+        info: false,
+        language: {
+            paginate: {
+                previous: '<i class="fa fa-arrow-circle-left"></i> Previous',
+                next: '<i class="fa fa-arrow-circle-right"></i> Next'
+            }
+        },
+        dom: 'tp'
+    });
 });
 
 

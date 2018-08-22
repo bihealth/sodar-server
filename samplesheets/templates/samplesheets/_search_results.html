@@ -7,45 +7,94 @@
 
 <style type="text/css">
 
-  /* Responsive modifications */
+  /* Materials table */
+
+  .table#omics-ss-search-table-materials thead tr th:nth-child(2) {
+      width: 65px !important;
+  }
+
+  .table#omics-ss-search-table-materials tbody tr td:nth-child(2) {
+      width: 65px !important;
+  }
+
   @media screen and (max-width: 1300px) {
-    .table#omics-ss-search-table tr th:nth-child(5) {
+    .table#omics-ss-search-table-materials tr th:nth-child(5) {
       display: none;
     }
 
-    .table#omics-ss-search-table tr td:nth-child(5) {
+    .table#omics-ss-search-table-materials tr td:nth-child(5) {
       display: none;
     }
   }
 
   @media screen and (max-width: 900px) {
-    .table#omics-ss-search-table tr th:nth-child(4) {
+    .table#omics-ss-search-table-materials tr th:nth-child(4) {
       display: none;
     }
 
-    .table#omics-ss-search-table tr td:nth-child(4) {
+    .table#omics-ss-search-table-materials tr td:nth-child(4) {
       display: none;
     }
   }
 
-  @media screen and (max-width: 700px) {
-    .table#omics-ss-search-table tr th:nth-child(2) {
+  @media screen and (max-width: 750px) {
+    .table#omics-ss-search-table-materials tr th:nth-child(2) {
       display: none;
     }
-     .table#omics-ss-search-table tr td:nth-child(2) {
+     .table#omics-ss-search-table-materials tr td:nth-child(2) {
       display: none;
     }
   }
 
-  @media screen and (max-width: 500px) {
-    .table#omics-ss-search-table tr th:nth-child(3) {
+  @media screen and (max-width: 600px) {
+    .table#omics-ss-search-table-materials tr th:nth-child(3) {
       display: none;
     }
 
-    .table#omics-ss-search-table tr td:nth-child(3) {
+    .table#omics-ss-search-table-materials tr td:nth-child(3) {
       display: none;
     }
   }
+
+  /* Files table */
+
+  .table#omics-ss-search-table-files thead tr th:nth-child(1) {
+      width: 350px !important;
+  }
+
+  .table#omics-ss-search-table-files tbody tr td:nth-child(1) {
+      width: 350px !important;
+  }
+
+  @media screen and (max-width: 1100px) {
+    .table#omics-ss-search-table-files tr th:nth-child(4) {
+      display: none;
+    }
+
+    .table#omics-ss-search-table-files tr td:nth-child(4) {
+      display: none;
+    }
+  }
+
+  @media screen and (max-width: 800px) {
+    .table#omics-ss-search-table-files tr th:nth-child(3) {
+      display: none;
+    }
+     .table#omics-ss-search-table-files tr td:nth-child(3) {
+      display: none;
+    }
+  }
+
+  @media screen and (max-width: 600px) {
+    .table#omics-ss-search-table-files tr th:nth-child(2) {
+      display: none;
+    }
+
+    .table#omics-ss-search-table-files tr td:nth-child(2) {
+      display: none;
+    }
+  }
+
 </style>
 
 {% if search_results.materials.items|length > 0 %}
@@ -54,7 +103,7 @@
     {% get_search_header plugin=plugin title=search_results.materials.title id_suffix='materials' %}
   {% endautoescape %}
 
-  <table class="table table-striped omics-card-table" id="omics-ss-search-table-materials">
+  <table class="table table-striped omics-card-table omics-search-table" id="omics-ss-search-table-materials">
     <thead>
       <tr>
         <th>Name</th>
@@ -84,7 +133,7 @@
     {% get_search_header plugin=plugin title=search_results.files.title id_suffix='files' %}
   {% endautoescape %}
 
-  <table class="table table-striped omics-card-table" id="omics-ss-search-table-files">
+  <table class="table table-striped omics-card-table omics-search-table" id="omics-ss-search-table-files">
     <thead>
       <tr>
         <th>Name</th>

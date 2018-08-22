@@ -425,7 +425,7 @@ dl.omics-dl dd {
 }
 
 .omics-list-btn {
-  padding-top: 1px !important;
+  padding-top: 0.5px !important;
   padding-left: 5px !important;
   padding-right: 5px !important;
   height: 1.65em;

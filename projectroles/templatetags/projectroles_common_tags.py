@@ -121,6 +121,7 @@ def get_setting(name):
     return getattr(settings, name) if hasattr(settings, name) else None
 
 
+# TODO: Add this as a template instead?
 @register.simple_tag
 def get_search_header(plugin, title, id_suffix=None):
     """
@@ -140,7 +141,7 @@ def get_search_header(plugin, title, id_suffix=None):
             plugin.icon, title)
 
     ret += '<div class="card-body omics-card-body-table">' \
-           '<div class="table-responsive omics-pr-app-search-container">\n'
+           '\n'
 
     return ret
 
@@ -148,4 +149,4 @@ def get_search_header(plugin, title, id_suffix=None):
 @register.simple_tag
 def get_search_footer():
     """Return search element footer"""
-    return '</div>\n</div>\n</div>\n'
+    return '\n</div>\n</div>\n'

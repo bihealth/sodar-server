@@ -1,6 +1,7 @@
 {% extends 'projectroles/base.html' %}
 {% load projectroles_tags %}
 {% load rules %}
+{% load static %}
 
 {% block title %}
   Search Results for "{{ search_term }}"
@@ -8,6 +9,27 @@
     (type:{{ search_type }})
   {% endif %}
 {% endblock title %}
+
+{% block css %}
+  {{ block.super }}
+
+  <style type="text/css">
+    table.omics-search-table {
+      table-layout: fixed;
+      min-width: 100%;
+      max-width: 100%;
+    }
+
+    .dataTables_paginate {
+      padding: 10px;
+      text-align: right;
+    }
+
+    .omics-paginate-button .current {
+      color: #FFFF00 !important;
+    }
+  </style>
+{% endblock css %}
 
 {% block projectroles %}
 
@@ -75,6 +97,9 @@
 
 {% block javascript %}
   {{ block.super }}
+
+  <!-- DataTables -->
+  <script type="text/javascript" src="{% static 'datatables/datatables.min.js'%}"></script>
 
   {# Tour content #}
   <script type="text/javascript">

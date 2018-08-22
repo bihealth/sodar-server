@@ -5,28 +5,35 @@
 {% load projectroles_common_tags %}
 
 <style type="text/css">
-  .table#omics-ff-search-table tr td:nth-child(1) {
-    padding-right: 0;
-    width: 20px;
+  .table#omics-ff-search-table thead tr th:nth-child(4) {
+    width: 40% !important;
   }
 
-  .table#omics-ff-search-table tr td:nth-child(2) {
-    padding-left: 4px;
+  .table#omics-ff-search-table tbody tr td:nth-child(4) {
+    width: 40% !important;
+  }
+
+  .table#omics-ff-search-table thead tr th:nth-child(3) {
+    width: 75px !important;
+  }
+
+  .table#omics-ff-search-table tbody tr td:nth-child(3) {
+    width: 75px !important;
   }
 
   /* Responsive modifications */
   @media screen and (max-width: 1100px) {
-    .table#omics-ff-search-table tr th:nth-child(4) {
+    .table#omics-ff-search-table tr th:nth-child(3) {
       display: none;
     }
 
-    .table#omics-ff-search-table tr td:nth-child(5) {
+    .table#omics-ff-search-table tr td:nth-child(3) {
       display: none;
     }
   }
 
   @media screen and (max-width: 900px) {
-    .table#omics-ff-search-table tr th:nth-child(3) {
+    .table#omics-ff-search-table tr th:nth-child(4) {
       display: none;
     }
 
@@ -40,7 +47,7 @@
       display: none;
     }
 
-    .table#omics-ff-search-table tr td:nth-child(3) {
+    .table#omics-ff-search-table tr td:nth-child(2) {
       display: none;
     }
   }
@@ -52,10 +59,10 @@
     {% get_search_header plugin=plugin title=search_results.all.title %}
   {% endautoescape %}
 
-  <table class="table table-striped omics-card-table" id="omics-ff-search-table">
+  <table class="table table-striped omics-card-table omics-search-table" id="omics-ff-search-table">
     <thead>
       <tr>
-        <th colspan="2">Name</th>
+        <th>Name</th>
         <th>Project</th>
         <th class="text-right">Size</th>
         <th>Description</th>
