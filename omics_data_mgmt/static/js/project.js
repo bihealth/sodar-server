@@ -158,6 +158,12 @@ $(document).ready(function() {
             dom: 'tp'
         });
 
+        // Hide pagination if only one page
+        console.log('pages=' + $(this).DataTable().page.info().pages);
+        if ($(this).DataTable().page.info().pages === 1) {
+            $(this).next('.dataTables_paginate').hide();
+        }
+
         $(this).closest('div.omics-search-card').show();
     });
 
