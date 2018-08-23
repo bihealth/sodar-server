@@ -3,16 +3,9 @@
 {% load projectroles_common_tags %}
 
 <tr class="omics-ff-search-item" id="omics-ff-search-item-{{ item.omics_uuid }}">
-  {# Icon & name column #}
+  {# Name & link column #}
   <td>
     <div class="omics-overflow-container omics-overflow-hover">
-      {% if item|get_class == 'Folder' %}
-        <i class="fa fa-fw fa-folder"></i>
-      {% elif item|get_class == 'HyperLink' %}
-        <i class="fa fa-fw fa-external-link"></i>
-      {% elif item|get_class == 'File' %}
-          <i class="fa fa-fw fa-{% get_file_icon item %}"></i>
-      {% endif %}
       {% highlight_search_term item.name search_term as item_display_name %}
       <a
         {% if item|get_class == 'HyperLink' %}
@@ -35,6 +28,10 @@
         {{ item_flag|safe }}
       {% endif %}
     </div>
+  </td>
+  {# Type column #}
+  <td class="text-nowrap">
+    {{ item|get_class }}
   </td>
   {# Project column #}
   <td>

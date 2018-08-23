@@ -5,26 +5,24 @@
 {% load projectroles_common_tags %}
 
 <style type="text/css">
-  .table#omics-ff-search-table thead tr th:nth-child(3) {
+  .table#omics-ff-search-table thead tr th:nth-child(2) {
     width: 75px !important;
   }
 
-  .table#omics-ff-search-table tbody tr td:nth-child(3) {
+  .table#omics-ff-search-table tbody tr td:nth-child(2) {
+    width: 75px !important;
+  }
+
+  .table#omics-ff-search-table thead tr th:nth-child(4) {
+    width: 75px !important;
+  }
+
+  .table#omics-ff-search-table tbody tr td:nth-child(4) {
     width: 75px !important;
   }
 
   /* Responsive modifications */
-  @media screen and (max-width: 1100px) {
-    .table#omics-ff-search-table tr th:nth-child(3) {
-      display: none;
-    }
-
-    .table#omics-ff-search-table tr td:nth-child(3) {
-      display: none;
-    }
-  }
-
-  @media screen and (max-width: 900px) {
+  @media screen and (max-width: 1300px) {
     .table#omics-ff-search-table tr th:nth-child(4) {
       display: none;
     }
@@ -34,12 +32,32 @@
     }
   }
 
-  @media screen and (max-width: 600px) {
+  @media screen and (max-width: 1100px) {
     .table#omics-ff-search-table tr th:nth-child(2) {
       display: none;
     }
 
     .table#omics-ff-search-table tr td:nth-child(2) {
+      display: none;
+    }
+  }
+
+  @media screen and (max-width: 900px) {
+    .table#omics-ff-search-table tr th:nth-child(5) {
+      display: none;
+    }
+
+    .table#omics-ff-search-table tr td:nth-child(5) {
+      display: none;
+    }
+  }
+
+  @media screen and (max-width: 600px) {
+    .table#omics-ff-search-table tr th:nth-child(3) {
+      display: none;
+    }
+
+    .table#omics-ff-search-table tr td:nth-child(3) {
       display: none;
     }
   }
@@ -53,8 +71,9 @@
     <thead>
       <tr>
         <th>Name</th>
+        <th>Type</th>
         <th>Project</th>
-        <th class="text-right">Size</th>
+        <th>Size</th>
         <th>Description</th>
       </tr>
     </thead>
