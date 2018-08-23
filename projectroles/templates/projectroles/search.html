@@ -42,14 +42,6 @@
       max-width: 250px !important;
     }
 
-    .table.omics-search-table thead tr th:first-child {
-      width: 40% !important;
-    }
-
-    .table.omics-search-table tbody tr td:first-child {
-      width: 40% !important;
-    }
-
     /* DataTables HACKS */
 
     .dataTables_paginate {
@@ -123,25 +115,6 @@
 
         {% include 'projectroles/_search_footer.html' %}
 
-        {% comment %}
-        <div class="card omics-card" id="omics-pr-search-project-list">
-          <div class="card-header">
-            <h4><i class="fa fa-cube"></i> Projects</h4>
-          </div>
-          <div class="card-body omics-card-body-table">
-           <table class="table table-hover omics-card-table omics-card-table-borderless omics-pr-project-list-table" id="omics-pr-project-list-table">
-             <thead>
-               {% include 'projectroles/_project_list_header.html' %}
-             </thead>
-             <tbody>
-               {% for p in project_results %}
-                 {% include 'projectroles/_project_search_item.html' %}
-               {% endfor %}
-             </tbody>
-           </table>
-          </div>
-        </div>
-        {% endcomment %}
       {% endif %}
 
     {% endif %}
@@ -172,6 +145,9 @@
     window.refreshCellOverflow = true;
   </script>
 
+  <!-- Project search JQuery -->
+  <script type="text/javascript" src="{% static 'js/search.js' %}"></script>
+
   <!-- DataTables -->
   <script type="text/javascript" src="{% static 'datatables/datatables.min.js'%}"></script>
 
@@ -179,35 +155,48 @@
   <script type="text/javascript">
     tourEnabled = true;
 
-    if ($('#omics-pr-search-project-list').length) {
-        tour.addStep('search_project', {
-            title: 'Matching Projects',
-            text: 'Projects matching the search are listed here.',
-            attachTo: '#omics-pr-search-project-list top',
-            advanceOn: '.docs-link click',
-            showCancelLink: true
-        });
-    }
+    $(document).ready(function() {
+        if ($('.omics-search-card').length) {
+            tour.addStep('search_card', {
+                title: 'Matching Items',
+                text: 'Matching projects and items are listed in cards separated ' +
+                      'by data type.',
+                advanceOn: '.docs-link click',
+                showCancelLink: true
+            });
+        }
 
-    if ($('.omics-pr-app-card').length) {
-        tour.addStep('search_app', {
-            title: 'Matching Data from Apps',
-            text: 'Matching Data from Apps is listed for each app with search' +
-                  ' enabled.',
-            attachTo: '.omics-pr-app-card top',
-            advanceOn: '.docs-link click',
-            showCancelLink: true
-        });
-    }
+        if ($('.omics-search-highlight').length) {
+            tour.addStep('search_highlight', {
+                title: 'Search Highlight',
+                text: 'Search terms are highlighted for each matching object.',
+                attachTo: '.omics-search-highlight right',
+                advanceOn: '.docs-link click',
+                showCancelLink: true
+            });
+        }
 
-    if ($('.omics-search-highlight').length) {
-        tour.addStep('search_highlight', {
-            title: 'Search Highlight',
-            text: 'The search terms are highlighted for each matching object.',
-            attachTo: '.omics-search-highlight right',
-            advanceOn: '.docs-link click',
-            showCancelLink: true
-        });
-    }
+        if ($('.omics-paginate-button').length) {
+            tour.addStep('search_paginate', {
+                title: 'Search Pagination',
+                text: 'In case of a large number of results, they can be browsed ' +
+                      'using this sub-page navigation.',
+                attachTo: '.omics-paginate-button left',
+                advanceOn: '.docs-link click',
+                showCancelLink: true
+            });
+        }
+
+        if ($('#omics-search-not-found-alert').length) {
+            tour.addStep('search_not_found', {
+                title: 'Data Not Found',
+                text: 'Data types in which we could not find anything are ' +
+                      'listed here.',
+                attachTo: '#omics-search-not-found-alert top',
+                advanceOn: '.docs-link click',
+                showCancelLink: true
+            });
+        }
+    });
   </script>
 {% endblock javascript %}
