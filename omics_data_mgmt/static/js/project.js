@@ -146,7 +146,7 @@ $(document).ready(function() {
         $(this).DataTable({
             scrollX: false,
             paging: true,
-            pageLength: 10,
+            pageLength: window.searchPagination,
             scrollCollapse: true,
             info: false,
             language: {

@@ -55,6 +55,7 @@ Added
     - No results alert for search (#288)
     - DataTables rendering for search results (#328)
     - Result count in search results (#338)
+    - Settings variable ``PROJECTROLES_SEARCH_PAGINATION`` (#328)
 - **Samplesheets**
     - Display original study/assay filenames as tooltips (#283)
     - Display assays for samples in search results (#157)
@@ -67,10 +68,10 @@ Added
     - iRODS files searchable in site search (#289)
     - Highlighting of search strings (#341)
     - Custom display for "external links" fields (#349)
-    - Settings value ``SHEETS_EXTERNAL_LINK_LABELS`` (#349)
+    - Settings variable ``SHEETS_EXTERNAL_LINK_LABELS`` (#349)
     - Custom display for different "contact" fields
     - Handle sheet table cell overflow
-    - Settings value ``SHEETS_MAX_COLUMN_WIDTH``
+    - Settings variable ``SHEETS_MAX_COLUMN_WIDTH``
     - ``search()`` function in plugin (#335)
 
 Changed

@@ -1,5 +1,6 @@
 {% extends 'projectroles/base.html' %}
 {% load projectroles_tags %}
+{% load projectroles_common_tags %}
 {% load rules %}
 {% load static %}
 
@@ -167,6 +168,7 @@
 
   <!-- Settings for Javascript -->
   <script type="text/javascript">
+    window.searchPagination = {% get_setting 'PROJECTROLES_SEARCH_PAGINATION' %};
     window.refreshCellOverflow = true;
   </script>
 
