@@ -5,11 +5,6 @@
 <tr class="omics-pr-project-list-item" id="omics-pr-project-search-item-{{ p.omics_uuid }}">
   <td>
     <div class="omics-overflow-container omics-overflow-hover">
-      {% if p.type == 'CATEGORY' %}
-        <i class="fa fa-fw fa-cubes"></i>
-      {% else %}
-        <i class="fa fa-fw fa-cube"></i>
-      {% endif %}
       <a href="{% url 'projectroles:detail' project=p.omics_uuid %}">
         {% get_project_title_html p as project_title %}
         {% autoescape off %}
