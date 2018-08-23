@@ -59,11 +59,11 @@
   /* Files table */
 
   .table#omics-ss-search-table-files thead tr th:nth-child(1) {
-      width: 35% !important;
+      min-width: 35% !important;
   }
 
   .table#omics-ss-search-table-files tbody tr td:nth-child(1) {
-      width: 35% !important;
+      min-width: 35% !important;
   }
 
   @media screen and (max-width: 1400px) {
@@ -83,9 +83,17 @@
      .table#omics-ss-search-table-files tr td:nth-child(4) {
       display: none;
     }
+
+    .table#omics-ss-search-table-files tr th:nth-child(2) {
+      width: 25% !important;
+    }
+
+    .table#omics-ss-search-table-files tr td:nth-child(2) {
+      width: 25% !important;
+    }
   }
 
-  @media screen and (max-width: 850px) {
+  @media screen and (max-width: 800px) {
     .table#omics-ss-search-table-files tr th:nth-child(2) {
       display: none;
     }
