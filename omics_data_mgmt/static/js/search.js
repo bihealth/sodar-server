@@ -1,5 +1,9 @@
 // Set up DataTables for search tables
 $(document).ready(function() {
+    /*****************
+     Set up DataTables
+     *****************/
+
     $.fn.dataTable.ext.classes.sPageButton =
         'btn btn-secondary omics-list-btn ml-1 omics-paginate-button';
 
@@ -25,11 +29,23 @@ $(document).ready(function() {
             $(this).next('.dataTables_paginate').hide();
         }
 
+        // Display card once table has been initialized
         $(this).closest('div.omics-search-card').show();
     });
 
+    // Display not found once all DataTables have been initialized
     $('div#omics-search-not-found-alert').removeClass('d-none');
 
     // Update overflow status
     modifyCellOverflow();
+
+    /*********
+     Filtering
+     *********/
+
+    $('.omics-search-filter').keyup(function () {
+        var dt = $(this).closest('.omics-search-card').find('table').dataTable();
+        var v = $(this).val();
+        dt.fnFilter(v);
+    });
 });

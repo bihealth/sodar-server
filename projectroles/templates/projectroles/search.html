@@ -42,6 +42,10 @@
       max-width: 250px !important;
     }
 
+    .omics-header-input-group-search {
+        max-width: 200px;
+    }
+
     /* DataTables HACKS */
 
     .dataTables_paginate {
@@ -57,7 +61,7 @@
     }
 
     th.sorting::after {
-      padding-top: 8px !important;
+      padding-top: 7px !important;
     }
 
     .previous::before {
@@ -67,6 +71,14 @@
     .next::after {
         display: none !important;
     }
+
+    /* Responsive modifications */
+
+    @media screen and (max-width: 1000px) {
+    .omics-header-input-group-search {
+      display: none;
+    }
+  }
 
   </style>
 {% endblock css %}

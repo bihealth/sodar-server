@@ -56,6 +56,8 @@ Added
     - DataTables rendering for search results (#328)
     - Result count in search results (#338)
     - Settings variable ``PROJECTROLES_SEARCH_PAGINATION`` (#328)
+    - Pagination for search results (#328)
+    - Filtering for search results (#328)
 - **Samplesheets**
     - Display original study/assay filenames as tooltips (#283)
     - Display assays for samples in search results (#157)
