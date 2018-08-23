@@ -470,7 +470,8 @@ SHEETS_EXTERNAL_LINK_LABELS = {
     'x-dkfz-1touch-id': 'ID assigned through Heidelberg one-touch pipeline',
     'x-dkfz-ilse-id': 'ID assigned through DFKZ sequencing',
     'x-dkfz-mtk-id': 'ID assigned through DFKZ sequencing for the Molecular '
-                     'Tumor Conference project'}
+                     'Tumor Conference project',
+    'x-labor-berlin-blood-book-id': 'Labor Berlin Blood Book ID'}
 
 
 # Landingzones app settings
