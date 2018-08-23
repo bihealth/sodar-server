@@ -77,3 +77,4 @@ ENABLED_BACKEND_PLUGINS = [
 
 # Projectroles app settings
 PROJECTROLES_SEND_EMAIL = True
+PROJECTROLES_SEARCH_PAGINATION = 10  # Workaround for #360
