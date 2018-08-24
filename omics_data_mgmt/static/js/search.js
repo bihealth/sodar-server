@@ -20,11 +20,21 @@ $(document).ready(function() {
                     next: '<i class="fa fa-arrow-circle-right"></i> Next'
                 }
             },
-            dom: 'tp'
+            dom: 'tp',
+            fnDrawCallback: function() { /* Highlight pagination */
+                var currentPage = $(this).DataTable().page.info().page;
+
+                $(this).closest('.card-body').find('.omics-paginate-button').each(function() {
+                    var btnPage = $(this).attr('data-dt-idx');
+
+                    if (btnPage == currentPage + 1) {
+                        $(this).removeClass('btn-secondary').addClass('btn-success');
+                    }
+                });
+            }
         });
 
         // Hide pagination if only one page
-        console.log('pages=' + $(this).DataTable().page.info().pages);
         if ($(this).DataTable().page.info().pages === 1) {
             $(this).next('.dataTables_paginate').hide();
         }
@@ -48,4 +58,8 @@ $(document).ready(function() {
         var v = $(this).val();
         dt.fnFilter(v);
     });
+
+    /********************
+     Pagination Highlight
+     ********************/
 });
