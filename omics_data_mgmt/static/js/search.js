@@ -50,9 +50,6 @@ $(document).ready(function() {
     // Display not found once all DataTables have been initialized
     $('div#omics-search-not-found-alert').removeClass('d-none');
 
-    // Update overflow status
-    //modifyCellOverflow();
-
     /*********
      Filtering
      *********/
@@ -62,8 +59,4 @@ $(document).ready(function() {
         var v = $(this).val();
         dt.fnFilter(v);
     });
-
-    /********************
-     Pagination Highlight
-     ********************/
 });
