@@ -12,4 +12,9 @@
       </div>
     </h4>
   </div>
+  {% if result_count >= result_limit %}
+    <div class="card-body omics-card-body omics-card-body-info">
+      <i class="fa fa-warning"></i> Some results may be omitted, please narrow down your search
+    </div>
+  {% endif %}
   <div class="card-body omics-card-body-table">
