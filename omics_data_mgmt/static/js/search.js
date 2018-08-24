@@ -50,6 +50,9 @@ $(document).ready(function() {
     // Display not found once all DataTables have been initialized
     $('div#omics-search-not-found-alert').removeClass('d-none');
 
+    // Update overflow status
+    modifyCellOverflow();
+
     /*********
      Filtering
      *********/
