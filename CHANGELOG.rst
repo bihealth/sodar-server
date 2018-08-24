@@ -75,6 +75,7 @@ Added
     - Handle sheet table cell overflow
     - Settings variable ``SHEETS_MAX_COLUMN_WIDTH``
     - ``search()`` function in plugin (#335)
+    - Settings variables ``SHEETS_IRODS_LIMIT_PROJECT`` and ``SHEETS_IRODS_LIMIT_TOTAL`` (#289)
 
 Changed
 -------

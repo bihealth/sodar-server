@@ -204,25 +204,26 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                 projects = Project.objects.filter(
                     roles__user=user, type=PROJECT_TYPE_PROJECT)
 
+            obj_count = 0
+
             for project in projects:
                 if (not user.is_superuser and
                         not user.has_perm('samplesheets.view_sheet', project)):
                     continue  # Skip rest if user has no perms for project
 
                 try:
-                    objs = irods_backend.get_objects(
+                    obj_data = irods_backend.get_objects(
                         path=irods_backend.get_sample_path(project),
                         name_like=search_term,
-                        limit=settings.SHEETS_IRODS_QUERY_LIMIT)
+                        limit=settings.SHEETS_IRODS_LIMIT_PROJECT)
 
                 except FileNotFoundError:
                     continue  # Skip rest if no data objects were found
 
-                for o in objs['data_objects']:
+                for o in obj_data['data_objects']:
                     study = None
                     assay = None
 
-                    # Get study
                     try:
                         study = Study.objects.get(
                             omics_uuid=irods_backend.get_uuid_from_path(
@@ -241,6 +242,14 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                         'study': study,
                         'assays': [assay] if Assay else None,
                         'irods_path': o['path']})
+
+                    obj_count += 1
+
+                    if obj_count == settings.SHEETS_IRODS_LIMIT_TOTAL:
+                        break
+
+                if obj_count == settings.SHEETS_IRODS_LIMIT_TOTAL:
+                    break
 
         if file_items:
             file_items.sort(key=lambda x: x['name'].lower())
