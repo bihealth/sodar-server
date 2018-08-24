@@ -26,7 +26,7 @@ $(document).ready(function() {
                 var currentPage = $(this).DataTable().page.info().page;
 
                 $(this).closest('.card-body').find('.omics-paginate-button').each(function() {
-                    var btnPage = $(this).attr('data-dt-idx');
+                    var btnPage = $(this).text();
 
                     if (btnPage == currentPage + 1) {
                         $(this).removeClass('btn-secondary').addClass('btn-success');
