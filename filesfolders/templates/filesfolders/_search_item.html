@@ -5,7 +5,7 @@
 <tr class="omics-ff-search-item" id="omics-ff-search-item-{{ item.omics_uuid }}">
   {# Name & link column #}
   <td>
-    <div class="omics-overflow-container omics-overflow-hover">
+    <div class="omics-overflow-container">
       {% highlight_search_term item.name search_term as item_display_name %}
       <a
         {% if item|get_class == 'HyperLink' %}
@@ -35,7 +35,7 @@
   </td>
   {# Project column #}
   <td>
-    <div class="omics-overflow-container omics-overflow-hover">
+    <div class="omics-overflow-container">
       <a
         {% if item.folder %}
           href="{% url 'filesfolders:list' folder=item.folder.omics_uuid %}"

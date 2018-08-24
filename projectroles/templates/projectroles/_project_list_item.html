@@ -8,7 +8,7 @@
 <tr class="omics-pr-project-list-item omics-pr-home-display-default {% if not is_starred %}omics-pr-home-unstarred{% endif %}"
     id="omics-pr-project-list-item-{{ p.omics_uuid }}">
   <td>
-    <div class="omics-overflow-container omics-overflow-hover">
+    <div class="omics-overflow-container">
       {% get_project_list_indent p list_parent as project_indent %}
       <span style="padding-left: {{ project_indent }}px;"></span>
       {% if p.type == 'CATEGORY' %}

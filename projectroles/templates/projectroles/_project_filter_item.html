@@ -7,7 +7,7 @@
 <tr class="omics-pr-project-list-item omics-pr-home-display-filtered {% if is_starred %}omics-pr-home-display-starred{% endif %}"
     id="omics-pr-project-search-item-{{ p.omics_uuid }}">
   <td orig-txt="{{ p.get_full_title }}">
-    <div class="omics-overflow-container omics-overflow-hover">
+    <div class="omics-overflow-container">
       {% if p.type == 'CATEGORY' %}
         <i class="fa fa-fw fa-cubes"></i>
       {% else %}

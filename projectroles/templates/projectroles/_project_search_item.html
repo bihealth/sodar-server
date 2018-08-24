@@ -4,7 +4,7 @@
 
 <tr class="omics-pr-project-list-item" id="omics-pr-project-search-item-{{ p.omics_uuid }}">
   <td>
-    <div class="omics-overflow-container omics-overflow-hover">
+    <div class="omics-overflow-container">
       <a href="{% url 'projectroles:detail' project=p.omics_uuid %}">
         {% get_project_title_html p as project_title %}
         {% autoescape off %}
