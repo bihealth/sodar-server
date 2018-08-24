@@ -81,7 +81,15 @@ def print_not_found_alert(project_results, app_search_data, search_type):
     for results in [a['results'] for a in app_search_data]:
         if results:
             for k, result in results.items():
-                if not result['items'] or len(result['items']) == 0:
+                type_match = False
+
+                if (not search_type or (
+                        'search_type' in result and
+                        search_type in result['search_types'])):
+                    type_match = True
+
+                if (type_match and (
+                        not result['items'] or len(result['items']) == 0)):
                     not_found.append(result['title'])
 
     if not_found:
@@ -95,6 +103,7 @@ def print_not_found_alert(project_results, app_search_data, search_type):
         ret += '</ul>\n</div>\n'
         return ret
 
+    return ''
 
 @register.simple_tag
 def omics_constant(value):

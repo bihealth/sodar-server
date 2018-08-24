@@ -21,7 +21,8 @@ $(document).ready(function() {
                 }
             },
             dom: 'tp',
-            fnDrawCallback: function() { /* Highlight pagination */
+            fnDrawCallback: function() {
+                // Highlight pagination
                 var currentPage = $(this).DataTable().page.info().page;
 
                 $(this).closest('.card-body').find('.omics-paginate-button').each(function() {
@@ -31,6 +32,9 @@ $(document).ready(function() {
                         $(this).removeClass('btn-secondary').addClass('btn-success');
                     }
                 });
+
+                // Update overflow status
+                modifyCellOverflow();
             }
         });
 
@@ -47,7 +51,7 @@ $(document).ready(function() {
     $('div#omics-search-not-found-alert').removeClass('d-none');
 
     // Update overflow status
-    modifyCellOverflow();
+    //modifyCellOverflow();
 
     /*********
      Filtering

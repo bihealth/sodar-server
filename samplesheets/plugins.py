@@ -189,7 +189,8 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
             material_items.sort(key=lambda x: x['name'].lower())
 
         results['materials'] = {
-            'title': 'Sample Sheet Sources and Samples',
+            'title': 'Sources and Samples',
+            'search_types': ['source', 'sample'],
             'items': material_items}
 
         # iRODS files
@@ -246,6 +247,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
 
         results['files'] = {
             'title': 'Sample Files in iRODS',
+            'search_types': ['file'],
             'items': file_items}
 
         return results

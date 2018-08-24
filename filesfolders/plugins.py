@@ -146,4 +146,5 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         return {
             'all': {
                 'title': 'Small Files, Folders and Links',
+                'search_types': ['file', 'folder', 'link'],
                 'items': items}}

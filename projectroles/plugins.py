@@ -139,6 +139,7 @@ class ProjectAppPluginPoint(PluginPoint):
         return {
             'all': {    # You can add 1-N lists of result items
                 'title': 'Title to be displayed',
+                'search_types': [],
                 'items': []
             }
         }
