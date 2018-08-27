@@ -23,12 +23,18 @@
         display: none;  /* Will be enabled after DataTables init */
     }
 
+    div.omics-search-card-body {
+        padding: 0;
+        overflow-x: hidden; /* Fix possible overflow when resizing window */
+    }
+
     table.omics-search-table {
       display: inline-table;
       min-width: 100%;
       max-width: 100%;
       width: 100%;
       border-bottom: 0 !important;
+
     }
 
     .table.omics-search-table thead tr th {

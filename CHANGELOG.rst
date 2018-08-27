@@ -2,8 +2,23 @@ SODAR Changelog
 ^^^^^^^^^^^^^^^
 
 Changelog for the SODAR Web UI. Loosely follows the
-`Keep a Changelog <http://keepachangelog.com/en/0.3.0/>`_
-guidelines.
+`Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
+
+
+Unreleased
+==========
+
+Changed
+-------
+
+- **Projectroles**
+    - Use ``omics-search-card-body`` instead of ``omics-card-body-table`` (#364)
+
+Fixed
+-----
+
+- **General**
+    - Dropdown menu overflow hiding in ``omics-card-body-table`` classes (#364)
 
 
 v0.3.1 (2018-08-24)
