@@ -19,6 +19,8 @@ Fixed
 
 - **General**
     - Dropdown menu overflow hiding in ``omics-card-body-table`` classes (#364)
+- **Samplesheets**
+    - Investigation parsing failure when replacing isatab deleted previous version (#365)
 
 
 v0.3.1 (2018-08-24)

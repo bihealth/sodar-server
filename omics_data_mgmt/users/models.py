@@ -10,6 +10,8 @@ from django.utils.translation import ugettext_lazy as _
 from .utils import set_user_group
 
 
+# TODO: Use user model from projectroles instead
+
 @python_2_unicode_compatible
 class User(AbstractUser):
 

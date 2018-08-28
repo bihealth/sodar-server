@@ -256,8 +256,8 @@ class SampleSheetImportView(
                     invs[1].save()
                     old_inv = invs[1]
 
-                # Delete failed import
-                invs[0].delete()
+                    # Delete failed import
+                    invs[0].delete()
 
             # Just in case, delete remaining ones from the db
             if old_inv:
