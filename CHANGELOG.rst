@@ -5,8 +5,8 @@ Changelog for the SODAR Web UI. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
-Unreleased
-==========
+v0.3.2 (2018-09-11)
+===================
 
 Changed
 -------
@@ -21,6 +21,12 @@ Fixed
     - Dropdown menu overflow hiding in ``omics-card-body-table`` classes (#364)
 - **Samplesheets**
     - Investigation parsing failure when replacing isatab deleted previous version (#365)
+
+Removed
+-------
+
+- **Landingzones**
+    - Usage of ``popupNoFilesHtml`` (will be removed from omics_projectroles)
 
 
 v0.3.1 (2018-08-24)
