@@ -14,6 +14,14 @@ It is developed by the Core Unit Bioinformatics at the Berlin Institute of Healt
 
 .. toctree::
     :maxdepth: 1
+    :caption: Data Transfer
+    :name: data-transfer
+    :hidden:
+
+    data_transfer_bih_prot
+
+.. toctree::
+    :maxdepth: 1
     :caption: External Tools
     :name: external-tools
     :hidden:

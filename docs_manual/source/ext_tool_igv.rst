@@ -1,4 +1,4 @@
-.. ext_tool_igv:
+.. _ext_tool_igv:
 
 ========================
 IGV Installation & Setup

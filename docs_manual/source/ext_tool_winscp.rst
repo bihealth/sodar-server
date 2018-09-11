@@ -1,4 +1,4 @@
-.. ext_tool_winscp:
+.. _ext_tool_winscp:
 
 ===========================
 WinSCP Installation & Setup
