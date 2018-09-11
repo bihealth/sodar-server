@@ -8,6 +8,12 @@ Changelog for the SODAR Web UI. Loosely follows the
 v0.3.2 (2018-09-11)
 ===================
 
+Added
+-----
+
+- **General**
+    - BIH Proteomics data transfer docs (Mathias Kuhring)
+
 Changed
 -------
 
