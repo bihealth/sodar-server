@@ -270,11 +270,13 @@ class IGVSessionFileRenderView(BaseGermlineConfigView):
         if not fam_id:
             fam_id = self.source.name   # Use source name if family ID not known
 
+        vcf_urls = {fam_id: vcf_url}
+
         # Build IGV session XML file
         xml_str = get_igv_xml(
-            fam_id=fam_id,
             bam_urls=bam_urls,
-            vcf_url=vcf_url,
+            vcf_urls=vcf_urls,
+            vcf_title='Pedigree',
             request=request)
 
         ###########

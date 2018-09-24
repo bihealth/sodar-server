@@ -4,16 +4,12 @@ import hashlib
 from lxml import etree as ET
 
 
-# TODO: Update this so it works with both germline and pedicree
-# TODO: Accept multiple VCF URLs
-# TODO: Build VCF panel names for multiple VCF URLs
-
-def get_igv_xml(fam_id, bam_urls, vcf_url, request):
+def get_igv_xml(bam_urls, vcf_urls, vcf_title, request):
     """
-    Get IGV session XML file based on family ID and URLs of BAM/VCF files
-    :param fam_id:
-    :param bam_urls:
-    :param vcf_url: URL to a VCF file
+    Build IGV session XML file
+    :param bam_urls: BAM file URLs (dict {name: url})
+    :param vcf_urls: VCF file URLs (dict {name: url})
+    :param vcf_title: VCF title to prefix to VCF title strings (string)
     :param request: Django request
     :return: String (contains XML)
     """
@@ -30,15 +26,15 @@ def get_igv_xml(fam_id, bam_urls, vcf_url, request):
     xml_resources = ET.SubElement(xml_session, 'Resources')
 
     # VCF resource
-    if vcf_url:
+    for vcf_name, vcf_url in vcf_urls.items():
         ET.SubElement(xml_resources, 'Resource', attrib={'path': vcf_url})
 
     # BAM resources
-    for source_name, bam_url in bam_urls.items():
+    for bam_name, bam_url in bam_urls.items():
         ET.SubElement(xml_resources, 'Resource', attrib={'path': bam_url})
 
     # VCF panel (under Session)
-    if vcf_url:
+    for vcf_name, vcf_url in vcf_urls.items():
         xml_vcf_panel = ET.SubElement(xml_session, 'Panel', attrib={
             'height': '70',
             'name': 'DataPanel',
@@ -57,7 +53,7 @@ def get_igv_xml(fam_id, bam_urls, vcf_url, request):
                 'fontSize': '10',
                 'grouped': 'false',
                 'id': vcf_url,
-                'name': 'Pedigree ' + fam_id,
+                'name': vcf_title + ' ' + vcf_name,
                 'renderer': 'BASIC_FEATURE',
                 'siteColorMode': 'ALLELE_FREQUENCY',
                 'sortable': 'false',
@@ -66,7 +62,7 @@ def get_igv_xml(fam_id, bam_urls, vcf_url, request):
                 'windowFunction': 'count'})
 
     # BAM panels
-    for source_name, bam_url in bam_urls.items():
+    for bam_name, bam_url in bam_urls.items():
         # Generating unique panel name with hashlib
         xml_bam_panel = ET.SubElement(xml_session, 'Panel', attrib={
             'height': '70',
@@ -83,7 +79,7 @@ def get_igv_xml(fam_id, bam_urls, vcf_url, request):
                 'featureVisibilityWindow': '-1',
                 'fontSize': '10',
                 'id': bam_url + '_coverage',
-                'name': source_name + ' Coverage',
+                'name': bam_name + ' Coverage',
                 'showReference': 'false',
                 'snpThreshold': '0.05',
                 'sortable': 'true',
@@ -107,7 +103,7 @@ def get_igv_xml(fam_id, bam_urls, vcf_url, request):
                 'featureVisibilityWindow': '-1',
                 'fontSize': '10',
                 'id': bam_url,
-                'name': source_name,
+                'name': bam_name,
                 'sortable': 'true',
                 'visible': 'true'})
 
