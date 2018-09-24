@@ -23,6 +23,7 @@ Changed
 
 - **Samplesheets**
     - Use ``get_igv_xml()`` in germline study app
+    - Use ``get_last_material_name()`` in DNA sequencing assay app
 
 
 v0.3.2 (2018-09-11)

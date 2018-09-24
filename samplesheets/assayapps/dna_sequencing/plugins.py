@@ -2,6 +2,7 @@ from projectroles.plugins import get_backend_api
 
 from samplesheets.models import GenericMaterial
 from samplesheets.plugins import SampleSheetAssayPluginPoint
+from samplesheets.utils import get_last_material_name
 
 
 class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
@@ -56,15 +57,7 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
             return None
 
         # Get the name of the last material
-        # TODO: Replace with samplesheets.utils.get_last_material_name()
-        last_material_name = None
-
-        for cell in row:
-            if (cell['obj_cls'] == GenericMaterial and
-                    cell['item_type'] != 'DATA' and
-                    cell['field_name'] == 'name' and
-                    cell['value']):
-                last_material_name = cell['value']
+        last_material_name = get_last_material_name(row)
 
         if last_material_name:
             return irods_backend.get_path(assay) + '/' + last_material_name
