@@ -5,6 +5,22 @@ Changelog for the SODAR Web UI. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+Unreleased
+==========
+
+Added
+-----
+
+- **Samplesheets**
+    - Generic IGV session file generating function ``get_igv_xml()`` in ``studyapps.utils``
+
+Changed
+-------
+
+- **Samplesheets**
+    - Use ``get_igv_xml()`` in ``germline`` study app
+
+
 v0.3.2 (2018-09-11)
 ===================
 
