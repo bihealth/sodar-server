@@ -1,6 +1,5 @@
 """Views for the germline study app"""
 
-# TODO: Refactor to remove repetition between germline and cancer study app
 
 from django.conf import settings
 from django.contrib import messages
@@ -20,15 +19,10 @@ from samplesheets.models import GenericMaterial
 from samplesheets.plugins import find_assay_plugin
 from samplesheets.rendering import SampleSheetTableBuilder
 from samplesheets.utils import get_index_by_header
-from samplesheets.studyapps.utils import get_igv_xml
+from samplesheets.studyapps.utils import get_igv_xml, FILE_TYPE_SUFFIXES
 
 # Local helper for authenticating with auth basic
 from omics_data_mgmt.users.auth import fallback_to_auth_basic
-
-# Local constants
-FILE_TYPE_SUFFIXES = {
-    'bam': '.bam',
-    'vcf': '.vcf.gz'}
 
 
 class BaseGermlineConfigView(

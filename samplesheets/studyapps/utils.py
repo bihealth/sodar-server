@@ -4,6 +4,13 @@ import hashlib
 from lxml import etree as ET
 
 
+# Constants
+
+FILE_TYPE_SUFFIXES = {
+    'bam': '.bam',
+    'vcf': '.vcf.gz'}
+
+
 def get_igv_xml(bam_urls, vcf_urls, vcf_title, request):
     """
     Build IGV session XML file
