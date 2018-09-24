@@ -49,6 +49,10 @@ urlpatterns = [
     url(
         r'^samplesheets/study/germline/',
         include('samplesheets.studyapps.germline.urls')),
+    url(
+        r'^samplesheets/study/cancer/',
+        include('samplesheets.studyapps.cancer.urls')),
+
 
     # Landingzones config sub-app URLs
     url(

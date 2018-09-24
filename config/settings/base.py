@@ -81,6 +81,7 @@ LOCAL_APPS = [
 
     # Samplesheets study sub-apps
     'samplesheets.studyapps.germline.apps.GermlineConfig',
+    'samplesheets.studyapps.cancer.apps.CancerConfig',
 
     # Samplesheets assay sub-apps
     'samplesheets.assayapps.dna_sequencing.apps.DnaSequencingConfig',   # noqa

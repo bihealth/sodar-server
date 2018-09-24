@@ -1,0 +1,49 @@
+{# Samplesheets dependence #}
+{% load samplesheets_tags %}
+
+{# Projectroles dependence #}
+{% load projectroles_common_tags %}
+
+<div class="card">
+  <div class="card-header">
+    <h4>
+      Case-Wise iRODS and IGV Shortcuts
+
+      <div class="input-group omics-header-input-group pull-right" table-id="omics-ss-cancer-table">
+      <input class="form-control omics-ss-data-filter"
+           type="text" placeholder="Filter" aria-label="Filter Pedigree Data"
+           id="omics-ss-cancer-filter">
+      </div>
+    </h4>
+  </div>
+  {% if investigation.irods_status %}
+    <div class="card-body omics-card-body-table omics-ss-contentapp-container">
+      <div class="table-responsive omics-ss-init-container">
+        <table class="table cell-border order-column omics-ss-data-table omics-ss-data-table-contentapp" id="omics-ss-cancer-table">
+          <thead>
+            <tr>
+              <th>Case</th>
+              <th>BAM files</th>
+              <th>VCF file</th>
+              <th>IGV session file</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>TODO</td>
+              <td>TODO</td>
+              <td>TODO</td>
+              <td>TODO</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  {% else %}
+    <div class="card-body omics-card-body text-center">
+    <p class="font-italic">
+      iRODS directories not created, file listing disabled
+    </p>
+    </div>
+  {% endif %}
+</div>
