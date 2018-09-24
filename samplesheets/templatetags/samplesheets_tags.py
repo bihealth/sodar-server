@@ -15,6 +15,7 @@ from ..models import Investigation, Study, Assay, GenericMaterial, \
     GENERIC_MATERIAL_TYPES
 from ..plugins import find_study_plugin as find_study_p, \
     find_assay_plugin as find_assay_p
+from samplesheets.utils import get_index_by_header, get_last_material_name
 
 
 irods_backend = get_backend_api('omics_irods')
@@ -180,6 +181,41 @@ def get_family_sources(study, family_id):
             name=family_id)
 
     return ret
+
+
+@register.simple_tag
+def get_study_sources(study):
+    """
+    Return list of samples within this study
+    :param study: Study object
+    :return: GenericMaterial objects
+    """
+    return GenericMaterial.objects.filter(
+        study=study, item_type='SOURCE').order_by('name')
+
+
+@register.simple_tag
+def get_last_sample_materials(sample, table_data):
+    """Return last materials per sample"""
+    # HACK for short notice demo, need to do this smarter..
+    material_names = []
+
+    for k, assay_table in table_data['assays'].items():
+        # Get sample index
+
+        sample_idx = get_index_by_header(
+            assay_table, 'name',
+            obj_cls=GenericMaterial, item_type='SAMPLE')
+
+        for row in assay_table['table_data']:
+            if row[sample_idx]['value'] == sample.name:
+                last_name = get_last_material_name(row)
+
+                if last_name not in material_names:
+                    material_names.append(last_name)
+
+    return GenericMaterial.objects.filter(
+        study=sample.study, name__in=material_names).order_by('name')
 
 
 # Table rendering --------------------------------------------------------------

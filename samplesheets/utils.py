@@ -5,6 +5,8 @@ import re
 # Projectroles dependency
 from projectroles.plugins import get_backend_api
 
+# from samplesheets.models import GenericMaterial
+
 
 ALT_NAMES_COUNT = 2     # Needed for ArrayField hack
 
@@ -90,6 +92,20 @@ def get_index_by_header(
             return i
 
     return None
+
+
+def get_last_material_name(row):
+    """Return name of the last non-DATA material in a table row"""
+    name = None
+
+    for cell in row:
+        if (cell['obj_cls'].__name__ == 'GenericMaterial' and
+                cell['item_type'] != 'DATA' and
+                cell['field_name'] == 'name' and
+                cell['value']):
+            name = cell['value']
+
+    return name
 
 
 def get_isa_field_name(field):

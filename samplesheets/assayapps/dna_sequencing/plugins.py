@@ -56,6 +56,7 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
             return None
 
         # Get the name of the last material
+        # TODO: Replace with samplesheets.utils.get_last_material_name()
         last_material_name = None
 
         for cell in row:

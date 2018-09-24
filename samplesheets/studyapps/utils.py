@@ -4,6 +4,10 @@ import hashlib
 from lxml import etree as ET
 
 
+# TODO: Update this so it works with both germline and pedicree
+# TODO: Accept multiple VCF URLs
+# TODO: Build VCF panel names for multiple VCF URLs
+
 def get_igv_xml(fam_id, bam_urls, vcf_url, request):
     """
     Get IGV session XML file based on family ID and URLs of BAM/VCF files

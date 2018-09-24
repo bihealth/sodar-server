@@ -289,6 +289,11 @@ class Study(BaseSampleSheet):
             list(Process.objects.filter(
                 study=self).prefetch_related('protocol'))
 
+    def get_sources(self):
+        """Return sources used in study"""
+        # TODO: Add tests
+        return GenericMaterial.objects.filter(
+            study=self, item_type='SOURCE').order_by('name')
 
 # Protocol ---------------------------------------------------------------------
 
@@ -639,6 +644,18 @@ class GenericMaterial(BaseSampleSheet):
             study=self.study, arcs__contains=[self.unique_name]).order_by(
             'file_name')
 
+    def get_samples(self):
+        """Return samples for the current material"""
+        # TODO: Add tests
+        # NOTE: Only works for SOURCE type materials for now
+        if self.item_type != 'SOURCE':
+            return None
+
+        # HACK: Only works if our naming scheme is followed
+        return GenericMaterial.objects.filter(
+            item_type='SAMPLE',
+            study=self.study,
+            name__startswith='{}-'.format(self.name))
 
 # Process ----------------------------------------------------------------------
 

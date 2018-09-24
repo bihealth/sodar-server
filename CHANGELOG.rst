@@ -13,12 +13,15 @@ Added
 
 - **Samplesheets**
     - Generic IGV session file generating function ``get_igv_xml()`` in ``studyapps.utils``
+    - Cancer study app (#371)
+    - ``get_sources()`` helper in ``Study`` model
+    - ``get_samples()`` helper in ``GenericMaterial`` model
 
 Changed
 -------
 
 - **Samplesheets**
-    - Use ``get_igv_xml()`` in ``germline`` study app
+    - Use ``get_igv_xml()`` in germline study app
 
 
 v0.3.2 (2018-09-11)

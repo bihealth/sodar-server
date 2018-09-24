@@ -1,5 +1,6 @@
-import hashlib
-from lxml import etree as ET
+"""Views for the germline study app"""
+
+# TODO: Refactor to remove repetition between germline and cancer study app
 
 from django.conf import settings
 from django.contrib import messages
@@ -25,7 +26,7 @@ from samplesheets.studyapps.utils import get_igv_xml
 from omics_data_mgmt.users.auth import fallback_to_auth_basic
 
 # Local constants
-FILE_TYPE_SUFFIX = {
+FILE_TYPE_SUFFIXES = {
     'bam': '.bam',
     'vcf': '.vcf.gz'}
 
@@ -120,7 +121,7 @@ class BaseGermlineConfigView(
                 for obj in obj_list['data_objects']:
                     # NOTE: We expect the SAMPLE name to appear in filenames
                     if (obj['name'].lower().endswith(
-                            FILE_TYPE_SUFFIX[file_type]) and
+                            FILE_TYPE_SUFFIXES[file_type]) and
                             any(x in obj['name'] for x in sample_names)):
                         file_paths.append(obj['path'])
 
@@ -183,7 +184,7 @@ class FileRedirectView(BaseGermlineConfigView):
         super(FileRedirectView, self).get(request, *args, **kwargs)
         file_type = kwargs['file_type']
 
-        if file_type not in FILE_TYPE_SUFFIX.keys():
+        if file_type not in FILE_TYPE_SUFFIXES.keys():
             messages.error(
                 self.request, 'Unsupported file type "{}"'.format(file_type))
             return redirect(self.redirect_url)
