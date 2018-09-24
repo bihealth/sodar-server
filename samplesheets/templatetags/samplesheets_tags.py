@@ -13,9 +13,9 @@ from projectroles.plugins import get_backend_api
 
 from ..models import Investigation, Study, Assay, GenericMaterial, \
     GENERIC_MATERIAL_TYPES
-from ..plugins import find_study_plugin as find_study_p, \
-    find_assay_plugin as find_assay_p
-from samplesheets.utils import get_index_by_header, get_last_material_name
+from ..plugins import find_study_plugin as _find_study_plugin, \
+    find_assay_plugin as _find_assay_plugin
+from ..utils import get_sample_libraries as _get_sample_libraries
 
 
 irods_backend = get_backend_api('omics_irods')
@@ -58,13 +58,13 @@ def get_investigation(project):
 @register.simple_tag
 def get_study_plugin(study):
     """Return study app plugin or None if not found"""
-    return find_study_p(study.investigation.get_configuration())
+    return _find_study_plugin(study.investigation.get_configuration())
 
 
 @register.simple_tag
 def get_assay_plugin(assay):
     """Return assay app plugin or None if not found"""
-    return find_assay_p(assay.measurement_type, assay.technology_type)
+    return _find_assay_plugin(assay.measurement_type, assay.technology_type)
 
 
 @register.simple_tag
@@ -195,27 +195,9 @@ def get_study_sources(study):
 
 
 @register.simple_tag
-def get_last_sample_materials(sample, table_data):
-    """Return last materials per sample"""
-    # HACK for short notice demo, need to do this smarter..
-    material_names = []
-
-    for k, assay_table in table_data['assays'].items():
-        # Get sample index
-
-        sample_idx = get_index_by_header(
-            assay_table, 'name',
-            obj_cls=GenericMaterial, item_type='SAMPLE')
-
-        for row in assay_table['table_data']:
-            if row[sample_idx]['value'] == sample.name:
-                last_name = get_last_material_name(row)
-
-                if last_name not in material_names:
-                    material_names.append(last_name)
-
-    return GenericMaterial.objects.filter(
-        study=sample.study, name__in=material_names).order_by('name')
+def get_sample_libraries(sample, study_table):
+    """Return libraries per sample"""
+    return _get_sample_libraries(sample, study_table)
 
 
 # Table rendering --------------------------------------------------------------

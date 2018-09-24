@@ -36,7 +36,7 @@
                   {# BAM files #}
                   {% for sample in source.get_samples %}
                     {# TODO: Only get libraries once #}
-                    {% get_last_sample_materials sample table_data as sample_libraries %}
+                    {% get_sample_libraries sample table_data as sample_libraries %}
                     {% for library in sample_libraries %}
                       {% url 'samplesheets.studyapps.cancer:file' file_type='bam' genericmaterial=library.omics_uuid as bam_url %}
                       <div class="btn-group omics-edit-button-group mb-1 mr-1">
@@ -54,7 +54,7 @@
                 <td>
                   {# VCF files #}
                   {% for sample in source.get_samples %}
-                    {% get_last_sample_materials sample table_data as sample_libraries %}
+                    {% get_sample_libraries sample table_data as sample_libraries %}
 
                     {% for library in sample_libraries %}
                       {% url 'samplesheets.studyapps.cancer:file' file_type='vcf' genericmaterial=library.omics_uuid as vcf_url %}

@@ -16,6 +16,7 @@ Added
     - Cancer study app (#371)
     - ``get_sources()`` helper in ``Study`` model
     - ``get_samples()`` helper in ``GenericMaterial`` model
+    - ``get_sample_libraries()`` helper in ``samplesheets.utils``
 
 Changed
 -------

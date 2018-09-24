@@ -5,8 +5,6 @@ import re
 # Projectroles dependency
 from projectroles.plugins import get_backend_api
 
-# from samplesheets.models import GenericMaterial
-
 
 ALT_NAMES_COUNT = 2     # Needed for ArrayField hack
 
@@ -106,6 +104,40 @@ def get_last_material_name(row):
             name = cell['value']
 
     return name
+
+
+def get_sample_libraries(samples, study_tables):
+    """
+    Return libraries for samples
+    :param samples: Sample object or a list of Sample objects within a study
+    :param study_tables: Rendered study tables
+    :return: GenericMaterial queryset
+    """
+
+    # TODO: Circular dependency error if importing in module root, investigate
+    from samplesheets.models import GenericMaterial
+
+    if type(samples) != list:
+        samples = [samples]
+
+    sample_names = [s.name for s in samples]
+    study = samples[0].study
+    library_names = []
+
+    for k, assay_table in study_tables['assays'].items():
+        sample_idx = get_index_by_header(
+            assay_table, 'name',
+            obj_cls=GenericMaterial, item_type='SAMPLE')
+
+        for row in assay_table['table_data']:
+            if row[sample_idx]['value'] in sample_names:
+                last_name = get_last_material_name(row)
+
+                if last_name not in library_names:
+                    library_names.append(last_name)
+
+    return GenericMaterial.objects.filter(
+        study=study, name__in=library_names).order_by('name')
 
 
 def get_isa_field_name(field):
