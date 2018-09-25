@@ -5,15 +5,15 @@ Changelog for the SODAR Web UI. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
-Unreleased
-==========
+v0.3.3 (2018-09-25)
+===================
 
 Added
 -----
 
 - **Samplesheets**
-    - Generic IGV session file generating function ``get_igv_xml()`` in ``studyapps.utils``
     - Cancer study app (#371)
+    - Generic IGV session file generating function ``get_igv_xml()`` in ``studyapps.utils``
     - ``get_sources()`` helper in ``Study`` model
     - ``get_samples()`` helper in ``GenericMaterial`` model
     - ``get_sample_libraries()`` helper in ``samplesheets.utils``
@@ -23,7 +23,7 @@ Changed
 
 - **Samplesheets**
     - Use ``get_igv_xml()`` in germline study app
-    - Use ``get_last_material_name()`` in DNA sequencing assay app
+    - Use ``get_sample_libraries()`` in DNA sequencing assay app
 
 
 v0.3.2 (2018-09-11)
