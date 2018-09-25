@@ -8,7 +8,7 @@ from django.urls import reverse
 from django.utils.html import escape
 
 # Projectroles dependency
-from projectroles.models import Project, OMICS_CONSTANTS
+from projectroles.models import OMICS_CONSTANTS
 from projectroles.plugins import get_backend_api
 
 from ..models import Investigation, Study, Assay, GenericMaterial, \

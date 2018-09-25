@@ -30,7 +30,6 @@ def get_sample_dirs(investigation):
     ret = []
     irods_backend = get_backend_api('omics_irods')
 
-    # TODO: Raise exception if backend is not found?
     if irods_backend:
         for study in investigation.studies.all():
             ret.append(irods_backend.get_subdir(study))
@@ -71,9 +70,6 @@ def get_index_by_header(
     :param item_type: Type of item in case of GenericMaterial (optional)
     :return: Int or None if not found
     """
-
-    # TODO: Smarter way to iterate and find with variable amount of params?
-    # TODO: My flu brain can't get around this..
     for i, h in enumerate(render_table['field_header']):
         found = True
 
@@ -113,8 +109,6 @@ def get_sample_libraries(samples, study_tables):
     :param study_tables: Rendered study tables
     :return: GenericMaterial queryset
     """
-
-    # TODO: Circular dependency error if importing in module root, investigate
     from samplesheets.models import GenericMaterial
 
     if type(samples) != list:

@@ -35,7 +35,6 @@
                 <td>
                   {# BAM files #}
                   {% for sample in source.get_samples %}
-                    {# TODO: Only get libraries once #}
                     {% get_sample_libraries sample table_data as sample_libraries %}
                     {% for library in sample_libraries %}
                       {% url 'samplesheets.studyapps.cancer:file' file_type='bam' genericmaterial=library.omics_uuid as bam_url %}
