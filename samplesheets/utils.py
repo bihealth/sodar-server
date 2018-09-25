@@ -2,6 +2,8 @@
 
 import re
 
+from django.db.models import QuerySet
+
 # Projectroles dependency
 from projectroles.plugins import get_backend_api
 
@@ -111,7 +113,7 @@ def get_sample_libraries(samples, study_tables):
     """
     from samplesheets.models import GenericMaterial
 
-    if type(samples) != list:
+    if type(samples) not in [list, QuerySet]:
         samples = [samples]
 
     sample_names = [s.name for s in samples]

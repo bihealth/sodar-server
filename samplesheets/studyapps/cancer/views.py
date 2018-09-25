@@ -17,7 +17,8 @@ from projectroles.views import LoggedInPermissionMixin, \
 # Samplesheets dependency
 from samplesheets.models import GenericMaterial
 from samplesheets.rendering import SampleSheetTableBuilder
-from samplesheets.utils import get_index_by_header, get_last_material_name
+from samplesheets.utils import get_index_by_header, get_last_material_name, \
+    get_sample_libraries
 from samplesheets.studyapps.utils import get_igv_xml, FILE_TYPE_SUFFIXES
 
 # Local helper for authenticating with auth basic
@@ -173,30 +174,13 @@ class IGVSessionFileRenderView(BaseCancerConfigView):
         ###################
 
         samples = self.source.get_samples()
-        sample_names = [s.name for s in samples]
 
         # Build render table
         tb = SampleSheetTableBuilder()
         study_tables = tb.build_study_tables(self.source.study)
 
         # Get libraries
-        library_names = []
-
-        # TODO: Repeated in samplesheets_tags, make this a generic helper
-        for k, assay_table in study_tables['assays'].items():
-            sample_idx = get_index_by_header(
-                assay_table, 'name',
-                obj_cls=GenericMaterial, item_type='SAMPLE')
-
-            for row in assay_table['table_data']:
-                if row[sample_idx]['value'] in sample_names:
-                    last_name = get_last_material_name(row)
-
-                    if last_name not in library_names:
-                        library_names.append(last_name)
-
-        libraries = GenericMaterial.objects.filter(
-            study=self.source.study, name__in=library_names).order_by('name')
+        libraries = get_sample_libraries(samples, study_tables)
 
         bam_urls = {}
         vcf_urls = {}
