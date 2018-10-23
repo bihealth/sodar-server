@@ -11,9 +11,38 @@
 {% is_webdav_enabled as irods_webdav_enabled %}
 {% get_webdav_url as irods_webdav_url %}
 
+<style type="text/css">
+  /* Size column */
+  table.sodar-irods-obj-table thead tr th:nth-child(2) {
+    min-width: 60px;
+    text-align: right;
+  }
+
+  table.sodar-irods-obj-table tbody tr td:nth-child(2) {
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  /* Date column */
+  table.sodar-irods-obj-table tbody tr td:nth-child(3) {
+    width: 5%;
+    white-space: nowrap;
+  }
+
+  /* MD5 column */
+  table.sodar-irods-obj-table thead tr th:nth-child(4) {
+    width: 40px;
+    text-align: center;
+  }
+
+  table.sodar-irods-obj-table tbody tr td:nth-child(4) {
+    text-align: center;
+  }
+</style>
+
 <span class="text-nowrap">
   {% if show_file_list and irods_backend_enabled and irods_webdav_enabled %}
-    <button class="btn btn-secondary omics-list-btn omics-irods-popup-list-btn"
+    <button class="btn btn-secondary sodar-list-btn sodar-irods-popup-list-btn"
             irods-path="{{ irods_path }}"
             list-url="{{ list_url }}"
             webdav-url="{{ irods_webdav_url }}"
@@ -27,7 +56,7 @@
       <i class="fa fa-folder-open-o"></i>
     </button>
   {% endif %}
-  <button class="btn btn-secondary omics-list-btn omics-irods-copy-btn"
+  <button class="btn btn-secondary sodar-list-btn sodar-irods-copy-btn"
           data-clipboard-text="{{ irods_path }}" role="submit"
           data-table="{% if data_table %}1{% else %}0{% endif %}"
           {% if not data_table %}
@@ -37,7 +66,7 @@
           {% if not irods_dirs or disable_all %} disabled{% endif %}>
     <i class="fa fa-terminal"></i>
   </button>
-  <button class="btn btn-secondary omics-list-btn omics-irods-copy-btn
+  <button class="btn btn-secondary sodar-list-btn sodar-irods-copy-btn
           {% if not irods_webdav_enabled or not irods_dirs or disable_all %} disabled{% endif %}"
           data-clipboard-text="{{ irods_webdav_url }}{{ irods_path }}" role="submit"
           data-tooltip="tooltip" data-placement="top"
@@ -45,7 +74,7 @@
           {% if not irods_dirs or disable_all %} disabled{% endif %}>
     <i class="fa fa-clipboard"></i>
   </button>
-  <a class="btn btn-secondary omics-list-btn omics-irods-dav-btn {% if data_table %}mr-1{% endif %}
+  <a class="btn btn-secondary sodar-list-btn sodar-irods-dav-btn {% if data_table %}mr-1{% endif %}
      {% if not irods_webdav_enabled or not irods_dirs or disable_all %} disabled{% endif %}"
      href="{{ irods_webdav_url }}{{ irods_path }}" role="button"
      data-table="{% if data_table %}1{% else %}0{% endif %}"

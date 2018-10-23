@@ -29,7 +29,7 @@ def get_stats_html(irods_path, project=None):
     if project:
         url_kwargs['project'] = project.sodar_uuid
 
-    return '<span class="badge badge-pill badge-info omics-irods-stats"' \
+    return '<span class="badge badge-pill badge-info sodar-irods-stats"' \
            'stats-url="{url}">' \
            '<i class="fa fa-spin fa-circle-o-notch"></i> Updating stats..' \
            '</span>'.format(

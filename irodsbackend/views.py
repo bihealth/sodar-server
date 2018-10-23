@@ -11,7 +11,7 @@ from projectroles.models import Project, RoleAssignment, SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
 
 
-# Omics constants
+# SODAR constants
 PROJECT_ROLE_OWNER = SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
 PROJECT_ROLE_DELEGATE = SODAR_CONSTANTS['PROJECT_ROLE_DELEGATE']
 
