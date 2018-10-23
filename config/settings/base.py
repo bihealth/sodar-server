@@ -283,7 +283,7 @@ AUTHENTICATION_BACKENDS = [
 # Custom user app defaults
 AUTH_USER_MODEL = 'users.User'
 LOGIN_REDIRECT_URL = 'home'
-LOGIN_URL = 'account_login'
+LOGIN_URL = 'login'
 
 # SLUGLIFIER
 AUTOSLUG_SLUGIFY_FUNCTION = 'slugify.slugify'
