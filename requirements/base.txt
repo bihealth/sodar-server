@@ -52,9 +52,6 @@ sphinx-rtd-theme==0.4.1
 django-auth-ldap==1.2.8
 pyldap==2.4.25.1
 
-# Django-plugins (with self-made Django 1.10 support)
--e git://github.com/mikkonie/django-plugins.git@1bc07181e6ab68b0f9ed3a00382eb1f6519e1009#egg=django-plugins
-
 # Rules for permissions
 rules==2.0
 
@@ -69,6 +66,13 @@ markdown==2.6.11
 django-markupfield==1.5.0
 django-pagedown==1.0.6
 mistune==0.8.3
+
+# Django-plugins (with self-made Django 1.10 support)
+-e git://github.com/mikkonie/django-plugins.git@1bc07181e6ab68b0f9ed3a00382eb1f6519e1009#egg=django-plugins
+
+# SODAR Core
+-e git+ssh://git@cubi-gitlab.bihealth.org/CUBI_Engineering/CUBI_Data_Mgmt/sodar_core.git@9ee52d94bef61215d84c2125707745baa40a1957#egg=django-sodar-core
+
 
 ####################
 # SODAR app imports

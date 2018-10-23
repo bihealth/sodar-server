@@ -16,6 +16,7 @@ Changed
     - Update requirements to match sodar_core v0.3.0 (#370)
     - Update SODAR app requirements to current versions
     - Rebrand project and site as ``sodar`` (#166)
+    - Update projectroles dependencies in SODAR apps to match SODAR Core v0.3.0 (#370)
 
 Removed
 -------

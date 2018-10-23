@@ -9,8 +9,9 @@ https://docs.djangoproject.com/en/dev/ref/settings/
 """
 import environ
 
+SITE_PACKAGE = 'sodar'
 ROOT_DIR = environ.Path(__file__) - 3
-APPS_DIR = ROOT_DIR.path('sodar')
+APPS_DIR = ROOT_DIR.path(SITE_PACKAGE)
 
 # Load operating system environment variables and then prepare to use them
 env = environ.Env()
@@ -405,7 +406,9 @@ ENABLED_BACKEND_PLUGINS = env.list('ENABLED_BACKEND_PLUGINS', None, [
 
 
 # General site settings
+SITE_TITLE = 'SODAR'
 SITE_SUBTITLE = env.str('SITE_SUBTITLE', 'Beta')
+SITE_INSTANCE_TITLE = env.str('SITE_INSTANCE_TITLE', 'CUBI SODAR')
 
 
 # General API settings
@@ -414,6 +417,7 @@ SODAR_API_MEDIA_TYPE = 'application/vnd.bihealth.sodar+json'
 
 
 # Projectroles app settings
+PROJECTROLES_SITE_MODE = env.str('PROJECTROLES_SITE_MODE', 'SOURCE')
 PROJECTROLES_SECRET_LENGTH = 32
 PROJECTROLES_INVITE_EXPIRY_DAYS = env.int('PROJECTROLES_INVITE_EXPIRY_DAYS', 14)
 PROJECTROLES_SEND_EMAIL = env.bool('PROJECTROLES_SEND_EMAIL', False)
@@ -437,6 +441,7 @@ ADMINALERTS_PAGINATION = 15
 
 
 # Taskflow backend settings
+TASKFLOW_TARGETS = ['irods', 'sodar']
 TASKFLOW_BACKEND_HOST = env.str('TASKFLOW_BACKEND_HOST', 'http://0.0.0.0')
 TASKFLOW_BACKEND_PORT = env.int('TASKFLOW_BACKEND_PORT', 5005)
 

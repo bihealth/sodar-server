@@ -7,13 +7,13 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 # Projectroles dependency
-from projectroles.models import Project, RoleAssignment, OMICS_CONSTANTS
+from projectroles.models import Project, RoleAssignment, SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
 
 
 # Omics constants
-PROJECT_ROLE_OWNER = OMICS_CONSTANTS['PROJECT_ROLE_OWNER']
-PROJECT_ROLE_DELEGATE = OMICS_CONSTANTS['PROJECT_ROLE_DELEGATE']
+PROJECT_ROLE_OWNER = SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
+PROJECT_ROLE_DELEGATE = SODAR_CONSTANTS['PROJECT_ROLE_DELEGATE']
 
 
 class BaseIrodsAPIView(APIView):

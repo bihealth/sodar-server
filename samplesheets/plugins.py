@@ -4,7 +4,7 @@ from django.urls import reverse
 from djangoplugins.point import PluginPoint
 
 # Projectroles dependency
-from projectroles.models import Project, OMICS_CONSTANTS
+from projectroles.models import Project, SODAR_CONSTANTS
 from projectroles.plugins import ProjectAppPluginPoint, get_backend_api
 
 from .models import Investigation, Study, Assay, GenericMaterial
@@ -13,7 +13,7 @@ from .utils import get_sample_dirs, get_isa_field_name
 
 
 # Omics constants
-PROJECT_TYPE_PROJECT = OMICS_CONSTANTS['PROJECT_TYPE_PROJECT']
+PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 
 
 # Samplesheets project app plugin ----------------------------------------------
