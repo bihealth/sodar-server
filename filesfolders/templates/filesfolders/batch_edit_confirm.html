@@ -46,7 +46,7 @@
     {% if folder %}
       action="{% url 'filesfolders:batch_edit' folder=folder %}">
     {% else %}
-      action="{% url 'filesfolders:batch_edit' project=project.omics_uuid %}">
+      action="{% url 'filesfolders:batch_edit' project=project.sodar_uuid %}">
     {% endif %}
 
     {% csrf_token %}
@@ -85,7 +85,7 @@
               <option value="0">root</option>
             {% endif %}
             {% for choice in folder_choices %}
-              <option value="{{ choice.omics_uuid }}">{{ choice.get_path }}</option>
+              <option value="{{ choice.sodar_uuid }}">{{ choice.get_path }}</option>
             {% endfor %}
           </select>
         </div>

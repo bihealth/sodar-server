@@ -125,7 +125,7 @@ class TestListView(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
             self.as_guest.user]
         url = reverse(
             'filesfolders:list',
-            kwargs={'project': self.project.omics_uuid})
+            kwargs={'project': self.project.sodar_uuid})
 
         self.assert_element_exists(
             expected_true, url, 'omics-ff-readme-card', True)
@@ -142,7 +142,7 @@ class TestListView(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
             self.as_guest.user]
         url = reverse(
             'filesfolders:list',
-            kwargs={'project': self.project.omics_uuid})
+            kwargs={'project': self.project.sodar_uuid})
 
         self.assert_element_exists(
             expected_true, url, 'omics-ff-buttons-list', True)
@@ -160,7 +160,7 @@ class TestListView(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
             (self.as_guest.user, 0)]
         url = reverse(
             'filesfolders:list',
-            kwargs={'project': self.project.omics_uuid})
+            kwargs={'project': self.project.sodar_uuid})
         self.assert_element_count(expected, url, 'omics-ff-file-buttons')
 
     def test_buttons_folder(self):
@@ -174,7 +174,7 @@ class TestListView(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
             (self.as_guest.user, 0)]
         url = reverse(
             'filesfolders:list',
-            kwargs={'project': self.project.omics_uuid})
+            kwargs={'project': self.project.sodar_uuid})
         self.assert_element_count(expected, url, 'omics-ff-folder-buttons')
 
     def test_buttons_hyperlink(self):
@@ -188,7 +188,7 @@ class TestListView(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
             (self.as_guest.user, 0)]
         url = reverse(
             'filesfolders:list',
-            kwargs={'project': self.project.omics_uuid})
+            kwargs={'project': self.project.sodar_uuid})
         self.assert_element_count(expected, url, 'omics-ff-hyperlink-buttons')
 
     def test_file_checkboxes(self):
@@ -202,7 +202,7 @@ class TestListView(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
             (self.as_guest.user, 0)]
         url = reverse(
             'filesfolders:list',
-            kwargs={'project': self.project.omics_uuid})
+            kwargs={'project': self.project.sodar_uuid})
         self.assert_element_count(expected, url, 'omics-ff-checkbox')
 
     def test_public_link(self):
@@ -216,7 +216,7 @@ class TestListView(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
             (self.as_guest.user, 0)]
         url = reverse(
             'filesfolders:list',
-            kwargs={'project': self.project.omics_uuid})
+            kwargs={'project': self.project.sodar_uuid})
         self.assert_element_count(expected, url, 'omics-ff-link-public')
 
     def test_public_link_disable(self):
@@ -236,7 +236,7 @@ class TestListView(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
             (self.as_guest.user, 0)]
         url = reverse(
             'filesfolders:list',
-            kwargs={'project': self.project.omics_uuid})
+            kwargs={'project': self.project.sodar_uuid})
         self.assert_element_count(expected, url, 'omics-ff-link-public')
 
     def test_item_flags(self):
@@ -258,7 +258,7 @@ class TestListView(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
             (self.as_guest.user, 3)]
         url = reverse(
             'filesfolders:list',
-            kwargs={'project': self.project.omics_uuid})
+            kwargs={'project': self.project.sodar_uuid})
         self.assert_element_count(
             expected, url, 'omics-ff-flag-icon', 'class')
 

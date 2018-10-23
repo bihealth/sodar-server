@@ -2,7 +2,7 @@
 {# Projectroles dependency #}
 {% load projectroles_common_tags %}
 
-<tr class="omics-ff-search-item" id="omics-ff-search-item-{{ item.omics_uuid }}">
+<tr class="omics-ff-search-item" id="omics-ff-search-item-{{ item.sodar_uuid }}">
   {# Name & link column #}
   <td>
     <div class="omics-overflow-container">
@@ -11,15 +11,15 @@
         {% if item|get_class == 'HyperLink' %}
           href="{{ item.url }}" target="_blank"
         {% elif item|get_class == 'Folder' %}
-          href="{% url 'filesfolders:list' folder=item.omics_uuid %}"
+          href="{% url 'filesfolders:list' folder=item.sodar_uuid %}"
         {% elif item|get_class == 'File' %}
-          href="{% url 'filesfolders:file_serve' file=item.omics_uuid file_name=item.name %}"
+          href="{% url 'filesfolders:file_serve' file=item.sodar_uuid file_name=item.name %}"
         {% endif %}
       >
         {% autoescape off %}{{ item_display_name }}{% endautoescape %}
       </a>
       {% if item|get_class == 'File' and allow_public_links and item.public_url and can_share_link %}
-        <a title="Public Link" href="{% url 'filesfolders:file_public_link' file=item.omics_uuid %}" id="omics-ff-link-public-{{ item.omics_uuid }}">
+        <a title="Public Link" href="{% url 'filesfolders:file_public_link' file=item.sodar_uuid %}" id="omics-ff-link-public-{{ item.sodar_uuid }}">
           <i class="fa fa-link" aria-hidden="false"></i>
         </a>
       {% endif %}
@@ -38,9 +38,9 @@
     <div class="omics-overflow-container">
       <a
         {% if item.folder %}
-          href="{% url 'filesfolders:list' folder=item.folder.omics_uuid %}"
+          href="{% url 'filesfolders:list' folder=item.folder.sodar_uuid %}"
         {% else %}
-          href="{% url 'filesfolders:list' project=item.project.omics_uuid %}"
+          href="{% url 'filesfolders:list' project=item.project.sodar_uuid %}"
         {% endif %}
       >
         {% autoescape off %}

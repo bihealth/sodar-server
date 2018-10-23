@@ -20,13 +20,13 @@
       {% get_flag_classes item.flag as flag_classes %}
     {% endif %}
     {% if item|get_class == 'Folder' %}
-      <a href="{% url 'filesfolders:list' folder=item.omics_uuid %}" class="{{ flag_classes }}">{{ item.name|force_wrap:24|safe }}</a>
+      <a href="{% url 'filesfolders:list' folder=item.sodar_uuid %}" class="{{ flag_classes }}">{{ item.name|force_wrap:24|safe }}</a>
     {% elif item|get_class == 'HyperLink' %}
       <a href="{{ item.url }}" target="_blank" class="{{ flag_classes }}">{{ item.name|force_wrap:24|safe }}</a>
     {% elif item|get_class == 'File' %}
-      <a href="{% url 'filesfolders:file_serve' file=item.omics_uuid file_name=item.name %}" class="{{ flag_classes }}">{{ item.name|force_wrap:24|safe }}</a>
+      <a href="{% url 'filesfolders:file_serve' file=item.sodar_uuid file_name=item.name %}" class="{{ flag_classes }}">{{ item.name|force_wrap:24|safe }}</a>
       {% if allow_public_links and item.public_url and can_share_link %}
-        <a title="Public Link" href="{% url 'filesfolders:file_public_link' file=item.omics_uuid %}" id="omics-ff-link-public-{{ item.omics_uuid }}" data-toggle="tooltip" data-placement="top">
+        <a title="Public Link" href="{% url 'filesfolders:file_public_link' file=item.sodar_uuid %}" id="omics-ff-link-public-{{ item.sodar_uuid }}" data-toggle="tooltip" data-placement="top">
           <i class="fa fa-link" aria-hidden="false"></i>
         </a>
       {% endif %}
@@ -66,8 +66,8 @@
     <td>
       {% if can_update_all or item.owner == request.user and can_update_own %}
         <input class="omics-checkbox" type="checkbox"
-               id="omics-ff-checkbox-{{ item|get_class }}-{{ item.omics_uuid }}"
-               name="batch_item_{{ item|get_class }}_{{ item.omics_uuid }}" value="1" />
+               id="omics-ff-checkbox-{{ item|get_class }}-{{ item.sodar_uuid }}"
+               name="batch_item_{{ item|get_class }}_{{ item.sodar_uuid }}" value="1" />
       {% endif %}
     </td>
   {% endif %}

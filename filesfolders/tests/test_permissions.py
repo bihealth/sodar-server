@@ -39,7 +39,7 @@ class TestFolderPermissions(TestProjectPermissionBase, FolderMixin):
     def test_folder_create(self):
         url = reverse(
             'filesfolders:folder_create',
-            kwargs={'project': self.project.omics_uuid})
+            kwargs={'project': self.project.sodar_uuid})
         good_users = [
             self.superuser,
             self.as_owner.user,
@@ -55,7 +55,7 @@ class TestFolderPermissions(TestProjectPermissionBase, FolderMixin):
     def test_folder_update(self):
         url = reverse(
             'filesfolders:folder_update',
-            kwargs={'item': self.folder.omics_uuid})
+            kwargs={'item': self.folder.sodar_uuid})
         good_users = [
             self.superuser,
             self.as_owner.user,
@@ -71,7 +71,7 @@ class TestFolderPermissions(TestProjectPermissionBase, FolderMixin):
     def test_folder_delete(self):
         url = reverse(
             'filesfolders:folder_delete',
-            kwargs={'item': self.folder.omics_uuid})
+            kwargs={'item': self.folder.sodar_uuid})
         good_users = [
             self.superuser,
             self.as_owner.user,
@@ -112,7 +112,7 @@ class TestFilePermissions(TestProjectPermissionBase, FileMixin):
         url = reverse(
             'filesfolders:file_create',
             kwargs={
-                'project': self.project.omics_uuid})
+                'project': self.project.sodar_uuid})
         good_users = [
             self.superuser,
             self.as_owner.user,
@@ -128,7 +128,7 @@ class TestFilePermissions(TestProjectPermissionBase, FileMixin):
     def test_file_update(self):
         url = reverse(
             'filesfolders:file_update',
-            kwargs={'item': self.file.omics_uuid})
+            kwargs={'item': self.file.sodar_uuid})
         good_users = [
             self.superuser,
             self.as_owner.user,
@@ -144,7 +144,7 @@ class TestFilePermissions(TestProjectPermissionBase, FileMixin):
     def test_file_delete(self):
         url = reverse(
             'filesfolders:file_delete',
-            kwargs={'item': self.file.omics_uuid})
+            kwargs={'item': self.file.sodar_uuid})
         good_users = [
             self.superuser,
             self.as_owner.user,
@@ -161,7 +161,7 @@ class TestFilePermissions(TestProjectPermissionBase, FileMixin):
         """Test generation and viewing of a public URL to a file"""
         url = reverse(
             'filesfolders:file_public_link',
-            kwargs={'file': self.file.omics_uuid})
+            kwargs={'file': self.file.sodar_uuid})
         good_users = [
             self.superuser,
             self.as_owner.user,
@@ -179,7 +179,7 @@ class TestFilePermissions(TestProjectPermissionBase, FileMixin):
         url = reverse(
             'filesfolders:file_serve',
             kwargs={
-                'file': self.file.omics_uuid,
+                'file': self.file.sodar_uuid,
                 'file_name': self.file.name})
         good_users = [
             self.superuser,
@@ -255,7 +255,7 @@ class TestHyperLinkPermissions(TestProjectPermissionBase, HyperLinkMixin):
     def test_hyperlink_create(self):
         url = reverse(
             'filesfolders:hyperlink_create',
-            kwargs={'project': self.project.omics_uuid})
+            kwargs={'project': self.project.sodar_uuid})
         good_users = [
             self.superuser,
             self.as_owner.user,
@@ -271,7 +271,7 @@ class TestHyperLinkPermissions(TestProjectPermissionBase, HyperLinkMixin):
     def test_hyperlink_update(self):
         url = reverse(
             'filesfolders:hyperlink_update',
-            kwargs={'item': self.hyperlink.omics_uuid})
+            kwargs={'item': self.hyperlink.sodar_uuid})
         good_users = [
             self.superuser,
             self.as_owner.user,
@@ -287,7 +287,7 @@ class TestHyperLinkPermissions(TestProjectPermissionBase, HyperLinkMixin):
     def test_hyperlink_delete(self):
         url = reverse(
             'filesfolders:hyperlink_delete',
-            kwargs={'item': self.hyperlink.omics_uuid})
+            kwargs={'item': self.hyperlink.sodar_uuid})
         good_users = [
             self.superuser,
             self.as_owner.user,
@@ -318,7 +318,7 @@ class TestBatchPermissions(TestProjectPermissionBase, FolderMixin):
         """Test access to batch editing confirmation"""
         url = reverse(
             'filesfolders:batch_edit',
-            kwargs={'project': self.project.omics_uuid})
+            kwargs={'project': self.project.sodar_uuid})
 
         # NOTE: Contributor is OK as checks for object perms happen after POST
         good_users = [
@@ -334,7 +334,7 @@ class TestBatchPermissions(TestProjectPermissionBase, FolderMixin):
         post_data = {
             'batch-action': 'delete',
             'user-confirmed': '0',
-            'batch_item_Folder_{}'.format(self.folder.omics_uuid): '1'}
+            'batch_item_Folder_{}'.format(self.folder.sodar_uuid): '1'}
 
         for user in good_users:
             with self.login(user):

@@ -112,7 +112,7 @@ class TestFolder(TestCase, FolderMixin, ProjectMixin, HyperLinkMixin):
             'owner': self.user_owner.pk,
             'description': 'description',
             'flag': None,
-            'omics_uuid': self.folder.omics_uuid}
+            'sodar_uuid': self.folder.sodar_uuid}
         self.assertEqual(model_to_dict(self.folder), expected)
 
     def test_find_name(self):
@@ -156,7 +156,7 @@ class TestFolder(TestCase, FolderMixin, ProjectMixin, HyperLinkMixin):
             'owner': self.user_owner.pk,
             'description': '',
             'flag': None,
-            'omics_uuid': subfolder.omics_uuid}
+            'sodar_uuid': subfolder.sodar_uuid}
         self.assertEqual(model_to_dict(subfolder), expected)
 
     def test_get_path(self):
@@ -266,7 +266,7 @@ class TestFile(TestCase, FileMixin, FolderMixin, ProjectMixin):
             'public_url': True,
             'secret': SECRET,
             'flag': None,
-            'omics_uuid': self.file.omics_uuid}
+            'sodar_uuid': self.file.sodar_uuid}
         self.assertEqual(model_to_dict(self.file), expected)
 
     def test_find_name(self):
@@ -364,7 +364,7 @@ class TestHyperLink(
             'owner': self.user_owner.pk,
             'description': 'description',
             'flag': None,
-            'omics_uuid': self.hyperlink.omics_uuid}
+            'sodar_uuid': self.hyperlink.sodar_uuid}
         self.assertEqual(model_to_dict(self.hyperlink), expected)
 
     def test__str__(self):

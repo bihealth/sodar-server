@@ -40,14 +40,14 @@ class FilesfoldersItemForm(forms.ModelForm):
             self.current_user = current_user
 
         if folder:
-            self.folder = Folder.objects.get(omics_uuid=folder)
+            self.folder = Folder.objects.get(sodar_uuid=folder)
             self.project = self.folder.project
 
         elif project:
-            self.project = Project.objects.get(omics_uuid=project)
+            self.project = Project.objects.get(sodar_uuid=project)
 
-        # Modify ModelChoiceFields to use omics_uuid
-        self.fields['folder'].to_field_name = 'omics_uuid'
+        # Modify ModelChoiceFields to use sodar_uuid
+        self.fields['folder'].to_field_name = 'sodar_uuid'
 
 
 class FolderForm(FilesfoldersItemForm):
@@ -69,7 +69,7 @@ class FolderForm(FilesfoldersItemForm):
         if not self.instance.pk:
             # Don't allow changing folder if we are creating a new object
             self.fields['folder'].choices = [
-                (self.folder.omics_uuid, self.folder.name)
+                (self.folder.sodar_uuid, self.folder.name)
                 if self.folder else (None, 'root')]
             self.fields['folder'].widget.attrs['readonly'] = True
 
@@ -86,10 +86,10 @@ class FolderForm(FilesfoldersItemForm):
             folders = [f for f in folders if not f.has_in_path(self.instance)]
 
             for f in folders:
-                folder_choices.append((f.omics_uuid, f.get_path()))
+                folder_choices.append((f.sodar_uuid, f.get_path()))
 
             self.fields['folder'].choices = folder_choices
-            self.initial['folder'] = self.instance.folder.omics_uuid if \
+            self.initial['folder'] = self.instance.folder.sodar_uuid if \
                 self.instance.folder else None
 
     def clean(self):
@@ -192,7 +192,7 @@ class FileForm(FilesfoldersItemForm):
         if not self.instance.pk:
             # Don't allow changing folder if we are creating a new object
             self.fields['folder'].choices = [
-                (self.folder.omics_uuid, self.folder.name)
+                (self.folder.sodar_uuid, self.folder.name)
                 if self.folder else (None, 'root')]
             self.fields['folder'].widget.attrs['readonly'] = True
 
@@ -203,10 +203,10 @@ class FileForm(FilesfoldersItemForm):
 
             for f in Folder.objects.filter(
                     project=self.instance.project.pk):
-                folder_choices.append((f.omics_uuid, f.get_path()))
+                folder_choices.append((f.sodar_uuid, f.get_path()))
 
             self.fields['folder'].choices = folder_choices
-            self.initial['folder'] = self.instance.folder.omics_uuid if \
+            self.initial['folder'] = self.instance.folder.sodar_uuid if \
                 self.instance.folder else None
 
     def clean(self):
@@ -416,7 +416,7 @@ class HyperLinkForm(FilesfoldersItemForm):
         if not self.instance.pk:
             # Don't allow changing folder if we are creating a new object
             self.fields['folder'].choices = [
-                (self.folder.omics_uuid, self.folder.name)
+                (self.folder.sodar_uuid, self.folder.name)
                 if self.folder else (None, 'root')]
             self.fields['folder'].widget.attrs['readonly'] = True
 
@@ -427,10 +427,10 @@ class HyperLinkForm(FilesfoldersItemForm):
 
             for f in Folder.objects.filter(
                     project=self.instance.project.pk):
-                folder_choices.append((f.omics_uuid, f.get_path()))
+                folder_choices.append((f.sodar_uuid, f.get_path()))
 
             self.fields['folder'].choices = folder_choices
-            self.initial['folder'] = self.instance.folder.omics_uuid if \
+            self.initial['folder'] = self.instance.folder.sodar_uuid if \
                 self.instance.folder else None
 
     def clean(self):

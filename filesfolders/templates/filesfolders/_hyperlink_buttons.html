@@ -1,17 +1,17 @@
 {# Projectroles dependency #}
 {% load projectroles_common_tags %}
 
-<div class="btn-group omics-edit-button-group" id="omics-ff-hyperlink-buttons-{{ link.omics_uuid }}">
+<div class="btn-group omics-edit-button-group" id="omics-ff-hyperlink-buttons-{{ link.sodar_uuid }}">
   <button class="btn btn-secondary dropdown-toggle btn-sm omics-edit-dropdown"
       type="button" data-toggle="dropdown" aria-expanded="false">
     <i class="fa fa-cog"></i>
   </button>
   <div class="dropdown-menu dropdown-menu-right">
-    <a class="dropdown-item" href="{% url 'filesfolders:hyperlink_update' item=link.omics_uuid %}">
+    <a class="dropdown-item" href="{% url 'filesfolders:hyperlink_update' item=link.sodar_uuid %}">
       <i class="fa fa-fw fa-pencil"></i>
       Update Link
     </a>
-    <a class="dropdown-item" href="{% url 'filesfolders:hyperlink_delete' item=link.omics_uuid %}">
+    <a class="dropdown-item" href="{% url 'filesfolders:hyperlink_delete' item=link.sodar_uuid %}">
       <i class="fa fa-fw fa-close"></i>
       Delete Link
     </a>

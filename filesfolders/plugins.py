@@ -33,7 +33,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
     #: FontAwesome icon ID string
     icon = 'file'
 
-    #: Entry point URL ID (must take project omics_uuid as "project" argument)
+    #: Entry point URL ID (must take project sodar_uuid as "project" argument)
     entry_point_url_id = 'filesfolders:list'
 
     #: Description string
@@ -76,7 +76,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         Return URL for referring to a object used by the app, along with a
         label to be shown to the user for linking.
         :param model_str: Object class (string)
-        :param uuid: omics_uuid of the referred object
+        :param uuid: sodar_uuid of the referred object
         :return: Dict or None if not found
         """
         obj = self.get_object(eval(model_str), uuid)
@@ -89,7 +89,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                 'url': reverse(
                     'filesfolders:file_serve',
                     kwargs={
-                        'file': obj.omics_uuid,
+                        'file': obj.sodar_uuid,
                         'file_name': obj.name}),
                     'label': obj.name,
                     'blank': True}
@@ -98,7 +98,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
             return {
                 'url': reverse(
                     'filesfolders:list',
-                    kwargs={'folder': obj.omics_uuid}),
+                    kwargs={'folder': obj.sodar_uuid}),
                 'label': obj.name}
 
         elif obj.__class__ == HyperLink:

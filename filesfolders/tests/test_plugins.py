@@ -105,9 +105,9 @@ class TestPlugins(
         """Test get_object_link() for a File object"""
         plugin = ProjectAppPluginPoint.get_plugin(PLUGIN_NAME)
         url = reverse('filesfolders:file_serve', kwargs={
-            'file': self.file.omics_uuid,
+            'file': self.file.sodar_uuid,
             'file_name': self.file.name})
-        ret = plugin.get_object_link('File', self.file.omics_uuid)
+        ret = plugin.get_object_link('File', self.file.sodar_uuid)
 
         self.assertEqual(ret['url'], url)
         self.assertEqual(ret['label'], self.file.name)
@@ -117,8 +117,8 @@ class TestPlugins(
         """Test get_object_link() for a Folder object"""
         plugin = ProjectAppPluginPoint.get_plugin(PLUGIN_NAME)
         url = reverse('filesfolders:list', kwargs={
-            'folder': self.folder.omics_uuid})
-        ret = plugin.get_object_link('Folder', self.folder.omics_uuid)
+            'folder': self.folder.sodar_uuid})
+        ret = plugin.get_object_link('Folder', self.folder.sodar_uuid)
 
         self.assertEqual(ret['url'], url)
         self.assertEqual(ret['label'], self.folder.name)
@@ -126,7 +126,7 @@ class TestPlugins(
     def test_get_object_link_hyperlink(self):
         """Test get_object_link() for a HyperLink object"""
         plugin = ProjectAppPluginPoint.get_plugin(PLUGIN_NAME)
-        ret = plugin.get_object_link('HyperLink', self.hyperlink.omics_uuid)
+        ret = plugin.get_object_link('HyperLink', self.hyperlink.sodar_uuid)
 
         self.assertEqual(ret['url'], self.hyperlink.url)
         self.assertEqual(ret['label'], self.hyperlink.name)
