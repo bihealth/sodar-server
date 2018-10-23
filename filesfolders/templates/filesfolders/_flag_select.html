@@ -1,10 +1,10 @@
 {% load filesfolders_tags %}
 
-<label for="omics-ff-flag-group">{{ form.flag.label }}</label>
-<div class="form-group" id="omics-ff-flag-group">
+<label for="sodar-ff-flag-group">{{ form.flag.label }}</label>
+<div class="form-group" id="sodar-ff-flag-group">
   {% for k, v in form.fields.flag.choices %}
-    <label for="omics-ff-flag-select" class="omics-horizontal-radio">
-      <input id="omics-ff-flag-select"
+    <label for="sodar-ff-flag-select" class="sodar-horizontal-radio">
+      <input id="sodar-ff-flag-select"
              type="radio" value="{{ k }}" name="flag"
              class="radio-inline" {% get_flag_status form.flag.value k %}>
         {% if k %}

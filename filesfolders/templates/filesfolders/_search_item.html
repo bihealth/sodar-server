@@ -2,10 +2,10 @@
 {# Projectroles dependency #}
 {% load projectroles_common_tags %}
 
-<tr class="omics-ff-search-item" id="omics-ff-search-item-{{ item.sodar_uuid }}">
+<tr class="sodar-ff-search-item" id="sodar-ff-search-item-{{ item.sodar_uuid }}">
   {# Name & link column #}
   <td>
-    <div class="omics-overflow-container">
+    <div class="sodar-overflow-container">
       {% highlight_search_term item.name search_term as item_display_name %}
       <a
         {% if item|get_class == 'HyperLink' %}
@@ -19,7 +19,7 @@
         {% autoescape off %}{{ item_display_name }}{% endautoescape %}
       </a>
       {% if item|get_class == 'File' and allow_public_links and item.public_url and can_share_link %}
-        <a title="Public Link" href="{% url 'filesfolders:file_public_link' file=item.sodar_uuid %}" id="omics-ff-link-public-{{ item.sodar_uuid }}">
+        <a title="Public Link" href="{% url 'filesfolders:file_public_link' file=item.sodar_uuid %}" id="sodar-ff-link-public-{{ item.sodar_uuid }}">
           <i class="fa fa-link" aria-hidden="false"></i>
         </a>
       {% endif %}
@@ -35,7 +35,7 @@
   </td>
   {# Project column #}
   <td>
-    <div class="omics-overflow-container">
+    <div class="sodar-overflow-container">
       <a
         {% if item.folder %}
           href="{% url 'filesfolders:list' folder=item.folder.sodar_uuid %}"
@@ -58,7 +58,7 @@
   </td>
   {# Description column #}
   <td>
-    <div class="omics-overflow-container">
+    <div class="sodar-overflow-container">
       {% autoescape off %}
         {% highlight_search_term item.description search_term %}
       {% endautoescape %}

@@ -12,7 +12,7 @@
 
 {% block projectroles_extend %}
 
-<div class="row omics-subtitle-container">
+<div class="container-fluid sodar-subtitle-container">
   <h3>
     {% if batch_action == 'delete' %}
       Delete
@@ -23,10 +23,10 @@
   </h3>
 </div>
 
-<div class="container-fluid omics-page-container">
+<div class="container-fluid sodar-page-container">
   {% if failed|length > 0 %}
     <div class="alert alert-danger" role="alert">
-      <p><strong>Note:</strong> The following
+      <p><strong>Note!</strong> The following
           item{% if failed|length != 1 %}s{% endif %} can <strong>not</strong> be
         {% if batch_action == 'move' %}
           moved (insufficient permissions)
@@ -34,7 +34,7 @@
           deleted (insufficient permissions or non-empty folders)
         {% endif %}
       </p>
-      <ul class="list-unstyled">
+      <ul class="list-unstyled mb-0">
         {% for item in failed %}
           <li>{{ item.name }}</li>
         {% endfor %}
@@ -54,7 +54,7 @@
     {% if items|length > 0 %}
 
       <div class="alert alert-warning" role="alert">
-        <p><strong>Warning:</strong>
+        <p><strong>Warning!</strong>
           {% if batch_action == 'move' %}
             The following item{% if items|length != 1 %}s{% endif %} will be moved:
           {% elif batch_action == 'delete' %}
@@ -62,15 +62,15 @@
               following item{% if items|length != 1 %}s{% endif %}?
           {% endif %}
         </p>
-        <ul class="list-unstyled">
+        <ul class="list-unstyled mb-0">
           {% for item in items %}
           <li>{{ item.name }}</li>
          {% endfor %}
         </ul>
       </div>
 
-      <input type="hidden" id="omics-ff-user-confirmed" name="user-confirmed" value="1" />
-      <input type="hidden" id="omics-ff-batch-action" name="batch-action" value="{{ batch_action }}" />
+      <input type="hidden" id="sodar-ff-user-confirmed" name="user-confirmed" value="1" />
+      <input type="hidden" id="sodar-ff-batch-action" name="batch-action" value="{{ batch_action }}" />
 
       {% for name in item_names %}
         <input type="hidden" name="{{ name }}" value="1" />
@@ -78,9 +78,9 @@
 
       {% if batch_action == 'move' and folder_check %}
         <div class="form-group">
-          <label for="omics-ff-older-select">Select folder:</label>
+          <label for="sodar-ff-older-select">Select folder:</label>
           <select class="form-control"
-                  id="omics-ff-folder-select" name="target-folder">
+                  id="sodar-ff-folder-select" name="target-folder">
             {% if folder %}
               <option value="0">root</option>
             {% endif %}

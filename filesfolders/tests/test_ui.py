@@ -128,7 +128,7 @@ class TestListView(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
             kwargs={'project': self.project.sodar_uuid})
 
         self.assert_element_exists(
-            expected_true, url, 'omics-ff-readme-card', True)
+            expected_true, url, 'sodar-ff-readme-card', True)
 
     def test_buttons_list(self):
         """Test file/folder list-wide button visibility according to user
@@ -145,10 +145,10 @@ class TestListView(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
             kwargs={'project': self.project.sodar_uuid})
 
         self.assert_element_exists(
-            expected_true, url, 'omics-ff-buttons-list', True)
+            expected_true, url, 'sodar-ff-buttons-list', True)
 
         self.assert_element_exists(
-            expected_false, url, 'omics-ff-buttons-list', False)
+            expected_false, url, 'sodar-ff-buttons-list', False)
 
     def test_buttons_file(self):
         """Test file action buttons visibility according to user permissions"""
@@ -161,7 +161,7 @@ class TestListView(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
         url = reverse(
             'filesfolders:list',
             kwargs={'project': self.project.sodar_uuid})
-        self.assert_element_count(expected, url, 'omics-ff-file-buttons')
+        self.assert_element_count(expected, url, 'sodar-ff-file-buttons')
 
     def test_buttons_folder(self):
         """Test folder action buttons visibility according to user
@@ -175,7 +175,7 @@ class TestListView(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
         url = reverse(
             'filesfolders:list',
             kwargs={'project': self.project.sodar_uuid})
-        self.assert_element_count(expected, url, 'omics-ff-folder-buttons')
+        self.assert_element_count(expected, url, 'sodar-ff-folder-buttons')
 
     def test_buttons_hyperlink(self):
         """Test hyperlink action buttons visibility according to user
@@ -189,7 +189,7 @@ class TestListView(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
         url = reverse(
             'filesfolders:list',
             kwargs={'project': self.project.sodar_uuid})
-        self.assert_element_count(expected, url, 'omics-ff-hyperlink-buttons')
+        self.assert_element_count(expected, url, 'sodar-ff-hyperlink-buttons')
 
     def test_file_checkboxes(self):
         """Test batch file editing checkbox visibility according to user
@@ -203,7 +203,7 @@ class TestListView(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
         url = reverse(
             'filesfolders:list',
             kwargs={'project': self.project.sodar_uuid})
-        self.assert_element_count(expected, url, 'omics-ff-checkbox')
+        self.assert_element_count(expected, url, 'sodar-ff-checkbox')
 
     def test_public_link(self):
         """Test public link visibility according to user
@@ -217,7 +217,7 @@ class TestListView(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
         url = reverse(
             'filesfolders:list',
             kwargs={'project': self.project.sodar_uuid})
-        self.assert_element_count(expected, url, 'omics-ff-link-public')
+        self.assert_element_count(expected, url, 'sodar-ff-link-public')
 
     def test_public_link_disable(self):
         """Test public link visibility if allow_public_links is set to False"""
@@ -237,7 +237,7 @@ class TestListView(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
         url = reverse(
             'filesfolders:list',
             kwargs={'project': self.project.sodar_uuid})
-        self.assert_element_count(expected, url, 'omics-ff-link-public')
+        self.assert_element_count(expected, url, 'sodar-ff-link-public')
 
     def test_item_flags(self):
         """Test item flagging"""
@@ -260,7 +260,7 @@ class TestListView(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
             'filesfolders:list',
             kwargs={'project': self.project.sodar_uuid})
         self.assert_element_count(
-            expected, url, 'omics-ff-flag-icon', 'class')
+            expected, url, 'sodar-ff-flag-icon', 'class')
 
 
 class TestSearch(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
@@ -348,7 +348,7 @@ class TestSearch(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
             (self.user_no_roles, 0)]
         url = reverse('projectroles:search') + '?' + urlencode(
             {'s': 'description'})
-        self.assert_element_count(expected, url, 'omics-ff-search-item')
+        self.assert_element_count(expected, url, 'sodar-ff-search-item')
 
     def test_search_type_file(self):
         """Test search items visibility with 'file' type"""
@@ -361,7 +361,7 @@ class TestSearch(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
             (self.user_no_roles, 0)]
         url = reverse('projectroles:search') + '?' + urlencode({
             's': 'file type:file'})
-        self.assert_element_count(expected, url, 'omics-ff-search-item')
+        self.assert_element_count(expected, url, 'sodar-ff-search-item')
 
     def test_search_type_folder(self):
         """Test search items visibility with 'folder' type"""
@@ -374,7 +374,7 @@ class TestSearch(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
             (self.user_no_roles, 0)]
         url = reverse('projectroles:search') + '?' + urlencode({
             's': 'folder type:folder'})
-        self.assert_element_count(expected, url, 'omics-ff-search-item')
+        self.assert_element_count(expected, url, 'sodar-ff-search-item')
 
     def test_search_type_link(self):
         """Test search items visibility with 'link' as type"""
@@ -387,7 +387,7 @@ class TestSearch(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
             (self.user_no_roles, 0)]
         url = reverse('projectroles:search') + '?' + urlencode({
             's': 'link type:link'})
-        self.assert_element_count(expected, url, 'omics-ff-search-item')
+        self.assert_element_count(expected, url, 'sodar-ff-search-item')
 
     def test_search_type_nonexisting(self):
         """Test search items visibility with a nonexisting type"""
@@ -400,4 +400,4 @@ class TestSearch(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
             (self.user_no_roles, 0)]
         url = reverse('projectroles:search') + '?' + urlencode({
             's': 'test type:Jaix1au'})
-        self.assert_element_count(expected, url, 'omics-ff-search-item')
+        self.assert_element_count(expected, url, 'sodar-ff-search-item')

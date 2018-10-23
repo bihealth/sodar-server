@@ -15,56 +15,64 @@
 {% block css %}
   {{ block.super }}
   <style type="text/css">
-    .table#omics-ff-list-table tr td:nth-child(1) {
+    .table#sodar-ff-list-table tr td:nth-child(1) {
       padding-right: 0;
       width: 20px;
     }
 
-    .table#omics-ff-list-table tr td:nth-child(2) {
+    .table#sodar-ff-list-table tr td:nth-child(2) {
       padding-left: 4px;
     }
 
-    .table#omics-ff-list-table tr td:nth-child(6) {
+    .table#sodar-ff-list-table tr td:nth-child(6) {
       white-space: nowrap;
+    }
+
+    .table#sodar-ff-list-table tr td:nth-child(7) {
+      width: 25px !important;
+    }
+
+    .table#sodar-ff-list-table tr td:nth-child(8) {
+      width: 15px !important;
     }
 
     /* Responsive modifications */
     @media screen and (max-width: 1200px) {
-      .table#omics-ff-list-table tr th:nth-child(4) {
+      .table#sodar-ff-list-table tr th:nth-child(4) {
         display: none;
       }
 
-      .table#omics-ff-list-table tr td:nth-child(5) {
+      .table#sodar-ff-list-table tr td:nth-child(5) {
         display: none;
       }
     }
 
     @media screen and (max-width: 900px) {
-      .table#omics-ff-list-table tr th:nth-child(5) {
+      .table#sodar-ff-list-table tr th:nth-child(5) {
         display: none;
       }
 
-      .table#omics-ff-list-table tr td:nth-child(6) {
+      .table#sodar-ff-list-table tr td:nth-child(6) {
         display: none;
       }
     }
 
     @media screen and (max-width: 750px) {
-      .table#omics-ff-list-table tr th:nth-child(3) {
+      .table#sodar-ff-list-table tr th:nth-child(3) {
         display: none;
       }
 
-      .table#omics-ff-list-table tr td:nth-child(4) {
+      .table#sodar-ff-list-table tr td:nth-child(4) {
         display: none;
       }
     }
 
     @media screen and (max-width: 500px) {
-      .table#omics-ff-list-table tr th:nth-child(2) {
+      .table#sodar-ff-list-table tr th:nth-child(2) {
         display: none;
       }
 
-      .table#omics-ff-list-table tr td:nth-child(3) {
+      .table#sodar-ff-list-table tr td:nth-child(3) {
         display: none;
       }
     }
@@ -83,32 +91,32 @@
 {% allow_public_links project as allow_public_links %}
 
 {% if can_view_data %}
-  <div class="row omics-subtitle-container bg-white sticky-top">
+  <div class="row sodar-subtitle-container bg-white sticky-top">
     <h3><i class="fa fa-file"></i> Small Files</h3>
     {% if can_add_data %}
       {% include 'filesfolders/_list_buttons.html' with project=project folder=folder up=False %}
     {% endif %}
   </div>
 
-  <div class="container-fluid omics-page-container">
+  <div class="container-fluid sodar-page-container">
     {% if folder %}
-      <form method="post" action="{% url 'filesfolders:batch_edit' folder=folder.sodar_uuid %}" id="omics-ff-batch-form">
+      <form method="post" action="{% url 'filesfolders:batch_edit' folder=folder.sodar_uuid %}" id="sodar-ff-batch-form">
     {% else %}
-      <form method="post" action="{% url 'filesfolders:batch_edit' project=project.sodar_uuid %}" id="omics-ff-batch-form">
+      <form method="post" action="{% url 'filesfolders:batch_edit' project=project.sodar_uuid %}" id="sodar-ff-batch-form">
     {% endif %}
 
       {% csrf_token %}
-      <input type="hidden" id="omics-ff-batch-form-action" name="batch-action" value="" />
-      <input type="hidden" id="omics-ff-user-confirmed" name="user-confirmed" value="0" />
+      <input type="hidden" id="sodar-ff-batch-form-action" name="batch-action" value="" />
+      <input type="hidden" id="sodar-ff-user-confirmed" name="user-confirmed" value="0" />
 
-      <div class="card omics-card{% if not readme_file %}-single{% endif %}" id="omics-ff-file-list">
-        <div class="card-body omics-card-body-table">
+      <div class="card" id="sodar-ff-file-list">
+        <div class="card-body p-0">
 
           <!-- Breadcrumb -->
-          <ol id="omics-ff-breadcrumb" class="breadcrumb omics-breadcrumb-table">
+          <ol id="sodar-ff-breadcrumb" class="breadcrumb sodar-breadcrumb-table">
             {% if not folder %}
               <li class="breadcrumb-item active">
-                <i class="fa fa-angle-right" id="omics-ff-breadcrumb-icon"></i>
+                <i class="fa fa-angle-right" id="sodar-ff-breadcrumb-icon"></i>
                 root
               </li>
             {% else %}
@@ -127,14 +135,14 @@
           </ol>
 
         </div>
-        <div class="card-body omics-card-body-table">
-          <table class="table table-striped omics-card-table" id="omics-ff-list-table">
+        <div class="card-body p-0">
+          <table class="table table-striped sodar-card-table" id="sodar-ff-list-table">
             <thead>
               {% include 'filesfolders/_list_header.html' with details_card_mode=False %}
             </thead>
 
             <!-- Content -->
-            <tbody id="omics-ff-list-content">
+            <tbody id="sodar-ff-list-content">
 
               <!-- Folders -->
               <!-- Print this if current folder is not root -->
@@ -190,16 +198,16 @@
 
     {# Folder ReadMe #}
     {% if readme_data %}
-      <div class="card omics-card" id="omics-ff-readme-card">
+      <div class="card" id="sodar-ff-readme-card">
         <div class="card-header">
           <h4><i class="fa fa-book"></i> Folder ReadMe ({{ readme_name }})</h4>
         </div>
         {% if readme_alt %}
-          <div class="card-body omics-card-body omics-card-body-info">
+          <div class="card-body sodar-card-body-info">
             <i class="fa fa-info-circle"></i> File "{{ readme_alt }}" also found in folder
           </div>
         {% endif %}
-        <div class="card-body omics-card-body">
+        <div class="card-body">
           {% if readme_mime == 'text/plain' %}
             <pre>{{ readme_data|wordwrap:79 }}</pre>
           {% elif readme_mime == 'text/markdown' %}
@@ -235,13 +243,13 @@
          var checkboxes = document.getElementsByTagName('input');
          if (ele.checked) {
              for (var i = 0; i < checkboxes.length; i++) {
-                 if (checkboxes[i].type == 'checkbox') {
+                 if (checkboxes[i].type === 'checkbox') {
                      checkboxes[i].checked = true;
                  }
              }
          } else {
              for (var i = 0; i < checkboxes.length; i++) {
-                 if (checkboxes[i].type == 'checkbox') {
+                 if (checkboxes[i].type === 'checkbox') {
                      checkboxes[i].checked = false;
                  }
              }
@@ -257,7 +265,7 @@
         title: 'File List',
         text: 'Here you can browse the files in the current folder and ' +
               'navigate between folders.',
-        attachTo: '#omics-ff-file-list top',
+        attachTo: '#sodar-ff-file-list top',
         advanceOn: '.docs-link click',
         showCancelLink: true
     });
@@ -266,7 +274,7 @@
         title: 'Breadcrumb',
         text: 'This element displays the path to the current folder for ' +
               'quick navigation.',
-        attachTo: '#omics-ff-breadcrumb-icon right',
+        attachTo: '#sodar-ff-breadcrumb-icon right',
         advanceOn: '.docs-link click',
         showCancelLink: true
     });
@@ -276,29 +284,29 @@
         text: 'From this menu you can upload small files, create new ' +
               'folders, define links to external resources and manage batch ' +
               'moving or deletion of files.',
-        attachTo: '#omics-ff-buttons-list left',
+        attachTo: '#sodar-ff-buttons-list left',
         advanceOn: '.docs-link click',
         showCancelLink: true
     });
 
-    if ($('td.omics-ff-action-column').length) {
+    if ($('td.sodar-ff-action-column').length) {
         tour.addStep('item_menu', {
             title: 'Item Menu',
             text: 'For each file, folder or hyperlink you are allowed to ' +
                   'edit, functions for updating and deleting them can be ' +
                   'found in this menu.',
-            attachTo: '.omics-ff-action-column left',
+            attachTo: '.sodar-ff-action-column left',
             advanceOn: '.docs-link click',
             showCancelLink: true
         });
     }
 
-    if ($('#omics-ff-list-header-select').length) {
+    if ($('#sodar-ff-list-header-select').length) {
         tour.addStep('project_app_details', {
             title: 'Item Selection Column',
             text: 'Select files, folders and hyperlinks in this column for ' +
                   'batch moving from the File Actions menu.',
-            attachTo: '#omics-ff-list-header-select left',
+            attachTo: '#sodar-ff-list-header-select left',
             advanceOn: '.docs-link click',
             showCancelLink: true
         });

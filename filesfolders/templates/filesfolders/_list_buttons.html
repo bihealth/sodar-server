@@ -1,8 +1,8 @@
 {% if up %}
   <div class="row">
-    <div class="btn-group dropup ml-auto" id="omics-ff-buttons-list-up">
+    <div class="btn-group dropup ml-auto" id="sodar-ff-buttons-list-up">
 {% else %}
-  <div class="btn-group ml-auto" id="omics-ff-buttons-list">
+  <div class="btn-group ml-auto" id="sodar-ff-buttons-list">
 {% endif %}
   <button class="btn btn-primary dropdown-toggle"
           type="button" data-toggle="dropdown"
@@ -45,8 +45,8 @@
     <a class="dropdown-item"
          href="javascript:{}"
          onclick="
-           document.getElementById('omics-ff-batch-form-action').value = 'move';
-           document.getElementById('omics-ff-batch-form').submit();
+           document.getElementById('sodar-ff-batch-form-action').value = 'move';
+           document.getElementById('sodar-ff-batch-form').submit();
            return false;">
       <i class="fa fa-fw fa-arrow-right"></i> Move Selected
     </a>
@@ -55,8 +55,8 @@
     <a class="dropdown-item"
          href="javascript:{}"
          onclick="
-           document.getElementById('omics-ff-batch-form-action').value = 'delete';
-           document.getElementById('omics-ff-batch-form').submit();
+           document.getElementById('sodar-ff-batch-form-action').value = 'delete';
+           document.getElementById('sodar-ff-batch-form').submit();
            return false;">
       <i class="fa fa-fw fa-trash"></i> Delete Selected
     </a>

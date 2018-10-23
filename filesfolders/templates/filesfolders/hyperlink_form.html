@@ -17,7 +17,7 @@
 
 {% block projectroles_extend %}
 
-<div class="row omics-subtitle-container">
+<div class="container-fluid sodar-subtitle-container">
   {% if object.pk %}
     <h3>Update External Link "{{ object.name }}"</h3>
   {% else %}
@@ -32,7 +32,7 @@
   {% endif %}
 </div>
 
-<div class="container-fluid omics-page-container">
+<div class="container-fluid sodar-page-container">
   <form method="post">
     {% csrf_token %}
 

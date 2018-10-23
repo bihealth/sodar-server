@@ -7,18 +7,17 @@
 
 {% block projectroles_extend %}
 
-<div class="row omics-subtitle-container">
+<div class="container-fluid sodar-subtitle-container">
   <h3>Public Link to File "{{ file.name }}"</h3>
 </div>
 
-<div class="container-fluid omics-page-container">
+<div class="container-fluid sodar-page-container">
   <p>Use the URL below to provide a publicly available download link to the file "{{ file.name }}" in project {{ file.project.title }}.</p>
   <div class="alert alert-warning" role="alert">
     <strong>Warning:</strong> Anyone with this URL can access the file, including users without permissions in the project.
   </div>
-</div>
 
-  <dl class="row omics-dl">
+  <dl class="row">
     <dt class="col-2">Link</dt>
     <dd class="col-10"><a href="{{ public_url }}">{{ public_url }}</a></dd>
   </dl>

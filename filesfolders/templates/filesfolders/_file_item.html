@@ -26,7 +26,7 @@
     {% elif item|get_class == 'File' %}
       <a href="{% url 'filesfolders:file_serve' file=item.sodar_uuid file_name=item.name %}" class="{{ flag_classes }}">{{ item.name|force_wrap:24|safe }}</a>
       {% if allow_public_links and item.public_url and can_share_link %}
-        <a title="Public Link" href="{% url 'filesfolders:file_public_link' file=item.sodar_uuid %}" id="omics-ff-link-public-{{ item.sodar_uuid }}" data-toggle="tooltip" data-placement="top">
+        <a title="Public Link" href="{% url 'filesfolders:file_public_link' file=item.sodar_uuid %}" id="sodar-ff-link-public-{{ item.sodar_uuid }}" data-toggle="tooltip" data-placement="top">
           <i class="fa fa-link" aria-hidden="false"></i>
         </a>
       {% endif %}
@@ -51,7 +51,7 @@
 
   {% if not details_card_mode %}
   {# Action button column #}
-    <td class="omics-ff-action-column">
+    <td class="sodar-ff-action-column">
       {% if can_update_all or item.owner == request.user and can_update_own %}
         {% if item|get_class == 'Folder' %}
           {% include 'filesfolders/_folder_buttons.html' with item_uuid=item.uuid %}
@@ -65,8 +65,8 @@
     {# Checkbox column #}
     <td>
       {% if can_update_all or item.owner == request.user and can_update_own %}
-        <input class="omics-checkbox" type="checkbox"
-               id="omics-ff-checkbox-{{ item|get_class }}-{{ item.sodar_uuid }}"
+        <input class="sodar-checkbox" type="checkbox"
+               id="sodar-ff-checkbox-{{ item|get_class }}-{{ item.sodar_uuid }}"
                name="batch_item_{{ item|get_class }}_{{ item.sodar_uuid }}" value="1" />
       {% endif %}
     </td>

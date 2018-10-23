@@ -18,7 +18,7 @@
 
 {% block projectroles_extend %}
 
-<div class="row omics-subtitle-container">
+<div class="container-fluid sodar-subtitle-container">
   {% if object.pk %}
     <h3>Update File</h3>
   {% else %}
@@ -33,7 +33,7 @@
   {% endif %}
 </div>
 
-<div class="container-fluid omics-page-container">
+<div class="container-fluid sodar-page-container">
   <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
 
