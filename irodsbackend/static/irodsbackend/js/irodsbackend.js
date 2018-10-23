@@ -2,7 +2,7 @@
  Collection statistics updating function
  ***************************************/
 var updateCollectionStats = function() {
-    $('span.omics-irods-stats').each(function () {
+    $('span.sodar-irods-stats').each(function () {
         var statsSpan = $(this);
 
         $.ajax({
@@ -27,12 +27,12 @@ $(document).ready(function() {
     /***************
      Init Clipboards
      ***************/
-    new ClipboardJS('.omics-irods-copy-btn');
+    new ClipboardJS('.sodar-irods-copy-btn');
 
     /******************
      Copy link handling
      ******************/
-    $('.omics-irods-copy-btn').click(function () {
+    $('.sodar-irods-copy-btn').click(function () {
         $(this).addClass('text-warning');
 
         if ($(this).attr('data-table') !== '1') {
@@ -63,7 +63,7 @@ $(document).ready(function() {
     /***************
      Link list Popup
      ***************/
-    $('.omics-irods-popup-list-btn').click(function() {
+    $('.sodar-irods-popup-list-btn').click(function() {
         var listUrl = $(this).attr('list-url');
         var irodsPath = $(this).attr('irods-path');
         var irodsPathLength = irodsPath.split('/').length;
@@ -85,7 +85,7 @@ $(document).ready(function() {
             // console.log(data);  // DEBUG
 
             if (data['data_objects'].length > 0) {
-                htmlData += '<table class="table omics-card-table table-striped omics-irods-obj-table">';
+                htmlData += '<table class="table sodar-card-table table-striped sodar-irods-obj-table">';
                 htmlData += '<thead><th>File</th><th>Size</th><th>Modified</th>';
 
                 if (showChecksumCol === true) {
@@ -124,8 +124,8 @@ $(document).ready(function() {
 
             // Set success content and toggle modal
             $('.modal-body').html(htmlData);
-            $('#omics-modal-wait').modal('hide');
-            $('#omics-modal').modal('show');
+            $('#sodar-modal-wait').modal('hide');
+            $('#sodar-modal').modal('show');
         }).fail(function (response) {
             // Set failure content and toggle modal
             if (response.status === 404) {
@@ -139,11 +139,11 @@ $(document).ready(function() {
                     response.status + ': ' + response.responseText + ')</span>');
             }
 
-            $('#omics-modal-wait').modal('hide');
-            $('#omics-modal').modal('show');
+            $('#sodar-modal-wait').modal('hide');
+            $('#sodar-modal').modal('show');
         });
 
         // Set waiting content and toggle modal
-        $('#omics-modal-wait').modal('show');
+        $('#sodar-modal-wait').modal('show');
     });
 });

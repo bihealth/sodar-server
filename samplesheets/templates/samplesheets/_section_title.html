@@ -1,7 +1,7 @@
 {% load samplesheets_tags %}
 
 <div class="row mb-4">
-  <h4 class="font-weight-bold {% if section_type == 'assay' %}text-danger{% else %}text-info{% endif %}">
+  <h4 class="font-weight-bold mb-0 {% if section_type == 'assay' %}text-danger{% else %}text-info{% endif %}">
     {% if section_type == 'assay' %}
       <i class="fa fa-fw fa-table" data-toggle="tooltip" data-placement="top" title="{{ item.file_name }}"></i>Assay:
     {% else %}
