@@ -52,9 +52,9 @@ class ZoneTicketGetView(
         """POST function for generating/refreshing a ticket"""
         irods_backend = get_backend_api('omics_irods')
         zone = LandingZone.objects.get(
-            omics_uuid=self.kwargs['landingzone'])
+            sodar_uuid=self.kwargs['landingzone'])
         redirect_url = reverse(
-            'landingzones:list', kwargs={'project': zone.project.omics_uuid})
+            'landingzones:list', kwargs={'project': zone.project.sodar_uuid})
         expiry_days = settings.LZ_BIH_PROTEOMICS_SMB_EXPIRY_DAYS
         error = False
         ex_msg = None

@@ -52,7 +52,7 @@ class TestLandingZonePermissions(
         """Test permissions for the project landing zone list"""
         url = reverse(
             'landingzones:list',
-            kwargs={'project': self.project.omics_uuid})
+            kwargs={'project': self.project.sodar_uuid})
         good_users = [
             self.superuser,
             self.as_owner.user,
@@ -68,7 +68,7 @@ class TestLandingZonePermissions(
         """Test permissions for landing zone creation"""
         url = reverse(
             'landingzones:create',
-            kwargs={'project': self.project.omics_uuid})
+            kwargs={'project': self.project.sodar_uuid})
         good_users = [
             self.superuser,
             self.as_owner.user,
@@ -84,7 +84,7 @@ class TestLandingZonePermissions(
         """Test permissions for landing zone deletion"""
         url = reverse(
             'landingzones:delete',
-            kwargs={'landingzone': self.landing_zone.omics_uuid})
+            kwargs={'landingzone': self.landing_zone.sodar_uuid})
         good_users = [
             self.superuser,
             self.as_owner.user,
@@ -100,7 +100,7 @@ class TestLandingZonePermissions(
         """Test permissions for landing zone status"""
         url = reverse(
             'landingzones:status',
-            kwargs={'landingzone': self.landing_zone.omics_uuid})
+            kwargs={'landingzone': self.landing_zone.sodar_uuid})
         good_users = [
             self.superuser,
             self.as_owner.user,

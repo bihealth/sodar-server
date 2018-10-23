@@ -59,8 +59,8 @@ def get_zone_samples_url(zone):
     # TODO: TBD: Inherit this from samplesheets instead?
     return reverse(
         'samplesheets:project_sheets',
-        kwargs={'study': zone.assay.study.omics_uuid}) + \
-        '#' + str(zone.assay.omics_uuid)
+        kwargs={'study': zone.assay.study.sodar_uuid}) + \
+        '#' + str(zone.assay.sodar_uuid)
 
 
 @register.simple_tag
@@ -87,7 +87,7 @@ def get_zone_list_url(zone):
     return reverse(
         'irodsbackend:list',
         kwargs={
-            'project': zone.project.omics_uuid,
+            'project': zone.project.sodar_uuid,
             'path': path,
             'md5': 1})
 
@@ -113,4 +113,4 @@ def get_config_plugin(zone):
 @register.simple_tag
 def get_config_link_url(zone, url_name):
     """Return URL for a config plugin link"""
-    return reverse(url_name, kwargs={'landingzone': zone.omics_uuid})
+    return reverse(url_name, kwargs={'landingzone': zone.sodar_uuid})

@@ -11,10 +11,10 @@
 {% is_zone_enabled zone as zone_enabled %}
 
 <tr class="{% get_zone_row_class zone %}"
-    id="{{ zone.omics_uuid }}"
-    zone-uuid="{{ zone.omics_uuid }}"
+    id="{{ zone.sodar_uuid }}"
+    zone-uuid="{{ zone.sodar_uuid }}"
     sample-url="{% get_zone_samples_url zone %}"
-    status-url="{% url 'landingzones:status' landingzone=zone.omics_uuid %}">
+    status-url="{% url 'landingzones:status' landingzone=zone.sodar_uuid %}">
   <td class="omics-lz-zone-title">
     {% if zone.user != request.user %}
       {% autoescape off %}
@@ -22,7 +22,7 @@
       {% endautoescape %}
     {% endif %}
       {% if details_card_mode %}
-        <a href="{% url 'landingzones:list' project=project.omics_uuid %}#{{ zone.omics_uuid }}">
+        <a href="{% url 'landingzones:list' project=project.sodar_uuid %}#{{ zone.sodar_uuid }}">
       {% endif %}
       {{ zone.title|force_wrap:16|safe }}
       {% if details_card_mode %}
@@ -42,10 +42,10 @@
 
   <td class="omics-lz-zone-assay">{{ zone.assay.get_display_name }}</td>
   <td class="omics-lz-zone-status-info">
-      <span id="omics-lz-zone-status-info-{{ zone.omics_uuid }}">
+      <span id="omics-lz-zone-status-info-{{ zone.sodar_uuid }}">
         {{ zone.status_info }}
       </span>
-      <span id="omics-lz-zone-status-moved-{{ zone.omics_uuid }}">
+      <span id="omics-lz-zone-status-moved-{{ zone.sodar_uuid }}">
       {% if zone.status == 'MOVED' %}
         <p class="mb-0">
           <a href="{% get_zone_samples_url zone %}"><i class="fa fa-arrow-circle-right"></i> Browse files in sample sheets</a>
@@ -53,7 +53,7 @@
       </span>
       {% endif %}
       {% if zone_enabled and irods_backend_enabled %}
-        <p class="mb-0" id="omics-lz-zone-stats-container-{{ zone.omics_uuid }}">
+        <p class="mb-0" id="omics-lz-zone-stats-container-{{ zone.sodar_uuid }}">
           {% get_irods_path zone as zone_irods_path %}
           {% autoescape off %}
             {% get_stats_html zone_irods_path project %}
@@ -61,7 +61,7 @@
         </p>
       {% endif %}
   </td>
-  <td id="omics-lz-zone-status-{{ zone.omics_uuid }}"
+  <td id="omics-lz-zone-status-{{ zone.sodar_uuid }}"
       class="omics-lz-zone-status text-white {% get_status_style zone %}">
     {{ zone.status }}
   </td>

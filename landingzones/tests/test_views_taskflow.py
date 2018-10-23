@@ -82,9 +82,9 @@ class LandingZoneTaskflowMixin:
 
         flow_data = {
             'zone_title': zone.title,
-            'zone_uuid': zone.omics_uuid,
+            'zone_uuid': zone.sodar_uuid,
             'user_name': user.username,
-            'user_uuid': user.omics_uuid,
+            'user_uuid': user.sodar_uuid,
             'assay_path': irods_backend.get_subdir(
                 zone.assay, landing_zone=True),
             'description': zone.description,
@@ -92,10 +92,10 @@ class LandingZoneTaskflowMixin:
             'dirs': []}
 
         values = {
-            'project_uuid': zone.project.omics_uuid,
+            'project_uuid': zone.project.sodar_uuid,
             'flow_name': 'landing_zone_create',
             'flow_data': flow_data,
-            'timeline_uuid': tl_event.omics_uuid,
+            'timeline_uuid': tl_event.sodar_uuid,
             'request_mode': 'async',
             'request': request}
 
@@ -178,7 +178,7 @@ class TestLandingZoneCreateView(
 
         # Issue POST request
         values = {
-            'assay': str(self.assay.omics_uuid),
+            'assay': str(self.assay.sodar_uuid),
             'title_suffix': ZONE_SUFFIX,
             'description': ZONE_DESC,
             'configuration': '',
@@ -188,7 +188,7 @@ class TestLandingZoneCreateView(
             response = self.client.post(
                 reverse(
                     'landingzones:create',
-                    kwargs={'project': self.project.omics_uuid}),
+                    kwargs={'project': self.project.sodar_uuid}),
                 values)
 
         # Assert redirect
@@ -197,7 +197,7 @@ class TestLandingZoneCreateView(
                 response,
                 reverse(
                     'landingzones:list',
-                    kwargs={'project': self.project.omics_uuid}))
+                    kwargs={'project': self.project.sodar_uuid}))
 
         # HACK: Wait for async stuff to finish
         for i in range(0, ASYNC_RETRY_COUNT):
@@ -285,7 +285,7 @@ class TestLandingZoneMoveView(
             response = self.client.post(
                 reverse(
                     'landingzones:move',
-                    kwargs={'landingzone': self.landing_zone.omics_uuid}),
+                    kwargs={'landingzone': self.landing_zone.sodar_uuid}),
                 values)
 
         # Assert redirect
@@ -293,7 +293,7 @@ class TestLandingZoneMoveView(
             self.assertRedirects(
                 response, reverse(
                     'landingzones:list',
-                    kwargs={'project': self.project.omics_uuid}))
+                    kwargs={'project': self.project.sodar_uuid}))
 
         # HACK: Wait for async stuff to finish
         for i in range(0, ASYNC_RETRY_COUNT):
@@ -328,7 +328,7 @@ class TestLandingZoneMoveView(
             response = self.client.post(
                 reverse(
                     'landingzones:move',
-                    kwargs={'landingzone': self.landing_zone.omics_uuid}),
+                    kwargs={'landingzone': self.landing_zone.sodar_uuid}),
                 values)
 
         # Assert redirect
@@ -336,7 +336,7 @@ class TestLandingZoneMoveView(
             self.assertRedirects(
                 response, reverse(
                     'landingzones:list',
-                    kwargs={'project': self.project.omics_uuid}))
+                    kwargs={'project': self.project.sodar_uuid}))
 
         # HACK: Wait for async stuff to finish
         for i in range(0, ASYNC_RETRY_COUNT):
@@ -371,7 +371,7 @@ class TestLandingZoneMoveView(
             response = self.client.post(
                 reverse(
                     'landingzones:validate',
-                    kwargs={'landingzone': self.landing_zone.omics_uuid}),
+                    kwargs={'landingzone': self.landing_zone.sodar_uuid}),
                 values)
 
         # Assert redirect
@@ -379,7 +379,7 @@ class TestLandingZoneMoveView(
             self.assertRedirects(
                 response, reverse(
                     'landingzones:list',
-                    kwargs={'project': self.project.omics_uuid}))
+                    kwargs={'project': self.project.sodar_uuid}))
 
         # HACK: Wait for async stuff to finish
         for i in range(0, ASYNC_RETRY_COUNT):
@@ -414,7 +414,7 @@ class TestLandingZoneMoveView(
             response = self.client.post(
                 reverse(
                     'landingzones:validate',
-                    kwargs={'landingzone': self.landing_zone.omics_uuid}),
+                    kwargs={'landingzone': self.landing_zone.sodar_uuid}),
                 values)
 
         # Assert redirect
@@ -422,7 +422,7 @@ class TestLandingZoneMoveView(
             self.assertRedirects(
                 response, reverse(
                     'landingzones:list',
-                    kwargs={'project': self.project.omics_uuid}))
+                    kwargs={'project': self.project.sodar_uuid}))
 
         # HACK: Wait for async stuff to finish
         for i in range(0, ASYNC_RETRY_COUNT):
@@ -491,7 +491,7 @@ class TestLandingZoneDeleteView(
             response = self.client.post(
                 reverse(
                     'landingzones:delete',
-                    kwargs={'landingzone': self.landing_zone.omics_uuid}),
+                    kwargs={'landingzone': self.landing_zone.sodar_uuid}),
                 values)
 
         # Assert redirect
@@ -499,7 +499,7 @@ class TestLandingZoneDeleteView(
             self.assertRedirects(
                 response, reverse(
                     'landingzones:list',
-                    kwargs={'project': self.project.omics_uuid}))
+                    kwargs={'project': self.project.sodar_uuid}))
 
         # HACK: Wait for async stuff to finish
         for i in range(0, ASYNC_RETRY_COUNT):

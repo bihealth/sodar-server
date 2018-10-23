@@ -105,7 +105,7 @@ class TestLandingZone(TestLandingZoneBase):
             'config_data': {},
             'status': ZONE_STATUS_INIT,
             'status_info': ZONE_STATUS_INFO_INIT,
-            'omics_uuid': self.landing_zone.omics_uuid}
+            'sodar_uuid': self.landing_zone.sodar_uuid}
 
         self.assertEqual(model_to_dict(self.landing_zone), expected)
 

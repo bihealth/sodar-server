@@ -84,7 +84,7 @@ class LandingZoneContextMixin:
 
         try:
             context['zone'] = LandingZone.objects.get(
-                omics_uuid=self.kwargs['landingzone'])
+                sodar_uuid=self.kwargs['landingzone'])
 
         except LandingZone.DoesNotExist:
             context['zone'] = None
@@ -245,9 +245,9 @@ class ZoneCreateView(
             flow_data = self.get_flow_data(
                 zone, flow_name, {
                     'zone_title': zone.title,
-                    'zone_uuid': zone.omics_uuid,
+                    'zone_uuid': zone.sodar_uuid,
                     'user_name': self.request.user.username,
-                    'user_uuid': self.request.user.omics_uuid,
+                    'user_uuid': self.request.user.sodar_uuid,
                     'assay_path': irods_backend.get_subdir(
                         assay, landing_zone=True),
                     'description': zone.description,
@@ -256,10 +256,10 @@ class ZoneCreateView(
 
             try:
                 taskflow.submit(
-                    project_uuid=project.omics_uuid,
+                    project_uuid=project.sodar_uuid,
                     flow_name=flow_name,
                     flow_data=flow_data,
-                    timeline_uuid=tl_event.omics_uuid,
+                    timeline_uuid=tl_event.sodar_uuid,
                     request_mode='async',
                     request=self.request)
 
@@ -278,7 +278,7 @@ class ZoneCreateView(
 
             return redirect(reverse(
                 'landingzones:list',
-                kwargs={'project': project.omics_uuid}))
+                kwargs={'project': project.sodar_uuid}))
 
 
 class ZoneDeleteView(
@@ -294,7 +294,7 @@ class ZoneDeleteView(
         """Override has_permission to check perms depending on owner"""
         try:
             zone = LandingZone.objects.get(
-                omics_uuid=self.kwargs['landingzone'])
+                sodar_uuid=self.kwargs['landingzone'])
 
             if zone.user == self.request.user:
                 return self.request.user.has_perm(
@@ -314,7 +314,7 @@ class ZoneDeleteView(
             *args, **kwargs)
 
         context['zone'] = LandingZone.objects.get(
-            omics_uuid=self.kwargs['landingzone'])
+            sodar_uuid=self.kwargs['landingzone'])
 
         return context
 
@@ -324,12 +324,12 @@ class ZoneDeleteView(
         irods_backend = get_backend_api('omics_irods')  # TODO: Ensure it exists
         tl_event = None
 
-        zone = LandingZone.objects.get(omics_uuid=self.kwargs['landingzone'])
+        zone = LandingZone.objects.get(sodar_uuid=self.kwargs['landingzone'])
         project = zone.project
 
         redirect_url = reverse(
             'landingzones:list',
-            kwargs={'project': project.omics_uuid})
+            kwargs={'project': project.sodar_uuid})
 
         if not taskflow:
             messages.error(
@@ -372,7 +372,7 @@ class ZoneDeleteView(
             flow_data = self.get_flow_data(
                 zone, flow_name, {
                     'zone_title': zone.title,
-                    'zone_uuid': zone.omics_uuid,
+                    'zone_uuid': zone.sodar_uuid,
                     'zone_config': zone.configuration,
                     'assay_path': irods_backend.get_subdir(
                         zone.assay, landing_zone=True),
@@ -380,12 +380,12 @@ class ZoneDeleteView(
 
             try:
                 taskflow.submit(
-                    project_uuid=project.omics_uuid,
+                    project_uuid=project.sodar_uuid,
                     flow_name=flow_name,
                     flow_data=flow_data,
                     request=self.request,
                     request_mode='async',
-                    timeline_uuid=tl_event.omics_uuid)
+                    timeline_uuid=tl_event.sodar_uuid)
                 self.object = None
 
             except taskflow.FlowSubmitException as ex:
@@ -425,12 +425,12 @@ class ZoneMoveView(
             *args, **kwargs)
 
         context['zone'] = LandingZone.objects.get(
-            omics_uuid=self.kwargs['landingzone'])
+            sodar_uuid=self.kwargs['landingzone'])
 
         # Validate only mode
         if self.request.get_full_path() == reverse(
                 'landingzones:validate',
-                kwargs={'landingzone': context['zone'].omics_uuid}):
+                kwargs={'landingzone': context['zone'].sodar_uuid}):
             context['validate_only'] = True
 
         context['sample_dir'] = settings.IRODS_SAMPLE_DIR
@@ -442,7 +442,7 @@ class ZoneMoveView(
         taskflow = get_backend_api('taskflow')
         irods_backend = get_backend_api('omics_irods')  # TODO: Ensure it exists
 
-        zone = LandingZone.objects.get(omics_uuid=self.kwargs['landingzone'])
+        zone = LandingZone.objects.get(sodar_uuid=self.kwargs['landingzone'])
         project = zone.project
         tl_event = None
         validate_only = False
@@ -451,7 +451,7 @@ class ZoneMoveView(
         # Validate only mode
         if self.request.get_full_path() == reverse(
                 'landingzones:validate',
-                kwargs={'landingzone': zone.omics_uuid}):
+                kwargs={'landingzone': zone.sodar_uuid}):
             validate_only = True
             event_name = 'zone_validate'
 
@@ -497,7 +497,7 @@ class ZoneMoveView(
                 self.request, 'Unable to process zone: taskflow not enabled!')
 
             return redirect(reverse(
-                'landingzones:list', kwargs={'project': project.omics_uuid}))
+                'landingzones:list', kwargs={'project': project.sodar_uuid}))
 
         # Else go on with the creation
         if tl_event:
@@ -508,7 +508,7 @@ class ZoneMoveView(
         flow_data = self.get_flow_data(
             zone, flow_name, {
                 'zone_title': str(zone.title),
-                'zone_uuid': zone.omics_uuid,
+                'zone_uuid': zone.sodar_uuid,
                 'zone_config': zone.configuration,
                 'assay_path_samples': irods_backend.get_subdir(
                     zone.assay, landing_zone=False),
@@ -521,12 +521,12 @@ class ZoneMoveView(
 
         try:
             taskflow.submit(
-                project_uuid=project.omics_uuid,
+                project_uuid=project.sodar_uuid,
                 flow_name='landing_zone_move',
                 flow_data=flow_data,
                 request=self.request,
                 request_mode='async',
-                timeline_uuid=tl_event.omics_uuid)
+                timeline_uuid=tl_event.sodar_uuid)
 
             messages.warning(
                 self.request,
@@ -544,7 +544,7 @@ class ZoneMoveView(
 
         return HttpResponseRedirect(
             reverse('landingzones:list', kwargs={
-                'project': project.omics_uuid}))
+                'project': project.sodar_uuid}))
 
 
 class ZoneClearView(
@@ -558,7 +558,7 @@ class ZoneClearView(
 
     def post(self, request, **kwargs):
         timeline = get_backend_api('timeline_backend')
-        project = Project.objects.get(omics_uuid=self.kwargs['project'])
+        project = Project.objects.get(sodar_uuid=self.kwargs['project'])
         tl_event = None
 
         # Add event in Timeline
@@ -602,7 +602,7 @@ class ZoneClearView(
 
         return HttpResponseRedirect(
             reverse('landingzones:list', kwargs={
-                'project': project.omics_uuid}))
+                'project': project.sodar_uuid}))
 
 
 # General API Views ------------------------------------------------------------
@@ -617,7 +617,7 @@ class LandingZoneStatusGetAPIView(
 
         try:
             zone = LandingZone.objects.get(
-                omics_uuid=zone_uuid)
+                sodar_uuid=zone_uuid)
 
         except LandingZone.DoesNotExist:
             return Response('LandingZone not found', status=404)
@@ -660,7 +660,7 @@ class LandingZoneListAPIView(APIView):
         ret_data = {}
 
         for zone in zones:
-            ret_data[str(zone.omics_uuid)] = {
+            ret_data[str(zone.sodar_uuid)] = {
                 'title': zone.title,
                 'assay': zone.assay.get_name(),
                 'user': zone.user.username,
@@ -671,7 +671,7 @@ class LandingZoneListAPIView(APIView):
             if config_plugin:
                 for field in config_plugin.api_config_data:
                     if field in zone.config_data:
-                        ret_data[str(zone.omics_uuid)][field] = \
+                        ret_data[str(zone.sodar_uuid)][field] = \
                             zone.config_data[field]
 
         return Response(ret_data, status=200)
@@ -686,11 +686,11 @@ class LandingZoneListAPIView(APIView):
 class ZoneCreateAPIView(APIView):
     def post(self, request):
         try:
-            user = User.objects.get(omics_uuid=request.data['user_uuid'])
+            user = User.objects.get(sodar_uuid=request.data['user_uuid'])
             project = Project.objects.get(
-                omics_uuid=request.data['project_uuid'])
+                sodar_uuid=request.data['project_uuid'])
             assay = Assay.objects.get(
-                omics_uuid=request.data['assay_uuid'])
+                sodar_uuid=request.data['assay_uuid'])
 
         except (
                 User.DoesNotExist,
@@ -706,14 +706,14 @@ class ZoneCreateAPIView(APIView):
             description=request.data['description'])
         zone.save()
 
-        return Response({'zone_uuid': zone.omics_uuid}, status=200)
+        return Response({'zone_uuid': zone.sodar_uuid}, status=200)
 
 
 '''
 class ZoneStatusGetAPIView(APIView):
     def post(self, request):
         try:
-            zone = LandingZone.objects.get(omics_uuid=request.data['zone_uuid'])
+            zone = LandingZone.objects.get(sodar_uuid=request.data['zone_uuid'])
 
         except LandingZone.DoesNotExist:
             return Response('LandingZone not found', status=404)
@@ -731,7 +731,7 @@ class ZoneStatusSetAPIView(APIView):
     def post(self, request):
         try:
             zone = LandingZone.objects.get(
-                omics_uuid=request.data['zone_uuid'])
+                sodar_uuid=request.data['zone_uuid'])
 
         except LandingZone.DoesNotExist:
             return Response('LandingZone not found', status=404)
@@ -758,14 +758,14 @@ class ZoneStatusSetAPIView(APIView):
             if zone.status == 'MOVED':
                 email_url = request.build_absolute_uri(reverse(
                     'samplesheets:project_sheets',
-                    kwargs={'study': zone.assay.study.omics_uuid}) + \
-                            '#' + str(zone.assay.omics_uuid))
+                    kwargs={'study': zone.assay.study.sodar_uuid}) + \
+                            '#' + str(zone.assay.sodar_uuid))
 
             else:   # FAILED
                 email_url = request.build_absolute_uri(reverse(
                     'landingzones:list',
-                    kwargs={'project': zone.project.omics_uuid}) + \
-                            '#' + str(zone.omics_uuid))
+                    kwargs={'project': zone.project.sodar_uuid}) + \
+                            '#' + str(zone.sodar_uuid))
 
             message_body = message_body.format(
                 zone=zone.title,
@@ -773,7 +773,7 @@ class ZoneStatusSetAPIView(APIView):
                 assay=zone.assay.get_display_name(),
                 user=zone.user.username,
                 user_email=zone.user.email,
-                zone_uuid=str(zone.omics_uuid),
+                zone_uuid=str(zone.sodar_uuid),
                 status_info=zone.status_info,
                 url=email_url)
 

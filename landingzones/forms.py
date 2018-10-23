@@ -45,22 +45,22 @@ class LandingZoneForm(forms.ModelForm):
 
         if project:
             try:
-                self.project = Project.objects.get(omics_uuid=project)
+                self.project = Project.objects.get(sodar_uuid=project)
 
             except Project.DoesNotExist:
                 pass    # TODO: Fail
 
         if assay:
             try:
-                self.assay = Assay.objects.get(omics_uuid=assay)
+                self.assay = Assay.objects.get(sodar_uuid=assay)
 
             except Assay.DoesNotExist:
                 pass    # TODO: Fail
 
         # Form modifications
 
-        # Modify ModelChoiceFields to use omics_uuid
-        self.fields['assay'].to_field_name = 'omics_uuid'
+        # Modify ModelChoiceFields to use sodar_uuid
+        self.fields['assay'].to_field_name = 'sodar_uuid'
 
         # Set suffix
         self.fields['title_suffix'].label = 'Title suffix'
@@ -86,7 +86,7 @@ class LandingZoneForm(forms.ModelForm):
                 if not irods_backend or irods_backend.collection_exists(
                         irods_backend.get_path(assay)):
                     self.fields['assay'].choices.append(
-                        (assay.omics_uuid, '{} / {}'.format(
+                        (assay.sodar_uuid, '{} / {}'.format(
                             assay.study.get_display_name(),
                             assay.get_display_name())))
 

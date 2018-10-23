@@ -38,7 +38,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
     #: FontAwesome icon ID string
     icon = 'database'
 
-    #: Entry point URL ID (must take project omics_uuid as "project" argument)
+    #: Entry point URL ID (must take project sodar_uuid as "project" argument)
     entry_point_url_id = 'landingzones:list'
 
     #: Description string
@@ -103,9 +103,9 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                 flow_name = 'landing_zone_create'
                 flow_data = {
                     'zone_title': zone.title,
-                    'zone_uuid': zone.omics_uuid,
+                    'zone_uuid': zone.sodar_uuid,
                     'user_name': zone.user.username,
-                    'user_uuid': str(zone.user.omics_uuid),
+                    'user_uuid': str(zone.user.sodar_uuid),
                     'assay_path': irods_backend.get_subdir(
                         zone.assay, landing_zone=True),
                     'description': zone.description,
@@ -121,7 +121,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
 
                 flow = {
                     'flow_name': flow_name,
-                    'project_uuid': str(zone.project.omics_uuid),
+                    'project_uuid': str(zone.project.sodar_uuid),
                     'flow_data': flow_data}
                 sync_flows.append(flow)
 
@@ -132,7 +132,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         Return URL for referring to a object used by the app, along with a
         label to be shown to the user for linking.
         :param model_str: Object class (string)
-        :param uuid: omics_uuid of the referred object
+        :param uuid: sodar_uuid of the referred object
         :return: Dict or None if not found
         """
         obj = self.get_object(eval(model_str), uuid)
@@ -144,16 +144,16 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
             return {
                 'url': reverse(
                     'landingzones:list',
-                    kwargs={'project': obj.project.omics_uuid}) +
-                            '#' + str(obj.omics_uuid),
+                    kwargs={'project': obj.project.sodar_uuid}) +
+                            '#' + str(obj.sodar_uuid),
                 'label': obj.title}
 
         elif obj.__class__ == Assay:
             return {
                 'url': reverse(
                     'samplesheets:project_sheets',
-                    kwargs={'study': obj.study.omics_uuid}) +
-                            '#' + str(obj.omics_uuid),
+                    kwargs={'study': obj.study.sodar_uuid}) +
+                            '#' + str(obj.sodar_uuid),
                 'label': obj.get_display_name()}
 
 

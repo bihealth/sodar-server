@@ -96,7 +96,7 @@ class TestProjectZonesView(TestViewsBase):
         with self.login(self.user):
             response = self.client.get(reverse(
                 'landingzones:list',
-                kwargs={'project': self.project.omics_uuid}))
+                kwargs={'project': self.project.sodar_uuid}))
             self.assertEqual(response.status_code, 200)
             self.assertEqual(
                 response.context['investigation'], self.investigation)
@@ -110,7 +110,7 @@ class TestProjectZonesView(TestViewsBase):
         with self.login(self.user_contrib):
             response = self.client.get(reverse(
                 'landingzones:list',
-                kwargs={'project': self.project.omics_uuid}))
+                kwargs={'project': self.project.sodar_uuid}))
             self.assertEqual(response.status_code, 200)
             self.assertEqual(
                 response.context['investigation'], self.investigation)
@@ -127,7 +127,7 @@ class TestLandingZoneCreateView(TestViewsBase):
         with self.login(self.user):
             response = self.client.get(reverse(
                 'landingzones:create',
-                kwargs={'project': self.project.omics_uuid}))
+                kwargs={'project': self.project.sodar_uuid}))
             self.assertEqual(response.status_code, 200)
 
             # Assert form
@@ -152,7 +152,7 @@ class TestLandingZoneClearView(TestViewsBase):
         with self.login(self.user):
             response = self.client.get(reverse(
                 'landingzones:clear',
-                kwargs={'project': self.project.omics_uuid}))
+                kwargs={'project': self.project.sodar_uuid}))
             self.assertEqual(response.status_code, 200)
 
     def test_post(self):
@@ -164,12 +164,12 @@ class TestLandingZoneClearView(TestViewsBase):
         with self.login(self.user):
             response = self.client.post(reverse(
                 'landingzones:clear',
-                kwargs={'project': self.project.omics_uuid}))
+                kwargs={'project': self.project.sodar_uuid}))
 
             # Assert redirect
             self.assertRedirects(response, reverse(
                 'landingzones:list',
-                kwargs={'project': self.project.omics_uuid}))
+                kwargs={'project': self.project.sodar_uuid}))
 
         # Assert postcondition
         self.assertEqual(LandingZone.objects.all().count(), 0)
@@ -183,7 +183,7 @@ class TestLandingZoneStatusGetAPIView(TestViewsBase):
         with self.login(self.user):
             response = self.client.get(reverse(
                 'landingzones:status',
-                kwargs={'landingzone': self.landing_zone.omics_uuid}))
+                kwargs={'landingzone': self.landing_zone.sodar_uuid}))
 
             self.assertEqual(response.status_code, 200)
 
@@ -201,7 +201,7 @@ class TestLandingZoneStatusSetAPIView(TestViewsBase):
         """Test POST request for setting a landing zone status into ACTIVE"""
         with self.login(self.user):
             values = {
-                'zone_uuid': str(self.landing_zone.omics_uuid),
+                'zone_uuid': str(self.landing_zone.sodar_uuid),
                 'status': 'ACTIVE',
                 'status_info': DEFAULT_STATUS_INFO['ACTIVE']}
 
@@ -216,7 +216,7 @@ class TestLandingZoneStatusSetAPIView(TestViewsBase):
         """Test POST request for setting a landing zone status into MOVED"""
         with self.login(self.user):
             values = {
-                'zone_uuid': str(self.landing_zone.omics_uuid),
+                'zone_uuid': str(self.landing_zone.sodar_uuid),
                 'status': 'MOVED',
                 'status_info': DEFAULT_STATUS_INFO['MOVED']}
 
@@ -231,7 +231,7 @@ class TestLandingZoneStatusSetAPIView(TestViewsBase):
         """Test POST request for setting a landing zone status into FAILED"""
         with self.login(self.user):
             values = {
-                'zone_uuid': str(self.landing_zone.omics_uuid),
+                'zone_uuid': str(self.landing_zone.sodar_uuid),
                 'status': 'FAILED',
                 'status_info': DEFAULT_STATUS_INFO['FAILED']}
 
