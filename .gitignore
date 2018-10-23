@@ -76,7 +76,7 @@ node_modules/
 .env
 
 # User-uploaded media
-omics_data_mgmt/media/
+sodar/media/
 
 
 # Static files

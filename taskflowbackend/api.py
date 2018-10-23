@@ -48,7 +48,7 @@ class TaskflowAPI:
         :param request_mode: "sync" or "async"
         :param timeline_uuid: UUID of corresponding timeline event (optional)
         :param force_fail: Make flow fail on purpose (boolean, default False)
-        :param omics_url: URL of omics_data_mgmt server (optional, for testing)
+        :param omics_url: URL of SODAR server (optional, for testing)
         :return: Boolean, status info if failure (string)
         """
         url = TASKFLOW_URL + '/submit'

@@ -3,7 +3,7 @@
 from __future__ import unicode_literals
 
 from django.conf import settings
-from omics_data_mgmt.users.models import User
+from sodar.users.models import User
 # from django.contrib.users.models import User
 from django.db import migrations
 

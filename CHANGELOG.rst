@@ -15,6 +15,7 @@ Changed
     - Update Django to v1.11.16 (#370)
     - Update requirements to match sodar_core v0.3.0 (#370)
     - Update SODAR app requirements to current versions
+    - Rebrand project and site as ``sodar`` (#166)
 
 Removed
 -------

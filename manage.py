@@ -21,9 +21,8 @@ if __name__ == '__main__':
             )
         raise
 
-    # This allows easy placement of apps within the interior
-    # omics_data_mgmt directory.
+    # This allows easy placement of apps within the interior sodar directory.
     current_path = os.path.dirname(os.path.abspath(__file__))
-    sys.path.append(os.path.join(current_path, 'omics_data_mgmt'))
+    sys.path.append(os.path.join(current_path, 'sodar'))
 
     execute_from_command_line(sys.argv)

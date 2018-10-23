@@ -5,4 +5,4 @@ set -o pipefail
 set -o nounset
 
 
-celery -A omics_data_mgmt.taskapp beat -l INFO
+celery -A sodar.taskapp beat -l INFO

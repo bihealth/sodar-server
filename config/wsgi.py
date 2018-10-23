@@ -18,10 +18,9 @@ import sys
 
 from django.core.wsgi import get_wsgi_application
 
-# This allows easy placement of apps within the interior
-# omics_data_mgmt directory.
+# This allows easy placement of apps within the interior sodar directory.
 app_path = os.path.dirname(os.path.abspath(__file__)).replace('/config', '')
-sys.path.append(os.path.join(app_path, 'omics_data_mgmt'))
+sys.path.append(os.path.join(app_path, 'sodar'))
 
 if os.environ.get('DJANGO_SETTINGS_MODULE') == 'config.settings.production':
     from raven.contrib.django.raven_compat.middleware.wsgi import Sentry

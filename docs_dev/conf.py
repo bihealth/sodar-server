@@ -163,7 +163,7 @@ html_static_path = ['_static']
 # html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'omics_data_mgmtdoc'
+htmlhelp_basename = 'sodardoc'
 
 
 # -- Options for LaTeX output --------------------------------------------------
@@ -183,7 +183,7 @@ latex_elements = {
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
     ('index',
-     'omics_data_mgmt.tex',
+     'sodar.tex',
      'SODAR Documentation',
      """Mikko Nieminen""", 'manual'),
 ]
@@ -214,7 +214,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'omics_data_mgmt', 'SODAR Documentation',
+    ('index', 'sodar', 'SODAR Documentation',
      ["""Mikko Nieminen"""], 1)
 ]
 
@@ -228,7 +228,7 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    ('index', 'omics_data_mgmt', 'SODAR Documentation',
+    ('index', 'sodar', 'SODAR Documentation',
      """Mikko Nieminen""", 'SODAR',
      """SODAR Web UI""", 'Miscellaneous'),
 ]

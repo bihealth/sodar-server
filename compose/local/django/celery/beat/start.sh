@@ -7,4 +7,4 @@ set -o xtrace
 
 
 rm -f './celerybeat.pid'
-celery -A omics_data_mgmt.taskapp beat -l INFO
+celery -A sodar.taskapp beat -l INFO

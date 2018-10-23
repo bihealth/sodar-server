@@ -11,13 +11,13 @@ with open(os.path.join(os.path.dirname(__file__), 'README.rst')) as readme:
 os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
 setup(
-    name='omics_data_mgmt',
+    name='sodar',
     version=versioneer.get_version(),
     cmdclass=versioneer.get_cmdclass(),
     packages=find_packages(),
     include_package_data=True,
     license='MIT License',
-    description='Web GUI for BIH CUBI SODAR system',
+    description='BIH CUBI SODAR system',
     long_description=README,
     url='https://bihealth.org',
     author='Mikko Nieminen, Manuel Holtgrewe',

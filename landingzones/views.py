@@ -25,7 +25,7 @@ from samplesheets.models import Assay
 from samplesheets.views import InvestigationContextMixin
 
 # Local helper for authenticating with auth basic
-from omics_data_mgmt.users.auth import fallback_to_auth_basic
+from sodar.users.auth import fallback_to_auth_basic
 
 from .forms import LandingZoneForm
 from .models import LandingZone

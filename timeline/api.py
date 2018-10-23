@@ -7,7 +7,7 @@ from django.urls import reverse
 from django.utils.text import Truncator
 
 # Access Django user model
-from omics_data_mgmt.users.models import User
+from sodar.users.models import User
 
 # Projectroles dependency
 from projectroles.models import Project

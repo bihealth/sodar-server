@@ -4,10 +4,10 @@ services:
   - postgres:9.4
 
 variables:
-  POSTGRES_DB: omics_data_mgmt
-  POSTGRES_USER: omics_data_mgmt
-  POSTGRES_PASSWORD: omics_data_mgmt
-  DATABASE_URL: postgres://omics_data_mgmt:omics_data_mgmt@postgres/omics_data_mgmt
+  POSTGRES_DB: sodar
+  POSTGRES_USER: sodar
+  POSTGRES_PASSWORD: sodar
+  DATABASE_URL: postgres://sodar:sodar@postgres/sodar
 
 before_script:
   # SSH setup taken from https://gitlab.com/gitlab-examples/ssh-private-key

@@ -10,7 +10,7 @@ https://docs.djangoproject.com/en/dev/ref/settings/
 import environ
 
 ROOT_DIR = environ.Path(__file__) - 3
-APPS_DIR = ROOT_DIR.path('omics_data_mgmt')
+APPS_DIR = ROOT_DIR.path('sodar')
 
 # Load operating system environment variables and then prepare to use them
 env = environ.Env()
@@ -62,7 +62,7 @@ THIRD_PARTY_APPS = [
 # Project apps
 LOCAL_APPS = [
     # Custom users app
-    'omics_data_mgmt.users.apps.UsersConfig',
+    'sodar.users.apps.UsersConfig',
 
     # Project apps
     'projectroles.apps.ProjectrolesConfig',
@@ -109,7 +109,7 @@ MIDDLEWARE = [
 # MIGRATIONS CONFIGURATION
 # ------------------------------------------------------------------------------
 MIGRATION_MODULES = {
-    'sites': 'omics_data_mgmt.contrib.sites.migrations'
+    'sites': 'sodar.contrib.sites.migrations'
 }
 
 # DEBUG
@@ -145,7 +145,7 @@ MANAGERS = ADMINS
 # Uses django-environ to accept uri format
 # See: https://django-environ.readthedocs.io/en/latest/#supported-types
 DATABASES = {
-    'default': env.db('DATABASE_URL', default='postgres:///omics_data_mgmt'),
+    'default': env.db('DATABASE_URL', default='postgres:///sodar'),
 }
 DATABASES['default']['ATOMIC_REQUESTS'] = False
 
@@ -270,14 +270,6 @@ AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
 ]
 
-ACCOUNT_AUTHENTICATION_METHOD = 'username'
-ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
-
-ACCOUNT_ALLOW_REGISTRATION = False
-ACCOUNT_ADAPTER = 'omics_data_mgmt.users.adapters.AccountAdapter'
-SOCIALACCOUNT_ADAPTER = 'omics_data_mgmt.users.adapters.SocialAccountAdapter'
-
 # Custom user app defaults
 AUTH_USER_MODEL = 'users.User'
 LOGIN_REDIRECT_URL = 'home'
@@ -342,8 +334,8 @@ if env.str('ENABLE_LDAP', None):
 
     AUTHENTICATION_BACKENDS = tuple(itertools.chain(
         # ('django_auth_ldap.backend.LDAPBackend',),
-        ('omics_data_mgmt.users.backends.ChariteLDAPBackend',),
-        ('omics_data_mgmt.users.backends.MDCLDAPBackend',),
+        ('sodar.users.backends.ChariteLDAPBackend',),
+        ('sodar.users.backends.MDCLDAPBackend',),
         AUTHENTICATION_BACKENDS,))
 
 

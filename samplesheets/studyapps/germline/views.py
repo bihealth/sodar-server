@@ -22,7 +22,7 @@ from samplesheets.utils import get_index_by_header
 from samplesheets.studyapps.utils import get_igv_xml, FILE_TYPE_SUFFIXES
 
 # Local helper for authenticating with auth basic
-from omics_data_mgmt.users.auth import fallback_to_auth_basic
+from sodar.users.auth import fallback_to_auth_basic
 
 
 class BaseGermlineConfigView(

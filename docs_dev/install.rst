@@ -9,7 +9,7 @@ This document describes how to install the system for local development.
 NB: the display of this document in Gitlab is incomplete and all listings will be missing.
 Please rather click "view source" if you want to read this in Gitlab.
 
-NB: Make sure to use the `dev` branch of all repositories for development.
+NB: Make sure to use the ``dev`` branch of all repositories for development.
 
 **NOTE:** If you want to develop without iRODS and Omics Taskflow, you can skip
 the steps related to their installation and set the environment variable
@@ -20,17 +20,17 @@ Install SODAR
 =============
 
 First, create a postgresql users and a database for your application.
-For example, ``omics_data_mgmt`` with password ``omics_data_mgmt`` and a database called ``omics_data_mgmt``.
+For example, ``sodar`` with password ``sodar`` and a database called ``sodar``.
 Also, give the user the permission to create further Postgres databases (used for testing).
 
 .. code-block:: shell
-    $ sudo adduser --no-create-home omics_data_mgmt
+    $ sudo adduser --no-create-home sodar
     $ sudo su - postgres
     $ psql
-    $ CREATE DATABASE omics_data_mgmt;
-    $ CREATE USER omics_data_mgmt WITH PASSWORD 'omics_data_mgmt';
-    $ GRANT ALL PRIVILEGES ON DATABASE omics_data_mgmt to omics_data_mgmt;
-    $ ALTER USER omics_data_mgmt CREATEDB;
+    $ CREATE DATABASE sodar;
+    $ CREATE USER sodar WITH PASSWORD 'sodar';
+    $ GRANT ALL PRIVILEGES ON DATABASE sodar to sodar;
+    $ ALTER USER sodar CREATEDB;
     $ \q
 
 You have to make the credentials in the environment variable ``DATABASE_URL``.
@@ -39,13 +39,13 @@ set ``DJANGO_READ_DOT_ENV_FILE`` true in your actual environment. See
 ``config/settings/base.py`` for more information.
 
 .. code-block:: shell
-    $ export DATABASE_URL='postgres://omics_data_mgmt:omics_data_mgmt@127.0.0.1/omics_data_mgmt'
+    $ export DATABASE_URL='postgres://sodar:sodar@127.0.0.1/sodar'
 
 Clone the repository and setup the virtual environment inside:
 
 .. code-block:: shell
-    $ git clone git@cubi-gitlab.bihealth.org:CUBI_Engineering/CUBI_Data_Mgmt/omics_data_mgmt.git
-    $ cd omics_data_mgmt
+    $ git clone git@cubi-gitlab.bihealth.org:CUBI_Engineering/CUBI_Data_Mgmt/sodar.git
+    $ cd sodar
     $ virtualenv -p python3.6 .venv
     $ source .venv/bin/activate
 

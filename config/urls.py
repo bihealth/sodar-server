@@ -18,7 +18,7 @@ urlpatterns = [
     url(settings.ADMIN_URL, admin.site.urls),
 
     # User management
-    url(r'^users/', include('omics_data_mgmt.users.urls', namespace='users')),
+    url(r'^users/', include('sodar.users.urls', namespace='users')),
 
     # Login and logout
     url(r'^login/$', auth_views.login, name='account_login'),

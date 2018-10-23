@@ -1,2 +1,2 @@
 include versioneer.py
-include omics_data_mgmt/_version.py
+include sodar/_version.py

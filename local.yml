@@ -14,7 +14,7 @@ services:
     volumes:
       - .:/app
     environment:
-      - POSTGRES_USER=omics_data_mgmt
+      - POSTGRES_USER=sodar
       - USE_DOCKER=yes
     ports:
       - "8000:8000"
@@ -28,6 +28,6 @@ services:
       - postgres_data_local:/var/lib/postgresql/data
       - postgres_backup_local:/backups
     environment:
-      - POSTGRES_USER=omics_data_mgmt
+      - POSTGRES_USER=sodar
 
 
