@@ -9,96 +9,96 @@
 
   /* Materials table */
 
-  .table#omics-ss-search-table-materials thead tr th:nth-child(2) {
+  .table#sodar-ss-search-table-materials thead tr th:nth-child(2) {
       width: 65px !important;
   }
 
-  .table#omics-ss-search-table-materials tbody tr td:nth-child(2) {
+  .table#sodar-ss-search-table-materials tbody tr td:nth-child(2) {
       width: 65px !important;
   }
 
   @media screen and (max-width: 1200px) {
-    .table#omics-ss-search-table-materials tr th:nth-child(5) {
+    .table#sodar-ss-search-table-materials tr th:nth-child(5) {
       display: none;
     }
 
-    .table#omics-ss-search-table-materials tr td:nth-child(5) {
+    .table#sodar-ss-search-table-materials tr td:nth-child(5) {
       display: none;
     }
   }
 
   @media screen and (max-width: 900px) {
-    .table#omics-ss-search-table-materials tr th:nth-child(4) {
+    .table#sodar-ss-search-table-materials tr th:nth-child(4) {
       display: none;
     }
 
-    .table#omics-ss-search-table-materials tr td:nth-child(4) {
+    .table#sodar-ss-search-table-materials tr td:nth-child(4) {
       display: none;
     }
   }
 
   @media screen and (max-width: 750px) {
-    .table#omics-ss-search-table-materials tr th:nth-child(2) {
+    .table#sodar-ss-search-table-materials tr th:nth-child(2) {
       display: none;
     }
-     .table#omics-ss-search-table-materials tr td:nth-child(2) {
+     .table#sodar-ss-search-table-materials tr td:nth-child(2) {
       display: none;
     }
   }
 
   @media screen and (max-width: 600px) {
-    .table#omics-ss-search-table-materials tr th:nth-child(3) {
+    .table#sodar-ss-search-table-materials tr th:nth-child(3) {
       display: none;
     }
 
-    .table#omics-ss-search-table-materials tr td:nth-child(3) {
+    .table#sodar-ss-search-table-materials tr td:nth-child(3) {
       display: none;
     }
   }
 
   /* Files table */
 
-  .table#omics-ss-search-table-files thead tr th:nth-child(1) {
+  .table#sodar-ss-search-table-files thead tr th:nth-child(1) {
       min-width: 35% !important;
   }
 
-  .table#omics-ss-search-table-files tbody tr td:nth-child(1) {
+  .table#sodar-ss-search-table-files tbody tr td:nth-child(1) {
       min-width: 35% !important;
   }
 
   @media screen and (max-width: 1400px) {
-    .table#omics-ss-search-table-files tr th:nth-child(3) {
+    .table#sodar-ss-search-table-files tr th:nth-child(3) {
       display: none;
     }
 
-    .table#omics-ss-search-table-files tr td:nth-child(3) {
+    .table#sodar-ss-search-table-files tr td:nth-child(3) {
       display: none;
     }
   }
 
   @media screen and (max-width: 1100px) {
-    .table#omics-ss-search-table-files tr th:nth-child(4) {
+    .table#sodar-ss-search-table-files tr th:nth-child(4) {
       display: none;
     }
-     .table#omics-ss-search-table-files tr td:nth-child(4) {
+     .table#sodar-ss-search-table-files tr td:nth-child(4) {
       display: none;
     }
 
-    .table#omics-ss-search-table-files tr th:nth-child(2) {
+    .table#sodar-ss-search-table-files tr th:nth-child(2) {
       width: 25% !important;
     }
 
-    .table#omics-ss-search-table-files tr td:nth-child(2) {
+    .table#sodar-ss-search-table-files tr td:nth-child(2) {
       width: 25% !important;
     }
   }
 
   @media screen and (max-width: 800px) {
-    .table#omics-ss-search-table-files tr th:nth-child(2) {
+    .table#sodar-ss-search-table-files tr th:nth-child(2) {
       display: none;
     }
 
-    .table#omics-ss-search-table-files tr td:nth-child(2) {
+    .table#sodar-ss-search-table-files tr td:nth-child(2) {
       display: none;
     }
   }
@@ -109,7 +109,7 @@
 
   {% include 'projectroles/_search_header.html' with search_title=search_results.materials.title result_count=search_results.materials.items|length %}
 
-  <table class="table table-striped omics-card-table omics-search-table" id="omics-ss-search-table-materials">
+  <table class="table table-striped sodar-card-table sodar-search-table" id="sodar-ss-search-table-materials">
     <thead>
       <tr>
         <th>Name</th>
@@ -135,7 +135,7 @@
 
   {% include 'projectroles/_search_header.html' with search_title=search_results.files.title result_count=search_results.files.items|length result_limit=irods_query_limit %}
 
-  <table class="table table-striped omics-card-table omics-search-table" id="omics-ss-search-table-files">
+  <table class="table table-striped sodar-card-table sodar-search-table" id="sodar-ss-search-table-files">
     <thead>
       <tr>
         <th>Name</th>

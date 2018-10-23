@@ -20,33 +20,33 @@
 
   <style type="text/css">
     /* Special version of the container for samplesheets */
-    div.omics-subtitle-container {
+    div.sodar-subtitle-container {
       padding-top: 10px;
       padding-bottom: 8px;
       // border-bottom: 1px solid #dfdfdf;
     }
 
-    .omics-ss-assay-info-popup {
+    .sodar-ss-assay-info-popup {
       max-width: 800px;
     }
 
-    a.omics-ss-anchor {
+    a.sodar-ss-anchor {
       display: block;
       position: relative;
       top: -75px;
       visibility: hidden;
     }
 
-    .omics-ss-init-container {
+    .sodar-ss-init-container {
       height: 470px;
     }
 
-    .omics-ss-data-table {
+    .sodar-ss-data-table {
       border: 0 !important;
       min-width: 100%;
     }
 
-    .omics-ss-data-table thead tr th {
+    .sodar-ss-data-table thead tr th {
       white-space: nowrap;
       padding: 5px;
       border-top: 0;
@@ -55,30 +55,30 @@
 
     }
 
-    th.omics-ss-data-header {
+    th.sodar-ss-data-header {
       max-width: {% get_setting 'SHEETS_MAX_COLUMN_WIDTH' %}px;
     }
 
-    td.omics-ss-data-cell {
+    td.sodar-ss-data-cell {
       max-width: {% get_setting 'SHEETS_MAX_COLUMN_WIDTH' %}px;
       padding: 2px;
     }
 
-    .omics-ss-data-table thead tr th:last-child {
+    .sodar-ss-data-table thead tr th:last-child {
       border-right: 0;
     }
 
-    .omics-ss-data-table thead tr.omics-ss-header-row th {
+    .sodar-ss-data-table thead tr.sodar-ss-header-row th {
       padding-right: 22px; /* Avoid covering sort icons */
     }
 
-    .omics-ss-data-table tbody tr td {
+    .sodar-ss-data-table tbody tr td {
       white-space: nowrap;
       padding: 5px;
       margin: 0 !important;
     }
 
-    .omics-ss-data-table-contentapp tbody tr td {
+    .sodar-ss-data-table-contentapp tbody tr td {
       vertical-align: top !important;
       white-space: normal !important;
     }
@@ -97,23 +97,23 @@
       background-color: #ffffff;
     }
 
-    .omics-ss-data-table tbody tr:last-child td {
+    .sodar-ss-data-table tbody tr:last-child td {
       border-bottom: 0;
     }
 
-    .omics-ss-data-table-study thead tr th:first-child {
+    .sodar-ss-data-table-study thead tr th:first-child {
       border-left: 0 !important;
     }
 
-    .omics-ss-data-table-study thead tr th:last-child {
+    .sodar-ss-data-table-study thead tr th:last-child {
       border-right: 0 !important;
     }
 
-    .omics-ss-data-table tbody tr td:first-child {
+    .sodar-ss-data-table tbody tr td:first-child {
       border-left: 0 !important;
     }
 
-    .omics-ss-data-table tbody tr td:last-child {
+    .sodar-ss-data-table tbody tr td:last-child {
       border-right: 0 !important;
     }
 
@@ -126,7 +126,7 @@
       border-right: 1px solid #dfdfdf !important;
     }
 
-    .omics-ss-data-links-header {
+    .sodar-ss-data-links-header {
       border-right: 0 !important;
     }
 
@@ -138,18 +138,18 @@
       border-left: 3px solid #dfdfdf !important;
     }
 
-    .omics-ss-data-links-header {
+    .sodar-ss-data-links-header {
       border-left: 3px solid #dfdfdf !important;
     }
 
-    .omics-ss-data-dropdown {
+    .sodar-ss-data-dropdown {
       margin-top: -3px !important; /* Force dropdown position */
       padding-top: 2px !important;
       height: 1.75em;
     }
 
     @media screen and (max-width: 1200px) {
-      .omics-ss-nav {
+      .sodar-ss-nav {
         display: none;
       }
     }
@@ -162,11 +162,11 @@
 
 {% include 'samplesheets/_sheet_page_header.html' %}
 
-<div class="container-fluid omics-page-container"> {# Main container #}
+<div class="container-fluid sodar-page-container"> {# Main container #}
 
   {% if not investigation %}
 
-    <div class="alert alert-info" role="alert" id="omics-ss-alert-no-sheets">
+    <div class="alert alert-info" role="alert" id="sodar-ss-alert-no-sheets">
       No sample sheets are currently available for this project.
       {% if can_edit_sheet %}
         To add sample sheets, please import it from ab existing ISAtab investigation.
@@ -177,7 +177,7 @@
 
     {% if render_error %}
 
-      <div class="alert alert-danger" role="alert" id="omics-ss-alert-render-error">
+      <div class="alert alert-danger" role="alert" id="sodar-ss-alert-render-error">
         Error rendering sample sheets, please check your ISAtab files. Exception:
         {{ render_error|truncatechars:512 }}
       </div>
@@ -188,7 +188,7 @@
       {% get_study_plugin study as study_plugin %}
 
       {# Study anchor #}
-      <a class="omics-ss-anchor" id="{{ study.sodar_uuid }}"></a>
+      <a class="sodar-ss-anchor" id="{{ study.sodar_uuid }}"></a>
 
       {# Study title #}
       {% include 'samplesheets/_section_title.html' with item=study section_type='study' content_plugin=study_plugin %}
@@ -208,12 +208,12 @@
 
       {# Study table #}
 
-      <div class="card omics-ss-data-card omics-ss-data-card-study">
+      <div class="card sodar-ss-data-card sodar-ss-data-card-study">
         <div class="card-header">
           {% include 'samplesheets/_sheet_table_header.html' with table_type='study' item=study content_plugin=study_plugin %}
         </div>
-        <div class="card-body omics-card-body-table">
-          <div class="table-responsive omics-ss-init-container">
+        <div class="card-body p-0">
+          <div class="table-responsive sodar-ss-init-container">
             {% include 'samplesheets/_sheet_table.html' with table=table_data.study parent=study %}
           </div>
         </div>
@@ -225,7 +225,7 @@
         {% get_assay_plugin assay as assay_plugin %}
 
         {# Assay anchor #}
-        <a class="omics-ss-anchor" id="{{ assay.sodar_uuid }}"></a>
+        <a class="sodar-ss-anchor" id="{{ assay.sodar_uuid }}"></a>
 
         {# Assay title #}
         {% include 'samplesheets/_section_title.html' with item=assay section_type='assay' content_plugin=assay_plugin %}
@@ -235,12 +235,12 @@
           {% include assay_plugin.assay_template %}
         {% endif %}
 
-        <div class="card omics-ss-data-card omics-ss-data-card-assay">
+        <div class="card sodar-ss-data-card sodar-ss-data-card-assay">
           <div class="card-header">
             {% include 'samplesheets/_sheet_table_header.html' with table_type='assay' item=assay content_plugin=assay_plugin %}
           </div>
-          <div class="card-body omics-card-body-table">
-            <div class="table-responsive omics-ss-init-container">
+          <div class="card-body p-0">
+            <div class="table-responsive sodar-ss-init-container">
               {% get_assay_table table_data assay as assay_table %}
               {% include 'samplesheets/_sheet_table.html' with table=assay_table parent=assay %}
             </div>
@@ -263,15 +263,9 @@
   <script type="text/javascript">
     window.refreshCellOverflow = false;
   </script>
-
-  <!-- DataTables -->
-  <script type="text/javascript" src="{% static 'datatables/datatables.min.js'%}"></script>
-
+    
   <!-- Dragscroll for tables -->
   <script type="text/javascript" src="{% static 'js/dragscroll.js' %}"></script>
-
-  <!-- Clipboard helper -->
-  <script type="text/javascript" src="{% static 'js/clipboard.min.js' %}"></script>
 
   <!-- Samplesheets Javascript -->
   <script type="text/javascript" src="{% static 'samplesheets/js/samplesheets.js' %}"></script>
@@ -290,13 +284,13 @@
     });
 
     // No sheets
-    if ($('#omics-ss-alert-no-sheets').length) {
+    if ($('#sodar-ss-alert-no-sheets').length) {
         tour.addStep('no_sheets', {
             title: 'No Sample Sheets Available',
             text: 'No sample sheets have been imported for the project. ' +
                   'Users with sufficient permissions can import an ISA ' +
                   'investigation using the Sheet Operations menu.',
-            attachTo: '#omics-ss-buttons-op left',
+            attachTo: '#sodar-ss-buttons-op left',
             advanceOn: '.docs-link click',
             showCancelLink: true
         });
@@ -320,7 +314,7 @@
             title: 'Sample Sheet Navigation',
             text: 'Navigate between studies and data overview using this ' +
                   'navigation bar.',
-            attachTo: '.omics-subtitle-container bottom',
+            attachTo: '.sodar-subtitle-container bottom',
             advanceOn: '.docs-link click',
             showCancelLink: true
         });
@@ -329,29 +323,29 @@
             title: 'Sample Sheet Shortcuts',
             text: 'Shortcuts to project studies and assays can be accessed ' +
                   'in this dropdown menu.',
-            attachTo: '#omics-ss-nav-dropdown bottom',
+            attachTo: '#sodar-ss-nav-dropdown bottom',
             advanceOn: '.docs-link click',
             showCancelLink: true
         });
 
-        if ($('#omics-ss-buttons-op').length) {
+        if ($('#sodar-ss-buttons-op').length) {
             tour.addStep('sheet_operations', {
                 title: 'Sheet Operations',
                 text: 'Authorized users can perform sheet-wide operations ' +
                       'such as iRODS directory creation in this menu.',
-                attachTo: '#omics-ss-buttons-op left',
+                attachTo: '#sodar-ss-buttons-op left',
                 advanceOn: '.docs-link click',
                 showCancelLink: true
             });
         }
     }
 
-    if ($('.omics-ss-data-card').length) {
+    if ($('.sodar-ss-data-card').length) {
         tour.addStep('study_data', {
             title: 'Study Data',
             text: 'This is a data table listing all the sources and samples ' +
                   'in the currently selected study.',
-            attachTo: '.omics-ss-data-card-study top',
+            attachTo: '.sodar-ss-data-card-study top',
             advanceOn: '.docs-link click',
             showCancelLink: true
         });
@@ -360,7 +354,7 @@
             title: 'Assay Data',
             text: 'Assay-specific processed and materials are described in ' +
                   'assay tables.',
-            attachTo: '.omics-ss-data-card-assay top',
+            attachTo: '.sodar-ss-data-card-assay top',
             advanceOn: '.docs-link click',
             showCancelLink: true
         });
@@ -368,7 +362,7 @@
         tour.addStep('data_controls', {
             title: 'Data Table Controls',
             text: 'Access data table controls in the table header.',
-            attachTo: '.omics-header-input-group top',
+            attachTo: '.sodar-header-input-group top',
             advanceOn: '.docs-link click',
             showCancelLink: true
         });
@@ -380,7 +374,7 @@
                   'create the iRODS directories for the project for these ' +
                   'controls to be enabled. Uploading new data is done using ' +
                   'the Landing Zones app.',
-            attachTo: '.omics-ss-popup-list-btn left',
+            attachTo: '.sodar-ss-popup-list-btn left',
             advanceOn: '.docs-link click',
             showCancelLink: true
         });

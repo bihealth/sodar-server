@@ -24,7 +24,7 @@ TOP_HEADER_MATERIAL_VALUES = {
 
 EMPTY_VALUE = '-'
 
-STUDY_HIDEABLE_CLASS = 'omics-ss-hideable-study'
+STUDY_HIDEABLE_CLASS = 'sodar-ss-hideable-study'
 SOURCE_SEARCH_STR = '-source-'
 ONTOLOGY_URL_TEMPLATE = 'https://bioportal.bioontology.org/ontologies/' \
                         '{ontology_name}/?p=classes&conceptid={accession}'

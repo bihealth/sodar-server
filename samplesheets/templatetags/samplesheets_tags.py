@@ -74,7 +74,7 @@ def get_table_id(parent):
     :param parent: Study or Assay object
     :return: string
     """
-    return 'omics-ss-data-table-{}-{}'.format(
+    return 'sodar-ss-data-table-{}-{}'.format(
         parent.__class__.__name__.lower(), parent.sodar_uuid)
 
 
@@ -101,7 +101,7 @@ def get_search_item_type(item):
 @register.simple_tag
 def get_assay_info_html(assay):
     """Return assay info popup HTML"""
-    ret = '<div class="row omics-ss-assay-info-popup">\n'
+    ret = '<div class="row sodar-ss-assay-info-popup">\n'
 
     for k, v in assay.comments.items():
         if v['value']:
@@ -219,7 +219,7 @@ def render_top_headers(top_header, col_values):
 
         if final_colspan > 0:
             ret += '<th class="bg-{} text-nowrap text-white ' \
-                   'omics-ss-top-header" colspan="{}" original-colspan="{}" ' \
+                   'sodar-ss-top-header" colspan="{}" original-colspan="{}" ' \
                    '>{}</th>\n'.format(
                     section['colour'],
                     final_colspan,     # Actual colspan
@@ -246,7 +246,7 @@ def render_field_headers(field_header, col_values):
         header = field_header[i]
 
         if col_values[i]:
-            ret += '<th class="omics-ss-data-header {}">{}</th>\n'.format(
+            ret += '<th class="sodar-ss-data-header {}">{}</th>\n'.format(
                 ' '.join(header['classes']), header['value'])
 
     return ret
@@ -283,7 +283,7 @@ def render_cells(row, table, assay=None, assay_plugin=None):
         cell = row[i]
 
         if table['col_values'][i]:
-            td_class_str = 'omics-ss-data-cell ' + ' '.join(cell['classes'])
+            td_class_str = 'sodar-ss-data-cell ' + ' '.join(cell['classes'])
 
             ret += '<td '
 
@@ -301,8 +301,8 @@ def render_cells(row, table, assay=None, assay_plugin=None):
 
             # Add cell value
             if cell['value']:
-                ret += '<div class="omics-overflow-container ' \
-                       'omics-overflow-hover"'
+                ret += '<div class="sodar-overflow-container ' \
+                       'sodar-overflow-hover"'
 
                 # Tooltip
                 if cell['tooltip']:

@@ -2,7 +2,7 @@ $(document).ready(function() {
     /*********************
      Initialize DataTables
      *********************/
-    $('.omics-ss-data-table-contentapp').DataTable({
+    $('.sodar-ss-data-table-contentapp').DataTable({
         scrollY: 300,
         scrollX: true,
         paging: false,
@@ -15,7 +15,7 @@ $(document).ready(function() {
         dom: 't' // Disable toolbar
     });
 
-    $('.omics-ss-data-table-study').DataTable({
+    $('.sodar-ss-data-table-study').DataTable({
         scrollY: 300,
         scrollX: true,
         paging: false,
@@ -28,10 +28,10 @@ $(document).ready(function() {
         dom: 't' // Disable toolbar
     });
 
-    $('.omics-ss-data-table-assay').each(function() {
+    $('.sodar-ss-data-table-assay').each(function() {
         var rightCols = 1;
 
-        if ($(this).hasClass('omics-ss-data-hide-links')) {
+        if ($(this).hasClass('sodar-ss-data-hide-links')) {
             rightCols = 0;
         }
 
@@ -49,12 +49,12 @@ $(document).ready(function() {
                 {
                     // Disable sorting from links column
                     targets: [
-                        'omics-ss-data-cell-links',
-                        'omics-ss-data-links-header'],
+                        'sodar-ss-data-cell-links',
+                        'sodar-ss-data-links-header'],
                     orderable: false
                 },
                 {
-                    targets: 'omics-ss-hideable-study',
+                    targets: 'sodar-ss-hideable-study',
                     visible: false
                 }
                 ],
@@ -63,23 +63,23 @@ $(document).ready(function() {
     });
 
     // Once initialized, remove temporary init classes
-    $('.omics-ss-init-container').removeClass('table-responsive').removeClass('omics-ss-init-container');
+    $('.sodar-ss-init-container').removeClass('table-responsive').removeClass('sodar-ss-init-container');
 
     /*************************
      Enable/disable dragscroll
      *************************/
-    $('.omics-ss-data-drag-toggle').click(function() {
+    $('.sodar-ss-data-drag-toggle').click(function() {
         if ($(this).attr('drag-mode') === '0') {
             $(this).find('i').addClass('text-warning');
             $(this).attr('drag-mode', '1');
-            $(this).closest('.omics-ss-data-card').find('.dataTables_scrollBody').addClass('dragscroll');
+            $(this).closest('.sodar-ss-data-card').find('.dataTables_scrollBody').addClass('dragscroll');
             dragscroll.reset();
         }
 
         else {
             $(this).find('i').removeClass('text-warning');
             $(this).attr('drag-mode', '0');
-            $(this).closest('.omics-ss-data-card').find('.dataTables_scrollBody').removeClass('dragscroll');
+            $(this).closest('.sodar-ss-data-card').find('.dataTables_scrollBody').removeClass('dragscroll');
             dragscroll.reset();
         }
     });
@@ -88,7 +88,7 @@ $(document).ready(function() {
      Filtering
      *********/
 
-    $('.omics-ss-data-filter').keyup(function () {
+    $('.sodar-ss-data-filter').keyup(function () {
         var tableId = $(this).closest('.input-group').attr('table-id');
         var dt = $('#' + tableId).dataTable();
         var v = $(this).val();
@@ -100,21 +100,21 @@ $(document).ready(function() {
      *******************/
 
     // Hide/show study columns when clicked
-    $('.omics-ss-assay-hide').click(function () {
+    $('.sodar-ss-assay-hide').click(function () {
         var tableId = $(this).closest('.input-group').attr('table-id');
         var dt = $('#' + tableId).DataTable();
 
         // Hide
         if ($(this).attr('assay-hide-mode') === '0') {
             $(this).find('i').removeClass('fa-eye').addClass('fa-eye-slash').removeClass('text-warning');
-            dt.columns('.omics-ss-hideable-study').visible(false);
+            dt.columns('.sodar-ss-hideable-study').visible(false);
             $(this).attr('assay-hide-mode', '1');
         }
 
         // Show
         else {
             $(this).find('i').removeClass('fa-eye-slash').addClass('fa-eye').addClass('text-warning');
-            dt.columns('.omics-ss-hideable-study').visible(true);
+            dt.columns('.sodar-ss-hideable-study').visible(true);
             $(this).attr('assay-hide-mode', '0');
         }
     });

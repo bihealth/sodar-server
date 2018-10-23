@@ -4,22 +4,22 @@
 
 <h4>
   {% if table_type == 'assay' %}Assay{% else %}Study{% endif %} Data
-  <div class="input-group omics-header-input-group pull-right" table-id="{% get_table_id item %}">
+  <div class="input-group sodar-header-input-group pull-right" table-id="{% get_table_id item %}">
     <div class="input-group-prepend">
       {% if table_type == 'assay' %}
-      <button class="btn btn-secondary omics-ss-assay-hide"
-              type="submit" id="omics-ss-assay-hide-{{ item.sodar_uuid }}"
+      <button class="btn btn-secondary sodar-ss-assay-hide"
+              type="submit" id="sodar-ss-assay-hide-{{ item.sodar_uuid }}"
               data-toggle="tooltip" data-placement="top" title="Show/hide study details"
               assay-hide-mode="1"><i class="fa fa-eye-slash"></i></button>
       {% endif %}
-      <button class="btn btn-secondary omics-ss-data-drag-toggle"
-              type="submit" id="omics-ss-data-drag-toggle-{{ item.sodar_uuid }}"
+      <button class="btn btn-secondary sodar-ss-data-drag-toggle"
+              type="submit" id="sodar-ss-data-drag-toggle-{{ item.sodar_uuid }}"
               data-toggle="tooltip" data-placement="top" title="Enable/disable drag scroll"
               drag-mode="0"><i class="fa fa-mouse-pointer"></i></button>
       {% if can_export_sheet %}
-        <a role="button" class="btn btn-secondary omics-ss-data-excel"
+        <a role="button" class="btn btn-secondary sodar-ss-data-excel"
            data-toggle="tooltip" data-placement="top" title="Download TSV file for Excel"
-           id="omics-ss-data-excel-{{ item.sodar_uuid }}"
+           id="sodar-ss-data-excel-{{ item.sodar_uuid }}"
           {% if table_type == 'assay' %}
             href="{% url 'samplesheets:export_tsv' assay=item.sodar_uuid %}">
           {% else %}
@@ -29,8 +29,8 @@
         </a>
       {% endif %}
     </div>
-    <input class="form-control omics-ss-data-filter"
+    <input class="form-control sodar-ss-data-filter"
            type="text" placeholder="Filter" aria-label="Filter {{ table_type }} {{ item.sodar_uuid }}"
-           id="omics-ss-data-filter-{{ item.sodar_uuid }}">
+           id="sodar-ss-data-filter-{{ item.sodar_uuid }}">
   </div>
 </h4>

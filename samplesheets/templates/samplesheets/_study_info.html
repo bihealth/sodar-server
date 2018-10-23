@@ -4,8 +4,8 @@
   {% load irodsbackend_tags %}
 {% endif %}
 
-<div class="card-body omics-card-body">
-  <dl class="row omics-dl">
+<div class="card-body">
+  <dl class="row">
     <dt class="col-md-3">Title</dt>
     <dd class="col-md-9">{{ study.get_display_name }}</dd>
     {% if study.description %}
@@ -40,7 +40,7 @@
         {% for assay in study.assays.all %}
           <a href="#assay{{ assay.sodar_uuid }}">{{ assay.get_display_name }}</a>
           {% if assay.comments %}
-            <a class="omics-ss-assay-info-link" tabindex="0" data-toggle="popover"
+            <a class="sodar-ss-assay-info-link" tabindex="0" data-toggle="popover"
                data-trigger="focus" data-placement="top" data-html="true"
                data-content="{% get_assay_info_html assay %}">
               <i class="fa fa-info-circle text-info"></i></a>

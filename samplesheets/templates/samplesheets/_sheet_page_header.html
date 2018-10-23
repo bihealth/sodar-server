@@ -2,14 +2,14 @@
 {% load rules %}
 {% has_perm 'samplesheets.edit_sheet' request.user project as can_edit_sheet %}
 
-<div class="row omics-subtitle-container bg-white sticky-top">
+<div class="row sodar-subtitle-container bg-white sticky-top">
   <h3><i class="fa fa-flask"></i> Sample Sheets</h3>
 
   {% if investigation %}
-    <ul class="nav nav-pills omics-ss-nav ml-4 mr-auto">
+    <ul class="nav nav-pills sodar-ss-nav ml-4 mr-auto">
       {% for s in investigation.studies.all %}
         <li class="nav-item">
-          <a class="nav-link omics-ss-nav-btn {% if s == study %}bg-success active{% endif %}"
+          <a class="nav-link sodar-ss-nav-btn {% if s == study %}bg-success active{% endif %}"
              href="{% url 'samplesheets:project_sheets' study=s.sodar_uuid %}"
              {% if s.get_display_name|length > 20 %}
                data-toggle="tooltip" data-placement="top" title="{{ s.get_display_name }}"
@@ -20,7 +20,8 @@
       <li class="nav-item">
         <a class="nav-link {% if request.resolver_match.url_name == 'overview' %}bg-success active{% endif %}"
            href="{% url 'samplesheets:overview' project=project.sodar_uuid %}">
-            <i class="fa fa-sitemap"></i> Overview</a>
+          <i class="fa fa-sitemap"></i> Overview
+        </a>
       </li>
     </ul>
   {% endif %}

@@ -15,39 +15,36 @@
 
 {% get_investigation project as investigation %}
 
-<!-- Clipboard helper -->
-<script type="text/javascript" src="{% static 'js/clipboard.min.js' %}"></script>
-
 <style type="text/css">
-  table#omics-ss-details-table tr td:nth-child(2) {
+  table#sodar-ss-details-table tr td:nth-child(2) {
     width: 220px;
   }
 
-  table#omics-ss-details-table tr td:nth-child(3) {
+  table#sodar-ss-details-table tr td:nth-child(3) {
     width: 110px;
   }
 
   /* Responsive modifications */
   @media screen and (max-width: 800px) {
-    table#omics-ss-details-table tr th:nth-child(2) {
+    table#sodar-ss-details-table tr th:nth-child(2) {
       display: none;
     }
-    table#omics-ss-details-table tr td:nth-child(2) {
+    table#sodar-ss-details-table tr td:nth-child(2) {
       display: none;
     }
   }
 </style>
 
 {% if not investigation %}
-  <div class="card-body omics-card-body bg-faded font-italic text-center">
+  <div class="card-body bg-faded font-italic text-center">
     <p>No sample sheets available</p>
   </div>
 {% elif investigation and not investigation.irods_status %}
-  <div class="card-body omics-card-body bg-faded font-italic text-center">
+  <div class="card-body bg-faded font-italic text-center">
     <p>Sample directories not created in iRODS</p>
   </div>
 {% elif investigation and can_view_sheet %}
-  <table class="table omics-card-table" id="omics-ss-details-table">
+  <table class="table sodar-card-table" id="sodar-ss-details-table">
     <thead>
       <tr>
         <th>Investigation/Study/Assay</th>

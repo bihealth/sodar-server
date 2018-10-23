@@ -14,10 +14,10 @@
            title="Using: {{ content_plugin.title }}"></i>
     {% endif %}
   </h4>
-    <div class="ml-auto">
-      {% if irods_backend_enabled %}
-        {% get_irods_path item as section_irods_path %}
-        {% include 'irodsbackend/_irods_buttons.html' with irods_dirs=investigation.irods_status irods_path=section_irods_path data_table=False show_file_list=False %}
-      {% endif %}
-    </div>
+  <div class="ml-auto">
+    {% if irods_backend_enabled %}
+      {% get_irods_path item as section_irods_path %}
+      {% include 'irodsbackend/_irods_buttons.html' with irods_dirs=investigation.irods_status irods_path=section_irods_path data_table=False show_file_list=False %}
+    {% endif %}
+  </div>
 </div>

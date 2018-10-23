@@ -36,7 +36,7 @@ class TestProjectSheetsView(TestUIBase, SampleSheetIOMixin):
         url = reverse(
             'samplesheets:project_sheets',
             kwargs={'project': self.project.sodar_uuid})
-        self.assert_element_count(expected, url, 'omics-ss-data-table')
+        self.assert_element_count(expected, url, 'sodar-ss-data-table')
     '''
 
     def test_nav(self):
@@ -51,7 +51,7 @@ class TestProjectSheetsView(TestUIBase, SampleSheetIOMixin):
             'samplesheets:project_sheets',
             kwargs={'project': self.project.sodar_uuid})
         self.assert_element_count(
-            expected, url, 'omics-ss-nav-item', attribute='class')
+            expected, url, 'sodar-ss-nav-item', attribute='class')
 
     def test_operations(self):
         """Test existence of operations buttons in the view"""
@@ -67,10 +67,10 @@ class TestProjectSheetsView(TestUIBase, SampleSheetIOMixin):
             kwargs={'project': self.project.sodar_uuid})
 
         self.assert_element_exists(
-            expected_true, url, 'omics-ss-buttons-op', True)
+            expected_true, url, 'sodar-ss-buttons-op', True)
 
         self.assert_element_exists(
-            expected_false, url, 'omics-ss-buttons-op', False)
+            expected_false, url, 'sodar-ss-buttons-op', False)
 
     def test_export_button(self):
         """Test existence of TSV export buttons in the view"""
@@ -84,4 +84,4 @@ class TestProjectSheetsView(TestUIBase, SampleSheetIOMixin):
             'samplesheets:project_sheets',
             kwargs={'project': self.project.sodar_uuid})
         self.assert_element_count(
-            expected, url, 'omics-ss-data-excel', attribute='class')
+            expected, url, 'sodar-ss-data-excel', attribute='class')

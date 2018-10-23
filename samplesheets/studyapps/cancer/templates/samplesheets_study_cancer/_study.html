@@ -9,17 +9,17 @@
     <h4>
       Case-Wise iRODS and IGV Shortcuts
 
-      <div class="input-group omics-header-input-group pull-right" table-id="omics-ss-cancer-table">
-      <input class="form-control omics-ss-data-filter"
+      <div class="input-group sodar-header-input-group pull-right" table-id="sodar-ss-cancer-table">
+      <input class="form-control sodar-ss-data-filter"
            type="text" placeholder="Filter" aria-label="Filter Pedigree Data"
-           id="omics-ss-cancer-filter">
+           id="sodar-ss-cancer-filter">
       </div>
     </h4>
   </div>
   {% if investigation.irods_status %}
-    <div class="card-body omics-card-body-table omics-ss-contentapp-container">
-      <div class="table-responsive omics-ss-init-container">
-        <table class="table cell-border order-column omics-ss-data-table omics-ss-data-table-contentapp" id="omics-ss-cancer-table">
+    <div class="card-body p-0 sodar-ss-contentapp-container">
+      <div class="table-responsive sodar-ss-init-container">
+        <table class="table cell-border order-column sodar-ss-data-table sodar-ss-data-table-contentapp" id="sodar-ss-cancer-table">
           <thead>
             <tr>
               <th>Case</th>
@@ -38,11 +38,11 @@
                     {% get_sample_libraries sample table_data as sample_libraries %}
                     {% for library in sample_libraries %}
                       {% url 'samplesheets.studyapps.cancer:file' file_type='bam' genericmaterial=library.sodar_uuid as bam_url %}
-                      <div class="btn-group omics-edit-button-group mb-1 mr-1">
-                        <button class="btn omics-list-btn btn-outline-secondary text-body" disabled>
+                      <div class="btn-group sodar-edit-button-group mb-1 mr-1">
+                        <button class="btn sodar-list-btn btn-outline-secondary text-body" disabled>
                           {{ library.name }}
                         </button>
-                        <a role="button" class="btn omics-list-btn btn-secondary"
+                        <a role="button" class="btn sodar-list-btn btn-secondary"
                            href="{{ bam_url }}" title="Download {{ library.name }} BAM file">
                           <i class="fa fa-download"></i> Download
                         </a>
@@ -57,11 +57,11 @@
 
                     {% for library in sample_libraries %}
                       {% url 'samplesheets.studyapps.cancer:file' file_type='vcf' genericmaterial=library.sodar_uuid as vcf_url %}
-                      <div class="btn-group omics-edit-button-group mb-1 mr-1">
-                        <button class="btn omics-list-btn btn-outline-secondary text-body" disabled>
+                      <div class="btn-group sodar-edit-button-group mb-1 mr-1">
+                        <button class="btn sodar-list-btn btn-outline-secondary text-body" disabled>
                           {{ library.name }}
                         </button>
-                        <a role="button" class="btn omics-list-btn btn-secondary"
+                        <a role="button" class="btn sodar-list-btn btn-secondary"
                            href="{{ vcf_url }}" title="Download {{ library.name }} VCF file">
                           <i class="fa fa-download"></i> Download
                         </a>
@@ -71,13 +71,13 @@
                 </td>
                 <td>
                   {% url 'samplesheets.studyapps.cancer:igv' genericmaterial=source.sodar_uuid as igv_url %}
-                  <div class="btn-group omics-edit-button-group">
-                    <a role="button" class="btn omics-list-btn btn-secondary"
+                  <div class="btn-group sodar-edit-button-group">
+                    <a role="button" class="btn sodar-list-btn btn-secondary"
                        href="{{ igv_url }}" title="Download IGV session file for case">
                       <i class="fa fa-download"></i> Download
                     </a>
                     <!-- TODO: (1) not full URL, (2) configure genome build in project config, (3) get port from user profile -->
-                    <button type="button" class="btn omics-list-btn btn-secondary"
+                    <button type="button" class="btn sodar-list-btn btn-secondary"
                        onclick="javascript:$.ajax({url: 'http://127.0.0.1:60151/load?genome=b37&merge=false&file=https://cubi-omics-davrods-beta.bihealth.org/__sodar{{ igv_url }}.xml'})"
                        title="Open IGV session file for case in IGV">
                       <i class="fa fa-share-square-o"></i> IGV
@@ -91,7 +91,7 @@
       </div>
     </div>
   {% else %}
-    <div class="card-body omics-card-body text-center">
+    <div class="card-body text-center">
     <p class="font-italic">
       iRODS directories not created, file listing disabled
     </p>

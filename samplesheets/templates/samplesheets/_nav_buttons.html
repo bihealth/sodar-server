@@ -1,6 +1,6 @@
 {% load samplesheets_tags %}
 
-<div class="btn-group ml-auto" id="omics-ss-nav-dropdown">
+<div class="btn-group ml-auto" id="sodar-ss-nav-dropdown">
   <button class="btn btn-success dropdown-toggle"
           type="button" data-toggle="dropdown"
           aria-haspopup="true" aria-expanded="false">
@@ -9,12 +9,12 @@
   <div class="dropdown-menu dropdown-menu-right">
 
     {% for s in investigation.studies.all %}
-      <a class="dropdown-item omics-ss-nav-item" href="{% if s != study %}{% url 'samplesheets:project_sheets' study=s.sodar_uuid %}{% endif %}">
+      <a class="dropdown-item sodar-ss-nav-item" href="{% if s != study %}{% url 'samplesheets:project_sheets' study=s.sodar_uuid %}{% endif %}">
         {% autoescape off %}{% get_icon s %}{% endautoescape %} {{ s.get_display_name }}
       </a>
 
       {% for a in s.assays.all %}
-        <a class="dropdown-item omics-ss-nav-item" href="{% if s != study %}{% url 'samplesheets:project_sheets' study=s.sodar_uuid %}{% endif %}#{{ a.sodar_uuid }}">
+        <a class="dropdown-item sodar-ss-nav-item" href="{% if s != study %}{% url 'samplesheets:project_sheets' study=s.sodar_uuid %}{% endif %}#{{ a.sodar_uuid }}">
           <span class="ml-4">
             {% autoescape off %}{% get_icon a %}{% endautoescape %} {{ a.get_display_name }}
           </span>
@@ -22,7 +22,7 @@
       {% endfor %}
     {% endfor %}
 
-    <a class="dropdown-item omics-ss-nav-item" href="{% url 'samplesheets:overview' project=project.sodar_uuid %}">
+    <a class="dropdown-item sodar-ss-nav-item" href="{% url 'samplesheets:overview' project=project.sodar_uuid %}">
       <i class="fa fa-fw fa-sitemap"></i> Overview
     </a>
   </div>

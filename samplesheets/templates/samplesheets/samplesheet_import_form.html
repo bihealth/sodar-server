@@ -13,7 +13,7 @@
 
 {% block projectroles_extend %}
 
-<div class="row omics-subtitle-container">
+<div class="container-fluid sodar-subtitle-container">
   <h3>
     {% if replace_sheets %}
       Replace Current Sample Sheets with ISAtab
@@ -23,7 +23,7 @@
   </h3>
 </div>
 
-<div class="container-fluid omics-page-container">
+<div class="container-fluid sodar-page-container">
   {% if replace_sheets and irods_status %}
     <div class="alert alert-warning">
       <strong>Warning:</strong> because iRODS directories have already been

@@ -9,9 +9,9 @@
   {% get_webdav_url as webdav_url %}
 {% endif %}
 
-<tr class="omics-ss-search-list-item" id="omics-ss-project-search-item-{{ item.sodar_uuid }}">
+<tr class="sodar-ss-search-list-item" id="sodar-ss-project-search-item-{{ item.sodar_uuid }}">
   <td>
-    <div class="omics-overflow-container">
+    <div class="sodar-overflow-container">
       {% highlight_search_term item.name search_term as item_display_name %}
       {% if item.type != 'file' %}
         <a href="{% url 'samplesheets:project_sheets' study=item.study.sodar_uuid %}">{{ item_display_name | safe }}</a>
@@ -30,14 +30,14 @@
       </td>
     {% endif %}
   <td>
-    <div class="omics-overflow-container">
+    <div class="sodar-overflow-container">
       {% autoescape off %}
         {% get_project_link item.project %}
       {% endautoescape %}
     </div>
   </td>
   <td>
-    <div class="omics-overflow-container">
+    <div class="sodar-overflow-container">
       {% if item.study %}
         <a href="{% url 'samplesheets:project_sheets' study=item.study.sodar_uuid %}">
           {{ item.study.get_display_name }}
@@ -50,7 +50,7 @@
   <td>
     {% if item.assays %}
       {% for assay in item.assays %}
-        <div class="omics-overflow-container">
+        <div class="sodar-overflow-container">
           <a href="{% url 'samplesheets:project_sheets' study=item.study.sodar_uuid %}#assay{{ assay.sodar_uuid }}">
             {{ assay.get_display_name }}
           </a>

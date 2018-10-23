@@ -6,7 +6,7 @@
 {% check_backend 'omics_irods' as irods_backend_enabled %}
 
 <style type="text/css">
-  table#omics-ss-pep-ms-table thead tr th:nth-child(2) {
+  table#sodar-ss-pep-ms-table thead tr th:nth-child(2) {
     width: 100px;
   }
 </style>
@@ -16,9 +16,9 @@
     <div class="card-header">
       <h4>Shortcuts for Raw Data and MaxQuant Results</h4>
     </div>
-    <div class="card-body omics-card-body-table">
+    <div class="card-body p-0">
       {% if irods_backend_enabled %}
-        <table class="table cell-border omics-ss-data-table omics-ss-data-table-contentapp" id="omics-ss-pep-ms-table">
+        <table class="table cell-border sodar-ss-data-table sodar-ss-data-table-contentapp" id="sodar-ss-pep-ms-table">
           <thead>
             <tr>
               <th>Directory</th>
