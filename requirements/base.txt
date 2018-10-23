@@ -8,36 +8,31 @@ setuptools==39.0.1
 wheel==0.30.0
 
 # Conservative Django
-django==1.11.13 # pyup: <2.0
+django==1.11.16 # pyup: <2.0
 
 # Configuration
-django-environ==0.4.4
-whitenoise==3.3.1
+django-environ==0.4.5
 
 # Forms
-django-crispy-forms==1.7.1
+django-crispy-forms==1.7.2
 
 # Models
-django-model-utils==3.0.0
+django-model-utils==3.1.2
 
 # Images
-Pillow==4.3.0
+Pillow==5.2.0
 
 # Password storage
-argon2-cffi==16.3.0
+argon2-cffi==18.3.0
 
 # Python-PostgreSQL Database Adapter
-psycopg2==2.7.3.2
+psycopg2-binary==2.7.5
 
 # Unicode slugification
 awesome-slugify==1.6.5
 
 # Time zones support
-pytz==2018.4
-
-# Redis support
-django-redis==4.8.0
-redis>=2.10.5
+pytz==2018.5
 
 # Profiling
 django-cprofile-middleware==1.0
@@ -46,13 +41,13 @@ django-cprofile-middleware==1.0
 versioneer==0.18
 
 # Online documentation via django-docs.
-Sphinx==1.6.5
+Sphinx==1.7.9
 django-docs==0.3.0
-sphinx-rtd-theme==0.4.0
+sphinx-rtd-theme==0.4.1
 
-######################
-# Project app imports
-######################
+#####################
+# SODAR Core imports
+#####################
 
 django-auth-ldap==1.2.8
 pyldap==2.4.25.1
@@ -61,31 +56,32 @@ pyldap==2.4.25.1
 -e git://github.com/mikkonie/django-plugins.git@1bc07181e6ab68b0f9ed3a00382eb1f6519e1009#egg=django-plugins
 
 # Rules for permissions
-rules==1.2.1
+rules==2.0
 
 # REST framework
-djangorestframework==3.7.0
+djangorestframework==3.8.2
 
 # Token authentication
 django-rest-knox==3.1.5
 
-# Extra views for formset helping
-django-extra-views==0.9.0
-
 # Markdown field support
-markdown==2.6.9
-django-markupfield==1.4.3
-django-pagedown==0.1.3
-mistune==0.7.4
+markdown==2.6.11
+django-markupfield==1.5.0
+django-pagedown==1.0.6
+mistune==0.8.3
+
+####################
+# SODAR app imports
+####################
 
 # Database file storage
-django-db-file-storage==0.5.2
+django-db-file-storage==0.5.3
 
 # CUBI AltamISA parser
 -e git://github.com/bihealth/altamisa.git@ddf54e9ab9b47d2b5a7d54ce65ea8aa673375f87#egg=altamisa
 
 # Python iRODS client for irodsbackend
-python-irodsclient==0.8.0
+python-irodsclient==0.8.1
 
 # XML generating
-lxml==4.2.1
+lxml==4.2.5

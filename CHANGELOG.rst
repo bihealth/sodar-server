@@ -5,6 +5,24 @@ Changelog for the SODAR Web UI. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+Unreleased
+==========
+
+Changed
+-------
+
+- **General**
+    - Update Django to v1.11.16 (#370)
+    - Update requirements to match sodar_core v0.3.0 (#370)
+    - Update SODAR app requirements to current versions
+
+Removed
+-------
+
+- **General**
+    - Unused django-extra-views requirement
+
+
 v0.3.3 (2018-09-25)
 ===================
 
