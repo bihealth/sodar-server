@@ -68,7 +68,7 @@ class ProjectSheetsView(
             try:
                 if 'study' in self.kwargs and self.kwargs['study']:
                     study = Study.objects.get(
-                        omics_uuid=self.kwargs['study'])
+                        sodar_uuid=self.kwargs['study'])
                 else:
                     study = Study.objects.filter(
                         investigation=context['investigation']).first()
@@ -183,7 +183,7 @@ class SampleSheetImportView(
         project = self._get_project(self.request, self.kwargs)
 
         if 'project' in self.kwargs:
-            kwargs.update({'project': project.omics_uuid})
+            kwargs.update({'project': project.sodar_uuid})
 
         # If investigation for project already exists, set replace=True
         try:
@@ -208,7 +208,7 @@ class SampleSheetImportView(
 
         redirect_url = reverse(
             'samplesheets:project_sheets',
-            kwargs={'project': project.omics_uuid})
+            kwargs={'project': project.sodar_uuid})
 
         try:
             self.object = form.save()
@@ -228,13 +228,13 @@ class SampleSheetImportView(
                     compare_inv_replace(old_inv, self.object)
 
                 # Save UUIDs
-                old_inv_uuid = old_inv.omics_uuid
+                old_inv_uuid = old_inv.sodar_uuid
 
                 for study in old_inv.studies.all():
-                    old_study_uuids[study.get_name()] = study.omics_uuid
+                    old_study_uuids[study.get_name()] = study.sodar_uuid
 
                     for assay in study.assays.all():
-                        old_assay_uuids[assay.get_name()] = assay.omics_uuid
+                        old_assay_uuids[assay.get_name()] = assay.sodar_uuid
 
                 # Set irods_status to our previous sheet's state
                 self.object.irods_status = old_inv.irods_status
@@ -274,17 +274,17 @@ class SampleSheetImportView(
 
         # Update UUIDs
         if old_inv_found:
-            self.object.omics_uuid = old_inv_uuid
+            self.object.sodar_uuid = old_inv_uuid
             self.object.save()
 
             for study in self.object.studies.all():
                 if study.get_name() in old_study_uuids:
-                    study.omics_uuid = old_study_uuids[study.get_name()]
+                    study.sodar_uuid = old_study_uuids[study.get_name()]
                     study.save()
 
                 for assay in study.assays.all():
                     if assay.get_name() in old_assay_uuids:
-                        assay.omics_uuid = old_assay_uuids[assay.get_name()]
+                        assay.sodar_uuid = old_assay_uuids[assay.get_name()]
                         assay.save()
 
         # Set current import active status to True
@@ -335,7 +335,7 @@ class SampleSheetTableExportView(
 
         if 'assay' in self.kwargs:
             try:
-                assay = Assay.objects.get(omics_uuid=self.kwargs['assay'])
+                assay = Assay.objects.get(sodar_uuid=self.kwargs['assay'])
                 study = assay.study
 
             except Exception as ex:
@@ -343,7 +343,7 @@ class SampleSheetTableExportView(
 
         elif 'study' in self.kwargs:
             try:
-                study = Study.objects.get(omics_uuid=self.kwargs['study'])
+                study = Study.objects.get(sodar_uuid=self.kwargs['study'])
 
             except Study.DoesNotExist:
                 pass
@@ -351,7 +351,7 @@ class SampleSheetTableExportView(
         redirect_url = reverse(
             'samplesheets:project_sheets',
             kwargs={'project': self._get_project(
-                self.request, self.kwargs).omics_uuid})
+                self.request, self.kwargs).sodar_uuid})
 
         if not study:
             messages.error(
@@ -420,7 +420,7 @@ class SampleSheetDeleteView(
         timeline = get_backend_api('timeline_backend')
         taskflow = get_backend_api('taskflow')
         tl_event = None
-        project = Project.objects.get(omics_uuid=kwargs['project'])
+        project = Project.objects.get(sodar_uuid=kwargs['project'])
         investigation = Investigation.objects.get(project=project, active=True)
 
         # Add event in Timeline
@@ -444,7 +444,7 @@ class SampleSheetDeleteView(
 
             try:
                 taskflow.submit(
-                    project_uuid=project.omics_uuid,
+                    project_uuid=project.sodar_uuid,
                     flow_name='sheet_delete',
                     flow_data={},
                     request=self.request)
@@ -461,7 +461,7 @@ class SampleSheetDeleteView(
 
         return HttpResponseRedirect(reverse(
             'samplesheets:project_sheets',
-            kwargs={'project': project.omics_uuid}))
+            kwargs={'project': project.sodar_uuid}))
 
 
 class IrodsDirsView(
@@ -521,7 +521,7 @@ class IrodsDirsView(
 
             return redirect(reverse(
                 'samplesheets:project_sheets',
-                kwargs={'project': project.omics_uuid}))
+                kwargs={'project': project.sodar_uuid}))
 
         # Else go on with the creation
         if tl_event:
@@ -532,7 +532,7 @@ class IrodsDirsView(
 
         try:
             taskflow.submit(
-                project_uuid=project.omics_uuid,
+                project_uuid=project.sodar_uuid,
                 flow_name='sheet_dirs_create',
                 flow_data=flow_data,
                 request=self.request)
@@ -552,7 +552,7 @@ class IrodsDirsView(
 
         return HttpResponseRedirect(reverse(
             'samplesheets:project_sheets',
-            kwargs={'project': project.omics_uuid}))
+            kwargs={'project': project.sodar_uuid}))
 
     def get(self, request, *args, **kwargs):
         super(IrodsDirsView, self).get(request, *args, **kwargs)
@@ -604,7 +604,7 @@ class SampleSheetDirStatusGetAPIView(APIView):
     def post(self, request):
         try:
             investigation = Investigation.objects.get(
-                project__omics_uuid=request.data['project_uuid'], active=True)
+                project__sodar_uuid=request.data['project_uuid'], active=True)
 
         except Investigation.DoesNotExist as ex:
             return Response(str(ex), status=404)
@@ -617,7 +617,7 @@ class SampleSheetDirStatusSetAPIView(APIView):
     def post(self, request):
         try:
             investigation = Investigation.objects.get(
-                project__omics_uuid=request.data['project_uuid'], active=True)
+                project__sodar_uuid=request.data['project_uuid'], active=True)
 
         except Investigation.DoesNotExist as ex:
             return Response(str(ex), status=404)
@@ -633,7 +633,7 @@ class SampleSheetDeleteAPIView(APIView):
     def post(self, request):
         try:
             investigation = Investigation.objects.get(
-                project__omics_uuid=request.data['project_uuid'], active=True)
+                project__sodar_uuid=request.data['project_uuid'], active=True)
 
         except Investigation.DoesNotExist as ex:
             return Response(str(ex), status=404)

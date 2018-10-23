@@ -30,7 +30,7 @@ class SampleSheetImportForm(forms.Form):
 
         if project:
             try:
-                self.project = Project.objects.get(omics_uuid=project)
+                self.project = Project.objects.get(sodar_uuid=project)
 
             except Project.DoesNotExist:
                 pass

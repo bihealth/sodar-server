@@ -27,7 +27,7 @@ class TestSampleSheetsPermissions(
         """Test the project sheets view"""
         url = reverse(
             'samplesheets:project_sheets',
-            kwargs={'project': self.project.omics_uuid})
+            kwargs={'project': self.project.sodar_uuid})
         good_users = [
             self.superuser,
             self.as_owner.user,
@@ -44,7 +44,7 @@ class TestSampleSheetsPermissions(
         """Test the project sheets overview"""
         url = reverse(
             'samplesheets:overview',
-            kwargs={'project': self.project.omics_uuid})
+            kwargs={'project': self.project.sodar_uuid})
         good_users = [
             self.superuser,
             self.as_owner.user,
@@ -61,7 +61,7 @@ class TestSampleSheetsPermissions(
         """Test the project sheets import view"""
         url = reverse(
             'samplesheets:import',
-            kwargs={'project': self.project.omics_uuid})
+            kwargs={'project': self.project.sodar_uuid})
         good_users = [
             self.superuser,
             self.as_owner.user,
@@ -78,7 +78,7 @@ class TestSampleSheetsPermissions(
         """Test the project sheets TSV export view for study table"""
         url = reverse(
             'samplesheets:export_tsv',
-            kwargs={'study': self.study.omics_uuid})
+            kwargs={'study': self.study.sodar_uuid})
         good_users = [
             self.superuser,
             self.as_owner.user,
@@ -95,7 +95,7 @@ class TestSampleSheetsPermissions(
         """Test the project sheets TSV export view for assay table"""
         url = reverse(
             'samplesheets:export_tsv',
-            kwargs={'assay': self.assay.omics_uuid})
+            kwargs={'assay': self.assay.sodar_uuid})
         good_users = [
             self.superuser,
             self.as_owner.user,
@@ -112,7 +112,7 @@ class TestSampleSheetsPermissions(
         """Test the project sheets delete view"""
         url = reverse(
             'samplesheets:delete',
-            kwargs={'project': self.project.omics_uuid})
+            kwargs={'project': self.project.sodar_uuid})
         good_users = [
             self.superuser,
             self.as_owner.user,

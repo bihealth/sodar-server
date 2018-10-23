@@ -9,12 +9,12 @@
   {% get_webdav_url as webdav_url %}
 {% endif %}
 
-<tr class="omics-ss-search-list-item" id="omics-ss-project-search-item-{{ item.omics_uuid }}">
+<tr class="omics-ss-search-list-item" id="omics-ss-project-search-item-{{ item.sodar_uuid }}">
   <td>
     <div class="omics-overflow-container">
       {% highlight_search_term item.name search_term as item_display_name %}
       {% if item.type != 'file' %}
-        <a href="{% url 'samplesheets:project_sheets' study=item.study.omics_uuid %}">{{ item_display_name | safe }}</a>
+        <a href="{% url 'samplesheets:project_sheets' study=item.study.sodar_uuid %}">{{ item_display_name | safe }}</a>
       {% else %}
         {% if webdav_url %}
           <a href="{{ webdav_url }}{{ item.irods_path }}">{{ item_display_name | safe }}</a>
@@ -39,7 +39,7 @@
   <td>
     <div class="omics-overflow-container">
       {% if item.study %}
-        <a href="{% url 'samplesheets:project_sheets' study=item.study.omics_uuid %}">
+        <a href="{% url 'samplesheets:project_sheets' study=item.study.sodar_uuid %}">
           {{ item.study.get_display_name }}
         </a>
     {% else %}
@@ -51,7 +51,7 @@
     {% if item.assays %}
       {% for assay in item.assays %}
         <div class="omics-overflow-container">
-          <a href="{% url 'samplesheets:project_sheets' study=item.study.omics_uuid %}#assay{{ assay.omics_uuid }}">
+          <a href="{% url 'samplesheets:project_sheets' study=item.study.sodar_uuid %}#assay{{ assay.sodar_uuid }}">
             {{ assay.get_display_name }}
           </a>
           <br />

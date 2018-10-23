@@ -10,7 +10,7 @@
       {% for s in investigation.studies.all %}
         <li class="nav-item">
           <a class="nav-link omics-ss-nav-btn {% if s == study %}bg-success active{% endif %}"
-             href="{% url 'samplesheets:project_sheets' study=s.omics_uuid %}"
+             href="{% url 'samplesheets:project_sheets' study=s.sodar_uuid %}"
              {% if s.get_display_name|length > 20 %}
                data-toggle="tooltip" data-placement="top" title="{{ s.get_display_name }}"
              {% endif %}>
@@ -19,7 +19,7 @@
       {% endfor %}
       <li class="nav-item">
         <a class="nav-link {% if request.resolver_match.url_name == 'overview' %}bg-success active{% endif %}"
-           href="{% url 'samplesheets:overview' project=project.omics_uuid %}">
+           href="{% url 'samplesheets:overview' project=project.sodar_uuid %}">
             <i class="fa fa-sitemap"></i> Overview</a>
       </li>
     </ul>

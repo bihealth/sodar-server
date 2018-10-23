@@ -259,7 +259,7 @@ class TestInvestigation(TestSampleSheetBase):
             'title': INV_TITLE,
             'description': DEFAULT_DESCRIPTION,
             'ontology_source_refs': {},
-            'omics_uuid': self.investigation.omics_uuid,
+            'sodar_uuid': self.investigation.sodar_uuid,
             'sharing_data': {},
             'retraction_data': {},
             'comments': DEFAULT_COMMENTS,
@@ -305,7 +305,7 @@ class TestStudy(TestSampleSheetBase):
             'unit_cat': {},
             'arcs': [],
             'header': {},
-            'omics_uuid': self.study.omics_uuid,
+            'sodar_uuid': self.study.sodar_uuid,
             'sharing_data': {},
             'retraction_data': {},
             'comments': DEFAULT_COMMENTS}
@@ -371,7 +371,7 @@ class TestProtocol(TestSampleSheetBase):
             'version': PROTOCOL_VERSION,
             'parameters': PROTOCOL_PARAMS,
             'components': PROTOCOL_COMPONENTS,
-            'omics_uuid': self.protocol.omics_uuid,
+            'sodar_uuid': self.protocol.sodar_uuid,
             'sharing_data': {},
             'retraction_data': {},
             'comments': DEFAULT_COMMENTS}
@@ -414,7 +414,7 @@ class TestAssay(TestSampleSheetBase):
             'unit_cat': {},
             'arcs': [],
             'header': {},
-            'omics_uuid': self.assay.omics_uuid,
+            'sodar_uuid': self.assay.sodar_uuid,
             'sharing_data': {},
             'retraction_data': {},
             'comments': DEFAULT_COMMENTS}
@@ -478,7 +478,7 @@ class TestSource(TestSampleSheetBase):
             'material_type': None,
             'factor_values': None,
             'extract_label': None,
-            'omics_uuid': self.material.omics_uuid,
+            'sodar_uuid': self.material.sodar_uuid,
             'sharing_data': {},
             'retraction_data': {},
             'comments': DEFAULT_COMMENTS}
@@ -544,7 +544,7 @@ class TestSample(TestSampleSheetBase):
             'material_type': None,
             'factor_values': None,
             'extract_label': None,
-            'omics_uuid': self.material.omics_uuid,
+            'sodar_uuid': self.material.sodar_uuid,
             'sharing_data': {},
             'retraction_data': {},
             'comments': DEFAULT_COMMENTS}
@@ -610,7 +610,7 @@ class TestMaterial(TestSampleSheetBase):
             'material_type': MATERIAL_TYPE,
             'factor_values': None,
             'extract_label': None,
-            'omics_uuid': self.material.omics_uuid,
+            'sodar_uuid': self.material.sodar_uuid,
             'sharing_data': {},
             'retraction_data': {},
             'comments': DEFAULT_COMMENTS}
@@ -676,7 +676,7 @@ class TestDataFile(TestSampleSheetBase):
             'material_type': DATA_TYPE,
             'factor_values': None,
             'extract_label': None,
-            'omics_uuid': self.material.omics_uuid,
+            'sodar_uuid': self.material.sodar_uuid,
             'sharing_data': {},
             'retraction_data': {},
             'comments': DEFAULT_COMMENTS}
@@ -753,7 +753,7 @@ class TestProcess(TestSampleSheetBase):
             'perform_date': PROCESS_PERFORM_DATE,
             'array_design_ref': None,
             'scan_name': None,
-            'omics_uuid': self.process.omics_uuid,
+            'sodar_uuid': self.process.sodar_uuid,
             'sharing_data': {},
             'retraction_data': {},
             'comments': DEFAULT_COMMENTS}

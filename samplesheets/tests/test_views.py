@@ -88,7 +88,7 @@ class TestProjectSheetsView(TestViewsBase):
         with self.login(self.user):
             response = self.client.get(reverse(
                 'samplesheets:project_sheets',
-                kwargs={'project': self.project.omics_uuid}))
+                kwargs={'project': self.project.sodar_uuid}))
             self.assertEqual(response.status_code, 200)
 
             # Assert context data
@@ -102,7 +102,7 @@ class TestProjectSheetsView(TestViewsBase):
         with self.login(self.user):
             response = self.client.get(reverse(
                 'samplesheets:project_sheets',
-                kwargs={'study': self.study.omics_uuid}))
+                kwargs={'study': self.study.sodar_uuid}))
             self.assertEqual(response.status_code, 200)
 
             # Assert context data
@@ -120,7 +120,7 @@ class TestProjectSheetsView(TestViewsBase):
         with self.login(self.user):
             response = self.client.get(reverse(
                 'samplesheets:project_sheets',
-                kwargs={'project': self.project.omics_uuid}))
+                kwargs={'project': self.project.sodar_uuid}))
             self.assertEqual(response.status_code, 200)
 
             # Assert context data
@@ -146,7 +146,7 @@ class TestProjectSheetsOverviewView(TestViewsBase):
         with self.login(self.user):
             response = self.client.get(reverse(
                 'samplesheets:overview',
-                kwargs={'project': self.project.omics_uuid}))
+                kwargs={'project': self.project.sodar_uuid}))
             self.assertEqual(response.status_code, 200)
 
             # Assert context data
@@ -164,7 +164,7 @@ class TestSampleSheetImportView(TestViewsBase):
         with self.login(self.user):
             response = self.client.get(reverse(
                 'samplesheets:import',
-                kwargs={'project': self.project.omics_uuid}))
+                kwargs={'project': self.project.sodar_uuid}))
             self.assertEqual(response.status_code, 200)
 
     def test_post(self):
@@ -178,7 +178,7 @@ class TestSampleSheetImportView(TestViewsBase):
                 values = {'file_upload': file}
                 response = self.client.post(reverse(
                     'samplesheets:import',
-                    kwargs={'project': self.project.omics_uuid}), values)
+                    kwargs={'project': self.project.sodar_uuid}), values)
 
         # Assert postconditions
         self.assertEqual(response.status_code, 302)
@@ -187,7 +187,7 @@ class TestSampleSheetImportView(TestViewsBase):
     def test_post_replace(self):
         """Test replacing an existing investigation by posting"""
         inv = self._import_isa_from_file(SHEET_PATH, self.project)
-        uuid = inv.omics_uuid
+        uuid = inv.sodar_uuid
 
         # Assert precondition
         self.assertEqual(Investigation.objects.all().count(), 1)
@@ -197,20 +197,20 @@ class TestSampleSheetImportView(TestViewsBase):
                 values = {'file_upload': file}
                 response = self.client.post(reverse(
                     'samplesheets:import',
-                    kwargs={'project': self.project.omics_uuid}), values)
+                    kwargs={'project': self.project.sodar_uuid}), values)
 
         # Assert postconditions
         self.assertEqual(response.status_code, 302)
         self.assertEqual(Investigation.objects.all().count(), 1)
         new_inv = Investigation.objects.first()
-        self.assertEqual(uuid, new_inv.omics_uuid)
+        self.assertEqual(uuid, new_inv.sodar_uuid)
 
     def test_post_replace_not_allowed(self):
         """Test replacing an iRODS-enabled investigation with missing studies or assays"""
         inv = self._import_isa_from_file(SHEET_PATH, self.project)
         inv.irods_status = True
         inv.save()
-        uuid = inv.omics_uuid
+        uuid = inv.sodar_uuid
 
         # Assert precondition
         self.assertEqual(Investigation.objects.all().count(), 1)
@@ -220,13 +220,13 @@ class TestSampleSheetImportView(TestViewsBase):
                 values = {'file_upload': file}
                 response = self.client.post(reverse(
                     'samplesheets:import',
-                    kwargs={'project': self.project.omics_uuid}), values)
+                    kwargs={'project': self.project.sodar_uuid}), values)
 
         # Assert postconditions
         self.assertEqual(response.status_code, 302)
         self.assertEqual(Investigation.objects.all().count(), 1)
         new_inv = Investigation.objects.first()
-        self.assertEqual(uuid, new_inv.omics_uuid)  # Should not have changed
+        self.assertEqual(uuid, new_inv.sodar_uuid)  # Should not have changed
 
 
 class TestSampleSheetTableExportView(TestViewsBase):
@@ -246,7 +246,7 @@ class TestSampleSheetTableExportView(TestViewsBase):
         with self.login(self.user):
             response = self.client.get(reverse(
                 'samplesheets:export_tsv',
-                kwargs={'study': self.study.omics_uuid}))
+                kwargs={'study': self.study.sodar_uuid}))
             self.assertEqual(response.status_code, 200)
 
     def test_render_assay(self):
@@ -254,7 +254,7 @@ class TestSampleSheetTableExportView(TestViewsBase):
         with self.login(self.user):
             response = self.client.get(reverse(
                 'samplesheets:export_tsv',
-                kwargs={'assay': self.assay.omics_uuid}))
+                kwargs={'assay': self.assay.sodar_uuid}))
             self.assertEqual(response.status_code, 200)
 
 
@@ -275,7 +275,7 @@ class TestSampleSheetDeleteView(TestViewsBase):
         with self.login(self.user):
             response = self.client.get(reverse(
                 'samplesheets:delete',
-                kwargs={'project': self.project.omics_uuid}))
+                kwargs={'project': self.project.sodar_uuid}))
             self.assertEqual(response.status_code, 200)
 
     def test_delete(self):
@@ -286,11 +286,11 @@ class TestSampleSheetDeleteView(TestViewsBase):
         with self.login(self.user):
             response = self.client.post(reverse(
                 'samplesheets:delete',
-                kwargs={'project': self.project.omics_uuid}))
+                kwargs={'project': self.project.sodar_uuid}))
             self.assertEqual(response.status_code, 302)
             self.assertEqual(response.url, reverse(
                 'samplesheets:project_sheets',
-                kwargs={'project': self.project.omics_uuid}))
+                kwargs={'project': self.project.sodar_uuid}))
 
         self.assertEqual(Investigation.objects.all().count(), 0)
 

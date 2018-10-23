@@ -16,13 +16,13 @@
 
     {# Import #}
     {% if not investigation and can_edit_sheet %}
-      <a class="dropdown-item" href="{% url 'samplesheets:import' project=project.omics_uuid %}">
+      <a class="dropdown-item" href="{% url 'samplesheets:import' project=project.sodar_uuid %}">
         <i class="fa fa-fw fa-upload"></i> Import ISAtab
       </a>
 
     {# Replace #}
     {% elif investigation and can_edit_sheet %}
-      <a class="dropdown-item" href="{% url 'samplesheets:import' project=project.omics_uuid %}">
+      <a class="dropdown-item" href="{% url 'samplesheets:import' project=project.sodar_uuid %}">
         <i class="fa fa-fw fa-refresh"></i> Replace ISAtab
       </a>
     {% endif %}
@@ -30,21 +30,21 @@
     {# Export #}
     {% comment %}
     {% if investigation and can_export_sheet %}
-      <a class="dropdown-item" href="{% url 'sheet_export_json' project=project.omics_uuid %}">
+      <a class="dropdown-item" href="{% url 'sheet_export_json' project=project.sodar_uuid %}">
         <i class="fa fa-fw fa-download"></i> Export JSON
       </a>
     {% endif %}
     {% endcomment %}
 
     {% if investigation and can_create_dirs and not render_error %}
-      <a class="dropdown-item" href="{% url 'samplesheets:dirs' project=project.omics_uuid %}">
+      <a class="dropdown-item" href="{% url 'samplesheets:dirs' project=project.sodar_uuid %}">
         <i class="fa fa-fw fa-database"></i> {% if investigation.irods_status %}Update{% else %}Create{% endif %} iRODS Directories
       </a>
     {% endif %}
 
     {# Delete #}
     {% if investigation and can_delete_sheet %}
-      <a class="dropdown-item" href="{% url 'samplesheets:delete' project=project.omics_uuid %}">
+      <a class="dropdown-item" href="{% url 'samplesheets:delete' project=project.sodar_uuid %}">
         <i class="fa fa-fw fa-close"></i> Delete Sheets and Data
       </a>
     {% endif %}

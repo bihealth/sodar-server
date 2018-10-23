@@ -35,7 +35,7 @@ class TestProjectSheetsView(TestUIBase, SampleSheetIOMixin):
             (self.as_guest.user, 2)]
         url = reverse(
             'samplesheets:project_sheets',
-            kwargs={'project': self.project.omics_uuid})
+            kwargs={'project': self.project.sodar_uuid})
         self.assert_element_count(expected, url, 'omics-ss-data-table')
     '''
 
@@ -49,7 +49,7 @@ class TestProjectSheetsView(TestUIBase, SampleSheetIOMixin):
             (self.as_guest.user, 3)]
         url = reverse(
             'samplesheets:project_sheets',
-            kwargs={'project': self.project.omics_uuid})
+            kwargs={'project': self.project.sodar_uuid})
         self.assert_element_count(
             expected, url, 'omics-ss-nav-item', attribute='class')
 
@@ -64,7 +64,7 @@ class TestProjectSheetsView(TestUIBase, SampleSheetIOMixin):
             self.as_guest.user]
         url = reverse(
             'samplesheets:project_sheets',
-            kwargs={'project': self.project.omics_uuid})
+            kwargs={'project': self.project.sodar_uuid})
 
         self.assert_element_exists(
             expected_true, url, 'omics-ss-buttons-op', True)
@@ -82,6 +82,6 @@ class TestProjectSheetsView(TestUIBase, SampleSheetIOMixin):
             (self.as_guest.user, 0)]
         url = reverse(
             'samplesheets:project_sheets',
-            kwargs={'project': self.project.omics_uuid})
+            kwargs={'project': self.project.sodar_uuid})
         self.assert_element_count(
             expected, url, 'omics-ss-data-excel', attribute='class')

@@ -45,7 +45,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
     #: FontAwesome icon ID string
     icon = 'flask'
 
-    #: Entry point URL ID (must take project omics_uuid as "project" argument)
+    #: Entry point URL ID (must take project sodar_uuid as "project" argument)
     entry_point_url_id = 'samplesheets:project_sheets'
 
     #: Description string
@@ -115,7 +115,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         for investigation in Investigation.objects.filter(irods_status=True):
             flow = {
                 'flow_name': 'sheet_dirs_create',
-                'project_uuid': investigation.project.omics_uuid,
+                'project_uuid': investigation.project.sodar_uuid,
                 'flow_data': {'dirs': get_sample_dirs(investigation)}}
             sync_flows.append(flow)
 
@@ -126,7 +126,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         Return URL for referring to a object used by the app, along with a
         label to be shown to the user for linking.
         :param model_str: Object class (string)
-        :param uuid: omics_uuid of the referred object
+        :param uuid: sodar_uuid of the referred object
         :return: Dict or None if not found
         """
         obj = self.get_object(eval(model_str), uuid)
@@ -138,7 +138,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         return {
             'url': reverse(
                 'samplesheets:project_sheets',
-                kwargs={'project': obj.project.omics_uuid}),
+                kwargs={'project': obj.project.sodar_uuid}),
             'label': obj.title}
 
     def search(self, search_term, user, search_type=None, keywords=None):
@@ -226,10 +226,10 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
 
                     try:
                         study = Study.objects.get(
-                            omics_uuid=irods_backend.get_uuid_from_path(
+                            sodar_uuid=irods_backend.get_uuid_from_path(
                                 o['path'], obj_type='study'))
                         assay = Assay.objects.get(
-                            omics_uuid=irods_backend.get_uuid_from_path(
+                            sodar_uuid=irods_backend.get_uuid_from_path(
                                 o['path'], obj_type='assay'))
 
                     except Exception as ex:

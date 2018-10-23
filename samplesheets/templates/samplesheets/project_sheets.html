@@ -188,7 +188,7 @@
       {% get_study_plugin study as study_plugin %}
 
       {# Study anchor #}
-      <a class="omics-ss-anchor" id="{{ study.omics_uuid }}"></a>
+      <a class="omics-ss-anchor" id="{{ study.sodar_uuid }}"></a>
 
       {# Study title #}
       {% include 'samplesheets/_section_title.html' with item=study section_type='study' content_plugin=study_plugin %}
@@ -225,7 +225,7 @@
         {% get_assay_plugin assay as assay_plugin %}
 
         {# Assay anchor #}
-        <a class="omics-ss-anchor" id="{{ assay.omics_uuid }}"></a>
+        <a class="omics-ss-anchor" id="{{ assay.sodar_uuid }}"></a>
 
         {# Assay title #}
         {% include 'samplesheets/_section_title.html' with item=assay section_type='assay' content_plugin=assay_plugin %}

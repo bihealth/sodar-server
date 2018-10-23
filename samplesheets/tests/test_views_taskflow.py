@@ -53,7 +53,7 @@ class SampleSheetTaskflowMixin:
         self.assertEqual(investigation.irods_status, False)
 
         values = {
-            'project_uuid': investigation.project.omics_uuid,
+            'project_uuid': investigation.project.sodar_uuid,
             'flow_name': 'sheet_dirs_create',
             'flow_data': {'dirs': get_sample_dirs(investigation)},
             'request': request}
@@ -101,7 +101,7 @@ class TestIrodsDirView(
         with self.login(self.user):
             response = self.client.post(reverse(
                     'samplesheets:dirs',
-                    kwargs={'project': self.project.omics_uuid}),
+                    kwargs={'project': self.project.sodar_uuid}),
                 values)
 
         # Assert sample sheet dir structure state after creation
@@ -114,7 +114,7 @@ class TestIrodsDirView(
                 response,
                 reverse(
                     'samplesheets:project_sheets',
-                    kwargs={'project': self.project.omics_uuid}))
+                    kwargs={'project': self.project.sodar_uuid}))
 
 
 class TestSampleSheetDeleteView(
@@ -151,13 +151,13 @@ class TestSampleSheetDeleteView(
         with self.login(self.user):
             response = self.client.post(reverse(
                     'samplesheets:delete',
-                    kwargs={'project': self.project.omics_uuid}),
+                    kwargs={'project': self.project.sodar_uuid}),
                 values)
 
         # Assert sample sheet dir structure state after creation
         with self.assertRaises(Investigation.DoesNotExist):
             Investigation.objects.get(
-                project__omics_uuid=self.project.omics_uuid)
+                project__sodar_uuid=self.project.sodar_uuid)
 
         # Assert redirect
         with self.login(self.user):
@@ -165,4 +165,4 @@ class TestSampleSheetDeleteView(
                 response,
                 reverse(
                     'samplesheets:project_sheets',
-                    kwargs={'project': self.project.omics_uuid}))
+                    kwargs={'project': self.project.sodar_uuid}))

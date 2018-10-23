@@ -75,7 +75,7 @@ def get_table_id(parent):
     :return: string
     """
     return 'omics-ss-data-table-{}-{}'.format(
-        parent.__class__.__name__.lower(), parent.omics_uuid)
+        parent.__class__.__name__.lower(), parent.sodar_uuid)
 
 
 @register.simple_tag
@@ -441,7 +441,7 @@ def get_assay_list_url(assay, path=None):
     return reverse(
         'irodsbackend:list',
         kwargs={
-            'project': assay.get_project().omics_uuid,
+            'project': assay.get_project().sodar_uuid,
             'path': path,
             'md5': 0})
 

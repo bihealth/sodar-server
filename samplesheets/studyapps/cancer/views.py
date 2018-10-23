@@ -83,7 +83,7 @@ class BaseCancerConfigView(
         self.redirect_url = reverse(
             'samplesheets:project_sheets',
             kwargs={'project': self._get_project(
-                self.request, self.kwargs).omics_uuid})
+                self.request, self.kwargs).sodar_uuid})
 
         if not irods_backend:
             messages.error(self.request, 'iRODS Backend not available')
@@ -115,7 +115,7 @@ class FileRedirectView(BaseCancerConfigView):
         # Get library
         try:
             self.library = GenericMaterial.objects.get(
-                omics_uuid=self.kwargs['genericmaterial'])
+                sodar_uuid=self.kwargs['genericmaterial'])
 
         except GenericMaterial.DoesNotExist:
             messages.error(
@@ -161,7 +161,7 @@ class IGVSessionFileRenderView(BaseCancerConfigView):
         # Get source
         try:
             self.source = GenericMaterial.objects.get(
-                omics_uuid=self.kwargs['genericmaterial'])
+                sodar_uuid=self.kwargs['genericmaterial'])
 
         except GenericMaterial.DoesNotExist:
             messages.error(
