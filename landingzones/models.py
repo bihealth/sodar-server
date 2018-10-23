@@ -119,11 +119,11 @@ class LandingZone(models.Model):
         default=dict,
         help_text='Configuration data (for storing plugin-specific settings)')
 
-    #: Landing zone Omics UUID
-    omics_uuid = models.UUIDField(
+    #: Landing zone SODAR UUID
+    sodar_uuid = models.UUIDField(
         default=uuid.uuid4,
         unique=True,
-        help_text='Landing zone Omics UUID')
+        help_text='Landing zone SODAR UUID')
 
     class Meta:
         ordering = ['project', 'assay__file_name', 'title']

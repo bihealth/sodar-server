@@ -44,13 +44,13 @@ def get_zone_dir(obj):
 
 
 class BaseSampleSheet(models.Model):
-    """Abstract class with common ODM sample sheet properties"""
+    """Abstract class with common SODAR sample sheet properties"""
 
     #: Internal UUID for the object
-    omics_uuid = models.UUIDField(
+    sodar_uuid = models.UUIDField(
         default=uuid.uuid4,
         unique=True,
-        help_text='Internal UUID for the object')
+        help_text='SODAR UUID for the object')
 
     #: Data sharing rules
     sharing_data = JSONField(

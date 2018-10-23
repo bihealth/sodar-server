@@ -117,11 +117,11 @@ class BaseFilesfoldersClass(models.Model):
         blank=True,
         help_text='Description (optional)')
 
-    #: Filesfolders Omics UUID
-    omics_uuid = models.UUIDField(
+    #: Filesfolders SODAR UUID
+    sodar_uuid = models.UUIDField(
         default=uuid.uuid4,
         unique=True,
-        help_text='Filesfolders Omics UUID')
+        help_text='Filesfolders SODAR UUID')
 
     # Set manager for custom queries
     objects = FilesfoldersManager()
