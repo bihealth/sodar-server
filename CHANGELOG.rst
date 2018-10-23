@@ -8,17 +8,32 @@ Changelog for the SODAR Web UI. Loosely follows the
 Unreleased
 ==========
 
+Added
+-----
+
+- **Userprofile**
+    - Add app from django-sodar-core
+
 Changed
 -------
 
 - **General**
     - Update Django to v1.11.16 (#370)
-    - Update requirements to match sodar_core v0.3.0 (#370)
+    - Update requirements to match django-sodar-core v0.3.0 (#370)
     - Update SODAR app requirements to current versions
     - Rebrand project and site as ``sodar`` (#166)
-    - Update ``SODAR_CORE`` dependencies (#370)
-    - Update ``sodar_uuid`` model fields and references (#370)
-    - Update ``sodar_url`` references (#370)
+    - Update ``SODAR_CONSTANTS`` dependencies in local apps (#370)
+    - Update ``sodar_uuid`` model fields and references in local apps (#370)
+    - Update ``sodar_url`` references in local apps (#370)
+    - Update default templates (#370)
+- **Adminalerts**
+    - Import app from djagno-sodar-core
+- **Projectroles**
+    - Import app from django-sodar-core
+- **Taskflowbackend**
+    - Import app from django-sodar-core
+- **Timeline**
+    - Import app from django-sodar-core
 
 Removed
 -------
@@ -26,6 +41,7 @@ Removed
 - **General**
     - Local Django apps included in SODAR Core v0.3.0 (#370)
     - Unused django-extra-views requirement
+    - Unused user templates (#370)
 
 
 v0.3.3 (2018-09-25)
