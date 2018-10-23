@@ -9,7 +9,7 @@ from django.forms.models import model_to_dict
 from django.utils import timezone
 
 # Projectroles dependency
-from projectroles.models import Role, OMICS_CONSTANTS
+from projectroles.models import Role, SODAR_CONSTANTS
 from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
 
 from ..models import Investigation, Study, Assay, Protocol, Process, \
@@ -211,9 +211,9 @@ class TestSampleSheetBase(
 
         # Init project, role and assignment
         self.project = self._make_project(
-            'TestProject', OMICS_CONSTANTS['PROJECT_TYPE_PROJECT'], None)
+            'TestProject', SODAR_CONSTANTS['PROJECT_TYPE_PROJECT'], None)
         self.role_owner = Role.objects.get_or_create(
-            name=OMICS_CONSTANTS['PROJECT_ROLE_OWNER'])[0]
+            name=SODAR_CONSTANTS['PROJECT_ROLE_OWNER'])[0]
         self.assignment_owner = self._make_assignment(
             self.project, self.user_owner, self.role_owner)
 

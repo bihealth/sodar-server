@@ -8,7 +8,7 @@ from django.urls import reverse
 from django.utils.html import escape
 
 # Projectroles dependency
-from projectroles.models import OMICS_CONSTANTS
+from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
 
 from ..models import Investigation, Study, Assay, GenericMaterial, \
@@ -25,7 +25,7 @@ register = template.Library()
 
 
 # Omics constants
-PROJECT_TYPE_PROJECT = OMICS_CONSTANTS['PROJECT_TYPE_PROJECT']
+PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 
 # Local constants
 

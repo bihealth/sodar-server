@@ -22,6 +22,7 @@ Removed
 -------
 
 - **General**
+    - Local Django apps included in SODAR Core v0.3.0 (#370)
     - Unused django-extra-views requirement
 
 

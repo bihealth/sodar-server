@@ -10,13 +10,13 @@ from test_plus.test import TestCase
 from ..models import File, FileData, Folder, HyperLink
 
 # Projectroles dependency
-from projectroles.models import OMICS_CONSTANTS
+from projectroles.models import SODAR_CONSTANTS
 from projectroles.tests.test_models import ProjectMixin
 
 
 # Omics constants
-PROJECT_TYPE_CATEGORY = OMICS_CONSTANTS['PROJECT_TYPE_CATEGORY']
-PROJECT_TYPE_PROJECT = OMICS_CONSTANTS['PROJECT_TYPE_PROJECT']
+PROJECT_TYPE_CATEGORY = SODAR_CONSTANTS['PROJECT_TYPE_CATEGORY']
+PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 
 # Local constants
 PROJECT_NAME = 'Test Project'
