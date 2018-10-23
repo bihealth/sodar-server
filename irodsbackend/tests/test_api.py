@@ -82,8 +82,8 @@ class TestIrodsBackendAPI(
         """Test get_irods_path() with a Project object"""
         expected = '/{zone}/projects/{uuid_prefix}/{uuid}'.format(
             zone=IRODS_ZONE,
-            uuid_prefix=str(self.project.omics_uuid)[:2],
-            uuid=str(self.project.omics_uuid))
+            uuid_prefix=str(self.project.sodar_uuid)[:2],
+            uuid=str(self.project.sodar_uuid))
         path = self.irods_backend.get_path(self.project)
         self.assertEqual(expected, path)
 
@@ -92,10 +92,10 @@ class TestIrodsBackendAPI(
         expected = '/{zone}/projects/{uuid_prefix}/{uuid}/{sample_dir}' \
                    '/{study}'.format(
                     zone=IRODS_ZONE,
-                    uuid_prefix=str(self.project.omics_uuid)[:2],
-                    uuid=str(self.project.omics_uuid),
+                    uuid_prefix=str(self.project.sodar_uuid)[:2],
+                    uuid=str(self.project.sodar_uuid),
                     sample_dir=SAMPLE_DIR,
-                    study='study_' + str(self.study.omics_uuid))
+                    study='study_' + str(self.study.sodar_uuid))
         path = self.irods_backend.get_path(self.study)
         self.assertEqual(expected, path)
 
@@ -104,11 +104,11 @@ class TestIrodsBackendAPI(
         expected = '/{zone}/projects/{uuid_prefix}/{uuid}/{sample_dir}' \
                    '/{study}/{assay}'.format(
                     zone=IRODS_ZONE,
-                    uuid_prefix=str(self.project.omics_uuid)[:2],
-                    uuid=str(self.project.omics_uuid),
+                    uuid_prefix=str(self.project.sodar_uuid)[:2],
+                    uuid=str(self.project.sodar_uuid),
                     sample_dir=SAMPLE_DIR,
-                    study='study_' + str(self.study.omics_uuid),
-                    assay='assay_' + str(self.assay.omics_uuid))
+                    study='study_' + str(self.study.sodar_uuid),
+                    assay='assay_' + str(self.assay.sodar_uuid))
         path = self.irods_backend.get_path(self.assay)
         self.assertEqual(expected, path)
 
@@ -117,8 +117,8 @@ class TestIrodsBackendAPI(
         expected = '/{zone}/projects/{uuid_prefix}/{uuid}/{zone_dir}' \
                    '/{user}/{study_assay}/{zone_title}'.format(
                     zone=IRODS_ZONE,
-                    uuid_prefix=str(self.project.omics_uuid)[:2],
-                    uuid=str(self.project.omics_uuid),
+                    uuid_prefix=str(self.project.sodar_uuid)[:2],
+                    uuid=str(self.project.sodar_uuid),
                     zone_dir=LANDING_ZONE_DIR,
                     user=self.user.username,
                     study_assay=self.irods_backend.get_subdir(
@@ -131,8 +131,8 @@ class TestIrodsBackendAPI(
         """Test get_sample_path() with a Project object"""
         expected = '/{zone}/projects/{uuid_prefix}/{uuid}/{sample_dir}'.format(
             zone=IRODS_ZONE,
-            uuid_prefix=str(self.project.omics_uuid)[:2],
-            uuid=str(self.project.omics_uuid),
+            uuid_prefix=str(self.project.sodar_uuid)[:2],
+            uuid=str(self.project.sodar_uuid),
             sample_dir=SAMPLE_DIR)
         path = self.irods_backend.get_sample_path(self.project)
         self.assertEqual(expected, path)
@@ -146,13 +146,13 @@ class TestIrodsBackendAPI(
         """Test get_uuid_from_path() with an assay path"""
         path = self.irods_backend.get_path(self.assay)
         uuid = self.irods_backend.get_uuid_from_path(path, 'assay')
-        self.assertEqual(uuid, str(self.assay.omics_uuid))
+        self.assertEqual(uuid, str(self.assay.sodar_uuid))
 
     def test_get_uuid_from_path_study(self):
         """Test get_uuid_from_path() with a study path"""
         path = self.irods_backend.get_path(self.study)
         uuid = self.irods_backend.get_uuid_from_path(path, 'study')
-        self.assertEqual(uuid, str(self.study.omics_uuid))
+        self.assertEqual(uuid, str(self.study.sodar_uuid))
 
     def test_get_uuid_from_path_wrong_type(self):
         """Test get_uuid_from_path() with a path not containing the uuid (should fail)"""

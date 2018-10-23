@@ -95,7 +95,7 @@ class TestIrodsStatisticsAPIView(TestViewsBase):
             response = self.client.get(reverse(
                 'irodsbackend:stats',
                 kwargs={
-                    'project': self.project.omics_uuid,
+                    'project': self.project.sodar_uuid,
                     'path': self.irods_path}))
 
             self.assertEqual(response.status_code, 200)
@@ -114,7 +114,7 @@ class TestIrodsStatisticsAPIView(TestViewsBase):
             response = self.client.get(reverse(
                 'irodsbackend:stats',
                 kwargs={
-                    'project': self.project.omics_uuid,
+                    'project': self.project.sodar_uuid,
                     'path': self.irods_path}))
 
             self.assertEqual(response.status_code, 200)
@@ -138,7 +138,7 @@ class TestIrodsStatisticsAPIView(TestViewsBase):
             response = self.client.get(reverse(
                 'irodsbackend:stats',
                 kwargs={
-                    'project': self.project.omics_uuid,
+                    'project': self.project.sodar_uuid,
                     'path': self.irods_path}))
 
             self.assertEqual(response.status_code, 200)
@@ -155,7 +155,7 @@ class TestIrodsStatisticsAPIView(TestViewsBase):
             response = self.client.get(reverse(
                 'irodsbackend:stats',
                 kwargs={
-                    'project': self.project.omics_uuid,
+                    'project': self.project.sodar_uuid,
                     'path': fail_path}))
 
             self.assertEqual(response.status_code, 404)
@@ -169,7 +169,7 @@ class TestIrodsStatisticsAPIView(TestViewsBase):
             response = self.client.get(reverse(
                 'irodsbackend:stats',
                 kwargs={
-                    'project': self.project.omics_uuid,
+                    'project': self.project.sodar_uuid,
                     'path': IRODS_NON_PROJECT_PATH}))
 
             self.assertEqual(response.status_code, 400)
@@ -206,7 +206,7 @@ class TestIrodsStatisticsAPIView(TestViewsBase):
             response = self.client.get(reverse(
                 'irodsbackend:stats',
                 kwargs={
-                    'project': self.project.omics_uuid,
+                    'project': self.project.sodar_uuid,
                     'path': self.irods_path}))
 
             self.assertEqual(response.status_code, 403)
@@ -232,7 +232,7 @@ class TestIrodsObjectListAPIView(TestViewsBase):
             response = self.client.get(reverse(
                 'irodsbackend:list',
                 kwargs={
-                    'project': self.project.omics_uuid,
+                    'project': self.project.sodar_uuid,
                     'path': self.irods_path,
                     'md5': 0}))
 
@@ -251,7 +251,7 @@ class TestIrodsObjectListAPIView(TestViewsBase):
             response = self.client.get(reverse(
                 'irodsbackend:list',
                 kwargs={
-                    'project': self.project.omics_uuid,
+                    'project': self.project.sodar_uuid,
                     'path': self.irods_path,
                     'md5': 0}))
 
@@ -281,7 +281,7 @@ class TestIrodsObjectListAPIView(TestViewsBase):
             response = self.client.get(reverse(
                 'irodsbackend:list',
                 kwargs={
-                    'project': self.project.omics_uuid,
+                    'project': self.project.sodar_uuid,
                     'path': self.irods_path,
                     'md5': 1}))
 
@@ -301,7 +301,7 @@ class TestIrodsObjectListAPIView(TestViewsBase):
             response = self.client.get(reverse(
                 'irodsbackend:list',
                 kwargs={
-                    'project': self.project.omics_uuid,
+                    'project': self.project.sodar_uuid,
                     'path': self.irods_path,
                     'md5': 1}))
 
@@ -319,7 +319,7 @@ class TestIrodsObjectListAPIView(TestViewsBase):
             response = self.client.get(reverse(
                 'irodsbackend:list',
                 kwargs={
-                    'project': self.project.omics_uuid,
+                    'project': self.project.sodar_uuid,
                     'path': fail_path,
                     'md5': 0}))
 
@@ -334,7 +334,7 @@ class TestIrodsObjectListAPIView(TestViewsBase):
             response = self.client.get(reverse(
                 'irodsbackend:list',
                 kwargs={
-                    'project': self.project.omics_uuid,
+                    'project': self.project.sodar_uuid,
                     'path': IRODS_NON_PROJECT_PATH,
                     'md5': 0}))
 
@@ -374,7 +374,7 @@ class TestIrodsObjectListAPIView(TestViewsBase):
             response = self.client.get(reverse(
                 'irodsbackend:list',
                 kwargs={
-                    'project': self.project.omics_uuid,
+                    'project': self.project.sodar_uuid,
                     'path': self.irods_path,
                     'md5': 0}))
 

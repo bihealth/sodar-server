@@ -34,7 +34,7 @@ class BaseIrodsAPIView(APIView):
         if 'project' in self.kwargs:
             try:
                 self.project = Project.objects.get(
-                    omics_uuid=self.kwargs['project'])
+                    sodar_uuid=self.kwargs['project'])
 
             except Project.DoesNotExist:
                 return Response('Project not found', status=400)

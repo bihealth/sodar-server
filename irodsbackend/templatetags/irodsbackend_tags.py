@@ -27,7 +27,7 @@ def get_stats_html(irods_path, project=None):
     url_kwargs = {'path': irods_path}
 
     if project:
-        url_kwargs['project'] = project.omics_uuid
+        url_kwargs['project'] = project.sodar_uuid
 
     return '<span class="badge badge-pill badge-info omics-irods-stats"' \
            'stats-url="{url}">' \

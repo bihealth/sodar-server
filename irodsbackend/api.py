@@ -291,7 +291,7 @@ class IrodsAPI:
             if not landing_zone:
                 return '{}_{}'.format(
                     obj.__class__.__name__.lower(),
-                    obj.omics_uuid)
+                    obj.sodar_uuid)
 
             else:
                 return slugify(obj.get_display_name()).replace('-', '_')
@@ -331,8 +331,8 @@ class IrodsAPI:
         # Base path (project)
         path = '/{zone}/projects/{uuid_prefix}/{uuid}'.format(
             zone=settings.IRODS_ZONE,
-            uuid_prefix=str(project.omics_uuid)[:2],
-            uuid=project.omics_uuid)
+            uuid_prefix=str(project.sodar_uuid)[:2],
+            uuid=project.sodar_uuid)
 
         # Project
         if obj_class == 'Project':
