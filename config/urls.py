@@ -17,12 +17,13 @@ urlpatterns = [
     # Django Admin, use {% url 'admin:index' %}
     url(settings.ADMIN_URL, admin.site.urls),
 
-    # User management
-    url(r'^users/', include('sodar.users.urls', namespace='users')),
-
     # Login and logout
-    url(r'^login/$', auth_views.login, name='account_login'),
-    url(r'^logout/$', auth_views.logout_then_login, name='account_logout'),
+    url(r'^login/$', auth_views.LoginView.as_view(
+        template_name='users/login.html'), name='login'),
+    url(r'^logout/$', auth_views.logout_then_login, name='logout'),
+
+    # User Profile URLs
+    url(r'^user/', include('userprofile.urls')),
 
     # Auth
     url(r'api/auth/', include('knox.urls')),
