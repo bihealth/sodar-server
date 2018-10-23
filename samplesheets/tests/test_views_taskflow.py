@@ -1,6 +1,6 @@
 """Integration tests for views in the samplesheets Django app with taskflow"""
 
-# NOTE: You must supply 'omics_url': self.live_server_url in taskflow requests!
+# NOTE: You must supply 'sodar_url': self.live_server_url in taskflow requests!
 
 from django.conf import settings
 from django.contrib import auth
@@ -59,7 +59,7 @@ class SampleSheetTaskflowMixin:
             'request': request}
 
         if not request:
-            values['omics_url'] = self.live_server_url
+            values['sodar_url'] = self.live_server_url
 
         self.taskflow.submit(**values)
 
@@ -96,7 +96,7 @@ class TestIrodsDirView(
 
         # Issue POST request
         values = {
-            'omics_url': self.live_server_url}  # HACK: Override callback URL
+            'sodar_url': self.live_server_url}  # HACK: Override callback URL
 
         with self.login(self.user):
             response = self.client.post(reverse(
@@ -146,7 +146,7 @@ class TestSampleSheetDeleteView(
 
         # Issue POST request
         values = {
-            'omics_url': self.live_server_url}  # HACK: Override callback URL
+            'sodar_url': self.live_server_url}  # HACK: Override callback URL
 
         with self.login(self.user):
             response = self.client.post(reverse(

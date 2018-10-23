@@ -1,6 +1,6 @@
 """Integration tests for views in the landingzones Django app with taskflow"""
 
-# NOTE: You must supply 'omics_url': self.live_server_url in taskflow requests!
+# NOTE: You must supply 'sodar_url': self.live_server_url in taskflow requests!
 
 import hashlib
 from irods.test.helpers import make_object
@@ -100,7 +100,7 @@ class LandingZoneTaskflowMixin:
             'request': request}
 
         if not request:
-            values['omics_url'] = self.live_server_url
+            values['sodar_url'] = self.live_server_url
 
         self.taskflow.submit(**values)
 
@@ -182,7 +182,7 @@ class TestLandingZoneCreateView(
             'title_suffix': ZONE_SUFFIX,
             'description': ZONE_DESC,
             'configuration': '',
-            'omics_url': self.live_server_url}
+            'sodar_url': self.live_server_url}
 
         with self.login(self.user):
             response = self.client.post(
@@ -279,7 +279,7 @@ class TestLandingZoneMoveView(
 
         # Issue POST request
         values = {
-            'omics_url': self.live_server_url}
+            'sodar_url': self.live_server_url}
 
         with self.login(self.user):
             response = self.client.post(
@@ -322,7 +322,7 @@ class TestLandingZoneMoveView(
 
         # Issue POST request
         values = {
-            'omics_url': self.live_server_url}
+            'sodar_url': self.live_server_url}
 
         with self.login(self.user):
             response = self.client.post(
@@ -365,7 +365,7 @@ class TestLandingZoneMoveView(
 
         # Issue POST request
         values = {
-            'omics_url': self.live_server_url}
+            'sodar_url': self.live_server_url}
 
         with self.login(self.user):
             response = self.client.post(
@@ -408,7 +408,7 @@ class TestLandingZoneMoveView(
 
         # Issue POST request
         values = {
-            'omics_url': self.live_server_url}
+            'sodar_url': self.live_server_url}
 
         with self.login(self.user):
             response = self.client.post(
@@ -485,7 +485,7 @@ class TestLandingZoneDeleteView(
 
         # Issue POST request
         values = {
-            'omics_url': self.live_server_url}
+            'sodar_url': self.live_server_url}
 
         with self.login(self.user):
             response = self.client.post(

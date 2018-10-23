@@ -58,6 +58,19 @@ THIRD_PARTY_APPS = [
     'rest_framework',   # For API views
     'knox',  # For token auth
     'docs',  # For the online user documentation/manual
+
+    # SODAR Core apps
+
+    # Project apps
+    'projectroles.apps.ProjectrolesConfig',
+    'timeline.apps.TimelineConfig',
+
+    # Site apps
+    'userprofile.apps.UserprofileConfig',
+    'adminalerts.apps.AdminalertsConfig',
+
+    # Backend apps
+    'taskflowbackend.apps.TaskflowbackendConfig',
 ]
 
 # Project apps
@@ -66,18 +79,14 @@ LOCAL_APPS = [
     'sodar.users.apps.UsersConfig',
 
     # Project apps
-    'projectroles.apps.ProjectrolesConfig',
-    'timeline.apps.TimelineConfig',
     'filesfolders.apps.FilesfoldersConfig',
     'samplesheets.apps.SamplesheetsConfig',
     'landingzones.apps.LandingzonesConfig',
 
     # Backend apps
-    'taskflowbackend.apps.TaskflowbackendConfig',
     'irodsbackend.apps.IrodsbackendConfig',
 
     # General site apps
-    'adminalerts.apps.AdminalertsConfig',
     'irodsinfo.apps.IrodsinfoConfig',
 
     # Samplesheets study sub-apps
