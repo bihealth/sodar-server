@@ -1,6 +1,5 @@
 """Tests for models in the landingzones app"""
 
-from django.conf import settings
 from django.forms.models import model_to_dict
 
 from test_plus.test import TestCase

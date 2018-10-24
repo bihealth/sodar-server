@@ -1,6 +1,8 @@
+"""Assay app plugin for samplesheets"""
+
+# Projectroles dependency
 from projectroles.plugins import get_backend_api
 
-from samplesheets.models import GenericMaterial
 from samplesheets.plugins import SampleSheetAssayPluginPoint
 from samplesheets.utils import get_last_material_name
 

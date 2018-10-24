@@ -17,7 +17,7 @@ from .test_models import FolderMixin, FileMixin, HyperLinkMixin
 from ..utils import build_public_url
 
 
-# Global constants from settings
+# SODAR constants
 PROJECT_ROLE_OWNER = SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
 PROJECT_ROLE_DELEGATE = SODAR_CONSTANTS['PROJECT_ROLE_DELEGATE']
 PROJECT_ROLE_CONTRIBUTOR = SODAR_CONSTANTS['PROJECT_ROLE_CONTRIBUTOR']

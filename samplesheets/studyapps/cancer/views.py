@@ -17,8 +17,7 @@ from projectroles.views import LoggedInPermissionMixin, \
 # Samplesheets dependency
 from samplesheets.models import GenericMaterial
 from samplesheets.rendering import SampleSheetTableBuilder
-from samplesheets.utils import get_index_by_header, get_last_material_name, \
-    get_sample_libraries
+from samplesheets.utils import get_sample_libraries
 from samplesheets.studyapps.utils import get_igv_xml, FILE_TYPE_SUFFIXES
 
 # Local helper for authenticating with auth basic

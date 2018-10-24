@@ -12,7 +12,7 @@ from .urls import urlpatterns
 from .utils import get_sample_dirs, get_isa_field_name
 
 
-# Omics constants
+# SODAR constants
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 
 

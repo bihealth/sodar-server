@@ -1,14 +1,10 @@
-import multiprocessing
 from zipfile import ZipFile
 
 from django import forms
-from django.conf import settings
 
 # Projectroles dependency
 from projectroles.models import Project
 
-from .models import Investigation, Study, Assay, GenericMaterial, Protocol, \
-    Process
 from .io import import_isa, get_inv_paths
 
 

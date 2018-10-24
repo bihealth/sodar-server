@@ -1,14 +1,13 @@
 """Tests for samplesheets.rendering"""
 
-from bs4 import BeautifulSoup
 from test_plus.test import TestCase
 
 # Projectroles dependency
 from projectroles.models import Role, SODAR_CONSTANTS
 from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
 
-from ..models import Investigation, GenericMaterial
-from ..rendering import SampleSheetTableBuilder, EMPTY_VALUE
+from ..models import GenericMaterial
+from ..rendering import SampleSheetTableBuilder
 from .test_io import SampleSheetIOMixin, SHEET_DIR
 
 

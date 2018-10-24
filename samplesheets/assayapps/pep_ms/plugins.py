@@ -1,3 +1,5 @@
+"""Assay app plugin for samplesheets"""
+
 from django.conf import settings
 
 from samplesheets.models import GenericMaterial, Process

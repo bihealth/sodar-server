@@ -1,7 +1,7 @@
 import uuid
 
 from django.conf import settings
-from django.contrib.postgres.fields import ArrayField, JSONField
+from django.contrib.postgres.fields import JSONField
 from django.db import models
 
 # Projectroles dependency

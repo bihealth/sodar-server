@@ -1,6 +1,5 @@
 """Tests for permissions in the landingzones app"""
 
-from django.conf import settings
 from django.urls import reverse
 
 # Projectroles dependency

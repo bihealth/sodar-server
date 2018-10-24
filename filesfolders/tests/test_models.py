@@ -14,7 +14,7 @@ from projectroles.models import SODAR_CONSTANTS
 from projectroles.tests.test_models import ProjectMixin
 
 
-# Omics constants
+# SODAR constants
 PROJECT_TYPE_CATEGORY = SODAR_CONSTANTS['PROJECT_TYPE_CATEGORY']
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 

@@ -20,8 +20,7 @@ from knox.auth import TokenAuthentication
 from projectroles.models import Project
 from projectroles.plugins import get_backend_api
 from projectroles.views import LoggedInPermissionMixin, \
-    ProjectContextMixin, ProjectPermissionMixin, APIPermissionMixin, \
-    HTTPRefererMixin
+    ProjectContextMixin, ProjectPermissionMixin
 
 from .forms import SampleSheetImportForm
 from .models import Investigation, Study, Assay, Protocol, Process, \

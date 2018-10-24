@@ -8,7 +8,6 @@ from django.core.urlresolvers import reverse
 
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
-from projectroles.plugins import get_backend_api
 from projectroles.tests.test_views_taskflow import TestTaskflowBase
 
 from unittest import skipIf
@@ -21,7 +20,7 @@ from .test_io import SampleSheetIOMixin, SHEET_DIR
 User = auth.get_user_model()
 
 
-# Omics constants
+# SODAR constants
 PROJECT_ROLE_OWNER = SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
 PROJECT_ROLE_DELEGATE = SODAR_CONSTANTS['PROJECT_ROLE_DELEGATE']
 PROJECT_ROLE_CONTRIBUTOR = SODAR_CONSTANTS['PROJECT_ROLE_CONTRIBUTOR']

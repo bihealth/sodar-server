@@ -24,7 +24,7 @@ num_re = re.compile('^(?=.)([+-]?([0-9]*)(\.([0-9]+))?)$')
 register = template.Library()
 
 
-# Omics constants
+# SODAR constants
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 
 # Local constants

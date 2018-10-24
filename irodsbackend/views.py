@@ -1,8 +1,3 @@
-import logging
-import rules
-
-from django.contrib.auth.mixins import LoginRequiredMixin
-
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
