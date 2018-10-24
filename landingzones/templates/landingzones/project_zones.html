@@ -13,57 +13,57 @@
 {% block css %}
   {{ block.super }}
   <style type="text/css">
-    .omics-lz-table thead tr th:nth-child(3) {
+    .sodar-lz-table thead tr th:nth-child(3) {
       width: 350px !important;
     }
 
-    .omics-lz-table thead tr th:nth-child(4) {
+    .sodar-lz-table thead tr th:nth-child(4) {
       white-space: nowrap !important;
       width: 150px !important;
     }
 
-    .omics-lz-table thead tr th:nth-child(5) {
+    .sodar-lz-table thead tr th:nth-child(5) {
       width: 120px !important;
       white-space: nowrap !important;
     }
 
-    .omics-lz-table thead tr th:nth-child(6) {
+    .sodar-lz-table thead tr th:nth-child(6) {
       width: 70px !important;
     }
 
     /* Responsive modifications */
     @media screen and (max-width: 1300px) {
-      .table.omics-lz-table tr th:nth-child(3) {
+      .table.sodar-lz-table tr th:nth-child(3) {
         display: none;
       }
-      .table.omics-lz-table tr td:nth-child(3) {
+      .table.sodar-lz-table tr td:nth-child(3) {
         display: none;
       }
     }
 
     @media screen and (max-width: 800px) {
-      .table.omics-lz-table tr th:nth-child(2) {
+      .table.sodar-lz-table tr th:nth-child(2) {
         display: none;
       }
-      .table.omics-lz-table tr td:nth-child(2) {
+      .table.sodar-lz-table tr td:nth-child(2) {
         display: none;
       }
     }
 
     @media screen and (max-width: 600px) {
-      .table.omics-lz-table tr th:nth-child(4) {
+      .table.sodar-lz-table tr th:nth-child(4) {
         display: none;
       }
-      .table.omics-lz-table tr td:nth-child(4) {
+      .table.sodar-lz-table tr td:nth-child(4) {
         display: none;
       }
     }
 
     @media screen and (max-width: 450px) {
-      .table.omics-lz-table tr th:nth-child(5) {
+      .table.sodar-lz-table tr th:nth-child(5) {
         display: none;
       }
-      .table.omics-lz-table tr td:nth-child(5) {
+      .table.sodar-lz-table tr td:nth-child(5) {
         display: none;
       }
     }
@@ -76,17 +76,17 @@
 {% has_perm 'landingzones.update_zones_all' request.user project as can_update_zones_all %}
 {% has_perm 'landingzones.add_zones' request.user project as can_add_zones %}
 
-<div class="row omics-subtitle-container bg-white sticky-top">
+<div class="row sodar-subtitle-container bg-white sticky-top">
   <h3><i class="fa fa-database"></i> Landing Zones</h3>
   {% if investigation and can_add_zones %}
     {% include 'landingzones/_list_buttons.html' %}
   {% endif %}
 </div>
 
-<div class="container-fluid omics-page-container"> {# Main container #}
+<div class="container-fluid sodar-page-container"> {# Main container #}
 
   {% if not investigation %}
-    <div class="alert alert-danger" role="alert" id="omics-lz-alert-no-zones">
+    <div class="alert alert-danger" role="alert" id="sodar-lz-alert-no-zones">
       <strong>Note:</strong> No sample sheets are currently available for this project.
       To create landing zones, a person with sufficient project permissions must
       import an ISAtab investigation and create the sample directory structure in iRODS
@@ -94,7 +94,7 @@
     </div>
 
   {% elif investigation and not investigation.irods_status %}
-    <div class="alert alert-danger" role="alert" id="omics-lz-alert-no-zones">
+    <div class="alert alert-danger" role="alert" id="sodar-lz-alert-no-zones">
       <strong>Note:</strong> The iRODS directory structure for the project sample
       sheets is not available. A user authorized for sample sheet editing must
       enable iRODS access by selecting <cite>"Create in iRODS"</cite> in the
@@ -103,7 +103,7 @@
     </div>
 
   {% elif zones_own.count == 0 and not zones_other %}
-    <div class="alert alert-info" role="alert" id="omics-lz-alert-no-zones">
+    <div class="alert alert-info" role="alert" id="sodar-lz-alert-no-zones">
       No landing zones are currently available for you in this project. Please
       create a landing zone for a desired assay using the "Zone Operations" menu.
     </div>
@@ -120,8 +120,8 @@
 
 </div> {# Main container #}
 
-<span class="omics-popup-overlay" id="omics-lz-popup-list" list-url="" zone-title=""></span>
-<span class="omics-popup-overlay" id="omics-lz-popup-cmd" irods-path="" zone-title=""></span>
+<span class="sodar-popup-overlay" id="sodar-lz-popup-list" list-url="" zone-title=""></span>
+<span class="sodar-popup-overlay" id="sodar-lz-popup-cmd" irods-path="" zone-title=""></span>
 
 {% endblock projectroles_extend %}
 
@@ -151,56 +151,56 @@
     });
 
     // No zones
-    if ($('#omics-lz-alert-no-zones').length) {
+    if ($('#sodar-lz-alert-no-zones').length) {
         tour.addStep('no_zones', {
             title: 'No Landing Zones Available',
             text: 'No landing zones are currently available. See the alert ' +
                   'box for instruction on how to proceed.',
-            attachTo: '#omics-lz-alert-no-zones top',
+            attachTo: '#sodar-lz-alert-no-zones top',
             advanceOn: '.docs-link click',
             showCancelLink: true
         });
     }
 
-    if ($('#omics-lz-zone-list-own').length) {
+    if ($('#sodar-lz-zone-list-own').length) {
         tour.addStep('own_zones', {
             title: 'Your Own Zones',
             text: 'Your own landing zones are listed in this table.',
-            attachTo: '#omics-lz-zone-list-own top',
+            attachTo: '#sodar-lz-zone-list-own top',
             advanceOn: '.docs-link click',
             showCancelLink: true
         });
     }
 
-    if ($('#omics-lz-zone-list-other').length) {
+    if ($('#sodar-lz-zone-list-other').length) {
         tour.addStep('other_zones', {
             title: 'Zones of Other Users',
             text: 'This table lists zones of other users to which you have ' +
                   'been given access.',
-            attachTo: '#omics-lz-zone-list-other top',
+            attachTo: '#sodar-lz-zone-list-other top',
             advanceOn: '.docs-link click',
             showCancelLink: true
         });
     }
 
-    if ($('#omics-lz-buttons-list').length) {
+    if ($('#sodar-lz-buttons-list').length) {
         tour.addStep('zone_operations', {
             title: 'Zone Operations',
             text: 'Create new zones or clear existing moved zones from this ' +
                   'menu.',
-            attachTo: '#omics-lz-buttons-list left',
+            attachTo: '#sodar-lz-buttons-list left',
             advanceOn: '.docs-link click',
             showCancelLink: true
         });
     }
 
     // Table data
-    if ($('.omics-lz-table').length) {
+    if ($('.sodar-lz-table').length) {
         tour.addStep('zone_title', {
             title: 'Zone Title',
             text: 'The title of each stone is shown in this column. This ' +
                   'takes the form of a timestamp and an arbitrary suffix.',
-            attachTo: '.omics-lz-list-header-title top',
+            attachTo: '.sodar-lz-list-header-title top',
             advanceOn: '.docs-link click',
             showCancelLink: true
         });
@@ -209,7 +209,7 @@
             title: 'Zone Assay',
             text: 'Each landing zone is specific to one assay within the ' +
                   'project studies.',
-            attachTo: '.omics-lz-list-header-assay top',
+            attachTo: '.sodar-lz-list-header-assay top',
             advanceOn: '.docs-link click',
             showCancelLink: true
         });
@@ -220,7 +220,7 @@
                   'column. Available actions depend on the current status. ' +
                   '"ACTIVE" zones are ones in which you can freely upload ' +
                   'and modify files.',
-            attachTo: '.omics-lz-list-header-status top',
+            attachTo: '.sodar-lz-list-header-status top',
             advanceOn: '.docs-link click',
             showCancelLink: true
         });
@@ -229,7 +229,7 @@
             title: 'iRODS Links for Zone',
             text: 'Links for iRODS access for available zone are presented ' +
                   'in this column.',
-            attachTo: '.omics-lz-zone-links left',
+            attachTo: '.sodar-lz-zone-links left',
             advanceOn: '.docs-link click',
             showCancelLink: true
         });
@@ -240,7 +240,7 @@
                   'moving operation for moving your landing zone content ' +
                   'into the project sample repository. Here you can also ' +
                   'delete unwanted landing zones.',
-            attachTo: '.omics-lz-zone-edit left',
+            attachTo: '.sodar-lz-zone-edit left',
             advanceOn: '.docs-link click',
             showCancelLink: true
         });

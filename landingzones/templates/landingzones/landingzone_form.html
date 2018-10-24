@@ -8,11 +8,11 @@
 
 {% block projectroles_extend %}
 
-<div class="row omics-subtitle-container">
+<div class="container-fluid sodar-subtitle-container">
   <h3>Create Landing Zone</h3>
 </div>
 
-<div class="container-fluid omics-page-container">
+<div class="container-fluid sodar-page-container">
   <form method="post">
     {% csrf_token %}
     {{ form | crispy }}

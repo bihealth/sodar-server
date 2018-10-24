@@ -1,5 +1,4 @@
 from django import template
-from django.conf import settings
 from django.urls import reverse
 
 # Projectroles dependency
@@ -9,14 +8,11 @@ from ..models import LandingZone, STATUS_STYLES
 from ..plugins import get_zone_config_plugin
 
 
-DISABLED_STATES = [
-    'NOT CREATED',
-    'MOVED',
-    'DELETED']
-
 irods_backend = get_backend_api('omics_irods')
-
 register = template.Library()
+
+
+DISABLED_STATES = ['NOT CREATED', 'MOVED', 'DELETED']
 
 
 @register.simple_tag
@@ -27,8 +23,8 @@ def get_status_style(zone):
 
 @register.simple_tag
 def get_zone_row_class(zone):
-    return 'omics-lz-zone-tr-moved text-muted' if \
-        zone.status in DISABLED_STATES else 'omics-lz-zone-tr-existing'
+    return 'sodar-lz-zone-tr-moved text-muted' if \
+        zone.status in DISABLED_STATES else 'sodar-lz-zone-tr-existing'
 
 
 # TODO: Refactor/remove

@@ -15,7 +15,7 @@
     zone-uuid="{{ zone.sodar_uuid }}"
     sample-url="{% get_zone_samples_url zone %}"
     status-url="{% url 'landingzones:status' landingzone=zone.sodar_uuid %}">
-  <td class="omics-lz-zone-title">
+  <td class="sodar-lz-zone-title">
     {% if zone.user != request.user %}
       {% autoescape off %}
         {% get_user_html zone.user %} /
@@ -29,7 +29,7 @@
         </a>
       {% endif %}
       {% if zone.description %}
-        <a class="omics-ss-assay-info-link" tabindex="0" data-toggle="popover"
+        <a class="sodar-ss-assay-info-link" tabindex="0" data-toggle="popover"
            data-trigger="focus" data-placement="top" data-html="true"
            data-content="{% get_zone_desc_html zone %}">
           <i class="fa fa-info-circle text-info"></i>
@@ -40,12 +40,12 @@
     {% endif %}
   </td>
 
-  <td class="omics-lz-zone-assay">{{ zone.assay.get_display_name }}</td>
-  <td class="omics-lz-zone-status-info">
-      <span id="omics-lz-zone-status-info-{{ zone.sodar_uuid }}">
+  <td class="sodar-lz-zone-assay">{{ zone.assay.get_display_name }}</td>
+  <td class="sodar-lz-zone-status-info">
+      <span id="sodar-lz-zone-status-info-{{ zone.sodar_uuid }}">
         {{ zone.status_info }}
       </span>
-      <span id="omics-lz-zone-status-moved-{{ zone.sodar_uuid }}">
+      <span id="sodar-lz-zone-status-moved-{{ zone.sodar_uuid }}">
       {% if zone.status == 'MOVED' %}
         <p class="mb-0">
           <a href="{% get_zone_samples_url zone %}"><i class="fa fa-arrow-circle-right"></i> Browse files in sample sheets</a>
@@ -53,7 +53,7 @@
       </span>
       {% endif %}
       {% if zone_enabled and irods_backend_enabled %}
-        <p class="mb-0" id="omics-lz-zone-stats-container-{{ zone.sodar_uuid }}">
+        <p class="mb-0" id="sodar-lz-zone-stats-container-{{ zone.sodar_uuid }}">
           {% get_irods_path zone as zone_irods_path %}
           {% autoescape off %}
             {% get_stats_html zone_irods_path project %}
@@ -61,14 +61,14 @@
         </p>
       {% endif %}
   </td>
-  <td id="omics-lz-zone-status-{{ zone.sodar_uuid }}"
-      class="omics-lz-zone-status text-white {% get_status_style zone %}">
+  <td id="sodar-lz-zone-status-{{ zone.sodar_uuid }}"
+      class="sodar-lz-zone-status text-white {% get_status_style zone %}">
     {{ zone.status }}
   </td>
   {% if not details_card_mode %}
-    <td class="omics-lz-zone-links">
+    <td class="sodar-lz-zone-links">
       {% if irods_backend_enabled %}
-        <span class="omics-lz-control">
+        <span class="sodar-lz-control">
           {% get_irods_path zone as zone_irods_path %}
           {% get_zone_list_url zone as zone_list_url %}
           {% is_zone_disabled zone as disable_all %}
@@ -76,8 +76,8 @@
         </span>
       {% endif %}
     </td>
-    <td class="omics-lz-zone-edit">
-      <span class="omics-lz-control">
+    <td class="sodar-lz-zone-edit">
+      <span class="sodar-lz-control">
         {% include 'landingzones/_zone_buttons.html' %}
       </span>
     </td>

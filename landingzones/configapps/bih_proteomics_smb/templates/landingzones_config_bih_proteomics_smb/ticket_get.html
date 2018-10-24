@@ -10,11 +10,11 @@
 
 {% block projectroles_extend %}
 
-<div class="row omics-subtitle-container">
+<div class="container-fluid sodar-subtitle-container">
   <h3>Generate or Refresh Landing Zone Access Ticket</h3>
 </div>
 
-<div class="container-fluid omics-page-container">
+<div class="container-fluid sodar-page-container">
   <div class="alert alert-info" role="alert">
     {% if not ticket %}
       No ticket currently exists for zone "{{ zone.title }}".
@@ -44,7 +44,6 @@
       </div>
     </div>
   </form>
-</div>
 </div>
 
 {% endblock %}
