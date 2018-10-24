@@ -11,8 +11,16 @@ Unreleased
 Added
 -----
 
+- **Adminalerts**
+    - Import app from djagno-sodar-core
+- **Projectroles**
+    - Import app from django-sodar-core
+- **Taskflowbackend**
+    - Import app from django-sodar-core
+- **Timeline**
+    - Import app from django-sodar-core
 - **Userprofile**
-    - Add app from django-sodar-core
+    - Import app from django-sodar-core
 
 Changed
 -------
@@ -26,14 +34,6 @@ Changed
     - Update ``sodar_uuid`` model fields and references in local apps (#370)
     - Update ``sodar_url`` references in local apps (#370)
     - Update default templates (#370)
-- **Adminalerts**
-    - Import app from djagno-sodar-core
-- **Projectroles**
-    - Import app from django-sodar-core
-- **Taskflowbackend**
-    - Import app from django-sodar-core
-- **Timeline**
-    - Import app from django-sodar-core
 
 Removed
 -------
