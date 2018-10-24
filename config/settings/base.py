@@ -305,48 +305,57 @@ REST_FRAMEWORK = {
 # ------------------------------------------------------------------------------
 
 # Enable LDAP if configured
-if env.str('ENABLE_LDAP', None):
+ENABLE_LDAP = env.bool('ENABLE_LDAP', False)
+ENABLE_LDAP_SECONDARY = env.bool('ENABLE_LDAP_SECONDARY', False)
+
+if ENABLE_LDAP:
     import itertools
     import ldap
     from django_auth_ldap.config import LDAPSearch
 
-    # Charite LDAP settings
-    AUTH_CHARITE_LDAP_SERVER_URI = env.str('AUTH_CHARITE_LDAP_SERVER_URI')
-    AUTH_CHARITE_LDAP_BIND_PASSWORD = env.str('AUTH_CHARITE_LDAP_BIND_PASSWORD')
-    AUTH_CHARITE_LDAP_BIND_DN = env.str('AUTH_CHARITE_LDAP_BIND_DN')
-    AUTH_CHARITE_LDAP_CONNECTION_OPTIONS = {
-        ldap.OPT_REFERRALS: 0}
-
-    AUTH_CHARITE_LDAP_USER_SEARCH = LDAPSearch(
-        env.str('AUTH_CHARITE_LDAP_USER_SEARCH_BASE'),
-        ldap.SCOPE_SUBTREE, '(sAMAccountName=%(user)s)')
-
-    AUTH_CHARITE_LDAP_USER_ATTR_MAP = {
+    # Default values
+    LDAP_DEFAULT_CONN_OPTIONS = {ldap.OPT_REFERRALS: 0}
+    LDAP_DEFAULT_FILTERSTR = '(sAMAccountName=%(user)s)'
+    LDAP_DEFAULT_ATTR_MAP = {
         'first_name': 'givenName',
         'last_name': 'sn',
         'email': 'mail'}
 
-    # MDC LDAP settings
-    AUTH_MDC_LDAP_SERVER_URI = env.str('AUTH_MDC_LDAP_SERVER_URI')
-    AUTH_MDC_LDAP_BIND_PASSWORD = env.str('AUTH_MDC_LDAP_BIND_PASSWORD')
-    AUTH_MDC_LDAP_BIND_DN = env.str('AUTH_MDC_LDAP_BIND_DN')
-    AUTH_MDC_LDAP_CONNECTION_OPTIONS = {
-        ldap.OPT_REFERRALS: 0}
+    # Primary LDAP server
+    AUTH_LDAP_SERVER_URI = env.str('AUTH_LDAP_SERVER_URI', None)
+    AUTH_LDAP_BIND_DN = env.str('AUTH_LDAP_BIND_DN', None)
+    AUTH_LDAP_BIND_PASSWORD = env.str('AUTH_LDAP_BIND_PASSWORD', None)
+    AUTH_LDAP_CONNECTION_OPTIONS = LDAP_DEFAULT_CONN_OPTIONS
 
-    AUTH_MDC_LDAP_USER_SEARCH = LDAPSearch(
-        env.str('AUTH_MDC_LDAP_USER_SEARCH_BASE'),
-        ldap.SCOPE_SUBTREE, '(sAMAccountName=%(user)s)')
-
-    AUTH_MDC_LDAP_USER_ATTR_MAP = {
-        'first_name': 'givenName',
-        'last_name': 'sn',
-        'email': 'mail'}
+    AUTH_LDAP_USER_SEARCH = LDAPSearch(
+        env.str('AUTH_LDAP_USER_SEARCH_BASE', None),
+        ldap.SCOPE_SUBTREE, LDAP_DEFAULT_FILTERSTR)
+    AUTH_LDAP_USER_ATTR_MAP = LDAP_DEFAULT_ATTR_MAP
+    AUTH_LDAP_USERNAME_DOMAIN = env.str('AUTH_LDAP_USERNAME_DOMAIN', None)
+    AUTH_LDAP_DOMAIN_PRINTABLE = env.str('AUTH_LDAP_DOMAIN_PRINTABLE', None)
 
     AUTHENTICATION_BACKENDS = tuple(itertools.chain(
-        # ('django_auth_ldap.backend.LDAPBackend',),
-        ('sodar.users.backends.ChariteLDAPBackend',),
-        ('sodar.users.backends.MDCLDAPBackend',),
+        ('projectroles.auth_backends.PrimaryLDAPBackend',),
         AUTHENTICATION_BACKENDS,))
+
+    # Secondary LDAP server (optional)
+    if ENABLE_LDAP_SECONDARY:
+        AUTH_LDAP2_SERVER_URI = env.str('AUTH_LDAP2_SERVER_URI', None)
+        AUTH_LDAP2_BIND_DN = env.str('AUTH_LDAP2_BIND_DN', None)
+        AUTH_LDAP2_BIND_PASSWORD = env.str('AUTH_LDAP2_BIND_PASSWORD', None)
+        AUTH_LDAP2_CONNECTION_OPTIONS = LDAP_DEFAULT_CONN_OPTIONS
+
+        AUTH_LDAP2_USER_SEARCH = LDAPSearch(
+            env.str('AUTH_LDAP2_USER_SEARCH_BASE', None),
+            ldap.SCOPE_SUBTREE, LDAP_DEFAULT_FILTERSTR)
+        AUTH_LDAP2_USER_ATTR_MAP = LDAP_DEFAULT_ATTR_MAP
+        AUTH_LDAP2_USERNAME_DOMAIN = env.str('AUTH_LDAP2_USERNAME_DOMAIN')
+        AUTH_LDAP2_DOMAIN_PRINTABLE = env.str(
+            'AUTH_LDAP2_DOMAIN_PRINTABLE', None)
+
+        AUTHENTICATION_BACKENDS = tuple(itertools.chain(
+            ('projectroles.auth_backends.SecondaryLDAPBackend',),
+            AUTHENTICATION_BACKENDS,))
 
 
 # Logging
