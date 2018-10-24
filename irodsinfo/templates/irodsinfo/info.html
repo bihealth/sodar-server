@@ -10,7 +10,7 @@
 
 {% has_perm 'irodsinfo.get_config' request.user as can_get_config %}
 
-<div class="row omics-subtitle-container bg-white sticky-top">
+<div class="row sodar-subtitle-container bg-white sticky-top">
   <h2><i class="fa fa-support"></i> iRODS Info</h2>
 
   {% if can_get_config %}
@@ -21,14 +21,14 @@
   {% endif %}
 </div>
 
-<div class="container-fluid omics-page-container">
+<div class="container-fluid sodar-page-container">
 
   {# Guide #}
   <div class="card">
     <div class="card-header">
       <h4><i class="fa fa-book"></i> Connecting Guide</h4>
       </div>
-      <div class="card-body omics-card-body">
+      <div class="card-body">
         <h4 class="card-title">Accessing iRODS</h4>
         <p>
           Experiment data for omics project data is stored under a distributed
@@ -98,7 +98,7 @@ iinit</code></pre>
     <div class="card-header">
       <h4><i class="fa fa-database"></i> iRODS Server</h4>
     </div>
-    <div class="card-body omics-card-body">
+    <div class="card-body">
       {% if server_info %}
         <dl class="row">
           <dt class="col-sm-1">Status</dt>
