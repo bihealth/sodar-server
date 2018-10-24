@@ -213,6 +213,9 @@ class IGVSessionFileRenderView(BaseGermlineConfigView):
         """Override get() to return IGV session file"""
         super(IGVSessionFileRenderView, self).get(request, *args, **kwargs)
 
+        vcf_urls = {}
+        bam_urls = {}
+
         ###################
         # Get resource URLs
         ###################
@@ -224,7 +227,6 @@ class IGVSessionFileRenderView(BaseGermlineConfigView):
             study_tables=self.study_tables)
 
         # Get URLs to all latest bam files for all sources in family
-        bam_urls = {}
 
         # Family defined
         if 'Family' in self.source.characteristics:
@@ -261,10 +263,12 @@ class IGVSessionFileRenderView(BaseGermlineConfigView):
         # Build XML
         ###########
 
-        if not fam_id:
-            fam_id = self.source.name   # Use source name if family ID not known
+        if vcf_url:
+            # Use source name if family ID not known
+            if not fam_id:
+                fam_id = self.source.name
 
-        vcf_urls = {fam_id: vcf_url}
+            vcf_urls[fam_id] = vcf_url
 
         # Build IGV session XML file
         xml_str = get_igv_xml(

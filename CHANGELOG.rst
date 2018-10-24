@@ -35,6 +35,12 @@ Changed
     - Update ``sodar_url`` references in local apps (#370)
     - Update default templates (#370)
 
+Fixed
+-----
+
+- **Samplesheets**
+    - IGV session file generating crash if VCF file was not found (#372)
+
 Removed
 -------
 
