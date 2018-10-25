@@ -38,6 +38,8 @@ Changed
 Fixed
 -----
 
+- **Irodsbackend**
+    - Viewing iRODS file list on an empty collection failed (#375)
 - **Samplesheets**
     - IGV session file generating crash if VCF file was not found (#372)
 
@@ -98,7 +100,7 @@ Removed
 -------
 
 - **Landingzones**
-    - Usage of ``popupNoFilesHtml`` (will be removed from omics_projectroles)
+    - Usage of ``popupNoFilesHtml`` (will be removed from omics_core)
 
 
 v0.3.1 (2018-08-24)

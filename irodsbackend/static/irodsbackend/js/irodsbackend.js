@@ -119,7 +119,7 @@ $(document).ready(function() {
             }
 
             else {
-                htmlData += popupNoFilesHtml;
+                htmlData += '<span class="text-muted font-italic">Empty collection</span>';
             }
 
             // Set success content and toggle modal
