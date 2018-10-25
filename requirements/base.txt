@@ -71,7 +71,7 @@ mistune==0.8.3
 -e git://github.com/mikkonie/django-plugins.git@1bc07181e6ab68b0f9ed3a00382eb1f6519e1009#egg=django-plugins
 
 # SODAR Core
--e git+ssh://git@cubi-gitlab.bihealth.org/CUBI_Engineering/CUBI_Data_Mgmt/sodar_core.git@e86eaa1384fdd76e547ce8038baf91bb3c352d8c#egg=django-sodar-core
+-e git+ssh://git@cubi-gitlab.bihealth.org/CUBI_Engineering/CUBI_Data_Mgmt/sodar_core.git@ad8f9120983c49c997587ae9a874ebfe7fd37d44#egg=django-sodar-core
 
 
 ####################
