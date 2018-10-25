@@ -34,6 +34,7 @@ Changed
     - Update ``sodar_uuid`` model fields and references in local apps (#370)
     - Update ``sodar_url`` references in local apps (#370)
     - Update default templates (#370)
+    - Move login Javascript to ``login.js``
 
 Fixed
 -----
@@ -50,6 +51,8 @@ Removed
     - Local Django apps included in SODAR Core v0.3.0 (#370)
     - Unused django-extra-views requirement
     - Unused user templates (#370)
+- **Samplesheets**
+    - Duplicate DataTables CSS includes
 
 
 v0.3.3 (2018-09-25)
