@@ -15,6 +15,10 @@
 {% block css %}
   {{ block.super }}
 
+  <!-- DataTables -->
+  <link rel="stylesheet" type="text/css" href="{% static 'datatables/datatables.min.css' %}" />
+  <link rel="stylesheet" type="text/css" href="{% static 'datatables/DataTables-1.10.16/integration/dataTables.fontAwesome.css' %}" />
+
   <style type="text/css">
     /* Special version of the container for samplesheets */
     div.sodar-subtitle-container {
@@ -264,11 +268,14 @@
     window.refreshCellOverflow = false;
   </script>
 
-  <!-- Dragscroll for tables -->
-  <script type="text/javascript" src="{% static 'js/dragscroll.js' %}"></script>
+  <!-- DataTables -->
+  <script type="text/javascript" src="{% static 'datatables/datatables.min.js' %}"></script>
 
   <!-- Samplesheets Javascript -->
   <script type="text/javascript" src="{% static 'samplesheets/js/samplesheets.js' %}"></script>
+
+  <!-- Dragscroll for tables -->
+  <script type="text/javascript" src="{% static 'js/dragscroll.js' %}"></script>
 
   {# Tour content #}
   <script type="text/javascript">
