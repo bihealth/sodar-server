@@ -1,3 +1,5 @@
+.. _development:
+
 SODAR Development Guidelines
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -14,25 +16,32 @@ Git Branches
 - ``dev``
     - The bleeding edge development branch with (mostly) stable new features
     - This branch is deployed for test use in ``http://omics-beta.bihealth.org``
+    - Only push small urgent updates such as bug fixes here, otherwise fork and
+      submit a merge request!
 - Temporary development branches
     - Base on ``dev``
     - Please use a consistent naming such as ``feature/x`` and ``fix/y``
     - These will be merged into ``dev`` when finished/stable
 
+
 Commits
 =======
 
-- Please refer to issues by their ids in comments as it makes thins easier to track
+- Please refer to issues by their ids in comments as it makes things easier to
+  track
 
 
 Testing
 =======
 
-- For tests utilizing Taskflow or iRODS, please decorate with ``@skipIf`` (see examples in e.g. tests)
+- For tests utilizing Taskflow or iRODS, please decorate with ``@skipIf``
 
 
 App Relationships and Plugins
 =============================
+
+For detailed information, see `SODAR Core <https://cubi-gitlab.bihealth.org/CUBI_Engineering/CUBI_Data_Mgmt/sodar_core>`_
+docs.
 
 - Apps can freely import and use stuff from the ``projectroles`` app
 - Apps should not import code directly from other apps, **except** for the following:
@@ -45,6 +54,9 @@ App Relationships and Plugins
 Plugin Types
 ============
 
+For detailed information, see `SODAR Core <https://cubi-gitlab.bihealth.org/CUBI_Engineering/CUBI_Data_Mgmt/sodar_core>`_
+docs.
+
 - Project app plugin (``projectroles.plugins.ProjectAppPluginPoint``)
     - For apps related to project operations
     - Content always related to a project
@@ -53,5 +65,8 @@ Plugin Types
     - Intended for backend apps used by other apps, mostly without their own views
 - Site plugin (``projectroles.plugins.SiteAppPluginPoint``)
     - Generic site app *not* tied to a project
-- Samplesheet config app plugins (``samplesheets.plugins.SampleSheetConfigPluginPoint``)
-    - Plugins for configuration-specific sample sheet display includes
+- Sample Sheet study/assay app plugins
+    - Plugins for configuration-specific sample sheet display includes, either
+      on the *study* or *assay* level
+- Landing Zone config app plugins
+    - Plugins for zone configuration specific functionality

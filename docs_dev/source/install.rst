@@ -1,18 +1,19 @@
-Installation for Development
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. _installation:
+
+Installation
+^^^^^^^^^^^^
 
 .. warning::
+
    Under construction!
 
 This document describes how to install the system for local development.
 
-NB: the display of this document in Gitlab is incomplete and all listings will be missing.
-Please rather click "view source" if you want to read this in Gitlab.
+**NOTE:** When viewing this document in GitLab critical content will by default
+be missing. Please click "display source" if you want to read this in GitLab.
 
-NB: Make sure to use the ``dev`` branch of all repositories for development.
-
-**NOTE:** If you want to develop without iRODS and Omics Taskflow, you can skip
-the steps related to their installation and set the environment variable
+If you want to install or develo SODAR without iRODS and SODAR Taskflow, you can
+skip the steps related to their installation and set the environment variable
 ``ENABLED_BACKEND_PLUGINS='timeline_backend'``.
 
 
@@ -21,9 +22,11 @@ Install SODAR
 
 First, create a postgresql users and a database for your application.
 For example, ``sodar`` with password ``sodar`` and a database called ``sodar``.
-Also, give the user the permission to create further Postgres databases (used for testing).
+Also, give the user the permission to create further Postgres databases (used
+for testing).
 
-.. code-block:: shell
+.. code-block:: console
+
     $ sudo adduser --no-create-home sodar
     $ sudo su - postgres
     $ psql
@@ -38,12 +41,14 @@ For development it is recommended to place this variable in an ``.env`` file and
 set ``DJANGO_READ_DOT_ENV_FILE`` true in your actual environment. See
 ``config/settings/base.py`` for more information.
 
-.. code-block:: shell
+.. code-block:: console
+
     $ export DATABASE_URL='postgres://sodar:sodar@127.0.0.1/sodar'
 
 Clone the repository and setup the virtual environment inside:
 
-.. code-block:: shell
+.. code-block:: console
+
     $ git clone git@cubi-gitlab.bihealth.org:CUBI_Engineering/CUBI_Data_Mgmt/sodar.git
     $ cd sodar
     $ virtualenv -p python3.6 .venv
@@ -51,7 +56,8 @@ Clone the repository and setup the virtual environment inside:
 
 Install the dependencies:
 
-.. code-block:: shell
+.. code-block:: console
+
     $ sudo utility/install_os_dependencies.sh install
     $ sudo utility/install_chrome.sh
     $ pip install --upgrade pip
@@ -59,38 +65,41 @@ Install the dependencies:
 
 Initialize the database:
 
-.. code-block:: shell
+.. code-block:: console
+
     $ ./manage.py migrate
 
 Create Django superuser, needed to create initial project(s) on the site
 
-.. code-block:: shell
+.. code-block:: console
+
     $ ./manage.py createsuperuser
 
 If you are running the Docker environment then modify ``config/settings/test_local.py`` and add the following line.
 
 .. code-block:: python
+
     IRODS_PORT = env.int('IRODS_PORT', 4477)
 
 
-2. Set Up a Development iRODS Server
-====================================
+Set Up a Development iRODS Server
+=================================
 
 To use the iRODS and taskflow functionalities, You need to have an iRODS iCAT
 server v4.2+ running and configured for omics projects.
 
-**IMPORTANT:** Do **NOT** develop or run tests on a production server or an iRODS
-server used for any other project, as server data **WILL** be wiped between
-automated tests! (The ability for defining a separate server for running tests
-is TODO)
+.. warning::
+
+    Do **NOT** develop or run tests on a production server or an iRODS
+    server used for any other project, as server data **WILL** be wiped between
+    automated tests! (The ability for defining a separate server for running
+    tests is TODO)
 
 Options for setting up an iRODS server:
 
 - Install and run a server locally (see `irods.org <https://irods.org/download/>`_ for instructions)
 - Run server as a Docker image
 - Install on a VM using e.g. Vagrant and the `CUBI Ansible Playbooks <https://cubi-gitlab.bihealth.org/CUBI_Operations/Ansible_Playbooks/>`_
-
-A Docker environment containing a basic iRODS setup: `omics_docker_env <https://cubi-gitlab.bihealth.org/CUBI_Engineering/CUBI_Data_Mgmt/omics_docker_env>`_
 
 The server must be configured with the `omics.re <https://cubi-gitlab.bihealth.org/CUBI_Operations/Ansible_Playbooks/blob/master/roles/cubi.irods-setup/files/etc/irods/omics.re>`_
 rule set file and MD5 as the default hash scheme. In the Docker setup and the
@@ -101,51 +110,53 @@ file), set up iRODS variables to point to your server. See
 ``config/settings/base.py`` for the variables and their default values.
 
 
-3. Install and Configure Omics Taskflow
-=======================================
+Install and Configure SODAR Taskflow
+====================================
 
-For development it is recommend to run omics_taskflow locally.
+For development it is recommend to run sodar_taskflow locally.
 
-First, clone the `Omics Taskflow repository <https://cubi-gitlab.bihealth.org/CUBI_Engineering/CUBI_Data_Mgmt/omics_taskflow>`_.
+First, clone the `sodar_taskflow repository <https://cubi-gitlab.bihealth.org/CUBI_Engineering/CUBI_Data_Mgmt/sodar_taskflow>`_.
 
 Follow the installation instructions in the ``README.rst`` file. Make sure to
 configure environment variables to point to the Redis and iRODS servers you are
 using.
 
-The `omics_docker_env <https://cubi-gitlab.bihealth.org/CUBI_Engineering/CUBI_Data_Mgmt/omics_docker_env>`_
-environment also contains a Redis server for omics_taskflow use.
 
-
-4. Run the Components
-=====================
+Run the Components
+==================
 
 Make sure `Redis <https://redis.io/>`_ is running. If you're running it locally
 and it is not autostarted, start it manually:
 
-.. code-block:: shell
+.. code-block:: console
+
     $ ./redis-server
 
-In the Omics Taskflow root directory, start the Taskflow service:
+In the SODAR Taskflow root directory, start the Taskflow service:
 
-.. code-block:: shell
+.. code-block:: console
+
     $ utility/run_dev.sh
 
 In the SODAR root directory, start the site in debug mode with
 ``local`` settings. After this you can access the site at
 ``http://localhost:8080``.
 
-.. code-block:: shell
+.. code-block:: console
+
     $ ./run.sh
 
-**NOTE:** If data on your development iRODS server is wiped out due to e.g.
-running tests or restarting a Docker instance *after* you have already created
-projects, project metadata and directories (but not files) can be synced with
-the following command:
+If data on your development iRODS server is wiped out due to e.g. running tests
+or restarting a Docker instance *after* you have already created projects,
+project metadata and directories (but not files) can be synced with the
+following command:
 
-.. code-block:: shell
+.. code-block:: console
+
     $ ./manage.py synctaskflow
 
 There is also a shortcut for syncing iRODS data and starting the server:
 
 .. code-block:: shell
+
     $ ./run.sh sync

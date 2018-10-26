@@ -35,6 +35,7 @@ Changed
     - Update ``sodar_url`` references in local apps (#370)
     - Update default templates (#370)
     - Move login Javascript to ``login.js``
+    - Update development documentation
 - **Samplesheets**
     - Improve data table CSS during DataTables init (#359)
 
