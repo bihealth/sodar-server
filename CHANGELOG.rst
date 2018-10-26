@@ -43,6 +43,7 @@ Fixed
 
 - **Irodsbackend**
     - Viewing iRODS file list on an empty collection failed (#375)
+    - WebDAV URL copying tooltip not rendered correctly inside DataTables (#377)
 - **Samplesheets**
     - IGV session file generating crash if VCF file was not found (#372)
 

@@ -69,7 +69,10 @@
   <button class="btn btn-secondary sodar-list-btn sodar-irods-copy-btn
           {% if not irods_webdav_enabled or not irods_dirs or disable_all %} disabled{% endif %}"
           data-clipboard-text="{{ irods_webdav_url }}{{ irods_path }}" role="submit"
-          data-tooltip="tooltip" data-placement="top"
+          data-table="{% if data_table %}1{% else %}0{% endif %}"
+          {% if not data_table %}
+            data-tooltip="tooltip" data-placement="top"
+          {% endif %}
           title="Copy WebDAV URL into clipboard"
           {% if not irods_dirs or disable_all %} disabled{% endif %}>
     <i class="fa fa-clipboard"></i>
