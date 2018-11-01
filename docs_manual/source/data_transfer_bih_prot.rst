@@ -1,8 +1,10 @@
-.. data_transfer_bih_prot:
+.. _data_transfer_bih_prot:
 
 ============================
 BIH Proteomics Data Transfer
 ============================
+
+`QUICK REFERENCE CHART`_
 
 The BIH Proteomics Data Transfer project aims to assist the transfer of MS data
 from the BIH Proteomics core unit to BIH CUBI infrastructure, starting from
@@ -14,6 +16,7 @@ This manual is focusing on the application by users. Deployment, installation
 and execution of the automated parts of the workflow are described in the
 corresponding `code repository`_ (restricted access).
 
+.. _QUICK REFERENCE CHART: _static/data_transfer_bih_prot/bih_proteomics_data_transfer_quick_reference.pdf
 .. _SODAR: https://sodar.bihealth.org
 .. _code repository: https://cubi-gitlab.bihealth.org/CUBI_Engineering/CUBI_Data_Mgmt/omics_data_transfer_bih_prot_main
 

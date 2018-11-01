@@ -30,6 +30,14 @@ It is developed by the Core Unit Bioinformatics at the Berlin Institute of Healt
     ext_tool_igv
     ext_tool_winscp
 
+.. toctree::
+    :maxdepth: 1
+    :caption: Metadata
+    :name: metadata
+    :hidden:
+
+    metadata_recording
+
 
 Indices and tables
 ==================
