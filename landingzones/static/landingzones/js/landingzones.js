@@ -67,7 +67,7 @@ var updateZoneStatus = function() {
                            $(this).tooltip('disable');
                         });
 
-                        zoneTr.find('.sodar-edit-dropdown').addClass('disabled');
+                        zoneTr.find('.sodar-list-dropdown').addClass('disabled');
                     }
 
                     else {
@@ -86,7 +86,7 @@ var updateZoneStatus = function() {
                            $(this).tooltip('enable');
                         });
 
-                        zoneTr.find('.sodar-edit-dropdown').removeClass('disabled');
+                        zoneTr.find('.sodar-list-dropdown').removeClass('disabled');
                     }
                 }
             });

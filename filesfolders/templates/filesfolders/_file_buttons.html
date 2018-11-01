@@ -5,8 +5,8 @@
 {% has_perm 'filesfolders.update_data_own' request.user file.project as can_update_own %}
 {% has_perm 'filesfolders.update_data_all' request.user file.project as can_update_all %}
 
-<div class="btn-group sodar-edit-button-group" id="sodar-ff-file-buttons-{{ file.sodar_uuid }}">
-  <button class="btn btn-secondary dropdown-toggle btn-sm sodar-edit-dropdown"
+<div class="btn-group sodar-list-btn-group" id="sodar-ff-file-buttons-{{ file.sodar_uuid }}">
+  <button class="btn btn-secondary dropdown-toggle sodar-list-dropdown"
       type="button" data-toggle="dropdown" aria-expanded="false">
     <i class="fa fa-cog"></i>
   </button>

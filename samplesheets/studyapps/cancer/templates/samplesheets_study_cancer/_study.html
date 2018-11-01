@@ -38,7 +38,7 @@
                     {% get_sample_libraries sample table_data as sample_libraries %}
                     {% for library in sample_libraries %}
                       {% url 'samplesheets.studyapps.cancer:file' file_type='bam' genericmaterial=library.sodar_uuid as bam_url %}
-                      <div class="btn-group sodar-edit-button-group mb-1 mr-1">
+                      <div class="btn-group sodar-list-btn-group mb-1 mr-1">
                         <button class="btn sodar-list-btn btn-outline-secondary text-body" disabled>
                           {{ library.name }}
                         </button>
@@ -57,7 +57,7 @@
 
                     {% for library in sample_libraries %}
                       {% url 'samplesheets.studyapps.cancer:file' file_type='vcf' genericmaterial=library.sodar_uuid as vcf_url %}
-                      <div class="btn-group sodar-edit-button-group mb-1 mr-1">
+                      <div class="btn-group sodar-list-btn-group mb-1 mr-1">
                         <button class="btn sodar-list-btn btn-outline-secondary text-body" disabled>
                           {{ library.name }}
                         </button>
@@ -71,7 +71,7 @@
                 </td>
                 <td>
                   {% url 'samplesheets.studyapps.cancer:igv' genericmaterial=source.sodar_uuid as igv_url %}
-                  <div class="btn-group sodar-edit-button-group">
+                  <div class="btn-group sodar-list-btn-group">
                     <a role="button" class="btn sodar-list-btn btn-secondary"
                        href="{{ igv_url }}" title="Download IGV session file for case">
                       <i class="fa fa-download"></i> Download

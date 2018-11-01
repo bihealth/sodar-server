@@ -38,7 +38,7 @@
                   {% for fam_source in fam_sources %}
                     {% url 'samplesheets.studyapps.germline:file' file_type='bam' genericmaterial=fam_source.sodar_uuid as bam_url %}
                     {% get_full_url request bam_url as full_bam_url %}
-                    <div class="btn-group sodar-edit-button-group mb-1 mr-1">
+                    <div class="btn-group sodar-list-btn-group mb-1 mr-1">
                       <button class="btn sodar-list-btn btn-outline-secondary text-body" disabled>
                         {{ fam_source.name }}
                       </button>
@@ -60,7 +60,7 @@
                 <td>
                   {% url 'samplesheets.studyapps.germline:file' file_type='vcf' genericmaterial=fam_sources.0.sodar_uuid as vcf_url %}
                   {% get_full_url request vcf_url as full_vcf_url %}
-                  <div class="btn-group sodar-edit-button-group">
+                  <div class="btn-group sodar-list-btn-group">
                     <a role="button" class="btn sodar-list-btn btn-secondary"
                        href="{{ vcf_url }}" title="Download pedigree VCF file">
                       <i class="fa fa-download"></i> Download
@@ -76,7 +76,7 @@
                   </div>
                 <td>
                   {% url 'samplesheets.studyapps.germline:igv' genericmaterial=fam_sources.0.sodar_uuid as igv_url %}
-                  <div class="btn-group sodar-edit-button-group">
+                  <div class="btn-group sodar-list-btn-group">
                     <a role="button" class="btn sodar-list-btn btn-secondary"
                        href="{{ igv_url }}" title="Download IGV session file for full pedigree">
                       <i class="fa fa-download"></i> Download

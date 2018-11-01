@@ -4,8 +4,8 @@
 {% has_perm 'landingzones.update_zones_own' request.user project as can_update_own %}
 {% has_perm 'landingzones.update_zones_all' request.user project as can_update_all %}
 
-<div class="btn-group sodar-edit-button-group" id="sodar-lz-zone-buttons-{{ zone.sodar_uuid }}">
-  <button class="btn btn-secondary btn-sm dropdown-toggle sodar-edit-dropdown
+<div class="btn-group sodar-list-btn-group" id="sodar-lz-zone-buttons-{{ zone.sodar_uuid }}">
+  <button class="btn btn-secondary dropdown-toggle sodar-list-dropdown
       {% if not zone_enabled %} disabled{% endif %}"
       type="button" data-toggle="dropdown"
       aria-haspopup="true" aria-expanded="false">

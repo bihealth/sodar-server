@@ -5,6 +5,16 @@ Changelog for the SODAR Web UI. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+Unreleased
+==========
+
+Changed
+-------
+
+- **General**
+    - Update list button and dropdown classes (#381)
+
+
 v0.4.0 (2018-10-26)
 ===================
 
