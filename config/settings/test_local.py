@@ -12,6 +12,10 @@ from .test import *  # noqa
 # ------------------------------------------------------------------------------
 
 
+# Taskflow backend settings
+TASKFLOW_TEST_MODE = True     # Important! Make taskflow use a test iRODS server
+
+
 # Plugin settings
 ENABLED_BACKEND_PLUGINS = [
     'timeline_backend',

@@ -8,6 +8,13 @@ Changelog for the SODAR Web UI. Loosely follows the
 Unreleased
 ==========
 
+Added
+-----
+
+- **General**
+    - ``TASKFLOW_TEST_MODE`` setting for test iRODS server support (sodar_core#67)
+
+
 Changed
 -------
 
