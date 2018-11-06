@@ -67,7 +67,7 @@ class SampleSheetTaskflowMixin:
 
 
 class TestIrodsDirView(
-        TestTaskflowBase, SampleSheetIOMixin):
+        SampleSheetIOMixin, TestTaskflowBase):
     """Tests for iRODS directory structure creation view with taskflow"""
 
     def setUp(self):
@@ -117,7 +117,7 @@ class TestIrodsDirView(
 
 
 class TestSampleSheetDeleteView(
-        TestTaskflowBase, SampleSheetIOMixin):
+        SampleSheetIOMixin, TestTaskflowBase):
     """Tests for sample sheet deletion with taskflow"""
 
     def setUp(self):

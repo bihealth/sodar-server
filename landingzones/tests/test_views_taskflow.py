@@ -139,8 +139,8 @@ class LandingZoneTaskflowMixin:
 
 
 class TestLandingZoneCreateView(
-        TestTaskflowBase, SampleSheetIOMixin,
-        LandingZoneMixin, SampleSheetTaskflowMixin):
+        SampleSheetIOMixin, LandingZoneMixin, SampleSheetTaskflowMixin,
+        TestTaskflowBase):
     """Tests for the landingzones create view with Taskflow and iRODS"""
 
     def setUp(self):
@@ -215,8 +215,8 @@ class TestLandingZoneCreateView(
 
 
 class TestLandingZoneMoveView(
-        TestTaskflowBase, SampleSheetIOMixin,
-        LandingZoneMixin, LandingZoneTaskflowMixin, SampleSheetTaskflowMixin):
+        SampleSheetIOMixin, LandingZoneMixin, LandingZoneTaskflowMixin,
+        SampleSheetTaskflowMixin, TestTaskflowBase):
     """Tests for the landingzones move/validate view with Taskflow and iRODS"""
 
     def setUp(self):
@@ -438,8 +438,8 @@ class TestLandingZoneMoveView(
 
 
 class TestLandingZoneDeleteView(
-        TestTaskflowBase, SampleSheetIOMixin,
-        LandingZoneMixin, LandingZoneTaskflowMixin, SampleSheetTaskflowMixin):
+        SampleSheetIOMixin, LandingZoneMixin, LandingZoneTaskflowMixin,
+        SampleSheetTaskflowMixin, TestTaskflowBase):
     """Tests for the landingzones delete view with Taskflow and iRODS"""
 
     def setUp(self):

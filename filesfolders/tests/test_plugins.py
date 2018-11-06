@@ -34,8 +34,8 @@ SETTING_KEY = 'allow_public_links'
 
 
 class TestPlugins(
-        TestCase, ProjectMixin, FolderMixin, FileMixin, HyperLinkMixin,
-        RoleAssignmentMixin):
+        ProjectMixin, FolderMixin, FileMixin, HyperLinkMixin,
+        RoleAssignmentMixin, TestCase):
     """Test filesfolders plugin"""
 
     def setUp(self):

@@ -36,7 +36,7 @@ class SampleSheetIOMixin:
 
 
 class TestSampleSheetIO(
-        TestCase, ProjectMixin, RoleAssignmentMixin, SampleSheetIOMixin):
+        ProjectMixin, RoleAssignmentMixin, SampleSheetIOMixin, TestCase):
     def setUp(self):
         # Make owner user
         self.user_owner = self.make_user('owner')

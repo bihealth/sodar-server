@@ -35,8 +35,8 @@ LANDING_ZONE_DIR = settings.IRODS_LANDING_ZONE_DIR
 
 
 class TestIrodsBackendAPI(
-        TestCase, ProjectMixin, RoleAssignmentMixin, SampleSheetIOMixin,
-        LandingZoneMixin):
+        ProjectMixin, RoleAssignmentMixin, SampleSheetIOMixin,
+        LandingZoneMixin, TestCase):
     """Tests for the API in the irodsbackend app"""
 
     def setUp(self):

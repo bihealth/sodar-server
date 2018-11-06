@@ -16,7 +16,7 @@ SHEET_PATH = SHEET_DIR + 'i_small2.zip'
 
 
 class TestRenderingBase(
-        TestCase, ProjectMixin, RoleAssignmentMixin, SampleSheetIOMixin):
+        ProjectMixin, RoleAssignmentMixin, SampleSheetIOMixin, TestCase):
     """Base class for rendering tests"""
     def setUp(self):
         # Make owner user

@@ -23,7 +23,7 @@ APP_NAME = 'filesfolders'
 SECRET = '7dqq83clo2iyhg29hifbor56og6911r5'
 
 
-class TestFolderPermissions(TestProjectPermissionBase, FolderMixin):
+class TestFolderPermissions(FolderMixin, TestProjectPermissionBase):
     """Tests for Folder views"""
 
     def setUp(self):
@@ -85,7 +85,7 @@ class TestFolderPermissions(TestProjectPermissionBase, FolderMixin):
         self.assert_redirect(url, bad_users)
 
 
-class TestFilePermissions(TestProjectPermissionBase, FileMixin):
+class TestFilePermissions(FileMixin, TestProjectPermissionBase):
     """Tests for File views"""
 
     def setUp(self):
@@ -237,7 +237,7 @@ class TestFilePermissions(TestProjectPermissionBase, FileMixin):
         self.assertEqual(response.status_code, 400)
 
 
-class TestHyperLinkPermissions(TestProjectPermissionBase, HyperLinkMixin):
+class TestHyperLinkPermissions(HyperLinkMixin, TestProjectPermissionBase):
     """Tests for HyperLink views"""
 
     def setUp(self):
@@ -301,7 +301,7 @@ class TestHyperLinkPermissions(TestProjectPermissionBase, HyperLinkMixin):
         self.assert_redirect(url, bad_users)
 
 
-class TestBatchPermissions(TestProjectPermissionBase, FolderMixin):
+class TestBatchPermissions(FolderMixin, TestProjectPermissionBase):
     """Tests for batch editing views"""
 
     def setUp(self):

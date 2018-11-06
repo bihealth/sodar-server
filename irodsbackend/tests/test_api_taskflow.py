@@ -43,8 +43,8 @@ TEST_FILE_NAME2 = 'test2'
 
 
 class TestIrodsBackendAPITaskflow(
-        TestTaskflowBase, SampleSheetIOMixin,
-        LandingZoneMixin, SampleSheetTaskflowMixin):
+        SampleSheetIOMixin, LandingZoneMixin, SampleSheetTaskflowMixin,
+        TestTaskflowBase):
     """Tests for the API in the irodsbackend app with Taskflow and iRODS"""
 
     def setUp(self):

@@ -35,8 +35,8 @@ ZIP_PATH_NO_FILES = TEST_DATA_PATH + 'no_files.zip'
 
 
 class TestViewsBase(
-        TestCase, ProjectMixin, RoleAssignmentMixin, FileMixin, FolderMixin,
-        HyperLinkMixin):
+        ProjectMixin, RoleAssignmentMixin, FileMixin, FolderMixin,
+        HyperLinkMixin, TestCase):
     """Base class for view testing"""
 
     def setUp(self):

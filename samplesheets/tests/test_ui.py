@@ -12,7 +12,7 @@ from .test_io import SampleSheetIOMixin, SHEET_DIR
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
 
 
-class TestProjectSheetsView(TestUIBase, SampleSheetIOMixin):
+class TestProjectSheetsView(SampleSheetIOMixin, TestUIBase):
     """Tests for the project sheets view UI"""
 
     def setUp(self):

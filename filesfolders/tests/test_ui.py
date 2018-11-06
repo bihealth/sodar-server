@@ -25,7 +25,7 @@ PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 APP_NAME = 'filesfolders'
 
 
-class TestListView(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
+class TestListView(FolderMixin, FileMixin, HyperLinkMixin, TestUIBase):
     """Tests for filesfolders main file list view UI"""
 
     def setUp(self):
@@ -263,7 +263,7 @@ class TestListView(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
             expected, url, 'sodar-ff-flag-icon', 'class')
 
 
-class TestSearch(TestUIBase, FolderMixin, FileMixin, HyperLinkMixin):
+class TestSearch(FolderMixin, FileMixin, HyperLinkMixin, TestUIBase):
     """Tests for the project search UI functionalities"""
 
     def setUp(self):

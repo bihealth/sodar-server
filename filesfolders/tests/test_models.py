@@ -84,7 +84,7 @@ class HyperLinkMixin:
 # Test classes -----------------------------------------------------------
 
 
-class TestFolder(TestCase, FolderMixin, ProjectMixin, HyperLinkMixin):
+class TestFolder(FolderMixin, ProjectMixin, HyperLinkMixin, TestCase):
     """Tests for model.Folder"""
 
     def setUp(self):
@@ -221,7 +221,7 @@ class TestFolder(TestCase, FolderMixin, ProjectMixin, HyperLinkMixin):
         self.assertEqual(self.folder.has_in_path(subfolder), False)
 
 
-class TestFile(TestCase, FileMixin, FolderMixin, ProjectMixin):
+class TestFile(FileMixin, FolderMixin, ProjectMixin, TestCase):
     """Tests for model.File"""
 
     def setUp(self):
@@ -326,7 +326,7 @@ class TestFile(TestCase, FileMixin, FolderMixin, ProjectMixin):
 
 
 class TestHyperLink(
-        TestCase, FileMixin, FolderMixin, ProjectMixin, HyperLinkMixin):
+        FileMixin, FolderMixin, ProjectMixin, HyperLinkMixin, TestCase):
     """Tests for model.File"""
 
     def setUp(self):

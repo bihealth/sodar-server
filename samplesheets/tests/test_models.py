@@ -202,7 +202,7 @@ class SampleSheetModelMixin:
 
 
 class TestSampleSheetBase(
-        TestCase, ProjectMixin, RoleAssignmentMixin, SampleSheetModelMixin):
+        ProjectMixin, RoleAssignmentMixin, SampleSheetModelMixin, TestCase):
     """Base class for Samplesheets tests"""
 
     def setUp(self):

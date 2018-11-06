@@ -21,6 +21,12 @@ Changed
 - **General**
     - Update list button and dropdown classes (#381)
 
+Fixed
+-----
+
+- **General**
+    - Potential inheritance issues in test classes (sodar_core#74)
+
 
 v0.4.0 (2018-10-26)
 ===================

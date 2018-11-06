@@ -25,7 +25,7 @@ SHEET_PATH = SHEET_DIR + 'i_small.zip'
 
 
 class TestLandingZonePermissions(
-        TestProjectPermissionBase, LandingZoneMixin, SampleSheetIOMixin):
+        LandingZoneMixin, SampleSheetIOMixin, TestProjectPermissionBase):
     """Tests for LandingZone views"""
 
     def setUp(self):

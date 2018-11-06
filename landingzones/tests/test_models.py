@@ -52,8 +52,8 @@ class LandingZoneMixin:
 
 
 class TestLandingZoneBase(
-        TestCase, LandingZoneMixin, SampleSheetIOMixin, ProjectMixin,
-        RoleAssignmentMixin):
+        LandingZoneMixin, SampleSheetIOMixin, ProjectMixin, RoleAssignmentMixin,
+        TestCase):
     """Base tests for LandingZone"""
 
     def setUp(self):

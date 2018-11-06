@@ -37,8 +37,8 @@ IRODS_BACKEND_SKIP_MSG = 'iRODS backend not enabled in settings'
 
 
 class TestViewsBase(
-        TestCase, LandingZoneMixin,
-        SampleSheetIOMixin, ProjectMixin, RoleAssignmentMixin):
+        LandingZoneMixin, SampleSheetIOMixin, ProjectMixin, RoleAssignmentMixin,
+        TestCase):
     """Base class for view testing"""
 
     def setUp(self):

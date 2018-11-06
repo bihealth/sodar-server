@@ -40,7 +40,7 @@ API_INVALID_VERSION = '5.0'
 
 
 class TestViewsBase(
-        TestCase, ProjectMixin, RoleAssignmentMixin, SampleSheetIOMixin):
+        ProjectMixin, RoleAssignmentMixin, SampleSheetIOMixin, TestCase):
     """Base view for samplesheets views tests"""
 
     def setUp(self):

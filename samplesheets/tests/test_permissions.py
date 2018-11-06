@@ -13,7 +13,7 @@ SHEET_PATH = SHEET_DIR + 'i_small.zip'
 
 
 class TestSampleSheetsPermissions(
-        TestProjectPermissionBase, SampleSheetIOMixin):
+        SampleSheetIOMixin, TestProjectPermissionBase):
     """Tests for samplesheets view permissions"""
 
     def setUp(self):
