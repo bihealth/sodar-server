@@ -12,9 +12,9 @@ This document describes how to install the system for local development.
 **NOTE:** When viewing this document in GitLab critical content will by default
 be missing. Please click "display source" if you want to read this in GitLab.
 
-If you want to install or develo SODAR without iRODS and SODAR Taskflow, you can
-skip the steps related to their installation and set the environment variable
-``ENABLED_BACKEND_PLUGINS='timeline_backend'``.
+If you want to install or develop SODAR without iRODS and SODAR Taskflow, you
+can skip the steps related to their installation and set the environment
+variable ``ENABLED_BACKEND_PLUGINS='timeline_backend'``.
 
 
 Install SODAR
@@ -27,7 +27,6 @@ for testing).
 
 .. code-block:: console
 
-    $ sudo adduser --no-create-home sodar
     $ sudo su - postgres
     $ psql
     $ CREATE DATABASE sodar;
@@ -63,55 +62,45 @@ Install the dependencies:
     $ pip install --upgrade pip
     $ utility/install_python_dependencies.sh install
 
-Initialize the database:
+Initialize the database and plugins:
 
 .. code-block:: console
 
     $ ./manage.py migrate
 
-Create Django superuser, needed to create initial project(s) on the site
+Create Django superuser, needed to create initial project(s) on the site:
 
 .. code-block:: console
 
     $ ./manage.py createsuperuser
 
-If you are running the Docker environment then modify ``config/settings/test_local.py`` and add the following line.
 
-.. code-block:: python
+Set Up the Development Environment
+==================================
 
-    IRODS_PORT = env.int('IRODS_PORT', 4477)
+To use iRODS and SODAR Taskflow in development, you need to have
+`sodar_taskflow <https://cubi-gitlab.bihealth.org/CUBI_Engineering/CUBI_Data_Mgmt/sodar_taskflow>`_
+installed and running. As prerequisites, the project requires a Redis server
+plus two iRODS iCAT servers (one for a throwavay test server) running and
+configured for SODAR projects.
 
+Prerequisites / Docker Environment
+----------------------------------
 
-Set Up a Development iRODS Server
-=================================
+The easiest way to get the dependencies up is to clone and run the SODAR docker
+environment in
+`sodar_docker_env <https://cubi-gitlab.bihealth.org/CUBI_Engineering/CUBI_Data_Mgmt/sodar_docker_env>`_.
+As a downside, the environment does not currently provide permanent storage for
+the default iRODS server.
 
-To use the iRODS and taskflow functionalities, You need to have an iRODS iCAT
-server v4.2+ running and configured for omics projects.
+If you want to set up an iRODS server manually, it must be configured with the
+`omics.re <https://cubi-gitlab.bihealth.org/CUBI_Operations/Ansible_Playbooks/blob/master/roles/cubi.irods-setup/files/etc/irods/omics.re>`_
+rule set file and MD5 set as the default hash scheme in ``server_config.json``.
+In the Docker environment setup CUBI Ansible playbooks these settings are
+already pre-configured.
 
-.. warning::
-
-    Do **NOT** develop or run tests on a production server or an iRODS
-    server used for any other project, as server data **WILL** be wiped between
-    automated tests! (The ability for defining a separate server for running
-    tests is TODO)
-
-Options for setting up an iRODS server:
-
-- Install and run a server locally (see `irods.org <https://irods.org/download/>`_ for instructions)
-- Run server as a Docker image
-- Install on a VM using e.g. Vagrant and the `CUBI Ansible Playbooks <https://cubi-gitlab.bihealth.org/CUBI_Operations/Ansible_Playbooks/>`_
-
-The server must be configured with the `omics.re <https://cubi-gitlab.bihealth.org/CUBI_Operations/Ansible_Playbooks/blob/master/roles/cubi.irods-setup/files/etc/irods/omics.re>`_
-rule set file and MD5 as the default hash scheme. In the Docker setup and the
-Ansible playbooks, this is already pre-configured.
-
-In the SODAR environment variables (preferably in the ``.env``
-file), set up iRODS variables to point to your server. See
-``config/settings/base.py`` for the variables and their default values.
-
-
-Install and Configure SODAR Taskflow
-====================================
+SODAR Taskflow
+--------------
 
 For development it is recommend to run sodar_taskflow locally.
 
@@ -121,35 +110,45 @@ Follow the installation instructions in the ``README.rst`` file. Make sure to
 configure environment variables to point to the Redis and iRODS servers you are
 using.
 
+Configure SODAR
+---------------
+
+In the SODAR environment variables (preferably in the ``.env``
+file), set up iRODS and Taskflow variables to point to your server. The default
+values in ``config/settings/base.py`` point to the sodar_docker_env and
+sodar_taskflow defaults. If using the Docker environment and local Taskflow
+service, no changes should thus be required.
+
 
 Run the Components
 ==================
 
-Make sure `Redis <https://redis.io/>`_ is running. If you're running it locally
-and it is not autostarted, start it manually:
+Make sure Redis and iRODS iCAT server(s) are running. If you have set up and
+launched the sodar_docker_env environment, they all should be available as
+Docker containers.
+
+Run the Docker environment as follows:
 
 .. code-block:: console
 
-    $ ./redis-server
+    $ utility/env_relaunch.sh
 
-In the SODAR Taskflow root directory, start the Taskflow service:
+In the ``sodar_taskflow`` repository, start the SODAR Taskflow service:
 
 .. code-block:: console
 
     $ utility/run_dev.sh
 
-In the SODAR root directory, start the site in debug mode with
-``local`` settings. After this you can access the site at
-``http://localhost:8080``.
+In the SODAR root directory, start the site in debug mode with ``local``
+settings. After this you can access the site at ``http://localhost:8080``.
 
 .. code-block:: console
 
     $ ./run.sh
 
-If data on your development iRODS server is wiped out due to e.g. running tests
-or restarting a Docker instance *after* you have already created projects,
-project metadata and directories (but not files) can be synced with the
-following command:
+If existing data on your development iRODS server has been wiped out due to e.g.
+rebooting the Docker environment project metadata and collections (but not data
+objects) can be synced with the following command:
 
 .. code-block:: console
 
@@ -157,6 +156,9 @@ following command:
 
 There is also a shortcut for syncing iRODS data and starting the server:
 
-.. code-block:: shell
+.. code-block:: console
 
     $ ./run.sh sync
+
+Now you should be able to browse to http://localhost:8000 and see you site.
+iRODS and Taskflow actions should also be available.
