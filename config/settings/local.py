@@ -15,10 +15,6 @@ import socket
 import os
 
 
-# APP CONFIGURATION
-# ------------------------------------------------------------------------------
-INSTALLED_APPS += ['gunicorn', ]
-
 # DEBUG
 # ------------------------------------------------------------------------------
 DEBUG = env.bool('DJANGO_DEBUG', default=True)

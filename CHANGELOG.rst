@@ -27,6 +27,12 @@ Fixed
 - **General**
     - Potential inheritance issues in test classes (sodar_core#74)
 
+Removed
+-------
+
+- **General**
+    - Unneeded gunicorn dependency in ``settings/local.py`` (#383)
+
 
 v0.4.0 (2018-10-26)
 ===================
