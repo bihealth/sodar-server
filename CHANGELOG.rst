@@ -13,6 +13,7 @@ Added
 
 - **General**
     - ``TASKFLOW_TEST_MODE`` setting for test iRODS server support (sodar_core#67)
+    - Missing LDAP dev setup script (#385)
 
 
 Changed
