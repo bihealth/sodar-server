@@ -15,7 +15,6 @@ Added
     - ``TASKFLOW_TEST_MODE`` setting for test iRODS server support (sodar_core#67)
     - Missing LDAP dev setup script (#385)
 
-
 Changed
 -------
 
@@ -27,6 +26,8 @@ Fixed
 
 - **General**
     - Potential inheritance issues in test classes (sodar_core#74)
+- **Samplesheets**
+    - Cancer study app source query not filtered by study (#389)
 
 Removed
 -------

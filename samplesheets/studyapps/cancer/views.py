@@ -126,7 +126,9 @@ class FileRedirectView(BaseCancerConfigView):
         # HACK: May fail if naming conventions are not followed in ISAtab?
         try:
             self.source = GenericMaterial.objects.get(
-                item_type='SOURCE', name=self.library.name.split('-')[0])
+                study=self.library.study,
+                item_type='SOURCE',
+                name=self.library.name.split('-')[0])
 
         except GenericMaterial.DoesNotExist:
             messages.error(
