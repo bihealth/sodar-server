@@ -8,7 +8,7 @@ from django.db.models import QuerySet
 from projectroles.plugins import get_backend_api
 
 
-ALT_NAMES_COUNT = 2     # Needed for ArrayField hack
+ALT_NAMES_COUNT = 3     # Needed for ArrayField hack
 
 
 def get_alt_names(name):
@@ -17,9 +17,12 @@ def get_alt_names(name):
     :param name: Original name/ID (string)
     :return: List
     """
+    name = name.lower()     # Convert all versions lowercase for indexed search
+
     return [
         name.replace('_', '-'),
-        re.sub(r'[^a-zA-Z0-9]', '', name)]
+        re.sub(r'[^a-zA-Z0-9]', '', name),
+        name]
 
 
 def get_sample_dirs(investigation):

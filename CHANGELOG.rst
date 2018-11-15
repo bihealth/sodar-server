@@ -20,6 +20,9 @@ Changed
 
 - **General**
     - Update list button and dropdown classes (#381)
+- **Samplesheets**
+    - Normalize alternative material names as lowercase to optimize search (#390)
+    - Add real material name in ``alt_names`` as lowercase (#390)
 
 Fixed
 -----

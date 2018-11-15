@@ -472,11 +472,18 @@ class GenericMaterialManager(models.Manager):
             GenericMaterialManager, self).get_queryset().exclude(
             item_type__in=['DATA', 'MATERIAL']).order_by('name')
 
-        q_filters = Q(name__iexact=search_term)
+        q_filters = None
 
         # HACK for ArrayField
+        # NOTE: Only look for alt_names as they also contain lowercase name
         for i in range(0, ALT_NAMES_COUNT):
-            q_filters |= Q(**{'alt_names__{}__iexact'.format(i): search_term})
+            q_alt_name = Q(**{'alt_names__{}'.format(i): search_term.lower()})
+
+            if q_filters:
+                q_filters |= q_alt_name
+
+            else:
+                q_filters = q_alt_name
 
         objects = objects.filter(q_filters)
 
