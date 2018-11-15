@@ -220,19 +220,24 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                 except FileNotFoundError:
                     continue  # Skip rest if no data objects were found
 
+                p_studies = {
+                    s.sodar_uuid: s for s in Study.objects.filter(
+                        investigation__project=project)}
+                p_assays = {
+                    a.sodar_uuid: a for a in Assay.objects.filter(
+                        study__investigation__project=project)}
+
                 for o in obj_data['data_objects']:
                     study = None
                     assay = None
 
                     try:
-                        study = Study.objects.get(
-                            sodar_uuid=irods_backend.get_uuid_from_path(
-                                o['path'], obj_type='study'))
-                        assay = Assay.objects.get(
-                            sodar_uuid=irods_backend.get_uuid_from_path(
-                                o['path'], obj_type='assay'))
+                        study = p_studies[irods_backend.get_uuid_from_path(
+                            o['path'], obj_type='study')]
+                        assay = p_assays[ irods_backend.get_uuid_from_path(
+                            o['path'], obj_type='assay')]
 
-                    except Exception as ex:
+                    except KeyError:
                         pass
 
                     file_items.append({
@@ -240,7 +245,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                         'type': 'file',
                         'project': project,
                         'study': study,
-                        'assays': [assay] if Assay else None,
+                        'assays': [assay] if assay else None,
                         'irods_path': o['path']})
 
                     obj_count += 1

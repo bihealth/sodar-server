@@ -23,6 +23,7 @@ Changed
 - **Samplesheets**
     - Normalize alternative material names as lowercase to optimize search (#390)
     - Add real material name in ``alt_names`` as lowercase (#390)
+    - Reduce Django queries to optimize iRODS file search (#393)
 
 Fixed
 -----
