@@ -14,6 +14,8 @@ Added
 - **General**
     - ``TASKFLOW_TEST_MODE`` setting for test iRODS server support (sodar_core#67)
     - Missing LDAP dev setup script (#385)
+- **Irodsbackend**
+    - Project UUID parsing support for ``get_uuid_from_path()``
 
 Changed
 -------
@@ -24,6 +26,7 @@ Changed
     - Normalize alternative material names as lowercase to optimize search (#390)
     - Add real material name in ``alt_names`` as lowercase (#390)
     - Reduce Django queries to optimize iRODS file search (#393)
+    - Replace IRODS query limit settings with ``SHEETS_IRODS_LIMIT`` (#393)
 
 Fixed
 -----

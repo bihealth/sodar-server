@@ -31,6 +31,8 @@ ACCEPTED_PATH_TYPES = [
     'Study']
 
 PATH_REGEX = {
+    'project': '/{}/'.format(settings.IRODS_ZONE) +
+               'projects/[a-zA-Z\d]{2}/(.+?)(?:/|$)',
     'study': '/study_(.+?)(?:/|$)',
     'assay': '/assay_(.+?)(?:/|$)'}
 
@@ -383,16 +385,19 @@ class IrodsAPI:
     @classmethod
     def get_uuid_from_path(cls, path, obj_type):
         """
-        Return study or assay UUID from iRODS path or None if not found
+        Return project, study or assay UUID from iRODS path or None if not found
         :param path: Full iRODS path (string)
-        :param obj_type: Type of object (study or assay)
+        :param obj_type: Type of object ("project", "study" or "assay")
         :return: String or None
         :raise: ValueError if obj_type is not accepted
         """
-        if obj_type.lower() not in PATH_REGEX.keys():
-            raise ValueError('Invalid argument "obj_type"')
+        obj_type = obj_type.lower()
 
-        s = re.search(PATH_REGEX[obj_type.lower()], path)
+        if obj_type not in PATH_REGEX.keys():
+            raise ValueError(
+                'Invalid argument for obj_type ("{}"'.format(obj_type))
+
+        s = re.search(PATH_REGEX[obj_type], path)
 
         if s:
             return s.group(1)

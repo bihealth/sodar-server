@@ -197,63 +197,54 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         file_items = []
 
         if irods_backend and (not search_type or search_type == 'file'):
-            if user.is_superuser:
-                projects = Project.objects.filter(type=PROJECT_TYPE_PROJECT)
+            try:
+                obj_data = irods_backend.get_objects(
+                    path='/{}/projects'.format(settings.IRODS_ZONE),
+                    name_like=search_term,
+                    limit=settings.SHEETS_IRODS_LIMIT)
 
-            else:
-                projects = Project.objects.filter(
-                    roles__user=user, type=PROJECT_TYPE_PROJECT)
+            except FileNotFoundError:
+                return results  # Skip rest if no data objects were found
 
-            obj_count = 0
+            projects = {
+                str(p.sodar_uuid): p for p in Project.objects.filter(
+                    type=PROJECT_TYPE_PROJECT) if
+                    user.has_perm('samplesheets.view_sheet', p)}
+            studies = {
+                str(s.sodar_uuid): s for s in Study.objects.filter(
+                    investigation__project__in=projects.values())}
+            assays = {
+                str(a.sodar_uuid): a for a in Assay.objects.filter(
+                    study__in=studies.values())}
 
-            for project in projects:
-                if (not user.is_superuser and
-                        not user.has_perm('samplesheets.view_sheet', project)):
-                    continue  # Skip rest if user has no perms for project
+            for o in obj_data['data_objects']:
+                project_uuid = irods_backend.get_uuid_from_path(
+                    o['path'], obj_type='project')
+                sample_subpath = '/{}/{}/'.format(
+                    project_uuid, settings.IRODS_SAMPLE_DIR)
+
+                if sample_subpath not in o['path']:
+                    continue    # Skip files not in sample data repository
 
                 try:
-                    obj_data = irods_backend.get_objects(
-                        path=irods_backend.get_sample_path(project),
-                        name_like=search_term,
-                        limit=settings.SHEETS_IRODS_LIMIT_PROJECT)
+                    project = projects[project_uuid]
+                    study = studies[irods_backend.get_uuid_from_path(
+                        o['path'], obj_type='study')]
+                    assay = assays[irods_backend.get_uuid_from_path(
+                        o['path'], obj_type='assay')]
 
-                except FileNotFoundError:
-                    continue  # Skip rest if no data objects were found
+                except KeyError:
+                    continue    # Skip file if the project/etc is not found
 
-                p_studies = {
-                    s.sodar_uuid: s for s in Study.objects.filter(
-                        investigation__project=project)}
-                p_assays = {
-                    a.sodar_uuid: a for a in Assay.objects.filter(
-                        study__investigation__project=project)}
+                file_items.append({
+                    'name': o['name'],
+                    'type': 'file',
+                    'project': project,
+                    'study': study,
+                    'assays': [assay] if assay else None,
+                    'irods_path': o['path']})
 
-                for o in obj_data['data_objects']:
-                    study = None
-                    assay = None
-
-                    try:
-                        study = p_studies[irods_backend.get_uuid_from_path(
-                            o['path'], obj_type='study')]
-                        assay = p_assays[ irods_backend.get_uuid_from_path(
-                            o['path'], obj_type='assay')]
-
-                    except KeyError:
-                        pass
-
-                    file_items.append({
-                        'name': o['name'],
-                        'type': 'file',
-                        'project': project,
-                        'study': study,
-                        'assays': [assay] if assay else None,
-                        'irods_path': o['path']})
-
-                    obj_count += 1
-
-                    if obj_count == settings.SHEETS_IRODS_LIMIT_TOTAL:
-                        break
-
-                if obj_count == settings.SHEETS_IRODS_LIMIT_TOTAL:
+                if len(file_items) == settings.SHEETS_IRODS_LIMIT:
                     break
 
         if file_items:

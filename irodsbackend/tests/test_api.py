@@ -148,18 +148,18 @@ class TestIrodsBackendAPI(
         uuid = self.irods_backend.get_uuid_from_path(path, 'assay')
         self.assertEqual(uuid, str(self.assay.sodar_uuid))
 
-    def test_get_uuid_from_path_study(self):
-        """Test get_uuid_from_path() with a study path"""
-        path = self.irods_backend.get_path(self.study)
-        uuid = self.irods_backend.get_uuid_from_path(path, 'study')
-        self.assertEqual(uuid, str(self.study.sodar_uuid))
+    def test_get_uuid_from_path_project(self):
+        """Test get_uuid_from_path() for project UUID with an assay path"""
+        path = self.irods_backend.get_path(self.assay)
+        uuid = self.irods_backend.get_uuid_from_path(path, 'project')
+        self.assertEqual(uuid, str(self.project.sodar_uuid))
 
     def test_get_uuid_from_path_wrong_type(self):
-        """Test get_uuid_from_path() with a path not containing the uuid (should fail)"""
+        """Test get_uuid_from_path() with an invalid type (should fail)"""
         path = self.irods_backend.get_path(self.study)
 
         with self.assertRaises(ValueError):
-            self.irods_backend.get_uuid_from_path(path, 'project')
+            self.irods_backend.get_uuid_from_path(path, 'investigation')
 
     def test_get_uuid_from_path_wrong_path(self):
         """Test get_uuid_from_path() with a path not containing the uuid (should fail)"""
