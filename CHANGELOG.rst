@@ -33,6 +33,8 @@ Fixed
 
 - **General**
     - Potential inheritance issues in test classes (sodar_core#74)
+- **Irodsinfo**
+    - ``NetworkException`` not caught if iRODS server is unavailable (#395)
 - **Samplesheets**
     - Cancer study app source query not filtered by study (#389)
 

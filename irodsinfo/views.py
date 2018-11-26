@@ -1,4 +1,5 @@
 import io
+from irods.exception import NetworkException
 import json
 import zipfile
 
@@ -26,7 +27,7 @@ class IrodsInfoView(LoggedInPermissionMixin, HTTPRefererMixin, TemplateView):
             try:
                 context['server_info'] = irods_backend.get_info()
 
-            except irods_backend.IrodsQueryException:
+            except (NetworkException, irods_backend.IrodsQueryException):
                 context['server_info'] = None
 
         context['irods_backend'] = get_backend_api('omics_irods')
