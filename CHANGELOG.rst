@@ -29,6 +29,7 @@ Changed
     - Add real material name in ``alt_names`` as lowercase (#390)
     - Reduce Django queries to optimize iRODS file search (#393)
     - Replace IRODS query limit settings with ``SHEETS_IRODS_LIMIT`` (#393)
+    - Cancer study app: only show shortcuts for genome/exome seq assays (#398)
 
 Fixed
 -----

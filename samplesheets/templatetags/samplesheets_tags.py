@@ -137,7 +137,7 @@ def get_irods_tree(investigation):
     return ret
 
 
-# TODO: This should be in germline app template tags
+# TODO: This should be in germline app template tags (see issue #399)
 @register.simple_tag
 def get_families(study):
     """
@@ -160,7 +160,7 @@ def get_families(study):
     return ret
 
 
-# TODO: This should be in germline app template tags
+# TODO: This should be in germline app template tags (see issue #399)
 @register.simple_tag
 def get_family_sources(study, family_id):
     """
