@@ -746,6 +746,7 @@ class ZoneStatusSetAPIView(APIView):
             return Response('Invalid status type', status=400)
 
         zone.refresh_from_db()
+        server_host = settings.SODAR_API_DEFAULT_HOST.geturl()
 
         # Send email
         if zone.status in ['MOVED', 'FAILED']:
@@ -756,16 +757,16 @@ class ZoneStatusSetAPIView(APIView):
                 zone.status == 'MOVED' else EMAIL_MESSAGE_FAILED
 
             if zone.status == 'MOVED':
-                email_url = request.build_absolute_uri(reverse(
+                email_url = server_host + reverse(
                     'samplesheets:project_sheets',
                     kwargs={'study': zone.assay.study.sodar_uuid}) + \
-                            '#' + str(zone.assay.sodar_uuid))
+                            '#' + str(zone.assay.sodar_uuid)
 
             else:   # FAILED
-                email_url = request.build_absolute_uri(reverse(
+                email_url = server_host + reverse(
                     'landingzones:list',
                     kwargs={'project': zone.project.sodar_uuid}) + \
-                            '#' + str(zone.sodar_uuid))
+                            '#' + str(zone.sodar_uuid)
 
             message_body = message_body.format(
                 zone=zone.title,

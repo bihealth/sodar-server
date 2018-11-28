@@ -22,6 +22,8 @@ Changed
 
 - **General**
     - Update list button and dropdown classes (#381)
+- **Landingzones**
+    - Use ``SODAR_API_DEFAULT_HOST`` in email generation (#396)
 - **Samplesheets**
     - Normalize alternative material names as lowercase to optimize search (#390)
     - Add real material name in ``alt_names`` as lowercase (#390)
@@ -35,6 +37,8 @@ Fixed
     - Potential inheritance issues in test classes (sodar_core#74)
 - **Irodsinfo**
     - ``NetworkException`` not caught if iRODS server is unavailable (#395)
+- **Landingzones**
+    - Invalid URLs in zone status update emails (#396)
 - **Samplesheets**
     - Cancer study app source query not filtered by study (#389)
 
