@@ -122,6 +122,13 @@ class FileRedirectView(BaseCancerConfigView):
                 'Library not found, unable to redirect to file')
             return redirect(self.redirect_url)
 
+        if not self.library.assay:
+            messages.error(
+                self.request,
+                'Assay not found for library, make sure your sample sheets '
+                'are correctly formed')
+            return redirect(self.redirect_url)
+
         # Get source
         # HACK: May fail if naming conventions are not followed in ISAtab?
         try:
@@ -136,9 +143,17 @@ class FileRedirectView(BaseCancerConfigView):
                 'Source not found, unable to redirect to file')
             return redirect(self.redirect_url)
 
-        file_url = self._get_library_file_url(
-            file_type=file_type,
-            library=self.library)
+        try:
+            file_url = self._get_library_file_url(
+                file_type=file_type,
+                library=self.library)
+
+        except TypeError:
+            messages.error(
+                self.request,
+                'Library file URL retrieval failed, please make sure your '
+                'sample sheet is correctly formed')
+            return redirect(self.redirect_url)
 
         if not file_url:
             messages.warning(
@@ -186,7 +201,15 @@ class IGVSessionFileRenderView(BaseCancerConfigView):
         bam_urls = {}
         vcf_urls = {}
 
+        # In case of malformed sample sheets
         for library in libraries:
+            if not self.library.assay:
+                messages.error(
+                    self.request,
+                    'Assay not found for library, make sure your sample sheets '
+                    'are correctly formed')
+                return redirect(self.redirect_url)
+
             bam_url = self._get_library_file_url(
                 file_type='bam',
                 library=library)

@@ -45,6 +45,7 @@ Fixed
     - Invalid URLs in zone status update emails (#396)
 - **Samplesheets**
     - Cancer study app source query not filtered by study (#389)
+    - Handle cancer app library assay linking errors (#404)
 
 Removed
 -------
