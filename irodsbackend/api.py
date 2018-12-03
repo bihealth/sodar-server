@@ -318,8 +318,8 @@ class IrodsAPI:
 
         if obj_class not in ACCEPTED_PATH_TYPES:
             raise TypeError(
-                'Object of type "{}" not supported! Accepted models: {}',
-                format(obj_class, ', '.join(ACCEPTED_PATH_TYPES)))
+                'Object of type "{}" not supported! Accepted models: {}'.format(
+                    obj_class, ', '.join(ACCEPTED_PATH_TYPES)))
 
         if obj_class == 'Project':
             project = obj

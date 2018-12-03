@@ -37,6 +37,8 @@ Fixed
 
 - **General**
     - Potential inheritance issues in test classes (sodar_core#74)
+- **Irodsbackend**
+    - ``TypeError`` in ``get_path()`` not correctly raised with invalid object class name (#404)
 - **Irodsinfo**
     - ``NetworkException`` not caught if iRODS server is unavailable (#395)
 - **Landingzones**
