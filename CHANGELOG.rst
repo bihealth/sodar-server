@@ -49,6 +49,7 @@ Fixed
     - Handle cancer app library assay linking errors (#404)
     - Assay links in study overview card (#405)
     - Study app shortcut exceptions always redirected to default study (#406)
+    - Cancer study IGV shortcut crash if samples not found (#407)
 
 Removed
 -------

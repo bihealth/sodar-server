@@ -161,6 +161,13 @@ class IGVSessionFileRenderView(BaseCancerConfigView):
 
         samples = self.material.get_samples()
 
+        if not samples:
+            messages.error(
+                request,
+                'Samples not found, make sure your sample sheets are '
+                'correctly formed')
+            return redirect(self.redirect_url)
+
         # Build render table
         tb = SampleSheetTableBuilder()
         study_tables = tb.build_study_tables(self.material.study)
