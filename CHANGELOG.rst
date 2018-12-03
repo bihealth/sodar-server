@@ -46,6 +46,7 @@ Fixed
 - **Samplesheets**
     - Cancer study app source query not filtered by study (#389)
     - Handle cancer app library assay linking errors (#404)
+    - Assay links in study overview card (#405)
 
 Removed
 -------

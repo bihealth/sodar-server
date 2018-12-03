@@ -38,7 +38,7 @@
       <dt class="col-md-3">Assays</dt>
       <dd class="col-md-9">
         {% for assay in study.assays.all %}
-          <a href="#assay{{ assay.sodar_uuid }}">{{ assay.get_display_name }}</a>
+          <a href="#{{ assay.sodar_uuid }}">{{ assay.get_display_name }}</a>
           {% if assay.comments %}
             <a class="sodar-ss-assay-info-link" tabindex="0" data-toggle="popover"
                data-trigger="focus" data-placement="top" data-html="true"
