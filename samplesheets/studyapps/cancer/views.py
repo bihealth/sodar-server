@@ -32,8 +32,7 @@ class BaseCancerConfigView(
     def __init__(self, *args, **kwargs):
         super(BaseCancerConfigView, self).__init__(*args, **kwargs)
         self.redirect_url = None
-        self.source = None
-        self.library = None
+        self.material = None
         self.study_tables = None
 
     @classmethod
@@ -84,16 +83,23 @@ class BaseCancerConfigView(
             kwargs={'project': self._get_project(
                 self.request, self.kwargs).sodar_uuid})
 
+        try:
+            self.material = GenericMaterial.objects.get(
+                sodar_uuid=self.kwargs['genericmaterial'])
+            self.redirect_url = reverse(
+                'samplesheets:project_sheets',
+                kwargs={'study': self.material.study.sodar_uuid})
+
+        except GenericMaterial.DoesNotExist:
+            messages.error(request, 'Material not found')
+            return redirect(self.redirect_url)
+
         if not irods_backend:
             messages.error(self.request, 'iRODS Backend not available')
             return redirect(self.redirect_url)
 
         if not settings.IRODS_WEBDAV_ENABLED or not settings.IRODS_WEBDAV_URL:
             messages.error(self.request, 'iRODS WebDAV not available')
-            return redirect(self.redirect_url)
-
-        if 'genericmaterial' not in self.kwargs:
-            messages.error(self.request, 'No material given for linking')
             return redirect(self.redirect_url)
 
 
@@ -111,42 +117,17 @@ class FileRedirectView(BaseCancerConfigView):
                 self.request, 'Unsupported file type "{}"'.format(file_type))
             return redirect(self.redirect_url)
 
-        # Get library
-        try:
-            self.library = GenericMaterial.objects.get(
-                sodar_uuid=self.kwargs['genericmaterial'])
-
-        except GenericMaterial.DoesNotExist:
-            messages.error(
-                self.request,
-                'Library not found, unable to redirect to file')
-            return redirect(self.redirect_url)
-
-        if not self.library.assay:
+        if not self.material.assay:
             messages.error(
                 self.request,
                 'Assay not found for library, make sure your sample sheets '
                 'are correctly formed')
             return redirect(self.redirect_url)
 
-        # Get source
-        # HACK: May fail if naming conventions are not followed in ISAtab?
-        try:
-            self.source = GenericMaterial.objects.get(
-                study=self.library.study,
-                item_type='SOURCE',
-                name=self.library.name.split('-')[0])
-
-        except GenericMaterial.DoesNotExist:
-            messages.error(
-                self.request,
-                'Source not found, unable to redirect to file')
-            return redirect(self.redirect_url)
-
         try:
             file_url = self._get_library_file_url(
                 file_type=file_type,
-                library=self.library)
+                library=self.material)
 
         except TypeError:
             messages.error(
@@ -158,7 +139,7 @@ class FileRedirectView(BaseCancerConfigView):
         if not file_url:
             messages.warning(
                 self.request, 'No {} file found for {}'.format(
-                    file_type.upper(), self.library.name))
+                    file_type.upper(), self.material.name))
             return redirect(self.redirect_url)
 
         # Return with link to file in DavRods
@@ -174,26 +155,15 @@ class IGVSessionFileRenderView(BaseCancerConfigView):
         """Override get() to return IGV session file"""
         super(IGVSessionFileRenderView, self).get(request, *args, **kwargs)
 
-        # Get source
-        try:
-            self.source = GenericMaterial.objects.get(
-                sodar_uuid=self.kwargs['genericmaterial'])
-
-        except GenericMaterial.DoesNotExist:
-            messages.error(
-                self.request,
-                'Source not found, unable to redirect to file')
-            return redirect(self.redirect_url)
-
         ###################
         # Get resource URLs
         ###################
 
-        samples = self.source.get_samples()
+        samples = self.material.get_samples()
 
         # Build render table
         tb = SampleSheetTableBuilder()
-        study_tables = tb.build_study_tables(self.source.study)
+        study_tables = tb.build_study_tables(self.material.study)
 
         # Get libraries
         libraries = get_sample_libraries(samples, study_tables)
@@ -203,7 +173,7 @@ class IGVSessionFileRenderView(BaseCancerConfigView):
 
         # In case of malformed sample sheets
         for library in libraries:
-            if not self.library.assay:
+            if not library.assay:
                 messages.error(
                     self.request,
                     'Assay not found for library, make sure your sample sheets '
@@ -239,7 +209,7 @@ class IGVSessionFileRenderView(BaseCancerConfigView):
         # Serve XML
         ###########
 
-        file_name = self.source.name + '.case.igv.xml'
+        file_name = self.material.name + '.case.igv.xml'
 
         # Set up response
         response = HttpResponse(xml_str, content_type='text/xml')

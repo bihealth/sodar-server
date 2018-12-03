@@ -141,27 +141,23 @@ class BaseGermlineConfigView(
             kwargs={'project': self._get_project(
                 self.request, self.kwargs).sodar_uuid})
 
+        try:
+            self.source = GenericMaterial.objects.get(
+                sodar_uuid=self.kwargs['genericmaterial'])
+            self.redirect_url = reverse(
+                'samplesheets:project_sheets',
+                kwargs={'study': self.source.study.sodar_uuid})
+
+        except GenericMaterial.DoesNotExist:
+            messages.error(request, 'Source material not found')
+            return redirect(self.redirect_url)
+
         if not irods_backend:
             messages.error(self.request, 'iRODS Backend not available')
             return redirect(self.redirect_url)
 
         if not settings.IRODS_WEBDAV_ENABLED or not settings.IRODS_WEBDAV_URL:
             messages.error(self.request, 'iRODS WebDAV not available')
-            return redirect(self.redirect_url)
-
-        if 'genericmaterial' not in self.kwargs:
-            messages.error(self.request, 'No Source material given for linking')
-            return redirect(self.redirect_url)
-
-        try:
-            self.source = GenericMaterial.objects.get(
-                item_type='SOURCE',
-                sodar_uuid=self.kwargs['genericmaterial'])
-
-        except GenericMaterial.DoesNotExist:
-            messages.error(
-                self.request,
-                'Source not found, unable to redirect to file')
             return redirect(self.redirect_url)
 
         # Build render table

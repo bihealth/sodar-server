@@ -31,6 +31,7 @@ Changed
     - Replace IRODS query limit settings with ``SHEETS_IRODS_LIMIT`` (#393)
     - Cancer study app: only show shortcuts for genome/exome seq assays (#398)
     - Move germline specific template tags in germline study app (#399)
+    - Refactor study app views (#406)
 
 Fixed
 -----
@@ -47,6 +48,7 @@ Fixed
     - Cancer study app source query not filtered by study (#389)
     - Handle cancer app library assay linking errors (#404)
     - Assay links in study overview card (#405)
+    - Study app shortcut exceptions always redirected to default study (#406)
 
 Removed
 -------
