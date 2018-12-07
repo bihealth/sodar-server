@@ -22,6 +22,8 @@ Changed
 
 - **General**
     - Update list button and dropdown classes (#381)
+- **Filesfolders**
+    - Import app from SODAR Core (#403)
 - **Landingzones**
     - Use ``SODAR_API_DEFAULT_HOST`` in email generation (#396)
 - **Samplesheets**
@@ -56,6 +58,8 @@ Removed
 
 - **General**
     - Unneeded gunicorn dependency in ``settings/local.py`` (#383)
+- **Filesfolders**
+    - Local app removed (#403)
 
 
 v0.4.0 (2018-10-26)
