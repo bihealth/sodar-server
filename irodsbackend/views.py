@@ -17,7 +17,6 @@ class BaseIrodsAPIView(APIView):
     def __init__(self, *args, **kwargs):
         super(BaseIrodsAPIView, self).__init__(*args, **kwargs)
         self.project = None
-        self.irods_backend = get_backend_api('omics_irods')
 
     def get(self, *args, **kwargs):
         """Setup get() function"""
@@ -34,7 +33,9 @@ class BaseIrodsAPIView(APIView):
             except Project.DoesNotExist:
                 return Response('Project not found', status=400)
 
-        if not self.irods_backend:
+        irods_backend = get_backend_api('omics_irods')
+
+        if not irods_backend:
             return Response('iRODS backend not enabled', status=500)
 
         if 'path' not in self.kwargs:
@@ -42,7 +43,7 @@ class BaseIrodsAPIView(APIView):
 
         # Ensure the given path belongs in the project
         if (self.project and
-                self.irods_backend.get_path(
+                irods_backend.get_path(
                     self.project) not in self.kwargs['path']):
             return Response('Path does not belong to project', status=400)
 
@@ -59,7 +60,7 @@ class BaseIrodsAPIView(APIView):
             return Response('User not authorized for project', status=403)
 
         # Check iRODS perms
-        irods_session = self.irods_backend.get_session()
+        irods_session = irods_backend.get_session()
 
         try:
             coll = irods_session.collections.get(self.kwargs['path'])
@@ -95,12 +96,13 @@ class IrodsStatisticsAPIView(BaseIrodsAPIView):
 
     def get(self, *args, **kwargs):
         response = super(IrodsStatisticsAPIView, self).get(*args, **kwargs)
+        irods_backend = get_backend_api('omics_irods')
 
         if response:
             return response
 
         try:
-            stats = self.irods_backend.get_object_stats(self.kwargs['path'])
+            stats = irods_backend.get_object_stats(self.kwargs['path'])
             return Response(stats, status=200)
 
         except FileNotFoundError:
@@ -115,13 +117,14 @@ class IrodsObjectListAPIView(BaseIrodsAPIView):
 
     def get(self, *args, **kwargs):
         response = super(IrodsObjectListAPIView, self).get(*args, **kwargs)
+        irods_backend = get_backend_api('omics_irods')
 
         if response:
             return response
 
         # Get files
         try:
-            ret_data = self.irods_backend.get_objects(
+            ret_data = irods_backend.get_objects(
                 self.kwargs['path'], check_md5=bool(int(self.kwargs['md5'])))
             return Response(ret_data, status=200)
 
