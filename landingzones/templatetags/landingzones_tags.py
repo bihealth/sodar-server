@@ -27,19 +27,12 @@ def get_zone_row_class(zone):
         zone.status in DISABLED_STATES else 'sodar-lz-zone-tr-existing'
 
 
-# TODO: Refactor/remove
-@register.simple_tag
-def get_irods_cmd(zone):
-    """Return iRODS icommand for popover"""
-    return '/omicsZone/projects/project{}/landing_zones/{}/{}'.format(
-        zone.project.pk, zone.user, zone.title)
-
-
 @register.simple_tag
 def get_details_zones(project, user):
     """Return active user zones for the project details page"""
     return LandingZone.objects.filter(
-        project=project, user=user).exclude(status='MOVED').order_by('-pk')
+        project=project, user=user).exclude(
+            status__in=['MOVED', 'DELETED']).order_by('-pk')
 
 
 @register.simple_tag

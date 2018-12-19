@@ -5,8 +5,8 @@ Changelog for the SODAR Web UI. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
-Unreleased
-==========
+v0.4.1 (2018-12-19)
+===================
 
 Added
 -----
@@ -22,10 +22,12 @@ Changed
 
 - **General**
     - Update list button and dropdown classes (#381)
+    - Upgrade to django-sodar-core v0.4.0
 - **Filesfolders**
-    - Import app from SODAR Core (#403)
+    - Import app from django-sodar-core v0.4.0 (#403)
 - **Landingzones**
     - Use ``SODAR_API_DEFAULT_HOST`` in email generation (#396)
+    - Hide deleted zones in project overview (#394)
 - **Samplesheets**
     - Normalize alternative material names as lowercase to optimize search (#390)
     - Add real material name in ``alt_names`` as lowercase (#390)
@@ -61,6 +63,8 @@ Removed
     - Unneeded gunicorn dependency in ``settings/local.py`` (#383)
 - **Filesfolders**
     - Local app removed (#403)
+- **Landingzones**
+    - Unused ``get_irods_cmd()`` template tag
 
 
 v0.4.0 (2018-10-26)
