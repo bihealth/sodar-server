@@ -23,6 +23,7 @@ Changed
 - **General**
     - Update list button and dropdown classes (#381)
     - Upgrade to django-sodar-core v0.4.0
+    - Use ``TASKFLOW_SODAR_SECRET`` for securing Taskflow API views (sodar_core#46)
 - **Filesfolders**
     - Import app from django-sodar-core v0.4.0 (#403)
 - **Landingzones**
