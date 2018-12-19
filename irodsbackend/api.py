@@ -61,7 +61,10 @@ def init_irods(func):
         except Exception as ex:
             pass    # TODO: Handle exceptions, add logging
 
-        return func(self, *args, **kwargs)
+        result = func(self, *args, **kwargs)
+        self.irods.cleanup()
+        self.irods = None
+        return result
 
     return _decorator
 

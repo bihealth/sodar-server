@@ -46,6 +46,7 @@ Fixed
 - **Irodsbackend**
     - ``TypeError`` in ``get_path()`` not correctly raised with invalid object class name (#404)
     - iRODS connections not properly cleaned up in Ajax API views (#413)
+    - Ensure iRODS connection cleanup after exiting a decorated function
 - **Irodsinfo**
     - ``NetworkException`` not caught if iRODS server is unavailable (#395)
 - **Landingzones**
