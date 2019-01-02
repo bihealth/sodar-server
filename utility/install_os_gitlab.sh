@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Install OS dependencies for Docker image python:3.4 used in Gitlab CI
+# Install OS dependencies for Docker image python:3.6 used in Gitlab CI
 # TODO: Some of these are up-to-date on image, remove or keep just in case?
 
 echo "***********************************************"
