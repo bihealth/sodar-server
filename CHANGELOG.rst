@@ -5,6 +5,16 @@ Changelog for the SODAR Web UI. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+Unreleased
+==========
+
+Changed
+-------
+
+- **General**
+    - Upgrade minimum Python version requirement to 3.6 (sodar_core#102)
+
+
 v0.4.1 (2018-12-19)
 ===================
 

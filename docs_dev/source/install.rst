@@ -16,6 +16,10 @@ If you want to install or develop SODAR without iRODS and SODAR Taskflow, you
 can skip the steps related to their installation and set the environment
 variable ``ENABLED_BACKEND_PLUGINS='timeline_backend'``.
 
+These instructions assume you have Python 3.6+ and PostgreSQL 9.4+ installed.
+
+**NOTE:** Python 3.5.x and lower are no longer supported!
+
 
 Install SODAR
 =============
