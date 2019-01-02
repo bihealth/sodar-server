@@ -5,11 +5,11 @@ echo "Installing Chrome + Driver for UI Testing"
 echo "***********************************************"
 
 # Version
-CHROME_DRIVER_VERSION=2.36
+CHROME_DRIVER_VERSION=2.45
 
 # Install dependencies
 sudo apt-get update
-sudo apt-get install -y unzip openjdk-8-jre-headless xvfb libxi6 libgconf-2-4
+sudo apt-get install -y unzip xvfb libxi6 libgconf-2-4
 
 # Install Chrome
 wget -N https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb -P ~/

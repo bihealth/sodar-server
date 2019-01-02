@@ -13,6 +13,9 @@ Changed
 
 - **General**
     - Upgrade minimum Python version requirement to 3.6 (sodar_core#102)
+    - Update and cleanup Gitlab-CI setup (sodar_core#85)
+    - Update Chrome Driver for UI tests
+    - Cleanup Chrome setup
 
 
 v0.4.1 (2018-12-19)
