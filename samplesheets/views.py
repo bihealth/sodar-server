@@ -594,11 +594,10 @@ class SourceIDQueryAPIView(APIView):
 # Taskflow API Views -----------------------------------------------------
 
 
-# TODO: Limit access to localhost
+# TODO: Integrate Taskflow API functionality with general SODAR API (see #47)
 
 
-# TODO: Use GET instead of POST
-class SampleSheetDirStatusGetAPIView(APIView):
+class TaskflowDirStatusGetAPIView(APIView):
     """View for getting the sample sheet iRODS dir status"""
     def post(self, request):
         try:
@@ -611,7 +610,7 @@ class SampleSheetDirStatusGetAPIView(APIView):
         return Response({'dir_status': investigation.irods_status}, 200)
 
 
-class SampleSheetDirStatusSetAPIView(APIView):
+class TaskflowDirStatusSetAPIView(APIView):
     """View for creating or updating a role assignment based on params"""
     def post(self, request):
         try:
@@ -627,7 +626,7 @@ class SampleSheetDirStatusSetAPIView(APIView):
         return Response('ok', status=200)
 
 
-class SampleSheetDeleteAPIView(APIView):
+class TaskflowSheetDeleteAPIView(APIView):
     """View for deleting the sample sheets of a project"""
     def post(self, request):
         try:

@@ -680,10 +680,10 @@ class LandingZoneListAPIView(APIView):
 # Taskflow API Views -----------------------------------------------------
 
 
-# TODO: Limit access to localhost
+# TODO: Integrate Taskflow API functionality with general SODAR API (see #47)
 
 
-class ZoneCreateAPIView(APIView):
+class TaskflowZoneCreateAPIView(APIView):
     def post(self, request):
         try:
             user = User.objects.get(sodar_uuid=request.data['user_uuid'])
@@ -709,25 +709,7 @@ class ZoneCreateAPIView(APIView):
         return Response({'zone_uuid': zone.sodar_uuid}, status=200)
 
 
-'''
-class ZoneStatusGetAPIView(APIView):
-    def post(self, request):
-        try:
-            zone = LandingZone.objects.get(sodar_uuid=request.data['zone_uuid'])
-
-        except LandingZone.DoesNotExist:
-            return Response('LandingZone not found', status=404)
-
-        ret_data = {
-            'zone_pk': zone.pk,
-            'status': zone.status,
-            'status_info': zone.status_info}
-
-        return Response(ret_data, status=200)
-'''
-
-
-class ZoneStatusSetAPIView(APIView):
+class TaskflowZoneStatusSetAPIView(APIView):
     def post(self, request):
         try:
             zone = LandingZone.objects.get(

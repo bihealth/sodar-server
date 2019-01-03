@@ -51,12 +51,12 @@ urlpatterns = [
     # Taskflow API views
     url(
         regex=r'^taskflow/create$',
-        view=views.ZoneCreateAPIView.as_view(),
+        view=views.TaskflowZoneCreateAPIView.as_view(),
         name='taskflow_zone_create',
     ),
     url(
         regex=r'^taskflow/status/set$',
-        view=views.ZoneStatusSetAPIView.as_view(),
+        view=views.TaskflowZoneStatusSetAPIView.as_view(),
         name='taskflow_zone_status_set',
     ),
 ]

@@ -17,6 +17,10 @@ Changed
     - Update Chrome Driver for UI tests
     - Cleanup Chrome setup
     - Update ``login.html`` override to add site messages (sodar_core#105)
+- **Landingzones**
+    - Rename Taskflow specific API views (sodar_core#104)
+- **Samplesheets**
+    - Rename Taskflow specific API views (sodar_core#104)
 
 Fixed
 -----

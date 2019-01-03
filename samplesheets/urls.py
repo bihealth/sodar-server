@@ -55,17 +55,17 @@ urlpatterns = [
     # Taskflow API views
     url(
         regex=r'^taskflow/dirs/get$',
-        view=views.SampleSheetDirStatusGetAPIView.as_view(),
+        view=views.TaskflowDirStatusGetAPIView.as_view(),
         name='taskflow_sheet_dirs_get',
     ),
     url(
         regex=r'^taskflow/dirs/set$',
-        view=views.SampleSheetDirStatusSetAPIView.as_view(),
+        view=views.TaskflowDirStatusSetAPIView.as_view(),
         name='taskflow_sheet_dirs_set',
     ),
     url(
         regex=r'^taskflow/delete$',
-        view=views.SampleSheetDeleteAPIView.as_view(),
+        view=views.TaskflowSheetDeleteAPIView.as_view(),
         name='taskflow_sheet_delete',
     ),
 ]
