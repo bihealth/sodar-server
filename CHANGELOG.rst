@@ -16,6 +16,20 @@ Changed
     - Update and cleanup Gitlab-CI setup (sodar_core#85)
     - Update Chrome Driver for UI tests
     - Cleanup Chrome setup
+    - Update ``login.html`` override to add site messages (sodar_core#105)
+
+Fixed
+-----
+
+- **General**
+    - Login URL was not set to ``sodar/users/login.html``
+
+Removed
+-------
+
+- **General**
+    - Unused templates in ``sodar/pages``
+    - Unused URL mapping to ``about.html``
 
 
 v0.4.1 (2018-12-19)
