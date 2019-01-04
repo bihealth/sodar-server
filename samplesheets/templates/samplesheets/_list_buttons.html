@@ -4,7 +4,6 @@
 {% has_perm 'samplesheets.export_sheet' request.user project as can_export_sheet %}
 {% has_perm 'samplesheets.delete_sheet' request.user project as can_delete_sheet %}
 
-
 <div class="btn-group ml-auto" id="sodar-ss-buttons-op">
   <button class="btn btn-primary dropdown-toggle"
           type="button" data-toggle="dropdown"
@@ -51,7 +50,3 @@
 
   </div>
 </div>
-
-{% if up %}
-  </div>
-{% endif %}

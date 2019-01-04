@@ -34,6 +34,8 @@ Removed
 - **General**
     - Unused templates in ``sodar/pages``
     - Unused URL mapping to ``about.html``
+- **Samplesheets**
+    - Unused dropup app buttons mode in templates (sodar_core#108)
 
 
 v0.4.1 (2018-12-19)
