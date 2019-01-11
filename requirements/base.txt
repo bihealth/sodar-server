@@ -67,11 +67,11 @@ django-markupfield==1.5.0
 django-pagedown==1.0.6
 mistune==0.8.3
 
-# Django-plugins (with self-made Django 1.10 support)
+# Django-plugins (with Django 1.11 support)
 -e git://github.com/mikkonie/django-plugins.git@1bc07181e6ab68b0f9ed3a00382eb1f6519e1009#egg=django-plugins
 
 # SODAR Core
--e git+ssh://git@cubi-gitlab.bihealth.org/CUBI_Engineering/CUBI_Data_Mgmt/sodar_core.git@70407de0e01a201d5a3240f19b70f8f220059cae#egg=django-sodar-core
+-e git+ssh://git@cubi-gitlab.bihealth.org/CUBI_Engineering/CUBI_Data_Mgmt/sodar_core.git@v0.4.1#egg=django-sodar-core
 
 
 ####################

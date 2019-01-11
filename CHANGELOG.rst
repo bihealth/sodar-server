@@ -17,6 +17,8 @@ Changed
     - Update Chrome Driver for UI tests
     - Cleanup Chrome setup
     - Update ``login.html`` override to add site messages (sodar_core#105)
+    - Upgrade to django-sodar-core v0.4.1
+    - Update site dependency utilities to match django-sodar-core v0.4.1 (sodar_core#90)
 - **Landingzones**
     - Rename Taskflow specific API views (sodar_core#104)
 - **Samplesheets**

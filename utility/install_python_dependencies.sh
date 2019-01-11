@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 WORK_DIR="$(dirname "$0")"
 PROJECT_DIR="$(dirname "$WORK_DIR")"

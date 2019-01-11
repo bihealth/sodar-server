@@ -24,10 +24,31 @@ These instructions assume you have Python 3.6+ and PostgreSQL 9.4+ installed.
 Install SODAR
 =============
 
-First, create a postgresql users and a database for your application.
-For example, ``sodar`` with password ``sodar`` and a database called ``sodar``.
-Also, give the user the permission to create further Postgres databases (used
-for testing).
+Requirements
+------------
+
+- Ubuntu 16.04 Xenial
+- Python 3.6+
+- Postgres 9.6+
+
+System Installation
+-------------------
+
+First you need to install OS dependencies, PostgreSQL 9.6 and Python3.6.
+
+.. code-block:: console
+
+    $ sudo utility/install_os_dependencies.sh
+    $ sudo utility/install_python.sh
+    $ sudo utility/install_postgres.sh
+
+Database Setup
+--------------
+
+Create a PostgreSQL user and a database for your application. In the example,
+we use ``sodar`` for the database, user name and password. Make sure to
+give the user the permission to create further PostgreSQL databases (used for
+testing).
 
 .. code-block:: console
 
@@ -39,40 +60,50 @@ for testing).
     $ ALTER USER sodar CREATEDB;
     $ \q
 
-You have to make the credentials in the environment variable ``DATABASE_URL``.
+You have to add the credentials in the environment variable ``DATABASE_URL``.
 For development it is recommended to place this variable in an ``.env`` file and
-set ``DJANGO_READ_DOT_ENV_FILE`` true in your actual environment. See
+set ``DJANGO_READ_DOT_ENV_FILE=1`` in your actual environment. See
 ``config/settings/base.py`` for more information.
 
 .. code-block:: console
 
     $ export DATABASE_URL='postgres://sodar:sodar@127.0.0.1/sodar'
 
-Clone the repository and setup the virtual environment inside:
+Project Setup
+-------------
+
+Clone the repository, setup and activate the virtual environment. Once in
+the environment, install Python requirements for the project:
 
 .. code-block:: console
 
     $ git clone git@cubi-gitlab.bihealth.org:CUBI_Engineering/CUBI_Data_Mgmt/sodar.git
     $ cd sodar
+    $ pip install virtualenv
     $ virtualenv -p python3.6 .venv
     $ source .venv/bin/activate
+    $ utility/install_python_dependencies.sh
 
-Install the dependencies:
+LDAP Setup (Optional)
+---------------------
+
+If you will be using LDAP/AD auth on your site, make sure to also run:
 
 .. code-block:: console
 
-    $ sudo utility/install_os_dependencies.sh install
-    $ sudo utility/install_chrome.sh
-    $ pip install --upgrade pip
-    $ utility/install_python_dependencies.sh install
+    $ sudo utility/install_ldap_dependencies.sh
+    $ pip install -r requirements/ldap.txt
 
-Initialize the database and plugins:
+Final Setup
+-----------
+
+Initialize the database (this will also synchronize django-plugins):
 
 .. code-block:: console
 
     $ ./manage.py migrate
 
-Create Django superuser, needed to create initial project(s) on the site:
+Create a Django superuser for the SODAR site:
 
 .. code-block:: console
 
@@ -164,5 +195,5 @@ There is also a shortcut for syncing iRODS data and starting the server:
 
     $ ./run.sh sync
 
-Now you should be able to browse to http://localhost:8000 and see you site.
+Now you should be able to browse to http://localhost:8000 and see your site.
 iRODS and Taskflow actions should also be available.
