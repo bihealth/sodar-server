@@ -22,6 +22,10 @@ from django.conf import settings
 from django.utils.text import slugify
 
 
+# Projectroles dependency
+from projectroles.models import RoleAssignment
+
+
 # Local constants
 ACCEPTED_PATH_TYPES = [
     'Assay',
@@ -109,7 +113,8 @@ class IrodsAPI:
     def _get_colls_recursively(cls, coll):
         """
         Return all subcollections for a coll efficiently (without multiple
-        queries)
+        queries).
+
         :param coll: Collection object
         :return: List
         """
@@ -121,7 +126,8 @@ class IrodsAPI:
             self, coll, md5=False, name_like=None, limit=None):
         """
         Return objects below a coll recursively (replacement for the
-        non-scalable walk() function in the API)
+        non-scalable walk() function in the API).
+
         :param coll: Collection object
         :param md5: if True, return .md5 files, otherwise anything but them
         :param name_like: Filtering of file names (string)
@@ -177,7 +183,8 @@ class IrodsAPI:
 
     def _get_obj_list(self, coll, check_md5=False, name_like=None, limit=None):
         """
-        Return a list of data objects within an iRODS collection
+        Return a list of data objects within an iRODS collection.
+
         :param coll: iRODS collection object
         :param check_md5: Whether to add md5 checksum file info (bool)
         :param name_like: Filtering of file names (string)
@@ -209,7 +216,8 @@ class IrodsAPI:
 
     def _get_obj_stats(self, coll):
         """
-        Return statistics for data objects within an iRODS collection
+        Return statistics for data objects within an iRODS collection.
+
         :param coll: iRODS collection object
         :return: Dict
         """
@@ -248,7 +256,8 @@ class IrodsAPI:
     def _send_request(self, api_id, *args):
         """
         Temporary function for sending a raw API request using
-        python-irodsclient
+        python-irodsclient.
+
         :param *args: Arguments for the request body
         :return: Response
         :raise: Exception if iRODS is not initialized
@@ -274,7 +283,8 @@ class IrodsAPI:
     def get_subdir(cls, obj, landing_zone=False, include_parent=True):
         """
         Get the directory name for a stuy or assay under the sample data
-        collection
+        collection.
+
         :param obj: Study or Assay object
         :param landing_zone: Return dir for landing zone if True (bool)
         :param include_parent: Include parent dir if True (bool)
@@ -311,7 +321,8 @@ class IrodsAPI:
     @classmethod
     def get_path(cls, obj):
         """
-        Get the path for object
+        Get the path for object.
+
         :param obj: Django model object
         :return: String
         :raise: TypeError if obj is not of supported type
@@ -375,7 +386,8 @@ class IrodsAPI:
     @classmethod
     def get_sample_path(cls, project):
         """
-        Return project sample data path
+        Return project sample data path.
+
         :param project: Project object
         :return: String
         :raise: ValueError if "project" is not a valid Project object
@@ -388,7 +400,9 @@ class IrodsAPI:
     @classmethod
     def get_uuid_from_path(cls, path, obj_type):
         """
-        Return project, study or assay UUID from iRODS path or None if not found
+        Return project, study or assay UUID from iRODS path or None if not
+        found.
+
         :param path: Full iRODS path (string)
         :param obj_type: Type of object ("project", "study" or "assay")
         :return: String or None
@@ -412,7 +426,8 @@ class IrodsAPI:
     @init_irods
     def get_session(self):
         """
-        Get iRODS session object (for direct API access)
+        Get iRODS session object for direct API access.
+
         :return: iRODSSession object (already initialized)
         """
         return self.irods
@@ -438,7 +453,8 @@ class IrodsAPI:
     @init_irods
     def get_objects(self, path, check_md5=False, name_like=None, limit=None):
         """
-        Return iRODS object list
+        Return iRODS object list.
+
         :param path: Full path to iRODS collection
         :param check_md5: Whether to add md5 checksum file info (bool)
         :param name_like: Filtering of file names (string)
@@ -463,6 +479,7 @@ class IrodsAPI:
     def get_object_stats(self, path):
         """
         Return file count and total file size for all files within a path.
+
         :param path: Full path to iRODS collection
         :return: Dict
         """
@@ -479,6 +496,7 @@ class IrodsAPI:
     def collection_exists(self, path):
         """
         Return True/False depending if the collection defined in path exists
+
         :param path: Full path to iRODS collection
         :return: Boolean
         """
@@ -490,6 +508,7 @@ class IrodsAPI:
     def issue_ticket(self, mode, path, ticket_str=None, expiry_date=None):
         """
         Issue ticket for a specific iRODS collection
+
         :param mode: "read" or "write"
         :param path: iRODS path for creating the ticket
         :param ticket_str: String to use as the ticket

@@ -8,6 +8,12 @@ Changelog for the SODAR Web UI. Loosely follows the
 Unreleased
 ==========
 
+Added
+-----
+
+- **Irodsbackend**
+    - Support for POST in Ajax views (#416)
+
 Changed
 -------
 
@@ -19,6 +25,8 @@ Changed
     - Update ``login.html`` override to add site messages (sodar_core#105)
     - Upgrade to django-sodar-core v0.4.1
     - Update site dependency utilities to match django-sodar-core v0.4.1 (sodar_core#90)
+- **Irodsbackend**
+    - Refactor Ajax API views (#416)
 - **Landingzones**
     - Rename Taskflow specific API views (sodar_core#104)
 - **Samplesheets**

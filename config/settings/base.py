@@ -298,6 +298,7 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',
         'knox.auth.TokenAuthentication',
     ),
+    'EXCEPTION_HANDLER': 'rest_framework.views.exception_handler'
 }
 
 
