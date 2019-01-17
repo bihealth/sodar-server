@@ -25,7 +25,7 @@ class BaseIrodsAPIView(
         APIView):
     """Base iRODS API View"""
 
-    permission_required = 'samplesheets.view_sheet'
+    permission_required = 'irodsbackend.view_stats'  # Default perm
 
     def __init__(self, *args, **kwargs):
         super(BaseIrodsAPIView, self).__init__(*args, **kwargs)
@@ -38,6 +38,10 @@ class BaseIrodsAPIView(
         :param path: Full path to iRODS collection
         :return: Boolean
         """
+        # Just in case this was called with superuser..
+        if self.request.user.is_superuser:
+            return True
+
         irods_backend = get_backend_api('omics_irods')
         irods_session = irods_backend.get_session()
 
@@ -57,8 +61,7 @@ class BaseIrodsAPIView(
                 PROJECT_ROLE_OWNER, PROJECT_ROLE_DELEGATE]:
             owner_or_delegate = True
 
-        if (self.request.user.is_superuser or
-                owner_or_delegate or
+        if (owner_or_delegate or
                 self.request.user.username in [p.user_name for p in perms]):
             return True
 
@@ -67,6 +70,11 @@ class BaseIrodsAPIView(
     def dispatch(self, request, *args, **kwargs):
         """Perform required checks before processing a request"""
         self.project = self._get_project(request, kwargs)
+
+        if not self.project and not request.user.is_superuser:
+            return HttpResponse(
+                'Project UUID required for regular user', status=400)
+
         irods_backend = get_backend_api('omics_irods')
 
         if not irods_backend:
@@ -86,7 +94,8 @@ class BaseIrodsAPIView(
             if not irods_backend.collection_exists(self.kwargs['path']):
                 return HttpResponse(ERROR_NOT_FOUND, status=404)
 
-            if not self._check_collection_perm(self.kwargs['path']):
+            if (not request.user.is_superuser and
+                    not self._check_collection_perm(self.kwargs['path'])):
                 return HttpResponse(ERROR_NO_AUTH, status=403)
 
         return super(BaseIrodsAPIView, self).dispatch(request, *args, **kwargs)
@@ -108,6 +117,8 @@ class IrodsStatisticsAPIView(BaseIrodsAPIView):
 
 class IrodsObjectListAPIView(BaseIrodsAPIView):
     """View for listing data objects in iRODS recursively"""
+
+    permission_required = 'irodsbackend.view_files'
 
     def get(self, *args, **kwargs):
         irods_backend = get_backend_api('omics_irods')

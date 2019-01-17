@@ -194,7 +194,7 @@ class TestIrodsStatisticsAPIView(TestViewsBase):
                 kwargs={
                     'path': self.irods_path}))
 
-            self.assertEqual(response.status_code, 403)
+            self.assertEqual(response.status_code, 400)
 
     def test_get_no_access(self):
         """Test GET request for stats with no acces for the iRODS folder"""
@@ -362,7 +362,7 @@ class TestIrodsObjectListAPIView(TestViewsBase):
                     'path': self.irods_path,
                     'md5': 0}))
 
-            self.assertEqual(response.status_code, 403)
+            self.assertEqual(response.status_code, 400)
 
     def test_get_no_access(self):
         """Test GET request for listing with no acces for the iRODS folder"""

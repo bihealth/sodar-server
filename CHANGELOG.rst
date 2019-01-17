@@ -13,6 +13,7 @@ Added
 
 - **Irodsbackend**
     - Support for POST in Ajax views (#416)
+    - App specific rules (#418)
 
 Changed
 -------
