@@ -14,6 +14,8 @@ Added
 - **Irodsbackend**
     - Support for POST in Ajax views (#416)
     - App specific rules (#418)
+- **Samplesheets**
+    - Support alternative notation in contact fields (#382)
 
 Changed
 -------

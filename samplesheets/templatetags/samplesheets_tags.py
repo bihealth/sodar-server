@@ -323,11 +323,12 @@ def render_special_field(cell):
     elif field_name in [
             'primary contact', 'provider contact', 'requestor contact',
             'center contact']:
-        email_result = re.findall(r'<(.+?)>', cell['value'])
+        email = re.findall(r'(?<=[<|[])(.+?)(?=[>\]])', cell['value'])
 
-        if len(email_result) > 0:
+        if email and email[0] != '':
+            name = re.findall(r'(.+?)(?=[<\[])', cell['value'])
             ret += '<a href="mailto:{}">{}</a>'.format(
-                email_result[0], cell['value'].split('<')[0].strip())
+                email[0], name[0].strip() if name else email[0])
 
         else:
             ret += cell['value']
