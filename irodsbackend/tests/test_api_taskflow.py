@@ -48,7 +48,7 @@ class TestIrodsBackendAPITaskflow(
     """Tests for the API in the irodsbackend app with Taskflow and iRODS"""
 
     def setUp(self):
-        super(TestIrodsBackendAPITaskflow, self).setUp()
+        super().setUp()
 
         # Init project
         # Make project with owner in Taskflow and Django

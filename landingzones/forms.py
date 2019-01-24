@@ -28,7 +28,7 @@ class LandingZoneForm(forms.ModelForm):
             self, current_user=None, project=None, assay=None,
             *args, **kwargs):
         """Override for form initialization"""
-        super(LandingZoneForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         irods_backend = get_backend_api('omics_irods')
 
         # NOTE: Can't import in root of module because of urlpatterns conflict?
@@ -113,7 +113,7 @@ class LandingZoneForm(forms.ModelForm):
 
     def save(self, *args, **kwargs):
         """Override of form saving function"""
-        obj = super(LandingZoneForm, self).save(commit=False)
+        obj = super().save(commit=False)
         obj.title = self.cleaned_data['title']
 
         # Updating

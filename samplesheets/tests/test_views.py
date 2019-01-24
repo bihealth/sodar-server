@@ -75,7 +75,7 @@ class TestProjectSheetsView(TestViewsBase):
     """Tests for the project sheets view"""
 
     def setUp(self):
-        super(TestProjectSheetsView, self).setUp()
+        super().setUp()
 
         # Import investigation
         self.investigation = self._import_isa_from_file(
@@ -133,7 +133,7 @@ class TestProjectSheetsOverviewView(TestViewsBase):
     """Tests for the project sheets view"""
 
     def setUp(self):
-        super(TestProjectSheetsOverviewView, self).setUp()
+        super().setUp()
 
         # Import investigation
         self.investigation = self._import_isa_from_file(
@@ -233,7 +233,7 @@ class TestSampleSheetTableExportView(TestViewsBase):
     """Tests for the sample sheet TSV export view"""
 
     def setUp(self):
-        super(TestSampleSheetTableExportView, self).setUp()
+        super().setUp()
 
         # Import investigation
         self.investigation = self._import_isa_from_file(
@@ -262,7 +262,7 @@ class TestSampleSheetDeleteView(TestViewsBase):
     """Tests for the investigation delete view"""
 
     def setUp(self):
-        super(TestSampleSheetDeleteView, self).setUp()
+        super().setUp()
 
         # Import investigation
         self.investigation = self._import_isa_from_file(
@@ -299,7 +299,7 @@ class TestSourceIDQueryAPIView(KnoxAuthMixin, TestViewsBase):
     """Tests for SourceIDQueryAPIView"""
 
     def setUp(self):
-        super(TestSourceIDQueryAPIView, self).setUp()
+        super().setUp()
 
         # Import investigation
         self.investigation = self._import_isa_from_file(

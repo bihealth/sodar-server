@@ -1,14 +1,8 @@
-# Required for Flynn workarounds with the current buildpack
-setuptools==39.0.1
-
-# Wheel 0.25+ needed to install certain packages on CPython 3.5+
-# like Pillow and psycopg2
-# See http://bitly.com/wheel-building-fails-CPython-35
-# Verified bug on Python 3.5.1
-wheel==0.30.0
+# Wheel
+wheel==0.32.3
 
 # Conservative Django
-django==1.11.16 # pyup: <2.0
+django==1.11.18 # pyup: <2.0
 
 # Configuration
 django-environ==0.4.5
@@ -20,19 +14,19 @@ django-crispy-forms==1.7.2
 django-model-utils==3.1.2
 
 # Images
-Pillow==5.2.0
+Pillow==5.4.1
 
 # Password storage
-argon2-cffi==18.3.0
+argon2-cffi==19.1.0
 
 # Python-PostgreSQL Database Adapter
-psycopg2-binary==2.7.5
+psycopg2-binary==2.7.6.1
 
 # Unicode slugification
 awesome-slugify==1.6.5
 
 # Time zones support
-pytz==2018.5
+pytz==2018.9
 
 # Profiling
 django-cprofile-middleware==1.0
@@ -41,9 +35,9 @@ django-cprofile-middleware==1.0
 versioneer==0.18
 
 # Online documentation via django-docs.
-Sphinx==1.7.9
-django-docs==0.3.0
-sphinx-rtd-theme==0.4.1
+Sphinx==1.8.3
+django-docs==0.3.1
+sphinx-rtd-theme==0.4.2
 
 #####################
 # SODAR Core imports
@@ -53,32 +47,32 @@ django-auth-ldap==1.2.8
 pyldap==2.4.25.1
 
 # Rules for permissions
-rules==2.0
+rules==2.0.1
 
 # REST framework
-djangorestframework==3.8.2
+djangorestframework==3.9.1
 
 # Token authentication
-django-rest-knox==3.1.5
+django-rest-knox==3.6.0
 
 # Markdown field support
-markdown==2.6.11
-django-markupfield==1.5.0
+markdown==3.0.1
+django-markupfield==1.5.1
 django-pagedown==1.0.6
-mistune==0.8.3
+mistune==0.8.4
+
+# Database file storage
+django-db-file-storage==0.5.3
 
 # Django-plugins (with Django 1.11 support)
 -e git://github.com/mikkonie/django-plugins.git@1bc07181e6ab68b0f9ed3a00382eb1f6519e1009#egg=django-plugins
 
 # SODAR Core
--e git+ssh://git@cubi-gitlab.bihealth.org/CUBI_Engineering/CUBI_Data_Mgmt/sodar_core.git@3448f6542e5400824c0ea1c83dab9843f4ad43c1#egg=django-sodar-core
+-e git+ssh://git@cubi-gitlab.bihealth.org/CUBI_Engineering/CUBI_Data_Mgmt/sodar_core.git@98bf3dd8ff52877b808070e17a8dfa8d51fff0af#egg=django-sodar-core
 
 ####################
 # SODAR app imports
 ####################
-
-# Database file storage
-django-db-file-storage==0.5.3
 
 # CUBI AltamISA parser
 -e git://github.com/bihealth/altamisa.git@ddf54e9ab9b47d2b5a7d54ce65ea8aa673375f87#egg=altamisa

@@ -144,7 +144,7 @@ class TestLandingZoneCreateView(
     """Tests for the landingzones create view with Taskflow and iRODS"""
 
     def setUp(self):
-        super(TestLandingZoneCreateView, self).setUp()
+        super().setUp()
 
         # Get iRODS backend for session access
         self.irods_backend = get_backend_api('omics_irods')
@@ -220,7 +220,7 @@ class TestLandingZoneMoveView(
     """Tests for the landingzones move/validate view with Taskflow and iRODS"""
 
     def setUp(self):
-        super(TestLandingZoneMoveView, self).setUp()
+        super().setUp()
 
         # Get iRODS backend for session access
         self.irods_backend = get_backend_api('omics_irods')
@@ -443,7 +443,7 @@ class TestLandingZoneDeleteView(
     """Tests for the landingzones delete view with Taskflow and iRODS"""
 
     def setUp(self):
-        super(TestLandingZoneDeleteView, self).setUp()
+        super().setUp()
 
         # Init project
         # Make project with owner in Taskflow and Django

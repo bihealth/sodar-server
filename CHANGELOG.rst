@@ -24,8 +24,10 @@ Changed
     - Update Chrome Driver for UI tests
     - Cleanup Chrome setup
     - Update ``login.html`` override to add site messages (sodar_core#105)
-    - Upgrade to django-sodar-core v0.4.1
-    - Update site dependency utilities to match django-sodar-core v0.4.1 (sodar_core#90)
+    - Update site dependency utilities to match django-sodar-core v0.4.1+ (sodar_core#90)
+    - Upgrade to django-sodar-core v0.4.2 (#420)
+    - Upgrade dependencies to match django-sodar-core v0.4.2 (#420)
+    - Disable ``USE_I18N`` (sodar_core#117)
 - **Irodsbackend**
     - Refactor Ajax API views (#416)
 - **Landingzones**
@@ -38,6 +40,10 @@ Fixed
 
 - **General**
     - Login URL was not set to ``sodar/users/login.html``
+    - Django docs references (sodar_core#131)
+- **Samplesheets**
+    - DataTables scrolling issue with Bootstrap 4.2.1 (#421)
+    - Workaround for DataTables vertical overflow bug (#369)
 
 Removed
 -------
@@ -45,6 +51,8 @@ Removed
 - **General**
     - Unused templates in ``sodar/pages``
     - Unused URL mapping to ``about.html``
+    - Local JS/CSS includes for JQuery, Bootstrap and other JS helpers (#420)
+    - Legacy Python2 ``super()`` calls (sodar_core#118)
 - **Samplesheets**
     - Unused dropup app buttons mode in templates (sodar_core#108)
 

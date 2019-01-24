@@ -35,8 +35,7 @@ APP_NAME = 'samplesheets'
 class InvestigationContextMixin(ProjectContextMixin):
     """Mixin for providing investigation for context if available"""
     def get_context_data(self, *args, **kwargs):
-        context = super(InvestigationContextMixin, self).get_context_data(
-            *args, **kwargs)
+        context = super().get_context_data(*args, **kwargs)
 
         try:
             investigation = Investigation.objects.get(
@@ -59,8 +58,7 @@ class ProjectSheetsView(
     template_name = 'samplesheets/project_sheets.html'
 
     def get_context_data(self, *args, **kwargs):
-        context = super(ProjectSheetsView, self).get_context_data(
-            *args, **kwargs)
+        context = super().get_context_data(*args, **kwargs)
         project = context['project']
 
         if 'investigation' in context and context['investigation']:
@@ -109,8 +107,7 @@ class ProjectSheetsOverviewView(
     template_name = 'samplesheets/overview.html'
 
     def get_context_data(self, *args, **kwargs):
-        context = super(ProjectSheetsOverviewView, self).get_context_data(
-            *args, **kwargs)
+        context = super().get_context_data(*args, **kwargs)
 
         # Investigation
         investigation = None
@@ -162,8 +159,7 @@ class SampleSheetImportView(
     template_name = 'samplesheets/samplesheet_import_form.html'
 
     def get_context_data(self, *args, **kwargs):
-        context = super(SampleSheetImportView, self).get_context_data(
-            *args, **kwargs)
+        context = super().get_context_data(*args, **kwargs)
         project = self._get_project(self.request, self.kwargs)
 
         try:
@@ -178,7 +174,7 @@ class SampleSheetImportView(
 
     def get_form_kwargs(self):
         """Pass kwargs to form"""
-        kwargs = super(SampleSheetImportView, self).get_form_kwargs()
+        kwargs = super().get_form_kwargs()
         project = self._get_project(self.request, self.kwargs)
 
         if 'project' in self.kwargs:
@@ -472,8 +468,7 @@ class IrodsDirsView(
     permission_required = 'samplesheets.create_dirs'
 
     def get_context_data(self, *args, **kwargs):
-        context = super(IrodsDirsView, self).get_context_data(
-            *args, **kwargs)
+        context = super().get_context_data(*args, **kwargs)
 
         investigation = context['investigation']
 
@@ -554,9 +549,8 @@ class IrodsDirsView(
             kwargs={'project': project.sodar_uuid}))
 
     def get(self, request, *args, **kwargs):
-        super(IrodsDirsView, self).get(request, *args, **kwargs)
-        return super(IrodsDirsView, self).render_to_response(
-            self.get_context_data())
+        super().get(request, *args, **kwargs)
+        return super().render_to_response(self.get_context_data())
 
 
 # General API Views ------------------------------------------------------

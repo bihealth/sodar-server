@@ -32,7 +32,7 @@ class ZoneTicketGetView(
 
     def get_context_data(self, *args, **kwargs):
         """Override get_context_data() for ticket information"""
-        context = super(ZoneTicketGetView, self).get_context_data()
+        context = super().get_context_data()
 
         if context['zone']:
             zone = context['zone']

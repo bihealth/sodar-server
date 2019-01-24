@@ -89,7 +89,7 @@ class TestLandingZone(TestLandingZoneBase):
     """Tests for LandingZone"""
 
     def setUp(self):
-        super(TestLandingZone, self).setUp()
+        super().setUp()
 
     def test_initialization(self):
         """Test LandingZone initialization"""

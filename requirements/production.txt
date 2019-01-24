@@ -24,5 +24,3 @@ django-anymail==4.3
 
 # Raven is the Sentry client
 raven==6.9.0
-
-

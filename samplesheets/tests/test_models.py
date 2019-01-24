@@ -345,7 +345,7 @@ class TestProtocol(TestSampleSheetBase):
     """Tests for the Protocol model"""
 
     def setUp(self):
-        super(TestProtocol, self).setUp()
+        super().setUp()
 
         # Set up Protocol
         self.protocol = self._make_protocol(
@@ -449,7 +449,7 @@ class TestSource(TestSampleSheetBase):
     """Tests for the GenericMaterial model with type SOURCE"""
 
     def setUp(self):
-        super(TestSource, self).setUp()
+        super().setUp()
 
         # Set up SOURCE GenericMaterial
         self.material = self._make_material(
@@ -515,7 +515,7 @@ class TestSample(TestSampleSheetBase):
     """Tests for the GenericMaterial model with type SAMPLE"""
 
     def setUp(self):
-        super(TestSample, self).setUp()
+        super().setUp()
 
         # Set up SAMPLE GenericMaterial
         self.material = self._make_material(
@@ -581,7 +581,7 @@ class TestMaterial(TestSampleSheetBase):
     """Tests for the GenericMaterial model with type MATERIAL"""
 
     def setUp(self):
-        super(TestMaterial, self).setUp()
+        super().setUp()
 
         # Set up MATERIAL GenericMaterial
         self.material = self._make_material(
@@ -647,7 +647,7 @@ class TestDataFile(TestSampleSheetBase):
     """Tests for the GenericMaterial model with type DATA"""
 
     def setUp(self):
-        super(TestDataFile, self).setUp()
+        super().setUp()
 
         # Set up DATA GenericMaterial
         self.material = self._make_material(
@@ -713,7 +713,7 @@ class TestProcess(TestSampleSheetBase):
     """Tests for the Process model"""
 
     def setUp(self):
-        super(TestProcess, self).setUp()
+        super().setUp()
 
         # Set up Protocol
         self.protocol = self._make_protocol(

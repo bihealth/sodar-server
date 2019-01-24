@@ -29,7 +29,7 @@ class TestLandingZonePermissions(
     """Tests for LandingZone views"""
 
     def setUp(self):
-        super(TestLandingZonePermissions, self).setUp()
+        super().setUp()
 
         # Import investigation
         self.investigation = self._import_isa_from_file(

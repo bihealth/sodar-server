@@ -18,7 +18,7 @@ class IrodsInfoView(LoggedInPermissionMixin, HTTPRefererMixin, TemplateView):
     template_name = 'irodsinfo/info.html'
 
     def get_context_data(self, *args, **kwargs):
-        context = super(IrodsInfoView, self).get_context_data(*args, **kwargs)
+        context = super().get_context_data(*args, **kwargs)
 
         # Add iRODS query API
         irods_backend = get_backend_api('omics_irods')

@@ -20,7 +20,7 @@ class SampleSheetImportForm(forms.Form):
 
     def __init__(self, project=None, replace=False, *args, **kwargs):
         """Override form initialization"""
-        super(SampleSheetImportForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.isa_zip = None
         self.project = None
 

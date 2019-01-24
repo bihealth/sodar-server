@@ -143,7 +143,7 @@ class TestLandingZoneClearView(TestViewsBase):
     """Tests for the landing zone clearing view"""
 
     def setUp(self):
-        super(TestLandingZoneClearView, self).setUp()
+        super().setUp()
         self.landing_zone.status = 'DELETED'
         self.landing_zone.save()
 

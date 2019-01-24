@@ -100,7 +100,7 @@ class TestHTMLRenderer(TestRenderingBase):
     """Tests for SampleSheetHTMLRenderer"""
 
     def setUp(self):
-        super(TestHTMLRenderer, self).setUp()
+        super().setUp()
         self.tables = self.tb.build_study_tables(self.study)
 
     def test_render_top_header(self):

@@ -16,7 +16,7 @@ class TestProjectSheetsView(SampleSheetIOMixin, TestUIBase):
     """Tests for the project sheets view UI"""
 
     def setUp(self):
-        super(TestProjectSheetsView, self).setUp()
+        super().setUp()
 
         # Import investigation
         self.investigation = self._import_isa_from_file(

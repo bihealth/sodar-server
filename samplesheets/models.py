@@ -468,8 +468,7 @@ class GenericMaterialManager(models.Manager):
         """
 
         # NOTE: Exlude intermediate materials and data files, at least for now
-        objects = super(
-            GenericMaterialManager, self).get_queryset().exclude(
+        objects = super().get_queryset().exclude(
             item_type__in=['DATA', 'MATERIAL']).order_by('name')
 
         q_filters = None
@@ -611,7 +610,7 @@ class GenericMaterial(BaseSampleSheet):
         if not self.alt_names:
             self.alt_names = get_alt_names(self.name)
 
-        super(GenericMaterial, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
     def _validate_parent(self):
         """Validate the existence of a parent assay or study"""
@@ -768,7 +767,7 @@ class Process(BaseSampleSheet):
     def save(self, *args, **kwargs):
         """Override save() to include custom validation functions"""
         self._validate_parent()
-        super(Process, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
     def _validate_parent(self):
         """Validate the existence of a parent assay or study"""

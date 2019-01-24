@@ -79,8 +79,7 @@ Status message:
 class LandingZoneContextMixin:
     """Context mixing for LandingZones"""
     def get_context_data(self, *args, **kwargs):
-        context = super(LandingZoneContextMixin, self).get_context_data(
-            *args, **kwargs)
+        context = super().get_context_data(*args, **kwargs)
 
         try:
             context['zone'] = LandingZone.objects.get(
@@ -124,8 +123,7 @@ class ProjectZoneView(
     template_name = 'landingzones/project_zones.html'
 
     def get_context_data(self, *args, **kwargs):
-        context = super(ProjectZoneView, self).get_context_data(
-            *args, **kwargs)
+        context = super().get_context_data(*args, **kwargs)
 
         # Add flag for taskflow
         context['taskflow_enabled'] = True if \
@@ -173,7 +171,7 @@ class ZoneCreateView(
 
     def get_form_kwargs(self):
         """Pass current user to form"""
-        kwargs = super(ZoneCreateView, self).get_form_kwargs()
+        kwargs = super().get_form_kwargs()
         kwargs.update({
             'current_user': self.request.user,
             'project': self.kwargs['project']})
@@ -310,8 +308,7 @@ class ZoneDeleteView(
             return False
 
     def get_context_data(self, *args, **kwargs):
-        context = super(ZoneDeleteView, self).get_context_data(
-            *args, **kwargs)
+        context = super().get_context_data(*args, **kwargs)
 
         context['zone'] = LandingZone.objects.get(
             sodar_uuid=self.kwargs['landingzone'])
@@ -406,7 +403,7 @@ class ZoneDeleteView(
 
     def get_form_kwargs(self):
         """Pass current user to form"""
-        kwargs = super(ZoneDeleteView, self).get_form_kwargs()
+        kwargs = super().get_form_kwargs()
         kwargs.update({'current_user': self.request.user})
         return kwargs
 
@@ -421,7 +418,7 @@ class ZoneMoveView(
     permission_required = 'landingzones.update_zones_own'
 
     def get_context_data(self, *args, **kwargs):
-        context = super(ZoneMoveView, self).get_context_data(
+        context = super().get_context_data(
             *args, **kwargs)
 
         context['zone'] = LandingZone.objects.get(

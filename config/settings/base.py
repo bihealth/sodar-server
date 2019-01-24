@@ -5,7 +5,7 @@ For more information on this file, see
 https://docs.djangoproject.com/en/dev/topics/settings/
 
 For the full list of settings and their values, see
-https://docs.djangoproject.com/en/dev/ref/settings/
+https://docs.djangoproject.com/en/1.11/ref/settings/
 """
 import environ
 
@@ -146,12 +146,12 @@ ADMINS = [
     ("""Mikko Nieminen""", 'mikko.nieminen@bihealth.de'),
 ]
 
-# See: https://docs.djangoproject.com/en/dev/ref/settings/#managers
+# See: https://docs.djangoproject.com/en/1.11/ref/settings/#managers
 MANAGERS = ADMINS
 
 # DATABASE CONFIGURATION
 # ------------------------------------------------------------------------------
-# See: https://docs.djangoproject.com/en/dev/ref/settings/#databases
+# See: https://docs.djangoproject.com/en/1.11/ref/settings/#databases
 # Uses django-environ to accept uri format
 # See: https://django-environ.readthedocs.io/en/latest/#supported-types
 DATABASES = {
@@ -170,24 +170,24 @@ DEFAULT_FILE_STORAGE = 'db_file_storage.storage.DatabaseFileStorage'
 # In a Windows environment this must be set to your system time zone.
 TIME_ZONE = 'Europe/Berlin'
 
-# See: https://docs.djangoproject.com/en/dev/ref/settings/#language-code
+# See: https://docs.djangoproject.com/en/1.11/ref/settings/#language-code
 LANGUAGE_CODE = 'en-us'
 
-# See: https://docs.djangoproject.com/en/dev/ref/settings/#site-id
+# See: https://docs.djangoproject.com/en/1.11/ref/settings/#site-id
 SITE_ID = 1
 
-# See: https://docs.djangoproject.com/en/dev/ref/settings/#use-i18n
-USE_I18N = True
+# See: https://docs.djangoproject.com/en/1.11/ref/settings/#use-i18n
+USE_I18N = False
 
-# See: https://docs.djangoproject.com/en/dev/ref/settings/#use-l10n
+# See: https://docs.djangoproject.com/en/1.11/ref/settings/#use-l10n
 USE_L10N = True
 
-# See: https://docs.djangoproject.com/en/dev/ref/settings/#use-tz
+# See: https://docs.djangoproject.com/en/1.11/ref/settings/#use-tz
 USE_TZ = True
 
 # TEMPLATE CONFIGURATION
 # ------------------------------------------------------------------------------
-# See: https://docs.djangoproject.com/en/dev/ref/settings/#templates
+# See: https://docs.djangoproject.com/en/1.11/ref/settings/#templates
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -468,6 +468,7 @@ TASKFLOW_TARGETS = ['irods', 'sodar']
 TASKFLOW_BACKEND_HOST = env.str('TASKFLOW_BACKEND_HOST', 'http://0.0.0.0')
 TASKFLOW_BACKEND_PORT = env.int('TASKFLOW_BACKEND_PORT', 5005)
 TASKFLOW_SODAR_SECRET = env.str('TASKFLOW_SODAR_SECRET', 'CHANGE ME!')
+TASKFLOW_TEST_MODE = False  # Important to protect iRODS data
 
 
 # Samplesheets and Landingzones link settings

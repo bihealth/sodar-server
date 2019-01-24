@@ -71,7 +71,7 @@ class TestIrodsDirView(
     """Tests for iRODS directory structure creation view with taskflow"""
 
     def setUp(self):
-        super(TestIrodsDirView, self).setUp()
+        super().setUp()
 
         # Make project with owner in Taskflow and Django
         self.project, self.owner_as = self._make_project_taskflow(
@@ -121,7 +121,7 @@ class TestSampleSheetDeleteView(
     """Tests for sample sheet deletion with taskflow"""
 
     def setUp(self):
-        super(TestSampleSheetDeleteView, self).setUp()
+        super().setUp()
 
         # Make project with owner in Taskflow and Django
         self.project, self.owner_as = self._make_project_taskflow(

@@ -17,7 +17,7 @@ class TestSampleSheetsPermissions(
     """Tests for samplesheets view permissions"""
 
     def setUp(self):
-        super(TestSampleSheetsPermissions, self).setUp()
+        super().setUp()
         self.investigation = self._import_isa_from_file(
             SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
