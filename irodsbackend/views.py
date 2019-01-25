@@ -69,7 +69,7 @@ class BaseIrodsAPIView(
 
     def dispatch(self, request, *args, **kwargs):
         """Perform required checks before processing a request"""
-        self.project = self._get_project(request, kwargs)
+        self.project = self.get_project()
 
         if not self.project and not request.user.is_superuser:
             return HttpResponse(

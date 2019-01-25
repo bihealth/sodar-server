@@ -43,6 +43,7 @@ Fixed
 - **General**
     - Login URL was not set to ``sodar/users/login.html``
     - Django docs references (sodar_core#131)
+    - ``ProjectAccessMixin.get_project()`` calls
 - **Samplesheets**
     - DataTables scrolling issue with Bootstrap 4.2.1 (#421)
     - Workaround for DataTables vertical overflow bug (#369)

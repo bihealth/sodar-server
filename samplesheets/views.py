@@ -160,7 +160,7 @@ class SampleSheetImportView(
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
-        project = self._get_project(self.request, self.kwargs)
+        project = self.get_project()
 
         try:
             old_inv = Investigation.objects.get(project=project, active=True)
@@ -175,7 +175,7 @@ class SampleSheetImportView(
     def get_form_kwargs(self):
         """Pass kwargs to form"""
         kwargs = super().get_form_kwargs()
-        project = self._get_project(self.request, self.kwargs)
+        project = self.get_project()
 
         if 'project' in self.kwargs:
             kwargs.update({'project': project.sodar_uuid})
@@ -192,7 +192,7 @@ class SampleSheetImportView(
 
     def form_valid(self, form):
         timeline = get_backend_api('timeline_backend')
-        project = self._get_project(self.request, self.kwargs)
+        project = self.get_project()
         form_kwargs = self.get_form_kwargs()
         form_action = 'replace' if form_kwargs['replace'] else 'create'
 
@@ -345,8 +345,7 @@ class SampleSheetTableExportView(
 
         redirect_url = reverse(
             'samplesheets:project_sheets',
-            kwargs={'project': self._get_project(
-                self.request, self.kwargs).sodar_uuid})
+            kwargs={'project': self.get_project().sodar_uuid})
 
         if not study:
             messages.error(

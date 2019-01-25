@@ -138,8 +138,7 @@ class BaseGermlineConfigView(
 
         self.redirect_url = reverse(
             'samplesheets:project_sheets',
-            kwargs={'project': self._get_project(
-                self.request, self.kwargs).sodar_uuid})
+            kwargs={'project': self.get_project().sodar_uuid})
 
         try:
             self.source = GenericMaterial.objects.get(
