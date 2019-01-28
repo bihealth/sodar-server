@@ -217,7 +217,7 @@ class TestIrodsObjectListAPIView(TestViewsBase):
     """Tests for the landing zone data object listing API view"""
 
     def setUp(self):
-        super(TestIrodsObjectListAPIView, self).setUp()
+        super().setUp()
 
         # Build path for test collection
         self.irods_path = self.irods_backend.get_path(
