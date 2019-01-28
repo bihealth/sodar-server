@@ -27,7 +27,7 @@ class BaseIrodsAPIView(
     permission_required = 'irodsbackend.view_stats'  # Default perm
 
     def __init__(self, *args, **kwargs):
-        super(BaseIrodsAPIView, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.project = None
 
     def _check_collection_perm(self, path):
@@ -68,7 +68,7 @@ class BaseIrodsAPIView(
 
     def dispatch(self, request, *args, **kwargs):
         """Perform required checks before processing a request"""
-        self.project = self._get_project(request, kwargs)
+        self.project = self.get_project()
 
         if not self.project and not request.user.is_superuser:
             return HttpResponse(
@@ -97,7 +97,7 @@ class BaseIrodsAPIView(
                     not self._check_collection_perm(self.kwargs['path'])):
                 return HttpResponse(ERROR_NO_AUTH, status=403)
 
-        return super(BaseIrodsAPIView, self).dispatch(request, *args, **kwargs)
+        return super().dispatch(request, *args, **kwargs)
 
 
 class IrodsStatisticsAPIView(BaseIrodsAPIView):
@@ -118,7 +118,7 @@ class IrodsStatisticsAPIView(BaseIrodsAPIView):
 
         data = {'coll_objects': []}
         q_dict = request.POST
-        self.project = self._get_project(request, kwargs)
+        self.project = self.get_project()
 
         for obj in q_dict.getlist('paths'):
 
