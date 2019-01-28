@@ -14,6 +14,7 @@ Added
 - **Irodsbackend**
     - Support for POST in Ajax views (#416)
     - App specific rules (#418)
+    - Client side enabling/disabling of iRODS links buttons (#260)
 - **Samplesheets**
     - Support alternative notation in contact fields (#382)
 
@@ -32,6 +33,7 @@ Changed
     - Disable ``USE_I18N`` (sodar_core#117)
 - **Irodsbackend**
     - Refactor Ajax API views (#416)
+    - Limit the amount of iRODS queries (#414)
 - **Landingzones**
     - Rename Taskflow specific API views (sodar_core#104)
 - **Samplesheets**
