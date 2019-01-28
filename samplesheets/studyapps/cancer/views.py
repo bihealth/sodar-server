@@ -9,10 +9,13 @@ from django.shortcuts import redirect
 from django.urls import reverse
 from django.views.generic import View
 
+from rest_framework.views import APIView
+from rest_framework.response import Response
+
 # Projectroles dependency
 from projectroles.plugins import get_backend_api
 from projectroles.views import LoggedInPermissionMixin, \
-    ProjectContextMixin, ProjectPermissionMixin
+    ProjectContextMixin, ProjectPermissionMixin, APIPermissionMixin
 
 # Samplesheets dependency
 from samplesheets.models import GenericMaterial
@@ -24,20 +27,10 @@ from samplesheets.studyapps.utils import get_igv_xml, FILE_TYPE_SUFFIXES
 from sodar.users.auth import fallback_to_auth_basic
 
 
-class BaseCancerConfigView(
-        LoginRequiredMixin, LoggedInPermissionMixin, ProjectPermissionMixin,
-        ProjectContextMixin, View):
-    """Base view from which actual views are extended"""
+class GetLibraryFileMixin:
+    """Mixin for getting the URL of the most recent bam or vcf file"""
 
-    def __init__(self, *args, **kwargs):
-        super(BaseCancerConfigView, self).__init__(*args, **kwargs)
-        self.redirect_url = None
-        self.material = None
-        self.study_tables = None
-
-    @classmethod
-    def _get_library_file_url(
-            cls, file_type, library):
+    def get_library_file_url(cls, file_type, library):
         """
         Return DavRods URL for the most recent file of type "bam" or "vcf"
         linked to library
@@ -58,7 +51,7 @@ class BaseCancerConfigView(
 
             for obj in obj_list['data_objects']:
                 if (obj['name'].lower().endswith(
-                        FILE_TYPE_SUFFIXES[file_type])):
+                  FILE_TYPE_SUFFIXES[file_type])):
                     file_paths.append(obj['path'])
 
         except FileNotFoundError:
@@ -73,6 +66,18 @@ class BaseCancerConfigView(
             settings.IRODS_WEBDAV_URL, file_path)
         return file_url
 
+
+class BaseCancerConfigView(
+        LoginRequiredMixin, LoggedInPermissionMixin, ProjectPermissionMixin,
+        ProjectContextMixin, View):
+    """Base view from which actual views are extended"""
+
+    def __init__(self, *args, **kwargs):
+        super(BaseCancerConfigView, self).__init__(*args, **kwargs)
+        self.redirect_url = None
+        self.material = None
+        self.study_tables = None
+
     def get(self, request, *args, **kwargs):
         """Override get() to set up stuff and return with failure if something
         is missing"""
@@ -80,7 +85,8 @@ class BaseCancerConfigView(
 
         self.redirect_url = reverse(
             'samplesheets:project_sheets',
-            kwargs={'project': self.get_project().sodar_uuid})
+            kwargs={'project': self._get_project(
+                self.request, self.kwargs).sodar_uuid})
 
         try:
             self.material = GenericMaterial.objects.get(
@@ -102,7 +108,7 @@ class BaseCancerConfigView(
             return redirect(self.redirect_url)
 
 
-class FileRedirectView(BaseCancerConfigView):
+class FileRedirectView(BaseCancerConfigView, GetLibraryFileMixin):
     """BAM/VCF file link view"""
     permission_required = 'samplesheets.view_sheet'
 
@@ -124,7 +130,7 @@ class FileRedirectView(BaseCancerConfigView):
             return redirect(self.redirect_url)
 
         try:
-            file_url = self._get_library_file_url(
+            file_url = self.get_library_file_url(
                 file_type=file_type,
                 library=self.material)
 
@@ -146,7 +152,7 @@ class FileRedirectView(BaseCancerConfigView):
 
 
 @fallback_to_auth_basic
-class IGVSessionFileRenderView(BaseCancerConfigView):
+class IGVSessionFileRenderView(BaseCancerConfigView, GetLibraryFileMixin):
     """IGV session file rendering view"""
     permission_required = 'samplesheets.view_sheet'
 
@@ -186,14 +192,14 @@ class IGVSessionFileRenderView(BaseCancerConfigView):
                     'are correctly formed')
                 return redirect(self.redirect_url)
 
-            bam_url = self._get_library_file_url(
+            bam_url = self.get_library_file_url(
                 file_type='bam',
                 library=library)
 
             if bam_url:
                 bam_urls[library.name] = bam_url
 
-            vcf_url = self._get_library_file_url(
+            vcf_url = self.get_library_file_url(
                 file_type='vcf',
                 library=library)
 
@@ -222,3 +228,40 @@ class IGVSessionFileRenderView(BaseCancerConfigView):
         response['Content-Disposition'] = \
             'attachment; filename="{}"'.format(file_name)
         return response
+
+
+class FileExistenceCheckView(GetLibraryFileMixin, LoginRequiredMixin,
+                             ProjectPermissionMixin, APIPermissionMixin,
+                             APIView):
+    """Check existence of BAM/VCF files view"""
+
+    permission_required = 'samplesheets.view_sheet'
+
+    def post(self, request, *args, **kwargs):
+        data = {'files': []}
+        study = kwargs['study']
+        q_dict = request.POST
+
+        valid_objs = [str(u) for u in GenericMaterial.objects.filter(
+                study__sodar_uuid=study).values_list(
+               'sodar_uuid', flat=True)]
+
+        for file_path in q_dict.getlist('paths'):
+            file_type = file_path.split('/')[5]
+            obj = file_path.split('/')[6]
+            existence = False
+            lib = GenericMaterial.objects.get(
+                        sodar_uuid=obj)
+
+            # check if queried files are in the corresponding study
+            if obj in valid_objs:
+                if self.get_library_file_url(
+                  file_type=file_type,
+                  library=lib):
+                    existence = True
+            else:
+                existence = ''
+
+            data['files'].append({'path': file_path, 'exists': existence})
+
+        return Response(data, status=200)
