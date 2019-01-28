@@ -2,26 +2,134 @@
  Collection statistics updating function
  ***************************************/
 var updateCollectionStats = function() {
+    var statsPaths = [];
+    var projectUUID = '';
+
     $('span.sodar-irods-stats').each(function () {
-        var statsSpan = $(this);
+        var statsUrl = ($(this).attr('stats-url')).split('=')[1];
+        projectUUID = statsUrl.split('/')[4];
 
+        if (!(statsPaths.includes(statsUrl))){
+            statsPaths.push(statsUrl);
+        }
+    });
+    var d = {paths: statsPaths};
+
+    if (projectUUID !== '') {
         $.ajax({
-            url: $(this).attr('stats-url'),
-            method: 'GET',
-            dataType: 'json'
+            url: '/irodsbackend/api/stats/' + projectUUID,
+            method: 'POST',
+            dataType: 'json',
+            data: d,
+            contentType: "application/x-www-form-urlencoded; charset=UTF-8", //should be default
+            traditional: true
         }).done(function (data) {
-            var fileSuffix = 's';
-
-            if (data['file_count'] === 1) {
-                fileSuffix = '';
-            }
-
-            statsSpan.text(
-                data['file_count'] + ' data file' + fileSuffix +
-                ' ('+ humanFileSize(data['total_size'], true) + ')');
+            $('span.sodar-irods-stats').each(function () {
+                var statsSpan = $(this);
+                var statsUrl = (statsSpan.attr('stats-url')).split('=')[1];
+                var fileSuffix = 's';
+                for (idx in data['coll_objects']) {
+                    if (data['coll_objects'].hasOwnProperty(idx)) {
+                        if (statsUrl === data['coll_objects'][idx]['path']
+                                && data['coll_objects'][idx]['status'] === '200') {
+                            var stats = data['coll_objects'][idx]['stats'];
+                            if (stats['file_count'] === 1) {
+                                fileSuffix = '';
+                            }
+                            statsSpan.text(
+                                stats['file_count'] + ' data file' + fileSuffix +
+                                ' ('+ humanFileSize(stats['total_size'], true) + ')');
+                            break;
+                        }
+                    }
+                }
+            });
         });
+    }
+};
+
+
+/***************************************
+ Toggling buttons in one row function
+ ***************************************/
+//enables or disables every .sodar-list-btn button in a row
+var toggleButtons = function(row, status, stats) {
+    $(row).find('.sodar-list-btn').each(function () {
+        if (status === '200') {
+            if ($(this).is('button')) {
+                $(this).removeAttr('disabled');
+            }
+            $(this).removeClass('disabled');
+            $(this).tooltip('enable');
+
+            //collection is empty; disable all but the copy path buttons
+            if(stats['file_count'] === 0){
+                if ($(this).is('.sodar-irods-popup-list-btn')) {
+                    $(this).attr('disabled', 'disabled');
+                    $(this).tooltip('disable');
+                }
+                else if ($(this).is('.sodar-irods-dav-btn')){
+                    $(this).addClass('disabled');
+                    $(this).tooltip('disable');
+                }
+            }
+        }
+        //collection doesn't exist; disable all buttons
+        else{
+            if ($(this).is('button')) {
+                $(this).attr('disabled', 'disabled');
+            } else if ($(this).is('a')) {
+                $(this).addClass('disabled');
+            }
+            $(this).tooltip('disable');
+        }
     });
 };
+
+/***************************************
+ Collection buttons updating function
+ ***************************************/
+var updateButtons = function() {
+    var ipaths = [];
+    var projectUUID = '';
+
+    $('button.sodar-irods-path-btn').each(function () {
+        var buttonPath = $(this).attr('data-clipboard-text');
+        projectUUID = buttonPath.split('/')[4];
+        if (!(ipaths.includes(buttonPath))){
+            ipaths.push(buttonPath);
+        }
+    });
+    var d = {paths: ipaths};
+
+    if (projectUUID !== '') {
+        $.ajax({
+            url: '/irodsbackend/api/stats/' + projectUUID,
+            method: 'POST',
+            dataType: 'json',
+            data: d,
+            contentType: "application/x-www-form-urlencoded; charset=UTF-8", //should be default
+            traditional: true
+        }).done(function (data) {
+            $('button.sodar-irods-path-btn').each(function () {
+                var buttonPath = $(this).attr('data-clipboard-text');
+                var buttonRow = $(this).closest('span');
+                for (idx in data['coll_objects']) {
+                    if (data['coll_objects'].hasOwnProperty(idx)) {
+                        if (buttonPath === data['coll_objects'][idx]['path']) {
+                            var status = data['coll_objects'][idx]['status'];
+                            var stats = data['coll_objects'][idx]['stats'];
+                            toggleButtons(buttonRow, status, stats);
+                            break;
+                        }
+                    }
+                }
+            });
+        });
+    }
+};
+
+
 
 $(document).ready(function() {
     /***************
@@ -53,6 +161,9 @@ $(document).ready(function() {
      Update collection stats
      ***********************/
     updateCollectionStats();
+    if ($('table.sodar-lz-table').length === 0){
+        updateButtons();
+    }
     var statsInterval = 8 * 1000;  // TODO: Get setting from Django
 
     // Poll and update active collections

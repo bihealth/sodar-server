@@ -44,13 +44,13 @@
                       <button class="btn sodar-list-btn btn-outline-secondary text-body" disabled>
                         {{ fam_source.name }}
                       </button>
-                      <a role="button" class="btn sodar-list-btn btn-secondary"
+                      <a role="button" class="btn sodar-list-btn btn-secondary disabled"
                          href="{{ bam_url }}" title="Download {{ fam_source.name }} BAM file">
                         <i class="fa fa-download"></i> Download
                       </a>
                       {% comment %}
                       <!-- TODO: (1) not full URL, (2) configure genome build in project config, (3) get port from user profile -->
-                      <a role="button" class="btn sodar-list-btn btn-secondary"
+                      <a role="button" class="btn sodar-list-btn btn-secondary disabled"
                          href="http://127.0.0.1:60151/load?genome=b37&merge=true&file={{ full_bam_url }}"
                          title="Open {{ fam_source.name }} BAM file in IGV">
                         <i class="fa fa-share-square-o"></i> IGV
@@ -63,13 +63,13 @@
                   {% url 'samplesheets.studyapps.germline:file' file_type='vcf' genericmaterial=fam_sources.0.sodar_uuid as vcf_url %}
                   {% get_full_url request vcf_url as full_vcf_url %}
                   <div class="btn-group sodar-list-btn-group">
-                    <a role="button" class="btn sodar-list-btn btn-secondary"
+                    <a role="button" class="btn sodar-list-btn btn-secondary disabled"
                        href="{{ vcf_url }}" title="Download pedigree VCF file">
                       <i class="fa fa-download"></i> Download
                     </a>
                     {% comment %}
                     <!-- TODO: (1) not full URL, (2) configure genome build in project config, (3) get port from user profile -->
-                    <a role="button" class="btn sodar-list-btn btn-secondary"
+                    <a role="button" class="btn sodar-list-btn btn-secondary disabled"
                        href="http://127.0.0.1:60151/load?genome=b37&merge=true&file={{ full_vcf_url }}"
                        title="Open pedigree VCF file in IGV">
                       <i class="fa fa-share-square-o"></i> IGV
@@ -79,14 +79,14 @@
                 <td>
                   {% url 'samplesheets.studyapps.germline:igv' genericmaterial=fam_sources.0.sodar_uuid as igv_url %}
                   <div class="btn-group sodar-list-btn-group">
-                    <a role="button" class="btn sodar-list-btn btn-secondary"
+                    <a role="button" class="btn sodar-list-btn sodar-igv-btn btn-secondary disabled"
                        href="{{ igv_url }}" title="Download IGV session file for full pedigree">
                       <i class="fa fa-download"></i> Download
                     </a>
                     <!-- TODO: (1) not full URL, (2) configure genome build in project config, (3) get port from user profile -->
-                    <button type="button" class="btn sodar-list-btn btn-secondary"
+                    <button type="button" class="btn sodar-list-btn sodar-igv-btn btn-secondary"
                        onclick="javascript:$.ajax({url: 'http://127.0.0.1:60151/load?genome=b37&merge=false&file=https://cubi-omics-davrods-beta.bihealth.org/__sodar{{ igv_url }}.xml'})"
-                       title="Open IGV session file for full pedigree in IGV">
+                       title="Open IGV session file for full pedigree in IGV" disabled>
                       <i class="fa fa-share-square-o"></i> IGV
                     </button>
                   </div>

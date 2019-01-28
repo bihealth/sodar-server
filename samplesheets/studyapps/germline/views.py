@@ -9,10 +9,13 @@ from django.shortcuts import redirect
 from django.urls import reverse
 from django.views.generic import View
 
+from rest_framework.views import APIView
+from rest_framework.response import Response
+
 # Projectroles dependency
 from projectroles.plugins import get_backend_api
 from projectroles.views import LoggedInPermissionMixin, \
-    ProjectContextMixin, ProjectPermissionMixin
+    ProjectContextMixin, ProjectPermissionMixin, APIPermissionMixin
 
 # Samplesheets dependency
 from samplesheets.models import GenericMaterial
@@ -25,19 +28,8 @@ from samplesheets.studyapps.utils import get_igv_xml, FILE_TYPE_SUFFIXES
 from sodar.users.auth import fallback_to_auth_basic
 
 
-class BaseGermlineConfigView(
-        LoginRequiredMixin, LoggedInPermissionMixin, ProjectPermissionMixin,
-        ProjectContextMixin, View):
-    """Base view from which actual views are extended"""
-
-    def __init__(self, *args, **kwargs):
-        super(BaseGermlineConfigView, self).__init__(*args, **kwargs)
-        self.redirect_url = None
-        self.source = None
-        self.study_tables = None
-
-    @classmethod
-    def _get_pedigree_file_url(
+class GetPedigreeFileMixin:
+    def get_pedigree_file_url(
             cls, file_type, source, study_tables):
         """
         Return DavRods URL for the most recent file of type "bam" or "vcf"
@@ -131,6 +123,18 @@ class BaseGermlineConfigView(
             settings.IRODS_WEBDAV_URL, file_path)
         return file_url
 
+
+class BaseGermlineConfigView(
+        LoginRequiredMixin, LoggedInPermissionMixin, ProjectPermissionMixin,
+        ProjectContextMixin, View):
+    """Base view from which actual views are extended"""
+
+    def __init__(self, *args, **kwargs):
+        super(BaseGermlineConfigView, self).__init__(*args, **kwargs)
+        self.redirect_url = None
+        self.source = None
+        self.study_tables = None
+
     def get(self, request, *args, **kwargs):
         """Override get() to set up stuff and return with failure if something
         is missing"""
@@ -164,7 +168,7 @@ class BaseGermlineConfigView(
         self.study_tables = tb.build_study_tables(self.source.study)
 
 
-class FileRedirectView(BaseGermlineConfigView):
+class FileRedirectView(BaseGermlineConfigView, GetPedigreeFileMixin):
     """BAM/VCF file link view"""
     permission_required = 'samplesheets.view_sheet'
 
@@ -178,7 +182,7 @@ class FileRedirectView(BaseGermlineConfigView):
                 self.request, 'Unsupported file type "{}"'.format(file_type))
             return redirect(self.redirect_url)
 
-        file_url = self._get_pedigree_file_url(
+        file_url = self.get_pedigree_file_url(
             file_type=file_type,
             source=self.source,
             study_tables=self.study_tables)
@@ -200,7 +204,7 @@ class FileRedirectView(BaseGermlineConfigView):
 
 
 @fallback_to_auth_basic
-class IGVSessionFileRenderView(BaseGermlineConfigView):
+class IGVSessionFileRenderView(BaseGermlineConfigView, GetPedigreeFileMixin):
     """IGV session file rendering view"""
     permission_required = 'samplesheets.view_sheet'
 
@@ -216,7 +220,7 @@ class IGVSessionFileRenderView(BaseGermlineConfigView):
         ###################
 
         # Get URL to latest family vcf file
-        vcf_url = self._get_pedigree_file_url(
+        vcf_url = self.get_pedigree_file_url(
             file_type='vcf',
             source=self.source,
             study_tables=self.study_tables)
@@ -236,7 +240,7 @@ class IGVSessionFileRenderView(BaseGermlineConfigView):
                 characteristics__Family__value=fam_id).order_by('name')
 
             for fam_source in fam_sources:
-                bam_url = self._get_pedigree_file_url(
+                bam_url = self.get_pedigree_file_url(
                     file_type='bam',
                     source=fam_source,
                     study_tables=self.study_tables)
@@ -246,7 +250,7 @@ class IGVSessionFileRenderView(BaseGermlineConfigView):
 
         # If not, just add for the current source
         else:
-            bam_url = self._get_pedigree_file_url(
+            bam_url = self.get_pedigree_file_url(
                 file_type='bam',
                 source=self.source,
                 study_tables=self.study_tables)
@@ -283,3 +287,44 @@ class IGVSessionFileRenderView(BaseGermlineConfigView):
         response['Content-Disposition'] = \
             'attachment; filename="{}"'.format(file_name)
         return response
+
+
+class FileExistenceCheckView(
+        GetPedigreeFileMixin, LoginRequiredMixin, ProjectPermissionMixin,
+        APIPermissionMixin, APIView):
+    """Check existence of BAM/VCF files view"""
+
+    permission_required = 'samplesheets.view_sheet'
+
+    def post(self, request, *args, **kwargs):
+        data = {'files': []}
+        study = kwargs['study']
+        q_dict = request.POST
+
+        valid_objs = [str(u) for u in GenericMaterial.objects.filter(
+            study__sodar_uuid=study, item_type='SOURCE').values_list(
+            'sodar_uuid', flat=True)]
+
+        for file_path in q_dict.getlist('paths'):
+            file_type = file_path.split('/')[5]
+            obj = file_path.split('/')[6]
+            existence = False
+            source = GenericMaterial.objects.get(
+                        sodar_uuid=obj)
+
+            # Build render table
+            tb = SampleSheetTableBuilder()
+            study_tables = tb.build_study_tables(source.study)
+
+            if obj in valid_objs:
+                if self.get_pedigree_file_url(
+                  file_type=file_type,
+                  source=source,
+                  study_tables=study_tables):
+                    existence = True
+            else:
+                existence = ''
+
+            data['files'].append({'path': file_path, 'exists': existence})
+
+        return Response(data, status=200)

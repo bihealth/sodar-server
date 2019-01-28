@@ -9,7 +9,6 @@ from projectroles.plugins import get_backend_api
 from projectroles.views import LoginRequiredMixin, ProjectPermissionMixin, \
     APIPermissionMixin
 
-
 # SODAR constants
 PROJECT_ROLE_OWNER = SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
 PROJECT_ROLE_DELEGATE = SODAR_CONSTANTS['PROJECT_ROLE_DELEGATE']
@@ -113,6 +112,36 @@ class IrodsStatisticsAPIView(BaseIrodsAPIView):
 
         except Exception as ex:
             return Response(str(ex), status=500)
+
+    def post(self, request, *args, **kwargs):
+        irods_backend = get_backend_api('omics_irods')
+
+        data = {'coll_objects': []}
+        q_dict = request.POST
+        self.project = self.get_project()
+
+        for obj in q_dict.getlist('paths'):
+
+            if (self.project
+               and irods_backend.get_path(self.project) not in obj):
+                data['coll_objects'].append({'path': obj, 'status': '400',
+                                             'stats': []})
+                break
+
+            try:
+                if not irods_backend.collection_exists(obj):
+                    data['coll_objects'].append({'path': obj, 'status': '404',
+                                                 'stats': []})
+                else:
+                    ret_data = irods_backend.get_object_stats(obj)
+                    data['coll_objects'].append({'path': obj, 'status': '200',
+                                                 'stats': ret_data})
+
+            except Exception as ex:
+                data['coll_objects'].append({'path': obj, 'status': '500',
+                                             'stats': []})
+
+        return Response(data, status=200)
 
 
 class IrodsObjectListAPIView(BaseIrodsAPIView):

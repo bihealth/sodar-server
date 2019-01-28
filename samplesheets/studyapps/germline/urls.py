@@ -16,4 +16,9 @@ urlpatterns = [
         view=views.IGVSessionFileRenderView.as_view(),
         name='igv',
     ),
+    url(
+        regex=r'^filecheck/(?P<study>[0-9a-f-]+)$',
+        view=views.FileExistenceCheckView.as_view(),
+        name='exist',
+    ),
 ]

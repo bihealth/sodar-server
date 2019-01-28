@@ -1,4 +1,87 @@
+/********************************
+ Enable/disable shortcut buttons
+ ********************************/
+function toggleShortcuts (table){
+    var filePaths = [];
+
+    //get study UUID
+    studyID = $('.sodar-ss-nav-btn.active').attr('href').split('/').pop();
+
+    // HACK to check if 'study' is already in the url
+    var study = 'study/';
+    if (window.location.pathname.includes('/study/')) {
+        study = '';
+    }
+    var url = study + 'germline/filecheck';
+
+    // get all the button paths to query all at once
+    table.find('a.sodar-list-btn').not('.sodar-igv-btn').each(function (){
+        var path = $(this).attr('href');
+        if(! filePaths.includes(path)){
+            filePaths.push(path);
+        }
+    });
+    var d = {paths: filePaths};
+
+    if (table.attr('id').includes('cancer')){
+        url = study + 'cancer/filecheck';
+    }
+    // check if files exist and enable the corresponding buttons
+    $.ajax({
+        url: url + '/' + studyID,
+        method: 'POST',
+        data: d,
+        traditional: true
+    }).done(function (data) {
+        table.find('tr').each(function (){
+            var buttonRow = $(this);
+            var igvEnable = false;
+            $(this).find('a.sodar-list-btn').each(function (){
+                var buttonPath = $(this).attr('href');
+                for (idx in data['files']) {
+                    if (data['files'].hasOwnProperty(idx)) {
+                        if (buttonPath === data['files'][idx]['path']) {
+                            if (data['files'][idx]['exists']){
+                                $(this).removeClass('disabled');
+                                $(this).tooltip('enable');
+                                igvEnable = true;
+                            }
+                            else{
+                                $(this).addClass('disabled');
+                                $(this).tooltip('disable');
+                            }
+                            break;
+                        }
+                    }
+                }
+            });
+
+            // toggle IGV buttons
+            buttonRow.find('.sodar-igv-btn').each(function(){
+                if (igvEnable){
+                    if ($(this).is('button')) {
+                        $(this).removeAttr('disabled');
+                    } else if ($(this).is('a')) {
+                        $(this).removeClass('disabled');
+                    }
+                    $(this).tooltip('enable');
+                }
+                else{
+                    if ($(this).is('button')) {
+                        $(this).attr('disabled', 'disabled');
+                    } else if ($(this).is('a')) {
+                        $(this).addClass('disabled');
+                    }
+                    $(this).tooltip('disable');
+                }
+            });
+        });
+    });
+};
+
+
 $(document).ready(function() {
+
     /*********************
      Initialize DataTables
      *********************/
@@ -64,6 +147,13 @@ $(document).ready(function() {
 
     // Once initialized, remove temporary init classes
     $('.sodar-ss-init-container').removeClass('table-responsive').removeClass('sodar-ss-init-container');
+
+    //Enable/Disable shortcut buttons
+    $('table.sodar-ss-data-table-contentapp').each(function() {
+        if (this.hasAttribute('id')){
+            toggleShortcuts($(this));
+        }
+    });
 
     /*************************
      Enable/disable dragscroll

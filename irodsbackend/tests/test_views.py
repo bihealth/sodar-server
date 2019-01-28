@@ -379,3 +379,197 @@ class TestIrodsObjectListAPIView(TestViewsBase):
                     'md5': 0}))
 
             self.assertEqual(response.status_code, 403)
+
+
+@skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
+class TestIrodsBatchStatisticsAPIView(TestViewsBase):
+    """Tests for the batch statistics API view"""
+
+    def test_post_empty_coll_stats(self):
+        """Test POST request for batch stats on empty collections in iRODS"""
+
+        post_data = {
+            'paths': [self.irods_path, self.irods_path],
+            'md5': ['0', '0']
+        }
+
+        with self.login(self.user):
+            response = self.client.post(reverse(
+                'irodsbackend:stats',
+                kwargs={'project': self.project.sodar_uuid}), post_data)
+
+            self.assertEqual(response.status_code, 200)
+            for idx in range(len(response.data['coll_objects'])):
+                self.assertEqual(response.data['coll_objects'][idx]['status'],
+                                 '200')
+                self.assertEqual(
+                    response.data['coll_objects'][idx]['stats']['file_count'],
+                    0)
+                self.assertEqual(
+                    response.data['coll_objects'][idx]['stats']['total_size'],
+                    0)
+
+    # obj_path?
+    def test_post_coll_stats(self):
+        """Test POST request for batch stats on collections with
+        a data object"""
+
+        # Put data object in iRODS
+        obj_path = self.irods_path + '/' + IRODS_OBJ_NAME
+        data_obj = make_object(
+            self.irods_session, obj_path, IRODS_OBJ_CONTENT)
+
+        post_data = {
+            'paths': [self.irods_path, self.irods_path],
+            'md5': ['0', '0']
+        }
+
+        with self.login(self.user):
+            response = self.client.post(reverse(
+                'irodsbackend:stats',
+                kwargs={'project': self.project.sodar_uuid}), post_data)
+
+            self.assertEqual(response.status_code, 200)
+            for idx in range(len(response.data['coll_objects'])):
+                self.assertEqual(response.data['coll_objects'][idx]['status'],
+                                 '200')
+                self.assertEqual(
+                    response.data['coll_objects'][idx]['stats']['file_count'],
+                    1)
+                self.assertEqual(
+                    response.data['coll_objects'][idx]['stats']['total_size'],
+                    IRODS_OBJ_SIZE)
+
+    # obj_path?
+    def test_post_coll_md5_stats(self):
+        """Test POST request for batch stats on collections with
+        a data object and md5"""
+
+        # Put data object in iRODS
+        obj_path = self.irods_path + '/' + IRODS_OBJ_NAME
+        data_obj = make_object(
+            self.irods_session, obj_path, IRODS_OBJ_CONTENT)
+
+        # Put MD5 data object in iRODS
+        md5_path = self.irods_path + '/' + IRODS_MD5_NAME
+        md5_obj = make_object(
+            self.irods_session, md5_path, IRODS_OBJ_CONTENT)  # Not actual md5
+
+        post_data = {
+            'paths': [self.irods_path, self.irods_path],
+            'md5': ['1', '1']
+        }
+
+        with self.login(self.user):
+            response = self.client.post(reverse(
+                'irodsbackend:stats',
+                kwargs={'project': self.project.sodar_uuid}), post_data)
+
+            self.assertEqual(response.status_code, 200)
+            for idx in range(len(response.data['coll_objects'])):
+                self.assertEqual(response.data['coll_objects'][idx]['status'],
+                                 '200')
+                self.assertEqual(
+                    response.data['coll_objects'][idx]['stats']['file_count'],
+                    1)
+                self.assertEqual(
+                    response.data['coll_objects'][idx]['stats']['total_size'],
+                    IRODS_OBJ_SIZE)
+
+    def test_post_coll_not_found(self):
+        """Test POST request for stats on collections which don't exist"""
+        fail_path = self.irods_path + '/' + IRODS_FAIL_COLL
+        self.assertEqual(
+            self.irods_session.collections.exists(fail_path), False)
+
+        post_data = {
+            'paths': [fail_path, fail_path],
+            'md5': ['0', '0']
+        }
+
+        with self.login(self.user):
+            response = self.client.post(reverse(
+                'irodsbackend:stats',
+                kwargs={'project': self.project.sodar_uuid}), post_data)
+
+            self.assertEqual(response.status_code, 200)
+            for idx in range(len(response.data['coll_objects'])):
+                self.assertEqual(response.data['coll_objects'][idx]['status'],
+                                 '404')
+                self.assertEqual(
+                    response.data['coll_objects'][idx]['stats'],
+                    [])
+
+    def test_post_coll_not_in_project(self):
+        """Test POST request for stats on collections
+        not belonging to project"""
+        self.assertEqual(
+            self.irods_session.collections.exists(IRODS_NON_PROJECT_PATH), True)
+
+        post_data = {
+            'paths': [IRODS_NON_PROJECT_PATH, IRODS_NON_PROJECT_PATH],
+            'md5': ['0', '0']
+        }
+
+        with self.login(self.user):
+            response = self.client.post(reverse(
+                'irodsbackend:stats',
+                kwargs={'project': self.project.sodar_uuid}), post_data)
+
+            self.assertEqual(response.status_code, 200)
+            for idx in range(len(response.data['coll_objects'])):
+                self.assertEqual(response.data['coll_objects'][idx]['status'],
+                                 '400')
+                self.assertEqual(
+                    response.data['coll_objects'][idx]['stats'],
+                    [])
+
+    def test_post_no_access(self):
+        """Test POST request for batch stats with no access for the iRODS
+        collections"""
+        new_user = self.make_user('new_user')
+        self._make_assignment(
+            self.project, new_user, self.role_contributor)  # No taskflow
+
+        post_data = {
+            'paths': [self.irods_path, self.irods_path],
+            'md5': ['0', '0']
+        }
+
+        with self.login(new_user):
+            response = self.client.post(reverse(
+                'irodsbackend:stats',
+                kwargs={'project': self.project.sodar_uuid}), post_data)
+
+            self.assertEqual(response.status_code, 200)
+            for idx in range(len(response.data['coll_objects'])):
+                self.assertEqual(
+                    response.data['coll_objects'][idx]['stats']['file_count'],
+                    0)
+                self.assertEqual(
+                    response.data['coll_objects'][idx]['stats']['total_size'],
+                    0)
+
+    def test_post_one_empty_coll(self):
+        """Test POST request for batch stats on only one
+         (empty) collection in iRODS"""
+        post_data = {
+            'paths': [self.irods_path],
+            'md5': ['0']
+        }
+
+        with self.login(self.user):
+            response = self.client.post(reverse(
+                'irodsbackend:stats',
+                kwargs={'project': self.project.sodar_uuid}), post_data)
+
+            self.assertEqual(response.status_code, 200)
+            for idx in range(len(response.data['coll_objects'])):
+                self.assertEqual(response.data['coll_objects'][idx]['status'],
+                                 '200')
+                self.assertEqual(
+                    response.data['coll_objects'][idx]['stats']['file_count'],
+                    0)
+                self.assertEqual(
+                    response.data['coll_objects'][idx]['stats']['total_size'],
+                    0)
