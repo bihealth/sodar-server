@@ -66,11 +66,12 @@ var toggleButtons = function(row, status, stats) {
             if(stats['file_count'] === 0){
                 if ($(this).is('.sodar-irods-popup-list-btn')) {
                     $(this).attr('disabled', 'disabled');
+                    $(this).tooltip('disable');
                 }
                 else if ($(this).is('.sodar-irods-dav-btn')){
                     $(this).addClass('disabled');
+                    $(this).tooltip('disable');
                 }
-                $(this).tooltip('disable');
             }
         }
         //collection doesn't exist; disable all buttons
