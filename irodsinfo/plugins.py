@@ -1,6 +1,3 @@
-from django.urls import reverse
-from django.utils import timezone
-
 # Projectroles dependency
 from projectroles.plugins import SiteAppPluginPoint
 

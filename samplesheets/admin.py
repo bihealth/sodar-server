@@ -1,7 +1,13 @@
 from django.contrib import admin
 
-from .models import Investigation, Study, Assay, GenericMaterial, Protocol, \
-    Process
+from .models import (
+    Investigation,
+    Study,
+    Assay,
+    GenericMaterial,
+    Protocol,
+    Process,
+)
 
 
 admin.site.register(Investigation)

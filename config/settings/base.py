@@ -41,10 +41,8 @@ DJANGO_APPS = [
     'django.contrib.sites',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-
     # Useful template tags
     # 'django.contrib.humanize',
-
     # Admin
     'django.contrib.admin',
 ]
@@ -55,20 +53,16 @@ THIRD_PARTY_APPS = [
     'pagedown',  # For markdown
     'markupfield',  # For markdown
     'db_file_storage',  # For storing files in database
-    'rest_framework',   # For API views
+    'rest_framework',  # For API views
     'knox',  # For token auth
     'docs',  # For the online user documentation/manual
-
     # SODAR Core apps
-
     # Project apps
     'projectroles.apps.ProjectrolesConfig',
     'timeline.apps.TimelineConfig',
-
     # Site apps
     'userprofile.apps.UserprofileConfig',
     'adminalerts.apps.AdminalertsConfig',
-
     # Backend apps
     'taskflowbackend.apps.TaskflowbackendConfig',
 ]
@@ -77,26 +71,20 @@ THIRD_PARTY_APPS = [
 LOCAL_APPS = [
     # Custom users app
     'sodar.users.apps.UsersConfig',
-
     # Project apps
     'filesfolders.apps.FilesfoldersConfig',
     'samplesheets.apps.SamplesheetsConfig',
     'landingzones.apps.LandingzonesConfig',
-
     # Backend apps
     'irodsbackend.apps.IrodsbackendConfig',
-
     # General site apps
     'irodsinfo.apps.IrodsinfoConfig',
-
     # Samplesheets study sub-apps
     'samplesheets.studyapps.germline.apps.GermlineConfig',
     'samplesheets.studyapps.cancer.apps.CancerConfig',
-
     # Samplesheets assay sub-apps
-    'samplesheets.assayapps.dna_sequencing.apps.DnaSequencingConfig',   # noqa
+    'samplesheets.assayapps.dna_sequencing.apps.DnaSequencingConfig',  # noqa
     'samplesheets.assayapps.pep_ms.apps.PepMsConfig',
-
     # Landingzones config sub-apps
     'landingzones.configapps.bih_proteomics_smb.apps.BihProteomicsSmbConfig',
 ]
@@ -118,9 +106,7 @@ MIDDLEWARE = [
 
 # MIGRATIONS CONFIGURATION
 # ------------------------------------------------------------------------------
-MIGRATION_MODULES = {
-    'sites': 'sodar.contrib.sites.migrations'
-}
+MIGRATION_MODULES = {'sites': 'sodar.contrib.sites.migrations'}
 
 # DEBUG
 # ------------------------------------------------------------------------------
@@ -128,23 +114,20 @@ DEBUG = env.bool('DJANGO_DEBUG', False)
 
 # FIXTURE CONFIGURATION
 # ------------------------------------------------------------------------------
-FIXTURE_DIRS = (
-    str(APPS_DIR.path('fixtures')),
-)
+FIXTURE_DIRS = (str(APPS_DIR.path('fixtures')),)
 
 # EMAIL CONFIGURATION
 # ------------------------------------------------------------------------------
 EMAIL_BACKEND = env(
     'DJANGO_EMAIL_BACKEND',
-    default='django.core.mail.backends.smtp.EmailBackend')
+    default='django.core.mail.backends.smtp.EmailBackend',
+)
 EMAIL_SENDER = env('EMAIL_SENDER', default='noreply@example.com')
 EMAIL_SUBJECT_PREFIX = env('EMAIL_SUBJECT_PREFIX', default='')
 
 # MANAGER CONFIGURATION
 # ------------------------------------------------------------------------------
-ADMINS = [
-    ("""Mikko Nieminen""", 'mikko.nieminen@bihealth.de'),
-]
+ADMINS = [("""Mikko Nieminen""", 'mikko.nieminen@bihealth.de')]
 
 # See: https://docs.djangoproject.com/en/1.11/ref/settings/#managers
 MANAGERS = ADMINS
@@ -154,9 +137,7 @@ MANAGERS = ADMINS
 # See: https://docs.djangoproject.com/en/1.11/ref/settings/#databases
 # Uses django-environ to accept uri format
 # See: https://django-environ.readthedocs.io/en/latest/#supported-types
-DATABASES = {
-    'default': env.db('DATABASE_URL', default='postgres:///sodar'),
-}
+DATABASES = {'default': env.db('DATABASE_URL', default='postgres:///sodar')}
 DATABASES['default']['ATOMIC_REQUESTS'] = False
 
 # Set django-db-file-storage as the default storage
@@ -191,9 +172,7 @@ USE_TZ = True
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [
-            str(APPS_DIR.path('templates')),
-        ],
+        'DIRS': [str(APPS_DIR.path('templates'))],
         'OPTIONS': {
             'debug': DEBUG,
             'loaders': [
@@ -213,7 +192,7 @@ TEMPLATES = [
                 'projectroles.context_processors.urls_processor',
             ],
         },
-    },
+    }
 ]
 
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
@@ -223,9 +202,7 @@ CRISPY_TEMPLATE_PACK = 'bootstrap4'
 STATIC_ROOT = str(ROOT_DIR('staticfiles'))
 STATIC_URL = '/static/'
 
-STATICFILES_DIRS = [
-    str(APPS_DIR.path('static')),
-]
+STATICFILES_DIRS = [str(APPS_DIR.path('static'))]
 
 STATICFILES_FINDERS = [
     'django.contrib.staticfiles.finders.FileSystemFinder',
@@ -257,26 +234,26 @@ PASSWORD_HASHERS = [
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.'
-                'UserAttributeSimilarityValidator',
+        'UserAttributeSimilarityValidator'
     },
     {
         'NAME': 'django.contrib.auth.password_validation.'
-                'MinimumLengthValidator',
+        'MinimumLengthValidator'
     },
     {
         'NAME': 'django.contrib.auth.password_validation.'
-                'CommonPasswordValidator',
+        'CommonPasswordValidator'
     },
     {
         'NAME': 'django.contrib.auth.password_validation.'
-                'NumericPasswordValidator',
+        'NumericPasswordValidator'
     },
 ]
 
 # AUTHENTICATION CONFIGURATION
 # ------------------------------------------------------------------------------
 AUTHENTICATION_BACKENDS = [
-    'rules.permissions.ObjectPermissionBackend',    # For rules
+    'rules.permissions.ObjectPermissionBackend',  # For rules
     'django.contrib.auth.backends.ModelBackend',
 ]
 
@@ -298,7 +275,7 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',
         'knox.auth.TokenAuthentication',
     ),
-    'EXCEPTION_HANDLER': 'rest_framework.views.exception_handler'
+    'EXCEPTION_HANDLER': 'rest_framework.views.exception_handler',
 }
 
 
@@ -320,7 +297,8 @@ if ENABLE_LDAP:
     LDAP_DEFAULT_ATTR_MAP = {
         'first_name': 'givenName',
         'last_name': 'sn',
-        'email': 'mail'}
+        'email': 'mail',
+    }
 
     # Primary LDAP server
     AUTH_LDAP_SERVER_URI = env.str('AUTH_LDAP_SERVER_URI', None)
@@ -330,15 +308,21 @@ if ENABLE_LDAP:
 
     AUTH_LDAP_USER_SEARCH = LDAPSearch(
         env.str('AUTH_LDAP_USER_SEARCH_BASE', None),
-        ldap.SCOPE_SUBTREE, LDAP_DEFAULT_FILTERSTR)
+        ldap.SCOPE_SUBTREE,
+        LDAP_DEFAULT_FILTERSTR,
+    )
     AUTH_LDAP_USER_ATTR_MAP = LDAP_DEFAULT_ATTR_MAP
     AUTH_LDAP_USERNAME_DOMAIN = env.str('AUTH_LDAP_USERNAME_DOMAIN', None)
     AUTH_LDAP_DOMAIN_PRINTABLE = env.str(
-        'AUTH_LDAP_DOMAIN_PRINTABLE', AUTH_LDAP_USERNAME_DOMAIN)
+        'AUTH_LDAP_DOMAIN_PRINTABLE', AUTH_LDAP_USERNAME_DOMAIN
+    )
 
-    AUTHENTICATION_BACKENDS = tuple(itertools.chain(
-        ('projectroles.auth_backends.PrimaryLDAPBackend',),
-        AUTHENTICATION_BACKENDS,))
+    AUTHENTICATION_BACKENDS = tuple(
+        itertools.chain(
+            ('projectroles.auth_backends.PrimaryLDAPBackend',),
+            AUTHENTICATION_BACKENDS,
+        )
+    )
 
     # Secondary LDAP server (optional)
     if ENABLE_LDAP_SECONDARY:
@@ -349,19 +333,26 @@ if ENABLE_LDAP:
 
         AUTH_LDAP2_USER_SEARCH = LDAPSearch(
             env.str('AUTH_LDAP2_USER_SEARCH_BASE', None),
-            ldap.SCOPE_SUBTREE, LDAP_DEFAULT_FILTERSTR)
+            ldap.SCOPE_SUBTREE,
+            LDAP_DEFAULT_FILTERSTR,
+        )
         AUTH_LDAP2_USER_ATTR_MAP = LDAP_DEFAULT_ATTR_MAP
         AUTH_LDAP2_USERNAME_DOMAIN = env.str('AUTH_LDAP2_USERNAME_DOMAIN')
         AUTH_LDAP2_DOMAIN_PRINTABLE = env.str(
-            'AUTH_LDAP2_DOMAIN_PRINTABLE', AUTH_LDAP2_USERNAME_DOMAIN)
+            'AUTH_LDAP2_DOMAIN_PRINTABLE', AUTH_LDAP2_USERNAME_DOMAIN
+        )
 
-        AUTHENTICATION_BACKENDS = tuple(itertools.chain(
-            ('projectroles.auth_backends.SecondaryLDAPBackend',),
-            AUTHENTICATION_BACKENDS,))
+        AUTHENTICATION_BACKENDS = tuple(
+            itertools.chain(
+                ('projectroles.auth_backends.SecondaryLDAPBackend',),
+                AUTHENTICATION_BACKENDS,
+            )
+        )
 
 
 # Logging
 # ------------------------------------------------------------------------------
+
 
 def set_logging(debug):
     return {
@@ -376,28 +367,28 @@ def set_logging(debug):
             'console': {
                 'level': 'DEBUG',
                 'class': 'logging.StreamHandler',
-                'formatter': 'simple'
+                'formatter': 'simple',
             }
         },
         'loggers': {
             'irodsbackend': {
                 'level': 'DEBUG' if debug else 'INFO',
-                'handlers': ['console', ],
+                'handlers': ['console'],
                 'propagate': False,
             },
             'landingzones': {
                 'level': 'DEBUG' if debug else 'INFO',
-                'handlers': ['console', ],
+                'handlers': ['console'],
                 'propagate': False,
             },
             'projectroles': {
                 'level': 'DEBUG' if debug else 'INFO',
-                'handlers': ['console', ],
+                'handlers': ['console'],
                 'propagate': False,
             },
             'samplesheets': {
                 'level': 'DEBUG' if debug else 'INFO',
-                'handlers': ['console', ],
+                'handlers': ['console'],
                 'propagate': False,
             },
         },
@@ -418,11 +409,15 @@ DOCS_ROOT = ROOT_DIR.path('docs_manual/build/html/')
 
 
 # Plugin settings
-ENABLED_BACKEND_PLUGINS = env.list('ENABLED_BACKEND_PLUGINS', None, [
-    'timeline_backend',
-    # 'taskflow',
-    # 'omics_irods',
-])
+ENABLED_BACKEND_PLUGINS = env.list(
+    'ENABLED_BACKEND_PLUGINS',
+    None,
+    [
+        'timeline_backend',
+        # 'taskflow',
+        # 'omics_irods',
+    ],
+)
 
 
 # General site settings
@@ -435,7 +430,8 @@ SITE_INSTANCE_TITLE = env.str('SITE_INSTANCE_TITLE', 'CUBI SODAR')
 SODAR_API_DEFAULT_VERSION = '0.1'
 SODAR_API_MEDIA_TYPE = 'application/vnd.bihealth.sodar+json'
 SODAR_API_DEFAULT_HOST = env.url(
-    'SODAR_API_DEFAULT_HOST', 'http://0.0.0.0:8000')
+    'SODAR_API_DEFAULT_HOST', 'http://0.0.0.0:8000'
+)
 
 
 # Projectroles app settings
@@ -454,7 +450,8 @@ TIMELINE_PAGINATION = 15
 # Filesfolders app settings
 FILESFOLDERS_MAX_UPLOAD_SIZE = env.int('FILESFOLDERS_MAX_UPLOAD_SIZE', 10485760)
 FILESFOLDERS_MAX_ARCHIVE_SIZE = env.int(
-    'FILESFOLDERS_MAX_ARCHIVE_SIZE', 52428800)
+    'FILESFOLDERS_MAX_ARCHIVE_SIZE', 52428800
+)
 FILESFOLDERS_SERVE_AS_ATTACHMENT = False
 FILESFOLDERS_LINK_BAD_REQUEST_MSG = 'Invalid request'
 
@@ -476,15 +473,20 @@ IRODS_WEBDAV_ENABLED = env.bool('IRODS_WEBDAV_ENABLED', True)
 IRODS_WEBDAV_URL = env.str('IRODS_WEBDAV_URL', 'https://0.0.0.0')
 
 
+# Irodsbackend settings
+# Status query interval in seconds
+IRODSBACKEND_STATUS_INTERVAL = env.int('IRODSBACKEND_STATUS_INTERVAL', 12)
+
+
 # Samplesheets settings
 SHEETS_IRODS_LIMIT = env.int('SHEETS_IRODS_LIMIT', 50)  # iRODS file query limit
 SHEETS_MAX_COLUMN_WIDTH = 350  # Max column width for content overflow
 
 SHEETS_EXTERNAL_LINK_LABELS = {
     'x-bih-buch-genomics-wetlab-id': 'Wetlab-ID assigned by BIH genomics unit '
-                                     'in Buch',
+    'in Buch',
     'x-bih-cvk-genomics-wetlab-id': 'Wetlab-ID assigned by BIH genomics unit '
-                                    'in CVK',
+    'in CVK',
     'x-bih-tcell2015-id': 'ID assigned in "T-CELL 2015" project ran at BIH',
     'x-cegat-sequencing-id': 'CeGaT Sequencing ID',
     'x-charite-bcrt-genomics-wetlab-id': 'BCRT Genomics Wet-Lab ID',
@@ -493,8 +495,9 @@ SHEETS_EXTERNAL_LINK_LABELS = {
     'x-dkfz-1touch-id': 'ID assigned through Heidelberg one-touch pipeline',
     'x-dkfz-ilse-id': 'ID assigned through DFKZ sequencing',
     'x-dkfz-mtk-id': 'ID assigned through DFKZ sequencing for the Molecular '
-                     'Tumor Conference project',
-    'x-labor-berlin-blood-book-id': 'Labor Berlin Blood Book ID'}
+    'Tumor Conference project',
+    'x-labor-berlin-blood-book-id': 'Labor Berlin Blood Book ID',
+}
 
 
 # Landingzones app settings
@@ -504,11 +507,14 @@ LANDINGZONES_STATUS_INTERVAL = env.int('LANDINGZONES_STATUS_INTERVAL', 3)
 
 # Landingzones configapp plugin settings
 LZ_BIH_PROTEOMICS_SMB_EXPIRY_DAYS = env.int(
-    'LZ_BIH_PROTEOMICS_SMB_EXPIRY_DAYS', 14)
+    'LZ_BIH_PROTEOMICS_SMB_EXPIRY_DAYS', 14
+)
 LZ_BIH_PROTEOMICS_SMB_USER = env.str(
-    'LZ_BIH_PROTEOMICS_SMB_USER', 'bih_proteomics_smb')
+    'LZ_BIH_PROTEOMICS_SMB_USER', 'bih_proteomics_smb'
+)
 LZ_BIH_PROTEOMICS_SMB_PASS = env.str(
-    'LZ_BIH_PROTEOMICS_SMB_PASS', 'eech1Iekvaivai6A')
+    'LZ_BIH_PROTEOMICS_SMB_PASS', 'eech1Iekvaivai6A'
+)
 
 
 # iRODS settings shared by iRODS using apps
@@ -523,5 +529,7 @@ IRODS_CERT_PATH = STATIC_ROOT + '/irods/irods_server.crt'
 
 
 # Settings for HTTP AuthBasic
-BASICAUTH_REALM = 'Login with user@CHARITE or user@MDC-BERLIN and your password.'
+BASICAUTH_REALM = (
+    'Login with user@CHARITE or user@MDC-BERLIN and your password.'
+)
 BASICAUTH_DISABLE = False

@@ -11,15 +11,22 @@ from django.utils.html import escape
 from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
 
-from ..models import Investigation, Study, Assay, GenericMaterial, \
-    GENERIC_MATERIAL_TYPES
-from ..plugins import find_study_plugin as _find_study_plugin, \
-    find_assay_plugin as _find_assay_plugin
+from ..models import (
+    Investigation,
+    Study,
+    Assay,
+    GenericMaterial,
+    GENERIC_MATERIAL_TYPES,
+)
+from ..plugins import (
+    find_study_plugin as _find_study_plugin,
+    find_assay_plugin as _find_assay_plugin,
+)
 from ..utils import get_sample_libraries as _get_sample_libraries
 
 
 irods_backend = get_backend_api('omics_irods')
-num_re = re.compile('^(?=.)([+-]?([0-9]*)(\.([0-9]+))?)$')
+num_re = re.compile('^(?=.)([+-]?([0-9]*)(.([0-9]+))?)$')
 
 register = template.Library()
 
@@ -37,7 +44,8 @@ SPECIAL_FIELDS = [
     'primary contact',
     'provider contact',
     'requestor contact',
-    'center contact']
+    'center contact',
+]
 
 EXTERNAL_LINK_LABELS = settings.SHEETS_EXTERNAL_LINK_LABELS
 
@@ -75,7 +83,8 @@ def get_table_id(parent):
     :return: string
     """
     return 'sodar-ss-data-table-{}-{}'.format(
-        parent.__class__.__name__.lower(), parent.sodar_uuid)
+        parent.__class__.__name__.lower(), parent.sodar_uuid
+    )
 
 
 @register.simple_tag
@@ -119,14 +128,16 @@ def get_irods_tree(investigation):
 
     for study in investigation.studies.all():
         ret += '<li>{}'.format(
-            irods_backend.get_subdir(study, include_parent=False))
+            irods_backend.get_subdir(study, include_parent=False)
+        )
 
         if study.assays.all().count() > 0:
             ret += '<ul>'
 
             for assay in study.assays.all():
                 ret += '<li>{}</li>'.format(
-                    irods_backend.get_subdir(assay, include_parent=False))
+                    irods_backend.get_subdir(assay, include_parent=False)
+                )
 
             ret += '</ul>'
 
@@ -145,7 +156,8 @@ def get_study_sources(study):
     :return: GenericMaterial objects
     """
     return GenericMaterial.objects.filter(
-        study=study, item_type='SOURCE').order_by('name')
+        study=study, item_type='SOURCE'
+    ).order_by('name')
 
 
 @register.simple_tag
@@ -166,19 +178,22 @@ def render_top_headers(top_header, col_values):
     :return: String (contains HTML)
     """
     ret = ''
-    col_idx = 0     # Index in original (non-hidden) columns
+    col_idx = 0  # Index in original (non-hidden) columns
 
     for section in top_header:
-        final_colspan = sum(col_values[col_idx:col_idx + section['colspan']])
+        final_colspan = sum(col_values[col_idx : col_idx + section['colspan']])
 
         if final_colspan > 0:
-            ret += '<th class="bg-{} text-nowrap text-white ' \
-                   'sodar-ss-top-header" colspan="{}" original-colspan="{}" ' \
-                   '>{}</th>\n'.format(
+            ret += (
+                '<th class="bg-{} text-nowrap text-white '
+                'sodar-ss-top-header" colspan="{}" original-colspan="{}" '
+                '>{}</th>\n'.format(
                     section['colour'],
-                    final_colspan,     # Actual colspan
-                    final_colspan,     # Original colspan
-                    section['value'])
+                    final_colspan,  # Actual colspan
+                    final_colspan,  # Original colspan
+                    section['value'],
+                )
+            )
 
         col_idx += section['colspan']
 
@@ -201,7 +216,8 @@ def render_field_headers(field_header, col_values):
 
         if col_values[i]:
             ret += '<th class="sodar-ss-data-header {}">{}</th>\n'.format(
-                ' '.join(header['classes']), header['value'])
+                ' '.join(header['classes']), header['value']
+            )
 
     return ret
 
@@ -212,8 +228,10 @@ def get_row_id():
     Return random string for link ids
     :return: string
     """
-    return ''.join(random.SystemRandom().choice(
-        string.ascii_lowercase + string.digits) for x in range(16))
+    return ''.join(
+        random.SystemRandom().choice(string.ascii_lowercase + string.digits)
+        for x in range(16)
+    )
 
 
 @register.simple_tag
@@ -242,8 +260,11 @@ def render_cells(row, table, assay=None, assay_plugin=None):
             ret += '<td '
 
             # Right aligning
-            if (cell['field_name'] != 'name' and cell['value'] and
-                    num_re.match(cell['value'])):
+            if (
+                cell['field_name'] != 'name'
+                and cell['value']
+                and num_re.match(cell['value'])
+            ):
                 td_class_str += ' text-right'
 
             # Add extra attrs if present
@@ -255,13 +276,17 @@ def render_cells(row, table, assay=None, assay_plugin=None):
 
             # Add cell value
             if cell['value']:
-                ret += '<div class="sodar-overflow-container ' \
-                       'sodar-overflow-hover"'
+                ret += (
+                    '<div class="sodar-overflow-container '
+                    'sodar-overflow-hover"'
+                )
 
                 # Tooltip
                 if cell['tooltip']:
-                    ret += ' title="{}" data-toggle="tooltip" ' \
-                           'data-placement="top"'.format(cell['tooltip'])
+                    ret += (
+                        ' title="{}" data-toggle="tooltip" '
+                        'data-placement="top"'.format(cell['tooltip'])
+                    )
 
                 ret += '>'
 
@@ -277,16 +302,18 @@ def render_cells(row, table, assay=None, assay_plugin=None):
                         ret += '<a href="{}" {}>{}</a>'.format(
                             cell['link'],
                             'target="_blank"' if not cell['link_file'] else '',
-                            value)
+                            value,
+                        )
 
                     else:
                         ret += value
 
                     # Unit if present
                     if cell['unit']:
-                        ret += '&nbsp;<span class="text-muted">' \
-                               '{}</span>'.format(
-                                cell['unit'])
+                        ret += (
+                            '&nbsp;<span class="text-muted">'
+                            '{}</span>'.format(cell['unit'])
+                        )
 
                 ret += '</div>'
 
@@ -313,22 +340,29 @@ def render_special_field(cell):
             id_val = v.split(':')[1]
 
             if link in EXTERNAL_LINK_LABELS:
-                ret += '<span class="badge-group" data-toggle="tooltip" ' \
-                       'data-placement="top" title="{}">' \
-                       '<span class="badge badge-secondary">ID</span>' \
-                       '<span class="badge badge-info">{}</span></span>'.format(
-                        EXTERNAL_LINK_LABELS[link], id_val)
+                ret += (
+                    '<span class="badge-group" data-toggle="tooltip" '
+                    'data-placement="top" title="{}">'
+                    '<span class="badge badge-secondary">ID</span>'
+                    '<span class="badge badge-info">{}</span></span>'.format(
+                        EXTERNAL_LINK_LABELS[link], id_val
+                    )
+                )
 
     # Contact field
     elif field_name in [
-            'primary contact', 'provider contact', 'requestor contact',
-            'center contact']:
+        'primary contact',
+        'provider contact',
+        'requestor contact',
+        'center contact',
+    ]:
         email = re.findall(r'(?<=[<|[])(.+?)(?=[>\]])', cell['value'])
 
         if email and email[0] != '':
             name = re.findall(r'(.+?)(?=[<\[])', cell['value'])
             ret += '<a href="mailto:{}">{}</a>'.format(
-                email[0], name[0].strip() if name else email[0])
+                email[0], name[0].strip() if name else email[0]
+            )
 
         else:
             ret += cell['value']
@@ -398,7 +432,9 @@ def get_assay_list_url(assay, path=None):
         kwargs={
             'project': assay.get_project().sodar_uuid,
             'path': path,
-            'md5': 0})
+            'md5': 0,
+        },
+    )
 
 
 @register.simple_tag

@@ -48,12 +48,10 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
     app_permission = 'landingzones.view_zones_own'
 
     #: Enable or disable general search from project title bar
-    search_enable = False   # TODO: Enable once implemented
+    search_enable = False  # TODO: Enable once implemented
 
     #: List of search object types for the app
-    search_types = [
-        'zone',
-        'file']
+    search_types = ['zone', 'file']
 
     #: Search results template
     search_template = 'landingzones/_search_results.html'
@@ -107,22 +105,26 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                     'user_name': zone.user.username,
                     'user_uuid': str(zone.user.sodar_uuid),
                     'assay_path': irods_backend.get_subdir(
-                        zone.assay, landing_zone=True),
+                        zone.assay, landing_zone=True
+                    ),
                     'description': zone.description,
                     'zone_config': zone.configuration,
-                    'dirs': get_assay_dirs(zone.assay)}
+                    'dirs': get_assay_dirs(zone.assay),
+                }
 
                 config_plugin = get_zone_config_plugin(zone)
 
                 if config_plugin:
                     flow_data = {
                         **flow_data,
-                        **config_plugin.get_extra_flow_data(zone, flow_name)}
+                        **config_plugin.get_extra_flow_data(zone, flow_name),
+                    }
 
                 flow = {
                     'flow_name': flow_name,
                     'project_uuid': str(zone.project.sodar_uuid),
-                    'flow_data': flow_data}
+                    'flow_data': flow_data,
+                }
                 sync_flows.append(flow)
 
         return sync_flows
@@ -144,17 +146,23 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
             return {
                 'url': reverse(
                     'landingzones:list',
-                    kwargs={'project': obj.project.sodar_uuid}) +
-                            '#' + str(obj.sodar_uuid),
-                'label': obj.title}
+                    kwargs={'project': obj.project.sodar_uuid},
+                )
+                + '#'
+                + str(obj.sodar_uuid),
+                'label': obj.title,
+            }
 
         elif obj.__class__ == Assay:
             return {
                 'url': reverse(
                     'samplesheets:project_sheets',
-                    kwargs={'study': obj.study.sodar_uuid}) +
-                            '#' + str(obj.sodar_uuid),
-                'label': obj.get_display_name()}
+                    kwargs={'study': obj.study.sodar_uuid},
+                )
+                + '#'
+                + str(obj.sodar_uuid),
+                'label': obj.get_display_name(),
+            }
 
 
 # Landingzones configuration sub-app plugin ------------------------------------
@@ -190,10 +198,12 @@ class LandingZoneConfigPluginPoint(PluginPoint):
 
     #: Additional zone menu items
     # TODO: Implement this in your config plugin
-    menu_items = [{
-        'label': '',     # Label to be displayed in menu
-        'icon': '',      # Icon name without the fa-* prefix
-        'url_name': ''}  # URL name, will receive zone as "landingzone" kwarg
+    menu_items = [
+        {
+            'label': '',  # Label to be displayed in menu
+            'icon': '',  # Icon name without the fa-* prefix
+            'url_name': '',
+        }  # URL name, will receive zone as "landingzone" kwarg
     ]
 
     #: Fields from LandingZone.config_data to be displayed in zone list API
@@ -235,7 +245,8 @@ def get_zone_config_plugin(zone):
 
     try:
         return LandingZoneConfigPluginPoint.get_plugin(
-            'landingzones_config_' + zone.configuration)
+            'landingzones_config_' + zone.configuration
+        )
 
     except LandingZoneConfigPluginPoint.DoesNotExist:
         return None

@@ -26,5 +26,8 @@ class Command(BaseCommand):
                 if group_name:
                     print('{} -> {}'.format(user.username, group_name))
 
-        print('Synchronized groups for {} users'.format(
-            User.objects.all().count()))
+        print(
+            'Synchronized groups for {} users'.format(
+                User.objects.all().count()
+            )
+        )

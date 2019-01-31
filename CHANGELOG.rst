@@ -11,10 +11,16 @@ Unreleased
 Added
 -----
 
+- **General**
+    - Formatting with Black
+    - Flake8 and Black checks in CI (#422)
+    - General code cleanup and refactoring (#422)
+    - ``IRODSBACKEND_STATUS_INTERVAL`` setting passed to JQuery (#423)
 - **Irodsbackend**
     - Support for POST in Ajax views (#416)
     - App specific rules (#418)
     - Client side enabling/disabling of iRODS links buttons (#260)
+    - Get status updating interval from setting variable (#423)
 - **Samplesheets**
     - Support alternative notation in contact fields (#382)
 
@@ -58,6 +64,8 @@ Removed
     - Unused URL mapping to ``about.html``
     - Local JS/CSS includes for JQuery, Bootstrap and other JS helpers (#420)
     - Legacy Python2 ``super()`` calls (sodar_core#118)
+- **Irodsbackend**
+    - Unused module ``admin.py``
 - **Samplesheets**
     - Unused dropup app buttons mode in templates (sodar_core#108)
 

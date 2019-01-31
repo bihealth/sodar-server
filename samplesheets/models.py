@@ -1,6 +1,5 @@
 import uuid
 
-from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.fields import ArrayField, JSONField
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -20,7 +19,8 @@ GENERIC_MATERIAL_TYPES = {
     'SOURCE': 'Source',
     'MATERIAL': 'Material',
     'SAMPLE': 'Sample',
-    'DATA': 'Data File'}
+    'DATA': 'Data File',
+}
 
 GENERIC_MATERIAL_CHOICES = [(k, v) for k, v in GENERIC_MATERIAL_TYPES.items()]
 NOT_AVAILABLE_STR = '(N/A)'
@@ -28,6 +28,7 @@ CONFIG_LABEL = 'Created With Configuration'
 
 
 # Utils ------------------------------------------------------------------------
+
 
 def get_zone_dir(obj):
     """
@@ -48,24 +49,19 @@ class BaseSampleSheet(models.Model):
 
     #: Internal UUID for the object
     sodar_uuid = models.UUIDField(
-        default=uuid.uuid4,
-        unique=True,
-        help_text='SODAR UUID for the object')
+        default=uuid.uuid4, unique=True, help_text='SODAR UUID for the object'
+    )
 
     #: Data sharing rules
-    sharing_data = JSONField(
-        default=dict,
-        help_text='Data sharing rules')
+    sharing_data = JSONField(default=dict, help_text='Data sharing rules')
 
     #: Consent retraction data
     retraction_data = JSONField(
-        default=dict,
-        help_text='Consent retraction data')
+        default=dict, help_text='Consent retraction data'
+    )
 
     #: Comments
-    comments = JSONField(
-        default=dict,
-        help_text='Comments')
+    comments = JSONField(default=dict, help_text='Comments')
 
     class Meta:
         abstract = True
@@ -112,58 +108,62 @@ class Investigation(BaseSampleSheet):
         max_length=DEFAULT_LENGTH,
         unique=False,
         blank=False,
-        help_text='Locally unique identifier')
+        help_text='Locally unique identifier',
+    )
 
     #: File name for exporting
     file_name = models.CharField(
         max_length=DEFAULT_LENGTH,
         unique=False,
         blank=False,
-        help_text='File name for exporting')
+        help_text='File name for exporting',
+    )
 
     #: Project to which the investigation belongs
     project = models.ForeignKey(
         Project,
         null=False,
         related_name='investigations',
-        help_text='Project to which the investigation belongs')
+        help_text='Project to which the investigation belongs',
+    )
 
     #: Investigation title (optional, can be derived from project)
     title = models.CharField(
         max_length=DEFAULT_LENGTH,
         blank=True,
         null=True,
-        help_text='Title (optional, can be derived from project)')
+        help_text='Title (optional, can be derived from project)',
+    )
 
     #: Investigation description (optional, can be derived from project)
     description = models.TextField(
         blank=True,
         null=True,
         help_text='Investigation description (optional, can be derived from '
-                  'project)')
+        'project)',
+    )
 
     #: Ontology source references
     ontology_source_refs = JSONField(
-        default=dict,
-        help_text='Ontology source references')
+        default=dict, help_text='Ontology source references'
+    )
 
     #: Active status of investigation (only one active per project)
     active = models.BooleanField(
         default=False,
-        help_text='Active status of investigation (one active per project)')
+        help_text='Active status of investigation (one active per project)',
+    )
 
     #: Status of iRODS directory structure creation
     irods_status = models.BooleanField(
-        default=False,
-        help_text='Status of iRODS directory structure creation')
+        default=False, help_text='Status of iRODS directory structure creation'
+    )
 
     def __str__(self):
         return '{}: {}'.format(self.project.title, self.title)
 
     def __repr__(self):
-        values = (
-            self.project.title,
-            self.title)
+        values = (self.project.title, self.title)
         return 'Investigation({})'.format(', '.join(repr(v) for v in values))
 
     # Custom row-level functions
@@ -196,66 +196,61 @@ class Study(BaseSampleSheet):
         max_length=DEFAULT_LENGTH,
         unique=False,
         blank=False,
-        help_text='Locally unique identifier')
+        help_text='Locally unique identifier',
+    )
 
     #: File name for exporting
     file_name = models.CharField(
         max_length=DEFAULT_LENGTH,
         unique=False,
         blank=False,
-        help_text='File name for exporting')
+        help_text='File name for exporting',
+    )
 
     #: Investigation to which the study belongs
     investigation = models.ForeignKey(
         Investigation,
         null=False,
         related_name='studies',
-        help_text='Investigation to which the study belongs')
+        help_text='Investigation to which the study belongs',
+    )
 
     #: Title of the study (optional)
     title = models.CharField(
         max_length=DEFAULT_LENGTH,
         unique=False,
         blank=True,
-        help_text='Title of the study (optional)')
+        help_text='Title of the study (optional)',
+    )
 
     #: Study description (optional)
     description = models.TextField(
-        unique=False,
-        blank=True,
-        help_text='Study description (optional)')
+        unique=False, blank=True, help_text='Study description (optional)'
+    )
 
     #: Study design descriptors
-    study_design = JSONField(
-        default=dict,
-        help_text='Study design descriptors')
+    study_design = JSONField(default=dict, help_text='Study design descriptors')
 
     #: Study factors
-    factors = JSONField(
-        default=dict,
-        help_text='Study factors')
+    factors = JSONField(default=dict, help_text='Study factors')
 
     #: Characteristic categories
     characteristic_cat = JSONField(
-        default=dict,
-        help_text='Characteristic categories')
+        default=dict, help_text='Characteristic categories'
+    )
 
     #: Unit categories
-    unit_cat = JSONField(
-        default=dict,
-        help_text='Unit categories')
+    unit_cat = JSONField(default=dict, help_text='Unit categories')
 
     #: Study arcs
     arcs = ArrayField(
-        ArrayField(
-            models.CharField(max_length=DEFAULT_LENGTH, blank=True)),
+        ArrayField(models.CharField(max_length=DEFAULT_LENGTH, blank=True)),
         default=list,
-        help_text='Study arcs')
+        help_text='Study arcs',
+    )
 
     #: Column headers
-    header = JSONField(
-        default=dict,
-        help_text='Column headers')
+    header = JSONField(default=dict, help_text='Column headers')
 
     class Meta:
         ordering = ['identifier']
@@ -263,14 +258,10 @@ class Study(BaseSampleSheet):
         verbose_name_plural = 'studies'
 
     def __str__(self):
-        return '{}: {}'.format(
-            self.get_project().title,
-            self.get_name())
+        return '{}: {}'.format(self.get_project().title, self.get_name())
 
     def __repr__(self):
-        values = (
-            self.get_project().title,
-            self.get_name())
+        values = (self.get_project().title, self.get_name())
         return 'Study({})'.format(', '.join(repr(v) for v in values))
 
     # Custom row-level functions
@@ -285,15 +276,17 @@ class Study(BaseSampleSheet):
 
     def get_nodes(self):
         """Return list of all nodes (materials and processes) for study"""
-        return list(GenericMaterial.objects.filter(study=self)) + \
-            list(Process.objects.filter(
-                study=self).prefetch_related('protocol'))
+        return list(GenericMaterial.objects.filter(study=self)) + list(
+            Process.objects.filter(study=self).prefetch_related('protocol')
+        )
 
     def get_sources(self):
         """Return sources used in study"""
         # TODO: Add tests
         return GenericMaterial.objects.filter(
-            study=self, item_type='SOURCE').order_by('name')
+            study=self, item_type='SOURCE'
+        ).order_by('name')
+
 
 # Protocol ---------------------------------------------------------------------
 
@@ -306,62 +299,52 @@ class Protocol(BaseSampleSheet):
         max_length=DEFAULT_LENGTH,
         unique=False,
         blank=False,
-        help_text='Protocol name')
+        help_text='Protocol name',
+    )
 
     #: Study to which the protocol belongs
     study = models.ForeignKey(
         Study,
         related_name='protocols',
-        help_text='Study to which the protocol belongs')
+        help_text='Study to which the protocol belongs',
+    )
 
     #: Protocol type
     protocol_type = JSONField(
-        null=True,
-        default=dict,
-        help_text='Protocol type')
+        null=True, default=dict, help_text='Protocol type'
+    )
 
     #: Protocol description
     description = models.TextField(
-        unique=False,
-        blank=True,
-        help_text='Protocol description')
+        unique=False, blank=True, help_text='Protocol description'
+    )
 
     #: Protocol URI
     uri = models.CharField(
-        max_length=2048,
-        unique=False,
-        help_text='Protocol URI')
+        max_length=2048, unique=False, help_text='Protocol URI'
+    )
 
     #: Protocol version
     version = models.CharField(
-        max_length=DEFAULT_LENGTH,
-        unique=False,
-        help_text='Protocol version')
+        max_length=DEFAULT_LENGTH, unique=False, help_text='Protocol version'
+    )
 
     #: Protocol parameters
-    parameters = JSONField(
-        default=dict,
-        help_text='Protocol parameters')
+    parameters = JSONField(default=dict, help_text='Protocol parameters')
 
     #: Protocol components
-    components = JSONField(
-        default=dict,
-        help_text='Protocol components')
+    components = JSONField(default=dict, help_text='Protocol components')
 
     class Meta:
         unique_together = ('study', 'name')
 
     def __str__(self):
         return '{}: {}/{}'.format(
-            self.get_project().title,
-            self.study.get_name(),
-            self.name)
+            self.get_project().title, self.study.get_name(), self.name
+        )
 
     def __repr__(self):
-        values = (
-            self.get_project().title,
-            self.study.get_name(),
-            self.name)
+        values = (self.get_project().title, self.study.get_name(), self.name)
         return 'Protocol({})'.format(', '.join(repr(v) for v in values))
 
 
@@ -376,13 +359,15 @@ class Assay(BaseSampleSheet):
         max_length=DEFAULT_LENGTH,
         unique=False,
         blank=False,
-        help_text='File name for exporting')
+        help_text='File name for exporting',
+    )
 
     #: Study to which the assay belongs
     study = models.ForeignKey(
         Study,
         related_name='assays',
-        help_text='Study to which the assay belongs')
+        help_text='Study to which the assay belongs',
+    )
 
     #: Technology platform (optional)
     technology_platform = models.CharField(
@@ -390,39 +375,32 @@ class Assay(BaseSampleSheet):
         unique=False,
         blank=True,
         null=True,
-        help_text='Technology platform (optional)')
+        help_text='Technology platform (optional)',
+    )
 
     #: Technology type
-    technology_type = JSONField(
-        default=dict,
-        help_text='Technology type')
+    technology_type = JSONField(default=dict, help_text='Technology type')
 
     #: Measurement type
-    measurement_type = JSONField(
-        default=dict,
-        help_text='Measurement type')
+    measurement_type = JSONField(default=dict, help_text='Measurement type')
 
     #: Characteristic categories
     characteristic_cat = JSONField(
-        default=dict,
-        help_text='Characteristic categories')
+        default=dict, help_text='Characteristic categories'
+    )
 
     #: Unit categories
-    unit_cat = JSONField(
-        default=dict,
-        help_text='Unit categories')
+    unit_cat = JSONField(default=dict, help_text='Unit categories')
 
     #: Assay arcs
     arcs = ArrayField(
-        ArrayField(
-            models.CharField(max_length=DEFAULT_LENGTH, blank=True)),
+        ArrayField(models.CharField(max_length=DEFAULT_LENGTH, blank=True)),
         default=list,
-        help_text='Assay arcs')
+        help_text='Assay arcs',
+    )
 
     #: Column headers
-    header = JSONField(
-        default=dict,
-        help_text='Column headers')
+    header = JSONField(default=dict, help_text='Column headers')
 
     class Meta:
         unique_together = ('study', 'file_name')
@@ -430,15 +408,15 @@ class Assay(BaseSampleSheet):
 
     def __str__(self):
         return '{}: {}/{}'.format(
-            self.get_project().title,
-            self.study.get_name(),
-            self.get_name())
+            self.get_project().title, self.study.get_name(), self.get_name()
+        )
 
     def __repr__(self):
         values = (
             self.get_project().title,
             self.study.get_name(),
-            self.get_name())
+            self.get_name(),
+        )
         return 'Assay({})'.format(', '.join(repr(v) for v in values))
 
     # Custom row-level functions
@@ -468,8 +446,12 @@ class GenericMaterialManager(models.Manager):
         """
 
         # NOTE: Exlude intermediate materials and data files, at least for now
-        objects = super().get_queryset().exclude(
-            item_type__in=['DATA', 'MATERIAL']).order_by('name')
+        objects = (
+            super()
+            .get_queryset()
+            .exclude(item_type__in=['DATA', 'MATERIAL'])
+            .order_by('name')
+        )
 
         q_filters = None
 
@@ -504,14 +486,16 @@ class GenericMaterial(BaseSampleSheet):
         null=False,
         default='MATERIAL',
         choices=GENERIC_MATERIAL_CHOICES,
-        help_text='')
+        help_text='',
+    )
 
     #: Material name (common to all item types)
     name = models.CharField(
         max_length=DEFAULT_LENGTH,
         unique=False,
         blank=False,
-        help_text='Material name')
+        help_text='Material name',
+    )
 
     #: Unique material name
     unique_name = models.CharField(
@@ -519,33 +503,37 @@ class GenericMaterial(BaseSampleSheet):
         unique=False,
         blank=True,
         null=True,
-        help_text='Unique material name')
+        help_text='Unique material name',
+    )
 
     #: Alternative names to aid lookup
     alt_names = ArrayField(
         models.CharField(max_length=DEFAULT_LENGTH, blank=True),
         default=list,
         db_index=True,
-        help_text='Alternative names')
+        help_text='Alternative names',
+    )
 
     #: Material characteristics (NOT needed for DataFile)
     characteristics = JSONField(
-        default=dict,
-        help_text='Material characteristics')
+        default=dict, help_text='Material characteristics'
+    )
 
     #: Study to which the material belongs (for study sequence)
     study = models.ForeignKey(
         Study,
         related_name='materials',
         null=True,
-        help_text='Study to which the material belongs (for study sequence)')
+        help_text='Study to which the material belongs (for study sequence)',
+    )
 
     #: Assay to which the material belongs (for assay sequence)
     assay = models.ForeignKey(
         Assay,
         related_name='materials',
         null=True,
-        help_text='Assay to which the material belongs (for assay sequence)')
+        help_text='Assay to which the material belongs (for assay sequence)',
+    )
 
     #: Material or data field type (only for materials and data files)
     material_type = models.CharField(
@@ -553,14 +541,16 @@ class GenericMaterial(BaseSampleSheet):
         unique=False,
         blank=True,
         null=True,
-        help_text='Material or data file type')
+        help_text='Material or data file type',
+    )
 
     #: Factor values for a sample (only for samples)
     factor_values = JSONField(
         default=list,
         blank=True,
         null=True,
-        help_text='Factor values for a sample')
+        help_text='Factor values for a sample',
+    )
 
     #: Extract label
     extract_label = models.CharField(
@@ -568,7 +558,8 @@ class GenericMaterial(BaseSampleSheet):
         unique=False,
         blank=True,
         null=True,
-        help_text='Extract label')
+        help_text='Extract label',
+    )
 
     # Set manager for custom queries
     objects = GenericMaterialManager()
@@ -580,7 +571,8 @@ class GenericMaterial(BaseSampleSheet):
 
         indexes = [
             models.Index(fields=['unique_name']),
-            models.Index(fields=['study'])]
+            models.Index(fields=['study']),
+        ]
 
     def __str__(self):
         return '{}: {}/{}/{}/{}'.format(
@@ -588,7 +580,8 @@ class GenericMaterial(BaseSampleSheet):
             self.get_study().title,
             self.assay.get_name() if self.assay else NOT_AVAILABLE_STR,
             self.item_type,
-            self.unique_name)
+            self.unique_name,
+        )
 
     def __repr__(self):
         values = (
@@ -596,7 +589,8 @@ class GenericMaterial(BaseSampleSheet):
             self.get_study().title,
             self.assay.get_name() if self.assay else NOT_AVAILABLE_STR,
             self.item_type,
-            self.unique_name)
+            self.unique_name,
+        )
 
         return 'GenericMaterial({})'.format(', '.join(repr(v) for v in values))
 
@@ -623,7 +617,8 @@ class GenericMaterial(BaseSampleSheet):
         if self.item_type == 'DATA' and self.characteristics:
             raise ValidationError(
                 'Field "characteristics" should not be included for a data '
-                'file')
+                'file'
+            )
 
         if self.item_type != 'SAMPLE' and self.factor_values:
             raise ValidationError('Factor values included for a non-sample')
@@ -647,8 +642,8 @@ class GenericMaterial(BaseSampleSheet):
             return None
 
         return Assay.objects.filter(
-            study=self.study, arcs__contains=[self.unique_name]).order_by(
-            'file_name')
+            study=self.study, arcs__contains=[self.unique_name]
+        ).order_by('file_name')
 
     def get_samples(self):
         """Return samples for the current material"""
@@ -661,7 +656,9 @@ class GenericMaterial(BaseSampleSheet):
         return GenericMaterial.objects.filter(
             item_type='SAMPLE',
             study=self.study,
-            name__startswith='{}-'.format(self.name))
+            name__startswith='{}-'.format(self.name),
+        )
+
 
 # Process ----------------------------------------------------------------------
 
@@ -675,7 +672,8 @@ class Process(BaseSampleSheet):
         unique=False,
         blank=True,
         null=True,
-        help_text='Process name (optional)')
+        help_text='Process name (optional)',
+    )
 
     #: Unique process name
     unique_name = models.CharField(
@@ -683,7 +681,8 @@ class Process(BaseSampleSheet):
         unique=False,
         blank=True,
         null=True,
-        help_text='Unique process name')
+        help_text='Unique process name',
+    )
 
     #: Protocol which the process executes
     protocol = models.ForeignKey(
@@ -691,26 +690,29 @@ class Process(BaseSampleSheet):
         related_name='processes',
         null=True,  # When under a study, protocol is not needed
         blank=True,
-        help_text='Protocol which the process executes')
+        help_text='Protocol which the process executes',
+    )
 
     #: Study to which the process belongs
     study = models.ForeignKey(
         Study,
         related_name='processes',
         null=True,
-        help_text='Study to which the process belongs (for study sequence)')
+        help_text='Study to which the process belongs (for study sequence)',
+    )
 
     #: Assay to which the process belongs (for assay sequence)
     assay = models.ForeignKey(
         Assay,
         related_name='processes',
         null=True,
-        help_text='Assay to which the process belongs (for assay sequence)')
+        help_text='Assay to which the process belongs (for assay sequence)',
+    )
 
     #: Process parameter values
     parameter_values = JSONField(
-        default=dict,
-        help_text='Process parameter values')
+        default=dict, help_text='Process parameter values'
+    )
 
     #: Process performer (optional)
     performer = models.CharField(
@@ -718,12 +720,13 @@ class Process(BaseSampleSheet):
         unique=False,
         blank=True,
         null=True,
-        help_text='Process performer (optional)')
+        help_text='Process performer (optional)',
+    )
 
     #: Process performing date (optional)
     perform_date = models.DateField(
-        null=True,
-        help_text='Process performing date (optional)')
+        null=True, help_text='Process performing date (optional)'
+    )
 
     #: Array design ref
     array_design_ref = models.CharField(
@@ -731,7 +734,8 @@ class Process(BaseSampleSheet):
         unique=False,
         blank=True,
         null=True,
-        help_text='Array design ref')
+        help_text='Array design ref',
+    )
 
     #: Scan name for special cases in ISAtab
     scan_name = models.CharField(
@@ -739,27 +743,31 @@ class Process(BaseSampleSheet):
         unique=False,
         blank=True,
         null=True,
-        help_text='Scan name for special cases in ISAtab')
+        help_text='Scan name for special cases in ISAtab',
+    )
 
     class Meta:
         verbose_name_plural = 'processes'
         indexes = [
             models.Index(fields=['unique_name']),
-            models.Index(fields=['study'])]
+            models.Index(fields=['study']),
+        ]
 
     def __str__(self):
         return '{}: {}/{}/{}'.format(
             self.get_project().title,
             self.get_study().get_name(),
             self.assay.get_name() if self.assay else NOT_AVAILABLE_STR,
-            self.unique_name)
+            self.unique_name,
+        )
 
     def __repr__(self):
         values = (
             self.get_project().title,
             self.get_study().get_name(),
             self.assay.get_name() if self.assay else NOT_AVAILABLE_STR,
-            self.unique_name)
+            self.unique_name,
+        )
         return 'Process({})'.format(', '.join(repr(v) for v in values))
 
     # Saving and validation

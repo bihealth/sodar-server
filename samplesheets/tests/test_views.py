@@ -23,7 +23,8 @@ PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 SUBMIT_STATUS_OK = SODAR_CONSTANTS['SUBMIT_STATUS_OK']
 SUBMIT_STATUS_PENDING = SODAR_CONSTANTS['SUBMIT_STATUS_PENDING']
 SUBMIT_STATUS_PENDING_TASKFLOW = SODAR_CONSTANTS[
-    'SUBMIT_STATUS_PENDING_TASKFLOW']
+    'SUBMIT_STATUS_PENDING_TASKFLOW'
+]
 
 
 # Local constants
@@ -40,19 +41,20 @@ API_INVALID_VERSION = '5.0'
 
 
 class TestViewsBase(
-        ProjectMixin, RoleAssignmentMixin, SampleSheetIOMixin, TestCase):
+    ProjectMixin, RoleAssignmentMixin, SampleSheetIOMixin, TestCase
+):
     """Base view for samplesheets views tests"""
 
     def setUp(self):
         # Init roles
-        self.role_owner = Role.objects.get_or_create(
-            name=PROJECT_ROLE_OWNER)[0]
+        self.role_owner = Role.objects.get_or_create(name=PROJECT_ROLE_OWNER)[0]
         self.role_delegate = Role.objects.get_or_create(
-            name=PROJECT_ROLE_DELEGATE)[0]
+            name=PROJECT_ROLE_DELEGATE
+        )[0]
         self.role_contributor = Role.objects.get_or_create(
-            name=PROJECT_ROLE_CONTRIBUTOR)[0]
-        self.role_guest = Role.objects.get_or_create(
-            name=PROJECT_ROLE_GUEST)[0]
+            name=PROJECT_ROLE_CONTRIBUTOR
+        )[0]
+        self.role_guest = Role.objects.get_or_create(name=PROJECT_ROLE_GUEST)[0]
 
         # Init superuser
         self.user = self.make_user('superuser', password=USER_PASSWORD)
@@ -62,13 +64,17 @@ class TestViewsBase(
 
         # Init projects
         self.category = self._make_project(
-            'TestCategory', PROJECT_TYPE_CATEGORY, None)
+            'TestCategory', PROJECT_TYPE_CATEGORY, None
+        )
         self.owner_as = self._make_assignment(
-            self.category, self.user, self.role_owner)
+            self.category, self.user, self.role_owner
+        )
         self.project = self._make_project(
-            'TestProject', PROJECT_TYPE_PROJECT, self.category)
+            'TestProject', PROJECT_TYPE_PROJECT, self.category
+        )
         self.owner_as = self._make_assignment(
-            self.project, self.user, self.role_owner)
+            self.project, self.user, self.role_owner
+        )
 
 
 class TestProjectSheetsView(TestViewsBase):
@@ -79,16 +85,20 @@ class TestProjectSheetsView(TestViewsBase):
 
         # Import investigation
         self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project)
+            SHEET_PATH, self.project
+        )
         self.study = self.investigation.studies.first()
 
     def test_render(self):
         """Test rendering the project sheets view"""
 
         with self.login(self.user):
-            response = self.client.get(reverse(
-                'samplesheets:project_sheets',
-                kwargs={'project': self.project.sodar_uuid}))
+            response = self.client.get(
+                reverse(
+                    'samplesheets:project_sheets',
+                    kwargs={'project': self.project.sodar_uuid},
+                )
+            )
             self.assertEqual(response.status_code, 200)
 
             # Assert context data
@@ -100,9 +110,12 @@ class TestProjectSheetsView(TestViewsBase):
         """Test rendering the project sheets view with a study UUID"""
 
         with self.login(self.user):
-            response = self.client.get(reverse(
-                'samplesheets:project_sheets',
-                kwargs={'study': self.study.sodar_uuid}))
+            response = self.client.get(
+                reverse(
+                    'samplesheets:project_sheets',
+                    kwargs={'study': self.study.sodar_uuid},
+                )
+            )
             self.assertEqual(response.status_code, 200)
 
             # Assert context data
@@ -118,9 +131,12 @@ class TestProjectSheetsView(TestViewsBase):
         self.study = None
 
         with self.login(self.user):
-            response = self.client.get(reverse(
-                'samplesheets:project_sheets',
-                kwargs={'project': self.project.sodar_uuid}))
+            response = self.client.get(
+                reverse(
+                    'samplesheets:project_sheets',
+                    kwargs={'project': self.project.sodar_uuid},
+                )
+            )
             self.assertEqual(response.status_code, 200)
 
             # Assert context data
@@ -137,16 +153,20 @@ class TestProjectSheetsOverviewView(TestViewsBase):
 
         # Import investigation
         self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project)
+            SHEET_PATH, self.project
+        )
         self.study = self.investigation.studies.first()
 
     def test_render(self):
         """Test rendering the project sheets overview view"""
 
         with self.login(self.user):
-            response = self.client.get(reverse(
-                'samplesheets:overview',
-                kwargs={'project': self.project.sodar_uuid}))
+            response = self.client.get(
+                reverse(
+                    'samplesheets:overview',
+                    kwargs={'project': self.project.sodar_uuid},
+                )
+            )
             self.assertEqual(response.status_code, 200)
 
             # Assert context data
@@ -162,9 +182,12 @@ class TestSampleSheetImportView(TestViewsBase):
         """Test rendering the project sheets view"""
 
         with self.login(self.user):
-            response = self.client.get(reverse(
-                'samplesheets:import',
-                kwargs={'project': self.project.sodar_uuid}))
+            response = self.client.get(
+                reverse(
+                    'samplesheets:import',
+                    kwargs={'project': self.project.sodar_uuid},
+                )
+            )
             self.assertEqual(response.status_code, 200)
 
     def test_post(self):
@@ -176,9 +199,13 @@ class TestSampleSheetImportView(TestViewsBase):
         with open(SHEET_PATH, 'rb') as file:
             with self.login(self.user):
                 values = {'file_upload': file}
-                response = self.client.post(reverse(
-                    'samplesheets:import',
-                    kwargs={'project': self.project.sodar_uuid}), values)
+                response = self.client.post(
+                    reverse(
+                        'samplesheets:import',
+                        kwargs={'project': self.project.sodar_uuid},
+                    ),
+                    values,
+                )
 
         # Assert postconditions
         self.assertEqual(response.status_code, 302)
@@ -195,9 +222,13 @@ class TestSampleSheetImportView(TestViewsBase):
         with open(SHEET_PATH_SMALL2, 'rb') as file:
             with self.login(self.user):
                 values = {'file_upload': file}
-                response = self.client.post(reverse(
-                    'samplesheets:import',
-                    kwargs={'project': self.project.sodar_uuid}), values)
+                response = self.client.post(
+                    reverse(
+                        'samplesheets:import',
+                        kwargs={'project': self.project.sodar_uuid},
+                    ),
+                    values,
+                )
 
         # Assert postconditions
         self.assertEqual(response.status_code, 302)
@@ -218,9 +249,13 @@ class TestSampleSheetImportView(TestViewsBase):
         with open(SHEET_PATH_MINIMAL, 'rb') as file:
             with self.login(self.user):
                 values = {'file_upload': file}
-                response = self.client.post(reverse(
-                    'samplesheets:import',
-                    kwargs={'project': self.project.sodar_uuid}), values)
+                response = self.client.post(
+                    reverse(
+                        'samplesheets:import',
+                        kwargs={'project': self.project.sodar_uuid},
+                    ),
+                    values,
+                )
 
         # Assert postconditions
         self.assertEqual(response.status_code, 302)
@@ -237,24 +272,31 @@ class TestSampleSheetTableExportView(TestViewsBase):
 
         # Import investigation
         self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project)
+            SHEET_PATH, self.project
+        )
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
 
     def test_render_study(self):
         """Test rendering the TSV file for a study table"""
         with self.login(self.user):
-            response = self.client.get(reverse(
-                'samplesheets:export_tsv',
-                kwargs={'study': self.study.sodar_uuid}))
+            response = self.client.get(
+                reverse(
+                    'samplesheets:export_tsv',
+                    kwargs={'study': self.study.sodar_uuid},
+                )
+            )
             self.assertEqual(response.status_code, 200)
 
     def test_render_assay(self):
         """Test rendering the TSV file for a assay table"""
         with self.login(self.user):
-            response = self.client.get(reverse(
-                'samplesheets:export_tsv',
-                kwargs={'assay': self.assay.sodar_uuid}))
+            response = self.client.get(
+                reverse(
+                    'samplesheets:export_tsv',
+                    kwargs={'assay': self.assay.sodar_uuid},
+                )
+            )
             self.assertEqual(response.status_code, 200)
 
 
@@ -266,16 +308,20 @@ class TestSampleSheetDeleteView(TestViewsBase):
 
         # Import investigation
         self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project)
+            SHEET_PATH, self.project
+        )
         self.study = self.investigation.studies.first()
 
     def test_render(self):
         """Test rendering the project sheets view"""
 
         with self.login(self.user):
-            response = self.client.get(reverse(
-                'samplesheets:delete',
-                kwargs={'project': self.project.sodar_uuid}))
+            response = self.client.get(
+                reverse(
+                    'samplesheets:delete',
+                    kwargs={'project': self.project.sodar_uuid},
+                )
+            )
             self.assertEqual(response.status_code, 200)
 
     def test_delete(self):
@@ -284,13 +330,20 @@ class TestSampleSheetDeleteView(TestViewsBase):
         self.assertEqual(Investigation.objects.all().count(), 1)
 
         with self.login(self.user):
-            response = self.client.post(reverse(
-                'samplesheets:delete',
-                kwargs={'project': self.project.sodar_uuid}))
+            response = self.client.post(
+                reverse(
+                    'samplesheets:delete',
+                    kwargs={'project': self.project.sodar_uuid},
+                )
+            )
             self.assertEqual(response.status_code, 302)
-            self.assertEqual(response.url, reverse(
-                'samplesheets:project_sheets',
-                kwargs={'project': self.project.sodar_uuid}))
+            self.assertEqual(
+                response.url,
+                reverse(
+                    'samplesheets:project_sheets',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+            )
 
         self.assertEqual(Investigation.objects.all().count(), 0)
 
@@ -303,7 +356,8 @@ class TestSourceIDQueryAPIView(KnoxAuthMixin, TestViewsBase):
 
         # Import investigation
         self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project)
+            SHEET_PATH, self.project
+        )
 
         # Login with Knox
         self.token = self.knox_login(self.user, USER_PASSWORD)
@@ -312,9 +366,10 @@ class TestSourceIDQueryAPIView(KnoxAuthMixin, TestViewsBase):
         """Test HTTP GET request with an existing ID"""
         response = self.knox_get(
             reverse(
-                'samplesheets:source_get',
-                kwargs={'source_id': SOURCE_NAME}),
-            token=self.token)
+                'samplesheets:source_get', kwargs={'source_id': SOURCE_NAME}
+            ),
+            token=self.token,
+        )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['id_found'], True)
 
@@ -323,8 +378,10 @@ class TestSourceIDQueryAPIView(KnoxAuthMixin, TestViewsBase):
         response = self.knox_get(
             reverse(
                 'samplesheets:source_get',
-                kwargs={'source_id': SOURCE_NAME_FAIL}),
-            token=self.token)
+                kwargs={'source_id': SOURCE_NAME_FAIL},
+            ),
+            token=self.token,
+        )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['id_found'], False)
 
@@ -333,8 +390,10 @@ class TestSourceIDQueryAPIView(KnoxAuthMixin, TestViewsBase):
         response = self.knox_get(
             reverse(
                 'samplesheets:source_get',
-                kwargs={'source_id': SOURCE_NAME[:-1]}),
-            token=self.token)
+                kwargs={'source_id': SOURCE_NAME[:-1]},
+            ),
+            token=self.token,
+        )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['id_found'], False)
 
@@ -343,15 +402,18 @@ class TestSourceIDQueryAPIView(KnoxAuthMixin, TestViewsBase):
         response = self.client.get(
             reverse(
                 'samplesheets:source_get',
-                kwargs={'source_id': SOURCE_NAME[:-1]}))
+                kwargs={'source_id': SOURCE_NAME[:-1]},
+            )
+        )
         self.assertEqual(response.status_code, 401)
 
     def test_get_wrong_version(self):
         """Test HTTP GET request with an unaccepted API version (should fail)"""
         response = self.knox_get(
             reverse(
-                'samplesheets:source_get',
-                kwargs={'source_id': SOURCE_NAME}),
+                'samplesheets:source_get', kwargs={'source_id': SOURCE_NAME}
+            ),
             token=self.token,
-            version=API_INVALID_VERSION)
+            version=API_INVALID_VERSION,
+        )
         self.assertEqual(response.status_code, 406)

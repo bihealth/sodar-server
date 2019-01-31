@@ -31,4 +31,4 @@ class BackendPlugin(BackendPluginPoint):
 
         except Exception as ex:
             print(str(ex))
-            return None     # TODO: log exception
+            return None  # TODO: log exception

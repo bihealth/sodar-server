@@ -35,8 +35,12 @@ LANDING_ZONE_DIR = settings.IRODS_LANDING_ZONE_DIR
 
 
 class TestIrodsBackendAPI(
-        ProjectMixin, RoleAssignmentMixin, SampleSheetIOMixin,
-        LandingZoneMixin, TestCase):
+    ProjectMixin,
+    RoleAssignmentMixin,
+    SampleSheetIOMixin,
+    LandingZoneMixin,
+    TestCase,
+):
     """Tests for the API in the irodsbackend app"""
 
     def setUp(self):
@@ -45,24 +49,27 @@ class TestIrodsBackendAPI(
         self.user.save()
 
         # Init roles
-        self.role_owner = Role.objects.get_or_create(
-            name=PROJECT_ROLE_OWNER)[0]
+        self.role_owner = Role.objects.get_or_create(name=PROJECT_ROLE_OWNER)[0]
         self.role_delegate = Role.objects.get_or_create(
-            name=PROJECT_ROLE_DELEGATE)[0]
+            name=PROJECT_ROLE_DELEGATE
+        )[0]
         self.role_contributor = Role.objects.get_or_create(
-            name=PROJECT_ROLE_CONTRIBUTOR)[0]
-        self.role_guest = Role.objects.get_or_create(
-            name=PROJECT_ROLE_GUEST)[0]
+            name=PROJECT_ROLE_CONTRIBUTOR
+        )[0]
+        self.role_guest = Role.objects.get_or_create(name=PROJECT_ROLE_GUEST)[0]
 
         # Init project with owner
         self.project = self._make_project(
-            'TestProject', PROJECT_TYPE_PROJECT, None)
+            'TestProject', PROJECT_TYPE_PROJECT, None
+        )
         self.as_owner = self._make_assignment(
-            self.project, self.user, self.role_owner)
+            self.project, self.user, self.role_owner
+        )
 
         # Import investigation
         self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project)
+            SHEET_PATH, self.project
+        )
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
 
@@ -74,7 +81,8 @@ class TestIrodsBackendAPI(
             assay=self.assay,
             description=ZONE_DESC,
             configuration=None,
-            config_data={})
+            config_data={},
+        )
 
         self.irods_backend = IrodsAPI()
 
@@ -83,47 +91,58 @@ class TestIrodsBackendAPI(
         expected = '/{zone}/projects/{uuid_prefix}/{uuid}'.format(
             zone=IRODS_ZONE,
             uuid_prefix=str(self.project.sodar_uuid)[:2],
-            uuid=str(self.project.sodar_uuid))
+            uuid=str(self.project.sodar_uuid),
+        )
         path = self.irods_backend.get_path(self.project)
         self.assertEqual(expected, path)
 
     def test_get_path_study(self):
         """Test get_irods_path() with a Study object"""
-        expected = '/{zone}/projects/{uuid_prefix}/{uuid}/{sample_dir}' \
-                   '/{study}'.format(
-                    zone=IRODS_ZONE,
-                    uuid_prefix=str(self.project.sodar_uuid)[:2],
-                    uuid=str(self.project.sodar_uuid),
-                    sample_dir=SAMPLE_DIR,
-                    study='study_' + str(self.study.sodar_uuid))
+        expected = (
+            '/{zone}/projects/{uuid_prefix}/{uuid}/{sample_dir}'
+            '/{study}'.format(
+                zone=IRODS_ZONE,
+                uuid_prefix=str(self.project.sodar_uuid)[:2],
+                uuid=str(self.project.sodar_uuid),
+                sample_dir=SAMPLE_DIR,
+                study='study_' + str(self.study.sodar_uuid),
+            )
+        )
         path = self.irods_backend.get_path(self.study)
         self.assertEqual(expected, path)
 
     def test_get_path_assay(self):
         """Test get_irods_path() with an Assay object"""
-        expected = '/{zone}/projects/{uuid_prefix}/{uuid}/{sample_dir}' \
-                   '/{study}/{assay}'.format(
-                    zone=IRODS_ZONE,
-                    uuid_prefix=str(self.project.sodar_uuid)[:2],
-                    uuid=str(self.project.sodar_uuid),
-                    sample_dir=SAMPLE_DIR,
-                    study='study_' + str(self.study.sodar_uuid),
-                    assay='assay_' + str(self.assay.sodar_uuid))
+        expected = (
+            '/{zone}/projects/{uuid_prefix}/{uuid}/{sample_dir}'
+            '/{study}/{assay}'.format(
+                zone=IRODS_ZONE,
+                uuid_prefix=str(self.project.sodar_uuid)[:2],
+                uuid=str(self.project.sodar_uuid),
+                sample_dir=SAMPLE_DIR,
+                study='study_' + str(self.study.sodar_uuid),
+                assay='assay_' + str(self.assay.sodar_uuid),
+            )
+        )
         path = self.irods_backend.get_path(self.assay)
         self.assertEqual(expected, path)
 
     def test_get_path_zone(self):
         """Test get_irods_path() with a LandingZone object"""
-        expected = '/{zone}/projects/{uuid_prefix}/{uuid}/{zone_dir}' \
-                   '/{user}/{study_assay}/{zone_title}'.format(
-                    zone=IRODS_ZONE,
-                    uuid_prefix=str(self.project.sodar_uuid)[:2],
-                    uuid=str(self.project.sodar_uuid),
-                    zone_dir=LANDING_ZONE_DIR,
-                    user=self.user.username,
-                    study_assay=self.irods_backend.get_subdir(
-                        self.landing_zone.assay, landing_zone=True),
-                    zone_title=ZONE_TITLE)
+        expected = (
+            '/{zone}/projects/{uuid_prefix}/{uuid}/{zone_dir}'
+            '/{user}/{study_assay}/{zone_title}'.format(
+                zone=IRODS_ZONE,
+                uuid_prefix=str(self.project.sodar_uuid)[:2],
+                uuid=str(self.project.sodar_uuid),
+                zone_dir=LANDING_ZONE_DIR,
+                user=self.user.username,
+                study_assay=self.irods_backend.get_subdir(
+                    self.landing_zone.assay, landing_zone=True
+                ),
+                zone_title=ZONE_TITLE,
+            )
+        )
         path = self.irods_backend.get_path(self.landing_zone)
         self.assertEqual(expected, path)
 
@@ -133,7 +152,8 @@ class TestIrodsBackendAPI(
             zone=IRODS_ZONE,
             uuid_prefix=str(self.project.sodar_uuid)[:2],
             uuid=str(self.project.sodar_uuid),
-            sample_dir=SAMPLE_DIR)
+            sample_dir=SAMPLE_DIR,
+        )
         path = self.irods_backend.get_sample_path(self.project)
         self.assertEqual(expected, path)
 

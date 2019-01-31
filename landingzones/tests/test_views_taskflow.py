@@ -37,13 +37,15 @@ PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 SUBMIT_STATUS_OK = SODAR_CONSTANTS['SUBMIT_STATUS_OK']
 SUBMIT_STATUS_PENDING = SODAR_CONSTANTS['SUBMIT_STATUS_PENDING']
 SUBMIT_STATUS_PENDING_TASKFLOW = SODAR_CONSTANTS[
-    'SUBMIT_STATUS_PENDING_TASKFLOW']
+    'SUBMIT_STATUS_PENDING_TASKFLOW'
+]
 
 
 # Local constants
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
-TASKFLOW_ENABLED = True if \
-    'taskflow' in settings.ENABLED_BACKEND_PLUGINS else False
+TASKFLOW_ENABLED = (
+    True if 'taskflow' in settings.ENABLED_BACKEND_PLUGINS else False
+)
 TASKFLOW_SKIP_MSG = 'Taskflow not enabled in settings'
 
 ZONE_TITLE = '20190703_1724'
@@ -78,7 +80,8 @@ class LandingZoneTaskflowMixin:
             user=user,
             event_name='zone_create',
             description='create landing zone',
-            status_type='SUBMIT')
+            status_type='SUBMIT',
+        )
 
         flow_data = {
             'zone_title': zone.title,
@@ -86,10 +89,12 @@ class LandingZoneTaskflowMixin:
             'user_name': user.username,
             'user_uuid': user.sodar_uuid,
             'assay_path': irods_backend.get_subdir(
-                zone.assay, landing_zone=True),
+                zone.assay, landing_zone=True
+            ),
             'description': zone.description,
             'zone_config': zone.configuration,
-            'dirs': []}
+            'dirs': [],
+        }
 
         values = {
             'project_uuid': zone.project.sodar_uuid,
@@ -97,7 +102,8 @@ class LandingZoneTaskflowMixin:
             'flow_data': flow_data,
             'timeline_uuid': tl_event.sodar_uuid,
             'request_mode': 'async',
-            'request': request}
+            'request': request,
+        }
 
         if not request:
             values['sodar_url'] = self.live_server_url
@@ -139,8 +145,11 @@ class LandingZoneTaskflowMixin:
 
 
 class TestLandingZoneCreateView(
-        SampleSheetIOMixin, LandingZoneMixin, SampleSheetTaskflowMixin,
-        TestTaskflowBase):
+    SampleSheetIOMixin,
+    LandingZoneMixin,
+    SampleSheetTaskflowMixin,
+    TestTaskflowBase,
+):
     """Tests for the landingzones create view with Taskflow and iRODS"""
 
     def setUp(self):
@@ -158,11 +167,13 @@ class TestLandingZoneCreateView(
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
-            description='description')
+            description='description',
+        )
 
         # Import investigation
         self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project)
+            SHEET_PATH, self.project
+        )
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
 
@@ -182,14 +193,17 @@ class TestLandingZoneCreateView(
             'title_suffix': ZONE_SUFFIX,
             'description': ZONE_DESC,
             'configuration': '',
-            'sodar_url': self.live_server_url}
+            'sodar_url': self.live_server_url,
+        }
 
         with self.login(self.user):
             response = self.client.post(
                 reverse(
                     'landingzones:create',
-                    kwargs={'project': self.project.sodar_uuid}),
-                values)
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                values,
+            )
 
         # Assert redirect
         with self.login(self.user):
@@ -197,7 +211,9 @@ class TestLandingZoneCreateView(
                 response,
                 reverse(
                     'landingzones:list',
-                    kwargs={'project': self.project.sodar_uuid}))
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+            )
 
         # HACK: Wait for async stuff to finish
         for i in range(0, ASYNC_RETRY_COUNT):
@@ -215,8 +231,12 @@ class TestLandingZoneCreateView(
 
 
 class TestLandingZoneMoveView(
-        SampleSheetIOMixin, LandingZoneMixin, LandingZoneTaskflowMixin,
-        SampleSheetTaskflowMixin, TestTaskflowBase):
+    SampleSheetIOMixin,
+    LandingZoneMixin,
+    LandingZoneTaskflowMixin,
+    SampleSheetTaskflowMixin,
+    TestTaskflowBase,
+):
     """Tests for the landingzones move/validate view with Taskflow and iRODS"""
 
     def setUp(self):
@@ -234,11 +254,13 @@ class TestLandingZoneMoveView(
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
-            description='description')
+            description='description',
+        )
 
         # Import investigation
         self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project)
+            SHEET_PATH, self.project
+        )
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
 
@@ -253,16 +275,19 @@ class TestLandingZoneMoveView(
             assay=self.assay,
             description=ZONE_DESC,
             configuration=None,
-            config_data={})
+            config_data={},
+        )
 
         # Create zone in taskflow
         self._make_zone_taskflow(self.landing_zone)
 
         # Get collections
         self.zone_coll = self.irods_session.collections.get(
-            self.irods_backend.get_path(self.landing_zone))
+            self.irods_backend.get_path(self.landing_zone)
+        )
         self.assay_coll = self.irods_session.collections.get(
-            self.irods_backend.get_path(self.assay))
+            self.irods_backend.get_path(self.assay)
+        )
 
     @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_move(self):
@@ -278,22 +303,26 @@ class TestLandingZoneMoveView(
         self.assertEqual(len(self.assay_coll.data_objects), 0)
 
         # Issue POST request
-        values = {
-            'sodar_url': self.live_server_url}
+        values = {'sodar_url': self.live_server_url}
 
         with self.login(self.user):
             response = self.client.post(
                 reverse(
                     'landingzones:move',
-                    kwargs={'landingzone': self.landing_zone.sodar_uuid}),
-                values)
+                    kwargs={'landingzone': self.landing_zone.sodar_uuid},
+                ),
+                values,
+            )
 
         # Assert redirect
         with self.login(self.user):
             self.assertRedirects(
-                response, reverse(
+                response,
+                reverse(
                     'landingzones:list',
-                    kwargs={'project': self.project.sodar_uuid}))
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+            )
 
         # HACK: Wait for async stuff to finish
         for i in range(0, ASYNC_RETRY_COUNT):
@@ -321,22 +350,26 @@ class TestLandingZoneMoveView(
         self.assertEqual(len(self.assay_coll.data_objects), 0)
 
         # Issue POST request
-        values = {
-            'sodar_url': self.live_server_url}
+        values = {'sodar_url': self.live_server_url}
 
         with self.login(self.user):
             response = self.client.post(
                 reverse(
                     'landingzones:move',
-                    kwargs={'landingzone': self.landing_zone.sodar_uuid}),
-                values)
+                    kwargs={'landingzone': self.landing_zone.sodar_uuid},
+                ),
+                values,
+            )
 
         # Assert redirect
         with self.login(self.user):
             self.assertRedirects(
-                response, reverse(
+                response,
+                reverse(
                     'landingzones:list',
-                    kwargs={'project': self.project.sodar_uuid}))
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+            )
 
         # HACK: Wait for async stuff to finish
         for i in range(0, ASYNC_RETRY_COUNT):
@@ -364,22 +397,26 @@ class TestLandingZoneMoveView(
         self.assertEqual(len(self.assay_coll.data_objects), 0)
 
         # Issue POST request
-        values = {
-            'sodar_url': self.live_server_url}
+        values = {'sodar_url': self.live_server_url}
 
         with self.login(self.user):
             response = self.client.post(
                 reverse(
                     'landingzones:validate',
-                    kwargs={'landingzone': self.landing_zone.sodar_uuid}),
-                values)
+                    kwargs={'landingzone': self.landing_zone.sodar_uuid},
+                ),
+                values,
+            )
 
         # Assert redirect
         with self.login(self.user):
             self.assertRedirects(
-                response, reverse(
+                response,
+                reverse(
                     'landingzones:list',
-                    kwargs={'project': self.project.sodar_uuid}))
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+            )
 
         # HACK: Wait for async stuff to finish
         for i in range(0, ASYNC_RETRY_COUNT):
@@ -407,22 +444,26 @@ class TestLandingZoneMoveView(
         self.assertEqual(len(self.assay_coll.data_objects), 0)
 
         # Issue POST request
-        values = {
-            'sodar_url': self.live_server_url}
+        values = {'sodar_url': self.live_server_url}
 
         with self.login(self.user):
             response = self.client.post(
                 reverse(
                     'landingzones:validate',
-                    kwargs={'landingzone': self.landing_zone.sodar_uuid}),
-                values)
+                    kwargs={'landingzone': self.landing_zone.sodar_uuid},
+                ),
+                values,
+            )
 
         # Assert redirect
         with self.login(self.user):
             self.assertRedirects(
-                response, reverse(
+                response,
+                reverse(
                     'landingzones:list',
-                    kwargs={'project': self.project.sodar_uuid}))
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+            )
 
         # HACK: Wait for async stuff to finish
         for i in range(0, ASYNC_RETRY_COUNT):
@@ -438,8 +479,12 @@ class TestLandingZoneMoveView(
 
 
 class TestLandingZoneDeleteView(
-        SampleSheetIOMixin, LandingZoneMixin, LandingZoneTaskflowMixin,
-        SampleSheetTaskflowMixin, TestTaskflowBase):
+    SampleSheetIOMixin,
+    LandingZoneMixin,
+    LandingZoneTaskflowMixin,
+    SampleSheetTaskflowMixin,
+    TestTaskflowBase,
+):
     """Tests for the landingzones delete view with Taskflow and iRODS"""
 
     def setUp(self):
@@ -452,11 +497,13 @@ class TestLandingZoneDeleteView(
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
-            description='description')
+            description='description',
+        )
 
         # Import investigation
         self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project)
+            SHEET_PATH, self.project
+        )
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
 
@@ -471,7 +518,8 @@ class TestLandingZoneDeleteView(
             assay=self.assay,
             description=ZONE_DESC,
             configuration=None,
-            config_data={})
+            config_data={},
+        )
 
         # Create zone in taskflow
         self._make_zone_taskflow(self.landing_zone)
@@ -484,22 +532,26 @@ class TestLandingZoneDeleteView(
         self.assertEqual(LandingZone.objects.all().count(), 1)
 
         # Issue POST request
-        values = {
-            'sodar_url': self.live_server_url}
+        values = {'sodar_url': self.live_server_url}
 
         with self.login(self.user):
             response = self.client.post(
                 reverse(
                     'landingzones:delete',
-                    kwargs={'landingzone': self.landing_zone.sodar_uuid}),
-                values)
+                    kwargs={'landingzone': self.landing_zone.sodar_uuid},
+                ),
+                values,
+            )
 
         # Assert redirect
         with self.login(self.user):
             self.assertRedirects(
-                response, reverse(
+                response,
+                reverse(
                     'landingzones:list',
-                    kwargs={'project': self.project.sodar_uuid}))
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+            )
 
         # HACK: Wait for async stuff to finish
         for i in range(0, ASYNC_RETRY_COUNT):

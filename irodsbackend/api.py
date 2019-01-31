@@ -22,23 +22,21 @@ from django.conf import settings
 from django.utils.text import slugify
 
 
-# Projectroles dependency
-from projectroles.models import RoleAssignment
-
-
 # Local constants
 ACCEPTED_PATH_TYPES = [
     'Assay',
     'LandingZone',
     'Project',
     'Investigation',
-    'Study']
+    'Study',
+]
 
 PATH_REGEX = {
-    'project': '/{}/'.format(settings.IRODS_ZONE) +
-               'projects/[a-zA-Z\d]{2}/(.+?)(?:/|$)',
+    'project': '/{}/'.format(settings.IRODS_ZONE)
+    + 'projects/[a-zA-Z0-9]{2}/(.+?)(?:/|$)',
     'study': '/study_(.+?)(?:/|$)',
-    'assay': '/assay_(.+?)(?:/|$)'}
+    'assay': '/assay_(.+?)(?:/|$)',
+}
 
 
 logger = logging.getLogger(__name__)
@@ -56,14 +54,16 @@ def init_irods(func):
                 port=settings.IRODS_PORT,
                 user=settings.IRODS_USER,
                 password=settings.IRODS_PASS,
-                zone=settings.IRODS_ZONE)
+                zone=settings.IRODS_ZONE,
+            )
 
             # Ensure we have a connection
-            self.irods.collections.exists('/{}/home/{}'.format(
-                settings.IRODS_ZONE, settings.IRODS_USER))
+            self.irods.collections.exists(
+                '/{}/home/{}'.format(settings.IRODS_ZONE, settings.IRODS_USER)
+            )
 
-        except Exception as ex:
-            pass    # TODO: Handle exceptions, add logging
+        except Exception:
+            pass  # TODO: Handle exceptions, add logging
 
         result = func(self, *args, **kwargs)
         self.irods.cleanup()
@@ -75,11 +75,13 @@ def init_irods(func):
 
 # API class --------------------------------------------------------------------
 
+
 class IrodsAPI:
     """iRODS API to be used by Django apps"""
 
     class IrodsQueryException(Exception):
         """Irods REST service query exception"""
+
         pass
 
     def __init__(self):
@@ -104,10 +106,14 @@ class IrodsAPI:
     @classmethod
     def _get_query_alias(cls):
         """Return a random iCAT SQL query alias"""
-        return 'sodar_query_{}'.format(''.join(
-            random.SystemRandom().choice(
-                string.ascii_lowercase + string.ascii_uppercase) for
-            _ in range(16)))
+        return 'sodar_query_{}'.format(
+            ''.join(
+                random.SystemRandom().choice(
+                    string.ascii_lowercase + string.ascii_uppercase
+                )
+                for _ in range(16)
+            )
+        )
 
     @classmethod
     def _get_colls_recursively(cls, coll):
@@ -119,11 +125,13 @@ class IrodsAPI:
         :return: List
         """
         query = coll.manager.sess.query(Collection).filter(
-            Criterion('like', Collection.parent_name, coll.path + '%'))
+            Criterion('like', Collection.parent_name, coll.path + '%')
+        )
         return [iRODSCollection(coll.manager, row) for row in query]
 
     def _get_objs_recursively(
-            self, coll, md5=False, name_like=None, limit=None):
+        self, coll, md5=False, name_like=None, limit=None
+    ):
         """
         Return objects below a coll recursively (replacement for the
         non-scalable walk() function in the API).
@@ -137,14 +145,16 @@ class IrodsAPI:
         ret = []
         md5_filter = 'LIKE' if md5 else 'NOT LIKE'
 
-        sql = 'SELECT data_name, data_size, ' \
-              'r_data_main.modify_ts as modify_ts, coll_name ' \
-              'FROM r_data_main JOIN r_coll_main USING (coll_id)' \
-              'WHERE (coll_name = \'{coll_path}\' ' \
-              'OR coll_name LIKE \'{coll_path}/%\') ' \
-              'AND data_name {md5_filter} \'%.md5\''.format(
-                coll_path=coll.path,
-                md5_filter=md5_filter)
+        sql = (
+            'SELECT data_name, data_size, '
+            'r_data_main.modify_ts as modify_ts, coll_name '
+            'FROM r_data_main JOIN r_coll_main USING (coll_id)'
+            'WHERE (coll_name = \'{coll_path}\' '
+            'OR coll_name LIKE \'{coll_path}/%\') '
+            'AND data_name {md5_filter} \'%.md5\''.format(
+                coll_path=coll.path, md5_filter=md5_filter
+            )
+        )
 
         if name_like:
             sql += ' AND data_name LIKE \'%{}%\''.format(name_like)
@@ -153,8 +163,11 @@ class IrodsAPI:
             sql += ' LIMIT {}'.format(limit)
 
         columns = [
-            DataObject.name, DataObject.size, DataObject.modify_time,
-            Collection.name]
+            DataObject.name,
+            DataObject.size,
+            DataObject.modify_time,
+            Collection.name,
+        ]
 
         query = SpecificQuery(self.irods, sql, self._get_query_alias(), columns)
         _ = query.register()
@@ -163,12 +176,18 @@ class IrodsAPI:
             results = query.get_results()
 
             for row in results:
-                ret.append({
-                    'name': row[DataObject.name],
-                    'path': row[Collection.name] + '/' + row[DataObject.name],
-                    'size': row[DataObject.size],
-                    'modify_time': self._get_datetime(
-                        row[DataObject.modify_time])})
+                ret.append(
+                    {
+                        'name': row[DataObject.name],
+                        'path': row[Collection.name]
+                        + '/'
+                        + row[DataObject.name],
+                        'size': row[DataObject.size],
+                        'modify_time': self._get_datetime(
+                            row[DataObject.modify_time]
+                        ),
+                    }
+                )
 
         except CAT_NO_ROWS_FOUND:
             pass
@@ -176,9 +195,11 @@ class IrodsAPI:
         except Exception as ex:
             logger.error(
                 'iRODS exception in _get_objs_recursively(): {}'.format(
-                    ex.__class__.__name__))
+                    ex.__class__.__name__
+                )
+            )
 
-        _ = query.remove()
+        _ = query.remove()  # noqa
         return sorted(ret, key=lambda x: x['path'])
 
     def _get_obj_list(self, coll, check_md5=False, name_like=None, limit=None):
@@ -195,12 +216,16 @@ class IrodsAPI:
         md5_paths = None
 
         data_objs = self._get_objs_recursively(
-            coll, name_like=name_like, limit=limit)
+            coll, name_like=name_like, limit=limit
+        )
 
         if data_objs and check_md5:
             md5_paths = [
-                o['path'] for o in self._get_objs_recursively(
-                    coll, md5=True, name_like=name_like)]
+                o['path']
+                for o in self._get_objs_recursively(
+                    coll, md5=True, name_like=name_like
+                )
+            ]
 
         for o in data_objs:
             if check_md5:
@@ -221,17 +246,16 @@ class IrodsAPI:
         :param coll: iRODS collection object
         :return: Dict
         """
-        ret = {
-            'file_count': 0,
-            'total_size': 0}
+        ret = {'file_count': 0, 'total_size': 0}
 
-        sql = 'SELECT COUNT(data_id) as file_count, ' \
-              'SUM(data_size) as total_size ' \
-              'FROM r_data_main JOIN r_coll_main USING (coll_id) ' \
-              'WHERE (coll_name = \'{coll_path}\' ' \
-              'OR coll_name LIKE \'{coll_path}/%\') ' \
-              'AND data_name NOT LIKE \'%.md5\''.format(
-                coll_path=coll.path)
+        sql = (
+            'SELECT COUNT(data_id) as file_count, '
+            'SUM(data_size) as total_size '
+            'FROM r_data_main JOIN r_coll_main USING (coll_id) '
+            'WHERE (coll_name = \'{coll_path}\' '
+            'OR coll_name LIKE \'{coll_path}/%\') '
+            'AND data_name NOT LIKE \'%.md5\''.format(coll_path=coll.path)
+        )
 
         query = SpecificQuery(self.irods, sql, self._get_query_alias())
         _ = query.register()
@@ -247,9 +271,11 @@ class IrodsAPI:
         except Exception as ex:
             logger.error(
                 'iRODS exception in _get_obj_stats(): {}; SQL = "{}"'.format(
-                    ex.__class__.__name__, sql))
+                    ex.__class__.__name__, sql
+                )
+            )
 
-        _ = query.remove()
+        _ = query.remove()  # noqa
         return ret
 
     # TODO: Fork python-irodsclient and implement ticket functionality there
@@ -267,7 +293,8 @@ class IrodsAPI:
 
         msg_body = TicketAdminRequest(*args)
         msg = iRODSMessage(
-            'RODS_API_REQ', msg=msg_body, int_info=api_number[api_id])
+            'RODS_API_REQ', msg=msg_body, int_info=api_number[api_id]
+        )
 
         with self.irods.pool.get_connection() as conn:
             conn.send(msg)
@@ -300,13 +327,14 @@ class IrodsAPI:
 
         if landing_zone and not hasattr(obj, 'get_display_name'):
             raise NotImplementedError(
-                'Function get_display_name() not implemented')
+                'Function get_display_name() not implemented'
+            )
 
         def get_dir(obj):
             if not landing_zone:
                 return '{}_{}'.format(
-                    obj.__class__.__name__.lower(),
-                    obj.sodar_uuid)
+                    obj.__class__.__name__.lower(), obj.sodar_uuid
+                )
 
             else:
                 return slugify(obj.get_display_name()).replace('-', '_')
@@ -333,7 +361,9 @@ class IrodsAPI:
         if obj_class not in ACCEPTED_PATH_TYPES:
             raise TypeError(
                 'Object of type "{}" not supported! Accepted models: {}'.format(
-                    obj_class, ', '.join(ACCEPTED_PATH_TYPES)))
+                    obj_class, ', '.join(ACCEPTED_PATH_TYPES)
+                )
+            )
 
         if obj_class == 'Project':
             project = obj
@@ -348,38 +378,43 @@ class IrodsAPI:
         path = '/{zone}/projects/{uuid_prefix}/{uuid}'.format(
             zone=settings.IRODS_ZONE,
             uuid_prefix=str(project.sodar_uuid)[:2],
-            uuid=project.sodar_uuid)
+            uuid=project.sodar_uuid,
+        )
 
         # Project
         if obj_class == 'Project':
             return path
 
         elif obj_class == 'Investigation':
-            path += '/{sample_dir}'.format(
-                sample_dir=settings.IRODS_SAMPLE_DIR)
+            path += '/{sample_dir}'.format(sample_dir=settings.IRODS_SAMPLE_DIR)
 
         # Study (in sample data)
         elif obj_class == 'Study':
             path += '/{sample_dir}/{study}'.format(
-                sample_dir=settings.IRODS_SAMPLE_DIR,
-                study=cls.get_subdir(obj))
+                sample_dir=settings.IRODS_SAMPLE_DIR, study=cls.get_subdir(obj)
+            )
 
         # Assay (in sample data)
         elif obj_class == 'Assay':
             path += '/{sample_dir}/{study_assay}'.format(
                 sample_dir=settings.IRODS_SAMPLE_DIR,
-                study_assay=cls.get_subdir(obj))
+                study_assay=cls.get_subdir(obj),
+            )
 
         # LandingZone
         elif obj_class == 'LandingZone':
-            path += '/{zone_dir}/{user}/{study_assay}/{zone_title}' \
-                    '{zone_config}'.format(
-                zone_dir=settings.IRODS_LANDING_ZONE_DIR,
-                user=obj.user.username,
-                study_assay=cls.get_subdir(obj.assay, landing_zone=True),
-                zone_title=obj.title,
-                zone_config='_' + obj.configuration if
-                obj.configuration else '')
+            path += (
+                '/{zone_dir}/{user}/{study_assay}/{zone_title}'
+                '{zone_config}'.format(
+                    zone_dir=settings.IRODS_LANDING_ZONE_DIR,
+                    user=obj.user.username,
+                    study_assay=cls.get_subdir(obj.assay, landing_zone=True),
+                    zone_title=obj.title,
+                    zone_config='_' + obj.configuration
+                    if obj.configuration
+                    else '',
+                )
+            )
 
         return path
 
@@ -412,7 +447,8 @@ class IrodsAPI:
 
         if obj_type not in PATH_REGEX.keys():
             raise ValueError(
-                'Invalid argument for obj_type ("{}"'.format(obj_type))
+                'Invalid argument for obj_type ("{}"'.format(obj_type)
+            )
 
         s = re.search(PATH_REGEX[obj_type], path)
 
@@ -443,7 +479,8 @@ class IrodsAPI:
             ret['server_port'] = self.irods.port
             ret['server_zone'] = self.irods.zone
             ret['server_version'] = '.'.join(
-                str(x) for x in self.irods.pool.get_connection().server_version)
+                str(x) for x in self.irods.pool.get_connection().server_version
+            )
 
         else:
             ret['server_status'] = 'unavailable'
@@ -469,10 +506,11 @@ class IrodsAPI:
             raise FileNotFoundError('iRODS collection not found')
 
         if name_like:
-            name_like = name_like.replace('_', '\_')
+            name_like = name_like.replace('_', '\_')  # noqa
 
         ret = self._get_obj_list(
-            coll, check_md5, name_like=name_like, limit=limit)
+            coll, check_md5, name_like=name_like, limit=limit
+        )
         return ret
 
     @init_irods
@@ -520,13 +558,15 @@ class IrodsAPI:
 
         # Remove default file writing limitation
         self._send_request(
-            'TICKET_ADMIN_AN', 'mod', ticket._ticket, 'write-file', '0')
+            'TICKET_ADMIN_AN', 'mod', ticket._ticket, 'write-file', '0'
+        )
 
         # Set expiration
         if expiry_date:
             exp_str = expiry_date.strftime('%Y-%m-%d.%H:%M:%S')
             self._send_request(
-                'TICKET_ADMIN_AN', 'mod', ticket._ticket, 'expire', exp_str)
+                'TICKET_ADMIN_AN', 'mod', ticket._ticket, 'expire', exp_str
+            )
 
         return ticket
 
@@ -537,4 +577,3 @@ class IrodsAPI:
         :param ticket_str: String
         """
         self._send_request('TICKET_ADMIN_AN', 'delete', ticket_str)
-

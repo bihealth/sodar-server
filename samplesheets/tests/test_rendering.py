@@ -16,23 +16,29 @@ SHEET_PATH = SHEET_DIR + 'i_small2.zip'
 
 
 class TestRenderingBase(
-        ProjectMixin, RoleAssignmentMixin, SampleSheetIOMixin, TestCase):
+    ProjectMixin, RoleAssignmentMixin, SampleSheetIOMixin, TestCase
+):
     """Base class for rendering tests"""
+
     def setUp(self):
         # Make owner user
         self.user_owner = self.make_user('owner')
 
         # Init project, role and assignment
         self.project = self._make_project(
-            'TestProject', SODAR_CONSTANTS['PROJECT_TYPE_PROJECT'], None)
+            'TestProject', SODAR_CONSTANTS['PROJECT_TYPE_PROJECT'], None
+        )
         self.role_owner = Role.objects.get_or_create(
-            name=SODAR_CONSTANTS['PROJECT_ROLE_OWNER'])[0]
+            name=SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
+        )[0]
         self.assignment_owner = self._make_assignment(
-            self.project, self.user_owner, self.role_owner)
+            self.project, self.user_owner, self.role_owner
+        )
 
         # Import investigation
         self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project)
+            SHEET_PATH, self.project
+        )
         self.study = self.investigation.studies.first()
 
         self.tb = SampleSheetTableBuilder()
@@ -66,9 +72,11 @@ class TestTableBuilder(TestRenderingBase):
 
         # Sources
         table_sources = get_column_set(tables['study'], 1)
-        db_sources = set(GenericMaterial.objects.filter(
-            study=self.study, item_type='SOURCE').values_list(
-            'name', flat=True))
+        db_sources = set(
+            GenericMaterial.objects.filter(
+                study=self.study, item_type='SOURCE'
+            ).values_list('name', flat=True)
+        )
         self.assertEqual(table_sources, db_sources)
 
         # Samples
@@ -82,9 +90,11 @@ class TestTableBuilder(TestRenderingBase):
                 sample_pos += c['colspan']
 
         table_samples = get_column_set(tables['study'], sample_pos)
-        db_samples = set(GenericMaterial.objects.filter(
-            study=self.study, item_type='SAMPLE').values_list(
-            'name', flat=True))
+        db_samples = set(
+            GenericMaterial.objects.filter(
+                study=self.study, item_type='SAMPLE'
+            ).values_list('name', flat=True)
+        )
         self.assertEqual(table_samples, db_samples)
 
         # Test assay tables

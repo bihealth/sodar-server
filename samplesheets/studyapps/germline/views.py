@@ -14,8 +14,12 @@ from rest_framework.response import Response
 
 # Projectroles dependency
 from projectroles.plugins import get_backend_api
-from projectroles.views import LoggedInPermissionMixin, \
-    ProjectContextMixin, ProjectPermissionMixin, APIPermissionMixin
+from projectroles.views import (
+    LoggedInPermissionMixin,
+    ProjectContextMixin,
+    ProjectPermissionMixin,
+    APIPermissionMixin,
+)
 
 # Samplesheets dependency
 from samplesheets.models import GenericMaterial
@@ -29,8 +33,7 @@ from sodar.users.auth import fallback_to_auth_basic
 
 
 class GetPedigreeFileMixin:
-    def get_pedigree_file_url(
-            cls, file_type, source, study_tables):
+    def get_pedigree_file_url(cls, file_type, source, study_tables):
         """
         Return DavRods URL for the most recent file of type "bam" or "vcf"
         linked to source
@@ -46,7 +49,8 @@ class GetPedigreeFileMixin:
         for assay in source.study.assays.all():
             assay_table = study_tables['assays'][assay.get_name()]
             assay_plugin = find_assay_plugin(
-                assay.measurement_type, assay.technology_type)
+                assay.measurement_type, assay.technology_type
+            )
             source_fam = None
 
             if 'Family' in source.characteristics:
@@ -57,8 +61,8 @@ class GetPedigreeFileMixin:
 
             # Get sample index
             sample_idx = get_index_by_header(
-                assay_table, 'name',
-                obj_cls=GenericMaterial, item_type='SAMPLE')
+                assay_table, 'name', obj_cls=GenericMaterial, item_type='SAMPLE'
+            )
 
             def get_val_by_index(row, idx):
                 if not idx:
@@ -86,7 +90,8 @@ class GetPedigreeFileMixin:
                 if assay_plugin:
                     if row_name == source.name or vcf_search:
                         path = assay_plugin.get_row_path(
-                            row, assay_table, assay)
+                            row, assay_table, assay
+                        )
                         if path not in query_paths:
                             query_paths.append(path)
 
@@ -106,9 +111,9 @@ class GetPedigreeFileMixin:
 
                 for obj in obj_list['data_objects']:
                     # NOTE: We expect the SAMPLE name to appear in filenames
-                    if (obj['name'].lower().endswith(
-                            FILE_TYPE_SUFFIXES[file_type]) and
-                            any(x in obj['name'] for x in sample_names)):
+                    if obj['name'].lower().endswith(
+                        FILE_TYPE_SUFFIXES[file_type]
+                    ) and any(x in obj['name'] for x in sample_names):
                         file_paths.append(obj['path'])
 
             except FileNotFoundError:
@@ -119,14 +124,17 @@ class GetPedigreeFileMixin:
 
         # Get the last file of type by file name
         file_path = sorted(file_paths, key=lambda x: x.split('/')[-1])[-1]
-        file_url = '{}{}'.format(
-            settings.IRODS_WEBDAV_URL, file_path)
+        file_url = '{}{}'.format(settings.IRODS_WEBDAV_URL, file_path)
         return file_url
 
 
 class BaseGermlineConfigView(
-        LoginRequiredMixin, LoggedInPermissionMixin, ProjectPermissionMixin,
-        ProjectContextMixin, View):
+    LoginRequiredMixin,
+    LoggedInPermissionMixin,
+    ProjectPermissionMixin,
+    ProjectContextMixin,
+    View,
+):
     """Base view from which actual views are extended"""
 
     def __init__(self, *args, **kwargs):
@@ -142,14 +150,17 @@ class BaseGermlineConfigView(
 
         self.redirect_url = reverse(
             'samplesheets:project_sheets',
-            kwargs={'project': self.get_project().sodar_uuid})
+            kwargs={'project': self.get_project().sodar_uuid},
+        )
 
         try:
             self.source = GenericMaterial.objects.get(
-                sodar_uuid=self.kwargs['genericmaterial'])
+                sodar_uuid=self.kwargs['genericmaterial']
+            )
             self.redirect_url = reverse(
                 'samplesheets:project_sheets',
-                kwargs={'study': self.source.study.sodar_uuid})
+                kwargs={'study': self.source.study.sodar_uuid},
+            )
 
         except GenericMaterial.DoesNotExist:
             messages.error(request, 'Source material not found')
@@ -170,6 +181,7 @@ class BaseGermlineConfigView(
 
 class FileRedirectView(BaseGermlineConfigView, GetPedigreeFileMixin):
     """BAM/VCF file link view"""
+
     permission_required = 'samplesheets.view_sheet'
 
     def get(self, request, *args, **kwargs):
@@ -179,13 +191,15 @@ class FileRedirectView(BaseGermlineConfigView, GetPedigreeFileMixin):
 
         if file_type not in FILE_TYPE_SUFFIXES.keys():
             messages.error(
-                self.request, 'Unsupported file type "{}"'.format(file_type))
+                self.request, 'Unsupported file type "{}"'.format(file_type)
+            )
             return redirect(self.redirect_url)
 
         file_url = self.get_pedigree_file_url(
             file_type=file_type,
             source=self.source,
-            study_tables=self.study_tables)
+            study_tables=self.study_tables,
+        )
 
         if not file_url:
             if file_type != 'bam' and 'Family' in self.source.characteristics:
@@ -195,8 +209,11 @@ class FileRedirectView(BaseGermlineConfigView, GetPedigreeFileMixin):
                 target_name = self.source.name
 
             messages.warning(
-                self.request, 'No {} file found for {}'.format(
-                    file_type.upper(), target_name))
+                self.request,
+                'No {} file found for {}'.format(
+                    file_type.upper(), target_name
+                ),
+            )
             return redirect(self.redirect_url)
 
         # Return with link to file in DavRods
@@ -206,6 +223,7 @@ class FileRedirectView(BaseGermlineConfigView, GetPedigreeFileMixin):
 @fallback_to_auth_basic
 class IGVSessionFileRenderView(BaseGermlineConfigView, GetPedigreeFileMixin):
     """IGV session file rendering view"""
+
     permission_required = 'samplesheets.view_sheet'
 
     def get(self, request, *args, **kwargs):
@@ -221,9 +239,8 @@ class IGVSessionFileRenderView(BaseGermlineConfigView, GetPedigreeFileMixin):
 
         # Get URL to latest family vcf file
         vcf_url = self.get_pedigree_file_url(
-            file_type='vcf',
-            source=self.source,
-            study_tables=self.study_tables)
+            file_type='vcf', source=self.source, study_tables=self.study_tables
+        )
 
         # Get URLs to all latest bam files for all sources in family
 
@@ -236,14 +253,17 @@ class IGVSessionFileRenderView(BaseGermlineConfigView, GetPedigreeFileMixin):
 
         if fam_id:
             fam_sources = GenericMaterial.objects.filter(
-                study=self.source.study, item_type='SOURCE',
-                characteristics__Family__value=fam_id).order_by('name')
+                study=self.source.study,
+                item_type='SOURCE',
+                characteristics__Family__value=fam_id,
+            ).order_by('name')
 
             for fam_source in fam_sources:
                 bam_url = self.get_pedigree_file_url(
                     file_type='bam',
                     source=fam_source,
-                    study_tables=self.study_tables)
+                    study_tables=self.study_tables,
+                )
 
                 if bam_url:
                     bam_urls[fam_source.name] = bam_url
@@ -253,7 +273,8 @@ class IGVSessionFileRenderView(BaseGermlineConfigView, GetPedigreeFileMixin):
             bam_url = self.get_pedigree_file_url(
                 file_type='bam',
                 source=self.source,
-                study_tables=self.study_tables)
+                study_tables=self.study_tables,
+            )
 
             if bam_url:
                 bam_urls[self.source.name] = bam_url
@@ -274,7 +295,8 @@ class IGVSessionFileRenderView(BaseGermlineConfigView, GetPedigreeFileMixin):
             bam_urls=bam_urls,
             vcf_urls=vcf_urls,
             vcf_title='Pedigree',
-            request=request)
+            request=request,
+        )
 
         ###########
         # Serve XML
@@ -284,14 +306,19 @@ class IGVSessionFileRenderView(BaseGermlineConfigView, GetPedigreeFileMixin):
 
         # Set up response
         response = HttpResponse(xml_str, content_type='text/xml')
-        response['Content-Disposition'] = \
-            'attachment; filename="{}"'.format(file_name)
+        response['Content-Disposition'] = 'attachment; filename="{}"'.format(
+            file_name
+        )
         return response
 
 
 class FileExistenceCheckView(
-        GetPedigreeFileMixin, LoginRequiredMixin, ProjectPermissionMixin,
-        APIPermissionMixin, APIView):
+    GetPedigreeFileMixin,
+    LoginRequiredMixin,
+    ProjectPermissionMixin,
+    APIPermissionMixin,
+    APIView,
+):
     """Check existence of BAM/VCF files view"""
 
     permission_required = 'samplesheets.view_sheet'
@@ -301,16 +328,18 @@ class FileExistenceCheckView(
         study = kwargs['study']
         q_dict = request.POST
 
-        valid_objs = [str(u) for u in GenericMaterial.objects.filter(
-            study__sodar_uuid=study, item_type='SOURCE').values_list(
-            'sodar_uuid', flat=True)]
+        valid_objs = [
+            str(u)
+            for u in GenericMaterial.objects.filter(
+                study__sodar_uuid=study, item_type='SOURCE'
+            ).values_list('sodar_uuid', flat=True)
+        ]
 
         for file_path in q_dict.getlist('paths'):
             file_type = file_path.split('/')[5]
             obj = file_path.split('/')[6]
             existence = False
-            source = GenericMaterial.objects.get(
-                        sodar_uuid=obj)
+            source = GenericMaterial.objects.get(sodar_uuid=obj)
 
             # Build render table
             tb = SampleSheetTableBuilder()
@@ -318,9 +347,10 @@ class FileExistenceCheckView(
 
             if obj in valid_objs:
                 if self.get_pedigree_file_url(
-                  file_type=file_type,
-                  source=source,
-                  study_tables=study_tables):
+                    file_type=file_type,
+                    source=source,
+                    study_tables=study_tables,
+                ):
                     existence = True
             else:
                 existence = ''

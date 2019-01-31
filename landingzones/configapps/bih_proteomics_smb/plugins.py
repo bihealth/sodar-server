@@ -40,15 +40,14 @@ class LandingZoneConfigPlugin(LandingZoneConfigPluginPoint):
     #: Additional zone menu items
     menu_items = [
         {
-        'label': 'Generate/Refresh Ticket',
-        'icon': 'key',
-        'url_name': 'landingzones.configapps.bih_proteomics_smb:ticket_get'}
-     ]
+            'label': 'Generate/Refresh Ticket',
+            'icon': 'key',
+            'url_name': 'landingzones.configapps.bih_proteomics_smb:ticket_get',
+        }
+    ]
 
     #: Fields from LandingZone.config_data to be displayed in zone list API
-    api_config_data = [
-        'ticket',
-        'ticket_expire_date']
+    api_config_data = ['ticket', 'ticket_expire_date']
 
     #: Required permission for accessing the plugin
     # TODO: TBD: Do we need this?
@@ -61,7 +60,7 @@ class LandingZoneConfigPlugin(LandingZoneConfigPluginPoint):
         :param flow_name: Name of flow (string)
         :return: dict or None
         """
-        return {'script_user': 'bih_proteomics_smb'}    # Workaround for #297
+        return {'script_user': 'bih_proteomics_smb'}  # Workaround for #297
 
     def cleanup_zone(self, zone):
         """
@@ -73,8 +72,11 @@ class LandingZoneConfigPlugin(LandingZoneConfigPluginPoint):
         if not irods_backend:
             return
 
-        if ('ticket' in zone.config_data and
-                dt.strptime(
-                    zone.config_data['ticket_expire_date'],
-                    TICKET_DATE_FORMAT) > dt.now()):
+        if (
+            'ticket' in zone.config_data
+            and dt.strptime(
+                zone.config_data['ticket_expire_date'], TICKET_DATE_FORMAT
+            )
+            > dt.now()
+        ):
             irods_backend.delete_ticket(zone.config_data['ticket'])

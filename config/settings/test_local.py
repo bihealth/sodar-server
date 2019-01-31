@@ -13,7 +13,7 @@ from .test import *  # noqa
 
 
 # Taskflow backend settings
-TASKFLOW_TEST_MODE = True     # Important! Make taskflow use a test iRODS server
+TASKFLOW_TEST_MODE = True  # Important! Make taskflow use a test iRODS server
 IRODS_HOST = '0.0.0.0'
 IRODS_PORT = 4488
 IRODS_USER = 'rods'
@@ -22,8 +22,4 @@ IRODS_ZONE = 'omicsZone'
 
 
 # Plugin settings
-ENABLED_BACKEND_PLUGINS = [
-    'timeline_backend',
-    'taskflow',
-    'omics_irods',
-]
+ENABLED_BACKEND_PLUGINS = ['timeline_backend', 'taskflow', 'omics_irods']

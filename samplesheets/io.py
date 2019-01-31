@@ -6,8 +6,14 @@ import io
 import logging
 import time
 
-from .models import Investigation, Study, Assay, GenericMaterial, Protocol, \
-    Process
+from .models import (
+    Investigation,
+    Study,
+    Assay,
+    GenericMaterial,
+    Protocol,
+    Process,
+)
 from .rendering import SampleSheetTableBuilder
 from .utils import get_alt_names
 
@@ -20,8 +26,8 @@ MATERIAL_TYPE_MAP = {
     'Sample Name': 'SAMPLE',
     'Extract Name': 'MATERIAL',
     'Labeled Extract Name': 'MATERIAL',
-    'Raw Data File': 'DATA',        # HACK: File subtypes should be in their own
-    'Derived Data File': 'DATA',    # field instead of material.type
+    'Raw Data File': 'DATA',  # HACK: File subtypes should be in their own
+    'Derived Data File': 'DATA',  # field instead of material.type
     'Image File': 'DATA',
     'Acquisition Parameter Data File': 'DATA',
     'Derived Spectral Data File': 'DATA',
@@ -34,7 +40,8 @@ MATERIAL_TYPE_MAP = {
     'Derived Array Data Matrix File': 'DATA',
     'Free Induction Decay Data File': 'DATA',
     'Metabolite Assignment File': 'DATA',
-    'Array Data Matrix File': 'DATA'}
+    'Array Data Matrix File': 'DATA',
+}
 
 SAMPLE_SEARCH_SUBSTR = '-sample-'
 
@@ -66,15 +73,15 @@ def import_isa(isa_zip, project):
 
     def get_zip_path(inv_path, file_path):
         return '{}{}{}'.format(
-            inv_path, '/' if inv_path else '', str(file_path))
+            inv_path, '/' if inv_path else '', str(file_path)
+        )
 
     # Parse investigation
     inv_file_path = get_inv_paths(isa_zip)[0]
     inv_dir = '/'.join(inv_file_path.split('/')[:-1])
 
     input_file = get_file(isa_zip, inv_file_path)
-    isa_inv = InvestigationReader.from_stream(
-        input_file=input_file).read()
+    isa_inv = InvestigationReader.from_stream(input_file=input_file).read()
 
     ###################
     # Helper functions
@@ -99,7 +106,8 @@ def import_isa(isa_zip, project):
         for v in vals:
             ret[v.name] = {
                 'unit': get_multitype_val(v.unit),
-                'value': get_multitype_val(v.value)}
+                'value': get_multitype_val(v.value),
+            }
 
         return ret
 
@@ -109,7 +117,7 @@ def import_isa(isa_zip, project):
             return [get_multitype_val(v) for v in tuples.values()]
 
         elif type(tuples) in [tuple, list]:
-            return[get_multitype_val(v) for v in tuples]
+            return [get_multitype_val(v) for v in tuples]
 
     def get_header(header):
         """Get list of dicts from an object list for JSONField"""
@@ -119,8 +127,9 @@ def import_isa(isa_zip, project):
             h_ret = h.__dict__
 
             if h_ret['term_source_ref_header']:
-                h_ret['term_source_ref_header'] = \
-                    h_ret['term_source_ref_header'].__dict__
+                h_ret['term_source_ref_header'] = h_ret[
+                    'term_source_ref_header'
+                ].__dict__
 
             if h_ret['unit_header']:
                 h_ret['unit_header'] = h_ret['unit_header'].__dict__
@@ -148,7 +157,8 @@ def import_isa(isa_zip, project):
                 'name': m.name,
                 'unique_name': m.unique_name,
                 'alt_names': get_alt_names(m.name),
-                'study': study}
+                'study': study,
+            }
 
             if type(db_parent) == Assay:
                 values['assay'] = db_parent
@@ -168,12 +178,16 @@ def import_isa(isa_zip, project):
 
             material_vals.append(values)
 
-        materials = GenericMaterial.objects.bulk_create([
-            GenericMaterial(**v) for v in material_vals])
+        materials = GenericMaterial.objects.bulk_create(
+            [GenericMaterial(**v) for v in material_vals]
+        )
         obj_lookup.update({m.unique_name: m for m in materials})
 
-        logger.debug('Added {} materials to "{}"'.format(
-            len(materials), db_parent.get_name()))
+        logger.debug(
+            'Added {} materials to "{}"'.format(
+                len(materials), db_parent.get_name()
+            )
+        )
 
     def import_processes(processes, db_parent, obj_lookup, protocol_lookup):
         """
@@ -197,8 +211,8 @@ def import_isa(isa_zip, project):
                 except KeyError:
                     logger.warning(
                         'No protocol found for process "{}" '
-                        'with ref "{}"'.format(
-                            p.unique_name, p.protocol_ref))
+                        'with ref "{}"'.format(p.unique_name, p.protocol_ref)
+                    )
 
             values = {
                 'name': p.name,
@@ -210,21 +224,27 @@ def import_isa(isa_zip, project):
                 'perform_date': p.date,
                 'array_design_ref': p.array_design_ref,
                 'scan_name': p.scan_name,
-                'comments': get_ontology_vals(p.comments)}
+                'comments': get_ontology_vals(p.comments),
+            }
 
             # Parameter values
             if p.parameter_values:
                 values['parameter_values'] = get_ontology_vals(
-                    p.parameter_values)
+                    p.parameter_values
+                )
 
             process_vals.append(values)
 
-        processes = Process.objects.bulk_create([
-            Process(**v) for v in process_vals])
+        processes = Process.objects.bulk_create(
+            [Process(**v) for v in process_vals]
+        )
         obj_lookup.update({p.unique_name: p for p in processes})
 
-        logger.debug('Added {} processes to "{}"'.format(
-            len(processes), db_parent.get_name()))
+        logger.debug(
+            'Added {} processes to "{}"'.format(
+                len(processes), db_parent.get_name()
+            )
+        )
 
     def import_arcs(arcs, db_parent):
         """
@@ -240,8 +260,9 @@ def import_isa(isa_zip, project):
         db_parent.arcs = arc_vals
         db_parent.save()
 
-        logger.debug('Added {} arcs to "{}"'.format(
-            len(arc_vals), db_parent.get_name()))
+        logger.debug(
+            'Added {} arcs to "{}"'.format(len(arc_vals), db_parent.get_name())
+        )
 
     #########
     # Import
@@ -255,7 +276,8 @@ def import_isa(isa_zip, project):
         'description': (isa_inv.info.description or project.description),
         'file_name': inv_file_path,
         'ontology_source_refs': get_tuple_list(isa_inv.ontology_source_refs),
-        'comments': get_ontology_vals(isa_inv.info.comments)}
+        'comments': get_ontology_vals(isa_inv.info.comments),
+    }
 
     db_investigation = Investigation(**values)
     db_investigation.save()
@@ -273,7 +295,8 @@ def import_isa(isa_zip, project):
             isa_inv,
             s_i,
             input_file=get_file(isa_zip, get_zip_path(inv_dir, s_i.info.path)),
-            study_id=study_id).read()
+            study_id=study_id,
+        ).read()
 
         values = {
             'identifier': s_i.info.identifier,
@@ -281,12 +304,13 @@ def import_isa(isa_zip, project):
             'investigation': db_investigation,
             'title': s_i.info.title,
             'description': s_i.info.description,
-            'study_design': s_i.designs,        # TODO
-            'factors': s_i.factors,             # TODO
-            'characteristic_cat': [],           # TODO: TBD: Implement or omit?
-            'unit_cat': [],                     # TODO: TBD: Implement or omit?
+            'study_design': s_i.designs,  # TODO
+            'factors': s_i.factors,  # TODO
+            'characteristic_cat': [],  # TODO: TBD: Implement or omit?
+            'unit_cat': [],  # TODO: TBD: Implement or omit?
             'comments': get_ontology_vals(s_i.info.comments),
-            'header': get_header(s.header)}
+            'header': get_header(s.header),
+        }
 
         db_study = Study(**values)
         db_study.save()
@@ -297,23 +321,30 @@ def import_isa(isa_zip, project):
         protocol_vals = []
 
         for p_i in s_i.protocols.values():
-            protocol_vals.append({
-                'name': p_i.name,
-                'study': db_study,
-                'protocol_type': get_multitype_val(p_i.type),
-                'description': p_i.description,
-                'uri': p_i.uri,
-                'version': p_i.version,
-                'parameters': get_tuple_list(p_i.parameters),
-                'components': get_tuple_list(p_i.components),
-                'comments': get_ontology_vals(p_i.comments)})
+            protocol_vals.append(
+                {
+                    'name': p_i.name,
+                    'study': db_study,
+                    'protocol_type': get_multitype_val(p_i.type),
+                    'description': p_i.description,
+                    'uri': p_i.uri,
+                    'version': p_i.version,
+                    'parameters': get_tuple_list(p_i.parameters),
+                    'components': get_tuple_list(p_i.components),
+                    'comments': get_ontology_vals(p_i.comments),
+                }
+            )
 
-        protocols = Protocol.objects.bulk_create([
-            Protocol(**v) for v in protocol_vals])
+        protocols = Protocol.objects.bulk_create(
+            [Protocol(**v) for v in protocol_vals]
+        )
         protocol_lookup = {p.name: p for p in protocols}  # Per study, no update
 
-        logger.debug('Added {} protocols in study "{}"'.format(
-            len(protocols), db_study.title))
+        logger.debug(
+            'Added {} protocols in study "{}"'.format(
+                len(protocols), db_study.title
+            )
+        )
 
         # Create study materials
         import_materials(s.materials, db_study, obj_lookup)
@@ -328,9 +359,10 @@ def import_isa(isa_zip, project):
         assay_paths = sorted([a_i.path for a_i in s_i.assays.values()])
 
         for assay_path in assay_paths:
-            a_i = next((
-                a_i for a_i in s_i.assays.values() if a_i.path == assay_path),
-                None)
+            a_i = next(
+                (a_i for a_i in s_i.assays.values() if a_i.path == assay_path),
+                None,
+            )
             assay_id = 'a{}'.format(assay_count)
 
             a = AssayReader.from_stream(
@@ -338,8 +370,8 @@ def import_isa(isa_zip, project):
                 s_i,
                 study_id=study_id,
                 assay_id=assay_id,
-                input_file=get_file(
-                    isa_zip, get_zip_path(inv_dir, a_i.path))).read()
+                input_file=get_file(isa_zip, get_zip_path(inv_dir, a_i.path)),
+            ).read()
 
             values = {
                 'file_name': a_i.path,
@@ -347,21 +379,27 @@ def import_isa(isa_zip, project):
                 'measurement_type': get_multitype_val(a_i.measurement_type),
                 'technology_type': get_multitype_val(a_i.technology_type),
                 'technology_platform': a_i.platform,
-                'characteristic_cat': [],           # TODO
-                'unit_cat': [],                     # TODO
+                'characteristic_cat': [],  # TODO
+                'unit_cat': [],  # TODO
                 'comments': get_ontology_vals(a_i.comments),
-                'header': get_header(a.header)}
+                'header': get_header(a.header),
+            }
 
             db_assay = Assay(**values)
             db_assay.save()
-            logger.debug('Added assay "{}" in study "{}"'.format(
-                db_assay.file_name, db_study.title))
+            logger.debug(
+                'Added assay "{}" in study "{}"'.format(
+                    db_assay.file_name, db_study.title
+                )
+            )
 
             # Create assay materials (excluding sources and samples)
             assay_materials = {
-                k: a.materials[k] for k in a.materials if
-                MATERIAL_TYPE_MAP[a.materials[k].type] not in [
-                    'SOURCE', 'SAMPLE']}
+                k: a.materials[k]
+                for k in a.materials
+                if MATERIAL_TYPE_MAP[a.materials[k].type]
+                not in ['SOURCE', 'SAMPLE']
+            }
             import_materials(assay_materials, db_assay, obj_lookup)
 
             # Create assay processes
@@ -380,8 +418,11 @@ def import_isa(isa_zip, project):
         # Throws an exception if we are unable to build this
         SampleSheetTableBuilder.build_study_reference(study)
 
-    logger.info('Import of investigation "{}" OK ({:.1f}s)'.format(
-        db_investigation.title, time.time() - t_start))
+    logger.info(
+        'Import of investigation "{}" OK ({:.1f}s)'.format(
+            db_investigation.title, time.time() - t_start
+        )
+    )
     return db_investigation
 
 

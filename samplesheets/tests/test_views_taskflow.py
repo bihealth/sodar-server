@@ -30,12 +30,14 @@ PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 SUBMIT_STATUS_OK = SODAR_CONSTANTS['SUBMIT_STATUS_OK']
 SUBMIT_STATUS_PENDING = SODAR_CONSTANTS['SUBMIT_STATUS_PENDING']
 SUBMIT_STATUS_PENDING_TASKFLOW = SODAR_CONSTANTS[
-    'SUBMIT_STATUS_PENDING_TASKFLOW']
+    'SUBMIT_STATUS_PENDING_TASKFLOW'
+]
 
 # Local constants
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
-TASKFLOW_ENABLED = True if \
-    'taskflow' in settings.ENABLED_BACKEND_PLUGINS else False
+TASKFLOW_ENABLED = (
+    True if 'taskflow' in settings.ENABLED_BACKEND_PLUGINS else False
+)
 TASKFLOW_SKIP_MSG = 'Taskflow not enabled in settings'
 
 
@@ -55,7 +57,8 @@ class SampleSheetTaskflowMixin:
             'project_uuid': investigation.project.sodar_uuid,
             'flow_name': 'sheet_dirs_create',
             'flow_data': {'dirs': get_sample_dirs(investigation)},
-            'request': request}
+            'request': request,
+        }
 
         if not request:
             values['sodar_url'] = self.live_server_url
@@ -66,8 +69,7 @@ class SampleSheetTaskflowMixin:
         self.assertEqual(investigation.irods_status, True)
 
 
-class TestIrodsDirView(
-        SampleSheetIOMixin, TestTaskflowBase):
+class TestIrodsDirView(SampleSheetIOMixin, TestTaskflowBase):
     """Tests for iRODS directory structure creation view with taskflow"""
 
     def setUp(self):
@@ -79,11 +81,13 @@ class TestIrodsDirView(
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
-            description='description')
+            description='description',
+        )
 
         # Import investigation
         self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project)
+            SHEET_PATH, self.project
+        )
         self.study = self.investigation.studies.first()
 
     @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
@@ -95,13 +99,17 @@ class TestIrodsDirView(
 
         # Issue POST request
         values = {
-            'sodar_url': self.live_server_url}  # HACK: Override callback URL
+            'sodar_url': self.live_server_url
+        }  # HACK: Override callback URL
 
         with self.login(self.user):
-            response = self.client.post(reverse(
+            response = self.client.post(
+                reverse(
                     'samplesheets:dirs',
-                    kwargs={'project': self.project.sodar_uuid}),
-                values)
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                values,
+            )
 
         # Assert sample sheet dir structure state after creation
         self.investigation.refresh_from_db()
@@ -113,11 +121,12 @@ class TestIrodsDirView(
                 response,
                 reverse(
                     'samplesheets:project_sheets',
-                    kwargs={'project': self.project.sodar_uuid}))
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+            )
 
 
-class TestSampleSheetDeleteView(
-        SampleSheetIOMixin, TestTaskflowBase):
+class TestSampleSheetDeleteView(SampleSheetIOMixin, TestTaskflowBase):
     """Tests for sample sheet deletion with taskflow"""
 
     def setUp(self):
@@ -129,11 +138,13 @@ class TestSampleSheetDeleteView(
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
-            description='description')
+            description='description',
+        )
 
         # Import investigation
         self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project)
+            SHEET_PATH, self.project
+        )
         self.study = self.investigation.studies.first()
 
     @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
@@ -145,18 +156,23 @@ class TestSampleSheetDeleteView(
 
         # Issue POST request
         values = {
-            'sodar_url': self.live_server_url}  # HACK: Override callback URL
+            'sodar_url': self.live_server_url
+        }  # HACK: Override callback URL
 
         with self.login(self.user):
-            response = self.client.post(reverse(
+            response = self.client.post(
+                reverse(
                     'samplesheets:delete',
-                    kwargs={'project': self.project.sodar_uuid}),
-                values)
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                values,
+            )
 
         # Assert sample sheet dir structure state after creation
         with self.assertRaises(Investigation.DoesNotExist):
             Investigation.objects.get(
-                project__sodar_uuid=self.project.sodar_uuid)
+                project__sodar_uuid=self.project.sodar_uuid
+            )
 
         # Assert redirect
         with self.login(self.user):
@@ -164,4 +180,6 @@ class TestSampleSheetDeleteView(
                 response,
                 reverse(
                     'samplesheets:project_sheets',
-                    kwargs={'project': self.project.sodar_uuid}))
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+            )

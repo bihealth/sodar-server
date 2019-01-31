@@ -14,6 +14,7 @@ from projectroles.views import LoggedInPermissionMixin, HTTPRefererMixin
 
 class IrodsInfoView(LoggedInPermissionMixin, HTTPRefererMixin, TemplateView):
     """iRODS Help View"""
+
     permission_required = 'irodsinfo.view_info'
     template_name = 'irodsinfo/info.html'
 
@@ -43,6 +44,7 @@ class IrodsInfoView(LoggedInPermissionMixin, HTTPRefererMixin, TemplateView):
 
 class IrodsConfigView(LoggedInPermissionMixin, HTTPRefererMixin, View):
     """iRODS Configuration file download view"""
+
     permission_required = 'irodsinfo.get_config'
 
     def get(self, request, *args, **kwargs):
@@ -50,8 +52,9 @@ class IrodsConfigView(LoggedInPermissionMixin, HTTPRefererMixin, View):
 
         # Just in case Django mangles the user name case, as it might
         if user_name.find('@') != -1:
-            user_name = user_name.split('@')[0] + '@' + \
-                        user_name.split('@')[1].upper()
+            user_name = (
+                user_name.split('@')[0] + '@' + user_name.split('@')[1].upper()
+            )
 
         home_path = '/{}/home/{}'.format(settings.IRODS_ZONE, user_name)
         cert_file_name = settings.IRODS_HOST + '.crt'
@@ -68,7 +71,8 @@ class IrodsConfigView(LoggedInPermissionMixin, HTTPRefererMixin, View):
             'irods_zone_name': settings.IRODS_ZONE,
             'irods_user_name': user_name,
             'irods_cwd': home_path,
-            'irods_home': home_path}
+            'irods_home': home_path,
+        }
         env_json = json.dumps(irods_env, indent=2)
 
         # Create zip archive
@@ -76,21 +80,22 @@ class IrodsConfigView(LoggedInPermissionMixin, HTTPRefererMixin, View):
         zip_file = zipfile.ZipFile(io_buf, 'w')
 
         # Write environment file
-        zip_file.writestr(
-            'irods_environment.json', env_json)
+        zip_file.writestr('irods_environment.json', env_json)
 
         # Write cert file if it exists
         try:
             with open(settings.IRODS_CERT_PATH) as cert_file:
                 zip_file.writestr(cert_file_name, cert_file.read())
 
-        except FileNotFoundError as ex:
+        except FileNotFoundError:
             pass
 
         zip_file.close()
 
         response = HttpResponse(
-            io_buf.getvalue(), content_type='application/zip')
-        response['Content-Disposition'] = \
-            'attachment; filename={}'.format('irods_config.zip')
+            io_buf.getvalue(), content_type='application/zip'
+        )
+        response['Content-Disposition'] = 'attachment; filename={}'.format(
+            'irods_config.zip'
+        )
         return response

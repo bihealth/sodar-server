@@ -8,8 +8,7 @@ from functools import wraps
 from django.conf import settings
 from django.contrib.auth import authenticate, login
 from django.http import HttpResponse
-from django.utils.decorators import (
-    method_decorator, decorator_from_middleware)
+from django.utils.decorators import method_decorator, decorator_from_middleware
 from django.utils.deprecation import MiddlewareMixin
 
 
@@ -20,8 +19,9 @@ class FallbackToAuthBasicMiddleware(MiddlewareMixin):
 
     def process_request(self, request):
         # Authentication middleware must be active.
-        assert hasattr(request, 'user'), (
-            'AuthenticationMiddleware must be active')
+        assert hasattr(
+            request, 'user'
+        ), 'AuthenticationMiddleware must be active'
 
         # We are already done if the user is already authenticated.
         if request.user.is_authenticated():
@@ -53,6 +53,7 @@ class FallbackToAuthBasicMiddleware(MiddlewareMixin):
 
 def cbv_decorator_from_middleware(middleware):
     """A variant for ``decorator_from_middleware`` for class-based views."""
+
     def decorator(cls):
         dispatch = cls.dispatch
 
@@ -63,10 +64,11 @@ def cbv_decorator_from_middleware(middleware):
 
         cls.dispatch = wrapper
         return cls
+
     return decorator
 
 
 #: Decorator for ``FallbackToAuthBasicMiddleware``
 fallback_to_auth_basic = cbv_decorator_from_middleware(
-    FallbackToAuthBasicMiddleware)
-
+    FallbackToAuthBasicMiddleware
+)

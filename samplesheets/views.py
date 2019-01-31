@@ -19,12 +19,21 @@ from knox.auth import TokenAuthentication
 # Projectroles dependency
 from projectroles.models import Project
 from projectroles.plugins import get_backend_api
-from projectroles.views import LoggedInPermissionMixin, \
-    ProjectContextMixin, ProjectPermissionMixin
+from projectroles.views import (
+    LoggedInPermissionMixin,
+    ProjectContextMixin,
+    ProjectPermissionMixin,
+)
 
 from .forms import SampleSheetImportForm
-from .models import Investigation, Study, Assay, Protocol, Process, \
-    GenericMaterial
+from .models import (
+    Investigation,
+    Study,
+    Assay,
+    Protocol,
+    Process,
+    GenericMaterial,
+)
 from .rendering import SampleSheetTableBuilder, EMPTY_VALUE
 from .utils import get_sample_dirs, compare_inv_replace
 
@@ -34,12 +43,14 @@ APP_NAME = 'samplesheets'
 
 class InvestigationContextMixin(ProjectContextMixin):
     """Mixin for providing investigation for context if available"""
+
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
 
         try:
             investigation = Investigation.objects.get(
-                project=context['project'], active=True)
+                project=context['project'], active=True
+            )
             context['investigation'] = investigation
 
         except Investigation.DoesNotExist:
@@ -49,8 +60,12 @@ class InvestigationContextMixin(ProjectContextMixin):
 
 
 class ProjectSheetsView(
-        LoginRequiredMixin, LoggedInPermissionMixin, ProjectPermissionMixin,
-        InvestigationContextMixin, TemplateView):
+    LoginRequiredMixin,
+    LoggedInPermissionMixin,
+    ProjectPermissionMixin,
+    InvestigationContextMixin,
+    TemplateView,
+):
     """Main view for displaying sample sheets in a project"""
 
     # Projectroles dependency
@@ -59,16 +74,15 @@ class ProjectSheetsView(
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
-        project = context['project']
 
         if 'investigation' in context and context['investigation']:
             try:
                 if 'study' in self.kwargs and self.kwargs['study']:
-                    study = Study.objects.get(
-                        sodar_uuid=self.kwargs['study'])
+                    study = Study.objects.get(sodar_uuid=self.kwargs['study'])
                 else:
                     study = Study.objects.filter(
-                        investigation=context['investigation']).first()
+                        investigation=context['investigation']
+                    ).first()
 
                 context['study'] = study
                 tb = SampleSheetTableBuilder()
@@ -81,25 +95,31 @@ class ProjectSheetsView(
                     context['render_error'] = str(ex)
 
                 # iRODS backend
-                context['irods_backend_enabled'] = True if \
-                    get_backend_api('omics_irods') else False
+                context['irods_backend_enabled'] = (
+                    True if get_backend_api('omics_irods') else False
+                )
 
                 # iRODS WebDAV
                 if settings.IRODS_WEBDAV_ENABLED:
                     context['irods_webdav_enabled'] = True
-                    context['irods_webdav_url'] = \
-                        settings.IRODS_WEBDAV_URL.rstrip('/')
+                    context[
+                        'irods_webdav_url'
+                    ] = settings.IRODS_WEBDAV_URL.rstrip('/')
 
             except Study.DoesNotExist:
-                pass    # TODO: Show error message if study not found?
+                pass  # TODO: Show error message if study not found?
 
-        context['EMPTY_VALUE'] = EMPTY_VALUE    # For JQuery
+        context['EMPTY_VALUE'] = EMPTY_VALUE  # For JQuery
         return context
 
 
 class ProjectSheetsOverviewView(
-        LoginRequiredMixin, LoggedInPermissionMixin, ProjectPermissionMixin,
-        ProjectContextMixin, TemplateView):
+    LoginRequiredMixin,
+    LoggedInPermissionMixin,
+    ProjectPermissionMixin,
+    ProjectContextMixin,
+    TemplateView,
+):
     """Main view for displaying information about project sheets"""
 
     # Projectroles dependency
@@ -114,7 +134,8 @@ class ProjectSheetsOverviewView(
 
         try:
             investigation = Investigation.objects.get(
-                project=context['project'], active=True)
+                project=context['project'], active=True
+            )
             context['investigation'] = investigation
 
         except Investigation.DoesNotExist:
@@ -124,23 +145,29 @@ class ProjectSheetsOverviewView(
         def get_material_count(item_type):
             return GenericMaterial.objects.filter(
                 Q(item_type=item_type),
-                Q(study__investigation=investigation) |
-                Q(assay__study__investigation=investigation)).count()
+                Q(study__investigation=investigation)
+                | Q(assay__study__investigation=investigation),
+            ).count()
 
         # Statistics
         context['sheet_stats'] = {
             'study_count': Study.objects.filter(
-                investigation=investigation).count(),
+                investigation=investigation
+            ).count(),
             'assay_count': Assay.objects.filter(
-                study__investigation=investigation).count(),
+                study__investigation=investigation
+            ).count(),
             'protocol_count': Protocol.objects.filter(
-                study__investigation=investigation).count(),
+                study__investigation=investigation
+            ).count(),
             'process_count': Process.objects.filter(
-                protocol__study__investigation=investigation).count(),
+                protocol__study__investigation=investigation
+            ).count(),
             'source_count': get_material_count('SOURCE'),
             'material_count': get_material_count('MATERIAL'),
             'sample_count': get_material_count('SAMPLE'),
-            'data_count': get_material_count('DATA')}
+            'data_count': get_material_count('DATA'),
+        }
 
         # iRODS backend
         context['irods_backend_enabled'] = get_backend_api('omics_irods')
@@ -149,8 +176,12 @@ class ProjectSheetsOverviewView(
 
 
 class SampleSheetImportView(
-        LoginRequiredMixin, LoggedInPermissionMixin, ProjectPermissionMixin,
-        ProjectContextMixin, FormView):
+    LoginRequiredMixin,
+    LoggedInPermissionMixin,
+    ProjectPermissionMixin,
+    ProjectContextMixin,
+    FormView,
+):
     """Sample sheet JSON import view"""
 
     permission_required = 'samplesheets.edit_sheet'
@@ -203,7 +234,8 @@ class SampleSheetImportView(
 
         redirect_url = reverse(
             'samplesheets:project_sheets',
-            kwargs={'project': project.sodar_uuid})
+            kwargs={'project': project.sodar_uuid},
+        )
 
         try:
             self.object = form.save()
@@ -212,10 +244,11 @@ class SampleSheetImportView(
             # Check for existing investigation
             try:
                 old_inv = Investigation.objects.get(
-                    project=project, active=True)
+                    project=project, active=True
+                )
                 old_inv_found = True
             except Investigation.DoesNotExist:
-                pass    # This is fine
+                pass  # This is fine
 
             if old_inv:
                 # Ensure existing studies and assays are found in new inv
@@ -240,8 +273,7 @@ class SampleSheetImportView(
 
         except Exception as ex:
             # Get existing investigations under project
-            invs = Investigation.objects.filter(
-                project=project).order_by('-pk')
+            invs = Investigation.objects.filter(project=project).order_by('-pk')
             old_inv = None
 
             if invs:
@@ -257,13 +289,14 @@ class SampleSheetImportView(
             # Just in case, delete remaining ones from the db
             if old_inv:
                 Investigation.objects.filter(project=project).exclude(
-                    pk=old_inv.pk).delete()
+                    pk=old_inv.pk
+                ).delete()
 
             if settings.DEBUG:
                 raise ex
 
             messages.error(self.request, str(ex))
-            return redirect(redirect_url)   # NOTE: Return here with failure
+            return redirect(redirect_url)  # NOTE: Return here with failure
 
         # If all went well..
 
@@ -300,25 +333,30 @@ class SampleSheetImportView(
                 user=self.request.user,
                 event_name='sheet_' + form_action,
                 description=desc + ' {investigation}',
-                status_type='OK')
+                status_type='OK',
+            )
 
             tl_event.add_object(
-                obj=self.object,
-                label='investigation',
-                name=self.object.title)
+                obj=self.object, label='investigation', name=self.object.title
+            )
 
             messages.success(
                 self.request,
-                form_action.capitalize() +
-                'd sample sheets from ISAtab import')
+                form_action.capitalize() + 'd sample sheets from ISAtab import',
+            )
 
         return redirect(redirect_url)
 
 
 class SampleSheetTableExportView(
-        LoginRequiredMixin, LoggedInPermissionMixin, ProjectPermissionMixin,
-        ProjectContextMixin, View):
+    LoginRequiredMixin,
+    LoggedInPermissionMixin,
+    ProjectPermissionMixin,
+    ProjectContextMixin,
+    View,
+):
     """Sample sheet table TSV export view"""
+
     permission_required = 'samplesheets.export_sheet'
 
     def get(self, request, *args, **kwargs):
@@ -329,27 +367,25 @@ class SampleSheetTableExportView(
         study = None
 
         if 'assay' in self.kwargs:
-            try:
-                assay = Assay.objects.get(sodar_uuid=self.kwargs['assay'])
-                study = assay.study
-
-            except Exception as ex:
-                pass
+            assay = Assay.objects.filter(
+                sodar_uuid=self.kwargs['assay']
+            ).first()
+            study = assay.study if assay else None
 
         elif 'study' in self.kwargs:
-            try:
-                study = Study.objects.get(sodar_uuid=self.kwargs['study'])
-
-            except Study.DoesNotExist:
-                pass
+            study = Study.objects.filter(
+                sodar_uuid=self.kwargs['study']
+            ).first()
 
         redirect_url = reverse(
             'samplesheets:project_sheets',
-            kwargs={'project': self.get_project().sodar_uuid})
+            kwargs={'project': self.get_project().sodar_uuid},
+        )
 
         if not study:
             messages.error(
-                self.request, 'Study not found, unable to render TSV')
+                self.request, 'Study not found, unable to render TSV'
+            )
             return redirect(redirect_url)
 
         # Build study tables
@@ -360,23 +396,25 @@ class SampleSheetTableExportView(
 
         except Exception as ex:
             messages.error(
-                self.request,
-                'Unable to render table for export: {}'.format(ex))
+                self.request, 'Unable to render table for export: {}'.format(ex)
+            )
             return redirect(redirect_url)
 
         if 'assay' in self.kwargs:
             table = tables['assays'][assay.get_name()]
             input_name = assay.file_name
 
-        else:   # Study
+        else:  # Study
             table = tables['study']
             input_name = study.file_name
 
         # Set up response
         response = HttpResponse(content_type='text/tab-separated-values')
-        response['Content-Disposition'] = \
-            'attachment; filename="{}.tsv"'.format(
-                input_name.split('.')[0])  # TODO: TBD: Output file name?
+        response[
+            'Content-Disposition'
+        ] = 'attachment; filename="{}.tsv"'.format(
+            input_name.split('.')[0]
+        )  # TODO: TBD: Output file name?
 
         # Build TSV
         writer = csv.writer(response, delimiter='\t')
@@ -404,9 +442,14 @@ class SampleSheetTableExportView(
 
 
 class SampleSheetDeleteView(
-        LoginRequiredMixin, LoggedInPermissionMixin, ProjectContextMixin,
-        ProjectPermissionMixin, TemplateView):
+    LoginRequiredMixin,
+    LoggedInPermissionMixin,
+    ProjectContextMixin,
+    ProjectPermissionMixin,
+    TemplateView,
+):
     """Sample sheet deletion view"""
+
     permission_required = 'samplesheets.delete_sheet'
     template_name = 'samplesheets/samplesheet_confirm_delete.html'
 
@@ -425,12 +468,14 @@ class SampleSheetDeleteView(
                 user=self.request.user,
                 event_name='sheet_delete',
                 description='delete investigation {investigation}',
-                status_type='OK')
+                status_type='OK',
+            )
 
             tl_event.add_object(
                 obj=investigation,
                 label='investigation',
-                name=investigation.title)
+                name=investigation.title,
+            )
 
         if taskflow and investigation.irods_status:
             if tl_event:
@@ -441,7 +486,8 @@ class SampleSheetDeleteView(
                     project_uuid=project.sodar_uuid,
                     flow_name='sheet_delete',
                     flow_data={},
-                    request=self.request)
+                    request=self.request,
+                )
 
             except taskflow.FlowSubmitException as ex:
                 if tl_event:
@@ -450,18 +496,25 @@ class SampleSheetDeleteView(
         else:
             investigation.delete()
 
-        messages.success(
-            self.request, 'Sample sheets deleted.')
+        messages.success(self.request, 'Sample sheets deleted.')
 
-        return HttpResponseRedirect(reverse(
-            'samplesheets:project_sheets',
-            kwargs={'project': project.sodar_uuid}))
+        return HttpResponseRedirect(
+            reverse(
+                'samplesheets:project_sheets',
+                kwargs={'project': project.sodar_uuid},
+            )
+        )
 
 
 class IrodsDirsView(
-        LoginRequiredMixin, LoggedInPermissionMixin, InvestigationContextMixin,
-        ProjectPermissionMixin, TemplateView):
+    LoginRequiredMixin,
+    LoggedInPermissionMixin,
+    InvestigationContextMixin,
+    ProjectPermissionMixin,
+    TemplateView,
+):
     """iRODS directory structure creation confirm view"""
+
     template_name = 'samplesheets/irods_dirs_confirm.html'
     # NOTE: minimum perm, all checked files will be tested in post()
     permission_required = 'samplesheets.create_dirs'
@@ -495,44 +548,53 @@ class IrodsDirsView(
                 user=self.request.user,
                 event_name='sheet_dirs_' + action,
                 description=action + ' irods directory structure for '
-                                     '{investigation}')
+                '{investigation}',
+            )
 
             tl_event.add_object(
                 obj=investigation,
                 label='investigation',
-                name=investigation.title)
+                name=investigation.title,
+            )
 
         # Fail if tasflow is not available
         if not taskflow:
             if timeline:
                 tl_event.set_status(
-                    'FAILED', status_desc='Taskflow not enabled')
+                    'FAILED', status_desc='Taskflow not enabled'
+                )
 
             messages.error(
                 self.request,
-                'Unable to {} dirs: taskflow not enabled!'.format(action))
+                'Unable to {} dirs: taskflow not enabled!'.format(action),
+            )
 
-            return redirect(reverse(
-                'samplesheets:project_sheets',
-                kwargs={'project': project.sodar_uuid}))
+            return redirect(
+                reverse(
+                    'samplesheets:project_sheets',
+                    kwargs={'project': project.sodar_uuid},
+                )
+            )
 
         # Else go on with the creation
         if tl_event:
             tl_event.set_status('SUBMIT')
 
-        flow_data = {
-            'dirs': context['dirs']}
+        flow_data = {'dirs': context['dirs']}
 
         try:
             taskflow.submit(
                 project_uuid=project.sodar_uuid,
                 flow_name='sheet_dirs_create',
                 flow_data=flow_data,
-                request=self.request)
+                request=self.request,
+            )
             messages.success(
                 self.request,
                 'Directory structure for sample data {}d in iRODS'.format(
-                    action))
+                    action
+                ),
+            )
 
             if tl_event:
                 tl_event.set_status('OK')
@@ -543,9 +605,12 @@ class IrodsDirsView(
 
             messages.error(self.request, str(ex))
 
-        return HttpResponseRedirect(reverse(
-            'samplesheets:project_sheets',
-            kwargs={'project': project.sodar_uuid}))
+        return HttpResponseRedirect(
+            reverse(
+                'samplesheets:project_sheets',
+                kwargs={'project': project.sodar_uuid},
+            )
+        )
 
     def get(self, request, *args, **kwargs):
         super().get(request, *args, **kwargs)
@@ -568,6 +633,7 @@ class SourceIDAPIRenderer(JSONRenderer):
 
 class SourceIDQueryAPIView(APIView):
     """Proof-of-concept source ID querying view for BeLOVE integration"""
+
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated,)
     versioning_class = SourceIDAPIVersioning
@@ -577,8 +643,8 @@ class SourceIDQueryAPIView(APIView):
         source_id = self.kwargs['source_id']
 
         source_count = GenericMaterial.objects.find(
-            search_term=source_id,
-            item_type='SOURCE').count()
+            search_term=source_id, item_type='SOURCE'
+        ).count()
 
         ret_data = {'id_found': True if source_count > 0 else False}
         return Response(ret_data, status=200)
@@ -592,10 +658,12 @@ class SourceIDQueryAPIView(APIView):
 
 class TaskflowDirStatusGetAPIView(APIView):
     """View for getting the sample sheet iRODS dir status"""
+
     def post(self, request):
         try:
             investigation = Investigation.objects.get(
-                project__sodar_uuid=request.data['project_uuid'], active=True)
+                project__sodar_uuid=request.data['project_uuid'], active=True
+            )
 
         except Investigation.DoesNotExist as ex:
             return Response(str(ex), status=404)
@@ -605,10 +673,12 @@ class TaskflowDirStatusGetAPIView(APIView):
 
 class TaskflowDirStatusSetAPIView(APIView):
     """View for creating or updating a role assignment based on params"""
+
     def post(self, request):
         try:
             investigation = Investigation.objects.get(
-                project__sodar_uuid=request.data['project_uuid'], active=True)
+                project__sodar_uuid=request.data['project_uuid'], active=True
+            )
 
         except Investigation.DoesNotExist as ex:
             return Response(str(ex), status=404)
@@ -621,10 +691,12 @@ class TaskflowDirStatusSetAPIView(APIView):
 
 class TaskflowSheetDeleteAPIView(APIView):
     """View for deleting the sample sheets of a project"""
+
     def post(self, request):
         try:
             investigation = Investigation.objects.get(
-                project__sodar_uuid=request.data['project_uuid'], active=True)
+                project__sodar_uuid=request.data['project_uuid'], active=True
+            )
 
         except Investigation.DoesNotExist as ex:
             return Response(str(ex), status=404)

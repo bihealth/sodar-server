@@ -24,12 +24,12 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
     assay_fields = [
         {
             'measurement_type': 'genome sequencing',
-            'technology_type': 'nucleotide sequencing'
+            'technology_type': 'nucleotide sequencing',
         },
         {
             'measurement_type': 'exome sequencing',
-            'technology_type': 'nucleotide sequencing'
-        }
+            'technology_type': 'nucleotide sequencing',
+        },
     ]
 
     #: Description string

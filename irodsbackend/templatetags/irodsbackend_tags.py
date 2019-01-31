@@ -29,11 +29,12 @@ def get_stats_html(irods_path, project=None):
     if project:
         url_kwargs['project'] = project.sodar_uuid
 
-    return '<span class="badge badge-pill badge-info sodar-irods-stats"' \
-           'stats-url="{url}">' \
-           '<i class="fa fa-spin fa-circle-o-notch"></i> Updating stats..' \
-           '</span>'.format(
-            url=reverse('irodsbackend:stats', kwargs=url_kwargs))
+    return (
+        '<span class="badge badge-pill badge-info sodar-irods-stats"'
+        'stats-url="{url}">'
+        '<i class="fa fa-spin fa-circle-o-notch"></i> Updating stats..'
+        '</span>'.format(url=reverse('irodsbackend:stats', kwargs=url_kwargs))
+    )
 
 
 @register.simple_tag

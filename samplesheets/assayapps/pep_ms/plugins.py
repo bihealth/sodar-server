@@ -14,17 +14,24 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
     name = 'samplesheets_assay_pep_ms'
 
     #: Title
-    title = 'Sample Sheets Protein Expression Profiling / Mass Spectrometry ' \
-            'Assay Plugin'
+    title = (
+        'Sample Sheets Protein Expression Profiling / Mass Spectrometry '
+        'Assay Plugin'
+    )
 
     #: Identifying assay fields (used to identify plugin by assay)
-    assay_fields = [{
-        'measurement_type': 'protein expression profiling',
-        'technology_type': 'mass spectrometry'}]
+    assay_fields = [
+        {
+            'measurement_type': 'protein expression profiling',
+            'technology_type': 'mass spectrometry',
+        }
+    ]
 
     #: Description string
-    description = 'Sample sheets protein expression profiling / mass ' \
-                  'spectrometry assay plugin'
+    description = (
+        'Sample sheets protein expression profiling / mass '
+        'spectrometry assay plugin'
+    )
 
     #: Template for assay addition (Assay object as "assay" in context)
     assay_template = 'samplesheets_assay_pep_ms/_assay.html'
@@ -80,30 +87,41 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
         max_quant_found = False
 
         for cell in row:
-            if (cell['obj_cls'] == Process and
-                    cell['field_name'] == 'analysis software name' and
-                    cell['value'] == 'MaxQuant'):
+            if (
+                cell['obj_cls'] == Process
+                and cell['field_name'] == 'analysis software name'
+                and cell['value'] == 'MaxQuant'
+            ):
                 max_quant_found = True
                 break
 
         for cell in row:
             # Data files
-            if (cell['obj_cls'] == GenericMaterial and
-                    cell['item_type'] == 'DATA' and
-                    cell['field_name'] == 'name'):
+            if (
+                cell['obj_cls'] == GenericMaterial
+                and cell['item_type'] == 'DATA'
+                and cell['field_name'] == 'name'
+            ):
                 # .raw files
                 if cell['value'].split('.')[-1].lower() == 'raw':
-                    cell['link'] = \
-                        base_url + '/' + self.raw_data_coll + '/' + \
-                        cell['value']
+                    cell['link'] = (
+                        base_url
+                        + '/'
+                        + self.raw_data_coll
+                        + '/'
+                        + cell['value']
+                    )
                     cell['link_file'] = True
 
             # Process parameter files
-            elif (max_quant_found and
-                  cell['obj_cls'] == Process and
-                  cell['field_name'] == 'analysis database file'):
-                cell['link'] = \
+            elif (
+                max_quant_found
+                and cell['obj_cls'] == Process
+                and cell['field_name'] == 'analysis database file'
+            ):
+                cell['link'] = (
                     base_url + '/' + self.max_quant_coll + '/' + cell['value']
+                )
                 cell['link_file'] = True
 
         return row

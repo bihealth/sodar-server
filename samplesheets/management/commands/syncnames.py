@@ -19,5 +19,8 @@ class Command(BaseCommand):
                 m.alt_names = get_alt_names(m.name)
                 m.save()
 
-        print('{} materials updated.'.format(
-            GenericMaterial.objects.all().count()))
+        print(
+            '{} materials updated.'.format(
+                GenericMaterial.objects.all().count()
+            )
+        )

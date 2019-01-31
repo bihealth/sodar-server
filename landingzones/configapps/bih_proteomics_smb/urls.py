@@ -10,5 +10,5 @@ urlpatterns = [
         regex=r'^(?P<landingzone>[0-9a-f-]+)$',
         view=views.ZoneTicketGetView.as_view(),
         name='ticket_get',
-    ),
+    )
 ]

@@ -12,8 +12,15 @@ from django.utils import timezone
 from projectroles.models import Role, SODAR_CONSTANTS
 from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
 
-from ..models import Investigation, Study, Assay, Protocol, Process, \
-    GenericMaterial, NOT_AVAILABLE_STR
+from ..models import (
+    Investigation,
+    Study,
+    Assay,
+    Protocol,
+    Process,
+    GenericMaterial,
+    NOT_AVAILABLE_STR,
+)
 from ..utils import get_alt_names
 
 
@@ -31,8 +38,13 @@ STUDY_TITLE = 'study'
 PROTOCOL_NAME = 'sample collection'
 PROTOCOL_TYPE = 'sample collection'
 PROTOCOL_PARAMS = [
-    'library kit', 'library selection', 'mid', 'library source',
-    'library layout', 'library strategy']
+    'library kit',
+    'library selection',
+    'mid',
+    'library source',
+    'library layout',
+    'library strategy',
+]
 PROTOCOL_URI = 'pmid:11314272'
 PROTOCOL_VERSION = '1'
 PROTOCOL_COMPONENTS = '454 GS FLX Titanium'
@@ -50,9 +62,9 @@ SOURCE_CHARACTERISTICS = {
         'unit': {
             'name': 'day',
             'accession': 'http://purl.obolibrary.org/obo/UO_0000033',
-            'ontology_name': 'UO'
+            'ontology_name': 'UO',
         },
-        'value': '2423'
+        'value': '2423',
     }
 }
 
@@ -86,8 +98,16 @@ class SampleSheetModelMixin:
 
     @classmethod
     def _make_investigation(
-            cls, identifier, file_name, project, title, description,
-            retraction_data=None, sharing_data=None, comments=None):
+        cls,
+        identifier,
+        file_name,
+        project,
+        title,
+        description,
+        retraction_data=None,
+        sharing_data=None,
+        comments=None,
+    ):
         """Create Investigation in database"""
         values = {
             'identifier': identifier,
@@ -96,15 +116,24 @@ class SampleSheetModelMixin:
             'title': title,
             'description': description,
             'comments': comments,
-            'active': True}     # NOTE: Must explicitly set active to True
+            'active': True,
+        }  # NOTE: Must explicitly set active to True
         obj = Investigation(**values)
         obj.save()
         return obj
 
     @classmethod
     def _make_study(
-            cls, identifier, file_name, investigation, title, description,
-            retraction_data=None, sharing_data=None, comments=None):
+        cls,
+        identifier,
+        file_name,
+        investigation,
+        title,
+        description,
+        retraction_data=None,
+        sharing_data=None,
+        comments=None,
+    ):
         """Create Study in database"""
         values = {
             'identifier': identifier,
@@ -112,16 +141,27 @@ class SampleSheetModelMixin:
             'investigation': investigation,
             'title': title,
             'description': description,
-            'comments': comments}
+            'comments': comments,
+        }
         obj = Study(**values)
         obj.save()
         return obj
 
     @classmethod
     def _make_protocol(
-            cls, name, study, protocol_type, description, uri, version,
-            parameters, components, retraction_data=None, sharing_data=None,
-            comments=None):
+        cls,
+        name,
+        study,
+        protocol_type,
+        description,
+        uri,
+        version,
+        parameters,
+        components,
+        retraction_data=None,
+        sharing_data=None,
+        comments=None,
+    ):
         """Create Protocol in database"""
         values = {
             'name': name,
@@ -132,15 +172,25 @@ class SampleSheetModelMixin:
             'version': version,
             'parameters': parameters,
             'components': components,
-            'comments': comments}
+            'comments': comments,
+        }
         obj = Protocol(**values)
         obj.save()
         return obj
 
     @classmethod
     def _make_assay(
-            cls, file_name, study, tech_platform, tech_type, measurement_type,
-            arcs, retraction_data=None, sharing_data=None, comments=None):
+        cls,
+        file_name,
+        study,
+        tech_platform,
+        tech_type,
+        measurement_type,
+        arcs,
+        retraction_data=None,
+        sharing_data=None,
+        comments=None,
+    ):
         """Create Assay in database"""
         # NOTE: characteristics_cat and unit_cat not currently supported
         values = {
@@ -150,16 +200,28 @@ class SampleSheetModelMixin:
             'technology_type': tech_type,
             'measurement_type': measurement_type,
             'arcs': arcs,
-            'comments': comments}
+            'comments': comments,
+        }
         obj = Assay(**values)
         obj.save()
         return obj
 
     @classmethod
     def _make_material(
-            cls, item_type, name, unique_name, characteristics, study, assay,
-            material_type, factor_values, extract_label=None,
-            retraction_data=None, sharing_data=None, comments=None):
+        cls,
+        item_type,
+        name,
+        unique_name,
+        characteristics,
+        study,
+        assay,
+        material_type,
+        factor_values,
+        extract_label=None,
+        retraction_data=None,
+        sharing_data=None,
+        comments=None,
+    ):
         """Create Material in database"""
         values = {
             'item_type': item_type,
@@ -171,16 +233,27 @@ class SampleSheetModelMixin:
             'material_type': material_type,
             'factor_values': factor_values,
             'extract_label': extract_label,
-            'comments': comments}
+            'comments': comments,
+        }
         obj = GenericMaterial(**values)
         obj.save()
         return obj
 
     @classmethod
     def _make_process(
-            cls, name, unique_name, protocol, study, assay,
-            parameter_values, performer, perform_date,
-            retraction_data=None, sharing_data=None, comments=None):
+        cls,
+        name,
+        unique_name,
+        protocol,
+        study,
+        assay,
+        parameter_values,
+        performer,
+        perform_date,
+        retraction_data=None,
+        sharing_data=None,
+        comments=None,
+    ):
         """Create Material in database"""
         # NOTE: array_design_ref and scan_name not supported at the moment
         values = {
@@ -192,7 +265,8 @@ class SampleSheetModelMixin:
             'parameter_values': parameter_values,
             'performer': performer,
             'perform_date': perform_date,
-            'comments': comments}
+            'comments': comments,
+        }
         obj = Process(**values)
         obj.save()
         return obj
@@ -202,7 +276,8 @@ class SampleSheetModelMixin:
 
 
 class TestSampleSheetBase(
-        ProjectMixin, RoleAssignmentMixin, SampleSheetModelMixin, TestCase):
+    ProjectMixin, RoleAssignmentMixin, SampleSheetModelMixin, TestCase
+):
     """Base class for Samplesheets tests"""
 
     def setUp(self):
@@ -211,11 +286,14 @@ class TestSampleSheetBase(
 
         # Init project, role and assignment
         self.project = self._make_project(
-            'TestProject', SODAR_CONSTANTS['PROJECT_TYPE_PROJECT'], None)
+            'TestProject', SODAR_CONSTANTS['PROJECT_TYPE_PROJECT'], None
+        )
         self.role_owner = Role.objects.get_or_create(
-            name=SODAR_CONSTANTS['PROJECT_ROLE_OWNER'])[0]
+            name=SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
+        )[0]
         self.assignment_owner = self._make_assignment(
-            self.project, self.user_owner, self.role_owner)
+            self.project, self.user_owner, self.role_owner
+        )
 
         # Set up Investigation
         self.investigation = self._make_investigation(
@@ -224,7 +302,8 @@ class TestSampleSheetBase(
             project=self.project,
             title=INV_TITLE,
             description=DEFAULT_DESCRIPTION,
-            comments=DEFAULT_COMMENTS)
+            comments=DEFAULT_COMMENTS,
+        )
 
         # Set up Study
         self.study = self._make_study(
@@ -233,7 +312,8 @@ class TestSampleSheetBase(
             investigation=self.investigation,
             title=STUDY_TITLE,
             description=DEFAULT_DESCRIPTION,
-            comments=DEFAULT_COMMENTS)
+            comments=DEFAULT_COMMENTS,
+        )
 
         # Set up Assay
         self.assay = self._make_assay(
@@ -243,7 +323,8 @@ class TestSampleSheetBase(
             tech_type=ASSAY_TECH_TYPE,
             measurement_type=ASSAY_MEASURE_TYPE,
             arcs=[],
-            comments=DEFAULT_COMMENTS)
+            comments=DEFAULT_COMMENTS,
+        )
 
 
 class TestInvestigation(TestSampleSheetBase):
@@ -264,7 +345,8 @@ class TestInvestigation(TestSampleSheetBase):
             'retraction_data': {},
             'comments': DEFAULT_COMMENTS,
             'irods_status': False,
-            'active': True}
+            'active': True,
+        }
         self.assertEqual(model_to_dict(self.investigation), expected)
 
     def test__str__(self):
@@ -275,7 +357,8 @@ class TestInvestigation(TestSampleSheetBase):
     def test__repr__(self):
         """Test Investigation __repr__() function"""
         expected = "Investigation('{}', '{}')".format(
-            self.project.title, INV_TITLE)
+            self.project.title, INV_TITLE
+        )
         self.assertEqual(repr(self.investigation), expected)
 
     def test_get_study(self):
@@ -308,7 +391,8 @@ class TestStudy(TestSampleSheetBase):
             'sodar_uuid': self.study.sodar_uuid,
             'sharing_data': {},
             'retraction_data': {},
-            'comments': DEFAULT_COMMENTS}
+            'comments': DEFAULT_COMMENTS,
+        }
         self.assertEqual(model_to_dict(self.study), expected)
 
     def test__str__(self):
@@ -318,8 +402,7 @@ class TestStudy(TestSampleSheetBase):
 
     def test__repr__(self):
         """Test Study __repr__() function"""
-        expected = "Study('{}', '{}')".format(
-            self.project.title, STUDY_TITLE)
+        expected = "Study('{}', '{}')".format(self.project.title, STUDY_TITLE)
         self.assertEqual(repr(self.study), expected)
 
     def test_get_study(self):
@@ -357,7 +440,8 @@ class TestProtocol(TestSampleSheetBase):
             version=PROTOCOL_VERSION,
             parameters=PROTOCOL_PARAMS,
             components=PROTOCOL_COMPONENTS,
-            comments=DEFAULT_COMMENTS)
+            comments=DEFAULT_COMMENTS,
+        )
 
     def test_initialization(self):
         """Test Protocol initialization"""
@@ -374,19 +458,22 @@ class TestProtocol(TestSampleSheetBase):
             'sodar_uuid': self.protocol.sodar_uuid,
             'sharing_data': {},
             'retraction_data': {},
-            'comments': DEFAULT_COMMENTS}
+            'comments': DEFAULT_COMMENTS,
+        }
         self.assertEqual(model_to_dict(self.protocol), expected)
 
     def test__str__(self):
         """Test Protocol __str__() function"""
         expected = '{}: {}/{}'.format(
-            self.project.title, STUDY_TITLE, PROTOCOL_NAME)
+            self.project.title, STUDY_TITLE, PROTOCOL_NAME
+        )
         self.assertEqual(str(self.protocol), expected)
 
     def test__repr__(self):
         """Test Protocol __repr__() function"""
         expected = "Protocol('{}', '{}', '{}')".format(
-            self.project.title, STUDY_TITLE, PROTOCOL_NAME)
+            self.project.title, STUDY_TITLE, PROTOCOL_NAME
+        )
         self.assertEqual(repr(self.protocol), expected)
 
     def test_get_study(self):
@@ -417,19 +504,22 @@ class TestAssay(TestSampleSheetBase):
             'sodar_uuid': self.assay.sodar_uuid,
             'sharing_data': {},
             'retraction_data': {},
-            'comments': DEFAULT_COMMENTS}
+            'comments': DEFAULT_COMMENTS,
+        }
         self.assertEqual(model_to_dict(self.assay), expected)
 
     def test__str__(self):
         """Test Assay __str__() function"""
         expected = '{}: {}/{}'.format(
-            self.project.title, STUDY_TITLE, self.assay.get_name())
+            self.project.title, STUDY_TITLE, self.assay.get_name()
+        )
         self.assertEqual(str(self.assay), expected)
 
     def test__repr__(self):
         """Test Assay __repr__() function"""
         expected = "Assay('{}', '{}', '{}')".format(
-            self.project.title, STUDY_TITLE, self.assay.get_name())
+            self.project.title, STUDY_TITLE, self.assay.get_name()
+        )
         self.assertEqual(repr(self.assay), expected)
 
     def test_get_study(self):
@@ -462,7 +552,8 @@ class TestSource(TestSampleSheetBase):
             material_type=None,
             factor_values=None,
             extract_label=None,
-            comments=DEFAULT_COMMENTS)
+            comments=DEFAULT_COMMENTS,
+        )
 
     def test_initialization(self):
         """Test SOURCE GenericMaterial initialization"""
@@ -481,21 +572,30 @@ class TestSource(TestSampleSheetBase):
             'sodar_uuid': self.material.sodar_uuid,
             'sharing_data': {},
             'retraction_data': {},
-            'comments': DEFAULT_COMMENTS}
+            'comments': DEFAULT_COMMENTS,
+        }
         self.assertEqual(model_to_dict(self.material), expected)
 
     def test__str__(self):
         """Test SOURCE GenericMaterial __str__() function"""
         expected = '{}: {}/{}/{}/{}'.format(
-            self.project.title, STUDY_TITLE, NOT_AVAILABLE_STR, 'SOURCE',
-            SOURCE_UNIQUE_NAME)
+            self.project.title,
+            STUDY_TITLE,
+            NOT_AVAILABLE_STR,
+            'SOURCE',
+            SOURCE_UNIQUE_NAME,
+        )
         self.assertEqual(str(self.material), expected)
 
     def test__repr__(self):
         """Test SOURCE GenericMaterial __repr__() function"""
         expected = "GenericMaterial('{}', '{}', '{}', '{}', '{}')".format(
-            self.project.title, STUDY_TITLE, NOT_AVAILABLE_STR, 'SOURCE',
-            SOURCE_UNIQUE_NAME)
+            self.project.title,
+            STUDY_TITLE,
+            NOT_AVAILABLE_STR,
+            'SOURCE',
+            SOURCE_UNIQUE_NAME,
+        )
         self.assertEqual(repr(self.material), expected)
 
     def test_get_study(self):
@@ -526,9 +626,10 @@ class TestSample(TestSampleSheetBase):
             study=self.study,
             assay=None,
             material_type=None,
-            factor_values=None,     # TODO: Test this
-            extract_label=None,     # TODO: Test this
-            comments=DEFAULT_COMMENTS)
+            factor_values=None,  # TODO: Test this
+            extract_label=None,  # TODO: Test this
+            comments=DEFAULT_COMMENTS,
+        )
 
     def test_initialization(self):
         """Test SAMPLE GenericMaterial initialization"""
@@ -547,21 +648,30 @@ class TestSample(TestSampleSheetBase):
             'sodar_uuid': self.material.sodar_uuid,
             'sharing_data': {},
             'retraction_data': {},
-            'comments': DEFAULT_COMMENTS}
+            'comments': DEFAULT_COMMENTS,
+        }
         self.assertEqual(model_to_dict(self.material), expected)
 
     def test__str__(self):
         """Test SAMPLE GenericMaterial __str__() function"""
         expected = '{}: {}/{}/{}/{}'.format(
-            self.project.title, STUDY_TITLE, NOT_AVAILABLE_STR, 'SAMPLE',
-            SAMPLE_UNIQUE_NAME)
+            self.project.title,
+            STUDY_TITLE,
+            NOT_AVAILABLE_STR,
+            'SAMPLE',
+            SAMPLE_UNIQUE_NAME,
+        )
         self.assertEqual(str(self.material), expected)
 
     def test__repr__(self):
         """Test SAMPLE GenericMaterial __repr__() function"""
         expected = "GenericMaterial('{}', '{}', '{}', '{}', '{}')".format(
-            self.project.title, STUDY_TITLE, NOT_AVAILABLE_STR, 'SAMPLE',
-            SAMPLE_UNIQUE_NAME)
+            self.project.title,
+            STUDY_TITLE,
+            NOT_AVAILABLE_STR,
+            'SAMPLE',
+            SAMPLE_UNIQUE_NAME,
+        )
         self.assertEqual(repr(self.material), expected)
 
     def test_get_study(self):
@@ -594,7 +704,8 @@ class TestMaterial(TestSampleSheetBase):
             material_type=MATERIAL_TYPE,
             factor_values=None,
             extract_label=None,
-            comments=DEFAULT_COMMENTS)
+            comments=DEFAULT_COMMENTS,
+        )
 
     def test_initialization(self):
         """Test MATERIAL GenericMaterial initialization"""
@@ -613,21 +724,30 @@ class TestMaterial(TestSampleSheetBase):
             'sodar_uuid': self.material.sodar_uuid,
             'sharing_data': {},
             'retraction_data': {},
-            'comments': DEFAULT_COMMENTS}
+            'comments': DEFAULT_COMMENTS,
+        }
         self.assertEqual(model_to_dict(self.material), expected)
 
     def test__str__(self):
         """Test MATERIAL GenericMaterial __str__() function"""
         expected = '{}: {}/{}/{}/{}'.format(
-            self.project.title, STUDY_TITLE, self.assay.get_name(), 'MATERIAL',
-            MATERIAL_UNIQUE_NAME)
+            self.project.title,
+            STUDY_TITLE,
+            self.assay.get_name(),
+            'MATERIAL',
+            MATERIAL_UNIQUE_NAME,
+        )
         self.assertEqual(str(self.material), expected)
 
     def test__repr__(self):
         """Test MATERIAL GenericMaterial __repr__() function"""
         expected = "GenericMaterial('{}', '{}', '{}', '{}', '{}')".format(
-            self.project.title, STUDY_TITLE, self.assay.get_name(), 'MATERIAL',
-            MATERIAL_UNIQUE_NAME)
+            self.project.title,
+            STUDY_TITLE,
+            self.assay.get_name(),
+            'MATERIAL',
+            MATERIAL_UNIQUE_NAME,
+        )
         self.assertEqual(repr(self.material), expected)
 
     def test_get_study(self):
@@ -660,7 +780,8 @@ class TestDataFile(TestSampleSheetBase):
             material_type=DATA_TYPE,
             factor_values=None,
             extract_label=None,
-            comments=DEFAULT_COMMENTS)
+            comments=DEFAULT_COMMENTS,
+        )
 
     def test_initialization(self):
         """Test MATERIAL GenericMaterial initialization"""
@@ -679,21 +800,30 @@ class TestDataFile(TestSampleSheetBase):
             'sodar_uuid': self.material.sodar_uuid,
             'sharing_data': {},
             'retraction_data': {},
-            'comments': DEFAULT_COMMENTS}
+            'comments': DEFAULT_COMMENTS,
+        }
         self.assertEqual(model_to_dict(self.material), expected)
 
     def test__str__(self):
         """Test DATA GenericMaterial __str__() function"""
         expected = '{}: {}/{}/{}/{}'.format(
-            self.project.title, STUDY_TITLE, self.assay.get_name(), 'DATA',
-            DATA_UNIQUE_NAME)
+            self.project.title,
+            STUDY_TITLE,
+            self.assay.get_name(),
+            'DATA',
+            DATA_UNIQUE_NAME,
+        )
         self.assertEqual(str(self.material), expected)
 
     def test__repr__(self):
         """Test DATA GenericMaterial __repr__() function"""
         expected = "GenericMaterial('{}', '{}', '{}', '{}', '{}')".format(
-            self.project.title, STUDY_TITLE, self.assay.get_name(), 'DATA',
-            DATA_UNIQUE_NAME)
+            self.project.title,
+            STUDY_TITLE,
+            self.assay.get_name(),
+            'DATA',
+            DATA_UNIQUE_NAME,
+        )
         self.assertEqual(repr(self.material), expected)
 
     def test_get_study(self):
@@ -725,7 +855,8 @@ class TestProcess(TestSampleSheetBase):
             version=PROTOCOL_VERSION,
             parameters=PROTOCOL_PARAMS,
             components=PROTOCOL_COMPONENTS,
-            comments=DEFAULT_COMMENTS)
+            comments=DEFAULT_COMMENTS,
+        )
 
         # Set up Process
         self.process = self._make_process(
@@ -737,7 +868,8 @@ class TestProcess(TestSampleSheetBase):
             parameter_values=PROCESS_PARAM_VALUES,
             performer=PROCESS_PERFORMER,
             perform_date=PROCESS_PERFORM_DATE,
-            comments=DEFAULT_COMMENTS)
+            comments=DEFAULT_COMMENTS,
+        )
 
     def test_initialization(self):
         """Test Process initialization"""
@@ -756,21 +888,28 @@ class TestProcess(TestSampleSheetBase):
             'sodar_uuid': self.process.sodar_uuid,
             'sharing_data': {},
             'retraction_data': {},
-            'comments': DEFAULT_COMMENTS}
+            'comments': DEFAULT_COMMENTS,
+        }
         self.assertEqual(model_to_dict(self.process), expected)
 
     def test__str__(self):
         """Test Process __str__() function"""
         expected = '{}: {}/{}/{}'.format(
-            self.project.title, STUDY_TITLE, self.assay.get_name(),
-            PROCESS_UNIQUE_NAME)
+            self.project.title,
+            STUDY_TITLE,
+            self.assay.get_name(),
+            PROCESS_UNIQUE_NAME,
+        )
         self.assertEqual(str(self.process), expected)
 
     def test__repr__(self):
         """Test Process __repr__() function"""
         expected = "Process('{}', '{}', '{}', '{}')".format(
-            self.project.title, STUDY_TITLE, self.assay.get_name(),
-            PROCESS_UNIQUE_NAME)
+            self.project.title,
+            STUDY_TITLE,
+            self.assay.get_name(),
+            PROCESS_UNIQUE_NAME,
+        )
         self.assertEqual(repr(self.process), expected)
 
     def test_get_study(self):

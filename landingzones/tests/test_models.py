@@ -35,8 +35,15 @@ class LandingZoneMixin:
 
     @classmethod
     def _make_landing_zone(
-            cls, title, project, user, assay, description, configuration,
-            config_data):
+        cls,
+        title,
+        project,
+        user,
+        assay,
+        description,
+        configuration,
+        config_data,
+    ):
         values = {
             'title': title,
             'project': project,
@@ -44,7 +51,8 @@ class LandingZoneMixin:
             'assay': assay,
             'description': description,
             'configuration': configuration,
-            'config_data': config_data}
+            'config_data': config_data,
+        }
 
         result = LandingZone(**values)
         result.save()
@@ -52,8 +60,12 @@ class LandingZoneMixin:
 
 
 class TestLandingZoneBase(
-        LandingZoneMixin, SampleSheetIOMixin, ProjectMixin, RoleAssignmentMixin,
-        TestCase):
+    LandingZoneMixin,
+    SampleSheetIOMixin,
+    ProjectMixin,
+    RoleAssignmentMixin,
+    TestCase,
+):
     """Base tests for LandingZone"""
 
     def setUp(self):
@@ -62,15 +74,17 @@ class TestLandingZoneBase(
 
         # Init project, role and assignment
         self.project = self._make_project(
-            'TestProject', PROJECT_TYPE_PROJECT, None)
-        self.role_owner = Role.objects.get_or_create(
-            name=PROJECT_ROLE_OWNER)[0]
+            'TestProject', PROJECT_TYPE_PROJECT, None
+        )
+        self.role_owner = Role.objects.get_or_create(name=PROJECT_ROLE_OWNER)[0]
         self.assignment_owner = self._make_assignment(
-            self.project, self.user_owner, self.role_owner)
+            self.project, self.user_owner, self.role_owner
+        )
 
         # Import investigation
         self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project)
+            SHEET_PATH, self.project
+        )
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
 
@@ -82,7 +96,8 @@ class TestLandingZoneBase(
             assay=self.assay,
             description=ZONE_DESC,
             configuration=None,
-            config_data={})
+            config_data={},
+        )
 
 
 class TestLandingZone(TestLandingZoneBase):
@@ -104,7 +119,8 @@ class TestLandingZone(TestLandingZoneBase):
             'config_data': {},
             'status': ZONE_STATUS_INIT,
             'status_info': ZONE_STATUS_INFO_INIT,
-            'sodar_uuid': self.landing_zone.sodar_uuid}
+            'sodar_uuid': self.landing_zone.sodar_uuid,
+        }
 
         self.assertEqual(model_to_dict(self.landing_zone), expected)
 
@@ -113,14 +129,16 @@ class TestLandingZone(TestLandingZoneBase):
         expected = '{}: {}/{}'.format(
             self.landing_zone.project.title,
             self.landing_zone.user.username,
-            self.landing_zone.title)
+            self.landing_zone.title,
+        )
         self.assertEqual(str(self.landing_zone), expected)
 
     def test__repr__(self):
         expected = "LandingZone('{}', '{}', '{}')".format(
             self.landing_zone.project.title,
             self.landing_zone.user.username,
-            self.landing_zone.title)
+            self.landing_zone.title,
+        )
         self.assertEqual(repr(self.landing_zone), expected)
 
     def test_set_status(self):

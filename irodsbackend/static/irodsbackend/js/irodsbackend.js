@@ -164,7 +164,14 @@ $(document).ready(function() {
     if ($('table.sodar-lz-table').length === 0){
         updateButtons();
     }
-    var statsInterval = 8 * 1000;  // TODO: Get setting from Django
+
+    var statsSec = 8;
+
+    if (typeof(window.irodsbackendStatusInterval) !== 'undefined') {
+        statsSec = window.irodsbackendStatusInterval;
+    }
+
+    var statsInterval = statsSec * 1000;
 
     // Poll and update active collections
     setInterval(function () {

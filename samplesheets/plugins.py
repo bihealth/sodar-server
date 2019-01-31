@@ -40,7 +40,9 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         'study_row_limit': {
             'type': 'INTEGER',
             'default': 5000,
-            'description': 'Limit sample sheet rows per study'}}
+            'description': 'Limit sample sheet rows per study',
+        }
+    }
 
     #: FontAwesome icon ID string
     icon = 'flask'
@@ -49,9 +51,11 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
     entry_point_url_id = 'samplesheets:project_sheets'
 
     #: Description string
-    description = 'Sample sheets contain your donors/patients, samples, and ' \
-                  'links to assays (such as NGS data), with ISA-Tools ' \
-                  'compatibility'
+    description = (
+        'Sample sheets contain your donors/patients, samples, and '
+        'links to assays (such as NGS data), with ISA-Tools '
+        'compatibility'
+    )
 
     #: Required permission for accessing the app
     app_permission = 'samplesheets.view_sheet'
@@ -60,10 +64,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
     search_enable = True
 
     #: List of search object types for the app
-    search_types = [
-        'source',
-        'sample',
-        'file']
+    search_types = ['source', 'sample', 'file']
 
     #: Search results template
     search_template = 'samplesheets/_search_results.html'
@@ -116,7 +117,8 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
             flow = {
                 'flow_name': 'sheet_dirs_create',
                 'project_uuid': investigation.project.sodar_uuid,
-                'flow_data': {'dirs': get_sample_dirs(investigation)}}
+                'flow_data': {'dirs': get_sample_dirs(investigation)},
+            }
             sync_flows.append(flow)
 
         return sync_flows
@@ -138,8 +140,10 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         return {
             'url': reverse(
                 'samplesheets:project_sheets',
-                kwargs={'project': obj.project.sodar_uuid}),
-            'label': obj.title}
+                kwargs={'project': obj.project.sodar_uuid},
+            ),
+            'label': obj.title,
+        }
 
     def search(self, search_term, user, search_type=None, keywords=None):
         """
@@ -166,24 +170,33 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                     else:
                         assays = [m.assay]
 
-                    ret.append({
-                        'name': m.name,
-                        'type': m.item_type,
-                        'project': m.get_project(),
-                        'study': m.study,
-                        'assays': assays})
+                    ret.append(
+                        {
+                            'name': m.name,
+                            'type': m.item_type,
+                            'project': m.get_project(),
+                            'study': m.study,
+                            'assays': assays,
+                        }
+                    )
 
             return ret
 
         material_items = []
 
         if not search_type or search_type == 'source':
-            material_items += get_materials(GenericMaterial.objects.find(
-                search_term, keywords, item_type='SOURCE'))
+            material_items += get_materials(
+                GenericMaterial.objects.find(
+                    search_term, keywords, item_type='SOURCE'
+                )
+            )
 
         if not search_type or search_type == 'sample':
-            material_items += get_materials(GenericMaterial.objects.find(
-                search_term, keywords, item_type='SAMPLE'))
+            material_items += get_materials(
+                GenericMaterial.objects.find(
+                    search_term, keywords, item_type='SAMPLE'
+                )
+            )
 
         if material_items:
             material_items.sort(key=lambda x: x['name'].lower())
@@ -191,7 +204,8 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         results['materials'] = {
             'title': 'Sources and Samples',
             'search_types': ['source', 'sample'],
-            'items': material_items}
+            'items': material_items,
+        }
 
         # iRODS files
         file_items = []
@@ -201,48 +215,65 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                 obj_data = irods_backend.get_objects(
                     path='/{}/projects'.format(settings.IRODS_ZONE),
                     name_like=search_term,
-                    limit=settings.SHEETS_IRODS_LIMIT)
+                    limit=settings.SHEETS_IRODS_LIMIT,
+                )
 
             except FileNotFoundError:
                 return results  # Skip rest if no data objects were found
 
             projects = {
-                str(p.sodar_uuid): p for p in Project.objects.filter(
-                    type=PROJECT_TYPE_PROJECT) if
-                    user.has_perm('samplesheets.view_sheet', p)}
+                str(p.sodar_uuid): p
+                for p in Project.objects.filter(type=PROJECT_TYPE_PROJECT)
+                if user.has_perm('samplesheets.view_sheet', p)
+            }
             studies = {
-                str(s.sodar_uuid): s for s in Study.objects.filter(
-                    investigation__project__in=projects.values())}
+                str(s.sodar_uuid): s
+                for s in Study.objects.filter(
+                    investigation__project__in=projects.values()
+                )
+            }
             assays = {
-                str(a.sodar_uuid): a for a in Assay.objects.filter(
-                    study__in=studies.values())}
+                str(a.sodar_uuid): a
+                for a in Assay.objects.filter(study__in=studies.values())
+            }
 
             for o in obj_data['data_objects']:
                 project_uuid = irods_backend.get_uuid_from_path(
-                    o['path'], obj_type='project')
+                    o['path'], obj_type='project'
+                )
                 sample_subpath = '/{}/{}/'.format(
-                    project_uuid, settings.IRODS_SAMPLE_DIR)
+                    project_uuid, settings.IRODS_SAMPLE_DIR
+                )
 
                 if sample_subpath not in o['path']:
-                    continue    # Skip files not in sample data repository
+                    continue  # Skip files not in sample data repository
 
                 try:
                     project = projects[project_uuid]
-                    study = studies[irods_backend.get_uuid_from_path(
-                        o['path'], obj_type='study')]
-                    assay = assays[irods_backend.get_uuid_from_path(
-                        o['path'], obj_type='assay')]
+                    study = studies[
+                        irods_backend.get_uuid_from_path(
+                            o['path'], obj_type='study'
+                        )
+                    ]
+                    assay = assays[
+                        irods_backend.get_uuid_from_path(
+                            o['path'], obj_type='assay'
+                        )
+                    ]
 
                 except KeyError:
-                    continue    # Skip file if the project/etc is not found
+                    continue  # Skip file if the project/etc is not found
 
-                file_items.append({
-                    'name': o['name'],
-                    'type': 'file',
-                    'project': project,
-                    'study': study,
-                    'assays': [assay] if assay else None,
-                    'irods_path': o['path']})
+                file_items.append(
+                    {
+                        'name': o['name'],
+                        'type': 'file',
+                        'project': project,
+                        'study': study,
+                        'assays': [assay] if assay else None,
+                        'irods_path': o['path'],
+                    }
+                )
 
                 if len(file_items) == settings.SHEETS_IRODS_LIMIT:
                     break
@@ -253,7 +284,8 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         results['files'] = {
             'title': 'Sample Files in iRODS',
             'search_types': ['file'],
-            'items': file_items}
+            'items': file_items,
+        }
 
         return results
 
@@ -342,12 +374,7 @@ class SampleSheetAssayPluginPoint(PluginPoint):
 
     #: Identifying assay fields (used to identify plugin by assay)
     # TODO: Implement this in your assay plugin, example below
-    assay_fields = [
-        {
-            'measurement_type': 'x',
-            'technology_type': 'y'
-        }
-    ]
+    assay_fields = [{'measurement_type': 'x', 'technology_type': 'y'}]
 
     #: Description string
     # TODO: Implement this in your assay plugin
@@ -399,8 +426,7 @@ class SampleSheetAssayPluginPoint(PluginPoint):
         :return: List of dicts
         """
         # TODO: Implement this in your assay plugin
-        raise NotImplementedError(
-            'Implement update_row() in your assay plugin')
+        raise NotImplementedError('Implement update_row() in your assay plugin')
 
 
 def get_assay_plugin(plugin_name):
@@ -428,7 +454,8 @@ def find_assay_plugin(measurement_type, technology_type):
 
     search_fields = {
         'measurement_type': get_isa_field_name(measurement_type),
-        'technology_type': get_isa_field_name(technology_type)}
+        'technology_type': get_isa_field_name(technology_type),
+    }
 
     for plugin in SampleSheetAssayPluginPoint.get_plugins():
         if search_fields in plugin.assay_fields:

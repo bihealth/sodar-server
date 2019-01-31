@@ -6,8 +6,11 @@ from rest_framework.views import APIView
 # Projectroles dependency
 from projectroles.models import RoleAssignment, SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
-from projectroles.views import LoginRequiredMixin, ProjectPermissionMixin, \
-    APIPermissionMixin
+from projectroles.views import (
+    LoginRequiredMixin,
+    ProjectPermissionMixin,
+    APIPermissionMixin,
+)
 
 # SODAR constants
 PROJECT_ROLE_OWNER = SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
@@ -20,8 +23,8 @@ ERROR_NO_AUTH = 'User not authorized for iRODS collection'
 
 
 class BaseIrodsAPIView(
-        LoginRequiredMixin, ProjectPermissionMixin, APIPermissionMixin,
-        APIView):
+    LoginRequiredMixin, ProjectPermissionMixin, APIPermissionMixin, APIView
+):
     """Base iRODS API View"""
 
     permission_required = 'irodsbackend.view_stats'  # Default perm
@@ -54,14 +57,18 @@ class BaseIrodsAPIView(
         perms = irods_session.permissions.get(coll)
         owner_or_delegate = False
         user_as = RoleAssignment.objects.get_assignment(
-            self.request.user, self.project)
+            self.request.user, self.project
+        )
 
         if user_as and user_as.role.name in [
-                PROJECT_ROLE_OWNER, PROJECT_ROLE_DELEGATE]:
+            PROJECT_ROLE_OWNER,
+            PROJECT_ROLE_DELEGATE,
+        ]:
             owner_or_delegate = True
 
-        if (owner_or_delegate or
-                self.request.user.username in [p.user_name for p in perms]):
+        if owner_or_delegate or self.request.user.username in [
+            p.user_name for p in perms
+        ]:
             return True
 
         return False
@@ -72,7 +79,8 @@ class BaseIrodsAPIView(
 
         if not self.project and not request.user.is_superuser:
             return HttpResponse(
-                'Project UUID required for regular user', status=400)
+                'Project UUID required for regular user', status=400
+            )
 
         irods_backend = get_backend_api('omics_irods')
 
@@ -85,16 +93,20 @@ class BaseIrodsAPIView(
         # Collection checks
         # NOTE: If supplying path(s) via POST, implement these in request func
         if 'path' in self.kwargs:
-            if (self.project and
-                    irods_backend.get_path(self.project) not in
-                    self.kwargs['path']):
+            if (
+                self.project
+                and irods_backend.get_path(self.project)
+                not in self.kwargs['path']
+            ):
                 return HttpResponse(ERROR_NOT_IN_PROJECT, status=400)
 
             if not irods_backend.collection_exists(self.kwargs['path']):
                 return HttpResponse(ERROR_NOT_FOUND, status=404)
 
-            if (not request.user.is_superuser and
-                    not self._check_collection_perm(self.kwargs['path'])):
+            if (
+                not request.user.is_superuser
+                and not self._check_collection_perm(self.kwargs['path'])
+            ):
                 return HttpResponse(ERROR_NO_AUTH, status=403)
 
         return super().dispatch(request, *args, **kwargs)
@@ -122,24 +134,27 @@ class IrodsStatisticsAPIView(BaseIrodsAPIView):
 
         for obj in q_dict.getlist('paths'):
 
-            if (self.project
-               and irods_backend.get_path(self.project) not in obj):
-                data['coll_objects'].append({'path': obj, 'status': '400',
-                                             'stats': []})
+            if self.project and irods_backend.get_path(self.project) not in obj:
+                data['coll_objects'].append(
+                    {'path': obj, 'status': '400', 'stats': []}
+                )
                 break
 
             try:
                 if not irods_backend.collection_exists(obj):
-                    data['coll_objects'].append({'path': obj, 'status': '404',
-                                                 'stats': []})
+                    data['coll_objects'].append(
+                        {'path': obj, 'status': '404', 'stats': []}
+                    )
                 else:
                     ret_data = irods_backend.get_object_stats(obj)
-                    data['coll_objects'].append({'path': obj, 'status': '200',
-                                                 'stats': ret_data})
+                    data['coll_objects'].append(
+                        {'path': obj, 'status': '200', 'stats': ret_data}
+                    )
 
-            except Exception as ex:
-                data['coll_objects'].append({'path': obj, 'status': '500',
-                                             'stats': []})
+            except Exception:
+                data['coll_objects'].append(
+                    {'path': obj, 'status': '500', 'stats': []}
+                )
 
         return Response(data, status=200)
 
@@ -155,7 +170,8 @@ class IrodsObjectListAPIView(BaseIrodsAPIView):
         # Get files
         try:
             ret_data = irods_backend.get_objects(
-                self.kwargs['path'], check_md5=bool(int(self.kwargs['md5'])))
+                self.kwargs['path'], check_md5=bool(int(self.kwargs['md5']))
+            )
             return Response(ret_data, status=200)
 
         except Exception as ex:

@@ -14,20 +14,24 @@ TOP_HEADER_MATERIAL_COLOURS = {
     'SOURCE': 'info',
     'SAMPLE': 'warning',
     'MATERIAL': 'success',
-    'DATA': 'success'}
+    'DATA': 'success',
+}
 
 TOP_HEADER_MATERIAL_VALUES = {
     'SOURCE': 'Source',
     'SAMPLE': 'Sample',
     'MATERIAL': 'Material',
-    'DATA': 'Data File'}
+    'DATA': 'Data File',
+}
 
 EMPTY_VALUE = '-'
 
 STUDY_HIDEABLE_CLASS = 'sodar-ss-hideable-study'
 SOURCE_SEARCH_STR = '-source-'
-ONTOLOGY_URL_TEMPLATE = 'https://bioportal.bioontology.org/ontologies/' \
-                        '{ontology_name}/?p=classes&conceptid={accession}'
+ONTOLOGY_URL_TEMPLATE = (
+    'https://bioportal.bioontology.org/ontologies/'
+    '{ontology_name}/?p=classes&conceptid={accession}'
+)
 
 
 logger = logging.getLogger(__name__)
@@ -38,13 +42,15 @@ logger = logging.getLogger(__name__)
 
 class Digraph:
     """Simple class encapsulating directed graph with vertices and arcs"""
+
     def __init__(self, vertices, arcs):
         self.vertices = vertices
         self.arcs = arcs
         self.v_by_name = {v.unique_name: v for v in self.vertices}
         self.a_by_name = {(a[0], a[1]) for a in self.arcs}
         self.source_names = [
-            k for k in self.v_by_name.keys() if SOURCE_SEARCH_STR in k]
+            k for k in self.v_by_name.keys() if SOURCE_SEARCH_STR in k
+        ]
         self.outgoing = {}
 
         for s_name, t_name in self.a_by_name:
@@ -98,6 +104,7 @@ class UnionFind:
 
 class RefTableBuilder:
     """Class for building reference table from a graph"""
+
     def __init__(self, nodes, arcs):
         self.digraph = Digraph(nodes, arcs)
         self._rows = []
@@ -106,9 +113,7 @@ class RefTableBuilder:
         uf = UnionFind(self.digraph.v_by_name.keys())
 
         for arc in self.digraph.arcs:
-            uf.union_by_name(
-                arc[0],
-                arc[1])
+            uf.union_by_name(arc[0], arc[1])
 
         result = {}
 
@@ -156,6 +161,7 @@ class RefTableBuilder:
 
 class SampleSheetRenderingException(Exception):
     """Sample sheet rendering exception"""
+
     pass
 
 
@@ -181,25 +187,31 @@ class SampleSheetTableBuilder:
         :return: String
         """
         return ONTOLOGY_URL_TEMPLATE.format(
-                ontology_name=ontology_name,
-                accession=accession)
+            ontology_name=ontology_name, accession=accession
+        )
 
     def _add_top_header(self, obj, colspan, hiding={}):
         """Append columns to top header"""
-        if type(obj) == GenericMaterial:    # Material
+        if type(obj) == GenericMaterial:  # Material
             colour = TOP_HEADER_MATERIAL_COLOURS[obj.item_type]
-            value = obj.material_type if obj.material_type else \
-                TOP_HEADER_MATERIAL_VALUES[obj.item_type]
+            value = (
+                obj.material_type
+                if obj.material_type
+                else TOP_HEADER_MATERIAL_VALUES[obj.item_type]
+            )
 
-        else:   # Process
+        else:  # Process
             colour = 'danger'
             value = 'Process'
 
-        self._top_header.append({
-            'value': value,
-            'colour': colour,
-            'colspan': colspan,
-            'hiding': hiding})
+        self._top_header.append(
+            {
+                'value': value,
+                'colour': colour,
+                'colspan': colspan,
+                'hiding': hiding,
+            }
+        )
 
     def _add_header(self, value, obj=None, classes=list()):
         """
@@ -208,16 +220,28 @@ class SampleSheetTableBuilder:
         :param obj: Original Django model object
         :param classes: Optional extra classes
         """
-        self._field_header.append({
-            'value': value,
-            'obj_cls': type(obj),
-            'item_type': obj.item_type if
-            type(obj) == GenericMaterial else None,
-            'classes': classes})
+        self._field_header.append(
+            {
+                'value': value,
+                'obj_cls': type(obj),
+                'item_type': obj.item_type
+                if type(obj) == GenericMaterial
+                else None,
+                'classes': classes,
+            }
+        )
 
     def _add_cell(
-            self, value=None, unit=None, link=None, obj=None, field_name=None,
-            tooltip=None, attrs=None, classes=list()):
+        self,
+        value=None,
+        unit=None,
+        link=None,
+        obj=None,
+        field_name=None,
+        tooltip=None,
+        attrs=None,
+        classes=list(),
+    ):
         """
         Add cell data
         :param value: Value to be displayed in the cell
@@ -229,18 +253,22 @@ class SampleSheetTableBuilder:
         :param attrs: Optional attributes (dict)
         :param classes: Optional extra classes (list)
         """
-        self._row.append({
-            'value': value,
-            'unit': unit,
-            'link': link,
-            'link_file': False,
-            'obj_cls': type(obj),
-            'item_type': obj.item_type if
-            type(obj) == GenericMaterial else None,
-            'field_name': field_name.lower() if field_name else None,
-            'tooltip': tooltip,
-            'attrs': attrs,
-            'classes': classes})
+        self._row.append(
+            {
+                'value': value,
+                'unit': unit,
+                'link': link,
+                'link_file': False,
+                'obj_cls': type(obj),
+                'item_type': obj.item_type
+                if type(obj) == GenericMaterial
+                else None,
+                'field_name': field_name.lower() if field_name else None,
+                'tooltip': tooltip,
+                'attrs': attrs,
+                'classes': classes,
+            }
+        )
 
         # Store value for detecting unfilled columns
         col_value = 0 if not value else 1
@@ -263,8 +291,7 @@ class SampleSheetTableBuilder:
 
         return a_count
 
-    def _add_annotations(
-            self, annotations, obj=None, classes=list()):
+    def _add_annotations(self, annotations, obj=None, classes=list()):
         """Append annotations to row columns"""
         if not annotations:
             return None
@@ -281,7 +308,8 @@ class SampleSheetTableBuilder:
 
                 val += v['value']['name']
                 link = self._get_ontology_link(
-                    v['value']['ontology_name'], v['value']['accession'])
+                    v['value']['ontology_name'], v['value']['accession']
+                )
 
             else:
                 val = v['value']
@@ -294,8 +322,14 @@ class SampleSheetTableBuilder:
                     unit = v['unit']
 
             self._add_cell(
-                val, unit=unit, link=link, obj=obj, field_name=k,
-                tooltip=tooltip, classes=classes)
+                val,
+                unit=unit,
+                link=link,
+                obj=obj,
+                field_name=k,
+                tooltip=tooltip,
+                classes=classes,
+            )
 
     def _add_element(self, obj, study_data_in_assay=False):
         """
@@ -317,90 +351,109 @@ class SampleSheetTableBuilder:
             # Material headers
             if obj_type == GenericMaterial:
                 self._add_header(
-                    'Name', obj, hide_cls if obj.item_type in
-                    ['DATA', 'MATERIAL'] else list())           # Name
+                    'Name',
+                    obj,
+                    hide_cls
+                    if obj.item_type in ['DATA', 'MATERIAL']
+                    else list(),
+                )  # Name
                 field_count += 1
 
-                if (obj.material_type == 'Labeled Extract Name' and
-                        obj.extract_label):
-                    self._add_header('Label', obj, hide_cls)    # Extract label
+                if (
+                    obj.material_type == 'Labeled Extract Name'
+                    and obj.extract_label
+                ):
+                    self._add_header('Label', obj, hide_cls)  # Extract label
                     field_count += 1
 
                 a_header_count = self._add_annotation_headers(
-                    obj.characteristics, obj, hide_cls)         # Character.
+                    obj.characteristics, obj, hide_cls
+                )  # Character.
                 field_count += a_header_count
                 hideable_count += a_header_count
 
                 if obj.item_type == 'SAMPLE':
                     a_header_count = self._add_annotation_headers(
-                        obj.factor_values, obj, hide_cls)       # Factor values
+                        obj.factor_values, obj, hide_cls
+                    )  # Factor values
                     field_count += a_header_count
                     hideable_count += a_header_count
 
             # Process headers
-            else:   # obj_type == Process
+            else:  # obj_type == Process
                 if obj.protocol and obj.protocol.name:
-                    self._add_header(
-                        'Protocol', obj, hide_cls)              # Protocol
+                    self._add_header('Protocol', obj, hide_cls)  # Protocol
                     field_count += 1
 
-                self._add_header('Name', obj, hide_cls)         # Name
+                self._add_header('Name', obj, hide_cls)  # Name
                 field_count += 1
 
                 a_header_count = self._add_annotation_headers(
-                    obj.parameter_values, obj, hide_cls)        # Param values
+                    obj.parameter_values, obj, hide_cls
+                )  # Param values
                 field_count += a_header_count
                 hideable_count += a_header_count
 
             a_header_count = self._add_annotation_headers(
-                obj.comments, obj, hide_cls)                    # Comments
+                obj.comments, obj, hide_cls
+            )  # Comments
             field_count += a_header_count
             hideable_count += a_header_count
 
             self._add_top_header(
-                obj, field_count, hiding={
-                    STUDY_HIDEABLE_CLASS: hideable_count if
-                    study_data_in_assay else 0})
+                obj,
+                field_count,
+                hiding={
+                    STUDY_HIDEABLE_CLASS: hideable_count
+                    if study_data_in_assay
+                    else 0
+                },
+            )
 
         # Material data
         if obj_type == GenericMaterial:
             # Add material info for iRODS links Ajax querying
 
-            self._add_cell(
-                obj.name, obj=obj, field_name='name')           # Name + attrs
+            self._add_cell(obj.name, obj=obj, field_name='name')  # Name + attrs
 
-            if (obj.material_type == 'Labeled Extract Name' and
-                    obj.extract_label):
+            if (
+                obj.material_type == 'Labeled Extract Name'
+                and obj.extract_label
+            ):
                 self._add_cell(
-                    obj.extract_label, obj=obj,
-                    field_name='label')                         # Extract label
+                    obj.extract_label, obj=obj, field_name='label'
+                )  # Extract label
 
             self._add_annotations(
-                obj.characteristics, obj=obj,
-                classes=hide_cls)                               # Character.
+                obj.characteristics, obj=obj, classes=hide_cls
+            )  # Character.
 
             if obj.item_type == 'SAMPLE':
                 self._add_annotations(
-                    obj.factor_values, obj=obj,
-                    classes=hide_cls)                           # Factor values
+                    obj.factor_values, obj=obj, classes=hide_cls
+                )  # Factor values
 
         # Process data
         elif obj_type == Process:
             if obj.protocol and obj.protocol.name:
                 self._add_cell(
-                    obj.protocol.name, obj=obj,
-                    field_name='protocol', classes=hide_cls)    # Protocol
+                    obj.protocol.name,
+                    obj=obj,
+                    field_name='protocol',
+                    classes=hide_cls,
+                )  # Protocol
 
             self._add_cell(
-                obj.name, obj=obj, field_name='name',
-                classes=hide_cls)                               # Name
+                obj.name, obj=obj, field_name='name', classes=hide_cls
+            )  # Name
 
             self._add_annotations(
-                obj.parameter_values, obj=obj,
-                classes=hide_cls)                               # Param values
+                obj.parameter_values, obj=obj, classes=hide_cls
+            )  # Param values
 
         self._add_annotations(
-            obj.comments, obj=obj, classes=hide_cls)            # Comments
+            obj.comments, obj=obj, classes=hide_cls
+        )  # Comments
 
     def _append_row(self):
         """Append current row to table data and cleanup"""
@@ -427,11 +480,9 @@ class SampleSheetTableBuilder:
         self._col_idx = 0
 
         # Add row column headers
-        self._top_header.append({
-            'value': 'Row',
-            'colour': 'secondary',
-            'colspan': 1,
-            'hiding': {}})
+        self._top_header.append(
+            {'value': 'Row', 'colour': 'secondary', 'colspan': 1, 'hiding': {}}
+        )
         self._add_header('#')
         row_id = 1
 
@@ -440,14 +491,17 @@ class SampleSheetTableBuilder:
 
             # Add row column cell
             self._add_cell(
-                str(row_id), field_name='row', classes=['text-muted'])
+                str(row_id), field_name='row', classes=['text-muted']
+            )
 
             # Add elements on row
             for col in input_row:
                 obj = node_lookup[col]
-                study_data_in_assay = True if \
-                    type(table_parent) == Assay and \
-                    col_pos <= sample_pos else False
+                study_data_in_assay = (
+                    True
+                    if type(table_parent) == Assay and col_pos <= sample_pos
+                    else False
+                )
                 self._add_element(obj, study_data_in_assay)
                 col_pos += 1
 
@@ -458,7 +512,8 @@ class SampleSheetTableBuilder:
             'top_header': self._top_header,
             'field_header': self._field_header,
             'table_data': self._table_data,
-            'col_values': self._col_values}
+            'col_values': self._col_values,
+        }
 
     @classmethod
     def build_study_reference(cls, study, nodes=None):
@@ -481,13 +536,14 @@ class SampleSheetTableBuilder:
 
         # Ensure the study does not exceed project limitations
         row_limit = get_project_setting(
-            study.get_project(), 'samplesheets', 'study_row_limit')
+            study.get_project(), 'samplesheets', 'study_row_limit'
+        )
 
         if len(all_refs) > row_limit:
             raise SampleSheetRenderingException(
                 'Row limit set in samplesheets.study_row_limit reached ({}), '
-                'unable to render study'.format(
-                    len(all_refs)))
+                'unable to render study'.format(len(all_refs))
+            )
 
         return all_refs
 
@@ -498,53 +554,60 @@ class SampleSheetTableBuilder:
         :return: Dict
         """
         s_start = time.time()
-        logger.debug('Building study "{}" (pk={})..'.format(
-            study.get_name(), study.pk))
+        logger.debug(
+            'Building study "{}" (pk={})..'.format(study.get_name(), study.pk)
+        )
 
-        ret = {
-            'study': None,
-            'assays': {}}
+        ret = {'study': None, 'assays': {}}
 
         nodes = study.get_nodes()
         all_refs = self.build_study_reference(study, nodes)
 
         sample_pos = [
-            i for i, col in enumerate(all_refs[0]) if
-            '-sample-' in col][0]
+            i for i, col in enumerate(all_refs[0]) if '-sample-' in col
+        ][0]
         node_lookup = {n.unique_name: n for n in nodes}
 
         # Study ref table without duplicates
-        sr = [row[:sample_pos + 1] for row in all_refs]
+        sr = [row[: sample_pos + 1] for row in all_refs]
         study_refs = list(sr for sr, _ in itertools.groupby(sr))
 
         ret['study'] = self._build_table(
-            study_refs, node_lookup, sample_pos, study)
+            study_refs, node_lookup, sample_pos, study
+        )
 
         logger.debug(
-            'Building study OK ({:.1f}s)'.format(time.time() - s_start))
+            'Building study OK ({:.1f}s)'.format(time.time() - s_start)
+        )
 
         # Assay tables
         assay_count = 0
 
         for assay in study.assays.all().order_by('file_name'):
             a_start = time.time()
-            logger.debug('Building assay "{}" (pk={})..'.format(
-                assay.get_name(), assay.pk))
+            logger.debug(
+                'Building assay "{}" (pk={})..'.format(
+                    assay.get_name(), assay.pk
+                )
+            )
 
             assay_search_str = '-a{}-'.format(assay_count)
             assay_refs = []
 
             for row in all_refs:
-                if (len(row) > sample_pos + 1 and
-                        assay_search_str in row[sample_pos + 1]):
+                if (
+                    len(row) > sample_pos + 1
+                    and assay_search_str in row[sample_pos + 1]
+                ):
                     assay_refs.append(row)
 
             ret['assays'][assay.get_name()] = self._build_table(
-                assay_refs, node_lookup, sample_pos, assay)
+                assay_refs, node_lookup, sample_pos, assay
+            )
 
             assay_count += 1
             logger.debug(
-                'Building assay OK ({:.1f}s)'.format(
-                    time.time() - a_start))
+                'Building assay OK ({:.1f}s)'.format(time.time() - a_start)
+            )
 
         return ret

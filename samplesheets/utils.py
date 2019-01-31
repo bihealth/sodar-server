@@ -8,7 +8,7 @@ from django.db.models import QuerySet
 from projectroles.plugins import get_backend_api
 
 
-ALT_NAMES_COUNT = 3     # Needed for ArrayField hack
+ALT_NAMES_COUNT = 3  # Needed for ArrayField hack
 
 
 def get_alt_names(name):
@@ -17,12 +17,9 @@ def get_alt_names(name):
     :param name: Original name/ID (string)
     :return: List
     """
-    name = name.lower()     # Convert all versions lowercase for indexed search
+    name = name.lower()  # Convert all versions lowercase for indexed search
 
-    return [
-        name.replace('_', '-'),
-        re.sub(r'[^a-zA-Z0-9]', '', name),
-        name]
+    return [name.replace('_', '-'), re.sub(r'[^a-zA-Z0-9]', '', name), name]
 
 
 def get_sample_dirs(investigation):
@@ -57,16 +54,18 @@ def compare_inv_replace(inv1, inv2):
             study2 = inv2.studies.get(file_name=study1.file_name)
 
             for assay1 in study1.assays.all():
-                assay2 = study2.assays.get(file_name=assay1.file_name)
+                study2.assays.get(file_name=assay1.file_name)
 
-    except Exception as ex:
+    except Exception:
         raise ValueError(
             'iRODS directories exist but studies and assays '
-            'do not match: unable to replace investigation')
+            'do not match: unable to replace investigation'
+        )
 
 
 def get_index_by_header(
-        render_table, header_value, obj_cls=None, item_type=None):
+    render_table, header_value, obj_cls=None, item_type=None
+):
     """
     Return the column index based on field header value
     :param render_table: Study/assay render table
@@ -98,10 +97,12 @@ def get_last_material_name(row):
     name = None
 
     for cell in row:
-        if (cell['obj_cls'].__name__ == 'GenericMaterial' and
-                cell['item_type'] != 'DATA' and
-                cell['field_name'] == 'name' and
-                cell['value']):
+        if (
+            cell['obj_cls'].__name__ == 'GenericMaterial'
+            and cell['item_type'] != 'DATA'
+            and cell['field_name'] == 'name'
+            and cell['value']
+        ):
             name = cell['value']
 
     return name
@@ -125,8 +126,8 @@ def get_sample_libraries(samples, study_tables):
 
     for k, assay_table in study_tables['assays'].items():
         sample_idx = get_index_by_header(
-            assay_table, 'name',
-            obj_cls=GenericMaterial, item_type='SAMPLE')
+            assay_table, 'name', obj_cls=GenericMaterial, item_type='SAMPLE'
+        )
 
         for row in assay_table['table_data']:
             if row[sample_idx]['value'] in sample_names:
@@ -136,7 +137,8 @@ def get_sample_libraries(samples, study_tables):
                     library_names.append(last_name)
 
     return GenericMaterial.objects.filter(
-        study=study, name__in=library_names).order_by('name')
+        study=study, name__in=library_names
+    ).order_by('name')
 
 
 def get_isa_field_name(field):

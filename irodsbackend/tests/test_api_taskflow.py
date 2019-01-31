@@ -6,8 +6,11 @@ from django.conf import settings
 
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
-from projectroles.tests.test_views_taskflow import TestTaskflowBase, \
-    TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG
+from projectroles.tests.test_views_taskflow import (
+    TestTaskflowBase,
+    TASKFLOW_ENABLED,
+    TASKFLOW_SKIP_MSG,
+)
 
 # Samplesheets dependency
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
@@ -43,8 +46,11 @@ TEST_FILE_NAME2 = 'test2'
 
 
 class TestIrodsBackendAPITaskflow(
-        SampleSheetIOMixin, LandingZoneMixin, SampleSheetTaskflowMixin,
-        TestTaskflowBase):
+    SampleSheetIOMixin,
+    LandingZoneMixin,
+    SampleSheetTaskflowMixin,
+    TestTaskflowBase,
+):
     """Tests for the API in the irodsbackend app with Taskflow and iRODS"""
 
     def setUp(self):
@@ -57,11 +63,13 @@ class TestIrodsBackendAPITaskflow(
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
-            description='description')
+            description='description',
+        )
 
         # Import investigation
         self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project)
+            SHEET_PATH, self.project
+        )
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
 
@@ -102,7 +110,8 @@ class TestIrodsBackendAPITaskflow(
             'path': path + '/' + TEST_FILE_NAME,
             'size': 0,
             'md5_file': True,
-            'modify_time': obj['modify_time']}
+            'modify_time': obj['modify_time'],
+        }
         self.assertEqual(obj, expected)
 
     @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
@@ -124,7 +133,7 @@ class TestIrodsBackendAPITaskflow(
         path = self.irods_backend.get_path(self.project) + '/' + SAMPLE_DIR
 
         with self.assertRaises(FileNotFoundError):
-            obj_list = self.irods_backend.get_objects(path)
+            self.irods_backend.get_objects(path)
 
     @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_get_objects_limit(self):
@@ -141,6 +150,7 @@ class TestIrodsBackendAPITaskflow(
         irods.data_objects.create(path + '/' + TEST_FILE_NAME2)
 
         obj_list = self.irods_backend.get_objects(
-            path, check_md5=False, limit=1)
+            path, check_md5=False, limit=1
+        )
         self.assertIsNotNone(obj_list)
         self.assertEqual(len(obj_list['data_objects']), 1)  # Limited to 1

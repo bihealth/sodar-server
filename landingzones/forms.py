@@ -16,23 +16,22 @@ from .models import LandingZone
 class LandingZoneForm(forms.ModelForm):
     """Form for landing zone creation"""
 
-    title_suffix = forms.CharField(
-        max_length=64,
-        required=False)
+    title_suffix = forms.CharField(max_length=64, required=False)
 
     class Meta:
         model = LandingZone
         fields = ['assay', 'title_suffix', 'description', 'configuration']
 
     def __init__(
-            self, current_user=None, project=None, assay=None,
-            *args, **kwargs):
+        self, current_user=None, project=None, assay=None, *args, **kwargs
+    ):
         """Override for form initialization"""
         super().__init__(*args, **kwargs)
         irods_backend = get_backend_api('omics_irods')
 
         # NOTE: Can't import in root of module because of urlpatterns conflict?
         from .plugins import LandingZoneConfigPluginPoint
+
         config_plugins = LandingZoneConfigPluginPoint.get_plugins()
 
         self.current_user = None
@@ -48,14 +47,14 @@ class LandingZoneForm(forms.ModelForm):
                 self.project = Project.objects.get(sodar_uuid=project)
 
             except Project.DoesNotExist:
-                pass    # TODO: Fail
+                pass  # TODO: Fail
 
         if assay:
             try:
                 self.assay = Assay.objects.get(sodar_uuid=assay)
 
             except Assay.DoesNotExist:
-                pass    # TODO: Fail
+                pass  # TODO: Fail
 
         # Form modifications
 
@@ -64,31 +63,40 @@ class LandingZoneForm(forms.ModelForm):
 
         # Set suffix
         self.fields['title_suffix'].label = 'Title suffix'
-        self.fields['title_suffix'].help_text = \
-            'Zone title suffix (optional, maximum 64 characters)'
+        self.fields[
+            'title_suffix'
+        ].help_text = 'Zone title suffix (optional, maximum 64 characters)'
 
         # Get options for configuration
         self.fields['configuration'].widget = forms.Select()
         self.fields['configuration'].widget.choices = [(None, '--------------')]
 
         for plugin in config_plugins:
-            self.fields['configuration'].widget.choices.append((
-                plugin.config_name, plugin.config_display_name))  # TODO: Sort
+            self.fields['configuration'].widget.choices.append(
+                (plugin.config_name, plugin.config_display_name)
+            )  # TODO: Sort
 
         # Creation
         if not self.instance.pk:
             self.fields['assay'].choices = []
             # Only show choices for assays which are in iRODS
             for assay in Assay.objects.filter(
-                    study__investigation__project=self.project,
-                    study__investigation__active=True):
+                study__investigation__project=self.project,
+                study__investigation__active=True,
+            ):
 
                 if not irods_backend or irods_backend.collection_exists(
-                        irods_backend.get_path(assay)):
+                    irods_backend.get_path(assay)
+                ):
                     self.fields['assay'].choices.append(
-                        (assay.sodar_uuid, '{} / {}'.format(
-                            assay.study.get_display_name(),
-                            assay.get_display_name())))
+                        (
+                            assay.sodar_uuid,
+                            '{} / {}'.format(
+                                assay.study.get_display_name(),
+                                assay.get_display_name(),
+                            ),
+                        )
+                    )
 
         # Updating
         else:
@@ -105,7 +113,8 @@ class LandingZoneForm(forms.ModelForm):
 
             if self.cleaned_data.get('title_suffix') != '':
                 title += '_' + slugify(
-                    self.cleaned_data.get('title_suffix')).replace('-', '_')
+                    self.cleaned_data.get('title_suffix')
+                ).replace('-', '_')
 
             self.cleaned_data['title'] = title
 

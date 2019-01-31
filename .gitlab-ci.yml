@@ -30,4 +30,6 @@ all_tests:
     - python3 manage.py collectstatic --noinput
     - coverage run --source="." manage.py test -v 2 --settings=config.settings.test
     - coverage report
+    - sh ./black.sh --check
+    - flake8 .
   when: on_success

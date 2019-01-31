@@ -24,7 +24,8 @@ ZONE_STATUS_TYPES = [
     'FAILED',
     'MOVED',
     'DELETING',
-    'DELETED']
+    'DELETED',
+]
 
 DEFAULT_STATUS_INFO = {
     'CREATING': 'Creating landing zone in iRODS',
@@ -36,7 +37,8 @@ DEFAULT_STATUS_INFO = {
     'MOVED': 'Files moved successfully, landing zone removed',
     'FAILED': 'Validation/moving failed (unknown problem)',
     'DELETING': 'Deleting landing zone',
-    'DELETED': 'Landing zone deleted'}
+    'DELETED': 'Landing zone deleted',
+}
 
 STATUS_STYLES = {
     'CREATING': 'bg-warning',
@@ -48,7 +50,8 @@ STATUS_STYLES = {
     'MOVED': 'bg-success',
     'FAILED': 'bg-danger',
     'DELETING': 'bg-warning',
-    'DELETED': 'bg-secondary'}
+    'DELETED': 'bg-secondary',
+}
 
 
 class LandingZone(models.Model):
@@ -56,27 +59,29 @@ class LandingZone(models.Model):
 
     #: Title of the landing zone
     title = models.CharField(
-        max_length=255,
-        unique=False,
-        help_text='Title of the landing zone')
+        max_length=255, unique=False, help_text='Title of the landing zone'
+    )
 
     #: Project in which the landing zone belongs
     project = models.ForeignKey(
         Project,
         related_name='landing_zones',
-        help_text='Project in which the landing zone belongs')
+        help_text='Project in which the landing zone belongs',
+    )
 
     #: User who owns the landing zone
     user = models.ForeignKey(
         AUTH_USER_MODEL,
         related_name='landing_zones',
-        help_text='User who owns the landing zone')
+        help_text='User who owns the landing zone',
+    )
 
     #: Assay for which the landing zone belongs
     assay = models.ForeignKey(
         Assay,
         related_name='landing_zones',
-        help_text='Assay for which the landing zone belongs')
+        help_text='Assay for which the landing zone belongs',
+    )
 
     #: Status of landing zone
     status = models.CharField(
@@ -84,7 +89,8 @@ class LandingZone(models.Model):
         null=False,
         blank=False,
         default='CREATING',
-        help_text='Status of landing zone')
+        help_text='Status of landing zone',
+    )
 
     #: Additional status information
     status_info = models.CharField(
@@ -92,18 +98,20 @@ class LandingZone(models.Model):
         null=True,
         blank=True,
         default=DEFAULT_STATUS_INFO['CREATING'],
-        help_text='Additional status information')
+        help_text='Additional status information',
+    )
 
     #: DateTime of last folder modification
     date_modified = models.DateTimeField(
-        auto_now=True,
-        help_text='DateTime of last landing zone modification')
+        auto_now=True, help_text='DateTime of last landing zone modification'
+    )
 
     #: Landing zone description (optional)
     description = models.TextField(
         unique=False,
         blank=True,
-        help_text='Landing zone description (optional)')
+        help_text='Landing zone description (optional)',
+    )
 
     #: Special configuration
     configuration = models.CharField(
@@ -112,18 +120,19 @@ class LandingZone(models.Model):
         blank=True,
         null=True,
         help_text='Special configuration (optional, leave blank for a '
-                  'standard landing zone)')
+        'standard landing zone)',
+    )
 
     #: Configuration data (for storing plugin-specific settings)
     config_data = JSONField(
         default=dict,
-        help_text='Configuration data (for storing plugin-specific settings)')
+        help_text='Configuration data (for storing plugin-specific settings)',
+    )
 
     #: Landing zone SODAR UUID
     sodar_uuid = models.UUIDField(
-        default=uuid.uuid4,
-        unique=True,
-        help_text='Landing zone SODAR UUID')
+        default=uuid.uuid4, unique=True, help_text='Landing zone SODAR UUID'
+    )
 
     class Meta:
         ordering = ['project', 'assay__file_name', 'title']
@@ -132,15 +141,11 @@ class LandingZone(models.Model):
 
     def __str__(self):
         return '{}: {}/{}'.format(
-            self.project.title,
-            self.user.username,
-            self.title)
+            self.project.title, self.user.username, self.title
+        )
 
     def __repr__(self):
-        values = (
-            self.project.title,
-            self.user.username,
-            self.title)
+        values = (self.project.title, self.user.username, self.title)
         return 'LandingZone({})'.format(', '.join(repr(v) for v in values))
 
     # Custom row-level functions

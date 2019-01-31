@@ -13,7 +13,8 @@ class SampleSheetImportForm(forms.Form):
 
     file_upload = forms.FileField(
         allow_empty_file=False,
-        help_text='Zip archive containing ISAtab investigation files')
+        help_text='Zip archive containing ISAtab investigation files',
+    )
 
     class Meta:
         fields = ['file_upload']
@@ -36,8 +37,9 @@ class SampleSheetImportForm(forms.Form):
 
         # Ensure file type
         if file and file.content_type not in [
-                'application/zip',
-                'application/x-zip-compressed']:
+            'application/zip',
+            'application/x-zip-compressed',
+        ]:
             self.add_error('file_upload', 'The file is not a Zip archive')
             return self.cleaned_data
 
@@ -47,7 +49,8 @@ class SampleSheetImportForm(forms.Form):
 
         except Exception as ex:
             self.add_error(
-                'file_upload', 'Unable to open zip file: {}'.format(ex))
+                'file_upload', 'Unable to open zip file: {}'.format(ex)
+            )
             return self.cleaned_data
 
         # Get investigation file path(s)
@@ -55,14 +58,14 @@ class SampleSheetImportForm(forms.Form):
 
         if len(i_paths) == 0:
             self.add_error(
-                'file_upload',
-                'Investigation file not found in archive')
+                'file_upload', 'Investigation file not found in archive'
+            )
             return self.cleaned_data
 
         elif len(i_paths) > 1:
             self.add_error(
-                'file_upload',
-                'Multiple investigation files found in archive')
+                'file_upload', 'Multiple investigation files found in archive'
+            )
             return self.cleaned_data
 
         self.isa_zip = zip_file
@@ -72,8 +75,8 @@ class SampleSheetImportForm(forms.Form):
     def save(self, *args, **kwargs):
         try:
             investigation = import_isa(
-                isa_zip=self.isa_zip,
-                project=self.project)
+                isa_zip=self.isa_zip, project=self.project
+            )
             return investigation
 
         except Exception as ex:

@@ -17,39 +17,52 @@ DISABLED_STATES = ['NOT CREATED', 'MOVED', 'DELETED']
 
 @register.simple_tag
 def get_status_style(zone):
-    return STATUS_STYLES[zone.status] \
-        if zone.status in STATUS_STYLES else 'bg_faded'
+    return (
+        STATUS_STYLES[zone.status]
+        if zone.status in STATUS_STYLES
+        else 'bg_faded'
+    )
 
 
 @register.simple_tag
 def get_zone_row_class(zone):
-    return 'sodar-lz-zone-tr-moved text-muted' if \
-        zone.status in DISABLED_STATES else 'sodar-lz-zone-tr-existing'
+    return (
+        'sodar-lz-zone-tr-moved text-muted'
+        if zone.status in DISABLED_STATES
+        else 'sodar-lz-zone-tr-existing'
+    )
 
 
 @register.simple_tag
 def get_details_zones(project, user):
     """Return active user zones for the project details page"""
-    return LandingZone.objects.filter(
-        project=project, user=user).exclude(
-            status__in=['MOVED', 'DELETED']).order_by('-pk')
+    return (
+        LandingZone.objects.filter(project=project, user=user)
+        .exclude(status__in=['MOVED', 'DELETED'])
+        .order_by('-pk')
+    )
 
 
 @register.simple_tag
 def get_zone_desc_html(zone):
     """Return zone description as HTML"""
     return '<div><strong>Description</strong><br />{}</div>'.format(
-        zone.description)
+        zone.description
+    )
 
 
 @register.simple_tag
 def get_zone_samples_url(zone):
     """Return URL for samples related to zone"""
     # TODO: TBD: Inherit this from samplesheets instead?
-    return reverse(
-        'samplesheets:project_sheets',
-        kwargs={'study': zone.assay.study.sodar_uuid}) + \
-        '#' + str(zone.assay.sodar_uuid)
+    return (
+        reverse(
+            'samplesheets:project_sheets',
+            kwargs={'study': zone.assay.study.sodar_uuid},
+        )
+        + '#'
+        + str(zone.assay.sodar_uuid)
+    )
 
 
 @register.simple_tag
@@ -75,10 +88,8 @@ def get_zone_list_url(zone):
 
     return reverse(
         'irodsbackend:list',
-        kwargs={
-            'project': zone.project.sodar_uuid,
-            'path': path,
-            'md5': 1})
+        kwargs={'project': zone.project.sodar_uuid, 'path': path, 'md5': 1},
+    )
 
 
 @register.simple_tag

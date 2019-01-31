@@ -25,7 +25,8 @@ SHEET_PATH = SHEET_DIR + 'i_small.zip'
 
 
 class TestLandingZonePermissions(
-        LandingZoneMixin, SampleSheetIOMixin, TestProjectPermissionBase):
+    LandingZoneMixin, SampleSheetIOMixin, TestProjectPermissionBase
+):
     """Tests for LandingZone views"""
 
     def setUp(self):
@@ -33,7 +34,8 @@ class TestLandingZonePermissions(
 
         # Import investigation
         self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project)
+            SHEET_PATH, self.project
+        )
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
 
@@ -45,37 +47,36 @@ class TestLandingZonePermissions(
             assay=self.assay,
             description=ZONE_DESC,
             configuration=None,
-            config_data={})
+            config_data={},
+        )
 
     def test_zone_list(self):
         """Test permissions for the project landing zone list"""
         url = reverse(
-            'landingzones:list',
-            kwargs={'project': self.project.sodar_uuid})
+            'landingzones:list', kwargs={'project': self.project.sodar_uuid}
+        )
         good_users = [
             self.superuser,
             self.as_owner.user,
             self.as_delegate.user,
-            self.as_contributor.user]
-        bad_users = [
-            self.anonymous,
-            self.user_no_roles]
+            self.as_contributor.user,
+        ]
+        bad_users = [self.anonymous, self.user_no_roles]
         self.assert_render200_ok(url, good_users)
         self.assert_redirect(url, bad_users)
 
     def test_zone_create(self):
         """Test permissions for landing zone creation"""
         url = reverse(
-            'landingzones:create',
-            kwargs={'project': self.project.sodar_uuid})
+            'landingzones:create', kwargs={'project': self.project.sodar_uuid}
+        )
         good_users = [
             self.superuser,
             self.as_owner.user,
             self.as_delegate.user,
-            self.as_contributor.user]
-        bad_users = [
-            self.anonymous,
-            self.user_no_roles]
+            self.as_contributor.user,
+        ]
+        bad_users = [self.anonymous, self.user_no_roles]
         self.assert_render200_ok(url, good_users)
         self.assert_redirect(url, bad_users)
 
@@ -83,15 +84,14 @@ class TestLandingZonePermissions(
         """Test permissions for landing zone deletion"""
         url = reverse(
             'landingzones:delete',
-            kwargs={'landingzone': self.landing_zone.sodar_uuid})
-        good_users = [
-            self.superuser,
-            self.as_owner.user,
-            self.as_delegate.user]
+            kwargs={'landingzone': self.landing_zone.sodar_uuid},
+        )
+        good_users = [self.superuser, self.as_owner.user, self.as_delegate.user]
         bad_users = [
-            self.as_contributor.user,   # NOTE: not the owner of the zone
+            self.as_contributor.user,  # NOTE: not the owner of the zone
             self.anonymous,
-            self.user_no_roles]
+            self.user_no_roles,
+        ]
         self.assert_render200_ok(url, good_users)
         self.assert_redirect(url, bad_users)
 
@@ -99,16 +99,14 @@ class TestLandingZonePermissions(
         """Test permissions for landing zone status"""
         url = reverse(
             'landingzones:status',
-            kwargs={'landingzone': self.landing_zone.sodar_uuid})
-        good_users = [
-            self.superuser,
-            self.as_owner.user,
-            self.as_delegate.user]
+            kwargs={'landingzone': self.landing_zone.sodar_uuid},
+        )
+        good_users = [self.superuser, self.as_owner.user, self.as_delegate.user]
         bad_users = [
-            self.as_contributor.user,   # NOTE: not the owner of the zone
-            self.user_no_roles]
-        redirect_users = [
-            self.anonymous]
+            self.as_contributor.user,  # NOTE: not the owner of the zone
+            self.user_no_roles,
+        ]
+        redirect_users = [self.anonymous]
         self.assert_render200_ok(url, good_users)
         self.assert_response(url, bad_users, 403)
         self.assert_redirect(url, redirect_users)
