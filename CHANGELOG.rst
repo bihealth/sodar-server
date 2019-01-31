@@ -34,8 +34,8 @@ Changed
     - Cleanup Chrome setup
     - Update ``login.html`` override to add site messages (sodar_core#105)
     - Update site dependency utilities to match django-sodar-core v0.4.1+ (sodar_core#90)
-    - Upgrade to django-sodar-core v0.4.2 (#420)
-    - Upgrade dependencies to match django-sodar-core v0.4.2 (#420)
+    - Upgrade to django-sodar-core v0.4.3
+    - Upgrade dependencies to match django-sodar-core v0.4.2+ (#420)
     - Disable ``USE_I18N`` (sodar_core#117)
 - **Irodsbackend**
     - Refactor Ajax API views (#416)
