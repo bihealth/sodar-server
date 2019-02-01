@@ -63,7 +63,7 @@ Removed
 - **General**
     - Unused templates in ``sodar/pages``
     - Unused URL mapping to ``about.html``
-    - Local JS/CSS includes for JQuery, Bootstrap and other JS helpers (#420)
+    - Local JS/CSS includes for JQuery, Bootstrap and other JS helpers (#379, #420)
     - Legacy Python2 ``super()`` calls (sodar_core#118)
 - **Irodsbackend**
     - Unused module ``admin.py``
