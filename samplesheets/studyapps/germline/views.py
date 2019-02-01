@@ -22,7 +22,7 @@ from projectroles.views import (
 )
 
 # Samplesheets dependency
-from samplesheets.models import GenericMaterial
+from samplesheets.models import Study, GenericMaterial
 from samplesheets.plugins import find_assay_plugin
 from samplesheets.rendering import SampleSheetTableBuilder
 from samplesheets.utils import get_index_by_header
@@ -325,13 +325,17 @@ class FileExistenceCheckView(
 
     def post(self, request, *args, **kwargs):
         data = {'files': []}
-        study = kwargs['study']
+        study = Study.objects.filter(sodar_uuid=kwargs['study']).first()
         q_dict = request.POST
+
+        # Build render table
+        tb = SampleSheetTableBuilder()
+        study_tables = tb.build_study_tables(study)
 
         valid_objs = [
             str(u)
             for u in GenericMaterial.objects.filter(
-                study__sodar_uuid=study, item_type='SOURCE'
+                study=study, item_type='SOURCE'
             ).values_list('sodar_uuid', flat=True)
         ]
 
@@ -340,10 +344,6 @@ class FileExistenceCheckView(
             obj = file_path.split('/')[6]
             existence = False
             source = GenericMaterial.objects.get(sodar_uuid=obj)
-
-            # Build render table
-            tb = SampleSheetTableBuilder()
-            study_tables = tb.build_study_tables(source.study)
 
             if obj in valid_objs:
                 if self.get_pedigree_file_url(
