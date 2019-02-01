@@ -38,6 +38,7 @@ Changed
     - Upgrade to django-sodar-core v0.4.3
     - Upgrade dependencies to match django-sodar-core v0.4.2+ (#420)
     - Disable ``USE_I18N`` (sodar_core#117)
+    - Changed ``CONTRIBUTORS.txt`` into ``AUTHORS.rst``
 - **Irodsbackend**
     - Refactor Ajax API views (#416)
     - Limit the amount of iRODS queries (#414)
