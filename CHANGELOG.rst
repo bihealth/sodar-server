@@ -21,6 +21,7 @@ Added
     - App specific rules (#418)
     - Client side enabling/disabling of iRODS links buttons (#260)
     - Get status updating interval from setting variable (#423)
+    - API view permission tests (#386, #417)
 - **Samplesheets**
     - Support alternative notation in contact fields (#382)
 

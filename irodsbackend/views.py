@@ -104,7 +104,8 @@ class BaseIrodsAPIView(
                 return HttpResponse(ERROR_NOT_FOUND, status=404)
 
             if (
-                not request.user.is_superuser
+                request.user.is_authenticated
+                and not request.user.is_superuser
                 and not self._check_collection_perm(self.kwargs['path'])
             ):
                 return HttpResponse(ERROR_NO_AUTH, status=403)
