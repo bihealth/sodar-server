@@ -17,6 +17,19 @@
     "{{ project.title }}"?
   </div>
 
+  {% if irods_sample_stats.file_count > 0 %}
+    <div class="alert alert-danger" role="alert">
+      {% if request.user.is_superuser or request.user == project.get_owner.user %}
+        The sample data repository in iRODS contains {{ irods_sample_stats.file_count }}
+        files which will be permanently deleted along with the sample sheet!
+        Please proceed with caution!
+      {% else %}
+        The sample data repository in iRODS contains files. Only the project
+        owner or a superuser is allowed to proceed with deletion.
+      {% endif %}
+    </div>
+  {% endif %}
+
   <form method="post">
     {% csrf_token %}
     <div class="row">
@@ -25,9 +38,11 @@
             href="{{ request.session.real_referer }}">
           <i class="fa fa-arrow-circle-left"></i> Cancel
         </a>
-       <button type="submit" class="btn btn-danger">
-          <i class="fa fa-close"></i> Delete
-        </button>
+        {% if irods_sample_stats.file_count == 0 or request.user.is_superuser or request.user == project.get_owner.user %}
+          <button type="submit" class="btn btn-danger">
+            <i class="fa fa-close"></i> Delete
+          </button>
+        {% endif %}
       </div>
     </div>
   </form>

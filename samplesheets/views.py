@@ -453,6 +453,24 @@ class SampleSheetDeleteView(
     permission_required = 'samplesheets.delete_sheet'
     template_name = 'samplesheets/samplesheet_confirm_delete.html'
 
+    def get_context_data(self, *args, **kwargs):
+        """Override get_context_data() to check for data objects in iRODS"""
+        context = super().get_context_data(*args, **kwargs)
+        irods_backend = get_backend_api('omics_irods')
+
+        if irods_backend:
+            project = self.get_project()
+
+            try:
+                context['irods_sample_stats'] = irods_backend.get_object_stats(
+                    irods_backend.get_sample_path(project)
+                )
+
+            except FileNotFoundError:
+                pass
+
+        return context
+
     def post(self, request, *args, **kwargs):
         timeline = get_backend_api('timeline_backend')
         taskflow = get_backend_api('taskflow')

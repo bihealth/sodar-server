@@ -46,6 +46,7 @@ Changed
     - Rename Taskflow specific API views (sodar_core#104)
 - **Samplesheets**
     - Rename Taskflow specific API views (sodar_core#104)
+    - Only allow superuser or project owner to delete sheet with iRODS data (#424)
 
 Fixed
 -----
