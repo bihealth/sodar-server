@@ -67,6 +67,7 @@ Removed
     - Unused URL mapping to ``about.html``
     - Local JS/CSS includes for JQuery, Bootstrap and other JS helpers (#379, #420)
     - Legacy Python2 ``super()`` calls (sodar_core#118)
+    - Redundant ``is_superuser`` predicates from rules (sodar_core#138)
 - **Irodsbackend**
     - Unused module ``admin.py``
 - **Samplesheets**
