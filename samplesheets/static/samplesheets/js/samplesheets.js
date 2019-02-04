@@ -76,6 +76,11 @@ function toggleShortcuts (table){
                 }
             });
         });
+
+        // Hide iRODS wait spinners after first execution, if any
+        $('.sodar-irods-wait-icon').each(function() {
+            $(this).hide();
+        });
     });
 };
 
