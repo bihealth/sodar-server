@@ -8,6 +8,7 @@ from django.core.urlresolvers import reverse
 
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
+from projectroles.plugins import get_backend_api
 from projectroles.tests.test_views_taskflow import TestTaskflowBase
 
 from unittest import skipIf
@@ -39,6 +40,13 @@ TASKFLOW_ENABLED = (
     True if 'taskflow' in settings.ENABLED_BACKEND_PLUGINS else False
 )
 TASKFLOW_SKIP_MSG = 'Taskflow not enabled in settings'
+BACKENDS_ENABLED = all(
+    _ in settings.ENABLED_BACKEND_PLUGINS for _ in ['omics_irods', 'taskflow']
+)
+BACKEND_SKIP_MSG = (
+    'Required backends (taskflow, omics_irods) ' 'not enabled in settings'
+)
+TEST_FILE_NAME = 'test1'
 
 
 class SampleSheetTaskflowMixin:
@@ -126,11 +134,16 @@ class TestIrodsDirView(SampleSheetIOMixin, TestTaskflowBase):
             )
 
 
-class TestSampleSheetDeleteView(SampleSheetIOMixin, TestTaskflowBase):
+@skipIf(not BACKENDS_ENABLED, BACKEND_SKIP_MSG)
+class TestSampleSheetDeleteView(
+    SampleSheetIOMixin, SampleSheetTaskflowMixin, TestTaskflowBase
+):
     """Tests for sample sheet deletion with taskflow"""
 
     def setUp(self):
         super().setUp()
+
+        self.irods_backend = get_backend_api('omics_irods')
 
         # Make project with owner in Taskflow and Django
         self.project, self.owner_as = self._make_project_taskflow(
@@ -146,8 +159,8 @@ class TestSampleSheetDeleteView(SampleSheetIOMixin, TestTaskflowBase):
             SHEET_PATH, self.project
         )
         self.study = self.investigation.studies.first()
+        self.assay = self.study.assays.first()
 
-    @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_delete(self):
         """Test sample sheet deleting with taskflow"""
 
@@ -173,6 +186,105 @@ class TestSampleSheetDeleteView(SampleSheetIOMixin, TestTaskflowBase):
             Investigation.objects.get(
                 project__sodar_uuid=self.project.sodar_uuid
             )
+
+        # Assert redirect
+        with self.login(self.user):
+            self.assertRedirects(
+                response,
+                reverse(
+                    'samplesheets:project_sheets',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+            )
+
+    def test_delete_files_owner(self):
+        """Test sample sheet deleting with files in irods as owner"""
+
+        # Create collections and file in iRODS
+        self._make_irods_dirs(self.investigation)
+        irods = self.irods_backend.get_session()
+        assay_path = self.irods_backend.get_path(self.assay)
+        file_path = assay_path + '/' + TEST_FILE_NAME
+        irods.data_objects.create(file_path)
+
+        # Assert precondition
+        self.assertEqual(irods.data_objects.exists(file_path), True)
+
+        # Issue POST request
+        values = {
+            'sodar_url': self.live_server_url
+        }  # HACK: Override callback URL
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:delete',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                values,
+            )
+
+        # Assert sample sheet dir structure state after creation
+        with self.assertRaises(Investigation.DoesNotExist):
+            Investigation.objects.get(
+                project__sodar_uuid=self.project.sodar_uuid
+            )
+
+        # Assert file status
+        self.assertEqual(irods.data_objects.exists(file_path), False)
+
+        # Assert redirect
+        with self.login(self.user):
+            self.assertRedirects(
+                response,
+                reverse(
+                    'samplesheets:project_sheets',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+            )
+
+    def test_delete_files_contributor(self):
+        """Test sample sheet deleting with files in irods as contributor"""
+
+        # Create contributor user
+        user_contributor = self.make_user('user_contributor')
+        self._make_assignment_taskflow(
+            self.project, user_contributor, self.role_contributor
+        )
+
+        # Create collections and file in iRODS
+        self._make_irods_dirs(self.investigation)
+        irods = self.irods_backend.get_session()
+        assay_path = self.irods_backend.get_path(self.assay)
+        file_path = assay_path + '/' + TEST_FILE_NAME
+        irods.data_objects.create(file_path)
+
+        # Assert precondition
+        self.assertEqual(irods.data_objects.exists(file_path), True)
+
+        # Issue POST request
+        values = {
+            'sodar_url': self.live_server_url
+        }  # HACK: Override callback URL
+
+        with self.login(user_contributor):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:delete',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                values,
+            )
+
+        # Assert sample sheet state after creation (should be there)
+        self.assertIsNotNone(
+            Investigation.objects.filter(
+                project__sodar_uuid=self.project.sodar_uuid
+            ).first()
+        )
+
+        # Assert file status (operation should fail)
+        self.assertEqual(irods.data_objects.exists(file_path), True)
 
         # Assert redirect
         with self.login(self.user):

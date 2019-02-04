@@ -38,7 +38,7 @@
             href="{{ request.session.real_referer }}">
           <i class="fa fa-arrow-circle-left"></i> Cancel
         </a>
-        {% if irods_sample_stats.file_count == 0 or request.user.is_superuser or request.user == project.get_owner.user %}
+        {% if not irods_sample_stats.file_count or request.user.is_superuser or request.user == project.get_owner.user %}
           <button type="submit" class="btn btn-danger">
             <i class="fa fa-close"></i> Delete
           </button>

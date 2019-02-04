@@ -478,6 +478,35 @@ class SampleSheetDeleteView(
         project = Project.objects.get(sodar_uuid=kwargs['project'])
         investigation = Investigation.objects.get(project=project, active=True)
 
+        # Don't allow deletion for everybody if files exist in iRODS
+        # HACK for issue #424: This could also be implemented in rules..
+        context = self.get_context_data(*args, **kwargs)
+        file_count = (
+            context['irods_sample_stats']['file_count']
+            if 'irods_sample_stats' in context
+            else 0
+        )
+
+        if (
+            file_count > 0
+            and not self.request.user.is_superuser
+            and self.request.user != context['project'].get_owner().user
+        ):
+            messages.warning(
+                self.request,
+                '{} file{} for project in iRODS, deletion only allowed '
+                'for project owner or superuser'.format(
+                    file_count, 's' if int(file_count) != 1 else ''
+                ),
+            )
+            return redirect(
+                reverse(
+                    'samplesheets:project_sheets',
+                    kwargs={'project': context['project'].sodar_uuid},
+                )
+            )
+
+        # Else go forward..
         # Add event in Timeline
         if timeline:
             tl_event = timeline.add_event(
