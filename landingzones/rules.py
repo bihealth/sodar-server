@@ -30,8 +30,7 @@ rules.add_perm(
 # Allow viewing all landing zones for the project
 rules.add_perm(
     'landingzones.view_zones_all',
-    pr_rules.is_project_owner
-    | pr_rules.is_project_delegate,
+    pr_rules.is_project_owner | pr_rules.is_project_delegate,
 )
 
 # Allow creating landing zones
@@ -53,6 +52,5 @@ rules.add_perm(
 # Allow modifying or deleting all landing zones
 rules.add_perm(
     'landingzones.update_zones_all',
-    pr_rules.is_project_owner
-    | pr_rules.is_project_delegate,
+    pr_rules.is_project_owner | pr_rules.is_project_delegate,
 )
