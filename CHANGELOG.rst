@@ -11,6 +11,8 @@ Unreleased
 Fixed
 -----
 
+- **General**
+    - Add missing ``.coveragerc`` excludes (#427)
 - **Samplesheets**
     - iRODS button status updating for Proteomics projects (#428)
     - General iRODS button status only updated once per page load (#429)
