@@ -161,7 +161,7 @@ $(document).ready(function() {
      Update collection stats
      ***********************/
     updateCollectionStats();
-    if ($('table.sodar-lz-table').length === 0){
+    if ($('table.sodar-lz-table').length === 0) {
         updateButtons();
     }
 
@@ -175,6 +175,9 @@ $(document).ready(function() {
 
     // Poll and update active collections
     setInterval(function () {
+        if ($('table.sodar-lz-table').length === 0) {
+            updateButtons();
+        }
         updateCollectionStats();
     }, statsInterval);
 
