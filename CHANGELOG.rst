@@ -5,6 +5,16 @@ Changelog for the SODAR Web UI. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+Unreleased
+==========
+
+Fixed
+-----
+
+- **Samplesheets**
+    - iRODS button status updating for Proteomics projects (#428)
+
+
 v0.4.2 (2019-02-04)
 ===================
 

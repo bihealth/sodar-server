@@ -277,10 +277,10 @@ class FileExistenceCheckView(
             file_type = file_path.split('/')[5]
             obj = file_path.split('/')[6]
             existence = False
-            lib = GenericMaterial.objects.get(sodar_uuid=obj)
+            lib = GenericMaterial.objects.filter(sodar_uuid=obj).first()
 
             # check if queried files are in the corresponding study
-            if obj in valid_objs:
+            if obj in valid_objs and lib:
                 if self.get_library_file_url(file_type=file_type, library=lib):
                     existence = True
             else:

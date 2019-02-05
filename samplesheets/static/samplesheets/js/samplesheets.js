@@ -153,8 +153,9 @@ $(document).ready(function() {
     // Once initialized, remove temporary init classes
     $('.sodar-ss-init-container').removeClass('table-responsive').removeClass('sodar-ss-init-container');
 
-    //Enable/Disable shortcut buttons
-    $('table.sodar-ss-data-table-contentapp').each(function() {
+    // Enable/Disable shortcut buttons
+    // NOTE: Currently limiting to study apps (see issue #428)
+    $('table.sodar-ss-data-table-studyapp').each(function() {
         if (this.hasAttribute('id')){
             toggleShortcuts($(this));
         }

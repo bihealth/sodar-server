@@ -343,9 +343,9 @@ class FileExistenceCheckView(
             file_type = file_path.split('/')[5]
             obj = file_path.split('/')[6]
             existence = False
-            source = GenericMaterial.objects.get(sodar_uuid=obj)
+            source = GenericMaterial.objects.filter(sodar_uuid=obj).first()
 
-            if obj in valid_objs:
+            if obj in valid_objs and source:
                 if self.get_pedigree_file_url(
                     file_type=file_type,
                     source=source,
