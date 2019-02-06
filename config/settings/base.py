@@ -480,6 +480,8 @@ IRODSBACKEND_STATUS_INTERVAL = env.int('IRODSBACKEND_STATUS_INTERVAL', 12)
 
 # Samplesheets settings
 SHEETS_IRODS_LIMIT = env.int('SHEETS_IRODS_LIMIT', 50)  # iRODS file query limit
+# Temporary HACK for issue #432: shortcut query limit in queryable buttons
+SHEETS_SHORTCUT_QUERY_LIMIT = env.int('SHEETS_SHORTCUT_QUERY_LIMIT', 50)
 SHEETS_MAX_COLUMN_WIDTH = 350  # Max column width for content overflow
 
 SHEETS_EXTERNAL_LINK_LABELS = {

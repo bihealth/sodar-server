@@ -4,6 +4,27 @@
 function toggleShortcuts (table){
     var filePaths = [];
 
+    // Temporary HACK to fix issue #432 (updating freezes on large projects):
+    // If there are too many queries, skip checks and enable all
+    var btnClass = '.sodar-list-btn';
+    var labelClass = '.btn-outline-secondary';
+    var queryLimit = window.shortcutQueryLimit; // TODO: Get from settings
+    var queryCount = table.find(btnClass)
+        .not(labelClass).not('.sodar-igv-btn').length;
+
+    if (queryCount > queryLimit) {
+        table.find(btnClass).not(labelClass).each(function () {
+            if ($(this).is('button')) {
+                $(this).removeAttr('disabled');
+            } else if ($(this).is('a')) {
+                $(this).removeClass('disabled');
+            }
+            $(this).tooltip('enable');
+        });
+        $('.sodar-irods-studyapp-wait-icon').hide();
+        return;
+    }
+
     //get study UUID
     studyID = $('.sodar-ss-nav-btn.active').attr('href').split('/').pop();
 
@@ -77,10 +98,8 @@ function toggleShortcuts (table){
             });
         });
 
-        // Hide iRODS wait spinners after first execution, if any
-        $('.sodar-irods-wait-icon').each(function() {
-            $(this).hide();
-        });
+        // Hide iRODS study app wait spinner after first execution
+        $('.sodar-irods-studyapp-wait-icon').hide();
     });
 };
 

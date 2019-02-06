@@ -8,6 +8,13 @@ Changelog for the SODAR Web UI. Loosely follows the
 Unreleased
 ==========
 
+Added
+-----
+
+- **Samplesheets**
+    - Temporary query limit workaround for study app button refresh issues in large projects (#432)
+    - Temporary setting ``SHEETS_SHORTCUT_QUERY_LIMIT`` (#432)
+
 Fixed
 -----
 
