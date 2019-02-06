@@ -14,6 +14,9 @@ Added
 - **Samplesheets**
     - Temporary query limit workaround for study app button refresh issues in large projects (#432)
     - Temporary setting ``SHEETS_SHORTCUT_QUERY_LIMIT`` (#432)
+    - Support for multiple ontology links in ``_get_ontology_link()`` (#431)
+    - Hack for providing correct HPO ontology into links (#431)
+    - Rendering for HPO term links (#431)
 
 Fixed
 -----

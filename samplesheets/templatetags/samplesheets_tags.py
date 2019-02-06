@@ -41,6 +41,7 @@ EMPTY_VALUE = '-'
 # TODO: Add a more dynamic way to render special fields (e.g. a plugin)
 SPECIAL_FIELDS = [
     'external links',
+    'hpo terms',
     'primary contact',
     'provider contact',
     'requestor contact',
@@ -348,6 +349,19 @@ def render_special_field(cell):
                         EXTERNAL_LINK_LABELS[link], id_val
                     )
                 )
+
+    # HPO Terms
+    elif field_name == 'hpo terms':
+        if not cell['link']:
+            ret = cell['value']
+
+        else:
+            tmp_list = list(
+                zip(cell['value'].split(';'), cell['link'].split(';'))
+            )
+            ret = '; '.join(
+                ['<a href="{}">{}</a>'.format(x[1], x[0]) for x in tmp_list]
+            )
 
     # Contact field
     elif field_name in [

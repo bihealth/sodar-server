@@ -93,6 +93,9 @@ var updateButtons = function() {
     var ipaths = [];
     var projectUUID = '';
 
+    // Temporary HACK to fix issue #432 (updating freezes on large projects):
+    // If there are too many queries, skip checks and enable all
+
     $('button.sodar-irods-path-btn').each(function () {
         var buttonPath = $(this).attr('data-clipboard-text');
         projectUUID = buttonPath.split('/')[4];

@@ -181,13 +181,23 @@ class SampleSheetTableBuilder:
     @classmethod
     def _get_ontology_link(cls, ontology_name, accession):
         """
-        Build ontology link.
+        Build ontology link(s).
         :param ontology_name: Ontology name
         :param accession: Ontology accession URL
         :return: String
         """
-        return ONTOLOGY_URL_TEMPLATE.format(
-            ontology_name=ontology_name, accession=accession
+
+        # HACK: "HPO" is "HP" in bioontology.org
+        if ontology_name == 'HPO':
+            ontology_name = 'HP'
+
+        return ';'.join(
+            [
+                ONTOLOGY_URL_TEMPLATE.format(
+                    ontology_name=ontology_name, accession=a
+                )
+                for a in accession.split(';')
+            ]
         )
 
     def _add_top_header(self, obj, colspan, hiding={}):
