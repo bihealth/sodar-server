@@ -544,16 +544,26 @@ class SampleSheetTableBuilder:
         tb = RefTableBuilder(nodes, arcs)
         all_refs = tb.run()
 
+        if not all_refs:
+            error_msg = (
+                'RefTableBuilder failed to build a table from graph, unable to '
+                'render study. Please ensure the validity of your ISAtab files'
+            )
+            logger.error(error_msg)
+            raise SampleSheetRenderingException(error_msg)
+
         # Ensure the study does not exceed project limitations
         row_limit = get_project_setting(
             study.get_project(), 'samplesheets', 'study_row_limit'
         )
 
         if len(all_refs) > row_limit:
-            raise SampleSheetRenderingException(
-                'Row limit set in samplesheets.study_row_limit reached ({}), '
-                'unable to render study'.format(len(all_refs))
+            error_msg = (
+                'Row limit set in samplesheets.study_row_limit '
+                'reached ({}), unable to render study'.format(len(all_refs))
             )
+            logger.error(error_msg)
+            raise SampleSheetRenderingException(error_msg)
 
         return all_refs
 

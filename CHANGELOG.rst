@@ -18,6 +18,12 @@ Added
     - Hack for providing correct HPO ontology into links (#431)
     - Rendering for HPO term links (#431)
 
+Changed
+-------
+
+- **Samplesheets**
+    - Improve exception reporting in ``SampleSheetTableBuilder`` (#433)
+
 Fixed
 -----
 
