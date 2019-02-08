@@ -92,7 +92,18 @@ var toggleButtons = function(row, status, stats) {
 var updateButtons = function() {
     var ipaths = [];
     var projectUUID = '';
-    
+
+    // Temp fix for #432: just enable everything
+    $('.sodar-irods-btn').each(function () {
+        if ($(this).is('button')) {
+            $(this).removeAttr('disabled');
+        } else if ($(this).is('a')) {
+            $(this).removeClass('disabled');
+        }
+        $(this).tooltip('enable');
+    });
+
+    /*
     $('button.sodar-irods-path-btn').each(function () {
         var buttonPath = $(this).attr('data-clipboard-text');
         projectUUID = buttonPath.split('/')[4];
@@ -127,6 +138,7 @@ var updateButtons = function() {
             });
         });
     }
+    */
 };
 
 
