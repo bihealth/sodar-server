@@ -23,6 +23,7 @@ from projectroles.views import (
     LoggedInPermissionMixin,
     ProjectContextMixin,
     ProjectPermissionMixin,
+    BaseTaskflowAPIView,
 )
 
 from .forms import SampleSheetImportForm
@@ -664,7 +665,7 @@ class IrodsDirsView(
         return super().render_to_response(self.get_context_data())
 
 
-# General API Views ------------------------------------------------------
+# General API Views ------------------------------------------------------------
 
 
 # NOTE: Using a specific versioner for the query API, to be generalized..
@@ -697,13 +698,13 @@ class SourceIDQueryAPIView(APIView):
         return Response(ret_data, status=200)
 
 
-# Taskflow API Views -----------------------------------------------------
+# Taskflow API Views -----------------------------------------------------------
 
 
 # TODO: Integrate Taskflow API functionality with general SODAR API (see #47)
 
 
-class TaskflowDirStatusGetAPIView(APIView):
+class TaskflowDirStatusGetAPIView(BaseTaskflowAPIView):
     """View for getting the sample sheet iRODS dir status"""
 
     def post(self, request):
@@ -718,7 +719,7 @@ class TaskflowDirStatusGetAPIView(APIView):
         return Response({'dir_status': investigation.irods_status}, 200)
 
 
-class TaskflowDirStatusSetAPIView(APIView):
+class TaskflowDirStatusSetAPIView(BaseTaskflowAPIView):
     """View for creating or updating a role assignment based on params"""
 
     def post(self, request):
@@ -736,7 +737,7 @@ class TaskflowDirStatusSetAPIView(APIView):
         return Response('ok', status=200)
 
 
-class TaskflowSheetDeleteAPIView(APIView):
+class TaskflowSheetDeleteAPIView(BaseTaskflowAPIView):
     """View for deleting the sample sheets of a project"""
 
     def post(self, request):

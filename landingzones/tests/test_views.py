@@ -240,6 +240,7 @@ class TestLandingZoneStatusSetAPIView(TestViewsBase):
                 'zone_uuid': str(self.landing_zone.sodar_uuid),
                 'status': 'ACTIVE',
                 'status_info': DEFAULT_STATUS_INFO['ACTIVE'],
+                'sodar_secret': settings.TASKFLOW_SODAR_SECRET,
             }
 
             response = self.client.post(
@@ -256,6 +257,7 @@ class TestLandingZoneStatusSetAPIView(TestViewsBase):
                 'zone_uuid': str(self.landing_zone.sodar_uuid),
                 'status': 'MOVED',
                 'status_info': DEFAULT_STATUS_INFO['MOVED'],
+                'sodar_secret': settings.TASKFLOW_SODAR_SECRET,
             }
 
             response = self.client.post(
@@ -272,6 +274,7 @@ class TestLandingZoneStatusSetAPIView(TestViewsBase):
                 'zone_uuid': str(self.landing_zone.sodar_uuid),
                 'status': 'FAILED',
                 'status_info': DEFAULT_STATUS_INFO['FAILED'],
+                'sodar_secret': settings.TASKFLOW_SODAR_SECRET,
             }
 
             response = self.client.post(

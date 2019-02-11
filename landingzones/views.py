@@ -19,6 +19,7 @@ from projectroles.views import (
     LoggedInPermissionMixin,
     ProjectPermissionMixin,
     ProjectContextMixin,
+    BaseTaskflowAPIView,
 )
 from projectroles.plugins import get_backend_api
 
@@ -750,13 +751,13 @@ class LandingZoneListAPIView(APIView):
         return Response(ret_data, status=200)
 
 
-# Taskflow API Views -----------------------------------------------------
+# Taskflow API Views -----------------------------------------------------------
 
 
 # TODO: Integrate Taskflow API functionality with general SODAR API (see #47)
 
 
-class TaskflowZoneCreateAPIView(APIView):
+class TaskflowZoneCreateAPIView(BaseTaskflowAPIView):
     def post(self, request):
         try:
             user = User.objects.get(sodar_uuid=request.data['user_uuid'])
@@ -780,7 +781,7 @@ class TaskflowZoneCreateAPIView(APIView):
         return Response({'zone_uuid': zone.sodar_uuid}, status=200)
 
 
-class TaskflowZoneStatusSetAPIView(APIView):
+class TaskflowZoneStatusSetAPIView(BaseTaskflowAPIView):
     def post(self, request):
         try:
             zone = LandingZone.objects.get(sodar_uuid=request.data['zone_uuid'])

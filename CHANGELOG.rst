@@ -21,8 +21,11 @@ Added
 Changed
 -------
 
+- **Landingzones**
+    - Secure Taskflow API views with ``BaseTaskflowAPIView`` (#435)
 - **Samplesheets**
     - Improve exception reporting in ``SampleSheetTableBuilder`` (#433)
+    - Secure Taskflow API views with ``BaseTaskflowAPIView`` (#435)
 
 Fixed
 -----
