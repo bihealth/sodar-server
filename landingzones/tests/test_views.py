@@ -3,7 +3,6 @@
 from test_plus.test import TestCase
 
 from django.conf import settings
-from django.core import mail
 from django.core.urlresolvers import reverse
 from django.test import RequestFactory
 
@@ -14,7 +13,7 @@ from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
 # Samplesheets dependency
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 
-from ..models import LandingZone, DEFAULT_STATUS_INFO
+from ..models import LandingZone
 from .test_models import LandingZoneMixin, ZONE_TITLE, ZONE_DESC
 
 # Global constants
@@ -227,59 +226,3 @@ class TestLandingZoneStatusGetAPIView(TestViewsBase):
                 'status_info': self.landing_zone.status_info,
             }
             self.assertEquals(response.data, expected)
-
-
-# NOTE: Taskflow actually not required for this view
-class TestLandingZoneStatusSetAPIView(TestViewsBase):
-    """Tests for the landing zone status setting API view"""
-
-    def test_post_status_active(self):
-        """Test POST request for setting a landing zone status into ACTIVE"""
-        with self.login(self.user):
-            values = {
-                'zone_uuid': str(self.landing_zone.sodar_uuid),
-                'status': 'ACTIVE',
-                'status_info': DEFAULT_STATUS_INFO['ACTIVE'],
-                'sodar_secret': settings.TASKFLOW_SODAR_SECRET,
-            }
-
-            response = self.client.post(
-                reverse('landingzones:taskflow_zone_status_set'), values
-            )
-
-            self.assertEqual(response.status_code, 200)
-            self.assertEqual(len(mail.outbox), 0)  # No mail sent for ACTIVE
-
-    def test_post_status_moved(self):
-        """Test POST request for setting a landing zone status into MOVED"""
-        with self.login(self.user):
-            values = {
-                'zone_uuid': str(self.landing_zone.sodar_uuid),
-                'status': 'MOVED',
-                'status_info': DEFAULT_STATUS_INFO['MOVED'],
-                'sodar_secret': settings.TASKFLOW_SODAR_SECRET,
-            }
-
-            response = self.client.post(
-                reverse('landingzones:taskflow_zone_status_set'), values
-            )
-
-            self.assertEqual(response.status_code, 200)
-            self.assertEqual(len(mail.outbox), 1)  # Mail should be sent
-
-    def test_post_status_failed(self):
-        """Test POST request for setting a landing zone status into FAILED"""
-        with self.login(self.user):
-            values = {
-                'zone_uuid': str(self.landing_zone.sodar_uuid),
-                'status': 'FAILED',
-                'status_info': DEFAULT_STATUS_INFO['FAILED'],
-                'sodar_secret': settings.TASKFLOW_SODAR_SECRET,
-            }
-
-            response = self.client.post(
-                reverse('landingzones:taskflow_zone_status_set'), values
-            )
-
-            self.assertEqual(response.status_code, 200)
-            self.assertEqual(len(mail.outbox), 1)  # Mail should be sent
