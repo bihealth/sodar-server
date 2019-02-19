@@ -66,6 +66,7 @@ class LandingZoneForm(forms.ModelForm):
         self.fields[
             'title_suffix'
         ].help_text = 'Zone title suffix (optional, maximum 64 characters)'
+        self.fields['description'].widget.attrs['rows'] = 4
 
         # Get options for configuration
         self.fields['configuration'].widget = forms.Select()

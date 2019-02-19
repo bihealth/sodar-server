@@ -23,6 +23,7 @@ Changed
 
 - **Landingzones**
     - Secure Taskflow API views with ``BaseTaskflowAPIView`` (#435)
+    - Adjust form textarea height (#437)
 - **Samplesheets**
     - Improve exception reporting in ``SampleSheetTableBuilder`` (#433)
     - Secure Taskflow API views with ``BaseTaskflowAPIView`` (#435)
