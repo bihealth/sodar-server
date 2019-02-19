@@ -2,7 +2,7 @@
 wheel==0.32.3
 
 # Conservative Django
-django==1.11.18 # pyup: <2.0
+django==1.11.20 # pyup: <2.0
 
 # Configuration
 django-environ==0.4.5
@@ -68,7 +68,7 @@ django-db-file-storage==0.5.3
 -e git://github.com/mikkonie/django-plugins.git@1bc07181e6ab68b0f9ed3a00382eb1f6519e1009#egg=django-plugins
 
 # SODAR Core
--e git+ssh://git@cubi-gitlab.bihealth.org/CUBI_Engineering/CUBI_Data_Mgmt/sodar_core.git@0b191200fdebd35c52b8795501a903d24217a364#egg=django-sodar-core
+-e git+ssh://git@cubi-gitlab.bihealth.org/CUBI_Engineering/CUBI_Data_Mgmt/sodar_core.git@a1db5544fb50be22aac88e6009be62c1a188ee87#egg=django-sodar-core
 
 ####################
 # SODAR app imports
