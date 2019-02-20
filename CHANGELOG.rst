@@ -27,6 +27,8 @@ Changed
 - **Samplesheets**
     - Improve exception reporting in ``SampleSheetTableBuilder`` (#433)
     - Secure Taskflow API views with ``BaseTaskflowAPIView`` (#435)
+    - Support email link rendering for "contact" fields (#439)
+    - Refactor contact field rendering (#439)
 
 Fixed
 -----

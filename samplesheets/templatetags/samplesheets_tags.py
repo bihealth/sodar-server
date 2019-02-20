@@ -26,7 +26,8 @@ from ..utils import get_sample_libraries as _get_sample_libraries
 
 
 irods_backend = get_backend_api('omics_irods')
-num_re = re.compile('^(?=.)([+-]?([0-9]*)(.([0-9]+))?)$')
+num_re = re.compile(r'^(?=.)([+-]?([0-9]*)(.([0-9]+))?)$')
+contact_re = re.compile(r'(.+?)(?:[<|[])(.+?)(?:[>\]])')
 
 register = template.Library()
 
@@ -42,6 +43,7 @@ EMPTY_VALUE = '-'
 SPECIAL_FIELDS = [
     'external links',
     'hpo terms',
+    'contact',
     'primary contact',
     'provider contact',
     'requestor contact',
@@ -364,18 +366,12 @@ def render_special_field(cell):
             )
 
     # Contact field
-    elif field_name in [
-        'primary contact',
-        'provider contact',
-        'requestor contact',
-        'center contact',
-    ]:
-        email = re.findall(r'(?<=[<|[])(.+?)(?=[>\]])', cell['value'])
+    elif 'contact' in field_name:
+        contact = re.findall(contact_re, cell['value'])[0]
 
-        if email and email[0] != '':
-            name = re.findall(r'(.+?)(?=[<\[])', cell['value'])
+        if len(contact) > 1:
             ret += '<a href="mailto:{}">{}</a>'.format(
-                email[0], name[0].strip() if name else email[0]
+                contact[1], contact[0].strip() if contact[0] else contact[1]
             )
 
         else:
