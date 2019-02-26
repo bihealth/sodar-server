@@ -398,6 +398,11 @@ class SampleSheetTableBuilder:
                 self._add_header('Name', obj, hide_cls)  # Name
                 field_count += 1
 
+                if obj.performer and obj.perform_date:  # Performer
+                    self._add_header('Performer', obj, hide_cls)
+                    self._add_header('Perform Date', obj, hide_cls)
+                    field_count += 2
+
                 a_header_count = self._add_annotation_headers(
                     obj.parameter_values, obj, hide_cls
                 )  # Param values
@@ -456,6 +461,20 @@ class SampleSheetTableBuilder:
             self._add_cell(
                 obj.name, obj=obj, field_name='name', classes=hide_cls
             )  # Name
+
+            if obj.performer and obj.perform_date:
+                self._add_cell(
+                    obj.performer,
+                    obj=obj,
+                    field_name='performer',
+                    classes=hide_cls,
+                )
+                self._add_cell(
+                    str(obj.perform_date),
+                    obj=obj,
+                    field_name='perform date',
+                    classes=hide_cls,
+                )
 
             self._add_annotations(
                 obj.parameter_values, obj=obj, classes=hide_cls
