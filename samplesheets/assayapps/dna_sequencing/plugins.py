@@ -30,6 +30,10 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
             'measurement_type': 'exome sequencing',
             'technology_type': 'nucleotide sequencing',
         },
+        {
+            'measurement_type': 'transcription profiling',
+            'technology_type': 'nucleotide sequencing',
+        },
     ]
 
     #: Description string

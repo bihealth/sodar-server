@@ -18,6 +18,7 @@ Added
     - Hack for providing correct HPO ontology into links (#431)
     - Rendering for HPO term links (#431)
     - Rendering for performer and perform date (#187)
+    - Transcription profiling support in dna_sequencing assay app (#443)
 
 Changed
 -------
