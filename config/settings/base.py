@@ -56,6 +56,8 @@ THIRD_PARTY_APPS = [
     'rest_framework',  # For API views
     'knox',  # For token auth
     'docs',  # For the online user documentation/manual
+    'dal',  # For user search combo box
+    'dal_select2',
     # SODAR Core apps
     # Project apps
     'projectroles.apps.ProjectrolesConfig',
