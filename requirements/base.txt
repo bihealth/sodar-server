@@ -68,7 +68,7 @@ django-db-file-storage==0.5.3
 -e git://github.com/mikkonie/django-plugins.git@1bc07181e6ab68b0f9ed3a00382eb1f6519e1009#egg=django-plugins
 
 # SODAR Core
--e git+ssh://git@cubi-gitlab.bihealth.org/CUBI_Engineering/CUBI_Data_Mgmt/sodar_core.git@6c2a1d0c977a82135a5c3e25768aab5dd3cb2095#egg=django-sodar-core
+-e git+ssh://git@cubi-gitlab.bihealth.org/CUBI_Engineering/CUBI_Data_Mgmt/sodar_core.git@5bf4cfe9e47c54f60071a174dcf89aa3ed598001#egg=django-sodar-core
 
 ####################
 # SODAR app imports
