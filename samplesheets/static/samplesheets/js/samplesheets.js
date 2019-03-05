@@ -94,8 +94,6 @@ async function toggleShortcuts (table){
 
         });
     }
-    // Hide iRODS study app wait spinner after first execution
-    $('.sodar-irods-studyapp-wait-icon').hide();
 };
 
 

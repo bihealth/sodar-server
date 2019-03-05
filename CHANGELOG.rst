@@ -48,7 +48,7 @@ Removed
 -------
 
 - **Samplesheets**
-    - iRODS wait icon from assay tables (#430)
+    - iRODS wait icon from study apps and assay tables (#430)
 
 
 v0.4.2 (2019-02-04)
