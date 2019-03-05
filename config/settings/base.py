@@ -479,7 +479,7 @@ IRODS_WEBDAV_URL = env.str('IRODS_WEBDAV_URL', 'https://0.0.0.0')
 # Status query interval in seconds
 IRODSBACKEND_STATUS_INTERVAL = env.int('IRODSBACKEND_STATUS_INTERVAL', 15)
 # Set batch query size for improving sequential iRODS query performance (#432)
-IRODS_QUERY_BATCH_SIZE = env.int('IRODS_QUERY_BATCH_SIZE', 32)
+IRODS_QUERY_BATCH_SIZE = env.int('IRODS_QUERY_BATCH_SIZE', 24)
 
 
 # Samplesheets settings
