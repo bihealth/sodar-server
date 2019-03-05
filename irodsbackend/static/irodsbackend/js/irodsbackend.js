@@ -55,34 +55,33 @@ var updateCollectionStats = function() {
 //enables or disables every .sodar-list-btn button in a row
 var toggleButtons = function(row, status, stats) {
     $(row).find('.sodar-list-btn').each(function () {
-        if (status === '200') {
-            if ($(this).is('button')) {
-                $(this).removeAttr('disabled');
-            }
-            $(this).removeClass('disabled');
-            $(this).tooltip('enable');
+            if (status === '200') {
+                if ($(this).is('button')) {
+                    $(this).removeAttr('disabled');
+                }
+                $(this).removeClass('disabled');
+                $(this).tooltip('enable');
 
-            //collection is empty; disable all but the copy path buttons
-            if(stats['file_count'] === 0){
-                if ($(this).is('.sodar-irods-popup-list-btn')) {
+                //collection is empty; disable all but the copy path buttons
+                if (stats['file_count'] === 0) {
+                    if ($(this).is('.sodar-irods-popup-list-btn')) {
+                        $(this).attr('disabled', 'disabled');
+                        $(this).tooltip('disable');
+                    } else if ($(this).is('.sodar-irods-dav-btn')) {
+                        $(this).addClass('disabled');
+                        $(this).tooltip('disable');
+                    }
+                }
+            }
+            //collection doesn't exist; disable all buttons
+            else {
+                if ($(this).is('button')) {
                     $(this).attr('disabled', 'disabled');
-                    $(this).tooltip('disable');
-                }
-                else if ($(this).is('.sodar-irods-dav-btn')){
+                } else if ($(this).is('a')) {
                     $(this).addClass('disabled');
-                    $(this).tooltip('disable');
                 }
+                $(this).tooltip('disable');
             }
-        }
-        //collection doesn't exist; disable all buttons
-        else{
-            if ($(this).is('button')) {
-                $(this).attr('disabled', 'disabled');
-            } else if ($(this).is('a')) {
-                $(this).addClass('disabled');
-            }
-            $(this).tooltip('disable');
-        }
     });
 };
 
@@ -94,6 +93,7 @@ var updateButtons = function() {
     var projectUUID = '';
 
     // Temp fix for #432: just enable everything
+    /*
     $('.sodar-irods-btn').each(function () {
         if ($(this).is('button')) {
             $(this).removeAttr('disabled');
@@ -102,13 +102,23 @@ var updateButtons = function() {
         }
         $(this).tooltip('enable');
     });
+    */
 
-    /*
     $('button.sodar-irods-path-btn').each(function () {
-        var buttonPath = $(this).attr('data-clipboard-text');
-        projectUUID = buttonPath.split('/')[4];
-        if (!(ipaths.includes(buttonPath))){
-            ipaths.push(buttonPath);
+        if (!$(this).hasClass('no-dirs')) {
+            var buttonPath = $(this).attr('data-clipboard-text');
+            projectUUID = buttonPath.split('/')[4];
+            if (!(ipaths.includes(buttonPath))){
+                ipaths.push(buttonPath);
+            }
+        }
+
+        // disable tooltip if dirs are empty
+        else{
+            $(this).closest('span').find('.sodar-list-btn').each(
+                function () {
+                $(this).tooltip('disable');
+                });
         }
     });
     var d = {paths: ipaths};
@@ -119,7 +129,7 @@ var updateButtons = function() {
             method: 'POST',
             dataType: 'json',
             data: d,
-            contentType: "application/x-www-form-urlencoded; charset=UTF-8", //should be default
+            contentType: "application/x-www-form-urlencoded; charset=UTF-8",
             traditional: true
         }).done(function (data) {
             $('button.sodar-irods-path-btn').each(function () {
@@ -138,7 +148,6 @@ var updateButtons = function() {
             });
         });
     }
-    */
 };
 
 
