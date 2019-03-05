@@ -91,19 +91,7 @@ var toggleButtons = function(row, status, stats) {
 var updateButtons = function() {
     var ipaths = [];
     var projectUUID = '';
-
-    // Temp fix for #432: just enable everything
-    /*
-    $('.sodar-irods-btn').each(function () {
-        if ($(this).is('button')) {
-            $(this).removeAttr('disabled');
-        } else if ($(this).is('a')) {
-            $(this).removeClass('disabled');
-        }
-        $(this).tooltip('enable');
-    });
-    */
-
+    
     $('button.sodar-irods-path-btn').each(function () {
         if (!$(this).hasClass('no-dirs')) {
             var buttonPath = $(this).attr('data-clipboard-text');
@@ -121,32 +109,48 @@ var updateButtons = function() {
                 });
         }
     });
-    var d = {paths: ipaths};
+    var pathCount = ipaths.length;
+    // set n higher?
+    var n = 10;
+    var batchStart = 0;
+    var pathBatch = [];
 
-    if (projectUUID !== '') {
-        $.ajax({
-            url: '/irodsbackend/api/stats/' + projectUUID,
-            method: 'POST',
-            dataType: 'json',
-            data: d,
-            contentType: "application/x-www-form-urlencoded; charset=UTF-8",
-            traditional: true
-        }).done(function (data) {
-            $('button.sodar-irods-path-btn').each(function () {
-                var buttonPath = $(this).attr('data-clipboard-text');
-                var buttonRow = $(this).closest('span');
-                for (idx in data['coll_objects']) {
-                    if (data['coll_objects'].hasOwnProperty(idx)) {
-                        if (buttonPath === data['coll_objects'][idx]['path']) {
-                            var status = data['coll_objects'][idx]['status'];
-                            var stats = data['coll_objects'][idx]['stats'];
-                            toggleButtons(buttonRow, status, stats);
-                            break;
+    // query in batches
+    while(batchStart < pathCount) {
+        if (pathCount < (batchStart+n)){
+            pathBatch = ipaths.slice(batchStart, pathCount);
+        }
+        else {
+            pathBatch = ipaths.slice(batchStart, batchStart + n);
+        }
+        batchStart = batchStart+n;
+        var d = {paths: pathBatch};
+
+        if (projectUUID !== '') {
+            $.ajax({
+                url: '/irodsbackend/api/stats/' + projectUUID,
+                method: 'POST',
+                dataType: 'json',
+                data: d,
+                contentType: "application/x-www-form-urlencoded; charset=UTF-8",
+                traditional: true
+            }).done(function (data) {
+                $('button.sodar-irods-path-btn').each(function () {
+                    var buttonPath = $(this).attr('data-clipboard-text');
+                    var buttonRow = $(this).closest('span');
+                    for (idx in data['coll_objects']) {
+                        if (data['coll_objects'].hasOwnProperty(idx)) {
+                            if (buttonPath === data['coll_objects'][idx]['path']) {
+                                var status = data['coll_objects'][idx]['status'];
+                                var stats = data['coll_objects'][idx]['stats'];
+                                toggleButtons(buttonRow, status, stats);
+                                break;
+                            }
                         }
                     }
-                }
+                });
             });
-        });
+        }
     }
 };
 
@@ -182,6 +186,7 @@ $(document).ready(function() {
      Update collection stats
      ***********************/
     updateCollectionStats();
+
     if ($('table.sodar-lz-table').length === 0) {
         updateButtons();
     }

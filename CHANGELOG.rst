@@ -12,13 +12,12 @@ Added
 -----
 
 - **Samplesheets**
-    - Temporary query limit workaround for study app button refresh issues in large projects (#432)
-    - Temporary setting ``SHEETS_SHORTCUT_QUERY_LIMIT`` (#432)
     - Support for multiple ontology links in ``_get_ontology_link()`` (#431)
     - Hack for providing correct HPO ontology into links (#431)
     - Rendering for HPO term links (#431)
     - Rendering for performer and perform date (#187)
     - Transcription profiling support in dna_sequencing assay app (#443)
+    - ``SHEETS_QUERY_BATCH_SIZE`` setting for batch queries (#432)
 
 Changed
 -------
@@ -31,6 +30,8 @@ Changed
     - Secure Taskflow API views with ``BaseTaskflowAPIView`` (#435)
     - Support email link rendering for "contact" fields (#439)
     - Refactor contact field rendering (#439)
+    - Query iRODS stats in batches (#432)
+    - Enable iRODS buttons by default (#432)
 
 Fixed
 -----
@@ -40,6 +41,8 @@ Fixed
 - **Samplesheets**
     - iRODS button status updating for Proteomics projects (#428)
     - General iRODS button status only updated once per page load (#429)
+    - Performance issues in iRODS stats querying with large data (#432)
+    - iRDOS buttons not disabled if iRODS collections not created (#445)
 
 Removed
 -------

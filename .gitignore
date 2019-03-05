@@ -98,3 +98,6 @@ flamegraph.pl
 # Certificate files
 *.crt
 *.pem
+
+#irods config
+irods_config.zip

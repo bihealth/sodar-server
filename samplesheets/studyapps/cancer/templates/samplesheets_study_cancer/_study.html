@@ -49,7 +49,7 @@
                           <button class="btn sodar-list-btn btn-outline-secondary text-body" disabled>
                             {{ library.name }}
                           </button>
-                          <a role="button" class="btn sodar-list-btn btn-secondary disabled"
+                          <a role="button" class="btn sodar-list-btn btn-secondary"
                              href="{{ bam_url }}" title="Download {{ library.name }} BAM file">
                             <i class="fa fa-download"></i> Download
                           </a>
@@ -68,7 +68,7 @@
                           <button class="btn sodar-list-btn btn-outline-secondary text-body" disabled>
                             {{ library.name }}
                           </button>
-                          <a role="button" class="btn sodar-list-btn btn-secondary disabled"
+                          <a role="button" class="btn sodar-list-btn btn-secondary"
                              href="{{ vcf_url }}" title="Download {{ library.name }} VCF file">
                             <i class="fa fa-download"></i> Download
                           </a>
@@ -79,14 +79,14 @@
                   <td>
                     {% url 'samplesheets.studyapps.cancer:igv' genericmaterial=source.sodar_uuid as igv_url %}
                     <div class="btn-group sodar-list-btn-group">
-                      <a role="button" class="btn sodar-list-btn sodar-igv-btn btn-secondary disabled"
+                      <a role="button" class="btn sodar-list-btn sodar-igv-btn btn-secondary"
                          href="{{ igv_url }}" title="Download IGV session file for case">
                         <i class="fa fa-download"></i> Download
                       </a>
                       <!-- TODO: (1) not full URL, (2) configure genome build in project config, (3) get port from user profile -->
                       <button type="button" class="btn sodar-list-btn sodar-igv-btn btn-secondary"
                          onclick="javascript:$.ajax({url: 'http://127.0.0.1:60151/load?genome=b37&merge=false&file=https://cubi-omics-davrods-beta.bihealth.org/__sodar{{ igv_url }}.xml'})"
-                         title="Open IGV session file for case in IGV" disabled>
+                         title="Open IGV session file for case in IGV">
                         <i class="fa fa-share-square-o"></i> IGV
                       </button>
                     </div>

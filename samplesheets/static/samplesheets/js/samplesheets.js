@@ -1,29 +1,8 @@
 /********************************
  Enable/disable shortcut buttons
  ********************************/
-function toggleShortcuts (table){
+async function toggleShortcuts (table){
     var filePaths = [];
-
-    // Temporary HACK to fix issue #432 (updating freezes on large projects):
-    // If there are too many queries, skip checks and enable all
-    var btnClass = '.sodar-list-btn';
-    var labelClass = '.btn-outline-secondary';
-    var queryLimit = window.shortcutQueryLimit; // TODO: Get from settings
-    var queryCount = table.find(btnClass)
-        .not(labelClass).not('.sodar-igv-btn').length;
-
-    if (queryCount > queryLimit) {
-        table.find(btnClass).not(labelClass).each(function () {
-            if ($(this).is('button')) {
-                $(this).removeAttr('disabled');
-            } else if ($(this).is('a')) {
-                $(this).removeClass('disabled');
-            }
-            $(this).tooltip('enable');
-        });
-        $('.sodar-irods-studyapp-wait-icon').hide();
-        return;
-    }
 
     //get study UUID
     studyID = $('.sodar-ss-nav-btn.active').attr('href').split('/').pop();
@@ -42,65 +21,81 @@ function toggleShortcuts (table){
             filePaths.push(path);
         }
     });
-    var d = {paths: filePaths};
 
     if (table.attr('id').includes('cancer')){
         url = study + 'cancer/filecheck';
     }
-    // check if files exist and enable the corresponding buttons
-    $.ajax({
-        url: url + '/' + studyID,
-        method: 'POST',
-        data: d,
-        traditional: true
-    }).done(function (data) {
-        table.find('tr').each(function (){
-            var buttonRow = $(this);
-            var igvEnable = false;
-            $(this).find('a.sodar-list-btn').each(function (){
-                var buttonPath = $(this).attr('href');
-                for (idx in data['files']) {
-                    if (data['files'].hasOwnProperty(idx)) {
-                        if (buttonPath === data['files'][idx]['path']) {
-                            if (data['files'][idx]['exists']){
-                                $(this).removeClass('disabled');
-                                $(this).tooltip('enable');
-                                igvEnable = true;
+
+    var pathCount = filePaths.length;
+    var batchSize = window.queryBatchSize;
+    var batchStart = 0;
+    var pathBatch = [];
+
+    // Query in batches
+    while(batchStart < pathCount) {
+        if (pathCount < (batchStart + batchSize)){
+            pathBatch = filePaths.slice(batchStart, pathCount);
+        }
+        else {
+            pathBatch = filePaths.slice(batchStart, batchStart + batchSize);
+        }
+        batchStart = batchStart + batchSize;
+        var d = {paths: pathBatch};
+
+        // Check if files exist and enable the corresponding buttons
+        $.ajax({
+            url: url + '/' + studyID,
+            method: 'POST',
+            data: d,
+            traditional: true
+        }).done(function (data) {
+            table.find('tr').each(function () {
+                var buttonRow = $(this);
+                var igvEnable = false;
+                $(this).find('a.sodar-list-btn').each(function () {
+                    var buttonPath = $(this).attr('href');
+                    for (idx in data['files']) {
+                        if (data['files'].hasOwnProperty(idx)) {
+                            if (buttonPath === data['files'][idx]['path']) {
+                                if (data['files'][idx]['exists']) {
+                                    $(this).removeClass('disabled');
+                                    $(this).tooltip('enable');
+                                    igvEnable = true;
+                                } else {
+                                    $(this).addClass('disabled');
+                                    $(this).tooltip('disable');
+                                }
+                                break;
                             }
-                            else{
-                                $(this).addClass('disabled');
-                                $(this).tooltip('disable');
-                            }
-                            break;
                         }
                     }
-                }
+                });
+
+                // Toggle IGV buttons
+                buttonRow.find('.sodar-igv-btn').each(function () {
+                    if (igvEnable) {
+                        if ($(this).is('button')) {
+                            $(this).removeAttr('disabled');
+                        } else if ($(this).is('a')) {
+                            $(this).removeClass('disabled');
+                        }
+                        $(this).tooltip('enable');
+                    } else {
+                        if ($(this).is('button')) {
+                            $(this).attr('disabled', 'disabled');
+                        } else if ($(this).is('a')) {
+                            $(this).addClass('disabled');
+                        }
+                        $(this).tooltip('disable');
+                    }
+                });
             });
 
-            // toggle IGV buttons
-            buttonRow.find('.sodar-igv-btn').each(function(){
-                if (igvEnable){
-                    if ($(this).is('button')) {
-                        $(this).removeAttr('disabled');
-                    } else if ($(this).is('a')) {
-                        $(this).removeClass('disabled');
-                    }
-                    $(this).tooltip('enable');
-                }
-                else{
-                    if ($(this).is('button')) {
-                        $(this).attr('disabled', 'disabled');
-                    } else if ($(this).is('a')) {
-                        $(this).addClass('disabled');
-                    }
-                    $(this).tooltip('disable');
-                }
-            });
+
         });
-
-        // Hide iRODS study app wait spinner after first execution
-        $('.sodar-irods-studyapp-wait-icon').hide();
-    });
+    }
+    // Hide iRODS study app wait spinner after first execution
+    $('.sodar-irods-studyapp-wait-icon').hide();
 };
 
 
