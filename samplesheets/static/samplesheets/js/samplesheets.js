@@ -42,7 +42,7 @@ async function toggleShortcuts (table){
         batchStart = batchStart + batchSize;
         var d = {paths: pathBatch};
 
-        // Check if files exist and enable the corresponding buttons
+       // Check if files exist and enable the corresponding buttons
         $.ajax({
             url: url + '/' + studyID,
             method: 'POST',
@@ -52,11 +52,13 @@ async function toggleShortcuts (table){
             table.find('tr').each(function () {
                 var buttonRow = $(this);
                 var igvEnable = false;
+                var batchRow = false;
                 $(this).find('a.sodar-list-btn').each(function () {
                     var buttonPath = $(this).attr('href');
                     for (idx in data['files']) {
                         if (data['files'].hasOwnProperty(idx)) {
                             if (buttonPath === data['files'][idx]['path']) {
+                                batchRow = true;
                                 if (data['files'][idx]['exists']) {
                                     $(this).removeClass('disabled');
                                     $(this).tooltip('enable');
@@ -72,23 +74,25 @@ async function toggleShortcuts (table){
                 });
 
                 // Toggle IGV buttons
-                buttonRow.find('.sodar-igv-btn').each(function () {
-                    if (igvEnable) {
-                        if ($(this).is('button')) {
-                            $(this).removeAttr('disabled');
-                        } else if ($(this).is('a')) {
-                            $(this).removeClass('disabled');
+                if(batchRow) {
+                    buttonRow.find('.sodar-igv-btn').each(function () {
+                        if (igvEnable) {
+                            if ($(this).is('button')) {
+                                $(this).removeAttr('disabled');
+                            } else if ($(this).is('a')) {
+                                $(this).removeClass('disabled');
+                            }
+                            $(this).tooltip('enable');
+                        } else {
+                            if ($(this).is('button')) {
+                                $(this).attr('disabled', 'disabled');
+                            } else if ($(this).is('a')) {
+                                $(this).addClass('disabled');
+                            }
+                            $(this).tooltip('disable');
                         }
-                        $(this).tooltip('enable');
-                    } else {
-                        if ($(this).is('button')) {
-                            $(this).attr('disabled', 'disabled');
-                        } else if ($(this).is('a')) {
-                            $(this).addClass('disabled');
-                        }
-                        $(this).tooltip('disable');
-                    }
-                });
+                    });
+                }
             });
 
 
