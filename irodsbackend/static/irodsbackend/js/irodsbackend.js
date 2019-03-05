@@ -91,7 +91,7 @@ var toggleButtons = function(row, status, stats) {
 var updateButtons = function() {
     var ipaths = [];
     var projectUUID = '';
-    
+
     $('button.sodar-irods-path-btn').each(function () {
         if (!$(this).hasClass('no-dirs')) {
             var buttonPath = $(this).attr('data-clipboard-text');
@@ -110,20 +110,19 @@ var updateButtons = function() {
         }
     });
     var pathCount = ipaths.length;
-    // set n higher?
-    var n = 10;
+    var batchSize = window.irodsQueryBatchSize;
     var batchStart = 0;
     var pathBatch = [];
 
-    // query in batches
+    // Query in batches
     while(batchStart < pathCount) {
-        if (pathCount < (batchStart+n)){
+        if (pathCount < (batchStart + batchSize)){
             pathBatch = ipaths.slice(batchStart, pathCount);
         }
         else {
-            pathBatch = ipaths.slice(batchStart, batchStart + n);
+            pathBatch = ipaths.slice(batchStart, batchStart + batchSize);
         }
-        batchStart = batchStart+n;
+        batchStart = batchStart+batchSize;
         var d = {paths: pathBatch};
 
         if (projectUUID !== '') {

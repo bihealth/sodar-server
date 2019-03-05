@@ -119,6 +119,8 @@
       <!-- Settings -->
       <script type="text/javascript">
         window.irodsbackendStatusInterval = {% get_setting 'IRODSBACKEND_STATUS_INTERVAL' %};
+        {% get_setting 'IRODS_QUERY_BATCH_SIZE' as query_batch_size %}
+        window.irodsQueryBatchSize = {{ query_batch_size }};
       </script>
     {% endblock javascript %}
 

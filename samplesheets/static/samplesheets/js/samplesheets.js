@@ -27,7 +27,7 @@ async function toggleShortcuts (table){
     }
 
     var pathCount = filePaths.length;
-    var batchSize = window.queryBatchSize;
+    var batchSize = window.irodsQueryBatchSize;
     var batchStart = 0;
     var pathBatch = [];
 

@@ -11,13 +11,15 @@ Unreleased
 Added
 -----
 
+- **Irodsbackend**
+    - ``IRODS_QUERY_BATCH_SIZE`` setting for batch queries (#432)
 - **Samplesheets**
     - Support for multiple ontology links in ``_get_ontology_link()`` (#431)
     - Hack for providing correct HPO ontology into links (#431)
     - Rendering for HPO term links (#431)
     - Rendering for performer and perform date (#187)
     - Transcription profiling support in dna_sequencing assay app (#443)
-    - ``SHEETS_QUERY_BATCH_SIZE`` setting for batch queries (#432)
+    - Use ``IRODS_QUERY_BATCH_SIZE`` for iRODS updating (#432)
 
 Changed
 -------
