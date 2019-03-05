@@ -343,14 +343,16 @@ def render_special_field(cell):
             id_val = v.split(':')[1]
 
             if link in EXTERNAL_LINK_LABELS:
-                ret += (
-                    '<span class="badge-group" data-toggle="tooltip" '
-                    'data-placement="top" title="{}">'
-                    '<span class="badge badge-secondary">ID</span>'
-                    '<span class="badge badge-info">{}</span></span>'.format(
-                        EXTERNAL_LINK_LABELS[link], id_val
-                    )
+                link = EXTERNAL_LINK_LABELS[link]
+
+            ret += (
+                '<span class="badge-group" data-toggle="tooltip" '
+                'data-placement="top" title="{}">'
+                '<span class="badge badge-secondary">ID</span>'
+                '<span class="badge badge-info">{}</span></span>'.format(
+                    link, id_val
                 )
+            )
 
     # HPO Terms
     elif field_name == 'hpo terms':

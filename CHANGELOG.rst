@@ -20,6 +20,7 @@ Added
     - Rendering for performer and perform date (#187)
     - Transcription profiling support in dna_sequencing assay app (#443)
     - Use ``IRODS_QUERY_BATCH_SIZE`` for iRODS updating (#432)
+    - External link label ``x-generic-remote`` (#448)
 
 Changed
 -------
@@ -34,6 +35,7 @@ Changed
     - Refactor contact field rendering (#439)
     - Query iRODS stats in batches (#432)
     - Enable iRODS buttons by default (#432)
+    - Display external ID if label is not found (#449)
 
 Fixed
 -----

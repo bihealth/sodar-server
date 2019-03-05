@@ -501,6 +501,7 @@ SHEETS_EXTERNAL_LINK_LABELS = {
     'x-dkfz-mtk-id': 'ID assigned through DFKZ sequencing for the Molecular '
     'Tumor Conference project',
     'x-labor-berlin-blood-book-id': 'Labor Berlin Blood Book ID',
+    'x-generic-remote': 'External ID',
 }
 
 
