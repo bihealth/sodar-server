@@ -25,6 +25,8 @@ Added
 Changed
 -------
 
+- **General**
+    - Upgrade to django-sodar-core v0.4.5
 - **Landingzones**
     - Secure Taskflow API views with ``BaseTaskflowAPIView`` (#435)
     - Adjust form textarea height (#437)
