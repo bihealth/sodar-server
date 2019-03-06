@@ -47,10 +47,13 @@ Fixed
     - General iRODS button status only updated once per page load (#429)
     - Performance issues in iRODS stats querying with large data (#432)
     - iRDOS buttons not disabled if iRODS collections not created (#445)
+    - ISAtab upload wiget error not displayed without Bootstrap 4 workarounds (sodar_core#164)
 
 Removed
 -------
 
+- **General**
+    - Old Bootstrap 4 workarounds for django-crispy-forms (sodar_core#157)
 - **Samplesheets**
     - iRODS wait icon from study apps and assay tables (#430)
 

@@ -11,6 +11,16 @@
   into {{ project.title }}
 {% endblock title %}
 
+{% block css %}
+  {{ block.super }}
+  {# Workaround for django-db-file-storage Bootstrap4 issue (sodar_core#164) #}
+  <style type="text/css">
+    div#div_id_file_upload div p.invalid-feedback {
+      display: block;
+    }
+  </style>
+{% endblock css %}
+
 {% block projectroles_extend %}
 
 <div class="container-fluid sodar-subtitle-container">
