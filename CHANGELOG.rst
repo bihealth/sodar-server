@@ -5,6 +5,16 @@ Changelog for the SODAR Web UI. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+Unreleased
+==========
+
+Fixed
+-----
+
+- **Irodsbackend**
+    - Repeated CSS overrides moved to ``irodsbackend.css`` (#452)
+
+
 v0.4.3 (2019-03-07)
 ===================
 
