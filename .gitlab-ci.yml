@@ -24,6 +24,9 @@ before_script:
   - virtualenv env
   - source env/bin/activate
   - sh ./utility/install_python_dependencies.sh
+  - npm install --prefix samplesheets
+  # Temporary HACK, should not actually do this
+  - nohup npm run -prefix samplesheets dev &
 
 all_tests:
   script:

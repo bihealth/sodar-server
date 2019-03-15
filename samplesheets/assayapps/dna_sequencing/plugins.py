@@ -70,6 +70,7 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
 
         return None
 
+    # TODO: Rework for vue.js viewer
     def update_row(self, row, table, assay):
         """
         Update render table row with e.g. links. Return the modified row

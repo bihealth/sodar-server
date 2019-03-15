@@ -65,6 +65,8 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
         # TODO: Alternatives for RawData?
         return assay_path + '/' + self.raw_data_coll
 
+    # TODO: Rework for vue.js viewer
+    # TODO: obj_class and item_type must be gotten from column instead
     def update_row(self, row, table, assay):
         """
         Update render table row with e.g. links. Return the modified row

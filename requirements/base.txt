@@ -82,3 +82,6 @@ python-irodsclient==0.8.1
 
 # XML generating
 lxml==4.2.5
+
+# Webpack loader for Vue.js
+django-webpack-loader==0.6.0

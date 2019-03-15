@@ -98,7 +98,7 @@ def get_assay_table(table_data, assay):
     :param assay: Assay object
     :return: Dict
     """
-    return table_data['assays'][assay.get_name()]
+    return table_data['assays'][str(assay.sodar_uuid)]
 
 
 @register.simple_tag

@@ -157,9 +157,9 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
             return {
                 'url': reverse(
                     'samplesheets:project_sheets',
-                    kwargs={'study': obj.study.sodar_uuid},
+                    kwargs={'project': obj.get_project().sodar_uuid},
                 )
-                + '#'
+                + '#/assay/'
                 + str(obj.sodar_uuid),
                 'label': obj.get_display_name(),
             }

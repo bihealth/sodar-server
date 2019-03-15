@@ -42,22 +42,6 @@ class TestSampleSheetsPermissions(
         self.assert_render200_ok(url, good_users)
         self.assert_redirect(url, bad_users)
 
-    def test_overview(self):
-        """Test the project sheets overview"""
-        url = reverse(
-            'samplesheets:overview', kwargs={'project': self.project.sodar_uuid}
-        )
-        good_users = [
-            self.superuser,
-            self.as_owner.user,
-            self.as_delegate.user,
-            self.as_contributor.user,
-            self.as_guest.user,
-        ]
-        bad_users = [self.anonymous, self.user_no_roles]
-        self.assert_render200_ok(url, good_users)
-        self.assert_redirect(url, bad_users)
-
     def test_sheet_import(self):
         """Test the project sheets import view"""
         url = reverse(

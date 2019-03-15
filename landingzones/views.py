@@ -820,9 +820,9 @@ class TaskflowZoneStatusSetAPIView(BaseTaskflowAPIView):
                     server_host
                     + reverse(
                         'samplesheets:project_sheets',
-                        kwargs={'study': zone.assay.study.sodar_uuid},
+                        kwargs={'project': zone.project.sodar_uuid},
                     )
-                    + '#'
+                    + '#/assay/'
                     + str(zone.assay.sodar_uuid)
                 )
 

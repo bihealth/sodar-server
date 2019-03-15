@@ -30,3 +30,9 @@ echo "***********************************************"
 echo "Installing django-extensions dependencies"
 echo "***********************************************"
 apt-get -y install graphviz-dev
+
+echo "***********************************************"
+echo "Installing Node.js"
+echo "***********************************************"
+curl -sL https://deb.nodesource.com/setup_10.x | sudo -E bash -
+apt-get install -y nodejs

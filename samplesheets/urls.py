@@ -12,16 +12,6 @@ urlpatterns = [
         name='project_sheets',
     ),
     url(
-        regex=r'^study/(?P<study>[0-9a-f-]+)$',
-        view=views.ProjectSheetsView.as_view(),
-        name='project_sheets',
-    ),
-    url(
-        regex=r'^overview/(?P<project>[0-9a-f-]+)$',
-        view=views.ProjectSheetsOverviewView.as_view(),
-        name='overview',
-    ),
-    url(
         regex=r'^import/(?P<project>[0-9a-f-]+)$',
         view=views.SampleSheetImportView.as_view(),
         name='import',
@@ -45,6 +35,17 @@ urlpatterns = [
         regex=r'^delete/(?P<project>[0-9a-f-]+)$',
         view=views.SampleSheetDeleteView.as_view(),
         name='delete',
+    ),
+    # Ajax API views
+    url(
+        regex=r'^api/context/get/(?P<project>[0-9a-f-]+)$',
+        view=views.SampleSheetContextGetAPIView.as_view(),
+        name='api_context_get',
+    ),
+    url(
+        regex=r'^api/tables/get/(?P<study>[0-9a-f-]+)$',
+        view=views.SampleSheetStudyTablesGetAPIView.as_view(),
+        name='api_tables_get',
     ),
     # General API views
     url(

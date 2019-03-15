@@ -1,6 +1,6 @@
 """UI tests for the samplesheets app"""
 
-from django.urls import reverse
+# from django.urls import reverse
 
 # Projectroles dependency
 from projectroles.tests.test_ui import TestUIBase
@@ -24,22 +24,8 @@ class TestProjectSheetsView(SampleSheetIOMixin, TestUIBase):
         )
         self.study = self.investigation.studies.first()
 
-    # TODO: Temporarily disabled, see issue #125
+    # Disabled for Vue.js editor development
     '''
-    def test_tables(self):
-        """Test existence of tables in the view after import"""
-        expected = [
-            (self.superuser, 2),
-            (self.as_owner.user, 2),
-            (self.as_delegate.user, 2),
-            (self.as_contributor.user, 2),
-            (self.as_guest.user, 2)]
-        url = reverse(
-            'samplesheets:project_sheets',
-            kwargs={'project': self.project.sodar_uuid})
-        self.assert_element_count(expected, url, 'sodar-ss-data-table')
-    '''
-
     def test_nav(self):
         """Test existence of navigation menu items in the view"""
         expected = [
@@ -56,7 +42,10 @@ class TestProjectSheetsView(SampleSheetIOMixin, TestUIBase):
         self.assert_element_count(
             expected, url, 'sodar-ss-nav-item', attribute='class'
         )
+    '''
 
+    # Disabled for Vue.js editor development
+    '''
     def test_operations(self):
         """Test existence of operations buttons in the view"""
         expected_true = [
@@ -78,20 +67,4 @@ class TestProjectSheetsView(SampleSheetIOMixin, TestUIBase):
         self.assert_element_exists(
             expected_false, url, 'sodar-ss-buttons-op', False
         )
-
-    def test_export_button(self):
-        """Test existence of TSV export buttons in the view"""
-        expected = [
-            (self.superuser, 2),
-            (self.as_owner.user, 2),
-            (self.as_delegate.user, 2),
-            (self.as_contributor.user, 2),
-            (self.as_guest.user, 0),
-        ]
-        url = reverse(
-            'samplesheets:project_sheets',
-            kwargs={'project': self.project.sodar_uuid},
-        )
-        self.assert_element_count(
-            expected, url, 'sodar-ss-data-excel', attribute='class'
-        )
+    '''

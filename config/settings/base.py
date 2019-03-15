@@ -58,6 +58,7 @@ THIRD_PARTY_APPS = [
     'docs',  # For the online user documentation/manual
     'dal',  # For user search combo box
     'dal_select2',
+    'webpack_loader',  # For accessing webpack bundles
     # SODAR Core apps
     # Project apps
     'projectroles.apps.ProjectrolesConfig',
@@ -206,12 +207,22 @@ CRISPY_TEMPLATE_PACK = 'bootstrap4'
 STATIC_ROOT = str(ROOT_DIR('staticfiles'))
 STATIC_URL = '/static/'
 
-STATICFILES_DIRS = [str(APPS_DIR.path('static'))]
+STATICFILES_DIRS = [
+    str(APPS_DIR.path('static')),
+    # str(ROOT_DIR('samplesheets/dist')),  # samplesheets assets
+]
 
 STATICFILES_FINDERS = [
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
 ]
+
+WEBPACK_LOADER = {
+    'SAMPLESHEETS': {
+        'BUNDLE_DIR_NAME': '',
+        'STATS_FILE': ROOT_DIR('samplesheets/webpack-stats.json'),
+    }
+}
 
 # MEDIA CONFIGURATION
 # ------------------------------------------------------------------------------
@@ -492,7 +503,9 @@ IRODS_QUERY_BATCH_SIZE = env.int('IRODS_QUERY_BATCH_SIZE', 24)
 
 # Samplesheets settings
 SHEETS_IRODS_LIMIT = env.int('SHEETS_IRODS_LIMIT', 50)  # iRODS file query limit
-SHEETS_MAX_COLUMN_WIDTH = 350  # Max column width for content overflow
+SHEETS_TABLE_HEIGHT = 450  # Study/assay table height
+SHEETS_MIN_COLUMN_WIDTH = 100  # Min default column width
+SHEETS_MAX_COLUMN_WIDTH = 300  # Max default column width
 
 SHEETS_EXTERNAL_LINK_LABELS = {
     'x-bih-buch-genomics-wetlab-id': 'Wetlab-ID assigned by BIH genomics unit '

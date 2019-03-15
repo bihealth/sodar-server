@@ -71,7 +71,7 @@ class TestTableBuilder(TestRenderingBase):
         assert_row_length(tables['study'])
 
         # Sources
-        table_sources = get_column_set(tables['study'], 1)
+        table_sources = get_column_set(tables['study'], 0)
         db_sources = set(
             GenericMaterial.objects.filter(
                 study=self.study, item_type='SOURCE'

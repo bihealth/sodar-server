@@ -1,4 +1,5 @@
 import csv
+import json
 
 from django.conf import settings
 from django.contrib import messages
@@ -23,6 +24,7 @@ from projectroles.views import (
     LoggedInPermissionMixin,
     ProjectContextMixin,
     ProjectPermissionMixin,
+    APIPermissionMixin,
     BaseTaskflowAPIView,
 )
 
@@ -75,104 +77,32 @@ class ProjectSheetsView(
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
+        studies = Study.objects.filter(
+            investigation=context['investigation']
+        ).order_by('title')
 
-        if 'investigation' in context and context['investigation']:
-            try:
-                if 'study' in self.kwargs and self.kwargs['study']:
-                    study = Study.objects.get(sodar_uuid=self.kwargs['study'])
-                else:
-                    study = Study.objects.filter(
-                        investigation=context['investigation']
-                    ).first()
-
-                context['study'] = study
-                tb = SampleSheetTableBuilder()
-
-                try:
-                    context['table_data'] = tb.build_study_tables(study)
-
-                except Exception as ex:
-                    # TODO: Log error
-                    context['render_error'] = str(ex)
-
-                # iRODS backend
-                context['irods_backend_enabled'] = (
-                    True if get_backend_api('omics_irods') else False
+        # Provide initial context data to Vue app
+        app_context = {
+            'project_uuid': str(context['project'].sodar_uuid),
+            'context_url': self.request.build_absolute_uri(
+                reverse(
+                    'samplesheets:api_context_get',
+                    kwargs={'project': str(self.get_project().sodar_uuid)},
                 )
-
-                # iRODS WebDAV
-                if settings.IRODS_WEBDAV_ENABLED:
-                    context['irods_webdav_enabled'] = True
-                    context[
-                        'irods_webdav_url'
-                    ] = settings.IRODS_WEBDAV_URL.rstrip('/')
-
-            except Study.DoesNotExist:
-                pass  # TODO: Show error message if study not found?
-
-        context['EMPTY_VALUE'] = EMPTY_VALUE  # For JQuery
-        return context
-
-
-class ProjectSheetsOverviewView(
-    LoginRequiredMixin,
-    LoggedInPermissionMixin,
-    ProjectPermissionMixin,
-    ProjectContextMixin,
-    TemplateView,
-):
-    """Main view for displaying information about project sheets"""
-
-    # Projectroles dependency
-    permission_required = 'samplesheets.view_sheet'
-    template_name = 'samplesheets/overview.html'
-
-    def get_context_data(self, *args, **kwargs):
-        context = super().get_context_data(*args, **kwargs)
-
-        # Investigation
-        investigation = None
-
-        try:
-            investigation = Investigation.objects.get(
-                project=context['project'], active=True
-            )
-            context['investigation'] = investigation
-
-        except Investigation.DoesNotExist:
-            context['investigation'] = None
-            return context
-
-        def get_material_count(item_type):
-            return GenericMaterial.objects.filter(
-                Q(item_type=item_type),
-                Q(study__investigation=investigation)
-                | Q(assay__study__investigation=investigation),
-            ).count()
-
-        # Statistics
-        context['sheet_stats'] = {
-            'study_count': Study.objects.filter(
-                investigation=investigation
-            ).count(),
-            'assay_count': Assay.objects.filter(
-                study__investigation=investigation
-            ).count(),
-            'protocol_count': Protocol.objects.filter(
-                study__investigation=investigation
-            ).count(),
-            'process_count': Process.objects.filter(
-                protocol__study__investigation=investigation
-            ).count(),
-            'source_count': get_material_count('SOURCE'),
-            'material_count': get_material_count('MATERIAL'),
-            'sample_count': get_material_count('SAMPLE'),
-            'data_count': get_material_count('DATA'),
+            ),
         }
 
-        # iRODS backend
-        context['irods_backend_enabled'] = get_backend_api('omics_irods')
+        if 'study' in self.kwargs:
+            app_context['initial_study'] = self.kwargs['study']
 
+        elif studies.count() > 0:
+            app_context['initial_study'] = str(studies.first().sodar_uuid)
+
+        else:
+            app_context['initial_study'] = None
+
+        context['app_context'] = json.dumps(app_context)
+        context['EMPTY_VALUE'] = EMPTY_VALUE  # For JQuery
         return context
 
 
@@ -312,7 +242,7 @@ class SampleSheetImportView(
                     study.save()
 
                 for assay in study.assays.all():
-                    if assay.get_name() in old_assay_uuids:
+                    if str(assay.sodar_uuid) in old_assay_uuids:
                         assay.sodar_uuid = old_assay_uuids[assay.get_name()]
                         assay.save()
 
@@ -402,7 +332,7 @@ class SampleSheetTableExportView(
             return redirect(redirect_url)
 
         if 'assay' in self.kwargs:
-            table = tables['assays'][assay.get_name()]
+            table = tables['assays'][str(assay.sodar_uuid)]
             input_name = assay.file_name
 
         else:  # Study
@@ -423,7 +353,7 @@ class SampleSheetTableExportView(
         # Top header
         output_row = []
 
-        for c in table['top_header'][1:]:
+        for c in table['top_header']:
             output_row.append(c['value'])
 
             if c['colspan'] > 1:
@@ -432,11 +362,11 @@ class SampleSheetTableExportView(
         writer.writerow(output_row)
 
         # Header
-        writer.writerow([c['value'] for c in table['field_header'][1:]])
+        writer.writerow([c['value'] for c in table['field_header']])
 
         # Data cells
         for row in table['table_data']:
-            writer.writerow([c['value'] for c in row[1:]])
+            writer.writerow([c['value'] for c in row])
 
         # Return file
         return response
@@ -663,6 +593,153 @@ class IrodsDirsView(
     def get(self, request, *args, **kwargs):
         super().get(request, *args, **kwargs)
         return super().render_to_response(self.get_context_data())
+
+
+# Ajax API Views ---------------------------------------------------------------
+
+
+# TODO: Add tests
+class SampleSheetContextGetAPIView(
+    LoginRequiredMixin, ProjectPermissionMixin, APIPermissionMixin, APIView
+):
+    """View to retrieve sample sheet context data"""
+
+    permission_required = 'samplesheets.view_sheet'
+    renderer_classes = [JSONRenderer]
+
+    def get(self, request, *args, **kwargs):
+        project = self.get_project()
+        investigation = Investigation.objects.filter(project=project).first()
+        studies = Study.objects.filter(investigation=investigation).order_by(
+            'title'
+        )
+
+        # General context data for Vue app
+        ret_data = {
+            'irods_status': investigation.irods_status
+            if investigation
+            else None,
+            'irods_backend_enabled': (
+                True if get_backend_api('omics_irods') else False
+            ),
+            'irods_webdav_enabled': settings.IRODS_WEBDAV_ENABLED,
+            'irods_webdav_url': settings.IRODS_WEBDAV_URL.rstrip('/'),
+            'external_link_labels': settings.SHEETS_EXTERNAL_LINK_LABELS,
+            'table_height': settings.SHEETS_TABLE_HEIGHT,
+            'min_col_width': settings.SHEETS_MIN_COLUMN_WIDTH,
+            'max_col_width': settings.SHEETS_MAX_COLUMN_WIDTH,
+        }
+
+        # Study info
+        if studies.count() > 0:
+            ret_data['studies'] = {
+                str(s.sodar_uuid): {
+                    'display_name': s.get_display_name(),
+                    'description': s.description,
+                    'configuration': s.investigation.get_configuration(),
+                    'comments': s.comments,
+                    'assays': {
+                        str(a.sodar_uuid): {
+                            'name': a.get_name(),
+                            'display_name': a.get_display_name(),
+                        }
+                        for a in s.assays.all().order_by('file_name')
+                    },
+                    'table_url': request.build_absolute_uri(
+                        reverse(
+                            'samplesheets:api_tables_get',
+                            kwargs={'study': str(s.sodar_uuid)},
+                        )
+                    ),
+                }
+                for s in studies
+            }
+
+        # Permissions for UI elements (will be checked on request)
+        ret_data['perms'] = {
+            'edit_sheet': request.user.has_perm(
+                'samplesheets.edit_sheet', project
+            ),
+            'create_dirs': request.user.has_perm(
+                'samplesheets.create_dirs', project
+            ),
+            'export_sheet': request.user.has_perm(
+                'samplesheets.export_sheet', project
+            ),
+            'delete_sheet': request.user.has_perm(
+                'samplesheets.delete_sheet', project
+            ),
+        }
+
+        # Overview data
+        ret_data['investigation'] = (
+            {
+                'identifier': investigation.identifier,
+                'title': investigation.title,
+                'description': investigation.description
+                if investigation.description != project.description
+                else None,
+                'comments': investigation.comments,
+            }
+            if investigation
+            else {}
+        )
+
+        def get_material_count(item_type):
+            return GenericMaterial.objects.filter(
+                Q(item_type=item_type),
+                Q(study__investigation=investigation)
+                | Q(assay__study__investigation=investigation),
+            ).count()
+
+        # Statistics
+        ret_data['sheet_stats'] = {
+            'study_count': Study.objects.filter(
+                investigation=investigation
+            ).count(),
+            'assay_count': Assay.objects.filter(
+                study__investigation=investigation
+            ).count(),
+            'protocol_count': Protocol.objects.filter(
+                study__investigation=investigation
+            ).count(),
+            'process_count': Process.objects.filter(
+                protocol__study__investigation=investigation
+            ).count(),
+            'source_count': get_material_count('SOURCE'),
+            'material_count': get_material_count('MATERIAL'),
+            'sample_count': get_material_count('SAMPLE'),
+            'data_count': get_material_count('DATA'),
+        }
+
+        ret_data = json.dumps(ret_data)
+        return Response(ret_data, status=200)
+
+
+# TODO: Add tests
+class SampleSheetStudyTablesGetAPIView(
+    LoginRequiredMixin, ProjectPermissionMixin, APIPermissionMixin, APIView
+):
+    """View to retrieve study tables built from the sample sheet graph"""
+
+    permission_required = 'samplesheets.view_sheet'
+    renderer_classes = [JSONRenderer]
+
+    def get(self, request, *args, **kwargs):
+        # TODO: Handle exceptions etc.
+        study = Study.objects.filter(sodar_uuid=self.kwargs['study']).first()
+
+        ret_data = {'study': {'display_name': study.get_display_name()}}
+        tb = SampleSheetTableBuilder()
+
+        try:
+            ret_data['table_data'] = tb.build_study_tables(study)
+
+        except Exception as ex:
+            # TODO: Log error
+            ret_data['render_error'] = str(ex)
+
+        return Response(ret_data, status=200)
 
 
 # General API Views ------------------------------------------------------------

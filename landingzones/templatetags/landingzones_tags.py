@@ -58,9 +58,9 @@ def get_zone_samples_url(zone):
     return (
         reverse(
             'samplesheets:project_sheets',
-            kwargs={'study': zone.assay.study.sodar_uuid},
+            kwargs={'project': zone.project.sodar_uuid},
         )
-        + '#'
+        + '#/assay/'
         + str(zone.assay.sodar_uuid)
     )
 
