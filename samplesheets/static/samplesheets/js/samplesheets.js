@@ -230,4 +230,23 @@ $(document).ready(function() {
             $(this).attr('assay-hide-mode', '0');
         }
     });
+
+    /*************************
+     Copy HPO IDs (issue #454)
+     *************************/
+    new ClipboardJS('.sodar-ss-copy-hpo-btn');
+
+    $('.sodar-ss-copy-hpo-btn').click(function () {
+        $(this).addClass('text-warning');
+        var realTitle = $(this).tooltip().attr('data-original-title');
+        $(this).attr('title', 'Copied!')
+            .tooltip('_fixTitle')
+            .tooltip('show')
+            .attr('title', realTitle)
+            .tooltip('_fixTitle');
+
+        $(this).delay(250).queue(function() {
+            $(this).removeClass('text-warning').dequeue();
+        });
+    });
 });

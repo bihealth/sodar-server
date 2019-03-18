@@ -8,6 +8,12 @@ Changelog for the SODAR Web UI. Loosely follows the
 Unreleased
 ==========
 
+Added
+-----
+
+- **Samplesheets**
+    - Copying HPO term IDs into clipboard (#454)
+
 Fixed
 -----
 

@@ -284,8 +284,11 @@ def render_cells(row, table, assay=None, assay_plugin=None):
                     'sodar-overflow-hover"'
                 )
 
-                # Tooltip
-                if cell['tooltip']:
+                # Tooltip (HACK: disable for hpo terms)
+                if (
+                    cell['tooltip']
+                    and cell['field_name'].lower() != 'hpo terms'
+                ):
                     ret += (
                         ' title="{}" data-toggle="tooltip" '
                         'data-placement="top"'.format(cell['tooltip'])
@@ -360,10 +363,29 @@ def render_special_field(cell):
             ret = cell['value']
 
         else:
+            ret = ''
+
+            if cell['link']:
+                copy_ids = ';'.join(
+                    [s.split('/')[-1] for s in cell['link'].split(';')]
+                )
+
+                # Add copy button (issue #454)
+                ret += (
+                    '<button class="btn btn-secondary mr-1 sodar-list-btn '
+                    'sodar-ss-copy-hpo-btn"'
+                    'role="submit"'
+                    'title="Copy HPO term IDs to clipboard" '
+                    'data-toggle="tooltip" data-placement="top"'
+                    'data-clipboard-text="{}">'
+                    '<i class="fa fa-clipboard"></i>'
+                    '</button>'.format(copy_ids)
+                )
+
             tmp_list = list(
                 zip(cell['value'].split(';'), cell['link'].split(';'))
             )
-            ret = '; '.join(
+            ret += '; '.join(
                 ['<a href="{}">{}</a>'.format(x[1], x[0]) for x in tmp_list]
             )
 
