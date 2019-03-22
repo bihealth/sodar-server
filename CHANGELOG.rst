@@ -19,6 +19,8 @@ Fixed
 
 - **Irodsbackend**
     - Repeated CSS overrides moved to ``irodsbackend.css`` (#452)
+- **Samplesheets**
+    - Tooltips broke study app table layout in small tables (#458)
 
 
 v0.4.3 (2019-03-07)

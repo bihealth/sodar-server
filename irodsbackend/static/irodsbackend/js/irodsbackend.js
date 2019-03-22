@@ -60,16 +60,16 @@ var toggleButtons = function(row, status, stats) {
                     $(this).removeAttr('disabled');
                 }
                 $(this).removeClass('disabled');
-                $(this).tooltip('enable');
+                // $(this).tooltip('enable');
 
                 //collection is empty; disable all but the copy path buttons
                 if (stats['file_count'] === 0) {
                     if ($(this).is('.sodar-irods-popup-list-btn')) {
                         $(this).attr('disabled', 'disabled');
-                        $(this).tooltip('disable');
+                        // $(this).tooltip('disable');
                     } else if ($(this).is('.sodar-irods-dav-btn')) {
                         $(this).addClass('disabled');
-                        $(this).tooltip('disable');
+                        // $(this).tooltip('disable');
                     }
                 }
             }
@@ -80,7 +80,7 @@ var toggleButtons = function(row, status, stats) {
                 } else if ($(this).is('a')) {
                     $(this).addClass('disabled');
                 }
-                $(this).tooltip('disable');
+                // $(this).tooltip('disable');
             }
     });
 };
@@ -102,12 +102,13 @@ var updateButtons = function() {
         }
 
         // disable tooltip if dirs are empty
-        else{
+        else {
             $(this).closest('span').find('.sodar-list-btn').each(
                 function () {
                 $(this).tooltip('disable');
                 });
         }
+
     });
     var pathCount = ipaths.length;
     var batchSize = window.irodsQueryBatchSize;

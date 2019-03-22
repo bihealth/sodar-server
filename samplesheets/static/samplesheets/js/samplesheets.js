@@ -61,11 +61,11 @@ async function toggleShortcuts (table){
                                 batchRow = true;
                                 if (data['files'][idx]['exists']) {
                                     $(this).removeClass('disabled');
-                                    $(this).tooltip('enable');
+                                    // $(this).tooltip('enable');
                                     igvEnable = true;
                                 } else {
                                     $(this).addClass('disabled');
-                                    $(this).tooltip('disable');
+                                    // $(this).tooltip('disable');
                                 }
                                 break;
                             }
@@ -82,14 +82,14 @@ async function toggleShortcuts (table){
                             } else if ($(this).is('a')) {
                                 $(this).removeClass('disabled');
                             }
-                            $(this).tooltip('enable');
+                            // $(this).tooltip('enable');
                         } else {
                             if ($(this).is('button')) {
                                 $(this).attr('disabled', 'disabled');
                             } else if ($(this).is('a')) {
                                 $(this).addClass('disabled');
                             }
-                            $(this).tooltip('disable');
+                            // $(this).tooltip('disable');
                         }
                     });
                 }
