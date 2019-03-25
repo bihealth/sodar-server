@@ -1,4 +1,4 @@
-from django.http import HttpResponse  # To return exceptions from dispatch()
+from django.http import JsonResponse  # To return exceptions from dispatch()
 
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -17,8 +17,8 @@ PROJECT_ROLE_OWNER = SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
 PROJECT_ROLE_DELEGATE = SODAR_CONSTANTS['PROJECT_ROLE_DELEGATE']
 
 # Local constants
-ERROR_NOT_IN_PROJECT = 'Path does not belong to project'
-ERROR_NOT_FOUND = 'Path not found'
+ERROR_NOT_IN_PROJECT = 'Collection does not belong to project'
+ERROR_NOT_FOUND = 'Collection not found'
 ERROR_NO_AUTH = 'User not authorized for iRODS collection'
 
 
@@ -32,6 +32,17 @@ class BaseIrodsAPIView(
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.project = None
+        self.path = None
+
+    @staticmethod
+    def _get_msg(msg):
+        """
+        Return message as a dict to be returned as JSON.
+
+        :param msg: String
+        :return: Dict
+        """
+        return {'message': msg}
 
     def _check_collection_perm(self, path):
         """
@@ -76,40 +87,46 @@ class BaseIrodsAPIView(
     def dispatch(self, request, *args, **kwargs):
         """Perform required checks before processing a request"""
         self.project = self.get_project()
+        path = request.GET.get('path') if request.method == 'GET' else None
 
         if not self.project and not request.user.is_superuser:
-            return HttpResponse(
-                'Project UUID required for regular user', status=400
+            return JsonResponse(
+                self._get_msg('Project UUID required for regular user'),
+                status=400,
             )
 
         irods_backend = get_backend_api('omics_irods')
 
         if not irods_backend:
-            return HttpResponse('iRODS backend not enabled', status=500)
+            return JsonResponse(
+                self._get_msg('iRODS backend not enabled'), status=500
+            )
 
-        if request.method == 'GET' and 'path' not in self.kwargs:
-            return HttpResponse('Path not set', status=400)
+        if request.method == 'GET' and not path:
+            return JsonResponse(self._get_msg('Path not set'), status=400)
 
         # Collection checks
         # NOTE: If supplying path(s) via POST, implement these in request func
-        if 'path' in self.kwargs:
+        if path:
             if (
                 self.project
-                and irods_backend.get_path(self.project)
-                not in self.kwargs['path']
+                and irods_backend.get_path(self.project) not in path
             ):
-                return HttpResponse(ERROR_NOT_IN_PROJECT, status=400)
+                return JsonResponse(
+                    self._get_msg(ERROR_NOT_IN_PROJECT), status=400
+                )
 
-            if not irods_backend.collection_exists(self.kwargs['path']):
-                return HttpResponse(ERROR_NOT_FOUND, status=404)
+            if not irods_backend.collection_exists(path):
+                return JsonResponse(self._get_msg(ERROR_NOT_FOUND), status=404)
 
             if (
                 request.user.is_authenticated
                 and not request.user.is_superuser
-                and not self._check_collection_perm(self.kwargs['path'])
+                and not self._check_collection_perm(path)
             ):
-                return HttpResponse(ERROR_NO_AUTH, status=403)
+                return JsonResponse(self._get_msg(ERROR_NO_AUTH), status=403)
 
+        self.path = path
         return super().dispatch(request, *args, **kwargs)
 
 
@@ -120,11 +137,11 @@ class IrodsStatisticsAPIView(BaseIrodsAPIView):
         irods_backend = get_backend_api('omics_irods')
 
         try:
-            stats = irods_backend.get_object_stats(self.kwargs['path'])
+            stats = irods_backend.get_object_stats(self.path)
             return Response(stats, status=200)
 
         except Exception as ex:
-            return Response(str(ex), status=500)
+            return Response(self._get_msg(str(ex)), status=500)
 
     def post(self, request, *args, **kwargs):
         irods_backend = get_backend_api('omics_irods')
@@ -165,15 +182,16 @@ class IrodsObjectListAPIView(BaseIrodsAPIView):
 
     permission_required = 'irodsbackend.view_files'
 
-    def get(self, *args, **kwargs):
+    def get(self, request, *args, **kwargs):
         irods_backend = get_backend_api('omics_irods')
+        md5 = request.GET.get('md5')
 
         # Get files
         try:
             ret_data = irods_backend.get_objects(
-                self.kwargs['path'], check_md5=bool(int(self.kwargs['md5']))
+                self.path, check_md5=bool(int(md5))
             )
             return Response(ret_data, status=200)
 
         except Exception as ex:
-            return Response(str(ex), status=500)
+            return Response(self._get_msg(str(ex)), status=500)

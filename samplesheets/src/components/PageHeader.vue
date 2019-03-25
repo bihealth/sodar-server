@@ -5,7 +5,7 @@
            pills
            class="sodar-ss-nav ml-4 mr-auto">
       <b-nav-item v-for="(studyInfo, studyUuid, index) in app.sodarContext['studies']"
-                  v-bind:key="index"
+                  :key="index"
                   @mousedown="app.handleStudyNavigation(studyUuid)"
                   v-b-tooltip.hover
                   :title="getStudyNavTitle(studyInfo['display_name'])"
@@ -29,7 +29,7 @@
           <i class="fa fa-navicon"></i>
         </template>
         <span v-for="(studyInfo, studyUuid, index) in app.sodarContext['studies']"
-              v-bind:key="index">
+              :key="index">
           <b-dropdown-item
               href="#"
               class="sodar-ss-nav-item"
@@ -38,7 +38,7 @@
           </b-dropdown-item>
           <b-dropdown-item
               v-for="(assayInfo, assayUuid, assayIndex) in studyInfo['assays']"
-              v-bind:key="assayIndex"
+              :key="assayIndex"
               href="#"
               class="sodar-ss-nav-item"
               @click="app.handleStudyNavigation(studyUuid, assayUuid)">

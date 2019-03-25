@@ -21,8 +21,45 @@
           <h4 class="font-weight-bold mb-0 text-info">
             <i class="fa fa-fw fa-list-alt"></i>
             Study: {{ sodarContext['studies'][currentStudyUuid]['display_name'] }}
-            <!-- TODO: Add config/iRODS badges and iRODS buttons here -->
           </h4>
+          <div class="ml-auto">
+            <span class="mr-2">
+              <!-- iRODS dir status / stats badge -->
+              <span class="badge-group text-nowrap">
+                <span class="badge badge-pill badge-secondary">iRODS</span>
+                    <irods-stats-badge
+                        v-if="sodarContext['irods_status']"
+                        ref="studyStatsBadge"
+                        :project-uuid="projectUuid"
+                        :irods-status="sodarContext['irods_status']"
+                        :irods-path="sodarContext['studies'][currentStudyUuid]['irods_path']">
+                    </irods-stats-badge>
+                <span v-if="!sodarContext['irods_status']"
+                      class="badge badge-pill badge-danger">
+                  Not Created
+                </span>
+              </span>
+              <!-- Configuration -->
+              <span class="badge-group">
+                <span class="badge badge-pill badge-secondary">Config</span>
+                <span v-if="sodarContext['studies'][currentStudyUuid]['configuration']"
+                      class="badge badge-pill badge-info">
+                  {{ sodarContext['studies'][currentStudyUuid]['configuration'] }}
+                </span>
+                <span v-else class="badge badge-pill badge-danger">
+                  Unknown
+                </span>
+              </span>
+            </span>
+            <irods-buttons
+                v-if="sodarContext"
+                :irods-status="sodarContext['irods_status']"
+                :irods-backend-enabled="sodarContext['irods_backend_enabled']"
+                :irods-webdav-url="sodarContext['irods_webdav_url']"
+                :irods-path="sodarContext['studies'][currentStudyUuid]['irods_path']"
+                :show-file-list="false">
+            </irods-buttons>
+          </div>
         </div>
 
         <div class="card sodar-ss-data-card sodar-ss-data-card-study">
@@ -30,28 +67,31 @@
             <h4>Study Data
               <b-input-group class="sodar-header-input-group pull-right">
                 <b-input-group-prepend>
-                  <b-button variant="secondary"
-                            v-b-tooltip.hover
-                            title="Download TSV file for Excel"
-                            :href="'export/study/' + currentStudyUuid">
+                  <b-button
+                      variant="secondary"
+                      v-b-tooltip.hover
+                      title="Download TSV file for Excel"
+                      :href="'export/study/' + currentStudyUuid">
                     <i class="fa fa-file-excel-o"></i>
                   </b-button>
                 </b-input-group-prepend>
-                <b-form-input class="sodar-ss-data-filter"
-                       type="text"
-                       placeholder="Filter"
-                       id="sodar-ss-data-filter-study"
-                       @keyup="onFilterChange" />
+                <b-form-input
+                    class="sodar-ss-data-filter"
+                    type="text"
+                    placeholder="Filter"
+                    id="sodar-ss-data-filter-study"
+                    @keyup="onFilterChange" />
               </b-input-group>
             </h4>
           </div>
           <div class="card-body p-0">
-            <ag-grid-vue class="ag-theme-bootstrap"
-                         :style="getGridStyle()"
-                         :columnDefs="columnDefs['study']"
-                         :rowData="rowData['study']"
-                         :gridOptions="gridOptions['study']"
-                         @grid-ready="onGridReady">
+            <ag-grid-vue
+                class="ag-theme-bootstrap"
+                :style="getGridStyle()"
+                :columnDefs="columnDefs['study']"
+                :rowData="rowData['study']"
+                :gridOptions="gridOptions['study']"
+                @grid-ready="onGridReady">
             </ag-grid-vue>
           </div>
         </div>
@@ -66,6 +106,16 @@
               <i class="fa fa-fw fa-table"></i>
               Assay: {{ assayInfo['display_name'] }}
             </h4>
+            <div class="ml-auto">
+              <irods-buttons
+                  v-if="sodarContext"
+                  :irods-status="sodarContext['irods_status']"
+                  :irods-backend-enabled="sodarContext['irods_backend_enabled']"
+                  :irods-webdav-url="sodarContext['irods_webdav_url']"
+                  :irodsPath="assayInfo['irods_path']"
+                  :showFileList="false">
+              </irods-buttons>
+            </div>
           </div>
           <div class="card sodar-ss-data-card sodar-ss-data-card-assay">
             <div class="card-header">
@@ -73,36 +123,40 @@
                 Assay Data
                 <b-input-group class="sodar-header-input-group pull-right">
                   <b-input-group-prepend>
-                    <b-button variant="secondary"
-                              v-b-tooltip.hover
-                              title="Show/hide study details"
-                              :id="'sodar-ss-assay-hide-' + assayUuid"
-                              @mousedown="onAssayHideToggle($event, assayUuid)">
+                    <b-button
+                        variant="secondary"
+                        v-b-tooltip.hover
+                        title="Show/hide study details"
+                        :id="'sodar-ss-assay-hide-' + assayUuid"
+                        @mousedown="onAssayHideToggle($event, assayUuid)">
                       <i class="fa fa-eye-slash"></i>
                     </b-button>
-                    <b-button variant="secondary"
-                              v-b-tooltip.hover
-                              title="Download TSV file for Excel"
-                              :href="'export/assay/' + assayUuid">
+                    <b-button
+                        variant="secondary"
+                        v-b-tooltip.hover
+                        title="Download TSV file for Excel"
+                        :href="'export/assay/' + assayUuid">
                       <i class="fa fa-file-excel-o"></i>
                     </b-button>
                   </b-input-group-prepend>
-                  <b-form-input class="sodar-ss-data-filter"
-                         type="text"
-                         placeholder="Filter"
-                         :id="'sodar-ss-data-filter-assay-' + assayUuid"
-                         :assay-uuid="assayUuid"
-                         @keyup="onFilterChange" />
+                  <b-form-input
+                      class="sodar-ss-data-filter"
+                      type="text"
+                      placeholder="Filter"
+                      :id="'sodar-ss-data-filter-assay-' + assayUuid"
+                      :assay-uuid="assayUuid"
+                      @keyup="onFilterChange" />
                 </b-input-group>
               </h4>
             </div>
             <div class="card-body p-0">
-              <ag-grid-vue :style="getGridStyle()"
-                           class="ag-theme-bootstrap"
-                           :columnDefs="columnDefs['assays'][assayUuid]"
-                           :rowData="rowData['assays'][assayUuid]"
-                           :gridOptions="gridOptions['assays'][assayUuid]"
-                           @grid-ready="onGridReady">
+              <ag-grid-vue
+                  :style="getGridStyle()"
+                  class="ag-theme-bootstrap"
+                  :columnDefs="columnDefs['assays'][assayUuid]"
+                  :rowData="rowData['assays'][assayUuid]"
+                  :gridOptions="gridOptions['assays'][assayUuid]"
+                  @grid-ready="onGridReady">
             </ag-grid-vue>
             </div>
           </div>
@@ -142,6 +196,14 @@
 
     </div> <!-- Main container -->
 
+    <!-- Vue.js version of the standard SODAR modal -->
+    <irods-dir-modal
+        v-if="sodarContext"
+        :project-uuid="projectUuid"
+        :irods-webdav-url="sodarContext['irods_webdav_url']"
+        ref="modalComponentRef">
+    </irods-dir-modal>
+
     <!--<router-view/>-->
   </div>
 </template>
@@ -149,8 +211,12 @@
 <script>
 import PageHeader from './components/PageHeader.vue'
 import Overview from './components/Overview.vue'
+import IrodsButtons from './components/IrodsButtons.vue'
+import IrodsDirModal from './components/IrodsDirModal.vue'
+import IrodsStatsBadge from './components/IrodsStatsBadge.vue'
 import {AgGridVue} from 'ag-grid-vue'
 import DataCellRenderer from './components/renderers/DataCellRenderer.vue'
+import IrodsButtonsRenderer from './components/renderers/IrodsButtonsRenderer.vue'
 
 export default {
   name: 'App',
@@ -184,6 +250,9 @@ export default {
   components: {
     PageHeader,
     Overview,
+    IrodsButtons,
+    IrodsDirModal,
+    IrodsStatsBadge,
     AgGridVue
   },
   methods: {
@@ -268,7 +337,8 @@ export default {
               headerClass: ['bg-light'],
               cellClass: [
                 'bg-light', 'text-right', 'text-muted',
-                'sodar-ss-data-unselectable'
+                'sodar-ss-data-unselectable',
+                'sodar-ss-data-row-cell'
               ],
               suppressSizeToFit: true,
               suppressAutoSize: true,
@@ -341,6 +411,7 @@ export default {
                 'colType': colType,
                 'colMeta': colMeta
               },
+              cellClass: ['sodar-ss-data-cell'],
               cellClassRules: {
                 // Right align numbers (but not for names)
                 'text-right': function (params) {
@@ -371,6 +442,52 @@ export default {
       }
 
       if (assayMode) {
+        if (this.sodarContext['irods_status']) {
+          let assayIrodsPath = this.sodarContext['studies'][this.currentStudyUuid]['assays'][uuid]['irods_path']
+          let irodsHeaderGroup = {
+            headerName: 'iRODS',
+            headerClass: [
+              'text-white',
+              'bg-secondary',
+              'sodar-ss-data-irods-top'
+            ],
+            children: [
+              {
+                headerName: 'Links',
+                field: 'irodsLinks',
+                editable: false,
+                headerClass: [
+                  'bg-light',
+                  'sodar-ss-data-irods-header'
+                ],
+                cellClass: [
+                  'bg-light',
+                  'sodar-ss-data-unselectable',
+                  'sodar-ss-data-irods-cell'
+                ],
+                suppressSizeToFit: true,
+                suppressAutoSize: true,
+                resizable: false,
+                sortable: false,
+                pinned: 'right',
+                unselectable: true,
+                cellRendererFramework: IrodsButtonsRenderer,
+                cellRendererParams: {
+                  irodsStatus: this.sodarContext['irods_status'],
+                  irodsBackendEnabled: this.sodarContext['irods_backend_enabled'],
+                  irodsWebdavUrl: this.sodarContext['irods_webdav_url'],
+                  assayIrodsPath: assayIrodsPath,
+                  showFileList: true,
+                  modalComponent: this.$refs.modalComponentRef
+                },
+                width: 148,
+                minWidth: 148
+              }
+            ]
+          }
+          colDef.push(irodsHeaderGroup)
+        }
+
         this.hideableAssayCols[uuid] = {}
         this.hideableAssayCols[uuid]['hidden'] = true
         this.hideableAssayCols[uuid]['cols'] = hideableCols
@@ -391,6 +508,13 @@ export default {
         for (let j = 0; j < rowCells.length; j++) {
           row['col' + j.toString()] = rowCells[j]['value']
         }
+
+        // Add iRODS row
+        if (this.sodarContext['irods_status'] && 'irods_paths' in table &&
+            table['irods_paths'].length > 0) {
+          row['irodsLinks'] = table['irods_paths'][i]
+        }
+
         rowData.push(row)
       }
       return rowData
@@ -452,9 +576,15 @@ export default {
             }
             this.gridsBusy = false
 
-            // Scroll to assay anchor if set
+            // Perform actions after render
             this.$nextTick(() => {
+              // Scroll to assay anchor if set
               this.scrollToCurrentTable()
+
+              // Update study badge stats
+              if (this.sodarContext['irods_status']) {
+                this.$refs.studyStatsBadge.updateStats() // TODO: Set up timer
+              }
             })
           }
         )
@@ -616,7 +746,7 @@ export default {
   height: 38px !important;
 }
 
-.ag-cell-focus {
+.sodar-ss-data-cell:focus {
   border: 1px solid #000000 !important;
 }
 
@@ -630,11 +760,45 @@ export default {
   font-weight: bold;
 }
 
+.ag-pinned-right-header {
+  border: 0 !important;
+}
+
 a.sodar-ss-anchor {
   display: block;
   position: relative;
   top: -75px;
   visibility: hidden;
+}
+
+.sodar-ss-data-irods-top {
+  border-left: 1px solid #dfdfdf !important;
+  border-right: 1px solid #6c757d !important;
+}
+
+.sodar-ss-data-irods-header {
+  border-left: 1px solid #dfdfdf !important;
+}
+
+.sodar-ss-data-irods-cell {
+  border-left: 1px solid #dfdfdf !important;
+  border-top: 1px solid #dfdfdf !important;
+  border-bottom: 0 !important;
+}
+
+.sodar-ss-data-unselectable:focus {
+  border-right: 1px solid #dfdfdf !important;
+  border-top: 1px solid #dfdfdf !important;
+  border-bottom: 0 !important;
+}
+
+.sodar-ss-data-row-cell:focus {
+  border-left: 0 !important;
+}
+
+/* TODO: Remove this once upgrading site to django-sodar-core > 0.4.5 */
+.badge-group {
+  display: inline-flex !important;
 }
 
 </style>

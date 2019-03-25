@@ -26,6 +26,8 @@ var updateCollectionStats = function() {
             contentType: "application/x-www-form-urlencoded; charset=UTF-8", //should be default
             traditional: true
         }).done(function (data) {
+            console.log('Got response') // DEBUG
+            console.dir(data) // DEBUG
             $('span.sodar-irods-stats').each(function () {
                 var statsSpan = $(this);
                 var irodsPath = decodeURIComponent(statsSpan.attr('stats-url')).split('=')[1];
@@ -57,22 +59,46 @@ var updateCollectionStats = function() {
 //enables or disables every .sodar-list-btn button in a row
 var toggleButtons = function(row, status, stats) {
     $(row).find('.sodar-list-btn').each(function () {
+<<<<<<< 8bc0cf99f950f50beecbf79f2b48d81ca1473b84
+            if (status === '200') {
+                if ($(this).is('button')) {
+                    $(this).removeAttr('disabled');
+                }
+                $(this).removeClass('disabled');
+                // $(this).tooltip('enable');
+
+                //collection is empty; disable all but the copy path buttons
+                if (stats['file_count'] === 0) {
+                    if ($(this).is('.sodar-irods-popup-list-btn')) {
+                        $(this).attr('disabled', 'disabled');
+                        // $(this).tooltip('disable');
+                    } else if ($(this).is('.sodar-irods-dav-btn')) {
+                        $(this).addClass('disabled');
+                        // $(this).tooltip('disable');
+                    }
+                }
+=======
         if (status === '200') {
             if ($(this).is('button')) {
                 $(this).removeAttr('disabled');
+>>>>>>> fix query string handling in irodsbackend urls (#455), add url encoding to strings (#456), modify get_stats_url into get_url (#438), refactor irodsbackend.js
             }
             $(this).removeClass('disabled');
-            // $(this).tooltip('enable');
+            $(this).tooltip('enable');
 
             //collection is empty; disable all but the copy path buttons
             if (stats['file_count'] === 0) {
                 if ($(this).is('.sodar-irods-popup-list-btn')) {
                     $(this).attr('disabled', 'disabled');
-                    // $(this).tooltip('disable');
+                    $(this).tooltip('disable');
                 } else if ($(this).is('.sodar-irods-dav-btn')) {
                     $(this).addClass('disabled');
-                    // $(this).tooltip('disable');
+                    $(this).tooltip('disable');
                 }
+<<<<<<< 8bc0cf99f950f50beecbf79f2b48d81ca1473b84
+                // $(this).tooltip('disable');
+=======
+>>>>>>> fix query string handling in irodsbackend urls (#455), add url encoding to strings (#456), modify get_stats_url into get_url (#438), refactor irodsbackend.js
             }
         }
         //collection doesn't exist; disable all buttons
@@ -81,9 +107,8 @@ var toggleButtons = function(row, status, stats) {
                 $(this).attr('disabled', 'disabled');
             } else if ($(this).is('a')) {
                 $(this).addClass('disabled');
-                $(this).tooltip('disable');
             }
-            // $(this).tooltip('disable');
+            $(this).tooltip('disable');
         }
     });
 };

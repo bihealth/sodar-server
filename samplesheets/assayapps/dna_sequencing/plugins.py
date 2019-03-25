@@ -1,7 +1,5 @@
 """Assay app plugin for samplesheets"""
 
-# Projectroles dependency
-from projectroles.plugins import get_backend_api
 
 from samplesheets.plugins import SampleSheetAssayPluginPoint
 from samplesheets.utils import get_last_material_name
@@ -49,24 +47,21 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
     #: Toggle displaying of row-based iRODS links in the assay table
     display_row_links = True
 
-    def get_row_path(self, row, table, assay):
+    def get_row_path(self, row, table, assay, assay_path):
         """Return iRODS path for an assay row in a sample sheet. If None,
         display default directory.
-        :param assay: Assay object
-        :param table: List of lists (table returned by SampleSheetTableBuilder)
         :param row: List of dicts (a row returned by SampleSheetTableBuilder)
+        :param table: Full table with headers (dict returned by
+                      SampleSheetTableBuilder)
+        :param assay: Assay object
+        :param assay_path: Root path for assay
         :return: String with full iRODS path or None
         """
-        irods_backend = get_backend_api('omics_irods')
-
-        if not irods_backend:
-            return None
-
         # Get the name of the last material
-        last_material_name = get_last_material_name(row)
+        last_material_name = get_last_material_name(row, table)
 
         if last_material_name:
-            return irods_backend.get_path(assay) + '/' + last_material_name
+            return assay_path + '/' + last_material_name
 
         return None
 

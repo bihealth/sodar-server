@@ -613,6 +613,7 @@ class SampleSheetContextGetAPIView(
         studies = Study.objects.filter(investigation=investigation).order_by(
             'title'
         )
+        irods_backend = get_backend_api('omics_irods')
 
         # General context data for Vue app
         ret_data = {
@@ -631,6 +632,7 @@ class SampleSheetContextGetAPIView(
         }
 
         # Study info
+        # TODO: TBD: Do we need "irods_stats_url" here?
         if studies.count() > 0:
             ret_data['studies'] = {
                 str(s.sodar_uuid): {
@@ -638,10 +640,34 @@ class SampleSheetContextGetAPIView(
                     'description': s.description,
                     'configuration': s.investigation.get_configuration(),
                     'comments': s.comments,
+                    'irods_path': irods_backend.get_path(s)
+                    if irods_backend
+                    else None,
+                    'irods_stats_url': irods_backend.get_url(
+                        view='stats',
+                        path=irods_backend.get_path(s),
+                        project=project,
+                        absolute=True,
+                        request=request,
+                    )
+                    if irods_backend
+                    else None,
                     'assays': {
                         str(a.sodar_uuid): {
                             'name': a.get_name(),
                             'display_name': a.get_display_name(),
+                            'irods_path': irods_backend.get_path(a)
+                            if irods_backend
+                            else None,
+                            'irods_stats_url': irods_backend.get_url(
+                                view='stats',
+                                path=irods_backend.get_path(s),
+                                project=project,
+                                absolute=True,
+                                request=request,
+                            )
+                            if irods_backend
+                            else None,
                         }
                         for a in s.assays.all().order_by('file_name')
                     },
@@ -726,7 +752,7 @@ class SampleSheetStudyTablesGetAPIView(
     renderer_classes = [JSONRenderer]
 
     def get(self, request, *args, **kwargs):
-        # TODO: Handle exceptions etc.
+        irods_backend = get_backend_api('omics_irods')
         study = Study.objects.filter(sodar_uuid=self.kwargs['study']).first()
 
         ret_data = {'study': {'display_name': study.get_display_name()}}
@@ -738,6 +764,27 @@ class SampleSheetStudyTablesGetAPIView(
         except Exception as ex:
             # TODO: Log error
             ret_data['render_error'] = str(ex)
+
+        # Get iRODS paths for assays if corresponding assay plugin exists
+        if 'table_data' in ret_data and study.investigation.irods_status:
+            # Can't import at module root due to circular dependency
+            from .plugins import find_assay_plugin
+
+            for a_uuid, a_data in ret_data['table_data']['assays'].items():
+                assay = Assay.objects.filter(sodar_uuid=a_uuid).first()
+                assay_path = irods_backend.get_path(assay)
+                a_data['irods_paths'] = []
+                assay_plugin = find_assay_plugin(
+                    assay.measurement_type, assay.technology_type
+                )
+
+                if assay_plugin:
+                    for row in a_data['table_data']:
+                        a_data['irods_paths'].append(
+                            assay_plugin.get_row_path(
+                                row, a_data, assay, assay_path
+                            )
+                        )
 
         return Response(ret_data, status=200)
 

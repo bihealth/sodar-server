@@ -1,6 +1,7 @@
 from django import template
 from django.conf import settings
 from django.urls import reverse
+from django.utils.http import urlencode
 
 from ..api import IrodsAPI
 
@@ -24,16 +25,19 @@ def get_stats_html(irods_path, project=None):
     :param project: Project object (optional)
     :return: String (contains HTML)
     """
-    url_kwargs = {'path': irods_path}
-
-    if project:
-        url_kwargs['project'] = project.sodar_uuid
+    url_kwargs = {'project': str(project.sodar_uuid)} if project else None
+    query_string = {'path': irods_path}
+    url = (
+        reverse('irodsbackend:stats', kwargs=url_kwargs)
+        + '?'
+        + urlencode(query_string)
+    )
 
     return (
         '<span class="badge badge-pill badge-info sodar-irods-stats"'
-        'stats-url="{url}">'
-        '<i class="fa fa-spin fa-circle-o-notch"></i> Updating stats..'
-        '</span>'.format(url=reverse('irodsbackend:stats', kwargs=url_kwargs))
+        'stats-url="{}">'
+        '<i class="fa fa-spin fa-circle-o-notch"></i> Updating..'
+        '</span>'.format(url)
     )
 
 

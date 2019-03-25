@@ -17,6 +17,7 @@
     "ag-grid-community": "^20.0.0",
     "ag-grid-vue": "^20.0.0",
     "bootstrap-vue": "^2.0.0-rc.13",
+    "v-clipboard": "^2.2.1",
     "vue": "^2.5.2",
     "vue-property-decorator": "^7.3.0",
     "vue-router": "^3.0.1"

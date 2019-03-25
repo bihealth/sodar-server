@@ -92,15 +92,17 @@ def get_index_by_header(
     return None
 
 
-def get_last_material_name(row):
+def get_last_material_name(row, table):
     """Return name of the last non-DATA material in a table row"""
     name = None
 
-    for cell in row:
+    for i in range(len(row)):
+        cell = row[i]
+        header = table['field_header'][i]
         if (
-            cell['obj_cls'].__name__ == 'GenericMaterial'
-            and cell['item_type'] != 'DATA'
-            and cell['field_name'] == 'name'
+            header['obj_cls'] == 'GenericMaterial'
+            and header['item_type'] != 'DATA'
+            and header['value'].lower() == 'name'
             and cell['value']
         ):
             name = cell['value']

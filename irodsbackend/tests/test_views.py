@@ -5,7 +5,8 @@ from test_plus.test import TestCase
 from unittest import skipIf
 
 from django.conf import settings
-from django.core.urlresolvers import reverse
+
+# from django.core.urlresolvers import reverse
 from django.test import RequestFactory
 
 # Projectroles dependency
@@ -97,12 +98,8 @@ class TestIrodsStatisticsAPIView(TestViewsBase):
         """Test GET request for stats on an empty collection in iRODS"""
         with self.login(self.user):
             response = self.client.get(
-                reverse(
-                    'irodsbackend:stats',
-                    kwargs={
-                        'project': self.project.sodar_uuid,
-                        'path': self.irods_path,
-                    },
+                self.irods_backend.get_url(
+                    view='stats', project=self.project, path=self.irods_path
                 )
             )
 
@@ -119,12 +116,8 @@ class TestIrodsStatisticsAPIView(TestViewsBase):
 
         with self.login(self.user):
             response = self.client.get(
-                reverse(
-                    'irodsbackend:stats',
-                    kwargs={
-                        'project': self.project.sodar_uuid,
-                        'path': self.irods_path,
-                    },
+                self.irods_backend.get_url(
+                    view='stats', project=self.project, path=self.irods_path
                 )
             )
 
@@ -147,12 +140,8 @@ class TestIrodsStatisticsAPIView(TestViewsBase):
 
         with self.login(self.user):
             response = self.client.get(
-                reverse(
-                    'irodsbackend:stats',
-                    kwargs={
-                        'project': self.project.sodar_uuid,
-                        'path': self.irods_path,
-                    },
+                self.irods_backend.get_url(
+                    view='stats', project=self.project, path=self.irods_path
                 )
             )
 
@@ -169,12 +158,8 @@ class TestIrodsStatisticsAPIView(TestViewsBase):
 
         with self.login(self.user):
             response = self.client.get(
-                reverse(
-                    'irodsbackend:stats',
-                    kwargs={
-                        'project': self.project.sodar_uuid,
-                        'path': fail_path,
-                    },
+                self.irods_backend.get_url(
+                    view='stats', project=self.project, path=fail_path
                 )
             )
 
@@ -188,12 +173,10 @@ class TestIrodsStatisticsAPIView(TestViewsBase):
 
         with self.login(self.user):
             response = self.client.get(
-                reverse(
-                    'irodsbackend:stats',
-                    kwargs={
-                        'project': self.project.sodar_uuid,
-                        'path': IRODS_NON_PROJECT_PATH,
-                    },
+                self.irods_backend.get_url(
+                    view='stats',
+                    project=self.project,
+                    path=IRODS_NON_PROJECT_PATH,
                 )
             )
 
@@ -203,7 +186,7 @@ class TestIrodsStatisticsAPIView(TestViewsBase):
         """Test GET request for stats without a project and a superuser"""
         with self.login(self.user):
             response = self.client.get(
-                reverse('irodsbackend:stats', kwargs={'path': self.irods_path})
+                self.irods_backend.get_url(view='stats', path=self.irods_path)
             )
 
             self.assertEqual(response.status_code, 200)
@@ -214,7 +197,7 @@ class TestIrodsStatisticsAPIView(TestViewsBase):
 
         with self.login(new_user):
             response = self.client.get(
-                reverse('irodsbackend:stats', kwargs={'path': self.irods_path})
+                self.irods_backend.get_url(view='stats', path=self.irods_path)
             )
 
             self.assertEqual(response.status_code, 400)
@@ -228,12 +211,8 @@ class TestIrodsStatisticsAPIView(TestViewsBase):
 
         with self.login(new_user):
             response = self.client.get(
-                reverse(
-                    'irodsbackend:stats',
-                    kwargs={
-                        'project': self.project.sodar_uuid,
-                        'path': self.irods_path,
-                    },
+                self.irods_backend.get_url(
+                    view='stats', project=self.project, path=self.irods_path
                 )
             )
 
@@ -259,13 +238,11 @@ class TestIrodsObjectListAPIView(TestViewsBase):
         """Test GET request for listing an empty collection in iRODS"""
         with self.login(self.user):
             response = self.client.get(
-                reverse(
-                    'irodsbackend:list',
-                    kwargs={
-                        'project': self.project.sodar_uuid,
-                        'path': self.irods_path,
-                        'md5': 0,
-                    },
+                self.irods_backend.get_url(
+                    view='list',
+                    path=self.irods_path,
+                    project=self.project,
+                    md5=0,
                 )
             )
 
@@ -281,13 +258,11 @@ class TestIrodsObjectListAPIView(TestViewsBase):
 
         with self.login(self.user):
             response = self.client.get(
-                reverse(
-                    'irodsbackend:list',
-                    kwargs={
-                        'project': self.project.sodar_uuid,
-                        'path': self.irods_path,
-                        'md5': 0,
-                    },
+                self.irods_backend.get_url(
+                    view='list',
+                    path=self.irods_path,
+                    project=self.project,
+                    md5=0,
                 )
             )
 
@@ -315,13 +290,11 @@ class TestIrodsObjectListAPIView(TestViewsBase):
 
         with self.login(self.user):
             response = self.client.get(
-                reverse(
-                    'irodsbackend:list',
-                    kwargs={
-                        'project': self.project.sodar_uuid,
-                        'path': self.irods_path,
-                        'md5': 1,
-                    },
+                self.irods_backend.get_url(
+                    view='list',
+                    path=self.irods_path,
+                    project=self.project,
+                    md5=1,
                 )
             )
 
@@ -338,13 +311,11 @@ class TestIrodsObjectListAPIView(TestViewsBase):
 
         with self.login(self.user):
             response = self.client.get(
-                reverse(
-                    'irodsbackend:list',
-                    kwargs={
-                        'project': self.project.sodar_uuid,
-                        'path': self.irods_path,
-                        'md5': 1,
-                    },
+                self.irods_backend.get_url(
+                    view='list',
+                    path=self.irods_path,
+                    project=self.project,
+                    md5=1,
                 )
             )
 
@@ -363,13 +334,8 @@ class TestIrodsObjectListAPIView(TestViewsBase):
 
         with self.login(self.user):
             response = self.client.get(
-                reverse(
-                    'irodsbackend:list',
-                    kwargs={
-                        'project': self.project.sodar_uuid,
-                        'path': fail_path,
-                        'md5': 0,
-                    },
+                self.irods_backend.get_url(
+                    view='list', path=fail_path, project=self.project, md5=0
                 )
             )
 
@@ -383,13 +349,11 @@ class TestIrodsObjectListAPIView(TestViewsBase):
 
         with self.login(self.user):
             response = self.client.get(
-                reverse(
-                    'irodsbackend:list',
-                    kwargs={
-                        'project': self.project.sodar_uuid,
-                        'path': IRODS_NON_PROJECT_PATH,
-                        'md5': 0,
-                    },
+                self.irods_backend.get_url(
+                    view='list',
+                    path=IRODS_NON_PROJECT_PATH,
+                    project=self.project,
+                    md5=0,
                 )
             )
 
@@ -399,9 +363,8 @@ class TestIrodsObjectListAPIView(TestViewsBase):
         """Test GET request for listing without a project and a superuser"""
         with self.login(self.user):
             response = self.client.get(
-                reverse(
-                    'irodsbackend:list',
-                    kwargs={'path': self.irods_path, 'md5': 0},
+                self.irods_backend.get_url(
+                    view='list', path=self.irods_path, md5=0
                 )
             )
 
@@ -413,9 +376,8 @@ class TestIrodsObjectListAPIView(TestViewsBase):
 
         with self.login(new_user):
             response = self.client.get(
-                reverse(
-                    'irodsbackend:list',
-                    kwargs={'path': self.irods_path, 'md5': 0},
+                self.irods_backend.get_url(
+                    view='list', path=self.irods_path, md5=0
                 )
             )
 
@@ -430,13 +392,11 @@ class TestIrodsObjectListAPIView(TestViewsBase):
 
         with self.login(new_user):
             response = self.client.get(
-                reverse(
-                    'irodsbackend:list',
-                    kwargs={
-                        'project': self.project.sodar_uuid,
-                        'path': self.irods_path,
-                        'md5': 0,
-                    },
+                self.irods_backend.get_url(
+                    view='list',
+                    path=self.irods_path,
+                    project=self.project,
+                    md5=0,
                 )
             )
 
@@ -457,10 +417,7 @@ class TestIrodsBatchStatisticsAPIView(TestViewsBase):
 
         with self.login(self.user):
             response = self.client.post(
-                reverse(
-                    'irodsbackend:stats',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
+                self.irods_backend.get_url(view='stats', project=self.project),
                 post_data,
             )
 
@@ -492,10 +449,7 @@ class TestIrodsBatchStatisticsAPIView(TestViewsBase):
 
         with self.login(self.user):
             response = self.client.post(
-                reverse(
-                    'irodsbackend:stats',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
+                self.irods_backend.get_url(view='stats', project=self.project),
                 post_data,
             )
 
@@ -534,10 +488,7 @@ class TestIrodsBatchStatisticsAPIView(TestViewsBase):
 
         with self.login(self.user):
             response = self.client.post(
-                reverse(
-                    'irodsbackend:stats',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
+                self.irods_backend.get_url(view='stats', project=self.project),
                 post_data,
             )
 
@@ -565,10 +516,7 @@ class TestIrodsBatchStatisticsAPIView(TestViewsBase):
 
         with self.login(self.user):
             response = self.client.post(
-                reverse(
-                    'irodsbackend:stats',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
+                self.irods_backend.get_url(view='stats', project=self.project),
                 post_data,
             )
 
@@ -595,10 +543,7 @@ class TestIrodsBatchStatisticsAPIView(TestViewsBase):
 
         with self.login(self.user):
             response = self.client.post(
-                reverse(
-                    'irodsbackend:stats',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
+                self.irods_backend.get_url(view='stats', project=self.project),
                 post_data,
             )
 
@@ -626,10 +571,7 @@ class TestIrodsBatchStatisticsAPIView(TestViewsBase):
 
         with self.login(new_user):
             response = self.client.post(
-                reverse(
-                    'irodsbackend:stats',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
+                self.irods_backend.get_url(view='stats', project=self.project),
                 post_data,
             )
 
@@ -649,10 +591,7 @@ class TestIrodsBatchStatisticsAPIView(TestViewsBase):
 
         with self.login(self.user):
             response = self.client.post(
-                reverse(
-                    'irodsbackend:stats',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
+                self.irods_backend.get_url(view='stats', project=self.project),
                 post_data,
             )
 

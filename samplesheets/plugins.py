@@ -438,12 +438,14 @@ class SampleSheetAssayPluginPoint(PluginPoint):
 
         return irods_backend.get_path(assay)
 
-    def get_row_path(self, row, table, assay):
+    def get_row_path(self, row, table, assay, assay_path):
         """Return iRODS path for an assay row in a sample sheet. If None,
         display default directory.
-        :param assay: Assay object
-        :param table: List of lists (table returned by SampleSheetTableBuilder)
         :param row: List of dicts (a row returned by SampleSheetTableBuilder)
+        :param table: Full table with headers (dict returned by
+                      SampleSheetTableBuilder)
+        :param assay: Assay object
+        :param assay_path: Root path for assay
         :return: String with full iRODS path or None
         """
         # TODO: Implement this in your assay plugin if display_row_links=True

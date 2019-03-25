@@ -131,12 +131,8 @@ class TestIrodsbackendPermissions(ViewPermissionMixin, TestTaskflowBase):
 
     def test_stats_get(self):
         """Test stats API view using a GET() request"""
-        url = reverse(
-            'irodsbackend:stats',
-            kwargs={
-                'project': self.project.sodar_uuid,
-                'path': self.project_path,
-            },
+        url = self.irods_backend.get_url(
+            view='stats', project=self.project, path=self.project_path
         )
         good_users = [
             self.superuser,
@@ -151,7 +147,7 @@ class TestIrodsbackendPermissions(ViewPermissionMixin, TestTaskflowBase):
 
     def test_stats_get_no_uuid(self):
         """Test stats API view using a GET() request without a project UUID"""
-        url = reverse('irodsbackend:stats', kwargs={'path': self.project_path})
+        url = self.irods_backend.get_url(view='stats', path=self.project_path)
         good_users = [self.superuser]
         bad_users = [
             self.anonymous,
@@ -166,12 +162,8 @@ class TestIrodsbackendPermissions(ViewPermissionMixin, TestTaskflowBase):
 
     def test_stats_get_not_in_project(self):
         """Test stats API view using a GET() request with path not in project"""
-        url = reverse(
-            'irodsbackend:stats',
-            kwargs={
-                'project': self.project.sodar_uuid,
-                'path': NON_PROJECT_PATH,
-            },
+        url = self.irods_backend.get_url(
+            view='stats', project=self.project, path=NON_PROJECT_PATH
         )
         bad_users = [
             self.anonymous,
@@ -189,9 +181,8 @@ class TestIrodsbackendPermissions(ViewPermissionMixin, TestTaskflowBase):
         test_path = self.project_path + '/' + TEST_COLL_NAME
         self.irods_session.collections.create(test_path)  # NOTE: No perms given
 
-        url = reverse(
-            'irodsbackend:stats',
-            kwargs={'project': self.project.sodar_uuid, 'path': test_path},
+        url = self.irods_backend.get_url(
+            view='stats', project=self.project, path=test_path
         )
         good_users = [self.superuser, self.as_owner.user, self.as_delegate.user]
         bad_users = [
@@ -205,12 +196,11 @@ class TestIrodsbackendPermissions(ViewPermissionMixin, TestTaskflowBase):
 
     def test_stats_post(self):
         """Test stats API view using a POST() request"""
-        url = reverse(
-            'irodsbackend:stats',
-            kwargs={
-                'project': self.project.sodar_uuid,
-                'path': self.project_path,
-            },
+        url = self.irods_backend.get_url(
+            view='stats',
+            project=self.project,
+            path=self.project_path,
+            method='POST',
         )
         post_data = {'paths': [self.project_path]}
 
@@ -231,7 +221,9 @@ class TestIrodsbackendPermissions(ViewPermissionMixin, TestTaskflowBase):
 
     def test_stats_post_no_uuid(self):
         """Test stats API view using a POST() request without a project UUID"""
-        url = reverse('irodsbackend:stats', kwargs={'path': self.project_path})
+        url = self.irods_backend.get_url(
+            view='stats', path=self.project_path, method='POST'
+        )
         post_data = {'paths': [self.project_path]}
 
         good_users = [self.superuser]
@@ -252,13 +244,8 @@ class TestIrodsbackendPermissions(ViewPermissionMixin, TestTaskflowBase):
 
     def test_list_get(self):
         """Test object list API view using a GET() request"""
-        url = reverse(
-            'irodsbackend:list',
-            kwargs={
-                'project': self.project.sodar_uuid,
-                'path': self.project_path,
-                'md5': 0,
-            },
+        url = self.irods_backend.get_url(
+            view='list', project=self.project, path=self.project_path, md5=0
         )
         good_users = [
             self.superuser,
@@ -273,8 +260,8 @@ class TestIrodsbackendPermissions(ViewPermissionMixin, TestTaskflowBase):
 
     def test_list_get_no_uuid(self):
         """Test object list API view using a GET() request without a project UUID"""
-        url = reverse(
-            'irodsbackend:list', kwargs={'path': self.project_path, 'md5': 0}
+        url = self.irods_backend.get_url(
+            view='list', path=self.project_path, md5=0
         )
         good_users = [self.superuser]
         bad_users = [
@@ -290,13 +277,8 @@ class TestIrodsbackendPermissions(ViewPermissionMixin, TestTaskflowBase):
 
     def test_list_get_not_in_project(self):
         """Test object list API view using a GET() request with path not in project"""
-        url = reverse(
-            'irodsbackend:list',
-            kwargs={
-                'project': self.project.sodar_uuid,
-                'path': NON_PROJECT_PATH,
-                'md5': 0,
-            },
+        url = self.irods_backend.get_url(
+            view='list', project=self.project, path=NON_PROJECT_PATH, md5=0
         )
         bad_users = [
             self.anonymous,
@@ -314,13 +296,8 @@ class TestIrodsbackendPermissions(ViewPermissionMixin, TestTaskflowBase):
         test_path = self.project_path + '/' + TEST_COLL_NAME
         self.irods_session.collections.create(test_path)  # NOTE: No perms given
 
-        url = reverse(
-            'irodsbackend:list',
-            kwargs={
-                'project': self.project.sodar_uuid,
-                'path': test_path,
-                'md5': 0,
-            },
+        url = self.irods_backend.get_url(
+            view='list', project=self.project, path=test_path, md5=0
         )
         good_users = [self.superuser, self.as_owner.user, self.as_delegate.user]
         bad_users = [

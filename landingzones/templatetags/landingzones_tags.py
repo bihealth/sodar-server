@@ -84,11 +84,11 @@ def get_zone_list_url(zone):
     if not irods_backend:
         return None
 
-    path = irods_backend.get_path(zone)
-
-    return reverse(
-        'irodsbackend:list',
-        kwargs={'project': zone.project.sodar_uuid, 'path': path, 'md5': 1},
+    return irods_backend.get_url(
+        view='list',
+        project=zone.project,
+        path=irods_backend.get_path(zone),
+        md5=1,
     )
 
 

@@ -34,7 +34,7 @@
         </dl>
         <span v-for="(data, key, index) in
                    app.sodarContext['investigation']['comments']"
-            v-bind:key="index">
+            :key="index">
           <dl class="row pb-0">
             <dt class="col-md-3">{{ key }}</dt>
             <dd class="col-md-9">{{ data['value'] }}</dd>
@@ -44,7 +44,7 @@
     </div>
 
     <div v-for="(studyInfo, studyUuid, index) in app.sodarContext['studies']"
-         v-bind:key="index"
+         :key="index"
          class="card">
       <div class="card-header">
         <h4>Study Details: {{ studyInfo['display_name'] }}</h4>
@@ -64,7 +64,7 @@
           <dd class="col-md-9">{{ studyInfo['configuration']}}</dd>
         </dl>
         <span v-for="(data, key, index) in studyInfo['comments']"
-              v-bind:key="index">
+              :key="index">
           <dl v-if="data['value']"
               class="row pb-0">
             <dt class="col-md-3">{{ key }}</dt>

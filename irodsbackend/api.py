@@ -19,6 +19,8 @@ from irods.ticket import Ticket
 from pytz import timezone
 
 from django.conf import settings
+from django.urls import reverse
+from django.utils.http import urlencode
 from django.utils.text import slugify
 
 
@@ -454,6 +456,53 @@ class IrodsAPI:
 
         if s:
             return s.group(1)
+
+    # TODO: Add tests
+    @classmethod
+    def get_url(
+        cls,
+        view,
+        project=None,
+        path=None,
+        md5=False,
+        method='GET',
+        absolute=False,
+        request=None,
+    ):
+        """
+        Get the list or stats URL for an iRODS path.
+
+        :param view: View of the URL ("stats" or "list")
+        :param path: Full iRODS path (string or None)
+        :param project: Project object or None
+        :param md5: Include MD5 or not for a list view (boolean)
+        :param method: Method for the function (string)
+        :param absolute: Whether or not an absolute URI is required (boolean)
+        :param request: Request object (required for building an absolute URI)
+        :return: String
+        :raise: ValueError if the view or method param is invalid
+        """
+        if view not in ['list', 'stats']:
+            raise ValueError('Invalid type "{}" for view'.format(view))
+
+        if method not in ['GET', 'POST']:
+            raise ValueError('Invalid method "{}"'.format(method))
+
+        url_kwargs = {'project': str(project.sodar_uuid)} if project else None
+        rev_url = reverse('irodsbackend:{}'.format(view), kwargs=url_kwargs)
+
+        if method == 'GET':
+            query_string = {'path': path}
+
+            if view == 'list':
+                query_string['md5'] = int(md5)
+
+            rev_url += '?' + urlencode(query_string)
+
+        if absolute and request:
+            return request.build_absolute_uri(rev_url)
+
+        return rev_url
 
     ###################
     # iRODS Operations

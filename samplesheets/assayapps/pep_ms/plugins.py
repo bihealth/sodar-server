@@ -49,19 +49,16 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
     #: MaxQuant results collection name
     max_quant_coll = 'MaxQuantResults'
 
-    def get_row_path(self, row, table, assay):
+    def get_row_path(self, row, table, assay, assay_path):
         """Return iRODS path for an assay row in a sample sheet. If None,
         display default directory.
-        :param assay: Assay object
-        :param table: List of lists (table returned by SampleSheetTableBuilder)
         :param row: List of dicts (a row returned by SampleSheetTableBuilder)
+        :param table: Full table with headers (dict returned by
+                      SampleSheetTableBuilder)
+        :param assay: Assay object
+        :param assay_path: Root path for assay
         :return: String with full iRODS path or None
         """
-        assay_path = self.get_assay_path(assay)
-
-        if not assay_path:
-            return None
-
         # TODO: Alternatives for RawData?
         return assay_path + '/' + self.raw_data_coll
 
