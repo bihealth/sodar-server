@@ -65,17 +65,17 @@ mistune==0.8.4
 django-db-file-storage==0.5.3
 
 # Django-plugins (with Django 1.11 support)
--e git://github.com/mikkonie/django-plugins.git@1bc07181e6ab68b0f9ed3a00382eb1f6519e1009#egg=django-plugins
+-e git+https://github.com/mikkonie/django-plugins.git@1bc07181e6ab68b0f9ed3a00382eb1f6519e1009#egg=django-plugins
 
 # SODAR Core
--e git+ssh://git@cubi-gitlab.bihealth.org/CUBI_Engineering/CUBI_Data_Mgmt/sodar_core.git@v0.4.5#egg=django-sodar-core
+-e git+ssh://git@cubi-gitlab.bihealth.org/CUBI_Engineering/CUBI_Data_Mgmt/sodar_core.git@v0.5.0#egg=django-sodar-core
 
 ####################
 # SODAR app imports
 ####################
 
 # CUBI AltamISA parser
--e git://github.com/bihealth/altamisa.git@ddf54e9ab9b47d2b5a7d54ce65ea8aa673375f87#egg=altamisa
+-e git+https://github.com/bihealth/altamisa.git@ddf54e9ab9b47d2b5a7d54ce65ea8aa673375f87#egg=altamisa
 
 # Python iRODS client for irodsbackend
 python-irodsclient==0.8.1

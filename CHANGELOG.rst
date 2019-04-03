@@ -5,14 +5,20 @@ Changelog for the SODAR Web UI. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
-v0.4.4 (WIP)
-============
+v0.4.4 (2019-04-03)
+===================
 
 Added
 -----
 
 - **Samplesheets**
     - Copying HPO term IDs into clipboard (#454)
+
+Changed
+-------
+
+- **General**
+    - Upgrade to django-sodar-core v0.5.0
 
 Fixed
 -----
