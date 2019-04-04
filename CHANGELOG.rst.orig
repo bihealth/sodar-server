@@ -1,0 +1,925 @@
+SODAR Changelog
+^^^^^^^^^^^^^^^
+
+Changelog for the SODAR Web UI. Loosely follows the
+`Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
+
+
+<<<<<<< 77a8732f726eff9f1d6f695eca665f345f38a94c
+v0.4.5 (WIP)
+============
+
+Fixed
+-----
+
+- **Samplesheets**
+    - Hard coded WebDAV URL in IGV links (#468)
+    - Add missing SODAR Core v0.5.0 settings variables (#469)
+=======
+v0.5.0 (WIP)
+============
+
+Added
+-----
+
+- **Irodsbackend**
+    - API function ``get_url()`` (#438)
+- **Samplesheets**
+    - New Vue.js based sample sheets viewer (#426)
+
+Changed
+-------
+
+- **Irodsbackend**
+    - Modify stats badge appearance
+    - Refactor URL arguments and URL patterns regarding query strings (#455)
+    - Properly URL encode query strings (#456)
+    - Always return JSON from API views (#457)
+- **Samplesheets**
+    - Update and refactor server side rendering for client-side sheet UI (#426)
+    - URL patterns for ``samplesheets:project_sheet`` updated for Vue.js routes (#426)
+    - Refactor and update sample sheet rendering for new renderer (#111, #426)
+    - Expect full table data with headers for assay app ``get_row_path()``
+    - Add table data to ``get_last_material_name()`` args
+
+Removed
+-------
+
+- **Samplesheets**
+    - DataTables sample sheet rendering (#100, #223)
+    - Server side Overview view (#426)
+    - Unused server side templates (#426)
+>>>>>>> fix changelog
+
+
+v0.4.4 (2019-04-03)
+===================
+
+Added
+-----
+
+- **Samplesheets**
+    - Copying HPO term IDs into clipboard (#454)
+
+Changed
+-------
+
+- **General**
+    - Upgrade to django-sodar-core v0.5.0
+
+Fixed
+-----
+
+- **Irodsbackend**
+    - Repeated CSS overrides moved to ``irodsbackend.css`` (#452)
+- **Samplesheets**
+    - Tooltips broke study app table layout in small tables (#458)
+
+
+v0.4.3 (2019-03-07)
+===================
+
+Added
+-----
+
+- **Irodsbackend**
+    - ``IRODS_QUERY_BATCH_SIZE`` setting for batch queries (#432)
+- **Samplesheets**
+    - Support for multiple ontology links in ``_get_ontology_link()`` (#431)
+    - Hack for providing correct HPO ontology into links (#431)
+    - Rendering for HPO term links (#431)
+    - Rendering for performer and perform date (#187)
+    - Transcription profiling support in dna_sequencing assay app (#443)
+    - Use ``IRODS_QUERY_BATCH_SIZE`` for iRODS updating (#432)
+    - External link label ``x-generic-remote`` (#448)
+
+Changed
+-------
+
+- **General**
+    - Upgrade to django-sodar-core v0.4.5
+- **Landingzones**
+    - Secure Taskflow API views with ``BaseTaskflowAPIView`` (#435)
+    - Adjust form textarea height (#437)
+- **Samplesheets**
+    - Improve exception reporting in ``SampleSheetTableBuilder`` (#433)
+    - Secure Taskflow API views with ``BaseTaskflowAPIView`` (#435)
+    - Support email link rendering for "contact" fields (#439)
+    - Refactor contact field rendering (#439)
+    - Query iRODS stats in batches (#432)
+    - Enable iRODS buttons by default (#432)
+    - Display external ID if label is not found (#449)
+
+Fixed
+-----
+
+- **General**
+    - Add missing ``.coveragerc`` excludes (#427)
+- **Samplesheets**
+    - iRODS button status updating for Proteomics projects (#428)
+    - General iRODS button status only updated once per page load (#429)
+    - Performance issues in iRODS stats querying with large data (#432)
+    - iRDOS buttons not disabled if iRODS collections not created (#445)
+    - ISAtab upload wiget error not displayed without Bootstrap 4 workarounds (sodar_core#164)
+
+Removed
+-------
+
+- **General**
+    - Old Bootstrap 4 workarounds for django-crispy-forms (sodar_core#157)
+- **Samplesheets**
+    - iRODS wait icon from study apps and assay tables (#430)
+
+
+v0.4.2 (2019-02-04)
+===================
+
+Added
+-----
+
+- **General**
+    - Formatting with Black
+    - Flake8 and Black checks in CI (#422)
+    - General code cleanup and refactoring (#422)
+    - ``IRODSBACKEND_STATUS_INTERVAL`` setting passed to JQuery (#423)
+- **Irodsbackend**
+    - Support for POST in Ajax views (#416)
+    - App specific rules (#418)
+    - Client side enabling/disabling of iRODS links buttons (#260)
+    - Get status updating interval from setting variable (#423)
+    - API view permission tests (#386, #417)
+- **Samplesheets**
+    - Support alternative notation in contact fields (#382)
+
+Changed
+-------
+
+- **General**
+    - Upgrade minimum Python version requirement to 3.6 (sodar_core#102)
+    - Update and cleanup Gitlab-CI setup (sodar_core#85)
+    - Update Chrome Driver for UI tests
+    - Cleanup Chrome setup
+    - Update ``login.html`` override to add site messages (sodar_core#105)
+    - Update site dependency utilities to match django-sodar-core v0.4.1+ (sodar_core#90)
+    - Upgrade to django-sodar-core v0.4.3
+    - Upgrade dependencies to match django-sodar-core v0.4.2+ (#420)
+    - Disable ``USE_I18N`` (sodar_core#117)
+    - Changed ``CONTRIBUTORS.txt`` into ``AUTHORS.rst``
+- **Irodsbackend**
+    - Refactor Ajax API views (#416)
+    - Limit the amount of iRODS queries (#414)
+- **Landingzones**
+    - Rename Taskflow specific API views (sodar_core#104)
+- **Samplesheets**
+    - Rename Taskflow specific API views (sodar_core#104)
+    - Only allow superuser or project owner to delete sheet with iRODS data (#424)
+
+Fixed
+-----
+
+- **General**
+    - Login URL was not set to ``sodar/users/login.html``
+    - Django docs references (sodar_core#131)
+    - ``ProjectAccessMixin.get_project()`` calls
+- **Samplesheets**
+    - DataTables scrolling issue with Bootstrap 4.2.1 (#421)
+    - Workaround for DataTables vertical overflow bug (#369)
+
+Removed
+-------
+
+- **General**
+    - Unused templates in ``sodar/pages``
+    - Unused URL mapping to ``about.html``
+    - Local JS/CSS includes for JQuery, Bootstrap and other JS helpers (#379, #420)
+    - Legacy Python2 ``super()`` calls (sodar_core#118)
+    - Redundant ``is_superuser`` predicates from rules (sodar_core#138)
+- **Irodsbackend**
+    - Unused module ``admin.py``
+- **Samplesheets**
+    - Unused dropup app buttons mode in templates (sodar_core#108)
+
+
+v0.4.1 (2018-12-19)
+===================
+
+Added
+-----
+
+- **General**
+    - ``TASKFLOW_TEST_MODE`` setting for test iRODS server support (sodar_core#67)
+    - Missing LDAP dev setup script (#385)
+- **Irodsbackend**
+    - Project UUID parsing support for ``get_uuid_from_path()``
+
+Changed
+-------
+
+- **General**
+    - Update list button and dropdown classes (#381)
+    - Upgrade to django-sodar-core v0.4.0
+    - Use ``TASKFLOW_SODAR_SECRET`` for securing Taskflow API views (sodar_core#46)
+- **Filesfolders**
+    - Import app from django-sodar-core v0.4.0 (#403)
+- **Landingzones**
+    - Use ``SODAR_API_DEFAULT_HOST`` in email generation (#396)
+    - Hide deleted zones in project overview (#394)
+- **Samplesheets**
+    - Normalize alternative material names as lowercase to optimize search (#390)
+    - Add real material name in ``alt_names`` as lowercase (#390)
+    - Reduce Django queries to optimize iRODS file search (#393)
+    - Replace IRODS query limit settings with ``SHEETS_IRODS_LIMIT`` (#393)
+    - Cancer study app: only show shortcuts for genome/exome seq assays (#398)
+    - Move germline specific template tags in germline study app (#399)
+    - Refactor study app views (#406)
+
+Fixed
+-----
+
+- **General**
+    - Potential inheritance issues in test classes (sodar_core#74)
+- **Irodsbackend**
+    - ``TypeError`` in ``get_path()`` not correctly raised with invalid object class name (#404)
+    - iRODS connections not properly cleaned up in Ajax API views (#413)
+    - Ensure iRODS connection cleanup after exiting a decorated function
+- **Irodsinfo**
+    - ``NetworkException`` not caught if iRODS server is unavailable (#395)
+- **Landingzones**
+    - Invalid URLs in zone status update emails (#396)
+- **Samplesheets**
+    - Cancer study app source query not filtered by study (#389)
+    - Handle cancer app library assay linking errors (#404)
+    - Assay links in study overview card (#405)
+    - Study app shortcut exceptions always redirected to default study (#406)
+    - Cancer study IGV shortcut crash if samples not found (#407)
+
+Removed
+-------
+
+- **General**
+    - Unneeded gunicorn dependency in ``settings/local.py`` (#383)
+- **Filesfolders**
+    - Local app removed (#403)
+- **Landingzones**
+    - Unused ``get_irods_cmd()`` template tag
+
+
+v0.4.0 (2018-10-26)
+===================
+
+Added
+-----
+
+- **Adminalerts**
+    - Import app from djagno-sodar-core
+- **Projectroles**
+    - Import app from django-sodar-core
+- **Taskflowbackend**
+    - Import app from django-sodar-core
+- **Timeline**
+    - Import app from django-sodar-core
+- **Userprofile**
+    - Import app from django-sodar-core
+
+Changed
+-------
+
+- **General**
+    - Update Django to v1.11.16 (#370)
+    - Update requirements to match django-sodar-core v0.3.0 (#370)
+    - Update SODAR app requirements to current versions
+    - Rebrand project and site as ``sodar`` (#166)
+    - Update ``SODAR_CONSTANTS`` dependencies in local apps (#370)
+    - Update ``sodar_uuid`` model fields and references in local apps (#370)
+    - Update ``sodar_url`` references in local apps (#370)
+    - Update default templates (#370)
+    - Move login Javascript to ``login.js``
+    - Update development documentation
+- **Samplesheets**
+    - Improve data table CSS during DataTables init (#359)
+
+Fixed
+-----
+
+- **Irodsbackend**
+    - Viewing iRODS file list on an empty collection failed (#375)
+    - WebDAV URL copying tooltip not rendered correctly inside DataTables (#377)
+- **Samplesheets**
+    - IGV session file generating crash if VCF file was not found (#372)
+
+Removed
+-------
+
+- **General**
+    - Local Django apps included in SODAR Core v0.3.0 (#370)
+    - Unused django-extra-views requirement
+    - Unused user templates (#370)
+- **Samplesheets**
+    - Duplicate DataTables CSS includes
+
+
+v0.3.3 (2018-09-25)
+===================
+
+Added
+-----
+
+- **Samplesheets**
+    - Cancer study app (#371)
+    - Generic IGV session file generating function ``get_igv_xml()`` in ``studyapps.utils``
+    - ``get_sources()`` helper in ``Study`` model
+    - ``get_samples()`` helper in ``GenericMaterial`` model
+    - ``get_sample_libraries()`` helper in ``samplesheets.utils``
+
+Changed
+-------
+
+- **Samplesheets**
+    - Use ``get_igv_xml()`` in germline study app
+    - Use ``get_sample_libraries()`` in DNA sequencing assay app
+
+
+v0.3.2 (2018-09-11)
+===================
+
+Added
+-----
+
+- **General**
+    - BIH Proteomics data transfer docs (Mathias Kuhring)
+
+Changed
+-------
+
+- **Projectroles**
+    - Use ``omics-search-card-body`` instead of ``omics-card-body-table`` (#364)
+
+Fixed
+-----
+
+- **General**
+    - Dropdown menu overflow hiding in ``omics-card-body-table`` classes (#364)
+- **Samplesheets**
+    - Investigation parsing failure when replacing isatab deleted previous version (#365)
+
+Removed
+-------
+
+- **Landingzones**
+    - Usage of ``popupNoFilesHtml`` (will be removed from omics_core)
+
+
+v0.3.1 (2018-08-24)
+===================
+
+Added
+-----
+
+- **General**
+    - ``SITE_SUBTITLE`` setting to show beta status or something similar (#311)
+    - API settings ``SODAR_API_DEFAULT_VERSION`` and ``SODAR_API_MEDIA_TYPE``
+    - Domain/system user groups set on login or by management command ``syncgroups`` (#313)
+    - CSS classes for ``badge-group`` (#349)
+- **Adminalerts**
+    - Enable Markdown in alert description (#196)
+    - Display user in alert details (#330)
+- **Filesfolders**
+    - Text style depending on item flag (#303)
+    - Optional automated unpacking for uploaded zip files (#327)
+    - Setting ``FILESFOLDERS_MAX_ARCHIVE_SIZE`` (#327)
+    - ``search()`` function in plugin (#335)
+- **Irodsbackend**
+    - Generic iRODS file statistics view, template tags and Javascript (#181, #188)
+    - Missing support for Investigation objects in ``get_path()`` (#292)
+    - iRODS collection query Javascript (#295)
+    - Display collection name in iRODS collection list
+    - ``IrodsObjectListAPIView``for iRODS collection list queries (#308)
+    - ``BaseIrodsAPIView`` for implementing views
+    - Logging for error cases (#310)
+    - ``get_sample_path()`` and ``get_uuid_from_path()`` helpers (#289)
+    - Param ``like_name`` into data object querying (#289)
+- **Landingzones**
+    - Send email when zone status is set as ``MOVED`` or ``FAILED`` (#280)
+    - Unit tests for ``ZoneStatusSetAPIView``
+    - Display iRODS stats in details card (#188)
+    - Ability to add extra flow parameters with ``get_extra_flow_data()`` (#297)
+    - Script user workaround for non-working tickets in the proteomics use case (#297)
+    - Option for validating files without moving (#333)
+    - Missing unit tests for ``LandingZoneMoveView`` (#248)
+- **Projectroles**
+    - Helper ``email.send_generic_mail()`` (#280)
+    - Common template tag ``check_backend()``
+    - Define backend app javascript include in plugin (#300)
+    - Common template tag ``get_setting()``
+    - ``CurrentUserFormMixin`` for providing current using to forms as ``current_user``
+    - Helper mixin ``KnoxAuthMixin`` for views testing
+    - Sanitize search input (#332)
+    - Handle project list title cell overflow (#306)
+    - No results alert for search (#288)
+    - DataTables rendering for search results (#328)
+    - Result count in search results (#338)
+    - Settings variable ``PROJECTROLES_SEARCH_PAGINATION`` (#328)
+    - Pagination for search results (#328)
+    - Filtering for search results (#328)
+- **Samplesheets**
+    - Display original study/assay filenames as tooltips (#283)
+    - Display assays for samples in search results (#157)
+    - Helper function ``GenericMaterial.get_sample_assays()`` (#157)
+    - Auto-populate field ``alt_names`` in the ``GenericMaterial`` model (#285)
+    - Management command ``syncnames`` to update ``alt_names`` (#285)
+    - Display project/study file statistics using irodsbackend (#188)
+    - Display stats on the project details page card (#188)
+    - Proof-of-concept ID Querying API with token authentication
+    - iRODS files searchable in site search (#289)
+    - Highlighting of search strings (#341)
+    - Custom display for "external links" fields (#349)
+    - Settings variable ``SHEETS_EXTERNAL_LINK_LABELS`` (#349)
+    - Custom display for different "contact" fields
+    - Handle sheet table cell overflow
+    - Settings variable ``SHEETS_MAX_COLUMN_WIDTH``
+    - ``search()`` function in plugin (#335)
+    - Settings variables ``SHEETS_IRODS_LIMIT_PROJECT`` and ``SHEETS_IRODS_LIMIT_TOTAL`` (#289)
+
+Changed
+-------
+
+- **General**
+    - Search button CSS (#351)
+    - Refactor search views to allow multiple result sets from apps (#335)
+    - Implement search in ``ProjectAppPlugin.search()`` instead of template tags (#335)
+- **Adminalerts**
+    - Update user when updating alert (#179)
+- **Filesfolders**
+    - Refactor timeline event creation for object modification
+    - Unify project title printing in search with other apps (#335)
+- **Irodsbackend**
+    - Optimize iRODS queries for increased performance (#242)
+    - Improve collection listing popup layout
+    - Check user perms for iRODS collection when performing queries
+    - Omit ``icp`` from iRODS path when copying to clipboard (#319)
+- **Landingzones**
+    - Use irodsbackend code for statistics queries (#188)
+    - Refactor ``irods_backend`` references in templates
+    - Move javascript to separate file (#181)
+    - Hide deleted zones from "other zones" (#302)
+    - Use irodsbackend code for collection listing (#295)
+    - Sort zones in list by zone tiele (#312)
+- **Projectroles**
+    - Minor email refactoring (#280)
+    - Hide system users from normal users' UI in member selection (#347)
+    - Hide search elements if no results are found (#288)
+- **Samplesheets**
+    - Search for VCF files under all family members in germline app (#275)
+    - Include ``alt_name`` in GenericMaterial search (#285)
+    - Improve search results layout
+    - Display investigation title on project card (#293)
+    - Refactor ``irods_backend`` references in templates
+    - Use irodsbackend code for collection listing (#295)
+    - Move irods buttons to irodsbackend (#301)
+    - Move irods clipboard javascript to irodsbackend (#301)
+    - Move javascript to separate file (#181)
+    - Allow multiple assay field combinations for selecting assay plugin (#315)
+    - Enable genome_seq_nucleotide_seq app also for exomes (#315)
+    - Rename genome_seq_nucleotide_seq into dna_sequencing (#315)
+    - Refactor site search (#289)
+    - Exclude "name" column from automated aligning (#350)
+
+Fixed
+-----
+
+- **General**
+    - Popover width in CSS (#291)
+- **Irodsbackend**
+    - Handle missing user auth in API views without raising an exception (#337)
+- **Landingzones**
+    - Incorrectly calculated ``LANDINGZONES_STATUS_INTERVAL`` (#305)
+- **Projectroles**
+    - Extra spaces and tabs broke search (#290)
+    - Search not enabled if selecting previous input with mouse (#307)
+    - Case conversion issue caused ``highlight_search_term()`` to fail (#341)
+- **Samplesheets**
+    - Show correct target in germline app ``FileRedirectView`` message (#275)
+    - Source/sample name search resulted in a template crash (#287)
+    - CSS highlight bug in nav dropdown
+    - Content app DataTable header broke layout if following assay anchor (#224)
+    - Wrong CSS class in pep_ms (#318)
+    - Assays not filtered by project in sample search (#358)
+- **Timeline**
+    - Not found label did not reflect timeline_mode (#346)
+
+Removed
+-------
+
+- **General**
+    - Unused ``ProjectAppPluginPoint.search_title`` attribute (#335)
+- **Filesfolders**
+    - ``find_filesfolders_items()`` template tag (#335)
+- **Landingzones**
+    - ``LandingZoneIrodsStatisticsGetAPIView`` and related redundant JQuery scripts
+    - ``LANDINGZONES_STATISTICS_INTERVAL`` settings variable
+    - ``LandingZoneIrodsObjectListAPIView``, use view in irodsbackend instead (#308)
+- **Projectroles**
+    - ``find_projects()`` template tag (#335)
+- **Samplesheets**
+    - MD5 display from file list view
+    - Deprecated ``irods_base_dir`` from views
+    - ``IrodsObjectListAPIView``, use view in irodsbackend instead (#308)
+    - ``samplesheets_common.js``, functionality now in irodsbackend (#301)
+    - ``utils.get_last_material_index()``, no longer used (#317)
+    - ``find_samplesheets_items()`` template tag (#335)
+
+
+v0.3.0 (2018-07-03)
+===================
+
+Added
+-----
+
+- **General**
+    - Sphinx-based online user manual (#50)
+    - Site favicon (#166)
+- **Irodsbackend**
+    - Proper cleanup of iRODS session on API deletion
+    - Temporary iRODS ticket operations (#240)
+- **Landingzones**
+    - Status types ``DELETING`` and ``DELETED`` (#228)
+    - Landing zone special configurations (#240)
+    - Configapp sub-app plugin point (#240)
+    - Configapp plugin for ``bih_proteomics_smb`` (#240)
+    - More unit tests for views (#248)
+- **Projectroles**
+    - Tag ``force_wrap()`` in common template tags
+- **Samplesheets**
+    - Add genome_seq_nucleotide_seq assay app (#249)
+    - Add pep_ms assay app (#245)
+    - Object metadata in sample sheet table rendering (#254)
+    - Show investigation configuration in study details table
+    - WebDAV clipboard copying links (#257)
+    - IGV integration and auth-basic support for germline study app
+
+Changed
+-------
+
+- **General**
+    - Update installation and development documentation (#237)
+    - Rebrand site as SODAR (#166)
+    - Separate manual from development docs (#50, #237)
+    - Use Bootstrap4 modal instead of jquery.popupoverlay (#180)
+    - Improve login user experience (#229)
+- **Landingzones**
+    - Make landing zone deletion async (#228)
+    - Refactor zone list item rendering
+    - Include iRODS buttons from ``_irods_buttons.html``
+    - Display full zone title in project overview
+    - Call ``cleanup_zone()`` in configapps when setting status to MOVED or DELETED (#240)
+- **Projectroles**
+    - Use modal for email preview popups (#180)
+- **Samplesheets**
+    - Clarify ISA parsing error message (#236)
+    - Separate configapps into study and assay apps (#249)
+    - Move ``get_row_path()`` to assay app (#249)
+    - Make links column hideable by assay app (#249)
+    - Move iRODS buttons in separate template for including
+    - Change ``get_assay_path()`` into a more general ``get_irods_path()`` in template tags (#257)
+    - Display study and assay links on the project details page (#257)
+    - Move commonly used javascript to ``samplesheets_common.js`` (#181)
+    - iCommands button copies link to clipboard without popup (#257)
+    - Improve germline study app layout
+    - General table layout updates
+
+Fixed
+-----
+
+- **Landingzones**
+    - Buttons not correctly activated during status update (#215)
+    - Long landing zone names broke zone list table
+    - iRODS client ``NetworkException`` not caught by ``LandingZoneStatisticsGetAPIView`` (#255)
+- **Samplesheets**
+    - Escape cell values (#233)
+    - Study and Assay UUIDs changed during replace (#234)
+    - Missing iCommands path in popup (#250)
+    - Improve study and assay layout
+    - Linking of BAM and VCF files if no assay plugin was found (#264)
+    - Incorrectly filled ``Family`` field broke germline study rendering (#270)
+- **Timeline**
+    - Long labels broke timeline table (#225)
+
+Removed
+-------
+
+- **General**
+    - jquery.popupoverlay dependencies (#180)
+- **Landingzones**
+    - ZoneDeleteAPIView as it's not needed anymore due to async deletion (#228)
+
+
+v0.3.0b (2018-06-05)
+====================
+
+Added
+-----
+
+- **General**
+    - Admin link for superuser (#134)
+    - Common ``popupWaitHtml`` and ``popupNoFilesHtml`` Javascript variables
+    - Clipboard.js for helping clipboard operations
+    - CSS styling for ``.omics-code-input``
+    - Height check for project sidebar and dropdown menu switching (#156)
+- **Irodsbackend**
+    - Add irodsbackend app (#139)
+    - Add ``get_path()`` for retrieving iRODS paths for Django objects
+    - Template tag ``get_irods_path()`` to get object iRODS path in template
+    - Add ``get_session()`` for direct iRODS API access
+    - Add ``collection_exists()`` to check collection availability
+- **Irodsinfo**
+    - Add irodsinfo site app (#183)
+- **Landingzones**
+    - Add landingzones app (#139)
+- **Projectroles**
+    - Settings updating to Taskflow for project creation and modification (#139)
+    - Add ``get_all_settings()`` and ``get_default_setting()`` in ``project_settings``
+    - Add ``get_class()`` in ``projectroles_common_tags``
+- **Samplesheets**
+    - iRODS directory creation (#139)
+    - iRODS link and iCommands display (#139)
+    - Render optional hidden HTML attributes for cell meta data (#139)
+    - Add ``get_dir()`` and ``get_display_name()`` helpers to Study and Assay
+    - Add ``SampleSheetTaskflowMixin`` for Taskflow test helpers
+    - Row numbers for sample sheet tables (#155)
+    - Tour help (#145)
+    - Row limit to prevent import and rendering of huge data (#192)
+    - Render extract label column
+    - Project setting ``study_row_limit`` (#192)
+    - Replacing sample sheets for limited modifications (#195)
+    - ``SampleSheetConfigPlugin`` for sheet configuration specific sub-apps (#201)
+    - Config app ``bih_germline`` as an example (#201)
+    - Add ``get_configuration()`` in the ``Investigation`` model (#201)
+    - Add ``get_irods_row_path()`` to iRODS path to sample sheet row (#172)
+- **Taskflowbackend**
+    - Add taskflowbackend app (#139)
+    - Add optional ``omics_url`` kwarg to ``submit()``
+
+Changed
+-------
+
+- **General**
+    - Upgrade to Django 1.11.13
+    - Upgrade to django-crispy-forms 1.7.1 (#153)
+    - Upgrade to Boostrap 4.1.1 (#144)
+    - Improve tour help layout
+    - Upgrade to Gunicorn 19.8.1
+    - Switch ordering of Filesfolders and Landingzones in project menu (#217)
+- **Filesfolders**
+    - Don't show empty folder label if subfolders exist (#135)
+- **Irodsbackend**
+    - Implement functionality of omics_irods_rest directly in the app
+    - Rename ``get_object_list()`` into ``get_objects()``
+    - Improve error handling in ``get_objects()``
+- **Projectroles**
+    - Use Taskflowbackend only for creating and modifying ``PROJECT`` type projects
+    - Modify Taskflow API URLs
+    - Refactor ``get_active_plugins()``
+    - Refactor email sending
+    - Properly log and report errors in email sending (#151)
+    - Require email sending to succeed for creating invites (#149)
+    - Modify ProjectStarringAPIView to use common permission mixins
+    - Rename ``TestTaskflowViewBase`` to ``TestTaskflowBase``
+    - Integrate ``TaskflowMixin`` into ``TestTaskflowBase``
+    - Improve project list layout (#171)
+    - Move iRODS info page into the irodsinfo app (#183)
+    - Modify signature of ``_get_project()`` in ``ProjectAccessMixin``
+    - Allow ``get_all_settings()`` and ``get_project_setting()`` with no project in ``project_settings``
+- **Samplesheets**
+    - Rename top header "legend" to "value" (#129)
+    - Allow sample sheet upload for project contributor (#137)
+    - Allow sample sheet deletion for project contributor (#168)
+    - In taskflow operations, use ``omics_uuid`` instead of ``pk`` (#99)
+    - Refactor table HTML rendering
+    - Improve URLs for ontology linking (#170)
+    - Hide columns with no data (#184)
+    - Do not allow importing sheet or creating iRODS dirs if rendering fails (#192)
+    - Upgrade altamISA to commit ``ddf54e9ab9b47d2b5a7d54ce65ea8aa673375f87`` (#191)
+    - Display material subtype in top column (#200)
+    - Display Process name if set (#207)
+- **Taskflowbackend**
+    - Use ``omics_uuid`` instead of ``pk`` (#139)
+    - Only set up ``PROJECT`` type projects in ``synctaskflow``
+
+Fixed
+-----
+
+- **General**
+    - Add missing email settings in production config (#149)
+    - Add ``python3-distutils`` to Xenial requirements to fix failing tests caused by recent updates
+    - User links visible when logged out on low resolutions (#197)
+    - Fix ``omics-card-table-bordered`` CSS
+- **Filesfolders**
+    - Broken link for subfolders with depth >1 (#136)
+- **Projectroles**
+    - Invalid URL in ``build_invite_url()`` caused a crash (#149)
+    - Project creation failure using taskflow caused database corruption (#162)
+    - Proper redirect from failed project creation to home or parent category
+    - Project partially modified instead of rollback if update with taskflow failed (#163)
+    - Project settings not correctly populated in ``TestTaskflowBase``
+    - Allow ``_get_project()`` with top level app models from nested apps (#201)
+    - README not modified when updating project with Taskflow enabled (#209)
+- **Samplesheets**
+    - Delete investigation if import fails (#138)
+    - Assay sorting was not defined
+    - Assay data could end up in the wrong table with multiple assays under a study (#169)
+    - Correctly use ``request.session.real_referer`` for back/cancel links (#175)
+    - Error rendering sheet tables caused app to crash (#182)
+    - Building a redirect URL in export view caused a crash
+    - Prevent double importing of Investigation (#189)
+    - Zip file upload failed on Windows browsers (#198)
+    - Remove possible duplicate sample rows from study tables (#199)
+    - Extract label not correctly parsed
+    - Back link not working in ``IrodsDirView`` (#206)
+    - Invalid HTML from rendering extra cell classes together with ``text-right``
+    - Correctly parse study description (#208)
+    - Numerical value check for right-aligning (#218)
+- **Timeline**
+    - Fix event id parameter in Taskflow view
+
+Removed
+-------
+
+- **General**
+    - Removed Flynn workarounds, deploying on Flynn no longer supported (#133)
+- **Projectroles**
+    - "View Details" link in details page, not needed thanks to project sidebar
+    - ``get_description()`` templatetag
+
+
+v0.2.0 (2018-04-13)
+===================
+
+Added
+-----
+
+- **General**
+    - Automated version numbering in footer (#130)
+    - ``ProjectPermissionMixin`` for project apps
+    - ``ProjectAccessMixin`` for retrieving project from UUID URL kwargs
+    - The ``omics_uuid`` field in models where it was missing (#97)
+    - Graph output with pygraphviz for local development
+- **Projectroles**
+    - Add ``get_project_link()`` in templatetags
+- **Samplesheets**
+    - Add samplesheets app
+    - ISA specification compatible data model (#76)
+    - Importing ISA investigations as sample sheets (#77)
+    - Rendering and navigation of sample sheets (#79)
+    - Simple sample sheet search (#87)
+    - DataTables rendering of sheets (#81)
+
+Changed
+-------
+
+- **General**
+    - Upgrade site to Django 1.11.11
+    - Upgrade site to Boostrap 4.0.0 Stable (#78)
+    - Use ``omics_uuid`` instead of ``pk`` in URLs and templates (#97)
+    - Rework URL scheme for consistency and compactness (#105)
+    - Modify subtitle and page content containers for all apps
+    - Sticky subtitle nav menu for pages with operations menus or navigation
+    - Site-wide CSS tweaks
+    - Rename ``details_position`` to ``plugin_ordering`` in plugins (#90)
+    - Refactor app views with redundant ``SingleObjectMixin`` includes (#106)
+    - Squashed/recreated database migrations (#120) (Note: site must be deployed on a fresh database in this version)
+- **Projectroles**
+    - Search view improvements
+    - Refactor roles and invites views
+    - Split ``get_link_state`` tag into ``get_app_link_state`` and ``get_pr_link_state`` to support new URLs (#105)
+- **Timeline**
+    - Use ``omics_uuid`` for object lookup in ``plugins.get_object_link()`` (#97)
+
+Fixed
+-----
+
+- **General**
+    - Update ChromeDriver to eliminate UI test crashes (#85)
+    - User dropdown rendering depth (#82)
+    - Error template layout breaking (#108)
+- **Filesfolders**
+    - Public link form widget always disabled when updating a file (#102)
+    - Content type correctly returned for uploaded files and folder READMEs (#131)
+
+Removed
+-------
+
+- **General**
+    - Role "project staff" (#121)
+
+
+v0.1 (2018-01-26)
+=================
+
+Added
+-----
+
+- **General**
+    - Create new base project using the current version of `cookiecutter-django <https://github.com/pydanny/cookiecutter-django>`_
+    - Additional unit tests for site apps
+    - Changelog in ``CHANGELOG.rst``
+    - User profile page (#29)
+    - Highlight help link for new users (#30)
+    - Support for multiple LDAP backends (#69)
+- **Adminalerts**
+    - Add adminalerts app (#17)
+- **Filesfolders**
+    - Import app from prototype
+    - Page title to main files list
+    - File, folder and link search (#21)
+    - Item flagging (#38)
+    - History links for items (#35)
+    - Folder readme file rendering (#36)
+- **Projectroles**
+    - Import app from prototype
+    - Sub-navbar with project breadcrumb (#20)
+    - Move app and project editing links to project sidebar (#20)
+    - Helper functions for project settings
+    - Initial project and app object search (#16, #21)
+    - More helper functions in Project model: ``get_parents()``, ``get_full_title()``
+    - Project list filtering (#32)
+    - Project tagging/starring functionality (#37)
+    - History links for project members (#35)
+    - Import roles from another owned project (#9)
+    - User HTML tag in common templatetags (#71)
+- **Timeline**
+    - Import app and backend plugin from prototype
+    - Object event view history and API (#35)
+    - Project model support in event references
+
+Changed
+-------
+
+- **General**
+    - Update site for Django 1.11.9 (#1) and Python 3.6.3 (#2)
+    - Update site to Bootstrap 4 Beta 3 (#70)
+    - Update third-party libraries to their latest versions
+    - Layout redesign (#20)
+    - Switch from PhantomJS to Headless Chrome for UI tests (improved performance and stability, Bootstrap 4 Beta compatibility)
+    - Include CSS and JS imports in testing configs and CI
+    - General code refactoring and cleanup
+    - Update installation instructions in ``INSTALL.rst``
+    - Rename "actions" into "operations" (#41)
+    - Message alert boxes made dismissable (#25)
+    - Make tables and navs responsive to browser width
+- **Filesfolders**
+    - Redesign data model with inheritance to avoid field repetition
+    - Internal app name is now ``filesfolders``
+    - Project setting ``allow_public_links`` is now False by default (#43)
+    - Include extra data in item creation and updating
+    - Only allow one readme.* file in each folder (#36)
+- **Projectroles**
+    - Remove two-level restriction for project and category nesting in models
+    - Only allow creation of categories on top level
+    - Improved project list layout
+    - Move ``OMICS_CONSTANTS`` from configuration into ``models.py``
+    - Populate Role objects in a migration script instead of a fixture
+    - Import patched ``django-plugins`` from GitHub instead of including in project directly
+    - Include extra data in project creation and updating
+    - Move Project settings helper functions to ``project_settings.py``
+    - Disable help link instead of hiding if no tour help is available
+    - Show notice card if no ReadMe is available for project (#42)
+    - Refactor URL kwargs
+    - Allow users with roles under category children to view category (#47)
+    - Update text labels for role management to refer to "members" (#40)
+    - Separate common template tags into ``projectroles_common_tags``
+    - Move project settings forms to project creation/update view (#44)
+    - Provide reload-safe referer URL in ``request.session.real_referer`` (#67)
+- **Timeline**
+    - Enable event details popover on the project details page
+    - Limit details page list to successful events
+    - Allow guest user to see non-classified events
+    - Function ``add_event()`` raises proper ``ValueError`` exceptions
+
+Fixed
+-----
+
+- **Filesfolders**
+    - Redirects in exception cases in ``FilePublicLinkView``
+    - Unexpected characters in file name broke the ``file_serve`` view (ODA #109)
+    - Check for existing file if moving file during update (#56)
+- **Projectroles**
+    - Check for project title uniqueness
+    - Don't allow matching titles for subproject and parent
+    - App plugin element IDs in templates
+    - Project context for role invite revocation page
+    - Project type correctly displayed for user (#27)
+- **Timeline**
+    - Tour help anchoring for list navigation buttons
+    - User column link was missing the ``mailto:`` protocol syntax
+
+Removed
+-------
+
+- **General**
+    - The unused ``get_info()`` function and its implementations from ``plugins`` (provide ``details_template`` instead)
+    - Unused user app features
+- **Filesfolders**
+    - Redundant and deprecated fields/functions from the data model
+    - Example project settings
+- **Projectroles**
+    - Temporary settings variables for demo and UI testing hacks
