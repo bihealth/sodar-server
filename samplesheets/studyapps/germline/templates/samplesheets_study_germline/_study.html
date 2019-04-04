@@ -6,6 +6,8 @@
 
 {% load samplesheets_study_germline_tags %}
 
+{% get_setting 'IRODS_WEBDAV_URL' as webdav_url %}
+
 <div class="card">
   <div class="card-header">
     <h4>
@@ -84,7 +86,7 @@
                     </a>
                     <!-- TODO: (1) not full URL, (2) configure genome build in project config, (3) get port from user profile -->
                     <button type="button" class="btn sodar-list-btn sodar-igv-btn btn-secondary"
-                       onclick="javascript:$.ajax({url: 'http://127.0.0.1:60151/load?genome=b37&merge=false&file=https://cubi-omics-davrods-beta.bihealth.org/__sodar{{ igv_url }}.xml'})"
+                       onclick="javascript:$.ajax({url: 'http://127.0.0.1:60151/load?genome=b37&merge=false&file={{ webdav_url }}/__sodar{{ igv_url }}.xml'})"
                        title="Open IGV session file for full pedigree in IGV">
                       <i class="fa fa-share-square-o"></i> IGV
                     </button>

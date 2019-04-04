@@ -5,6 +5,16 @@ Changelog for the SODAR Web UI. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+v0.4.5 (WIP)
+============
+
+Fixed
+-----
+
+- **Samplesheets**
+    - Hard coded WebDAV URL in IGV links (#468)
+
+
 v0.4.4 (2019-04-03)
 ===================
 
