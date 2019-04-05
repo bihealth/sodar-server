@@ -13,6 +13,7 @@ Fixed
 
 - **Samplesheets**
     - Hard coded WebDAV URL in IGV links (#468)
+    - Add missing SODAR Core v0.5.0 settings variables (#469)
 
 
 v0.4.4 (2019-04-03)
