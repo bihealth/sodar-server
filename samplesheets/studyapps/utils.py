@@ -293,6 +293,7 @@ def get_library_file_url(file_type, library):
 
 
 # for germline study apps
+# TODO: Germline study app specific, move this!
 def get_pedigree_file_url(file_type, source, study_tables):
     """
     Return DavRods URL for the most recent file of type "bam" or "vcf"
@@ -314,10 +315,11 @@ def get_pedigree_file_url(file_type, source, study_tables):
     sample_names = []
 
     for assay in source.study.assays.all():
-        assay_table = study_tables['assays'][assay.get_name()]
+        assay_table = study_tables['assays'][str(assay.sodar_uuid)]
         assay_plugin = find_assay_plugin(
             assay.measurement_type, assay.technology_type
         )
+        assay_path = irods_backend.get_path(assay)
         source_fam = None
 
         if 'Family' in source.characteristics:
@@ -337,7 +339,7 @@ def get_pedigree_file_url(file_type, source, study_tables):
             return row[idx]['value']
 
         for row in assay_table['table_data']:
-            row_name = row[1]['value']
+            row_name = row[0]['value']
             row_fam = get_val_by_index(row, fam_idx)
 
             # For VCF files, also search through other samples in family
@@ -356,13 +358,16 @@ def get_pedigree_file_url(file_type, source, study_tables):
             # Get query path from assay_plugin
             if assay_plugin:
                 if row_name == source.name or vcf_search:
-                    path = assay_plugin.get_row_path(row, assay_table, assay)
+                    path = assay_plugin.get_row_path(
+                        row, assay_table, assay, assay_path
+                    )
+
                     if path not in query_paths:
                         query_paths.append(path)
 
         # If not assay_plugin, just search from assay path
         if not assay_plugin:
-            path = irods_backend.get_path(assay)
+            path = assay_path
 
             if path not in query_paths:
                 query_paths.append(path)

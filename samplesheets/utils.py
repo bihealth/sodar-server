@@ -67,17 +67,21 @@ def get_index_by_header(
     render_table, header_value, obj_cls=None, item_type=None
 ):
     """
-    Return the column index based on field header value
+    Return the column index based on field header value.
+
     :param render_table: Study/assay render table
     :param header_value: Header value
     :param obj_cls: Class of Dango model object represented by header (optional)
     :param item_type: Type of item in case of GenericMaterial (optional)
     :return: Int or None if not found
     """
+    header_value = header_value.lower()
+    obj_cls = obj_cls.__name__ if obj_cls else None
+
     for i, h in enumerate(render_table['field_header']):
         found = True
 
-        if h['value'].lower() != header_value.lower():
+        if h['value'].lower() != header_value:
             found = False
 
         if found and obj_cls and h['obj_cls'] != obj_cls:

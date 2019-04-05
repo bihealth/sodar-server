@@ -1,6 +1,5 @@
 """Views for the germline study app"""
 
-
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -23,9 +22,7 @@ from projectroles.views import (
 
 # Samplesheets dependency
 from samplesheets.models import Study, GenericMaterial
-from samplesheets.plugins import find_assay_plugin
 from samplesheets.rendering import SampleSheetTableBuilder
-from samplesheets.utils import get_index_by_header
 from samplesheets.studyapps.utils import get_igv_xml, FILE_TYPE_SUFFIXES
 
 # Local helper for authenticating with auth basic
