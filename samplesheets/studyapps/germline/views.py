@@ -23,109 +23,13 @@ from projectroles.views import (
 
 # Samplesheets dependency
 from samplesheets.models import Study, GenericMaterial
-from samplesheets.plugins import find_assay_plugin
 from samplesheets.rendering import SampleSheetTableBuilder
-from samplesheets.utils import get_index_by_header
 from samplesheets.studyapps.utils import get_igv_xml, FILE_TYPE_SUFFIXES
 
 # Local helper for authenticating with auth basic
 from sodar.users.auth import fallback_to_auth_basic
 
-
-class GetPedigreeFileMixin:
-    def get_pedigree_file_url(cls, file_type, source, study_tables):
-        """
-        Return DavRods URL for the most recent file of type "bam" or "vcf"
-        linked to source
-        :param file_type: String ("bam" or "vcf")
-        :param source: GenericMaterial of type SOURCE
-        :param study_tables: Render study tables
-        :return: String
-        """
-        irods_backend = get_backend_api('omics_irods')
-        query_paths = []
-        sample_names = []
-
-        for assay in source.study.assays.all():
-            assay_table = study_tables['assays'][assay.get_name()]
-            assay_plugin = find_assay_plugin(
-                assay.measurement_type, assay.technology_type
-            )
-            source_fam = None
-
-            if 'Family' in source.characteristics:
-                source_fam = source.characteristics['Family']['value']
-
-            # Get family index
-            fam_idx = get_index_by_header(assay_table, 'family')
-
-            # Get sample index
-            sample_idx = get_index_by_header(
-                assay_table, 'name', obj_cls=GenericMaterial, item_type='SAMPLE'
-            )
-
-            def get_val_by_index(row, idx):
-                if not idx:
-                    return None
-                return row[idx]['value']
-
-            for row in assay_table['table_data']:
-                row_name = row[1]['value']
-                row_fam = get_val_by_index(row, fam_idx)
-
-                # For VCF files, also search through other samples in family
-                vcf_search = False
-
-                if file_type == 'vcf' and source_fam and row_fam == source_fam:
-                    vcf_search = True
-
-                # Add sample names for source
-                if row_name == source.name or vcf_search:
-                    sn = row[sample_idx]['value']
-
-                    if sn not in sample_names:
-                        sample_names.append(sn)
-
-                # Get query path from assay_plugin
-                if assay_plugin:
-                    if row_name == source.name or vcf_search:
-                        path = assay_plugin.get_row_path(
-                            row, assay_table, assay
-                        )
-                        if path not in query_paths:
-                            query_paths.append(path)
-
-            # If not assay_plugin, just search from assay path
-            if not assay_plugin:
-                path = irods_backend.get_path(assay)
-
-                if path not in query_paths:
-                    query_paths.append(path)
-
-        # Get paths to relevant files
-        file_paths = []
-
-        for query_path in query_paths:
-            try:
-                obj_list = irods_backend.get_objects(query_path)
-
-                for obj in obj_list['data_objects']:
-                    # NOTE: We expect the SAMPLE name to appear in filenames
-                    if obj['name'].lower().endswith(
-                        FILE_TYPE_SUFFIXES[file_type]
-                    ) and any(x in obj['name'] for x in sample_names):
-                        file_paths.append(obj['path'])
-
-            except FileNotFoundError:
-                pass
-
-        if not file_paths:
-            return None
-
-        # Get the last file of type by file name
-        file_path = sorted(file_paths, key=lambda x: x.split('/')[-1])[-1]
-        file_url = '{}{}'.format(settings.IRODS_WEBDAV_URL, file_path)
-        return file_url
+from ..utils import get_pedigree_file_url
 
 
 class BaseGermlineConfigView(
@@ -179,7 +83,7 @@ class BaseGermlineConfigView(
         self.study_tables = tb.build_study_tables(self.source.study)
 
 
-class FileRedirectView(BaseGermlineConfigView, GetPedigreeFileMixin):
+class FileRedirectView(BaseGermlineConfigView):
     """BAM/VCF file link view"""
 
     permission_required = 'samplesheets.view_sheet'
@@ -195,7 +99,7 @@ class FileRedirectView(BaseGermlineConfigView, GetPedigreeFileMixin):
             )
             return redirect(self.redirect_url)
 
-        file_url = self.get_pedigree_file_url(
+        file_url = get_pedigree_file_url(
             file_type=file_type,
             source=self.source,
             study_tables=self.study_tables,
@@ -221,7 +125,7 @@ class FileRedirectView(BaseGermlineConfigView, GetPedigreeFileMixin):
 
 
 @fallback_to_auth_basic
-class IGVSessionFileRenderView(BaseGermlineConfigView, GetPedigreeFileMixin):
+class IGVSessionFileRenderView(BaseGermlineConfigView):
     """IGV session file rendering view"""
 
     permission_required = 'samplesheets.view_sheet'
@@ -238,7 +142,7 @@ class IGVSessionFileRenderView(BaseGermlineConfigView, GetPedigreeFileMixin):
         ###################
 
         # Get URL to latest family vcf file
-        vcf_url = self.get_pedigree_file_url(
+        vcf_url = get_pedigree_file_url(
             file_type='vcf', source=self.source, study_tables=self.study_tables
         )
 
@@ -259,7 +163,7 @@ class IGVSessionFileRenderView(BaseGermlineConfigView, GetPedigreeFileMixin):
             ).order_by('name')
 
             for fam_source in fam_sources:
-                bam_url = self.get_pedigree_file_url(
+                bam_url = get_pedigree_file_url(
                     file_type='bam',
                     source=fam_source,
                     study_tables=self.study_tables,
@@ -270,7 +174,7 @@ class IGVSessionFileRenderView(BaseGermlineConfigView, GetPedigreeFileMixin):
 
         # If not, just add for the current source
         else:
-            bam_url = self.get_pedigree_file_url(
+            bam_url = get_pedigree_file_url(
                 file_type='bam',
                 source=self.source,
                 study_tables=self.study_tables,
@@ -313,11 +217,7 @@ class IGVSessionFileRenderView(BaseGermlineConfigView, GetPedigreeFileMixin):
 
 
 class FileExistenceCheckView(
-    GetPedigreeFileMixin,
-    LoginRequiredMixin,
-    ProjectPermissionMixin,
-    APIPermissionMixin,
-    APIView,
+    LoginRequiredMixin, ProjectPermissionMixin, APIPermissionMixin, APIView
 ):
     """Check existence of BAM/VCF files view"""
 
@@ -346,7 +246,7 @@ class FileExistenceCheckView(
             source = GenericMaterial.objects.filter(sodar_uuid=obj).first()
 
             if obj in valid_objs and source:
-                if self.get_pedigree_file_url(
+                if get_pedigree_file_url(
                     file_type=file_type,
                     source=source,
                     study_tables=study_tables,

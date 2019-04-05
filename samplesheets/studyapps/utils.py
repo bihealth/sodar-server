@@ -3,6 +3,13 @@
 import hashlib
 from lxml import etree as ET
 
+from django.conf import settings
+from projectroles.plugins import get_backend_api
+
+from samplesheets.models import GenericMaterial
+from samplesheets.plugins import find_assay_plugin
+from samplesheets.utils import get_index_by_header
+
 
 # Constants
 
@@ -241,3 +248,146 @@ def get_igv_xml(bam_urls, vcf_urls, vcf_title, request):
     )
 
     return xml_str
+
+
+# for cancer study apps
+def get_library_file_url(file_type, library):
+    """
+    Return DavRods URL for the most recent file of type "bam" or "vcf"
+    linked to library
+    :param file_type: String ("bam" or "vcf")
+    :param library: GenericMaterial object
+    :return: String
+    """
+    irods_backend = get_backend_api('omics_irods')
+
+    if not irods_backend:
+        raise Exception('iRODS Backend not available')
+
+    if not settings.IRODS_WEBDAV_ENABLED or not settings.IRODS_WEBDAV_URL:
+        raise Exception('iRODS WebDAV not available')
+
+    assay_path = irods_backend.get_path(library.assay)
+    query_path = assay_path + '/' + library.name
+
+    # Get paths to relevant files
+    file_paths = []
+
+    try:
+        obj_list = irods_backend.get_objects(query_path)
+
+        for obj in obj_list['data_objects']:
+            if obj['name'].lower().endswith(FILE_TYPE_SUFFIXES[file_type]):
+                file_paths.append(obj['path'])
+
+    except FileNotFoundError:
+        pass
+
+    if not file_paths:
+        return None
+
+    # Get the last file of type by file name
+    file_path = sorted(file_paths, key=lambda x: x.split('/')[-1])[-1]
+    file_url = '{}{}'.format(settings.IRODS_WEBDAV_URL, file_path)
+    return file_url
+
+
+# for germline study apps
+def get_pedigree_file_url(file_type, source, study_tables):
+    """
+    Return DavRods URL for the most recent file of type "bam" or "vcf"
+    linked to source
+    :param file_type: String ("bam" or "vcf")
+    :param source: GenericMaterial of type SOURCE
+    :param study_tables: Render study tables
+    :return: String
+    """
+    irods_backend = get_backend_api('omics_irods')
+
+    if not irods_backend:
+        raise Exception('iRODS Backend not available')
+
+    if not settings.IRODS_WEBDAV_ENABLED or not settings.IRODS_WEBDAV_URL:
+        raise Exception('iRODS WebDAV not available')
+
+    query_paths = []
+    sample_names = []
+
+    for assay in source.study.assays.all():
+        assay_table = study_tables['assays'][assay.get_name()]
+        assay_plugin = find_assay_plugin(
+            assay.measurement_type, assay.technology_type
+        )
+        source_fam = None
+
+        if 'Family' in source.characteristics:
+            source_fam = source.characteristics['Family']['value']
+
+        # Get family index
+        fam_idx = get_index_by_header(assay_table, 'family')
+
+        # Get sample index
+        sample_idx = get_index_by_header(
+            assay_table, 'name', obj_cls=GenericMaterial, item_type='SAMPLE'
+        )
+
+        def get_val_by_index(row, idx):
+            if not idx:
+                return None
+            return row[idx]['value']
+
+        for row in assay_table['table_data']:
+            row_name = row[1]['value']
+            row_fam = get_val_by_index(row, fam_idx)
+
+            # For VCF files, also search through other samples in family
+            vcf_search = False
+
+            if file_type == 'vcf' and source_fam and row_fam == source_fam:
+                vcf_search = True
+
+            # Add sample names for source
+            if row_name == source.name or vcf_search:
+                sn = row[sample_idx]['value']
+
+                if sn not in sample_names:
+                    sample_names.append(sn)
+
+            # Get query path from assay_plugin
+            if assay_plugin:
+                if row_name == source.name or vcf_search:
+                    path = assay_plugin.get_row_path(row, assay_table, assay)
+                    if path not in query_paths:
+                        query_paths.append(path)
+
+        # If not assay_plugin, just search from assay path
+        if not assay_plugin:
+            path = irods_backend.get_path(assay)
+
+            if path not in query_paths:
+                query_paths.append(path)
+
+    # Get paths to relevant files
+    file_paths = []
+
+    for query_path in query_paths:
+        try:
+            obj_list = irods_backend.get_objects(query_path)
+
+            for obj in obj_list['data_objects']:
+                # NOTE: We expect the SAMPLE name to appear in filenames
+                if obj['name'].lower().endswith(
+                    FILE_TYPE_SUFFIXES[file_type]
+                ) and any(x in obj['name'] for x in sample_names):
+                    file_paths.append(obj['path'])
+
+        except FileNotFoundError:
+            pass
+
+    if not file_paths:
+        return None
+
+    # Get the last file of type by file name
+    file_path = sorted(file_paths, key=lambda x: x.split('/')[-1])[-1]
+    file_url = '{}{}'.format(settings.IRODS_WEBDAV_URL, file_path)
+    return file_url

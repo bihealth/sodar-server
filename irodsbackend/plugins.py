@@ -2,7 +2,6 @@ from django.contrib.staticfiles.templatetags.staticfiles import static
 
 # Projectroles dependency
 from projectroles.plugins import BackendPluginPoint
-
 from .api import IrodsAPI
 
 

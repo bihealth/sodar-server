@@ -289,6 +289,28 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
 
         return results
 
+    def update_cache(self, name=None, project=None):
+        """
+        Update cached data for this app, limitable to item ID and/or project.
+
+        :param project: Project object to limit update to (optional)
+        :param name: Item name to limit update to (string, optional)
+        """
+
+        # TODO: Get plugins from database and iterate instead of hard coding!
+        get_study_plugin('samplesheets_study_cancer').update_cache(
+            name, project
+        )
+        get_study_plugin('samplesheets_study_germline').update_cache(
+            name, project
+        )
+        get_assay_plugin('samplesheets_assay_dna_sequencing').update_cache(
+            name, project
+        )
+        get_assay_plugin('samplesheets_assay_pep_ms').update_cache(
+            name, project
+        )
+
 
 # Samplesheets study sub-app plugin --------------------------------------------
 
@@ -325,6 +347,16 @@ class SampleSheetStudyPluginPoint(PluginPoint):
     # TODO: Implement this in your study plugin (can be None)
     # TODO: TBD: Do we need this?
     permission = None
+
+    def update_cache(self, name=None, project=None):
+        """
+        Update cached data for this app, limitable to item ID and/or project.
+
+        :param project: Project object to limit update to (optional)
+        :param name: Item name to limit update to (string, optional)
+        """
+        # TODO: Implement this in your app plugin
+        return None
 
 
 def get_study_plugin(plugin_name):
@@ -427,6 +459,16 @@ class SampleSheetAssayPluginPoint(PluginPoint):
         """
         # TODO: Implement this in your assay plugin
         raise NotImplementedError('Implement update_row() in your assay plugin')
+
+    def update_cache(self, name=None, project=None):
+        """
+        Update cached data for this app, limitable to item ID and/or project.
+
+        :param project: Project object to limit update to (optional)
+        :param name: Item name to limit update to (string, optional)
+        """
+        # TODO: Implement this in your app plugin
+        return None
 
 
 def get_assay_plugin(plugin_name):

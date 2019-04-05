@@ -30,43 +30,7 @@ from samplesheets.studyapps.utils import get_igv_xml, FILE_TYPE_SUFFIXES
 # Local helper for authenticating with auth basic
 from sodar.users.auth import fallback_to_auth_basic
 
-
-class GetLibraryFileMixin:
-    """Mixin for getting the URL of the most recent bam or vcf file"""
-
-    def get_library_file_url(cls, file_type, library):
-        """
-        Return DavRods URL for the most recent file of type "bam" or "vcf"
-        linked to library
-        :param file_type: String ("bam" or "vcf")
-        :param library: GenericMaterial object
-        :return: String
-        """
-        irods_backend = get_backend_api('omics_irods')
-
-        assay_path = irods_backend.get_path(library.assay)
-        query_path = assay_path + '/' + library.name
-
-        # Get paths to relevant files
-        file_paths = []
-
-        try:
-            obj_list = irods_backend.get_objects(query_path)
-
-            for obj in obj_list['data_objects']:
-                if obj['name'].lower().endswith(FILE_TYPE_SUFFIXES[file_type]):
-                    file_paths.append(obj['path'])
-
-        except FileNotFoundError:
-            pass
-
-        if not file_paths:
-            return None
-
-        # Get the last file of type by file name
-        file_path = sorted(file_paths, key=lambda x: x.split('/')[-1])[-1]
-        file_url = '{}{}'.format(settings.IRODS_WEBDAV_URL, file_path)
-        return file_url
+from ..utils import get_library_file_url
 
 
 class BaseCancerConfigView(
@@ -116,7 +80,7 @@ class BaseCancerConfigView(
             return redirect(self.redirect_url)
 
 
-class FileRedirectView(BaseCancerConfigView, GetLibraryFileMixin):
+class FileRedirectView(BaseCancerConfigView):
     """BAM/VCF file link view"""
 
     permission_required = 'samplesheets.view_sheet'
@@ -141,7 +105,7 @@ class FileRedirectView(BaseCancerConfigView, GetLibraryFileMixin):
             return redirect(self.redirect_url)
 
         try:
-            file_url = self.get_library_file_url(
+            file_url = get_library_file_url(
                 file_type=file_type, library=self.material
             )
 
@@ -167,7 +131,7 @@ class FileRedirectView(BaseCancerConfigView, GetLibraryFileMixin):
 
 
 @fallback_to_auth_basic
-class IGVSessionFileRenderView(BaseCancerConfigView, GetLibraryFileMixin):
+class IGVSessionFileRenderView(BaseCancerConfigView):
     """IGV session file rendering view"""
 
     permission_required = 'samplesheets.view_sheet'
@@ -210,16 +174,12 @@ class IGVSessionFileRenderView(BaseCancerConfigView, GetLibraryFileMixin):
                 )
                 return redirect(self.redirect_url)
 
-            bam_url = self.get_library_file_url(
-                file_type='bam', library=library
-            )
+            bam_url = get_library_file_url(file_type='bam', library=library)
 
             if bam_url:
                 bam_urls[library.name] = bam_url
 
-            vcf_url = self.get_library_file_url(
-                file_type='vcf', library=library
-            )
+            vcf_url = get_library_file_url(file_type='vcf', library=library)
 
             if vcf_url:
                 vcf_urls[library.name] = vcf_url
@@ -251,11 +211,7 @@ class IGVSessionFileRenderView(BaseCancerConfigView, GetLibraryFileMixin):
 
 
 class FileExistenceCheckView(
-    GetLibraryFileMixin,
-    LoginRequiredMixin,
-    ProjectPermissionMixin,
-    APIPermissionMixin,
-    APIView,
+    LoginRequiredMixin, ProjectPermissionMixin, APIPermissionMixin, APIView
 ):
     """Check existence of BAM/VCF files view"""
 
@@ -280,8 +236,8 @@ class FileExistenceCheckView(
             lib = GenericMaterial.objects.filter(sodar_uuid=obj).first()
 
             # check if queried files are in the corresponding study
-            if obj in valid_objs and lib:
-                if self.get_library_file_url(file_type=file_type, library=lib):
+            if obj in valid_objs and lib.assay:
+                if get_library_file_url(file_type=file_type, library=lib):
                     existence = True
             else:
                 existence = ''

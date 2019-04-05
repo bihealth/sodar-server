@@ -61,6 +61,7 @@ THIRD_PARTY_APPS = [
     # SODAR Core apps
     # Project apps
     'projectroles.apps.ProjectrolesConfig',
+    'sodarcache.apps.SodarCacheConfig',
     'timeline.apps.TimelineConfig',
     # Site apps
     'userprofile.apps.UserprofileConfig',
@@ -417,6 +418,7 @@ ENABLED_BACKEND_PLUGINS = env.list(
     None,
     [
         'timeline_backend',
+        'sodar_cache',
         # 'taskflow',
         # 'omics_irods',
     ],
