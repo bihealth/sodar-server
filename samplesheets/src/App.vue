@@ -62,6 +62,7 @@
           </div>
         </div>
 
+        <!-- Study data -->
         <div class="card sodar-ss-data-card sodar-ss-data-card-study">
           <div class="card-header">
             <h4>Study Data
@@ -201,8 +202,17 @@
         v-if="sodarContext"
         :project-uuid="projectUuid"
         :irods-webdav-url="sodarContext['irods_webdav_url']"
-        ref="modalComponentRef">
+        ref="dirModalRef">
     </irods-dir-modal>
+
+    <!-- Separate modal for study shortcuts -->
+    <shortcut-modal
+        v-if="sodarContext && currentStudyUuid"
+        :project-uuid="projectUuid"
+        :study-uuid="currentStudyUuid"
+        :irods-webdav-url="sodarContext['irods_webdav_url']"
+        ref="shortcutModalRef">
+    </shortcut-modal>
 
     <!--<router-view/>-->
   </div>
@@ -213,10 +223,13 @@ import PageHeader from './components/PageHeader.vue'
 import Overview from './components/Overview.vue'
 import IrodsButtons from './components/IrodsButtons.vue'
 import IrodsDirModal from './components/IrodsDirModal.vue'
+import ShortcutModal from './components/ShortcutModal.vue'
 import IrodsStatsBadge from './components/IrodsStatsBadge.vue'
+import ExtraContentTable from './components/ExtraContentTable.vue'
 import {AgGridVue} from 'ag-grid-vue'
 import DataCellRenderer from './components/renderers/DataCellRenderer.vue'
 import IrodsButtonsRenderer from './components/renderers/IrodsButtonsRenderer.vue'
+import ShortcutButtonsRenderer from './components/renderers/ShortcutButtonsRenderer.vue'
 
 export default {
   name: 'App',
@@ -236,6 +249,10 @@ export default {
         'study': null,
         'assays': {}
       },
+      extraTables: {
+        'study': null,
+        'assays': {}
+      },
       hideableAssayCols: {},
       currentStudyUuid: null,
       currentAssayUuid: null,
@@ -252,7 +269,9 @@ export default {
     Overview,
     IrodsButtons,
     IrodsDirModal,
+    ShortcutModal,
     IrodsStatsBadge,
+    ExtraContentTable,
     AgGridVue
   },
   methods: {
@@ -362,6 +381,7 @@ export default {
       // Iterate through top header
       for (let i = 0; i < topHeaderLength; i++) {
         let topHeader = table['top_header'][i]
+
         let headerGroup = {
           headerName: topHeader['value'],
           headerClass: ['text-white', 'bg-' + topHeader['colour']],
@@ -372,7 +392,7 @@ export default {
         while (j < headerIdx + topHeader['colspan']) {
           let fieldHeader = table['field_header'][j]
           // Check if data is present from col_values
-          if (table['col_values'][j] === 1) {
+          if (table['col_values'][j] === 1) { // TODO: Hide after enabling editing
             // Define special column properties
             let maxValueLen = fieldHeader['max_value_len']
             let colType = fieldHeader['col_type']
@@ -422,13 +442,28 @@ export default {
               }
             }
 
+            // Make first column pinned
+            // HACK: also create new header group to avoid name duplication
+            if (j === 0) {
+              header.pinned = 'left'
+              headerGroup.children.push(header)
+              colDef.push(headerGroup)
+              headerGroup = {
+                headerName: '',
+                headerClass: ['bg-' + topHeader['colour']],
+                children: []
+              }
+            }
+
             // Hide source and sample columns for assay table
             if (assayMode && studySection && header.headerName !== 'Name') {
               header.hide = true
               hideableCols.push(header.field)
             }
 
-            headerGroup.children.push(header)
+            if (j > 0) {
+              headerGroup.children.push(header)
+            }
           }
           j++
         }
@@ -441,6 +476,48 @@ export default {
         }
       }
 
+      if (!assayMode &&
+          table.hasOwnProperty('shortcuts') &&
+          table['shortcuts'] != null) {
+        let shortcutHeaderGroup = {
+          headerName: 'Links',
+          headerClass: [
+            'text-white',
+            'bg-secondary',
+            'sodar-ss-data-links-top'
+          ],
+          children: [
+            {
+              headerName: 'Study',
+              field: 'shortcutLinks',
+              editable: false,
+              headerClass: [
+                'bg-light',
+                'sodar-ss-data-links-header'
+              ],
+              cellClass: [
+                'bg-light',
+                'sodar-ss-data-links-cell'
+              ],
+              suppressSizeToFit: true,
+              suppressAutoSize: true,
+              resizable: false,
+              sortable: false,
+              pinned: 'right',
+              unselectable: true,
+              width: 45 * Object.keys(table['shortcuts']['schema']).length,
+              minWidth: 90,
+              cellRendererFramework: ShortcutButtonsRenderer,
+              cellRendererParams: {
+                schema: table['shortcuts']['schema'],
+                modalComponent: this.$refs.shortcutModalRef
+              }
+            }
+          ]
+        }
+        colDef.push(shortcutHeaderGroup)
+      }
+
       if (assayMode) {
         if (this.sodarContext['irods_status']) {
           let assayIrodsPath = this.sodarContext['studies'][this.currentStudyUuid]['assays'][uuid]['irods_path']
@@ -449,7 +526,7 @@ export default {
             headerClass: [
               'text-white',
               'bg-secondary',
-              'sodar-ss-data-irods-top'
+              'sodar-ss-data-links-top'
             ],
             children: [
               {
@@ -458,12 +535,11 @@ export default {
                 editable: false,
                 headerClass: [
                   'bg-light',
-                  'sodar-ss-data-irods-header'
+                  'sodar-ss-data-links-header'
                 ],
                 cellClass: [
                   'bg-light',
-                  'sodar-ss-data-unselectable',
-                  'sodar-ss-data-irods-cell'
+                  'sodar-ss-data-links-cell'
                 ],
                 suppressSizeToFit: true,
                 suppressAutoSize: true,
@@ -478,7 +554,7 @@ export default {
                   irodsWebdavUrl: this.sodarContext['irods_webdav_url'],
                   assayIrodsPath: assayIrodsPath,
                   showFileList: true,
-                  modalComponent: this.$refs.modalComponentRef
+                  modalComponent: this.$refs.dirModalRef
                 },
                 width: 148,
                 minWidth: 148
@@ -509,7 +585,12 @@ export default {
           row['col' + j.toString()] = rowCells[j]['value']
         }
 
-        // Add iRODS row
+        // Add study shortcut field
+        if (table.hasOwnProperty('shortcuts') && table['shortcuts'] != null) {
+          row['shortcutLinks'] = table['shortcuts']['data'][i]
+        }
+
+        // Add iRODS field
         if (this.sodarContext['irods_status'] && 'irods_paths' in table &&
             table['irods_paths'].length > 0) {
           row['irodsLinks'] = table['irods_paths'][i]
@@ -531,6 +612,10 @@ export default {
         'assays': {}
       }
       this.rowData = {
+        'study': null,
+        'assays': {}
+      }
+      this.extraTables = {
         'study': null,
         'assays': {}
       }
@@ -561,6 +646,11 @@ export default {
               this.columnDefs['study'] = this.buildColDef(
                 data['table_data']['study'], false, studyUuid)
               this.rowData['study'] = this.buildRowData(data['table_data']['study'])
+
+              // Get extra table
+              if ('extra_table' in data['table_data']['study']) {
+                this.extraTables['study'] = data['table_data']['study']['extra_table']
+              }
 
               // Build assays
               for (let assayUuid in data['table_data']['assays']) {
@@ -741,6 +831,8 @@ export default {
 .ag-cell {
   border-right: 1px solid #dfdfdf !important;
   border-top: 1px solid #dfdfdf !important;
+  border-left: 1px solid transparent !important;
+  border-bottom: 1px solid transparent !important;
   line-height: 28px !important;
   padding: 3px;
   height: 38px !important;
@@ -771,16 +863,22 @@ a.sodar-ss-anchor {
   visibility: hidden;
 }
 
-.sodar-ss-data-irods-top {
+.sodar-ss-data-links-top {
   border-left: 1px solid #dfdfdf !important;
   border-right: 1px solid #6c757d !important;
 }
 
-.sodar-ss-data-irods-header {
+.sodar-ss-data-links-header {
   border-left: 1px solid #dfdfdf !important;
 }
 
-.sodar-ss-data-irods-cell {
+.sodar-ss-data-links-cell {
+  border-left: 1px solid #dfdfdf !important;
+  border-top: 1px solid #dfdfdf !important;
+  border-bottom: 0 !important;
+}
+
+.sodar-ss-data-links-cell:focus {
   border-left: 1px solid #dfdfdf !important;
   border-top: 1px solid #dfdfdf !important;
   border-bottom: 0 !important;
@@ -789,6 +887,7 @@ a.sodar-ss-anchor {
 .sodar-ss-data-unselectable:focus {
   border-right: 1px solid #dfdfdf !important;
   border-top: 1px solid #dfdfdf !important;
+  border-left: 0 !important;
   border-bottom: 0 !important;
 }
 
@@ -796,9 +895,12 @@ a.sodar-ss-anchor {
   border-left: 0 !important;
 }
 
-/* TODO: Remove this once upgrading site to django-sodar-core > 0.4.5 */
-.badge-group {
-  display: inline-flex !important;
+/* HACK: Temporarily make text selectable in grid cells */
+div.ag-root .ag-cell-focus {
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+    user-select: text;
 }
 
 </style>

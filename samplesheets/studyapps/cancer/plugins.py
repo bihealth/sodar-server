@@ -1,10 +1,26 @@
 from django.conf import settings
 from django.contrib import auth
+from django.urls import reverse
 
-from samplesheets.plugins import SampleSheetStudyPluginPoint
-from samplesheets.models import Investigation, Study, GenericMaterial
+# Projectroles dependency
+from projectroles.models import Project, SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
-from ..utils import get_library_file_url
+
+from samplesheets.models import Investigation, Study, GenericMaterial
+from samplesheets.plugins import SampleSheetStudyPluginPoint
+from samplesheets.rendering import SampleSheetTableBuilder
+from samplesheets.utils import get_sample_libraries, get_study_libraries
+
+from samplesheets.studyapps.utils import get_igv_url
+
+from .utils import get_library_file_path
+
+
+# SODAR constants
+PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
+
+# Local constants
+APP_NAME = 'samplesheets.studyapps.cancer'
 
 User = auth.get_user_model()
 
@@ -12,7 +28,7 @@ User = auth.get_user_model()
 class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
     """Plugin for cancer studies in sample sheets"""
 
-    # Properties required by django-plugins ------------------------------
+    # Properties required by django-plugins ------------------------------------
 
     #: Name (used in code and as unique idenfitier)
     name = 'samplesheets_study_cancer'
@@ -20,7 +36,7 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
     #: Title (used in templates)
     title = 'Sample Sheets Cancer Study Plugin'
 
-    # Properties defined in SampleSheetStudyPluginPoint ------------------
+    # Properties defined in SampleSheetStudyPluginPoint ------------------------
 
     #: Configuration name
     config_name = 'bih_cancer'
@@ -28,71 +44,195 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
     #: Description string
     description = 'Sample sheets cancer study app'
 
-    #: Template for study addition (Study object as "study" in context)
-    study_template = 'samplesheets_study_cancer/_study.html'
-
     #: Required permission for accessing the plugin
     permission = None
 
-    def update_cache(self, name=None, project=None):
+    def get_shortcut_column(self, study, study_tables):
+        """
+        Return structure containing links for an extra study table links column.
+
+        :param study: Study object
+        :param study_tables: Rendered study tables (dict)
+        :return: Dict or None if not found
+        """
+        ret = {
+            'schema': {
+                'igv': {
+                    'type': 'link',
+                    'icon': 'fa-share-square-o',
+                    'title': 'Open IGV session file for case in IGV',
+                },
+                'files': {
+                    'type': 'modal',
+                    'icon': 'fa-folder-open-o',
+                    'title': 'View links to BAM, VCF and IGV session files '
+                    'for the case',
+                },
+            },
+            'data': [],
+        }
+
+        igv_urls = {}
+
+        for source in study.get_sources():
+            igv_urls[source.name] = get_igv_url(source)
+
+        if igv_urls:
+            for row in study_tables['study']['table_data']:
+                ret['data'].append(
+                    {
+                        'igv': {'url': igv_urls[row[0]['value']]},
+                        'files': {
+                            'query': {'key': 'case', 'value': row[0]['value']}
+                        },
+                    }
+                )
+
+        return ret
+
+    def get_shortcut_links(self, study, study_tables, **kwargs):
+        """
+        Return links for shortcut modal.
+
+        :param study: Study object
+        :param study_tables: Rendered study tables (dict)
+        :return: Dict or None
+        """
+        cache_backend = get_backend_api('sodar_cache')
+        cache_item = None
+        case_id = kwargs['case'][0]
+        source = GenericMaterial.objects.filter(
+            study=study, name=case_id
+        ).first()
+
+        if not case_id or not source:  # This should not happen..
+            return None
+
+        webdav_url = settings.IRODS_WEBDAV_URL
+
+        ret = {
+            'title': 'Case-Wise Links for {}'.format(case_id),
+            'data': {
+                'session': {'title': 'IGV Session File', 'links': []},
+                'bam': {'title': 'BAM Files', 'links': []},
+                'vcf': {'title': 'VCF Files', 'links': []},
+            },
+        }
+
+        if cache_backend:
+            cache_item = cache_backend.get_cache_item(
+                app_name=APP_NAME,
+                name='irods/{}'.format(study.sodar_uuid),
+                project=study.get_project(),
+            )
+
+        def _add_lib_path(library, file_type):
+            # Get iRODS URLs from cache if it's available
+            if cache_item and library.name in cache_item.data[file_type]:
+                path = cache_item.data[file_type][library.name]
+
+            # Else query iRODS
+            else:
+                path = get_library_file_path(
+                    file_type=file_type, library=library
+                )
+
+            if path:
+                ret['data'][file_type]['links'].append(
+                    {'label': library.name, 'url': webdav_url + path}
+                )
+
+        libraries = []
+
+        for sample in source.get_samples():
+            libraries += get_sample_libraries(sample, study_tables)
+
+        for library in libraries:
+            _add_lib_path(library, 'bam')
+            _add_lib_path(library, 'vcf')
+
+        # Session file link (only make available if other files exist)
+        if (
+            len(ret['data']['bam']['links']) > 0
+            or len(ret['data']['vcf']['links']) > 0
+        ):
+            ret['data']['session']['links'].append(
+                {
+                    'label': 'Download session file',
+                    'url': reverse(
+                        'samplesheets.studyapps.cancer:igv',
+                        kwargs={'genericmaterial': source.sodar_uuid},
+                    ),
+                }
+            )
+
+        return ret
+
+    def update_cache(self, name=None, project=None, user=None):
         """
         Update cached data for this app, limitable to item ID and/or project.
 
         :param name: Item name to limit update to (string, optional)
         :param project: Project object to limit update to (optional)
+        :param user: User object to denote user triggering the update (optional)
         """
-
-        # TODO: Refactor this once sodar_core#204 is done
-        try:
-            user = User.objects.get(
-                username=settings.PROJECTROLES_DEFAULT_ADMIN
-            )
-        except User.DoesNotExist:
-            raise Exception('PROJECTROLES_DEFAULT_ADMIN user not found')
+        if name and name.split('/')[0] != 'irods':
+            return
 
         cache_backend = get_backend_api('sodar_cache')
+        tb = SampleSheetTableBuilder()
 
         if not cache_backend:
             raise Exception('Sodarcache backend not available')
 
-        try:
-            investigation = Investigation.objects.get(project=project)
-        except Investigation.DoesNotExist:
-            return None
+        projects = (
+            [project]
+            if project
+            else Project.objects.filter(type=PROJECT_TYPE_PROJECT)
+        )
 
-        # if a name is given, only update that specific CacheItem
-        # TODO: Modify naming scheme
-        if name:
-            study_uuid = name.split('/')[0]
-            studies = Study.objects.filter(sodar_uuid=study_uuid)
-        else:
-            studies = Study.objects.filter(investigation=investigation)
+        for project in projects:
+            try:
+                investigation = Investigation.objects.get(project=project)
 
-        for study in studies:
-            if study:
-                study_uuid = study.sodar_uuid
+            except Investigation.DoesNotExist:
+                return
 
-                bam_urls = {}
-                vcf_urls = {}
+            # Only apply for investigations with the correct configuration
+            if investigation.get_configuration() != self.config_name:
+                continue
 
-                libraries = GenericMaterial.objects.filter(study=study)
-                for library in libraries:
-                    if library.assay:
-                        bam_url = get_library_file_url(
-                            file_type='bam', library=library
-                        )
-                        bam_urls[library.name] = bam_url
+            # If a name is given, only update that specific CacheItem
+            if name:
+                study_uuid = name.split('/')[-1]
+                studies = Study.objects.filter(sodar_uuid=study_uuid)
 
-                        vcf_url = get_library_file_url(
-                            file_type='vcf', library=library
-                        )
-                        vcf_urls[library.name] = vcf_url
+            else:
+                studies = Study.objects.filter(investigation=investigation)
 
-                updated_data = {'bam_urls': bam_urls, 'vcf_urls': vcf_urls}
+            for study in studies:
+                item_name = 'irods/{}'.format(study.sodar_uuid)
+                bam_paths = {}
+                vcf_paths = {}
 
+                # Build render table
+                study_tables = tb.build_study_tables(study)
+
+                for library in get_study_libraries(study, study_tables):
+                    bam_path = get_library_file_path(
+                        file_type='bam', library=library
+                    )
+                    bam_paths[library.name] = bam_path
+
+                    bam_path = get_library_file_path(
+                        file_type='vcf', library=library
+                    )
+                    vcf_paths[library.name] = bam_path
+
+                updated_data = {'bam': bam_paths, 'vcf': vcf_paths}
                 cache_backend.set_cache_item(
-                    name=str(study_uuid) + '/' + self.name,
-                    app_name='samplesheets',
+                    name=item_name,
+                    app_name=APP_NAME,
                     user=user,
                     data=updated_data,
                     project=project,

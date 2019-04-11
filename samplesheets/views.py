@@ -38,7 +38,7 @@ from .models import (
     GenericMaterial,
 )
 from .rendering import SampleSheetTableBuilder, EMPTY_VALUE
-from .utils import get_sample_dirs, compare_inv_replace
+from .utils import get_sample_dirs, compare_inv_replace, get_sheets_url
 
 
 APP_NAME = 'samplesheets'
@@ -162,11 +162,7 @@ class SampleSheetImportView(
         old_inv_uuid = None
         old_study_uuids = {}
         old_assay_uuids = {}
-
-        redirect_url = reverse(
-            'samplesheets:project_sheets',
-            kwargs={'project': project.sodar_uuid},
-        )
+        redirect_url = get_sheets_url(project)
 
         try:
             self.object = form.save()
@@ -308,11 +304,7 @@ class SampleSheetTableExportView(
                 sodar_uuid=self.kwargs['study']
             ).first()
 
-        redirect_url = reverse(
-            'samplesheets:project_sheets',
-            kwargs={'project': self.get_project().sodar_uuid},
-        )
-
+        redirect_url = get_sheets_url(self.get_project())
         if not study:
             messages.error(
                 self.request, 'Study not found, unable to render TSV'
@@ -430,12 +422,7 @@ class SampleSheetDeleteView(
                     file_count, 's' if int(file_count) != 1 else ''
                 ),
             )
-            return redirect(
-                reverse(
-                    'samplesheets:project_sheets',
-                    kwargs={'project': context['project'].sodar_uuid},
-                )
-            )
+            return redirect(get_sheets_url(context['project']))
 
         # Else go forward..
         # Add event in Timeline
@@ -475,13 +462,7 @@ class SampleSheetDeleteView(
             investigation.delete()
 
         messages.success(self.request, 'Sample sheets deleted.')
-
-        return HttpResponseRedirect(
-            reverse(
-                'samplesheets:project_sheets',
-                kwargs={'project': project.sodar_uuid},
-            )
-        )
+        return HttpResponseRedirect(get_sheets_url(project))
 
 
 class IrodsDirsView(
@@ -546,13 +527,7 @@ class IrodsDirsView(
                 self.request,
                 'Unable to {} dirs: taskflow not enabled!'.format(action),
             )
-
-            return redirect(
-                reverse(
-                    'samplesheets:project_sheets',
-                    kwargs={'project': project.sodar_uuid},
-                )
-            )
+            return redirect(get_sheets_url(project))
 
         # Else go on with the creation
         if tl_event:
@@ -583,12 +558,7 @@ class IrodsDirsView(
 
             messages.error(self.request, str(ex))
 
-        return HttpResponseRedirect(
-            reverse(
-                'samplesheets:project_sheets',
-                kwargs={'project': project.sodar_uuid},
-            )
-        )
+        return HttpResponseRedirect(get_sheets_url(project))
 
     def get(self, request, *args, **kwargs):
         super().get(request, *args, **kwargs)
@@ -673,7 +643,7 @@ class SampleSheetContextGetAPIView(
                     },
                     'table_url': request.build_absolute_uri(
                         reverse(
-                            'samplesheets:api_tables_get',
+                            'samplesheets:api_study_tables_get',
                             kwargs={'study': str(s.sodar_uuid)},
                         )
                     ),
@@ -764,9 +734,23 @@ class SampleSheetStudyTablesGetAPIView(
         except Exception as ex:
             # TODO: Log error
             ret_data['render_error'] = str(ex)
+            return Response(ret_data, status=200)
+
+        # Get study plugin for shortcut data
+        from .plugins import find_study_plugin
+
+        study_plugin = find_study_plugin(
+            study.investigation.get_configuration()
+        )
+
+        if study_plugin:
+            shortcuts = study_plugin.get_shortcut_column(
+                study, ret_data['table_data']
+            )
+            ret_data['table_data']['study']['shortcuts'] = shortcuts
 
         # Get iRODS paths for assays if corresponding assay plugin exists
-        if 'table_data' in ret_data and study.investigation.irods_status:
+        if study.investigation.irods_status:
             # Can't import at module root due to circular dependency
             from .plugins import find_assay_plugin
 
@@ -786,6 +770,48 @@ class SampleSheetStudyTablesGetAPIView(
                             )
                         )
 
+        return Response(ret_data, status=200)
+
+
+# TODO: Add tests
+class SampleSheetStudyLinksGetAPIView(
+    LoginRequiredMixin, ProjectPermissionMixin, APIPermissionMixin, APIView
+):
+    """View to retrieve data for shortcut links from study apps"""
+
+    # TODO: Also do this for assay apps?
+    permission_required = 'samplesheets.view_sheet'
+    renderer_classes = [JSONRenderer]
+
+    def get(self, request, *args, **kwargs):
+        study = Study.objects.filter(sodar_uuid=self.kwargs['study']).first()
+
+        # Get study plugin for shortcut data
+        from .plugins import find_study_plugin
+
+        study_plugin = find_study_plugin(
+            study.investigation.get_configuration()
+        )
+
+        if not study_plugin:
+            return Response(
+                {'message': 'Plugin not found for study'}, status=404
+            )
+
+        ret_data = {'study': {'display_name': study.get_display_name()}}
+        tb = SampleSheetTableBuilder()
+
+        try:
+            study_tables = tb.build_study_tables(study)
+
+        except Exception as ex:
+            # TODO: Log error
+            ret_data['render_error'] = str(ex)
+            return Response(ret_data, status=200)
+
+        ret_data = study_plugin.get_shortcut_links(
+            study, study_tables, **request.GET
+        )
         return Response(ret_data, status=200)
 
 

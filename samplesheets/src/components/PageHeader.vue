@@ -26,7 +26,7 @@
           right
           variant="success">
         <template slot="button-content">
-          <i class="fa fa-navicon"></i>
+          <i class="fa fa-bars"></i>
         </template>
         <span v-for="(studyInfo, studyUuid, index) in app.sodarContext['studies']"
               :key="index">
@@ -52,7 +52,6 @@
           <i class="fa fa-fw fa-sitemap"></i> Overview
         </b-dropdown-item>
       </b-dropdown>
-      <!-- TODO: Perm checks -->
       <b-dropdown
           id="sodar-ss-buttons-op"
           :disabled="app.gridsBusy"

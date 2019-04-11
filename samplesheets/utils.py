@@ -3,17 +3,19 @@
 import re
 
 from django.db.models import QuerySet
+from django.urls import reverse
 
 # Projectroles dependency
+from projectroles.models import Project
 from projectroles.plugins import get_backend_api
-
 
 ALT_NAMES_COUNT = 3  # Needed for ArrayField hack
 
 
 def get_alt_names(name):
     """
-    Return list of alternative names for an object
+    Return list of alternative names for an object.
+
     :param name: Original name/ID (string)
     :return: List
     """
@@ -26,6 +28,7 @@ def get_sample_dirs(investigation):
     """
     Return study and assay directories without parent dirs for the sample data
     directory structure.
+
     :param investigation: Investigation object
     :return: List
     """
@@ -44,7 +47,8 @@ def get_sample_dirs(investigation):
 
 def compare_inv_replace(inv1, inv2):
     """
-    Compare investigations for critical differences for replacing
+    Compare investigations for critical differences for replacing.
+
     :param inv1: Investigation object
     :param inv2: Investigation object
     :raise: ValueError if a problem is detected
@@ -116,7 +120,8 @@ def get_last_material_name(row, table):
 
 def get_sample_libraries(samples, study_tables):
     """
-    Return libraries for samples
+    Return libraries for samples.
+
     :param samples: Sample object or a list of Sample objects within a study
     :param study_tables: Rendered study tables
     :return: GenericMaterial queryset
@@ -137,7 +142,7 @@ def get_sample_libraries(samples, study_tables):
 
         for row in assay_table['table_data']:
             if row[sample_idx]['value'] in sample_names:
-                last_name = get_last_material_name(row)
+                last_name = get_last_material_name(row, assay_table)
 
                 if last_name not in library_names:
                     library_names.append(last_name)
@@ -147,10 +152,28 @@ def get_sample_libraries(samples, study_tables):
     ).order_by('name')
 
 
+def get_study_libraries(study, study_tables):
+    """
+    Return sample libraries for an entire study.
+
+    :param study: Study object
+    :param study_tables: Rendered study tables from samplesheets.rendering
+    :return: List of GenericMaterial objects
+    """
+    ret = []
+
+    for source in study.get_sources():
+        for sample in source.get_samples():
+            ret += get_sample_libraries(sample, study_tables)
+
+    return ret
+
+
 def get_isa_field_name(field):
     """
     Return the name of an ISA field. In case of an ontology reference, returns
     field['name'].
+
     :param field: Field of an ISA Django model
     :return: String
     """
@@ -158,3 +181,26 @@ def get_isa_field_name(field):
         return field['name']
 
     return field
+
+
+def get_sheets_url(obj):
+    """
+    Return URL for sample sheets compatible with the new Vue.js framework.
+
+    :param obj: An object of type Project, Study or Assay (or any other model
+                implementing get_project()
+    :return: String
+    """
+    project = obj if isinstance(obj, Project) else obj.get_project()
+    url = reverse(
+        'samplesheets:project_sheets', kwargs={'project': project.sodar_uuid}
+    )
+
+    # NOTE: Importing the model fails because of circular dependency
+    if obj.__class__.__name__ == 'Study':
+        url += '#/study/' + str(obj.sodar_uuid)
+
+    elif obj.__class__.__name__ == 'Assay':
+        url += '#/assay' + str(obj.sodar_uuid)
+
+    return url

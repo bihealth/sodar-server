@@ -62,7 +62,7 @@ THIRD_PARTY_APPS = [
     # SODAR Core apps
     # Project apps
     'projectroles.apps.ProjectrolesConfig',
-    'sodarcache.apps.SodarCacheConfig',
+    'sodarcache.apps.SodarcacheConfig',
     'timeline.apps.TimelineConfig',
     # Site apps
     'userprofile.apps.UserprofileConfig',
@@ -402,6 +402,11 @@ def set_logging(debug):
                 'propagate': False,
             },
             'samplesheets': {
+                'level': 'DEBUG' if debug else 'INFO',
+                'handlers': ['console'],
+                'propagate': False,
+            },
+            'sodarcache': {
                 'level': 'DEBUG' if debug else 'INFO',
                 'handlers': ['console'],
                 'propagate': False,

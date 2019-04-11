@@ -7,7 +7,7 @@
       {{ value }}
     </span>
     <!-- Value with unit -->
-    <span v-else-if="colType === 'UNIT'">
+    <span v-if="colType === 'UNIT'">
       {{ value }} <span v-if="meta && meta.unit" class="text-muted">{{ meta.unit }}</span>
     </span>
     <!-- Ontology links -->

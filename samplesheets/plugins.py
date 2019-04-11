@@ -289,27 +289,19 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
 
         return results
 
-    def update_cache(self, name=None, project=None):
+    def update_cache(self, name=None, project=None, user=None):
         """
         Update cached data for this app, limitable to item ID and/or project.
 
-        :param project: Project object to limit update to (optional)
         :param name: Item name to limit update to (string, optional)
+        :param project: Project object to limit update to (optional)
+        :param user: User object to denote user triggering the update (optional)
         """
+        for study_plugin in SampleSheetStudyPluginPoint.get_plugins():
+            study_plugin.update_cache(name, project, user)
 
-        # TODO: Get plugins from database and iterate instead of hard coding!
-        get_study_plugin('samplesheets_study_cancer').update_cache(
-            name, project
-        )
-        get_study_plugin('samplesheets_study_germline').update_cache(
-            name, project
-        )
-        get_assay_plugin('samplesheets_assay_dna_sequencing').update_cache(
-            name, project
-        )
-        get_assay_plugin('samplesheets_assay_pep_ms').update_cache(
-            name, project
-        )
+        for assay_plugin in SampleSheetAssayPluginPoint.get_plugins():
+            assay_plugin.update_cache(name, project, user)
 
 
 # Samplesheets study sub-app plugin --------------------------------------------
@@ -339,23 +331,41 @@ class SampleSheetStudyPluginPoint(PluginPoint):
     # TODO: Implement this in your study plugin
     description = 'TODO: Write a description for your study plugin'
 
-    #: Template for study addition (Study object as "study" in context)
-    # TODO: Rename this in your study plugin
-    study_template = 'samplesheets_study_configname/_study.html'
-
     #: Required permission for accessing the plugin
     # TODO: Implement this in your study plugin (can be None)
     # TODO: TBD: Do we need this?
     permission = None
 
-    def update_cache(self, name=None, project=None):
+    def update_cache(self, name=None, project=None, user=None):
         """
         Update cached data for this app, limitable to item ID and/or project.
 
-        :param project: Project object to limit update to (optional)
         :param name: Item name to limit update to (string, optional)
+        :param project: Project object to limit update to (optional)
+        :param user: User object to denote user triggering the update (optional)
         """
         # TODO: Implement this in your app plugin
+        return None
+
+    def get_shortcut_column(self, study, study_tables):
+        """
+        Return structure containing links for an extra study table links column.
+
+        :param study: Study object
+        :param study_tables: Rendered study tables (dict)
+        :return: Dict
+        """
+        # TODO: Implement this in your study plugin
+        return None
+
+    def get_shortcut_links(self, study, study_tables, **kwargs):
+        """
+        Return links for shortcut modal.
+
+        :param study: Study object
+        :param study_tables: Rendered study tables (dict)
+        :return: Dict
+        """
         return None
 
 
@@ -462,12 +472,13 @@ class SampleSheetAssayPluginPoint(PluginPoint):
         # TODO: Implement this in your assay plugin
         raise NotImplementedError('Implement update_row() in your assay plugin')
 
-    def update_cache(self, name=None, project=None):
+    def update_cache(self, name=None, project=None, user=None):
         """
         Update cached data for this app, limitable to item ID and/or project.
 
-        :param project: Project object to limit update to (optional)
         :param name: Item name to limit update to (string, optional)
+        :param project: Project object to limit update to (optional)
+        :param user: User object to denote user triggering the update (optional)
         """
         # TODO: Implement this in your app plugin
         return None

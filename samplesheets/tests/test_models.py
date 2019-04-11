@@ -20,6 +20,7 @@ from ..models import (
     Process,
     GenericMaterial,
     NOT_AVAILABLE_STR,
+    CONFIG_LABEL,
 )
 from ..utils import get_alt_names
 
@@ -270,6 +271,16 @@ class SampleSheetModelMixin:
         obj = Process(**values)
         obj.save()
         return obj
+
+    @classmethod
+    def _set_configuration(cls, investigation, config_name):
+        """Set the configuration for an investigation"""
+        investigation.comments[CONFIG_LABEL] = {
+            'unit': None,
+            'value': config_name,
+        }
+        investigation.save()
+        return investigation
 
 
 # Test classes -----------------------------------------------------------------

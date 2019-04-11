@@ -5,33 +5,55 @@ Changelog for the SODAR Web UI. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
-v0.4.6 (2019-04-25)
-===================
+v0.5.0 (WIP)
+============
 
 Added
 -----
 
+- **Irodsbackend**
+    - API function ``get_url()`` (#438)
 - **Samplesheets**
-    - Validate existence and uniqueness of study identifiers during import (#483)
+    - New Vue.js based sample sheets viewer (#426)
+    - Get shortcut table data from study apps using ``get_shortcut_table()``
+    - ``get_sheets_url()`` helper
+    - Sodarcache iRODS file info caching for study apps (#241)
+    - ``set_configuration()`` helper for unit tests
+    - ``get_igv_url()`` helper in study app utils
+    - ``get_study_libraries()`` helper in samplesheets.utils
 
 Changed
 -------
 
-- **General**
-    - Upgrade site to django-sodar-core v0.5.1 (#480)
-    - Upgrade to ChromeDriver v74 (sodar_core#221)
+- **Irodsbackend**
+    - Modify stats badge appearance
+    - Refactor URL arguments and URL patterns regarding query strings (#455)
+    - Properly URL encode query strings (#456)
+    - Always return JSON from API views (#457)
 - **Samplesheets**
-    - Identify studies in investigation replacing by identifier instead of title (#483)
+    - Update and refactor server side rendering for client-side sheet UI (#426)
+    - URL patterns for ``samplesheets:project_sheet`` updated for Vue.js routes (#426)
+    - Refactor and update sample sheet rendering for new renderer (#111, #426)
+    - Expect full table data with headers for assay app ``get_row_path()``
+    - Add table data to ``get_last_material_name()`` args
+    - Return iRODS path instead of Davrods URL from study app file locating helpers
+    - Redesign study apps to work with Vue.js viewer (#436)
+    - Display study shortcuts as link column instead of separate table (#464)
 
-Fixed
------
+Removed
+-------
 
 - **Samplesheets**
-    - Crash in investigation replacing if study titles are not unique (#483)
+    - DataTables sample sheet rendering (#100, #223)
+    - Unused views, templates and templatetags from main and sub apps (#462)
+    - Member variable ``study_template`` in ``SampleSheetStudyPluginPoint`` (#462)
+    - JQuery updating in ``samplesheets.js`` (#462, #473)
+    - Local DataTables includes (#462)
+    - JQuery Dragscroll (#462)
 
 
-v0.4.5 (2019-04-11)
-===================
+v0.4.5 (WIP)
+============
 
 Fixed
 -----

@@ -43,9 +43,14 @@ urlpatterns = [
         name='api_context_get',
     ),
     url(
-        regex=r'^api/tables/get/(?P<study>[0-9a-f-]+)$',
+        regex=r'^api/study/tables/get/(?P<study>[0-9a-f-]+)$',
         view=views.SampleSheetStudyTablesGetAPIView.as_view(),
-        name='api_tables_get',
+        name='api_study_tables_get',
+    ),
+    url(
+        regex=r'^api/study/links/get/(?P<study>[0-9a-f-]+)$',
+        view=views.SampleSheetStudyLinksGetAPIView.as_view(),
+        name='api_study_links_get',
     ),
     # General API views
     url(

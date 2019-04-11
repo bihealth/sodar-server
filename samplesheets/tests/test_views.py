@@ -89,47 +89,6 @@ class TestProjectSheetsView(TestViewsBase):
         )
         self.study = self.investigation.studies.first()
 
-    # Disabled for Vue.js editor development
-    '''
-    def test_render(self):
-        """Test rendering the project sheets view"""
-
-        with self.login(self.user):
-            response = self.client.get(
-                reverse(
-                    'samplesheets:project_sheets',
-                    kwargs={'project': self.project.sodar_uuid},
-                )
-            )
-            self.assertEqual(response.status_code, 200)
-
-            # Assert context data
-            self.assertIsNotNone(response.context['study'])
-            self.assertEquals(response.context['study'].pk, self.study.pk)
-            self.assertIsNotNone(response.context['table_data'])
-    '''
-
-    # Disabled for Vue.js editor development
-    '''
-    def test_render_study_id(self):
-        """Test rendering the project sheets view with a study UUID"""
-
-        with self.login(self.user):
-            response = self.client.get(
-                reverse(
-                    'samplesheets:project_sheets',
-                    kwargs={'study': self.study.sodar_uuid},
-                )
-            )
-            self.assertEqual(response.status_code, 200)
-
-            # Assert context data
-            self.assertIsNotNone(response.context['investigation'])
-            self.assertIsNotNone(response.context['study'])
-            self.assertEquals(response.context['study'].pk, self.study.pk)
-            self.assertIsNotNone(response.context['table_data'])
-    '''
-
     def test_render_no_sheets(self):
         """Test rendering the project sheets view without an investigation"""
         self.investigation.delete()

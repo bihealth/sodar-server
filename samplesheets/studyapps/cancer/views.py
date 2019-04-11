@@ -1,16 +1,11 @@
 """Views for the cancer study app"""
 
-
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponse
 from django.shortcuts import redirect
-from django.urls import reverse
 from django.views.generic import View
-
-from rest_framework.views import APIView
-from rest_framework.response import Response
 
 # Projectroles dependency
 from projectroles.plugins import get_backend_api
@@ -18,19 +13,18 @@ from projectroles.views import (
     LoggedInPermissionMixin,
     ProjectContextMixin,
     ProjectPermissionMixin,
-    APIPermissionMixin,
 )
 
 # Samplesheets dependency
 from samplesheets.models import GenericMaterial
 from samplesheets.rendering import SampleSheetTableBuilder
-from samplesheets.utils import get_sample_libraries
-from samplesheets.studyapps.utils import get_igv_xml, FILE_TYPE_SUFFIXES
+from samplesheets.utils import get_sample_libraries, get_sheets_url
+from samplesheets.studyapps.utils import get_igv_xml
 
 # Local helper for authenticating with auth basic
 from sodar.users.auth import fallback_to_auth_basic
 
-from ..utils import get_library_file_url
+from .utils import get_library_file_path
 
 
 class BaseCancerConfigView(
@@ -53,19 +47,13 @@ class BaseCancerConfigView(
         is missing"""
         irods_backend = get_backend_api('omics_irods')
 
-        self.redirect_url = reverse(
-            'samplesheets:project_sheets',
-            kwargs={'project': self.get_project().sodar_uuid},
-        )
+        self.redirect_url = get_sheets_url(self.get_project())
 
         try:
             self.material = GenericMaterial.objects.get(
                 sodar_uuid=self.kwargs['genericmaterial']
             )
-            self.redirect_url = reverse(
-                'samplesheets:project_sheets',
-                kwargs={'study': self.material.study.sodar_uuid},
-            )
+            self.redirect_url = get_sheets_url(self.material.study)
 
         except GenericMaterial.DoesNotExist:
             messages.error(request, 'Material not found')
@@ -78,56 +66,6 @@ class BaseCancerConfigView(
         if not settings.IRODS_WEBDAV_ENABLED or not settings.IRODS_WEBDAV_URL:
             messages.error(self.request, 'iRODS WebDAV not available')
             return redirect(self.redirect_url)
-
-
-class FileRedirectView(BaseCancerConfigView):
-    """BAM/VCF file link view"""
-
-    permission_required = 'samplesheets.view_sheet'
-
-    def get(self, request, *args, **kwargs):
-        """Override get() to return URL to file"""
-        super(FileRedirectView, self).get(request, *args, **kwargs)
-        file_type = kwargs['file_type']
-
-        if file_type not in FILE_TYPE_SUFFIXES.keys():
-            messages.error(
-                self.request, 'Unsupported file type "{}"'.format(file_type)
-            )
-            return redirect(self.redirect_url)
-
-        if not self.material.assay:
-            messages.error(
-                self.request,
-                'Assay not found for library, make sure your sample sheets '
-                'are correctly formed',
-            )
-            return redirect(self.redirect_url)
-
-        try:
-            file_url = get_library_file_url(
-                file_type=file_type, library=self.material
-            )
-
-        except TypeError:
-            messages.error(
-                self.request,
-                'Library file URL retrieval failed, please make sure your '
-                'sample sheet is correctly formed',
-            )
-            return redirect(self.redirect_url)
-
-        if not file_url:
-            messages.warning(
-                self.request,
-                'No {} file found for {}'.format(
-                    file_type.upper(), self.material.name
-                ),
-            )
-            return redirect(self.redirect_url)
-
-        # Return with link to file in DavRods
-        return redirect(file_url)
 
 
 @fallback_to_auth_basic
@@ -163,6 +101,7 @@ class IGVSessionFileRenderView(BaseCancerConfigView):
 
         bam_urls = {}
         vcf_urls = {}
+        webdav_url = settings.IRODS_WEBDAV_URL
 
         # In case of malformed sample sheets
         for library in libraries:
@@ -174,15 +113,15 @@ class IGVSessionFileRenderView(BaseCancerConfigView):
                 )
                 return redirect(self.redirect_url)
 
-            bam_url = get_library_file_url(file_type='bam', library=library)
+            bam_path = get_library_file_path(file_type='bam', library=library)
 
-            if bam_url:
-                bam_urls[library.name] = bam_url
+            if bam_path:
+                bam_urls[library.name] = webdav_url + bam_path
 
-            vcf_url = get_library_file_url(file_type='vcf', library=library)
+            vcf_path = get_library_file_path(file_type='vcf', library=library)
 
-            if vcf_url:
-                vcf_urls[library.name] = vcf_url
+            if vcf_path:
+                vcf_urls[library.name] = webdav_url + vcf_path
 
         ###########
         # Build XML
@@ -208,40 +147,3 @@ class IGVSessionFileRenderView(BaseCancerConfigView):
             file_name
         )
         return response
-
-
-class FileExistenceCheckView(
-    LoginRequiredMixin, ProjectPermissionMixin, APIPermissionMixin, APIView
-):
-    """Check existence of BAM/VCF files view"""
-
-    permission_required = 'samplesheets.view_sheet'
-
-    def post(self, request, *args, **kwargs):
-        data = {'files': []}
-        study = kwargs['study']
-        q_dict = request.POST
-
-        valid_objs = [
-            str(u)
-            for u in GenericMaterial.objects.filter(
-                study__sodar_uuid=study
-            ).values_list('sodar_uuid', flat=True)
-        ]
-
-        for file_path in q_dict.getlist('paths'):
-            file_type = file_path.split('/')[5]
-            obj = file_path.split('/')[6]
-            existence = False
-            lib = GenericMaterial.objects.filter(sodar_uuid=obj).first()
-
-            # check if queried files are in the corresponding study
-            if obj in valid_objs and lib.assay:
-                if get_library_file_url(file_type=file_type, library=lib):
-                    existence = True
-            else:
-                existence = ''
-
-            data['files'].append({'path': file_path, 'exists': existence})
-
-        return Response(data, status=200)
