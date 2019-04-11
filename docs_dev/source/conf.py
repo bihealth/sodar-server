@@ -20,13 +20,13 @@
 # -- Project information -----------------------------------------------------
 
 project = 'SODAR'
-copyright = '2018, BIH Core Unit Bioinformatics'
+copyright = '2019, BIH Core Unit Bioinformatics'
 author = 'Mikko Nieminen'
 
 # The short X.Y version
 version = '0.4'
 # The full version, including alpha/beta/rc tags
-release = '0.4.3'
+release = '0.4.5'
 
 
 # -- General configuration ---------------------------------------------------

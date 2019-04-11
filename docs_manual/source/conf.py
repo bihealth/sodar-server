@@ -47,7 +47,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'SODAR Manual'
-copyright = '2018, BIH Core Unit Bioinformatics'
+copyright = '2019, BIH Core Unit Bioinformatics'
 author = 'BIH Core Unit Bioinformatics'
 
 # The version info for the project you're documenting, acts as replacement for
