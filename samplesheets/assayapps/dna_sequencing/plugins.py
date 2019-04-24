@@ -65,12 +65,11 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
 
         return None
 
-    # TODO: Rework for vue.js viewer
     def update_row(self, row, table, assay):
         """
         Update render table row with e.g. links. Return the modified row
         :param row: Original row (list of dicts)
-        :param table: Full table (list of lists)
+        :param table: Full table (dict)
         :param assay: Assay object
         :return: List of dicts
         """

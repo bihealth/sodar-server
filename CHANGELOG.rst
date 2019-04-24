@@ -21,6 +21,7 @@ Added
     - ``set_configuration()`` helper for unit tests
     - ``get_igv_url()`` helper in study app utils
     - ``get_study_libraries()`` helper in samplesheets.utils
+    - ``get_extra_table()`` function in ``SampleSheetAssayPluginPoint``
 
 Changed
 -------

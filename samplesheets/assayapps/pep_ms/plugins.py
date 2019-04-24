@@ -2,7 +2,7 @@
 
 from django.conf import settings
 
-from samplesheets.models import GenericMaterial, Process
+# from samplesheets.models import GenericMaterial, Process
 from samplesheets.plugins import SampleSheetAssayPluginPoint
 
 
@@ -62,13 +62,11 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
         # TODO: Alternatives for RawData?
         return assay_path + '/' + self.raw_data_coll
 
-    # TODO: Rework for vue.js viewer
-    # TODO: obj_class and item_type must be gotten from column instead
     def update_row(self, row, table, assay):
         """
         Update render table row with e.g. links. Return the modified row
         :param row: Original row (list of dicts)
-        :param table: Full table (list of lists)
+        :param table: Full table (dict)
         :param assay: Assay object
         :return: List of dicts
         """
@@ -83,44 +81,85 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
         base_url = settings.IRODS_WEBDAV_URL + assay_path
 
         # Check if MaxQuant is found
+        # NOTE: Currently disabled
+        '''
         max_quant_found = False
 
-        for cell in row:
+        for i in range(len(row)):
+            header = table['field_header'][i]
+
             if (
-                cell['obj_cls'] == Process
-                and cell['field_name'] == 'analysis software name'
-                and cell['value'] == 'MaxQuant'
+                header['obj_cls'] == 'Process'
+                and header['value'].lower() == 'analysis software name'
+                and row[i]['value'] == 'MaxQuant'
             ):
                 max_quant_found = True
                 break
+        '''
 
-        for cell in row:
+        for i in range(len(row)):
+            header = table['field_header'][i]
+
             # Data files
             if (
-                cell['obj_cls'] == GenericMaterial
-                and cell['item_type'] == 'DATA'
-                and cell['field_name'] == 'name'
+                header['obj_cls'] == 'GenericMaterial'
+                and header['item_type'] == 'DATA'
+                and header['value'].lower() == 'name'
             ):
                 # .raw files
-                if cell['value'].split('.')[-1].lower() == 'raw':
-                    cell['link'] = (
+                if row[i]['value'].split('.')[-1].lower() == 'raw':
+                    row[i]['link'] = (
                         base_url
                         + '/'
                         + self.raw_data_coll
                         + '/'
-                        + cell['value']
+                        + row[i]['value']
                     )
-                    cell['link_file'] = True
+                    row[i]['link_file'] = True
 
             # Process parameter files
+            # NOTE: Currently disabled
+            '''
             elif (
                 max_quant_found
-                and cell['obj_cls'] == Process
-                and cell['field_name'] == 'analysis database file'
+                and header['obj_cls'] == 'Process'
+                and header['value'].lower() == 'analysis database file'
             ):
-                cell['link'] = (
-                    base_url + '/' + self.max_quant_coll + '/' + cell['value']
+                row[i]['link'] = (
+                    base_url + '/' + self.max_quant_coll + '/' + row[i]['value']
                 )
-                cell['link_file'] = True
+                row[i]['link_file'] = True
+            '''
 
         return row
+
+    def get_extra_table(self, table, assay):
+        """
+        Return data for an extra content/shortcut table.
+
+        :param table: Full table with headers (dict returned by
+                      SampleSheetTableBuilder)
+        :param assay: Assay object
+        :return: Dict or None
+        """
+        assay_path = self.get_assay_path(assay)
+
+        ret = {
+            'schema': {'title': 'Shortcuts for Raw Data and MaxQuant Results'},
+            'cols': [
+                {'field': 'directory', 'type': 'label', 'title': 'Directory'},
+                {'field': 'links', 'type': 'irods_buttons', 'title': 'Links'},
+            ],
+            'rows': [
+                {
+                    'directory': {'value': 'Raw Data'},
+                    'links': {'path': assay_path + '/' + self.raw_data_coll},
+                },
+                {
+                    'directory': {'value': 'MaxQuant Results'},
+                    'links': {'path': assay_path + '/' + self.max_quant_coll},
+                },
+            ],
+        }
+        print('Returning extra table')  # DEBUG
+        return ret

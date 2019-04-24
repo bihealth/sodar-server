@@ -472,6 +472,18 @@ class SampleSheetAssayPluginPoint(PluginPoint):
         # TODO: Implement this in your assay plugin
         raise NotImplementedError('Implement update_row() in your assay plugin')
 
+    def get_extra_table(self, table, assay):
+        """
+        Return data for an extra content/shortcut table.
+
+        :param table: Full table with headers (dict returned by
+                      SampleSheetTableBuilder)
+        :param assay: Assay object
+        :return: Dict or None
+        """
+        # TODO: Implement this in your app plugin
+        return None
+
     def update_cache(self, name=None, project=None, user=None):
         """
         Update cached data for this app, limitable to item ID and/or project.

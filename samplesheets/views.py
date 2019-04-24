@@ -585,6 +585,9 @@ class SampleSheetContextGetAPIView(
         )
         irods_backend = get_backend_api('omics_irods')
 
+        # Can't import at module root due to circular dependency
+        from .plugins import find_study_plugin, find_assay_plugin
+
         # General context data for Vue app
         ret_data = {
             'irods_status': investigation.irods_status
@@ -603,14 +606,49 @@ class SampleSheetContextGetAPIView(
 
         # Study info
         # TODO: TBD: Do we need "irods_stats_url" here?
-        if studies.count() > 0:
-            ret_data['studies'] = {
-                str(s.sodar_uuid): {
-                    'display_name': s.get_display_name(),
-                    'description': s.description,
-                    'configuration': s.investigation.get_configuration(),
-                    'comments': s.comments,
-                    'irods_path': irods_backend.get_path(s)
+        ret_data['studies'] = {}
+
+        for s in studies:
+            study_plugin = find_study_plugin(investigation.get_configuration())
+            ret_data['studies'][str(s.sodar_uuid)] = {
+                'display_name': s.get_display_name(),
+                'description': s.description,
+                'configuration': s.investigation.get_configuration(),
+                'comments': s.comments,
+                'irods_path': irods_backend.get_path(s)
+                if irods_backend
+                else None,
+                'irods_stats_url': irods_backend.get_url(
+                    view='stats',
+                    path=irods_backend.get_path(s),
+                    project=project,
+                    absolute=True,
+                    request=request,
+                )
+                if irods_backend
+                else None,
+                'table_url': request.build_absolute_uri(
+                    reverse(
+                        'samplesheets:api_study_tables_get',
+                        kwargs={'study': str(s.sodar_uuid)},
+                    )
+                ),
+                'plugin': study_plugin.title if study_plugin else None,
+                'assays': {},
+            }
+
+            # Set up assay data
+            for a in s.assays.all().order_by('file_name'):
+                assay_plugin = find_assay_plugin(
+                    a.measurement_type, a.technology_type
+                )
+
+                ret_data['studies'][str(s.sodar_uuid)]['assays'][
+                    str(a.sodar_uuid)
+                ] = {
+                    'name': a.get_name(),
+                    'display_name': a.get_display_name(),
+                    'irods_path': irods_backend.get_path(a)
                     if irods_backend
                     else None,
                     'irods_stats_url': irods_backend.get_url(
@@ -622,34 +660,11 @@ class SampleSheetContextGetAPIView(
                     )
                     if irods_backend
                     else None,
-                    'assays': {
-                        str(a.sodar_uuid): {
-                            'name': a.get_name(),
-                            'display_name': a.get_display_name(),
-                            'irods_path': irods_backend.get_path(a)
-                            if irods_backend
-                            else None,
-                            'irods_stats_url': irods_backend.get_url(
-                                view='stats',
-                                path=irods_backend.get_path(s),
-                                project=project,
-                                absolute=True,
-                                request=request,
-                            )
-                            if irods_backend
-                            else None,
-                        }
-                        for a in s.assays.all().order_by('file_name')
-                    },
-                    'table_url': request.build_absolute_uri(
-                        reverse(
-                            'samplesheets:api_study_tables_get',
-                            kwargs={'study': str(s.sodar_uuid)},
-                        )
-                    ),
+                    'display_row_links': assay_plugin.display_row_links
+                    if assay_plugin
+                    else True,
+                    'plugin': assay_plugin.title if assay_plugin else None,
                 }
-                for s in studies
-            }
 
         # Permissions for UI elements (will be checked on request)
         ret_data['perms'] = {
@@ -665,6 +680,7 @@ class SampleSheetContextGetAPIView(
             'delete_sheet': request.user.has_perm(
                 'samplesheets.delete_sheet', project
             ),
+            'is_superuser': request.user.is_superuser,
         }
 
         # Overview data
@@ -763,12 +779,19 @@ class SampleSheetStudyTablesGetAPIView(
                 )
 
                 if assay_plugin:
+                    # Update assay table
                     for row in a_data['table_data']:
                         a_data['irods_paths'].append(
                             assay_plugin.get_row_path(
                                 row, a_data, assay, assay_path
                             )
                         )
+                        assay_plugin.update_row(row, a_data, assay)
+
+                    # Add extra table if available
+                    a_data['extra_table'] = assay_plugin.get_extra_table(
+                        a_data, assay
+                    )
 
         return Response(ret_data, status=200)
 

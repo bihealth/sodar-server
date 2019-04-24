@@ -142,6 +142,11 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                     {'label': library.name, 'url': webdav_url + path}
                 )
 
+        samples = source.get_samples()
+
+        if not samples:
+            return ret
+
         libraries = []
 
         for sample in source.get_samples():

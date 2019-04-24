@@ -467,6 +467,7 @@ class SampleSheetTableBuilder:
             row_id += 1
 
         # Aggregate column data for Vue app
+        # TODO: Move this into an optionally called function, not always needed
         for i in range(len(self._field_header)):
             header_name = self._field_header[i]['value'].lower()
 
@@ -476,6 +477,12 @@ class SampleSheetTableBuilder:
 
             elif header_name == 'external links':
                 col_type = 'EXTERNAL_LINKS'
+
+            elif (
+                header_name == 'name'
+                and self._field_header[i]['item_type'] == 'DATA'
+            ):
+                col_type = 'LINK_FILE'
 
             elif any([x[i]['link'] for x in self._table_data]):
                 col_type = 'ONTOLOGY'

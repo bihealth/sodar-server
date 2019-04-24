@@ -12,7 +12,6 @@
     </span>
     <!-- Ontology links -->
     <span v-else-if="colType === 'ONTOLOGY'">
-      <!-- TODO: File link -->
       <span v-for="(link, index) in links = renderData.links" :key="index">
         <a :href="link.url"
            :title="meta.tooltip"
@@ -33,6 +32,13 @@
             :title="idRef.key">
         <span class="badge badge-secondary">ID</span><span class="badge badge-info">{{ idRef.id }}</span>
       </span>
+    </span>
+    <!-- File link -->
+    <span v-else-if="colType === 'LINK_FILE'">
+      <a :href="renderData.url"
+         :title="meta.tooltip"
+         v-b-tooltip.hover
+         target="_blank">{{ renderData.value }}</a>
     </span>
   </div>
 </template>
@@ -68,7 +74,7 @@ export default Vue.extend(
         }
       },
 
-      // Return one or more ontology links for field as HTML
+      // Return one or more ontology links for field
       getOntologyLinks () {
         this.getMeta()
         let links = []
@@ -119,6 +125,15 @@ export default Vue.extend(
         }
 
         return {'extIds': ret}
+      },
+
+      // Get file link
+      getFileLink () {
+        this.getMeta()
+        return {
+          value: this.value,
+          url: this.meta.link
+        }
       }
     },
     beforeMount () {
@@ -137,6 +152,8 @@ export default Vue.extend(
           this.renderData = this.getContact()
         } else if (this.colType === 'EXTERNAL_LINKS') {
           this.renderData = this.getExternalLinks()
+        } else if (this.colType === 'LINK_FILE') {
+          this.renderData = this.getFileLink()
         }
       } else {
         this.value = '-'

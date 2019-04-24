@@ -21,8 +21,14 @@
           <h4 class="font-weight-bold mb-0 text-info">
             <i class="fa fa-fw fa-list-alt"></i>
             Study: {{ sodarContext['studies'][currentStudyUuid]['display_name'] }}
+            <i v-if="sodarContext['perms']['is_superuser'] &&
+                     sodarContext['studies'][currentStudyUuid]['plugin']"
+               class="fa fa-puzzle-piece text-info ml-1"
+               :title="sodarContext['studies'][currentStudyUuid]['plugin']"
+               v-b-tooltip.hover>
+            </i>
           </h4>
-          <div class="ml-auto">
+          <div class="ml-auto align-middle">
             <span class="mr-2">
               <!-- iRODS dir status / stats badge -->
               <span class="badge-group text-nowrap">
@@ -106,6 +112,12 @@
             <h4 class="font-weight-bold mb-0 text-danger">
               <i class="fa fa-fw fa-table"></i>
               Assay: {{ assayInfo['display_name'] }}
+              <i v-if="sodarContext['perms']['is_superuser'] &&
+                       assayInfo['plugin']"
+                 class="fa fa-puzzle-piece text-danger ml-1"
+                 :title="assayInfo['plugin']"
+                 v-b-tooltip.hover>
+              </i>
             </h4>
             <div class="ml-auto">
               <irods-buttons
@@ -118,6 +130,16 @@
               </irods-buttons>
             </div>
           </div>
+
+          <extra-content-table
+              v-if="extraTables.assays[assayUuid]"
+              :app="this"
+              :table-data="extraTables.assays[assayUuid]"
+              :irods-status="sodarContext['irods_status']"
+              :irods-backend-enabled="sodarContext['irods_backend_enabled']"
+              :irods-webdav-url="sodarContext['irods_webdav_url']">
+          </extra-content-table>
+
           <div class="card sodar-ss-data-card sodar-ss-data-card-assay">
             <div class="card-header">
               <h4>
@@ -158,7 +180,7 @@
                   :rowData="rowData['assays'][assayUuid]"
                   :gridOptions="gridOptions['assays'][assayUuid]"
                   @grid-ready="onGridReady">
-            </ag-grid-vue>
+              </ag-grid-vue>
             </div>
           </div>
         </span>
@@ -426,6 +448,7 @@ export default {
               field: 'col' + j.toString(), // TODO: Proper naming
               width: colWidth,
               minWidth: minW,
+              headerClass: ['bg-light'],
               cellRendererFramework: DataCellRenderer,
               cellRendererParams: {
                 'colType': colType,
@@ -519,8 +542,9 @@ export default {
       }
 
       if (assayMode) {
-        if (this.sodarContext['irods_status']) {
-          let assayIrodsPath = this.sodarContext['studies'][this.currentStudyUuid]['assays'][uuid]['irods_path']
+        let assayContext = this.sodarContext['studies'][this.currentStudyUuid]['assays'][uuid]
+        if (this.sodarContext['irods_status'] && assayContext['display_row_links']) {
+          let assayIrodsPath = assayContext['irods_path']
           let irodsHeaderGroup = {
             headerName: 'iRODS',
             headerClass: [
@@ -647,11 +671,6 @@ export default {
                 data['table_data']['study'], false, studyUuid)
               this.rowData['study'] = this.buildRowData(data['table_data']['study'])
 
-              // Get extra table
-              if ('extra_table' in data['table_data']['study']) {
-                this.extraTables['study'] = data['table_data']['study']['extra_table']
-              }
-
               // Build assays
               for (let assayUuid in data['table_data']['assays']) {
                 this.gridOptions['assays'][assayUuid] = this.getGridOptions()
@@ -659,6 +678,12 @@ export default {
                   data['table_data']['assays'][assayUuid], true, assayUuid)
                 this.rowData['assays'][assayUuid] = this.buildRowData(
                   data['table_data']['assays'][assayUuid])
+
+                // Get extra table
+                if ('extra_table' in data['table_data']['assays'][assayUuid]) {
+                  this.extraTables.assays[assayUuid] =
+                      data['table_data']['assays'][assayUuid]['extra_table']
+                }
               }
 
               this.renderError = null
@@ -813,7 +838,7 @@ export default {
 }
 
 .ag-root {
-  border: 0;
+  border: 0 !important;
 }
 
 .ag-header-group-cell {
@@ -827,6 +852,12 @@ export default {
 .ag-row {
   background-color: #ffffff !important;
 }
+
+/*
+.ag-root .ag-row:first-child .ag-cell {
+  border-top: 0 !important;
+}
+*/
 
 .ag-cell {
   border-right: 1px solid #dfdfdf !important;
@@ -856,6 +887,10 @@ export default {
   border: 0 !important;
 }
 
+.ag-row:last-child .ag-cell {
+  border-bottom: 1px solid #dfdfdf !important;
+}
+
 a.sodar-ss-anchor {
   display: block;
   position: relative;
@@ -870,11 +905,13 @@ a.sodar-ss-anchor {
 
 .sodar-ss-data-links-header {
   border-left: 1px solid #dfdfdf !important;
+  border-right: 0 !important;
 }
 
 .sodar-ss-data-links-cell {
   border-left: 1px solid #dfdfdf !important;
   border-top: 1px solid #dfdfdf !important;
+  border-right: 0 !important;
   border-bottom: 0 !important;
 }
 
