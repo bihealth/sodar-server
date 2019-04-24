@@ -508,7 +508,7 @@ IRODS_QUERY_BATCH_SIZE = env.int('IRODS_QUERY_BATCH_SIZE', 24)
 
 # Samplesheets settings
 SHEETS_IRODS_LIMIT = env.int('SHEETS_IRODS_LIMIT', 50)  # iRODS file query limit
-SHEETS_TABLE_HEIGHT = 450  # Study/assay table height
+SHEETS_TABLE_HEIGHT = 400  # Study/assay table height
 SHEETS_MIN_COLUMN_WIDTH = 100  # Min default column width
 SHEETS_MAX_COLUMN_WIDTH = 300  # Max default column width
 
