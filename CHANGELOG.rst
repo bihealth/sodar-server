@@ -19,6 +19,7 @@ Changed
 
 - **General**
     - Upgrade site to django-sodar-core v0.5.1 (#480)
+    - Upgrade to ChromeDriver v74 (sodar_core#221)
 - **Samplesheets**
     - Identify studies in investigation replacing by identifier instead of title (#483)
 
