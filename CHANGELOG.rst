@@ -12,7 +12,7 @@ Added
 -----
 
 - **Samplesheets**
-    - Validate uniqueness of study identifiers during import (#483)
+    - Validate existence and uniqueness of study identifiers during import (#483)
 
 Changed
 -------

@@ -293,6 +293,11 @@ def import_isa(isa_zip, project):
         logger.error(error_msg)
         raise ValueError(error_msg)
 
+    if '' in study_ids or None in study_ids:
+        error_msg = 'Empty study identifier not allowed'
+        logger.error(error_msg)
+        raise ValueError(error_msg)
+
     # Create studies
     for s_i in isa_inv.studies:
         obj_lookup = {}  # Lookup dict for study materials and processes
