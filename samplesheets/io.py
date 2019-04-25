@@ -285,6 +285,14 @@ def import_isa(isa_zip, project):
     study_count = 0
     db_studies = []
 
+    # Make sure identifiers are unique (avoid issue #483 repeating)
+    study_ids = [s_i.info.identifier for s_i in isa_inv.studies]
+
+    if len(study_ids) != len(set(study_ids)):
+        error_msg = 'Study identifiers are not unique'
+        logger.error(error_msg)
+        raise ValueError(error_msg)
+
     # Create studies
     for s_i in isa_inv.studies:
         obj_lookup = {}  # Lookup dict for study materials and processes

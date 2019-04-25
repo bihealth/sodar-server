@@ -8,11 +8,25 @@ Changelog for the SODAR Web UI. Loosely follows the
 v0.4.6 (WIP)
 ============
 
+Added
+-----
+
+- **Samplesheets**
+    - Validate uniqueness of study identifiers during import (#483)
+
 Changed
 -------
 
 - **General**
     - Upgrade site to django-sodar-core v0.5.1 (#480)
+- **Samplesheets**
+    - Identify studies in investigation replacing by identifier instead of title (#483)
+
+Fixed
+-----
+
+- **Samplesheets**
+    - Crash in investigation replacing if study titles are not unique (#483)
 
 
 v0.4.5 (2019-04-11)

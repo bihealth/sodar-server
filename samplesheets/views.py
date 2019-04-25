@@ -260,7 +260,7 @@ class SampleSheetImportView(
                 old_inv_uuid = old_inv.sodar_uuid
 
                 for study in old_inv.studies.all():
-                    old_study_uuids[study.get_name()] = study.sodar_uuid
+                    old_study_uuids[study.identifier] = study.sodar_uuid
 
                     for assay in study.assays.all():
                         old_assay_uuids[assay.get_name()] = assay.sodar_uuid
@@ -307,8 +307,8 @@ class SampleSheetImportView(
             self.object.save()
 
             for study in self.object.studies.all():
-                if study.get_name() in old_study_uuids:
-                    study.sodar_uuid = old_study_uuids[study.get_name()]
+                if study.identifier in old_study_uuids:
+                    study.sodar_uuid = old_study_uuids[study.identifier]
                     study.save()
 
                 for assay in study.assays.all():
