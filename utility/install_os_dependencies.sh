@@ -9,6 +9,7 @@ echo "***********************************************"
 echo "Installing general OS dependencies"
 echo "***********************************************"
 apt-get -y install build-essential
+apt-get -y install curl
 
 echo "***********************************************"
 echo "Installing Pillow and pylibmc dependencies"

@@ -99,5 +99,8 @@ flamegraph.pl
 *.crt
 *.pem
 
+# Celery
+celerybeat-schedule
+
 #irods config
 irods_config.zip

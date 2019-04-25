@@ -67,6 +67,7 @@ THIRD_PARTY_APPS = [
     'adminalerts.apps.AdminalertsConfig',
     # Backend apps
     'taskflowbackend.apps.TaskflowbackendConfig',
+    'sodarcache.apps.SodarcacheConfig',
 ]
 
 # Project apps
