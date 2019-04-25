@@ -62,7 +62,6 @@ THIRD_PARTY_APPS = [
     # SODAR Core apps
     # Project apps
     'projectroles.apps.ProjectrolesConfig',
-    'sodarcache.apps.SodarcacheConfig',
     'timeline.apps.TimelineConfig',
     # Site apps
     'userprofile.apps.UserprofileConfig',
