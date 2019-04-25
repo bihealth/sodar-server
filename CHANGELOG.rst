@@ -53,6 +53,31 @@ Removed
     - JQuery Dragscroll (#462)
 
 
+v0.4.6 (2019-04-25)
+===================
+
+Added
+-----
+
+- **Samplesheets**
+    - Validate existence and uniqueness of study identifiers during import (#483)
+
+Changed
+-------
+
+- **General**
+    - Upgrade site to django-sodar-core v0.5.1 (#480)
+    - Upgrade to ChromeDriver v74 (sodar_core#221)
+- **Samplesheets**
+    - Identify studies in investigation replacing by identifier instead of title (#483)
+
+Fixed
+-----
+
+- **Samplesheets**
+    - Crash in investigation replacing if study titles are not unique (#483)
+
+
 v0.4.5 (2019-04-11)
 ===================
 
