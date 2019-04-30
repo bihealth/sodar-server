@@ -7,7 +7,7 @@
         variant="secondary"
         :class="getClasses()"
         :title="schemaItem['title']"
-        :disabled="setDisabledState()"
+        :disabled="getEnabledState(schemaId)"
         :href="value[schemaId]['url']"
         v-b-tooltip.hover>
       <i :class="'fa ' + schemaItem['icon']"></i>
@@ -17,7 +17,7 @@
         variant="secondary"
         :class="getClasses() + ' sodar-vue-popup-list-btn'"
         :title="schemaItem['title']"
-        :disabled="setDisabledState()"
+        :disabled="getEnabledState(schemaId)"
         @click="onModalClick(schemaId)"
         v-b-tooltip.hover>
       <i :class="'fa ' + schemaItem['icon']"></i>
@@ -42,8 +42,12 @@ export default Vue.extend(
       getClasses () {
         return 'sodar-list-btn sodar-ss-irods-btn mr-1'
       },
-      setDisabledState () {
-        // TODO
+      getEnabledState (schemaId) {
+        if (this.value[schemaId].hasOwnProperty('enabled') &&
+            this.value[schemaId]['enabled'] === false) {
+          return true
+        }
+        return false
       },
       onModalClick (schemaId) {
         this.modalComponent.getLinks(this.value[schemaId]['query'])

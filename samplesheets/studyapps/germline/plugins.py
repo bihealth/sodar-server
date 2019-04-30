@@ -55,6 +55,17 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
         :param study_tables: Rendered study tables (dict)
         :return: Dict or None if not found
         """
+        cache_backend = get_backend_api('sodar_cache')
+        cache_item = None
+
+        # Get iRODS URLs from cache if it's available
+        if cache_backend:
+            cache_item = cache_backend.get_cache_item(
+                app_name=APP_NAME,
+                name='irods/{}'.format(study.sodar_uuid),
+                project=study.get_project(),
+            )
+
         ret = {
             'schema': {
                 'igv': {
@@ -92,19 +103,33 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
             for source in study.get_sources():
                 igv_urls[source.name] = get_igv_url(source)
 
-        if igv_urls:
-            for row in study_tables['study']['table_data']:
-                ret['data'].append(
-                    {
-                        'igv': {'url': igv_urls[row[id_idx]['value']]},
-                        'files': {
-                            'query': {
-                                'key': query_key,
-                                'value': row[id_idx]['value'],
-                            }
-                        },
-                    }
-                )
+        if not igv_urls:
+            return ret  # Nothing else to do
+
+        for row in study_tables['study']['table_data']:
+            ped_id = row[id_idx]['value']
+            source_id = row[0]['value']
+            enabled = True
+
+            # Set initial state based on cache
+            if (
+                cache_item
+                and source_id in cache_item.data['bam']
+                and not cache_item.data['bam'][source_id]
+                and ped_id in cache_item.data['vcf']
+                and not cache_item.data['vcf'][ped_id]
+            ):
+                enabled = False
+
+            ret['data'].append(
+                {
+                    'igv': {'url': igv_urls[ped_id], 'enabled': enabled},
+                    'files': {
+                        'query': {'key': query_key, 'value': ped_id},
+                        'enabled': enabled,
+                    },
+                }
+            )
 
         return ret
 

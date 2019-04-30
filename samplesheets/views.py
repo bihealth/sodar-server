@@ -739,6 +739,8 @@ class SampleSheetStudyTablesGetAPIView(
 
     def get(self, request, *args, **kwargs):
         irods_backend = get_backend_api('omics_irods')
+        cache_backend = get_backend_api('sodar_cache')
+
         study = Study.objects.filter(sodar_uuid=self.kwargs['study']).first()
 
         ret_data = {'study': {'display_name': study.get_display_name()}}
@@ -765,7 +767,7 @@ class SampleSheetStudyTablesGetAPIView(
             )
             ret_data['table_data']['study']['shortcuts'] = shortcuts
 
-        # Get iRODS paths for assays if corresponding assay plugin exists
+        # Get assay content if corresponding assay plugin exists
         if study.investigation.irods_status:
             # Can't import at module root due to circular dependency
             from .plugins import find_assay_plugin
@@ -779,13 +781,34 @@ class SampleSheetStudyTablesGetAPIView(
                 )
 
                 if assay_plugin:
-                    # Update assay table
+                    cache_item = cache_backend.get_cache_item(
+                        name='irods/rows/{}'.format(a_uuid),
+                        app_name=assay_plugin.app_name,
+                        project=assay.get_project(),
+                    )
+
                     for row in a_data['table_data']:
-                        a_data['irods_paths'].append(
-                            assay_plugin.get_row_path(
-                                row, a_data, assay, assay_path
-                            )
+                        # Update assay links column
+                        path = assay_plugin.get_row_path(
+                            row, a_data, assay, assay_path
                         )
+                        enabled = True
+
+                        # Set initial state to disabled by cached value
+                        if (
+                            cache_item
+                            and path in cache_item.data['paths']
+                            and (
+                                not cache_item.data['paths'][path]
+                                or cache_item.data['paths'][path] == 0
+                            )
+                        ):
+                            enabled = False
+
+                        a_data['irods_paths'].append(
+                            {'path': path, 'enabled': enabled}
+                        )
+                        # Update row links
                         assay_plugin.update_row(row, a_data, assay)
 
                     # Add extra table if available

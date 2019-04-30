@@ -7,35 +7,38 @@
         variant="secondary"
         class="sodar-list-btn sodar-ss-irods-btn sodar-vue-popup-list-btn"
         title="List files"
-        :disabled="setDisabledState()"
+        :disabled="!getEnabledState()"
         @click="onDirListClick"
         v-b-tooltip.hover>
       <i class="fa fa-folder-open-o"></i>
     </b-button>
     <b-button
         variant="secondary"
-        class="sodar-list-btn sodar-ss-irods-btn sodar-ss-irods-copy-btn sodar-irods-copy-path-btn"
+        class="sodar-list-btn sodar-ss-irods-btn sodar-ss-irods-copy-btn
+               sodar-irods-copy-path-btn"
         title="Copy iRODS path into clipboard"
         v-clipboard="irodsPath"
-        :disabled="setDisabledState()"
+        :disabled="!getEnabledState()"
         v-b-tooltip.hover>
       <i class="fa fa-terminal"></i>
     </b-button>
     <b-button
         variant="secondary"
-        class="sodar-list-btn sodar-ss-irods-btn sodar-ss-irods-copy-btn sodar-irods-copy-dav-btn"
+        class="sodar-list-btn sodar-ss-irods-btn sodar-ss-irods-copy-btn
+               sodar-irods-copy-dav-btn"
         title="Copy WebDAV URL into clipboard"
         v-clipboard="irodsWebdavUrl + irodsPath"
-        :disabled="setDisabledState()"
+        :disabled="!getEnabledState()"
         v-b-tooltip.hover>
       <i class="fa fa-clipboard"></i>
     </b-button>
     <b-button
         variant="secondary"
-        class="sodar-list-btn sodar-ss-irods-btn sodar-irods-copy-btn sodar-irods-dav-btn"
+        class="sodar-list-btn sodar-ss-irods-btn sodar-irods-copy-btn
+               sodar-irods-dav-btn"
         title="Browse Files in WebDAV"
         :href="irodsWebdavUrl + irodsPath"
-        :disabled="setDisabledState()"
+        :disabled="!getEnabledState()"
         v-b-tooltip.hover>
       <i class="fa fa-external-link"></i>
     </b-button>
@@ -52,14 +55,15 @@ export default {
     'irodsWebdavUrl',
     'irodsPath',
     'showFileList',
-    'modalComponent'
+    'modalComponent',
+    'enabled'
   ],
   methods: {
-    setDisabledState () {
-      if (!this.irodsStatus) {
-        return true
+    getEnabledState () {
+      if (!this.irodsStatus || this.enabled === false) {
+        return false
       }
-      return false
+      return true
     },
     onDirListClick (event) {
       let modalTitle = 'Files in iRODS: ' + this.irodsPath.split('/').pop()

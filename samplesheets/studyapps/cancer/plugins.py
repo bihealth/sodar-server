@@ -55,6 +55,17 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
         :param study_tables: Rendered study tables (dict)
         :return: Dict or None if not found
         """
+        cache_backend = get_backend_api('sodar_cache')
+        cache_item = None
+
+        # Get iRODS URLs from cache if it's available
+        if cache_backend:
+            cache_item = cache_backend.get_cache_item(
+                app_name=APP_NAME,
+                name='irods/{}'.format(study.sodar_uuid),
+                project=study.get_project(),
+            )
+
         ret = {
             'schema': {
                 'igv': {
@@ -77,16 +88,49 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
         for source in study.get_sources():
             igv_urls[source.name] = get_igv_url(source)
 
-        if igv_urls:
-            for row in study_tables['study']['table_data']:
-                ret['data'].append(
-                    {
-                        'igv': {'url': igv_urls[row[0]['value']]},
-                        'files': {
-                            'query': {'key': 'case', 'value': row[0]['value']}
-                        },
-                    }
+        if not igv_urls:
+            return ret
+
+        # NOTE: Not fool proof but better than assay search for lib id:s
+        # TODO: Better way to do this? Tired now so this may be silly
+        def _source_files_exist(cache, prefix, item_type):
+            vals = list(
+                set(
+                    [
+                        v
+                        for k, v in cache.data[item_type].items()
+                        if prefix in k and k.index(prefix) == 0
+                    ]
                 )
+            )
+
+            if len(vals) == 0 or (len(vals) == 1 and not vals[0]):
+                return False
+
+            return True
+
+        for row in study_tables['study']['table_data']:
+            source_id = row[0]['value']
+            source_prefix = source_id + '-'
+            enabled = True
+
+            # Set initial state based on cache
+            if (
+                cache_item
+                and not _source_files_exist(cache_item, source_prefix, 'bam')
+                and not _source_files_exist(cache_item, source_prefix, 'vcf')
+            ):
+                enabled = False
+
+            ret['data'].append(
+                {
+                    'igv': {'url': igv_urls[source_id], 'enabled': enabled},
+                    'files': {
+                        'query': {'key': 'case', 'value': source_id},
+                        'enabled': enabled,
+                    },
+                }
+            )
 
         return ret
 

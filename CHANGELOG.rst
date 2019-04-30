@@ -22,6 +22,7 @@ Added
     - ``get_igv_url()`` helper in study app utils
     - ``get_study_libraries()`` helper in samplesheets.utils
     - ``get_extra_table()`` function in ``SampleSheetAssayPluginPoint``
+    - ``app_name`` member in ``SampleSheetAssayPluginPoint``
 
 Changed
 -------

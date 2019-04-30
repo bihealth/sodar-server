@@ -452,7 +452,7 @@ export default {
               cellRendererFramework: DataCellRenderer,
               cellRendererParams: {
                 'colType': colType,
-                'colMeta': colMeta
+                'colMeta': colMeta // TODO: Implement a getter instead
               },
               cellClass: ['sodar-ss-data-cell'],
               cellClassRules: {

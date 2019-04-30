@@ -12,6 +12,15 @@
     </span>
     <!-- Ontology links -->
     <span v-else-if="colType === 'ONTOLOGY'">
+      <span v-if="headerName === 'hpo terms' && renderData">
+        <b-button
+            class="btn sodar-list-btn"
+            v-clipboard="getHpoTerms()"
+            title="Copy HPO term IDs to clipboard"
+            v-b-tooltip.hover>
+          <i class="fa fa-clipboard"></i>
+        </b-button>
+      </span>
       <span v-for="(link, index) in links = renderData.links" :key="index">
         <a :href="link.url"
            :title="meta.tooltip"
@@ -50,7 +59,7 @@ export default Vue.extend(
     data: function () {
       return {
         value: null,
-        // headerName: null,
+        headerName: null,
         meta: null,
         colType: null,
         renderData: null
@@ -74,6 +83,11 @@ export default Vue.extend(
         }
       },
 
+      // Get header name and place in this.headerName
+      getHeaderName () {
+        return this.params.colDef.headerName.toLowerCase()
+      },
+
       // Return one or more ontology links for field
       getOntologyLinks () {
         this.getMeta()
@@ -91,6 +105,18 @@ export default Vue.extend(
           links.push({value: this.value, url: this.meta.link})
         }
         return {'links': links}
+      },
+
+      getHpoTerms () {
+        let hpoIds = []
+
+        for (let i = 0; i < this.renderData['links'].length; i++) {
+          let link = this.renderData['links'][i]
+          let splitUrl = link['url'].split('/')
+          hpoIds.push(splitUrl[splitUrl.length - 1])
+        }
+
+        return hpoIds.join(';')
       },
 
       // Return contact name and email
@@ -139,7 +165,6 @@ export default Vue.extend(
     beforeMount () {
       if (this.params.value && this.params.value.length > 0) {
         this.value = this.params.value
-        // this.headerName = this.params.colDef.headerName.toLowerCase()
 
         // Handle special column type
         this.colType = this.params.colType
@@ -147,6 +172,7 @@ export default Vue.extend(
         if (this.colType === 'UNIT') {
           this.getMeta()
         } else if (this.colType === 'ONTOLOGY') {
+          this.headerName = this.getHeaderName()
           this.renderData = this.getOntologyLinks()
         } else if (this.colType === 'CONTACT') {
           this.renderData = this.getContact()

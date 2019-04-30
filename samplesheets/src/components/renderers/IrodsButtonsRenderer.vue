@@ -5,7 +5,8 @@
       :irods-webdav-url="params.irodsWebdavUrl"
       :irods-path="getIrodsPath(params)"
       :show-file-list="params.showFileList"
-      :modal-component="params.modalComponent">
+      :modal-component="params.modalComponent"
+      :enabled="getEnabledState(params)">
   </irods-buttons>
 </template>
 
@@ -21,9 +22,16 @@ export default Vue.extend(
     methods: {
       getIrodsPath (params) {
         if (params.value) {
-          return params.value
+          return params.value['path']
         } else {
           return params.assayIrodsPath
+        }
+      },
+      getEnabledState (params) {
+        if (params.value) {
+          return params.value['enabled']
+        } else {
+          return 1 // TODO: Store assay path file count somewhere instead?
         }
       }
     },

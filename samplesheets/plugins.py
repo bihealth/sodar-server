@@ -414,6 +414,11 @@ class SampleSheetAssayPluginPoint(PluginPoint):
 
     # Properties defined in SampleSheetAssayPluginPoint ------------------
 
+    #: App name for dynamic reference to app in e.g. caching
+    # TODO: Rename plugin.name to APP_NAME?
+    # TODO: Implement this in your assay plugin
+    app_name = None
+
     #: Identifying assay fields (used to identify plugin by assay)
     # TODO: Implement this in your assay plugin, example below
     assay_fields = [{'measurement_type': 'x', 'technology_type': 'y'}]

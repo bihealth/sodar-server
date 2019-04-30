@@ -6,6 +6,10 @@ from django.conf import settings
 from samplesheets.plugins import SampleSheetAssayPluginPoint
 
 
+# Local constants
+APP_NAME = 'samplesheets.assayapps.pep_ms'
+
+
 class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
     """Plugin for protein expression profiling / mass spectrometry in sample
     sheets"""
@@ -18,6 +22,9 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
         'Sample Sheets Protein Expression Profiling / Mass Spectrometry '
         'Assay Plugin'
     )
+
+    #: App name for dynamic reference to app in e.g. caching
+    app_name = APP_NAME
 
     #: Identifying assay fields (used to identify plugin by assay)
     assay_fields = [
