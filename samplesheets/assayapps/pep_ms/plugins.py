@@ -168,5 +168,4 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
                 },
             ],
         }
-        print('Returning extra table')  # DEBUG
         return ret

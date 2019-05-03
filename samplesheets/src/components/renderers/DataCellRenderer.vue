@@ -1,5 +1,7 @@
 <template>
   <div class="sodar-ss-data"
+       :row-num="this.params.node.data.rowNum"
+       :col-num="this.params.colDef.field.substring(3)"
        @mouseover="onMouseOver"
        @mouseout="onMouseOut">
     <!-- Plain/empty value -->

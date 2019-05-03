@@ -68,7 +68,7 @@
           </div>
         </div>
 
-        <!-- Study data -->
+        <!-- Study -->
         <div class="card sodar-ss-data-card sodar-ss-data-card-study">
           <div class="card-header">
             <h4>Study Data
@@ -92,14 +92,19 @@
             </h4>
           </div>
           <div class="card-body p-0">
-            <ag-grid-vue
-                class="ag-theme-bootstrap"
-                :style="getGridStyle()"
-                :columnDefs="columnDefs['study']"
-                :rowData="rowData['study']"
-                :gridOptions="gridOptions['study']"
-                @grid-ready="onGridReady">
-            </ag-grid-vue>
+            <ag-grid-drag-select
+                :grid-options="gridOptions['study']">
+              <template slot-scope="{ selectedItems }">
+                <ag-grid-vue
+                    class="ag-theme-bootstrap"
+                    :style="getGridStyle()"
+                    :columnDefs="columnDefs['study']"
+                    :rowData="rowData['study']"
+                    :gridOptions="gridOptions['study']"
+                    @grid-ready="onGridReady">
+                </ag-grid-vue>
+              </template>
+            </ag-grid-drag-select>
           </div>
         </div>
 
@@ -173,14 +178,17 @@
               </h4>
             </div>
             <div class="card-body p-0">
-              <ag-grid-vue
-                  :style="getGridStyle()"
-                  class="ag-theme-bootstrap"
-                  :columnDefs="columnDefs['assays'][assayUuid]"
-                  :rowData="rowData['assays'][assayUuid]"
-                  :gridOptions="gridOptions['assays'][assayUuid]"
-                  @grid-ready="onGridReady">
-              </ag-grid-vue>
+              <ag-grid-drag-select
+                  :grid-options="gridOptions['assays'][assayUuid]">
+                <ag-grid-vue
+                    :style="getGridStyle()"
+                    class="ag-theme-bootstrap"
+                    :columnDefs="columnDefs['assays'][assayUuid]"
+                    :rowData="rowData['assays'][assayUuid]"
+                    :gridOptions="gridOptions['assays'][assayUuid]"
+                    @grid-ready="onGridReady">
+                </ag-grid-vue>
+              </ag-grid-drag-select>
             </div>
           </div>
         </span>
@@ -252,6 +260,7 @@ import {AgGridVue} from 'ag-grid-vue'
 import DataCellRenderer from './components/renderers/DataCellRenderer.vue'
 import IrodsButtonsRenderer from './components/renderers/IrodsButtonsRenderer.vue'
 import ShortcutButtonsRenderer from './components/renderers/ShortcutButtonsRenderer.vue'
+import AgGridDragSelect from './components/AgGridDragSelect.vue'
 
 export default {
   name: 'App',
@@ -294,9 +303,13 @@ export default {
     ShortcutModal,
     IrodsStatsBadge,
     ExtraContentTable,
-    AgGridVue
+    AgGridVue,
+    AgGridDragSelect
   },
   methods: {
+
+    /* Event Handlers ------------------------------------------------------- */
+
     onGridReady (params) {
       // this.gridApi = params.api
       // this.columnApi = params.columnApi
@@ -332,6 +345,8 @@ export default {
         event.currentTarget.children[0].className = 'fa fa-eye-slash'
       }
     },
+
+    /* Grid Setup ----------------------------------------------------------- */
 
     getGridOptions () {
       return {
@@ -520,7 +535,8 @@ export default {
               ],
               cellClass: [
                 'bg-light',
-                'sodar-ss-data-links-cell'
+                'sodar-ss-data-links-cell',
+                'sodar-ss-data-unselectable'
               ],
               suppressSizeToFit: true,
               suppressAutoSize: true,
@@ -563,7 +579,8 @@ export default {
                 ],
                 cellClass: [
                   'bg-light',
-                  'sodar-ss-data-links-cell'
+                  'sodar-ss-data-links-cell',
+                  'sodar-ss-data-unselectable'
                 ],
                 suppressSizeToFit: true,
                 suppressAutoSize: true,
@@ -704,6 +721,8 @@ export default {
           }
         )
     },
+
+    /* Navigation ----------------------------------------------------------- */
 
     setCurrentStudy (studyUuid) {
       this.currentStudyUuid = studyUuid
@@ -921,23 +940,25 @@ a.sodar-ss-anchor {
   border-bottom: 0 !important;
 }
 
-.sodar-ss-data-unselectable:focus {
+.sodar-ss-data-row-cell:focus {
   border-right: 1px solid #dfdfdf !important;
   border-top: 1px solid #dfdfdf !important;
   border-left: 0 !important;
   border-bottom: 0 !important;
 }
 
-.sodar-ss-data-row-cell:focus {
-  border-left: 0 !important;
-}
-
 /* HACK: Temporarily make text selectable in grid cells */
+/*
 div.ag-root .ag-cell-focus {
     -webkit-user-select: text;
     -moz-user-select: text;
     -ms-user-select: text;
     user-select: text;
+}
+*/
+
+.agds-selected {
+  background-color: #ffe8e8 !important;
 }
 
 </style>
