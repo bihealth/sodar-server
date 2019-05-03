@@ -13,6 +13,7 @@ Added
 
 - **Irodsbackend**
     - API function ``get_url()`` (#438)
+    - iRODS collection path sanitizing (#488)
 - **Samplesheets**
     - New Vue.js based sample sheets viewer (#426)
     - Get shortcut table data from study apps using ``get_shortcut_table()``
@@ -43,6 +44,12 @@ Changed
     - Redesign study apps to work with Vue.js viewer (#436)
     - Display study shortcuts as link column instead of separate table (#464)
     - Do not display shortcuts in cancer study app for mass spectrometry assays (workaround for #482)
+
+Fixed
+-----
+
+- **Irodsbackend**
+    - Exceptions raised by API for collection paths with trailing slash (#488)
 
 Removed
 -------

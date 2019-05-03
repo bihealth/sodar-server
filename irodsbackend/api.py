@@ -118,6 +118,22 @@ class IrodsAPI:
         )
 
     @classmethod
+    def _sanitize_coll_path(cls, path):
+        """
+        Return sanitized version of iRODS collection path
+        :param path: iRODS collection path (string)
+        :return: String
+        """
+        if path:
+            if path[0] != '/':
+                path = '/' + path
+
+            if path[-1] == '/':
+                path = path[:-1]
+
+        return path
+
+    @classmethod
     def _get_colls_recursively(cls, coll):
         """
         Return all subcollections for a coll efficiently (without multiple
@@ -452,7 +468,7 @@ class IrodsAPI:
                 'Invalid argument for obj_type ("{}"'.format(obj_type)
             )
 
-        s = re.search(PATH_REGEX[obj_type], path)
+        s = re.search(PATH_REGEX[obj_type], cls._sanitize_coll_path(path))
 
         if s:
             return s.group(1)
@@ -492,7 +508,7 @@ class IrodsAPI:
         rev_url = reverse('irodsbackend:{}'.format(view), kwargs=url_kwargs)
 
         if method == 'GET':
-            query_string = {'path': path}
+            query_string = {'path': cls._sanitize_coll_path(path)}
 
             if view == 'list':
                 query_string['md5'] = int(md5)
@@ -549,7 +565,7 @@ class IrodsAPI:
         :raise: FileNotFoundError if collection is not found
         """
         try:
-            coll = self.irods.collections.get(path)
+            coll = self.irods.collections.get(self._sanitize_coll_path(path))
 
         except CollectionDoesNotExist:
             raise FileNotFoundError('iRODS collection not found')
@@ -571,7 +587,7 @@ class IrodsAPI:
         :return: Dict
         """
         try:
-            coll = self.irods.collections.get(path)
+            coll = self.irods.collections.get(self._sanitize_coll_path(path))
 
         except CollectionDoesNotExist:
             raise FileNotFoundError('iRODS collection not found')
@@ -587,7 +603,7 @@ class IrodsAPI:
         :param path: Full path to iRODS collection
         :return: Boolean
         """
-        return self.irods.collections.exists(path)
+        return self.irods.collections.exists(self._sanitize_coll_path(path))
 
     # TODO: Fork python-irodsclient and implement ticket functionality there
 
@@ -603,7 +619,7 @@ class IrodsAPI:
         :return: irods client Ticket object
         """
         ticket = Ticket(self.irods, ticket=ticket_str)
-        ticket.issue(mode, path)
+        ticket.issue(mode, self._sanitize_coll_path(path))
 
         # Remove default file writing limitation
         self._send_request(
