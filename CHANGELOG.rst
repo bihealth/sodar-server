@@ -42,6 +42,7 @@ Changed
     - Return iRODS path instead of Davrods URL from study app file locating helpers
     - Redesign study apps to work with Vue.js viewer (#436)
     - Display study shortcuts as link column instead of separate table (#464)
+    - Do not display shortcuts in cancer study app for mass spectrometry assays (workaround for #482)
 
 Removed
 -------

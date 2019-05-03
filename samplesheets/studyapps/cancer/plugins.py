@@ -9,7 +9,11 @@ from projectroles.plugins import get_backend_api
 from samplesheets.models import Investigation, Study, GenericMaterial
 from samplesheets.plugins import SampleSheetStudyPluginPoint
 from samplesheets.rendering import SampleSheetTableBuilder
-from samplesheets.utils import get_sample_libraries, get_study_libraries
+from samplesheets.utils import (
+    get_sample_libraries,
+    get_study_libraries,
+    get_isa_field_name,
+)
 
 from samplesheets.studyapps.utils import get_igv_url
 
@@ -47,6 +51,15 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
     #: Required permission for accessing the plugin
     permission = None
 
+    def _ms_assays(self, study):
+        """Return True if study only contains mass spectrometry assays"""
+        # HACK: temporary workaround for issue #482
+        for assay in study.assays.all():
+            if get_isa_field_name(assay.technology_type) != 'mass spectrometry':
+                return False
+
+        return True
+
     def get_shortcut_column(self, study, study_tables):
         """
         Return structure containing links for an extra study table links column.
@@ -55,6 +68,10 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
         :param study_tables: Rendered study tables (dict)
         :return: Dict or None if not found
         """
+        # Omit for mass spectrometry studies (workaround for issue #482)
+        if self._ms_assays(study):
+            return None
+
         cache_backend = get_backend_api('sodar_cache')
         cache_item = None
 
@@ -225,6 +242,7 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
         :param project: Project object to limit update to (optional)
         :param user: User object to denote user triggering the update (optional)
         """
+        # Omit for mass spectrometry studies (workaround for issue #482)
         if name and name.split('/')[0] != 'irods':
             return
 
@@ -260,6 +278,9 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                 studies = Study.objects.filter(investigation=investigation)
 
             for study in studies:
+                if self._ms_assays(study):
+                    continue
+
                 item_name = 'irods/{}'.format(study.sodar_uuid)
                 bam_paths = {}
                 vcf_paths = {}
