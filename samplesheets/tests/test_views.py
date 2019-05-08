@@ -1,15 +1,19 @@
 """Tests for views in the samplesheets app"""
+import json
 
 from test_plus.test import TestCase
+from unittest import skipIf
 
+from django.conf import settings
 from django.urls import reverse
 
 # Projectroles dependency
 from projectroles.models import Role, SODAR_CONSTANTS
+from projectroles.plugins import get_backend_api
 from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
 from projectroles.tests.test_views import KnoxAuthMixin
 
-from ..models import Investigation
+from ..models import Investigation, Study, Assay, Protocol, Process
 from .test_io import SampleSheetIOMixin, SHEET_DIR
 
 
@@ -38,6 +42,11 @@ SOURCE_NAME = '0815'
 SOURCE_NAME_FAIL = 'oop5Choo'
 USER_PASSWORD = 'password'
 API_INVALID_VERSION = '5.0'
+
+IRODS_BACKEND_ENABLED = (
+    True if 'omics_irods' in settings.ENABLED_BACKEND_PLUGINS else False
+)
+IRODS_BACKEND_SKIP_MSG = 'iRODS backend not enabled in settings'
 
 
 class TestViewsBase(
@@ -281,6 +290,169 @@ class TestSampleSheetDeleteView(TestViewsBase):
             )
 
         self.assertEqual(Investigation.objects.all().count(), 0)
+
+
+# TODO: Test with realistic ISAtab examples using BIH configs (see #434)
+@skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
+class TestContextGetAPIView(TestViewsBase):
+    """Tests for SampleSheetContextGetAPIView"""
+
+    def setUp(self):
+        super().setUp()
+        self.irods_backend = get_backend_api('omics_irods')
+
+        # Import investigation
+        self.investigation = self._import_isa_from_file(
+            SHEET_PATH, self.project
+        )
+        self.study = self.investigation.studies.first()
+        self.assay = self.study.assays.first()
+
+    def test_get(self):
+        """Test context retrieval with example sheet"""
+        with self.login(self.user):
+            response = self.client.get(
+                reverse(
+                    'samplesheets:api_context_get',
+                    kwargs={'project': self.project.sodar_uuid},
+                )
+            )
+
+        self.assertEqual(response.status_code, 200)
+        expected = {
+            'configuration': self.investigation.get_configuration(),
+            'irods_status': False,
+            'irods_backend_enabled': True
+            if get_backend_api('omics_irods')
+            else False,
+            'irods_webdav_enabled': settings.IRODS_WEBDAV_ENABLED,
+            'irods_webdav_url': settings.IRODS_WEBDAV_URL,
+            'external_link_labels': settings.SHEETS_EXTERNAL_LINK_LABELS,
+            'table_height': settings.SHEETS_TABLE_HEIGHT,
+            'min_col_width': settings.SHEETS_MIN_COLUMN_WIDTH,
+            'max_col_width': settings.SHEETS_MAX_COLUMN_WIDTH,
+            'investigation': {
+                'identifier': self.investigation.identifier,
+                'title': self.investigation.title,
+                'description': None,
+                'comments': self.investigation.comments,
+            },
+            'studies': {
+                str(self.study.sodar_uuid): {
+                    'display_name': self.study.get_display_name(),
+                    'description': self.study.description,
+                    'comments': self.study.comments,
+                    'irods_path': self.irods_backend.get_path(self.study),
+                    'table_url': response.wsgi_request.build_absolute_uri(
+                        reverse(
+                            'samplesheets:api_study_tables_get',
+                            kwargs={'study': str(self.study.sodar_uuid)},
+                        )
+                    ),
+                    'plugin': None,
+                    'assays': {
+                        str(self.assay.sodar_uuid): {
+                            'name': self.assay.get_name(),
+                            'display_name': self.assay.get_display_name(),
+                            'irods_path': self.irods_backend.get_path(
+                                self.assay
+                            ),
+                            'display_row_links': True,
+                            'plugin': None,
+                        }
+                    },
+                }
+            },
+            'perms': {
+                'edit_sheet': True,
+                'create_dirs': True,
+                'export_sheet': True,
+                'delete_sheet': True,
+                'is_superuser': True,
+            },
+            'sheet_stats': {
+                'study_count': Study.objects.filter(
+                    investigation=self.investigation
+                ).count(),
+                'assay_count': Assay.objects.filter(
+                    study__investigation=self.investigation
+                ).count(),
+                'protocol_count': Protocol.objects.filter(
+                    study__investigation=self.investigation
+                ).count(),
+                'process_count': Process.objects.filter(
+                    protocol__study__investigation=self.investigation
+                ).count(),
+                'source_count': self.investigation.get_material_count('SOURCE'),
+                'material_count': self.investigation.get_material_count(
+                    'MATERIAL'
+                ),
+                'sample_count': self.investigation.get_material_count('SAMPLE'),
+                'data_count': self.investigation.get_material_count('DATA'),
+            },
+        }
+        self.assertEqual(json.loads(response.data), expected)
+
+
+# TODO: Test with realistic ISAtab examples using BIH configs (see #434)
+class TestStudyTablesGetAPIView(TestViewsBase):
+    """Tests for SampleSheetStudyTablesGetAPIView"""
+
+    def setUp(self):
+        super().setUp()
+
+        # Import investigation
+        self.investigation = self._import_isa_from_file(
+            SHEET_PATH, self.project
+        )
+        self.study = self.investigation.studies.first()
+        self.assay = self.study.assays.first()
+
+    def test_get(self):
+        """Test study tables retrieval"""
+        with self.login(self.user):
+            response = self.client.get(
+                reverse(
+                    'samplesheets:api_study_tables_get',
+                    kwargs={'study': self.study.sodar_uuid},
+                )
+            )
+
+        self.assertEqual(response.status_code, 200)
+
+        # Assert return data correctness
+        ret_data = response.data
+        self.assertIn('study', ret_data)
+        self.assertIn('table_data', ret_data)
+        self.assertNotIn('render_error', ret_data)
+        self.assertNotIn('shortcuts', ret_data['table_data']['study'])
+        self.assertEqual(len(ret_data['table_data']['assays']), 1)
+
+
+# TODO: Test with realistic ISAtab examples using BIH configs (see #434)
+class TestStudyLinksGetAPIView(TestViewsBase):
+    """Tests for SampleSheetStudyLinksGetAPIView"""
+
+    def setUp(self):
+        super().setUp()
+
+        # Import investigation
+        self.investigation = self._import_isa_from_file(
+            SHEET_PATH, self.project
+        )
+        self.study = self.investigation.studies.first()
+        self.assay = self.study.assays.first()
+
+    def test_get(self):
+        """Test study links retrieval without plugin"""
+        with self.login(self.user):
+            response = self.client.get(
+                reverse(
+                    'samplesheets:api_study_links_get',
+                    kwargs={'study': self.study.sodar_uuid},
+                )
+            )
+        self.assertEqual(response.status_code, 404)  # No plugin for test ISAtab
 
 
 class TestSourceIDQueryAPIView(KnoxAuthMixin, TestViewsBase):

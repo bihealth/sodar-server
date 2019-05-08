@@ -184,6 +184,13 @@ class Investigation(BaseSampleSheet):
 
         return conf.split('/')[-1]
 
+    def get_material_count(self, item_type):
+        """Return matieral count of a certain type within the investigation"""
+        return GenericMaterial.objects.filter(
+            Q(item_type=item_type),
+            Q(study__investigation=self) | Q(assay__study__investigation=self),
+        ).count()
+
 
 # Study ------------------------------------------------------------------------
 

@@ -1,6 +1,6 @@
 <template>
   <span>
-    <div class="card">
+    <div class="card" id="sodar-ss-overview-investigation">
       <div class="card-header">
         <h4>Investigation Details</h4>
       </div>
@@ -17,6 +17,10 @@
             class="row pb-0">
           <dt class="col-md-3">Description</dt>
           <dd class="col-md-9">{{ app.sodarContext['investigation']['description'] }}</dd>
+        </dl>
+        <dl class="row pb-0">
+          <dt class="col-md-3">Configuration</dt>
+          <dd class="col-md-9">{{ app.sodarContext['configuration']}}</dd>
         </dl>
         <dl class="row pb-0">
           <dt class="col-md-3">iRODS Repository</dt>
@@ -45,7 +49,8 @@
 
     <div v-for="(studyInfo, studyUuid, index) in app.sodarContext['studies']"
          :key="index"
-         class="card">
+         class="card"
+         :id="'sodar-ss-overview-study-' + studyUuid">
       <div class="card-header">
         <h4>Study Details: {{ studyInfo['display_name'] }}</h4>
       </div>
@@ -59,10 +64,6 @@
           <dt class="col-md-3">Description</dt>
           <dd class="col-md-9">{{ studyInfo['description']}}</dd>
         </dl>
-        <dl class="row pb-0">
-          <dt class="col-md-3">Configuration</dt>
-          <dd class="col-md-9">{{ studyInfo['configuration']}}</dd>
-        </dl>
         <span v-for="(data, key, index) in studyInfo['comments']"
               :key="index">
           <dl v-if="data['value']"
@@ -74,7 +75,7 @@
       </div>
     </div>
 
-    <div class="card">
+    <div class="card" id="sodar-ss-overview-stats">
       <div class="card-header">
         <h4>Statistics</h4>
       </div>

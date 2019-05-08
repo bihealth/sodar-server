@@ -101,3 +101,54 @@ class TestSampleSheetsPermissions(
         bad_users = [self.as_guest.user, self.anonymous, self.user_no_roles]
         self.assert_render200_ok(url, good_users)
         self.assert_redirect(url, bad_users)
+
+    def test_api_context(self):
+        """Test SampleSheetContextGetAPIView"""
+        url = reverse(
+            'samplesheets:api_context_get',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+        good_users = [
+            self.superuser,
+            self.as_owner.user,
+            self.as_delegate.user,
+            self.as_contributor.user,
+            self.as_guest.user,
+        ]
+        bad_users = [self.anonymous, self.user_no_roles]
+        self.assert_response(url, good_users, status_code=200)
+        self.assert_response(url, bad_users, status_code=403)
+
+    def test_api_study_tables(self):
+        """Test SampleSheetStudyTablesGetAPIView"""
+        url = reverse(
+            'samplesheets:api_study_tables_get',
+            kwargs={'study': self.study.sodar_uuid},
+        )
+        good_users = [
+            self.superuser,
+            self.as_owner.user,
+            self.as_delegate.user,
+            self.as_contributor.user,
+            self.as_guest.user,
+        ]
+        bad_users = [self.anonymous, self.user_no_roles]
+        self.assert_response(url, good_users, status_code=200)
+        self.assert_response(url, bad_users, status_code=403)
+
+    def test_api_study_links(self):
+        """Test SampleSheetStudyLinksGetAPIView"""
+        url = reverse(
+            'samplesheets:api_study_links_get',
+            kwargs={'study': self.study.sodar_uuid},
+        )
+        good_users = [
+            self.superuser,
+            self.as_owner.user,
+            self.as_delegate.user,
+            self.as_contributor.user,
+            self.as_guest.user,
+        ]
+        bad_users = [self.anonymous, self.user_no_roles]
+        self.assert_response(url, good_users, status_code=404)  # No plugin
+        self.assert_response(url, bad_users, status_code=403)

@@ -1,5 +1,5 @@
 <template>
-  <span class="text-nowrap">
+  <span class="text-nowrap sodar-ss-irods-links">
     <b-button
         v-if="showFileList &&
               irodsBackendEnabled &&

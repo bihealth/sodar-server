@@ -6,18 +6,20 @@
     </PageHeader>
 
     <!-- Main container -->
-    <div class="container-fluid sodar-page-container">
+    <div class="container-fluid sodar-page-container"
+         id="sodar-ss-vue-container">
 
       <!-- Study data rendered -->
       <div v-if="sodarContext &&
                  gridsLoaded &&
                  !renderError &&
                  !overviewActive"
-                 :studyUuid="currentStudyUuid">
+                 :studyUuid="currentStudyUuid"
+           id="sodar-ss-vue-content">
 
         <!-- Study -->
         <a class="sodar-ss-anchor" :id="currentStudyUuid"></a>
-        <div class="row mb-4">
+        <div class="row mb-4" id="sodar-ss-section-study">
           <h4 class="font-weight-bold mb-0 text-info">
             <i class="fa fa-fw fa-list-alt"></i>
             Study: {{ sodarContext['studies'][currentStudyUuid]['display_name'] }}
@@ -48,9 +50,9 @@
               <!-- Configuration -->
               <span class="badge-group">
                 <span class="badge badge-pill badge-secondary">Config</span>
-                <span v-if="sodarContext['studies'][currentStudyUuid]['configuration']"
+                <span v-if="sodarContext['configuration']"
                       class="badge badge-pill badge-info">
-                  {{ sodarContext['studies'][currentStudyUuid]['configuration'] }}
+                  {{ sodarContext['configuration'] }}
                 </span>
                 <span v-else class="badge badge-pill badge-danger">
                   Unknown
@@ -68,7 +70,6 @@
           </div>
         </div>
 
-        <!-- Study -->
         <div class="card sodar-ss-data-card sodar-ss-data-card-study">
           <div class="card-header">
             <h4>Study Data
@@ -97,6 +98,7 @@
               <template slot-scope="{ selectedItems }">
                 <ag-grid-vue
                     class="ag-theme-bootstrap"
+                    id="sodar-ss-grid-study"
                     :style="getGridStyle()"
                     :columnDefs="columnDefs['study']"
                     :rowData="rowData['study']"
@@ -113,7 +115,7 @@
                      sodarContext['studies'][currentStudyUuid]['assays']"
               :key="index">
           <a class="sodar-ss-anchor" :id="assayUuid"></a>
-          <div class="row mb-4">
+          <div class="row mb-4" :id="'sodar-ss-section-assay-' + assayUuid">
             <h4 class="font-weight-bold mb-0 text-danger">
               <i class="fa fa-fw fa-table"></i>
               Assay: {{ assayInfo['display_name'] }}
@@ -181,8 +183,9 @@
               <ag-grid-drag-select
                   :grid-options="gridOptions['assays'][assayUuid]">
                 <ag-grid-vue
-                    :style="getGridStyle()"
                     class="ag-theme-bootstrap"
+                    :id="'sodar-ss-grid-assay-' + assayUuid"
+                    :style="getGridStyle()"
                     :columnDefs="columnDefs['assays'][assayUuid]"
                     :rowData="rowData['assays'][assayUuid]"
                     :gridOptions="gridOptions['assays'][assayUuid]"
@@ -196,22 +199,23 @@
       </div>
 
       <!-- Overview mode -->
-      <div v-else-if="overviewActive">
+      <div v-else-if="overviewActive" id="sodar-ss-vue-content">
         <Overview :app="this">
         </Overview>
       </div>
 
       <!-- Render error -->
-      <div v-else-if="renderError">
-        <div class="alert alert-danger">
+      <div v-else-if="renderError" id="sodar-ss-vue-content">
+        <div class="alert alert-danger" id="sodar-ss-vue-alert-error">
           Error rendering study tables, please check your ISAtab files.
           Exception: {{ renderError }}
         </div>
       </div>
 
       <!-- No sheets available -->
-      <div v-else-if="appSetupDone && !sheetsAvailable">
-        <div class="alert alert-info">
+      <div v-else-if="appSetupDone && !sheetsAvailable"
+           id="sodar-ss-vue-content">
+        <div class="alert alert-info" id="sodar-ss-vue-alert-empty">
           No sample sheets are currently available for this project.
           <span v-if="sodarContext['perms']['edit_sheet']">
             To add sample sheets, please import it from an existing ISAtab
@@ -221,7 +225,7 @@
       </div>
 
       <!-- Loading/busy -->
-      <div v-else class="w-100 text-center">
+      <div v-else class="w-100 text-center" id="sodar-ss-vue-wait">
         <i class="fa fa-4x fa-spin fa-circle-o-notch text-muted mt-5"></i>
       </div>
 

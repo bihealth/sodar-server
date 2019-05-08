@@ -4,7 +4,6 @@ import json
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Q
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import redirect
 from django.urls import reverse
@@ -568,7 +567,6 @@ class IrodsDirsView(
 # Ajax API Views ---------------------------------------------------------------
 
 
-# TODO: Add tests
 class SampleSheetContextGetAPIView(
     LoginRequiredMixin, ProjectPermissionMixin, APIPermissionMixin, APIView
 ):
@@ -590,6 +588,9 @@ class SampleSheetContextGetAPIView(
 
         # General context data for Vue app
         ret_data = {
+            'configuration': investigation.get_configuration()
+            if investigation
+            else None,
             'irods_status': investigation.irods_status
             if investigation
             else None,
@@ -605,7 +606,6 @@ class SampleSheetContextGetAPIView(
         }
 
         # Study info
-        # TODO: TBD: Do we need "irods_stats_url" here?
         ret_data['studies'] = {}
 
         for s in studies:
@@ -613,18 +613,8 @@ class SampleSheetContextGetAPIView(
             ret_data['studies'][str(s.sodar_uuid)] = {
                 'display_name': s.get_display_name(),
                 'description': s.description,
-                'configuration': s.investigation.get_configuration(),
                 'comments': s.comments,
                 'irods_path': irods_backend.get_path(s)
-                if irods_backend
-                else None,
-                'irods_stats_url': irods_backend.get_url(
-                    view='stats',
-                    path=irods_backend.get_path(s),
-                    project=project,
-                    absolute=True,
-                    request=request,
-                )
                 if irods_backend
                 else None,
                 'table_url': request.build_absolute_uri(
@@ -649,15 +639,6 @@ class SampleSheetContextGetAPIView(
                     'name': a.get_name(),
                     'display_name': a.get_display_name(),
                     'irods_path': irods_backend.get_path(a)
-                    if irods_backend
-                    else None,
-                    'irods_stats_url': irods_backend.get_url(
-                        view='stats',
-                        path=irods_backend.get_path(s),
-                        project=project,
-                        absolute=True,
-                        request=request,
-                    )
                     if irods_backend
                     else None,
                     'display_row_links': assay_plugin.display_row_links
@@ -697,38 +678,34 @@ class SampleSheetContextGetAPIView(
             else {}
         )
 
-        def get_material_count(item_type):
-            return GenericMaterial.objects.filter(
-                Q(item_type=item_type),
-                Q(study__investigation=investigation)
-                | Q(assay__study__investigation=investigation),
-            ).count()
-
         # Statistics
-        ret_data['sheet_stats'] = {
-            'study_count': Study.objects.filter(
-                investigation=investigation
-            ).count(),
-            'assay_count': Assay.objects.filter(
-                study__investigation=investigation
-            ).count(),
-            'protocol_count': Protocol.objects.filter(
-                study__investigation=investigation
-            ).count(),
-            'process_count': Process.objects.filter(
-                protocol__study__investigation=investigation
-            ).count(),
-            'source_count': get_material_count('SOURCE'),
-            'material_count': get_material_count('MATERIAL'),
-            'sample_count': get_material_count('SAMPLE'),
-            'data_count': get_material_count('DATA'),
-        }
+        ret_data['sheet_stats'] = (
+            {
+                'study_count': Study.objects.filter(
+                    investigation=investigation
+                ).count(),
+                'assay_count': Assay.objects.filter(
+                    study__investigation=investigation
+                ).count(),
+                'protocol_count': Protocol.objects.filter(
+                    study__investigation=investigation
+                ).count(),
+                'process_count': Process.objects.filter(
+                    protocol__study__investigation=investigation
+                ).count(),
+                'source_count': investigation.get_material_count('SOURCE'),
+                'material_count': investigation.get_material_count('MATERIAL'),
+                'sample_count': investigation.get_material_count('SAMPLE'),
+                'data_count': investigation.get_material_count('DATA'),
+            }
+            if investigation
+            else {}
+        )
 
         ret_data = json.dumps(ret_data)
         return Response(ret_data, status=200)
 
 
-# TODO: Add tests
 class SampleSheetStudyTablesGetAPIView(
     LoginRequiredMixin, ProjectPermissionMixin, APIPermissionMixin, APIView
 ):
@@ -754,24 +731,23 @@ class SampleSheetStudyTablesGetAPIView(
             ret_data['render_error'] = str(ex)
             return Response(ret_data, status=200)
 
-        # Get study plugin for shortcut data
-        from .plugins import find_study_plugin
-
-        study_plugin = find_study_plugin(
-            study.investigation.get_configuration()
-        )
-
-        if study_plugin:
-            shortcuts = study_plugin.get_shortcut_column(
-                study, ret_data['table_data']
-            )
-            ret_data['table_data']['study']['shortcuts'] = shortcuts
-
-        # Get assay content if corresponding assay plugin exists
-        if study.investigation.irods_status:
+        if study.investigation.irods_status and irods_backend:
             # Can't import at module root due to circular dependency
+            from .plugins import find_study_plugin
             from .plugins import find_assay_plugin
 
+            # Get study plugin for shortcut data
+            study_plugin = find_study_plugin(
+                study.investigation.get_configuration()
+            )
+
+            if study_plugin:
+                shortcuts = study_plugin.get_shortcut_column(
+                    study, ret_data['table_data']
+                )
+                ret_data['table_data']['study']['shortcuts'] = shortcuts
+
+            # Get assay content if corresponding assay plugin exists
             for a_uuid, a_data in ret_data['table_data']['assays'].items():
                 assay = Assay.objects.filter(sodar_uuid=a_uuid).first()
                 assay_path = irods_backend.get_path(assay)
@@ -819,7 +795,6 @@ class SampleSheetStudyTablesGetAPIView(
         return Response(ret_data, status=200)
 
 
-# TODO: Add tests
 class SampleSheetStudyLinksGetAPIView(
     LoginRequiredMixin, ProjectPermissionMixin, APIPermissionMixin, APIView
 ):
