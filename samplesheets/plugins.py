@@ -35,9 +35,10 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
 
     # Properties defined in ProjectAppPluginPoint -----------------------
 
-    #: Project settings definition
-    project_settings = {
+    #: App settings definition
+    app_settings = {
         'study_row_limit': {
+            'scope': 'PROJECT',
             'type': 'INTEGER',
             'default': 5000,
             'description': 'Limit sample sheet rows per study',

@@ -6,7 +6,7 @@ import re
 import time
 
 # Projectroles dependency
-from projectroles.project_settings import get_project_setting
+from projectroles.app_settings import AppSettingAPI
 
 from .models import Process, GenericMaterial
 
@@ -34,8 +34,10 @@ ONTOLOGY_URL_TEMPLATE = (
     '{ontology_name}/?p=classes&conceptid={accession}'
 )
 
+
 contact_re = re.compile(r'(.+?)\s?(?:[<|[])(.+?)(?:[>\]])')
 logger = logging.getLogger(__name__)
+app_settings = AppSettingAPI()
 
 
 # Graph traversal / reference table building -----------------------------------
@@ -575,8 +577,8 @@ class SampleSheetTableBuilder:
             raise SampleSheetRenderingException(error_msg)
 
         # Ensure the study does not exceed project limitations
-        row_limit = get_project_setting(
-            study.get_project(), 'samplesheets', 'study_row_limit'
+        row_limit = app_settings.get_app_setting(
+            'samplesheets', 'study_row_limit', project=study.get_project()
         )
 
         if len(all_refs) > row_limit:

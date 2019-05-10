@@ -29,6 +29,8 @@ Added
 Changed
 -------
 
+- **General**
+    - Upgrade site to django-sodar-core v0.6.0
 - **Irodsbackend**
     - Modify stats badge appearance
     - Refactor URL arguments and URL patterns regarding query strings (#455)

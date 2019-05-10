@@ -31,6 +31,7 @@ urlpatterns = [
     url(r'api/auth/', include('knox.urls')),
     # General site apps
     url(r'^alerts/', include('adminalerts.urls')),
+    url(r'^siteinfo/', include('siteinfo.urls')),
     url(r'^irods/', include('irodsinfo.urls')),
     # Projectroles URLs
     url(r'^project/', include('projectroles.urls')),

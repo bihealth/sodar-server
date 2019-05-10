@@ -82,6 +82,7 @@ LOCAL_APPS = [
     # Backend apps
     'irodsbackend.apps.IrodsbackendConfig',
     # General site apps
+    'siteinfo.apps.SiteinfoConfig',
     'irodsinfo.apps.IrodsinfoConfig',
     # Samplesheets study sub-apps
     'samplesheets.studyapps.germline.apps.GermlineConfig',

@@ -32,8 +32,8 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
 
     # Properties defined in ProjectAppPluginPoint -----------------------
 
-    #: Project settings definition
-    project_settings = {}
+    #: App settings definition
+    app_settings = {}
 
     #: FontAwesome icon ID string
     icon = 'database'
