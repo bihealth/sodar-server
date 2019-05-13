@@ -37,6 +37,7 @@ from .models import (
     GenericMaterial,
 )
 from .rendering import SampleSheetTableBuilder, EMPTY_VALUE
+from .tasks import update_project_cache
 from .utils import get_sample_dirs, compare_inv_replace, get_sheets_url
 
 
@@ -461,6 +462,47 @@ class SampleSheetDeleteView(
             investigation.delete()
 
         messages.success(self.request, 'Sample sheets deleted.')
+        return HttpResponseRedirect(get_sheets_url(project))
+
+
+class SampleSheetCacheUpdateView(
+    LoginRequiredMixin,
+    LoggedInPermissionMixin,
+    ProjectContextMixin,
+    ProjectPermissionMixin,
+    View,
+):
+    """Sample sheet manual cache update view"""
+
+    permission_required = 'samplesheets.edit_sheet'
+
+    def get(self, request, *args, **kwargs):
+        project = self.get_project()
+        timeline = get_backend_api('timeline_backend')
+        tl_event = None
+
+        if timeline:
+            tl_event = timeline.add_event(
+                project=project,
+                app_name=APP_NAME,
+                user=request.user,
+                event_name='sheet_cache_update',
+                description='update cache for project sheets',
+                status_type='SUBMIT',
+                status_desc='Asynchronous update initiated',
+            )
+
+        update_project_cache.delay(
+            project_uuid=str(project.sodar_uuid),
+            user_uuid=str(request.user.sodar_uuid),
+            tl_uuid=str(tl_event.sodar_uuid),
+        )
+
+        messages.warning(
+            self.request,
+            'Cache updating initiated. This may take some time, refresh sheet '
+            'view after a while to see the results.',
+        )
         return HttpResponseRedirect(get_sheets_url(project))
 
 

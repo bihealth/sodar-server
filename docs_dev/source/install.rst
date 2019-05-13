@@ -199,30 +199,41 @@ Now you should be able to browse to http://localhost:8000 and see your site.
 iRODS and Taskflow actions should also be available.
 
 
+Run Celery
+==========
+
+For asynchronous task, run celery in dev using the following:
+
+.. code-block:: console
+
+    $ ./run_celery.sh
+
+
 Run the Sample Sheets Vue App
 =============================
 
 The Sample Sheets Vue app must be run in a separate process using NPM:
 
-``` bash
-# install dependencies
-npm install
+.. code-block:: console
 
-# serve with hot reload at localhost:8080
-npm run dev
+    # install dependencies
+    $ npm install
 
-# build for production with minification
-npm run build
+    # serve with hot reload at localhost:8080
+    $ npm run dev
 
-# build for production and view the bundle analyzer report
-npm run build --report
+    # build for production with minification
+    $ npm run build
 
-# run unit tests
-npm run unit
+    # build for production and view the bundle analyzer report
+    $ npm run build --report
 
-# run e2e tests
-npm run e2e
+    # run unit tests
+    $ npm run unit
 
-# run all tests
-npm test
-```
+    # run e2e tests
+    $ npm run e2e
+
+    # run all tests
+    $ npm test
+

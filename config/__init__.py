@@ -3,6 +3,6 @@
 
 # TODO: Uncomment if your site uses celery and bgjobs
 
-# from .celery import app as celery_app
+from .celery import app as celery_app
 
-# __all__ = ('celery_app',)
+__all__ = ('celery_app',)

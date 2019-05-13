@@ -74,10 +74,18 @@
         </b-dropdown-item>
         <b-dropdown-item
             v-if="app.sheetsAvailable &&
+                  app.sodarContext['irods_status'] &&
+                  app.sodarContext['perms']['edit_sheet']"
+            class="sodar-ss-op-item"
+            :href="'cache/update/' + app.projectUuid">
+          <i class="fa fa-fw fa-refresh"></i> Update Cached Data
+        </b-dropdown-item>
+        <b-dropdown-item
+            v-if="app.sheetsAvailable &&
                   app.sodarContext['perms']['edit_sheet']"
             class="sodar-ss-op-item"
             :href="'import/' + app.projectUuid">
-          <i class="fa fa-fw fa-refresh"></i> Replace ISAtab
+          <i class="fa fa-fw fa-upload"></i> Replace ISAtab
         </b-dropdown-item>
         <b-dropdown-item
             v-if="app.sheetsAvailable &&

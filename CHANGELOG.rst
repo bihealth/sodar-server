@@ -25,6 +25,7 @@ Added
     - ``get_extra_table()`` function in ``SampleSheetAssayPluginPoint``
     - ``app_name`` member in ``SampleSheetAssayPluginPoint``
     - Multi-cell selection and clipboard copying
+    - Temporary manual sample sheet cache updating (#474)
 
 Changed
 -------

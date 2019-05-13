@@ -36,6 +36,11 @@ urlpatterns = [
         view=views.SampleSheetDeleteView.as_view(),
         name='delete',
     ),
+    url(
+        regex=r'^cache/update/(?P<project>[0-9a-f-]+)$',
+        view=views.SampleSheetCacheUpdateView.as_view(),
+        name='cache_update',
+    ),
     # Ajax API views
     url(
         regex=r'^api/context/get/(?P<project>[0-9a-f-]+)$',
