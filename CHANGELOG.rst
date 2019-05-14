@@ -14,6 +14,7 @@ Added
 - **Irodsbackend**
     - API function ``get_url()`` (#438)
     - iRODS collection path sanitizing (#488)
+    - Statistics for the siteinfo app (#503)
 - **Landingzones**
     - Call samplesheets project cache updating after moving zone files (#508)
 - **Samplesheets**
@@ -40,6 +41,7 @@ Changed
     - Refactor URL arguments and URL patterns regarding query strings (#455)
     - Properly URL encode query strings (#456)
     - Always return JSON from API views (#457)
+    - Update title and description in plugin
 - **Samplesheets**
     - Update and refactor server side rendering for client-side sheet UI (#426)
     - URL patterns for ``samplesheets:project_sheet`` updated for Vue.js routes (#426)

@@ -1,4 +1,6 @@
+from django.conf import settings
 from django.contrib.staticfiles.templatetags.staticfiles import static
+from django.template.defaultfilters import filesizeformat
 
 # Projectroles dependency
 from projectroles.plugins import BackendPluginPoint
@@ -12,13 +14,13 @@ class BackendPlugin(BackendPluginPoint):
     name = 'omics_irods'
 
     #: Title (used in templates)
-    title = 'Omics iRODS Service'
+    title = 'iRODS Backend'
 
     #: FontAwesome icon ID string
     icon = 'cloud-download'
 
     #: Description string
-    description = 'iRODS backend for queries via the Omics iRODS REST Service'
+    description = 'iRODS backend for interfacing with the SODAR iRODS server'
 
     #: URL of optional javascript file to be included
     javascript_url = static('irodsbackend/js/irodsbackend.js')
@@ -31,3 +33,22 @@ class BackendPlugin(BackendPluginPoint):
         except Exception as ex:
             print(str(ex))
             return None  # TODO: log exception
+
+    def get_statistics(self):
+        if 'omics_irods' not in settings.ENABLED_BACKEND_PLUGINS:
+            return {}
+
+        irods_api = IrodsAPI()
+
+        return {
+            'irods_data_size': {
+                'label': 'Project Data in iRODS',
+                'value': filesizeformat(
+                    irods_api.get_object_stats(
+                        '/{}/projects'.format(settings.IRODS_ZONE)
+                    )['total_size']
+                ),
+                'description': 'Total file size including sample repositories '
+                'and landing zones.',
+            }
+        }
