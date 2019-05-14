@@ -28,6 +28,7 @@ Added
     - ``app_name`` member in ``SampleSheetAssayPluginPoint``
     - Multi-cell selection and clipboard copying
     - Temporary manual sample sheet cache updating (#474)
+    - Deletion of project samplesheets cache on sheet/data deletion (#509)
 
 Changed
 -------

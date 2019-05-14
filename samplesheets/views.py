@@ -948,5 +948,16 @@ class TaskflowSheetDeleteAPIView(BaseTaskflowAPIView):
         except Investigation.DoesNotExist as ex:
             return Response(str(ex), status=404)
 
+        project = investigation.project
         investigation.delete()
+
+        # Delete cache
+        cache_backend = get_backend_api('sodar_cache')
+
+        # TODO: Simplify once sodar_core#257 is done
+        if cache_backend:
+            cache_backend.get_project_cache(project).filter(
+                app_name__startswith=APP_NAME
+            ).delete()
+
         return Response('ok', status=200)
