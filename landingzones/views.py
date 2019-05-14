@@ -26,6 +26,7 @@ from projectroles.plugins import get_backend_api
 # Samplesheets dependency
 from samplesheets.io import get_assay_dirs
 from samplesheets.models import Assay
+from samplesheets.tasks import update_project_cache_task
 from samplesheets.views import InvestigationContextMixin
 
 # Local helper for authenticating with auth basic
@@ -42,6 +43,7 @@ logger = logging.getLogger(__name__)
 
 
 APP_NAME = 'landingzones'
+SAMPLESHEETS_APP_NAME = 'samplesheets'
 
 
 EMAIL_MESSAGE_MOVED = r'''
@@ -865,5 +867,13 @@ class TaskflowZoneStatusSetAPIView(BaseTaskflowAPIView):
                         'Unable to cleanup zone "{}" with plugin '
                         '"{}": {}'.format(zone.title, config_plugin.name, ex)
                     )
+
+        # Update cache
+        # NOTE: Should get user UUID from taskflow, see sodar_taskflow#48
+        if request.data['status'] == 'MOVED':
+            update_project_cache_task(
+                project_uuid=str(zone.project.sodar_uuid),
+                user_uuid=str(zone.user.sodar_uuid),
+            )
 
         return Response('ok', status=200)

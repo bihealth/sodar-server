@@ -14,6 +14,8 @@ Added
 - **Irodsbackend**
     - API function ``get_url()`` (#438)
     - iRODS collection path sanitizing (#488)
+- **Landingzones**
+    - Call samplesheets project cache updating after moving zone files (#508)
 - **Samplesheets**
     - New Vue.js based sample sheets viewer (#426)
     - Get shortcut table data from study apps using ``get_shortcut_table()``

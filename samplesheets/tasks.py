@@ -6,10 +6,7 @@ from config.celery import app
 
 # Projectroles dependency
 from projectroles.models import Project
-from projectroles.plugins import get_app_plugin
-
-# Timeline dependency (Temporary HACK, see sodar_core#256)
-from timeline.models import ProjectEvent
+from projectroles.plugins import get_app_plugin, get_backend_api
 
 
 APP_NAME = 'samplesheets'
@@ -20,7 +17,7 @@ User = auth.get_user_model()
 
 # TODO: This should be done in the SODAR Core API view called by SODAR Taskflow
 @app.task(bind=True)
-def update_project_cache(_self, project_uuid, user_uuid, tl_uuid=None):
+def update_project_cache_task(_self, project_uuid, user_uuid):
     """Update project cache asynchronously"""
     try:
         project = Project.objects.get(sodar_uuid=project_uuid)
@@ -35,12 +32,19 @@ def update_project_cache(_self, project_uuid, user_uuid, tl_uuid=None):
     except User.DoesNotExist:
         logger.error('User not found (uuid={})'.format(user_uuid))
 
-    # TODO: Use TimelineAPI.get_event() once implemented (see sodar_core#256)
-    tl_event = (
-        ProjectEvent.objects.filter(sodar_uuid=tl_uuid).first()
-        if tl_uuid
-        else None
-    )
+    timeline = get_backend_api('timeline_backend')
+    tl_event = None
+
+    if timeline:
+        tl_event = timeline.add_event(
+            project=project,
+            app_name=APP_NAME,
+            user=user,
+            event_name='sheet_cache_update',
+            description='update cache for project sheets',
+            status_type='SUBMIT',
+            status_desc='Asynchronous update started',
+        )
 
     logger.info(
         'Updating cache asynchronously for project "{}" ({})'.format(
