@@ -325,9 +325,9 @@ class IrodsAPI:
     ##########
 
     @classmethod
-    def get_subdir(cls, obj, landing_zone=False, include_parent=True):
+    def get_sub_path(cls, obj, landing_zone=False, include_parent=True):
         """
-        Get the directory name for a stuy or assay under the sample data
+        Get the collection path for a study or assay under the sample data
         collection.
 
         :param obj: Study or Assay object
@@ -348,7 +348,7 @@ class IrodsAPI:
                 'Function get_display_name() not implemented'
             )
 
-        def get_dir(obj):
+        def get_path(obj):
             if not landing_zone:
                 return '{}_{}'.format(
                     obj.__class__.__name__.lower(), obj.sodar_uuid
@@ -359,9 +359,9 @@ class IrodsAPI:
 
         # If assay, add study first
         if obj_class == 'Assay' and include_parent:
-            ret += get_dir(obj.study) + '/'
+            ret += get_path(obj.study) + '/'
 
-        ret += get_dir(obj)
+        ret += get_path(obj)
         return ret
 
     @classmethod
@@ -409,14 +409,15 @@ class IrodsAPI:
         # Study (in sample data)
         elif obj_class == 'Study':
             path += '/{sample_dir}/{study}'.format(
-                sample_dir=settings.IRODS_SAMPLE_DIR, study=cls.get_subdir(obj)
+                sample_dir=settings.IRODS_SAMPLE_DIR,
+                study=cls.get_sub_path(obj),
             )
 
         # Assay (in sample data)
         elif obj_class == 'Assay':
             path += '/{sample_dir}/{study_assay}'.format(
                 sample_dir=settings.IRODS_SAMPLE_DIR,
-                study_assay=cls.get_subdir(obj),
+                study_assay=cls.get_sub_path(obj),
             )
 
         # LandingZone
@@ -426,7 +427,7 @@ class IrodsAPI:
                 '{zone_config}'.format(
                     zone_dir=settings.IRODS_LANDING_ZONE_DIR,
                     user=obj.user.username,
-                    study_assay=cls.get_subdir(obj.assay, landing_zone=True),
+                    study_assay=cls.get_sub_path(obj.assay, landing_zone=True),
                     zone_title=obj.title,
                     zone_config='_' + obj.configuration
                     if obj.configuration

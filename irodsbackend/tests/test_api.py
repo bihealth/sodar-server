@@ -137,7 +137,7 @@ class TestIrodsBackendAPI(
                 uuid=str(self.project.sodar_uuid),
                 zone_dir=LANDING_ZONE_DIR,
                 user=self.user.username,
-                study_assay=self.irods_backend.get_subdir(
+                study_assay=self.irods_backend.get_sub_path(
                     self.landing_zone.assay, landing_zone=True
                 ),
                 zone_title=ZONE_TITLE,

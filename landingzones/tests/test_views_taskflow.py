@@ -90,7 +90,7 @@ class LandingZoneTaskflowMixin:
             'zone_uuid': zone.sodar_uuid,
             'user_name': user.username,
             'user_uuid': user.sodar_uuid,
-            'assay_path': irods_backend.get_subdir(
+            'assay_path': irods_backend.get_sub_path(
                 zone.assay, landing_zone=True
             ),
             'description': zone.description,

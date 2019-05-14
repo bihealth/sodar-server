@@ -42,6 +42,7 @@ Changed
     - Properly URL encode query strings (#456)
     - Always return JSON from API views (#457)
     - Update title and description in plugin
+    - Rename ``get_subdir()`` into ``get_sub_path()`` (#495)
 - **Samplesheets**
     - Update and refactor server side rendering for client-side sheet UI (#426)
     - URL patterns for ``samplesheets:project_sheet`` updated for Vue.js routes (#426)

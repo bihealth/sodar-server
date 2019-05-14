@@ -88,8 +88,8 @@ class TestGetSampleDirs(TestUtilsBase):
     def test_get_sample_dirs(self):
         """Test get_sample_dirs() with a minimal ISAtab example"""
         expected = [
-            self.irods_backend.get_subdir(self.study),
-            self.irods_backend.get_subdir(self.assay),
+            self.irods_backend.get_sub_path(self.study),
+            self.irods_backend.get_sub_path(self.assay),
         ]
 
         self.assertEqual(get_sample_dirs(self.investigation), expected)

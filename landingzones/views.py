@@ -269,7 +269,7 @@ class ZoneCreateView(
                     'zone_uuid': zone.sodar_uuid,
                     'user_name': self.request.user.username,
                     'user_uuid': self.request.user.sodar_uuid,
-                    'assay_path': irods_backend.get_subdir(
+                    'assay_path': irods_backend.get_sub_path(
                         assay, landing_zone=True
                     ),
                     'description': zone.description,
@@ -412,7 +412,7 @@ class ZoneDeleteView(
                     'zone_title': zone.title,
                     'zone_uuid': zone.sodar_uuid,
                     'zone_config': zone.configuration,
-                    'assay_path': irods_backend.get_subdir(
+                    'assay_path': irods_backend.get_sub_path(
                         zone.assay, landing_zone=True
                     ),
                     'user_name': zone.user.username,
@@ -565,10 +565,10 @@ class ZoneMoveView(
                 'zone_title': str(zone.title),
                 'zone_uuid': zone.sodar_uuid,
                 'zone_config': zone.configuration,
-                'assay_path_samples': irods_backend.get_subdir(
+                'assay_path_samples': irods_backend.get_sub_path(
                     zone.assay, landing_zone=False
                 ),
-                'assay_path_zone': irods_backend.get_subdir(
+                'assay_path_zone': irods_backend.get_sub_path(
                     zone.assay, landing_zone=True
                 ),
                 'user_name': str(zone.user.username),

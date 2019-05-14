@@ -37,10 +37,10 @@ def get_sample_dirs(investigation):
 
     if irods_backend:
         for study in investigation.studies.all():
-            ret.append(irods_backend.get_subdir(study))
+            ret.append(irods_backend.get_sub_path(study))
 
             for assay in study.assays.all():
-                ret.append(irods_backend.get_subdir(assay))
+                ret.append(irods_backend.get_sub_path(assay))
 
     return ret
 
