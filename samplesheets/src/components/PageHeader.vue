@@ -78,7 +78,7 @@
                   app.sodarContext['perms']['edit_sheet']"
             class="sodar-ss-op-item"
             :href="'cache/update/' + app.projectUuid">
-          <i class="fa fa-fw fa-refresh"></i> Update Cached Data
+          <i class="fa fa-fw fa-refresh"></i> Update Sheet Cache
         </b-dropdown-item>
         <b-dropdown-item
             v-if="app.sheetsAvailable &&
