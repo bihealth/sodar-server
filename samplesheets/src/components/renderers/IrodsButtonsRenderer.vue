@@ -1,5 +1,6 @@
 <template>
   <irods-buttons
+      :app="params.app"
       :irods-status="params.irodsStatus"
       :irods-backend-enabled="params.irodsBackendEnabled"
       :irods-webdav-url="params.irodsWebdavUrl"

@@ -16,6 +16,7 @@
 export default {
   name: 'AgGridDragSelect',
   props: [
+    'app',
     'gridOptions'
   ],
   data () {
@@ -226,6 +227,7 @@ export default {
       }
       this.$clipboard(copyData) // Use v-clipboard
       this.clearSelected()
+      this.app.showNotification('Copied!', 'success', 1000)
     }
   },
   mounted () {

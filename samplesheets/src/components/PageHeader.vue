@@ -24,6 +24,15 @@
       </b-nav-item>
     </b-nav>
     <div class="ml-auto">
+      <span class="sodar-ss-vue-notify-container">
+        <transition name="fade" mode="out-in">
+          <span v-if="notifyVisible"
+                ref="notifyBadge"
+                :class="notifyClasses">
+            Copied!
+          </span>
+        </transition>
+      </span>
       <b-dropdown
           id="sodar-ss-nav-dropdown"
           :disabled="!app.sheetsAvailable || app.gridsBusy"
@@ -114,6 +123,13 @@ export default {
   props: [
     'app'
   ],
+  data () {
+    return {
+      notifyVisible: false,
+      notifyMessage: null,
+      notifyClasses: 'badge badge-pill sodar-ss-vue-nofify mx-2'
+    }
+  },
   methods: {
     getStudyNavTitle (studyName) {
       if (studyName.length > 20) {
@@ -121,6 +137,23 @@ export default {
       } else {
         return null
       }
+    },
+    showNotification (message, variant, delay) {
+      this.notifyClasses = 'badge badge-pill sodar-ss-vue-nofify mx-2 badge-'
+
+      if (variant) {
+        this.notifyClasses += variant
+      } else {
+        this.notifyClasses += 'light'
+      }
+
+      this.notifyMessage = message
+      this.notifyVisible = true
+
+      setTimeout(() => {
+        this.notifyVisible = false
+        this.notifyMessage = null
+      }, delay || 2000)
     }
   }
 }
@@ -131,6 +164,19 @@ export default {
 /* Force bg-success to active nav link (not supported by boostrap-vue) */
 ul.sodar-ss-nav li a.active {
   background-color: #28a745 !important;
+}
+
+span.sodar-ss-vue-notify-container {
+  display: inline-block;
+  width: 150px;
+  text-align: right;
+}
+
+.fade-enter-active, .fade-leave-active {
+  transition: opacity .3s;
+}
+.fade-enter, .fade-leave-to /* .fade-leave-active below version 2.1.8 */ {
+  opacity: 0;
 }
 
 /* Hide navbar if browser is too narrow */

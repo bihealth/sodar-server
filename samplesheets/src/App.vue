@@ -2,6 +2,7 @@
   <div id="app">
     <!-- Header -->
     <PageHeader v-if="sodarContext"
+                ref="pageHeader"
                 :app="this">
     </PageHeader>
 
@@ -60,7 +61,7 @@
               </span>
             </span>
             <irods-buttons
-                v-if="sodarContext"
+                :app="this"
                 :irods-status="sodarContext['irods_status']"
                 :irods-backend-enabled="sodarContext['irods_backend_enabled']"
                 :irods-webdav-url="sodarContext['irods_webdav_url']"
@@ -94,6 +95,7 @@
           </div>
           <div class="card-body p-0">
             <ag-grid-drag-select
+                :app="this"
                 :grid-options="gridOptions['study']">
               <template slot-scope="{ selectedItems }">
                 <ag-grid-vue
@@ -128,7 +130,11 @@
             </h4>
             <div class="ml-auto">
               <irods-buttons
-                  v-if="sodarContext"
+                  v-if="sodarContext &&
+                        gridsLoaded &&
+                        !renderError &&
+                        !overviewActive"
+                  :app="this"
                   :irods-status="sodarContext['irods_status']"
                   :irods-backend-enabled="sodarContext['irods_backend_enabled']"
                   :irods-webdav-url="sodarContext['irods_webdav_url']"
@@ -181,6 +187,7 @@
             </div>
             <div class="card-body p-0">
               <ag-grid-drag-select
+                  :app="this"
                   :grid-options="gridOptions['assays'][assayUuid]">
                 <ag-grid-vue
                     class="ag-theme-bootstrap"
@@ -594,6 +601,7 @@ export default {
                 unselectable: true,
                 cellRendererFramework: IrodsButtonsRenderer,
                 cellRendererParams: {
+                  app: this,
                   irodsStatus: this.sodarContext['irods_status'],
                   irodsBackendEnabled: this.sodarContext['irods_backend_enabled'],
                   irodsWebdavUrl: this.sodarContext['irods_webdav_url'],
@@ -803,6 +811,12 @@ export default {
         this.setCurrentStudy(this.$route.fullPath.substr(7))
         this.setCurrentAssay(null)
       }
+    },
+
+    /* Display -------------------------------------------------------------- */
+
+    showNotification (message, delay) {
+      this.$refs.pageHeader.showNotification(message, delay)
     }
   },
   watch: {

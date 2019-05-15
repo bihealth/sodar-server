@@ -18,6 +18,7 @@
                sodar-irods-copy-path-btn"
         title="Copy iRODS path into clipboard"
         v-clipboard="irodsPath"
+        @click="onCopyBtnClick"
         :disabled="!getEnabledState()"
         v-b-tooltip.hover>
       <i class="fa fa-terminal"></i>
@@ -28,6 +29,7 @@
                sodar-irods-copy-dav-btn"
         title="Copy WebDAV URL into clipboard"
         v-clipboard="irodsWebdavUrl + irodsPath"
+        @click="onCopyBtnClick"
         :disabled="!getEnabledState()"
         v-b-tooltip.hover>
       <i class="fa fa-clipboard"></i>
@@ -50,6 +52,7 @@
 export default {
   name: 'IrodsButtons',
   props: [
+    'app',
     'irodsBackendEnabled',
     'irodsStatus',
     'irodsWebdavUrl',
@@ -69,6 +72,14 @@ export default {
       let modalTitle = 'Files in iRODS: ' + this.irodsPath.split('/').pop()
       this.modalComponent.setTitle(modalTitle)
       this.modalComponent.getDirList(this.irodsPath)
+    },
+    onCopyBtnClick (event) {
+      // HACK! this.app appears unset in some cases, not sure why? see #511
+      if (this.app) {
+        this.app.showNotification('Copied!', 'success', 1000)
+      } else {
+        this.$parent.showNotification('Copied!', 'success', 1000)
+      }
     }
   }
 }
