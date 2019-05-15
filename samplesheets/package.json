@@ -13,7 +13,7 @@
   "dependencies": {
     "ag-grid-community": "^20.2.0",
     "ag-grid-vue": "^20.2.0",
-    "bootstrap-vue": "^2.0.0-rc.15",
+    "bootstrap-vue": "^2.0.0-rc.20",
     "v-clipboard": "^2.2.1",
     "vue": "^2.6.10",
     "vue-property-decorator": "^7.3.0",
