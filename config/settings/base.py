@@ -207,10 +207,7 @@ CRISPY_TEMPLATE_PACK = 'bootstrap4'
 STATIC_ROOT = str(ROOT_DIR('staticfiles'))
 STATIC_URL = '/static/'
 
-STATICFILES_DIRS = [
-    str(APPS_DIR.path('static')),
-    str(ROOT_DIR('samplesheets/dist')),  # Samplesheets vue.js assets
-]
+STATICFILES_DIRS = [str(APPS_DIR.path('static'))]
 
 STATICFILES_FINDERS = [
     'django.contrib.staticfiles.finders.FileSystemFinder',

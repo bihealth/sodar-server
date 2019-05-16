@@ -50,6 +50,9 @@ INSTALLED_APPS += ['gunicorn']
 # ------------------------
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
+# Add Samplesheets vue.js app assets
+STATICFILES_DIRS.append(str(ROOT_DIR('samplesheets/dist')))
+
 # TEMPLATE CONFIGURATION
 # ------------------------------------------------------------------------------
 TEMPLATES[0]['OPTIONS']['loaders'] = [
