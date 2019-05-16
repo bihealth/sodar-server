@@ -209,7 +209,7 @@ STATIC_URL = '/static/'
 
 STATICFILES_DIRS = [
     str(APPS_DIR.path('static')),
-    # str(ROOT_DIR('samplesheets/dist')),  # samplesheets assets
+    str(ROOT_DIR('samplesheets/dist')),  # Samplesheets vue.js assets
 ]
 
 STATICFILES_FINDERS = [

@@ -11,8 +11,6 @@
   Sample Sheets for {{ project.title }}
 {% endblock title %}
 
-{% get_setting 'SHEETS_MAX_COLUMN_WIDTH' %}
-
 {% block css %}
   {{ block.super }}
   <link rel="stylesheet" type="text/css" href="{% static 'irodsbackend/css/irodsbackend.css' %}" />
@@ -23,7 +21,15 @@
 
 <div id="sodar-ss-app-context" app-context="{{ app_context }}"></div>
 <div id="app"></div>
-{% render_bundle 'app' 'js' 'SAMPLESHEETS' %}
+
+{# Render manifest and vendor bundles only if running in production #}
+{% if settings_module == 'config.settings.production' %}
+  {% render_bundle 'manifest' config='SAMPLESHEETS' %}
+  {% render_bundle 'vendor' config='SAMPLESHEETS' %}
+{% endif %}
+
+{# Always render app bundle #}
+{% render_bundle 'app' config='SAMPLESHEETS' %}
 
 {% endblock projectroles_extend %}
 

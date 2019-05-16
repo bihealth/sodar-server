@@ -1,5 +1,6 @@
 import csv
 import json
+import os
 
 from django.conf import settings
 from django.contrib import messages
@@ -77,6 +78,7 @@ class ProjectSheetsView(
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
+
         studies = Study.objects.filter(
             investigation=context['investigation']
         ).order_by('title')
@@ -102,6 +104,7 @@ class ProjectSheetsView(
             app_context['initial_study'] = None
 
         context['app_context'] = json.dumps(app_context)
+        context['settings_module'] = os.environ['DJANGO_SETTINGS_MODULE']
         context['EMPTY_VALUE'] = EMPTY_VALUE  # For JQuery
         return context
 
