@@ -1,6 +1,7 @@
-{# Custom login page based on SODAR Core v0.4.1 #}
+{# Custom login page based on SODAR Core v0.6.0 #}
 
 {% extends 'base.html' %}
+
 {% load static %}
 {% load projectroles_tags %}
 {% load projectroles_common_tags %}
@@ -10,6 +11,7 @@
 {% block title %}Login{% endblock title %}
 
 {% block content %}
+
 <div class="container-fluid">
 
   {# Django messages / site app messages #}
@@ -32,12 +34,20 @@
 
     <form class="form-signin" method="post" id="sodar-form-login">
       {% csrf_token %}
-      <input type="text" name="username" id="sodar-login-username" class="form-control" placeholder="username@DOMAIN" required autofocus>
-      <input type="password" name="password" id="sodar-login-password" class="form-control my-sm-2 mb-sm-2" placeholder="Password" required>
-      <button class="btn btn-md btn-primary btn-block" type="submit" id="sodar-login-submit"><i class="fa fa-sign-in"></i> Log In</button>
+      {% get_setting 'PROJECTROLES_ALLOW_LOCAL_USERS' as allow_local_users %}
+      <input type="text" name="username" id="sodar-login-username" class="form-control"
+             placeholder="{% if allow_local_users %}username{% else %}username@DOMAIN{% endif %}"
+             required autofocus>
+      <input type="password" name="password" id="sodar-login-password"
+             class="form-control my-sm-2 mb-sm-2" placeholder="password"
+             required>
+      <button class="btn btn-md btn-primary btn-block" type="submit" id="sodar-login-submit">
+        <i class="fa fa-sign-in"></i> Log In
+      </button>
     </form>
   </div>
 </div>
+
 {% endblock content %}
 
 {% block javascript %}
