@@ -4,6 +4,7 @@ from django.conf import settings
 from django.test import override_settings
 
 from test_plus.test import TestCase
+from unittest import skipIf
 
 # Projectroles dependency
 from projectroles.models import Role, SODAR_CONSTANTS
@@ -33,6 +34,11 @@ ZONE_DESC = 'description'
 IRODS_ZONE = settings.IRODS_ZONE
 SAMPLE_DIR = settings.IRODS_SAMPLE_DIR
 LANDING_ZONE_DIR = settings.IRODS_LANDING_ZONE_DIR
+
+IRODS_BACKEND_ENABLED = (
+    True if 'omics_irods' in settings.ENABLED_BACKEND_PLUGINS else False
+)
+IRODS_BACKEND_SKIP_MSG = 'iRODS backend not enabled in settings'
 
 
 class TestIrodsBackendAPI(
@@ -87,10 +93,12 @@ class TestIrodsBackendAPI(
 
         self.irods_backend = IrodsAPI()
 
+    @skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
     def test_test_connection(self):
         """Test test_connection() with valid settings"""
         self.assertEqual(self.irods_backend.test_connection(), True)
 
+    @skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
     @override_settings(IRODS_PASS='Iequ4QueOchai2ro')
     def test_test_connection_no_auth(self):
         """Test test_connection() with invalid authentication"""
