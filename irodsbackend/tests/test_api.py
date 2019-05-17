@@ -1,6 +1,7 @@
 """Tests for the API in the irodsbackend app"""
 
 from django.conf import settings
+from django.test import override_settings
 
 from test_plus.test import TestCase
 
@@ -85,6 +86,15 @@ class TestIrodsBackendAPI(
         )
 
         self.irods_backend = IrodsAPI()
+
+    def test_test_connection(self):
+        """Test test_connection() with valid settings"""
+        self.assertEqual(self.irods_backend.test_connection(), True)
+
+    @override_settings(IRODS_PASS='Iequ4QueOchai2ro')
+    def test_test_connection_no_auth(self):
+        """Test test_connection() with invalid authentication"""
+        self.assertEqual(self.irods_backend.test_connection(), False)
 
     def test_get_path_project(self):
         """Test get_irods_path() with a Project object"""

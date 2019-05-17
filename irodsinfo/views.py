@@ -1,5 +1,5 @@
 import io
-from irods.exception import NetworkException
+from irods.exception import NetworkException, CAT_INVALID_AUTHENTICATION
 import json
 import zipfile
 
@@ -28,7 +28,11 @@ class IrodsInfoView(LoggedInPermissionMixin, HTTPRefererMixin, TemplateView):
             try:
                 context['server_info'] = irods_backend.get_info()
 
-            except (NetworkException, irods_backend.IrodsQueryException):
+            except (
+                NetworkException,
+                CAT_INVALID_AUTHENTICATION,
+                irods_backend.IrodsQueryException,
+            ):
                 context['server_info'] = None
 
         context['irods_backend'] = get_backend_api('omics_irods')

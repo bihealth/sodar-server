@@ -64,8 +64,12 @@ def init_irods(func):
                 '/{}/home/{}'.format(settings.IRODS_ZONE, settings.IRODS_USER)
             )
 
-        except Exception:
-            pass  # TODO: Handle exceptions, add logging
+        except Exception as ex:
+            if self.irods:
+                self.irods.cleanup()
+
+            # TODO: Add logging
+            raise ex
 
         result = func(self, *args, **kwargs)
         self.irods.cleanup()
@@ -82,7 +86,7 @@ class IrodsAPI:
     """iRODS API to be used by Django apps"""
 
     class IrodsQueryException(Exception):
-        """Irods REST service query exception"""
+        """Irods query exception"""
 
         pass
 
@@ -524,6 +528,34 @@ class IrodsAPI:
     ###################
     # iRODS Operations
     ###################
+
+    def test_connection(self):
+        """
+        Test the iRODS connection without raising an exception on an error.
+        Useful for e.g. making sure the connection can be made before issuing
+        multiple iRODS operations.
+
+        :return: Boolean
+        """
+        # TODO: Repetition with init_irods, refactor
+        try:
+            self.irods = iRODSSession(
+                host=settings.IRODS_HOST,
+                port=settings.IRODS_PORT,
+                user=settings.IRODS_USER,
+                password=settings.IRODS_PASS,
+                zone=settings.IRODS_ZONE,
+            )
+
+            # Ensure we have a connection
+            self.irods.collections.exists(
+                '/{}/home/{}'.format(settings.IRODS_ZONE, settings.IRODS_USER)
+            )
+            self.irods.cleanup()
+            return True
+
+        except Exception:
+            return False
 
     @init_irods
     def get_session(self):

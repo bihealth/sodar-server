@@ -40,14 +40,18 @@ class BackendPlugin(BackendPluginPoint):
 
         irods_api = IrodsAPI()
 
+        try:
+            project_stats = irods_api.get_object_stats(
+                '/{}/projects'.format(settings.IRODS_ZONE)
+            )
+
+        except Exception:
+            return {}
+
         return {
             'irods_data_size': {
                 'label': 'Project Data in iRODS',
-                'value': filesizeformat(
-                    irods_api.get_object_stats(
-                        '/{}/projects'.format(settings.IRODS_ZONE)
-                    )['total_size']
-                ),
+                'value': filesizeformat(project_stats['total_size']),
                 'description': 'Total file size including sample repositories '
                 'and landing zones.',
             }

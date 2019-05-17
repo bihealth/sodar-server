@@ -102,6 +102,11 @@ class BaseIrodsAPIView(
                 self._get_msg('iRODS backend not enabled'), status=500
             )
 
+        if not irods_backend.test_connection():
+            return JsonResponse(
+                self._get_msg('Unable to connect to iRODS'), status=500
+            )
+
         if request.method == 'GET' and not path:
             return JsonResponse(self._get_msg('Path not set'), status=400)
 

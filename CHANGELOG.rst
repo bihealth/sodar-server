@@ -15,6 +15,7 @@ Added
     - API function ``get_url()`` (#438)
     - iRODS collection path sanitizing (#488)
     - Statistics for the siteinfo app (#503)
+    - API function ``test_connection()`` (#514)
 - **Landingzones**
     - Call samplesheets project cache updating after moving zone files (#508)
 - **Samplesheets**
@@ -61,6 +62,9 @@ Fixed
 
 - **Irodsbackend**
     - Exceptions raised by API for collection paths with trailing slash (#488)
+    - Crash from invalid iRODS authentication in multiple locations (#514)
+- **Irodsinfo**
+    - Crash from invalid iRODS authentication in ``IrodsInfoView`` (#514)
 
 Removed
 -------
