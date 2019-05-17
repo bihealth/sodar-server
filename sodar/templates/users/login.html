@@ -28,9 +28,11 @@
   <div class="col-md-4 mx-auto my-5">
     <h2 class="sodar-pr-content-title">Log In</h2>
 
+    {% comment TEMPORARILY COMMENTED OFF %}
     {% autoescape off %}
       {% get_login_info %}
     {% endautoescape %}
+    {% endcomment %}
 
     <form class="form-signin" method="post" id="sodar-form-login">
       {% csrf_token %}
