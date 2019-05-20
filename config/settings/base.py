@@ -216,7 +216,7 @@ STATICFILES_FINDERS = [
 
 WEBPACK_LOADER = {
     'SAMPLESHEETS': {
-        'BUNDLE_DIR_NAME': '/',
+        'BUNDLE_DIR_NAME': 'static/',
         'STATS_FILE': ROOT_DIR('samplesheets/webpack-stats.json'),
     }
 }
