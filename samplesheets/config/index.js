@@ -8,7 +8,7 @@ module.exports = {
   dev: {
 
     // Paths
-    assetsSubDirectory: 'static',
+    assetsSubDirectory: 'samplesheets-vue',
     assetsPublicPath: 'http://localhost:8080/',  // SODAR: CHANGED
     proxyTable: {},
 
@@ -49,7 +49,7 @@ module.exports = {
 
     // Paths
     assetsRoot: path.resolve(__dirname, '../dist'),
-    assetsSubDirectory: 'static',
+    assetsSubDirectory: 'samplesheets-vue',
     assetsPublicPath: '/',
 
     /**

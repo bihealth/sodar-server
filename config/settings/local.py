@@ -28,6 +28,12 @@ SECRET_KEY = env(
     default='dlf%}b3:8+;o99yZ]2a11M2A.NC9e5fF6qs]S1,S:)iGJ;E>`c',
 )
 
+# Static Assets
+# ------------------------------------------------------------------------------
+
+# Add Samplesheets vue.js app assets
+STATICFILES_DIRS.append(str(ROOT_DIR('samplesheets/dist')))
+
 # Mail settings
 # ------------------------------------------------------------------------------
 EMAIL_PORT = 1025

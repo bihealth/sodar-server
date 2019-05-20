@@ -47,7 +47,7 @@ X_FRAME_OPTIONS = 'DENY'
 INSTALLED_APPS += ['gunicorn']
 
 # Static Assets
-# ------------------------
+# ------------------------------------------------------------------------------
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Add Samplesheets vue.js app assets
