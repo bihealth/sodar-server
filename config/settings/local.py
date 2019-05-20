@@ -32,7 +32,7 @@ SECRET_KEY = env(
 # ------------------------------------------------------------------------------
 
 # Add Samplesheets vue.js app assets
-STATICFILES_DIRS.append(str(ROOT_DIR('samplesheets/dist')))
+# STATICFILES_DIRS.append(str(ROOT_DIR('samplesheets/dist')))
 
 # Mail settings
 # ------------------------------------------------------------------------------
