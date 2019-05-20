@@ -3,7 +3,7 @@
     <!-- Header -->
     <PageHeader v-if="sodarContext"
                 ref="pageHeader"
-                :app="this">
+                :app="getApp()">
     </PageHeader>
 
     <!-- Main container -->
@@ -61,7 +61,7 @@
               </span>
             </span>
             <irods-buttons
-                :app="this"
+                :app="getApp()"
                 :irods-status="sodarContext['irods_status']"
                 :irods-backend-enabled="sodarContext['irods_backend_enabled']"
                 :irods-webdav-url="sodarContext['irods_webdav_url']"
@@ -95,7 +95,7 @@
           </div>
           <div class="card-body p-0">
             <ag-grid-drag-select
-                :app="this"
+                :app="getApp()"
                 :grid-options="gridOptions['study']">
               <template slot-scope="{ selectedItems }">
                 <ag-grid-vue
@@ -134,7 +134,7 @@
                         gridsLoaded &&
                         !renderError &&
                         !overviewActive"
-                  :app="this"
+                  :app="getApp()"
                   :irods-status="sodarContext['irods_status']"
                   :irods-backend-enabled="sodarContext['irods_backend_enabled']"
                   :irods-webdav-url="sodarContext['irods_webdav_url']"
@@ -146,7 +146,7 @@
 
           <extra-content-table
               v-if="extraTables.assays[assayUuid]"
-              :app="this"
+              :app="getApp()"
               :table-data="extraTables.assays[assayUuid]"
               :irods-status="sodarContext['irods_status']"
               :irods-backend-enabled="sodarContext['irods_backend_enabled']"
@@ -187,7 +187,7 @@
             </div>
             <div class="card-body p-0">
               <ag-grid-drag-select
-                  :app="this"
+                  :app="getApp()"
                   :grid-options="gridOptions['assays'][assayUuid]">
                 <ag-grid-vue
                     class="ag-theme-bootstrap"
@@ -207,7 +207,7 @@
 
       <!-- Overview mode -->
       <div v-else-if="overviewActive" id="sodar-ss-vue-content">
-        <Overview :app="this">
+        <Overview :app="getApp()">
         </Overview>
       </div>
 
@@ -817,6 +817,11 @@ export default {
 
     showNotification (message, delay) {
       this.$refs.pageHeader.showNotification(message, delay)
+    },
+
+    // Workaround attempt for #520 where the app doesn't always appear initialized
+    getApp () {
+      return this
     }
   },
   watch: {
