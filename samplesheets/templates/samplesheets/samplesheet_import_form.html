@@ -34,7 +34,7 @@
 </div>
 
 <div class="container-fluid sodar-page-container">
-  {% if replace_sheets and irods_status %}
+  {% if replace_sheets and irods_status and not zones_exist %}
     <div class="alert alert-warning">
       <strong>Warning:</strong> because iRODS directories have already been
       created, replacing the ISAtab will only be accepted if studies and assays
@@ -46,11 +46,19 @@
       select <strong>Update iRODS Directories</strong> from the Zone Operations
       menu after replace has completed.
     </div>
+  {% elif replace_sheets and zones_exist %}
+    <div class="alert alert-danger">
+      <strong>Error:</strong> Active landing zones exist for the project,
+      replacing sample sheets is not allowed. Please make sure all landing zones
+      from the project are finished or deleted and try again.
+    </div>
   {% endif %}
 
   <form method="post" enctype="multipart/form-data">
-    {% csrf_token %}
-    {{ form | crispy }}
+    {% if not replace_sheets or not zones_exist %}
+      {% csrf_token %}
+      {{ form | crispy }}
+    {% endif %}
 
     <div class="row">
       <div class="btn-group ml-auto">
@@ -58,13 +66,15 @@
            href="{{ request.session.real_referer }}">
           <i class="fa fa-arrow-circle-left"></i> Cancel
         </a>
-        <button type="submit" class="btn btn-primary">
-          {% if replace_sheets %}
+        {% if replace_sheets and not zones_exist %}
+          <button type="submit" class="btn btn-primary">
             <i class="fa fa-refresh"></i> Replace
-          {% else %}
+          </button>
+        {% elif not replace_sheets %}
+          <button type="submit" class="btn btn-primary">
             <i class="fa fa-upload"></i> Import
-          {% endif %}
-        </button>
+          </button>
+        {% endif %}
       </div>
     </div>
   </form>

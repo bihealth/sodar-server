@@ -132,6 +132,15 @@ class SampleSheetImportView(
             context['replace_sheets'] = True
             context['irods_status'] = old_inv.irods_status
 
+            # Check for active zones in case of sheet replacing
+            if (
+                old_inv.project.landing_zones.exclude(
+                    status__in=['MOVED', 'DELETED']
+                ).count()
+                > 0
+            ):
+                context['zones_exist'] = True
+
         except Investigation.DoesNotExist:
             pass
 

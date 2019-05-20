@@ -58,6 +58,7 @@ Changed
     - Display study shortcuts as link column instead of separate table (#464)
     - Do not display shortcuts in cancer study app for mass spectrometry assays (workaround for #482)
     - Move ``get_material_count()`` from views into Investigation model
+    - Disable sheet replacing if active landing zones exist in the project (#525)
 
 Fixed
 -----
