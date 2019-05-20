@@ -216,7 +216,7 @@ STATICFILES_FINDERS = [
 
 WEBPACK_LOADER = {
     'SAMPLESHEETS': {
-        'BUNDLE_DIR_NAME': 'samplesheets-vue/',
+        'BUNDLE_DIR_NAME': '/static/samplesheets-vue/',
         'STATS_FILE': ROOT_DIR('samplesheets/webpack-stats.json'),
     }
 }
