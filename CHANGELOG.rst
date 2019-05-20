@@ -16,6 +16,8 @@ Added
     - iRODS collection path sanitizing (#488)
     - Statistics for the siteinfo app (#503)
     - API function ``test_connection()`` (#514)
+- **Irodsinfo**
+    - ``IRODSINFO_SSL_VERIFY`` setting for toggling SSL verification in iRODS configuration JSON (#516)
 - **Landingzones**
     - Call samplesheets project cache updating after moving zone files (#508)
 - **Samplesheets**
@@ -69,6 +71,8 @@ Fixed
 Removed
 -------
 
+- **Irodsinfo**
+    - iRODS certificate issue workaround (#516)
 - **Samplesheets**
     - DataTables sample sheet rendering (#100, #223)
     - Unused views, templates and templatetags from main and sub apps (#462)

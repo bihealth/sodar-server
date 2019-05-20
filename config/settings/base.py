@@ -525,6 +525,10 @@ IRODSBACKEND_STATUS_INTERVAL = env.int('IRODSBACKEND_STATUS_INTERVAL', 15)
 IRODS_QUERY_BATCH_SIZE = env.int('IRODS_QUERY_BATCH_SIZE', 24)
 
 
+# Irodsinfo settings
+# In the generated iRODS config, require SSL cert verification unless False
+IRODSINFO_SSL_VERIFY = env.bool('IRODSINFO_SSL_VERIFY', True)
+
 # Samplesheets settings
 SHEETS_IRODS_LIMIT = env.int('SHEETS_IRODS_LIMIT', 50)  # iRODS file query limit
 SHEETS_TABLE_HEIGHT = 400  # Study/assay table height

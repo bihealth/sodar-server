@@ -70,7 +70,9 @@ class IrodsConfigView(LoggedInPermissionMixin, HTTPRefererMixin, View):
             'irods_authentication_scheme': 'PAM',
             'irods_client_server_negotiation': 'request_server_negotiation',
             'irods_client_server_policy': 'CS_NEG_REFUSE',
-            'irods_ssl_verify_server': 'none',
+            'irods_ssl_verify_server': 'cert'
+            if settings.IRODSINFO_SSL_VERIFY
+            else 'none',
             'irods_ssl_certificate_file': cert_file_name,
             'irods_zone_name': settings.IRODS_ZONE,
             'irods_user_name': user_name,
