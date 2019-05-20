@@ -50,7 +50,7 @@ module.exports = {
     // Paths
     assetsRoot: path.resolve(__dirname, '../dist'),
     assetsSubDirectory: 'samplesheets-vue',
-    assetsPublicPath: '/',
+    assetsPublicPath: '/static/',
 
     /**
      * Source Maps
