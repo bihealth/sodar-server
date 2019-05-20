@@ -871,7 +871,7 @@ export default {
 /* NOTE: border-collapse will not work as ag-grid is not rendered as a table */
 
 .ag-theme-bootstrap, .ag-theme-bootstrap .ag-header {
-  font: inherit;
+  font: inherit !important;
 }
 
 .ag-root {
