@@ -889,15 +889,13 @@ export default {
   border-right: 1px solid #dfdfdf !important;
 }
 
+.ag-full-width-container {
+  border-bottom: 1px solid #dfdfdf !important;
+}
+
 .ag-row {
   background-color: #ffffff !important;
 }
-
-/*
-.ag-root .ag-row:first-child .ag-cell {
-  border-top: 0 !important;
-}
-*/
 
 .ag-cell {
   border-right: 1px solid #dfdfdf !important;
@@ -929,10 +927,6 @@ export default {
 
 .ag-pinned-right-header {
   border: 0 !important;
-}
-
-.ag-row:last-child .ag-cell {
-  border-bottom: 1px solid #dfdfdf !important;
 }
 
 a.sodar-ss-anchor {
