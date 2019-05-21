@@ -33,7 +33,7 @@ ONTOLOGY_URL_TEMPLATE = (
     'https://bioportal.bioontology.org/ontologies/'
     '{ontology_name}/?p=classes&conceptid={accession}'
 )
-
+NARROW_CHARS = 'iIlrt;:.,'
 
 contact_re = re.compile(r'(.+?)\s?(?:[<|[])(.+?)(?:[>\]])')
 logger = logging.getLogger(__name__)
@@ -498,13 +498,22 @@ class SampleSheetTableBuilder:
             self._field_header[i]['col_type'] = col_type
 
             # Maximum column value length for column width estimate
+
+            def _get_length(value):
+                """Return estimated length for proportional text"""
+                # Very unscientific and font-specific, don't try this at home
+                nc = sum([value.count(c) for c in NARROW_CHARS])
+                return round(len(value) - nc + 0.5 * nc)
+
             header_len = len(self._field_header[i]['value'])
 
             if col_type == 'CONTACT':
                 max_cell_len = max(
                     [
                         (
-                            len(re.findall(contact_re, x[i]['value'])[0][0])
+                            _get_length(
+                                re.findall(contact_re, x[i]['value'])[0][0]
+                            )
                             if x[i]['value']
                             and re.findall(contact_re, x[i]['value'])
                             else 0
@@ -517,7 +526,11 @@ class SampleSheetTableBuilder:
                 header_len = 0  # Header length is not comparable
                 max_cell_len = max(
                     [
-                        (len(x[i]['value'].split(';')) if x[i]['value'] else 0)
+                        (
+                            _get_length(x[i]['value'].split(';'))
+                            if x[i]['value']
+                            else 0
+                        )
                         for x in self._table_data
                     ]
                 )
@@ -525,8 +538,8 @@ class SampleSheetTableBuilder:
             else:
                 max_cell_len = max(
                     [
-                        (len(x[i]['value']) if x[i]['value'] else 0)
-                        + (len(x[i]['unit']) if x[i]['unit'] else 0)
+                        (_get_length(x[i]['value']) if x[i]['value'] else 0)
+                        + (_get_length(x[i]['unit']) if x[i]['unit'] else 0)
                         for x in self._table_data
                     ]
                 )
