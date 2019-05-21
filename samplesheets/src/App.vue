@@ -401,9 +401,9 @@ export default {
               headerName: '#',
               field: 'rowNum',
               editable: false,
-              headerClass: ['bg-light'],
+              headerClass: ['sodar-ss-data-header'],
               cellClass: [
-                'bg-light', 'text-right', 'text-muted',
+                'text-right', 'text-muted',
                 'sodar-ss-data-unselectable',
                 'sodar-ss-data-row-cell'
               ],
@@ -474,7 +474,7 @@ export default {
               field: 'col' + j.toString(), // TODO: Proper naming
               width: colWidth,
               minWidth: minW,
-              headerClass: ['bg-light'],
+              headerClass: ['sodar-ss-data-header'],
               cellRendererFramework: DataCellRenderer,
               cellRendererParams: {
                 'colType': colType,
@@ -541,11 +541,10 @@ export default {
               field: 'shortcutLinks',
               editable: false,
               headerClass: [
-                'bg-light',
+                'sodar-ss-data-header',
                 'sodar-ss-data-links-header'
               ],
               cellClass: [
-                'bg-light',
                 'sodar-ss-data-links-cell',
                 'sodar-ss-data-unselectable'
               ],
@@ -585,11 +584,10 @@ export default {
                 field: 'irodsLinks',
                 editable: false,
                 headerClass: [
-                  'bg-light',
+                  'sodar-ss-data-header',
                   'sodar-ss-data-links-header'
                 ],
                 cellClass: [
-                  'bg-light',
                   'sodar-ss-data-links-cell',
                   'sodar-ss-data-unselectable'
                 ],
@@ -911,6 +909,10 @@ export default {
   height: 38px !important;
 }
 
+.sodar-ss-data-header {
+  background-color: #f4f5f6 !important;
+}
+
 .sodar-ss-data-cell:focus {
   border: 1px solid #000000 !important;
 }
@@ -969,16 +971,6 @@ a.sodar-ss-anchor {
   border-left: 0 !important;
   border-bottom: 0 !important;
 }
-
-/* HACK: Temporarily make text selectable in grid cells */
-/*
-div.ag-root .ag-cell-focus {
-    -webkit-user-select: text;
-    -moz-user-select: text;
-    -ms-user-select: text;
-    user-select: text;
-}
-*/
 
 .agds-selected {
   background-color: #ffe8e8 !important;
