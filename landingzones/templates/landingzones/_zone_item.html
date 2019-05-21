@@ -21,19 +21,17 @@
         {% get_user_html zone.user %} /
       {% endautoescape %}
     {% endif %}
-      {% if details_card_mode %}
-        <a href="{% url 'landingzones:list' project=project.sodar_uuid %}#{{ zone.sodar_uuid }}">
-      {% endif %}
-      {{ zone.title|force_wrap:16|safe }}
-      {% if details_card_mode %}
-        </a>
-      {% endif %}
-      {% if zone.description %}
-        <a class="sodar-ss-assay-info-link" tabindex="0" data-toggle="popover"
-           data-trigger="focus" data-placement="top" data-html="true"
-           data-content="{% get_zone_desc_html zone %}">
-          <i class="fa fa-info-circle text-info"></i>
-        </a>
+    {% if details_card_mode %}
+      <a href="{% url 'landingzones:list' project=project.sodar_uuid %}#{{ zone.sodar_uuid }}">
+    {% endif %}
+    {{ zone.title|force_wrap:16|safe }}
+    {% if details_card_mode %}
+      </a>
+    {% endif %}
+    {% if zone.description %}
+      {% get_zone_desc_html zone as zone_desc_html %}
+      {% get_info_link zone_desc_html html=True as info_link %}
+      {{ info_link | safe }}
     {% endif %}
     {% if zone.configuration %}
       <span class="badge badge-pill badge-success">{% get_config_legend zone %}</span>
