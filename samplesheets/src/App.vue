@@ -908,7 +908,7 @@ export default {
 }
 
 .sodar-ss-data-header {
-  background-color: #f4f5f6 !important;
+  background-color: #f7f7f7 !important;
 }
 
 .sodar-ss-data-cell:focus {
