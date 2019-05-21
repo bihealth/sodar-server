@@ -35,4 +35,79 @@
 
 {% block javascript %}
   {{ block.super }}
+
+  {# Tour content #}
+  <script type="text/javascript">
+    tourEnabled = true;
+
+    tour.addStep('sheet_info', {
+        title: 'Sample Sheets',
+        text: 'In this app you are able to access meta data regarding ' +
+              'project samples, along with links to sample file mass storage ' +
+              'in iRODS.',
+        advanceOn: '.docs-link click',
+        showCancelLink: true
+    });
+
+    tour.addStep('sheet_isa', {
+        title: 'ISA Model',
+        text: 'Sample data is represented according to the ISA ' +
+              '(Investigation/Study/Assay) specification. One project is ' +
+              'expected to contain one investigation, which contains one ' +
+              'or more studies, which in turn can consist of one or more ' +
+              'assays. One study and its assays are visualized per page ' +
+              'in this application.',
+        advanceOn: '.docs-link click',
+        showCancelLink: true
+    });
+
+    tour.addStep('sheet_navigation', {
+        title: 'Sample Sheet Navigation',
+        text: 'Navigate between studies and data overview using the ' +
+            'navigation bar on the top of the page.',
+        advanceOn: '.docs-link click',
+        showCancelLink: true
+    });
+
+    tour.addStep('sheet_operations', {
+        title: 'Sheet Operations',
+        text: 'Authorized users can perform sheet-wide operations ' +
+              'such as iRODS directory creation in the Operations menu.',
+        advanceOn: '.docs-link click',
+        showCancelLink: true
+    });
+
+    tour.addStep('data_links', {
+        title: 'iRODS Links',
+        text: 'Links to sample files in iRODS can be accessed in ' +
+              'the rightmost column of study and assay tables. Note that ' +
+              'an authorized user must first create iRODS directories ' +
+              'for the project for these controls to be enabled. ' +
+              'Uploading data is done using the Landing Zones app.',
+        advanceOn: '.docs-link click',
+        showCancelLink: true
+    });
+
+    tour.addStep('new_shortcuts', {
+        title: 'New in SODAR v0.5+: Study Shortcuts',
+        text: 'Study shortcuts such as IGV links are no longer found in a ' +
+              'separate table, but instead in the rightmost column of the ' +
+              'study table. Links will be inactive if no related files are ' +
+              'currently stored in iRODS.',
+        advanceOn: '.docs-link click',
+        showCancelLink: true
+    });
+
+    tour.addStep('new_copying', {
+        title: 'New in SODAR v0.5+: Cell Copying',
+        text: 'You can copy one or several cells by clicking on a ' +
+              'study/assay table and painting a selection with your mouse. ' +
+              'Then press CTRL+C to copy the cells into your clipboard. ' +
+              'This feature is still experimental and bugs may appear.',
+        advanceOn: '.docs-link click',
+        showCancelLink: true
+    });
+
+  </script>
+
 {% endblock javascript %}
