@@ -298,6 +298,11 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         :param project: Project object to limit update to (optional)
         :param user: User object to denote user triggering the update (optional)
         """
+        irods_backend = get_backend_api('omics_irods')
+
+        if not irods_backend or not irods_backend.test_connection():
+            return
+
         for study_plugin in SampleSheetStudyPluginPoint.get_plugins():
             study_plugin.update_cache(name, project, user)
 
