@@ -19,6 +19,7 @@
             class="btn sodar-list-btn"
             v-clipboard="getHpoTerms()"
             title="Copy HPO term IDs to clipboard"
+            @click="params.app.showNotification('Copied!', 'success', 1000)"
             v-b-tooltip.hover>
           <i class="fa fa-clipboard"></i>
         </b-button>

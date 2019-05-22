@@ -471,14 +471,15 @@ export default {
             // Create header
             let header = {
               headerName: fieldHeader['value'],
-              field: 'col' + j.toString(), // TODO: Proper naming
+              field: 'col' + j.toString(),
               width: colWidth,
               minWidth: minW,
               headerClass: ['sodar-ss-data-header'],
               cellRendererFramework: DataCellRenderer,
               cellRendererParams: {
+                'app': this,
                 'colType': colType,
-                'colMeta': colMeta // TODO: Implement a getter instead
+                'colMeta': colMeta
               },
               cellClass: ['sodar-ss-data-cell'],
               cellClassRules: {
@@ -817,7 +818,7 @@ export default {
       this.$refs.pageHeader.showNotification(message, delay)
     },
 
-    // Workaround attempt for #520 where the app doesn't always appear initialized
+    // Workaround for #520 where "this" doesn't always appear initialized in templates
     getApp () {
       return this
     }
