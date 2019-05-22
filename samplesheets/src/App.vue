@@ -492,10 +492,11 @@ export default {
               }
             }
 
-            // Make first column pinned
+            // Make source name column pinned, disable hover
             // HACK: also create new header group to avoid name duplication
             if (j === 0) {
               header.pinned = 'left'
+              header.cellRendererParams['enableHover'] = false
               headerGroup.children.push(header)
               colDef.push(headerGroup)
               headerGroup = {

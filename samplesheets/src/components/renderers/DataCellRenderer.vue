@@ -65,12 +65,14 @@ export default Vue.extend(
         headerName: null,
         meta: null,
         colType: null,
-        renderData: null
+        renderData: null,
+        enableHover: null
       }
     },
     methods: {
       onMouseOver (event) {
-        if (event.currentTarget.scrollWidth > event.currentTarget.clientWidth) {
+        if (this.enableHover &&
+            event.currentTarget.scrollWidth > event.currentTarget.clientWidth) {
           event.currentTarget.className += ' sodar-ss-data-hover'
         }
       },
@@ -171,6 +173,10 @@ export default Vue.extend(
 
         // Handle special column type
         this.colType = this.params.colType
+
+        // Enable/disable hover overflow
+        this.enableHover = (this.params.enableHover === undefined)
+          ? true : this.params.enableHover
 
         if (this.colType === 'UNIT') {
           this.getMeta()
