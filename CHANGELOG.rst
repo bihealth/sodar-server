@@ -83,7 +83,6 @@ Removed
     - JQuery updating in ``samplesheets.js`` (#462, #473)
     - Local DataTables includes (#462)
     - JQuery Dragscroll (#462)
-    - Unused settings ``IRODS_QUERY_BATCH_SIZE`` and ``IRODSBACKEND_STATUS_INTERVAL`` (#524)
 
 
 v0.4.6 (2019-04-25)
