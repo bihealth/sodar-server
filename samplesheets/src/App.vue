@@ -609,8 +609,8 @@ export default {
                   showFileList: true,
                   modalComponent: this.$refs.dirModalRef
                 },
-                width: 148,
-                minWidth: 148
+                width: 152, // TODO: Attempt to calculate this somehow?
+                minWidth: 152
               }
             ]
           }
