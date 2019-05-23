@@ -12,7 +12,7 @@ Added
 -----
 
 - **General**
-    - Unsupported browser warning (#534)
+    - Unsupported browser warning (#535)
 - **Irodsbackend**
     - API function ``get_url()`` (#438)
     - iRODS collection path sanitizing (#488)
