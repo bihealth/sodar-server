@@ -488,6 +488,9 @@ PROJECTROLES_ALLOW_LOCAL_USERS = env.bool(
     'PROJECTROLES_ALLOW_LOCAL_USERS', False
 )
 
+# Warn about unsupported browsers (IE)
+PROJECTROLES_BROWSER_WARNING = True
+
 # Timeline app settings
 TIMELINE_PAGINATION = 15
 
