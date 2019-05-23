@@ -1,5 +1,6 @@
 from django.conf import settings
-from django.contrib.staticfiles.templatetags.staticfiles import static
+
+# from django.contrib.staticfiles.templatetags.staticfiles import static
 from django.template.defaultfilters import filesizeformat
 
 # Projectroles dependency
@@ -23,7 +24,9 @@ class BackendPlugin(BackendPluginPoint):
     description = 'iRODS backend for interfacing with the SODAR iRODS server'
 
     #: URL of optional javascript file to be included
-    javascript_url = static('irodsbackend/js/irodsbackend.js')
+    # NOTE: Commented out temporarily (see sodar_core#261)
+    javascript_url = None
+    # javascript_url = static('irodsbackend/js/irodsbackend.js')
 
     def get_api(self):
         """Return API entry point object."""

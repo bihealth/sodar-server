@@ -47,8 +47,10 @@ Changed
     - Always return JSON from API views (#457)
     - Update title and description in plugin
     - Rename ``get_subdir()`` into ``get_sub_path()`` (#495)
+    - Disable loading backend javascript for each page (#532, sodar_core#261)
 - **Landingzones**
     - Use ``get_info_link()`` for zone descriptions (#501)
+    - Temporarily load ``irodsbackend.js`` by a manual include (#532, sodar_core#261)
 - **Samplesheets**
     - Update and refactor server side rendering for client-side sheet UI (#426)
     - URL patterns for ``samplesheets:project_sheet`` updated for Vue.js routes (#426)
@@ -61,6 +63,7 @@ Changed
     - Do not display shortcuts in cancer study app for mass spectrometry assays (workaround for #482)
     - Move ``get_material_count()`` from views into Investigation model
     - Disable sheet replacing if active landing zones exist in the project (#525)
+    - Temporarily load ``irodsbackend.js`` by a manual include in details card (#532, sodar_core#261)
 
 Fixed
 -----

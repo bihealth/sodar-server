@@ -13,7 +13,9 @@
 {% block css %}
   {{ block.super }}
   <!-- Irodsbackend -->
+  {% comment see sodar_core#261 %}
   <link rel="stylesheet" type="text/css" href="{% static 'irodsbackend/css/irodsbackend.css' %}" />
+  {% endcomment %}
 
   <style type="text/css">
     .sodar-lz-table thead tr th:nth-child(3) {
@@ -139,6 +141,9 @@
 
   <!-- Landingzones Javascript -->
   <script type="text/javascript" src="{% static 'landingzones/js/landingzones.js' %}"></script>
+
+  {# HACK: Manually include since plugin include is disabled (see sodar_core#261) #}
+  <script type="text/javascript" src="/static/irodsbackend/js/irodsbackend.js"></script>
 
   {# Tour content #}
   <script type="text/javascript">
