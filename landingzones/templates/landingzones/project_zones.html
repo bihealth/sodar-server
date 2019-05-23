@@ -13,9 +13,8 @@
 {% block css %}
   {{ block.super }}
   <!-- Irodsbackend -->
-  {% comment see sodar_core#261 %}
+  {# Should not be directly included, see sodar_core#261 #}
   <link rel="stylesheet" type="text/css" href="{% static 'irodsbackend/css/irodsbackend.css' %}" />
-  {% endcomment %}
 
   <style type="text/css">
     .sodar-lz-table thead tr th:nth-child(3) {

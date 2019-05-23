@@ -11,6 +11,14 @@
   Sample Sheets for {{ project.title }}
 {% endblock title %}
 
+{% block css %}
+  {{ block.super }}
+
+  <!-- Irodsbackend -->
+  {# Should not be directly included, see sodar_core#261 #}
+  <link rel="stylesheet" type="text/css" href="{% static 'irodsbackend/css/irodsbackend.css' %}" />
+{% endblock css %}
+
 {% block projectroles_extend %}
 {% has_perm 'samplesheets.edit_sheet' request.user project as can_edit_sheet %}
 
