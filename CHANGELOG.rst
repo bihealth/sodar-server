@@ -11,6 +11,8 @@ v0.5.0 (WIP)
 Added
 -----
 
+- **General**
+    - Unsupported browser warning (#534)
 - **Irodsbackend**
     - API function ``get_url()`` (#438)
     - iRODS collection path sanitizing (#488)

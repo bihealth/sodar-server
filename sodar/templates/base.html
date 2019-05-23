@@ -20,7 +20,7 @@
     <meta name="description" content="SODAR">
     <meta name="author" content="Berlin Institute of Health">
 
-    <!-- Favicon -->
+    <!-- Favicon (SODAR specific) -->
     <link rel="icon" type="image/png" href="{% static 'images/favicon/favicon-196x196.png' %}" sizes="196x196" />
     <link rel="icon" type="image/png" href="{% static 'images/favicon/favicon-96x96.png' %}" sizes="96x96" />
     <link rel="icon" type="image/png" href="{% static 'images/favicon/favicon-32x32.png' %}" sizes="32x32" />
@@ -83,14 +83,14 @@
 
   <body>
 
-    <div class="sodar-base-container">
+    <div class="sodar-base-container" id="sodar-base-container">
 
-      <div class="sodar-top-container">
+      <div class="sodar-top-container" id="sodar-top-container">
         {# Projectroles site title bar #}
         {% include 'projectroles/_site_titlebar.html' %}
       </div> <!-- /sodar-top-container -->
 
-      <div class="sodar-content-container">
+      <div class="sodar-content-container" id="sodar-content-container">
         {% block content %}
           <p>Use this document as a way to quick start any new project.</p>
         {% endblock content %}
@@ -106,6 +106,12 @@
     <!-- Standard Javascript includes -->
     {# Include your Javascript here #}
     {% block javascript %}
+      <!-- Settings -->
+      <script type="text/javascript">
+        {% get_setting name='PROJECTROLES_BROWSER_WARNING' js=True as browser_warning %}
+        window.sodarBrowserWarning = {{ browser_warning }};
+      </script>
+
       <!-- Shepherd -->
       <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.4/js/tether.js"></script>
       <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/shepherd/1.8.1/js/shepherd.min.js"></script>
@@ -116,7 +122,7 @@
       <!-- General project Javascript -->
       <script type="text/javascript" src="{% static 'js/project.js' %}"></script>
 
-      <!-- Settings -->
+      <!-- Settings (SODAR specific) -->
       <script type="text/javascript">
         window.irodsbackendStatusInterval = {% get_setting 'IRODSBACKEND_STATUS_INTERVAL' %};
         {% get_setting 'IRODS_QUERY_BATCH_SIZE' as query_batch_size %}
