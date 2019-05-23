@@ -9,7 +9,7 @@
         :title="schemaItem['title']"
         :disabled="getEnabledState(schemaId)"
         :href="value[schemaId]['url']"
-        v-b-tooltip.hover>
+        v-b-tooltip.hover.d300>
       <i :class="'fa ' + schemaItem['icon']"></i>
     </b-button>
     <b-button
@@ -19,7 +19,7 @@
         :title="schemaItem['title']"
         :disabled="getEnabledState(schemaId)"
         @click="onModalClick(schemaId)"
-        v-b-tooltip.hover>
+        v-b-tooltip.hover.d300>
       <i :class="'fa ' + schemaItem['icon']"></i>
     </b-button>
    </span>

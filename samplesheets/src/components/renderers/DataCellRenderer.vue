@@ -20,14 +20,14 @@
             v-clipboard="getHpoTerms()"
             title="Copy HPO term IDs to clipboard"
             @click="params.app.showNotification('Copied!', 'success', 1000)"
-            v-b-tooltip.hover>
+            v-b-tooltip.hover.d300>
           <i class="fa fa-clipboard"></i>
         </b-button>
       </span>
       <span v-for="(link, index) in links = renderData.links" :key="index">
         <a :href="link.url"
            :title="meta.tooltip"
-           v-b-tooltip.hover
+           v-b-tooltip.hover.d300
            target="_blank">{{ link.value }}</a><span v-if="index + 1 < links.length">, </span>
       </span>
     </span>
@@ -40,7 +40,7 @@
       <span v-for="(idRef, index) in renderData.extIds"
             class="badge-group"
             :key="index"
-            v-b-tooltip.hover
+            v-b-tooltip.hover.d300
             :title="idRef.key">
         <span class="badge badge-secondary">ID</span><span class="badge badge-info">{{ idRef.id }}</span>
       </span>
@@ -49,7 +49,7 @@
     <span v-else-if="colType === 'LINK_FILE'">
       <a :href="renderData.url"
          :title="meta.tooltip"
-         v-b-tooltip.hover
+         v-b-tooltip.hover.d300
          target="_blank">{{ renderData.value }}</a>
     </span>
   </div>
