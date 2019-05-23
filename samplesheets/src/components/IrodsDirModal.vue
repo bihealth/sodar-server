@@ -105,4 +105,30 @@ export default {
 </script>
 
 <style scoped>
+/* Size column */
+table.sodar-irods-obj-table thead tr th:nth-child(2) {
+  min-width: 60px;
+  text-align: right;
+}
+
+table.sodar-irods-obj-table tbody tr td:nth-child(2) {
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* Date column */
+table.sodar-irods-obj-table tbody tr td:nth-child(3) {
+  width: 5%;
+  white-space: nowrap;
+}
+
+/* MD5 column */
+table.sodar-irods-obj-table thead tr th:nth-child(4) {
+  width: 40px;
+  text-align: center;
+}
+
+table.sodar-irods-obj-table tbody tr td:nth-child(4) {
+  text-align: center;
+}
 </style>
