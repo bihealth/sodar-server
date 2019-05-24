@@ -66,7 +66,7 @@ urlpatterns = [
     url(
         regex=r'^api/remote/get/(?P<project>[0-9a-f-]+)/(?P<secret>[\w\-]+)$',
         view=views.RemoteSheetGetAPIView.as_view(),
-        name='remote_sheet_get',
+        name='api_remote_get',
     ),
     # Taskflow API views
     url(
