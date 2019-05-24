@@ -1,4 +1,3 @@
-import io
 import json
 import os
 
@@ -904,7 +903,8 @@ class SourceIDQueryAPIView(APIView):
 
 # TODO: Temporary HACK, should be replaced by real solution (sodar_core#261)
 class RemoteSheetGetAPIView(APIView):
-    """Temporary API view for retrieving sample sheet tsv:s by a target site"""
+    """Temporary API view for retrieving sample sheet tables as JSON by a target
+    site"""
 
     permission_classes = (AllowAny,)  # We check the secret in get()/post()
 
@@ -942,32 +942,18 @@ class RemoteSheetGetAPIView(APIView):
             )
 
         # All OK so far, return data
-        ret = {'assays': {}}
+        ret = {'studies': {}}
+        tb = SampleSheetTableBuilder()
 
         # Build study tables
         for study in investigation.studies.all():
-            tb = SampleSheetTableBuilder()
-
             try:
                 tables = tb.build_study_tables(study)
 
             except Exception:
                 continue  # TODO: TBD: How to inform the requester of a failure?
 
-            # Write assay tables
-            for assay in [
-                a
-                for a in study.assays.all()
-                if str(a.sodar_uuid) in tables['assays']
-            ]:
-                tsv_output = io.StringIO()
-                write_csv_table(
-                    tables['assays'][str(assay.sodar_uuid)], tsv_output
-                )
-                ret['assays'][str(assay.sodar_uuid)] = {
-                    'name': assay.get_name(),
-                    'tsv_table': tsv_output.getvalue(),
-                }
+            ret['studies'][str(study.sodar_uuid)] = tables
 
         return Response(ret, status=200)
 
