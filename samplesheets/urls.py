@@ -63,6 +63,11 @@ urlpatterns = [
         view=views.SourceIDQueryAPIView.as_view(),
         name='source_get',
     ),
+    url(
+        regex=r'^api/remote/get/(?P<project>[0-9a-f-]+)/(?P<secret>[\w\-]+)$',
+        view=views.RemoteSheetGetAPIView.as_view(),
+        name='remote_sheet_get',
+    ),
     # Taskflow API views
     url(
         regex=r'^taskflow/dirs/get$',

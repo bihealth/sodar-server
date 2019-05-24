@@ -1,4 +1,4 @@
-import csv
+import io
 import json
 import os
 
@@ -10,7 +10,7 @@ from django.shortcuts import redirect
 from django.urls import reverse
 from django.views.generic import TemplateView, FormView, View
 
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -18,7 +18,7 @@ from rest_framework.versioning import AcceptHeaderVersioning
 from knox.auth import TokenAuthentication
 
 # Projectroles dependency
-from projectroles.models import Project
+from projectroles.models import Project, RemoteSite, SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
 from projectroles.views import (
     LoggedInPermissionMixin,
@@ -39,9 +39,20 @@ from .models import (
 )
 from .rendering import SampleSheetTableBuilder, EMPTY_VALUE
 from .tasks import update_project_cache_task
-from .utils import get_sample_dirs, compare_inv_replace, get_sheets_url
+from .utils import (
+    get_sample_dirs,
+    compare_inv_replace,
+    get_sheets_url,
+    write_csv_table,
+)
 
 
+# SODAR constants
+SITE_MODE_TARGET = SODAR_CONSTANTS['SITE_MODE_TARGET']
+REMOTE_LEVEL_READ_ROLES = SODAR_CONSTANTS['REMOTE_LEVEL_READ_ROLES']
+
+
+# Local constants
 APP_NAME = 'samplesheets'
 
 
@@ -352,25 +363,7 @@ class SampleSheetTableExportView(
         )  # TODO: TBD: Output file name?
 
         # Build TSV
-        writer = csv.writer(response, delimiter='\t')
-
-        # Top header
-        output_row = []
-
-        for c in table['top_header']:
-            output_row.append(c['value'])
-
-            if c['colspan'] > 1:
-                output_row += [''] * (c['colspan'] - 1)
-
-        writer.writerow(output_row)
-
-        # Header
-        writer.writerow([c['value'] for c in table['field_header']])
-
-        # Data cells
-        for row in table['table_data']:
-            writer.writerow([c['value'] for c in row])
+        write_csv_table(table, response)
 
         # Return file
         return response
@@ -907,6 +900,76 @@ class SourceIDQueryAPIView(APIView):
 
         ret_data = {'id_found': True if source_count > 0 else False}
         return Response(ret_data, status=200)
+
+
+# TODO: Temporary HACK, should be replaced by real solution (sodar_core#261)
+class RemoteSheetGetAPIView(APIView):
+    """Temporary API view for retrieving sample sheet tsv:s by a target site"""
+
+    permission_classes = (AllowAny,)  # We check the secret in get()/post()
+
+    def get(self, request, *args, **kwargs):
+        secret = kwargs['secret']
+
+        try:
+            target_site = RemoteSite.objects.get(
+                mode=SITE_MODE_TARGET, secret=secret
+            )
+
+        except RemoteSite.DoesNotExist:
+            return Response('Remote site not found, unauthorized', status=401)
+
+        target_project = target_site.projects.filter(
+            project_uuid=kwargs['project']
+        ).first()
+
+        if (
+            not target_project
+            or target_project.level != REMOTE_LEVEL_READ_ROLES
+        ):
+            return Response(
+                'No project access for remote site, unauthorized', status=401
+            )
+
+        try:
+            investigation = Investigation.objects.get(
+                project=target_project.get_project()
+            )
+
+        except Investigation.DoesNotExist:
+            return Response(
+                'No ISA investigation found for project', status=404
+            )
+
+        # All OK so far, return data
+        ret = {'assays': {}}
+
+        # Build study tables
+        for study in investigation.studies.all():
+            tb = SampleSheetTableBuilder()
+
+            try:
+                tables = tb.build_study_tables(study)
+
+            except Exception:
+                continue  # TODO: TBD: How to inform the requester of a failure?
+
+            # Write assay tables
+            for assay in [
+                a
+                for a in study.assays.all()
+                if str(a.sodar_uuid) in tables['assays']
+            ]:
+                tsv_output = io.StringIO()
+                write_csv_table(
+                    tables['assays'][str(assay.sodar_uuid)], tsv_output
+                )
+                ret['assays'][str(assay.sodar_uuid)] = {
+                    'name': assay.get_name(),
+                    'tsv_table': tsv_output.getvalue(),
+                }
+
+        return Response(ret, status=200)
 
 
 # Taskflow API Views -----------------------------------------------------------

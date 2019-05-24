@@ -1,5 +1,6 @@
 """Utilities for the samplesheets app"""
 
+import csv
 import re
 
 from django.db.models import QuerySet
@@ -204,3 +205,32 @@ def get_sheets_url(obj):
         url += '#/assay' + str(obj.sodar_uuid)
 
     return url
+
+
+def write_csv_table(table, output, delimiter='\t'):
+    """
+    Write rendered study/assay table into csv/tsv.
+
+    :param table: Rendered study/assay table (dict)
+    :param output: Writer output object
+    :param delimiter: Delimiting character
+    """
+    writer = csv.writer(output, delimiter=delimiter)
+
+    # Top header
+    output_row = []
+
+    for c in table['top_header']:
+        output_row.append(c['value'])
+
+        if c['colspan'] > 1:
+            output_row += [''] * (c['colspan'] - 1)
+
+    writer.writerow(output_row)
+
+    # Header
+    writer.writerow([c['value'] for c in table['field_header']])
+
+    # Data cells
+    for row in table['table_data']:
+        writer.writerow([c['value'] for c in row])

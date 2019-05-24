@@ -35,6 +35,7 @@ Added
     - Multi-cell selection and clipboard copying
     - Temporary manual sample sheet cache updating (#474)
     - Deletion of project samplesheets cache on sheet/data deletion (#509)
+    - Temporary view ``RemoteSheetGetAPIView`` for remote sample sheet access (#388, #523)
 
 Changed
 -------
@@ -66,6 +67,7 @@ Changed
     - Move ``get_material_count()`` from views into Investigation model
     - Disable sheet replacing if active landing zones exist in the project (#525)
     - Temporarily load ``irodsbackend.js`` by a manual include in details card (#532, sodar_core#261)
+    - Move TSV table generation into ``utils.write_csv_table()`` (#523)
 
 Fixed
 -----
