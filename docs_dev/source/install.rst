@@ -16,9 +16,10 @@ If you want to install or develop SODAR without iRODS and SODAR Taskflow, you
 can skip the steps related to their installation and set the environment
 variable ``ENABLED_BACKEND_PLUGINS='timeline_backend'``.
 
-These instructions assume you have Python 3.6+ and PostgreSQL 9.4+ installed.
+These instructions assume you have Python 3.6 and PostgreSQL 9.6+ installed.
 
-**NOTE:** Python 3.5.x and lower are no longer supported!
+**NOTE:** Python 3.5.x and lower are no longer supported! Also, Python 3.7
+support is pending some 3rd party package updates.
 
 
 Install SODAR
@@ -28,7 +29,7 @@ Requirements
 ------------
 
 - Ubuntu 16.04 Xenial
-- Python 3.6+
+- Python 3.6
 - Postgres 9.6+
 
 System Installation
@@ -145,8 +146,8 @@ Follow the installation instructions in the ``README.rst`` file. Make sure to
 configure environment variables to point to the Redis and iRODS servers you are
 using.
 
-Configure SODAR
----------------
+Configure SODAR Components
+--------------------------
 
 In the SODAR environment variables (preferably in the ``.env``
 file), set up iRODS and Taskflow variables to point to your server. The default
@@ -154,19 +155,32 @@ values in ``config/settings/base.py`` point to the sodar_docker_env and
 sodar_taskflow defaults. If using the Docker environment and local Taskflow
 service, no changes should thus be required.
 
+Similar configuration also needs to be done to SODAR Taskflow, see instructions
+in its respective project repository.
+
 
 Run the Components
 ==================
+
+For best results, start the required components in the order presented here.
+
+1. SODAR Docker Environment
+---------------------------
 
 Make sure Redis and iRODS iCAT server(s) are running. If you have set up and
 launched the sodar_docker_env environment, they all should be available as
 Docker containers.
 
-Run the Docker environment as follows:
+Run the ``sodar_docker_env`` Docker environment as follows:
 
 .. code-block:: console
 
     $ utility/env_relaunch.sh
+
+**NOTE:** It can take a bit of time for the iRODS server to initialize.
+
+2. SODAR Taskflow
+-----------------
 
 In the ``sodar_taskflow`` repository, start the SODAR Taskflow service:
 
@@ -174,16 +188,40 @@ In the ``sodar_taskflow`` repository, start the SODAR Taskflow service:
 
     $ utility/run_dev.sh
 
-In the SODAR root directory, start the site in debug mode with ``local``
-settings. After this you can access the site at ``http://localhost:8080``.
+3. Sample Sheets Vue App
+------------------------
+
+The Sample Sheets Vue app must be run in a separate process using NPM. The
+easiest way is to use the shortcut script in the SODAR project, which will
+serve the development version with hot reload in ``http://localhost:8080``.
+
+.. code-block::
+
+    $ ./run_samplesheets_dev.sh
+
+4. SODAR Celery Process
+-----------------------
+
+For asynchronous tasks, run the SODAR celery process in debug mode using the
+following script:
+
+.. code-block:: console
+
+    $ ./run_celery.sh
+
+5. SODAR Django Site
+--------------------
+
+Finally, we can start up the actual SODAR Django Site. In the SODAR root
+directory, start the site in debug mode with ``local`` settings.
 
 .. code-block:: console
 
     $ ./run.sh
 
-If existing data on your development iRODS server has been wiped out due to e.g.
-rebooting the Docker environment project metadata and collections (but not data
-objects) can be synced with the following command:
+**NOTE:** If existing data on your development iRODS server has been wiped out
+due to e.g. rebooting the Docker environment project metadata and collections
+(but not data objects) can be synced with the following command:
 
 .. code-block:: console
 
@@ -196,35 +234,4 @@ There is also a shortcut for syncing iRODS data and starting the server:
     $ ./run.sh sync
 
 Now you should be able to browse to http://localhost:8000 and see your site.
-iRODS and Taskflow actions should also be available.
-
-
-Run Celery
-==========
-
-For asynchronous task, run celery in dev using the following:
-
-.. code-block:: console
-
-    $ ./run_celery.sh
-
-
-Run the Sample Sheets Vue App
-=============================
-
-The Sample Sheets Vue app must be run in a separate process using NPM:
-
-.. code-block:: console
-
-    # install dependencies
-    $ npm install
-
-    # serve with hot reload at localhost:8080
-    $ npm run dev
-
-    # build for production with minification
-    $ npm run build
-
-    # build for production and view the bundle analyzer report
-    $ npm run build --report
-
+iRODS and Taskflow functionalities should also be available.
