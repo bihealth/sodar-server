@@ -79,6 +79,13 @@
                   <b-button
                       variant="secondary"
                       v-b-tooltip.hover
+                      title="Toggle Study Column Visibility"
+                      @click="onColumnToggle(currentStudyUuid, false)">
+                    <i class="fa fa-eye"></i>
+                  </b-button>
+                  <b-button
+                      variant="secondary"
+                      v-b-tooltip.hover
                       title="Download TSV file for Excel"
                       :href="'export/study/' + currentStudyUuid">
                     <i class="fa fa-file-excel-o"></i>
@@ -160,13 +167,12 @@
                 <b-input-group class="sodar-header-input-group pull-right">
                   <b-input-group-prepend>
                     <b-button
-                        variant="secondary"
-                        v-b-tooltip.hover
-                        title="Show/hide study details"
-                        :id="'sodar-ss-assay-hide-' + assayUuid"
-                        @mousedown="onAssayHideToggle($event, assayUuid)">
-                      <i class="fa fa-eye-slash"></i>
-                    </b-button>
+                      variant="secondary"
+                      v-b-tooltip.hover
+                      title="Toggle Assay Column Visibility"
+                      @click="onColumnToggle(assayUuid, true)">
+                    <i class="fa fa-eye"></i>
+                  </b-button>
                     <b-button
                         variant="secondary"
                         v-b-tooltip.hover
@@ -238,7 +244,7 @@
 
     </div> <!-- Main container -->
 
-    <!-- Vue.js version of the standard SODAR modal -->
+    <!-- iRODS directory listing modal -->
     <irods-dir-modal
         v-if="sodarContext"
         :project-uuid="projectUuid"
@@ -246,7 +252,7 @@
         ref="dirModalRef">
     </irods-dir-modal>
 
-    <!-- Separate modal for study shortcuts -->
+    <!-- Modal for study shortcuts -->
     <shortcut-modal
         v-if="sodarContext && currentStudyUuid"
         :project-uuid="projectUuid"
@@ -254,6 +260,12 @@
         :irods-webdav-url="sodarContext['irods_webdav_url']"
         ref="shortcutModalRef">
     </shortcut-modal>
+
+    <column-toggle-modal
+      v-if="sodarContext && currentStudyUuid"
+      :app="getApp()"
+      ref="columnToggleModalRef">
+    </column-toggle-modal>
 
     <!--<router-view/>-->
   </div>
@@ -265,6 +277,7 @@ import Overview from './components/Overview.vue'
 import IrodsButtons from './components/IrodsButtons.vue'
 import IrodsDirModal from './components/IrodsDirModal.vue'
 import ShortcutModal from './components/ShortcutModal.vue'
+import ColumnToggleModal from './components/ColumnToggleModal'
 import IrodsStatsBadge from './components/IrodsStatsBadge.vue'
 import ExtraContentTable from './components/ExtraContentTable.vue'
 import {AgGridVue} from 'ag-grid-vue'
@@ -291,11 +304,14 @@ export default {
         'study': null,
         'assays': {}
       },
+      columnValues: {
+        'study': null,
+        'assays': {}
+      },
       extraTables: {
         'study': null,
         'assays': {}
       },
-      hideableAssayCols: {},
       currentStudyUuid: null,
       currentAssayUuid: null,
       gridsLoaded: false,
@@ -312,6 +328,7 @@ export default {
     IrodsButtons,
     IrodsDirModal,
     ShortcutModal,
+    ColumnToggleModal,
     IrodsStatsBadge,
     ExtraContentTable,
     AgGridVue,
@@ -324,7 +341,6 @@ export default {
     onGridReady (params) {
       // this.gridApi = params.api
       // this.columnApi = params.columnApi
-      // this.columnApi.autoSizeAllColumns()
     },
 
     onFilterChange (event) {
@@ -340,21 +356,8 @@ export default {
       }
     },
 
-    onAssayHideToggle (event, assayUuid) {
-      let columnApi = this.gridOptions['assays'][assayUuid].columnApi
-      let hideStatus = this.hideableAssayCols[assayUuid]['hidden']
-
-      // Toggle visibility
-      columnApi.setColumnsVisible(
-        this.hideableAssayCols[assayUuid]['cols'], hideStatus)
-      this.hideableAssayCols[assayUuid]['hidden'] = !hideStatus
-
-      // Update icon
-      if (hideStatus) {
-        event.currentTarget.children[0].className = 'fa fa-eye text-warning'
-      } else {
-        event.currentTarget.children[0].className = 'fa fa-eye-slash'
-      }
+    onColumnToggle (uuid, assayMode) {
+      this.$refs.columnToggleModalRef.showModal(uuid, assayMode)
     },
 
     /* Grid Setup ----------------------------------------------------------- */
@@ -387,8 +390,6 @@ export default {
     },
 
     buildColDef (table, assayMode, uuid) {
-      let hideableCols = [] // Store hideable assay column fields here
-
       // Default columns
       let colDef = [
         {
@@ -439,83 +440,82 @@ export default {
         // Iterate through field headers
         while (j < headerIdx + topHeader['colspan']) {
           let fieldHeader = table['field_header'][j]
-          // Check if data is present from col_values
-          if (table['col_values'][j] === 1) { // TODO: Hide after enabling editing
-            // Define special column properties
-            let maxValueLen = fieldHeader['max_value_len']
-            let colType = fieldHeader['col_type']
-            let minW = this.sodarContext['min_col_width']
-            let maxW = this.sodarContext['max_col_width']
-            let calcW = maxValueLen * 10 + 25 // Default
-            let colWidth
 
-            // External links are a special case
-            if (colType === 'EXTERNAL_LINKS') {
-              minW = 140
-              calcW = maxValueLen * 90
-            }
+          // Define special column properties
+          let maxValueLen = fieldHeader['max_value_len']
+          let colType = fieldHeader['col_type']
+          let minW = this.sodarContext['min_col_width']
+          let maxW = this.sodarContext['max_col_width']
+          let calcW = maxValueLen * 10 + 25 // Default
+          let colWidth
 
-            // Set the final column width
-            if (j < table['col_last_vis']) {
-              colWidth = calcW < minW ? minW : (calcW > maxW ? maxW : calcW)
-            } else { // Last visible column is a special case
-              colWidth = Math.max(calcW, minW)
-            }
+          // External links are a special case
+          if (colType === 'EXTERNAL_LINKS') {
+            minW = 140
+            calcW = maxValueLen * 90
+          }
 
-            // Set up column metadata
-            let colMeta = []
-            for (let k = 0; k < table['table_data'].length; k++) {
-              colMeta.push(table['table_data'][k][j])
-            }
+          // Set the final column width
+          if (j < table['col_last_vis']) {
+            colWidth = calcW < minW ? minW : (calcW > maxW ? maxW : calcW)
+          } else { // Last visible column is a special case
+            colWidth = Math.max(calcW, minW)
+          }
 
-            // Create header
-            let header = {
-              headerName: fieldHeader['value'],
-              field: 'col' + j.toString(),
-              width: colWidth,
-              minWidth: minW,
-              headerClass: ['sodar-ss-data-header'],
-              cellRendererFramework: DataCellRenderer,
-              cellRendererParams: {
-                'app': this,
-                'colType': colType,
-                'colMeta': colMeta
-              },
-              cellClass: ['sodar-ss-data-cell'],
-              cellClassRules: {
-                // Right align numbers (but not for names)
-                'text-right': function (params) {
-                  return params.colDef.headerName !== 'Name' &&
-                    !isNaN(parseFloat(params.value)) &&
-                    isFinite(params.value)
-                }
+          // Set up column metadata
+          let colMeta = []
+          for (let k = 0; k < table['table_data'].length; k++) {
+            colMeta.push(table['table_data'][k][j])
+          }
+
+          // Create header
+          let header = {
+            headerName: fieldHeader['value'],
+            field: 'col' + j.toString(),
+            width: colWidth,
+            minWidth: minW,
+            hide: !table['col_values'][j], // Hide by default if empty
+            headerClass: ['sodar-ss-data-header'],
+            cellRendererFramework: DataCellRenderer,
+            cellRendererParams: {
+              'app': this,
+              'colType': colType,
+              'colMeta': colMeta
+            },
+            cellClass: ['sodar-ss-data-cell'],
+            cellClassRules: {
+              // Right align numbers (but not for names)
+              'text-right': function (params) {
+                return params.colDef.headerName !== 'Name' &&
+                  !isNaN(parseFloat(params.value)) &&
+                  isFinite(params.value)
               }
-            }
-
-            // Make source name column pinned, disable hover
-            // HACK: also create new header group to avoid name duplication
-            if (j === 0) {
-              header.pinned = 'left'
-              header.cellRendererParams['enableHover'] = false
-              headerGroup.children.push(header)
-              colDef.push(headerGroup)
-              headerGroup = {
-                headerName: '',
-                headerClass: ['bg-' + topHeader['colour']],
-                children: []
-              }
-            }
-
-            // Hide source and sample columns for assay table
-            if (assayMode && studySection && header.headerName !== 'Name') {
-              header.hide = true
-              hideableCols.push(header.field)
-            }
-
-            if (j > 0) {
-              headerGroup.children.push(header)
             }
           }
+
+          // Make source name column pinned, disable hover
+          // HACK: also create new header group to avoid name duplication
+          if (j === 0) {
+            header.pinned = 'left'
+            header.cellRendererParams['enableHover'] = false
+            headerGroup.children.push(header)
+            colDef.push(headerGroup)
+            headerGroup = {
+              headerName: '',
+              headerClass: ['bg-' + topHeader['colour']],
+              children: []
+            }
+          }
+
+          // Hide source and sample columns for assay table
+          if (assayMode && studySection && header.headerName !== 'Name') {
+            header.hide = true
+          }
+
+          if (j > 0) {
+            headerGroup.children.push(header)
+          }
+
           j++
         }
 
@@ -616,10 +616,6 @@ export default {
           }
           colDef.push(irodsHeaderGroup)
         }
-
-        this.hideableAssayCols[uuid] = {}
-        this.hideableAssayCols[uuid]['hidden'] = true
-        this.hideableAssayCols[uuid]['cols'] = hideableCols
       }
 
       return colDef
@@ -668,11 +664,14 @@ export default {
         'study': null,
         'assays': {}
       }
+      this.columnValues = {
+        'study': null,
+        'assays': {}
+      }
       this.extraTables = {
         'study': null,
         'assays': {}
       }
-      this.hideableAssayCols = {}
     },
 
     getStudy (studyUuid) {
@@ -699,6 +698,7 @@ export default {
               this.columnDefs['study'] = this.buildColDef(
                 data['table_data']['study'], false, studyUuid)
               this.rowData['study'] = this.buildRowData(data['table_data']['study'])
+              this.columnValues['study'] = data['table_data']['study']['col_values']
 
               // Build assays
               for (let assayUuid in data['table_data']['assays']) {
@@ -707,6 +707,8 @@ export default {
                   data['table_data']['assays'][assayUuid], true, assayUuid)
                 this.rowData['assays'][assayUuid] = this.buildRowData(
                   data['table_data']['assays'][assayUuid])
+                this.columnValues['assays'][assayUuid] =
+                  data['table_data']['assays'][assayUuid]['col_values']
 
                 // Get extra table
                 if ('extra_table' in data['table_data']['assays'][assayUuid]) {
@@ -817,6 +819,16 @@ export default {
 
     showNotification (message, delay) {
       this.$refs.pageHeader.showNotification(message, delay)
+    },
+
+    /* Data and App Access -------------------------------------------------- */
+
+    getGridOptionsByUuid (uuid) {
+      if (uuid === this.currentStudyUuid) {
+        return this.gridOptions['study'].columnApi
+      } else if (uuid in this.gridOptions['assays']) {
+        return this.gridOptions['assays'][uuid].columnApi
+      }
     },
 
     // Workaround for #520 where "this" doesn't always appear initialized in templates

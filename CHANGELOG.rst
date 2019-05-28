@@ -36,6 +36,7 @@ Added
     - Temporary manual sample sheet cache updating (#474)
     - Deletion of project samplesheets cache on sheet/data deletion (#509)
     - Temporary view ``RemoteSheetGetAPIView`` for remote sample sheet access (#388, #523)
+    - UI for toggling column visibility (#466)
 
 Changed
 -------
@@ -90,6 +91,7 @@ Removed
     - JQuery updating in ``samplesheets.js`` (#462, #473)
     - Local DataTables includes (#462)
     - JQuery Dragscroll (#462)
+    - Old "hide study columns" functionality from assay tables (#466)
 
 
 v0.4.6 (2019-04-25)
