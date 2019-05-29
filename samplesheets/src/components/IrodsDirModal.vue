@@ -1,8 +1,25 @@
 <template>
   <b-modal id="sodar-vue-irods-modal" ref="irodsDirModal"
-           centered no-fade hide-footer
-           size="xl"
-           :title="title">
+           no-fade hide-footer
+           size="xl">
+
+    <template slot="modal-header">
+      <h5 class="modal-title text-nowrap mr-5">{{ title }}</h5>
+      <b-input
+          id="sodar-ss-vue-irods-filter"
+          size="sm"
+          placeholder="Filter"
+          class="ml-auto"
+          @keyup="onFilterChange">
+      </b-input>
+      <button
+          type="button"
+          class="close"
+          @click="hideModal">
+        ×
+      </button>
+    </template>
+
     <!-- Object list -->
     <div v-if="objectList"
          id="sodar-vue-irods-modal-content">
@@ -15,7 +32,9 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(objInfo, index) in objectList" :key="index">
+          <tr v-for="(objInfo, index) in objectList"
+              :key="index"
+              v-show="objInfo['visibleInList']">
             <td>
               <a :href="irodsWebdavUrl + objInfo['path']">
                 <span class="text-muted">{{ getRelativePath(objInfo['path']) }}/</span>{{ objInfo['name'] }}
@@ -60,15 +79,31 @@ export default {
     }
   },
   methods: {
+    onFilterChange (event) {
+      let inputVal = event.currentTarget.value.toLowerCase()
+
+      for (let i = 0; i < this.objectList.length; i++) {
+        if (inputVal === '' || this.objectList[i]['displayPath'].toLowerCase().includes(inputVal)) {
+          this.$set(this.objectList[i], 'visibleInList', true)
+        } else {
+          this.$set(this.objectList[i], 'visibleInList', false)
+        }
+      }
+
+      this.$forceUpdate() // TODO: Why is this necessary even when using $set?
+    },
+
     setTitle (title) {
       this.title = title
     },
+
     getRelativePath (path) {
       let pathSplit = path.split('/')
       return pathSplit.slice(this.dirPathLength, pathSplit.length - 1).join('/')
     },
-    getDirList (path) {
-      let modalElement = this.$refs.irodsDirModal // TODO: Make this survive reload
+
+    showModal (path) {
+      let modalElement = this.$refs.irodsDirModal
 
       // Clear previous data
       this.empty = false
@@ -87,6 +122,13 @@ export default {
             if ('data_objects' in response) {
               if (response['data_objects'].length > 0) {
                 this.objectList = response['data_objects']
+
+                for (let i = 0; i < this.objectList.length; i++) {
+                  this.objectList[i]['visibleInList'] = true
+                  this.objectList[i]['displayPath'] =
+                    this.getRelativePath(this.objectList[i]['path']) +
+                      this.objectList[i]['name']
+                }
               } else {
                 this.message = 'Empty collection'
                 this.empty = true
@@ -99,6 +141,10 @@ export default {
         })
 
       modalElement.show()
+    },
+
+    hideModal () {
+      this.$refs['irodsDirModal'].hide()
     }
   }
 }
@@ -131,4 +177,13 @@ table.sodar-irods-obj-table thead tr th:nth-child(4) {
 table.sodar-irods-obj-table tbody tr td:nth-child(4) {
   text-align: center;
 }
+
+h5 {
+  width: 100%;
+}
+
+input#sodar-ss-vue-irods-filter {
+  max-width: 200px;
+}
+
 </style>

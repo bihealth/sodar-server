@@ -231,4 +231,8 @@ tr.sodar-ss-vue-toggle-row td:first-child {
   width: 100%;
 }
 
+input#sodar-ss-vue-col-filter {
+  max-width: 200px;
+}
+
 </style>

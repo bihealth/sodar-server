@@ -37,6 +37,7 @@ Added
     - Deletion of project samplesheets cache on sheet/data deletion (#509)
     - Temporary view ``RemoteSheetGetAPIView`` for remote sample sheet access (#388, #523)
     - UI for toggling column visibility (#466)
+    - Filtering for iRODS collection list modal (#18, #467)
 
 Changed
 -------

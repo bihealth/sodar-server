@@ -71,7 +71,7 @@ export default {
     onDirListClick (event) {
       let modalTitle = 'Files in iRODS: ' + this.irodsPath.split('/').pop()
       this.modalComponent.setTitle(modalTitle)
-      this.modalComponent.getDirList(this.irodsPath)
+      this.modalComponent.showModal(this.irodsPath)
     },
     onCopyBtnClick (event) {
       // HACK! this.app appears unset in some cases, not sure why? see #511
