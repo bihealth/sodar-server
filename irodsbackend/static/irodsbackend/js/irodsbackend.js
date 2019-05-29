@@ -235,7 +235,7 @@ $(document).ready(function() {
             // console.log(data);  // DEBUG
 
             if (data['data_objects'].length > 0) {
-                htmlData += '<table class="table sodar-card-table table-striped sodar-irods-obj-table">';
+                htmlData += '<table class="table sodar-card-table sodar-irods-obj-table">';
                 htmlData += '<thead><th>File</th><th>Size</th><th>Modified</th>';
 
                 if (showChecksumCol === true) {

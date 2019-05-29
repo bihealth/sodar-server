@@ -23,7 +23,7 @@
     <!-- Object list -->
     <div v-if="objectList"
          id="sodar-vue-irods-modal-content">
-      <table class="table sodar-card-table table-striped sodar-irods-obj-table">
+      <table class="table sodar-card-table sodar-irods-obj-table">
         <thead>
           <tr>
             <th>File</th>
