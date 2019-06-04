@@ -33,7 +33,8 @@ ONTOLOGY_URL_TEMPLATE = (
     'https://bioportal.bioontology.org/ontologies/'
     '{ontology_name}/?p=classes&conceptid={accession}'
 )
-NARROW_CHARS = 'iIlrt;:.,'
+NARROW_CHARS = 'fIijlt;:.,/"!\'!()[]{}'
+WIDE_CHARS = 'ABCDEFHKLMNOPQRSTUVXYZ<>%$_'
 
 contact_re = re.compile(r'(.+?)\s?(?:[<|[])(.+?)(?:[>\]])')
 logger = logging.getLogger(__name__)
@@ -503,9 +504,10 @@ class SampleSheetTableBuilder:
                 """Return estimated length for proportional text"""
                 # Very unscientific and font-specific, don't try this at home
                 nc = sum([value.count(c) for c in NARROW_CHARS])
-                return round(len(value) - nc + 0.5 * nc)
+                wc = sum([value.count(c) for c in WIDE_CHARS])
+                return round(len(value) - nc - wc + 0.6 * nc + 1.3 * wc)
 
-            header_len = len(self._field_header[i]['value'])
+            header_len = round(_get_length(self._field_header[i]['value']))
 
             if col_type == 'CONTACT':
                 max_cell_len = max(
