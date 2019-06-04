@@ -609,7 +609,9 @@ class SampleSheetContextGetAPIView(
 
     def get(self, request, *args, **kwargs):
         project = self.get_project()
-        investigation = Investigation.objects.filter(project=project).first()
+        investigation = Investigation.objects.filter(
+            project=project, active=True
+        ).first()
         studies = Study.objects.filter(investigation=investigation).order_by(
             'title'
         )
@@ -933,7 +935,7 @@ class RemoteSheetGetAPIView(APIView):
 
         try:
             investigation = Investigation.objects.get(
-                project=target_project.get_project()
+                project=target_project.get_project(), active=True
             )
 
         except Investigation.DoesNotExist:

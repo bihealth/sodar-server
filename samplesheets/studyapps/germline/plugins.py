@@ -264,7 +264,9 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
 
         for project in projects:
             try:
-                investigation = Investigation.objects.get(project=project)
+                investigation = Investigation.objects.get(
+                    project=project, active=True
+                )
 
             except Investigation.DoesNotExist:
                 return

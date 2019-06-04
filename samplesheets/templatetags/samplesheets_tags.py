@@ -18,9 +18,9 @@ register = template.Library()
 
 @register.simple_tag
 def get_investigation(project):
-    """Return Investigation for a project"""
+    """Return active Investigation for a project"""
     try:
-        return Investigation.objects.get(project=project)
+        return Investigation.objects.get(project=project, active=True)
 
     except Investigation.DoesNotExist:
         return None

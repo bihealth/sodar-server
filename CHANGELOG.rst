@@ -79,6 +79,8 @@ Fixed
     - Crash from invalid iRODS authentication in multiple locations (#514)
 - **Irodsinfo**
     - Crash from invalid iRODS authentication in ``IrodsInfoView`` (#514)
+- **Samplesheets**
+    - Crash from certain queries if inactive ``Investigation`` objects are present for project (#544)
 
 Removed
 -------
