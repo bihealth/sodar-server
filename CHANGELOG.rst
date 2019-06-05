@@ -5,6 +5,16 @@ Changelog for the SODAR Web UI. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+Unreleased
+==========
+
+Changed
+-------
+
+- **General**
+    - Upgrade site to django-sodar-core v0.6.1
+
+
 v0.5.0 (2019-06-05)
 ===================
 
