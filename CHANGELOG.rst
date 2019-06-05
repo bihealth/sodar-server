@@ -5,8 +5,8 @@ Changelog for the SODAR Web UI. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
-v0.5.0 (WIP)
-============
+v0.5.0 (2019-06-05)
+===================
 
 Added
 -----
