@@ -269,7 +269,7 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                 )
 
             except Investigation.DoesNotExist:
-                return
+                continue
 
             # Only apply for investigations with the correct configuration
             if investigation.get_configuration() != self.config_name:
@@ -295,6 +295,9 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                 study_tables = tb.build_study_tables(study)
 
                 for library in get_study_libraries(study, study_tables):
+                    if not library.assay:
+                        continue
+
                     bam_path = get_library_file_path(
                         file_type='bam', library=library
                     )

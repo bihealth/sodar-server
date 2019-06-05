@@ -269,7 +269,7 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                 )
 
             except Investigation.DoesNotExist:
-                return
+                continue
 
             # Only apply for investigations with the correct configuration
             if investigation.get_configuration() != self.config_name:
