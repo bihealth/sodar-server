@@ -446,13 +446,13 @@ export default {
           let colType = fieldHeader['col_type']
           let minW = this.sodarContext['min_col_width']
           let maxW = this.sodarContext['max_col_width']
-          let calcW = Math.ceil(maxValueLen * 10) + 20 // Default
+          let calcW = maxValueLen * 10 + 25 // Default
           let colWidth
 
           // External links are a special case
           if (colType === 'EXTERNAL_LINKS') {
             minW = 140
-            calcW = maxValueLen * 90
+            calcW = maxValueLen * 120
           }
 
           // Set the final column width
