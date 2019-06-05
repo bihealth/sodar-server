@@ -65,28 +65,6 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
     #: Position in plugin ordering
     plugin_ordering = 20
 
-    '''
-    def get_info(self, pk):
-        """
-        Return app information to be displayed on the project details page
-        :param pk: Project ID
-        :returns: List of tuples
-        """
-
-        project = Project.objects.get(pk=pk)
-        sheet = project.sheet if hasattr(project, 'sheet') else None
-        zones = LandingZone.objects.filter(
-            project=project).exclude(status='MOVED')
-
-        info = []
-        info.append(
-            ('Zones enabled', True if sheet and sheet.irods_dirs else False))
-        info.append((
-            'Active zones', zones.count()))
-
-        return info
-    '''
-
     def get_taskflow_sync_data(self):
         """
         Return data for syncing taskflow operations

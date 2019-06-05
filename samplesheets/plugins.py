@@ -79,33 +79,6 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
     #: Position in plugin ordering
     plugin_ordering = 10
 
-    def get_info(self, pk):
-        """
-        Return app information to be displayed on the project details page
-        :param pk: Project ID
-        :returns: List of tuples
-        """
-
-        '''
-        try:
-            sheet = SampleSheet.objects.get(project=pk)
-            sheet_type = sheet.sheet_type
-            irods_dirs = sheet.irods_dirs
-
-        except SampleSheet.DoesNotExist:
-            sheet_type = 'N/A'
-            irods_dirs = False
-
-        info = []
-        info.append(
-            ('Sheet Type', sheet_type))
-        info.append((
-            'Available in iRODS', irods_dirs))
-
-        return info
-        '''
-        return []
-
     def get_taskflow_sync_data(self):
         """
         Return data for syncing taskflow operations

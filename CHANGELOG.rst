@@ -87,6 +87,8 @@ Removed
 
 - **Irodsinfo**
     - iRODS certificate issue workaround (#516)
+- **Landingzones**
+    - Unused ``get_info()`` definition in  project app plugin (#541)
 - **Samplesheets**
     - DataTables sample sheet rendering (#100, #223)
     - Unused views, templates and templatetags from main and sub apps (#462)
@@ -95,6 +97,7 @@ Removed
     - Local DataTables includes (#462)
     - JQuery Dragscroll (#462)
     - Old "hide study columns" functionality from assay tables (#466)
+    - Unused ``get_info()`` definition in  project app plugin (#541)
 
 
 v0.4.6 (2019-04-25)
