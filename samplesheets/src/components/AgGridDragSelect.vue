@@ -34,7 +34,7 @@ export default {
 
       const clientRect = this.$el.getBoundingClientRect()
       const scroll = this.getScroll()
-      const topOffset = 50 // TODO: What causes this? Temporary HACK
+      const topOffset = document.querySelector('div#sodar-top-container').offsetHeight
 
       // Calculate position and dimensions of the selection box
       const left = Math.min(this.startPoint.x, this.endPoint.x) - clientRect.left - scroll.x
