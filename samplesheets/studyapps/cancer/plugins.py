@@ -103,7 +103,7 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
         igv_urls = {}
 
         for source in study.get_sources():
-            igv_urls[source.name] = get_igv_url(source)
+            igv_urls[source.name] = get_igv_url(source, APP_NAME)
 
         if not igv_urls:
             return ret

@@ -96,12 +96,12 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
 
             for family in get_families(study):
                 sources = get_family_sources(study, family)
-                igv_urls[family] = get_igv_url(sources.first())
+                igv_urls[family] = get_igv_url(sources.first(), APP_NAME)
 
         # Else group by source
         else:
             for source in study.get_sources():
-                igv_urls[source.name] = get_igv_url(source)
+                igv_urls[source.name] = get_igv_url(source, APP_NAME)
 
         if not igv_urls:
             return ret  # Nothing else to do

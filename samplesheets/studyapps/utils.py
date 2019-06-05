@@ -10,16 +10,17 @@ from django.urls import reverse
 FILE_TYPE_SUFFIXES = {'bam': '.bam', 'vcf': '.vcf.gz'}
 
 
-def get_igv_url(source):
+def get_igv_url(source, app_name):
     """
     Return URL for opening a generated session file in IGV.
 
     :param source: GenericMaterial object of type SOURCE
+    :param app_name: App name for study app to use, must conform to study app
+                     URL config (string)
     :return: String
     """
     file_url = reverse(
-        'samplesheets.studyapps.germline:igv',
-        kwargs={'genericmaterial': source.sodar_uuid},
+        '{}:igv'.format(app_name), kwargs={'genericmaterial': source.sodar_uuid}
     )
     return (
         'http://127.0.0.1:60151/load?genome=b37&merge=false&'
