@@ -46,6 +46,21 @@
       select <strong>Update iRODS Directories</strong> from the Zone Operations
       menu after replace has completed.
     </div>
+    <div class="alert alert-danger">
+      <p>
+        <strong>Warning:</strong> Please note that at the moment we do not
+        automatically move iRODS files according to changes in replaced sample
+        sheets.
+      </p>
+      <p>
+        <strong>This means that iRODS links to existing files will no longer work
+        if you change any of the following:</strong>
+      </p>
+      <ul class="mb-0">
+        <li>Names of sources, samples and/or libraries associated with existing files</li>
+        <li>File name of an existing assay</li>
+      </ul>
+    </div>
   {% elif replace_sheets and zones_exist %}
     <div class="alert alert-danger">
       <strong>Error:</strong> Active landing zones exist for the project,

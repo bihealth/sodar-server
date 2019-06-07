@@ -8,6 +8,12 @@ Changelog for the SODAR Web UI. Loosely follows the
 Unreleased
 ==========
 
+Added
+-----
+
+- **Samplesheets**
+    - iRODS data corruption warning in sheet replacing (#557)
+
 Changed
 -------
 
