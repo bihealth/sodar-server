@@ -1025,10 +1025,7 @@ class TaskflowSheetDeleteAPIView(BaseTaskflowAPIView):
         # Delete cache
         cache_backend = get_backend_api('sodar_cache')
 
-        # TODO: Simplify once sodar_core#257 is done
         if cache_backend:
-            cache_backend.get_project_cache(project).filter(
-                app_name__startswith=APP_NAME
-            ).delete()
+            cache_backend.delete_cache(APP_NAME, project)
 
         return Response('ok', status=200)
