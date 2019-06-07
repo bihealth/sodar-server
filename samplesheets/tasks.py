@@ -15,7 +15,6 @@ logger = logging.getLogger(__name__)
 User = auth.get_user_model()
 
 
-# TODO: This should be done in the SODAR Core API view called by SODAR Taskflow
 @app.task(bind=True)
 def update_project_cache_task(_self, project_uuid, user_uuid):
     """Update project cache asynchronously"""

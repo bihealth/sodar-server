@@ -869,7 +869,6 @@ class TaskflowZoneStatusSetAPIView(BaseTaskflowAPIView):
                     )
 
         # Update cache
-        # NOTE: Should get user UUID from taskflow, see sodar_taskflow#48
         if request.data['status'] == 'MOVED':
             update_project_cache_task(
                 project_uuid=str(zone.project.sodar_uuid),

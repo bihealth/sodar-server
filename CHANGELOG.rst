@@ -13,6 +13,14 @@ Changed
 
 - **General**
     - Upgrade site to django-sodar-core v0.6.1
+- **Samplesheets**
+    - Update project iRODS cache when replacing sheets (#554)
+
+Fixed
+-----
+
+- **Samplesheets**
+    - Assay UUIDs accidentally updated when replacing sheets (#554)
 
 
 v0.5.0 (2019-06-05)

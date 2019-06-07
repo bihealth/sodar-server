@@ -260,7 +260,7 @@ class SampleSheetImportView(
                     study.save()
 
                 for assay in study.assays.all():
-                    if str(assay.sodar_uuid) in old_assay_uuids:
+                    if assay.get_name() in old_assay_uuids:
                         assay.sodar_uuid = old_assay_uuids[assay.get_name()]
                         assay.save()
 
@@ -289,11 +289,19 @@ class SampleSheetImportView(
                 obj=self.object, label='investigation', name=self.object.title
             )
 
-            messages.success(
-                self.request,
-                form_action.capitalize() + 'd sample sheets from ISAtab import',
-            )
+        success_msg = '{}d sample sheets from ISAtab import'.format(
+            form_action.capitalize()
+        )
 
+        # Update project cache if replacing sheets
+        if form_action == 'replace':
+            update_project_cache_task.delay(
+                project_uuid=str(project.sodar_uuid),
+                user_uuid=str(self.request.user.sodar_uuid),
+            )
+            success_msg += ', initiated iRODS cache update'
+
+        messages.success(self.request, success_msg)
         return redirect(redirect_url)
 
 
