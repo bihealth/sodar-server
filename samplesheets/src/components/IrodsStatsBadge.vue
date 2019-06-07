@@ -37,7 +37,9 @@ export default {
       let statsUrl = '/irodsbackend/api/stats/' +
         this.projectUuid + '?path=' + encodeURIComponent(this.irodsPath)
 
-      fetch(statsUrl)
+      fetch(statsUrl, {
+        credentials: 'same-origin'
+      })
         .then(
           response => response.json())
         .then(response => {

@@ -115,7 +115,9 @@ export default {
       let listUrl = '/irodsbackend/api/list/' +
         this.projectUuid + '?path=' + encodeURIComponent(path) + '&md5=0'
 
-      fetch(listUrl)
+      fetch(listUrl, {
+        credentials: 'same-origin'
+      })
         .then(response => response.json())
         .then(
           response => {

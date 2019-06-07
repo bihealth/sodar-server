@@ -28,7 +28,8 @@ Fixed
 -----
 
 - **Samplesheets**
-    - Assay UUIDs accidentally updated when replacing sheets (#554)
+    - Assay UUIDs modified when replacing sheets (#554)
+    - Default ``fetch()`` credentials failing with certain old browsers (#559)
 
 
 v0.5.0 (2019-06-05)

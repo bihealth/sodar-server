@@ -58,7 +58,9 @@ export default {
       let listUrl = '/samplesheets/api/study/links/get/' +
         this.studyUuid + '?' + query['key'] + '=' + query['value']
 
-      fetch(listUrl)
+      fetch(listUrl, {
+        credentials: 'same-origin'
+      })
         .then(response => response.json())
         .then(
           response => {

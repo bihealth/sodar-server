@@ -686,7 +686,9 @@ export default {
 
       // Retrieve study and assay tables for current study
       // TODO: Add timeout/retrying
-      fetch(this.sodarContext['studies'][studyUuid]['table_url'])
+      fetch(this.sodarContext['studies'][studyUuid]['table_url'], {
+        credentials: 'same-origin'
+      })
         .then(data => data.json())
         .then(
           data => {
@@ -855,7 +857,9 @@ export default {
     const setUpInitialData = async () => {
       // Get full context data from an API view
       // TODO: Add timeout/retrying
-      const data = await fetch(initialContext['context_url'])
+      const data = await fetch(initialContext['context_url'], {
+        credentials: 'same-origin'
+      })
       const jsonData = await data.json()
       this.sodarContext = JSON.parse(jsonData)
 
