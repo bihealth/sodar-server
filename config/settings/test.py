@@ -80,3 +80,6 @@ ENABLED_BACKEND_PLUGINS = [
 # Projectroles app settings
 PROJECTROLES_SEND_EMAIL = True
 PROJECTROLES_SEARCH_PAGINATION = 10  # Workaround for #360
+
+# Samplesheets app settings
+SHEETS_ENABLE_CACHE = False  # Temporarily disabled to fix CI, see issue #556

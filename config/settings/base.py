@@ -534,6 +534,7 @@ IRODSINFO_SSL_VERIFY = env.bool('IRODSINFO_SSL_VERIFY', True)
 
 
 # Samplesheets settings
+SHEETS_ENABLE_CACHE = True  # Temporary, see issue #556
 SHEETS_IRODS_LIMIT = env.int('SHEETS_IRODS_LIMIT', 50)  # iRODS file query limit
 SHEETS_TABLE_HEIGHT = 400  # Study/assay table height
 SHEETS_MIN_COLUMN_WIDTH = 100  # Min default column width

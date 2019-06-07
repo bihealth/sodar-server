@@ -13,6 +13,7 @@ Added
 
 - **Samplesheets**
     - iRODS data corruption warning in sheet replacing (#557)
+    - Temporary setting ``SHEETS_ENABLE_CACHE`` to fix CI (#556)
 
 Changed
 -------

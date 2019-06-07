@@ -869,7 +869,7 @@ class TaskflowZoneStatusSetAPIView(BaseTaskflowAPIView):
                     )
 
         # Update cache
-        if request.data['status'] == 'MOVED':
+        if request.data['status'] == 'MOVED' and settings.SHEETS_ENABLE_CACHE:
             update_project_cache_task(
                 project_uuid=str(zone.project.sodar_uuid),
                 user_uuid=str(zone.user.sodar_uuid),

@@ -28,3 +28,7 @@ ENABLED_BACKEND_PLUGINS = [
     'taskflow',
     'omics_irods',
 ]
+
+
+# Samplesheets app settings
+SHEETS_ENABLE_CACHE = True  # Temporary, see issue #556

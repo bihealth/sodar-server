@@ -294,7 +294,7 @@ class SampleSheetImportView(
         )
 
         # Update project cache if replacing sheets
-        if form_action == 'replace':
+        if form_action == 'replace' and settings.SHEETS_ENABLE_CACHE:
             update_project_cache_task.delay(
                 project_uuid=str(project.sodar_uuid),
                 user_uuid=str(self.request.user.sodar_uuid),
@@ -491,16 +491,17 @@ class SampleSheetCacheUpdateView(
     def get(self, request, *args, **kwargs):
         project = self.get_project()
 
-        update_project_cache_task.delay(
-            project_uuid=str(project.sodar_uuid),
-            user_uuid=str(request.user.sodar_uuid),
-        )
+        if settings.SHEETS_ENABLE_CACHE:
+            update_project_cache_task.delay(
+                project_uuid=str(project.sodar_uuid),
+                user_uuid=str(request.user.sodar_uuid),
+            )
 
-        messages.warning(
-            self.request,
-            'Cache updating initiated. This may take some time, refresh sheet '
-            'view after a while to see the results.',
-        )
+            messages.warning(
+                self.request,
+                'Cache updating initiated. This may take some time, refresh '
+                'sheet view after a while to see the results.',
+            )
         return HttpResponseRedirect(get_sheets_url(project))
 
 
