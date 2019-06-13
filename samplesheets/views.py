@@ -640,6 +640,9 @@ class SampleSheetContextGetAPIView(
             'irods_backend_enabled': (
                 True if get_backend_api('omics_irods') else False
             ),
+            'parser_version': (investigation.parser_version or 'LEGACY')
+            if investigation
+            else None,
             'irods_webdav_enabled': settings.IRODS_WEBDAV_ENABLED,
             'irods_webdav_url': settings.IRODS_WEBDAV_URL.rstrip('/'),
             'external_link_labels': settings.SHEETS_EXTERNAL_LINK_LABELS,
@@ -770,6 +773,10 @@ class SampleSheetStudyTablesGetAPIView(
             ret_data['table_data'] = tb.build_study_tables(study)
 
         except Exception as ex:
+            # Raise if we are in debug mode
+            if settings.DEBUG:
+                raise ex
+
             # TODO: Log error
             ret_data['render_error'] = str(ex)
             return Response(ret_data, status=200)

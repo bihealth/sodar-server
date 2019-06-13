@@ -3,6 +3,7 @@
 # NOTE: Retraction and sharing data not yet tested, to be implemented
 # TODO: Test validation rules and uniqueness constraints
 
+import altamisa
 from test_plus.test import TestCase
 
 from django.forms.models import model_to_dict
@@ -26,6 +27,9 @@ from ..utils import get_alt_names
 
 
 # Local constants --------------------------------------------------------------
+
+
+DEFAULT_PARSER_VERSION = altamisa.__version__
 
 
 INV_IDENTIFIER = 'Investigation identifier'
@@ -83,6 +87,7 @@ DATA_TYPE = 'Raw Data File'
 
 PROCESS_NAME = 'Process'
 PROCESS_UNIQUE_NAME = 'p1-s1-a1-process-1-1'
+PROCESS_NAME_TYPE = 'Data Transformation Name'
 PROCESS_PARAM_VALUES = {'INSERT_SIZE': {'unit': None, 'value': '481'}}
 PROCESS_PERFORMER = 'Alice Example'
 PROCESS_PERFORM_DATE = timezone.now()
@@ -105,9 +110,12 @@ class SampleSheetModelMixin:
         project,
         title,
         description,
+        comments=None,
+        headers=[],
+        parser_version=DEFAULT_PARSER_VERSION,
+        parser_warnings={},
         retraction_data=None,
         sharing_data=None,
-        comments=None,
     ):
         """Create Investigation in database"""
         values = {
@@ -116,7 +124,10 @@ class SampleSheetModelMixin:
             'project': project,
             'title': title,
             'description': description,
+            'parser_version': parser_version,
+            'parser_warnings': parser_warnings,
             'comments': comments,
+            'headers': headers,
             'active': True,
         }  # NOTE: Must explicitly set active to True
         obj = Investigation(**values)
@@ -131,9 +142,10 @@ class SampleSheetModelMixin:
         investigation,
         title,
         description,
+        comments=None,
+        headers=[],
         retraction_data=None,
         sharing_data=None,
-        comments=None,
     ):
         """Create Study in database"""
         values = {
@@ -143,6 +155,7 @@ class SampleSheetModelMixin:
             'title': title,
             'description': description,
             'comments': comments,
+            'headers': headers,
         }
         obj = Study(**values)
         obj.save()
@@ -159,9 +172,10 @@ class SampleSheetModelMixin:
         version,
         parameters,
         components,
+        comments=None,
+        headers=[],
         retraction_data=None,
         sharing_data=None,
-        comments=None,
     ):
         """Create Protocol in database"""
         values = {
@@ -174,6 +188,7 @@ class SampleSheetModelMixin:
             'parameters': parameters,
             'components': components,
             'comments': comments,
+            'headers': headers,
         }
         obj = Protocol(**values)
         obj.save()
@@ -188,12 +203,12 @@ class SampleSheetModelMixin:
         tech_type,
         measurement_type,
         arcs,
+        comments=None,
+        headers=[],
         retraction_data=None,
         sharing_data=None,
-        comments=None,
     ):
         """Create Assay in database"""
-        # NOTE: characteristics_cat and unit_cat not currently supported
         values = {
             'file_name': file_name,
             'study': study,
@@ -202,6 +217,7 @@ class SampleSheetModelMixin:
             'measurement_type': measurement_type,
             'arcs': arcs,
             'comments': comments,
+            'headers': headers,
         }
         obj = Assay(**values)
         obj.save()
@@ -218,10 +234,11 @@ class SampleSheetModelMixin:
         assay,
         material_type,
         factor_values,
-        extract_label=None,
+        extract_label={},
+        comments=None,
+        headers=[],
         retraction_data=None,
         sharing_data=None,
-        comments=None,
     ):
         """Create Material in database"""
         values = {
@@ -234,6 +251,7 @@ class SampleSheetModelMixin:
             'material_type': material_type,
             'factor_values': factor_values,
             'extract_label': extract_label,
+            'headers': headers,
             'comments': comments,
         }
         obj = GenericMaterial(**values)
@@ -245,28 +263,35 @@ class SampleSheetModelMixin:
         cls,
         name,
         unique_name,
+        name_type,
         protocol,
         study,
         assay,
         parameter_values,
         performer,
         perform_date,
+        first_dimension={},
+        second_dimension={},
+        comments=None,
+        headers=[],
         retraction_data=None,
         sharing_data=None,
-        comments=None,
     ):
         """Create Material in database"""
-        # NOTE: array_design_ref and scan_name not supported at the moment
         values = {
             'name': name,
             'unique_name': unique_name,
+            'name_type': name_type,
             'protocol': protocol,
             'study': study,
             'assay': assay,
             'parameter_values': parameter_values,
             'performer': performer,
             'perform_date': perform_date,
+            'first_dimension': first_dimension,
+            'second_dimension': second_dimension,
             'comments': comments,
+            'headers': headers,
         }
         obj = Process(**values)
         obj.save()
@@ -351,12 +376,15 @@ class TestInvestigation(TestSampleSheetBase):
             'title': INV_TITLE,
             'description': DEFAULT_DESCRIPTION,
             'ontology_source_refs': {},
-            'sodar_uuid': self.investigation.sodar_uuid,
-            'sharing_data': {},
-            'retraction_data': {},
             'comments': DEFAULT_COMMENTS,
+            'headers': [],
             'irods_status': False,
             'active': True,
+            'parser_version': DEFAULT_PARSER_VERSION,
+            'parser_warnings': {},
+            'sharing_data': {},
+            'retraction_data': {},
+            'sodar_uuid': self.investigation.sodar_uuid,
         }
         self.assertEqual(model_to_dict(self.investigation), expected)
 
@@ -395,14 +423,12 @@ class TestStudy(TestSampleSheetBase):
             'description': DEFAULT_DESCRIPTION,
             'study_design': {},
             'factors': {},
-            'characteristic_cat': {},
-            'unit_cat': {},
             'arcs': [],
-            'header': {},
-            'sodar_uuid': self.study.sodar_uuid,
+            'comments': DEFAULT_COMMENTS,
+            'headers': [],
             'sharing_data': {},
             'retraction_data': {},
-            'comments': DEFAULT_COMMENTS,
+            'sodar_uuid': self.study.sodar_uuid,
         }
         self.assertEqual(model_to_dict(self.study), expected)
 
@@ -466,10 +492,11 @@ class TestProtocol(TestSampleSheetBase):
             'version': PROTOCOL_VERSION,
             'parameters': PROTOCOL_PARAMS,
             'components': PROTOCOL_COMPONENTS,
-            'sodar_uuid': self.protocol.sodar_uuid,
+            'comments': DEFAULT_COMMENTS,
+            'headers': [],
             'sharing_data': {},
             'retraction_data': {},
-            'comments': DEFAULT_COMMENTS,
+            'sodar_uuid': self.protocol.sodar_uuid,
         }
         self.assertEqual(model_to_dict(self.protocol), expected)
 
@@ -508,14 +535,12 @@ class TestAssay(TestSampleSheetBase):
             'technology_platform': ASSAY_TECH_PLATFORM,
             'technology_type': ASSAY_TECH_TYPE,
             'measurement_type': ASSAY_MEASURE_TYPE,
-            'characteristic_cat': {},
-            'unit_cat': {},
             'arcs': [],
-            'header': {},
-            'sodar_uuid': self.assay.sodar_uuid,
+            'comments': DEFAULT_COMMENTS,
+            'headers': [],
             'sharing_data': {},
             'retraction_data': {},
-            'comments': DEFAULT_COMMENTS,
+            'sodar_uuid': self.assay.sodar_uuid,
         }
         self.assertEqual(model_to_dict(self.assay), expected)
 
@@ -562,7 +587,7 @@ class TestSource(TestSampleSheetBase):
             assay=None,
             material_type=None,
             factor_values=None,
-            extract_label=None,
+            extract_label={},
             comments=DEFAULT_COMMENTS,
         )
 
@@ -579,11 +604,12 @@ class TestSource(TestSampleSheetBase):
             'assay': None,
             'material_type': None,
             'factor_values': None,
-            'extract_label': None,
-            'sodar_uuid': self.material.sodar_uuid,
+            'extract_label': {},
+            'comments': DEFAULT_COMMENTS,
+            'headers': [],
             'sharing_data': {},
             'retraction_data': {},
-            'comments': DEFAULT_COMMENTS,
+            'sodar_uuid': self.material.sodar_uuid,
         }
         self.assertEqual(model_to_dict(self.material), expected)
 
@@ -638,7 +664,7 @@ class TestSample(TestSampleSheetBase):
             assay=None,
             material_type=None,
             factor_values=None,  # TODO: Test this
-            extract_label=None,  # TODO: Test this
+            extract_label={},  # TODO: Test this
             comments=DEFAULT_COMMENTS,
         )
 
@@ -655,11 +681,12 @@ class TestSample(TestSampleSheetBase):
             'assay': None,
             'material_type': None,
             'factor_values': None,
-            'extract_label': None,
-            'sodar_uuid': self.material.sodar_uuid,
+            'extract_label': {},
+            'comments': DEFAULT_COMMENTS,
+            'headers': [],
             'sharing_data': {},
             'retraction_data': {},
-            'comments': DEFAULT_COMMENTS,
+            'sodar_uuid': self.material.sodar_uuid,
         }
         self.assertEqual(model_to_dict(self.material), expected)
 
@@ -714,7 +741,7 @@ class TestMaterial(TestSampleSheetBase):
             assay=self.assay,
             material_type=MATERIAL_TYPE,
             factor_values=None,
-            extract_label=None,
+            extract_label={},
             comments=DEFAULT_COMMENTS,
         )
 
@@ -731,11 +758,12 @@ class TestMaterial(TestSampleSheetBase):
             'assay': self.assay.pk,
             'material_type': MATERIAL_TYPE,
             'factor_values': None,
-            'extract_label': None,
-            'sodar_uuid': self.material.sodar_uuid,
+            'extract_label': {},
+            'comments': DEFAULT_COMMENTS,
+            'headers': [],
             'sharing_data': {},
             'retraction_data': {},
-            'comments': DEFAULT_COMMENTS,
+            'sodar_uuid': self.material.sodar_uuid,
         }
         self.assertEqual(model_to_dict(self.material), expected)
 
@@ -790,7 +818,7 @@ class TestDataFile(TestSampleSheetBase):
             assay=self.assay,
             material_type=DATA_TYPE,
             factor_values=None,
-            extract_label=None,
+            extract_label={},
             comments=DEFAULT_COMMENTS,
         )
 
@@ -807,11 +835,12 @@ class TestDataFile(TestSampleSheetBase):
             'assay': self.assay.pk,
             'material_type': DATA_TYPE,
             'factor_values': None,
-            'extract_label': None,
-            'sodar_uuid': self.material.sodar_uuid,
+            'extract_label': {},
+            'comments': DEFAULT_COMMENTS,
+            'headers': [],
             'sharing_data': {},
             'retraction_data': {},
-            'comments': DEFAULT_COMMENTS,
+            'sodar_uuid': self.material.sodar_uuid,
         }
         self.assertEqual(model_to_dict(self.material), expected)
 
@@ -873,6 +902,7 @@ class TestProcess(TestSampleSheetBase):
         self.process = self._make_process(
             name=PROCESS_NAME,
             unique_name=PROCESS_UNIQUE_NAME,
+            name_type=PROCESS_NAME_TYPE,
             protocol=self.protocol,
             study=self.study,
             assay=self.assay,
@@ -888,6 +918,7 @@ class TestProcess(TestSampleSheetBase):
             'id': self.process.pk,
             'name': PROCESS_NAME,
             'unique_name': PROCESS_UNIQUE_NAME,
+            'name_type': PROCESS_NAME_TYPE,
             'protocol': self.protocol.pk,
             'study': self.study.pk,
             'assay': self.assay.pk,
@@ -895,11 +926,13 @@ class TestProcess(TestSampleSheetBase):
             'performer': PROCESS_PERFORMER,
             'perform_date': PROCESS_PERFORM_DATE,
             'array_design_ref': None,
-            'scan_name': None,
-            'sodar_uuid': self.process.sodar_uuid,
+            'first_dimension': {},
+            'second_dimension': {},
+            'comments': DEFAULT_COMMENTS,
+            'headers': [],
             'sharing_data': {},
             'retraction_data': {},
-            'comments': DEFAULT_COMMENTS,
+            'sodar_uuid': self.process.sodar_uuid,
         }
         self.assertEqual(model_to_dict(self.process), expected)
 

@@ -14,6 +14,12 @@ Added
 - **Samplesheets**
     - iRODS data corruption warning in sheet replacing (#557)
     - Temporary setting ``SHEETS_ENABLE_CACHE`` to fix CI (#556)
+    - ``Investigation`` model fields ``parser_version`` and ``parser_warning`` (#527)
+    - Multiple new model fields to support AltamISA v0.1 API (#527)
+    - ``_get_value()`` helper in rendering
+    - altamISA version storing and logging in rendering (#527)
+    - altamISA v0.1 validation (#527)
+    - Handling of altamISA warnings (#527)
 
 Changed
 -------
@@ -23,6 +29,14 @@ Changed
 - **Samplesheets**
     - Update project iRODS cache when replacing sheets (#554)
     - Use ``delete_cache()`` in ``TaskflowSheetDeleteAPIView`` (sodar_core#257)
+    - Upgrade to CUBI altamISA parser v0.1 (#527)
+    - Update ISAtab importing for altamISA v0.1 (#527)
+    - Update models for altamISA v0.1 (#527)
+    - Raise exception from parser errors when in debug mode
+    - Update test ISAtab files for altamISA v0.1 (#527)
+    - Refactor ``io`` module
+    - Improve ``io`` module logging
+    - Change ``GenericMaterial.extract_label`` into a JSON field (#527)
 
 Fixed
 -----
@@ -30,6 +44,14 @@ Fixed
 - **Samplesheets**
     - Assay UUIDs modified when replacing sheets (#554)
     - Default ``fetch()`` credentials failing with certain old browsers (#559)
+
+Removed
+-------
+
+- **Samplesheets**
+    - Model fields ``characteristic_cat`` and ``unit_cat`` from ``Study``
+    - Model field ``header`` from ``Study`` and ``Assay``
+    - Model field ``scan_name`` from ``Process``
 
 
 v0.5.0 (2019-06-05)

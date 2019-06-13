@@ -2,6 +2,7 @@
 
 import itertools
 import logging
+from packaging import version
 import re
 import time
 
@@ -181,6 +182,25 @@ class SampleSheetTableBuilder:
         self._first_row = True
         self._col_values = []
         self._col_idx = 0
+        self._parser_version = None
+
+    @classmethod
+    def _get_value(cls, field):
+        """
+        Return value of a field which can be either free text or term reference
+        :param field: Field (string or dict)
+        :return: String
+        """
+        if isinstance(field, str):
+            return field
+
+        if isinstance(field, dict) and 'value' in field:
+            if isinstance(field['value'], dict) and 'name' in field['value']:
+                return field['value']['name']
+
+            return field['value']
+
+        return ''
 
     @classmethod
     def _get_ontology_link(cls, ontology_name, accession):
@@ -258,6 +278,15 @@ class SampleSheetTableBuilder:
         :param obj: Original Django model object
         :param tooltip: Tooltip to be shown on mouse hover (string)
         """
+
+        # Handle new list value notation in altamISA>=0.1
+        if isinstance(value, list):
+            value = ';'.join([self._get_value(x) for x in value])
+
+        # Get printable value in case the function is called with a reference
+        elif isinstance(value, dict):
+            value = self._get_value(value)
+
         self._row.append(
             {
                 'value': value,
@@ -302,15 +331,29 @@ class SampleSheetTableBuilder:
             link = None
             tooltip = None
 
-            if type(v['value']) == dict:
+            # Ontology reference
+            if (
+                isinstance(v['value'], dict)
+                and 'name' in v['value']
+                and v['value']['name']
+            ):
                 if v['value']['ontology_name']:
                     tooltip = v['value']['ontology_name']
 
                 val += v['value']['name']
-                link = self._get_ontology_link(
-                    v['value']['ontology_name'], v['value']['accession']
-                )
 
+                if v['value']['ontology_name'] and v['value']['accession']:
+                    link = self._get_ontology_link(
+                        v['value']['ontology_name'], v['value']['accession']
+                    )
+
+            # Empty ontology reference (this can happen with altamISA v0.1)
+            elif isinstance(v['value'], dict) and (
+                'name' not in v['value'] or not v['value']['name']
+            ):
+                val = ''
+
+            # Basic value string
             else:
                 val = v['value']
 
@@ -343,6 +386,7 @@ class SampleSheetTableBuilder:
                 self._add_header('Name', obj)  # Name
                 field_count += 1
 
+                # TODO: TBD: How to render new extract label notation?
                 if (
                     obj.material_type == 'Labeled Extract Name'
                     and obj.extract_label
@@ -399,6 +443,7 @@ class SampleSheetTableBuilder:
 
             self._add_cell(obj.name, obj=obj)  # Name + attrs
 
+            # TODO: TBD: How to render new extract label notation?
             if (
                 obj.material_type == 'Labeled Extract Name'
                 and obj.extract_label
@@ -470,7 +515,18 @@ class SampleSheetTableBuilder:
             row_id += 1
 
         # Aggregate column data for Vue app
-        # TODO: Move this into an optionally called function, not always needed
+        # TODO: Move this into a separate function
+
+        def _get_length(value):
+            """Return estimated length for proportional text"""
+            if not value:
+                return 0
+
+            # Very unscientific and font-specific, don't try this at home
+            nc = sum([value.count(c) for c in NARROW_CHARS])
+            wc = sum([value.count(c) for c in WIDE_CHARS])
+            return round(len(value) - nc - wc + 0.6 * nc + 1.3 * wc)
+
         for i in range(len(self._field_header)):
             header_name = self._field_header[i]['value'].lower()
 
@@ -499,14 +555,6 @@ class SampleSheetTableBuilder:
             self._field_header[i]['col_type'] = col_type
 
             # Maximum column value length for column width estimate
-
-            def _get_length(value):
-                """Return estimated length for proportional text"""
-                # Very unscientific and font-specific, don't try this at home
-                nc = sum([value.count(c) for c in NARROW_CHARS])
-                wc = sum([value.count(c) for c in WIDE_CHARS])
-                return round(len(value) - nc - wc + 0.6 * nc + 1.3 * wc)
-
             header_len = round(_get_length(self._field_header[i]['value']))
 
             if col_type == 'CONTACT':
@@ -526,22 +574,22 @@ class SampleSheetTableBuilder:
 
             elif col_type == 'EXTERNAL_LINKS':  # Special case, count elements
                 header_len = 0  # Header length is not comparable
+
                 max_cell_len = max(
                     [
-                        (
-                            _get_length(x[i]['value'].split(';'))
-                            if x[i]['value']
-                            else 0
-                        )
+                        _get_length(x[i]['value'].split(';'))
+                        if x[i]['value']
+                        else 0
                         for x in self._table_data
                     ]
                 )
 
-            else:
+            else:  # Generic type
                 max_cell_len = max(
                     [
-                        (_get_length(x[i]['value']) if x[i]['value'] else 0)
-                        + (_get_length(x[i]['unit']) if x[i]['unit'] else 0)
+                        _get_length(x[i]['value'])
+                        + _get_length(x[i]['unit'])
+                        + 1
                         for x in self._table_data
                     ]
                 )
@@ -616,6 +664,20 @@ class SampleSheetTableBuilder:
         s_start = time.time()
         logger.debug(
             'Building study "{}" (pk={})..'.format(study.get_name(), study.pk)
+        )
+
+        self._parser_version = (
+            version.parse(study.investigation.parser_version)
+            if study.investigation.parser_version
+            else version.parse('')
+        )
+
+        logger.debug(
+            'Import parser version: {}'.format(
+                self._parser_version
+                if not isinstance(self._parser_version, version.LegacyVersion)
+                else 'LEGACY'
+            )
         )
 
         ret = {'study': None, 'assays': {}}

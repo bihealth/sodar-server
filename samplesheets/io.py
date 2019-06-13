@@ -1,10 +1,21 @@
 """Import and export utilities for the samplesheets app"""
 
-from altamisa.isatab import InvestigationReader, StudyReader, AssayReader
+# TODO: Refactor into class
+
+import altamisa
+from altamisa.isatab import (
+    InvestigationReader,
+    StudyReader,
+    AssayReader,
+    InvestigationValidator,
+    StudyValidator,
+    AssayValidator,
+)
 from fnmatch import fnmatch
 import io
 import logging
 import time
+import warnings
 
 from .models import (
     Investigation,
@@ -25,6 +36,7 @@ MATERIAL_TYPE_MAP = {
     'Source Name': 'SOURCE',
     'Sample Name': 'SAMPLE',
     'Extract Name': 'MATERIAL',
+    'Library Name': 'MATERIAL',
     'Labeled Extract Name': 'MATERIAL',
     'Raw Data File': 'DATA',  # HACK: File subtypes should be in their own
     'Derived Data File': 'DATA',  # field instead of material.type
@@ -61,33 +73,63 @@ def import_isa(isa_zip, project):
     :return: Django Investigation object
     """
     t_start = time.time()
-    logger.info('Importing investigation from a Zip archive..')
-
-    ######################
-    # Parse Zip archive
-    ######################
-
-    def get_file(zip_file, file_name):
-        file = zip_file.open(str(file_name), 'r')
-        return io.TextIOWrapper(file)
-
-    def get_zip_path(inv_path, file_path):
-        return '{}{}{}'.format(
-            inv_path, '/' if inv_path else '', str(file_path)
-        )
-
-    # Parse investigation
-    inv_file_path = get_inv_paths(isa_zip)[0]
-    inv_dir = '/'.join(inv_file_path.split('/')[:-1])
-
-    input_file = get_file(isa_zip, inv_file_path)
-    isa_inv = InvestigationReader.from_stream(input_file=input_file).read()
+    logger.info('Using CUBI altamISA parser v{}'.format(altamisa.__version__))
+    parser_warnings = {
+        'investigation': [],
+        'studies': {},
+        'assays': {},
+        'all_ok': True,
+    }
 
     ###################
     # Helper functions
     ###################
 
-    def get_study(o):
+    def _get_file(zip_file, file_name):
+        file = zip_file.open(str(file_name), 'r')
+        return io.TextIOWrapper(file)
+
+    def _get_zip_path(inv_path, file_path):
+        return '{}{}{}'.format(
+            inv_path, '/' if inv_path else '', str(file_path)
+        )
+
+    def _handle_warning(warning, db_obj):
+        """
+        Store and log altamISA warning.
+
+        :param warning: Warning object
+        :param obj_cls: SODAR database object which was parsed (Investigation,
+                        Study, Assay)
+        """
+        parser_warnings['all_ok'] = False
+        warn_data = {
+            'message': str(warning.message),
+            'category': warning.category.__name__,
+        }
+        obj_uuid = str(db_obj.sodar_uuid)
+
+        if isinstance(db_obj, Investigation):
+            parser_warnings['investigation'].append(warn_data)
+
+        elif isinstance(db_obj, Study):
+            if obj_uuid not in parser_warnings['studies']:
+                parser_warnings['studies'][obj_uuid] = []
+
+            parser_warnings['studies'][obj_uuid].append(warn_data)
+
+        elif isinstance(db_obj, Assay):
+            if obj_uuid not in parser_warnings['assays']:
+                parser_warnings['assays'][obj_uuid] = []
+
+            parser_warnings['assays'][obj_uuid].append(warn_data)
+
+        logger.warning(
+            'Parser warning: "{}" '
+            '(Category: {})'.format(warning.message, warning.category.__name__)
+        )
+
+    def _get_study(o):
         """Return study for a potentially unknown type of object"""
         if type(o) == Study:
             return o
@@ -95,50 +137,36 @@ def import_isa(isa_zip, project):
         elif hasattr(o, 'study'):
             return o.study
 
-    def get_multitype_val(o):
+    def _get_multitype_val(o):
         """Get value where the member type can vary"""
+        if isinstance(o, list) and len(o) == 1:
+            o = o[0]  # Store lists of 1 item (99% of cases) as single objects
+
         return o._asdict() if isinstance(o, tuple) else o
 
-    def get_ontology_vals(vals):
-        """Get value data from porential ontology references"""
+    def _get_ontology_vals(vals):
+        """Get value data from potential ontology references"""
         ret = {}
 
         for v in vals:
             ret[v.name] = {
-                'unit': get_multitype_val(v.unit),
-                'value': get_multitype_val(v.value),
+                'unit': _get_multitype_val(v.unit)
+                if hasattr(v, 'unit')
+                else None,
+                'value': _get_multitype_val(v.value),
             }
 
         return ret
 
-    def get_tuple_list(tuples):
+    def _get_tuple_list(tuples):
         """Get list of dicts from tuples for JSONField"""
         if type(tuples) == dict:
-            return [get_multitype_val(v) for v in tuples.values()]
+            return [_get_multitype_val(v) for v in tuples.values()]
 
         elif type(tuples) in [tuple, list]:
-            return [get_multitype_val(v) for v in tuples]
+            return [_get_multitype_val(v) for v in tuples]
 
-    def get_header(header):
-        """Get list of dicts from an object list for JSONField"""
-        ret = []
-
-        for h in header:
-            h_ret = h.__dict__
-
-            if h_ret['term_source_ref_header']:
-                h_ret['term_source_ref_header'] = h_ret[
-                    'term_source_ref_header'
-                ].__dict__
-
-            if h_ret['unit_header']:
-                h_ret['unit_header'] = h_ret['unit_header'].__dict__
-
-            ret.append(h_ret)
-
-        return ret
-
-    def import_materials(materials, db_parent, obj_lookup):
+    def _import_materials(materials, db_parent, obj_lookup):
         """
         Create material objects in Django database.
         :param materials: altamISA materials dict
@@ -146,7 +174,7 @@ def import_isa(isa_zip, project):
         :param obj_lookup: Dictionary for in-memory lookup
         """
         material_vals = []
-        study = get_study(db_parent)
+        study = _get_study(db_parent)
 
         for m in materials.values():
             item_type = MATERIAL_TYPE_MAP[m.type]
@@ -158,6 +186,7 @@ def import_isa(isa_zip, project):
                 'unique_name': m.unique_name,
                 'alt_names': get_alt_names(m.name),
                 'study': study,
+                'headers': m.headers,
             }
 
             if type(db_parent) == Assay:
@@ -167,14 +196,18 @@ def import_isa(isa_zip, project):
             # HACK since file/extract subtype is in .type
             if item_type in ['DATA', 'MATERIAL'] or m.material_type:
                 values['material_type'] = m.type
+
+            # NOTE: Extract label stored as JSON since altamISA 0.1 update
             if m.extract_label:
-                values['extract_label'] = m.extract_label
+                values['extract_label'] = {'value': m.extract_label}
 
             if m.characteristics:
-                values['characteristics'] = get_ontology_vals(m.characteristics)
+                values['characteristics'] = _get_ontology_vals(
+                    m.characteristics
+                )
             if m.factor_values:
-                values['factor_values'] = get_ontology_vals(m.factor_values)
-            values['comments'] = get_ontology_vals(m.comments)
+                values['factor_values'] = _get_ontology_vals(m.factor_values)
+            values['comments'] = _get_ontology_vals(m.comments)
 
             material_vals.append(values)
 
@@ -189,7 +222,7 @@ def import_isa(isa_zip, project):
             )
         )
 
-    def import_processes(processes, db_parent, obj_lookup, protocol_lookup):
+    def _import_processes(processes, db_parent, obj_lookup, protocol_lookup):
         """
         Create processes of a process sequence in the database.
         :param processes: Process sequence of a study or an assay in altamISA
@@ -197,7 +230,7 @@ def import_isa(isa_zip, project):
         :param obj_lookup: Dictionary for in-memory material/process lookup
         :param protocol_lookup: Dictionary for in-memory protocol lookup
         """
-        study = get_study(db_parent)
+        study = _get_study(db_parent)
         process_vals = []
 
         for p in processes.values():
@@ -217,19 +250,26 @@ def import_isa(isa_zip, project):
             values = {
                 'name': p.name,
                 'unique_name': p.unique_name,
+                'name_type': p.name_type,
                 'protocol': protocol,
                 'assay': db_parent if type(db_parent) == Assay else None,
                 'study': study,
                 'performer': p.performer,
                 'perform_date': p.date,
                 'array_design_ref': p.array_design_ref,
-                'scan_name': p.scan_name,
-                'comments': get_ontology_vals(p.comments),
+                'first_dimension': _get_ontology_vals(p.first_dimension)
+                if p.first_dimension
+                else {},
+                'second_dimension': _get_ontology_vals(p.second_dimension)
+                if p.second_dimension
+                else {},
+                'headers': p.headers,
+                'comments': _get_ontology_vals(p.comments),
             }
 
             # Parameter values
             if p.parameter_values:
-                values['parameter_values'] = get_ontology_vals(
+                values['parameter_values'] = _get_ontology_vals(
                     p.parameter_values
                 )
 
@@ -246,7 +286,7 @@ def import_isa(isa_zip, project):
             )
         )
 
-    def import_arcs(arcs, db_parent):
+    def _import_arcs(arcs, db_parent):
         """
         Create process/material arcs according to the altamISA structure
         :param arcs: Tuple
@@ -268,6 +308,19 @@ def import_isa(isa_zip, project):
     # Import
     #########
 
+    # Read zip file
+    logger.info(
+        'Importing investigation from archive "{}"..'.format(isa_zip.filename)
+    )
+    inv_file_path = get_inv_paths(isa_zip)[0]
+    inv_dir = '/'.join(inv_file_path.split('/')[:-1])
+    input_file = _get_file(isa_zip, inv_file_path)
+
+    # Parse and validate investigation
+    with warnings.catch_warnings(record=True) as ws:
+        isa_inv = InvestigationReader.from_stream(input_file=input_file).read()
+        InvestigationValidator(isa_inv).validate()
+
     # Create investigation
     values = {
         'project': project,
@@ -275,17 +328,24 @@ def import_isa(isa_zip, project):
         'title': (isa_inv.info.title or project.title),
         'description': (isa_inv.info.description or project.description),
         'file_name': inv_file_path,
-        'ontology_source_refs': get_tuple_list(isa_inv.ontology_source_refs),
-        'comments': get_ontology_vals(isa_inv.info.comments),
+        'ontology_source_refs': _get_tuple_list(isa_inv.ontology_source_refs),
+        'comments': _get_ontology_vals(isa_inv.info.comments),
+        'parser_version': altamisa.__version__,
     }
 
     db_investigation = Investigation(**values)
     db_investigation.save()
+
+    # Handle parser warnings for investigation
+    for w in ws:
+        _handle_warning(w, db_investigation)
+
     logger.debug('Created investigation "{}"'.format(db_investigation.title))
     study_count = 0
     db_studies = []
 
     # Make sure identifiers are unique (avoid issue #483 repeating)
+    # TODO: TBD: Do we still need this with altamISA v0.1?
     study_ids = [s_i.info.identifier for s_i in isa_inv.studies]
 
     if len(study_ids) != len(set(study_ids)):
@@ -300,16 +360,19 @@ def import_isa(isa_zip, project):
 
     # Create studies
     for s_i in isa_inv.studies:
+        logger.debug('Parsing study "{}"..'.format(s_i.info.title))
         obj_lookup = {}  # Lookup dict for study materials and processes
         study_id = 'p{}-s{}'.format(project.pk, study_count)
 
-        # Parse study file
-        s = StudyReader.from_stream(
-            isa_inv,
-            s_i,
-            input_file=get_file(isa_zip, get_zip_path(inv_dir, s_i.info.path)),
-            study_id=study_id,
-        ).read()
+        # Parse and validate study file
+        with warnings.catch_warnings(record=True) as ws:
+            s = StudyReader.from_stream(
+                input_file=_get_file(
+                    isa_zip, _get_zip_path(inv_dir, s_i.info.path)
+                ),
+                study_id=study_id,
+            ).read()
+            StudyValidator(isa_inv, s_i, s).validate()
 
         values = {
             'identifier': s_i.info.identifier,
@@ -317,17 +380,20 @@ def import_isa(isa_zip, project):
             'investigation': db_investigation,
             'title': s_i.info.title,
             'description': s_i.info.description,
-            'study_design': s_i.designs,  # TODO
-            'factors': s_i.factors,  # TODO
-            'characteristic_cat': [],  # TODO: TBD: Implement or omit?
-            'unit_cat': [],  # TODO: TBD: Implement or omit?
-            'comments': get_ontology_vals(s_i.info.comments),
-            'header': get_header(s.header),
+            'study_design': s_i.designs,
+            'factors': s_i.factors,
+            'comments': _get_ontology_vals(s_i.info.comments),
+            'headers': s_i.info.headers,
         }
 
         db_study = Study(**values)
         db_study.save()
         db_studies.append(db_study)
+
+        # Handle parser warnings for study
+        for w in ws:
+            _handle_warning(w, db_study)
+
         logger.debug('Added study "{}"'.format(db_study.title))
 
         # Create protocols
@@ -338,13 +404,14 @@ def import_isa(isa_zip, project):
                 {
                     'name': p_i.name,
                     'study': db_study,
-                    'protocol_type': get_multitype_val(p_i.type),
+                    'protocol_type': _get_multitype_val(p_i.type),
                     'description': p_i.description,
                     'uri': p_i.uri,
                     'version': p_i.version,
-                    'parameters': get_tuple_list(p_i.parameters),
-                    'components': get_tuple_list(p_i.components),
-                    'comments': get_ontology_vals(p_i.comments),
+                    'parameters': _get_tuple_list(p_i.parameters),
+                    'components': _get_tuple_list(p_i.components),
+                    'comments': _get_ontology_vals(p_i.comments),
+                    'headers': p_i.headers,
                 }
             )
 
@@ -360,46 +427,52 @@ def import_isa(isa_zip, project):
         )
 
         # Create study materials
-        import_materials(s.materials, db_study, obj_lookup)
+        _import_materials(s.materials, db_study, obj_lookup)
 
         # Create study processes
-        import_processes(s.processes, db_study, obj_lookup, protocol_lookup)
+        _import_processes(s.processes, db_study, obj_lookup, protocol_lookup)
 
         # Create study arcs
-        import_arcs(s.arcs, db_study)
+        _import_arcs(s.arcs, db_study)
 
         assay_count = 0
-        assay_paths = sorted([a_i.path for a_i in s_i.assays.values()])
+        assay_paths = [a_i.path for a_i in s_i.assays]
 
         for assay_path in assay_paths:
             a_i = next(
-                (a_i for a_i in s_i.assays.values() if a_i.path == assay_path),
-                None,
+                (a_i for a_i in s_i.assays if a_i.path == assay_path), None
             )
+            logger.debug('Parsing assay "{}"..'.format(a_i.path))
             assay_id = 'a{}'.format(assay_count)
 
-            a = AssayReader.from_stream(
-                isa_inv,
-                s_i,
-                study_id=study_id,
-                assay_id=assay_id,
-                input_file=get_file(isa_zip, get_zip_path(inv_dir, a_i.path)),
-            ).read()
+            # Parse and validate assay file
+            with warnings.catch_warnings(record=True) as ws:
+                a = AssayReader.from_stream(
+                    study_id=study_id,
+                    assay_id=assay_id,
+                    input_file=_get_file(
+                        isa_zip, _get_zip_path(inv_dir, a_i.path)
+                    ),
+                ).read()
+                AssayValidator(isa_inv, s_i, a_i, a).validate()
 
             values = {
                 'file_name': a_i.path,
                 'study': db_study,
-                'measurement_type': get_multitype_val(a_i.measurement_type),
-                'technology_type': get_multitype_val(a_i.technology_type),
+                'measurement_type': _get_multitype_val(a_i.measurement_type),
+                'technology_type': _get_multitype_val(a_i.technology_type),
                 'technology_platform': a_i.platform,
-                'characteristic_cat': [],  # TODO
-                'unit_cat': [],  # TODO
-                'comments': get_ontology_vals(a_i.comments),
-                'header': get_header(a.header),
+                'comments': _get_ontology_vals(a_i.comments),
+                'headers': a_i.headers,
             }
 
             db_assay = Assay(**values)
             db_assay.save()
+
+            # Handle parser warnings for assay
+            for w in ws:
+                _handle_warning(w, db_assay)
+
             logger.debug(
                 'Added assay "{}" in study "{}"'.format(
                     db_assay.file_name, db_study.title
@@ -413,13 +486,15 @@ def import_isa(isa_zip, project):
                 if MATERIAL_TYPE_MAP[a.materials[k].type]
                 not in ['SOURCE', 'SAMPLE']
             }
-            import_materials(assay_materials, db_assay, obj_lookup)
+            _import_materials(assay_materials, db_assay, obj_lookup)
 
             # Create assay processes
-            import_processes(a.processes, db_assay, obj_lookup, protocol_lookup)
+            _import_processes(
+                a.processes, db_assay, obj_lookup, protocol_lookup
+            )
 
             # Create assay arcs
-            import_arcs(a.arcs, db_assay)
+            _import_arcs(a.arcs, db_assay)
             assay_count += 1
 
         study_count += 1
@@ -430,6 +505,16 @@ def import_isa(isa_zip, project):
     for study in db_studies:
         # Throws an exception if we are unable to build this
         SampleSheetTableBuilder.build_study_reference(study)
+
+    logger.debug('Rendering OK')
+
+    # Store parser warnings (only if warnings were raised)
+    if not parser_warnings['all_ok']:
+        logger.debug(
+            'Warnings raised, storing in investigation.parser_warnings'
+        )
+        db_investigation.parser_warnings = parser_warnings
+        db_investigation.save()
 
     logger.info(
         'Import of investigation "{}" OK ({:.1f}s)'.format(

@@ -63,6 +63,13 @@ class BaseSampleSheet(models.Model):
     #: Comments
     comments = JSONField(default=dict, help_text='Comments')
 
+    #: Headers for ISAtab parsing/writing
+    headers = ArrayField(
+        models.CharField(max_length=DEFAULT_LENGTH, blank=True),
+        default=list,
+        help_text='Headers for ISAtab parsing/writing',
+    )
+
     class Meta:
         abstract = True
 
@@ -159,6 +166,21 @@ class Investigation(BaseSampleSheet):
         default=False, help_text='Status of iRODS directory structure creation'
     )
 
+    #: Parser version
+    parser_version = models.CharField(
+        max_length=DEFAULT_LENGTH,
+        blank=True,  # Blank/null = old version before this was introduced
+        null=True,
+        help_text='Parser version',
+    )
+
+    #: Parser warnings
+    parser_warnings = JSONField(
+        default=dict,
+        help_text='Warnings from the previous parsing of the corresponding '
+        'ISAtab',
+    )
+
     def __str__(self):
         return '{}: {}'.format(self.project.title, self.title)
 
@@ -241,23 +263,12 @@ class Study(BaseSampleSheet):
     #: Study factors
     factors = JSONField(default=dict, help_text='Study factors')
 
-    #: Characteristic categories
-    characteristic_cat = JSONField(
-        default=dict, help_text='Characteristic categories'
-    )
-
-    #: Unit categories
-    unit_cat = JSONField(default=dict, help_text='Unit categories')
-
     #: Study arcs
     arcs = ArrayField(
         ArrayField(models.CharField(max_length=DEFAULT_LENGTH, blank=True)),
         default=list,
         help_text='Study arcs',
     )
-
-    #: Column headers
-    header = JSONField(default=dict, help_text='Column headers')
 
     class Meta:
         ordering = ['identifier']
@@ -391,23 +402,12 @@ class Assay(BaseSampleSheet):
     #: Measurement type
     measurement_type = JSONField(default=dict, help_text='Measurement type')
 
-    #: Characteristic categories
-    characteristic_cat = JSONField(
-        default=dict, help_text='Characteristic categories'
-    )
-
-    #: Unit categories
-    unit_cat = JSONField(default=dict, help_text='Unit categories')
-
     #: Assay arcs
     arcs = ArrayField(
         ArrayField(models.CharField(max_length=DEFAULT_LENGTH, blank=True)),
         default=list,
         help_text='Assay arcs',
     )
-
-    #: Column headers
-    header = JSONField(default=dict, help_text='Column headers')
 
     class Meta:
         unique_together = ('study', 'file_name')
@@ -559,13 +559,9 @@ class GenericMaterial(BaseSampleSheet):
         help_text='Factor values for a sample',
     )
 
-    #: Extract label
-    extract_label = models.CharField(
-        max_length=DEFAULT_LENGTH,
-        unique=False,
-        blank=True,
-        null=True,
-        help_text='Extract label',
+    #: Extract label (JSON)
+    extract_label = JSONField(
+        default=dict, blank=True, null=True, help_text='Extract label'
     )
 
     # Set manager for custom queries
@@ -691,6 +687,15 @@ class Process(BaseSampleSheet):
         help_text='Unique process name',
     )
 
+    #: Type of original name
+    name_type = models.CharField(
+        max_length=DEFAULT_LENGTH,
+        unique=False,
+        blank=True,
+        null=True,
+        help_text='Type of original name (e.g. Assay Name)',
+    )
+
     #: Protocol which the process executes
     protocol = models.ForeignKey(
         Protocol,
@@ -744,13 +749,14 @@ class Process(BaseSampleSheet):
         help_text='Array design ref',
     )
 
-    #: Scan name for special cases in ISAtab
-    scan_name = models.CharField(
-        max_length=DEFAULT_LENGTH,
-        unique=False,
-        blank=True,
-        null=True,
-        help_text='Scan name for special cases in ISAtab',
+    #: First dimension
+    first_dimension = JSONField(
+        default=dict, help_text='First dimension (optional, for special case)'
+    )
+
+    #: Second dimension
+    second_dimension = JSONField(
+        default=dict, help_text='Second dimension (optional, for special case)'
     )
 
     class Meta:

@@ -322,6 +322,7 @@ class TestContextGetAPIView(TestViewsBase):
         expected = {
             'configuration': self.investigation.get_configuration(),
             'irods_status': False,
+            'parser_version': self.investigation.parser_version,
             'irods_backend_enabled': True
             if get_backend_api('omics_irods')
             else False,
