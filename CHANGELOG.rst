@@ -44,6 +44,8 @@ Fixed
 - **Samplesheets**
     - Assay UUIDs modified when replacing sheets (#554)
     - Default ``fetch()`` credentials failing with certain old browsers (#559)
+    - Crash in germline study app ``get_shortcut_column()`` with empty family column (#560)
+    - Germline study app ``update_cache()`` failing with empty family column
 
 Removed
 -------

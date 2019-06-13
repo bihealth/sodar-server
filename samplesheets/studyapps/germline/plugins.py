@@ -90,7 +90,7 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
         query_key = 'source'  # Default is source
 
         # Group by family
-        if family_idx:
+        if family_idx and study_tables['study']['col_values'][family_idx] == 1:
             id_idx = family_idx
             query_key = 'family'
 
@@ -307,7 +307,10 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                     bam_paths[source.name] = bam_path
 
                     # Get family ID
-                    if 'Family' in source.characteristics:
+                    if (
+                        'Family' in source.characteristics
+                        and source.characteristics['Family']['value']
+                    ):
                         query_id = source.characteristics['Family']['value']
 
                     else:
