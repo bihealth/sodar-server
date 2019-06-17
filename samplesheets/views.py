@@ -454,6 +454,8 @@ class SampleSheetDeleteView(
                 name=investigation.title,
             )
 
+        delete_success = True
+
         if taskflow and investigation.irods_status:
             if tl_event:
                 tl_event.set_status('SUBMIT')
@@ -470,10 +472,18 @@ class SampleSheetDeleteView(
                 if tl_event:
                     tl_event.set_status('FAILED', str(ex))
 
+                delete_success = False
+                messages.error(
+                    self.request,
+                    'Failed to delete sample sheets: {}'.format(ex),
+                )
+
         else:
             investigation.delete()
 
-        messages.success(self.request, 'Sample sheets deleted.')
+        if delete_success:
+            messages.success(self.request, 'Sample sheets deleted.')
+
         return HttpResponseRedirect(get_sheets_url(project))
 
 
@@ -512,7 +522,7 @@ class IrodsDirsView(
     ProjectPermissionMixin,
     TemplateView,
 ):
-    """iRODS directory structure creation confirm view"""
+    """iRODS directory structure creation view"""
 
     template_name = 'samplesheets/irods_dirs_confirm.html'
     # NOTE: minimum perm, all checked files will be tested in post()
@@ -582,15 +592,23 @@ class IrodsDirsView(
                 flow_data=flow_data,
                 request=self.request,
             )
-            messages.success(
-                self.request,
-                'Directory structure for sample data {}d in iRODS'.format(
-                    action
-                ),
-            )
 
             if tl_event:
                 tl_event.set_status('OK')
+
+            success_msg = (
+                'Directory structure for sample data '
+                '{}d in iRODS'.format(action)
+            )
+
+            if settings.SHEETS_ENABLE_CACHE:
+                update_project_cache_task.delay(
+                    project_uuid=str(project.sodar_uuid),
+                    user_uuid=str(self.request.user.sodar_uuid),
+                )
+                success_msg += ', initiated iRODS cache update'
+
+            messages.success(self.request, success_msg)
 
         except taskflow.FlowSubmitException as ex:
             if tl_event:

@@ -37,6 +37,7 @@ Changed
     - Refactor ``io`` module
     - Improve ``io`` module logging
     - Change ``GenericMaterial.extract_label`` into a JSON field (#527)
+    - Update project iRODS cache when creating or updating iRODS collections (#565)
 
 Fixed
 -----
@@ -46,6 +47,7 @@ Fixed
     - Default ``fetch()`` credentials failing with certain old browsers (#559)
     - Crash in germline study app ``get_shortcut_column()`` with empty family column (#560)
     - Germline study app ``update_cache()`` failing with empty family column
+    - Sheet deletion error not displayed to user (#568)
 
 Removed
 -------
