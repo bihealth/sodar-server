@@ -26,6 +26,7 @@ Changed
 
 - **General**
     - Upgrade site to django-sodar-core v0.6.1
+    - Update ``setup.py`` (#551)
 - **Samplesheets**
     - Update project iRODS cache when replacing sheets (#554)
     - Use ``delete_cache()`` in ``TaskflowSheetDeleteAPIView`` (sodar_core#257)
