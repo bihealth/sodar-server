@@ -20,6 +20,7 @@ Added
     - altamISA version storing and logging in rendering (#527)
     - altamISA v0.1 validation (#527)
     - Handling of altamISA warnings (#527)
+    - Helper script ``run_demo.sh`` to run in local demo mode
 
 Changed
 -------
