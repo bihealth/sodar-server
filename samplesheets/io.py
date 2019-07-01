@@ -436,7 +436,7 @@ def import_isa(isa_zip, project):
         _import_arcs(s.arcs, db_study)
 
         assay_count = 0
-        assay_paths = [a_i.path for a_i in s_i.assays]
+        assay_paths = sorted([a_i.path for a_i in s_i.assays])
 
         for assay_path in assay_paths:
             a_i = next(
