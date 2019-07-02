@@ -40,6 +40,7 @@ Changed
     - Improve ``io`` module logging
     - Change ``GenericMaterial.extract_label`` into a JSON field (#527)
     - Update project iRODS cache when creating or updating iRODS collections (#565)
+    - Disable operations dropdown for guest users (#497)
 
 Fixed
 -----

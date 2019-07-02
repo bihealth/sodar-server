@@ -189,10 +189,10 @@ class TestProjectSheetsView(SampleSheetIOMixin, TestUIBase):
             self._login_and_render(user[0])
 
             nav_elem = self.selenium.find_element_by_id('sodar-ss-op-dropdown')
-            nav_btn = nav_elem.find_element_by_tag_name('button')
             nav_links = nav_elem.find_elements_by_class_name('sodar-ss-op-item')
+            enabled_state = False if user == self.as_guest.user else True
 
-            self.assertEqual(nav_btn.is_enabled(), True)
+            self.assertEqual(nav_elem.is_enabled(), enabled_state)
             self.assertEqual(len(nav_links), user[1])
 
     def test_navigation_from_tabs(self):

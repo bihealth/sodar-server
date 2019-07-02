@@ -70,7 +70,7 @@
       </b-dropdown>
       <b-dropdown
           id="sodar-ss-op-dropdown"
-          :disabled="app.gridsBusy"
+          :disabled="app.gridsBusy || !app.sodarContext['perms']['edit_sheet']"
           right
           variant="primary"
           text="Sheet Operations">
