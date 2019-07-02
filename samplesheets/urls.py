@@ -57,6 +57,11 @@ urlpatterns = [
         view=views.SampleSheetStudyLinksGetAPIView.as_view(),
         name='api_study_links_get',
     ),
+    url(
+        regex=r'^api/warnings/get/(?P<project>[0-9a-f-]+)$',
+        view=views.SampleSheetWarningsGetAPIView.as_view(),
+        name='api_warnings_get',
+    ),
     # General API views
     url(
         regex=r'^api/source/get/(?P<source_id>[\w\-_/]+)$',

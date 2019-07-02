@@ -326,6 +326,9 @@ class TestContextGetAPIView(TestViewsBase):
             'irods_backend_enabled': True
             if get_backend_api('omics_irods')
             else False,
+            'parser_warnings': True
+            if self.investigation.parser_warnings
+            else False,
             'irods_webdav_enabled': settings.IRODS_WEBDAV_ENABLED,
             'irods_webdav_url': settings.IRODS_WEBDAV_URL,
             'external_link_labels': settings.SHEETS_EXTERNAL_LINK_LABELS,
@@ -454,6 +457,34 @@ class TestStudyLinksGetAPIView(TestViewsBase):
                 )
             )
         self.assertEqual(response.status_code, 404)  # No plugin for test ISAtab
+
+
+# TODO: Test with realistic ISAtab examples using BIH configs (see #434)
+class TestSampleSheetWarningsGetAPIView(TestViewsBase):
+    """Tests for SampleSheetWarningsGetAPIView"""
+
+    def setUp(self):
+        super().setUp()
+
+        # Import investigation
+        self.investigation = self._import_isa_from_file(
+            SHEET_PATH, self.project
+        )
+
+    def test_get(self):
+        """Test study tables retrieval"""
+        with self.login(self.user):
+            response = self.client.get(
+                reverse(
+                    'samplesheets:api_warnings_get',
+                    kwargs={'project': self.project.sodar_uuid},
+                )
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.data['warnings'], self.investigation.parser_warnings
+        )
 
 
 class TestSourceIDQueryAPIView(KnoxAuthMixin, TestViewsBase):

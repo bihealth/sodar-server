@@ -12,13 +12,13 @@
                   @mousedown="app.handleStudyNavigation(studyUuid)"
                   v-b-tooltip.hover
                   :title="getStudyNavTitle(studyInfo['display_name'])"
-                  :active="studyUuid === app.currentStudyUuid && !app.overviewActive"
+                  :active="studyUuid === app.currentStudyUuid && !app.activeSubPage"
                   :disabled="!app.sheetsAvailable || app.gridsBusy">
         <i class="fa fa-list-alt"></i> {{ studyInfo['display_name'] | truncate(20) }}
       </b-nav-item>
       <b-nav-item id="sodar-ss-tab-overview"
-                  @mousedown="app.showOverview()"
-                  :active="app.overviewActive"
+                  @mousedown="app.showSubPage('overview')"
+                  :active="app.activeSubPage === 'overview'"
                   :disabled="!app.sheetsAvailable || app.gridsBusy">
         <i class="fa fa-sitemap"></i> Overview
       </b-nav-item>
@@ -64,7 +64,7 @@
           href="#"
           id="sodar-ss-nav-overview"
           class="sodar-ss-nav-item"
-          @click="app.showOverview()">
+          @click="app.showSubPage('overview')">
           <i class="fa fa-fw fa-sitemap"></i> Overview
         </b-dropdown-item>
       </b-dropdown>
@@ -104,6 +104,14 @@
             :href="'dirs/' + app.projectUuid">
           <i class="fa fa-fw fa-database"></i>
           <span v-if="app.sodarContext['irods_status']">Update</span><span v-else>Create</span> iRODS Directories
+        </b-dropdown-item>
+        <b-dropdown-item
+            v-if="app.sheetsAvailable &&
+                  app.sodarContext['perms']['edit_sheet']"
+            class="sodar-ss-op-item"
+            :disabled="!app.sodarContext['parser_warnings']"
+            @click="app.showSubPage('warnings')">
+          <i class="fa fa-fw fa-exclamation-circle"></i> View Parser Warnings
         </b-dropdown-item>
         <b-dropdown-item
             v-if="app.sheetsAvailable &&

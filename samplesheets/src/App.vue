@@ -14,7 +14,7 @@
       <div v-if="sodarContext &&
                  gridsLoaded &&
                  !renderError &&
-                 !overviewActive"
+                 !activeSubPage"
                  :studyUuid="currentStudyUuid"
            id="sodar-ss-vue-content">
 
@@ -140,7 +140,7 @@
                   v-if="sodarContext &&
                         gridsLoaded &&
                         !renderError &&
-                        !overviewActive"
+                        !activeSubPage"
                   :app="getApp()"
                   :irods-status="sodarContext['irods_status']"
                   :irods-backend-enabled="sodarContext['irods_backend_enabled']"
@@ -211,10 +211,16 @@
 
       </div>
 
-      <!-- Overview mode -->
-      <div v-else-if="overviewActive" id="sodar-ss-vue-content">
+      <!-- Overview subpage -->
+      <div v-else-if="activeSubPage === 'overview'" id="sodar-ss-vue-content">
         <Overview :app="getApp()">
         </Overview>
+      </div>
+
+      <!-- Parser Warnings subpage -->
+      <div v-else-if="activeSubPage === 'warnings'" id="sodar-ss-vue-content">
+        <ParserWarnings :app="getApp()">
+        </ParserWarnings>
       </div>
 
       <!-- Render error -->
@@ -274,6 +280,7 @@
 <script>
 import PageHeader from './components/PageHeader.vue'
 import Overview from './components/Overview.vue'
+import ParserWarnings from './components/ParserWarnings.vue'
 import IrodsButtons from './components/IrodsButtons.vue'
 import IrodsDirModal from './components/IrodsDirModal.vue'
 import ShortcutModal from './components/ShortcutModal.vue'
@@ -318,13 +325,14 @@ export default {
       gridsBusy: false,
       renderError: null,
       sheetsAvailable: null,
-      overviewActive: false,
+      activeSubPage: null,
       appSetupDone: false
     }
   },
   components: {
     PageHeader,
     Overview,
+    ParserWarnings,
     IrodsButtons,
     IrodsDirModal,
     ShortcutModal,
@@ -761,20 +769,20 @@ export default {
 
     handleStudyNavigation (studyUuid, assayUuid) {
       this.setCurrentAssay(assayUuid)
-      let fromOverview = this.overviewActive
-      this.overviewActive = false
+      let fromSubPage = this.activeSubPage
+      this.activeSubPage = null
       this.setPath()
-      if (!fromOverview && studyUuid === this.currentStudyUuid) {
+      if (!fromSubPage && studyUuid === this.currentStudyUuid) {
         this.scrollToCurrentTable()
       } else {
         this.getStudy(studyUuid) // Will be scrolled after render
       }
     },
 
-    showOverview () {
-      this.overviewActive = true
+    showSubPage (pageId) {
+      this.activeSubPage = pageId
       this.setPath()
-      this.clearGrids()
+      this.clearGrids() // TODO: Should keep in memory
       this.$nextTick(() => {
         this.scrollToCurrentTable()
       })
@@ -782,8 +790,8 @@ export default {
 
     // Set path in current URL
     setPath () {
-      if (this.overviewActive) {
-        this.$router.push({path: '/overview'})
+      if (this.activeSubPage) {
+        this.$router.push({path: '/' + this.activeSubPage})
       } else if (this.currentStudyUuid && !this.currentAssayUuid) {
         this.$router.push({path: '/study/' + this.currentStudyUuid})
       } else if (this.currentAssayUuid) {
@@ -795,12 +803,16 @@ export default {
 
     // Set up current page target from URL path
     setTargetByPath () {
-      if (this.$route.fullPath.indexOf('/overview') !== -1) {
-        this.overviewActive = true
+      let pageId = this.$route.fullPath.split('/')[1]
+
+      if (this.$route.fullPath.indexOf('/study/') === -1 &&
+          this.$route.fullPath.indexOf('/assay/') === -1 &&
+          pageId) {
+        this.showSubPage(pageId)
         this.setCurrentStudy(null)
         this.setCurrentAssay(null)
       } else if (this.$route.fullPath.indexOf('/assay/') !== -1) {
-        this.overviewActive = false
+        this.activeSubPage = null
         this.setCurrentAssay(this.$route.fullPath.substr(7))
 
         for (let studyUuid in this.sodarContext['studies']) {
@@ -811,7 +823,7 @@ export default {
           }
         }
       } else if (this.$route.fullPath.indexOf('/study/') !== -1) {
-        this.overviewActive = false
+        this.activeSubPage = null
         this.setCurrentStudy(this.$route.fullPath.substr(7))
         this.setCurrentAssay(null)
       }
@@ -875,7 +887,7 @@ export default {
       if (this.currentStudyUuid) {
         this.sheetsAvailable = true
 
-        if (!this.overviewActive) {
+        if (!this.activeSubPage) {
           this.getStudy(this.currentStudyUuid)
         }
       } else {

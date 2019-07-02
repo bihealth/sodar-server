@@ -242,10 +242,7 @@ def import_isa(isa_zip, project):
                     protocol = protocol_lookup[p.protocol_ref]
 
                 except KeyError:
-                    logger.warning(
-                        'No protocol found for process "{}" '
-                        'with ref "{}"'.format(p.unique_name, p.protocol_ref)
-                    )
+                    pass  # Warning for no found protocol reported by altamISA
 
             values = {
                 'name': p.name,

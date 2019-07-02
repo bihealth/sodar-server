@@ -21,6 +21,7 @@ Added
     - altamISA v0.1 validation (#527)
     - Handling of altamISA warnings (#527)
     - Helper script ``run_demo.sh`` to run in local demo mode
+    - Vue.js app view for displaying parser warnings
 
 Changed
 -------
@@ -41,6 +42,7 @@ Changed
     - Change ``GenericMaterial.extract_label`` into a JSON field (#527)
     - Update project iRODS cache when creating or updating iRODS collections (#565)
     - Disable operations dropdown for guest users (#497)
+    - Refactor Vue.js subpage navigation
 
 Fixed
 -----
@@ -59,6 +61,7 @@ Removed
     - Model fields ``characteristic_cat`` and ``unit_cat`` from ``Study``
     - Model field ``header`` from ``Study`` and ``Assay``
     - Model field ``scan_name`` from ``Process``
+    - Redundant warning for missing protocol reference in ISAtab import
 
 
 v0.5.0 (2019-06-05)

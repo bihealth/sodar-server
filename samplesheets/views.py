@@ -7,6 +7,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import redirect
 from django.urls import reverse
+from django.utils.safestring import mark_safe
 from django.views.generic import TemplateView, FormView, View
 
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -293,6 +294,12 @@ class SampleSheetImportView(
             form_action.capitalize()
         )
 
+        if self.object.parser_warnings:
+            success_msg += (
+                ' (<strong>Note:</strong> '
+                '<a href="#/warnings">parser warnings raised</a>)'
+            )
+
         # Update project cache if replacing sheets
         if form_action == 'replace' and settings.SHEETS_ENABLE_CACHE:
             update_project_cache_task.delay(
@@ -301,7 +308,7 @@ class SampleSheetImportView(
             )
             success_msg += ', initiated iRODS cache update'
 
-        messages.success(self.request, success_msg)
+        messages.success(self.request, mark_safe(success_msg))
         return redirect(redirect_url)
 
 
@@ -661,6 +668,9 @@ class SampleSheetContextGetAPIView(
             'parser_version': (investigation.parser_version or 'LEGACY')
             if investigation
             else None,
+            'parser_warnings': True
+            if investigation and investigation.parser_warnings
+            else False,
             'irods_webdav_enabled': settings.IRODS_WEBDAV_ENABLED,
             'irods_webdav_url': settings.IRODS_WEBDAV_URL.rstrip('/'),
             'external_link_labels': settings.SHEETS_EXTERNAL_LINK_LABELS,
@@ -902,6 +912,27 @@ class SampleSheetStudyLinksGetAPIView(
             study, study_tables, **request.GET
         )
         return Response(ret_data, status=200)
+
+
+class SampleSheetWarningsGetAPIView(
+    LoginRequiredMixin, ProjectPermissionMixin, APIPermissionMixin, APIView
+):
+    """View to retrieve parser warnings for sample sheets"""
+
+    permission_required = 'samplesheets.view_sheet'
+    renderer_classes = [JSONRenderer]
+
+    def get(self, request, *args, **kwargs):
+        investigation = Investigation.objects.filter(
+            project=self.get_project()
+        ).first()
+
+        if not investigation:
+            return Response(
+                {'message': 'Investigation not found for project'}, status=404
+            )
+
+        return Response({'warnings': investigation.parser_warnings}, status=200)
 
 
 # General API Views ------------------------------------------------------------
