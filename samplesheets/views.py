@@ -791,8 +791,16 @@ class SampleSheetStudyTablesGetAPIView(
     def get(self, request, *args, **kwargs):
         irods_backend = get_backend_api('omics_irods')
         cache_backend = get_backend_api('sodar_cache')
-
         study = Study.objects.filter(sodar_uuid=self.kwargs['study']).first()
+
+        if not study:
+            return Response(
+                {
+                    'render_error': 'Study not found with UUID "{}", '
+                    'unable to render'.format(self.kwargs['study'])
+                },
+                status=404,
+            )
 
         ret_data = {'study': {'display_name': study.get_display_name()}}
         tb = SampleSheetTableBuilder()

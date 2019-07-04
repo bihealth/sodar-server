@@ -22,7 +22,7 @@ Added
     - Handling of altamISA warnings (#527)
     - Helper script ``run_demo.sh`` to run in local demo mode
     - Vue.js app view for displaying parser warnings
-    - Support for altamISA v0.1 column sorting (#566)
+    - Support for altamISA v0.1 column sorting (#86, #566)
     - Display comments, performer and perform date in tables
 
 Changed
@@ -56,6 +56,7 @@ Fixed
     - Crash in germline study app ``get_shortcut_column()`` with empty family column (#560)
     - Germline study app ``update_cache()`` failing with empty family column
     - Sheet deletion error not displayed to user (#568)
+    - Crash in ``SampleSheetStudyTablesGetAPIView`` if ``Study`` object not found (#578)
 
 Removed
 -------
