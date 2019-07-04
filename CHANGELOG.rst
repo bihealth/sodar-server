@@ -22,6 +22,8 @@ Added
     - Handling of altamISA warnings (#527)
     - Helper script ``run_demo.sh`` to run in local demo mode
     - Vue.js app view for displaying parser warnings
+    - Support for altamISA v0.1 column sorting (#566)
+    - Display comments, performer and perform date in tables
 
 Changed
 -------
@@ -43,6 +45,7 @@ Changed
     - Update project iRODS cache when creating or updating iRODS collections (#565)
     - Disable operations dropdown for guest users (#497)
     - Refactor Vue.js subpage navigation
+    - Refactor legacy table rendering (#111, #566)
 
 Fixed
 -----

@@ -115,7 +115,7 @@ class TestGetIndexByHeader(TestUtilsBase):
                 obj_cls=GenericMaterial,
                 item_type='SAMPLE',
             ),
-            3,
+            2,
         )
 
     def test_get_process_protocol(self):
@@ -140,7 +140,7 @@ class TestGetIndexByHeader(TestUtilsBase):
                 ],
                 header_value='replicate',
             ),
-            11,
+            7,
         )
 
     def test_get_not_found(self):

@@ -1,5 +1,7 @@
 """Rendering utilities for samplesheets"""
 
+from altamisa.constants import table_headers as th
+from datetime import date
 import itertools
 import logging
 from packaging import version
@@ -37,6 +39,36 @@ ONTOLOGY_URL_TEMPLATE = (
 NARROW_CHARS = 'fIijlt;:.,/"!\'!()[]{}'
 WIDE_CHARS = 'ABCDEFHKLMNOPQRSTUVXYZ<>%$_'
 
+IGNORED_HEADERS = ['Unit', 'Term Source REF', 'Term Accession Number']
+
+# Name fields (NOTE: Missing labeled extract name by purpose)
+ALTAMISA_MATERIAL_NAMES = [
+    th.EXTRACT_NAME,
+    th.LIBRARY_NAME,
+    th.SAMPLE_NAME,
+    th.SOURCE_NAME,
+]
+
+# Attribute list lookup
+LIST_ATTR_MAP = {
+    th.CHARACTERISTICS: 'characteristics',
+    th.COMMENT: 'comments',
+    th.FACTOR_VALUE: 'factor_values',
+    th.PARAMETER_VALUE: 'parameter_values',
+}
+
+# Basic fields lookup (header -> member of element)
+BASIC_FIELD_MAP = {th.PERFORMER: 'performer', th.DATE: 'perform_date'}
+
+# altamISA -> SODAR header name lookup
+HEADER_MAP = {
+    th.LABELED_EXTRACT_NAME: 'Label',
+    th.PROTOCOL_REF: 'Protocol',
+    th.PERFORMER: 'Performer',
+    th.DATE: 'Perform Date',
+}
+
+header_re = re.compile(r'^([a-zA-Z\s]+)[\[](.+)[\]]$')
 contact_re = re.compile(r'(.+?)\s?(?:[<|[])(.+?)(?:[>\]])')
 logger = logging.getLogger(__name__)
 app_settings = AppSettingAPI()
@@ -128,7 +160,6 @@ class RefTableBuilder:
         return list(result.values())
 
     def _dump_row(self, v_names):
-        # print('row: {}'.format(v_names))
         self._rows.append(list(v_names))
 
     def _dfs(self, source, path):
@@ -184,6 +215,8 @@ class SampleSheetTableBuilder:
         self._col_idx = 0
         self._parser_version = None
 
+    # General data and cell functions ------------------------------------------
+
     @classmethod
     def _get_value(cls, field):
         """
@@ -227,7 +260,7 @@ class SampleSheetTableBuilder:
 
     def _add_top_header(self, obj, colspan):
         """Append columns to top header"""
-        if type(obj) == GenericMaterial:  # Material
+        if isinstance(obj, GenericMaterial):  # Material
             colour = TOP_HEADER_MATERIAL_COLOURS[obj.item_type]
             value = (
                 obj.material_type
@@ -252,17 +285,18 @@ class SampleSheetTableBuilder:
         """
         self._field_header.append(
             {
-                'value': value,
+                'value': value.title(),  # TODO: Better titling (see #576)
                 'obj_cls': obj.__class__.__name__,
                 'item_type': obj.item_type
-                if type(obj) == GenericMaterial
+                if isinstance(obj, GenericMaterial)
                 else None,
             }
         )
 
     def _add_cell(
         self,
-        value=None,
+        value=None,  # TODO: Make mandatory when removing legacy parser support
+        header=None,  # TODO: Make mandatory when removing legacy parser support
         unit=None,
         link=None,
         obj=None,  # noqa: Temporarily not in use
@@ -270,14 +304,20 @@ class SampleSheetTableBuilder:
         # attrs=None,  # :param attrs: Optional attributes (dict)
     ):
         """
-        Add cell data.
+        Add cell data. Also maintain column value list and insert header if on
+        the first row and required parameters are supplied.
 
         :param value: Value to be displayed in the cell
+        :param header: Name of the column header
         :param unit: Unit to be displayed in the cell
         :param link: Link from the value (URL string)
         :param obj: Original Django model object
         :param tooltip: Tooltip to be shown on mouse hover (string)
         """
+
+        # Add header if first row
+        if header and obj and self._first_row:
+            self._add_header(header, obj)
 
         # Handle new list value notation in altamISA>=0.1
         if isinstance(value, list):
@@ -310,12 +350,14 @@ class SampleSheetTableBuilder:
 
         self._col_idx += 1
 
+    # Legacy altamISA Functions (to be deprecated) -----------------------------
+
     def _add_annotation_headers(self, annotations, obj):
         """Append annotation columns to field header"""
         a_count = 0
 
         for a in annotations:
-            self._add_header(a.title(), obj)
+            self._add_header(a, obj)
             a_count += 1
 
         return a_count
@@ -358,7 +400,7 @@ class SampleSheetTableBuilder:
                 val = v['value']
 
             if 'unit' in v:
-                if type(v['unit']) == dict:
+                if isinstance(v['unit'], dict):
                     unit = v['unit']['name']
 
                 else:
@@ -369,17 +411,15 @@ class SampleSheetTableBuilder:
     def _add_element(self, obj):
         """
         Append GenericMaterial or Process element to row along with its
-        attributes
+        attributes. To be used only with LEGACY versions of altamISA.
 
         :param obj: GenericMaterial or Pocess element
         """
-        # TODO: Contains repetition, refactor
         obj_type = type(obj)
 
         # Headers
         if self._first_row:
             field_count = 0
-            hideable_count = 0
 
             # Material headers
             if obj_type == GenericMaterial:
@@ -399,7 +439,6 @@ class SampleSheetTableBuilder:
                     obj.characteristics, obj
                 )
                 field_count += a_header_count
-                hideable_count += a_header_count
 
                 # Factor values
                 if obj.item_type == 'SAMPLE':
@@ -407,7 +446,6 @@ class SampleSheetTableBuilder:
                         obj.factor_values, obj
                     )
                     field_count += a_header_count
-                    hideable_count += a_header_count
 
             # Process headers
             else:  # obj_type == Process
@@ -428,12 +466,10 @@ class SampleSheetTableBuilder:
                     obj.parameter_values, obj
                 )
                 field_count += a_header_count
-                hideable_count += a_header_count
 
             # Comments
             a_header_count = self._add_annotation_headers(obj.comments, obj)
             field_count += a_header_count
-            hideable_count += a_header_count
 
             self._add_top_header(obj, field_count)
 
@@ -475,6 +511,124 @@ class SampleSheetTableBuilder:
         # Comments
         self._add_annotations(obj.comments, obj=obj)
 
+    # New altamISA v0.1+ Functions ---------------------------------------------
+
+    def _add_ordered_element(self, obj):
+        """
+        Append GenericMaterial or Process element to row along with its
+        attributes. To be used with altamISA v0.1+, requires the "headers"
+        field in each object.
+
+        :param obj: GenericMaterial or Pocess object
+        """
+        old_header_len = len(self._field_header)
+        headers = [h for h in obj.headers if h not in IGNORED_HEADERS]
+
+        for h in headers:
+            list_ref = re.findall(header_re, h)
+
+            # Value lists with possible ontology annotation
+            if list_ref:
+                h_type = list_ref[0][0]
+                h_name = list_ref[0][1]
+
+                if h_type in LIST_ATTR_MAP and hasattr(
+                    obj, LIST_ATTR_MAP[h_type]
+                ):
+                    obj_attr = getattr(obj, LIST_ATTR_MAP[h_type])
+
+                    if h_name in obj_attr:
+                        self._add_annotation(obj_attr[h_name], h_name, obj)
+
+            # Basic fields we can simply map using BASIC_FIELD_MAPE
+            elif h in BASIC_FIELD_MAP and hasattr(obj, BASIC_FIELD_MAP[h]):
+                self._add_cell(
+                    getattr(obj, BASIC_FIELD_MAP[h]), HEADER_MAP[h], obj=obj
+                )
+
+            # Special case: Name
+            elif h in ALTAMISA_MATERIAL_NAMES:
+                self._add_cell(obj.name, 'Name', obj=obj)
+
+            # Special case: Labeled Extract Name
+            elif h == th.LABELED_EXTRACT_NAME and hasattr(obj, 'extract_label'):
+                self._add_cell(
+                    obj.extract_label,
+                    HEADER_MAP[th.LABELED_EXTRACT_NAME],
+                    obj=obj,
+                )
+
+            # Special case: Protocol Name
+            elif (
+                h == th.PROTOCOL_REF
+                and hasattr(obj, 'protocol')
+                and obj.protocol
+            ):
+                self._add_cell(
+                    obj.protocol.name, HEADER_MAP[th.PROTOCOL_REF], obj=obj
+                )
+
+            # Special case: Process Name
+            elif isinstance(obj, Process) and h in th.PROCESS_NAME_HEADERS:
+                self._add_cell(obj.name, 'Name', obj=obj)
+
+        # Add top header
+        if self._first_row:
+            self._add_top_header(obj, len(self._field_header) - old_header_len)
+
+    def _add_annotation(self, ann, header, obj):
+        """
+        Append a single annotation to row as multiple cells. To be used with
+        altamISA v0.1+.
+
+        :param ann: Annotation value (string or Dict)
+        :param header: Name of the column header
+        :param obj: GenericMaterial or Pocess object the annotation belongs to
+        """
+        val = ''
+        unit = None
+        link = None
+        tooltip = None
+
+        # Ontology reference
+        if (
+            isinstance(ann['value'], dict)
+            and 'name' in ann['value']
+            and ann['value']['name']
+        ):
+            if ann['value']['ontology_name']:
+                tooltip = ann['value']['ontology_name']
+
+            val = ann['value']['name']
+
+            if ann['value']['ontology_name'] and ann['value']['accession']:
+                link = self._get_ontology_link(
+                    ann['value']['ontology_name'], ann['value']['accession']
+                )
+
+        # Empty ontology reference (this can happen with altamISA v0.1)
+        elif isinstance(ann['value'], dict) and (
+            'name' not in ann['value'] or not ann['value']['name']
+        ):
+            val = ''
+
+        # Basic value string
+        else:
+            val = ann['value']
+
+        if 'unit' in ann:
+            if isinstance(ann['unit'], dict):
+                unit = ann['unit']['name']
+
+            else:
+                unit = ann['unit']
+
+        self._add_cell(
+            val, header, unit=unit, link=link, obj=obj, tooltip=tooltip
+        )
+
+    # Table building functions -------------------------------------------------
+
     def _append_row(self):
         """Append current row to table data and cleanup"""
         self._table_data.append(self._row)
@@ -482,14 +636,12 @@ class SampleSheetTableBuilder:
         self._first_row = False
         self._col_idx = 0
 
-    def _build_table(self, table_refs, node_lookup, sample_pos, table_parent):
+    def _build_table(self, table_refs, node_map):
         """
         Function for building a table for rendering.
 
         :param table_refs: Object unique_name:s in a list of lists
-        :param node_lookup: Dictionary containing objects
-        :param sample_pos: Position of sample column (int)
-        :param table_parent: Parent object of table (Study or Assay)
+        :param node_map: Lookup dictionary containing objects
         :return: Dict
         """
         self._row = []
@@ -507,8 +659,17 @@ class SampleSheetTableBuilder:
 
             # Add elements on row
             for col in input_row:
-                obj = node_lookup[col]
-                self._add_element(obj)
+                obj = node_map[col]
+
+                # altamISA v0.1+ parsing with "headers" ordering
+                if not isinstance(self._parser_version, version.LegacyVersion):
+                    self._add_ordered_element(obj)
+
+                # Legacy altamISA parsing
+                # TODO: To be removed
+                else:
+                    self._add_element(obj)
+
                 col_pos += 1
 
             self._append_row()
@@ -521,6 +682,9 @@ class SampleSheetTableBuilder:
             """Return estimated length for proportional text"""
             if not value:
                 return 0
+
+            if isinstance(value, date):  # Convert perform date
+                value = str(value)
 
             # Very unscientific and font-specific, don't try this at home
             nc = sum([value.count(c) for c in NARROW_CHARS])
@@ -688,15 +852,13 @@ class SampleSheetTableBuilder:
         sample_pos = [
             i for i, col in enumerate(all_refs[0]) if '-sample-' in col
         ][0]
-        node_lookup = {n.unique_name: n for n in nodes}
+        node_map = {n.unique_name: n for n in nodes}
 
         # Study ref table without duplicates
         sr = [row[: sample_pos + 1] for row in all_refs]
         study_refs = list(sr for sr, _ in itertools.groupby(sr))
 
-        ret['study'] = self._build_table(
-            study_refs, node_lookup, sample_pos, study
-        )
+        ret['study'] = self._build_table(study_refs, node_map)
 
         logger.debug(
             'Building study OK ({:.1f}s)'.format(time.time() - s_start)
@@ -724,7 +886,7 @@ class SampleSheetTableBuilder:
                     assay_refs.append(row)
 
             ret['assays'][str(assay.sodar_uuid)] = self._build_table(
-                assay_refs, node_lookup, sample_pos, assay
+                assay_refs, node_map
             )
 
             assay_count += 1
