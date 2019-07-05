@@ -42,6 +42,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
             'type': 'INTEGER',
             'default': 5000,
             'description': 'Limit sample sheet rows per study',
+            'user_modifiable': True,
         }
     }
 

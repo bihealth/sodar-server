@@ -5,8 +5,8 @@
 {% load rules %}
 
 {# Local variables #}
-{% get_setting 'SITE_TITLE' as site_title %}
-{% get_setting 'SITE_SUBTITLE' as site_subtitle %}
+{% get_django_setting 'SITE_TITLE' as site_title %}
+{% get_django_setting 'SITE_SUBTITLE' as site_subtitle %}
 
 <html lang="en">
   <head>
@@ -108,7 +108,7 @@
     {% block javascript %}
       <!-- Settings -->
       <script type="text/javascript">
-        {% get_setting name='PROJECTROLES_BROWSER_WARNING' js=True as browser_warning %}
+        {% get_django_setting name='PROJECTROLES_BROWSER_WARNING' js=True as browser_warning %}
         window.sodarBrowserWarning = {{ browser_warning }};
       </script>
 
@@ -124,8 +124,8 @@
 
       <!-- Settings (SODAR specific) -->
       <script type="text/javascript">
-        window.irodsbackendStatusInterval = {% get_setting 'IRODSBACKEND_STATUS_INTERVAL' %};
-        {% get_setting 'IRODS_QUERY_BATCH_SIZE' as query_batch_size %}
+        window.irodsbackendStatusInterval = {% get_django_setting 'IRODSBACKEND_STATUS_INTERVAL' %};
+        {% get_django_setting 'IRODS_QUERY_BATCH_SIZE' as query_batch_size %}
         window.irodsQueryBatchSize = {{ query_batch_size }};
       </script>
     {% endblock javascript %}

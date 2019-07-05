@@ -6,7 +6,7 @@
 {% load projectroles_tags %}
 {% load projectroles_common_tags %}
 
-{% get_setting 'SITE_INSTANCE_TITLE' as site_title %}
+{% get_django_setting 'SITE_INSTANCE_TITLE' as site_title %}
 
 {% block title %}Login{% endblock title %}
 
@@ -34,7 +34,7 @@
 
     <form class="form-signin" method="post" id="sodar-form-login">
       {% csrf_token %}
-      {% get_setting 'PROJECTROLES_ALLOW_LOCAL_USERS' as allow_local_users %}
+      {% get_django_setting 'PROJECTROLES_ALLOW_LOCAL_USERS' as allow_local_users %}
       <input type="text" name="username" id="sodar-login-username" class="form-control"
              placeholder="{% if allow_local_users %}username{% else %}username@DOMAIN{% endif %}"
              required autofocus>

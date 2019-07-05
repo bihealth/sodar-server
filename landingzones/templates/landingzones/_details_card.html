@@ -5,7 +5,7 @@
 {% load projectroles_common_tags %}
 
 {% check_backend 'omics_irods' as irods_backend_enabled %}
-{% get_setting 'LANDINGZONES_STATUS_INTERVAL' as zone_status_interval %}
+{% get_django_setting 'LANDINGZONES_STATUS_INTERVAL' as zone_status_interval %}
 
 {% if irods_backend_enabled %}
   {% load irodsbackend_tags %}

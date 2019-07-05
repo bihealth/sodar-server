@@ -30,7 +30,7 @@ Changed
 -------
 
 - **General**
-    - Upgrade site to django-sodar-core v0.6.1
+    - Upgrade site to django-sodar-core v0.6.2 (#569)
     - Update ``setup.py`` (#551)
 - **Samplesheets**
     - Update project iRODS cache when replacing sheets (#554)
