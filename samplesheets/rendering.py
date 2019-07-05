@@ -610,7 +610,6 @@ class SampleSheetTableBuilder:
         tooltip = None
 
         # Ontology reference
-        # TODO: Handle list and get links!
         if (
             isinstance(ann['value'], dict)
             and 'name' in ann['value']
