@@ -24,6 +24,7 @@ Added
     - Vue.js app view for displaying parser warnings
     - Support for altamISA v0.1 column sorting (#86, #566)
     - Display comments, performer and perform date in tables
+    - ``_get_ontology_url()`` helper in ``SampleSheetTableBuilder``
 
 Changed
 -------
@@ -46,6 +47,7 @@ Changed
     - Disable operations dropdown for guest users (#497)
     - Refactor Vue.js subpage navigation
     - Refactor legacy table rendering (#111, #566)
+    - Store ontology URL template in ``settings.SHEETS_ONTOLOGY_URL_TEMPLATE``
 
 Fixed
 -----

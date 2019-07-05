@@ -28,7 +28,7 @@
         <a :href="link.url"
            :title="meta.tooltip"
            v-b-tooltip.hover.d300
-           target="_blank">{{ link.value }}</a><span v-if="index + 1 < links.length">, </span>
+           target="_blank">{{ link.value }}</a><span v-if="index + 1 < links.length">; </span>
       </span>
     </span>
     <!-- Contacts with email -->
@@ -98,8 +98,16 @@ export default Vue.extend(
         this.getMeta()
         let links = []
 
-        if (this.value.indexOf(';') !== -1 &&
-            this.meta.link.indexOf(';') !== -1) {
+        if (Array.isArray(this.value)) { // altamISA v0.1+ parsing
+          for (let i = 0; i < this.value.length; i++) {
+            links.push({
+              value: this.value[i][0],
+              url: this.value[i][1] // ,
+              // ontologyName: this.value[i][2] // TODO: Use this?
+            })
+          }
+        } else if (this.value.indexOf(';') !== -1 &&
+            this.meta.link.indexOf(';') !== -1) { // Legacy altamISA implementation
           let values = this.value.split(';')
           let urls = this.meta.link.split(';')
 

@@ -8,6 +8,8 @@ from packaging import version
 import re
 import time
 
+from django.conf import settings
+
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
 
@@ -32,10 +34,6 @@ EMPTY_VALUE = '-'
 
 STUDY_HIDEABLE_CLASS = 'sodar-ss-hideable-study'
 SOURCE_SEARCH_STR = '-source-'
-ONTOLOGY_URL_TEMPLATE = (
-    'https://bioportal.bioontology.org/ontologies/'
-    '{ontology_name}/?p=classes&conceptid={accession}'
-)
 NARROW_CHARS = 'fIijlt;:.,/"!\'!()[]{}'
 WIDE_CHARS = 'ABCDEFHKLMNOPQRSTUVXYZ<>%$_'
 
@@ -236,6 +234,31 @@ class SampleSheetTableBuilder:
         return ''
 
     @classmethod
+    def _get_ontology_url(cls, ontology_name, accession):
+        """
+        Return full URL for ontology reference.
+
+        :param ontology_name: String
+        :param accession: String (contains an URL)
+        :return: String
+        """
+        if not settings.SHEETS_ONTOLOGY_URL_TEMPLATE:
+            return accession
+
+        # HACK: "HPO" is "HP" in bioontology.org
+        # TODO: If there are more exceptions like this,
+        # TODO: create a proper map in settings
+        if (
+            'bioontology.org' in settings.SHEETS_ONTOLOGY_URL_TEMPLATE
+            and ontology_name == 'HPO'
+        ):
+            ontology_name = 'HP'
+
+        return settings.SHEETS_ONTOLOGY_URL_TEMPLATE.format(
+            ontology_name=ontology_name, accession=accession
+        )
+
+    @classmethod
     def _get_ontology_link(cls, ontology_name, accession):
         """
         Build ontology link(s).
@@ -244,16 +267,9 @@ class SampleSheetTableBuilder:
         :param accession: Ontology accession URL
         :return: String
         """
-
-        # HACK: "HPO" is "HP" in bioontology.org
-        if ontology_name == 'HPO':
-            ontology_name = 'HP'
-
         return ';'.join(
             [
-                ONTOLOGY_URL_TEMPLATE.format(
-                    ontology_name=ontology_name, accession=a
-                )
+                cls._get_ontology_url(ontology_name, a)
                 for a in accession.split(';')
             ]
         )
@@ -320,11 +336,14 @@ class SampleSheetTableBuilder:
             self._add_header(header, obj)
 
         # Handle new list value notation in altamISA>=0.1
+        # TODO: Not working, fix!
+        '''
         if isinstance(value, list):
             value = ';'.join([self._get_value(x) for x in value])
+        '''
 
         # Get printable value in case the function is called with a reference
-        elif isinstance(value, dict):
+        if isinstance(value, dict):
             value = self._get_value(value)
 
         self._row.append(
@@ -591,6 +610,7 @@ class SampleSheetTableBuilder:
         tooltip = None
 
         # Ontology reference
+        # TODO: Handle list and get links!
         if (
             isinstance(ann['value'], dict)
             and 'name' in ann['value']
@@ -611,6 +631,15 @@ class SampleSheetTableBuilder:
             'name' not in ann['value'] or not ann['value']['name']
         ):
             val = ''
+
+        # List value (altamISA v0.1+)
+        elif isinstance(ann['value'], list):
+            val = list(ann['value'])
+
+            for i in range(len(val)):
+                new_val = list(val[i])
+                new_val[1] = self._get_ontology_url(new_val[2], new_val[1])
+                val[i] = new_val
 
         # Basic value string
         else:

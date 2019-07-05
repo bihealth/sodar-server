@@ -539,6 +539,10 @@ SHEETS_IRODS_LIMIT = env.int('SHEETS_IRODS_LIMIT', 50)  # iRODS file query limit
 SHEETS_TABLE_HEIGHT = 400  # Study/assay table height
 SHEETS_MIN_COLUMN_WIDTH = 100  # Min default column width
 SHEETS_MAX_COLUMN_WIDTH = 300  # Max default column width
+SHEETS_ONTOLOGY_URL_TEMPLATE = (
+    'https://bioportal.bioontology.org/ontologies/'
+    '{ontology_name}/?p=classes&conceptid={accession}'
+)
 
 SHEETS_EXTERNAL_LINK_LABELS = {
     'x-bih-buch-genomics-wetlab-id': 'Wetlab-ID assigned by BIH genomics unit '
