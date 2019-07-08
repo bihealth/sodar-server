@@ -68,6 +68,7 @@ Removed
     - Model field ``header`` from ``Study`` and ``Assay``
     - Model field ``scan_name`` from ``Process``
     - Redundant warning for missing protocol reference in ISAtab import
+    - Duplicate database indexes (#582)
 
 
 v0.5.0 (2019-06-05)

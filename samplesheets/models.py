@@ -574,7 +574,6 @@ class GenericMaterial(BaseSampleSheet):
 
         indexes = [
             models.Index(fields=['unique_name']),
-            models.Index(fields=['study']),
         ]
 
     def __str__(self):
@@ -763,7 +762,6 @@ class Process(BaseSampleSheet):
         verbose_name_plural = 'processes'
         indexes = [
             models.Index(fields=['unique_name']),
-            models.Index(fields=['study']),
         ]
 
     def __str__(self):
