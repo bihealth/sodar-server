@@ -631,7 +631,7 @@ class SampleSheetTableBuilder:
             and isinstance(ann['value'][0], list)
         ):
             # Apparently we can have empty lists as values (fixes issue #586)
-            val = [x for x in list(ann['value']) if len(x) == 3]
+            val = [x for x in ann['value'] if len(x) == 3]
 
             for i in range(len(val)):
                 new_val = list(val[i])
@@ -716,15 +716,22 @@ class SampleSheetTableBuilder:
             row_id += 1
 
         # Aggregate column data for Vue app
-        # TODO: Move this into a separate function
-
-        def _get_length(value):
+        # TODO: Un-hackify and move this somewhere else
+        def _get_length(value, col_type=None):
             """Return estimated length for proportional text"""
             if not value:
                 return 0
 
-            if isinstance(value, date):  # Convert perform date
+            # Convert perform date
+            if isinstance(value, date):
                 value = str(value)
+
+            # Lists (altamISA v0.1+)
+            elif isinstance(value, list) and col_type != 'EXTERNAL_LINKS':
+                if isinstance(value[0], list) and value[0]:
+                    value = '; '.join([x[0] for x in value])
+                elif isinstance(value[0], str):
+                    value = '; '.join(value)
 
             # Very unscientific and font-specific, don't try this at home
             nc = sum([value.count(c) for c in NARROW_CHARS])
@@ -747,7 +754,15 @@ class SampleSheetTableBuilder:
             ):
                 col_type = 'LINK_FILE'
 
-            elif any([x[i]['link'] for x in self._table_data]):
+            # TODO: Refactor this?
+            elif any(x[i]['link'] for x in self._table_data) or (
+                any(
+                    isinstance(x[i]['value'], list)
+                    and len(x[i]['value']) > 0
+                    and isinstance(x[i]['value'][0], list)
+                    for x in self._table_data
+                )
+            ):
                 col_type = 'ONTOLOGY'
 
             elif any([x[i]['unit'] for x in self._table_data]):
@@ -781,7 +796,7 @@ class SampleSheetTableBuilder:
 
                 max_cell_len = max(
                     [
-                        _get_length(x[i]['value'].split(';'))
+                        _get_length(x[i]['value'].split(';'), col_type)
                         if x[i]['value']
                         else 0
                         for x in self._table_data
@@ -791,8 +806,8 @@ class SampleSheetTableBuilder:
             else:  # Generic type
                 max_cell_len = max(
                     [
-                        _get_length(x[i]['value'])
-                        + _get_length(x[i]['unit'])
+                        _get_length(x[i]['value'], col_type)
+                        + _get_length(x[i]['unit'], col_type)
                         + 1
                         for x in self._table_data
                     ]
