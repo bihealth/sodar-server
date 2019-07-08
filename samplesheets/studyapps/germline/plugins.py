@@ -111,8 +111,11 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
             source_id = row[0]['value']
             enabled = True
 
-            # Set initial state based on cache
-            if (
+            # Fix potential crash due to pedigree mapping failure (issue #589)
+            igv_url = igv_urls[ped_id] if ped_id in igv_urls else None
+
+            # Set initial state based on URL and cache
+            if not igv_url or (
                 cache_item
                 and source_id in cache_item.data['bam']
                 and not cache_item.data['bam'][source_id]
@@ -123,7 +126,10 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
 
             ret['data'].append(
                 {
-                    'igv': {'url': igv_urls[ped_id], 'enabled': enabled},
+                    'igv': {
+                        'url': igv_url if igv_url else '#',
+                        'enabled': enabled,
+                    },
                     'files': {
                         'query': {'key': query_key, 'value': ped_id},
                         'enabled': enabled,
