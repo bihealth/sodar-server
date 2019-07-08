@@ -545,7 +545,7 @@ Added
     - Missing support for Investigation objects in ``get_path()`` (#292)
     - iRODS collection query Javascript (#295)
     - Display collection name in iRODS collection list
-    - ``IrodsObjectListAPIView``for iRODS collection list queries (#308)
+    - ``IrodsObjectListAPIView`` for iRODS collection list queries (#308)
     - ``BaseIrodsAPIView`` for implementing views
     - Logging for error cases (#310)
     - ``get_sample_path()`` and ``get_uuid_from_path()`` helpers (#289)
