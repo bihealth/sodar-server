@@ -631,8 +631,12 @@ class SampleSheetTableBuilder:
         ):
             val = ''
 
-        # List value (altamISA v0.1+)
-        elif isinstance(ann['value'], list) and len(ann['value']) > 0:
+        # List of lists (altamISA v0.1+)
+        elif (
+            isinstance(ann['value'], list)
+            and len(ann['value']) > 0
+            and isinstance(ann['value'][0], list)
+        ):
             # Apparently we can have empty lists as values (fixes issue #586)
             val = [x for x in list(ann['value']) if len(x) == 3]
 
@@ -640,6 +644,14 @@ class SampleSheetTableBuilder:
                 new_val = list(val[i])
                 new_val[1] = self._get_ontology_url(new_val[2], new_val[1])
                 val[i] = new_val
+
+        # Basic list (altamISA v0.1+)
+        elif (
+            isinstance(ann['value'], list)
+            and len(ann['value']) > 0
+            and isinstance(ann['value'][0], str)
+        ):
+            val = '; '.join(ann['value'])
 
         # Basic value string
         else:
