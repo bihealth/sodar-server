@@ -59,6 +59,7 @@ Fixed
     - Germline study app ``update_cache()`` failing with empty family column
     - Sheet deletion error not displayed to user (#568)
     - Crash in ``SampleSheetStudyTablesGetAPIView`` if ``Study`` object not found (#578)
+    - Leading or trailing spaces in parsed field values (#584)
 
 Removed
 -------

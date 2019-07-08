@@ -142,7 +142,16 @@ def import_isa(isa_zip, project):
         if isinstance(o, list) and len(o) == 1:
             o = o[0]  # Store lists of 1 item (99% of cases) as single objects
 
-        return o._asdict() if isinstance(o, tuple) else o
+        if isinstance(o, tuple):
+            o = o._asdict()
+
+        if o and 'value' in o and isinstance(o['value'], str):
+            o['value'] = o['value'].strip()
+
+        elif isinstance(o, str):
+            return o.strip()
+
+        return o
 
     def _get_ontology_vals(vals):
         """Get value data from potential ontology references"""

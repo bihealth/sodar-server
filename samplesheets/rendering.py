@@ -289,7 +289,7 @@ class SampleSheetTableBuilder:
             value = 'Process'
 
         self._top_header.append(
-            {'value': value, 'colour': colour, 'colspan': colspan}
+            {'value': value.strip(), 'colour': colour, 'colspan': colspan}
         )
 
     def _add_header(self, value, obj=None):
@@ -301,7 +301,7 @@ class SampleSheetTableBuilder:
         """
         self._field_header.append(
             {
-                'value': value.title(),  # TODO: Better titling (see #576)
+                'value': value.strip().title(),  # TODO: Better titling (#576)
                 'obj_cls': obj.__class__.__name__,
                 'item_type': obj.item_type
                 if isinstance(obj, GenericMaterial)
@@ -335,21 +335,14 @@ class SampleSheetTableBuilder:
         if header and obj and self._first_row:
             self._add_header(header, obj)
 
-        # Handle new list value notation in altamISA>=0.1
-        # TODO: Not working, fix!
-        '''
-        if isinstance(value, list):
-            value = ';'.join([self._get_value(x) for x in value])
-        '''
-
         # Get printable value in case the function is called with a reference
         if isinstance(value, dict):
             value = self._get_value(value)
 
         self._row.append(
             {
-                'value': value,
-                'unit': unit,
+                'value': value.strip() if isinstance(value, str) else value,
+                'unit': unit.strip() if isinstance(unit, str) else unit,
                 'link': link,
                 'link_file': False,
                 'tooltip': tooltip,
@@ -642,6 +635,10 @@ class SampleSheetTableBuilder:
 
             for i in range(len(val)):
                 new_val = list(val[i])
+
+                if isinstance(new_val[0], str):
+                    new_val[0] = new_val[0].strip()
+
                 new_val[1] = self._get_ontology_url(new_val[2], new_val[1])
                 val[i] = new_val
 
@@ -651,7 +648,9 @@ class SampleSheetTableBuilder:
             and len(ann['value']) > 0
             and isinstance(ann['value'][0], str)
         ):
-            val = '; '.join(ann['value'])
+            val = '; '.join(
+                [x.strip() for x in ann['value'] if isinstance(x, str)]
+            )
 
         # Basic value string
         else:
