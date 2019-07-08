@@ -572,9 +572,7 @@ class GenericMaterial(BaseSampleSheet):
         verbose_name = 'material'
         verbose_name_plural = 'materials'
 
-        indexes = [
-            models.Index(fields=['unique_name']),
-        ]
+        indexes = [models.Index(fields=['unique_name'])]
 
     def __str__(self):
         return '{}: {}/{}/{}/{}'.format(
@@ -760,9 +758,7 @@ class Process(BaseSampleSheet):
 
     class Meta:
         verbose_name_plural = 'processes'
-        indexes = [
-            models.Index(fields=['unique_name']),
-        ]
+        indexes = [models.Index(fields=['unique_name'])]
 
     def __str__(self):
         return '{}: {}/{}/{}'.format(
