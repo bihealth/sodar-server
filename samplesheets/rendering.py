@@ -632,8 +632,9 @@ class SampleSheetTableBuilder:
             val = ''
 
         # List value (altamISA v0.1+)
-        elif isinstance(ann['value'], list):
-            val = list(ann['value'])
+        elif isinstance(ann['value'], list) and len(ann['value']) > 0:
+            # Apparently we can have empty lists as values (fixes issue #586)
+            val = [x for x in list(ann['value']) if len(x) == 3]
 
             for i in range(len(val)):
                 new_val = list(val[i])
