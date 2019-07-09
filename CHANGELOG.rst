@@ -49,6 +49,7 @@ Changed
     - Refactor legacy table rendering (#111, #566)
     - Store ontology URL template in ``settings.SHEETS_ONTOLOGY_URL_TEMPLATE``
     - Align columns uniformly with cells containing integer or float values (#598)
+    - Clarify "sample repository available" message on details page card (#587)
 
 Fixed
 -----

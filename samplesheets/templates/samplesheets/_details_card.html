@@ -41,7 +41,7 @@
   </div>
 {% elif investigation and not investigation.irods_status %}
   <div class="card-body bg-faded font-italic text-center">
-    <p>Sample directories not created in iRODS</p>
+    <p>Sample sheets available, sample repository not created in iRODS</p>
   </div>
 {% elif investigation and can_view_sheet %}
   {# HACK: Manually include since plugin include is disabled (see sodar_core#261) #}
