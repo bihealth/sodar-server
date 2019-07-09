@@ -306,6 +306,7 @@ class SampleSheetTableBuilder:
                 'item_type': obj.item_type
                 if isinstance(obj, GenericMaterial)
                 else None,
+                'align': 'left',
             }
         )
 
@@ -738,6 +739,16 @@ class SampleSheetTableBuilder:
             wc = sum([value.count(c) for c in WIDE_CHARS])
             return round(len(value) - nc - wc + 0.6 * nc + 1.3 * wc)
 
+        def _is_num(value):
+            """Return whether a value contains an integer/float"""
+            if isinstance(value, str) and '_' in value:
+                return False  # HACK because float() accepts underscore
+            try:
+                float(value)
+                return True
+            except (ValueError, TypeError):
+                return False
+
         for i in range(len(self._field_header)):
             header_name = self._field_header[i]['value'].lower()
 
@@ -772,6 +783,17 @@ class SampleSheetTableBuilder:
                 col_type = None
 
             self._field_header[i]['col_type'] = col_type
+
+            # Right align if values are all numbers or empty (except if name)
+            if (
+                header_name != 'name'
+                and any(_is_num(x[i]['value']) for x in self._table_data)
+                and all(
+                    (_is_num(x[i]['value']) or not x[i]['value'])
+                    for x in self._table_data
+                )
+            ):
+                self._field_header[i]['align'] = 'right'
 
             # Maximum column value length for column width estimate
             header_len = round(_get_length(self._field_header[i]['value']))

@@ -490,15 +490,10 @@ export default {
               'colType': colType,
               'colMeta': colMeta
             },
-            cellClass: ['sodar-ss-data-cell'],
-            cellClassRules: {
-              // Right align numbers (but not for names)
-              'text-right': function (params) {
-                return params.colDef.headerName !== 'Name' &&
-                  !isNaN(parseFloat(params.value)) &&
-                  isFinite(params.value)
-              }
-            }
+            cellClass: [
+              'sodar-ss-data-cell',
+              'text-' + fieldHeader['align']
+            ]
           }
 
           // Make source name column pinned, disable hover

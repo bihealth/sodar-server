@@ -48,6 +48,7 @@ Changed
     - Refactor Vue.js subpage navigation
     - Refactor legacy table rendering (#111, #566)
     - Store ontology URL template in ``settings.SHEETS_ONTOLOGY_URL_TEMPLATE``
+    - Align columns uniformly with cells containing integer or float values (#598)
 
 Fixed
 -----
