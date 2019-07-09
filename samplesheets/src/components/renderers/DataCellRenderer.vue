@@ -140,6 +140,8 @@ export default Vue.extend(
         if (contactRegex.test(this.value) === true) {
           let contactGroup = contactRegex.exec(this.value)
           return {name: contactGroup[1], email: contactGroup[2]}
+        } else {
+          this.colType = null  // Fall back to standard field
         }
       },
 

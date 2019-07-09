@@ -62,6 +62,7 @@ Fixed
     - Leading or trailing spaces in parsed field values (#584)
     - Crash in germline study app ``get_shortcut_column()`` if IGV URL was not generated (#589)
     - Errors in ``DataCellRenderer`` trying to access unset ``renderData`` (#595)
+    - Contact fields not rendered if using non-standard notation (#595)
 
 Removed
 -------
