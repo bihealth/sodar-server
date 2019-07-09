@@ -13,8 +13,8 @@
       {{ value }} <span v-if="meta && meta.unit" class="text-muted">{{ meta.unit }}</span>
     </span>
     <!-- Ontology links -->
-    <span v-else-if="colType === 'ONTOLOGY'">
-      <span v-if="headerName === 'hpo terms' && renderData">
+    <span v-else-if="colType === 'ONTOLOGY' && renderData">
+      <span v-if="headerName === 'hpo terms'">
         <b-button
             class="btn sodar-list-btn"
             v-clipboard="getHpoTerms()"
@@ -32,11 +32,11 @@
       </span>
     </span>
     <!-- Contacts with email -->
-    <span v-else-if="colType === 'CONTACT'">
+    <span v-else-if="colType === 'CONTACT' && renderData">
       <a :href="'mailto:' + renderData.email">{{ renderData.name }}</a>
     </span>
     <!-- External links -->
-    <span v-else-if="colType === 'EXTERNAL_LINKS'">
+    <span v-else-if="colType === 'EXTERNAL_LINKS' && renderData">
       <span v-for="(idRef, index) in renderData.extIds"
             class="badge-group"
             :key="index"
@@ -46,7 +46,7 @@
       </span>
     </span>
     <!-- File link -->
-    <span v-else-if="colType === 'LINK_FILE'">
+    <span v-else-if="colType === 'LINK_FILE' && renderData">
       <a :href="renderData.url"
          :title="meta.tooltip"
          v-b-tooltip.hover.d300
