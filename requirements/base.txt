@@ -28,6 +28,9 @@ awesome-slugify==1.6.5
 # Time zones support
 pytz==2018.9
 
+# Redis support
+redis>=2.10.5
+
 # Profiling
 django-cprofile-middleware==1.0
 

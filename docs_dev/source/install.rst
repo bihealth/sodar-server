@@ -66,9 +66,11 @@ For development it is recommended to place this variable in an ``.env`` file and
 set ``DJANGO_READ_DOT_ENV_FILE=1`` in your actual environment. See
 ``config/settings/base.py`` for more information.
 
+Example in .env file:
+
 .. code-block:: console
 
-    $ export DATABASE_URL='postgres://sodar:sodar@127.0.0.1/sodar'
+    DATABASE_URL=postgres://sodar:sodar@127.0.0.1/sodar
 
 Project Setup
 -------------
@@ -94,6 +96,23 @@ If you will be using LDAP/AD auth on your site, make sure to also run:
 
     $ sudo utility/install_ldap_dependencies.sh
     $ pip install -r requirements/ldap.txt
+
+Sample Sheets Vue.js App Installation
+-------------------------------------
+
+You need to install the Vue.js app prerequisites with NPM. First install the
+prerequisites using the following command:
+
+.. code-block:: console
+
+    $ utility/install_vue_dev.sh
+
+Once NPM has been set up, install the app requirements:
+
+.. code-block:: console
+
+    $ cd samplesheets
+    $ npm install
 
 Final Setup
 -----------
@@ -175,7 +194,7 @@ Run the ``sodar_docker_env`` Docker environment as follows:
 
 .. code-block:: console
 
-    $ utility/env_relaunch.sh
+    $ utility/env_restart.sh
 
 **NOTE:** It can take a bit of time for the iRODS server to initialize.
 
@@ -208,6 +227,10 @@ following script:
 .. code-block:: console
 
     $ ./run_celery.sh
+
+Note that the Celery process needs to access correct Django settings. Make sure
+the variable ``DJANGO_READ_DOT_ENV=1`` is set in your environment when running
+this process!
 
 5. SODAR Django Site
 --------------------

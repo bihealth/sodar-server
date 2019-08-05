@@ -6,10 +6,8 @@
 # Whitenoise for static files
 whitenoise==4.1.2
 
-# Redis support
-
+# Redis cache support
 django-redis==4.10.0
-redis>=2.10.5
 
 # WSGI Handler
 gevent==1.4.0
