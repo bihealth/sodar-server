@@ -117,6 +117,7 @@
             v-if="app.sheetsAvailable &&
                   app.sodarContext['perms']['delete_sheet']"
             class="sodar-ss-op-item"
+            variant="danger"
             :href="'delete/' + app.projectUuid">
           <i class="fa fa-fw fa-close"></i> Delete Sheets and Data
         </b-dropdown-item>
