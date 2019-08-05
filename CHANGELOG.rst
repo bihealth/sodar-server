@@ -8,11 +8,28 @@ Changelog for the SODAR Web UI. Loosely follows the
 Unreleased
 ==========
 
+Added
+-----
+
+- **General**
+    - Missing Celery broker URL in ``env.example`` (#607)
+
+Changed
+-------
+
+- **General**
+    - Upgrade site to Django 1.11.23 (sodar_core#295)
+    - Move graph creation dependencies to ``local_extra.txt`` (#609)
+    - Move redis requirement to base.txt (#610)
+- **Samplesheets**
+    - Color potentially dangerous links (sodar_core#64)
+
 Fixed
 -----
 
 - **General**
     - Missing .venv ignore in Flake8 config (sodar_core#300)
+    - Installation document omissions (#606)
 
 
 v0.5.1 (2019-07-09)
