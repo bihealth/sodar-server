@@ -13,10 +13,6 @@ django-redis==4.10.0
 gevent==1.4.0
 gunicorn==19.9.0
 
-# Static and Media Storage
-boto3==1.9.86
-django-storages==1.7.1
-
 # Email backends for Mailgun, Postmark, SendGrid and more
 django-anymail==4.3
 

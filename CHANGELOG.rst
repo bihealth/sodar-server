@@ -31,6 +31,12 @@ Fixed
     - Missing .venv ignore in Flake8 config (sodar_core#300)
     - Installation document omissions (#606)
 
+Removed
+-------
+
+- **General**
+    - Unused storage requirements from production config (#610)
+
 
 v0.5.1 (2019-07-09)
 ===================
