@@ -6,11 +6,11 @@
        @mouseout="onMouseOut">
     <!-- Plain/empty value -->
     <span v-if="!colType">
-      {{ value }}
+      {{ value.value }}
     </span>
     <!-- Value with unit -->
     <span v-if="colType === 'UNIT'">
-      {{ value }} <span v-if="meta && meta.unit" class="text-muted">{{ meta.unit }}</span>
+      {{ value.value }} <span v-if="value.unit" class="text-muted">{{ value.unit }}</span>
     </span>
     <!-- Ontology links -->
     <span v-else-if="colType === 'ONTOLOGY' && renderData">
@@ -26,7 +26,7 @@
       </span>
       <span v-for="(link, index) in links = renderData.links" :key="index">
         <a :href="link.url"
-           :title="meta.tooltip"
+           :title="value.tooltip"
            v-b-tooltip.hover.d300
            target="_blank">{{ link.value }}</a><span v-if="index + 1 < links.length">; </span>
       </span>
@@ -48,7 +48,7 @@
     <!-- File link -->
     <span v-else-if="colType === 'LINK_FILE' && renderData">
       <a :href="renderData.url"
-         :title="meta.tooltip"
+         :title="value.tooltip"
          v-b-tooltip.hover.d300
          target="_blank">{{ renderData.value }}</a>
     </span>
@@ -63,7 +63,6 @@ export default Vue.extend(
       return {
         value: null,
         headerName: null,
-        meta: null,
         colType: null,
         renderData: null,
         enableHover: null
@@ -81,13 +80,6 @@ export default Vue.extend(
         event.currentTarget.className = 'sodar-ss-data'
       },
 
-      // Update this.meta
-      getMeta () {
-        if (this.params.colMeta && !this.meta) {
-          this.meta = this.params.colMeta[this.params.node.data.rowNum - 1]
-        }
-      },
-
       // Get header name and place in this.headerName
       getHeaderName () {
         return this.params.colDef.headerName.toLowerCase()
@@ -95,27 +87,26 @@ export default Vue.extend(
 
       // Return one or more ontology links for field
       getOntologyLinks () {
-        this.getMeta()
         let links = []
 
-        if (Array.isArray(this.value)) { // altamISA v0.1+ parsing
-          for (let i = 0; i < this.value.length; i++) {
+        if (Array.isArray(this.value.value)) { // altamISA v0.1+ parsing
+          for (let i = 0; i < this.value.value.length; i++) {
             links.push({
-              value: this.value[i][0],
-              url: this.value[i][1] // ,
+              value: this.value.value[i][0],
+              url: this.value.value[i][1] // ,
               // ontologyName: this.value[i][2] // TODO: Use this?
             })
           }
-        } else if (this.value.indexOf(';') !== -1 &&
-            this.meta.link.indexOf(';') !== -1) { // Legacy altamISA implementation
-          let values = this.value.split(';')
-          let urls = this.meta.link.split(';')
+        } else if (this.value.value.indexOf(';') !== -1 &&
+            this.value.link.indexOf(';') !== -1) { // Legacy altamISA implementation
+          let values = this.value.value.split(';')
+          let urls = this.value.link.split(';')
 
           for (let i = 0; i < values.length; i++) {
             links.push({value: values[i], url: urls[i]})
           }
         } else {
-          links.push({value: this.value, url: this.meta.link})
+          links.push({value: this.value.value, url: this.value.link})
         }
         return {'links': links}
       },
@@ -134,11 +125,10 @@ export default Vue.extend(
 
       // Return contact name and email
       getContact () {
-        this.getMeta()
         let contactRegex = /(.+?)(?:[<[])(.+?)(?=[>\]])/
 
-        if (contactRegex.test(this.value) === true) {
-          let contactGroup = contactRegex.exec(this.value)
+        if (contactRegex.test(this.value.value) === true) {
+          let contactGroup = contactRegex.exec(this.value.value)
           return {name: contactGroup[1], email: contactGroup[2]}
         } else {
           this.colType = null // Fall back to standard field
@@ -150,7 +140,7 @@ export default Vue.extend(
         let linkLabels = this.params.context
           .componentParent.sodarContext['external_link_labels']
         let ret = []
-        let extIds = this.value.split(';')
+        let extIds = this.value.value.split(';')
 
         for (let i = 0; i < extIds.length; i++) {
           let extId = extIds[i]
@@ -170,15 +160,18 @@ export default Vue.extend(
 
       // Get file link
       getFileLink () {
-        this.getMeta()
         return {
-          value: this.value,
-          url: this.meta.link
+          value: this.value.value,
+          url: this.value.link
         }
       }
     },
     beforeMount () {
-      if (this.params.value && this.params.value.length > 0) {
+      if (
+        this.params.value &&
+        this.params.value.value &&
+        this.params.value.value.length > 0
+      ) {
         this.value = this.params.value
 
         // Handle special column type
@@ -188,9 +181,7 @@ export default Vue.extend(
         this.enableHover = (this.params.enableHover === undefined)
           ? true : this.params.enableHover
 
-        if (this.colType === 'UNIT') {
-          this.getMeta()
-        } else if (this.colType === 'ONTOLOGY') {
+        if (this.colType === 'ONTOLOGY') {
           this.headerName = this.getHeaderName()
           this.renderData = this.getOntologyLinks()
         } else if (this.colType === 'CONTACT') {
@@ -201,7 +192,9 @@ export default Vue.extend(
           this.renderData = this.getFileLink()
         }
       } else {
-        this.value = '-'
+        this.value = {
+          value: '-'
+        }
       }
     }
   }

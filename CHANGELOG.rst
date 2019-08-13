@@ -23,6 +23,7 @@ Changed
     - Move redis requirement to base.txt (#610)
 - **Samplesheets**
     - Color potentially dangerous links (sodar_core#64)
+    - Refactor sheet cell data access and sorting (#597)
 
 Fixed
 -----
@@ -30,6 +31,7 @@ Fixed
 - **General**
     - Missing .venv ignore in Flake8 config (sodar_core#300)
     - Installation document omissions (#606)
+    - Columns with integer and float values sorted lexicographically (#596)
 
 Removed
 -------

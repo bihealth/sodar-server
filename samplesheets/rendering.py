@@ -306,6 +306,7 @@ class SampleSheetTableBuilder:
                 'item_type': obj.item_type
                 if isinstance(obj, GenericMaterial)
                 else None,
+                'num_col': False,  # Will be checked for sorting later
                 'align': 'left',
             }
         )
@@ -785,15 +786,14 @@ class SampleSheetTableBuilder:
             self._field_header[i]['col_type'] = col_type
 
             # Right align if values are all numbers or empty (except if name)
-            if (
-                header_name != 'name'
-                and any(_is_num(x[i]['value']) for x in self._table_data)
-                and all(
-                    (_is_num(x[i]['value']) or not x[i]['value'])
-                    for x in self._table_data
-                )
+            if any(_is_num(x[i]['value']) for x in self._table_data) and all(
+                (_is_num(x[i]['value']) or not x[i]['value'])
+                for x in self._table_data
             ):
-                self._field_header[i]['align'] = 'right'
+                self._field_header[i]['num_col'] = True
+
+                if header_name != 'name':
+                    self._field_header[i]['align'] = 'right'
 
             # Maximum column value length for column width estimate
             header_len = round(_get_length(self._field_header[i]['value']))

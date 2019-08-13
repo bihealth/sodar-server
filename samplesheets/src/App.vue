@@ -368,6 +368,29 @@ export default {
       this.$refs.columnToggleModalRef.showModal(uuid, assayMode)
     },
 
+    /* Grid Helpers --------------------------------------------------------- */
+
+    dataCellCompare (dataA, dataB) {
+      let valueA = dataA['value']
+      let valueB = dataB['value']
+
+      // Integer/float sort
+      if (dataA['num_col']) {
+        return parseFloat(valueA) - parseFloat(valueB)
+      }
+
+      // Join array values into strings
+      if (Array.isArray(valueA)) {
+        valueA = valueA.join(';')
+      }
+      if (Array.isArray(valueB)) {
+        valueB = valueB.join(';')
+      }
+
+      // String sort
+      return valueA.localeCompare(valueB)
+    },
+
     /* Grid Setup ----------------------------------------------------------- */
 
     getGridOptions () {
@@ -470,12 +493,6 @@ export default {
             colWidth = Math.max(calcW, minW)
           }
 
-          // Set up column metadata
-          let colMeta = []
-          for (let k = 0; k < table['table_data'].length; k++) {
-            colMeta.push(table['table_data'][k][j])
-          }
-
           // Create header
           let header = {
             headerName: fieldHeader['value'],
@@ -487,13 +504,13 @@ export default {
             cellRendererFramework: DataCellRenderer,
             cellRendererParams: {
               'app': this,
-              'colType': colType,
-              'colMeta': colMeta
+              'colType': colType
             },
             cellClass: [
               'sodar-ss-data-cell',
               'text-' + fieldHeader['align']
-            ]
+            ],
+            comparator: this.dataCellCompare
           }
 
           // Make source name column pinned, disable hover
@@ -634,7 +651,10 @@ export default {
           'rowNum': i + 1
         }
         for (let j = 0; j < rowCells.length; j++) {
-          row['col' + j.toString()] = rowCells[j]['value']
+          let cellVal = rowCells[j]
+          // Copy num_col info to each cell (comparator can't access colDef)
+          cellVal['num_col'] = table['field_header'][j]['num_col']
+          row['col' + j.toString()] = cellVal
         }
 
         // Add study shortcut field
