@@ -24,6 +24,7 @@ Changed
 - **Samplesheets**
     - Color potentially dangerous links (sodar_core#64)
     - Refactor sheet cell data access and sorting (#597)
+    - Upgrade Vue.js app dependencies (#580)
 
 Fixed
 -----
