@@ -402,6 +402,8 @@ class SampleSheetISAExportView(
 
     def get(self, request, *args, **kwargs):
         """Override get() to return ISAtab files as a ZIP archive"""
+        timeline = get_backend_api('timeline_backend')
+        tl_event = None
         project = self.get_project()
         redirect_url = get_sheets_url(project)
         investigation = Investigation.objects.filter(project=project).first()
@@ -417,6 +419,34 @@ class SampleSheetISAExportView(
                 'is not supported . Please replace sheets to enable export.',
             )
             return redirect(redirect_url)
+
+        # Set up archive file name
+        if investigation.archive_name:
+            file_name = investigation.archive_name
+
+        else:
+            file_name = '{}.zip'.format(
+                re.sub(
+                    r'[\s]+',
+                    '_',
+                    re.sub(r'[^\w\s-]', '', project.title).strip(),
+                )
+            )
+
+        if timeline:
+            tl_event = timeline.add_event(
+                project=project,
+                app_name=APP_NAME,
+                user=self.request.user,
+                event_name='sheet_export_isa',
+                description='export {investigation} as ISAtab',
+            )
+
+            tl_event.add_object(
+                obj=investigation,
+                label='investigation',
+                name=investigation.title,
+            )
 
         # Initiate export
         try:
@@ -443,18 +473,9 @@ class SampleSheetISAExportView(
 
             zf.close()
 
-            # Set up archive file name
-            if investigation.archive_name:
-                file_name = investigation.archive_name
-
-            else:
-                file_name = '{}.zip'.format(
-                    re.sub(
-                        r'[\s]+',
-                        '_',
-                        re.sub(r'[^\w\s-]', '', project.title).strip(),
-                    )
-                )
+            # TODO: Catch and save warnings in extra_data (see #639)
+            if tl_event:
+                tl_event.set_status('OK')
 
             # Set up response
             response = HttpResponse(
@@ -466,6 +487,9 @@ class SampleSheetISAExportView(
             return response
 
         except Exception as ex:
+            if tl_event:
+                tl_event.set_status('FAILED', str(ex))
+
             if settings.DEBUG:
                 raise ex
 
