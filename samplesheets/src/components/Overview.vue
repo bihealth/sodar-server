@@ -19,12 +19,21 @@
           <dd class="col-md-9">{{ app.sodarContext['investigation']['description'] }}</dd>
         </dl>
         <dl class="row pb-0">
-          <dt class="col-md-3">Configuration</dt>
-          <dd class="col-md-9">{{ app.sodarContext['configuration']}}</dd>
-        </dl>
-        <dl class="row pb-0">
           <dt class="col-md-3">Parser Version</dt>
           <dd class="col-md-9">{{ app.sodarContext['parser_version']}}</dd>
+        </dl>
+        <dl class="row pb-0">
+          <dt class="col-md-3">Configuration</dt>
+          <dd class="col-md-9">
+            <span v-if="app.sodarContext['configuration']"
+                  class="badge badge-pill badge-info">
+              {{ app.sodarContext['configuration'] }}
+            </span>
+            <span v-else
+                  class="badge badge-pill badge-danger">
+              Unknown
+            </span>
+          </dd>
         </dl>
         <dl class="row pb-0">
           <dt class="col-md-3">iRODS Repository</dt>
