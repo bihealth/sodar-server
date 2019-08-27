@@ -98,6 +98,13 @@
         </b-dropdown-item>
         <b-dropdown-item
             v-if="app.sheetsAvailable &&
+                  app.sodarContext['perms']['export_sheet']"
+            class="sodar-ss-op-item"
+            :href="'export/isa/' + app.projectUuid">
+          <i class="fa fa-fw fa-download"></i> Export ISAtab
+        </b-dropdown-item>
+        <b-dropdown-item
+            v-if="app.sheetsAvailable &&
                   !app.renderError &&
                   app.sodarContext['perms']['create_dirs']"
             class="sodar-ss-op-item"

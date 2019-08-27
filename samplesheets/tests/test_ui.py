@@ -177,10 +177,10 @@ class TestProjectSheetsView(SampleSheetIOMixin, TestUIBase):
     def test_op_dropdown(self):
         """Test the operations dropdown"""
         users = [
-            (self.superuser, 4),
-            (self.as_owner.user, 4),
-            (self.as_delegate.user, 4),
-            (self.as_contributor.user, 4),
+            (self.superuser, 5),
+            (self.as_owner.user, 5),
+            (self.as_delegate.user, 5),
+            (self.as_contributor.user, 5),
             (self.as_guest.user, 0),
         ]
 

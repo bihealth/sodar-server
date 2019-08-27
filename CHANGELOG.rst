@@ -13,6 +13,12 @@ Added
 
 - **General**
     - Missing Celery broker URL in ``env.example`` (#607)
+- **Samplesheets**
+    - ISAtab export (#95)
+    - Model support and parsing for multiple missing ISAtab fields (#95, #581, #626)
+    - ``extra_material_type`` field in ``GenericMaterial``
+    - ``archive_name`` field in ``Investigation``
+    - Temporary ``get_comment()`` and ``get_comments()`` helpers (#629, #631)
 
 Changed
 -------
@@ -25,6 +31,11 @@ Changed
     - Color potentially dangerous links (sodar_core#64)
     - Refactor sheet cell data access and sorting (#597)
     - Upgrade Vue.js app dependencies (#580)
+    - Upgrade to altamISA v0.2.1
+    - Update ISAtab importing to support altamISA v0.2+ (#617)
+    - Improve characteristics list parsing (#616, #618)
+    - Always import ``material_type`` field for ``GenericMaterial``
+    - Do not replace title or description in ``Investigation`` if not provided
 
 Fixed
 -----
@@ -33,6 +44,9 @@ Fixed
     - Missing .venv ignore in Flake8 config (sodar_core#300)
     - Installation document omissions (#606)
     - Columns with integer and float values sorted lexicographically (#596)
+- **Samplesheets**
+    - "Sequence item 1" render error manifesting with BII-I-1 example (#620)
+    - Redundant unit/value parsing for comments during import (#629)
 
 Removed
 -------

@@ -370,6 +370,20 @@ export default {
 
     /* Grid Helpers --------------------------------------------------------- */
 
+    // Helper to get flat value for
+    getFlatValue (value) {
+      if (Array.isArray(value) && value.length > 0) {
+        if (Array.isArray(value[0])) { // TODO: remove (#619)
+          return value.map(a => a[0]).join(';')
+        } else if (value[0].hasOwnProperty('name')) {
+          return value.map(d => d['name']).join(';')
+        }
+      } else {
+        return value
+      }
+    },
+
+    // Custom comparator for data cells
     dataCellCompare (dataA, dataB) {
       let valueA = dataA['value']
       let valueB = dataB['value']
@@ -380,12 +394,8 @@ export default {
       }
 
       // Join array values into strings
-      if (Array.isArray(valueA)) {
-        valueA = valueA.join(';')
-      }
-      if (Array.isArray(valueB)) {
-        valueB = valueB.join(';')
-      }
+      valueA = this.getFlatValue(valueA)
+      valueB = this.getFlatValue(valueB)
 
       // String sort
       return valueA.localeCompare(valueB)

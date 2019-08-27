@@ -86,16 +86,27 @@ export default Vue.extend(
       },
 
       // Return one or more ontology links for field
+      // TODO: Refactor, remove legacy list importing support (#619)
       getOntologyLinks () {
         let links = []
 
         if (Array.isArray(this.value.value)) { // altamISA v0.1+ parsing
-          for (let i = 0; i < this.value.value.length; i++) {
-            links.push({
-              value: this.value.value[i][0],
-              url: this.value.value[i][1] // ,
-              // ontologyName: this.value[i][2] // TODO: Use this?
-            })
+          if (Array.isArray(this.value.value[0])) { // SODAR v0.5.1 imports
+            for (let i = 0; i < this.value.value.length; i++) {
+              links.push({
+                value: this.value.value[i][0],
+                url: this.value.value[i][1] // ,
+                // ontologyName: this.value.value[i][2] // TODO: Use this?
+              })
+            }
+          } else { // SODAR v0.5.2+ imports
+            for (let i = 0; i < this.value.value.length; i++) {
+              links.push({
+                value: this.value.value[i]['name'],
+                url: this.value.value[i]['accession'] // ,
+                // ontologyName: this.value.value[i]['ontology_name'] // TODO: Use this?
+              })
+            }
           }
         } else if (this.value.value.indexOf(';') !== -1 &&
             this.value.link.indexOf(';') !== -1) { // Legacy altamISA implementation

@@ -1,5 +1,8 @@
+import io
 import json
 import os
+import re
+import zipfile
 
 from django.conf import settings
 from django.contrib import messages
@@ -29,6 +32,7 @@ from projectroles.views import (
 )
 
 from .forms import SampleSheetImportForm
+from .io import export_isa
 from .models import (
     Investigation,
     Study,
@@ -43,6 +47,7 @@ from .utils import (
     get_sample_dirs,
     compare_inv_replace,
     get_sheets_url,
+    get_comments,
     write_csv_table,
 )
 
@@ -312,7 +317,8 @@ class SampleSheetImportView(
         return redirect(redirect_url)
 
 
-class SampleSheetTableExportView(
+# TODO: TBD: Keep or remove this once ISAtab export is introduced?
+class SampleSheetTSVExportView(
     LoginRequiredMixin,
     LoggedInPermissionMixin,
     ProjectPermissionMixin,
@@ -381,6 +387,90 @@ class SampleSheetTableExportView(
 
         # Return file
         return response
+
+
+class SampleSheetISAExportView(
+    LoginRequiredMixin,
+    LoggedInPermissionMixin,
+    ProjectPermissionMixin,
+    ProjectContextMixin,
+    View,
+):
+    """Sample sheet table ISAtab export view"""
+
+    permission_required = 'samplesheets.export_sheet'
+
+    def get(self, request, *args, **kwargs):
+        """Override get() to return ISAtab files as a ZIP archive"""
+        project = self.get_project()
+        redirect_url = get_sheets_url(project)
+        investigation = Investigation.objects.filter(project=project).first()
+
+        if not investigation:
+            messages.error(request, 'No sample sheets available for project')
+            return redirect(redirect_url)
+
+        if not investigation.parser_version:
+            messages.error(
+                request,
+                'Exporting ISAtabs imported using a LEGACY parser version '
+                'is not supported . Please replace sheets to enable export.',
+            )
+            return redirect(redirect_url)
+
+        # Initiate export
+        try:
+            export_data = export_isa(investigation)
+
+            # Build Zip archive
+            zip_io = io.BytesIO()
+            zf = zipfile.ZipFile(
+                zip_io, mode='w', compression=zipfile.ZIP_DEFLATED
+            )
+            zf.writestr(
+                export_data['investigation']['path'],
+                export_data['investigation']['data'],
+            )
+            inv_dir = '/'.join(
+                export_data['investigation']['path'].split('/')[:-1]
+            )
+
+            for k, v in export_data['studies'].items():
+                zf.writestr('{}/{}'.format(inv_dir, k), v['data'])
+
+            for k, v in export_data['assays'].items():
+                zf.writestr('{}/{}'.format(inv_dir, k), v['data'])
+
+            zf.close()
+
+            # Set up archive file name
+            if investigation.archive_name:
+                file_name = investigation.archive_name
+
+            else:
+                file_name = '{}.zip'.format(
+                    re.sub(
+                        r'[\s]+',
+                        '_',
+                        re.sub(r'[^\w\s-]', '', project.title).strip(),
+                    )
+                )
+
+            # Set up response
+            response = HttpResponse(
+                zip_io.getvalue(), content_type='application/zip'
+            )
+            response[
+                'Content-Disposition'
+            ] = 'attachment; filename="{}"'.format(file_name)
+            return response
+
+        except Exception as ex:
+            if settings.DEBUG:
+                raise ex
+
+            messages.error(request, 'Unable to export ISAtab: {}'.format(ex))
+            return redirect(redirect_url)
 
 
 class SampleSheetDeleteView(
@@ -687,7 +777,7 @@ class SampleSheetContextGetAPIView(
             ret_data['studies'][str(s.sodar_uuid)] = {
                 'display_name': s.get_display_name(),
                 'description': s.description,
-                'comments': s.comments,
+                'comments': get_comments(s),
                 'irods_path': irods_backend.get_path(s)
                 if irods_backend
                 else None,
@@ -746,7 +836,7 @@ class SampleSheetContextGetAPIView(
                 'description': investigation.description
                 if investigation.description != project.description
                 else None,
-                'comments': investigation.comments,
+                'comments': get_comments(investigation),
             }
             if investigation
             else {}

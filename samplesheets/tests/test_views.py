@@ -319,6 +319,7 @@ class TestContextGetAPIView(TestViewsBase):
             )
 
         self.assertEqual(response.status_code, 200)
+        self.maxDiff = None
         expected = {
             'configuration': self.investigation.get_configuration(),
             'irods_status': False,
@@ -339,7 +340,7 @@ class TestContextGetAPIView(TestViewsBase):
                 'identifier': self.investigation.identifier,
                 'title': self.investigation.title,
                 'description': None,
-                'comments': self.investigation.comments,
+                'comments': None,
             },
             'studies': {
                 str(self.study.sodar_uuid): {

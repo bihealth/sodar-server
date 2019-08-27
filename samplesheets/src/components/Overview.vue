@@ -40,12 +40,12 @@
             <!-- iRODS stats badge here -->
           </dd>
         </dl>
-        <span v-for="(data, key, index) in
+        <span v-for="(val, key, index) in
                    app.sodarContext['investigation']['comments']"
             :key="index">
           <dl class="row pb-0">
             <dt class="col-md-3">{{ key }}</dt>
-            <dd class="col-md-9">{{ data['value'] }}</dd>
+            <dd class="col-md-9">{{ val }}</dd>
           </dl>
         </span>
       </div>
@@ -68,12 +68,12 @@
           <dt class="col-md-3">Description</dt>
           <dd class="col-md-9">{{ studyInfo['description']}}</dd>
         </dl>
-        <span v-for="(data, key, index) in studyInfo['comments']"
+        <span v-for="(val, key, index) in studyInfo['comments']"
               :key="index">
-          <dl v-if="data['value']"
+          <dl v-if="val"
               class="row pb-0">
             <dt class="col-md-3">{{ key }}</dt>
-            <dd class="col-md-9">{{ data['value'] }}</dd>
+            <dd class="col-md-9">{{ val }}</dd>
           </dl>
         </span>
       </div>

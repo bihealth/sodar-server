@@ -10,7 +10,12 @@ from altamisa.isatab import (
     InvestigationValidator,
     StudyValidator,
     AssayValidator,
+    InvestigationWriter,
+    StudyWriter,
+    AssayWriter,
+    models as isa_models,
 )
+import attr
 from fnmatch import fnmatch
 import io
 import logging
@@ -55,7 +60,11 @@ MATERIAL_TYPE_MAP = {
     'Array Data Matrix File': 'DATA',
 }
 
+# For old ISAtabs where this field was not always filled out
+MATERIAL_TYPE_EXPORT_MAP = {'SOURCE': 'Source Name', 'SAMPLE': 'Sample Name'}
+
 SAMPLE_SEARCH_SUBSTR = '-sample-'
+PROTOCOL_UNKNOWN_NAME = 'Unknown'
 
 
 logger = logging.getLogger(__name__)
@@ -67,13 +76,14 @@ logger = logging.getLogger(__name__)
 def import_isa(isa_zip, project):
     """
     Import ISA investigation and its studies/assays from an ISAtab Zip archive
-    into the Django database, utilizing the altamISA parser
+    into the SODAR database using the altamISA parser.
+
     :param isa_zip: ZipFile (archive containing a single ISAtab investigation)
     :param project: Project object
-    :return: Django Investigation object
+    :return: Investigation object
     """
     t_start = time.time()
-    logger.info('Using CUBI altamISA parser v{}'.format(altamisa.__version__))
+    logger.info('CUBI altamISA parser version: {}'.format(altamisa.__version__))
     parser_warnings = {
         'investigation': [],
         'studies': {},
@@ -137,21 +147,28 @@ def import_isa(isa_zip, project):
         elif hasattr(o, 'study'):
             return o.study
 
-    def _get_multitype_val(o):
-        """Get value where the member type can vary"""
-        if isinstance(o, list) and len(o) == 1:
-            o = o[0]  # Store lists of 1 item (99% of cases) as single objects
+    def _get_ref_val(o):
+        """Get altamISA string/ref value"""
+        if isinstance(o, (isa_models.OntologyRef, isa_models.OntologyTermRef)):
+            o = attr.asdict(o)
 
-        if isinstance(o, tuple):
-            o = o._asdict()
+            if o and 'value' in o and isinstance(o['value'], str):
+                o['value'] = o['value'].strip()
 
-        if o and 'value' in o and isinstance(o['value'], str):
-            o['value'] = o['value'].strip()
+            return o
 
         elif isinstance(o, str):
             return o.strip()
 
-        return o
+    def _get_multitype_val(o):
+        """Get value where the member type can vary"""
+        if isinstance(o, list) and len(o) > 1:
+            return [_get_ref_val(x) for x in o]
+
+        elif isinstance(o, list) and len(o) == 1:
+            o = o[0]  # Store lists of 1 item as single objects
+
+        return _get_ref_val(o)
 
     def _get_ontology_vals(vals):
         """Get value data from potential ontology references"""
@@ -167,6 +184,10 @@ def import_isa(isa_zip, project):
 
         return ret
 
+    def _get_comments(comments):
+        """Get comments field as dict"""
+        return {v.name: v.value for v in comments}
+
     def _get_tuple_list(tuples):
         """Get list of dicts from tuples for JSONField"""
         if type(tuples) == dict:
@@ -175,9 +196,56 @@ def import_isa(isa_zip, project):
         elif type(tuples) in [tuple, list]:
             return [_get_multitype_val(v) for v in tuples]
 
+    def _import_publications(publications):
+        """
+        Convert altamISA publications tuple into a list to be stored into a
+        JSONField.
+
+        :param publications: Tuple[PublicationInfo]
+        :return: List of dicts
+        """
+        return [
+            {
+                'pubmed_id': v.pubmed_id,
+                'doi': v.doi,
+                'authors': v.authors,
+                'title': v.title,
+                'status': _get_ref_val(v.status),
+                'comments': _get_comments(v.comments),
+                'headers': v.headers,
+            }
+            for v in publications
+        ]
+
+    def _import_contacts(contacts):
+        """
+        Convert altamISA converts tuple into a list to be stored into a
+        JSONField.
+
+        :param contacts: Tuple[ContactInfo]
+        :return: List of dicts
+        """
+        return [
+            {
+                'last_name': v.last_name,
+                'first_name': v.first_name,
+                'mid_initial': v.mid_initial,
+                'email': v.email,
+                'phone': v.phone,
+                'fax': v.fax,
+                'address': v.address,
+                'affiliation': v.affiliation,
+                'role': _get_ref_val(v.role),
+                'comments': _get_comments(v.comments),
+                'headers': v.headers,
+            }
+            for v in contacts
+        ]
+
     def _import_materials(materials, db_parent, obj_lookup):
         """
         Create material objects in Django database.
+
         :param materials: altamISA materials dict
         :param db_parent: Parent Django db object (Assay or Study)
         :param obj_lookup: Dictionary for in-memory lookup
@@ -191,6 +259,8 @@ def import_isa(isa_zip, project):
             # Common values
             values = {
                 'item_type': item_type,
+                'material_type': m.type,
+                'extra_material_type': _get_multitype_val(m.material_type),
                 'name': m.name,
                 'unique_name': m.unique_name,
                 'alt_names': get_alt_names(m.name),
@@ -201,14 +271,9 @@ def import_isa(isa_zip, project):
             if type(db_parent) == Assay:
                 values['assay'] = db_parent
 
-            # Type
-            # HACK since file/extract subtype is in .type
-            if item_type in ['DATA', 'MATERIAL'] or m.material_type:
-                values['material_type'] = m.type
-
             # NOTE: Extract label stored as JSON since altamISA 0.1 update
             if m.extract_label:
-                values['extract_label'] = {'value': m.extract_label}
+                values['extract_label'] = _get_multitype_val(m.extract_label)
 
             if m.characteristics:
                 values['characteristics'] = _get_ontology_vals(
@@ -216,7 +281,7 @@ def import_isa(isa_zip, project):
                 )
             if m.factor_values:
                 values['factor_values'] = _get_ontology_vals(m.factor_values)
-            values['comments'] = _get_ontology_vals(m.comments)
+            values['comments'] = _get_comments(m.comments)
 
             material_vals.append(values)
 
@@ -234,6 +299,7 @@ def import_isa(isa_zip, project):
     def _import_processes(processes, db_parent, obj_lookup, protocol_lookup):
         """
         Create processes of a process sequence in the database.
+
         :param processes: Process sequence of a study or an assay in altamISA
         :param db_parent: Parent study or assay
         :param obj_lookup: Dictionary for in-memory material/process lookup
@@ -261,7 +327,7 @@ def import_isa(isa_zip, project):
                 'assay': db_parent if type(db_parent) == Assay else None,
                 'study': study,
                 'performer': p.performer,
-                'perform_date': p.date,
+                'perform_date': p.date if p.date else None,
                 'array_design_ref': p.array_design_ref,
                 'first_dimension': _get_ontology_vals(p.first_dimension)
                 if p.first_dimension
@@ -270,7 +336,7 @@ def import_isa(isa_zip, project):
                 if p.second_dimension
                 else {},
                 'headers': p.headers,
-                'comments': _get_ontology_vals(p.comments),
+                'comments': _get_comments(p.comments),
             }
 
             # Parameter values
@@ -295,6 +361,7 @@ def import_isa(isa_zip, project):
     def _import_arcs(arcs, db_parent):
         """
         Create process/material arcs according to the altamISA structure
+
         :param arcs: Tuple
         :param db_parent: Study or Assay object
         """
@@ -331,12 +398,18 @@ def import_isa(isa_zip, project):
     values = {
         'project': project,
         'identifier': isa_inv.info.identifier,
-        'title': (isa_inv.info.title or project.title),
-        'description': (isa_inv.info.description or project.description),
+        'title': isa_inv.info.title,
+        'description': isa_inv.info.description,
         'file_name': inv_file_path,
         'ontology_source_refs': _get_tuple_list(isa_inv.ontology_source_refs),
-        'comments': _get_ontology_vals(isa_inv.info.comments),
+        'publications': _import_publications(isa_inv.publications),
+        'contacts': _import_contacts(isa_inv.contacts),
+        'headers': isa_inv.info.headers,
+        'comments': _get_comments(isa_inv.info.comments),
+        'submission_date': isa_inv.info.submission_date,
+        'public_release_date': isa_inv.info.public_release_date,
         'parser_version': altamisa.__version__,
+        'archive_name': isa_zip.filename,
     }
 
     db_investigation = Investigation(**values)
@@ -365,8 +438,8 @@ def import_isa(isa_zip, project):
         raise ValueError(error_msg)
 
     # Create studies
-    for s_i in isa_inv.studies:
-        logger.debug('Parsing study "{}"..'.format(s_i.info.title))
+    for isa_study in isa_inv.studies:
+        logger.debug('Parsing study "{}"..'.format(isa_study.info.title))
         obj_lookup = {}  # Lookup dict for study materials and processes
         study_id = 'p{}-s{}'.format(project.pk, study_count)
 
@@ -374,22 +447,28 @@ def import_isa(isa_zip, project):
         with warnings.catch_warnings(record=True) as ws:
             s = StudyReader.from_stream(
                 input_file=_get_file(
-                    isa_zip, _get_zip_path(inv_dir, s_i.info.path)
+                    isa_zip, _get_zip_path(inv_dir, isa_study.info.path)
                 ),
                 study_id=study_id,
             ).read()
-            StudyValidator(isa_inv, s_i, s).validate()
+            StudyValidator(isa_inv, isa_study, s).validate()
 
         values = {
-            'identifier': s_i.info.identifier,
-            'file_name': s_i.info.path,
+            'identifier': isa_study.info.identifier,
+            'file_name': isa_study.info.path,
             'investigation': db_investigation,
-            'title': s_i.info.title,
-            'description': s_i.info.description,
-            'study_design': s_i.designs,
-            'factors': s_i.factors,
-            'comments': _get_ontology_vals(s_i.info.comments),
-            'headers': s_i.info.headers,
+            'title': isa_study.info.title,
+            'description': isa_study.info.description,
+            'study_design': [attr.asdict(x) for x in isa_study.designs],
+            'publications': _import_publications(isa_study.publications),
+            'contacts': _import_contacts(isa_study.contacts),
+            'factors': {
+                k: attr.asdict(v) for k, v in isa_study.factors.items()
+            },
+            'comments': _get_comments(isa_study.info.comments),
+            'submission_date': isa_study.info.submission_date,
+            'public_release_date': isa_study.info.public_release_date,
+            'headers': isa_study.info.headers,
         }
 
         db_study = Study(**values)
@@ -405,19 +484,19 @@ def import_isa(isa_zip, project):
         # Create protocols
         protocol_vals = []
 
-        for p_i in s_i.protocols.values():
+        for isa_prot in isa_study.protocols.values():
             protocol_vals.append(
                 {
-                    'name': p_i.name,
+                    'name': isa_prot.name,
                     'study': db_study,
-                    'protocol_type': _get_multitype_val(p_i.type),
-                    'description': p_i.description,
-                    'uri': p_i.uri,
-                    'version': p_i.version,
-                    'parameters': _get_tuple_list(p_i.parameters),
-                    'components': _get_tuple_list(p_i.components),
-                    'comments': _get_ontology_vals(p_i.comments),
-                    'headers': p_i.headers,
+                    'protocol_type': _get_multitype_val(isa_prot.type),
+                    'description': isa_prot.description,
+                    'uri': isa_prot.uri,
+                    'version': isa_prot.version,
+                    'parameters': _get_tuple_list(isa_prot.parameters),
+                    'components': _get_tuple_list(isa_prot.components),
+                    'comments': _get_comments(isa_prot.comments),
+                    'headers': isa_prot.headers,
                 }
             )
 
@@ -442,13 +521,14 @@ def import_isa(isa_zip, project):
         _import_arcs(s.arcs, db_study)
 
         assay_count = 0
-        assay_paths = sorted([a_i.path for a_i in s_i.assays])
+        assay_paths = sorted([a.path for a in isa_study.assays])
 
         for assay_path in assay_paths:
-            a_i = next(
-                (a_i for a_i in s_i.assays if a_i.path == assay_path), None
+            isa_assay = next(
+                (a_i for a_i in isa_study.assays if a_i.path == assay_path),
+                None,
             )
-            logger.debug('Parsing assay "{}"..'.format(a_i.path))
+            logger.debug('Parsing assay "{}"..'.format(isa_assay.path))
             assay_id = 'a{}'.format(assay_count)
 
             # Parse and validate assay file
@@ -457,19 +537,23 @@ def import_isa(isa_zip, project):
                     study_id=study_id,
                     assay_id=assay_id,
                     input_file=_get_file(
-                        isa_zip, _get_zip_path(inv_dir, a_i.path)
+                        isa_zip, _get_zip_path(inv_dir, isa_assay.path)
                     ),
                 ).read()
-                AssayValidator(isa_inv, s_i, a_i, a).validate()
+                AssayValidator(isa_inv, isa_study, isa_assay, a).validate()
 
             values = {
-                'file_name': a_i.path,
+                'file_name': isa_assay.path,
                 'study': db_study,
-                'measurement_type': _get_multitype_val(a_i.measurement_type),
-                'technology_type': _get_multitype_val(a_i.technology_type),
-                'technology_platform': a_i.platform,
-                'comments': _get_ontology_vals(a_i.comments),
-                'headers': a_i.headers,
+                'measurement_type': _get_multitype_val(
+                    isa_assay.measurement_type
+                ),
+                'technology_type': _get_multitype_val(
+                    isa_assay.technology_type
+                ),
+                'technology_platform': isa_assay.platform,
+                'comments': _get_comments(isa_assay.comments),
+                'headers': isa_assay.headers,
             }
 
             db_assay = Assay(**values)
@@ -533,6 +617,7 @@ def import_isa(isa_zip, project):
 def get_inv_paths(zip_file):
     """
     Return investigation file paths from a zip file
+
     :param zip_file: ZipFile
     :return: List
     :raise: ValueError if file_type is not valid
@@ -550,7 +635,540 @@ def get_inv_paths(zip_file):
 # Exporting --------------------------------------------------------------------
 
 
-# TODO: Export to ISAtab
+def export_isa(investigation):
+    """
+    Import ISA investigation and its studies/assays from the SODAR database
+    model into an ISAtab archive.
+
+    :param investigation: Investigation object
+    :return: ZipFile (archive containing ISAtab files for the investigation)
+    """
+
+    ################
+    # Export helpers
+    ################
+
+    def _get_nodes(nodes, arcs):
+        """
+        Return nodes referred to in arcs.
+
+        :param nodes: Dict of GenericMaterial or Process, key=unique_name
+        :param arcs: List of lists
+        :return: List
+        """
+        ret = {}
+
+        def _get_node(vertice):
+            if vertice in nodes and vertice not in ret:
+                ret[vertice] = nodes[vertice]
+
+        for a in arcs:
+            _get_node(a[0])
+            _get_node(a[1])
+
+        return ret.values()
+
+    def _build_value(value):
+        """
+        Build a "FreeTextOrTermRef" value out of a string/dict value in a
+        JSONField. Can also be used for units.
+
+        :param value: String or dict
+        :return: String or OntologyTermRef
+        """
+        if isinstance(value, str):
+            return value
+
+        elif isinstance(value, list):
+            return [_build_value(x) for x in value]
+
+        elif isinstance(value, dict):
+            if not value:  # Empty dict
+                return None  # {} is not cool to altamISA
+
+            return isa_models.OntologyTermRef(
+                name=value['name'],
+                accession=value['accession'],
+                ontology_name=value['ontology_name'],
+            )
+
+    def _build_comments(comments):
+        """
+        Build comments from JSON stored in a SODAR model object.
+
+        :param comments: Dict from a comments JSONField
+        :return: Tuple of Comment NamedTuples
+        """
+
+        # TODO: Remove once reimporting sample sheets (#629, #631)
+        def _get_comment_value(v):
+            if isinstance(v, dict):
+                return v['value']
+            return v
+
+        return tuple(
+            (
+                isa_models.Comment(name=k, value=_get_comment_value(v))
+                for k, v in comments.items()
+            )
+            if comments
+            else ()
+        )
+
+    def _build_publications(publications):
+        """
+        Build publications from a JSONField stored in an Investigation or Study
+        object.
+
+        :param publications: List of dicts from a publications JSONField
+        :return: Tuple[PublicationInfo]
+        """
+        return tuple(
+            isa_models.PublicationInfo(
+                pubmed_id=v['pubmed_id'],
+                doi=v['doi'],
+                authors=v['authors'],
+                title=v['title'],
+                status=_build_value(v['status']),
+                comments=_build_comments(v['comments']),
+                headers=v['headers'],
+            )
+            for v in publications
+        )
+
+    def _build_contacts(contacts):
+        """
+        Build contacts from a JSONField stored in an Investigation or Study
+        object.
+
+        :param contacts: List of dicts from a contacts JSONField
+        :return: Tuple[ContactInfo]
+        """
+        return tuple(
+            isa_models.ContactInfo(
+                last_name=v['last_name'],
+                first_name=v['first_name'],
+                mid_initial=v['mid_initial'],
+                email=v['email'],
+                phone=v['phone'],
+                fax=v['fax'],
+                address=v['address'],
+                affiliation=v['affiliation'],
+                role=_build_value(v['role']),
+                comments=_build_comments(v['comments']),
+                headers=v['headers'],
+            )
+            for v in contacts
+        )
+
+    def _build_source_refs(source_refs):
+        """
+        Build ontology source references from a JSONField stored in an
+        Investigation object.
+
+        :param source_refs: Dict from a ontology_source_refs JSONField
+        :return: Dict
+        """
+        return {
+            v['name']: isa_models.OntologyRef(
+                name=v['name'],
+                file=v['file'],
+                version=v['version'],
+                comments=_build_comments(v['comments']),
+                description=v['description'],
+                headers=v['headers'],
+            )
+            for v in source_refs
+        }
+
+    def _build_study_design(study_design):
+        """
+        Build study design descriptors from a JSONField in a Study object.
+
+        :param study_design: List from a study_design JSONField object
+        :return: Tuple[DesignDescriptorsInfo]
+        """
+        return tuple(
+            isa_models.DesignDescriptorsInfo(
+                type=_build_value(v['type']),
+                comments=_build_comments(v['comments']),
+                headers=v['headers'],
+            )
+            for v in study_design
+        )
+
+    def _build_components(components):
+        """
+        Build protocol components from JSON stored in a Protocol object.
+
+        :param components: Dict from a comments JSONField
+        :return: Tuple[ProtocolComponentInfo]
+        """
+        # TODO: Ensure this works with filled out data
+        return (
+            {
+                k: isa_models.ProtocolComponentInfo(name=k, type=v)
+                for k, v in components.items()
+            }
+            if components
+            else {}
+        )
+
+    def _build_characteristics(characteristics):
+        """
+        Build characteristics from JSON stored in a SODAR model object.
+
+        :param characteristics: Dict from a characteristics JSONField
+        :return: Tuple[Characteristics]
+        """
+        return tuple(
+            isa_models.Characteristics(
+                name=k,
+                value=[_build_value(v['value'])]
+                if not isinstance(v['value'], list)
+                else _build_value(v['value']),
+                unit=_build_value(v['unit']),
+            )
+            for k, v in characteristics.items()
+        )
+
+    def _build_factors(factors):
+        """
+        Build factor references from JSON stored in a Study object.
+
+        :param factors: Dict from a factors JSONField
+        :return: Dict[str, FactorInfo]
+        """
+        return {
+            k: isa_models.FactorInfo(
+                name=k,
+                type=_build_value(v['type']),
+                comments=_build_comments(v['comments']),
+                headers=v['headers'],
+            )
+            for k, v in factors.items()
+        }
+
+    def _build_factor_values(factor_values):
+        """
+        Build factor values from JSON stored in a GenericMaterial object.
+
+        :param factor_values: Dict from a factor_values JSONField
+        :return: Tuple[FactorValue]
+        """
+        if not factor_values:
+            return tuple()  # None is not accepted here
+
+        return tuple(
+            isa_models.FactorValue(
+                name=k,
+                value=_build_value(v['value']),
+                unit=_build_value(v['unit']),
+            )
+            for k, v in factor_values.items()
+        )
+
+    def _build_parameters(parameters):
+        """
+        Build parameters for a protocol from JSON stored in a Protocol
+        object.
+
+        :param parameters: List from a parameters JSONField
+        :return: Dict
+        """
+        ret = {}
+
+        for p in parameters:
+            ret[p['name']] = _build_value(p)
+
+        return ret
+
+    def _build_param_values(param_values):
+        """
+        Build parameter values from JSON stored in a Process object.
+
+        :param param_values: Dict from a parameter_values JSONField
+        :return: Tuple[ParameterValue]
+        """
+        return tuple(
+            isa_models.ParameterValue(
+                name=k,
+                value=[_build_value(v['value'])]
+                if not isinstance(v['value'], list)
+                else _build_value(v['value']),
+                unit=_build_value(v['unit']),
+            )
+            for k, v in param_values.items()
+        )
+
+    def _build_arcs(arcs):
+        """
+        Build arcs from ArrayField stored in a Study or Assay object.
+
+        :param arcs: List of lists from an arcs ArrayField
+        :return: Tuple[Arc]
+        """
+        return (
+            tuple(isa_models.Arc(tail=a[0], head=a[1]) for a in arcs)
+            if arcs
+            else ()
+        )
+
+    ################
+    # Export helpers
+    ################
+
+    def _export_materials(materials, study_data=True):
+        """
+        Export materials from SODAR model objects.
+
+        :param materials: QuerySet or array of GenericMaterial objects
+        :param study_data: If False, strip data not expected in an assay
+        :return: Dict
+        """
+        ret = {}
+
+        for m in materials:
+            sample_in_assay = m.item_type == 'SAMPLE' and not study_data
+            headers = m.headers if not sample_in_assay else [m.headers[0]]
+
+            # HACK for extract label parsing crash (#635)
+            if (
+                m.material_type == 'Labeled Extract Name'
+                and 'Label' in headers
+                and not m.extract_label
+            ):
+                extract_label = ''
+
+            else:
+                extract_label = _build_value(m.extract_label)
+
+            ret[m.unique_name] = isa_models.Material(
+                type=m.material_type
+                if m.material_type
+                else MATERIAL_TYPE_EXPORT_MAP[m.item_type],
+                unique_name=m.unique_name,
+                name=m.name,
+                extract_label=extract_label,
+                characteristics=_build_characteristics(m.characteristics)
+                if not sample_in_assay
+                else (),
+                comments=_build_comments(m.comments)
+                if not sample_in_assay
+                else (),
+                factor_values=_build_factor_values(m.factor_values)
+                if study_data
+                else tuple(),
+                material_type=_build_value(m.extra_material_type),
+                headers=headers,
+            )
+
+        return ret
+
+    def _export_processes(processes):
+        """
+        Export processes from SODAR model objects.
+
+        :param processes: QuerySet or array of Process objects
+        :return: Dict
+        """
+        ret = {}
+
+        for p in processes:
+            # Set up perform date
+            if not p.perform_date and 'Date' in p.headers:
+                perform_date = ''  # Empty string denotes an empty column
+
+            else:
+                perform_date = p.perform_date
+
+            ret[p.unique_name] = isa_models.Process(
+                protocol_ref=p.protocol.name
+                if p.protocol
+                else PROTOCOL_UNKNOWN_NAME,
+                unique_name=p.unique_name,
+                name=p.name,
+                name_type=p.name_type,
+                date=perform_date,
+                performer=p.performer,
+                parameter_values=_build_param_values(p.parameter_values),
+                comments=_build_comments(p.comments),
+                array_design_ref=p.array_design_ref,
+                first_dimension=_build_value(p.first_dimension),
+                second_dimension=_build_value(p.second_dimension),
+                headers=p.headers,
+            )
+
+        return ret
+
+    ###########
+    # Exporting
+    ###########
+
+    # Create StudyInfo objects for studies
+    isa_study_infos = []
+    isa_studies = []
+    isa_assays = {}
+    study_idx = 0
+
+    for study in investigation.studies.all().order_by('file_name'):
+        # Get all materials and nodes in study and its assays
+        all_materials = {m.unique_name: m for m in study.materials.all()}
+        all_processes = {p.unique_name: p for p in study.processes.all()}
+
+        # Get study materials
+        study_materials = _export_materials(
+            _get_nodes(all_materials, study.arcs)
+        )
+        study_processes = _export_processes(
+            _get_nodes(all_processes, study.arcs)
+        )
+
+        # Create study
+        isa_study = isa_models.Study(
+            file=study.file_name,
+            header=study.headers,
+            materials=study_materials,
+            processes=study_processes,
+            arcs=_build_arcs(study.arcs),
+        )
+        isa_studies.append(isa_study)
+
+        isa_assay_infos = []
+        isa_assays[study_idx] = {}
+        assay_idx = 0
+
+        # Create AssayInfo objects for assays
+        for assay in study.assays.all().order_by('file_name'):
+            assay_info = isa_models.AssayInfo(
+                measurement_type=_build_value(assay.measurement_type),
+                technology_type=_build_value(assay.technology_type),
+                platform=assay.technology_platform,
+                path=assay.file_name,
+                comments=_build_comments(assay.comments),
+                headers=assay.headers,
+            )
+            isa_assay_infos.append(assay_info)
+
+            # Get assay materials and processes
+            assay_materials = _export_materials(
+                _get_nodes(all_materials, assay.arcs), study_data=False
+            )
+            assay_processes = _export_processes(
+                _get_nodes(all_processes, assay.arcs)
+            )
+
+            # Create actual assay and parse its members
+            isa_assay = isa_models.Assay(
+                file=assay.file_name,
+                header=tuple(assay.headers),
+                materials=assay_materials,
+                processes=assay_processes,
+                arcs=_build_arcs(assay.arcs),
+            )
+            isa_assays[study_idx][assay_idx] = isa_assay
+            assay_idx += 1
+
+        # Create protocols for study
+        isa_protocols = {}
+
+        for protocol in study.protocols.all():
+            isa_protocols[protocol.name] = isa_models.ProtocolInfo(
+                name=protocol.name,
+                type=_build_value(protocol.protocol_type),
+                description=protocol.description,
+                uri=protocol.uri,
+                version=protocol.version,
+                parameters=_build_parameters(protocol.parameters),
+                components=_build_components(protocol.components),
+                comments=_build_comments(protocol.comments),
+                headers=protocol.headers,
+            )
+
+        # Create BasicInfo for study
+        isa_study_basic = isa_models.BasicInfo(
+            path=study.file_name,
+            identifier=study.identifier,
+            title=study.title,
+            description=study.description,
+            submission_date=study.submission_date,
+            public_release_date=study.public_release_date,
+            comments=_build_comments(study.comments),
+            headers=study.headers,
+        )
+
+        # Create StudyInfo object
+        isa_study_info = isa_models.StudyInfo(
+            info=isa_study_basic,
+            designs=_build_study_design(study.study_design),
+            publications=_build_publications(study.publications),
+            factors=_build_factors(study.factors),
+            assays=tuple(isa_assay_infos),
+            protocols=isa_protocols,
+            contacts=_build_contacts(study.contacts),
+        )
+        isa_study_infos.append(isa_study_info)
+        study_idx += 1
+
+    # Create BasicInfo for investigation
+    inv_basic = isa_models.BasicInfo(
+        path=investigation.file_name,
+        identifier=investigation.identifier,
+        title=investigation.title,
+        description=investigation.description,
+        submission_date=investigation.submission_date,
+        public_release_date=investigation.public_release_date,
+        comments=_build_comments(investigation.comments),
+        headers=investigation.headers,
+    )
+
+    # Create InvestigationInfo
+    inv_info = isa_models.InvestigationInfo(
+        ontology_source_refs=_build_source_refs(
+            investigation.ontology_source_refs
+        ),
+        info=inv_basic,
+        publications=_build_publications(investigation.publications),
+        contacts=_build_contacts(investigation.contacts),
+        studies=tuple(isa_study_infos),
+    )
+
+    # Prepare return data
+    # (the ZIP file preparing and serving should happen in the view)
+    ret = {'investigation': {}, 'studies': {}, 'assays': {}}
+    inv_out = io.StringIO()
+
+    # Write investigation
+    InvestigationValidator(inv_info).validate()
+    InvestigationWriter.from_stream(inv_info, output_file=inv_out).write()
+    ret['investigation']['path'] = inv_info.info.path
+    ret['investigation']['data'] = inv_out.getvalue()
+    inv_out.close()
+
+    # Write studies
+    for study_idx, study_info in enumerate(inv_info.studies):
+        StudyValidator(inv_info, study_info, isa_studies[study_idx]).validate()
+        study_out = io.StringIO()
+        StudyWriter.from_stream(isa_studies[study_idx], study_out).write()
+        ret['studies'][study_info.info.path] = {'data': study_out.getvalue()}
+        study_out.close()
+
+        # Write assays
+        for assay_idx, assay_info in enumerate(study_info.assays):
+            AssayValidator(
+                inv_info,
+                study_info,
+                assay_info,
+                isa_assays[study_idx][assay_idx],
+            ).validate()
+            assay_out = io.StringIO()
+            AssayWriter.from_stream(
+                isa_assays[study_idx][assay_idx], assay_out
+            ).write()
+            ret['assays'][assay_info.path] = {'data': assay_out.getvalue()}
+            assay_out.close()
+
+    return ret
 
 
 # iRODS Utils ------------------------------------------------------------------
@@ -559,6 +1177,7 @@ def get_inv_paths(zip_file):
 def get_assay_dirs(assay):
     """
     Return iRODS directory structure under an assay
+
     :param assay: Assay object
     :return: List
     """

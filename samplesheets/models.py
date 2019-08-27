@@ -9,7 +9,7 @@ from django.utils.text import slugify
 # Projectroles dependency
 from projectroles.models import Project
 
-from .utils import get_alt_names, ALT_NAMES_COUNT
+from .utils import get_alt_names, get_comment, ALT_NAMES_COUNT
 
 
 # Local constants
@@ -150,10 +150,26 @@ class Investigation(BaseSampleSheet):
         'project)',
     )
 
+    #: Submission date
+    submission_date = models.DateField(null=True, help_text='Submission date')
+
+    #: Public release date
+    public_release_date = models.DateField(
+        null=True, help_text='Public release date'
+    )
+
     #: Ontology source references
     ontology_source_refs = JSONField(
         default=dict, help_text='Ontology source references'
     )
+
+    #: Investigation publications
+    publications = JSONField(
+        default=dict, help_text='Investigation publications'
+    )
+
+    #: Investigation publications
+    contacts = JSONField(default=dict, help_text='Investigation contacts')
 
     #: Active status of investigation (only one active per project)
     active = models.BooleanField(
@@ -181,6 +197,15 @@ class Investigation(BaseSampleSheet):
         'ISAtab',
     )
 
+    #: File name of the original archive if imported
+    archive_name = models.CharField(
+        max_length=DEFAULT_LENGTH,
+        unique=False,
+        blank=True,
+        null=True,
+        help_text='File name of the original archive if imported',
+    )
+
     def __str__(self):
         return '{}: {}'.format(self.project.title, self.title)
 
@@ -196,7 +221,7 @@ class Investigation(BaseSampleSheet):
         if CONFIG_LABEL not in self.comments:
             return None
 
-        conf = self.comments[CONFIG_LABEL]['value']
+        conf = get_comment(self, CONFIG_LABEL)
 
         if conf.find('/') == -1 and conf.find('\\') == -1:
             return conf
@@ -257,11 +282,25 @@ class Study(BaseSampleSheet):
         unique=False, blank=True, help_text='Study description (optional)'
     )
 
+    #: Submission date
+    submission_date = models.DateField(null=True, help_text='Submission date')
+
+    #: Public release date
+    public_release_date = models.DateField(
+        null=True, help_text='Public release date'
+    )
+
     #: Study design descriptors
     study_design = JSONField(default=dict, help_text='Study design descriptors')
 
+    #: Study publications
+    publications = JSONField(default=dict, help_text='Study publications')
+
     #: Study factors
     factors = JSONField(default=dict, help_text='Study factors')
+
+    #: Study contacts
+    contacts = JSONField(default=dict, help_text='Study contacts')
 
     #: Study arcs
     arcs = ArrayField(
@@ -485,7 +524,7 @@ class GenericMaterial(BaseSampleSheet):
     """Generic model for materials in the ISA specification. Contains required
     properties for Source, Material, Sample and Data objects"""
 
-    #: Type of item (Source, Material, Sample, Data)
+    #: Type of item (SOURCE, MATERIAL, SAMPLE, DATA)
     item_type = models.CharField(
         max_length=DEFAULT_LENGTH,
         unique=False,
@@ -493,7 +532,7 @@ class GenericMaterial(BaseSampleSheet):
         null=False,
         default='MATERIAL',
         choices=GENERIC_MATERIAL_CHOICES,
-        help_text='',
+        help_text='Type of item (SOURCE, MATERIAL, SAMPLE, DATA)',
     )
 
     #: Material name (common to all item types)
@@ -542,13 +581,21 @@ class GenericMaterial(BaseSampleSheet):
         help_text='Assay to which the material belongs (for assay sequence)',
     )
 
-    #: Material or data field type (only for materials and data files)
+    #: Material type (from "type")
     material_type = models.CharField(
         max_length=DEFAULT_LENGTH,
         unique=False,
         blank=True,
         null=True,
-        help_text='Material or data file type',
+        help_text='Material type (from "type")',
+    )
+
+    #: Extra material type (from "material_type")
+    extra_material_type = JSONField(
+        default=dict,
+        blank=True,
+        null=True,
+        help_text='Extra material type (from "material_type")',
     )
 
     #: Factor values for a sample (only for samples)

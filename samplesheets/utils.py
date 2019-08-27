@@ -207,6 +207,42 @@ def get_sheets_url(obj):
     return url
 
 
+def get_comment(obj, key):
+    """
+    Return comment value for object based on key or None if not found.
+    TODO: Remove once reimporting sample sheets (#629, #631)
+
+    :param obj: Object parsed from ISAtab
+    :param key: Key for comment
+    :return:
+    """
+    if (
+        not hasattr(obj, 'comments')
+        or not obj.comments
+        or key not in obj.comments
+    ):
+        return None
+
+    if isinstance(obj.comments[key], dict):
+        return obj.comments[key]['value']
+
+    return obj.comments[key]
+
+
+def get_comments(obj):
+    """
+    Return comments for an object or None if they don't exist.
+    TODO: Remove once reimporting sample sheets (#629, #631)
+
+    :param obj: Object parsed from ISAtab
+    :return:
+    """
+    if not hasattr(obj, 'comments') or not obj.comments:
+        return None
+
+    return {k: get_comment(obj, k) for k in obj.comments.keys()}
+
+
 def write_csv_table(table, output, delimiter='\t'):
     """
     Write rendered study/assay table into csv/tsv.

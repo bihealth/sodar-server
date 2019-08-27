@@ -281,6 +281,7 @@ class SampleSheetTableBuilder:
             value = (
                 obj.material_type
                 if obj.material_type
+                and obj.item_type not in ['SOURCE', 'SAMPLE']
                 else TOP_HEADER_MATERIAL_VALUES[obj.item_type]
             )
 
@@ -604,8 +605,13 @@ class SampleSheetTableBuilder:
         link = None
         tooltip = None
 
+        # Special case: Comments as parsed in SODAR v0.5.2 (see #629)
+        # TODO: TBD: Should these be added in this function at all?
+        if isinstance(ann, str):
+            val = ann
+
         # Ontology reference
-        if (
+        elif (
             isinstance(ann['value'], dict)
             and 'name' in ann['value']
             and ann['value']['name']
@@ -626,7 +632,29 @@ class SampleSheetTableBuilder:
         ):
             val = ''
 
-        # List of lists (altamISA v0.1+)
+        # List of dicts (altamISA v0.1+, SODAR v0.5.2+)
+        # TODO: Refactor
+        elif (
+            isinstance(ann['value'], list)
+            and len(ann['value']) > 0
+            and isinstance(ann['value'][0], dict)
+        ):
+            val = list(ann['value'])
+
+            for i in range(len(val)):
+                new_val = dict(val[i])
+
+                if isinstance(new_val['name'], str):
+                    new_val['name'] = new_val['name'].strip()
+
+                new_val['accession'] = self._get_ontology_url(
+                    new_val['ontology_name'], new_val['accession']
+                )
+                val[i] = new_val
+
+        # List of lists (altamISA v0.1+, SODAR v0.5.1)
+        # TODO: Refactor
+        # TODO: Remove legacy list importing support (#619)
         elif (
             isinstance(ann['value'], list)
             and len(ann['value']) > 0
@@ -730,7 +758,9 @@ class SampleSheetTableBuilder:
 
             # Lists (altamISA v0.1+)
             elif isinstance(value, list) and col_type != 'EXTERNAL_LINKS':
-                if isinstance(value[0], list) and value[0]:
+                if isinstance(value[0], dict):
+                    value = '; '.join([x['name'] for x in value])
+                elif isinstance(value[0], list) and value[0]:
                     value = '; '.join([x[0] for x in value])
                 elif isinstance(value[0], str):
                     value = '; '.join(value)
@@ -767,11 +797,12 @@ class SampleSheetTableBuilder:
                 col_type = 'LINK_FILE'
 
             # TODO: Refactor this?
+            # TODO: Remove legacy list importing support (#619)
             elif any(x[i]['link'] for x in self._table_data) or (
                 any(
                     isinstance(x[i]['value'], list)
                     and len(x[i]['value']) > 0
-                    and isinstance(x[i]['value'][0], list)
+                    and isinstance(x[i]['value'][0], (list, dict))
                     for x in self._table_data
                 )
             ):
