@@ -37,6 +37,7 @@ Changed
     - Always import ``material_type`` field for ``GenericMaterial``
     - Do not replace title or description in ``Investigation`` if not provided
     - Display configuration in Overview as badge
+    - Improve comments display in Overview (#632)
 
 Fixed
 -----
