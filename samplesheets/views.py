@@ -32,7 +32,7 @@ from projectroles.views import (
 )
 
 from .forms import SampleSheetImportForm
-from .io import export_isa
+from .io import SampleSheetIO
 from .models import (
     Investigation,
     Study,
@@ -406,6 +406,7 @@ class SampleSheetISAExportView(
         tl_event = None
         project = self.get_project()
         redirect_url = get_sheets_url(project)
+        sheet_io = SampleSheetIO()
         investigation = Investigation.objects.filter(project=project).first()
 
         if not investigation:
@@ -450,7 +451,7 @@ class SampleSheetISAExportView(
 
         # Initiate export
         try:
-            export_data = export_isa(investigation)
+            export_data = sheet_io.export_isa(investigation)
 
             # Build Zip archive
             zip_io = io.BytesIO()

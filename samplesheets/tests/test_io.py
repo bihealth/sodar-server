@@ -12,7 +12,7 @@ from projectroles.models import Role, SODAR_CONSTANTS
 from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
 
 from ..models import Investigation
-from ..io import import_isa, export_isa
+from ..io import SampleSheetIO
 
 
 # Local constants
@@ -32,7 +32,8 @@ class SampleSheetIOMixin:
         :return: Investigation object
         """
         zf = ZipFile(os.fsdecode(path))
-        investigation = import_isa(zf, project)
+        sheet_io = SampleSheetIO(warn=False)
+        investigation = sheet_io.import_isa(zf, project)
         investigation.active = True  # Must set this explicitly
         investigation.save()
         return investigation
@@ -120,6 +121,8 @@ class TestSampleSheetImport(TestSampleSheetIOBase):
 class TestSampleSheetExport(TestSampleSheetIOBase):
     def test_isa_export_batch(self):
         """Test ISAtab export in batch"""
+        sheet_io = SampleSheetIO(warn=False)
+
         for zip_name, zip_file in self._get_isatab_files().items():
             investigation = self._import_isa_from_file(
                 zip_file.path, self.project
@@ -127,7 +130,7 @@ class TestSampleSheetExport(TestSampleSheetIOBase):
 
             try:
                 export_data = self._get_flat_export_data(
-                    export_isa(investigation)
+                    sheet_io.export_isa(investigation)
                 )
 
             except Exception as ex:

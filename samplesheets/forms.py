@@ -5,7 +5,7 @@ from django import forms
 # Projectroles dependency
 from projectroles.models import Project
 
-from .io import import_isa, get_inv_paths
+from .io import SampleSheetIO
 
 
 class SampleSheetImportForm(forms.Form):
@@ -53,8 +53,10 @@ class SampleSheetImportForm(forms.Form):
             )
             return self.cleaned_data
 
+        sheet_io = SampleSheetIO()
+
         # Get investigation file path(s)
-        i_paths = get_inv_paths(zip_file)
+        i_paths = sheet_io.get_inv_paths(zip_file)
 
         if len(i_paths) == 0:
             self.add_error(
@@ -73,8 +75,10 @@ class SampleSheetImportForm(forms.Form):
         return self.cleaned_data
 
     def save(self, *args, **kwargs):
+        sheet_io = SampleSheetIO()
+
         try:
-            investigation = import_isa(
+            investigation = sheet_io.import_isa(
                 isa_zip=self.isa_zip, project=self.project
             )
             return investigation

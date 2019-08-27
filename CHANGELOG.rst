@@ -38,6 +38,8 @@ Changed
     - Do not replace title or description in ``Investigation`` if not provided
     - Display configuration in Overview as badge
     - Improve comments display in Overview (#632)
+    - Refactor ``io`` module into a class (#562)
+    - Suppress altamISA warnings during testing (#637)
 
 Fixed
 -----
