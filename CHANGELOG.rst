@@ -49,6 +49,7 @@ Fixed
     - "Sequence item 1" render error manifesting with BII-I-1 example (#620)
     - Redundant unit/value parsing for comments during import (#629)
     - Missing label for unknown configuration in Overview (#638)
+    - Overview statistics table margin change (#630)
 
 Removed
 -------

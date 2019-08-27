@@ -93,7 +93,7 @@
         <h4>Statistics</h4>
       </div>
       <div class="card-body p-0">
-        <div class="table-responsive">
+        <div class="table-responsive mb-0">
           <table class="table sodar-card-table">
             <thead>
               <tr>
