@@ -59,6 +59,7 @@ REMOTE_LEVEL_READ_ROLES = SODAR_CONSTANTS['REMOTE_LEVEL_READ_ROLES']
 
 # Local constants
 APP_NAME = 'samplesheets'
+WARNING_STATUS_MSG = 'OK with warnings, see extra data'
 
 
 class InvestigationContextMixin(ProjectContextMixin):
@@ -182,28 +183,39 @@ class SampleSheetImportView(
 
     def form_valid(self, form):
         timeline = get_backend_api('timeline_backend')
+        tl_event = None
         project = self.get_project()
         form_kwargs = self.get_form_kwargs()
         form_action = 'replace' if form_kwargs['replace'] else 'create'
 
-        old_inv_found = False
         old_inv_uuid = None
         old_study_uuids = {}
         old_assay_uuids = {}
         redirect_url = get_sheets_url(project)
 
+        # Add event in Timeline
+        if timeline:
+            if form_action == 'replace':
+                desc = 'replace previous investigation with '
+
+            else:
+                desc = 'create investigation '
+
+            tl_event = timeline.add_event(
+                project=project,
+                app_name=APP_NAME,
+                user=self.request.user,
+                event_name='sheet_' + form_action,
+                description=desc + ' {investigation}',
+            )
+
+        # Get existing investigation
+        old_inv = Investigation.objects.filter(
+            project=project, active=True
+        ).first()
+
         try:
             self.object = form.save()
-            old_inv = None
-
-            # Check for existing investigation
-            try:
-                old_inv = Investigation.objects.get(
-                    project=project, active=True
-                )
-                old_inv_found = True
-            except Investigation.DoesNotExist:
-                pass  # This is fine
 
             if old_inv:
                 # Ensure existing studies and assays are found in new inv
@@ -247,6 +259,9 @@ class SampleSheetImportView(
                     pk=old_inv.pk
                 ).delete()
 
+            if tl_event:
+                tl_event.set_status('FAILED', status_desc=str(ex))
+
             if settings.DEBUG:
                 raise ex
 
@@ -256,7 +271,7 @@ class SampleSheetImportView(
         # If all went well..
 
         # Update UUIDs
-        if old_inv_found:
+        if old_inv:
             self.object.sodar_uuid = old_inv_uuid
             self.object.save()
 
@@ -274,25 +289,21 @@ class SampleSheetImportView(
         self.object.active = True
         self.object.save()
 
-        # Add event in Timeline
-        if timeline:
-            if form_action == 'replace':
-                desc = 'replace previous investigation with '
-
-            else:
-                desc = 'create investigation '
-
-            tl_event = timeline.add_event(
-                project=project,
-                app_name=APP_NAME,
-                user=self.request.user,
-                event_name='sheet_' + form_action,
-                description=desc + ' {investigation}',
-                status_type='OK',
-            )
-
+        # Add investigation data in Timeline
+        if tl_event:
             tl_event.add_object(
                 obj=self.object, label='investigation', name=self.object.title
+            )
+
+            extra_data = (
+                {'warnings': self.object.parser_warnings}
+                if self.object.parser_warnings
+                and not self.object.parser_warnings['all_ok']
+                else None
+            )
+            status_desc = WARNING_STATUS_MSG if extra_data else None
+            tl_event.set_status(
+                'OK', status_desc=status_desc, extra_data=extra_data
             )
 
         success_msg = '{}d sample sheets from ISAtab import'.format(
@@ -474,9 +485,17 @@ class SampleSheetISAExportView(
 
             zf.close()
 
-            # TODO: Catch and save warnings in extra_data (see #639)
             if tl_event:
-                tl_event.set_status('OK')
+                export_warnings = sheet_io.get_warnings()
+                extra_data = (
+                    {'warnings': export_warnings}
+                    if not export_warnings['all_ok']
+                    else None
+                )
+                status_desc = WARNING_STATUS_MSG if extra_data else None
+                tl_event.set_status(
+                    'OK', status_desc=status_desc, extra_data=extra_data
+                )
 
             # Set up response
             response = HttpResponse(
