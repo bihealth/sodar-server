@@ -44,6 +44,7 @@ Changed
     - Refactor ``io`` module into a class (#562)
     - Suppress altamISA warnings during testing (#637)
     - Fail when encountering critical altamISA warnings in ISAtab import (#573)
+    - Use file name as study/assay key in parser warning data (#644)
 
 Fixed
 -----

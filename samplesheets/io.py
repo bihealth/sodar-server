@@ -94,6 +94,7 @@ class SampleSheetIO:
             'assays': {},
             'all_ok': True,
             'critical_count': 0,
+            'use_file_names': True,  # HACK for issue #644
         }
 
     def _handle_warnings(self, warnings, db_obj):
@@ -120,22 +121,22 @@ class SampleSheetIO:
                 'message': str(warning.message),
                 'category': warning.category.__name__,
             }
-            obj_uuid = str(db_obj.sodar_uuid)
+            file_name = str(db_obj.file_name).split('/')[-1]  # Strip path
 
             if isinstance(db_obj, Investigation):
                 self._warnings['investigation'].append(warn_data)
 
             elif isinstance(db_obj, Study):
-                if obj_uuid not in self._warnings['studies']:
-                    self._warnings['studies'][obj_uuid] = []
+                if file_name not in self._warnings['studies']:
+                    self._warnings['studies'][file_name] = []
 
-                self._warnings['studies'][obj_uuid].append(warn_data)
+                self._warnings['studies'][file_name].append(warn_data)
 
             elif isinstance(db_obj, Assay):
-                if obj_uuid not in self._warnings['assays']:
-                    self._warnings['assays'][obj_uuid] = []
+                if file_name not in self._warnings['assays']:
+                    self._warnings['assays'][file_name] = []
 
-                self._warnings['assays'][obj_uuid].append(warn_data)
+                self._warnings['assays'][file_name].append(warn_data)
 
             logger.warning(
                 'Parser warning: "{}" '

@@ -806,6 +806,9 @@ class SampleSheetContextGetAPIView(
             'configuration': investigation.get_configuration()
             if investigation
             else None,
+            'inv_file_name': investigation.file_name.split('/')[-1]
+            if investigation
+            else None,
             'irods_status': investigation.irods_status
             if investigation
             else None,
@@ -816,7 +819,9 @@ class SampleSheetContextGetAPIView(
             if investigation
             else None,
             'parser_warnings': True
-            if investigation and investigation.parser_warnings
+            if investigation
+            and investigation.parser_warnings
+            and 'use_file_names' in investigation.parser_warnings
             else False,
             'irods_webdav_enabled': settings.IRODS_WEBDAV_ENABLED,
             'irods_webdav_url': settings.IRODS_WEBDAV_URL.rstrip('/'),

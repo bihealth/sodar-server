@@ -15,7 +15,7 @@
           </thead>
           <tbody>
             <tr v-for="(warning, index) in warnings" :key="index">
-              <td class="text-nowrap">{{ warning['source'] }}</td>
+              <td class="text-nowrap text-monospace">{{ warning['source'] }}</td>
               <td class="text-monospace">{{ warning['message'] }}</td>
               <td class="text-monospace">{{ warning['category'] }}</td>
             </tr>
@@ -80,31 +80,26 @@ export default {
                 this.warnings,
                 buildWarnings(
                   response['warnings']['investigation'],
-                  'Investigation'
+                  this.app.sodarContext['inv_file_name']
                 )
               )
             }
-            for (let studyUuid in this.app.sodarContext['studies']) {
-              if (response['warnings']['studies'].hasOwnProperty(studyUuid)) {
-                this.warnings.push.apply(
-                  this.warnings,
-                  buildWarnings(
-                    response['warnings']['studies'][studyUuid],
-                    'Study: ' + this.app.sodarContext['studies'][studyUuid]['display_name']
-                  )
+            for (let studyFileName in response['warnings']['studies']) {
+              this.warnings.push.apply(
+                this.warnings,
+                buildWarnings(
+                  response['warnings']['studies'][studyFileName], studyFileName
                 )
-              }
-              for (let assayUuid in this.app.sodarContext['studies'][studyUuid]['assays']) {
-                if (response['warnings']['assays'].hasOwnProperty(assayUuid)) {
-                  this.warnings.push.apply(
-                    this.warnings,
-                    buildWarnings(
-                      response['warnings']['assays'][assayUuid],
-                      'Assay: ' + this.app.sodarContext['studies'][studyUuid]['assays'][assayUuid]['display_name']
-                    )
-                  )
-                }
-              }
+              )
+            }
+            for (let assayFileName in response['warnings']['assays']) {
+              this.warnings.push.apply(
+                this.warnings,
+                buildWarnings(
+                  response['warnings']['assays'][assayFileName],
+                  assayFileName
+                )
+              )
             }
           } else if ('message' in response) {
             this.message = response['message']

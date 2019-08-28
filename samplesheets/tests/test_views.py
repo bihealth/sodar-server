@@ -322,6 +322,7 @@ class TestContextGetAPIView(TestViewsBase):
         self.maxDiff = None
         expected = {
             'configuration': self.investigation.get_configuration(),
+            'inv_file_name': self.investigation.file_name.split('/')[-1],
             'irods_status': False,
             'parser_version': self.investigation.parser_version,
             'irods_backend_enabled': True
