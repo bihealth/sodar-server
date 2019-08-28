@@ -13,12 +13,15 @@ from altamisa.isatab import (
     AssayWriter,
     models as isa_models,
 )
+from altamisa.exceptions import CriticalIsaValidationWarning
 import attr
 from fnmatch import fnmatch
 import io
 import logging
 import time
 import warnings
+
+from django.db import transaction
 
 from .models import (
     Investigation,
@@ -69,13 +72,15 @@ logger = logging.getLogger(__name__)
 
 
 class SampleSheetIO:
-    def __init__(self, warn=True):
+    def __init__(self, warn=True, allow_critical=False):
         """
         Initializate SampleSheetIO.
 
         :param warn: Handle warnings in import/export (bool)
+        :param allow_critical: Allow critical warnings in import (bool)
         """
         self._warn = warn
+        self._allow_critical = allow_critical
         self._warnings = self._init_warnings()
 
     # General internal functions -----------------------------------------------
@@ -88,6 +93,7 @@ class SampleSheetIO:
             'studies': {},
             'assays': {},
             'all_ok': True,
+            'critical_count': 0,
         }
 
     def _handle_warnings(self, warnings, db_obj):
@@ -107,6 +113,9 @@ class SampleSheetIO:
         self._warnings['all_ok'] = False
 
         for warning in warnings:
+            if warning.category == CriticalIsaValidationWarning:
+                self._warnings['critical_count'] += 1
+
             warn_data = {
                 'message': str(warning.message),
                 'category': warning.category.__name__,
@@ -427,6 +436,7 @@ class SampleSheetIO:
             'Added {} arcs to "{}"'.format(len(arc_vals), db_parent.get_name())
         )
 
+    @transaction.atomic
     def import_isa(self, isa_zip, project):
         """
         Import ISA investigation and its studies/assays from an ISAtab Zip
@@ -436,6 +446,7 @@ class SampleSheetIO:
                         investigation)
         :param project: Project object
         :return: Investigation
+        :raise: SampleSheetExportException if critical warnings are raised
         """
         t_start = time.time()
         logger.info(
@@ -674,6 +685,15 @@ class SampleSheetIO:
             SampleSheetTableBuilder.build_study_reference(study)
 
         logger.debug('Rendering OK')
+        cc = self._warnings['critical_count']
+
+        # Raise exception if we got criticals and don't accept them
+        if not self._allow_critical and cc > 0:
+            ex_msg = (
+                '{} critical warning{} raised by altamISA, '
+                'import failed'.format(cc, 's' if cc != 1 else '')
+            )
+            raise SampleSheetImportException(ex_msg, self._warnings)
 
         # Store parser warnings (only if warnings were raised)
         if not self._warnings['all_ok']:
@@ -1280,6 +1300,15 @@ class SampleSheetIO:
                 assay_out.close()
 
         return ret
+
+
+# Exceptions -------------------------------------------------------------------
+
+
+class SampleSheetImportException(Exception):
+    """Sample sheet importing exception"""
+
+    pass
 
 
 # iRODS Utils ------------------------------------------------------------------

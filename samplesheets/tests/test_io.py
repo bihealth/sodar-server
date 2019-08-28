@@ -32,7 +32,7 @@ class SampleSheetIOMixin:
         :return: Investigation object
         """
         zf = ZipFile(os.fsdecode(path))
-        sheet_io = SampleSheetIO(warn=False)
+        sheet_io = SampleSheetIO(warn=False, allow_critical=True)
         investigation = sheet_io.import_isa(zf, project)
         investigation.active = True  # Must set this explicitly
         investigation.save()
@@ -121,7 +121,7 @@ class TestSampleSheetImport(TestSampleSheetIOBase):
 class TestSampleSheetExport(TestSampleSheetIOBase):
     def test_isa_export_batch(self):
         """Test ISAtab export in batch"""
-        sheet_io = SampleSheetIO(warn=False)
+        sheet_io = SampleSheetIO(warn=False, allow_critical=True)
 
         for zip_name, zip_file in self._get_isatab_files().items():
             investigation = self._import_isa_from_file(

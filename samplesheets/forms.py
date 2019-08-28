@@ -77,11 +77,8 @@ class SampleSheetImportForm(forms.Form):
     def save(self, *args, **kwargs):
         sheet_io = SampleSheetIO()
 
-        try:
-            investigation = sheet_io.import_isa(
-                isa_zip=self.isa_zip, project=self.project
-            )
-            return investigation
-
-        except Exception as ex:
-            raise Exception('ISAtab parsing failed: {}'.format(ex))
+        # NOTE: May raise an exception, caught and handled in the view
+        investigation = sheet_io.import_isa(
+            isa_zip=self.isa_zip, project=self.project
+        )
+        return investigation

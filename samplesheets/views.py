@@ -32,7 +32,7 @@ from projectroles.views import (
 )
 
 from .forms import SampleSheetImportForm
-from .io import SampleSheetIO
+from .io import SampleSheetIO, SampleSheetImportException
 from .models import (
     Investigation,
     Study,
@@ -259,13 +259,26 @@ class SampleSheetImportView(
                     pk=old_inv.pk
                 ).delete()
 
+            if isinstance(ex, SampleSheetImportException):
+                ex_msg = str(ex.args[0])
+                extra_data = {'warnings': ex.args[1]}
+
+                # TODO: Report critical warnings here
+                messages.error(self.request, ex_msg)
+
+            else:
+                ex_msg = 'ISAtab import failed: {}'.format(ex)
+                extra_data = None
+                messages.error(self.request, ex_msg)
+
             if tl_event:
-                tl_event.set_status('FAILED', status_desc=str(ex))
+                tl_event.set_status(
+                    'FAILED', status_desc=ex_msg, extra_data=extra_data
+                )
 
             if settings.DEBUG:
                 raise ex
 
-            messages.error(self.request, str(ex))
             return redirect(redirect_url)  # NOTE: Return here with failure
 
         # If all went well..

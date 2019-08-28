@@ -42,6 +42,7 @@ Changed
     - Improve comments display in Overview (#632)
     - Refactor ``io`` module into a class (#562)
     - Suppress altamISA warnings during testing (#637)
+    - Fail when encountering critical altamISA warnings in ISAtab import (#573)
 
 Fixed
 -----
@@ -55,6 +56,7 @@ Fixed
     - Redundant unit/value parsing for comments during import (#629)
     - Missing label for unknown configuration in Overview (#638)
     - Overview statistics table margin change (#630)
+    - Leftover database objects from ISAtab import crash (#643)
 
 Removed
 -------
