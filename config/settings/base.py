@@ -534,6 +534,9 @@ IRODSINFO_SSL_VERIFY = env.bool('IRODSINFO_SSL_VERIFY', True)
 
 
 # Samplesheets settings
+
+# Allow critical altamISA warnings on import
+SHEETS_ALLOW_CRITICAL = env.bool('SHEETS_ALLOW_CRITICAL', False)
 SHEETS_ENABLE_CACHE = True  # Temporary, see issue #556
 SHEETS_IRODS_LIMIT = env.int('SHEETS_IRODS_LIMIT', 50)  # iRODS file query limit
 SHEETS_TABLE_HEIGHT = 400  # Study/assay table height

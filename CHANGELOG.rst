@@ -21,6 +21,7 @@ Added
     - Temporary ``get_comment()`` and ``get_comments()`` helpers (#629, #631)
     - Timeline logging for import and export warnings (#639)
     - Timeline logging for failed ISAtab import (#642)
+    - ``SHEETS_ALLOW_CRITICAL`` setting for handling critical import warnings (#573)
 
 Changed
 -------

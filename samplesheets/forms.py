@@ -1,6 +1,7 @@
 from zipfile import ZipFile
 
 from django import forms
+from django.conf import settings
 
 # Projectroles dependency
 from projectroles.models import Project
@@ -75,7 +76,7 @@ class SampleSheetImportForm(forms.Form):
         return self.cleaned_data
 
     def save(self, *args, **kwargs):
-        sheet_io = SampleSheetIO()
+        sheet_io = SampleSheetIO(allow_critical=settings.SHEETS_ALLOW_CRITICAL)
 
         # NOTE: May raise an exception, caught and handled in the view
         investigation = sheet_io.import_isa(
