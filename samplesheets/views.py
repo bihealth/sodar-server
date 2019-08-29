@@ -353,8 +353,12 @@ class SampleSheetImportView(
                 '<a href="#/warnings">parser warnings raised</a>)'
             )
 
-        # Update project cache if replacing sheets
-        if form_action == 'replace' and settings.SHEETS_ENABLE_CACHE:
+        # Update project cache if replacing sheets and iRODS collections exists
+        if (
+            form_action == 'replace'
+            and self.object.irods_status
+            and settings.SHEETS_ENABLE_CACHE
+        ):
             update_project_cache_task.delay(
                 project_uuid=str(project.sodar_uuid),
                 user_uuid=str(self.request.user.sodar_uuid),

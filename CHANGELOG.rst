@@ -61,6 +61,7 @@ Fixed
     - Overview statistics table margin change (#630)
     - Leftover database objects from ISAtab import crash (#643)
     - Extract label rendering as an ontology term (#563)
+    - Cache updated on sheet replace with iRODS collections not created (#622)
 
 Removed
 -------
