@@ -265,25 +265,28 @@ class SampleSheetImportView(
 
                 # HACK: Report critical warnings here
                 # TODO: Provide these to a proper view from Timeline instead
-                e = ex_msg
+                eh = ex_msg + '<ul>'
 
                 def _add_crits(legend, warnings, ex_html):
                     for w in warnings:
                         if w['category'] == 'CriticalIsaValidationWarning':
-                            ex_html += '<br />{}: {}'.format(
+                            ex_html += '<li>{}: {}</li>'.format(
                                 legend, w['message']
                             )
                     return ex_html
 
-                e = _add_crits('Investigation', ex.args[1]['investigation'], e)
+                eh = _add_crits(
+                    'Investigation', ex.args[1]['investigation'], eh
+                )
 
                 for k, v in ex.args[1]['studies'].items():
-                    e = _add_crits(k, v, e)
+                    eh = _add_crits(k, v, eh)
 
                 for k, v in ex.args[1]['assays'].items():
-                    e = _add_crits(k, v, e)
+                    eh = _add_crits(k, v, eh)
 
-                messages.error(self.request, mark_safe(e))
+                eh += '</li>'
+                messages.error(self.request, mark_safe(eh))
 
             else:
                 ex_msg = 'ISAtab import failed: {}'.format(ex)
@@ -295,8 +298,10 @@ class SampleSheetImportView(
                     'FAILED', status_desc=ex_msg, extra_data=extra_data
                 )
 
+            '''
             if settings.DEBUG:
                 raise ex
+            '''
 
             return redirect(redirect_url)  # NOTE: Return here with failure
 

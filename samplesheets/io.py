@@ -102,7 +102,7 @@ class SampleSheetIO:
         Store and log warnings resulting from an altamISA operation.
 
         :param warnings: Warning objects
-        :param db_obj: SODAR database object which was parsed (Investigation,
+        :param db_obj: SODAR database object which was imported (Investigation,
                        Study, Assay)
         """
         if not warnings or not self._warn:
@@ -139,7 +139,7 @@ class SampleSheetIO:
                 self._warnings['assays'][file_name].append(warn_data)
 
             logger.warning(
-                'Parser warning: "{}" '
+                'altamISA warning: "{}" '
                 '(Category: {})'.format(
                     warning.message, warning.category.__name__
                 )
@@ -450,9 +450,7 @@ class SampleSheetIO:
         :raise: SampleSheetExportException if critical warnings are raised
         """
         t_start = time.time()
-        logger.info(
-            'CUBI altamISA parser version: {}'.format(altamisa.__version__)
-        )
+        logger.info('altamISA version: {}'.format(altamisa.__version__))
 
         # Read zip file
         logger.info(
@@ -497,8 +495,8 @@ class SampleSheetIO:
         # Handle parser warnings for investigation
         self._handle_warnings(ws, db_investigation)
 
-        logger.debug(
-            'Created investigation "{}"'.format(db_investigation.title)
+        logger.info(
+            'Imported investigation "{}"'.format(db_investigation.title)
         )
         study_count = 0
         db_studies = []
@@ -519,7 +517,7 @@ class SampleSheetIO:
 
         # Create studies
         for isa_study in isa_inv.studies:
-            logger.debug('Parsing study "{}"..'.format(isa_study.info.title))
+            logger.info('Importing study "{}"..'.format(isa_study.info.title))
             obj_lookup = {}  # Lookup dict for study materials and processes
             study_id = 'p{}-s{}'.format(project.pk, study_count)
 
@@ -561,7 +559,7 @@ class SampleSheetIO:
             # Handle parser warnings for study
             self._handle_warnings(ws, db_study)
 
-            logger.debug('Added study "{}"'.format(db_study.title))
+            logger.info('Imported study "{}"'.format(db_study.title))
 
             # Create protocols
             protocol_vals = []
@@ -618,7 +616,7 @@ class SampleSheetIO:
                     (a_i for a_i in isa_study.assays if a_i.path == assay_path),
                     None,
                 )
-                logger.debug('Parsing assay "{}"..'.format(isa_assay.path))
+                logger.info('Importing assay "{}"..'.format(isa_assay.path))
                 assay_id = 'a{}'.format(assay_count)
 
                 # Parse and validate assay file
@@ -652,8 +650,8 @@ class SampleSheetIO:
                 # Handle parser warnings for assay
                 self._handle_warnings(ws, db_assay)
 
-                logger.debug(
-                    'Added assay "{}" in study "{}"'.format(
+                logger.info(
+                    'Imported assay "{}" in study "{}"'.format(
                         db_assay.file_name, db_study.title
                     )
                 )
@@ -1093,6 +1091,8 @@ class SampleSheetIO:
         isa_assays = {}
         study_idx = 0
 
+        logger.info('Converting database objects into altamISA models..')
+
         for study in investigation.studies.all().order_by('file_name'):
             # Get all materials and nodes in study and its assays
             all_materials = {m.unique_name: m for m in study.materials.all()}
@@ -1216,10 +1216,14 @@ class SampleSheetIO:
             studies=tuple(isa_study_infos),
         )
 
+        logger.info('Models converted')
+
         # Prepare return data
         # (the ZIP file preparing and serving should happen in the view)
         ret = {'investigation': {}, 'studies': {}, 'assays': {}}
         inv_out = io.StringIO()
+
+        logger.info('Validating and exporting investigation..')
 
         # Write investigation
         with warnings.catch_warnings(record=True) as ws:
@@ -1240,11 +1244,19 @@ class SampleSheetIO:
         ret['investigation']['data'] = inv_out.getvalue()
         inv_out.close()
 
+        logger.info('Exported investigation')
+
         # Write studies
         for study_idx, study_info in enumerate(inv_info.studies):
             db_study = Study.objects.get(
                 investigation=investigation,
                 identifier=study_info.info.identifier,
+            )
+
+            logger.info(
+                'Validating and exporting study "{}"..'.format(
+                    db_study.file_name
+                )
             )
 
             with warnings.catch_warnings(record=True) as ws:
@@ -1270,10 +1282,18 @@ class SampleSheetIO:
             }
             study_out.close()
 
+            logger.info('Exported study "{}"'.format(db_study.file_name))
+
             # Write assays
             for assay_idx, assay_info in enumerate(study_info.assays):
                 db_assay = Assay.objects.get(
                     study=db_study, file_name=assay_info.path
+                )
+
+                logger.info(
+                    'Validating and exporting assay "{}"..'.format(
+                        db_assay.file_name
+                    )
                 )
 
                 with warnings.catch_warnings(record=True) as ws:
@@ -1299,6 +1319,8 @@ class SampleSheetIO:
 
                 ret['assays'][assay_info.path] = {'data': assay_out.getvalue()}
                 assay_out.close()
+
+                logger.info('Exported assay "{}"'.format(db_assay.file_name))
 
         return ret
 
