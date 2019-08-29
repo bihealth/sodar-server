@@ -494,7 +494,6 @@ class SampleSheetTableBuilder:
 
             self._add_cell(obj.name, obj=obj)  # Name + attrs
 
-            # TODO: TBD: How to render new extract label notation?
             if (
                 obj.material_type == 'Labeled Extract Name'
                 and obj.extract_label
@@ -567,8 +566,8 @@ class SampleSheetTableBuilder:
 
             # Special case: Labeled Extract Name
             elif h == th.LABELED_EXTRACT_NAME and hasattr(obj, 'extract_label'):
-                self._add_cell(
-                    obj.extract_label,
+                self._add_annotation(
+                    {'value': obj.extract_label},
                     HEADER_MAP[th.LABELED_EXTRACT_NAME],
                     obj=obj,
                 )

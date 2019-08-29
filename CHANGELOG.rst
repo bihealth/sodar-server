@@ -59,6 +59,7 @@ Fixed
     - Missing label for unknown configuration in Overview (#638)
     - Overview statistics table margin change (#630)
     - Leftover database objects from ISAtab import crash (#643)
+    - Extract label rendering as an ontology term (#563)
 
 Removed
 -------
