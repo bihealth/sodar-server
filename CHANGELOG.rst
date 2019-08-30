@@ -37,7 +37,6 @@ Changed
     - Color potentially dangerous links (sodar_core#64)
     - Refactor sheet cell data access and sorting (#597)
     - Upgrade Vue.js app dependencies (#580)
-    - Upgrade to altamISA v0.2.1
     - Update ISAtab importing to support altamISA v0.2+ (#617)
     - Improve characteristics list parsing (#616, #618)
     - Always import ``material_type`` field for ``GenericMaterial``
@@ -48,6 +47,7 @@ Changed
     - Suppress altamISA warnings during testing (#637)
     - Fail when encountering critical altamISA warnings in ISAtab import (#573)
     - Use file name as study/assay key in parser warning data (#644)
+    - Upgrade to altamISA v0.2.3 (#655)
 
 Fixed
 -----
