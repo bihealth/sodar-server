@@ -386,12 +386,10 @@ class SampleSheetIO:
                 'performer': p.performer,
                 'perform_date': p.date if p.date else None,
                 'array_design_ref': p.array_design_ref,
-                'first_dimension': cls._import_ontology_vals(p.first_dimension)
+                'first_dimension': cls._import_multi_val(p.first_dimension)
                 if p.first_dimension
                 else {},
-                'second_dimension': cls._import_ontology_vals(
-                    p.second_dimension
-                )
+                'second_dimension': cls._import_multi_val(p.second_dimension)
                 if p.second_dimension
                 else {},
                 'headers': p.headers,

@@ -23,6 +23,8 @@ Added
     - Timeline logging for failed ISAtab import (#642)
     - ``SHEETS_ALLOW_CRITICAL`` setting for handling critical import warnings (#573)
     - PacBio support in ``dna_sequencing`` assay app (#628)
+    - Rendering for Assay Design REF columns (#652)
+    - Rendering for First Dimension and Second Dimension columns (#652, #653)
 
 Changed
 -------
@@ -62,6 +64,9 @@ Fixed
     - Leftover database objects from ISAtab import crash (#643)
     - Extract label rendering as an ontology term (#563)
     - Cache updated on sheet replace with iRODS collections not created (#622)
+    - Name column rendering for Labeled Extract Name materials (#652)
+    - Data File name column rendering (#652)
+    - Crash in importing First Dimension and Second Dimension fields (#653)
 
 Removed
 -------

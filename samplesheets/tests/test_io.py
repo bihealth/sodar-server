@@ -176,8 +176,12 @@ class TestSampleSheetExport(TestSampleSheetIOBase):
                 # Compare rows
                 def _get_row(row):
                     # HACK for missing tabs for empty fields in certain files
-                    if len(row) == 2 and not row[1]:
-                        return row[:1]
+                    # TODO: Fix input files instead
+                    if (len(row) == 2 and not row[1]) or (
+                        row[0].startswith('Term Source')
+                        and not row[len(row) - 1]
+                    ):
+                        return sorted(row[: len(row) - 1])
 
                     return sorted(row)
 

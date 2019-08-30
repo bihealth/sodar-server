@@ -140,7 +140,7 @@ class TestGetIndexByHeader(TestUtilsBase):
                 ],
                 header_value='replicate',
             ),
-            7,
+            8,
         )
 
     def test_get_not_found(self):

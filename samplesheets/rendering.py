@@ -561,15 +561,22 @@ class SampleSheetTableBuilder:
                 )
 
             # Special case: Name
-            elif h in ALTAMISA_MATERIAL_NAMES:
+            elif h in ALTAMISA_MATERIAL_NAMES or h in th.DATA_FILE_HEADERS:
                 self._add_cell(obj.name, 'Name', obj=obj)
 
-            # Special case: Labeled Extract Name
+            # Special case: Labeled Extract Name & Label
             elif h == th.LABELED_EXTRACT_NAME and hasattr(obj, 'extract_label'):
+                self._add_cell(obj.name, 'Name', obj=obj)
                 self._add_annotation(
                     {'value': obj.extract_label},
                     HEADER_MAP[th.LABELED_EXTRACT_NAME],
                     obj=obj,
+                )
+
+            # Special case: Array Design REF (NOTE: not actually a reference!)
+            elif h == th.ARRAY_DESIGN_REF and hasattr(obj, 'array_design_ref'):
+                self._add_cell(
+                    obj.array_design_ref, 'Array Design REF', obj=obj
                 )
 
             # Special case: Protocol Name
@@ -585,6 +592,18 @@ class SampleSheetTableBuilder:
             # Special case: Process Name
             elif isinstance(obj, Process) and h in th.PROCESS_NAME_HEADERS:
                 self._add_cell(obj.name, 'Name', obj=obj)
+
+            # Special case: First Dimension
+            elif isinstance(obj, Process) and h == th.FIRST_DIMENSION:
+                self._add_annotation(
+                    {'value': obj.first_dimension}, 'First Dimension', obj=obj
+                )
+
+            # Special case: First Dimension
+            elif isinstance(obj, Process) and h == th.SECOND_DIMENSION:
+                self._add_annotation(
+                    {'value': obj.second_dimension}, 'Second Dimension', obj=obj
+                )
 
         # Add top header
         if self._first_row:

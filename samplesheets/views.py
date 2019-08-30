@@ -298,10 +298,8 @@ class SampleSheetImportView(
                     'FAILED', status_desc=ex_msg, extra_data=extra_data
                 )
 
-            '''
             if settings.DEBUG:
                 raise ex
-            '''
 
             return redirect(redirect_url)  # NOTE: Return here with failure
 
