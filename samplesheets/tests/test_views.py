@@ -5,6 +5,7 @@ from test_plus.test import TestCase
 from unittest import skipIf
 
 from django.conf import settings
+from django.test import override_settings
 from django.urls import reverse
 
 # Projectroles dependency
@@ -14,7 +15,7 @@ from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
 from projectroles.tests.test_views import KnoxAuthMixin
 
 from ..models import Investigation, Study, Assay, Protocol, Process
-from .test_io import SampleSheetIOMixin, SHEET_DIR
+from .test_io import SampleSheetIOMixin, SHEET_DIR, SHEET_DIR_SPECIAL
 
 
 # SODAR constants
@@ -38,6 +39,8 @@ SHEET_NAME_SMALL2 = 'i_small2.zip'
 SHEET_PATH_SMALL2 = SHEET_DIR + SHEET_NAME_SMALL2
 SHEET_NAME_MINIMAL = 'i_minimal.zip'
 SHEET_PATH_MINIMAL = SHEET_DIR + SHEET_NAME_MINIMAL
+SHEET_NAME_CRITICAL = 'BII-I-1_critical.zip'
+SHEET_PATH_CRITICAL = SHEET_DIR_SPECIAL + SHEET_NAME_CRITICAL
 SOURCE_NAME = '0815'
 SOURCE_NAME_FAIL = 'oop5Choo'
 USER_PASSWORD = 'password'
@@ -123,7 +126,7 @@ class TestSampleSheetImportView(TestViewsBase):
     """Tests for the investigation import view"""
 
     def test_render(self):
-        """Test rendering the project sheets view"""
+        """Test rendering the investigation import view"""
 
         with self.login(self.user):
             response = self.client.get(
@@ -181,7 +184,7 @@ class TestSampleSheetImportView(TestViewsBase):
         self.assertEqual(uuid, new_inv.sodar_uuid)
 
     def test_post_replace_not_allowed(self):
-        """Test replacing an iRODS-enabled investigation with missing studies or assays"""
+        """Test replacing an iRODS-enabled investigation with missing data"""
         inv = self._import_isa_from_file(SHEET_PATH, self.project)
         inv.irods_status = True
         inv.save()
@@ -207,8 +210,63 @@ class TestSampleSheetImportView(TestViewsBase):
         new_inv = Investigation.objects.first()
         self.assertEqual(uuid, new_inv.sodar_uuid)  # Should not have changed
 
+    def test_post_critical_warnings(self):
+        """Test posting an ISAtab which raises critical warnings in altamISA"""
+        timeline = get_backend_api('timeline_backend')
 
-class TestSampleSheetTableExportView(TestViewsBase):
+        # Assert precondition
+        self.assertEqual(Investigation.objects.all().count(), 0)
+
+        with open(SHEET_PATH_CRITICAL, 'rb') as file:
+            with self.login(self.user):
+                values = {'file_upload': file}
+                response = self.client.post(
+                    reverse(
+                        'samplesheets:import',
+                        kwargs={'project': self.project.sodar_uuid},
+                    ),
+                    values,
+                )
+
+        # Assert postconditions
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Investigation.objects.all().count(), 0)
+
+        # Assert timeline event
+        tl_event = timeline.get_project_events(self.project).order_by('-pk')[0]
+        tl_status = tl_event.get_current_status()
+        self.assertIsNotNone(tl_status.extra_data['warnings'])
+
+    @override_settings(SHEETS_ALLOW_CRITICAL=True)
+    def test_post_critical_warnings_allowed(self):
+        """Test posting an ISAtab with critical warnings allowed"""
+        timeline = get_backend_api('timeline_backend')
+
+        # Assert precondition
+        self.assertEqual(Investigation.objects.all().count(), 0)
+
+        with open(SHEET_PATH_CRITICAL, 'rb') as file:
+            with self.login(self.user):
+                values = {'file_upload': file}
+                response = self.client.post(
+                    reverse(
+                        'samplesheets:import',
+                        kwargs={'project': self.project.sodar_uuid},
+                    ),
+                    values,
+                )
+
+        # Assert postconditions
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Investigation.objects.all().count(), 1)
+
+        # Assert timeline event
+        tl_event = timeline.get_project_events(self.project).order_by('-pk')[0]
+        tl_status = tl_event.get_current_status()
+        self.assertIsNotNone(tl_status.extra_data['warnings'])
+
+
+class TestSampleSheetTSVExportView(TestViewsBase):
     """Tests for the sample sheet TSV export view"""
 
     def setUp(self):
@@ -242,6 +300,53 @@ class TestSampleSheetTableExportView(TestViewsBase):
                 )
             )
             self.assertEqual(response.status_code, 200)
+
+
+class TestSampleSheetISAExportView(TestViewsBase):
+    """Tests for the investigation ISAtab export view"""
+
+    def test_get(self):
+        """Test requesting a file from the ISAtab export view"""
+        timeline = get_backend_api('timeline_backend')
+
+        # Import investigation
+        self.investigation = self._import_isa_from_file(
+            SHEET_PATH, self.project
+        )
+        self.study = self.investigation.studies.first()
+        self.assay = self.study.assays.first()
+
+        with self.login(self.user):
+            response = self.client.get(
+                reverse(
+                    'samplesheets:export_isa',
+                    kwargs={'project': self.project.sodar_uuid},
+                )
+            )
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(
+                response.get('Content-Disposition'),
+                'attachment; filename="{}"'.format(
+                    self.investigation.archive_name
+                ),
+            )
+
+        # Assert data in timeline event
+        tl_event = timeline.get_project_events(self.project).order_by('-pk')[0]
+        tl_status = tl_event.get_current_status()
+        self.assertIsNotNone(tl_status.extra_data['warnings'])
+
+    def test_get_no_investigation(self):
+        """Test requesting an ISAtab export with no investigation provided"""
+
+        with self.login(self.user):
+            response = self.client.get(
+                reverse(
+                    'samplesheets:export_isa',
+                    kwargs={'project': self.project.sodar_uuid},
+                )
+            )
+            self.assertEqual(response.status_code, 302)
 
 
 class TestSampleSheetDeleteView(TestViewsBase):

@@ -949,12 +949,7 @@ class SampleSheetIO:
         :param parameters: List from a parameters JSONField
         :return: Dict
         """
-        ret = {}
-
-        for p in parameters:
-            ret[p['name']] = cls._export_value(p)
-
-        return ret
+        return {p['name']: cls._export_value(p) for p in parameters}
 
     @classmethod
     def _export_param_values(cls, param_values):
