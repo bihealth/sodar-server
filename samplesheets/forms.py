@@ -20,11 +20,15 @@ class SampleSheetImportForm(forms.Form):
     class Meta:
         fields = ['file_upload']
 
-    def __init__(self, project=None, replace=False, *args, **kwargs):
+    def __init__(
+        self, project=None, replace=False, current_user=None, *args, **kwargs
+    ):
         """Override form initialization"""
         super().__init__(*args, **kwargs)
         self.isa_zip = None
         self.project = None
+        self.replace = replace
+        self.current_user = current_user
 
         if project:
             try:
@@ -80,6 +84,9 @@ class SampleSheetImportForm(forms.Form):
 
         # NOTE: May raise an exception, caught and handled in the view
         investigation = sheet_io.import_isa(
-            isa_zip=self.isa_zip, project=self.project
+            isa_zip=self.isa_zip,
+            project=self.project,
+            user=self.current_user,
+            replace=self.replace,
         )
         return investigation

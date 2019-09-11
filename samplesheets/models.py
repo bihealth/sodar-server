@@ -1,5 +1,6 @@
 import uuid
 
+from django.conf import settings
 from django.contrib.postgres.fields import ArrayField, JSONField
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -10,6 +11,10 @@ from django.utils.text import slugify
 from projectroles.models import Project
 
 from .utils import get_alt_names, get_comment, ALT_NAMES_COUNT
+
+
+# Access Django user model
+AUTH_USER_MODEL = getattr(settings, 'AUTH_USER_MODEL', 'auth.User')
 
 
 # Local constants
@@ -25,6 +30,11 @@ GENERIC_MATERIAL_TYPES = {
 GENERIC_MATERIAL_CHOICES = [(k, v) for k, v in GENERIC_MATERIAL_TYPES.items()]
 NOT_AVAILABLE_STR = '(N/A)'
 CONFIG_LABEL = 'Created With Configuration'
+
+ISATAB_TAGS = {
+    'IMPORT': 'Imported from an ISAtab archive',
+    'REPLACE': 'Replacing a previous ISAtab',
+}
 
 
 # Utils ------------------------------------------------------------------------
@@ -845,3 +855,85 @@ class Process(BaseSampleSheet):
 
         elif self.study:
             return self.study
+
+
+# ISAtab File Saving -----------------------------------------------------------
+
+
+class ISATab(models.Model):
+    """Class for storing ISAtab files for one investigation, including its
+    studies and assays"""
+
+    #: Project to which the ISAtab belongs
+    project = models.ForeignKey(
+        Project,
+        null=False,
+        related_name='isatabs',
+        help_text='Project to which the ISAtab belongs',
+    )
+
+    #: UUID of related Investigation object
+    investigation_uuid = models.UUIDField(
+        null=True,
+        blank=True,
+        unique=False,
+        help_text='UUID of related Investigation',
+    )
+    # NOTE: No ForeignKey because the investigations may have been deleted
+
+    #: File name of ISAtab archive (optional)
+    archive_name = models.CharField(
+        max_length=DEFAULT_LENGTH,
+        unique=False,
+        blank=True,
+        null=True,
+        help_text='File name of ISAtab archive (optional)',
+    )
+
+    #: Data from ISAtab files as a dict
+    data = JSONField(default=dict, help_text='Data from ISAtab files as a dict')
+
+    #: Tags for categorizing the ISAtab
+    tags = ArrayField(
+        models.CharField(max_length=DEFAULT_LENGTH, blank=True),
+        default=list,
+        help_text='Tags for categorizing the ISAtab',
+    )
+
+    #: User saving of this ISAtab (optional)
+    user = models.ForeignKey(
+        AUTH_USER_MODEL,
+        related_name='isatabs',
+        null=True,
+        help_text='User saving this ISAtab (optional)',
+    )
+
+    #: DateTime of ISAtab creation
+    date_created = models.DateTimeField(
+        auto_now=True, help_text='DateTime of ISAtab creation'
+    )
+
+    #: Version of altamISA used when processing this ISAtab
+    parser_version = models.CharField(
+        max_length=DEFAULT_LENGTH,
+        blank=True,
+        null=True,
+        help_text='Version of altamISA used when processing this ISAtab',
+    )
+
+    #: Optional extra data
+    extra_data = JSONField(default=dict, help_text='Optional extra data')
+
+    #: Internal UUID for the object
+    sodar_uuid = models.UUIDField(
+        default=uuid.uuid4, unique=True, help_text='SODAR UUID for the object'
+    )
+
+    def __str__(self):
+        return '{}: {} ({})'.format(
+            self.project.title, self.archive_name, self.date_created
+        )
+
+    def __repr__(self):
+        values = (self.project.title, self.archive_name, self.date_created)
+        return 'ISATab({})'.format(', '.join(repr(v) for v in values))

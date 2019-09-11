@@ -179,6 +179,8 @@ class SampleSheetImportView(
         except Investigation.DoesNotExist:
             kwargs.update({'replace': False})
 
+        # TODO: Use CurrentUserFormMixin instead (see issue #660)
+        kwargs.update({'current_user': self.request.user})
         return kwargs
 
     def form_valid(self, form):

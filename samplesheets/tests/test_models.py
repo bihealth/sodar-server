@@ -13,17 +13,18 @@ from django.utils import timezone
 from projectroles.models import Role, SODAR_CONSTANTS
 from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
 
-from ..models import (
+from samplesheets.models import (
     Investigation,
     Study,
     Assay,
     Protocol,
     Process,
     GenericMaterial,
+    ISATab,
     NOT_AVAILABLE_STR,
     CONFIG_LABEL,
 )
-from ..utils import get_alt_names
+from samplesheets.utils import get_alt_names
 
 
 # Local constants --------------------------------------------------------------
@@ -94,6 +95,8 @@ PROCESS_PERFORM_DATE = timezone.now()
 
 DEFAULT_DESCRIPTION = 'Description'
 DEFAULT_COMMENTS = {'comment': 'value'}
+
+ISATAB_DATA = {'i_investigation.txt': '', 's_study.txt': '', 'a_assay.txt': ''}
 
 
 # Helper mixins ----------------------------------------------------------------
@@ -328,6 +331,33 @@ class SampleSheetModelMixin:
         }
         investigation.save()
         return investigation
+
+    @classmethod
+    def _make_isatab(
+        cls,
+        project,
+        data,
+        investigation_uuid=None,
+        archive_name=None,
+        tags=[],
+        parser_version=None,
+        user=None,
+        extra_data={},
+    ):
+        """Create an ISATab object in the database"""
+        values = {
+            'project': project,
+            'data': data,
+            'investigation_uuid': investigation_uuid,
+            'archive_name': archive_name,
+            'tags': tags,
+            'parser_version': parser_version,
+            'user': user,
+            'extra_data': extra_data,
+        }
+        obj = ISATab(**values)
+        obj.save()
+        return obj
 
 
 # Test classes -----------------------------------------------------------------
@@ -1006,3 +1036,57 @@ class TestProcess(TestSampleSheetBase):
     def test_get_parent(self):
         """Test Process get_parent() function"""
         self.assertEqual(self.process.get_parent(), self.assay)
+
+
+class TestISATab(TestSampleSheetBase):
+    """Tests for the ISATab model"""
+
+    def setUp(self):
+        super().setUp()
+        self.isatab = self._make_isatab(
+            project=self.project,
+            data=ISATAB_DATA,
+            investigation_uuid=self.investigation.sodar_uuid,
+            archive_name=self.investigation.archive_name,
+            tags=[],
+            parser_version=DEFAULT_PARSER_VERSION,
+            user=self.user_owner,
+        )
+
+    def test_initialization(self):
+        """Test ISATab initialization"""
+        self.maxDiff = None
+        expected = {
+            'id': self.isatab.pk,
+            'project': self.project.pk,
+            'data': ISATAB_DATA,
+            'investigation_uuid': self.investigation.sodar_uuid,
+            'archive_name': self.investigation.archive_name,
+            'tags': [],
+            'parser_version': DEFAULT_PARSER_VERSION,
+            'user': self.user_owner.pk,
+            'extra_data': {},
+            'sodar_uuid': self.isatab.sodar_uuid,
+        }
+        self.assertEqual(model_to_dict(self.isatab), expected)
+
+    def test__str__(self):
+        expected = '{}: {} ({})'.format(
+            self.isatab.project.title,
+            self.isatab.archive_name,
+            self.isatab.date_created,
+        )
+        self.assertEqual(str(self.isatab), expected)
+
+    def test__repr__(self):
+        expected = 'ISATab({})'.format(
+            ', '.join(
+                repr(v)
+                for v in [
+                    self.isatab.project.title,
+                    self.isatab.archive_name,
+                    self.isatab.date_created,
+                ]
+            )
+        )
+        self.assertEqual(repr(self.isatab), expected)

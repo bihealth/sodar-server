@@ -23,16 +23,17 @@ import warnings
 
 from django.db import transaction
 
-from .models import (
+from samplesheets.models import (
     Investigation,
     Study,
     Assay,
     GenericMaterial,
     Protocol,
     Process,
+    ISATab,
 )
-from .rendering import SampleSheetTableBuilder
-from .utils import get_alt_names
+from samplesheets.rendering import SampleSheetTableBuilder
+from samplesheets.utils import get_alt_names
 
 
 # Local constants
@@ -436,7 +437,7 @@ class SampleSheetIO:
         )
 
     @transaction.atomic
-    def import_isa(self, isa_zip, project):
+    def import_isa(self, isa_zip, project, user=None, replace=False):
         """
         Import ISA investigation and its studies/assays from an ISAtab Zip
         archive into the SODAR database using the altamISA parser.
@@ -444,7 +445,9 @@ class SampleSheetIO:
         :param isa_zip: ZipFile (archive containing a single ISAtab
                         investigation)
         :param project: Project object
-        :return: Investigation
+        :param user: User initiating the operation (User or None)
+        :param replace: Whether replacing an existing sheet (bool)
+        :return: Investigation, ISATab
         :raise: SampleSheetExportException if critical warnings are raised
         """
         t_start = time.time()
@@ -456,8 +459,12 @@ class SampleSheetIO:
                 isa_zip.filename
             )
         )
+        isatab_data = {}
         inv_file_path = self.get_inv_paths(isa_zip)[0]
         inv_dir = '/'.join(inv_file_path.split('/')[:-1])
+        isatab_data[inv_file_path.split('/')[-1]] = self._get_import_file(
+            isa_zip, inv_file_path
+        ).read()  # TODO: Do this in a nicer way
         input_file = self._get_import_file(isa_zip, inv_file_path)
 
         # Parse and validate investigation
@@ -518,6 +525,9 @@ class SampleSheetIO:
             logger.info('Importing study "{}"..'.format(isa_study.info.title))
             obj_lookup = {}  # Lookup dict for study materials and processes
             study_id = 'p{}-s{}'.format(project.pk, study_count)
+            isatab_data[str(isa_study.info.path)] = self._get_import_file(
+                isa_zip, self._get_zip_path(inv_dir, isa_study.info.path)
+            ).read()
 
             # Parse and validate study file
             with warnings.catch_warnings(record=True) as ws:
@@ -616,6 +626,9 @@ class SampleSheetIO:
                 )
                 logger.info('Importing assay "{}"..'.format(isa_assay.path))
                 assay_id = 'a{}'.format(assay_count)
+                isatab_data[str(isa_assay.path)] = self._get_import_file(
+                    isa_zip, self._get_zip_path(inv_dir, isa_assay.path)
+                ).read()
 
                 # Parse and validate assay file
                 with warnings.catch_warnings(record=True) as ws:
@@ -704,6 +717,26 @@ class SampleSheetIO:
             'Import of investigation "{}" OK ({:.1f}s)'.format(
                 db_investigation.title, time.time() - t_start
             )
+        )
+
+        # Save original ISAtab data
+        # TODO: TBD: Prevent saving if previous data matches current one?
+        db_isatab = ISATab(
+            project=project,
+            investigation_uuid=db_investigation.sodar_uuid,
+            archive_name=isa_zip.filename,
+            data=isatab_data,
+            tags=['IMPORT'],
+            user=user,
+            parser_version=altamisa.__version__,
+        )
+
+        if replace:
+            db_isatab.tags.append('REPLACE')
+
+        db_isatab.save()
+        logger.info(
+            'Original ISAtab saved (UUID={})'.format(db_isatab.sodar_uuid)
         )
         return db_investigation
 

@@ -14,8 +14,19 @@ from projectroles.plugins import get_backend_api
 from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
 from projectroles.tests.test_views import KnoxAuthMixin
 
-from ..models import Investigation, Study, Assay, Protocol, Process
-from .test_io import SampleSheetIOMixin, SHEET_DIR, SHEET_DIR_SPECIAL
+from samplesheets.models import (
+    Investigation,
+    Study,
+    Assay,
+    Protocol,
+    Process,
+    ISATab,
+)
+from samplesheets.tests.test_io import (
+    SampleSheetIOMixin,
+    SHEET_DIR,
+    SHEET_DIR_SPECIAL,
+)
 
 
 # SODAR constants
@@ -140,8 +151,9 @@ class TestSampleSheetImportView(TestViewsBase):
     def test_post(self):
         """Test posting an ISAtab zip file in the import form"""
 
-        # Assert precondition
+        # Assert preconditions
         self.assertEqual(Investigation.objects.all().count(), 0)
+        self.assertEqual(ISATab.objects.all().count(), 0)
 
         with open(SHEET_PATH, 'rb') as file:
             with self.login(self.user):
@@ -157,14 +169,17 @@ class TestSampleSheetImportView(TestViewsBase):
         # Assert postconditions
         self.assertEqual(response.status_code, 302)
         self.assertEqual(Investigation.objects.all().count(), 1)
+        self.assertEqual(ISATab.objects.all().count(), 1)
+        self.assertListEqual(ISATab.objects.first().tags, ['IMPORT'])
 
     def test_post_replace(self):
         """Test replacing an existing investigation by posting"""
         inv = self._import_isa_from_file(SHEET_PATH, self.project)
         uuid = inv.sodar_uuid
 
-        # Assert precondition
+        # Assert preconditions
         self.assertEqual(Investigation.objects.all().count(), 1)
+        self.assertEqual(ISATab.objects.all().count(), 1)
 
         with open(SHEET_PATH_SMALL2, 'rb') as file:
             with self.login(self.user):
@@ -180,8 +195,12 @@ class TestSampleSheetImportView(TestViewsBase):
         # Assert postconditions
         self.assertEqual(response.status_code, 302)
         self.assertEqual(Investigation.objects.all().count(), 1)
-        new_inv = Investigation.objects.first()
-        self.assertEqual(uuid, new_inv.sodar_uuid)
+        self.assertEqual(uuid, Investigation.objects.first().sodar_uuid)
+        self.assertEqual(ISATab.objects.all().count(), 2)
+        self.assertListEqual(
+            ISATab.objects.all().order_by('-pk').first().tags,
+            ['IMPORT', 'REPLACE'],
+        )
 
     def test_post_replace_not_allowed(self):
         """Test replacing an iRODS-enabled investigation with missing data"""

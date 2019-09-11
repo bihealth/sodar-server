@@ -18,7 +18,7 @@ from test_plus.test import TestCase
 from projectroles.models import Role, SODAR_CONSTANTS
 from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
 
-from samplesheets.models import Investigation
+from samplesheets.models import Investigation, ISATab
 from samplesheets.io import SampleSheetIO
 
 
@@ -33,17 +33,18 @@ class SampleSheetIOMixin:
     """Helper functions for sample sheet i/o"""
 
     @classmethod
-    def _import_isa_from_file(cls, path, project):
+    def _import_isa_from_file(cls, path, project, user=None):
         """
         Import ISA from a zip file.
 
         :param path: Path to zip file
         :param project: Project object
+        :param user: User object or None
         :return: Investigation object
         """
         sheet_io = SampleSheetIO(warn=False, allow_critical=True)
         zf = ZipFile(os.fsdecode(path))
-        investigation = sheet_io.import_isa(zf, project)
+        investigation = sheet_io.import_isa(zf, project, user)
         investigation.active = True  # Must set this explicitly
         investigation.save()
         return investigation
@@ -182,6 +183,7 @@ class TestSampleSheetIOBatch(TestSampleSheetIOBase):
     def test_isa_import_batch(self):
         """Test ISAtab import in batch"""
         self.assertEqual(Investigation.objects.count(), 0)
+        self.assertEqual(ISATab.objects.count(), 0)
 
         for zip_name, zip_file in self._get_isatab_files().items():
             msg = 'file={}'.format(zip_name)
@@ -195,9 +197,12 @@ class TestSampleSheetIOBatch(TestSampleSheetIOBase):
                 return self._fail_isa(zip_name, ex)
 
             self.assertEqual(Investigation.objects.count(), 1, msg=msg)
+            self.assertEqual(ISATab.objects.count(), 1, msg=msg)
 
             investigation.delete()
+            ISATab.objects.first().delete()
             self.assertEqual(Investigation.objects.count(), 0, msg=msg)
+            self.assertEqual(ISATab.objects.count(), 0, msg=msg)
 
     def test_isa_export_batch(self):
         """Test ISAtab export in batch"""
@@ -282,6 +287,31 @@ class TestSampleSheetIOBatch(TestSampleSheetIOBase):
                     self.assertIn(export_cmp[i], import_cmp, msg=msg)
 
             investigation.delete()
+
+    def test_isa_saving_batch(self):
+        """Test original ISAtab saving in batch"""
+        for zip_name, zip_file in self._get_isatab_files().items():
+            try:
+                investigation = self._import_isa_from_file(
+                    zip_file.path, self.project
+                )
+
+            except Exception as ex:
+                return self._fail_isa(zip_name, ex)
+
+            saved_isatab = ISATab.objects.first()
+            zf = ZipFile(zip_file.path)
+
+            for f in [f for f in zf.filelist if f.file_size > 0]:
+                msg = 'zip={}, file={}'.format(zip_name, f.filename)
+                zip_data = zf.open(f.filename).read().decode('utf-8')
+
+                self.assertEqual(
+                    saved_isatab.data[f.filename.split('/')[-1]], zip_data, msg
+                )
+
+            investigation.delete()
+            ISATab.objects.first().delete()
 
 
 class TestSampleSheetIOImport(TestSampleSheetIOBase):

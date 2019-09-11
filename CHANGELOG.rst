@@ -25,6 +25,7 @@ Added
     - PacBio support in ``dna_sequencing`` assay app (#628)
     - Rendering for Assay Design REF columns (#652)
     - Rendering for First Dimension and Second Dimension columns (#652, #653)
+    - Saving of original ISAtab data into the SODAR database (#651)
 
 Changed
 -------
