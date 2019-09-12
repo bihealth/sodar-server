@@ -223,7 +223,7 @@ export default {
         }
       } else if (focusedCell) { // Single cell copy
         const row = gridApi.getDisplayedRowAtIndex(focusedCell.rowIndex)
-        copyData = gridApi.getValue(focusedCell.column.colId, row)
+        copyData = gridApi.getValue(focusedCell.column.colId, row).value
       }
       this.$clipboard(copyData) // Use v-clipboard
       this.clearSelected()
