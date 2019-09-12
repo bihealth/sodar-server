@@ -5,17 +5,36 @@
            :title="title">
     <div v-if="modalData"
          id="sodar-vue-shortcut-modal-content">
-      <div v-for="(cat, index) in modalData"
-           :key="index"
-           class="pb-3">
-        <h5>{{ cat['title'] }}</h5>
-        <div v-if="cat['links'].length > 0">
-          <div v-for="(link, index) in cat['links']" :key="index">
-            <a :href="link['url']" target="_blank">{{ link['label'] }}</a>
-          </div>
-        </div>
-        <div v-else class="text-muted">N/A</div>
-      </div>
+      <table v-for="(cat, index) in modalData"
+             :key="index"
+             class="table sodar-card-table sodar-vue-shortcut-table pb-3">
+        <thead>
+          <tr>
+            <th colspan="2">{{ cat['title']}}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(file, fileIdx) in cat['files']" :key="fileIdx">
+            <td>
+              <a :href="file['url']" target="_blank" :title="file['title']" v-b-tooltip.hover>
+                {{ file['label'] }}
+              </a>
+            </td>
+            <td class="text-right text-nowrap">
+              <b-button
+                  v-for="(extraLink, extraIdx) in file['extra_links']"
+                  :key="extraIdx"
+                  variant="secondary"
+                  class="sodar-list-btn sodar-ss-irods-btn sodar-vue-shortcut-extra-btn ml-1"
+                  :title="extraLink['label']"
+                  :href="extraLink['url']"
+                  v-b-tooltip.hover>
+                <i :class="'fa fa-' + extraLink['icon']"></i>
+              </b-button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
     <!-- Message/error -->
     <div v-else-if="message" class="text-danger font-italic">
@@ -69,7 +88,7 @@ export default {
               let filesFound = false
 
               for (let cat in response['data']) {
-                if (response['data'][cat]['links'].length > 0) {
+                if (response['data'][cat]['files'].length > 0) {
                   filesFound = true
                   break
                 }

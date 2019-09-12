@@ -7,24 +7,42 @@ from django.conf import settings
 from django.urls import reverse
 
 # Constants
+IGV_URL_BASE = 'http://127.0.0.1:60151'
 FILE_TYPE_SUFFIXES = {'bam': '.bam', 'vcf': '.vcf.gz'}
 
 
-def get_igv_url(source, app_name):
+def get_igv_session_url(source, app_name, merge=False):
     """
     Return URL for opening a generated session file in IGV.
 
     :param source: GenericMaterial object of type SOURCE
     :param app_name: App name for study app to use, must conform to study app
                      URL config (string)
+    :param merge: Merge into current session (bool, default=False)
     :return: String
     """
     file_url = reverse(
         '{}:igv'.format(app_name), kwargs={'genericmaterial': source.sodar_uuid}
     )
-    return (
-        'http://127.0.0.1:60151/load?genome=b37&merge=false&'
-        'file={}/__sodar{}.xml'.format(settings.IRODS_WEBDAV_URL, file_url)
+    return '{}/load?{}merge={}&file={}/__sodar{}.xml'.format(
+        IGV_URL_BASE,
+        'genome=b37&' if not merge else '',
+        str(merge).lower(),
+        settings.IRODS_WEBDAV_URL,
+        file_url,
+    )
+
+
+def get_igv_irods_url(irods_path, merge=True):
+    """
+    Return URL for opening an iRODS file in IGV.
+
+    :param irods_path: Full iRODS path for the file (string)
+    :param merge: Merge into current session (bool, default=True)
+    :return: String
+    """
+    return '{}/load?merge={}&file={}'.format(
+        IGV_URL_BASE, str(merge).lower(), settings.IRODS_WEBDAV_URL + irods_path
     )
 
 

@@ -15,7 +15,7 @@ from samplesheets.utils import (
     get_isa_field_name,
 )
 
-from samplesheets.studyapps.utils import get_igv_url
+from samplesheets.studyapps.utils import get_igv_session_url, get_igv_irods_url
 
 from .utils import get_library_file_path
 
@@ -103,7 +103,7 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
         igv_urls = {}
 
         for source in study.get_sources():
-            igv_urls[source.name] = get_igv_url(source, APP_NAME)
+            igv_urls[source.name] = get_igv_session_url(source, APP_NAME)
 
         if not igv_urls:
             return ret
@@ -174,9 +174,9 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
         ret = {
             'title': 'Case-Wise Links for {}'.format(case_id),
             'data': {
-                'session': {'title': 'IGV Session File', 'links': []},
-                'bam': {'title': 'BAM Files', 'links': []},
-                'vcf': {'title': 'VCF Files', 'links': []},
+                'session': {'title': 'IGV Session File', 'files': []},
+                'bam': {'title': 'BAM Files', 'files': []},
+                'vcf': {'title': 'VCF Files', 'files': []},
             },
         }
 
@@ -199,8 +199,21 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                 )
 
             if path:
-                ret['data'][file_type]['links'].append(
-                    {'label': library.name, 'url': webdav_url + path}
+                ret['data'][file_type]['files'].append(
+                    {
+                        'label': library.name,
+                        'url': webdav_url + path,
+                        'title': 'Download {} file'.format(file_type.upper()),
+                        'extra_links': [
+                            {
+                                'label': 'Add {} file to IGV'.format(
+                                    file_type.upper()
+                                ),
+                                'icon': 'plus',
+                                'url': get_igv_irods_url(path, merge=True),
+                            }
+                        ],
+                    }
                 )
 
         samples = source.get_samples()
@@ -219,16 +232,34 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
 
         # Session file link (only make available if other files exist)
         if (
-            len(ret['data']['bam']['links']) > 0
-            or len(ret['data']['vcf']['links']) > 0
+            len(ret['data']['bam']['files']) > 0
+            or len(ret['data']['vcf']['files']) > 0
         ):
-            ret['data']['session']['links'].append(
+            ret['data']['session']['files'].append(
                 {
                     'label': 'Download session file',
                     'url': reverse(
                         'samplesheets.studyapps.cancer:igv',
                         kwargs={'genericmaterial': source.sodar_uuid},
                     ),
+                    'title': None,
+                    'extra_links': [
+                        {
+                            'label': 'Open session file in IGV '
+                            '(replace current)',
+                            'icon': 'share-square-o',
+                            'url': get_igv_session_url(
+                                source, APP_NAME, merge=False
+                            ),
+                        },
+                        {
+                            'label': 'Merge into current IGV session',
+                            'icon': 'plus',
+                            'url': get_igv_session_url(
+                                source, APP_NAME, merge=True
+                            ),
+                        },
+                    ],
                 }
             )
 

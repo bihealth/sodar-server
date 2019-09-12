@@ -26,6 +26,8 @@ Added
     - Rendering for Assay Design REF columns (#652)
     - Rendering for First Dimension and Second Dimension columns (#652, #653)
     - Saving of original ISAtab data into the SODAR database (#651)
+    - ``get_igv_irods_url()`` helper (#402)
+    - IGV merge shortcuts in study links modal (#402)
 
 Changed
 -------
@@ -49,6 +51,7 @@ Changed
     - Fail when encountering critical altamISA warnings in ISAtab import (#573)
     - Use file name as study/assay key in parser warning data (#644)
     - Upgrade to altamISA v0.2.3 (#655)
+    - Rename and refactor ``get_igv_session_url()`` (#402)
 
 Fixed
 -----

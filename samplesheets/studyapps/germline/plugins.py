@@ -11,7 +11,7 @@ from samplesheets.plugins import SampleSheetStudyPluginPoint
 from samplesheets.rendering import SampleSheetTableBuilder
 from samplesheets.utils import get_index_by_header
 
-from samplesheets.studyapps.utils import get_igv_url
+from samplesheets.studyapps.utils import get_igv_session_url, get_igv_irods_url
 
 from .utils import get_pedigree_file_path, get_families, get_family_sources
 
@@ -96,12 +96,14 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
 
             for family in get_families(study):
                 sources = get_family_sources(study, family)
-                igv_urls[family] = get_igv_url(sources.first(), APP_NAME)
+                igv_urls[family] = get_igv_session_url(
+                    sources.first(), APP_NAME
+                )
 
         # Else group by source
         else:
             for source in study.get_sources():
-                igv_urls[source.name] = get_igv_url(source, APP_NAME)
+                igv_urls[source.name] = get_igv_session_url(source, APP_NAME)
 
         if not igv_urls:
             return ret  # Nothing else to do
@@ -167,9 +169,9 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
         ret = {
             'title': 'Pedigree-Wise Links for {}'.format(query_id),
             'data': {
-                'session': {'title': 'IGV Session File', 'links': []},
-                'bam': {'title': 'BAM Files', 'links': []},
-                'vcf': {'title': 'VCF File', 'links': []},
+                'session': {'title': 'IGV Session File', 'files': []},
+                'bam': {'title': 'BAM Files', 'files': []},
+                'vcf': {'title': 'VCF File', 'files': []},
             },
         }
 
@@ -200,8 +202,19 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                 )
 
             if bam_path:
-                ret['data']['bam']['links'].append(
-                    {'label': source.name, 'url': webdav_url + bam_path}
+                ret['data']['bam']['files'].append(
+                    {
+                        'label': source.name,
+                        'url': webdav_url + bam_path,
+                        'title': 'Download BAM file',
+                        'extra_links': [
+                            {
+                                'label': 'Add BAM file to IGV',
+                                'icon': 'plus',
+                                'url': get_igv_irods_url(bam_path, merge=True),
+                            }
+                        ],
+                    }
                 )
 
         # VCF link
@@ -220,22 +233,51 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
             )
 
         if vcf_path:
-            ret['data']['vcf']['links'].append(
-                {'label': query_id, 'url': webdav_url + vcf_path}
+            ret['data']['vcf']['files'].append(
+                {
+                    'label': query_id,
+                    'url': webdav_url + vcf_path,
+                    'title': 'Download VCF file',
+                    'extra_links': [
+                        {
+                            'label': 'Add VCF file to IGV',
+                            'icon': 'plus',
+                            'url': get_igv_irods_url(vcf_path, merge=True),
+                        }
+                    ],
+                }
             )
 
         # Session file link (only make available if other files exist)
         if (
-            len(ret['data']['bam']['links']) > 0
-            or len(ret['data']['vcf']['links']) > 0
+            len(ret['data']['bam']['files']) > 0
+            or len(ret['data']['vcf']['files']) > 0
         ):
-            ret['data']['session']['links'].append(
+            ret['data']['session']['files'].append(
                 {
                     'label': 'Download session file',
                     'url': reverse(
                         'samplesheets.studyapps.germline:igv',
                         kwargs={'genericmaterial': sources.first().sodar_uuid},
                     ),
+                    'title': None,
+                    'extra_links': [
+                        {
+                            'label': 'Open session file in IGV '
+                            '(replace current)',
+                            'icon': 'share-square-o',
+                            'url': get_igv_session_url(
+                                sources.first(), APP_NAME, merge=False
+                            ),
+                        },
+                        {
+                            'label': 'Merge into current IGV session',
+                            'icon': 'plus',
+                            'url': get_igv_session_url(
+                                sources.first(), APP_NAME, merge=True
+                            ),
+                        },
+                    ],
                 }
             )
 
