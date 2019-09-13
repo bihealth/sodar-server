@@ -71,6 +71,8 @@ Fixed
     - Name column rendering for Labeled Extract Name materials (#652)
     - Data File name column rendering (#652)
     - Crash in importing First Dimension and Second Dimension fields (#653)
+    - Display value copied to clipboard instead of full value in multi-cell select (#521)
+    - Multi-cell clipboard copying wrong cells with custom row ordering (#664)
 
 Removed
 -------

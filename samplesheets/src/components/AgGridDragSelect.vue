@@ -191,35 +191,40 @@ export default {
 
         // Get relevant data from each cell
         selectedElems.forEach(function (cell) {
+          const cellRect = cell.getBoundingClientRect()
+          let rowId = parseInt(cell.querySelector(
+            '.sodar-ss-data').getAttribute('row-id')
+          )
+          let colId = 'col' + cell.querySelector(
+            '.sodar-ss-data').getAttribute('col-num')
+
           selectedObjs.push({
-            'value': cell.textContent.trim(),
-            'row': parseInt(cell.querySelector(
-              '.sodar-ss-data').getAttribute('row-num')),
-            'col': parseInt(cell.querySelector(
-              '.sodar-ss-data').getAttribute('col-num'))
+            'value': gridApi.getValue(colId, gridApi.getRowNode(rowId)).value,
+            'top': cellRect.top,
+            'left': cellRect.left
           })
         })
 
-        // Sort by row and column
+        // Sort by cell coordinates (to ensure this works with sorting)
         selectedObjs.sort(function (a, b) {
-          return a['row'] - b['row'] || a['col'] - b['col']
+          return a['top'] - b['top'] || a['left'] - b['left']
         })
 
-        let previousRow = null
+        let prevTop = null
 
         // Build copyData
         for (let i = 0; i < selectedObjs.length; i++) {
           let o = selectedObjs[i]
 
-          if (previousRow) {
-            if (o['row'] !== previousRow) {
+          if (prevTop) {
+            if (o['top'] !== prevTop) {
               copyData += '\n'
             } else {
               copyData += '\t'
             }
           }
           copyData += o['value']
-          previousRow = o['row']
+          prevTop = o['top']
         }
       } else if (focusedCell) { // Single cell copy
         const row = gridApi.getDisplayedRowAtIndex(focusedCell.rowIndex)

@@ -815,15 +815,17 @@ export default {
 
     // Set path in current URL
     setPath () {
+      let path = '/'
+
       if (this.activeSubPage) {
-        this.$router.push({path: '/' + this.activeSubPage})
+        path = '/' + this.activeSubPage
       } else if (this.currentStudyUuid && !this.currentAssayUuid) {
-        this.$router.push({path: '/study/' + this.currentStudyUuid})
+        path = '/study/' + this.currentStudyUuid
       } else if (this.currentAssayUuid) {
-        this.$router.push({path: '/assay/' + this.currentAssayUuid})
-      } else {
-        this.$router.push({path: '/'})
+        path = '/assay/' + this.currentAssayUuid
       }
+      // TODO: Why does this raise NavigationDuplicated? (see issue #667)
+      this.$router.push({path: path}).catch(error => error)
     },
 
     // Set up current page target from URL path
@@ -1023,6 +1025,24 @@ a.sodar-ss-anchor {
 
 .agds-selected {
   background-color: #ffe8e8 !important;
+}
+
+div.sodar-ss-data {
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-right: 3px;
+  border: 1px solid transparent;
+}
+
+div.sodar-ss-data-hover {
+  z-index: 1100;
+  width: auto;
+  position: fixed;
+  background-color: #ffffe0;
+  border: 1px solid #dfdfdf;
+  box-shadow: 0 3px 3px -3px #909090;
 }
 
 </style>

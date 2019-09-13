@@ -2,6 +2,7 @@
   <div class="sodar-ss-data"
        :row-num="this.params.node.data.rowNum"
        :col-num="this.params.colDef.field.substring(3)"
+       :row-id="this.params.node.id"
        @mouseover="onMouseOver"
        @mouseout="onMouseOut">
     <!-- Plain/empty value -->
@@ -213,23 +214,4 @@ export default Vue.extend(
 </script>
 
 <style scoped>
-
-div.sodar-ss-data {
-  width: 100%;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  padding-right: 3px;
-  border: 1px solid transparent;
-}
-
-div.sodar-ss-data-hover {
-  z-index: 1100;
-  width: auto;
-  position: fixed;
-  background-color: #ffffe0;
-  border: 1px solid #dfdfdf;
-  box-shadow: 0 3px 3px -3px #909090;
-}
-
 </style>
