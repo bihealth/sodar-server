@@ -28,6 +28,7 @@ Added
     - Saving of original ISAtab data into the SODAR database (#651)
     - ``get_igv_irods_url()`` helper (#402)
     - IGV merge shortcuts in study links modal (#402)
+    - ISAtab import from multiple uncompressed files (#593)
 
 Changed
 -------
@@ -50,8 +51,10 @@ Changed
     - Suppress altamISA warnings during testing (#637)
     - Fail when encountering critical altamISA warnings in ISAtab import (#573)
     - Use file name as study/assay key in parser warning data (#644)
-    - Upgrade to altamISA v0.2.3 (#655)
+    - Upgrade to altamISA v0.2.4
     - Rename and refactor ``get_igv_session_url()`` (#402)
+    - Use reference table building classes from altamISA
+    - Enforce ordering in ``Study.get_nodes()`` to maintain row order (#510)
 
 Fixed
 -----
@@ -79,6 +82,8 @@ Removed
 
 - **General**
     - Unused storage requirements from production config (#610)
+- **Samplesheets**
+    - Reference table building classes from ``rendering.py``
 
 
 v0.5.1 (2019-07-09)

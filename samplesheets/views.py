@@ -263,32 +263,36 @@ class SampleSheetImportView(
 
             if isinstance(ex, SampleSheetImportException):
                 ex_msg = str(ex.args[0])
-                extra_data = {'warnings': ex.args[1]}
-
-                # HACK: Report critical warnings here
-                # TODO: Provide these to a proper view from Timeline instead
-                eh = ex_msg + '<ul>'
-
-                def _add_crits(legend, warnings, ex_html):
-                    for w in warnings:
-                        if w['category'] == 'CriticalIsaValidationWarning':
-                            ex_html += '<li>{}: {}</li>'.format(
-                                legend, w['message']
-                            )
-                    return ex_html
-
-                eh = _add_crits(
-                    'Investigation', ex.args[1]['investigation'], eh
+                extra_data = (
+                    {'warnings': ex.args[1]} if len(ex.args) > 1 else None
                 )
 
-                for k, v in ex.args[1]['studies'].items():
-                    eh = _add_crits(k, v, eh)
+                if len(ex.args) > 1:
+                    # HACK: Report critical warnings here
+                    # TODO: Provide these to a proper view from Timeline instead
+                    ex_msg += '<ul>'
 
-                for k, v in ex.args[1]['assays'].items():
-                    eh = _add_crits(k, v, eh)
+                    def _add_crits(legend, warnings, eh):
+                        for w in warnings:
+                            if w['category'] == 'CriticalIsaValidationWarning':
+                                eh += '<li>{}: {}</li>'.format(
+                                    legend, w['message']
+                                )
+                        return eh
 
-                eh += '</li>'
-                messages.error(self.request, mark_safe(eh))
+                    ex_msg = _add_crits(
+                        'Investigation', ex.args[1]['investigation'], ex_msg
+                    )
+
+                    for k, v in ex.args[1]['studies'].items():
+                        ex_msg = _add_crits(k, v, ex_msg)
+
+                    for k, v in ex.args[1]['assays'].items():
+                        ex_msg = _add_crits(k, v, ex_msg)
+
+                    ex_msg += '</ul>'
+
+                messages.error(self.request, mark_safe(ex_msg))
 
             else:
                 ex_msg = 'ISAtab import failed: {}'.format(ex)
@@ -512,17 +516,17 @@ class SampleSheetISAExportView(
             )
             zf.writestr(
                 export_data['investigation']['path'],
-                export_data['investigation']['data'],
+                export_data['investigation']['tsv'],
             )
             inv_dir = '/'.join(
                 export_data['investigation']['path'].split('/')[:-1]
             )
 
             for k, v in export_data['studies'].items():
-                zf.writestr('{}/{}'.format(inv_dir, k), v['data'])
+                zf.writestr('{}/{}'.format(inv_dir, k), v['tsv'])
 
             for k, v in export_data['assays'].items():
-                zf.writestr('{}/{}'.format(inv_dir, k), v['data'])
+                zf.writestr('{}/{}'.format(inv_dir, k), v['tsv'])
 
             zf.close()
 

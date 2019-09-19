@@ -166,16 +166,53 @@ class SampleSheetIO:
 
         return ret
 
+    @classmethod
+    def get_import_file(cls, zip_file, file_name):
+        file = zip_file.open(str(file_name), 'r')
+        return io.TextIOWrapper(file)
+
+    @classmethod
+    def get_isa_from_zip(cls, zip_file):
+        """
+        Read ISAtab files from a Zip archive into a dictionary.
+
+        :param zip_file: ZipFile object
+        :return: Dict
+        """
+        ret = {'investigation': {}, 'studies': {}, 'assays': {}}
+
+        for isa_path in [n for n in zip_file.namelist() if not n.endswith('/')]:
+            isa_name = isa_path.split('/')[-1]
+
+            if isa_name.startswith('i_'):
+                ret['investigation'] = {
+                    'path': isa_path,
+                    'tsv': zip_file.open(str(isa_path), 'r')
+                    .read()
+                    .decode('utf-8'),
+                }
+
+            elif isa_name.startswith('s_'):
+                ret['studies'][isa_name] = {
+                    'tsv': zip_file.open(str(isa_path), 'r')
+                    .read()
+                    .decode('utf-8')
+                }
+
+            elif isa_name.startswith('a_'):
+                ret['assays'][isa_name] = {
+                    'tsv': zip_file.open(str(isa_path), 'r')
+                    .read()
+                    .decode('utf-8')
+                }
+
+        return ret
+
     def get_warnings(self):
         """Return warnings from previous operation"""
         return self._warnings
 
     # Import -------------------------------------------------------------------
-
-    @classmethod
-    def _get_import_file(cls, zip_file, file_name):
-        file = zip_file.open(str(file_name), 'r')
-        return io.TextIOWrapper(file)
 
     @classmethod
     def _get_zip_path(cls, inv_path, file_path):
@@ -437,14 +474,16 @@ class SampleSheetIO:
         )
 
     @transaction.atomic
-    def import_isa(self, isa_zip, project, user=None, replace=False):
+    def import_isa(
+        self, isa_data, project, archive_name=None, user=None, replace=False
+    ):
         """
-        Import ISA investigation and its studies/assays from an ISAtab Zip
-        archive into the SODAR database using the altamISA parser.
+        Import ISA investigation and its studies/assays from a dictionary of
+        ISAtab files into the SODAR database using the altamISA parser.
 
-        :param isa_zip: ZipFile (archive containing a single ISAtab
-                        investigation)
+        :param isa_data: Dictionary of files for a single ISAtab investigation
         :param project: Project object
+        :param archive_name: Name of the original archive (string, optional)
         :param user: User initiating the operation (User or None)
         :param replace: Whether replacing an existing sheet (bool)
         :return: Investigation, ISATab
@@ -452,25 +491,19 @@ class SampleSheetIO:
         """
         t_start = time.time()
         logger.info('altamISA version: {}'.format(altamisa.__version__))
-
-        # Read zip file
         logger.info(
-            'Importing investigation from archive "{}"..'.format(
-                isa_zip.filename
+            'Importing investigation{}..'.format(
+                'from archive "{}"'.format(archive_name) if archive_name else ''
             )
         )
-        isatab_data = {}
-        inv_file_path = self.get_inv_paths(isa_zip)[0]
-        inv_dir = '/'.join(inv_file_path.split('/')[:-1])
-        isatab_data[inv_file_path.split('/')[-1]] = self._get_import_file(
-            isa_zip, inv_file_path
-        ).read()  # TODO: Do this in a nicer way
-        input_file = self._get_import_file(isa_zip, inv_file_path)
+
+        input_name = isa_data['investigation']['path'].split('/')[-1]
+        input_file = io.StringIO(isa_data['investigation']['tsv'])
 
         # Parse and validate investigation
         with warnings.catch_warnings(record=True) as ws:
             isa_inv = InvestigationReader.from_stream(
-                input_file=input_file
+                input_file=input_file, filename=input_name
             ).read()
             InvestigationValidator(isa_inv).validate()
 
@@ -480,7 +513,7 @@ class SampleSheetIO:
             'identifier': isa_inv.info.identifier,
             'title': isa_inv.info.title,
             'description': isa_inv.info.description,
-            'file_name': inv_file_path,
+            'file_name': isa_data['investigation']['path'],
             'ontology_source_refs': self._import_tuple_list(
                 isa_inv.ontology_source_refs
             ),
@@ -491,7 +524,7 @@ class SampleSheetIO:
             'submission_date': isa_inv.info.submission_date,
             'public_release_date': isa_inv.info.public_release_date,
             'parser_version': altamisa.__version__,
-            'archive_name': isa_zip.filename,
+            'archive_name': archive_name,
         }
 
         db_investigation = Investigation(**values)
@@ -525,18 +558,22 @@ class SampleSheetIO:
             logger.info('Importing study "{}"..'.format(isa_study.info.title))
             obj_lookup = {}  # Lookup dict for study materials and processes
             study_id = 'p{}-s{}'.format(project.pk, study_count)
-            isatab_data[str(isa_study.info.path)] = self._get_import_file(
-                isa_zip, self._get_zip_path(inv_dir, isa_study.info.path)
-            ).read()
+
+            input_name = str(isa_study.info.path)
+
+            if input_name not in isa_data['studies']:
+                raise SampleSheetImportException(
+                    'Study not found in import data: "{}"'.format(input_name)
+                )
+
+            input_file = io.StringIO(isa_data['studies'][input_name]['tsv'])
 
             # Parse and validate study file
             with warnings.catch_warnings(record=True) as ws:
                 s = StudyReader.from_stream(
-                    input_file=self._get_import_file(
-                        isa_zip,
-                        self._get_zip_path(inv_dir, isa_study.info.path),
-                    ),
                     study_id=study_id,
+                    input_file=input_file,
+                    filename=input_name,
                 ).read()
                 StudyValidator(isa_inv, isa_study, s).validate()
 
@@ -626,18 +663,26 @@ class SampleSheetIO:
                 )
                 logger.info('Importing assay "{}"..'.format(isa_assay.path))
                 assay_id = 'a{}'.format(assay_count)
-                isatab_data[str(isa_assay.path)] = self._get_import_file(
-                    isa_zip, self._get_zip_path(inv_dir, isa_assay.path)
-                ).read()
+
+                # HACK to fake a file for altamISA
+                input_name = str(isa_assay.path)
+
+                if input_name not in isa_data['assays']:
+                    raise SampleSheetImportException(
+                        'Assay not found in import data: "{}"'.format(
+                            input_name
+                        )
+                    )
+
+                input_file = io.StringIO(isa_data['assays'][input_name]['tsv'])
 
                 # Parse and validate assay file
                 with warnings.catch_warnings(record=True) as ws:
                     a = AssayReader.from_stream(
                         study_id=study_id,
                         assay_id=assay_id,
-                        input_file=self._get_import_file(
-                            isa_zip, self._get_zip_path(inv_dir, isa_assay.path)
-                        ),
+                        input_file=input_file,
+                        filename=input_name,
                     ).read()
                     AssayValidator(isa_inv, isa_study, isa_assay, a).validate()
 
@@ -724,8 +769,8 @@ class SampleSheetIO:
         db_isatab = ISATab(
             project=project,
             investigation_uuid=db_investigation.sodar_uuid,
-            archive_name=isa_zip.filename,
-            data=isatab_data,
+            archive_name=archive_name,
+            data=isa_data,  # NOTE: Format changed!
             tags=['IMPORT'],
             user=user,
             parser_version=altamisa.__version__,
@@ -1121,8 +1166,12 @@ class SampleSheetIO:
 
         for study in investigation.studies.all().order_by('file_name'):
             # Get all materials and nodes in study and its assays
-            all_materials = {m.unique_name: m for m in study.materials.all()}
-            all_processes = {p.unique_name: p for p in study.processes.all()}
+            all_materials = {
+                m.unique_name: m for m in study.materials.all().order_by('pk')
+            }
+            all_processes = {
+                p.unique_name: p for p in study.processes.all().order_by('pk')
+            }
 
             # Get study materials
             study_materials = self._export_materials(
@@ -1267,7 +1316,7 @@ class SampleSheetIO:
         self._handle_warnings(ws, investigation)
 
         ret['investigation']['path'] = inv_info.info.path
-        ret['investigation']['data'] = inv_out.getvalue()
+        ret['investigation']['tsv'] = inv_out.getvalue()
         inv_out.close()
 
         logger.info('Exported investigation')
@@ -1303,9 +1352,7 @@ class SampleSheetIO:
             # Handle parser warnings for study
             self._handle_warnings(ws, db_study)
 
-            ret['studies'][study_info.info.path] = {
-                'data': study_out.getvalue()
-            }
+            ret['studies'][study_info.info.path] = {'tsv': study_out.getvalue()}
             study_out.close()
 
             logger.info('Exported study "{}"'.format(db_study.file_name))
@@ -1343,7 +1390,7 @@ class SampleSheetIO:
                 # Handle parser warnings for assay
                 self._handle_warnings(ws, db_assay)
 
-                ret['assays'][assay_info.path] = {'data': assay_out.getvalue()}
+                ret['assays'][assay_info.path] = {'tsv': assay_out.getvalue()}
                 assay_out.close()
 
                 logger.info('Exported assay "{}"'.format(db_assay.file_name))

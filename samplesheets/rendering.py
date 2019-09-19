@@ -1,7 +1,9 @@
 """Rendering utilities for samplesheets"""
 
 from altamisa.constants import table_headers as th
+from altamisa.isatab.write_assay_study import RefTableBuilder
 from datetime import date
+import functools
 import itertools
 import logging
 from packaging import version
@@ -70,124 +72,6 @@ header_re = re.compile(r'^([a-zA-Z\s]+)[\[](.+)[\]]$')
 contact_re = re.compile(r'(.+?)\s?(?:[<|[])(.+?)(?:[>\]])')
 logger = logging.getLogger(__name__)
 app_settings = AppSettingAPI()
-
-
-# Graph traversal / reference table building -----------------------------------
-
-
-class Digraph:
-    """Simple class encapsulating directed graph with vertices and arcs"""
-
-    def __init__(self, vertices, arcs):
-        self.vertices = vertices
-        self.arcs = arcs
-        self.v_by_name = {v.unique_name: v for v in self.vertices}
-        self.a_by_name = {(a[0], a[1]) for a in self.arcs}
-        self.source_names = [
-            k for k in self.v_by_name.keys() if SOURCE_SEARCH_STR in k
-        ]
-        self.outgoing = {}
-
-        for s_name, t_name in self.a_by_name:
-            self.outgoing.setdefault(s_name, []).append(t_name)
-
-
-class UnionFind:
-    """Union-Find (disjoint set) data structure allowing to address by vertex
-    name"""
-
-    def __init__(self, vertex_names):
-        self.name_to_id = {i: v for i, v in enumerate(vertex_names)}
-        self.id_to_name = {v: i for i, v in self.name_to_id.items()}
-        self._id = list(range(len(vertex_names)))
-        self._sz = [1] * len(vertex_names)
-
-    def find(self, v):
-        assert type(v) is int
-        j = v
-
-        while j != self._id[j]:
-            self._id[j] = self._id[self._id[j]]
-            j = self._id[j]
-
-        return j
-
-    def find_by_name(self, v_name):
-        return self.find(self.id_to_name[v_name])
-
-    def union_by_name(self, v_name, w_name):
-        self.union(self.find_by_name(v_name), self.find_by_name(w_name))
-
-    def union(self, v, w):
-        assert type(v) is int
-        assert type(w) is int
-        i = self.find(v)
-        j = self.find(w)
-
-        if i == j:
-            return
-
-        if self._sz[i] < self._sz[j]:
-            self._id[i] = j
-            self._sz[j] += self._sz[i]
-
-        else:
-            self._id[j] = i
-
-        self._sz[i] += self._sz[j]
-
-
-class RefTableBuilder:
-    """Class for building reference table from a graph"""
-
-    def __init__(self, nodes, arcs):
-        self.digraph = Digraph(nodes, arcs)
-        self._rows = []
-
-    def _partition(self):
-        uf = UnionFind(self.digraph.v_by_name.keys())
-
-        for arc in self.digraph.arcs:
-            uf.union_by_name(arc[0], arc[1])
-
-        result = {}
-
-        for v_name in self.digraph.v_by_name.keys():
-            result.setdefault(v_name, []).append(v_name)
-
-        return list(result.values())
-
-    def _dump_row(self, v_names):
-        self._rows.append(list(v_names))
-
-    def _dfs(self, source, path):
-        next_v_names = None
-
-        if source in self.digraph.outgoing:
-            next_v_names = self.digraph.outgoing[source]
-
-        if next_v_names:
-            for target in next_v_names:
-                path.append(target)
-                self._dfs(target, path)
-                path.pop()
-
-        else:
-            self._dump_row(path)
-
-    def _process_component(self, v_names):
-        sources = list(sorted(set(v_names) & set(self.digraph.source_names)))
-
-        for source in sources:
-            self._dfs(source, [source])
-
-    def run(self):
-        components = self._partition()
-
-        for component in components:
-            self._process_component(component)
-
-        return self._rows
 
 
 # Table building ---------------------------------------------------------------
@@ -918,7 +802,14 @@ class SampleSheetTableBuilder:
         for a in study.assays.all().order_by('file_name'):
             arcs += a.arcs
 
-        tb = RefTableBuilder(nodes, arcs)
+        def _is_of_starting_type(starting_type, v):
+            """Predicate to select vertices based on starting type."""
+            return getattr(v, 'item_type', None) == starting_type
+
+        # starting_type = 'Source Name'
+        tb = RefTableBuilder(
+            nodes, arcs, functools.partial(_is_of_starting_type, 'SOURCE')
+        )
         all_refs = tb.run()
 
         if not all_refs:

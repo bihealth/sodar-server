@@ -9,12 +9,18 @@ from projectroles.models import Project
 from .io import SampleSheetIO
 
 
+# Local constants
+ARCHIVE_TYPES = ['application/zip', 'application/x-zip-compressed']
+
+
 class SampleSheetImportForm(forms.Form):
-    """Form for importing an ISA investigation from an ISAtab archive"""
+    """Form for importing an ISA investigation from an ISAtab archive or
+    directory"""
 
     file_upload = forms.FileField(
         allow_empty_file=False,
-        help_text='Zip archive containing ISAtab investigation files',
+        help_text='Zip archive or ISAtab files for a single investigation',
+        widget=forms.ClearableFileInput(attrs={'multiple': True}),
     )
 
     class Meta:
@@ -29,6 +35,9 @@ class SampleSheetImportForm(forms.Form):
         self.project = None
         self.replace = replace
         self.current_user = current_user
+        self.sheet_io = SampleSheetIO(
+            allow_critical=settings.SHEETS_ALLOW_CRITICAL
+        )
 
         if project:
             try:
@@ -38,55 +47,120 @@ class SampleSheetImportForm(forms.Form):
                 pass
 
     def clean(self):
-        file = self.cleaned_data.get('file_upload')
+        files = self.files.getlist('file_upload')
 
-        # Ensure file type
-        if file and file.content_type not in [
-            'application/zip',
-            'application/x-zip-compressed',
-        ]:
-            self.add_error('file_upload', 'The file is not a Zip archive')
-            return self.cleaned_data
+        # Zip archive upload
+        if len(files) == 1:
+            file = self.cleaned_data.get('file_upload')
 
-        # Validate zip file
-        try:
-            zip_file = ZipFile(file)
+            # Ensure file type
+            if file and file.content_type not in ARCHIVE_TYPES:
+                self.add_error('file_upload', 'The file is not a Zip archive')
+                return self.cleaned_data
 
-        except Exception as ex:
-            self.add_error(
-                'file_upload', 'Unable to open zip file: {}'.format(ex)
-            )
-            return self.cleaned_data
+            # Validate zip file
+            try:
+                zip_file = ZipFile(file)
 
-        sheet_io = SampleSheetIO()
+            except Exception as ex:
+                self.add_error(
+                    'file_upload', 'Unable to open zip file: {}'.format(ex)
+                )
+                return self.cleaned_data
 
-        # Get investigation file path(s)
-        i_paths = sheet_io.get_inv_paths(zip_file)
+            # Get investigation file path(s)
+            i_paths = self.sheet_io.get_inv_paths(zip_file)
 
-        if len(i_paths) == 0:
-            self.add_error(
-                'file_upload', 'Investigation file not found in archive'
-            )
-            return self.cleaned_data
+            if len(i_paths) == 0:
+                self.add_error(
+                    'file_upload', 'Investigation file not found in archive'
+                )
+                return self.cleaned_data
 
-        elif len(i_paths) > 1:
-            self.add_error(
-                'file_upload', 'Multiple investigation files found in archive'
-            )
-            return self.cleaned_data
+            elif len(i_paths) > 1:
+                self.add_error(
+                    'file_upload',
+                    'Multiple investigation files found in archive',
+                )
+                return self.cleaned_data
 
-        self.isa_zip = zip_file
+            self.isa_zip = zip_file
+
+        # Multi-file checkup
+        else:
+            inv_found = False
+            study_found = False
+
+            for file in files:
+                if file.content_type in ARCHIVE_TYPES:
+                    self.add_error(
+                        'file_upload',
+                        'You can only upload one Zip archive at a time',
+                    )
+                    return self.cleaned_data
+
+                if not file.name.endswith('.txt'):
+                    self.add_error(
+                        'file_upload',
+                        'Only a Zip archive or ISAtab .txt files allowed',
+                    )
+                    return self.cleaned_data
+
+                if file.name.startswith('i_'):
+                    inv_found = True
+
+                elif file.name.startswith('s_'):
+                    study_found = True
+
+            if not inv_found:
+                self.add_error(
+                    'file_upload',
+                    'Investigation file not found among uploaded files',
+                )
+                return self.cleaned_data
+
+            if not study_found:
+                self.add_error(
+                    'file_upload', 'Study file not found among uploaded files'
+                )
+                return self.cleaned_data
 
         return self.cleaned_data
 
     def save(self, *args, **kwargs):
-        sheet_io = SampleSheetIO(allow_critical=settings.SHEETS_ALLOW_CRITICAL)
+        # Zip archive
+        if self.isa_zip:
+            isa_data = self.sheet_io.get_isa_from_zip(self.isa_zip)
+
+        # Multi-file
+        else:
+
+            isa_data = {'investigation': {}, 'studies': {}, 'assays': {}}
+
+            for file in self.files.getlist('file_upload'):
+                if file.name.startswith('i_'):
+                    isa_data['investigation']['path'] = file.name
+                    isa_data['investigation']['tsv'] = file.read().decode(
+                        'utf-8'
+                    )
+
+                elif file.name.startswith('s_'):
+                    isa_data['studies'][file.name] = {
+                        'tsv': file.read().decode('utf-8')
+                    }
+
+                elif file.name.startswith('a_'):
+                    isa_data['assays'][file.name] = {
+                        'tsv': file.read().decode('utf-8')
+                    }
 
         # NOTE: May raise an exception, caught and handled in the view
-        investigation = sheet_io.import_isa(
-            isa_zip=self.isa_zip,
+        investigation = self.sheet_io.import_isa(
+            isa_data=isa_data,
             project=self.project,
+            archive_name=self.isa_zip.filename if self.isa_zip else None,
             user=self.current_user,
             replace=self.replace,
         )
+
         return investigation

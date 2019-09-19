@@ -1,8 +1,9 @@
 """Tests for views in the samplesheets app"""
 import json
-
+import os
 from test_plus.test import TestCase
 from unittest import skipIf
+from zipfile import ZipFile
 
 from django.conf import settings
 from django.test import override_settings
@@ -283,6 +284,95 @@ class TestSampleSheetImportView(TestViewsBase):
         tl_event = timeline.get_project_events(self.project).order_by('-pk')[0]
         tl_status = tl_event.get_current_status()
         self.assertIsNotNone(tl_status.extra_data['warnings'])
+
+    def test_post_multiple(self):
+        """Test posting an ISAtab as multiple files"""
+
+        # Assert preconditions
+        self.assertEqual(Investigation.objects.all().count(), 0)
+        self.assertEqual(ISATab.objects.all().count(), 0)
+
+        zf = ZipFile(os.fsdecode(SHEET_PATH))
+
+        with self.login(self.user):
+            values = {
+                'file_upload': [
+                    zf.open(f.filename) for f in zf.filelist if f.file_size > 0
+                ]
+            }
+            response = self.client.post(
+                reverse(
+                    'samplesheets:import',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                values,
+            )
+
+        # Assert postconditions
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Investigation.objects.all().count(), 1)
+        self.assertEqual(ISATab.objects.all().count(), 1)
+        self.assertListEqual(ISATab.objects.first().tags, ['IMPORT'])
+
+    def test_post_multiple_no_study(self):
+        """Test posting an ISAtab as multiple files without required study"""
+
+        # Assert preconditions
+        self.assertEqual(Investigation.objects.all().count(), 0)
+        self.assertEqual(ISATab.objects.all().count(), 0)
+
+        zf = ZipFile(os.fsdecode(SHEET_PATH))
+
+        with self.login(self.user):
+            values = {
+                'file_upload': [
+                    zf.open(f.filename)
+                    for f in zf.filelist
+                    if f.file_size > 0
+                    and not f.filename.split('/')[-1].startswith('s_')
+                ]
+            }
+            response = self.client.post(
+                reverse(
+                    'samplesheets:import',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                values,
+            )
+
+        # Assert postconditions
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(Investigation.objects.all().count(), 0)
+
+    def test_post_multiple_no_assay(self):
+        """Test posting an ISAtab as multiple files without required assay"""
+
+        # Assert preconditions
+        self.assertEqual(Investigation.objects.all().count(), 0)
+        self.assertEqual(ISATab.objects.all().count(), 0)
+
+        zf = ZipFile(os.fsdecode(SHEET_PATH))
+
+        with self.login(self.user):
+            values = {
+                'file_upload': [
+                    zf.open(f.filename)
+                    for f in zf.filelist
+                    if f.file_size > 0
+                    and not f.filename.split('/')[-1].startswith('a_')
+                ]
+            }
+            response = self.client.post(
+                reverse(
+                    'samplesheets:import',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                values,
+            )
+
+        # Assert postconditions
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Investigation.objects.all().count(), 0)
 
 
 class TestSampleSheetTSVExportView(TestViewsBase):

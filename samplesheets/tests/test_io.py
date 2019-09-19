@@ -44,7 +44,12 @@ class SampleSheetIOMixin:
         """
         sheet_io = SampleSheetIO(warn=False, allow_critical=True)
         zf = ZipFile(os.fsdecode(path))
-        investigation = sheet_io.import_isa(zf, project, user)
+        investigation = sheet_io.import_isa(
+            sheet_io.get_isa_from_zip(zf),
+            project,
+            archive_name=zf.filename,
+            user=user,
+        )
         investigation.active = True  # Must set this explicitly
         investigation.save()
         return investigation
@@ -64,7 +69,7 @@ class SampleSheetIOMixin:
         inv_dir = '/'.join(inv_file_path.split('/')[:-1])
 
         # Read investigation
-        input_file = sheet_io._get_import_file(zf, inv_file_path)
+        input_file = sheet_io.get_import_file(zf, inv_file_path)
 
         with warnings.catch_warnings(record=True):
             isa_inv = InvestigationReader.from_stream(
@@ -85,7 +90,7 @@ class SampleSheetIOMixin:
                 isa_studies[
                     str(study_info.info.path)
                 ] = StudyReader.from_stream(
-                    input_file=sheet_io._get_import_file(
+                    input_file=sheet_io.get_import_file(
                         zf,
                         sheet_io._get_zip_path(inv_dir, study_info.info.path),
                     ),
@@ -110,7 +115,7 @@ class SampleSheetIOMixin:
                     isa_assays[str(assay_path)] = AssayReader.from_stream(
                         study_id=study_id,
                         assay_id=assay_id,
-                        input_file=sheet_io._get_import_file(
+                        input_file=sheet_io.get_import_file(
                             zf, sheet_io._get_zip_path(inv_dir, isa_assay.path)
                         ),
                     ).read()
@@ -165,14 +170,14 @@ class TestSampleSheetIOBase(
         ret = {
             export_data['investigation']['path'].split('/')[-1]: export_data[
                 'investigation'
-            ]['data']
+            ]['tsv']
         }
 
         for k, v in export_data['studies'].items():
-            ret[k] = v['data']
+            ret[k] = v['tsv']
 
         for k, v in export_data['assays'].items():
-            ret[k] = v['data']
+            ret[k] = v['tsv']
 
         return ret
 
@@ -305,10 +310,26 @@ class TestSampleSheetIOBatch(TestSampleSheetIOBase):
             for f in [f for f in zf.filelist if f.file_size > 0]:
                 msg = 'zip={}, file={}'.format(zip_name, f.filename)
                 zip_data = zf.open(f.filename).read().decode('utf-8')
+                file_name = f.filename.split('/')[-1]
 
-                self.assertEqual(
-                    saved_isatab.data[f.filename.split('/')[-1]], zip_data, msg
-                )
+                if file_name.startswith('i_'):
+                    self.assertEqual(
+                        saved_isatab.data['investigation']['tsv'], zip_data, msg
+                    )
+
+                elif file_name.startswith('s_'):
+                    self.assertEqual(
+                        saved_isatab.data['studies'][file_name]['tsv'],
+                        zip_data,
+                        msg,
+                    )
+
+                elif file_name.startswith('a_'):
+                    self.assertEqual(
+                        saved_isatab.data['assays'][file_name]['tsv'],
+                        zip_data,
+                        msg,
+                    )
 
             investigation.delete()
             ISATab.objects.first().delete()
