@@ -55,6 +55,7 @@ Changed
     - Rename and refactor ``get_igv_session_url()`` (#402)
     - Use reference table building classes from altamISA
     - Enforce ordering in ``Study.get_nodes()`` to maintain row order (#510)
+    - Ignore file name when searching for germline study pedigree files (#602)
 
 Fixed
 -----

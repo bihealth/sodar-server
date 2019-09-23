@@ -90,10 +90,8 @@ def get_pedigree_file_path(file_type, source, study_tables):
             obj_list = irods_backend.get_objects(query_path)
 
             for obj in obj_list['data_objects']:
-                # NOTE: We expect the SAMPLE name to appear in filenames
-                if obj['name'].lower().endswith(
-                    FILE_TYPE_SUFFIXES[file_type]
-                ) and any(x in obj['name'] for x in sample_names):
+                # NOTE: We non longer expect the SAMPLE name in filenames
+                if obj['name'].lower().endswith(FILE_TYPE_SUFFIXES[file_type]):
                     file_paths.append(obj['path'])
 
         except FileNotFoundError:
