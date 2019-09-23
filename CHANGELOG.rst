@@ -34,7 +34,7 @@ Changed
 -------
 
 - **General**
-    - Upgrade site to Django 1.11.23 (sodar_core#295)
+    - Upgrade site to Django 1.11.24
     - Move graph creation dependencies to ``local_extra.txt`` (#609)
     - Move redis requirement to base.txt (#610)
 - **Samplesheets**

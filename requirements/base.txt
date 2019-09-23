@@ -2,7 +2,7 @@
 wheel==0.32.3
 
 # Conservative Django
-django==1.11.23 # pyup: <2.0
+django==1.11.24 # pyup: <2.0
 
 # Configuration
 django-environ==0.4.5
