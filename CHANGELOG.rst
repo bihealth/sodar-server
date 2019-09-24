@@ -29,6 +29,7 @@ Added
     - ``get_igv_irods_url()`` helper (#402)
     - IGV merge shortcuts in study links modal (#402)
     - ISAtab import from multiple uncompressed files (#593)
+    - ISAtab export option for ``RemoteSheetGetAPIView`` (#670)
 
 Changed
 -------

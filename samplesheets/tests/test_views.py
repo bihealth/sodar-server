@@ -12,9 +12,16 @@ from django.urls import reverse
 # Projectroles dependency
 from projectroles.models import Role, SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
-from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
+from projectroles.tests.test_models import (
+    ProjectMixin,
+    RoleAssignmentMixin,
+    RemoteSiteMixin,
+    RemoteProjectMixin,
+)
 from projectroles.tests.test_views import KnoxAuthMixin
+from projectroles.utils import build_secret
 
+from samplesheets.io import SampleSheetIO
 from samplesheets.models import (
     Investigation,
     Study,
@@ -23,6 +30,7 @@ from samplesheets.models import (
     Process,
     ISATab,
 )
+from samplesheets.rendering import SampleSheetTableBuilder
 from samplesheets.tests.test_io import (
     SampleSheetIOMixin,
     SHEET_DIR,
@@ -57,6 +65,10 @@ SOURCE_NAME = '0815'
 SOURCE_NAME_FAIL = 'oop5Choo'
 USER_PASSWORD = 'password'
 API_INVALID_VERSION = '5.0'
+REMOTE_SITE_NAME = 'Test site'
+REMOTE_SITE_URL = 'https://sodar.bihealth.org'
+REMOTE_SITE_DESC = 'description'
+REMOTE_SITE_SECRET = build_secret()
 
 IRODS_BACKEND_ENABLED = (
     True if 'omics_irods' in settings.ENABLED_BACKEND_PLUGINS else False
@@ -772,3 +784,75 @@ class TestSourceIDQueryAPIView(KnoxAuthMixin, TestViewsBase):
             version=API_INVALID_VERSION,
         )
         self.assertEqual(response.status_code, 406)
+
+
+class TestRemoteSheetGetAPIView(
+    RemoteSiteMixin, RemoteProjectMixin, TestViewsBase
+):
+    """Tests for RemoteSheetGetAPIView"""
+
+    def setUp(self):
+        super().setUp()
+
+        # Create target site
+        self.target_site = self._make_site(
+            name=REMOTE_SITE_NAME,
+            url=REMOTE_SITE_URL,
+            mode=SODAR_CONSTANTS['SITE_MODE_TARGET'],
+            description=REMOTE_SITE_DESC,
+            secret=REMOTE_SITE_SECRET,
+        )
+
+        # Create target project
+        self.target_project = self._make_remote_project(
+            project_uuid=self.project.sodar_uuid,
+            site=self.target_site,
+            level=SODAR_CONSTANTS['REMOTE_LEVEL_READ_ROLES'],
+        )
+
+        # Import investigation
+        self.investigation = self._import_isa_from_file(
+            SHEET_PATH, self.project
+        )
+        self.study = self.investigation.studies.first()
+
+    def test_get_tables(self):
+        """Test getting the investigation as rendered tables"""
+        response = self.client.get(
+            reverse(
+                'samplesheets:api_remote_get',
+                kwargs={
+                    'project': self.project.sodar_uuid,
+                    'secret': REMOTE_SITE_SECRET,
+                },
+            )
+        )
+
+        tb = SampleSheetTableBuilder()
+        expected = {
+            'studies': {
+                str(self.study.sodar_uuid): tb.build_study_tables(self.study)
+            }
+        }
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data, expected)
+
+    def test_get_isatab(self):
+        """Test getting the investigation as ISAtab"""
+        response = self.client.get(
+            reverse(
+                'samplesheets:api_remote_get',
+                kwargs={
+                    'project': self.project.sodar_uuid,
+                    'secret': REMOTE_SITE_SECRET,
+                },
+            ),
+            {'isa': '1'},
+        )
+
+        sheet_io = SampleSheetIO()
+        expected = sheet_io.export_isa(self.investigation)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data, expected)

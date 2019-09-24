@@ -1162,13 +1162,14 @@ class SourceIDQueryAPIView(APIView):
 
 # TODO: Temporary HACK, should be replaced by real solution (sodar_core#261)
 class RemoteSheetGetAPIView(APIView):
-    """Temporary API view for retrieving sample sheet tables as JSON by a target
-    site"""
+    """Temporary API view for retrieving the sample sheet as JSON by a target
+    site, either as rendered tables or the original ISAtab"""
 
     permission_classes = (AllowAny,)  # We check the secret in get()/post()
 
-    def get(self, request, *args, **kwargs):
+    def get(self, request, **kwargs):
         secret = kwargs['secret']
+        isa = request.GET.get('isa')
 
         try:
             target_site = RemoteSite.objects.get(
@@ -1201,18 +1202,30 @@ class RemoteSheetGetAPIView(APIView):
             )
 
         # All OK so far, return data
-        ret = {'studies': {}}
-        tb = SampleSheetTableBuilder()
+        # Rendered tables
+        if not isa or int(isa) != 1:
+            ret = {'studies': {}}
+            tb = SampleSheetTableBuilder()
 
-        # Build study tables
-        for study in investigation.studies.all():
+            # Build study tables
+            for study in investigation.studies.all():
+                try:
+                    tables = tb.build_study_tables(study)
+
+                except Exception as ex:
+                    return Response(str(ex), status=500)
+
+                ret['studies'][str(study.sodar_uuid)] = tables
+
+        # Original ISAtab
+        else:
+            sheet_io = SampleSheetIO()
+
             try:
-                tables = tb.build_study_tables(study)
+                ret = sheet_io.export_isa(investigation)
 
-            except Exception:
-                continue  # TODO: TBD: How to inform the requester of a failure?
-
-            ret['studies'][str(study.sodar_uuid)] = tables
+            except Exception as ex:
+                return Response(str(ex), status=500)
 
         return Response(ret, status=200)
 
