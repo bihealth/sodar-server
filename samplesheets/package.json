@@ -1,6 +1,6 @@
 {
   "name": "sodar-samplesheets",
-  "version": "0.5.2",
+  "version": "0.6.0",
   "description": "SODAR Sample Sheets",
   "author": "mikko.nieminen <mikko.nieminen@bihealth.de>",
   "private": true,
