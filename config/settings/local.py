@@ -54,20 +54,23 @@ CACHES = {
 
 # django-debug-toolbar
 # ------------------------------------------------------------------------------
-MIDDLEWARE += ['debug_toolbar.middleware.DebugToolbarMiddleware']
-INSTALLED_APPS += ['debug_toolbar']
+ENABLE_DEBUG_TOOLBAR = env.bool('ENABLE_DEBUG_TOOLBAR', default=True)
 
-INTERNAL_IPS = ['127.0.0.1', '10.0.2.2']
+if ENABLE_DEBUG_TOOLBAR:
+    MIDDLEWARE += ['debug_toolbar.middleware.DebugToolbarMiddleware']
+    INSTALLED_APPS += ['debug_toolbar']
 
-# tricks to have debug toolbar when developing with docker
-if os.environ.get('USE_DOCKER') == 'yes':
-    ip = socket.gethostbyname(socket.gethostname())
-    INTERNAL_IPS += [ip[:-1] + '1']
+    INTERNAL_IPS = ['127.0.0.1', '10.0.2.2']
 
-DEBUG_TOOLBAR_CONFIG = {
-    'DISABLE_PANELS': ['debug_toolbar.panels.redirects.RedirectsPanel'],
-    'SHOW_TEMPLATE_CONTEXT': True,
-}
+    # tricks to have debug toolbar when developing with docker
+    if os.environ.get('USE_DOCKER') == 'yes':
+        ip = socket.gethostbyname(socket.gethostname())
+        INTERNAL_IPS += [ip[:-1] + '1']
+
+    DEBUG_TOOLBAR_CONFIG = {
+        'DISABLE_PANELS': ['debug_toolbar.panels.redirects.RedirectsPanel'],
+        'SHOW_TEMPLATE_CONTEXT': True,
+    }
 
 # django-extensions
 # ------------------------------------------------------------------------------

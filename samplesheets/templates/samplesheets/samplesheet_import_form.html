@@ -82,11 +82,11 @@
           <i class="fa fa-arrow-circle-left"></i> Cancel
         </a>
         {% if replace_sheets and not zones_exist %}
-          <button type="submit" class="btn btn-primary">
+          <button type="submit" class="btn btn-primary" id="sodar-ss-btn-import-submit">
             <i class="fa fa-refresh"></i> Replace
           </button>
         {% elif not replace_sheets %}
-          <button type="submit" class="btn btn-primary">
+          <button type="submit" class="btn btn-primary" id="sodar-ss-btn-import-submit">
             <i class="fa fa-upload"></i> Import
           </button>
         {% endif %}
