@@ -13,8 +13,8 @@
 {% block css %}
   {{ block.super }}
   <!-- Irodsbackend -->
-  {# Should not be directly included, see sodar_core#261 #}
-  <link rel="stylesheet" type="text/css" href="{% static 'irodsbackend/css/irodsbackend.css' %}" />
+  {% get_backend_include 'omics_irods' 'css' as irodsbackend_css %}
+  {{ irodsbackend_css|safe }}
 
   <style type="text/css">
     .sodar-lz-table thead tr th:nth-child(3) {

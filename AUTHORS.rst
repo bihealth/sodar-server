@@ -5,3 +5,4 @@ Credits
 * Manuel Holtgrewe <manuel.holtgrewe@bihealth.de>
 * Mathias Kuhring <mathias.kuhring@bihealth.de>
 * Franziska Schumann <franziska.schumann@bihealth.de>
+* Tim Garrels <tim.garrels@student.hpi.uni-potsdam.de>

@@ -104,3 +104,6 @@ celerybeat-schedule
 
 #irods config
 irods_config.zip
+
+# Vscode
+.vscode/*

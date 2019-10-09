@@ -44,8 +44,10 @@
     <p>Sample sheets available, sample repository not created in iRODS</p>
   </div>
 {% elif investigation and can_view_sheet %}
-  {# HACK: Manually include since plugin include is disabled (see sodar_core#261) #}
-  <script type="text/javascript" src="/static/irodsbackend/js/irodsbackend.js"></script>
+  <!-- Irodsbackend -->
+  {% get_backend_include 'omics_irods' 'js' as irodsbackend_js %}
+  {{ irodsbackend_js|safe }}
+
   <table class="table sodar-card-table" id="sodar-ss-details-table">
     <thead>
       <tr>

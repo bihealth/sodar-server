@@ -24,9 +24,10 @@ class BackendPlugin(BackendPluginPoint):
     description = 'iRODS backend for interfacing with the SODAR iRODS server'
 
     #: URL of optional javascript file to be included
-    # NOTE: Commented out temporarily (see sodar_core#261)
-    javascript_url = None
-    # javascript_url = static('irodsbackend/js/irodsbackend.js')
+    javascript_url = 'irodsbackend/js/irodsbackend.js'
+
+    #: URL of optional css file to be included
+    css_url = 'irodsbackend/css/irodsbackend.css'
 
     def get_api(self):
         """Return API entry point object."""
