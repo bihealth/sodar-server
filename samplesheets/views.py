@@ -443,9 +443,6 @@ class SampleSheetExcelExportView(
         # Build Excel file
         write_excel_table(table, response, display_name)
 
-        # Build TSV
-        # write_csv_table(table, response)
-
         # Return file
         return response
 
