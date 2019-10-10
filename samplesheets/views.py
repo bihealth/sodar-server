@@ -1,6 +1,7 @@
 import io
 import json
 import os
+from packaging import version
 import re
 import zipfile
 
@@ -469,11 +470,11 @@ class SampleSheetISAExportView(
             messages.error(request, 'No sample sheets available for project')
             return redirect(redirect_url)
 
-        if not investigation.parser_version:
+        if version.parse(investigation.parser_version) < version.parse('0.2.4'):
             messages.error(
                 request,
-                'Exporting ISAtabs imported using a LEGACY parser version '
-                'is not supported . Please replace sheets to enable export.',
+                'Exporting ISAtabs imported using altamISA < 0.2.4 is not '
+                'supported. Please replace the sheets to enable export.',
             )
             return redirect(redirect_url)
 
