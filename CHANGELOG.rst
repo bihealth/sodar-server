@@ -40,6 +40,7 @@ Changed
     - Move graph creation dependencies to ``local_extra.txt`` (#609)
     - Move redis requirement to base.txt (#610)
     - Include backend Javascript and CSS as implemented in django-sodar-core v0.7.0 (#533)
+    - Upgrade to Chromedriver v77
 - **Samplesheets**
     - Color potentially dangerous links (sodar_core#64)
     - Refactor sheet cell data access and sorting (#597)
