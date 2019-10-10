@@ -59,6 +59,7 @@ Changed
     - Use reference table building classes from altamISA
     - Enforce ordering in ``Study.get_nodes()`` to maintain row order (#510)
     - Ignore file name when searching for germline study pedigree files (#602)
+    - Replace TSV table export with Excel file export (#613)
 
 Fixed
 -----
@@ -88,6 +89,7 @@ Removed
     - Unused storage requirements from production config (#610)
 - **Samplesheets**
     - Reference table building classes from ``rendering.py``
+    - ``write_csv_table()`` helper from ``samplesheets.utils`` (#613)
 
 
 v0.5.1 (2019-07-09)

@@ -49,7 +49,7 @@ from .utils import (
     compare_inv_replace,
     get_sheets_url,
     get_comments,
-    write_csv_table,
+    write_excel_table,
 )
 
 
@@ -374,20 +374,19 @@ class SampleSheetImportView(
         return redirect(redirect_url)
 
 
-# TODO: TBD: Keep or remove this once ISAtab export is introduced?
-class SampleSheetTSVExportView(
+class SampleSheetExcelExportView(
     LoginRequiredMixin,
     LoggedInPermissionMixin,
     ProjectPermissionMixin,
     ProjectContextMixin,
     View,
 ):
-    """Sample sheet table TSV export view"""
+    """Sample sheet table Excel export view"""
 
     permission_required = 'samplesheets.export_sheet'
 
     def get(self, request, *args, **kwargs):
-        """Override get() to return TSV file"""
+        """Override get() to return an Excel file"""
 
         # Get the input study (we need study to build assay tables too)
         assay = None
@@ -407,7 +406,7 @@ class SampleSheetTSVExportView(
         redirect_url = get_sheets_url(self.get_project())
         if not study:
             messages.error(
-                self.request, 'Study not found, unable to render TSV'
+                self.request, 'Study not found, unable to render an Excel file'
             )
             return redirect(redirect_url)
 
@@ -426,21 +425,26 @@ class SampleSheetTSVExportView(
         if 'assay' in self.kwargs:
             table = tables['assays'][str(assay.sodar_uuid)]
             input_name = assay.file_name
+            display_name = assay.get_display_name()
 
         else:  # Study
             table = tables['study']
             input_name = study.file_name
+            display_name = study.get_display_name()
 
         # Set up response
         response = HttpResponse(content_type='text/tab-separated-values')
         response[
             'Content-Disposition'
-        ] = 'attachment; filename="{}.tsv"'.format(
+        ] = 'attachment; filename="{}.xlsx"'.format(
             input_name.split('.')[0]
         )  # TODO: TBD: Output file name?
 
+        # Build Excel file
+        write_excel_table(table, response, display_name)
+
         # Build TSV
-        write_csv_table(table, response)
+        # write_csv_table(table, response)
 
         # Return file
         return response

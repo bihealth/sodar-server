@@ -1,6 +1,7 @@
 """Utilities for the samplesheets app"""
 
-import csv
+from openpyxl import Workbook
+from openpyxl.workbook.child import INVALID_TITLE_REGEX
 import re
 
 from django.db.models import QuerySet
@@ -243,30 +244,45 @@ def get_comments(obj):
     return {k: get_comment(obj, k) for k in obj.comments.keys()}
 
 
-def write_csv_table(table, output, delimiter='\t'):
+def write_excel_table(table, output, display_name):
     """
-    Write rendered study/assay table into csv/tsv.
-
-    :param table: Rendered study/assay table (dict)
-    :param output: Writer output object
-    :param delimiter: Delimiting character
+    Write an Excel 2010 file (.xlsx) from a rendered study/assay table
+    :param table:
+    :param output:
+    :return:
     """
-    writer = csv.writer(output, delimiter=delimiter)
 
-    # Top header
-    output_row = []
+    def _get_val(c_val):
+        if isinstance(c_val, str):
+            return c_val
+        elif isinstance(c_val, dict):
+            return c_val['name']
+        elif isinstance(c_val, list):
+            return ';'.join([_get_val(x) for x in c_val])
+        return ''
+
+    # Build Excel file
+    wb = Workbook()
+    ws = wb.active
+    ws.title = re.sub(INVALID_TITLE_REGEX, '_', display_name)
+    top_header_row = []
 
     for c in table['top_header']:
-        output_row.append(c['value'])
+        top_header_row.append(c['value'])
 
         if c['colspan'] > 1:
-            output_row += [''] * (c['colspan'] - 1)
+            top_header_row += [''] * (c['colspan'] - 1)
 
-    writer.writerow(output_row)
+    ws.append(top_header_row)
+    ws.append([c['value'] for c in table['field_header']])
 
-    # Header
-    writer.writerow([c['value'] for c in table['field_header']])
-
-    # Data cells
     for row in table['table_data']:
-        writer.writerow([c['value'] for c in row])
+        ws.append([_get_val(c['value']) for c in row])
+
+    # Resize columns (plus a little extra for padding)
+    # NOTE: There is a "bestFit" attribute but it doesn't really work at all
+    for col_cells in ws.columns:
+        length = max(len(c.value) if c.value else 0 for c in col_cells) + 2
+        ws.column_dimensions[col_cells[0].column_letter].width = length
+
+    wb.save(output)

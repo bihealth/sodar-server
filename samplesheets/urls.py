@@ -17,14 +17,14 @@ urlpatterns = [
         name='import',
     ),
     url(
-        regex=r'^export/tsv/study/(?P<study>[0-9a-f-]+)$',
-        view=views.SampleSheetTSVExportView.as_view(),
-        name='export_tsv',
+        regex=r'^export/excel/study/(?P<study>[0-9a-f-]+)$',
+        view=views.SampleSheetExcelExportView.as_view(),
+        name='export_excel',
     ),
     url(
-        regex=r'^export/tsv/assay/(?P<assay>[0-9a-f-]+)$',
-        view=views.SampleSheetTSVExportView.as_view(),
-        name='export_tsv',
+        regex=r'^export/excel/assay/(?P<assay>[0-9a-f-]+)$',
+        view=views.SampleSheetExcelExportView.as_view(),
+        name='export_excel',
     ),
     url(
         regex=r'^export/isa/(?P<project>[0-9a-f-]+)$',

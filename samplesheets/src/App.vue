@@ -86,8 +86,8 @@
                   <b-button
                       variant="secondary"
                       v-b-tooltip.hover
-                      title="Download TSV file for Excel"
-                      :href="'export/study/' + currentStudyUuid">
+                      title="Download table as Excel file (Note: not ISAtab compatible)"
+                      :href="'export/excel/study/' + currentStudyUuid">
                     <i class="fa fa-file-excel-o"></i>
                   </b-button>
                 </b-input-group-prepend>
@@ -176,8 +176,8 @@
                     <b-button
                         variant="secondary"
                         v-b-tooltip.hover
-                        title="Download TSV file for Excel"
-                        :href="'export/assay/' + assayUuid">
+                        title="Download table as Excel file (Note: not ISAtab compatible)"
+                        :href="'export/excel/assay/' + assayUuid">
                       <i class="fa fa-file-excel-o"></i>
                     </b-button>
                   </b-input-group-prepend>

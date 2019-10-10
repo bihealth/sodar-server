@@ -67,10 +67,10 @@ class TestSampleSheetsPermissions(
         self.assert_render200_ok(url, good_users)
         self.assert_redirect(url, bad_users)
 
-    def test_sheet_export_tsv_study(self):
-        """Test the project sheets TSV export view for study table"""
+    def test_sheet_export_excel_study(self):
+        """Test the project sheets Excel export view for study table"""
         url = reverse(
-            'samplesheets:export_tsv', kwargs={'study': self.study.sodar_uuid}
+            'samplesheets:export_excel', kwargs={'study': self.study.sodar_uuid}
         )
         good_users = [
             self.superuser,
@@ -82,10 +82,10 @@ class TestSampleSheetsPermissions(
         self.assert_render200_ok(url, good_users)
         self.assert_redirect(url, bad_users)
 
-    def test_sheet_export_tsv_assay(self):
-        """Test the project sheets TSV export view for assay table"""
+    def test_sheet_export_excel_assay(self):
+        """Test the project sheets Excel export view for assay table"""
         url = reverse(
-            'samplesheets:export_tsv', kwargs={'assay': self.assay.sodar_uuid}
+            'samplesheets:export_excel', kwargs={'assay': self.assay.sodar_uuid}
         )
         good_users = [
             self.superuser,

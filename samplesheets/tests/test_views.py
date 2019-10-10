@@ -387,8 +387,8 @@ class TestSampleSheetImportView(TestViewsBase):
         self.assertEqual(Investigation.objects.all().count(), 0)
 
 
-class TestSampleSheetTSVExportView(TestViewsBase):
-    """Tests for the sample sheet TSV export view"""
+class TestSampleSheetExcelExportView(TestViewsBase):
+    """Tests for the sample sheet Excel export view"""
 
     def setUp(self):
         super().setUp()
@@ -401,22 +401,22 @@ class TestSampleSheetTSVExportView(TestViewsBase):
         self.assay = self.study.assays.first()
 
     def test_render_study(self):
-        """Test rendering the TSV file for a study table"""
+        """Test rendering the Excel file for a study table"""
         with self.login(self.user):
             response = self.client.get(
                 reverse(
-                    'samplesheets:export_tsv',
+                    'samplesheets:export_excel',
                     kwargs={'study': self.study.sodar_uuid},
                 )
             )
             self.assertEqual(response.status_code, 200)
 
     def test_render_assay(self):
-        """Test rendering the TSV file for a assay table"""
+        """Test rendering the Excel file for a assay table"""
         with self.login(self.user):
             response = self.client.get(
                 reverse(
-                    'samplesheets:export_tsv',
+                    'samplesheets:export_excel',
                     kwargs={'assay': self.assay.sodar_uuid},
                 )
             )
