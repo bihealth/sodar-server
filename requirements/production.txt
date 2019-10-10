@@ -4,7 +4,7 @@
 
 
 # Whitenoise for static files
-whitenoise==4.1.2
+whitenoise==4.1.4
 
 # Redis cache support
 django-redis==4.10.0
@@ -14,7 +14,7 @@ gevent==1.4.0
 gunicorn==19.9.0
 
 # Email backends for Mailgun, Postmark, SendGrid and more
-django-anymail==4.3
+django-anymail==7.0.0
 
 # Raven is the Sentry client
 raven==6.10.0
