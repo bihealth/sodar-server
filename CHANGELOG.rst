@@ -55,7 +55,7 @@ Changed
     - Suppress altamISA warnings during testing (#637)
     - Fail when encountering critical altamISA warnings in ISAtab import (#573)
     - Use file name as study/assay key in parser warning data (#644)
-    - Upgrade to altamISA v0.2.4
+    - Upgrade to altamISA v0.2.5 (#676)
     - Rename and refactor ``get_igv_session_url()`` (#402)
     - Use reference table building classes from altamISA
     - Enforce ordering in ``Study.get_nodes()`` to maintain row order (#510)
