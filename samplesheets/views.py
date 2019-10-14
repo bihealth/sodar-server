@@ -387,8 +387,7 @@ class SampleSheetExcelExportView(
 
     def get(self, request, *args, **kwargs):
         """Override get() to return an Excel file"""
-
-        # Get the input study (we need study to build assay tables too)
+        timeline = get_backend_api('timeline_backend')
         assay = None
         study = None
 
@@ -422,7 +421,7 @@ class SampleSheetExcelExportView(
             )
             return redirect(redirect_url)
 
-        if 'assay' in self.kwargs:
+        if assay:
             table = tables['assays'][str(assay.sodar_uuid)]
             input_name = assay.file_name
             display_name = assay.get_display_name()
@@ -442,6 +441,29 @@ class SampleSheetExcelExportView(
 
         # Build Excel file
         write_excel_table(table, response, display_name)
+
+        if timeline:
+            tl_event = timeline.add_event(
+                project=self.get_project(),
+                app_name=APP_NAME,
+                user=self.request.user,
+                event_name='sheet_export_excel',
+                description='export {{{}}} as Excel file'.format(
+                    'assay' if assay else 'study'
+                ),
+                status_type='OK',
+                classified=True,
+            )
+
+            if assay:
+                tl_event.add_object(
+                    obj=assay, label='assay', name=assay.get_display_name()
+                )
+
+            else:  # Study
+                tl_event.add_object(
+                    obj=study, label='study', name=study.get_display_name()
+                )
 
         # Return file
         return response
@@ -499,6 +521,7 @@ class SampleSheetISAExportView(
                 user=self.request.user,
                 event_name='sheet_export_isa',
                 description='export {investigation} as ISAtab',
+                classified=True,
             )
 
             tl_event.add_object(

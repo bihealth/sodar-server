@@ -30,6 +30,8 @@ Added
     - IGV merge shortcuts in study links modal (#402)
     - ISAtab import from multiple uncompressed files (#593)
     - ISAtab export option for ``RemoteSheetGetAPIView`` (#670)
+    - Support for ``Study`` and ``Assay`` in ``get_object_link()``
+    - Timeline logging for ISAtab and Excel export
 
 Changed
 -------

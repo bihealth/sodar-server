@@ -1,5 +1,4 @@
 from django.conf import settings
-from django.urls import reverse
 
 from djangoplugins.point import PluginPoint
 
@@ -9,7 +8,7 @@ from projectroles.plugins import ProjectAppPluginPoint, get_backend_api
 
 from .models import Investigation, Study, Assay, GenericMaterial
 from .urls import urlpatterns
-from .utils import get_sample_dirs, get_isa_field_name
+from .utils import get_sample_dirs, get_isa_field_name, get_sheets_url
 
 
 # SODAR constants
@@ -108,16 +107,14 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         """
         obj = self.get_object(eval(model_str), uuid)
 
-        if not obj:
+        if not obj or obj.__class__ not in [Investigation, Study, Assay]:
             return None
 
-        # The only possible model is SampleSheet, directing to entry point
         return {
-            'url': reverse(
-                'samplesheets:project_sheets',
-                kwargs={'project': obj.project.sodar_uuid},
-            ),
-            'label': obj.title,
+            'url': get_sheets_url(obj),
+            'label': obj.title
+            if obj.__class__ == Investigation
+            else obj.get_display_name(),
         }
 
     def search(self, search_term, user, search_type=None, keywords=None):

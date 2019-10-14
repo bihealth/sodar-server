@@ -402,6 +402,8 @@ class TestSampleSheetExcelExportView(TestViewsBase):
 
     def test_render_study(self):
         """Test rendering the Excel file for a study table"""
+        timeline = get_backend_api('timeline_backend')
+
         with self.login(self.user):
             response = self.client.get(
                 reverse(
@@ -411,8 +413,16 @@ class TestSampleSheetExcelExportView(TestViewsBase):
             )
             self.assertEqual(response.status_code, 200)
 
+            # Assert data in timeline event
+            tl_event = timeline.get_project_events(
+                self.project, classified=True
+            ).order_by('-pk')[0]
+            self.assertEqual(tl_event.event_name, 'sheet_export_excel')
+
     def test_render_assay(self):
         """Test rendering the Excel file for a assay table"""
+        timeline = get_backend_api('timeline_backend')
+
         with self.login(self.user):
             response = self.client.get(
                 reverse(
@@ -421,6 +431,12 @@ class TestSampleSheetExcelExportView(TestViewsBase):
                 )
             )
             self.assertEqual(response.status_code, 200)
+
+            # Assert data in timeline event
+            tl_event = timeline.get_project_events(
+                self.project, classified=True
+            ).order_by('-pk')[0]
+            self.assertEqual(tl_event.event_name, 'sheet_export_excel')
 
 
 class TestSampleSheetISAExportView(TestViewsBase):
@@ -453,7 +469,9 @@ class TestSampleSheetISAExportView(TestViewsBase):
             )
 
         # Assert data in timeline event
-        tl_event = timeline.get_project_events(self.project).order_by('-pk')[0]
+        tl_event = timeline.get_project_events(
+            self.project, classified=True
+        ).order_by('-pk')[0]
         tl_status = tl_event.get_current_status()
         self.assertIsNotNone(tl_status.extra_data['warnings'])
 
