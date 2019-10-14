@@ -1,6 +1,7 @@
 from django.conf import settings
 
 from djangoplugins.point import PluginPoint
+from irods.exception import NetworkException
 
 # Projectroles dependency
 from projectroles.models import Project, SODAR_CONSTANTS
@@ -190,8 +191,9 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                     limit=settings.SHEETS_IRODS_LIMIT,
                 )
 
-            except FileNotFoundError:
-                return results  # Skip rest if no data objects were found
+            # Skip rest if no data objects were found or iRODS is unreachable
+            except (FileNotFoundError, NetworkException):
+                return results
 
             projects = {
                 str(p.sodar_uuid): p
