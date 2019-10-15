@@ -33,6 +33,8 @@ Added
     - Support for ``Study`` and ``Assay`` in ``get_object_link()``
     - Timeline logging for ISAtab and Excel export
     - Assay app ``meta_ms`` for metabolite profiling / mass spectrometry (#675)
+    - Ability to define alerts in context API view (#681)
+    - Alert for sheets parsed with an old altamISA version (#681)
 
 Changed
 -------

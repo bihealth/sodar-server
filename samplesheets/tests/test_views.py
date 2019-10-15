@@ -581,6 +581,7 @@ class TestContextGetAPIView(TestViewsBase):
             'table_height': settings.SHEETS_TABLE_HEIGHT,
             'min_col_width': settings.SHEETS_MIN_COLUMN_WIDTH,
             'max_col_width': settings.SHEETS_MAX_COLUMN_WIDTH,
+            'alerts': [],
             'investigation': {
                 'identifier': self.investigation.identifier,
                 'title': self.investigation.title,

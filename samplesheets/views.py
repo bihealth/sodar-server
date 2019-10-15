@@ -61,6 +61,7 @@ REMOTE_LEVEL_READ_ROLES = SODAR_CONSTANTS['REMOTE_LEVEL_READ_ROLES']
 # Local constants
 APP_NAME = 'samplesheets'
 WARNING_STATUS_MSG = 'OK with warnings, see extra data'
+TARGET_ALTAMISA_VERSION = '0.2.4'  # For warnings etc.
 
 
 class InvestigationContextMixin(ProjectContextMixin):
@@ -493,11 +494,15 @@ class SampleSheetISAExportView(
             messages.error(request, 'No sample sheets available for project')
             return redirect(redirect_url)
 
-        if version.parse(investigation.parser_version) < version.parse('0.2.4'):
+        if version.parse(investigation.parser_version) < version.parse(
+            TARGET_ALTAMISA_VERSION
+        ):
             messages.error(
                 request,
-                'Exporting ISAtabs imported using altamISA < 0.2.4 is not '
-                'supported. Please replace the sheets to enable export.',
+                'Exporting ISAtabs imported using altamISA < {} is not '
+                'supported. Please replace the sheets to enable export.'.format(
+                    TARGET_ALTAMISA_VERSION
+                ),
             )
             return redirect(redirect_url)
 
@@ -886,7 +891,21 @@ class SampleSheetContextGetAPIView(
             'table_height': settings.SHEETS_TABLE_HEIGHT,
             'min_col_width': settings.SHEETS_MIN_COLUMN_WIDTH,
             'max_col_width': settings.SHEETS_MAX_COLUMN_WIDTH,
+            'alerts': [],
         }
+
+        if investigation and version.parse(
+            investigation.parser_version
+        ) < version.parse(TARGET_ALTAMISA_VERSION):
+            ret_data['alerts'].append(
+                {
+                    'level': 'danger',
+                    'text': 'This sample sheet has been imported with an '
+                    'old altamISA version (< {}). Please replace the ISAtab '
+                    'to enable all features and ensure full '
+                    'functionality.'.format(TARGET_ALTAMISA_VERSION),
+                }
+            )
 
         # Study info
         ret_data['studies'] = {}

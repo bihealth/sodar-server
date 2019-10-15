@@ -10,6 +10,19 @@
     <div class="container-fluid sodar-page-container"
          id="sodar-ss-vue-container">
 
+      <!-- Alerts from context API view -->
+      <div v-if="sodarContext &&
+                 sodarContext['perms']['edit_sheet'] &&
+                 sodarContext['alerts'].length"
+           class="pb-2"
+           id="sodar-ss-vue-alert-container">
+        <div v-for="(alertData, alertIdx) in sodarContext['alerts']"
+             :key="alertIdx"
+             :class="'alert sodar ss-vue-alert alert-' + alertData['level']">
+          {{ alertData['text'] }}
+        </div>
+      </div>
+
       <!-- Study data rendered -->
       <div v-if="sodarContext &&
                  gridsLoaded &&
