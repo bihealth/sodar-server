@@ -88,7 +88,8 @@ LOCAL_APPS = [
     'samplesheets.studyapps.germline.apps.GermlineConfig',
     'samplesheets.studyapps.cancer.apps.CancerConfig',
     # Samplesheets assay sub-apps
-    'samplesheets.assayapps.dna_sequencing.apps.DnaSequencingConfig',  # noqa
+    'samplesheets.assayapps.dna_sequencing.apps.DnaSequencingConfig',
+    'samplesheets.assayapps.meta_ms.apps.MetaMsConfig',
     'samplesheets.assayapps.pep_ms.apps.PepMsConfig',
     # Landingzones config sub-apps
     'landingzones.configapps.bih_proteomics_smb.apps.BihProteomicsSmbConfig',

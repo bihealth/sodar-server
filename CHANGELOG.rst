@@ -32,6 +32,7 @@ Added
     - ISAtab export option for ``RemoteSheetGetAPIView`` (#670)
     - Support for ``Study`` and ``Assay`` in ``get_object_link()``
     - Timeline logging for ISAtab and Excel export
+    - Assay app ``meta_ms`` for metabolite profiling / mass spectrometry (#675)
 
 Changed
 -------
