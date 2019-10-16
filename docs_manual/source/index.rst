@@ -27,7 +27,8 @@ It is developed by the Core Unit Bioinformatics at the Berlin Institute of Healt
     :hidden:
     :titlesonly:
 
-    ext_tool_igv
+    ext_tool_igv_setup
+    ext_tool_igv_opening
     ext_tool_winscp
 
 .. toctree::
