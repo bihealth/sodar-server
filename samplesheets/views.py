@@ -494,9 +494,9 @@ class SampleSheetISAExportView(
             messages.error(request, 'No sample sheets available for project')
             return redirect(redirect_url)
 
-        if version.parse(investigation.parser_version) < version.parse(
-            TARGET_ALTAMISA_VERSION
-        ):
+        if not investigation.parser_version or version.parse(
+            investigation.parser_version
+        ) < version.parse(TARGET_ALTAMISA_VERSION):
             messages.error(
                 request,
                 'Exporting ISAtabs imported using altamISA < {} is not '
@@ -894,9 +894,11 @@ class SampleSheetContextGetAPIView(
             'alerts': [],
         }
 
-        if investigation and version.parse(
-            investigation.parser_version
-        ) < version.parse(TARGET_ALTAMISA_VERSION):
+        if investigation and (
+            not investigation.parser_version
+            or version.parse(investigation.parser_version)
+            < version.parse(TARGET_ALTAMISA_VERSION)
+        ):
             ret_data['alerts'].append(
                 {
                     'level': 'danger',
