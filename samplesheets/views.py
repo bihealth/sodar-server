@@ -154,7 +154,7 @@ class SampleSheetImportView(
             # Check for active zones in case of sheet replacing
             if (
                 old_inv.project.landing_zones.exclude(
-                    status__in=['MOVED', 'DELETED']
+                    status__in=['ACTIVE', 'MOVED', 'DELETED']
                 ).count()
                 > 0
             ):

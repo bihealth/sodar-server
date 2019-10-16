@@ -66,6 +66,7 @@ Changed
     - Enforce ordering in ``Study.get_nodes()`` to maintain row order (#510)
     - Ignore file name when searching for germline study pedigree files (#602)
     - Replace TSV table export with Excel file export (#613)
+    - Allow ``ACTIVE`` landing zones when replacing sample sheets
 
 Fixed
 -----
