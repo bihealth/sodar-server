@@ -15,7 +15,7 @@
           </thead>
           <tbody>
             <tr v-for="(warning, index) in warnings" :key="index">
-              <td class="text-nowrap text-monospace">{{ warning['source'] }}</td>
+              <td class="text-monospace">{{ warning['source'] }}</td>
               <td class="text-monospace">{{ warning['message'] }}</td>
               <td class="text-monospace">{{ warning['category'] }}</td>
             </tr>
@@ -112,4 +112,26 @@ export default {
 </script>
 
 <style scoped>
+
+table#sodar-ss-warnings-table tbody tr td {
+  word-break: break-word;
+}
+
+table#sodar-ss-warnings-table thead tr th:last-child,
+table#sodar-ss-warnings-table tbody tr td:last-child {
+  word-break: normal;
+}
+
+table#sodar-ss-warnings-table thead tr th:first-child,
+table#sodar-ss-warnings-table tbody tr td:first-child {
+  max-width: 350px;
+}
+
+@media (max-width: 1200px) {
+  table#sodar-ss-warnings-table thead tr th:nth-child(3),
+  table#sodar-ss-warnings-table tbody tr td:nth-child(3) {
+    display: none;
+  }
+}
+
 </style>

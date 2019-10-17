@@ -89,6 +89,7 @@ Fixed
     - Display value copied to clipboard instead of full value in multi-cell select (#521)
     - Multi-cell clipboard copying wrong cells with custom row ordering (#664)
     - Crash in search if iRODS connection fails (#680)
+    - Parser warnings layout breaking with long strings (#685)
 
 Removed
 -------
