@@ -856,7 +856,7 @@ class SampleSheetContextGetAPIView(
             project=project, active=True
         ).first()
         studies = Study.objects.filter(investigation=investigation).order_by(
-            'title'
+            'pk'
         )
         irods_backend = get_backend_api('omics_irods')
 
@@ -932,11 +932,10 @@ class SampleSheetContextGetAPIView(
             }
 
             # Set up assay data
-            for a in s.assays.all().order_by('file_name'):
+            for a in s.assays.all().order_by('pk'):
                 assay_plugin = find_assay_plugin(
                     a.measurement_type, a.technology_type
                 )
-
                 ret_data['studies'][str(s.sodar_uuid)]['assays'][
                     str(a.sodar_uuid)
                 ] = {

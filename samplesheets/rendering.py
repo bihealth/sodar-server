@@ -884,7 +884,7 @@ class SampleSheetTableBuilder:
         # Assay tables
         assay_count = 0
 
-        for assay in study.assays.all().order_by('file_name'):
+        for assay in study.assays.all().order_by('pk'):
             a_start = time.time()
             logger.debug(
                 'Building assay "{}" (pk={})..'.format(

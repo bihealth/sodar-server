@@ -67,6 +67,7 @@ Changed
     - Ignore file name when searching for germline study pedigree files (#602)
     - Replace TSV table export with Excel file export (#613)
     - Allow ``ACTIVE`` landing zones when replacing sample sheets
+    - Sort displayed studies and assays by parsing order instead of file name (#683)
 
 Fixed
 -----
