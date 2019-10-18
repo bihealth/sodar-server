@@ -366,14 +366,14 @@ export default {
 
     onFilterChange (event) {
       let gridApi
-      if (event.target.id === 'sodar-ss-data-filter-study') {
+      if (event.currentTarget.id === 'sodar-ss-data-filter-study') {
         gridApi = this.gridOptions['study'].api
-      } else if (event.target.id.indexOf('sodar-ss-data-filter-assay') !== -1) {
-        let assayUuid = event.target.getAttribute('assay-uuid')
+      } else if (event.currentTarget.id.indexOf('sodar-ss-data-filter-assay') !== -1) {
+        let assayUuid = event.currentTarget.getAttribute('assay-uuid')
         gridApi = this.gridOptions['assays'][assayUuid].api
       }
       if (gridApi) {
-        gridApi.setQuickFilter(event.target.value)
+        gridApi.setQuickFilter(event.currentTarget.value)
       }
     },
 
@@ -412,6 +412,11 @@ export default {
 
       // String sort
       return valueA.localeCompare(valueB)
+    },
+
+    // Custom filter value for data cells (fix for #686)
+    dataCellFilterValue (params) {
+      return params.data[params.column.colId].value
     },
 
     /* Grid Setup ----------------------------------------------------------- */
@@ -533,7 +538,8 @@ export default {
               'sodar-ss-data-cell',
               'text-' + fieldHeader['align']
             ],
-            comparator: this.dataCellCompare
+            comparator: this.dataCellCompare,
+            filterValueGetter: this.dataCellFilterValue
           }
 
           // Make source name column pinned, disable hover
