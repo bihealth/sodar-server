@@ -416,7 +416,7 @@ export default {
 
     // Custom filter value for data cells (fix for #686)
     dataCellFilterValue (params) {
-      return params.data[params.column.colId].value
+      return this.getFlatValue(params.data[params.column.colId].value)
     },
 
     /* Grid Setup ----------------------------------------------------------- */
