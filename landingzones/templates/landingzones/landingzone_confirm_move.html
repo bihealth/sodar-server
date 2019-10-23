@@ -17,9 +17,11 @@
 <div class="container-fluid sodar-page-container">
   <div class="alert alert-warning" role="alert">
     <strong>Note:</strong> You are initiating validation of your landing zone
-    "<strong>{{ zone.title }}</strong>". Files will not be moved upon successful
-    validation. Please see the landing zone list for the validation result once
-    you have confirmed the validation.
+    "<strong>{{ zone.title }}</strong>". Files
+    <strong>will {% if validate_only %}not{% endif %}</strong>
+    be moved to the sample repository upon successful validation. Please see the
+    landing zone list for the validation result once you have confirmed the
+    action.
   </div>
 
   <form method="post">

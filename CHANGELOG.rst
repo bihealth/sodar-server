@@ -5,6 +5,15 @@ Changelog for the SODAR Web UI. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+Unreleased
+==========
+
+Fixed
+-----
+
+- **Landingzones**
+    - Misleading alert text in ``landingzone_confirm_move.html`` (#689)
+
 v0.6.0 (2019-10-21)
 ===================
 
