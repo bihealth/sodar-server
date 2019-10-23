@@ -100,7 +100,7 @@ class ProjectSheetsView(
 
         studies = Study.objects.filter(
             investigation=context['investigation']
-        ).order_by('title')
+        ).order_by('pk')
 
         # Provide initial context data to Vue app
         app_context = {

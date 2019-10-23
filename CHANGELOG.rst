@@ -13,6 +13,9 @@ Fixed
 
 - **Landingzones**
     - Misleading alert text in ``landingzone_confirm_move.html`` (#689)
+- **Samplesheets**
+    - Initial study context sorted by title instead of parsing order (#692)
+
 
 v0.6.0 (2019-10-21)
 ===================
