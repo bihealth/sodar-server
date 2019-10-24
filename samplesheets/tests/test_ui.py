@@ -177,14 +177,13 @@ class TestProjectSheetsView(SampleSheetIOMixin, TestUIBase):
     def test_op_dropdown(self):
         """Test the operations dropdown"""
         users = [
-            (self.superuser, 5),
-            (self.as_owner.user, 5),
-            (self.as_delegate.user, 5),
-            (self.as_contributor.user, 5),
-            (self.as_guest.user, 0),
+            (self.superuser, 6),
+            (self.as_owner.user, 6),
+            (self.as_delegate.user, 6),
+            (self.as_contributor.user, 6),
+            (self.as_guest.user, 5),  # Links available but disabled
         ]
 
-        # TODO: Check if button is disabled (see issue #497)
         for user in users:
             self._login_and_render(user[0])
 

@@ -47,7 +47,7 @@
           <div class="ml-auto align-middle">
             <span class="mr-2">
               <!-- iRODS dir status / stats badge -->
-              <span class="badge-group text-nowrap">
+              <span v-if="!editMode" class="badge-group text-nowrap">
                 <span class="badge badge-pill badge-secondary">iRODS</span>
                     <irods-stats-badge
                         v-if="sodarContext['irods_status']"
@@ -125,6 +125,7 @@
                     :columnDefs="columnDefs['study']"
                     :rowData="rowData['study']"
                     :gridOptions="gridOptions['study']"
+                    :frameworkComponents="frameworkComponents"
                     @grid-ready="onGridReady">
                 </ag-grid-vue>
               </template>
@@ -165,7 +166,7 @@
           </div>
 
           <extra-content-table
-              v-if="extraTables.assays[assayUuid]"
+              v-if="!editMode && extraTables.assays[assayUuid]"
               :app="getApp()"
               :table-data="extraTables.assays[assayUuid]"
               :irods-status="sodarContext['irods_status']"
@@ -215,6 +216,7 @@
                     :columnDefs="columnDefs['assays'][assayUuid]"
                     :rowData="rowData['assays'][assayUuid]"
                     :gridOptions="gridOptions['assays'][assayUuid]"
+                    :frameworkComponents="frameworkComponents"
                     @grid-ready="onGridReady">
                 </ag-grid-vue>
               </ag-grid-drag-select>
@@ -304,6 +306,7 @@ import {AgGridVue} from 'ag-grid-vue'
 import DataCellRenderer from './components/renderers/DataCellRenderer.vue'
 import IrodsButtonsRenderer from './components/renderers/IrodsButtonsRenderer.vue'
 import ShortcutButtonsRenderer from './components/renderers/ShortcutButtonsRenderer.vue'
+import DataCellEditor from './components/editors/DataCellEditor.vue'
 import AgGridDragSelect from './components/AgGridDragSelect.vue'
 
 export default {
@@ -339,7 +342,13 @@ export default {
       renderError: null,
       sheetsAvailable: null,
       activeSubPage: null,
-      appSetupDone: false
+      appSetupDone: false,
+      editMode: false,
+      editStudyData: false,
+      /* NOTE: cell editor only works if provided through frameworkComponents? */
+      frameworkComponents: {
+        dataCellEditor: DataCellEditor
+      }
     }
   },
   components: {
@@ -448,39 +457,45 @@ export default {
       return 'height: ' + this.sodarContext['table_height'] + 'px;'
     },
 
-    buildColDef (table, assayMode, uuid) {
+    buildColDef (table, assayMode, uuid, editMode) {
       // Default columns
-      let colDef = [
-        {
-          headerName: 'Row',
-          headerClass: ['bg-secondary', 'text-white'],
-          suppressSizeToFit: true,
-          suppressAutoSize: true,
-          children: [
-            {
-              headerName: '#',
-              field: 'rowNum',
-              editable: false,
-              headerClass: ['sodar-ss-data-header'],
-              cellClass: [
-                'text-right', 'text-muted',
-                'sodar-ss-data-unselectable',
-                'sodar-ss-data-row-cell'
-              ],
-              suppressSizeToFit: true,
-              suppressAutoSize: true,
-              pinned: 'left',
-              unselectable: true,
-              cellRendererFramework: null,
-              minWidth: 65,
-              maxWidth: 100,
-              width: 65
-            }
-          ]
-        }
-      ]
+      let colDef = []
 
-      // Build column data
+      let rowHeaderGroup = {
+        headerName: 'Row',
+        headerClass: ['bg-secondary', 'text-white'],
+        suppressSizeToFit: true,
+        suppressAutoSize: true,
+        children: [
+          {
+            headerName: '#',
+            field: 'rowNum',
+            editable: false,
+            headerClass: ['sodar-ss-data-header'],
+            cellClass: [
+              'text-right', 'text-muted',
+              'sodar-ss-data-unselectable',
+              'sodar-ss-data-row-cell'
+            ],
+            suppressSizeToFit: true,
+            suppressAutoSize: true,
+            pinned: 'left',
+            unselectable: true,
+            cellRendererFramework: null,
+            minWidth: 65,
+            maxWidth: 100,
+            width: 65
+          }
+        ]
+      }
+
+      // Editing: gray out row column to avoid confusion
+      if (this.editMode) {
+        rowHeaderGroup.children[0].cellClass.push('bg-light')
+      }
+      colDef.push(rowHeaderGroup)
+
+      // Sample sheet columns
       let topHeaderLength = table['top_header'].length
       let headerIdx = 0
       let j = headerIdx
@@ -521,7 +536,7 @@ export default {
             colWidth = Math.max(calcW, minW)
           }
 
-          // Create header
+          // Create data header
           let header = {
             headerName: fieldHeader['value'],
             field: 'col' + j.toString(),
@@ -561,6 +576,24 @@ export default {
             header.hide = true
           }
 
+          // Editing: make specific fields editable
+          // TODO: Get editable fields from JSON setting
+          if (editMode && fieldHeader['type'] !== 'name' && !colType) {
+            header.editable = true
+            header.cellEditor = 'dataCellEditor'
+            header.cellEditorParams = {
+              'app': this.getApp(),
+              'headerInfo': {
+                'header_name': fieldHeader['og_field'],
+                'header_type': fieldHeader['type'],
+                'header_field': header.field, // For updating other cells
+                'obj_cls': fieldHeader['obj_cls']
+              }
+            }
+          } else if (editMode) {
+            header.cellClass = header.cellClass.concat(['bg-light', 'text-muted'])
+          }
+
           if (j > 0) {
             headerGroup.children.push(header)
           }
@@ -576,7 +609,8 @@ export default {
         }
       }
 
-      if (!assayMode &&
+      if (!this.editMode &&
+          !assayMode &&
           table.hasOwnProperty('shortcuts') &&
           table['shortcuts'] != null) {
         let shortcutHeaderGroup = {
@@ -618,7 +652,7 @@ export default {
         colDef.push(shortcutHeaderGroup)
       }
 
-      if (assayMode) {
+      if (!this.editMode && assayMode) {
         let assayContext = this.sodarContext['studies'][this.currentStudyUuid]['assays'][uuid]
         if (this.sodarContext['irods_status'] && assayContext['display_row_links']) {
           let assayIrodsPath = assayContext['irods_path']
@@ -726,7 +760,7 @@ export default {
       }
     },
 
-    getStudy (studyUuid) {
+    getStudy (studyUuid, editMode) {
       this.gridsLoaded = false
       this.gridsBusy = true
       this.clearGrids()
@@ -738,9 +772,13 @@ export default {
 
       // Retrieve study and assay tables for current study
       // TODO: Add timeout/retrying
-      fetch(this.sodarContext['studies'][studyUuid]['table_url'], {
-        credentials: 'same-origin'
-      })
+      let url = this.sodarContext['studies'][studyUuid]['table_url']
+
+      if (editMode) {
+        url = url + '?edit=1'
+      }
+
+      fetch(url, {credentials: 'same-origin'})
         .then(data => data.json())
         .then(
           data => {
@@ -750,27 +788,28 @@ export default {
             } else {
               // Build study
               this.columnDefs['study'] = this.buildColDef(
-                data['table_data']['study'], false, studyUuid)
-              this.rowData['study'] = this.buildRowData(data['table_data']['study'])
-              this.columnValues['study'] = data['table_data']['study']['col_values']
+                data['tables']['study'], false, studyUuid, editMode)
+              this.rowData['study'] = this.buildRowData(data['tables']['study'])
+              this.columnValues['study'] = data['tables']['study']['col_values']
 
               // Build assays
-              for (let assayUuid in data['table_data']['assays']) {
+              for (let assayUuid in data['tables']['assays']) {
                 this.gridOptions['assays'][assayUuid] = this.getGridOptions()
                 this.columnDefs['assays'][assayUuid] = this.buildColDef(
-                  data['table_data']['assays'][assayUuid], true, assayUuid)
+                  data['tables']['assays'][assayUuid], true, assayUuid, editMode)
                 this.rowData['assays'][assayUuid] = this.buildRowData(
-                  data['table_data']['assays'][assayUuid])
+                  data['tables']['assays'][assayUuid])
                 this.columnValues['assays'][assayUuid] =
-                  data['table_data']['assays'][assayUuid]['col_values']
+                  data['tables']['assays'][assayUuid]['col_values']
 
                 // Get extra table
-                if ('extra_table' in data['table_data']['assays'][assayUuid]) {
+                if ('extra_table' in data['tables']['assays'][assayUuid]) {
                   this.extraTables.assays[assayUuid] =
-                      data['table_data']['assays'][assayUuid]['extra_table']
+                      data['tables']['assays'][assayUuid]['extra_table']
                 }
               }
 
+              this.editStudyData = this.editMode
               this.renderError = null
               this.gridsLoaded = true
             }
@@ -782,7 +821,7 @@ export default {
               this.scrollToCurrentTable()
 
               // Update study badge stats
-              if (this.sodarContext['irods_status']) {
+              if (this.sodarContext['irods_status'] && this.$refs.studyStatsBadge) {
                 this.$refs.studyStatsBadge.updateStats() // TODO: Set up timer
               }
             })
@@ -816,10 +855,13 @@ export default {
       let fromSubPage = this.activeSubPage
       this.activeSubPage = null
       this.setPath()
-      if (!fromSubPage && studyUuid === this.currentStudyUuid) {
+
+      if (!fromSubPage &&
+          studyUuid === this.currentStudyUuid &&
+          this.editMode === this.editStudyData) {
         this.scrollToCurrentTable()
       } else {
-        this.getStudy(studyUuid) // Will be scrolled after render
+        this.getStudy(studyUuid, this.editMode) // Will be scrolled after render
       }
     },
 
@@ -875,10 +917,84 @@ export default {
       }
     },
 
+    toggleEditMode () {
+      this.editMode = !this.editMode
+
+      if (this.editMode) {
+        if (!this.currentStudyUuid) {
+          this.currentStudyUuid = Object.keys(this.sodarContext['studies'])[0]
+        }
+        this.handleStudyNavigation(this.currentStudyUuid)
+      } else {
+        this.handleFinishEditing() // Call actions for finishing editing
+        if (!this.editMode && this.currentStudyUuid) {
+          this.handleStudyNavigation(this.currentStudyUuid, this.currentAssayUuid)
+        }
+      }
+    },
+
     /* Display -------------------------------------------------------------- */
 
-    showNotification (message, delay) {
-      this.$refs.pageHeader.showNotification(message, delay)
+    showNotification (message, variant, delay) {
+      this.$refs.pageHeader.showNotification(message, variant, delay)
+    },
+
+    /* Editing -------------------------------------------------------------- */
+
+    handleCellEdit (cellData, ogValue, headerInfo) {
+      // TODO: Add timeout / retrying
+      // TODO: Cleanup unnecessary fields from JSON
+      // TODO: In the future, add edited info in a queue and save periodically
+      let upData = Object.assign(cellData, headerInfo, {'og_value': ogValue})
+
+      fetch('/samplesheets/api/edit/post/' + this.projectUuid, {
+        method: 'POST',
+        body: JSON.stringify({'updated_cells': [upData]}),
+        credentials: 'same-origin',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'X-CSRFToken': this.sodarContext['csrf_token']
+        }
+      }).then(data => data.json())
+        .then(
+          data => {
+            if (data['message'] === 'ok') {
+              this.showNotification('Changes Saved', 'success', 1000)
+
+              // Update other occurrences of cell in UI
+              this.updateCellUIValue(this.gridOptions['study'].api, upData)
+
+              for (var k in this.gridOptions['assays']) {
+                this.updateCellUIValue(this.gridOptions['assays'][k].api, upData)
+              }
+            } else {
+              console.log('Save status: ' + data['message']) // DEBUG
+              this.showNotification('Saving Failed', 'danger', 1000)
+              // TODO: Mark invalid/unsaved field(s) in UI
+              // TODO: Also change multi-cell copying highlight colour
+            }
+          }
+        ).catch(function (error) {
+          console.log('Error saving data: ' + error.message)
+        })
+    },
+
+    updateCellUIValue (gridApi, upData) {
+      gridApi.forEachNode(function (rowNode, index) {
+        let cell = rowNode.data[upData['header_field']]
+
+        if (cell &&
+            cell['uuid'] === upData['uuid'] &&
+            cell['value'] === upData['og_value']) {
+          cell['value'] = upData['value']
+        }
+      })
+    },
+
+    handleFinishEditing () {
+      // TODO: Save backup ISAtab, update timeline, etc
+      this.showNotification('Finished Editing', 'info', 1000)
     },
 
     /* Data and App Access -------------------------------------------------- */
@@ -981,6 +1097,42 @@ export default {
   line-height: 28px !important;
   padding: 3px;
   height: 38px !important;
+}
+
+/* HACK for select input failing in ag-grid community edition */
+/* Based on: https://stackoverflow.com/a/41641709 */
+select.ag-cell-edit-input {
+  -moz-appearance: none;
+  -webkit-appearance: none;
+  appearance: none;
+
+  height: 38px !important;
+  background-color: #ffffd8;
+  background-repeat: no-repeat;
+  background-size: 0.5em auto;
+  background-position: right 0.25em center;
+  padding-left: 5px;
+  padding-right: 18px;
+  padding-bottom: 0px !important;
+  text-align: inherit;
+
+  background-image: url("data:image/svg+xml;charset=utf-8, \
+    <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 40'> \
+      <polygon points='0,0 60,0 30,40' style='fill:black;'/> \
+    </svg>");
+}
+
+input.ag-cell-edit-input {
+  -moz-appearance: none;
+  -webkit-appearance: none;
+  appearance: none;
+
+  height: 38px !important;
+  background-color: #ffffd8;
+  padding-left: 10px;
+  padding-right: 13px;
+  padding-bottom: 2px;
+  text-align: inherit;
 }
 
 .sodar-ss-data-header {

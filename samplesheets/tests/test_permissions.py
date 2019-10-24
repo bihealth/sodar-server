@@ -162,6 +162,25 @@ class TestSampleSheetsPermissions(
         self.assert_response(url, good_users, status_code=200)
         self.assert_response(url, bad_users, status_code=403)
 
+    def test_api_study_tables_edit(self):
+        """Test SampleSheetStudyTablesGetAPIView with edit mode enabled"""
+        url = (
+            reverse(
+                'samplesheets:api_study_tables_get',
+                kwargs={'study': self.study.sodar_uuid},
+            )
+            + '?edit=1'
+        )
+        good_users = [
+            self.superuser,
+            self.as_owner.user,
+            self.as_delegate.user,
+            self.as_contributor.user,
+        ]
+        bad_users = [self.as_guest.user, self.anonymous, self.user_no_roles]
+        self.assert_response(url, good_users, status_code=200)
+        self.assert_response(url, bad_users, status_code=403)
+
     def test_api_study_links(self):
         """Test SampleSheetStudyLinksGetAPIView"""
         url = reverse(
@@ -178,6 +197,22 @@ class TestSampleSheetsPermissions(
         bad_users = [self.anonymous, self.user_no_roles]
         self.assert_response(url, good_users, status_code=404)  # No plugin
         self.assert_response(url, bad_users, status_code=403)
+
+    def test_api_edit_post(self):
+        """Test SampleSheetEditPostAPIView"""
+        url = reverse(
+            'samplesheets:api_edit_post',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+        good_users = [
+            self.superuser,
+            self.as_owner.user,
+            self.as_delegate.user,
+            self.as_contributor.user,
+        ]
+        bad_users = [self.as_guest.user, self.anonymous, self.user_no_roles]
+        self.assert_response(url, good_users, status_code=200, method='POST')
+        self.assert_response(url, bad_users, status_code=403, method='POST')
 
     def test_sheet_warnings(self):
         """Test SampleSheetWarningsGetAPIView"""

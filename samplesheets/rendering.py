@@ -96,6 +96,7 @@ class SampleSheetTableBuilder:
         self._col_values = []
         self._col_idx = 0
         self._parser_version = None
+        self._edit = False
 
     # General data and cell functions ------------------------------------------
 
@@ -177,24 +178,30 @@ class SampleSheetTableBuilder:
             {'value': value.strip(), 'colour': colour, 'colspan': colspan}
         )
 
-    def _add_header(self, value, obj=None):
+    def _add_header(self, value, header_type=None, obj=None):
         """
         Add column field header value.
 
         :param value: Value to be displayed
+        :param header_type: Header type
         :param obj: Original Django model object
         """
-        self._field_header.append(
-            {
-                'value': value.strip().title(),  # TODO: Better titling (#576)
-                'obj_cls': obj.__class__.__name__,
-                'item_type': obj.item_type
-                if isinstance(obj, GenericMaterial)
-                else None,
-                'num_col': False,  # Will be checked for sorting later
-                'align': 'left',
-            }
-        )
+        header = {
+            'value': value.strip().title(),  # TODO: Better titling (#576)
+            'obj_cls': obj.__class__.__name__,
+            'item_type': obj.item_type
+            if isinstance(obj, GenericMaterial)
+            else None,
+            'num_col': False,  # Will be checked for sorting later
+            'align': 'left',
+        }
+
+        # Add extra data for editing
+        if self._edit:
+            header['type'] = header_type
+            header['og_field'] = value  # Store original field name
+
+        self._field_header.append(header)
 
     def _add_cell(
         self,
@@ -202,7 +209,8 @@ class SampleSheetTableBuilder:
         header=None,  # TODO: Make mandatory when removing legacy parser support
         unit=None,
         link=None,
-        obj=None,  # noqa: Temporarily not in use
+        header_type=None,
+        obj=None,
         tooltip=None,
         # attrs=None,  # :param attrs: Optional attributes (dict)
     ):
@@ -214,29 +222,32 @@ class SampleSheetTableBuilder:
         :param header: Name of the column header
         :param unit: Unit to be displayed in the cell
         :param link: Link from the value (URL string)
+        :param header_type: Header type (string)
         :param obj: Original Django model object
         :param tooltip: Tooltip to be shown on mouse hover (string)
         """
 
         # Add header if first row
         if header and obj and self._first_row:
-            self._add_header(header, obj)
+            self._add_header(header, header_type=header_type, obj=obj)
 
         # Get printable value in case the function is called with a reference
         if isinstance(value, dict):
             value = self._get_value(value)
 
-        self._row.append(
-            {
-                'value': value.strip() if isinstance(value, str) else value,
-                'unit': unit.strip() if isinstance(unit, str) else unit,
-                'link': link,
-                'link_file': False,
-                'tooltip': tooltip,
-                # 'uuid': str(obj.sodar_uuid),  # TODO: Enable for editing
-                # 'attrs': attrs,  # TODO: TBD: Remove entirely?
-            }
-        )
+        cell = {
+            'value': value.strip() if isinstance(value, str) else value,
+            'unit': unit.strip() if isinstance(unit, str) else unit,
+            'link': link,
+            'link_file': False,
+            'tooltip': tooltip,
+        }
+
+        # Add extra data for editing
+        if self._edit:
+            cell['uuid'] = str(obj.sodar_uuid)
+
+        self._row.append(cell)
 
         # Store value for detecting unfilled columns
         col_value = 0 if not value else 1
@@ -436,31 +447,43 @@ class SampleSheetTableBuilder:
                     obj_attr = getattr(obj, LIST_ATTR_MAP[h_type])
 
                     if h_name in obj_attr:
-                        self._add_annotation(obj_attr[h_name], h_name, obj)
+                        self._add_annotation(
+                            obj_attr[h_name],
+                            h_name,
+                            header_type=LIST_ATTR_MAP[h_type],
+                            obj=obj,
+                        )
 
             # Basic fields we can simply map using BASIC_FIELD_MAPE
             elif h in BASIC_FIELD_MAP and hasattr(obj, BASIC_FIELD_MAP[h]):
                 self._add_cell(
-                    getattr(obj, BASIC_FIELD_MAP[h]), HEADER_MAP[h], obj=obj
+                    getattr(obj, BASIC_FIELD_MAP[h]),
+                    HEADER_MAP[h],
+                    header_type='field',
+                    obj=obj,
                 )
 
             # Special case: Name
             elif h in ALTAMISA_MATERIAL_NAMES or h in th.DATA_FILE_HEADERS:
-                self._add_cell(obj.name, 'Name', obj=obj)
+                self._add_cell(obj.name, 'Name', header_type='name', obj=obj)
 
             # Special case: Labeled Extract Name & Label
             elif h == th.LABELED_EXTRACT_NAME and hasattr(obj, 'extract_label'):
-                self._add_cell(obj.name, 'Name', obj=obj)
+                self._add_cell(obj.name, 'Name', header_type='name', obj=obj)
                 self._add_annotation(
                     {'value': obj.extract_label},
                     HEADER_MAP[th.LABELED_EXTRACT_NAME],
+                    header_type='field',
                     obj=obj,
                 )
 
             # Special case: Array Design REF (NOTE: not actually a reference!)
             elif h == th.ARRAY_DESIGN_REF and hasattr(obj, 'array_design_ref'):
                 self._add_cell(
-                    obj.array_design_ref, 'Array Design REF', obj=obj
+                    obj.array_design_ref,
+                    'Array Design REF',
+                    header_type='field',
+                    obj=obj,
                 )
 
             # Special case: Protocol Name
@@ -470,36 +493,46 @@ class SampleSheetTableBuilder:
                 and obj.protocol
             ):
                 self._add_cell(
-                    obj.protocol.name, HEADER_MAP[th.PROTOCOL_REF], obj=obj
+                    obj.protocol.name,
+                    HEADER_MAP[th.PROTOCOL_REF],
+                    header_type='name',
+                    obj=obj,
                 )
 
             # Special case: Process Name
             elif isinstance(obj, Process) and h in th.PROCESS_NAME_HEADERS:
-                self._add_cell(obj.name, 'Name', obj=obj)
+                self._add_cell(obj.name, 'Name', header_type='name', obj=obj)
 
             # Special case: First Dimension
             elif isinstance(obj, Process) and h == th.FIRST_DIMENSION:
                 self._add_annotation(
-                    {'value': obj.first_dimension}, 'First Dimension', obj=obj
+                    {'value': obj.first_dimension},
+                    'First Dimension',
+                    header_type='field',
+                    obj=obj,
                 )
 
             # Special case: First Dimension
             elif isinstance(obj, Process) and h == th.SECOND_DIMENSION:
                 self._add_annotation(
-                    {'value': obj.second_dimension}, 'Second Dimension', obj=obj
+                    {'value': obj.second_dimension},
+                    'Second Dimension',
+                    header_type='field',
+                    obj=obj,
                 )
 
         # Add top header
         if self._first_row:
             self._add_top_header(obj, len(self._field_header) - old_header_len)
 
-    def _add_annotation(self, ann, header, obj):
+    def _add_annotation(self, ann, header, header_type, obj):
         """
         Append a single annotation to row as multiple cells. To be used with
         altamISA v0.1+.
 
         :param ann: Annotation value (string or Dict)
-        :param header: Name of the column header
+        :param header: Name of the column header (string)
+        :param header_type: Header type (string)
         :param obj: GenericMaterial or Pocess object the annotation belongs to
         """
         val = ''
@@ -513,6 +546,7 @@ class SampleSheetTableBuilder:
             val = ann
 
         # Ontology reference
+        # TODO: add original accession and ontology name when editing
         elif (
             isinstance(ann['value'], dict)
             and 'name' in ann['value']
@@ -597,7 +631,13 @@ class SampleSheetTableBuilder:
                 unit = ann['unit']
 
         self._add_cell(
-            val, header, unit=unit, link=link, obj=obj, tooltip=tooltip
+            val,
+            header,
+            unit=unit,
+            link=link,
+            header_type=header_type,
+            obj=obj,
+            tooltip=tooltip,
         )
 
     # Table building functions -------------------------------------------------
@@ -836,18 +876,22 @@ class SampleSheetTableBuilder:
 
         return all_refs
 
-    def build_study_tables(self, study):
+    def build_study_tables(self, study, edit=False):
         """
         Build study table and associated assay tables for rendering.
 
         :param study: Study object
+        :param edit: Return extra data for editing if true (bool)
         :return: Dict
         """
         s_start = time.time()
         logger.debug(
-            'Building study "{}" (pk={})..'.format(study.get_name(), study.pk)
+            'Building study "{}" (pk={}, edit={})..'.format(
+                study.get_name(), study.pk, edit
+            )
         )
 
+        self._edit = edit
         self._parser_version = (
             version.parse(study.investigation.parser_version)
             if study.investigation.parser_version
@@ -888,8 +932,8 @@ class SampleSheetTableBuilder:
         for assay in study.assays.all().order_by('pk'):
             a_start = time.time()
             logger.debug(
-                'Building assay "{}" (pk={})..'.format(
-                    assay.get_name(), assay.pk
+                'Building assay "{}" (pk={}, edit={})..'.format(
+                    assay.get_name(), assay.pk, edit
                 )
             )
 

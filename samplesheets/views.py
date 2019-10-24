@@ -1,5 +1,6 @@
 import io
 import json
+import logging
 import os
 from packaging import version
 import re
@@ -9,6 +10,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponse, HttpResponseRedirect
+from django.middleware.csrf import get_token
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils.safestring import mark_safe
@@ -52,6 +54,9 @@ from .utils import (
     write_excel_table,
 )
 
+# Get logger
+logger = logging.getLogger(__name__)
+
 
 # SODAR constants
 SITE_MODE_TARGET = SODAR_CONSTANTS['SITE_MODE_TARGET']
@@ -62,6 +67,17 @@ REMOTE_LEVEL_READ_ROLES = SODAR_CONSTANTS['REMOTE_LEVEL_READ_ROLES']
 APP_NAME = 'samplesheets'
 WARNING_STATUS_MSG = 'OK with warnings, see extra data'
 TARGET_ALTAMISA_VERSION = '0.2.4'  # For warnings etc.
+EDIT_JSON_ATTRS = [
+    'characteristics',
+    'comments',
+    'factor_values',
+    'parameter_values',
+]
+EDIT_FIELD_MAP = {
+    'array design ref': 'array_design_ref',
+    'label': 'extract_label',
+    'performer': 'performer',
+}
 
 
 class InvestigationContextMixin(ProjectContextMixin):
@@ -892,6 +908,7 @@ class SampleSheetContextGetAPIView(
             'min_col_width': settings.SHEETS_MIN_COLUMN_WIDTH,
             'max_col_width': settings.SHEETS_MAX_COLUMN_WIDTH,
             'alerts': [],
+            'csrf_token': get_token(request),
         }
 
         if investigation and (
@@ -1017,10 +1034,20 @@ class SampleSheetStudyTablesGetAPIView(
     permission_required = 'samplesheets.view_sheet'
     renderer_classes = [JSONRenderer]
 
+    def has_permission(self):
+        """Override has_permission() to check perms depending on edit mode"""
+        if bool(self.request.GET.get('edit')):
+            return self.request.user.has_perm(
+                'samplesheets.edit_sheet', self.get_permission_object()
+            )
+
+        return super().has_permission()
+
     def get(self, request, *args, **kwargs):
         irods_backend = get_backend_api('omics_irods')
         cache_backend = get_backend_api('sodar_cache')
         study = Study.objects.filter(sodar_uuid=self.kwargs['study']).first()
+        edit = bool(request.GET.get('edit'))  # Return extra edit mode data
 
         if not study:
             return Response(
@@ -1035,7 +1062,7 @@ class SampleSheetStudyTablesGetAPIView(
         tb = SampleSheetTableBuilder()
 
         try:
-            ret_data['table_data'] = tb.build_study_tables(study)
+            ret_data['tables'] = tb.build_study_tables(study, edit=edit)
 
         except Exception as ex:
             # Raise if we are in debug mode
@@ -1058,12 +1085,12 @@ class SampleSheetStudyTablesGetAPIView(
 
             if study_plugin:
                 shortcuts = study_plugin.get_shortcut_column(
-                    study, ret_data['table_data']
+                    study, ret_data['tables']
                 )
-                ret_data['table_data']['study']['shortcuts'] = shortcuts
+                ret_data['tables']['study']['shortcuts'] = shortcuts
 
             # Get assay content if corresponding assay plugin exists
-            for a_uuid, a_data in ret_data['table_data']['assays'].items():
+            for a_uuid, a_data in ret_data['tables']['assays'].items():
                 assay = Assay.objects.filter(sodar_uuid=a_uuid).first()
                 assay_path = irods_backend.get_path(assay)
                 a_data['irods_paths'] = []
@@ -1170,6 +1197,93 @@ class SampleSheetWarningsGetAPIView(
             )
 
         return Response({'warnings': investigation.parser_warnings}, status=200)
+
+
+class SampleSheetEditPostAPIView(
+    LoginRequiredMixin, ProjectPermissionMixin, APIPermissionMixin, APIView
+):
+    """View to edit sample sheet data"""
+
+    permission_required = 'samplesheets.edit_sheet'
+    renderer_classes = [JSONRenderer]
+
+    def post(self, request, *args, **kwargs):
+        updated_cells = request.data.get('updated_cells')
+
+        if updated_cells:
+            cell = updated_cells[0]  # TODO: In future, iterate
+            logger.debug('Updated cell: {}'.format(cell))
+
+            obj = (
+                eval(cell['obj_cls'])
+                .objects.filter(sodar_uuid=cell['uuid'])
+                .first()
+            )
+            # TODO: Make sure given object actually belongs in project etc.
+
+            if not obj:
+                logger.error(
+                    'No {} found with UUID={}'.format(
+                        cell['obj_cls'], cell['uuid']
+                    )
+                )
+                # TODO: Return list of errors when processing in batch
+                return Response(
+                    {
+                        'message': 'Object not found: {} ({})'.format(
+                            cell['uuid'], cell['obj_cls']
+                        )
+                    },
+                    status=500,
+                )
+
+            logger.debug(
+                'Editing {} "{}" ({})'.format(
+                    obj.__class__.__name__, obj.unique_name, obj.sodar_uuid
+                )
+            )
+
+            # TODO: Provide the original header as one string instead
+            header_type = cell['header_type']
+            header_name = cell['header_name']
+
+            # Plain fields
+            if header_type == 'field' and header_name.lower() in EDIT_FIELD_MAP:
+                attr_name = EDIT_FIELD_MAP[header_name.lower()]
+                attr = getattr(obj, attr_name)
+
+                if isinstance(attr, str):
+                    setattr(obj, attr_name, cell['value'])
+
+                elif isinstance(attr, dict):
+                    attr['name'] = cell['value']
+                    # TODO: Set accession and ontology once editing is allowed
+
+                obj.save()
+                logger.debug('Edited field: {}'.format(attr_name))
+
+            # JSON Attributes
+            elif header_type in EDIT_JSON_ATTRS:
+                getattr(obj, header_type)[header_name] = cell['value']
+                obj.save()
+                logger.debug(
+                    'Edited JSON attribute: {}[{}]'.format(
+                        header_type, header_name
+                    )
+                )
+
+            else:
+                logger.error(
+                    'Editing not implemented '
+                    '(header_type={}; header_name={}'.format(
+                        header_type, header_name
+                    )
+                )
+                return Response({'message': 'failed'}, status=500)
+
+        # TODO: Log edits in timeline
+
+        return Response({'message': 'ok'}, status=200)
 
 
 # General API Views ------------------------------------------------------------

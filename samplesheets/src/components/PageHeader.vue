@@ -19,19 +19,23 @@
       <b-nav-item id="sodar-ss-tab-overview"
                   @mousedown="app.showSubPage('overview')"
                   :active="app.activeSubPage === 'overview'"
-                  :disabled="!app.sheetsAvailable || app.gridsBusy">
+                  :disabled="!app.sheetsAvailable || app.gridsBusy || app.editMode">
         <i class="fa fa-sitemap"></i> Overview
       </b-nav-item>
     </b-nav>
     <div class="ml-auto">
-      <span class="sodar-ss-vue-notify-container">
+      <span class="sodar-ss-vue-notify-container mr-1">
         <transition name="fade" mode="out-in">
           <span v-if="notifyVisible"
                 ref="notifyBadge"
                 :class="notifyClasses">
-            Copied!
+            {{ this.notifyMessage }}
           </span>
         </transition>
+      </span>
+      <span v-if="app.editMode"
+            :class='"badge badge-pill mr-3 badge-" + editVariant'>
+        <i class="fa fa-pencil"></i> {{ editMessage }}
       </span>
       <b-dropdown
           id="sodar-ss-nav-dropdown"
@@ -64,6 +68,7 @@
           href="#"
           id="sodar-ss-nav-overview"
           class="sodar-ss-nav-item"
+          :disabled="app.editMode"
           @click="app.showSubPage('overview')">
           <i class="fa fa-fw fa-sitemap"></i> Overview
         </b-dropdown-item>
@@ -75,58 +80,71 @@
           variant="primary"
           text="Sheet Operations">
         <b-dropdown-item
-            v-if="!app.sheetsAvailable &&
-                  app.sodarContext['perms']['edit_sheet']"
+            v-if="!app.sheetsAvailable"
             class="sodar-ss-op-item"
             :href="'import/' + app.projectUuid">
           <i class="fa fa-fw fa-upload"></i> Import ISAtab
         </b-dropdown-item>
         <b-dropdown-item
             v-if="app.sheetsAvailable &&
-                  app.sodarContext['irods_status'] &&
-                  app.sodarContext['perms']['edit_sheet']"
+                  !app.editMode"
             class="sodar-ss-op-item"
-            :href="'cache/update/' + app.projectUuid">
+            @click="toggleEditMode">
+          <i class="fa fa-fw fa-pencil"></i> Edit Sheet
+        </b-dropdown-item>
+        <b-dropdown-item
+            v-if="app.sheetsAvailable &&
+                  app.editMode"
+            class="sodar-ss-op-item"
+            @click="toggleEditMode">
+          <i class="fa fa-fw fa-check"></i> Finish Editing Sheet
+        </b-dropdown-item>
+        <b-dropdown-item
+            v-if="app.sheetsAvailable"
+            class="sodar-ss-op-item"
+            :disabled="app.editMode || !app.sodarContext['parser_warnings']"
+            @click="app.showSubPage('warnings')">
+          <i class="fa fa-fw fa-exclamation-circle"></i> View Parser Warnings
+        </b-dropdown-item>
+        <b-dropdown-item
+            v-if="app.sheetsAvailable &&
+                  app.sodarContext['irods_status']"
+            class="sodar-ss-op-item"
+            :href="'cache/update/' + app.projectUuid"
+            :disabled="app.editMode">
           <i class="fa fa-fw fa-refresh"></i> Update Sheet Cache
         </b-dropdown-item>
         <b-dropdown-item
-            v-if="app.sheetsAvailable &&
-                  app.sodarContext['perms']['edit_sheet']"
+            v-if="app.sheetsAvailable"
             class="sodar-ss-op-item"
-            :href="'import/' + app.projectUuid">
+            :href="'import/' + app.projectUuid"
+            :disabled="app.editMode">
           <i class="fa fa-fw fa-upload"></i> Replace ISAtab
         </b-dropdown-item>
         <b-dropdown-item
-            v-if="app.sheetsAvailable &&
-                  app.sodarContext['perms']['export_sheet']"
+            v-if="app.sheetsAvailable"
             class="sodar-ss-op-item"
-            :href="'export/isa/' + app.projectUuid">
+            :href="'export/isa/' + app.projectUuid"
+            :disabled="app.editMode">
           <i class="fa fa-fw fa-download"></i> Export ISAtab
         </b-dropdown-item>
         <b-dropdown-item
             v-if="app.sheetsAvailable &&
-                  !app.renderError &&
-                  app.sodarContext['perms']['create_dirs']"
+                  !app.renderError"
             class="sodar-ss-op-item"
-            :href="'dirs/' + app.projectUuid">
+            :href="'dirs/' + app.projectUuid"
+            :disabled="app.editMode">
           <i class="fa fa-fw fa-database"></i>
           <span v-if="app.sodarContext['irods_status']">Update</span><span v-else>Create</span> iRODS Directories
-        </b-dropdown-item>
-        <b-dropdown-item
-            v-if="app.sheetsAvailable &&
-                  app.sodarContext['perms']['edit_sheet']"
-            class="sodar-ss-op-item"
-            :disabled="!app.sodarContext['parser_warnings']"
-            @click="app.showSubPage('warnings')">
-          <i class="fa fa-fw fa-exclamation-circle"></i> View Parser Warnings
         </b-dropdown-item>
         <b-dropdown-item
             v-if="app.sheetsAvailable &&
                   app.sodarContext['perms']['delete_sheet']"
             class="sodar-ss-op-item"
             variant="danger"
-            :href="'delete/' + app.projectUuid">
-          <i class="fa fa-fw fa-close"></i> Delete Sheets and Data
+            :href="'delete/' + app.projectUuid"
+            :disabled="app.editMode">
+          <i class="fa fa-fw fa-close"></i> Delete Sheet and Data
         </b-dropdown-item>
       </b-dropdown>
     </div>
@@ -143,7 +161,10 @@ export default {
     return {
       notifyVisible: false,
       notifyMessage: null,
-      notifyClasses: 'badge badge-pill sodar-ss-vue-nofify mx-2'
+      notifyClasses: 'badge badge-pill sodar-ss-vue-nofify mx-2',
+      editMode: false,
+      editMessage: null,
+      editVariant: 'info'
     }
   },
   methods: {
@@ -170,6 +191,23 @@ export default {
         this.notifyVisible = false
         this.notifyMessage = null
       }, delay || 2000)
+    },
+    toggleEditMode (editMode) {
+      this.editMode = !this.editMode
+      this.app.toggleEditMode()
+
+      if (this.editMode) {
+        this.editMessage = 'Edit Mode'
+        this.editVariant = 'info'
+      }
+    },
+    // TODO: Use this when saving values periodically in a queue
+    setEditModeInfo (message, variant) {
+      this.editMessage = message
+
+      if (variant) {
+        this.editVariant = variant
+      }
     }
   }
 }

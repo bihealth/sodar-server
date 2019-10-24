@@ -26,6 +26,7 @@ from samplesheets.models import (
     Investigation,
     Study,
     Assay,
+    GenericMaterial,
     Protocol,
     Process,
     ISATab,
@@ -69,6 +70,7 @@ REMOTE_SITE_NAME = 'Test site'
 REMOTE_SITE_URL = 'https://sodar.bihealth.org'
 REMOTE_SITE_DESC = 'description'
 REMOTE_SITE_SECRET = build_secret()
+EDIT_NEW_VALUE_STR = 'edited value'
 
 IRODS_BACKEND_ENABLED = (
     True if 'omics_irods' in settings.ENABLED_BACKEND_PLUGINS else False
@@ -143,7 +145,7 @@ class TestProjectSheetsView(TestViewsBase):
             # Assert context data
             self.assertIsNone(response.context['investigation'])
             self.assertNotIn('study', response.context)
-            self.assertNotIn('table_data', response.context)
+            self.assertNotIn('tables', response.context)
 
 
 class TestSampleSheetImportView(TestViewsBase):
@@ -564,6 +566,9 @@ class TestContextGetAPIView(TestViewsBase):
 
         self.assertEqual(response.status_code, 200)
         self.maxDiff = None
+        response_data = json.loads(response.data)
+        response_data.pop('csrf_token')  # HACK
+
         expected = {
             'configuration': self.investigation.get_configuration(),
             'inv_file_name': self.investigation.file_name.split('/')[-1],
@@ -642,7 +647,7 @@ class TestContextGetAPIView(TestViewsBase):
                 'data_count': self.investigation.get_material_count('DATA'),
             },
         }
-        self.assertEqual(json.loads(response.data), expected)
+        self.assertEqual(response_data, expected)
 
 
 # TODO: Test with realistic ISAtab examples using BIH configs (see #434)
@@ -674,10 +679,35 @@ class TestStudyTablesGetAPIView(TestViewsBase):
         # Assert return data correctness
         ret_data = response.data
         self.assertIn('study', ret_data)
-        self.assertIn('table_data', ret_data)
+        self.assertIn('tables', ret_data)
         self.assertNotIn('render_error', ret_data)
-        self.assertNotIn('shortcuts', ret_data['table_data']['study'])
-        self.assertEqual(len(ret_data['table_data']['assays']), 1)
+        self.assertNotIn('shortcuts', ret_data['tables']['study'])
+        self.assertEqual(len(ret_data['tables']['assays']), 1)
+        self.assertNotIn(
+            'uuid', ret_data['tables']['study']['table_data'][0][0]
+        )
+
+    def test_get_edit(self):
+        """Test study tables retrieval with edit mode enabled"""
+        with self.login(self.user):
+            response = self.client.get(
+                reverse(
+                    'samplesheets:api_study_tables_get',
+                    kwargs={'study': self.study.sodar_uuid},
+                ),
+                {'edit': 1},
+            )
+
+        self.assertEqual(response.status_code, 200)
+
+        # Assert return data correctness
+        ret_data = response.data
+        self.assertIn('study', ret_data)
+        self.assertIn('tables', ret_data)
+        self.assertNotIn('render_error', ret_data)
+        self.assertNotIn('shortcuts', ret_data['tables']['study'])
+        self.assertEqual(len(ret_data['tables']['assays']), 1)
+        self.assertIn('uuid', ret_data['tables']['study']['table_data'][0][0])
 
 
 # TODO: Test with realistic ISAtab examples using BIH configs (see #434)
@@ -732,6 +762,98 @@ class TestSampleSheetWarningsGetAPIView(TestViewsBase):
         self.assertEqual(
             response.data['warnings'], self.investigation.parser_warnings
         )
+
+
+# TODO: Test with realistic ISAtab examples using BIH configs (see #434)
+# TODO: Add helper to create update data
+# TODO: Test all value types
+# TODO: Unify tests once saving a list of values is implemented
+class TestSampleSheetEditPostAPIView(TestViewsBase):
+    """Tests for SampleSheetEditPostAPIView"""
+
+    def setUp(self):
+        super().setUp()
+
+        # Import investigation
+        self.investigation = self._import_isa_from_file(
+            SHEET_PATH, self.project
+        )
+        self.study = self.investigation.studies.first()
+
+        # Set up POST data
+        self.values = {'updated_cells': []}
+
+    def test_edit_characteristics_str(self):
+        """Test editing a characteristics string value in a material"""
+        obj = GenericMaterial.objects.get(study=self.study, name='0816')
+        header_name = 'organism'
+
+        # Assert preconditions
+        self.assertNotEqual(
+            obj.characteristics[header_name], EDIT_NEW_VALUE_STR
+        )
+
+        # TODO: Add complete set of params once they have been refactored
+        self.values['updated_cells'].append(
+            {
+                'uuid': str(obj.sodar_uuid),
+                'header_name': header_name,
+                'header_type': 'characteristics',
+                'obj_cls': 'GenericMaterial',
+                'value': EDIT_NEW_VALUE_STR,
+            }
+        )
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:api_edit_post',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                json.dumps(self.values),
+                content_type='application/json',
+            )
+
+        # Asert postconditions
+        self.assertEqual(response.status_code, 200)
+        obj.refresh_from_db()
+        self.assertEqual(obj.characteristics[header_name], EDIT_NEW_VALUE_STR)
+
+    def test_edit_param_values_str(self):
+        """Test editing a parameter values string value in a process"""
+        obj = Process.objects.filter(study=self.study, assay=None).first()
+        header_name = 'instrument'
+
+        # Assert preconditions
+        self.assertNotEqual(
+            obj.parameter_values[header_name], EDIT_NEW_VALUE_STR
+        )
+
+        # TODO: Add complete set of params once they have been refactored
+        self.values['updated_cells'].append(
+            {
+                'uuid': str(obj.sodar_uuid),
+                'header_name': header_name,
+                'header_type': 'parameter_values',
+                'obj_cls': 'Process',
+                'value': EDIT_NEW_VALUE_STR,
+            }
+        )
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:api_edit_post',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                json.dumps(self.values),
+                content_type='application/json',
+            )
+
+        # Asert postconditions
+        self.assertEqual(response.status_code, 200)
+        obj.refresh_from_db()
+        self.assertEqual(obj.parameter_values[header_name], EDIT_NEW_VALUE_STR)
 
 
 class TestSourceIDQueryAPIView(KnoxAuthMixin, TestViewsBase):

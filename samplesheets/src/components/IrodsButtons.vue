@@ -63,7 +63,10 @@ export default {
   ],
   methods: {
     getEnabledState () {
-      if (!this.irodsStatus || this.enabled === false) {
+      if (!this.app ||
+          this.app.editMode ||
+          !this.irodsStatus ||
+          this.enabled === false) {
         return false
       }
       return true
@@ -76,9 +79,9 @@ export default {
     onCopyBtnClick (event) {
       // HACK! this.app appears unset in some cases, not sure why? see #511
       if (this.app) {
-        this.app.showNotification('Copied!', 'success', 1000)
+        this.app.showNotification('Copied', 'success', 1000)
       } else {
-        this.$parent.showNotification('Copied!', 'success', 1000)
+        this.$parent.showNotification('Copied', 'success', 1000)
       }
     }
   }
