@@ -7,9 +7,13 @@ from irods.exception import NetworkException
 from projectroles.models import Project, SODAR_CONSTANTS
 from projectroles.plugins import ProjectAppPluginPoint, get_backend_api
 
-from .models import Investigation, Study, Assay, GenericMaterial
-from .urls import urlpatterns
-from .utils import get_sample_dirs, get_isa_field_name, get_sheets_url
+from samplesheets.models import Investigation, Study, Assay, GenericMaterial
+from samplesheets.urls import urlpatterns
+from samplesheets.utils import (
+    get_sample_dirs,
+    get_isa_field_name,
+    get_sheets_url,
+)
 
 
 # SODAR constants
@@ -37,13 +41,24 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
 
     #: App settings definition
     app_settings = {
-        'study_row_limit': {
-            'scope': 'PROJECT',
-            'type': 'INTEGER',
-            'default': 5000,
-            'description': 'Limit sample sheet rows per study',
+        'allow_editing': {
+            'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT'],
+            'type': 'BOOLEAN',
+            'label': 'Allow Sample Sheet Editing',
+            'description': 'Allow editing of sample sheet data in this project '
+            'by authorized users (requires sample sheet '
+            'JSON configuration)',
             'user_modifiable': True,
-        }
+            'default': False,
+        },
+        'sheet_config': {
+            'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT'],
+            'type': 'JSON',
+            'label': 'Sample Sheet Configuration',
+            'description': 'JSON configuration for sample sheet editing',
+            'user_modifiable': True,
+            'default': {},
+        },
     }
 
     #: FontAwesome icon ID string

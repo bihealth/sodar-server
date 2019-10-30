@@ -15,7 +15,7 @@ from django.conf import settings
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
 
-from .models import Process, GenericMaterial
+from samplesheets.models import Process, GenericMaterial
 
 
 TOP_HEADER_MATERIAL_COLOURS = {
@@ -178,16 +178,16 @@ class SampleSheetTableBuilder:
             {'value': value.strip(), 'colour': colour, 'colspan': colspan}
         )
 
-    def _add_header(self, value, header_type=None, obj=None):
+    def _add_header(self, name, header_type=None, obj=None):
         """
         Add column field header value.
 
-        :param value: Value to be displayed
+        :param name: Header name to be displayed as "value"
         :param header_type: Header type
         :param obj: Original Django model object
         """
         header = {
-            'value': value.strip().title(),  # TODO: Better titling (#576)
+            'value': name.strip().title(),  # TODO: Better titling (#576)
             'obj_cls': obj.__class__.__name__,
             'item_type': obj.item_type
             if isinstance(obj, GenericMaterial)
@@ -199,14 +199,14 @@ class SampleSheetTableBuilder:
         # Add extra data for editing
         if self._edit:
             header['type'] = header_type
-            header['og_field'] = value  # Store original field name
+            header['name'] = name  # Store original field name
 
         self._field_header.append(header)
 
     def _add_cell(
         self,
-        value=None,  # TODO: Make mandatory when removing legacy parser support
-        header=None,  # TODO: Make mandatory when removing legacy parser support
+        value,
+        header_name,
         unit=None,
         link=None,
         header_type=None,
@@ -219,7 +219,7 @@ class SampleSheetTableBuilder:
         the first row and required parameters are supplied.
 
         :param value: Value to be displayed in the cell
-        :param header: Name of the column header
+        :param header_name: Name of the column header
         :param unit: Unit to be displayed in the cell
         :param link: Link from the value (URL string)
         :param header_type: Header type (string)
@@ -228,8 +228,8 @@ class SampleSheetTableBuilder:
         """
 
         # Add header if first row
-        if header and obj and self._first_row:
-            self._add_header(header, header_type=header_type, obj=obj)
+        if header_name and obj and self._first_row:
+            self._add_header(header_name, header_type=header_type, obj=obj)
 
         # Get printable value in case the function is called with a reference
         if isinstance(value, dict):
@@ -259,168 +259,6 @@ class SampleSheetTableBuilder:
             self._col_values[self._col_idx] = 1
 
         self._col_idx += 1
-
-    # Legacy altamISA Functions (to be deprecated) -----------------------------
-
-    def _add_annotation_headers(self, annotations, obj):
-        """Append annotation columns to field header"""
-        a_count = 0
-
-        for a in annotations:
-            self._add_header(a, obj)
-            a_count += 1
-
-        return a_count
-
-    def _add_annotations(self, annotations, obj=None):
-        """Append annotations to row columns"""
-        if not annotations:
-            return None
-
-        for k, v in annotations.items():
-            val = ''
-            unit = None
-            link = None
-            tooltip = None
-
-            # Ontology reference
-            if (
-                isinstance(v['value'], dict)
-                and 'name' in v['value']
-                and v['value']['name']
-            ):
-                if v['value']['ontology_name']:
-                    tooltip = v['value']['ontology_name']
-
-                val += v['value']['name']
-
-                if v['value']['ontology_name'] and v['value']['accession']:
-                    link = self._get_ontology_link(
-                        v['value']['ontology_name'], v['value']['accession']
-                    )
-
-            # Empty ontology reference (this can happen with altamISA v0.1)
-            elif isinstance(v['value'], dict) and (
-                'name' not in v['value'] or not v['value']['name']
-            ):
-                val = ''
-
-            # Basic value string
-            else:
-                val = v['value']
-
-            if 'unit' in v:
-                if isinstance(v['unit'], dict):
-                    unit = v['unit']['name']
-
-                else:
-                    unit = v['unit']
-
-            self._add_cell(val, unit=unit, link=link, obj=obj, tooltip=tooltip)
-
-    def _add_element(self, obj):
-        """
-        Append GenericMaterial or Process element to row along with its
-        attributes. To be used only with LEGACY versions of altamISA.
-
-        :param obj: GenericMaterial or Pocess element
-        """
-        obj_type = type(obj)
-
-        # Headers
-        if self._first_row:
-            field_count = 0
-
-            # Material headers
-            if obj_type == GenericMaterial:
-                self._add_header('Name', obj)  # Name
-                field_count += 1
-
-                # TODO: TBD: How to render new extract label notation?
-                if (
-                    obj.material_type == 'Labeled Extract Name'
-                    and obj.extract_label
-                ):
-                    self._add_header('Label', obj)  # Extract label
-                    field_count += 1
-
-                # Characteristics
-                a_header_count = self._add_annotation_headers(
-                    obj.characteristics, obj
-                )
-                field_count += a_header_count
-
-                # Factor values
-                if obj.item_type == 'SAMPLE':
-                    a_header_count = self._add_annotation_headers(
-                        obj.factor_values, obj
-                    )
-                    field_count += a_header_count
-
-            # Process headers
-            else:  # obj_type == Process
-                if obj.protocol and obj.protocol.name:
-                    self._add_header('Protocol', obj)  # Protocol
-                    field_count += 1
-
-                self._add_header('Name', obj)  # Name
-                field_count += 1
-
-                if obj.performer and obj.perform_date:
-                    self._add_header('Performer', obj)
-                    self._add_header('Perform Date', obj)
-                    field_count += 2
-
-                # Param values
-                a_header_count = self._add_annotation_headers(
-                    obj.parameter_values, obj
-                )
-                field_count += a_header_count
-
-            # Comments
-            a_header_count = self._add_annotation_headers(obj.comments, obj)
-            field_count += a_header_count
-
-            self._add_top_header(obj, field_count)
-
-        # Material data
-        if obj_type == GenericMaterial:
-            # Add material info for iRODS links Ajax querying
-
-            self._add_cell(obj.name, obj=obj)  # Name + attrs
-
-            if (
-                obj.material_type == 'Labeled Extract Name'
-                and obj.extract_label
-            ):
-                self._add_cell(obj.extract_label, obj=obj)  # Extract label
-
-            # Characteristics
-            self._add_annotations(obj.characteristics, obj=obj)
-
-            if obj.item_type == 'SAMPLE':
-                # Factor values
-                self._add_annotations(obj.factor_values, obj=obj)
-
-        # Process data
-        elif obj_type == Process:
-            if obj.protocol and obj.protocol.name:
-                self._add_cell(obj.protocol.name, obj=obj)  # Protocol
-
-            # Name
-            self._add_cell(obj.name, obj=obj)
-
-            if obj.performer and obj.perform_date:
-                self._add_cell(obj.performer, obj=obj)
-                self._add_cell(str(obj.perform_date), obj=obj)
-
-            # Param values
-            self._add_annotations(obj.parameter_values, obj=obj)
-
-        # Comments
-        self._add_annotations(obj.comments, obj=obj)
-
-    # New altamISA v0.1+ Functions ---------------------------------------------
 
     def _add_ordered_element(self, obj):
         """
@@ -457,33 +295,27 @@ class SampleSheetTableBuilder:
             # Basic fields we can simply map using BASIC_FIELD_MAPE
             elif h in BASIC_FIELD_MAP and hasattr(obj, BASIC_FIELD_MAP[h]):
                 self._add_cell(
-                    getattr(obj, BASIC_FIELD_MAP[h]),
-                    HEADER_MAP[h],
-                    header_type='field',
-                    obj=obj,
+                    getattr(obj, BASIC_FIELD_MAP[h]), HEADER_MAP[h], obj=obj
                 )
 
             # Special case: Name
             elif h in ALTAMISA_MATERIAL_NAMES or h in th.DATA_FILE_HEADERS:
-                self._add_cell(obj.name, 'Name', header_type='name', obj=obj)
+                self._add_cell(obj.name, 'Name', obj=obj)
 
             # Special case: Labeled Extract Name & Label
             elif h == th.LABELED_EXTRACT_NAME and hasattr(obj, 'extract_label'):
-                self._add_cell(obj.name, 'Name', header_type='name', obj=obj)
+                self._add_cell(obj.name, 'Name', obj=obj)
                 self._add_annotation(
                     {'value': obj.extract_label},
                     HEADER_MAP[th.LABELED_EXTRACT_NAME],
-                    header_type='field',
+                    header_type=None,
                     obj=obj,
                 )
 
             # Special case: Array Design REF (NOTE: not actually a reference!)
             elif h == th.ARRAY_DESIGN_REF and hasattr(obj, 'array_design_ref'):
                 self._add_cell(
-                    obj.array_design_ref,
-                    'Array Design REF',
-                    header_type='field',
-                    obj=obj,
+                    obj.array_design_ref, 'Array Design REF', obj=obj
                 )
 
             # Special case: Protocol Name
@@ -493,15 +325,12 @@ class SampleSheetTableBuilder:
                 and obj.protocol
             ):
                 self._add_cell(
-                    obj.protocol.name,
-                    HEADER_MAP[th.PROTOCOL_REF],
-                    header_type='name',
-                    obj=obj,
+                    obj.protocol.name, HEADER_MAP[th.PROTOCOL_REF], obj=obj
                 )
 
             # Special case: Process Name
             elif isinstance(obj, Process) and h in th.PROCESS_NAME_HEADERS:
-                self._add_cell(obj.name, 'Name', header_type='name', obj=obj)
+                self._add_cell(obj.name, 'Name', obj=obj)
 
             # Special case: First Dimension
             elif isinstance(obj, Process) and h == th.FIRST_DIMENSION:
@@ -532,7 +361,7 @@ class SampleSheetTableBuilder:
 
         :param ann: Annotation value (string or Dict)
         :param header: Name of the column header (string)
-        :param header_type: Header type (string)
+        :param header_type: Header type (string or None)
         :param obj: GenericMaterial or Pocess object the annotation belongs to
         """
         val = ''
@@ -586,26 +415,6 @@ class SampleSheetTableBuilder:
                 new_val['accession'] = self._get_ontology_url(
                     new_val['ontology_name'], new_val['accession']
                 )
-                val[i] = new_val
-
-        # List of lists (altamISA v0.1+, SODAR v0.5.1)
-        # TODO: Refactor
-        # TODO: Remove legacy list importing support (#619)
-        elif (
-            isinstance(ann['value'], list)
-            and len(ann['value']) > 0
-            and isinstance(ann['value'][0], list)
-        ):
-            # Apparently we can have empty lists as values (fixes issue #586)
-            val = [x for x in ann['value'] if len(x) == 3]
-
-            for i in range(len(val)):
-                new_val = list(val[i])
-
-                if isinstance(new_val[0], str):
-                    new_val[0] = new_val[0].strip()
-
-                new_val[1] = self._get_ontology_url(new_val[2], new_val[1])
                 val[i] = new_val
 
         # Basic list (altamISA v0.1+)
@@ -670,19 +479,9 @@ class SampleSheetTableBuilder:
         for input_row in table_refs:
             col_pos = 0
 
-            # Add elements on row
+            # Add elements in row
             for col in input_row:
-                obj = node_map[col]
-
-                # altamISA v0.1+ parsing with "headers" ordering
-                if not isinstance(self._parser_version, version.LegacyVersion):
-                    self._add_ordered_element(obj)
-
-                # Legacy altamISA parsing
-                # TODO: To be removed
-                else:
-                    self._add_element(obj)
-
+                self._add_ordered_element(node_map[col])
                 col_pos += 1
 
             self._append_row()
@@ -740,12 +539,11 @@ class SampleSheetTableBuilder:
                 col_type = 'LINK_FILE'
 
             # TODO: Refactor this?
-            # TODO: Remove legacy list importing support (#619)
             elif any(x[i]['link'] for x in self._table_data) or (
                 any(
                     isinstance(x[i]['value'], list)
                     and len(x[i]['value']) > 0
-                    and isinstance(x[i]['value'][0], (list, dict))
+                    and isinstance(x[i]['value'][0], dict)
                     for x in self._table_data
                 )
             ):
@@ -857,19 +655,6 @@ class SampleSheetTableBuilder:
             error_msg = (
                 'RefTableBuilder failed to build a table from graph, unable to '
                 'render study. Please ensure the validity of your ISAtab files'
-            )
-            logger.error(error_msg)
-            raise SampleSheetRenderingException(error_msg)
-
-        # Ensure the study does not exceed project limitations
-        row_limit = app_settings.get_app_setting(
-            'samplesheets', 'study_row_limit', project=study.get_project()
-        )
-
-        if len(all_refs) > row_limit:
-            error_msg = (
-                'Row limit set in samplesheets.study_row_limit '
-                'reached ({}), unable to render study'.format(len(all_refs))
             )
             logger.error(error_msg)
             raise SampleSheetRenderingException(error_msg)

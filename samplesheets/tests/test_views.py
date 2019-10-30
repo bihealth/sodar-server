@@ -10,6 +10,7 @@ from django.test import override_settings
 from django.urls import reverse
 
 # Projectroles dependency
+from projectroles.app_settings import AppSettingAPI
 from projectroles.models import Role, SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
 from projectroles.tests.test_models import (
@@ -37,6 +38,10 @@ from samplesheets.tests.test_io import (
     SHEET_DIR,
     SHEET_DIR_SPECIAL,
 )
+
+
+# App settings API
+app_settings = AppSettingAPI()
 
 
 # SODAR constants
@@ -586,6 +591,9 @@ class TestContextGetAPIView(TestViewsBase):
             'table_height': settings.SHEETS_TABLE_HEIGHT,
             'min_col_width': settings.SHEETS_MIN_COLUMN_WIDTH,
             'max_col_width': settings.SHEETS_MAX_COLUMN_WIDTH,
+            'allow_editing': app_settings.get_default_setting(
+                'samplesheets', 'allow_editing'
+            ),
             'alerts': [],
             'investigation': {
                 'identifier': self.investigation.identifier,
@@ -664,6 +672,11 @@ class TestStudyTablesGetAPIView(TestViewsBase):
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
 
+        # Allow sample sheet editing in project
+        app_settings.set_app_setting(
+            'samplesheets', 'allow_editing', True, project=self.project
+        )
+
     def test_get(self):
         """Test study tables retrieval"""
         with self.login(self.user):
@@ -708,6 +721,7 @@ class TestStudyTablesGetAPIView(TestViewsBase):
         self.assertNotIn('shortcuts', ret_data['tables']['study'])
         self.assertEqual(len(ret_data['tables']['assays']), 1)
         self.assertIn('uuid', ret_data['tables']['study']['table_data'][0][0])
+        self.assertIn('study_config', ret_data)
 
 
 # TODO: Test with realistic ISAtab examples using BIH configs (see #434)
@@ -817,7 +831,10 @@ class TestSampleSheetEditPostAPIView(TestViewsBase):
         # Asert postconditions
         self.assertEqual(response.status_code, 200)
         obj.refresh_from_db()
-        self.assertEqual(obj.characteristics[header_name], EDIT_NEW_VALUE_STR)
+        self.assertEqual(
+            obj.characteristics[header_name],
+            {'unit': None, 'value': EDIT_NEW_VALUE_STR},
+        )
 
     def test_edit_param_values_str(self):
         """Test editing a parameter values string value in a process"""
@@ -853,7 +870,10 @@ class TestSampleSheetEditPostAPIView(TestViewsBase):
         # Asert postconditions
         self.assertEqual(response.status_code, 200)
         obj.refresh_from_db()
-        self.assertEqual(obj.parameter_values[header_name], EDIT_NEW_VALUE_STR)
+        self.assertEqual(
+            obj.parameter_values[header_name],
+            {'unit': None, 'value': EDIT_NEW_VALUE_STR},
+        )
 
 
 class TestSourceIDQueryAPIView(KnoxAuthMixin, TestViewsBase):

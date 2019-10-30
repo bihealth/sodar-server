@@ -3,6 +3,7 @@
 from django.urls import reverse
 
 # Projectroles dependency
+from projectroles.app_settings import AppSettingAPI
 from projectroles.tests.test_models import (
     RemoteSiteMixin,
     RemoteProjectMixin,
@@ -12,6 +13,10 @@ from projectroles.tests.test_permissions import TestProjectPermissionBase
 from projectroles.utils import build_secret
 
 from .test_io import SampleSheetIOMixin, SHEET_DIR
+
+
+# App settings API
+app_settings = AppSettingAPI()
 
 
 # Local constants
@@ -164,6 +169,9 @@ class TestSampleSheetsPermissions(
 
     def test_api_study_tables_edit(self):
         """Test SampleSheetStudyTablesGetAPIView with edit mode enabled"""
+        app_settings.set_app_setting(
+            'samplesheets', 'allow_editing', True, project=self.project
+        )
         url = (
             reverse(
                 'samplesheets:api_study_tables_get',
@@ -180,6 +188,29 @@ class TestSampleSheetsPermissions(
         bad_users = [self.as_guest.user, self.anonymous, self.user_no_roles]
         self.assert_response(url, good_users, status_code=200)
         self.assert_response(url, bad_users, status_code=403)
+
+    def test_api_study_tables_not_allowed(self):
+        """Test SampleSheetStudyTablesGetAPIView with edit mode enabled but disallowed"""
+        app_settings.set_app_setting(
+            'samplesheets', 'allow_editing', False, project=self.project
+        )
+        url = (
+            reverse(
+                'samplesheets:api_study_tables_get',
+                kwargs={'study': self.study.sodar_uuid},
+            )
+            + '?edit=1'
+        )
+        users = [
+            self.superuser,
+            self.as_owner.user,
+            self.as_delegate.user,
+            self.as_contributor.user,
+            self.as_guest.user,
+            self.anonymous,
+            self.user_no_roles,
+        ]
+        self.assert_response(url, users, status_code=403)
 
     def test_api_study_links(self):
         """Test SampleSheetStudyLinksGetAPIView"""

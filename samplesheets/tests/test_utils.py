@@ -10,13 +10,14 @@ from projectroles.models import Role, SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
 from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
 
-from ..models import GenericMaterial, Process
-from ..rendering import SampleSheetTableBuilder
-from ..utils import (
+from samplesheets.models import GenericMaterial, Process
+from samplesheets.rendering import SampleSheetTableBuilder
+from samplesheets.utils import (
     get_alt_names,
     get_sample_dirs,
     get_index_by_header,
     get_last_material_name,
+    build_sheet_config,
 )
 from .test_io import SampleSheetIOMixin, SHEET_DIR
 
@@ -172,3 +173,78 @@ class TestGetLastMaterialName(TestUtilsBase):
 
 
 # TODO: Decent way to test get_sample_libraries()?
+
+
+class TestBuildSheetConfig(
+    ProjectMixin, RoleAssignmentMixin, SampleSheetIOMixin, TestCase
+):
+    """Tests for build_sheet_config()"""
+
+    # NOTE: Not using TestUtilsBase
+
+    def setUp(self):
+        self.tb = SampleSheetTableBuilder()
+
+        # Make owner user
+        self.user_owner = self.make_user('owner')
+
+        # Init project, role and assignment
+        self.project = self._make_project(
+            'TestProject', SODAR_CONSTANTS['PROJECT_TYPE_PROJECT'], None
+        )
+        self.role_owner = Role.objects.get_or_create(
+            name=SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
+        )[0]
+        self.assignment_owner = self._make_assignment(
+            self.project, self.user_owner, self.role_owner
+        )
+
+    # TODO: Test fields once we are finished with the notation
+    def test_build_sheet_config_batch(self):
+        """Test build_sheet_config() in batch"""
+        for zip_name, zip_file in self._get_isatab_files().items():
+            msg = 'file={}'.format(zip_name)
+
+            try:
+                investigation = self._import_isa_from_file(
+                    zip_file.path, self.project
+                )
+
+            except Exception as ex:
+                return self._fail_isa(zip_name, ex)
+
+            sc = build_sheet_config(investigation)
+            self.assertEqual(
+                len(sc['studies']), investigation.studies.all().count(), msg=msg
+            )
+
+            for sk, sv in sc['studies'].items():
+                study = investigation.studies.get(sodar_uuid=sk)
+                study_tables = self.tb.build_study_tables(study)
+                self.assertEqual(
+                    len(sv['nodes']),
+                    len(study_tables['study']['top_header']),
+                    msg=msg,
+                )
+                self.assertEqual(
+                    len(sv['assays']), study.assays.all().count(), msg=msg
+                )
+
+                for ak, av in sv['assays'].items():
+                    # Get sample node index
+                    s_idx = 0
+
+                    for h in study_tables['study']['top_header']:
+                        if h['value'] == 'Sample':
+                            break
+                        s_idx += 1
+
+                    self.assertEqual(
+                        len(av['nodes']),
+                        len(study_tables['assays'][ak]['top_header'])
+                        - s_idx
+                        - 1,
+                        msg=msg,
+                    )
+
+            investigation.delete()

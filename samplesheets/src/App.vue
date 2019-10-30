@@ -345,6 +345,7 @@ export default {
       appSetupDone: false,
       editMode: false,
       editStudyData: false,
+      editStudyConfig: null,
       /* NOTE: cell editor only works if provided through frameworkComponents? */
       frameworkComponents: {
         dataCellEditor: DataCellEditor
@@ -395,9 +396,7 @@ export default {
     // Helper to get flat value for
     getFlatValue (value) {
       if (Array.isArray(value) && value.length > 0) {
-        if (Array.isArray(value[0])) { // TODO: remove (#619)
-          return value.map(a => a[0]).join(';')
-        } else if (value[0].hasOwnProperty('name')) {
+        if (value[0].hasOwnProperty('name')) {
           return value.map(d => d['name']).join(';')
         }
       } else {
@@ -460,6 +459,7 @@ export default {
     buildColDef (table, assayMode, uuid, editMode) {
       // Default columns
       let colDef = []
+      let editFieldConfig
 
       let rowHeaderGroup = {
         headerName: 'Row',
@@ -536,13 +536,40 @@ export default {
             colWidth = Math.max(calcW, minW)
           }
 
+          // Get editFieldConfig if editing
+          if (editMode && this.editStudyConfig) {
+            editFieldConfig = null
+            let editNode = null
+            let studyNodeLen = this.editStudyConfig['nodes'].length
+
+            if (!assayMode || i < studyNodeLen) {
+              editNode = this.editStudyConfig['nodes'][i]
+            } else {
+              editNode = this.editStudyConfig['assays'][uuid]['nodes'][i - studyNodeLen]
+            }
+
+            if (editNode) {
+              for (let k = 0; k < editNode['fields'].length; k++) {
+                let f = editNode['fields'][k]
+
+                if (f['name'] === fieldHeader['name'] &&
+                    f['type'] === fieldHeader['type'] &&
+                    f.hasOwnProperty('editable') &&
+                    f['editable']) {
+                  editFieldConfig = f
+                  break
+                }
+              }
+            }
+          }
+
           // Create data header
           let header = {
             headerName: fieldHeader['value'],
             field: 'col' + j.toString(),
             width: colWidth,
             minWidth: minW,
-            hide: !table['col_values'][j], // Hide by default if empty
+            hide: !editFieldConfig && !table['col_values'][j], // Hide if empty and not editing
             headerClass: ['sodar-ss-data-header'],
             cellRendererFramework: DataCellRenderer,
             cellRendererParams: {
@@ -576,19 +603,30 @@ export default {
             header.hide = true
           }
 
-          // Editing: make specific fields editable
-          // TODO: Get editable fields from JSON setting
-          if (editMode && fieldHeader['type'] !== 'name' && !colType) {
+          // Editing: set up field for editing if we have editFieldConfig
+          if (editMode &&
+              editFieldConfig &&
+              ['Name', 'Protocol'].indexOf(fieldHeader['value']) === -1) {
             header.editable = true
             header.cellEditor = 'dataCellEditor'
             header.cellEditorParams = {
               'app': this.getApp(),
+              // Header information to be passed for calling server
               'headerInfo': {
-                'header_name': fieldHeader['og_field'],
+                'header_name': fieldHeader['name'],
                 'header_type': fieldHeader['type'],
                 'header_field': header.field, // For updating other cells
                 'obj_cls': fieldHeader['obj_cls']
+              },
+              // Mandatory editor configuration to be passed to DataCellEditor
+              'editConfig': {
+                'format': editFieldConfig['edit_format']
               }
+            }
+            // Optional editor configuration
+            if (editFieldConfig.hasOwnProperty('edit_options')) {
+              header.cellEditorParams['editConfig']['options'] =
+                editFieldConfig['edit_options']
             }
           } else if (editMode) {
             header.cellClass = header.cellClass.concat(['bg-light', 'text-muted'])
@@ -786,6 +824,11 @@ export default {
               this.renderError = data['render_error']
               this.gridsLoaded = false
             } else {
+              // Editing: Get study config
+              if (editMode && data.hasOwnProperty('study_config')) {
+                this.editStudyConfig = data['study_config']
+              }
+
               // Build study
               this.columnDefs['study'] = this.buildColDef(
                 data['tables']['study'], false, studyUuid, editMode)
@@ -994,6 +1037,7 @@ export default {
 
     handleFinishEditing () {
       // TODO: Save backup ISAtab, update timeline, etc
+      this.editStudyConfig = null
       this.showNotification('Finished Editing', 'info', 1000)
     },
 
@@ -1111,9 +1155,9 @@ select.ag-cell-edit-input {
   background-repeat: no-repeat;
   background-size: 0.5em auto;
   background-position: right 0.25em center;
-  padding-left: 5px;
+  padding-left: 6px;
   padding-right: 18px;
-  padding-bottom: 0px !important;
+  padding-bottom: 2px !important;
   text-align: inherit;
 
   background-image: url("data:image/svg+xml;charset=utf-8, \

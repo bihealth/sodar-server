@@ -77,26 +77,19 @@ def get_index_by_header(
 
     :param render_table: Study/assay render table
     :param header_value: Header value
-    :param obj_cls: Class of Dango model object represented by header (optional)
-    :param item_type: Type of item in case of GenericMaterial (optional)
+    :param obj_cls: Class of Dango model object for searched header (optional)
+    :param item_type: Type of searched item in GenericMaterial (optional)
     :return: Int or None if not found
     """
     header_value = header_value.lower()
     obj_cls = obj_cls.__name__ if obj_cls else None
 
     for i, h in enumerate(render_table['field_header']):
-        found = True
-
-        if h['value'].lower() != header_value:
-            found = False
-
-        if found and obj_cls and h['obj_cls'] != obj_cls:
-            found = False
-
-        if found and item_type and h['item_type'] != item_type:
-            found = False
-
-        if found:
+        if (
+            h['value'].lower() == header_value
+            and (not obj_cls or h['obj_cls'] == obj_cls)
+            and (not item_type or h['item_type'] == item_type)
+        ):
             return i
 
     return None
@@ -286,3 +279,78 @@ def write_excel_table(table, output, display_name):
         ws.column_dimensions[col_cells[0].column_letter].width = length
 
     wb.save(output)
+
+
+# TODO: Updating existing config based on sheet struture changes/replace
+def build_sheet_config(investigation):
+    """
+    Build basic sample sheet configuration for editing configuration.
+    NOTE: Under heavy development, end result may change
+    NOTE: Will be built from configuration template(s) eventually
+
+    :param investigation: Investigation object
+    :return: Dict
+    """
+
+    # Can't import in module root
+    from samplesheets.rendering import SampleSheetTableBuilder
+
+    tb = SampleSheetTableBuilder()
+
+    ret = {'investigation': {}, 'studies': {}}
+
+    def _build_node(node_header, field_header, idx):
+        node = {'header': node_header['value'], 'fields': []}
+
+        for i in range(idx, idx + node_header['colspan']):
+            h = field_header[i]
+            f = {'name': h['name']}
+
+            if h['type']:
+                f['type'] = h['type']
+
+            node['fields'].append(f)
+
+        return node, h_idx + node_header['colspan']
+
+    # Add studies
+    for study in investigation.studies.all().order_by('pk'):
+        study_data = {
+            'display_name': study.get_display_name(),  # For human readability
+            'nodes': [],
+            'assays': {},
+        }
+        study_tables = tb.build_study_tables(study, edit=True)
+        h_idx = 0
+
+        for h in study_tables['study']['top_header']:
+            node, h_idx = _build_node(
+                h, study_tables['study']['field_header'], h_idx
+            )
+            study_data['nodes'].append(node)
+
+        # Add study assays
+        for assay in study.assays.all().order_by('pk'):
+            assay_table = study_tables['assays'][str(assay.sodar_uuid)]
+            assay_data = {'display_name': assay.get_display_name(), 'nodes': []}
+            h_idx = 0
+            sample_found = False  # Leave out study columns
+
+            for h in assay_table['top_header']:
+                if sample_found:
+                    node, h_idx = _build_node(
+                        h, assay_table['field_header'], h_idx
+                    )
+                    assay_data['nodes'].append(node)
+
+                else:
+                    h_idx += h['colspan']
+
+                if h['value'] == 'Sample':
+                    sample_found = True
+
+            study_data['assays'][str(assay.sodar_uuid)] = assay_data
+
+        ret['studies'][str(study.sodar_uuid)] = study_data
+
+    return ret

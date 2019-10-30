@@ -1,8 +1,29 @@
 <template>
-  <input :ref="'input'"
-         v-model="editValue"
-         class="ag-cell-edit-input"
-         @keydown="onKeyDown($event)" />
+  <span>
+    <span v-if="editorMode === 'select'">
+      <select :ref="'input'"
+              v-model="editValue"
+              class="ag-cell-edit-input"
+              @keydown="onKeyDown($event)">
+        <option v-for="(val, index) in editConfig['options']"
+                :key="index"
+                :value="val"
+                :selected="val === editValue">
+          {{ val }}
+        </option>
+        <option :value="''"
+                :selected="editValue === ''">
+          -
+        </option>
+      </select>
+    </span>
+    <span v-else-if="editorMode === 'text'">
+      <input :ref="'input'"
+             v-model="editValue"
+             class="ag-cell-edit-input"
+             @keydown="onKeyDown($event)" />
+    </span>
+  </span>
 </template>
 
 <script>
@@ -15,6 +36,8 @@ export default Vue.extend({
     return {
       app: null,
       headerInfo: null,
+      editConfig: null,
+      editorMode: 'text',
       objCls: null,
       headerType: null,
       value: null,
@@ -72,9 +95,18 @@ export default Vue.extend({
   created () {
     this.app = this.params.app
     this.headerInfo = this.params.headerInfo
+    this.editConfig = this.params.editConfig
     this.value = this.params.value
     this.editValue = this.params.value['value']
     this.ogEditValue = this.editValue
+
+    // Set editor mode
+    if (this.editConfig.hasOwnProperty('options') && // Options
+        this.editConfig['options'].length > 0) {
+      this.editorMode = 'select'
+    } else { // Text input
+      this.editorMode = 'text'
+    }
 
     // Prevent keyboard navigation in parent when editing
     // See onKeyDown() for manual in-cell editing
@@ -103,6 +135,7 @@ export default Vue.extend({
         this.ogEditValue,
         this.headerInfo)
     }
+    this.params.colDef.suppressKeyboardEvent = false
   }
 })
 </script>

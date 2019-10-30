@@ -24,6 +24,7 @@ from rest_framework.versioning import AcceptHeaderVersioning
 from knox.auth import TokenAuthentication
 
 # Projectroles dependency
+from projectroles.app_settings import AppSettingAPI
 from projectroles.models import Project, RemoteSite, SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
 from projectroles.views import (
@@ -34,9 +35,9 @@ from projectroles.views import (
     BaseTaskflowAPIView,
 )
 
-from .forms import SampleSheetImportForm
-from .io import SampleSheetIO, SampleSheetImportException
-from .models import (
+from samplesheets.forms import SampleSheetImportForm
+from samplesheets.io import SampleSheetIO, SampleSheetImportException
+from samplesheets.models import (
     Investigation,
     Study,
     Assay,
@@ -44,18 +45,22 @@ from .models import (
     Process,
     GenericMaterial,
 )
-from .rendering import SampleSheetTableBuilder, EMPTY_VALUE
-from .tasks import update_project_cache_task
-from .utils import (
+from samplesheets.rendering import SampleSheetTableBuilder, EMPTY_VALUE
+from samplesheets.tasks import update_project_cache_task
+from samplesheets.utils import (
     get_sample_dirs,
     compare_inv_replace,
     get_sheets_url,
     get_comments,
     write_excel_table,
+    build_sheet_config,
 )
 
 # Get logger
 logger = logging.getLogger(__name__)
+
+# App settings API
+app_settings = AppSettingAPI()
 
 
 # SODAR constants
@@ -714,6 +719,10 @@ class SampleSheetDeleteView(
             investigation.delete()
 
         if delete_success:
+            # Delete sheet configuration
+            app_settings.set_app_setting(
+                APP_NAME, 'sheet_config', {}, project=project
+            )
             messages.success(self.request, 'Sample sheets deleted.')
 
         return HttpResponseRedirect(get_sheets_url(project))
@@ -907,6 +916,9 @@ class SampleSheetContextGetAPIView(
             'table_height': settings.SHEETS_TABLE_HEIGHT,
             'min_col_width': settings.SHEETS_MIN_COLUMN_WIDTH,
             'max_col_width': settings.SHEETS_MAX_COLUMN_WIDTH,
+            'allow_editing': app_settings.get_app_setting(
+                APP_NAME, 'allow_editing', project=project
+            ),
             'alerts': [],
             'csrf_token': get_token(request),
         }
@@ -1047,7 +1059,6 @@ class SampleSheetStudyTablesGetAPIView(
         irods_backend = get_backend_api('omics_irods')
         cache_backend = get_backend_api('sodar_cache')
         study = Study.objects.filter(sodar_uuid=self.kwargs['study']).first()
-        edit = bool(request.GET.get('edit'))  # Return extra edit mode data
 
         if not study:
             return Response(
@@ -1056,6 +1067,22 @@ class SampleSheetStudyTablesGetAPIView(
                     'unable to render'.format(self.kwargs['study'])
                 },
                 status=404,
+            )
+
+        # Return extra edit mode data
+        project = study.investigation.project
+        edit = bool(request.GET.get('edit'))
+        allow_editing = app_settings.get_app_setting(
+            APP_NAME, 'allow_editing', project=project
+        )
+
+        if edit and not allow_editing:
+            return Response(
+                {
+                    'render_error': 'Editing not allowed in the project, '
+                    'unable to render'
+                },
+                status=403,
             )
 
         ret_data = {'study': {'display_name': study.get_display_name()}}
@@ -1073,7 +1100,8 @@ class SampleSheetStudyTablesGetAPIView(
             ret_data['render_error'] = str(ex)
             return Response(ret_data, status=200)
 
-        if study.investigation.irods_status and irods_backend:
+        # Get iRODS content if NOT editing and collections have been created
+        if not edit and study.investigation.irods_status and irods_backend:
             # Can't import at module root due to circular dependency
             from .plugins import find_study_plugin
             from .plugins import find_assay_plugin
@@ -1133,6 +1161,25 @@ class SampleSheetStudyTablesGetAPIView(
                     a_data['extra_table'] = assay_plugin.get_extra_table(
                         a_data, assay
                     )
+
+        # Get sheet configuration if editing
+        if edit:
+            # If the config doesn't exist yet, build it
+            sheet_config = app_settings.get_app_setting(
+                APP_NAME, 'sheet_config', project=project
+            )
+
+            if not sheet_config:
+                logger.debug('No sheet configuration found, building..')
+                sheet_config = build_sheet_config(study.investigation)
+                app_settings.set_app_setting(
+                    APP_NAME, 'sheet_config', sheet_config, project=project
+                )
+                logger.info('Sheet configuration built for investigation')
+
+            ret_data['study_config'] = sheet_config['studies'][
+                str(study.sodar_uuid)
+            ]
 
         return Response(ret_data, status=200)
 
@@ -1248,7 +1295,7 @@ class SampleSheetEditPostAPIView(
             header_name = cell['header_name']
 
             # Plain fields
-            if header_type == 'field' and header_name.lower() in EDIT_FIELD_MAP:
+            if not header_type and header_name.lower() in EDIT_FIELD_MAP:
                 attr_name = EDIT_FIELD_MAP[header_name.lower()]
                 attr = getattr(obj, attr_name)
 
@@ -1257,6 +1304,7 @@ class SampleSheetEditPostAPIView(
 
                 elif isinstance(attr, dict):
                     attr['name'] = cell['value']
+
                     # TODO: Set accession and ontology once editing is allowed
 
                 obj.save()
@@ -1264,7 +1312,16 @@ class SampleSheetEditPostAPIView(
 
             # JSON Attributes
             elif header_type in EDIT_JSON_ATTRS:
-                getattr(obj, header_type)[header_name] = cell['value']
+                attr = getattr(obj, header_type)
+
+                # TODO: Is this actually a thing nowadays?
+                if isinstance(attr[header_name], str):
+                    attr[header_name] = cell['value']
+
+                elif isinstance(attr[header_name], dict):
+                    # TODO: Support unit etc
+                    attr[header_name]['value'] = cell['value']
+
                 obj.save()
                 logger.debug(
                     'Edited JSON attribute: {}[{}]'.format(

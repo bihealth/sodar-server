@@ -44,7 +44,11 @@
             class="sodar-ss-vue-toggle-row">
           <td>
             {{ header['headerName'] }}
-            <span v-if="!columnDataExists(header)"
+            <span v-if="app.editMode && header.editable"
+                class="text-muted font-italic pull-right">
+              Editable
+            </span>
+            <span v-else-if="!columnDataExists(header)"
                 class="text-muted font-italic pull-right">
               No data
             </span>

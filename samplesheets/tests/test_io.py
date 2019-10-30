@@ -126,6 +126,25 @@ class SampleSheetIOMixin:
 
         return isa_inv, isa_studies, isa_assays
 
+    @classmethod
+    def _get_isatab_files(cls):
+        """
+        Return all test ISAtab files.
+
+        :return: Dict
+        """
+        return {
+            os.fsdecode(file.name): file
+            for file in sorted(
+                [x for x in os.scandir(SHEET_DIR) if x.is_file()],
+                key=lambda x: x.name,
+            )
+        }
+
+    def _fail_isa(self, zip_name, ex):
+        """Fail with exception message and ISAtab zip file name"""
+        self.fail('Exception in {}: {}'.format(zip_name, ex))
+
 
 class TestSampleSheetIOBase(
     ProjectMixin, RoleAssignmentMixin, SampleSheetIOMixin, TestCase
@@ -144,25 +163,6 @@ class TestSampleSheetIOBase(
         self.assignment_owner = self._make_assignment(
             self.project, self.user_owner, self.role_owner
         )
-
-    def _fail_isa(self, zip_name, ex):
-        """Fail with exception message and ISAtab zip file name"""
-        self.fail('Exception in {}: {}'.format(zip_name, ex))
-
-    @classmethod
-    def _get_isatab_files(cls):
-        """
-        Return all test ISAtab files.
-
-        :return: Dict
-        """
-        return {
-            os.fsdecode(file.name): file
-            for file in sorted(
-                [x for x in os.scandir(SHEET_DIR) if x.is_file()],
-                key=lambda x: x.name,
-            )
-        }
 
     @classmethod
     def _get_flat_export_data(cls, export_data):

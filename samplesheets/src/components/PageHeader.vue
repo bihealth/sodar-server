@@ -89,7 +89,8 @@
             v-if="app.sheetsAvailable &&
                   !app.editMode"
             class="sodar-ss-op-item"
-            @click="toggleEditMode">
+            @click="toggleEditMode"
+            :disabled="!app.sodarContext['allow_editing']">
           <i class="fa fa-fw fa-pencil"></i> Edit Sheet
         </b-dropdown-item>
         <b-dropdown-item
