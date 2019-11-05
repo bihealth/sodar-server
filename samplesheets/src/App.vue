@@ -343,6 +343,7 @@ export default {
       sheetsAvailable: null,
       activeSubPage: null,
       appSetupDone: false,
+      selectEnabled: true,
       editMode: false,
       editStudyData: false,
       editStudyConfig: null,
@@ -618,15 +619,12 @@ export default {
                 'header_field': header.field, // For updating other cells
                 'obj_cls': fieldHeader['obj_cls']
               },
-              // Mandatory editor configuration to be passed to DataCellEditor
-              'editConfig': {
-                'format': editFieldConfig['edit_format']
-              }
-            }
-            // Optional editor configuration
-            if (editFieldConfig.hasOwnProperty('edit_options')) {
-              header.cellEditorParams['editConfig']['options'] =
-                editFieldConfig['edit_options']
+              'renderInfo': {
+                'align': fieldHeader['align'],
+                'width': colWidth
+              },
+              // Editor configuration to be passed to DataCellEditor
+              'editConfig': editFieldConfig
             }
           } else if (editMode) {
             header.cellClass = header.cellClass.concat(['bg-light', 'text-muted'])
@@ -970,6 +968,7 @@ export default {
         this.handleStudyNavigation(this.currentStudyUuid)
       } else {
         this.handleFinishEditing() // Call actions for finishing editing
+        this.selectEnabled = true // Just in case
         if (!this.editMode && this.currentStudyUuid) {
           this.handleStudyNavigation(this.currentStudyUuid, this.currentAssayUuid)
         }
@@ -1031,6 +1030,7 @@ export default {
             cell['uuid'] === upData['uuid'] &&
             cell['value'] === upData['og_value']) {
           cell['value'] = upData['value']
+          cell['unit'] = upData['unit']
         }
       })
     },
@@ -1143,48 +1143,12 @@ export default {
   height: 38px !important;
 }
 
-/* HACK for select input failing in ag-grid community edition */
-/* Based on: https://stackoverflow.com/a/41641709 */
-select.ag-cell-edit-input {
-  -moz-appearance: none;
-  -webkit-appearance: none;
-  appearance: none;
-
-  height: 38px !important;
-  background-color: #ffffd8;
-  background-repeat: no-repeat;
-  background-size: 0.5em auto;
-  background-position: right 0.25em center;
-  padding-left: 6px;
-  padding-right: 18px;
-  padding-bottom: 2px !important;
-  text-align: inherit;
-
-  background-image: url("data:image/svg+xml;charset=utf-8, \
-    <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 40'> \
-      <polygon points='0,0 60,0 30,40' style='fill:black;'/> \
-    </svg>");
-}
-
-input.ag-cell-edit-input {
-  -moz-appearance: none;
-  -webkit-appearance: none;
-  appearance: none;
-
-  height: 38px !important;
-  background-color: #ffffd8;
-  padding-left: 10px;
-  padding-right: 13px;
-  padding-bottom: 2px;
-  text-align: inherit;
-}
-
 .sodar-ss-data-header {
   background-color: #f7f7f7 !important;
 }
 
 .sodar-ss-data-cell:focus {
-  border: 1px solid #000000 !important;
+  border: 1px solid #6c757d !important;
 }
 
 .ag-header-group-text {
@@ -1200,6 +1164,12 @@ input.ag-cell-edit-input {
 .ag-pinned-right-header {
   border: 0 !important;
 }
+
+/*
+div.ag-popup-editor {
+  max-width: 500px !important;
+}
+*/
 
 a.sodar-ss-anchor {
   display: block;
@@ -1239,7 +1209,7 @@ a.sodar-ss-anchor {
 }
 
 .agds-selected {
-  background-color: #ffe8e8 !important;
+  background-color: #e2f0ff !important;
 }
 
 div.sodar-ss-data {

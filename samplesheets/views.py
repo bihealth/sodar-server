@@ -1319,8 +1319,15 @@ class SampleSheetEditPostAPIView(
                     attr[header_name] = cell['value']
 
                 elif isinstance(attr[header_name], dict):
-                    # TODO: Support unit etc
+                    # TODO: Ontology value and list support
                     attr[header_name]['value'] = cell['value']
+
+                    # TODO: Support ontology ref in unit
+                    if isinstance(attr[header_name]['unit'], str):
+                        attr[header_name]['unit'] = cell['unit']
+
+                    elif isinstance(attr[header_name]['unit'], dict):
+                        attr[header_name]['unit']['name'] = cell['unit']
 
                 obj.save()
                 logger.debug(

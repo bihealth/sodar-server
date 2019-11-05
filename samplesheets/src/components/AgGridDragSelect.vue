@@ -123,6 +123,12 @@ export default {
     },
 
     onMouseDown (event) {
+      // Disable and clear all if selecting is disabled by app
+      if (!this.app.selectEnabled) {
+        this.clearSelected()
+        return
+      }
+
       // Ignore right clicks
       if (event.button === 2) return
 
