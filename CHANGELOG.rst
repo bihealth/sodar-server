@@ -15,6 +15,7 @@ Fixed
     - Misleading alert text in ``landingzone_confirm_move.html`` (#689)
 - **Samplesheets**
     - Initial study context sorted by title instead of parsing order (#692)
+    - Rendering crash from missing value type check for units (#697)
 
 
 v0.6.0 (2019-10-21)

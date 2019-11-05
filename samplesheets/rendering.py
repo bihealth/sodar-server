@@ -588,7 +588,8 @@ class SampleSheetTableBuilder:
         else:
             val = ann['value']
 
-        if 'unit' in ann:
+        # Add unit if present
+        if isinstance(ann, dict) and 'unit' in ann:
             if isinstance(ann['unit'], dict):
                 unit = ann['unit']['name']
 
