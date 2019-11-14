@@ -7,15 +7,12 @@
               v-model="editValue"
               class="ag-cell-edit-input"
               @keydown="onKeyDown($event)">
+        <option value="" :selected="selectEmptyValue(editValue)">-</option>
         <option v-for="(val, index) in editConfig['options']"
                 :key="index"
                 :value="val"
                 :selected="editValue === val">
           {{ val }}
-        </option>
-        <option value=""
-                :selected="editValue === ''">
-          -
         </option>
       </select>
     </span>
@@ -35,15 +32,12 @@
             v-model="editUnit"
             class="ag-cell-edit-input sodar-ss-vue-popup-input"
             :style="unitStyle">
+      <option value="" :selected="selectEmptyValue(editUnit)">-</option>
       <option v-for="(unit, index) in editConfig['unit']"
               :key="index"
               :value="unit"
               :selected="editUnit === unit">
         {{ unit }}
-      </option>
-      <option value=""
-              :selected="editUnit === ''">
-          -
       </option>
     </select>
   </div>
@@ -125,6 +119,9 @@ export default Vue.extend({
       }
     },
     /* Helpers -------------------------------------------------------------- */
+    selectEmptyValue (value) {
+      return value === '' || !value
+    },
     getKeyCode (event) {
       return (typeof event.which === 'undefined') ? event.keyCode : event.which
     },
