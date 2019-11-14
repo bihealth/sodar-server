@@ -984,6 +984,9 @@ class SampleSheetContextGetAPIView(
             'edit_sheet': request.user.has_perm(
                 'samplesheets.edit_sheet', project
             ),
+            'manage_sheet': request.user.has_perm(
+                'samplesheets.manage_sheet', project
+            ),
             'create_dirs': request.user.has_perm(
                 'samplesheets.create_dirs', project
             ),
@@ -1346,6 +1349,83 @@ class SampleSheetEditPostAPIView(
                 return Response({'message': 'failed'}, status=500)
 
         # TODO: Log edits in timeline
+
+        return Response({'message': 'ok'}, status=200)
+
+
+class SampleSheetManagePostAPIView(
+    LoginRequiredMixin, ProjectPermissionMixin, APIPermissionMixin, APIView
+):
+    """View to manage sample sheet configuration"""
+
+    permission_required = 'samplesheets.manage_sheet'
+    renderer_classes = [JSONRenderer]
+
+    def post(self, request, *args, **kwargs):
+        project = self.get_project()
+        fields = request.data.get('fields')
+        sheet_config = app_settings.get_app_setting(
+            APP_NAME, 'sheet_config', project=project
+        )
+
+        for field in fields:
+            logger.debug('Field config: {}'.format(field))
+            s_uuid = field['study']
+            a_uuid = field['assay']
+            n_idx = field['node_idx']
+            f_idx = field['field_idx']
+            debug_info = 'study="{}"; assay="{}"; n={}; f={})'.format(
+                s_uuid, a_uuid, n_idx, f_idx
+            )
+
+            try:
+                if a_uuid:
+                    og_config = sheet_config['studies'][s_uuid]['assays'][
+                        a_uuid
+                    ]['nodes'][n_idx]['fields'][f_idx]
+
+                else:
+                    og_config = sheet_config['studies'][s_uuid]['nodes'][n_idx][
+                        'fields'
+                    ][f_idx]
+
+            except Exception as ex:
+                msg = 'Unable to access config field ({}): {}'.format(
+                    debug_info, ex
+                )
+                logger.error(msg)
+                return Response({'message': msg}, status=500)
+
+            if (
+                field['config']['name'] != og_config['name']
+                or field['config']['type'] != og_config['type']
+            ):
+                msg = 'Fields do not match ({})'.format(debug_info)
+                logger.error(msg)
+                return Response({'message': msg}, status=500)
+
+            if a_uuid:
+                sheet_config['studies'][s_uuid]['assays'][a_uuid]['nodes'][
+                    n_idx
+                ]['fields'][f_idx] = field['config']
+
+            else:
+                sheet_config['studies'][s_uuid]['nodes'][n_idx]['fields'][
+                    f_idx
+                ] = field['config']
+
+            app_settings.set_app_setting(
+                APP_NAME, 'sheet_config', sheet_config, project=project
+            )
+            logger.info(
+                'Updated field config for "{}" ({}) in {} {}'.format(
+                    field['config']['name'],
+                    field['config']['type'],
+                    'assay' if a_uuid else 'study',
+                    a_uuid if a_uuid else s_uuid,
+                )
+            )
+            # TODO: Add timeline event
 
         return Response({'message': 'ok'}, status=200)
 

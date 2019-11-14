@@ -144,10 +144,9 @@ export default {
       this.filterActive = false
 
       // Get data
-      let modalElement = this.$refs.columnToggleModal
       this.uuid = uuid
       this.assayMode = assayMode
-      this.columnApi = this.app.getGridOptionsByUuid(this.uuid)
+      this.columnApi = this.app.getGridOptionsByUuid(this.uuid).columnApi
 
       if (assayMode) {
         this.columnDefs = this.app.columnDefs['assays'][uuid]
@@ -200,11 +199,11 @@ export default {
       }
 
       // Show element
-      modalElement.show()
+      this.$refs.columnToggleModal.show()
     },
 
     hideModal () {
-      this.$refs['columnToggleModal'].hide()
+      this.$refs.columnToggleModal.hide()
     }
   }
 }

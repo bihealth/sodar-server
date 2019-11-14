@@ -282,11 +282,21 @@
         ref="shortcutModalRef">
     </shortcut-modal>
 
+    <!-- Modal for column visibility toggling -->
     <column-toggle-modal
-      v-if="sodarContext && currentStudyUuid"
-      :app="getApp()"
-      ref="columnToggleModalRef">
+        v-if="sodarContext && currentStudyUuid"
+        :app="getApp()"
+        ref="columnToggleModalRef">
     </column-toggle-modal>
+
+    <!-- Editing: Modal for column management -->
+    <manage-column-modal
+        v-if="editMode && sodarContext['perms']['manage_sheet']"
+        :app="getApp()"
+        :project-uuid="projectUuid"
+        :study-uuid="currentStudyUuid"
+        ref="manageColumnModalRef">
+    </manage-column-modal>
 
     <!--<router-view/>-->
   </div>
@@ -299,13 +309,15 @@ import ParserWarnings from './components/ParserWarnings.vue'
 import IrodsButtons from './components/IrodsButtons.vue'
 import IrodsDirModal from './components/IrodsDirModal.vue'
 import ShortcutModal from './components/ShortcutModal.vue'
-import ColumnToggleModal from './components/ColumnToggleModal'
+import ColumnToggleModal from './components/ColumnToggleModal.vue'
+import ManageColumnModal from './components/ManageColumnModal.vue'
 import IrodsStatsBadge from './components/IrodsStatsBadge.vue'
 import ExtraContentTable from './components/ExtraContentTable.vue'
 import {AgGridVue} from 'ag-grid-vue'
 import DataCellRenderer from './components/renderers/DataCellRenderer.vue'
 import IrodsButtonsRenderer from './components/renderers/IrodsButtonsRenderer.vue'
 import ShortcutButtonsRenderer from './components/renderers/ShortcutButtonsRenderer.vue'
+import FieldHeaderEditRenderer from './components/renderers/FieldHeaderEditRenderer'
 import DataCellEditor from './components/editors/DataCellEditor.vue'
 import AgGridDragSelect from './components/AgGridDragSelect.vue'
 
@@ -361,6 +373,7 @@ export default {
     IrodsDirModal,
     ShortcutModal,
     ColumnToggleModal,
+    ManageColumnModal,
     IrodsStatsBadge,
     ExtraContentTable,
     AgGridVue,
@@ -505,12 +518,12 @@ export default {
       // Iterate through top header
       for (let i = 0; i < topHeaderLength; i++) {
         let topHeader = table['top_header'][i]
-
         let headerGroup = {
           headerName: topHeader['value'],
           headerClass: ['text-white', 'bg-' + topHeader['colour']],
           children: []
         }
+        let nodeFieldIdx = 0 // For config management
 
         // Iterate through field headers
         while (j < headerIdx + topHeader['colspan']) {
@@ -523,6 +536,7 @@ export default {
           let maxW = this.sodarContext['max_col_width']
           let calcW = maxValueLen * 10 + 25 // Default
           let colWidth
+          let fieldEditable = false
 
           // External links are a special case
           if (colType === 'EXTERNAL_LINKS') {
@@ -554,14 +568,17 @@ export default {
                 let f = editNode['fields'][k]
 
                 if (f['name'] === fieldHeader['name'] &&
-                    f['type'] === fieldHeader['type'] &&
-                    f.hasOwnProperty('editable') &&
-                    f['editable']) {
+                    f['type'] === fieldHeader['type']) {
                   editFieldConfig = f
                   break
                 }
               }
             }
+          }
+
+          if (editFieldConfig &&
+              editFieldConfig.hasOwnProperty('editable')) {
+            fieldEditable = editFieldConfig['editable']
           }
 
           // Create data header
@@ -570,7 +587,7 @@ export default {
             field: 'col' + j.toString(),
             width: colWidth,
             minWidth: minW,
-            hide: !editFieldConfig && !table['col_values'][j], // Hide if empty and not editing
+            hide: !fieldEditable && !table['col_values'][j], // Hide if empty and not editing
             headerClass: ['sodar-ss-data-header'],
             cellRendererFramework: DataCellRenderer,
             cellRendererParams: {
@@ -604,30 +621,63 @@ export default {
             header.hide = true
           }
 
-          // Editing: set up field for editing if we have editFieldConfig
-          if (editMode &&
-              editFieldConfig &&
-              ['Name', 'Protocol'].indexOf(fieldHeader['value']) === -1) {
-            header.editable = true
-            header.cellEditor = 'dataCellEditor'
-            header.cellEditorParams = {
-              'app': this.getApp(),
-              // Header information to be passed for calling server
-              'headerInfo': {
-                'header_name': fieldHeader['name'],
-                'header_type': fieldHeader['type'],
-                'header_field': header.field, // For updating other cells
-                'obj_cls': fieldHeader['obj_cls']
-              },
-              'renderInfo': {
-                'align': fieldHeader['align'],
-                'width': colWidth
-              },
-              // Editor configuration to be passed to DataCellEditor
-              'editConfig': editFieldConfig
+          // Editing: set up field and its header for editing
+          if (editMode) {
+            // Set header renderer for fields we can manage
+            if (this.sodarContext['perms']['manage_sheet'] &&
+                !['Name', 'Protocol'].includes(fieldHeader['value']) &&
+                !['EXTERNAL_LINKS', 'ONTOLOGY'].includes(colType)) {
+              let configAssayUuid = assayMode ? uuid : null
+              let nodeIdx = i
+
+              if (assayMode) {
+                // NOTE: -2 because of row column and split source column
+                let studyNodeLen = this.columnDefs['study'].length - 2
+                if (nodeIdx < studyNodeLen) {
+                  configAssayUuid = null
+                } else {
+                  nodeIdx = i - studyNodeLen
+                }
+              }
+
+              header.headerComponentFramework = FieldHeaderEditRenderer
+              header.headerComponentParams = {
+                'modalComponent': this.$refs.manageColumnModalRef,
+                'fieldConfig': editFieldConfig,
+                'baseCellClasses': header.cellClass,
+                'assayUuid': configAssayUuid,
+                'nodeIdx': nodeIdx,
+                'fieldIdx': nodeFieldIdx
+              }
+              header.width = header.width + 20 // Fit button in header
+              header.minWidth = header.minWidth + 20
             }
-          } else if (editMode) {
-            header.cellClass = header.cellClass.concat(['bg-light', 'text-muted'])
+
+            // Set up field editing
+            if (editFieldConfig &&
+                !['Name', 'Protocol'].includes(fieldHeader['value'])) {
+              header.editable = fieldEditable
+              header.cellEditor = 'dataCellEditor'
+              header.cellEditorParams = {
+                'app': this.getApp(),
+                // Header information to be passed for calling server
+                'headerInfo': {
+                  'header_name': fieldHeader['name'],
+                  'header_type': fieldHeader['type'],
+                  'header_field': header.field, // For updating other cells
+                  'obj_cls': fieldHeader['obj_cls']
+                },
+                'renderInfo': {
+                  'align': fieldHeader['align'],
+                  'width': colWidth
+                },
+                // Editor configuration to be passed to DataCellEditor
+                'editConfig': editFieldConfig
+              }
+            }
+            if (!fieldEditable) { // Not editable at initial loading
+              header.cellClass = header.cellClass.concat(['bg-light', 'text-muted'])
+            }
           }
 
           if (j > 0) {
@@ -635,6 +685,7 @@ export default {
           }
 
           j++
+          nodeFieldIdx += 1
         }
 
         headerIdx = j
@@ -645,6 +696,7 @@ export default {
         }
       }
 
+      // Study shortcut column
       if (!this.editMode &&
           !assayMode &&
           table.hasOwnProperty('shortcuts') &&
@@ -1014,7 +1066,6 @@ export default {
               console.log('Save status: ' + data['message']) // DEBUG
               this.showNotification('Saving Failed', 'danger', 1000)
               // TODO: Mark invalid/unsaved field(s) in UI
-              // TODO: Also change multi-cell copying highlight colour
             }
           }
         ).catch(function (error) {
@@ -1033,6 +1084,8 @@ export default {
           cell['unit'] = upData['unit']
         }
       })
+      // NOTE: Sometimes a manual refresh is needed (ag-grid bug?)
+      gridApi.refreshCells({'columns': [upData['header_field']], 'force': true})
     },
 
     handleFinishEditing () {
@@ -1045,9 +1098,9 @@ export default {
 
     getGridOptionsByUuid (uuid) {
       if (uuid === this.currentStudyUuid) {
-        return this.gridOptions['study'].columnApi
+        return this.gridOptions['study']
       } else if (uuid in this.gridOptions['assays']) {
-        return this.gridOptions['assays'][uuid].columnApi
+        return this.gridOptions['assays'][uuid]
       }
     },
 
@@ -1124,6 +1177,12 @@ export default {
 .ag-header-cell {
   border-right: 1px solid #dfdfdf !important;
 }
+
+/*
+.ag-header-group-cell-label {
+  vertical-align: middle !important;
+}
+*/
 
 .ag-full-width-container {
   border-bottom: 1px solid #dfdfdf !important;
@@ -1228,6 +1287,14 @@ div.sodar-ss-data-hover {
   background-color: #ffffe0;
   border: 1px solid #dfdfdf;
   box-shadow: 0 3px 3px -3px #909090;
+}
+
+.sodar-ss-data-btn {
+  height: 28px;
+  line-height: 27px;
+  margin-top: 5px;
+  padding-top: 0;
+  color: #ffffff !important;
 }
 
 </style>

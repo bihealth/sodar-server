@@ -629,6 +629,7 @@ class TestContextGetAPIView(TestViewsBase):
             },
             'perms': {
                 'edit_sheet': True,
+                'manage_sheet': True,
                 'create_dirs': True,
                 'export_sheet': True,
                 'delete_sheet': True,

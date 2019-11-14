@@ -208,7 +208,8 @@ export default Vue.extend({
     }
 
     // Set editor type
-    if (this.editConfig.hasOwnProperty('options') && // Options
+    if (this.editConfig['format'] === 'select' &&
+        this.editConfig.hasOwnProperty('options') && // Options
         this.editConfig['options'].length > 0) {
       this.editorType = 'select'
     } else { // Basic text/integer/etc input
@@ -216,12 +217,13 @@ export default Vue.extend({
     }
 
     // Set regex
-    if (this.editConfig.hasOwnProperty('regex') &&
-        this.editConfig.hasOwnProperty('regex')) {
+    if (this.editConfig['format'] !== 'select' &&
+        this.editConfig.hasOwnProperty('regex') &&
+        this.editConfig['regex'].length > 0) {
       this.regex = new RegExp(this.editConfig['regex'])
     } else { // Default regex for certain fields
       if (this.editConfig['format'] === 'integer') {
-        this.regex = /^(([1-9][0-9]*)|([0]+))$/ // TODO: TBD: Allow negative?
+        this.regex = /^(([1-9][0-9]*)|([0]?))$/ // TODO: TBD: Allow negative?
       }
     }
 

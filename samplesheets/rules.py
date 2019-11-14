@@ -28,7 +28,7 @@ rules.add_perm(
     | pr_rules.is_project_guest,
 )
 
-# Allow creating, importing or modifying the project's JSON sample sheet
+# Allow creating, importing or modifying the project's sample sheet
 rules.add_perm(
     'samplesheets.edit_sheet',
     pr_rules.is_project_owner
@@ -36,7 +36,13 @@ rules.add_perm(
     | pr_rules.is_project_contributor,
 )
 
-# Allow exporting a JSON sample sheet from project
+# Allow managing sample sheet configuration and editing
+rules.add_perm(
+    'samplesheets.manage_sheet',
+    pr_rules.is_project_owner | pr_rules.is_project_delegate,
+)
+
+# Allow exporting a sample sheet from project
 rules.add_perm(
     'samplesheets.export_sheet',
     pr_rules.is_project_owner
