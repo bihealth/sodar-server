@@ -14,6 +14,10 @@ Added
 - **Irodsbackend**
     - Supply optional iRODS options in environment file (#714)
     - ``IRODS_ENV_PATH`` settings variable (#714)
+- **Irodsinfo**
+    - Supply optional iRODS options in environment file (#717)
+    - ``IRODSINFO_ENV_PATH`` settings variable (#717)
+    - Logging for environment generating and certificate loading
 
 Changed
 -------

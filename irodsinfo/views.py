@@ -1,6 +1,7 @@
 import io
 from irods.exception import NetworkException, CAT_INVALID_AUTHENTICATION
 import json
+import logging
 import zipfile
 
 from django.conf import settings
@@ -10,6 +11,9 @@ from django.views.generic import TemplateView, View
 # Projectroles dependency
 from projectroles.plugins import get_backend_api
 from projectroles.views import LoggedInPermissionMixin, HTTPRefererMixin
+
+
+logger = logging.getLogger(__name__)
 
 
 class IrodsInfoView(LoggedInPermissionMixin, HTTPRefererMixin, TemplateView):
@@ -63,6 +67,31 @@ class IrodsConfigView(LoggedInPermissionMixin, HTTPRefererMixin, View):
         home_path = '/{}/home/{}'.format(settings.IRODS_ZONE, user_name)
         cert_file_name = settings.IRODS_HOST + '.crt'
 
+        # Get optional environment file
+        env_opt = {}
+
+        if settings.IRODSINFO_ENV_PATH:
+            try:
+                with open(settings.IRODSINFO_ENV_PATH) as env_file:
+                    env_opt = json.load(env_file)
+
+                logger.debug('Loaded iRODS env from file: {}'.format(env_opt))
+
+            except FileNotFoundError:
+                logger.warning(
+                    'iRODS env file not found: generating with default '
+                    'parameters (path={})'.format(settings.IRODSINFO_ENV_PATH)
+                )
+                env_opt = {}
+
+            except Exception as ex:
+                logger.error(
+                    'Unable to read iRODS env file (path={}): {}'.format(
+                        settings.IRODSINFO_ENV_PATH, ex
+                    )
+                )
+                raise ex
+
         # Set up irods_environment.json
         irods_env = {
             'irods_host': settings.IRODS_HOST,
@@ -79,6 +108,7 @@ class IrodsConfigView(LoggedInPermissionMixin, HTTPRefererMixin, View):
             'irods_cwd': home_path,
             'irods_home': home_path,
         }
+        irods_env.update(env_opt)
         env_json = json.dumps(irods_env, indent=2)
 
         # Create zip archive
@@ -94,7 +124,12 @@ class IrodsConfigView(LoggedInPermissionMixin, HTTPRefererMixin, View):
                 zip_file.writestr(cert_file_name, cert_file.read())
 
         except FileNotFoundError:
-            pass
+            logger.warning(
+                'iRODS server cert file not found, '
+                'not adding to archive (path={})'.format(
+                    settings.IRODS_CERT_PATH
+                )
+            )
 
         zip_file.close()
 

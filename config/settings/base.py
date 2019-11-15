@@ -509,6 +509,25 @@ FILESFOLDERS_LINK_BAD_REQUEST_MSG = 'Invalid request'
 ADMINALERTS_PAGINATION = 15
 
 
+# iRODS settings shared by iRODS using apps
+IRODS_HOST = env.str('IRODS_HOST', '0.0.0.0')
+IRODS_PORT = env.int('IRODS_PORT', 4477)
+IRODS_ZONE = env.str('IRODS_ZONE', 'omicsZone')
+IRODS_USER = env.str('IRODS_USER', 'rods')
+IRODS_PASS = env.str('IRODS_PASS', 'rods')
+IRODS_SAMPLE_DIR = 'sample_data'
+IRODS_LANDING_ZONE_DIR = 'landing_zones'
+
+# Optional iRODS env file
+# (recommended: place in STATIC_ROOT + '/irods/irods_environment.json')
+IRODS_ENV_PATH = env.str('IRODS_ENV_PATH', None)
+
+# Optional iRODS certificate path
+IRODS_CERT_PATH = env.str(
+    'IRODS_CERT_PATH', STATIC_ROOT + '/irods/irods_server.crt'
+)
+
+
 # Taskflow backend settings
 TASKFLOW_TARGETS = ['irods', 'sodar']
 TASKFLOW_BACKEND_HOST = env.str('TASKFLOW_BACKEND_HOST', 'http://0.0.0.0')
@@ -532,6 +551,8 @@ IRODS_QUERY_BATCH_SIZE = env.int('IRODS_QUERY_BATCH_SIZE', 24)
 # Irodsinfo settings
 # In the generated iRODS config, require SSL cert verification unless False
 IRODSINFO_SSL_VERIFY = env.bool('IRODSINFO_SSL_VERIFY', True)
+# Path to iRODS env file appended to client env file (default=IRODS_ENV_PATH)
+IRODSINFO_ENV_PATH = env.str('IRODSINFO_ENV_PATH', IRODS_ENV_PATH)
 
 
 # Samplesheets settings
@@ -581,25 +602,6 @@ LZ_BIH_PROTEOMICS_SMB_USER = env.str(
 )
 LZ_BIH_PROTEOMICS_SMB_PASS = env.str(
     'LZ_BIH_PROTEOMICS_SMB_PASS', 'eech1Iekvaivai6A'
-)
-
-
-# iRODS settings shared by iRODS using apps
-IRODS_HOST = env.str('IRODS_HOST', '0.0.0.0')
-IRODS_PORT = env.int('IRODS_PORT', 4477)
-IRODS_ZONE = env.str('IRODS_ZONE', 'omicsZone')
-IRODS_USER = env.str('IRODS_USER', 'rods')
-IRODS_PASS = env.str('IRODS_PASS', 'rods')
-IRODS_SAMPLE_DIR = 'sample_data'
-IRODS_LANDING_ZONE_DIR = 'landing_zones'
-
-# Optional iRODS env file
-# (recommended: place in STATIC_ROOT + '/irods/irods_environment.json')
-IRODS_ENV_PATH = env.str('IRODS_ENV_PATH', None)
-
-# Optional iRODS certificate path
-IRODS_CERT_PATH = env.str(
-    'IRODS_CERT_PATH', STATIC_ROOT + '/irods/irods_server.crt'
 )
 
 
