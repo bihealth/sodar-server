@@ -1,6 +1,7 @@
 """iRODS backend API for SODAR Django apps"""
 
 from functools import wraps
+import json
 import logging
 import random
 import re
@@ -50,6 +51,35 @@ logger = logging.getLogger(__name__)
 def init_irods(func):
     @wraps(func)
     def _decorator(self, *args, **kwargs):
+        # Get optional environment file
+        if settings.IRODS_ENV_PATH:
+            try:
+                with open(settings.IRODS_ENV_PATH) as env_file:
+                    self.irods_env = json.load(env_file)
+
+                logger.debug(
+                    'Loaded iRODS env from file: {}'.format(self.irods_env)
+                )
+
+            except FileNotFoundError:
+                logger.warning(
+                    'iRODS env file not found: connecting with default '
+                    'parameters (path={})'.format(settings.IRODS_ENV_PATH)
+                )
+                self.irods_env = {}
+
+            except Exception as ex:
+                logger.error(
+                    'Unable to read iRODS env file (path={}): {}'.format(
+                        settings.IRODS_ENV_PATH, ex
+                    )
+                )
+                raise ex
+
+        else:
+            self.irods_env = {}
+
+        # Connect
         try:
             self.irods = iRODSSession(
                 host=settings.IRODS_HOST,
@@ -57,6 +87,7 @@ def init_irods(func):
                 user=settings.IRODS_USER,
                 password=settings.IRODS_PASS,
                 zone=settings.IRODS_ZONE,
+                **self.irods_env,
             )
 
             # Ensure we have a connection
@@ -68,7 +99,11 @@ def init_irods(func):
             if self.irods:
                 self.irods.cleanup()
 
-            # TODO: Add logging
+            logger.error(
+                'Unable to connect to iRODS (host={}, port={}): {}'.format(
+                    settings.IRODS_HOST, settings.IRODS_PORT, ex
+                )
+            )
             raise ex
 
         result = func(self, *args, **kwargs)
@@ -92,6 +127,7 @@ class IrodsAPI:
 
     def __init__(self):
         self.irods = None
+        self.irods_env = None
 
     def __del__(self):
         if self.irods:
@@ -533,28 +569,21 @@ class IrodsAPI:
         """
         Test the iRODS connection without raising an exception on an error.
         Useful for e.g. making sure the connection can be made before issuing
-        multiple iRODS operations.
+        multiple iRODS operations. It also assures the connection is cleaned up.
 
         :return: Boolean
         """
-        # TODO: Repetition with init_irods, refactor
-        try:
-            self.irods = iRODSSession(
-                host=settings.IRODS_HOST,
-                port=settings.IRODS_PORT,
-                user=settings.IRODS_USER,
-                password=settings.IRODS_PASS,
-                zone=settings.IRODS_ZONE,
-            )
 
-            # Ensure we have a connection
-            self.irods.collections.exists(
-                '/{}/home/{}'.format(settings.IRODS_ZONE, settings.IRODS_USER)
-            )
-            self.irods.cleanup()
+        # NOTE: Don't try this at home
+        @init_irods
+        def _connect(self):
             return True
 
-        except Exception:
+        try:
+            return _connect(self)
+
+        except Exception as ex:
+            logger.error('Exception caught in test_connection(): {}'.format(ex))
             return False
 
     @init_irods

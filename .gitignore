@@ -102,8 +102,9 @@ flamegraph.pl
 # Celery
 celerybeat-schedule
 
-#irods config
+#iRODS files
 irods_config.zip
+irods_environment.json
 
 # Vscode
 .vscode/*

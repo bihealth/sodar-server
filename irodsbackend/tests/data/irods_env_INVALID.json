@@ -1,0 +1,5 @@
+{
+  "irods_encryption_key_size": 32,
+  "irods_encryption_num_hash_rounds": 16,
+  "irods_encryption_salt_size: 8
+}

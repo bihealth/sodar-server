@@ -8,6 +8,21 @@ Changelog for the SODAR Web UI. Loosely follows the
 Unreleased
 ==========
 
+Added
+-----
+
+- **Irodsbackend**
+    - Supply optional iRODS options in environment file (#714)
+    - ``IRODS_ENV_PATH`` settings variable (#714)
+
+Changed
+-------
+
+- **Irodsbackend**
+    - Enable reading ``IRODS_CERT_PATH`` from environment variables
+    - Improve connection logging
+    - Refactor ``api.test_connection()`` (#715)
+
 Fixed
 -----
 

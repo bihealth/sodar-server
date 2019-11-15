@@ -592,7 +592,15 @@ IRODS_USER = env.str('IRODS_USER', 'rods')
 IRODS_PASS = env.str('IRODS_PASS', 'rods')
 IRODS_SAMPLE_DIR = 'sample_data'
 IRODS_LANDING_ZONE_DIR = 'landing_zones'
-IRODS_CERT_PATH = STATIC_ROOT + '/irods/irods_server.crt'
+
+# Optional iRODS env file
+# (recommended: place in STATIC_ROOT + '/irods/irods_environment.json')
+IRODS_ENV_PATH = env.str('IRODS_ENV_PATH', None)
+
+# Optional iRODS certificate path
+IRODS_CERT_PATH = env.str(
+    'IRODS_CERT_PATH', STATIC_ROOT + '/irods/irods_server.crt'
+)
 
 
 # Settings for HTTP AuthBasic

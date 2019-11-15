@@ -1,5 +1,7 @@
 """Tests for the API in the irodsbackend app"""
 
+import os
+
 from django.conf import settings
 from django.test import override_settings
 
@@ -34,6 +36,11 @@ ZONE_DESC = 'description'
 IRODS_ZONE = settings.IRODS_ZONE
 SAMPLE_DIR = settings.IRODS_SAMPLE_DIR
 LANDING_ZONE_DIR = settings.IRODS_LANDING_ZONE_DIR
+ENV_DIR = SHEET_DIR = os.path.dirname(__file__) + '/data/'
+ENV_PATH = ENV_DIR + 'irods_env.json'
+ENV_PATH_INVALID = ENV_DIR + 'irods_env_INVALID.json'
+ENV_PATH_NOT_FOUND = ENV_DIR + 'irods_env_NOT_HERE.json'
+
 
 IRODS_BACKEND_ENABLED = (
     True if 'omics_irods' in settings.ENABLED_BACKEND_PLUGINS else False
@@ -103,6 +110,25 @@ class TestIrodsBackendAPI(
     def test_test_connection_no_auth(self):
         """Test test_connection() with invalid authentication"""
         self.assertEqual(self.irods_backend.test_connection(), False)
+
+    @skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
+    @override_settings(IRODS_ENV_PATH=ENV_PATH)
+    def test_test_connection_env(self):
+        """Test test_connection() with an iRODS environment file"""
+        self.assertEqual(self.irods_backend.test_connection(), True)
+
+    @skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
+    @override_settings(IRODS_ENV_PATH=ENV_PATH_INVALID)
+    def test_test_connection_env_invalid(self):
+        """Test test_connection() with an invalid iRODS environment file"""
+        self.assertEqual(self.irods_backend.test_connection(), False)
+
+    @skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
+    @override_settings(IRODS_ENV_PATH=ENV_PATH_NOT_FOUND)
+    def test_test_connection_not_found(self):
+        """Test test_connection() with an iRODS environment file"""
+        # NOTE: Should return true, just returning a warning
+        self.assertEqual(self.irods_backend.test_connection(), True)
 
     def test_get_path_project(self):
         """Test get_irods_path() with a Project object"""
