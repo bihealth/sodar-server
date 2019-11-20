@@ -236,7 +236,7 @@ export default {
         const row = gridApi.getDisplayedRowAtIndex(focusedCell.rowIndex)
         copyData = gridApi.getValue(focusedCell.column.colId, row).value
       }
-      this.$clipboard(copyData) // Use v-clipboard
+      this.$copyText(copyData) // Use vue-clipboard2
       this.clearSelected()
       this.app.showNotification('Copied', 'success', 1000)
     }

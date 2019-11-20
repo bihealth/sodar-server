@@ -28,8 +28,8 @@
         class="sodar-list-btn sodar-ss-irods-btn sodar-ss-irods-copy-btn
                sodar-irods-copy-dav-btn"
         title="Copy WebDAV URL into clipboard"
-        v-clipboard="irodsWebdavUrl + irodsPath"
-        @click="onCopyBtnClick"
+        v-clipboard:copy="irodsWebdavUrl + irodsPath"
+        v-clipboard:success="onCopyBtnClick"
         :disabled="!getEnabledState()"
         v-b-tooltip.hover.d300>
       <i class="fa fa-clipboard"></i>
@@ -77,12 +77,7 @@ export default {
       this.modalComponent.showModal(this.irodsPath)
     },
     onCopyBtnClick (event) {
-      // HACK! this.app appears unset in some cases, not sure why? see #511
-      if (this.app) {
-        this.app.showNotification('Copied', 'success', 1000)
-      } else {
-        this.$parent.showNotification('Copied', 'success', 1000)
-      }
+      this.app.showNotification('Copied', 'success', 1000)
     }
   }
 }

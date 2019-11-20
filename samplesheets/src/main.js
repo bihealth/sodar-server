@@ -8,10 +8,11 @@ import '../node_modules/ag-grid-community/dist/styles/ag-theme-bootstrap.css'
 
 import BootstrapVue from 'bootstrap-vue'
 import 'bootstrap-vue/dist/bootstrap-vue.css'
-import Clipboard from 'v-clipboard'
+import VueClipboard from 'vue-clipboard2'
 
 Vue.use(BootstrapVue)
-Vue.use(Clipboard)
+VueClipboard.config.autoSetContainer = true
+Vue.use(VueClipboard)
 
 Vue.config.productionTip = false
 

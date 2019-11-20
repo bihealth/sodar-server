@@ -5,6 +5,43 @@ Changelog for the SODAR Web UI. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+Unreleased
+==========
+
+Added
+-----
+
+- **Samplesheets**
+    - Editing of selected sample sheet column values (#550)
+    - Project settings for sample sheet configuration (#687)
+    - ``manage_sheet`` permission (#696)
+    - Column management UI for sample sheet configuring (#698)
+
+Changed
+-------
+
+- **Samplesheets**
+    - Rename ``table_data`` member to ``tables`` in rendered table data (#219)
+    - Move ``_get_isatab_files()`` and ``_fail_isa()`` into ``SampleSheetIOMixin``
+    - Refactor ``utils.get_index_by_header()``
+    - Replace ``v-clipboard`` package with ``vue-clipboard2`` (#719)
+    - Move UI notifications to ``NotifyBadge.vue`` (#718)
+
+Fixed
+-----
+
+- **Samplesheets**
+    - ``getGridOptionsByUuid()`` returned column API instead of grid options (#706)
+
+Removed
+-------
+
+- **Samplesheets**
+    - Unused ``study_row_limit`` setting (#641)
+    - Support for SODAR v0.5.1 parsing of characteristics lists (#619)
+    - Support for old style comments parsing (#631)
+
+
 v0.6.1 (2019-11-15)
 ===================
 

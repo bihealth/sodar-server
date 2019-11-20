@@ -1030,7 +1030,9 @@ export default {
     /* Display -------------------------------------------------------------- */
 
     showNotification (message, variant, delay) {
-      this.$refs.pageHeader.showNotification(message, variant, delay)
+      // NOTE: This is a shortcut for the NotifyBadge component in PageHeader
+      this.$refs.pageHeader.$refs.notifyBadge.show(
+        message, variant, delay)
     },
 
     /* Editing -------------------------------------------------------------- */

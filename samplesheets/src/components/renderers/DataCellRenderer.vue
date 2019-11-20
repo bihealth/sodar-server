@@ -18,9 +18,8 @@
       <span v-if="headerName === 'hpo terms'">
         <b-button
             class="btn sodar-list-btn"
-            v-clipboard="getHpoTerms()"
             title="Copy HPO term IDs to clipboard"
-            @click="params.app.showNotification('Copied', 'success', 1000)"
+            @click="onCopyHpoTerms"
             v-b-tooltip.hover.d300>
           <i class="fa fa-clipboard"></i>
         </b-button>
@@ -81,6 +80,19 @@ export default Vue.extend(
         event.currentTarget.className = 'sodar-ss-data'
       },
 
+      onCopyHpoTerms () {
+        let hpoIds = []
+
+        for (let i = 0; i < this.renderData['links'].length; i++) {
+          let link = this.renderData['links'][i]
+          let splitUrl = link['url'].split('/')
+          hpoIds.push(splitUrl[splitUrl.length - 1])
+        }
+
+        this.$copyText(hpoIds.join(';'))
+        this.params.app.showNotification('Copied', 'success', 1000)
+      },
+
       // Get header name and place in this.headerName
       getHeaderName () {
         return this.params.colDef.headerName.toLowerCase()
@@ -110,18 +122,6 @@ export default Vue.extend(
           links.push({value: this.value.value, url: this.value.link})
         }
         return {'links': links}
-      },
-
-      getHpoTerms () {
-        let hpoIds = []
-
-        for (let i = 0; i < this.renderData['links'].length; i++) {
-          let link = this.renderData['links'][i]
-          let splitUrl = link['url'].split('/')
-          hpoIds.push(splitUrl[splitUrl.length - 1])
-        }
-
-        return hpoIds.join(';')
       },
 
       // Return contact name and email

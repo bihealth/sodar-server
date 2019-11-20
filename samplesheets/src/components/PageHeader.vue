@@ -24,15 +24,7 @@
       </b-nav-item>
     </b-nav>
     <div class="ml-auto">
-      <span class="sodar-ss-vue-notify-container mr-1">
-        <transition name="fade" mode="out-in">
-          <span v-if="notifyVisible"
-                ref="notifyBadge"
-                :class="notifyClasses">
-            {{ this.notifyMessage }}
-          </span>
-        </transition>
-      </span>
+      <notify-badge ref="notifyBadge"></notify-badge>
       <span v-if="app.editMode"
             :class='"badge badge-pill mr-3 badge-" + editVariant'>
         <i class="fa fa-pencil"></i> {{ editMessage }}
@@ -153,8 +145,13 @@
 </template>
 
 <script>
+import NotifyBadge from './NotifyBadge.vue'
+
 export default {
   name: 'PageHeader',
+  components: {
+    NotifyBadge
+  },
   props: [
     'app'
   ],
@@ -219,19 +216,6 @@ export default {
 /* Force bg-success to active nav link (not supported by boostrap-vue) */
 ul.sodar-ss-nav li a.active {
   background-color: #28a745 !important;
-}
-
-span.sodar-ss-vue-notify-container {
-  display: inline-block;
-  width: 150px;
-  text-align: right;
-}
-
-.fade-enter-active, .fade-leave-active {
-  transition: opacity .3s;
-}
-.fade-enter, .fade-leave-to /* .fade-leave-active below version 2.1.8 */ {
-  opacity: 0;
 }
 
 /* Hide navbar if browser is too narrow */

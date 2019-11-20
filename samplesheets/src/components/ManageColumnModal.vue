@@ -5,10 +5,38 @@
            centered no-fade hide-footer
            size="md">
     <template slot="modal-header">
-      <h5 class="modal-title text-nowrap w-100">
+      <div class="w-100">
+      <h5 class="modal-title text-nowrap" id="sodar-ss-vue-col-modal-title">
         {{ this.fieldDisplayName }}
-        <div class="pull-right text-muted text-nowrap text-right">Manage Column</div>
-      </h5>
+        <span class="pull-right">
+          <b-input-group class="sodar-header-input-group">
+            <b-input-group-prepend>
+            <b-button class="sodar-list-btn"
+                      ref="copyBtn"
+                      title="Copy configuration to clipboard"
+                      v-clipboard:copy="this.getCopyData()"
+                      v-clipboard:success="onCopySuccess"
+                      v-clipboard:error="onCopyError"
+                      v-b-tooltip.hover>
+              <i class="fa fa-clipboard"></i>
+            </b-button>
+            </b-input-group-prepend>
+            <b-form-input
+              id="sodar-ss-vue-col-input-paste"
+              ref="pasteInput"
+              v-model="pasteData"
+              @input="onPasteInput"
+              placeholder="Paste"
+              title="Paste a copied configuration here"
+              v-b-tooltip.hover>
+            </b-form-input>
+          </b-input-group>
+        </span>
+        <span class="pull-right text-nowrap text-right">
+          <notify-badge ref="notifyBadge"></notify-badge>
+        </span>
+        </h5>
+      </div>
     </template>
     <div class="sodar-ss-vue-col-manage-content">
       <table v-if="fieldConfig"
@@ -53,7 +81,7 @@
             <td>
               <b-textarea v-model="valueOptions"
                           rows="5"
-                          @input="onSelectInput">
+                          @input="validate('select')">
                 {{ valueOptions }}
               </b-textarea>
             </td>
@@ -70,8 +98,8 @@
                            v-model="fieldConfig['range'][0]"
                            placeholder="Min"
                            ref="minRangeInput"
-                           :class="rangeClasses"
-                           @input="onRangeInput">
+                           :class="formClasses['range']"
+                           @input="validate('range')">
                     {{ fieldConfig['range'][0] }}
                   </b-input>
                 </b-col>
@@ -82,8 +110,8 @@
                            v-model="fieldConfig['range'][1]"
                            placeholder="Max"
                            ref="maxRangeInput"
-                           :class="rangeClasses"
-                           @input="onRangeInput">
+                           :class="formClasses['range']"
+                           @input="validate('range')">
                     {{ fieldConfig['range'][1] }}
                   </b-input>
                 </b-col>
@@ -96,7 +124,7 @@
             <td>
               <b-input v-model="fieldConfig['regex']"
                        @input="onRegexInput"
-                       :class="regexClasses">
+                       :class="formClasses['regex']">
               </b-input>
             </td>
           </tr>
@@ -139,8 +167,11 @@
             <td>
               <!-- String/integer/double default -->
               <b-input v-if="fieldConfig['format'] !== 'select'"
-                       v-model="fieldConfig['default']">
+                       v-model="fieldConfig['default']"
+                       @input="validate('default')"
+                       :class="formClasses['default']">
               </b-input>
+              <!-- Selection default -->
               <b-select v-else
                         v-model="fieldConfig['default']"
                         :disabled="!valueOptions">
@@ -173,11 +204,15 @@
 </template>
 
 <script>
-
+import NotifyBadge from './NotifyBadge.vue'
 const integerRegex = /^(([1-9][0-9]*)|([0]?))$/
+const invalidClasses = 'text-danger'
 
 export default {
   name: 'ManageColumnModal',
+  components: {
+    NotifyBadge
+  },
   props: [
     'app',
     'projectUuid',
@@ -205,8 +240,13 @@ export default {
         'range': true,
         'regex': true
       },
-      regexClasses: '',
-      rangeClasses: ''
+      formClasses: {
+        'options': '',
+        'range': '',
+        'regex': '',
+        'default': ''
+      },
+      pasteData: ''
     }
   },
   methods: {
@@ -214,68 +254,197 @@ export default {
     onFormatChange () {
       this.setUpdateState()
     },
-    onSelectInput (val) {
-      let valSplit = val.split('\n')
-      this.inputValid['options'] = val && valSplit.length >= 2 && !valSplit.includes('')
-      this.setUpdateState()
-    },
-    onRangeInput () {
-      let rangeElems = [
-        document.querySelector('#sodar-ss-vue-col-range-min'),
-        document.querySelector('#sodar-ss-vue-col-range-max')
-      ]
-      let rangeValid = true
-      let rangeRegex
-      if (this.fieldConfig['regex'].length === 0 && this.inputValid['regex']) {
-        rangeRegex = integerRegex
-      } else {
-        rangeRegex = RegExp(this.fieldConfig['regex'])
-      }
-
-      // Validate individual fields
-      rangeElems.forEach(elem => {
-        if (elem.value.length > 0 && !rangeRegex.test(elem.value)) {
-          rangeValid = false
-        }
-      })
-
-      // Check that range is valid
-      if (rangeValid &&
-          ((rangeElems[0].value.length > 0 && rangeElems[1].value.length === 0) ||
-          (rangeElems[1].value.length > 0 && rangeElems[0].value.length === 0) ||
-          parseFloat(rangeElems[0].value) >= parseFloat(rangeElems[1].value))) {
-        rangeValid = false
-      }
-
-      // Handle validity
-      if (rangeValid) {
-        this.rangeClasses = ''
-      } else {
-        this.rangeClasses = 'text-danger'
-      }
-      this.inputValid['range'] = rangeValid
-      this.setUpdateState()
-    },
     onRegexInput (val) {
-      try {
-        RegExp(val)
-        this.inputValid['regex'] = true
-        this.regexClasses = ''
-      } catch (e) {
-        this.inputValid['regex'] = false
-        this.regexClasses = 'text-danger'
+      this.validate('regex')
+      if (this.inputValid['regex']) {
+        this.validate('default') // Depends on Regex
       }
-      this.setUpdateState()
+    },
+    onPasteInput (val) {
+      let pasteData
+      let pasteValid = true
+
+      try {
+        pasteData = JSON.parse(val)
+      } catch (error) {
+        this.$refs.notifyBadge.show('Invalid JSON', 'danger', 1000)
+        pasteValid = false
+      }
+
+      if (pasteValid && (!pasteData.hasOwnProperty('format') ||
+          !pasteData.hasOwnProperty('editable'))) {
+        pasteValid = false
+        this.$refs.notifyBadge.show('Invalid Data', 'danger', 2000)
+      } // TODO: Other checks for required fields
+
+      if (pasteValid) {
+        let copyableKeys = [
+          'format', 'editable', 'regex', 'options', 'range', 'default',
+          'unit', 'unit_default'
+        ]
+
+        // Copy data from pasted content
+        for (let i in copyableKeys) {
+          let k = copyableKeys[i]
+          if (pasteData.hasOwnProperty(k)) {
+            this.fieldConfig[k] = pasteData[k]
+          } else if (k === 'range') { // Range is a special case
+            this.fieldConfig[k] = [null, null]
+          } else if (['options', 'unit'].includes(k)) { // Options too
+            this.fieldConfig[k] = []
+          }
+        }
+        this.setWidgetData()
+        this.validate()
+        this.$refs.notifyBadge.show('Config Pasted', 'success', 1000)
+      }
+
+      // Clear the original value regardless of success/failure
+      this.$nextTick(() => {
+        this.pasteData = ''
+      })
+    },
+    onCopySuccess (event) {
+      this.$refs.notifyBadge.show('Config Copied', 'success', 1000)
+    },
+    onCopyError (event) {
+      this.$refs.notifyBadge.show('Copy Error', 'danger', 2000)
+      console.log('Copy Error: ' + event)
     },
     /* Helpers -------------------------------------------------------------- */
+    setWidgetData () {
+      // Set up certain data for the form widgets
+      if (this.fieldConfig.hasOwnProperty('options')) {
+        this.valueOptions = this.fieldConfig['options'].join('\n')
+      }
+      if (this.fieldConfig.hasOwnProperty('unit')) {
+        this.unitEnabled = true
+        this.unitOptions = this.fieldConfig['unit'].join('\n')
+      }
+    },
+    validate (inputParam) {
+      // Select
+      if (!inputParam || inputParam === 'select') {
+        let val = this.valueOptions
+        let valSplit = val.split('\n')
+        this.inputValid['options'] = val && valSplit.length >= 2 && !valSplit.includes('')
+      }
+
+      // Range
+      if (!inputParam || inputParam === 'range') {
+        let rangeValid = true
+        let rangeMin = this.fieldConfig['range'][0]
+        let rangeMax = this.fieldConfig['range'][1]
+
+        // If either range value is null, skip the rest
+        if (!rangeMin || !rangeMax) {
+          rangeValid = false
+        }
+
+        // Validate individual min/max fields
+        if (rangeValid) {
+          let rangeRegex
+          if (this.fieldConfig['regex'].length === 0 &&
+              this.inputValid['regex']) {
+            rangeRegex = integerRegex
+          } else {
+            rangeRegex = RegExp(this.fieldConfig['regex'])
+          }
+          if (!rangeRegex.test(rangeMin) || !rangeRegex.test(rangeMax)) {
+            rangeValid = false
+          }
+        }
+
+        // Validate the actual range
+        if (rangeValid &&
+            ((rangeMin.length > 0 && rangeMax.length === 0) ||
+            (rangeMax.length > 0 && rangeMin.length === 0) ||
+            parseFloat(rangeMin) >= parseFloat(rangeMax))) {
+          rangeValid = false
+        }
+
+        // Handle result
+        this.formClasses['range'] = rangeValid ? '' : invalidClasses
+        this.inputValid['range'] = rangeValid
+      }
+
+      // Regex
+      if (!inputParam || inputParam === 'regex') {
+        let val = this.fieldConfig['regex']
+        try {
+          RegExp(val)
+          this.inputValid['regex'] = true
+          this.formClasses['regex'] = ''
+        } catch (error) {
+          this.inputValid['regex'] = false
+          this.formClasses['regex'] = invalidClasses
+        }
+      }
+
+      // Default
+      if (!inputParam || inputParam === 'default') {
+        if (this.fieldConfig['default'].length > 0 &&
+            this.inputValid['regex']) {
+          let valueRegex = RegExp(this.fieldConfig['regex'])
+          if (valueRegex.test(this.fieldConfig['default'])) {
+            this.inputValid['default'] = true
+            this.formClasses['default'] = ''
+          } else {
+            this.inputValid['default'] = false
+            this.formClasses['default'] = invalidClasses
+          }
+        }
+      }
+
+      // Always call setUpdateState() after validation
+      this.setUpdateState()
+    },
     setUpdateState () {
       if (this.fieldConfig['format'] === 'select') {
-        this.$refs.updateBtn.disabled = !this.inputValid['options'] || !this.valueOptions
+        this.$refs.updateBtn.disabled = !this.inputValid['options'] ||
+            !this.valueOptions
       } else if (this.fieldConfig['format'] === 'string') {
-        this.$refs.updateBtn.disabled = !this.inputValid['regex']
+        this.$refs.updateBtn.disabled = !this.inputValid['regex'] ||
+            !this.inputValid['default']
       } else {
-        this.$refs.updateBtn.disabled = !this.inputValid['regex'] || !this.inputValid['range']
+        this.$refs.updateBtn.disabled = !this.inputValid['regex'] ||
+            !this.inputValid['range'] ||
+            !this.inputValid['default']
       }
+      this.$refs.copyBtn.disabled = this.$refs.updateBtn.disabled
+    },
+    cleanupFieldConfig (config, valueOptions, unitOptions) {
+      // Handle regex/options depending on select format
+      if (config['format'] === 'select') {
+        delete config['regex']
+        config['options'] = valueOptions.split('\n')
+      } else {
+        delete config['options']
+      }
+      // Remove range and unit if not integer/double
+      if (!['integer', 'double'].includes(config['format'])) {
+        delete config['range']
+        delete config['unit']
+        delete config['unit_default']
+      } else { // Set up unit
+        if (unitOptions.length === 0) {
+          delete config['unit']
+        } else {
+          config['unit'] = unitOptions.split('\n')
+        }
+      }
+      return config
+    },
+    getCopyData () {
+      if (!this.fieldConfig) {
+        return ''
+      }
+      let copyConfig = JSON.parse(JSON.stringify(this.fieldConfig)) // Copy
+      delete copyConfig['name']
+      delete copyConfig['type']
+      return JSON.stringify(
+        this.cleanupFieldConfig(
+          copyConfig, this.valueOptions, this.unitOptions))
     },
     /* Modal showing/hiding ------------------------------------------------- */
     showModal (data, col) {
@@ -293,38 +462,16 @@ export default {
       this.unitOptions = ''
 
       // Set up certain data for the form widgets
-      if (this.fieldConfig.hasOwnProperty('options')) {
-        this.valueOptions = this.fieldConfig['options'].join('\n')
-      }
-      if (this.fieldConfig.hasOwnProperty('unit')) {
-        this.unitEnabled = true
-        this.unitOptions = this.fieldConfig['unit'].join('\n')
-      }
+      this.setWidgetData()
 
+      // Show modal
       this.$refs.manageColumnModal.show()
     },
     hideModal (update) {
       if (update) {
         // Cleanup config
-        // Handle regex/options depending on select format
-        if (this.fieldConfig['format'] === 'select') {
-          delete this.fieldConfig['regex']
-          this.fieldConfig['options'] = this.valueOptions.split('\n')
-        } else {
-          delete this.fieldConfig['options']
-        }
-        // Remove range and unit if not integer/double
-        if (!['integer', 'double'].includes(this.fieldConfig['format'])) {
-          delete this.fieldConfig['range']
-          delete this.fieldConfig['unit']
-          delete this.fieldConfig['unit_default']
-        } else { // Set up unit
-          if (this.unitOptions.length === 0) {
-            delete this.fieldConfig['unit']
-          } else {
-            this.fieldConfig['unit'] = this.unitOptions.split('\n')
-          }
-        }
+        this.fieldConfig = this.cleanupFieldConfig(
+          this.fieldConfig, this.valueOptions, this.unitOptions)
 
         // Update fieldConfig in all tables (if study field in multiple tables)
         let colField = this.col.colDef.field
@@ -385,15 +532,13 @@ export default {
               if (data['message'] === 'ok') {
                 this.app.showNotification('Column Updated', 'success', 1000)
               } else {
-                console.log('Update status: ' + data['message']) // DEBUG
-                this.app.showNotification('Update Failed', 'danger', 1000)
+                console.log('Update status: ' + data['message'])
+                this.app.showNotification('Update Failed', 'danger', 2000)
               }
             }
           ).catch(function (error) {
             console.log('Error updating field: ' + error.message)
           })
-      } else {
-        this.app.showNotification('Update Cancelled', 'secondary', 1000)
       }
       this.$refs.manageColumnModal.hide()
     }
@@ -404,6 +549,10 @@ export default {
 <style scoped>
 div.sodar-ss-vue-col-manage-content {
   min-height: 550px !important;
+}
+
+#sodar-ss-vue-col-input-paste {
+  width: 70px;
 }
 
 table#sodar-ss-vue-col-manage-table tbody td:first-child {
