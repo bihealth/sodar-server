@@ -55,8 +55,10 @@ export default Vue.extend({
         'fieldConfig': this.fieldConfig,
         'baseCellClasses': this.params.baseCellClasses,
         'assayUuid': this.params.assayUuid,
-        'nodeIdx': this.params.nodeIdx,
-        'fieldIdx': this.params.fieldIdx
+        'configNodeIdx': this.params.configNodeIdx,
+        'configFieldIdx': this.params.configFieldIdx,
+        'defNodeIdx': this.params.defNodeIdx,
+        'defFieldIdx': this.params.defFieldIdx
       }, this.params.column)
     }
   },

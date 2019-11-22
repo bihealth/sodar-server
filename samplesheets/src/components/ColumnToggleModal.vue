@@ -76,10 +76,11 @@ export default {
       uuid: null,
       assayMode: null,
       title: null,
+      gridApi: null,
+      columnApi: null,
       columnDefs: null,
       columnList: null,
       columnValues: null,
-      columnApi: null,
       filterActive: false
     }
   },
@@ -93,7 +94,7 @@ export default {
     },
 
     columnDataExists (header) {
-      return this.columnValues[parseInt(header['field'].substring(3), 10)]
+      return this.columnValues[header['field']]
     },
 
     getTopHeaderClasses (topHeader) {
@@ -124,7 +125,7 @@ export default {
         }
       }
 
-      this.$forceUpdate() // TODO: Why is this necessary even when using $set?
+      this.$forceUpdate()
     },
     onColumnChange (event, header) {
       this.columnApi.setColumnVisible(header['field'], event)
@@ -146,27 +147,44 @@ export default {
       // Get data
       this.uuid = uuid
       this.assayMode = assayMode
-      this.columnApi = this.app.getGridOptionsByUuid(this.uuid).columnApi
+      this.gridApi = this.app.getGridOptionsByUuid(this.uuid)
+      this.columnApi = this.gridApi.columnApi
+      this.columnDefs = this.gridApi.columnDefs
+      let rowData
 
-      if (assayMode) {
-        this.columnDefs = this.app.columnDefs['assays'][uuid]
-        this.columnValues = this.app.columnValues['assays'][uuid]
-        this.title = 'Toggle Assay Columns'
-      } else {
-        this.columnDefs = this.app.columnDefs['study']
-        this.columnValues = this.app.columnValues['study']
+      if (!assayMode) {
+        rowData = this.app.rowData['study']
         this.title = 'Toggle Study Columns'
+      } else {
+        rowData = this.app.rowData['assays'][uuid]
+        this.title = 'Toggle Assay Columns'
       }
 
-      function getListGroup (colDefs, firstColIdx, headerName, headerClass) {
+      // Store current column data state
+      this.columnValues = {}
+      for (let i = 1; i < this.columnDefs.length; i++) {
+        for (let j = 0; j < this.columnDefs[i].children.length; j++) {
+          this.columnValues[this.columnDefs[i].children[j]['field']] = false
+        }
+      }
+      for (let key in this.columnValues) {
+        for (let i = 0; i < rowData.length; i++) {
+          if (rowData[i][key].value) {
+            this.columnValues[key] = true
+            break
+          }
+        }
+      }
+
+      function getListGroup (colDef, firstColIdx, headerName, headerClass) {
         let headerGroup = {
-          headerName: headerName || colDefs['headerName'],
-          headerClass: headerClass || colDefs['headerClass'],
+          headerName: headerName || colDef['headerName'],
+          headerClass: headerClass || colDef['headerClass'],
           children: []
         }
 
-        for (let i = firstColIdx; i < colDefs['children'].length; i++) {
-          let child = colDefs['children'][i]
+        for (let i = firstColIdx; i < colDef['children'].length; i++) {
+          let child = colDef['children'][i]
           child['visibleInList'] = true
           headerGroup['children'].push(child)
         }

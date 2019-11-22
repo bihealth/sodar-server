@@ -26,6 +26,7 @@ Changed
     - Refactor ``utils.get_index_by_header()``
     - Replace ``v-clipboard`` package with ``vue-clipboard2`` (#719)
     - Move UI notifications to ``NotifyBadge.vue`` (#718)
+    - Refactor column data retrieval in ``ColumnToggleModal`` (#710)
 
 Fixed
 -----
@@ -40,6 +41,7 @@ Removed
     - Unused ``study_row_limit`` setting (#641)
     - Support for SODAR v0.5.1 parsing of characteristics lists (#619)
     - Support for old style comments parsing (#631)
+    - Redundant ``columnValues`` structure (#711)
 
 
 v0.6.1 (2019-11-15)

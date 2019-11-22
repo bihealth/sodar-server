@@ -121,6 +121,7 @@
                 <ag-grid-vue
                     class="ag-theme-bootstrap"
                     id="sodar-ss-grid-study"
+                    ref="studyGrid"
                     :style="getGridStyle()"
                     :columnDefs="columnDefs['study']"
                     :rowData="rowData['study']"
@@ -212,6 +213,7 @@
                 <ag-grid-vue
                     class="ag-theme-bootstrap"
                     :id="'sodar-ss-grid-assay-' + assayUuid"
+                    :ref="'assayGrid' + assayUuid"
                     :style="getGridStyle()"
                     :columnDefs="columnDefs['assays'][assayUuid]"
                     :rowData="rowData['assays'][assayUuid]"
@@ -327,19 +329,18 @@ export default {
     return {
       projectUuid: null,
       sodarContext: null,
+      // NOTE: These will not get updated
+      // TODO: Remove?
       gridOptions: {
         'study': null,
         'assays': {}
       },
+      // Column definitions are managed here
       columnDefs: {
         'study': null,
         'assays': {}
       },
       rowData: {
-        'study': null,
-        'assays': {}
-      },
-      columnValues: {
         'study': null,
         'assays': {}
       },
@@ -523,7 +524,7 @@ export default {
           headerClass: ['text-white', 'bg-' + topHeader['colour']],
           children: []
         }
-        let nodeFieldIdx = 0 // For config management
+        let configFieldIdx = 0 // For config management
 
         // Iterate through field headers
         while (j < headerIdx + topHeader['colspan']) {
@@ -628,15 +629,20 @@ export default {
                 !['Name', 'Protocol'].includes(fieldHeader['value']) &&
                 !['EXTERNAL_LINKS', 'ONTOLOGY'].includes(colType)) {
               let configAssayUuid = assayMode ? uuid : null
-              let nodeIdx = i
+              let configNodeIdx = i
+              let defFieldIdx = configFieldIdx
+
+              if (i === 0) { // Subtract source name if in source
+                defFieldIdx = configFieldIdx - 1
+              }
 
               if (assayMode) {
                 // NOTE: -2 because of row column and split source column
                 let studyNodeLen = this.columnDefs['study'].length - 2
-                if (nodeIdx < studyNodeLen) {
+                if (configNodeIdx < studyNodeLen) {
                   configAssayUuid = null
                 } else {
-                  nodeIdx = i - studyNodeLen
+                  configNodeIdx = i - studyNodeLen
                 }
               }
 
@@ -646,8 +652,10 @@ export default {
                 'fieldConfig': editFieldConfig,
                 'baseCellClasses': header.cellClass,
                 'assayUuid': configAssayUuid,
-                'nodeIdx': nodeIdx,
-                'fieldIdx': nodeFieldIdx
+                'configNodeIdx': configNodeIdx,
+                'configFieldIdx': configFieldIdx,
+                'defNodeIdx': i + 2, // Add 2 for row & source groups
+                'defFieldIdx': defFieldIdx
               }
               header.width = header.width + 20 // Fit button in header
               header.minWidth = header.minWidth + 20
@@ -685,7 +693,7 @@ export default {
           }
 
           j++
-          nodeFieldIdx += 1
+          configFieldIdx += 1
         }
 
         headerIdx = j
@@ -838,10 +846,6 @@ export default {
         'study': null,
         'assays': {}
       }
-      this.columnValues = {
-        'study': null,
-        'assays': {}
-      }
       this.extraTables = {
         'study': null,
         'assays': {}
@@ -883,7 +887,6 @@ export default {
               this.columnDefs['study'] = this.buildColDef(
                 data['tables']['study'], false, studyUuid, editMode)
               this.rowData['study'] = this.buildRowData(data['tables']['study'])
-              this.columnValues['study'] = data['tables']['study']['col_values']
 
               // Build assays
               for (let assayUuid in data['tables']['assays']) {
@@ -892,8 +895,6 @@ export default {
                   data['tables']['assays'][assayUuid], true, assayUuid, editMode)
                 this.rowData['assays'][assayUuid] = this.buildRowData(
                   data['tables']['assays'][assayUuid])
-                this.columnValues['assays'][assayUuid] =
-                  data['tables']['assays'][assayUuid]['col_values']
 
                 // Get extra table
                 if ('extra_table' in data['tables']['assays'][assayUuid]) {
@@ -1099,6 +1100,8 @@ export default {
     /* Data and App Access -------------------------------------------------- */
 
     getGridOptionsByUuid (uuid) {
+      // TODO: Refactor this to get gridOptions from the grid element
+      // TODO: (local gridOptions not updated)
       if (uuid === this.currentStudyUuid) {
         return this.gridOptions['study']
       } else if (uuid in this.gridOptions['assays']) {

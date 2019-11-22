@@ -229,8 +229,10 @@ export default {
       fieldConfig: null,
       baseCellClasses: null,
       assayUuid: null,
-      colIdx: null,
-      fieldIdx: null,
+      configNodeIdx: null,
+      configFieldIdx: null,
+      defNodeIdx: null,
+      defFieldIdx: null,
       col: null,
       valueOptions: '',
       unitEnabled: false,
@@ -446,14 +448,55 @@ export default {
         this.cleanupFieldConfig(
           copyConfig, this.valueOptions, this.unitOptions))
     },
+    updateColDefs (assayMode, uuid) {
+      let colDef
+      if (!assayMode) {
+        colDef = this.app.columnDefs['study'][this.defNodeIdx]
+          .children[this.defFieldIdx]
+      } else {
+        colDef = this.app.columnDefs['assays'][uuid][this.defNodeIdx]
+          .children[this.defFieldIdx]
+      }
+
+      colDef.headerComponentParams['fieldConfig'] = this.fieldConfig
+      colDef.cellEditorParams['editConfig'] = this.fieldConfig
+      colDef.editable = this.fieldConfig['editable']
+
+      if (this.fieldConfig['editable']) {
+        colDef.cellClass = this.baseCellClasses
+      } else {
+        colDef.cellClass = this.baseCellClasses.concat(
+          ['bg-light', 'text-muted']
+        )
+      }
+
+      if (!assayMode) {
+        this.app.columnDefs['study'][this.defNodeIdx]
+          .children[this.defFieldIdx] = colDef
+        this.app.$refs['studyGrid'].gridOptions.api.setColumnDefs(
+          this.app.columnDefs['study']
+        )
+        // this.app.$refs['studyGrid'].gridOptions.api.redrawRows()
+      } else {
+        this.app.columnDefs['assays'][uuid][this.defNodeIdx]
+          .children[this.defFieldIdx] = colDef
+        let assayRef = 'assayGrid' + uuid
+        // TODO: Why is this an array?!
+        this.app.$refs[assayRef][0].gridOptions.api.setColumnDefs(
+          this.app.columnDefs['assays'][uuid]
+        )
+      }
+    },
     /* Modal showing/hiding ------------------------------------------------- */
     showModal (data, col) {
       this.fieldDisplayName = data['fieldDisplayName']
       this.fieldConfig = JSON.parse(JSON.stringify(data['fieldConfig'])) // Copy
       this.baseCellClasses = data['baseCellClasses']
       this.assayUuid = data['assayUuid']
-      this.nodeIdx = data['nodeIdx']
-      this.fieldIdx = data['fieldIdx']
+      this.configNodeIdx = data['configNodeIdx']
+      this.configFieldIdx = data['configFieldIdx']
+      this.defNodeIdx = data['defNodeIdx']
+      this.defFieldIdx = data['defFieldIdx']
       this.col = col
 
       // Reset internal variables
@@ -474,33 +517,12 @@ export default {
           this.fieldConfig, this.valueOptions, this.unitOptions)
 
         // Update fieldConfig in all tables (if study field in multiple tables)
-        let colField = this.col.colDef.field
-        let columnApis = [this.app.gridOptions['study'].columnApi]
-        for (let k in this.app.gridOptions['assays']) {
-          columnApis.push(this.app.gridOptions['assays'][k].columnApi)
+        if (this.defNodeIdx < this.app.columnDefs['study'].length) {
+          this.updateColDefs(false) // Update study
         }
 
-        for (let i = 0; i < columnApis.length; i++) {
-          let col = columnApis[i].getColumn(colField)
-
-          if (col) {
-            // Set the edited fieldConfig to the field header and the editor
-            col.colDef.headerComponentParams['fieldConfig'] = this.fieldConfig
-            col.colDef.cellEditorParams['editConfig'] = this.fieldConfig
-            col.colDef.editable = this.fieldConfig['editable']
-
-            if (this.fieldConfig['editable']) {
-              col.colDef.cellClass = this.baseCellClasses
-            } else {
-              col.colDef.cellClass = this.baseCellClasses.concat(
-                ['bg-light', 'text-muted']
-              )
-            }
-            // Refresh view for layout changes to take effect
-            // NOTE: refreshCells() for the column only works the other way around
-            // TODO: Report? (possible bug in ag-grid)
-            col.gridApi.redrawRows()
-          }
+        for (let k in this.app.gridOptions['assays']) { // Update assays
+          this.updateColDefs(true, k)
         }
 
         // Save config on server
@@ -510,8 +532,8 @@ export default {
               'action': 'update',
               'study': this.studyUuid,
               'assay': this.assayUuid,
-              'node_idx': this.nodeIdx,
-              'field_idx': this.fieldIdx,
+              'node_idx': this.configNodeIdx,
+              'field_idx': this.configFieldIdx,
               'config': this.fieldConfig
             }
           ]
