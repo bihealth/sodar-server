@@ -239,7 +239,6 @@ class SampleSheetTableBuilder:
             'value': value.strip() if isinstance(value, str) else value,
             'unit': unit.strip() if isinstance(unit, str) else unit,
             'link': link,
-            'link_file': False,
             'tooltip': tooltip,
         }
 

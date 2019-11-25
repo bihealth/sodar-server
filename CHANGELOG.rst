@@ -44,6 +44,7 @@ Removed
     - Support for SODAR v0.5.1 parsing of characteristics lists (#619)
     - Support for old style comments parsing (#631)
     - Redundant ``columnValues`` structure (#711)
+    - Unused ``link_file`` parameter from rendering (#708)
 
 
 v0.6.1 (2019-11-15)

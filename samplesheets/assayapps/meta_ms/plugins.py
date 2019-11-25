@@ -96,7 +96,6 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
                         + '/'
                         + row[i]['value']
                     )
-                    row[i]['link_file'] = True
 
         return row
 

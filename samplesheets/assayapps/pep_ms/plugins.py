@@ -122,7 +122,6 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
                         + '/'
                         + row[i]['value']
                     )
-                    row[i]['link_file'] = True
 
             # Process parameter files
             # NOTE: Currently disabled
@@ -135,7 +134,6 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
                 row[i]['link'] = (
                     base_url + '/' + self.max_quant_coll + '/' + row[i]['value']
                 )
-                row[i]['link_file'] = True
             '''
 
         return row
