@@ -33,6 +33,8 @@ Changed
 Fixed
 -----
 
+- **Irodsbackend**
+    - Cleanup skipped by uncaught exceptions in ``init_irods()`` (#723)
 - **Samplesheets**
     - ``getGridOptionsByUuid()`` returned column API instead of grid options (#706)
     - ``getGridOptionsByUuid()`` returned initial options without applied updates (#721)

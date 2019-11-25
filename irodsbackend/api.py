@@ -106,7 +106,13 @@ def init_irods(func):
             )
             raise ex
 
-        result = func(self, *args, **kwargs)
+        try:
+            result = func(self, *args, **kwargs)
+
+        except Exception as ex:
+            self.irods.cleanup()
+            raise ex
+
         self.irods.cleanup()
         self.irods = None
         return result
