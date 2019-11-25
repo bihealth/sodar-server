@@ -1,8 +1,8 @@
 <template>
   <div class="sodar-ss-data"
-       :row-num="this.params.node.data.rowNum"
-       :col-num="this.params.colDef.field.substring(3)"
-       :row-id="this.params.node.id"
+       :row-num="params.node.data.rowNum"
+       :col-num="params.colDef.field.substring(3)"
+       :row-id="params.node.id"
        @mouseover="onMouseOver"
        @mouseout="onMouseOut">
     <!-- Plain/empty value -->
@@ -26,7 +26,7 @@
       </span>
       <span v-for="(link, index) in links = renderData.links" :key="index">
         <a :href="link.url"
-           :title="value.tooltip"
+           :title="getTooltip()"
            v-b-tooltip.hover.d300
            target="_blank">{{ link.value }}</a><span v-if="index + 1 < links.length">; </span>
       </span>
@@ -48,7 +48,7 @@
     <!-- File link -->
     <span v-else-if="colType === 'LINK_FILE' && renderData">
       <a :href="renderData.url"
-         :title="value.tooltip"
+         :title="getTooltip()"
          v-b-tooltip.hover.d300
          target="_blank">{{ renderData.value }}</a>
     </span>
@@ -69,17 +69,16 @@ export default Vue.extend(
       }
     },
     methods: {
+      /* Event handling ----------------------------------------------------- */
       onMouseOver (event) {
         if (this.enableHover &&
             event.currentTarget.scrollWidth > event.currentTarget.clientWidth) {
           event.currentTarget.className += ' sodar-ss-data-hover'
         }
       },
-
       onMouseOut (event) {
         event.currentTarget.className = 'sodar-ss-data'
       },
-
       onCopyHpoTerms () {
         let hpoIds = []
 
@@ -92,14 +91,13 @@ export default Vue.extend(
         this.$copyText(hpoIds.join(';'))
         this.params.app.showNotification('Copied', 'success', 1000)
       },
-
-      // Get header name and place in this.headerName
+      /* Helpers ------------------------------------------------------------ */
       getHeaderName () {
+        // Get header name and place in this.headerName
         return this.params.colDef.headerName.toLowerCase()
       },
-
-      // Return one or more ontology links for field
       getOntologyLinks () {
+        // Return one or more ontology links for field
         let links = []
 
         if (Array.isArray(this.value.value)) {
@@ -123,9 +121,8 @@ export default Vue.extend(
         }
         return {'links': links}
       },
-
-      // Return contact name and email
       getContact () {
+        // Return contact name and email
         let contactRegex = /(.+?)(?:[<[])(.+?)(?=[>\]])/
 
         if (contactRegex.test(this.value.value) === true) {
@@ -135,9 +132,8 @@ export default Vue.extend(
           this.colType = null // Fall back to standard field
         }
       },
-
-      // Return external links
       getExternalLinks () {
+        // Return external links
         let linkLabels = this.params.context
           .componentParent.sodarContext['external_link_labels']
         let ret = []
@@ -158,12 +154,16 @@ export default Vue.extend(
 
         return {'extIds': ret}
       },
-
-      // Get file link
       getFileLink () {
+        // Get file link
         return {
           value: this.value.value,
           url: this.value.link
+        }
+      },
+      getTooltip () {
+        if (this.value.hasOwnProperty('tooltip')) {
+          return this.value.tooltip
         }
       }
     },

@@ -239,8 +239,10 @@ class SampleSheetTableBuilder:
             'value': value.strip() if isinstance(value, str) else value,
             'unit': unit.strip() if isinstance(unit, str) else unit,
             'link': link,
-            'tooltip': tooltip,
         }
+
+        if tooltip:
+            cell['tooltip'] = tooltip
 
         # Add extra data for editing
         if self._edit:
