@@ -17,7 +17,7 @@ export default {
   name: 'AgGridDragSelect',
   props: [
     'app',
-    'gridOptions'
+    'uuid'
   ],
   data () {
     return {
@@ -185,7 +185,7 @@ export default {
 
     onCopy () {
       let copyData = ''
-      let gridApi = this.gridOptions.api
+      let gridApi = this.app.getGridOptionsByUuid(this.uuid).api
       const focusedCell = gridApi.getFocusedCell()
       // let rowNum = null
 

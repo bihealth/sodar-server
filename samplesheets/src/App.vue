@@ -116,7 +116,7 @@
           <div class="card-body p-0">
             <ag-grid-drag-select
                 :app="getApp()"
-                :grid-options="gridOptions['study']">
+                :uuid="currentStudyUuid">
               <template slot-scope="{ selectedItems }">
                 <ag-grid-vue
                     class="ag-theme-bootstrap"
@@ -209,7 +209,7 @@
             <div class="card-body p-0">
               <ag-grid-drag-select
                   :app="getApp()"
-                  :grid-options="gridOptions['assays'][assayUuid]">
+                  :uuid="assayUuid">
                 <ag-grid-vue
                     class="ag-theme-bootstrap"
                     :id="'sodar-ss-grid-assay-' + assayUuid"
@@ -329,8 +329,8 @@ export default {
     return {
       projectUuid: null,
       sodarContext: null,
-      // NOTE: These will not get updated
-      // TODO: Remove?
+      // Initial grid options
+      // NOTE: These will NOT be updated, use getGridOptionsByUuid() instead
       gridOptions: {
         'study': null,
         'assays': {}
@@ -392,10 +392,10 @@ export default {
     onFilterChange (event) {
       let gridApi
       if (event.currentTarget.id === 'sodar-ss-data-filter-study') {
-        gridApi = this.gridOptions['study'].api
+        gridApi = this.getGridOptionsByUuid(this.currentStudyUuid).api
       } else if (event.currentTarget.id.indexOf('sodar-ss-data-filter-assay') !== -1) {
         let assayUuid = event.currentTarget.getAttribute('assay-uuid')
-        gridApi = this.gridOptions['assays'][assayUuid].api
+        gridApi = this.getGridOptionsByUuid(assayUuid).api
       }
       if (gridApi) {
         gridApi.setQuickFilter(event.currentTarget.value)
@@ -444,7 +444,7 @@ export default {
 
     /* Grid Setup ----------------------------------------------------------- */
 
-    getGridOptions () {
+    initGridOptions () {
       return {
         // debug: true,
         pagination: false,
@@ -858,7 +858,7 @@ export default {
       this.clearGrids()
 
       // Set up current study
-      this.gridOptions['study'] = this.getGridOptions()
+      this.gridOptions['study'] = this.initGridOptions()
       this.setCurrentStudy(studyUuid)
       this.setPath()
 
@@ -890,7 +890,7 @@ export default {
 
               // Build assays
               for (let assayUuid in data['tables']['assays']) {
-                this.gridOptions['assays'][assayUuid] = this.getGridOptions()
+                this.gridOptions['assays'][assayUuid] = this.initGridOptions()
                 this.columnDefs['assays'][assayUuid] = this.buildColDef(
                   data['tables']['assays'][assayUuid], true, assayUuid, editMode)
                 this.rowData['assays'][assayUuid] = this.buildRowData(
@@ -1060,10 +1060,11 @@ export default {
               this.showNotification('Changes Saved', 'success', 1000)
 
               // Update other occurrences of cell in UI
-              this.updateCellUIValue(this.gridOptions['study'].api, upData)
+              this.updateCellUIValue(
+                this.getGridOptionsByUuid(this.currentStudyUuid).api, upData)
 
-              for (var k in this.gridOptions['assays']) {
-                this.updateCellUIValue(this.gridOptions['assays'][k].api, upData)
+              for (var k in this.columnDefs['assays']) {
+                this.updateCellUIValue(this.getGridOptionsByUuid(k).api, upData)
               }
             } else {
               console.log('Save status: ' + data['message']) // DEBUG
@@ -1100,12 +1101,11 @@ export default {
     /* Data and App Access -------------------------------------------------- */
 
     getGridOptionsByUuid (uuid) {
-      // TODO: Refactor this to get gridOptions from the grid element
-      // TODO: (local gridOptions not updated)
       if (uuid === this.currentStudyUuid) {
-        return this.gridOptions['study']
-      } else if (uuid in this.gridOptions['assays']) {
-        return this.gridOptions['assays'][uuid]
+        return this.$refs['studyGrid'].gridOptions
+      } else if (uuid in this.columnDefs['assays']) {
+        // TODO: Why is this an array?
+        return this.$refs['assayGrid' + uuid][0].gridOptions
       }
     },
 

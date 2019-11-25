@@ -27,12 +27,14 @@ Changed
     - Replace ``v-clipboard`` package with ``vue-clipboard2`` (#719)
     - Move UI notifications to ``NotifyBadge.vue`` (#718)
     - Refactor column data retrieval in ``ColumnToggleModal`` (#710)
+    - Rename ``getGridOptions()`` to ``initGridOptions()`` (#721)
 
 Fixed
 -----
 
 - **Samplesheets**
     - ``getGridOptionsByUuid()`` returned column API instead of grid options (#706)
+    - ``getGridOptionsByUuid()`` returned initial options without applied updates (#721)
 
 Removed
 -------

@@ -449,7 +449,9 @@ export default {
         this.cleanupFieldConfig(
           copyConfig, this.valueOptions, this.unitOptions))
     },
-    updateColDefs (assayMode, uuid) {
+    updateColDefs (uuid, assayMode) {
+      let gridOptions = this.app.getGridOptionsByUuid(uuid)
+
       let colDef
       if (!assayMode) {
         colDef = this.app.columnDefs['study'][this.defNodeIdx]
@@ -474,17 +476,11 @@ export default {
       if (!assayMode) {
         this.app.columnDefs['study'][this.defNodeIdx]
           .children[this.defFieldIdx] = colDef
-        this.app.$refs['studyGrid'].gridOptions.api.setColumnDefs(
-          this.app.columnDefs['study']
-        )
-        // this.app.$refs['studyGrid'].gridOptions.api.redrawRows()
+        gridOptions.api.setColumnDefs(this.app.columnDefs['study'])
       } else {
         this.app.columnDefs['assays'][uuid][this.defNodeIdx]
           .children[this.defFieldIdx] = colDef
-        let assayRef = 'assayGrid' + uuid
-        // TODO: Why is this an array?!
-        this.app.$refs[assayRef][0].gridOptions.api.setColumnDefs(
-          this.app.columnDefs['assays'][uuid]
+        gridOptions.api.setColumnDefs(this.app.columnDefs['assays'][uuid]
         )
       }
     },
@@ -519,11 +515,10 @@ export default {
 
         // Update fieldConfig in all tables (if study field in multiple tables)
         if (this.defNodeIdx < this.app.columnDefs['study'].length) {
-          this.updateColDefs(false) // Update study
+          this.updateColDefs(this.app.currentStudyUuid, false) // Update study
         }
-
-        for (let k in this.app.gridOptions['assays']) { // Update assays
-          this.updateColDefs(true, k)
+        for (let k in this.app.columnDefs['assays']) { // Update assays
+          this.updateColDefs(k, true)
         }
 
         // Save config on server
