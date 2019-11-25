@@ -254,7 +254,7 @@ export default {
   methods: {
     /* Event handling ------------------------------------------------------- */
     onFormatChange () {
-      this.setUpdateState()
+      this.validate()
     },
     onRegexInput (val) {
       this.validate('regex')
@@ -329,19 +329,16 @@ export default {
       if (!inputParam || inputParam === 'select') {
         let val = this.valueOptions
         let valSplit = val.split('\n')
-        this.inputValid['options'] = val && valSplit.length >= 2 && !valSplit.includes('')
+        this.inputValid['options'] = val &&
+          valSplit.length >= 2 &&
+          !valSplit.includes('')
       }
 
       // Range
       if (!inputParam || inputParam === 'range') {
         let rangeValid = true
-        let rangeMin = this.fieldConfig['range'][0]
-        let rangeMax = this.fieldConfig['range'][1]
-
-        // If either range value is null, skip the rest
-        if (!rangeMin || !rangeMax) {
-          rangeValid = false
-        }
+        let rangeMin = this.fieldConfig['range'][0] || ''
+        let rangeMax = this.fieldConfig['range'][1] || ''
 
         // Validate individual min/max fields
         if (rangeValid) {
@@ -352,7 +349,8 @@ export default {
           } else {
             rangeRegex = RegExp(this.fieldConfig['regex'])
           }
-          if (!rangeRegex.test(rangeMin) || !rangeRegex.test(rangeMax)) {
+          if ((rangeMin && !rangeRegex.test(rangeMin)) ||
+              (rangeMax && !rangeRegex.test(rangeMax))) {
             rangeValid = false
           }
         }
@@ -395,6 +393,9 @@ export default {
             this.inputValid['default'] = false
             this.formClasses['default'] = invalidClasses
           }
+        } else if (this.fieldConfig['default'].length === 0) {
+          this.inputValid['default'] = true
+          this.formClasses['default'] = ''
         }
       }
 
