@@ -259,7 +259,8 @@ export default {
     onRegexInput (val) {
       this.validate('regex')
       if (this.inputValid['regex']) {
-        this.validate('default') // Depends on Regex
+        this.validate('range') // Depends on regex
+        this.validate('default') // Depends on regex
       }
     },
     onPasteInput (val) {
@@ -342,15 +343,10 @@ export default {
 
         // Validate individual min/max fields
         if (rangeValid) {
-          let rangeRegex
-          if (this.fieldConfig['regex'].length === 0 &&
-              this.inputValid['regex']) {
-            rangeRegex = integerRegex
-          } else {
-            rangeRegex = RegExp(this.fieldConfig['regex'])
-          }
-          if ((rangeMin && !rangeRegex.test(rangeMin)) ||
-              (rangeMax && !rangeRegex.test(rangeMax))) {
+          let rangeRegex = this.getRegex()
+          if (rangeRegex &&
+              ((rangeMin && !rangeRegex.test(rangeMin)) ||
+              (rangeMax && !rangeRegex.test(rangeMax)))) {
             rangeValid = false
           }
         }
@@ -383,9 +379,11 @@ export default {
 
       // Default
       if (!inputParam || inputParam === 'default') {
-        if (this.fieldConfig['default'].length > 0 &&
+        let valueRegex = this.getRegex()
+        if (this.fieldConfig.hasOwnProperty('default') &&
+            this.fieldConfig['default'].length > 0 &&
+            valueRegex &&
             this.inputValid['regex']) {
-          let valueRegex = RegExp(this.fieldConfig['regex'])
           if (valueRegex.test(this.fieldConfig['default'])) {
             this.inputValid['default'] = true
             this.formClasses['default'] = ''
@@ -393,7 +391,7 @@ export default {
             this.inputValid['default'] = false
             this.formClasses['default'] = invalidClasses
           }
-        } else if (this.fieldConfig['default'].length === 0) {
+        } else {
           this.inputValid['default'] = true
           this.formClasses['default'] = ''
         }
@@ -437,6 +435,16 @@ export default {
         }
       }
       return config
+    },
+    getRegex () {
+      if (this.fieldConfig['regex'].length === 0) {
+        if (this.fieldConfig['format'] === 'integer') {
+          return integerRegex
+        }
+      } else if (this.inputValid['regex']) {
+        return RegExp(this.fieldConfig['regex'])
+      }
+      return null
     },
     getCopyData () {
       if (!this.fieldConfig) {

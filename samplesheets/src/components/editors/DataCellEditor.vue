@@ -32,11 +32,10 @@
             v-model="editUnit"
             class="ag-cell-edit-input sodar-ss-vue-popup-input"
             :style="unitStyle">
-      <option value="" :selected="selectEmptyValue(editUnit)">-</option>
+      <option :value="null">-</option>
       <option v-for="(unit, index) in editConfig['unit']"
               :key="index"
-              :value="unit"
-              :selected="editUnit === unit">
+              :value="unit">
         {{ unit }}
       </option>
     </select>
@@ -185,6 +184,12 @@ export default Vue.extend({
         this.ogEditUnit = this.value['unit']
       }
       this.editUnitEnabled = true
+    }
+
+    // Set up default unit
+    if (this.editConfig.hasOwnProperty('unit_default') &&
+        this.editUnit.length === 0) {
+      this.editUnit = this.editConfig['unit_default']
     }
 
     // Get initial valid state on existing value
