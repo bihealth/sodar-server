@@ -340,6 +340,7 @@ export default {
         'study': null,
         'assays': {}
       },
+      // NOTE: These will NOT be updated, use getGridOptionsByUuid().rowData
       rowData: {
         'study': null,
         'assays': {}
@@ -1038,15 +1039,17 @@ export default {
 
     /* Editing -------------------------------------------------------------- */
 
-    handleCellEdit (cellData, ogValue, headerInfo) {
+    handleCellEdit (upDataArr) {
       // TODO: Add timeout / retrying
       // TODO: Cleanup unnecessary fields from JSON
       // TODO: In the future, add edited info in a queue and save periodically
-      let upData = Object.assign(cellData, headerInfo, {'og_value': ogValue})
+      if (!Array.isArray(upDataArr)) {
+        upDataArr = [upDataArr]
+      }
 
       fetch('/samplesheets/api/edit/post/' + this.projectUuid, {
         method: 'POST',
-        body: JSON.stringify({'updated_cells': [upData]}),
+        body: JSON.stringify({'updated_cells': upDataArr}),
         credentials: 'same-origin',
         headers: {
           'Accept': 'application/json',
@@ -1060,11 +1063,11 @@ export default {
               this.showNotification('Changes Saved', 'success', 1000)
 
               // Update other occurrences of cell in UI
-              this.updateCellUIValue(
-                this.getGridOptionsByUuid(this.currentStudyUuid).api, upData)
+              this.updateCellUIValues(
+                this.getGridOptionsByUuid(this.currentStudyUuid).api, upDataArr)
 
               for (var k in this.columnDefs['assays']) {
-                this.updateCellUIValue(this.getGridOptionsByUuid(k).api, upData)
+                this.updateCellUIValues(this.getGridOptionsByUuid(k).api, upDataArr)
               }
             } else {
               console.log('Save status: ' + data['message']) // DEBUG
@@ -1077,19 +1080,22 @@ export default {
         })
     },
 
-    updateCellUIValue (gridApi, upData) {
-      gridApi.forEachNode(function (rowNode, index) {
-        let cell = rowNode.data[upData['header_field']]
-
-        if (cell &&
-            cell['uuid'] === upData['uuid'] &&
-            cell['value'] === upData['og_value']) {
-          cell['value'] = upData['value']
-          cell['unit'] = upData['unit']
-        }
-      })
-      // NOTE: Sometimes a manual refresh is needed (ag-grid bug?)
-      gridApi.refreshCells({'columns': [upData['header_field']], 'force': true})
+    updateCellUIValues (gridApi, upDataArr) {
+      for (let i = 0; i < upDataArr.length; i++) {
+        let upData = upDataArr[i]
+        let field = upData['header_field']
+        gridApi.forEachNode(function (rowNode) {
+          let value = rowNode.data[field]
+          if (value &&
+              value['uuid'] === upData['uuid'] &&
+              value['value'] === upData['og_value']) {
+            value['value'] = upData['value']
+            value['unit'] = upData['unit']
+            rowNode.setDataValue(field, value)
+          }
+        })
+        gridApi.refreshCells({'columns': [field], 'force': true})
+      }
     },
 
     handleFinishEditing () {

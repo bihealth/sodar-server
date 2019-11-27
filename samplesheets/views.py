@@ -9,6 +9,7 @@ import zipfile
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db import transaction
 from django.http import HttpResponse, HttpResponseRedirect
 from django.middleware.csrf import get_token
 from django.shortcuts import redirect
@@ -1257,13 +1258,12 @@ class SampleSheetEditPostAPIView(
     permission_required = 'samplesheets.edit_sheet'
     renderer_classes = [JSONRenderer]
 
+    @transaction.atomic
     def post(self, request, *args, **kwargs):
-        updated_cells = request.data.get('updated_cells')
+        updated_cells = request.data.get('updated_cells') or []
 
-        if updated_cells:
-            cell = updated_cells[0]  # TODO: In future, iterate
-            logger.debug('Updated cell: {}'.format(cell))
-
+        for cell in updated_cells:
+            logger.debug('Cell update: {}'.format(cell))
             obj = (
                 eval(cell['obj_cls'])
                 .objects.filter(sodar_uuid=cell['uuid'])

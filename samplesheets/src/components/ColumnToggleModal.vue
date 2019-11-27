@@ -76,7 +76,7 @@ export default {
       uuid: null,
       assayMode: null,
       title: null,
-      gridApi: null,
+      gridOptions: null,
       columnApi: null,
       columnDefs: null,
       columnList: null,
@@ -147,16 +147,14 @@ export default {
       // Get data
       this.uuid = uuid
       this.assayMode = assayMode
-      this.gridApi = this.app.getGridOptionsByUuid(this.uuid)
-      this.columnApi = this.gridApi.columnApi
-      this.columnDefs = this.gridApi.columnDefs
-      let rowData
+      this.gridOptions = this.app.getGridOptionsByUuid(this.uuid)
+      this.columnApi = this.gridOptions.columnApi
+      this.columnDefs = this.gridOptions.columnDefs
+      let rowData = this.gridOptions.rowData
 
       if (!assayMode) {
-        rowData = this.app.rowData['study']
         this.title = 'Toggle Study Columns'
       } else {
-        rowData = this.app.rowData['assays'][uuid]
         this.title = 'Toggle Assay Columns'
       }
 

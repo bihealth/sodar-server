@@ -80,7 +80,7 @@
             </td>
             <td>
               <b-textarea v-model="valueOptions"
-                          rows="5"
+                          rows="4"
                           @input="validate('select')">
                 {{ valueOptions }}
               </b-textarea>
@@ -140,7 +140,7 @@
               </i>
             </td>
             <td>
-              <b-textarea v-model="unitOptions" rows="3">
+              <b-textarea v-model="unitOptions" rows="2">
                 {{ unitOptions }}
               </b-textarea>
             </td>
@@ -168,12 +168,15 @@
               <!-- String/integer/double default -->
               <b-input v-if="fieldConfig['format'] !== 'select'"
                        v-model="fieldConfig['default']"
-                       @input="validate('default')"
+                       @input="onDefaultInput"
+                       id="sodar-ss-vue-column-input-default"
                        :class="formClasses['default']">
               </b-input>
               <!-- Selection default -->
               <b-select v-else
                         v-model="fieldConfig['default']"
+                        id="sodar-ss-vue-column-select-default"
+                        @change="onDefaultChange"
                         :disabled="!valueOptions">
                 <option :value="null">-</option>
                 <option v-for="(option, index) in valueOptions.split('\n')"
@@ -182,6 +185,21 @@
                   {{ option }}
                 </option>
               </b-select>
+            </td>
+          </tr>
+          <tr>
+            <td>Default Fill</td>
+            <td>
+              <span id="sodar-ss-vue-column-wrapper-default"
+                    title="Fill empty column values with default value on update"
+                    v-b-tooltip.right.hover>
+                <b-checkbox
+                    plain
+                    v-model="defaultFill"
+                    :disabled="!defaultFillEnable"
+                    id="sodar-ss-vue-column-check-default">
+                </b-checkbox>
+              </span>
             </td>
           </tr>
         </tbody>
@@ -248,6 +266,8 @@ export default {
         'regex': '',
         'default': ''
       },
+      defaultFill: false,
+      defaultFillEnable: false,
       pasteData: ''
     }
   },
@@ -256,11 +276,26 @@ export default {
     onFormatChange () {
       this.validate()
     },
-    onRegexInput (val) {
+    onRegexInput () {
       this.validate('regex')
       if (this.inputValid['regex']) {
         this.validate('range') // Depends on regex
         this.validate('default') // Depends on regex
+      }
+    },
+    onDefaultInput () {
+      if (this.fieldConfig['default'].length === 0) {
+        this.defaultFill = false // No default fill if we don't have default
+      }
+      this.validate('default')
+    },
+    onDefaultChange () {
+      if (!this.fieldConfig['default'] ||
+          this.fieldConfig['default'].length === 0) {
+        this.defaultFill = false
+        this.defaultFillEnable = false
+      } else {
+        this.defaultFillEnable = true
       }
     },
     onPasteInput (val) {
@@ -387,13 +422,16 @@ export default {
           if (valueRegex.test(this.fieldConfig['default'])) {
             this.inputValid['default'] = true
             this.formClasses['default'] = ''
+            this.defaultFillEnable = true
           } else {
             this.inputValid['default'] = false
             this.formClasses['default'] = invalidClasses
+            this.defaultFillEnable = false
           }
         } else {
           this.inputValid['default'] = true
           this.formClasses['default'] = ''
+          this.defaultFillEnable = false
         }
       }
 
@@ -509,6 +547,11 @@ export default {
       this.unitEnabled = false
       this.unitOptions = ''
 
+      // Set up fieldConfig
+      if (!this.fieldConfig.hasOwnProperty('default')) {
+        this.fieldConfig['default'] = ''
+      }
+
       // Set up certain data for the form widgets
       this.setWidgetData()
 
@@ -542,7 +585,6 @@ export default {
             }
           ]
         }
-
         fetch('/samplesheets/api/manage/post/' + this.projectUuid, {
           method: 'POST',
           body: JSON.stringify(upData),
@@ -565,6 +607,36 @@ export default {
           ).catch(function (error) {
             console.log('Error updating field: ' + error.message)
           })
+
+        // Fill default value to empty cells in column if selected
+        if (this.defaultFill &&
+            this.fieldConfig.hasOwnProperty('default') &&
+            this.fieldConfig['default'].length > 0) {
+          // Collect column cell data
+          let gridUuid = !this.assayUuid ? this.studyUuid : this.assayUuid
+          let gridOptions = this.app.getGridOptionsByUuid(gridUuid)
+          let field = this.col.colDef.field
+          let cellUuids = [] // Store found cell UUIDs
+          let upData = [] // The actual update data
+
+          for (let i = 0; i < gridOptions.rowData.length; i++) {
+            let row = gridOptions.rowData[i]
+            if (row.hasOwnProperty(field) &&
+                !cellUuids.includes(row[field]['uuid'])) {
+              if (!row[field]['value'] || row[field]['value'].length === 0) {
+                let cell = row[field]
+                let ogValue = cell['value']
+                cell['value'] = this.fieldConfig['default']
+                upData.push(Object.assign(
+                  cell,
+                  {'og_value': ogValue},
+                  this.col.colDef.cellEditorParams['headerInfo']))
+              }
+              cellUuids.push(row[field]['uuid'])
+            }
+          }
+          this.app.handleCellEdit(upData)
+        }
       }
       this.$refs.manageColumnModal.hide()
     }
@@ -574,7 +646,7 @@ export default {
 
 <style scoped>
 div.sodar-ss-vue-col-manage-content {
-  min-height: 550px !important;
+  min-height: 560px !important;
 }
 
 #sodar-ss-vue-col-input-paste {
@@ -590,6 +662,10 @@ table#sodar-ss-vue-col-manage-table tbody td:first-child {
 
 #sodar-ss-vue-col-btn-group {
   padding-right: 12px;
+}
+
+#sodar-ss-vue-column-wrapper-default .form-check {
+  width: 20px !important;
 }
 
 </style>

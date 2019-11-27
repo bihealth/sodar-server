@@ -162,6 +162,10 @@ export default Vue.extend({
         }
       }
       return true // Empty value or no failed tests
+    },
+    getUpdateData () {
+      return Object.assign(
+        this.value, this.headerInfo, {'og_value': this.ogEditValue})
     }
   },
   created () {
@@ -264,11 +268,7 @@ export default Vue.extend({
       if (this.value['unit'] === '') {
         this.value['unit'] = null
       }
-      // TODO: Is copying necessary?
-      this.app.handleCellEdit(
-        JSON.parse(JSON.stringify(this.value)), // Copying just in case..
-        this.ogEditValue,
-        this.headerInfo)
+      this.app.handleCellEdit(this.getUpdateData())
     }
     this.params.colDef.suppressKeyboardEvent = false
     this.app.selectEnabled = true
