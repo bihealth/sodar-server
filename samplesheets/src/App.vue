@@ -445,7 +445,7 @@ export default {
 
     /* Grid Setup ----------------------------------------------------------- */
 
-    initGridOptions () {
+    initGridOptions (editMode) {
       return {
         // debug: true,
         pagination: false,
@@ -463,7 +463,7 @@ export default {
         defaultColDef: {
           editable: false,
           resizable: true,
-          sortable: true
+          sortable: !editMode
         }
       }
     },
@@ -859,7 +859,7 @@ export default {
       this.clearGrids()
 
       // Set up current study
-      this.gridOptions['study'] = this.initGridOptions()
+      this.gridOptions['study'] = this.initGridOptions(editMode)
       this.setCurrentStudy(studyUuid)
       this.setPath()
 
@@ -891,7 +891,7 @@ export default {
 
               // Build assays
               for (let assayUuid in data['tables']['assays']) {
-                this.gridOptions['assays'][assayUuid] = this.initGridOptions()
+                this.gridOptions['assays'][assayUuid] = this.initGridOptions(editMode)
                 this.columnDefs['assays'][assayUuid] = this.buildColDef(
                   data['tables']['assays'][assayUuid], true, assayUuid, editMode)
                 this.rowData['assays'][assayUuid] = this.buildRowData(
