@@ -258,7 +258,8 @@ export default {
       inputValid: {
         'options': true,
         'range': true,
-        'regex': true
+        'regex': true,
+        'default': true
       },
       formClasses: {
         'options': '',
