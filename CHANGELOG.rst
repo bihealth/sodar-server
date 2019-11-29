@@ -28,7 +28,8 @@ Changed
     - Move UI notifications to ``NotifyBadge.vue`` (#718)
     - Refactor column data retrieval in ``ColumnToggleModal`` (#710)
     - Rename ``getGridOptions()`` to ``initGridOptions()`` (#721)
-    - Dynamically add cell tooltip in rendering if value is defined (#708)
+    - Dynamically add/omit cell unit, link and tooltip in rendering (#708)
+    - Improve column type detection (#730)
 
 Fixed
 -----

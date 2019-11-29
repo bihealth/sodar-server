@@ -11,7 +11,7 @@
     </span>
     <!-- Value with unit -->
     <span v-if="colType === 'UNIT'">
-      {{ value.value }} <span v-if="value.unit" class="text-muted">{{ value.unit }}</span>
+      {{ value.value }} <span v-if="value.hasOwnProperty('unit') && value.unit" class="text-muted">{{ value.unit }}</span>
     </span>
     <!-- Ontology links -->
     <span v-else-if="colType === 'ONTOLOGY' && renderData">
@@ -109,6 +109,7 @@ export default Vue.extend(
             })
           }
         } else if (this.value.value.indexOf(';') !== -1 &&
+            this.value.hasOwnProperty('link') &&
             this.value.link.indexOf(';') !== -1) { // Legacy altamISA implementation
           let values = this.value.value.split(';')
           let urls = this.value.link.split(';')
@@ -116,7 +117,7 @@ export default Vue.extend(
           for (let i = 0; i < values.length; i++) {
             links.push({value: values[i], url: urls[i]})
           }
-        } else {
+        } else if (this.value.hasOwnProperty('link')) {
           links.push({value: this.value.value, url: this.value.link})
         }
         return {'links': links}
@@ -158,7 +159,7 @@ export default Vue.extend(
         // Get file link
         return {
           value: this.value.value,
-          url: this.value.link
+          url: this.value.link ? this.value.hasOwnProperty('link') : '#'
         }
       },
       getTooltip () {

@@ -88,6 +88,8 @@ class SampleSheetTableBuilder:
     headers, to be rendered as HTML on the site"""
 
     def __init__(self):
+        self._study = None
+        self._assay = None
         self._row = []
         self._top_header = []
         self._field_header = []
@@ -95,8 +97,11 @@ class SampleSheetTableBuilder:
         self._first_row = True
         self._col_values = []
         self._col_idx = 0
+        self._node_idx = 0
+        self._field_idx = 0
         self._parser_version = None
         self._edit = False
+        self._sheet_config = None
 
     # General data and cell functions ------------------------------------------
 
@@ -177,6 +182,8 @@ class SampleSheetTableBuilder:
         self._top_header.append(
             {'value': value.strip(), 'colour': colour, 'colspan': colspan}
         )
+        self._node_idx += 1
+        self._field_idx = 0
 
     def _add_header(self, name, header_type=None, obj=None):
         """
@@ -195,6 +202,42 @@ class SampleSheetTableBuilder:
             'num_col': False,  # Will be checked for sorting later
             'align': 'left',
         }
+        field_config = None
+
+        # Column type (the ones we can determine at this point)
+        # Override by config setting if present
+        if self._sheet_config:
+            study_config = self._sheet_config['studies'][
+                str(self._study.sodar_uuid)
+            ]
+
+            if not self._assay or self._node_idx < len(study_config['nodes']):
+                field_config = study_config['nodes'][self._node_idx]['fields'][
+                    self._field_idx
+                ]
+
+            else:  # Assay
+                a_node_idx = self._node_idx - len(study_config['nodes'])
+                field_config = study_config['assays'][
+                    str(self._assay.sodar_uuid)
+                ]['nodes'][a_node_idx]['fields'][self._field_idx]
+
+        if field_config and field_config.get('format') == 'integer':
+            header['col_type'] = 'UNIT'
+            header['align'] = 'right'  # TODO: Should not be required for UNIT
+
+        # Else detect type without config
+        elif 'contact' in name.lower():
+            header['col_type'] = 'CONTACT'
+
+        elif name.lower() == 'external links':
+            header['col_type'] = 'EXTERNAL_LINKS'
+
+        elif name.lower() == 'name' and header['item_type'] == 'DATA':
+            header['col_type'] = 'LINK_FILE'
+
+        else:
+            header['col_type'] = None  # Default / to be determined later
 
         # Add extra data for editing
         if self._edit:
@@ -202,6 +245,7 @@ class SampleSheetTableBuilder:
             header['name'] = name  # Store original field name
 
         self._field_header.append(header)
+        self._field_idx += 1
 
     def _add_cell(
         self,
@@ -212,6 +256,7 @@ class SampleSheetTableBuilder:
         header_type=None,
         obj=None,
         tooltip=None,
+        basic_val=True,
         # attrs=None,  # :param attrs: Optional attributes (dict)
     ):
         """
@@ -225,6 +270,7 @@ class SampleSheetTableBuilder:
         :param header_type: Header type (string)
         :param obj: Original Django model object
         :param tooltip: Tooltip to be shown on mouse hover (string)
+        :param basic_val: Whether the value is a basic string (HACK for #730)
         """
 
         # Add header if first row
@@ -235,11 +281,13 @@ class SampleSheetTableBuilder:
         if isinstance(value, dict):
             value = self._get_value(value)
 
-        cell = {
-            'value': value.strip() if isinstance(value, str) else value,
-            'unit': unit.strip() if isinstance(unit, str) else unit,
-            'link': link,
-        }
+        cell = {'value': value.strip() if isinstance(value, str) else value}
+
+        if unit:
+            cell['unit'] = unit.strip() if isinstance(unit, str) else unit
+
+        if link:
+            cell['link'] = link
 
         if tooltip:
             cell['tooltip'] = tooltip
@@ -258,6 +306,23 @@ class SampleSheetTableBuilder:
 
         elif col_value == 1 and self._col_values[self._col_idx] == 0:
             self._col_values[self._col_idx] = 1
+
+        # Modify column type according to data
+        if not self._field_header[self._col_idx]['col_type']:
+            if (
+                not basic_val
+                or cell.get('link')
+                or isinstance(cell['value'], dict)
+                or (
+                    isinstance(cell['value'], list)
+                    and len(cell['value']) > 0
+                    and isinstance(cell['value'][0], dict)
+                )
+            ):
+                self._field_header[self._col_idx]['col_type'] = 'ONTOLOGY'
+
+            elif cell.get('unit'):
+                self._field_header[self._col_idx]['col_type'] = 'UNIT'
 
         self._col_idx += 1
 
@@ -369,11 +434,13 @@ class SampleSheetTableBuilder:
         unit = None
         link = None
         tooltip = None
+        basic_val = False
 
         # Special case: Comments as parsed in SODAR v0.5.2 (see #629)
         # TODO: TBD: Should these be added in this function at all?
         if isinstance(ann, str):
             val = ann
+            basic_val = True
 
         # Ontology reference
         # TODO: add original accession and ontology name when editing
@@ -431,6 +498,7 @@ class SampleSheetTableBuilder:
         # Basic value string
         else:
             val = ann['value']
+            basic_val = True
 
         # Add unit if present
         if isinstance(ann, dict) and 'unit' in ann:
@@ -448,6 +516,7 @@ class SampleSheetTableBuilder:
             header_type=header_type,
             obj=obj,
             tooltip=tooltip,
+            basic_val=basic_val,
         )
 
     # Table building functions -------------------------------------------------
@@ -458,15 +527,25 @@ class SampleSheetTableBuilder:
         self._row = []
         self._first_row = False
         self._col_idx = 0
+        self._node_idx = 0
+        self._field_idx = 0
 
-    def _build_table(self, table_refs, node_map):
+    def _build_table(self, table_refs, node_map, study=None, assay=None):
         """
         Function for building a table for rendering.
 
         :param table_refs: Object unique_name:s in a list of lists
         :param node_map: Lookup dictionary containing objects
+        :param study: Study object (optional, required if rendering study)
+        :param assay: Assay object (optional, required if rendering assay)
+        :raise: ValueError if both study and assay are None
         :return: Dict
         """
+        if not study and not assay:
+            raise ValueError('Either study or assay must be defined')
+
+        self._study = study or assay.study
+        self._assay = assay
         self._row = []
         self._top_header = []
         self._field_header = []
@@ -526,42 +605,15 @@ class SampleSheetTableBuilder:
         for i in range(len(self._field_header)):
             header_name = self._field_header[i]['value'].lower()
 
-            # Column type
-            if 'contact' in header_name:
-                col_type = 'CONTACT'
-
-            elif header_name == 'external links':
-                col_type = 'EXTERNAL_LINKS'
-
-            elif (
-                header_name == 'name'
-                and self._field_header[i]['item_type'] == 'DATA'
-            ):
-                col_type = 'LINK_FILE'
-
-            # TODO: Refactor this?
-            elif any(x[i]['link'] for x in self._table_data) or (
-                any(
-                    isinstance(x[i]['value'], list)
-                    and len(x[i]['value']) > 0
-                    and isinstance(x[i]['value'][0], dict)
+            # Right align if values are all numbers or empty (except if name)
+            # Skip check if column is already defined as UNIT
+            if (
+                self._field_header[i]['col_type'] != 'UNIT'
+                and any(_is_num(x[i]['value']) for x in self._table_data)
+                and all(
+                    (_is_num(x[i]['value']) or not x[i]['value'])
                     for x in self._table_data
                 )
-            ):
-                col_type = 'ONTOLOGY'
-
-            elif any([x[i]['unit'] for x in self._table_data]):
-                col_type = 'UNIT'
-
-            else:
-                col_type = None
-
-            self._field_header[i]['col_type'] = col_type
-
-            # Right align if values are all numbers or empty (except if name)
-            if any(_is_num(x[i]['value']) for x in self._table_data) and all(
-                (_is_num(x[i]['value']) or not x[i]['value'])
-                for x in self._table_data
             ):
                 self._field_header[i]['num_col'] = True
 
@@ -570,6 +622,7 @@ class SampleSheetTableBuilder:
 
             # Maximum column value length for column width estimate
             header_len = round(_get_length(self._field_header[i]['value']))
+            col_type = self._field_header[i]['col_type']
 
             if col_type == 'CONTACT':
                 max_cell_len = max(
@@ -602,7 +655,7 @@ class SampleSheetTableBuilder:
                 max_cell_len = max(
                     [
                         _get_length(x[i]['value'], col_type)
-                        + _get_length(x[i]['unit'], col_type)
+                        + _get_length(x[i].get('unit'), col_type)
                         + 1
                         for x in self._table_data
                     ]
@@ -677,6 +730,17 @@ class SampleSheetTableBuilder:
             )
         )
 
+        # Get study config for column type detection
+        self._sheet_config = app_settings.get_app_setting(
+            'samplesheets', 'sheet_config', project=study.get_project()
+        )
+
+        if self._sheet_config:
+            logger.debug('Using sheet configuration from app settings')
+
+        else:
+            logger.debug('No sheet configuration found in app settings')
+
         self._edit = edit
         self._parser_version = (
             version.parse(study.investigation.parser_version)
@@ -693,10 +757,8 @@ class SampleSheetTableBuilder:
         )
 
         ret = {'study': None, 'assays': {}}
-
         nodes = study.get_nodes()
         all_refs = self.build_study_reference(study, nodes)
-
         sample_pos = [
             i for i, col in enumerate(all_refs[0]) if '-sample-' in col
         ][0]
@@ -706,8 +768,7 @@ class SampleSheetTableBuilder:
         sr = [row[: sample_pos + 1] for row in all_refs]
         study_refs = list(sr for sr, _ in itertools.groupby(sr))
 
-        ret['study'] = self._build_table(study_refs, node_map)
-
+        ret['study'] = self._build_table(study_refs, node_map, study=study)
         logger.debug(
             'Building study OK ({:.1f}s)'.format(time.time() - s_start)
         )
@@ -734,7 +795,7 @@ class SampleSheetTableBuilder:
                     assay_refs.append(row)
 
             ret['assays'][str(assay.sodar_uuid)] = self._build_table(
-                assay_refs, node_map
+                assay_refs, node_map, assay=assay
             )
 
             assay_count += 1

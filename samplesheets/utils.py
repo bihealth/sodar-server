@@ -281,7 +281,6 @@ def write_excel_table(table, output, display_name):
     wb.save(output)
 
 
-# TODO: Updating existing config based on sheet struture changes/replace
 def build_sheet_config(investigation):
     """
     Build basic sample sheet configuration for editing configuration.
