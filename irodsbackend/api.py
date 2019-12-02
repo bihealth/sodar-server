@@ -210,9 +210,9 @@ class IrodsAPI:
         md5_filter = 'LIKE' if md5 else 'NOT LIKE'
 
         sql = (
-            'SELECT data_name, data_size, '
+            'SELECT DISTINCT ON (data_id) data_name, data_size, '
             'r_data_main.modify_ts as modify_ts, coll_name '
-            'FROM r_data_main JOIN r_coll_main USING (coll_id)'
+            'FROM r_data_main JOIN r_coll_main USING (coll_id) '
             'WHERE (coll_name = \'{coll_path}\' '
             'OR coll_name LIKE \'{coll_path}/%\') '
             'AND data_name {md5_filter} \'%.md5\''.format(
@@ -226,13 +226,13 @@ class IrodsAPI:
         if not md5 and limit:
             sql += ' LIMIT {}'.format(limit)
 
+        logger.debug('Object list query = "{}"'.format(sql))
         columns = [
             DataObject.name,
             DataObject.size,
             DataObject.modify_time,
             Collection.name,
         ]
-
         query = SpecificQuery(self.irods, sql, self._get_query_alias(), columns)
         _ = query.register()
 
@@ -315,12 +315,16 @@ class IrodsAPI:
         sql = (
             'SELECT COUNT(data_id) as file_count, '
             'SUM(data_size) as total_size '
-            'FROM r_data_main JOIN r_coll_main USING (coll_id) '
+            'FROM (SELECT data_id, data_size FROM r_data_main '
+            'JOIN r_coll_main USING (coll_id) '
             'WHERE (coll_name = \'{coll_path}\' '
             'OR coll_name LIKE \'{coll_path}/%\') '
-            'AND data_name NOT LIKE \'%.md5\''.format(coll_path=coll.path)
+            'AND data_name NOT LIKE \'%.md5\' '
+            'GROUP BY data_id, data_size) AS sub_query'.format(
+                coll_path=coll.path
+            )
         )
-
+        # logger.debug('Object stats query = "{}"'.format(sql))
         query = SpecificQuery(self.irods, sql, self._get_query_alias())
         _ = query.register()
 

@@ -36,6 +36,7 @@ Fixed
 
 - **Irodsbackend**
     - Cleanup skipped by uncaught exceptions in ``init_irods()`` (#723)
+    - Data object replicates included in file and stats queries (#722)
 - **Samplesheets**
     - ``getGridOptionsByUuid()`` returned column API instead of grid options (#706)
     - ``getGridOptionsByUuid()`` returned initial options without applied updates (#721)
