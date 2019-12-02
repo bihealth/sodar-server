@@ -20,6 +20,8 @@ Added
 Changed
 -------
 
+- **General**
+    - Upgrade to python-irodsclient v0.8.2 (#731)
 - **Samplesheets**
     - Rename ``table_data`` member to ``tables`` in rendered table data (#219)
     - Move ``_get_isatab_files()`` and ``_fail_isa()`` into ``SampleSheetIOMixin``
