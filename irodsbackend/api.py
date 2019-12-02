@@ -226,7 +226,7 @@ class IrodsAPI:
         if not md5 and limit:
             sql += ' LIMIT {}'.format(limit)
 
-        logger.debug('Object list query = "{}"'.format(sql))
+        # logger.debug('Object list query = "{}"'.format(sql))
         columns = [
             DataObject.name,
             DataObject.size,
