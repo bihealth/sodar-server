@@ -36,6 +36,7 @@ DEFAULT_PARSER_VERSION = altamisa.__version__
 INV_IDENTIFIER = 'Investigation identifier'
 INV_FILE_NAME = 'i_Investigation.txt'
 INV_TITLE = 'Investigation'
+INV_ARCHIVE_NAME = 'investigation.zip'
 
 STUDY_IDENTIFIER = 'Study identifier'
 STUDY_FILE_NAME = 's_study.txt'
@@ -391,6 +392,7 @@ class TestSampleSheetBase(
             title=INV_TITLE,
             description=DEFAULT_DESCRIPTION,
             comments=DEFAULT_COMMENTS,
+            archive_name=INV_ARCHIVE_NAME,
         )
 
         # Set up Study
@@ -438,7 +440,7 @@ class TestInvestigation(TestSampleSheetBase):
             'active': True,
             'parser_version': DEFAULT_PARSER_VERSION,
             'parser_warnings': {},
-            'archive_name': None,
+            'archive_name': INV_ARCHIVE_NAME,
             'sharing_data': {},
             'retraction_data': {},
             'sodar_uuid': self.investigation.sodar_uuid,
@@ -1071,6 +1073,7 @@ class TestISATab(TestSampleSheetBase):
         self.assertEqual(model_to_dict(self.isatab), expected)
 
     def test__str__(self):
+        """Test ISATab __str__()"""
         expected = '{}: {} ({})'.format(
             self.isatab.project.title,
             self.isatab.archive_name,
@@ -1079,6 +1082,7 @@ class TestISATab(TestSampleSheetBase):
         self.assertEqual(str(self.isatab), expected)
 
     def test__repr__(self):
+        """Test ISATab __repr__()"""
         expected = 'ISATab({})'.format(
             ', '.join(
                 repr(v)
@@ -1090,3 +1094,40 @@ class TestISATab(TestSampleSheetBase):
             )
         )
         self.assertEqual(repr(self.isatab), expected)
+
+    def test_get_name(self):
+        """Test get_name()"""
+        expected = '{} ({})'.format(
+            self.investigation.title,
+            timezone.localtime(self.isatab.date_created).strftime(
+                '%Y-%m-%d %H:%M:%S'
+            ),
+        )
+        self.assertEqual(self.isatab.get_name(), expected)
+
+    def test_get_name_no_title(self):
+        """Test get_name() with no title"""
+        self.investigation.title = ''
+        self.investigation.save()
+
+        expected = '{} ({})'.format(
+            self.investigation.archive_name.split('.')[0],
+            timezone.localtime(self.isatab.date_created).strftime(
+                '%Y-%m-%d %H:%M:%S'
+            ),
+        )
+        self.assertEqual(self.isatab.get_name(), expected)
+
+    def test_get_name_no_archive(self):
+        """Test get_name() with no title or archive name"""
+        self.investigation.title = ''
+        self.investigation.save()
+        self.isatab.archive_name = ''
+
+        expected = '{} ({})'.format(
+            self.project.title,
+            timezone.localtime(self.isatab.date_created).strftime(
+                '%Y-%m-%d %H:%M:%S'
+            ),
+        )
+        self.assertEqual(self.isatab.get_name(), expected)

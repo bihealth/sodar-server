@@ -766,23 +766,19 @@ class SampleSheetIO:
 
         # Save original ISAtab data
         # TODO: TBD: Prevent saving if previous data matches current one?
-        db_isatab = ISATab(
-            project=project,
-            investigation_uuid=db_investigation.sodar_uuid,
-            archive_name=archive_name,
-            data=isa_data,  # NOTE: Format changed!
-            tags=['IMPORT'],
-            user=user,
-            parser_version=altamisa.__version__,
-        )
+        tags = ['IMPORT']
 
         if replace:
-            db_isatab.tags.append('REPLACE')
+            tags.append('REPLACE')
 
-        db_isatab.save()
-        logger.info(
-            'Original ISAtab saved (UUID={})'.format(db_isatab.sodar_uuid)
+        self.save_isa(
+            investigation=db_investigation,
+            isa_data=isa_data,
+            tags=tags,
+            user=user,
+            archive_name=archive_name,
         )
+
         return db_investigation
 
     # Export -------------------------------------------------------------------
@@ -1396,6 +1392,32 @@ class SampleSheetIO:
                 logger.info('Exported assay "{}"'.format(db_assay.file_name))
 
         return ret
+
+    @classmethod
+    def save_isa(
+        cls, investigation, isa_data, tags=None, user=None, archive_name=None
+    ):
+        """
+        Save a copy of an ISAtab investigation into the SODAR database.
+
+        :param investigation: Investigation object
+        :param isa_data: ISAtab file contents (dict)
+        :param tags: Tags for the ISAtab (optional)
+        :param user: User saving the ISAtab (optional)
+        :param archive_name: File name of ISAtab archive (optional)
+        :return: ISATab object
+        """
+        db_isatab = ISATab.objects.create(
+            project=investigation.project,
+            investigation_uuid=investigation.sodar_uuid,
+            data=isa_data,
+            tags=tags or [],
+            user=user,
+            archive_name=archive_name,
+            parser_version=altamisa.__version__,
+        )
+        logger.info('ISAtab saved (UUID={})'.format(db_isatab.sodar_uuid))
+        return db_isatab
 
 
 # Exceptions -------------------------------------------------------------------

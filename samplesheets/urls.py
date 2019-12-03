@@ -73,6 +73,11 @@ urlpatterns = [
         name='api_edit_post',
     ),
     url(
+        regex=r'^api/edit/finish/(?P<project>[0-9a-f-]+)$',
+        view=views.SampleSheetEditFinishAPIView.as_view(),
+        name='api_edit_finish',
+    ),
+    url(
         regex=r'^api/manage/post/(?P<project>[0-9a-f-]+)$',
         view=views.SampleSheetManagePostAPIView.as_view(),
         name='api_manage_post',

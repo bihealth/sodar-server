@@ -245,6 +245,22 @@ class TestSampleSheetsPermissions(
         self.assert_response(url, good_users, status_code=200, method='POST')
         self.assert_response(url, bad_users, status_code=403, method='POST')
 
+    def test_api_edit_finish(self):
+        """Test SampleSheetEditFinishAPIView"""
+        url = reverse(
+            'samplesheets:api_edit_finish',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+        good_users = [
+            self.superuser,
+            self.as_owner.user,
+            self.as_delegate.user,
+            self.as_contributor.user,
+        ]
+        bad_users = [self.as_guest.user, self.anonymous, self.user_no_roles]
+        self.assert_response(url, good_users, status_code=200, method='POST')
+        self.assert_response(url, bad_users, status_code=403, method='POST')
+
     def test_sheet_warnings(self):
         """Test SampleSheetWarningsGetAPIView"""
         url = reverse(

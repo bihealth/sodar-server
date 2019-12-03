@@ -16,6 +16,7 @@ Added
     - Project settings for sample sheet configuration (#687)
     - ``manage_sheet`` permission (#696)
     - Column management UI for sample sheet configuring (#698)
+    - ``get_name()`` helper in ``ISATab``
 
 Changed
 -------

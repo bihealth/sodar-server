@@ -6,6 +6,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
 from django.utils.text import slugify
+from django.utils.timezone import localtime
 
 # Projectroles dependency
 from projectroles.models import Project
@@ -941,3 +942,23 @@ class ISATab(models.Model):
     def __repr__(self):
         values = (self.project.title, self.archive_name, self.date_created)
         return 'ISATab({})'.format(', '.join(repr(v) for v in values))
+
+    # Custom row-level functions
+
+    def get_name(self):
+        investigation = Investigation.objects.filter(
+            sodar_uuid=self.investigation_uuid
+        ).first()
+
+        if investigation and investigation.title:
+            name = investigation.title
+
+        elif self.archive_name:
+            name = self.archive_name.split('.')[0]
+
+        else:
+            name = self.project.title
+
+        return name + ' ({})'.format(
+            localtime(self.date_created).strftime('%Y-%m-%d %H:%M:%S')
+        )

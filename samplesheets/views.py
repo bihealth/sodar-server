@@ -1353,6 +1353,77 @@ class SampleSheetEditPostAPIView(
         return Response({'message': 'ok'}, status=200)
 
 
+# TODO: Test
+class SampleSheetEditFinishAPIView(
+    LoginRequiredMixin, ProjectPermissionMixin, APIPermissionMixin, APIView
+):
+    """View for finishing editing and saving an ISAtab copy of the current
+    sample sheet"""
+
+    permission_required = 'samplesheets.edit_sheet'
+    renderer_classes = [JSONRenderer]
+
+    def post(self, request, *args, **kwargs):
+        updated = request.data.get('updated')
+        log_msg = 'Finish editing: '
+
+        if not updated:
+            logger.info(log_msg + 'nothing updated')
+            return Response({'message': 'ok'}, status=200)  # Nothing to do
+
+        timeline = get_backend_api('timeline_backend')
+        isa_copy = None
+        sheet_io = SampleSheetIO()
+        project = self.get_project()
+        investigation = Investigation.objects.filter(
+            project=project, active=True
+        ).first()
+        export_ex = None
+
+        try:
+            isa_data = sheet_io.export_isa(investigation)
+            isa_copy = sheet_io.save_isa(
+                investigation=investigation,
+                isa_data=isa_data,
+                tags=['EDIT'],
+                user=request.user,
+                archive_name=investigation.archive_name,
+            )
+
+        except Exception as ex:
+            logger.error(
+                log_msg + 'Unable to export sheet to ISAtab: {}'.format(ex)
+            )
+            export_ex = str(ex)
+
+        if timeline and updated:
+            tl_status = 'FAILED' if export_ex else 'OK'
+            tl_event = timeline.add_event(
+                project=project,
+                app_name=APP_NAME,
+                user=request.user,
+                event_name='sheet_edit',
+                description='edit sheet' + ', save version as {isatab}'
+                if tl_status == 'OK'
+                else 'edit sheet',
+                status_type=tl_status,
+                status_desc=export_ex if tl_status == 'FAILED' else None,
+            )
+
+            if not export_ex and isa_copy:
+                tl_event.add_object(
+                    obj=isa_copy, label='isatab', name=isa_copy.get_name()
+                )
+
+        if not export_ex:
+            logger.info(
+                log_msg + 'Saved ISATab "{}"'.format(isa_copy.get_name())
+            )
+            return Response({'message': 'ok'}, status=200)
+
+        return Response({'message': export_ex}, status=500)
+
+
 class SampleSheetManagePostAPIView(
     LoginRequiredMixin, ProjectPermissionMixin, APIPermissionMixin, APIView
 ):

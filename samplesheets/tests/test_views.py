@@ -878,6 +878,57 @@ class TestSampleSheetEditPostAPIView(TestViewsBase):
         )
 
 
+class TestSampleSheetEditFinishAPIView(TestViewsBase):
+    """Tests for SampleSheetEditFinishAPIView"""
+
+    def setUp(self):
+        super().setUp()
+
+        # Import investigation
+        self.investigation = self._import_isa_from_file(
+            SHEET_PATH, self.project
+        )
+        self.study = self.investigation.studies.first()
+
+    def test_post(self):
+        """Test POST with updates=True"""
+        # Assert preconditions
+        self.assertEqual(ISATab.objects.all().count(), 1)
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:api_edit_finish',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                json.dumps({'updated': True}),
+                content_type='application/json',
+            )
+
+        # Asert postconditions
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(ISATab.objects.all().count(), 2)
+
+    def test_post_no_updates(self):
+        """Test POST with updates=False"""
+        # Assert preconditions
+        self.assertEqual(ISATab.objects.all().count(), 1)
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:api_edit_finish',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                json.dumps({'updated': False}),
+                content_type='application/json',
+            )
+
+        # Asert postconditions
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(ISATab.objects.all().count(), 1)
+
+
 class TestSourceIDQueryAPIView(KnoxAuthMixin, TestViewsBase):
     """Tests for SourceIDQueryAPIView"""
 

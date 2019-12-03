@@ -361,6 +361,7 @@ export default {
       editMode: false,
       editStudyData: false,
       editStudyConfig: null,
+      editDataUpdated: false,
       /* NOTE: cell editor only works if provided through frameworkComponents? */
       frameworkComponents: {
         dataCellEditor: DataCellEditor
@@ -1027,6 +1028,7 @@ export default {
           this.handleStudyNavigation(this.currentStudyUuid, this.currentAssayUuid)
         }
       }
+      this.editDataUpdated = false
     },
 
     /* Display -------------------------------------------------------------- */
@@ -1061,6 +1063,7 @@ export default {
           data => {
             if (data['message'] === 'ok') {
               this.showNotification('Changes Saved', 'success', 1000)
+              this.editDataUpdated = true
 
               // Update other occurrences of cell in UI
               this.updateCellUIValues(
@@ -1099,9 +1102,31 @@ export default {
     },
 
     handleFinishEditing () {
-      // TODO: Save backup ISAtab, update timeline, etc
+      fetch('/samplesheets/api/edit/finish/' + this.projectUuid, {
+        method: 'POST',
+        body: JSON.stringify({'updated': this.editDataUpdated}),
+        credentials: 'same-origin',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'X-CSRFToken': this.sodarContext['csrf_token']
+        }
+      }).then(data => data.json())
+        .then(
+          data => {
+            if (data['message'] === 'ok') {
+              this.showNotification('Finished Editing', 'info', 1000)
+            } else {
+              console.log('Finish status: ' + data['message']) // DEBUG
+              this.showNotification('Saving Version Failed', 'danger', 1000)
+            }
+          }
+        ).catch(function (error) {
+          console.log('Error saving version: ' + error.message)
+          this.showNotification('Finishing Error', 'danger', 2000)
+        })
+
       this.editStudyConfig = null
-      this.showNotification('Finished Editing', 'info', 1000)
     },
 
     /* Data and App Access -------------------------------------------------- */
