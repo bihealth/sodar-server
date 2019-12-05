@@ -1,0 +1,52 @@
+{# Projectroles dependency #}
+{% extends 'projectroles/project_base.html' %}
+{% load rules %}
+{% load samplesheets_tags %}
+{% load projectroles_common_tags %}
+
+{% block title %}
+  Confirm Sample Sheet Version Restoring
+{% endblock title %}
+
+{% block projectroles_extend %}
+
+<div class="container-fluid sodar-subtitle-container">
+  <h3>Confirm Sample Sheet Version Restoring</h3>
+</div>
+
+<div class="container-fluid sodar-page-container">
+  <div class="alert alert-warning" role="alert">
+    <p class="pt-0">
+      <strong>Warning:</strong> Are you sure you want to
+      replace current sample sheet data with a previously saved version?
+      This will not delete subsequent versions.
+    </p>
+    <p>
+      The selected version was saved on
+      <strong>{{ sheet_version.date_created | date:'Y-m-d H:i:s' }}</strong>
+      {% if sheet_version.user %}
+        by user {% get_user_html sheet_version.user as user_html %}{{ user_html | safe }}
+      {% endif %}
+    </p>
+    <p class="mb-0">
+      <a href="{% url 'samplesheets:export_isa' isatab=sheet_version.sodar_uuid %}">You can export and review the version to be deleted here</a>.
+    </p>
+  </div>
+
+  <form method="post">
+    {% csrf_token %}
+    <div class="row">
+      <div class="btn-group ml-auto">
+        <a role="button" class="btn btn-secondary"
+            href="{{ request.session.real_referer }}">
+          <i class="fa fa-arrow-circle-left"></i> Cancel
+        </a>
+        <button type="submit" class="btn btn-primary">
+          <i class="fa fa-refresh"></i> Restore
+        </button>
+      </div>
+    </div>
+  </form>
+</div>
+
+{% endblock projectroles_extend %}

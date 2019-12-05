@@ -177,11 +177,11 @@ class TestProjectSheetsView(SampleSheetIOMixin, TestUIBase):
     def test_op_dropdown(self):
         """Test the operations dropdown"""
         users = [
-            (self.superuser, 6),
-            (self.as_owner.user, 6),
-            (self.as_delegate.user, 6),
-            (self.as_contributor.user, 6),
-            (self.as_guest.user, 5),  # Links available but disabled
+            (self.superuser, 7),
+            (self.as_owner.user, 7),
+            (self.as_delegate.user, 7),
+            (self.as_contributor.user, 7),
+            (self.as_guest.user, 6),  # Links available but disabled
         ]
 
         for user in users:
@@ -386,3 +386,54 @@ class TestProjectSheetsView(SampleSheetIOMixin, TestUIBase):
 
         for btn in assay_btns:
             self.assertEqual(self._get_enabled_state(btn), True)
+
+
+class TestSampleSheetVersionListView(SampleSheetIOMixin, TestUIBase):
+    """Tests for the sheet version list view UI"""
+
+    def setUp(self):
+        super().setUp()
+
+        self.default_user = self.as_contributor.user
+
+        # Import investigation
+        self.investigation = self._import_isa_from_file(
+            SHEET_PATH, self.project
+        )
+        self.study = self.investigation.studies.first()
+        self.assay = self.study.assays.first()
+        self.url = reverse(
+            'samplesheets:versions', kwargs={'project': self.project.sodar_uuid}
+        )
+
+    def test_list(self):
+        """Test UI rendering for list items"""
+        self.assert_element_exists(
+            [self.default_user], self.url, 'sodar-ss-version-list', True
+        )
+        self.assert_element_exists(
+            [self.default_user], self.url, 'sodar-ss-version-alert', False
+        )
+
+    def test_list_no_versions(self):
+        """Test UI rendering for list items with no versions"""
+        self.investigation.delete()
+        self.assert_element_exists(
+            [self.default_user], self.url, 'sodar-ss-version-list', False
+        )
+        self.assert_element_exists(
+            [self.default_user], self.url, 'sodar-ss-version-alert', True
+        )
+
+    def test_list_buttons(self):
+        """Test list button rendering"""
+        expected = [
+            (self.superuser, 1),
+            (self.as_owner.user, 1),
+            (self.as_delegate.user, 1),
+            (self.as_contributor.user, 0),
+            (self.as_guest.user, 0),
+        ]
+        self.assert_element_count(
+            expected, self.url, 'sodar-ss-version-btn-group', 'class'
+        )

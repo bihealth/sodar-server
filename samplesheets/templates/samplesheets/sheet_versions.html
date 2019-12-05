@@ -1,0 +1,132 @@
+{# Projectroles dependency #}
+{% extends 'projectroles/project_base.html' %}
+{% load projectroles_common_tags %}
+
+{% load static %}
+{% load rules %}
+{% load samplesheets_tags %}
+
+{% block title %}
+  Sample Sheet Versions for {{ project.title }}
+{% endblock title %}
+
+{% block css %}
+  {{ block.super }}
+  <style type="text/css">
+    table#sodar-ss-version-table thead tr th:nth-child(1),
+    table#sodar-ss-version-table tbody tr td:nth-child(1) {
+      white-space: nowrap;
+    }
+
+    table#sodar-ss-version-table thead tr th:nth-child(5),
+    table#sodar-ss-version-table tbody tr td:nth-child(5) {
+      width: 75px;
+    }
+  </style>
+{% endblock css %}
+
+{% block projectroles_extend %}
+{% has_perm 'samplesheets.manage_sheet' request.user project as can_manage_sheet %}
+
+<div class="row sodar-subtitle-container">
+  <h3>
+    Sample Sheet Versions
+  </h3>
+  <div class="input-group sodar-header-input-group ml-auto mt-1">
+    <a href="{% url 'samplesheets:project_sheets' project=project.sodar_uuid %}"
+       class="btn btn-secondary ml-auto" role="button">
+     <i class="fa fa-arrow-circle-left"></i> Project Sheets
+    </a>
+  </div>
+</div>
+
+<div class="container-fluid sodar-page-container">
+
+{% if sheet_versions %}
+  <div class="card" id="sodar-ss-version-list">
+    <div class="card-body p-0">
+      <table class="table table-striped sodar-card-table" id="sodar-ss-version-table">
+        <thead>
+          <tr>
+            <th>Version</th>
+            <th>User</th>
+            <th>Tags</th>
+            <th>Parser</th>
+            {% if can_manage_sheet %}
+              <th></th>
+            {% endif %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for sv in sheet_versions %}
+            <tr>
+              <td>
+                {% if sv == current_version %}
+                  <strong>
+                {% endif %}
+                <a href="{% url 'samplesheets:export_isa' isatab=sv.sodar_uuid %}">{{ sv.date_created | date:'Y-m-d H:i:s' }}</a>
+                {% if sv == current_version %}
+                  </strong>
+                  <span class="badge badge-pill badge-success ml-1">Most Recent</span>
+                {% endif %}
+              </td>
+              {% if sv.user %}
+                <td>
+                  {% get_user_html sv.user as user_html %}{{ user_html | safe }}
+                </td>
+              {% else %}
+                <td class="text-muted">N/A</td>
+              {% endif %}
+              <td>
+                {% get_isatab_tag_html sv as tag_html %}{{ tag_html | safe }}
+              </td>
+              <td>{{ sv.parser_version }}</td>
+              {% if can_manage_sheet %}
+                <td>
+                  <div class="btn-group sodar-list-btn-group sodar-ss-version-btn-group"
+                       id="sodar-ss-version-btn-group-{{ sv.sodar_uuid }}">
+                    <button class="btn btn-secondary dropdown-toggle sodar-list-dropdown"
+                            type="button" data-toggle="dropdown" aria-expanded="false">
+                      <i class="fa fa-cog"></i>
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-right">
+                      <a class="dropdown-item"
+                         href="{% url 'samplesheets:export_isa' isatab=sv.sodar_uuid %}">
+                        <i class="fa fa-fw fa-download"></i> Export Version
+                      </a>
+                      <a class="dropdown-item" href="{% url 'samplesheets:version_restore' isatab=sv.sodar_uuid %}">
+                        <i class="fa fa-fw fa-refresh"></i> Restore Version
+                      </a>
+                      <a class="dropdown-item text-danger" href="{% url 'samplesheets:version_delete' isatab=sv.sodar_uuid %}">
+                        <i class="fa fa-fw fa-close"></i> Delete Version
+                      </a>
+                    </div>
+                  </div>
+                </td>
+              {% endif %}
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% else %}
+  <div class="alert alert-info" id="sodar-ss-version-alert">
+    No saved versions have been found for the sample sheets in this project.
+  </div>
+{% endif %}
+
+</div>
+
+{% endblock projectroles_extend %}
+
+{% block javascript %}
+  {{ block.super }}
+
+  {# Tour content #}
+  <script type="text/javascript">
+    tourEnabled = false;
+    // TODO: Tour
+  </script>
+
+{% endblock javascript %}

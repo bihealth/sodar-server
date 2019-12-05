@@ -12,7 +12,8 @@ from projectroles.tests.test_models import (
 from projectroles.tests.test_permissions import TestProjectPermissionBase
 from projectroles.utils import build_secret
 
-from .test_io import SampleSheetIOMixin, SHEET_DIR
+from samplesheets.models import ISATab
+from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 
 
 # App settings API
@@ -130,6 +131,59 @@ class TestSampleSheetsPermissions(
             self.as_contributor.user,
         ]
         bad_users = [self.as_guest.user, self.anonymous, self.user_no_roles]
+        self.assert_render200_ok(url, good_users)
+        self.assert_redirect(url, bad_users)
+
+    def test_version_list(self):
+        """Test the sheet version list view"""
+        url = reverse(
+            'samplesheets:versions', kwargs={'project': self.project.sodar_uuid}
+        )
+        good_users = [
+            self.superuser,
+            self.as_owner.user,
+            self.as_delegate.user,
+            self.as_contributor.user,
+        ]
+        bad_users = [self.as_guest.user, self.anonymous, self.user_no_roles]
+        self.assert_render200_ok(url, good_users)
+        self.assert_redirect(url, bad_users)
+
+    def test_version_restore(self):
+        """Test the sheet restoring view"""
+        isa_version = ISATab.objects.get(
+            investigation_uuid=self.investigation.sodar_uuid
+        )
+        url = reverse(
+            'samplesheets:version_restore',
+            kwargs={'isatab': isa_version.sodar_uuid},
+        )
+        good_users = [self.superuser, self.as_owner.user, self.as_delegate.user]
+        bad_users = [
+            self.as_contributor.user,
+            self.as_guest.user,
+            self.anonymous,
+            self.user_no_roles,
+        ]
+        self.assert_render200_ok(url, good_users)
+        self.assert_redirect(url, bad_users)
+
+    def test_version_delete(self):
+        """Test the sheet delete view"""
+        isa_version = ISATab.objects.get(
+            investigation_uuid=self.investigation.sodar_uuid
+        )
+        url = reverse(
+            'samplesheets:version_delete',
+            kwargs={'isatab': isa_version.sodar_uuid},
+        )
+        good_users = [self.superuser, self.as_owner.user, self.as_delegate.user]
+        bad_users = [
+            self.as_contributor.user,
+            self.as_guest.user,
+            self.anonymous,
+            self.user_no_roles,
+        ]
         self.assert_render200_ok(url, good_users)
         self.assert_redirect(url, bad_users)
 

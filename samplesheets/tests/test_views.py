@@ -449,16 +449,17 @@ class TestSampleSheetExcelExportView(TestViewsBase):
 class TestSampleSheetISAExportView(TestViewsBase):
     """Tests for the investigation ISAtab export view"""
 
-    def test_get(self):
-        """Test requesting a file from the ISAtab export view"""
-        timeline = get_backend_api('timeline_backend')
+    def setUp(self):
+        super().setUp()
 
         # Import investigation
         self.investigation = self._import_isa_from_file(
             SHEET_PATH, self.project
         )
-        self.study = self.investigation.studies.first()
-        self.assay = self.study.assays.first()
+
+    def test_get(self):
+        """Test requesting a file from the ISAtab export view"""
+        timeline = get_backend_api('timeline_backend')
 
         with self.login(self.user):
             response = self.client.get(
@@ -467,13 +468,12 @@ class TestSampleSheetISAExportView(TestViewsBase):
                     kwargs={'project': self.project.sodar_uuid},
                 )
             )
-            self.assertEqual(response.status_code, 200)
-            self.assertEqual(
-                response.get('Content-Disposition'),
-                'attachment; filename="{}"'.format(
-                    self.investigation.archive_name
-                ),
-            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.get('Content-Disposition'),
+            'attachment; filename="{}"'.format(self.investigation.archive_name),
+        )
 
         # Assert data in timeline event
         tl_event = timeline.get_project_events(
@@ -484,6 +484,7 @@ class TestSampleSheetISAExportView(TestViewsBase):
 
     def test_get_no_investigation(self):
         """Test requesting an ISAtab export with no investigation provided"""
+        self.investigation.delete()
 
         with self.login(self.user):
             response = self.client.get(
@@ -492,7 +493,34 @@ class TestSampleSheetISAExportView(TestViewsBase):
                     kwargs={'project': self.project.sodar_uuid},
                 )
             )
-            self.assertEqual(response.status_code, 302)
+
+        self.assertEqual(response.status_code, 302)
+
+    def test_get_version(self):
+        """Test requesting export of an ISATab version"""
+        isa_version = ISATab.objects.get(
+            investigation_uuid=self.investigation.sodar_uuid
+        )
+        filename = (
+            self.investigation.archive_name.split('.zip')[0]
+            + '_'
+            + isa_version.date_created.strftime('%Y-%m-%d_%H%M%S')
+            + '.zip'
+        )
+
+        with self.login(self.user):
+            response = self.client.get(
+                reverse(
+                    'samplesheets:export_isa',
+                    kwargs={'isatab': isa_version.sodar_uuid},
+                )
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.get('Content-Disposition'),
+            'attachment; filename="{}"'.format(filename),
+        )
 
 
 class TestSampleSheetDeleteView(TestViewsBase):
@@ -541,6 +569,161 @@ class TestSampleSheetDeleteView(TestViewsBase):
             )
 
         self.assertEqual(Investigation.objects.all().count(), 0)
+
+
+class TestSampleSheetVersionListView(TestViewsBase):
+    """Tests for the sample sheet version list view"""
+
+    def test_render(self):
+        """Test rendering the sheet version list view"""
+        self.investigation = self._import_isa_from_file(
+            SHEET_PATH, self.project
+        )
+        self.study = self.investigation.studies.first()
+
+        with self.login(self.user):
+            response = self.client.get(
+                reverse(
+                    'samplesheets:versions',
+                    kwargs={'project': self.project.sodar_uuid},
+                )
+            )
+
+        self.assertEqual(response.status_code, 200)
+
+        # Assert context data
+        self.assertEqual(response.context['sheet_versions'].count(), 1)
+        self.assertEqual(
+            response.context['current_version'],
+            response.context['sheet_versions'][0],
+        )
+
+    def test_render_no_sheets(self):
+        """Test rendering the sheet version list view with no versions available"""
+        with self.login(self.user):
+            response = self.client.get(
+                reverse(
+                    'samplesheets:versions',
+                    kwargs={'project': self.project.sodar_uuid},
+                )
+            )
+
+        self.assertEqual(response.status_code, 200)
+
+        # Assert context data
+        self.assertIsNone(response.context['sheet_versions'])
+        self.assertIsNone(response.context['current_version'])
+
+
+class TestSampleSheetVersionRestoreView(TestViewsBase):
+    """Tests for the sample sheet version restore view"""
+
+    def setUp(self):
+        super().setUp()
+
+        # Import investigation
+        self.investigation = self._import_isa_from_file(
+            SHEET_PATH, self.project
+        )
+        self.study = self.investigation.studies.first()
+        self.isatab = ISATab.objects.get(
+            investigation_uuid=self.investigation.sodar_uuid
+        )
+
+    def test_render(self):
+        """Test rendering the sheet version restore view"""
+
+        with self.login(self.user):
+            response = self.client.get(
+                reverse(
+                    'samplesheets:version_restore',
+                    kwargs={'isatab': self.isatab.sodar_uuid},
+                )
+            )
+
+        self.assertEqual(response.status_code, 200)
+
+        # Assert context data
+        self.assertIsNotNone(response.context['sheet_version'])
+
+    def test_post(self):
+        """Test issuing a POST request for the sheet version restore view"""
+        sheet_io = SampleSheetIO()
+        isatab_new = sheet_io.save_isa(
+            project=self.project,
+            inv_uuid=self.investigation.sodar_uuid,
+            isa_data=sheet_io.export_isa(self.investigation),
+        )
+
+        # Assert preconditions
+        self.assertEqual(Investigation.objects.all().count(), 1)
+        self.assertEqual(ISATab.objects.all().count(), 2)
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:version_restore',
+                    kwargs={'isatab': isatab_new.sodar_uuid},
+                )
+            )
+
+        # Assert postconditions
+        self.assertEqual(response.status_code, 302)
+
+        isatab_latest = ISATab.objects.all().order_by('-date_created').first()
+        self.assertNotEqual(
+            isatab_latest.date_created, self.isatab.date_created
+        )
+        self.assertEqual(Investigation.objects.all().count(), 1)
+        self.assertEqual(ISATab.objects.all().count(), 2)
+
+
+class TestSampleSheetVersionDeleteView(TestViewsBase):
+    """Tests for the sample sheet version delete view"""
+
+    def setUp(self):
+        super().setUp()
+
+        # Import investigation
+        self.investigation = self._import_isa_from_file(
+            SHEET_PATH, self.project
+        )
+        self.study = self.investigation.studies.first()
+        self.isatab = ISATab.objects.get(
+            investigation_uuid=self.investigation.sodar_uuid
+        )
+
+    def test_render(self):
+        """Test rendering the sheet version delete view"""
+
+        with self.login(self.user):
+            response = self.client.get(
+                reverse(
+                    'samplesheets:version_delete',
+                    kwargs={'isatab': self.isatab.sodar_uuid},
+                )
+            )
+
+        self.assertEqual(response.status_code, 200)
+
+        # Assert context data
+        self.assertIsNotNone(response.context['sheet_version'])
+
+    def test_post(self):
+        """Test issuing a POST request for the sheet version delete view"""
+        self.assertEqual(ISATab.objects.all().count(), 1)
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:version_delete',
+                    kwargs={'isatab': self.isatab.sodar_uuid},
+                )
+            )
+
+        # Assert postconditions
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(ISATab.objects.all().count(), 0)
 
 
 # TODO: Test with realistic ISAtab examples using BIH configs (see #434)

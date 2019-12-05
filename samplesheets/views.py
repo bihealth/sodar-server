@@ -15,7 +15,8 @@ from django.middleware.csrf import get_token
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils.safestring import mark_safe
-from django.views.generic import TemplateView, FormView, View
+from django.utils.text import slugify
+from django.views.generic import TemplateView, FormView, DeleteView, View
 
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.renderers import JSONRenderer
@@ -45,6 +46,7 @@ from samplesheets.models import (
     Protocol,
     Process,
     GenericMaterial,
+    ISATab,
 )
 from samplesheets.rendering import SampleSheetTableBuilder, EMPTY_VALUE
 from samplesheets.tasks import update_project_cache_task
@@ -86,6 +88,9 @@ EDIT_FIELD_MAP = {
 }
 
 
+# Mixins -----------------------------------------------------------------------
+
+
 class InvestigationContextMixin(ProjectContextMixin):
     """Mixin for providing investigation for context if available"""
 
@@ -104,6 +109,172 @@ class InvestigationContextMixin(ProjectContextMixin):
         return context
 
 
+class SampleSheetImportMixin:
+    """Mixin for sample sheet importing/replacing helpers"""
+
+    def handle_replace(self, investigation, old_inv, tl_event=None):
+        project = investigation.project
+        old_study_uuids = {}
+        old_assay_uuids = {}
+
+        try:
+            # Ensure existing studies and assays are found in new inv
+            if old_inv.irods_status:
+                compare_inv_replace(old_inv, investigation)
+
+            # Save UUIDs
+            old_inv_uuid = old_inv.sodar_uuid
+
+            for study in old_inv.studies.all():
+                old_study_uuids[study.identifier] = study.sodar_uuid
+
+                for assay in study.assays.all():
+                    old_assay_uuids[assay.get_name()] = assay.sodar_uuid
+
+            # Set irods_status to our previous sheet's state
+            investigation.irods_status = old_inv.irods_status
+            investigation.save()
+
+            # Delete old investigation
+            old_inv.delete()
+
+        except Exception as ex:
+            # Get existing investigations under project
+            invs = Investigation.objects.filter(project=project).order_by('-pk')
+            old_inv = None
+
+            if invs:
+                # Activate previous investigation
+                if invs.count() > 1:
+                    invs[1].active = True
+                    invs[1].save()
+                    old_inv = invs[1]
+
+                    # Delete failed import
+                    invs[0].delete()
+
+            # Just in case, delete remaining ones from the db
+            if old_inv:
+                Investigation.objects.filter(project=project).exclude(
+                    pk=old_inv.pk
+                ).delete()
+
+            self.handle_import_exception(ex, tl_event)
+            return None
+
+        # If all went well..
+
+        # Update UUIDs
+        if old_inv:
+            investigation.sodar_uuid = old_inv_uuid
+            investigation.save()
+
+            for study in investigation.studies.all():
+                if study.identifier in old_study_uuids:
+                    study.sodar_uuid = old_study_uuids[study.identifier]
+                    study.save()
+
+                for assay in study.assays.all():
+                    if assay.get_name() in old_assay_uuids:
+                        assay.sodar_uuid = old_assay_uuids[assay.get_name()]
+                        assay.save()
+
+        return investigation
+
+    def handle_import_exception(self, ex, tl_event=None):
+        if isinstance(ex, SampleSheetImportException):
+            ex_msg = str(ex.args[0])
+            extra_data = {'warnings': ex.args[1]} if len(ex.args) > 1 else None
+
+            if len(ex.args) > 1:
+                # HACK: Report critical warnings here
+                # TODO: Provide these to a proper view from Timeline
+                ex_msg += '<ul>'
+
+                def _add_crits(legend, warnings, eh):
+                    for w in warnings:
+                        if w['category'] == 'CriticalIsaValidationWarning':
+                            eh += '<li>{}: {}</li>'.format(legend, w['message'])
+                    return eh
+
+                ex_msg = _add_crits(
+                    'Investigation', ex.args[1]['investigation'], ex_msg
+                )
+
+                for k, v in ex.args[1]['studies'].items():
+                    ex_msg = _add_crits(k, v, ex_msg)
+
+                for k, v in ex.args[1]['assays'].items():
+                    ex_msg = _add_crits(k, v, ex_msg)
+
+                ex_msg += '</ul>'
+
+            messages.error(self.request, mark_safe(ex_msg))
+
+        else:
+            ex_msg = 'ISAtab import failed: {}'.format(ex)
+            extra_data = None
+            messages.error(self.request, ex_msg)
+
+        if tl_event:
+            tl_event.set_status(
+                'FAILED', status_desc=ex_msg, extra_data=extra_data
+            )
+
+    def finalize_import(
+        self, investigation, action, tl_event=None, isa_version=None
+    ):
+        project = investigation.project
+
+        # Set current import active status to True
+        investigation.active = True
+        investigation.save()
+
+        # Add investigation data in Timeline
+        if tl_event:
+            extra_data = (
+                {'warnings': investigation.parser_warnings}
+                if investigation.parser_warnings
+                and not investigation.parser_warnings['all_ok']
+                else None
+            )
+            status_desc = WARNING_STATUS_MSG if extra_data else None
+            tl_event.set_status(
+                'OK', status_desc=status_desc, extra_data=extra_data
+            )
+
+        success_msg = '{}d sample sheets from {}'.format(
+            action.capitalize(),
+            'version {}'.format(isa_version.get_name())
+            if action == 'restore'
+            else 'ISAtab import',
+        )
+
+        if investigation.parser_warnings:
+            success_msg += (
+                ' (<strong>Note:</strong> '
+                '<a href="#/warnings">parser warnings raised</a>)'
+            )
+
+        # Update project cache if replacing sheets and iRODS collections exists
+        if (
+            action in ['replace', 'restore']
+            and investigation.irods_status
+            and settings.SHEETS_ENABLE_CACHE
+        ):
+            update_project_cache_task.delay(
+                project_uuid=str(project.sodar_uuid),
+                user_uuid=str(self.request.user.sodar_uuid),
+            )
+            success_msg += ', initiated iRODS cache update'
+
+        messages.success(self.request, mark_safe(success_msg))
+        return investigation
+
+
+# Regular Views ----------------------------------------------------------------
+
+
 class ProjectSheetsView(
     LoginRequiredMixin,
     LoggedInPermissionMixin,
@@ -113,7 +284,6 @@ class ProjectSheetsView(
 ):
     """Main view for displaying sample sheets in a project"""
 
-    # Projectroles dependency
     permission_required = 'samplesheets.view_sheet'
     template_name = 'samplesheets/project_sheets.html'
 
@@ -155,9 +325,10 @@ class SampleSheetImportView(
     LoggedInPermissionMixin,
     ProjectPermissionMixin,
     ProjectContextMixin,
+    SampleSheetImportMixin,
     FormView,
 ):
-    """Sample sheet JSON import view"""
+    """Sample sheet ISATab import view"""
 
     permission_required = 'samplesheets.edit_sheet'
     model = Investigation
@@ -209,191 +380,57 @@ class SampleSheetImportView(
 
     def form_valid(self, form):
         timeline = get_backend_api('timeline_backend')
-        tl_event = None
         project = self.get_project()
         form_kwargs = self.get_form_kwargs()
         form_action = 'replace' if form_kwargs['replace'] else 'create'
-
-        old_inv_uuid = None
-        old_study_uuids = {}
-        old_assay_uuids = {}
         redirect_url = get_sheets_url(project)
+        tl_event = None
 
-        # Add event in Timeline
         if timeline:
             if form_action == 'replace':
-                desc = 'replace previous investigation with '
+                tl_desc = 'replace previous investigation with {investigation}'
 
             else:
-                desc = 'create investigation '
+                tl_desc = 'create investigation {investigation}'
 
             tl_event = timeline.add_event(
                 project=project,
                 app_name=APP_NAME,
                 user=self.request.user,
                 event_name='sheet_' + form_action,
-                description=desc + ' {investigation}',
+                description=tl_desc,
             )
 
-        # Get existing investigation
-        old_inv = Investigation.objects.filter(
-            project=project, active=True
-        ).first()
-
+        # Try actual import
         try:
             self.object = form.save()
 
-            if old_inv:
-                # Ensure existing studies and assays are found in new inv
-                if old_inv.irods_status:
-                    compare_inv_replace(old_inv, self.object)
-
-                # Save UUIDs
-                old_inv_uuid = old_inv.sodar_uuid
-
-                for study in old_inv.studies.all():
-                    old_study_uuids[study.identifier] = study.sodar_uuid
-
-                    for assay in study.assays.all():
-                        old_assay_uuids[assay.get_name()] = assay.sodar_uuid
-
-                # Set irods_status to our previous sheet's state
-                self.object.irods_status = old_inv.irods_status
-                self.object.save()
-
-                # Delete old investigation
-                old_inv.delete()
-
         except Exception as ex:
-            # Get existing investigations under project
-            invs = Investigation.objects.filter(project=project).order_by('-pk')
-            old_inv = None
+            self.handle_import_exception(ex, tl_event)
+            return redirect(redirect_url)  # Return with error here
 
-            if invs:
-                # Activate previous investigation
-                if invs.count() > 1:
-                    invs[1].active = True
-                    invs[1].save()
-                    old_inv = invs[1]
-
-                    # Delete failed import
-                    invs[0].delete()
-
-            # Just in case, delete remaining ones from the db
-            if old_inv:
-                Investigation.objects.filter(project=project).exclude(
-                    pk=old_inv.pk
-                ).delete()
-
-            if isinstance(ex, SampleSheetImportException):
-                ex_msg = str(ex.args[0])
-                extra_data = (
-                    {'warnings': ex.args[1]} if len(ex.args) > 1 else None
-                )
-
-                if len(ex.args) > 1:
-                    # HACK: Report critical warnings here
-                    # TODO: Provide these to a proper view from Timeline instead
-                    ex_msg += '<ul>'
-
-                    def _add_crits(legend, warnings, eh):
-                        for w in warnings:
-                            if w['category'] == 'CriticalIsaValidationWarning':
-                                eh += '<li>{}: {}</li>'.format(
-                                    legend, w['message']
-                                )
-                        return eh
-
-                    ex_msg = _add_crits(
-                        'Investigation', ex.args[1]['investigation'], ex_msg
-                    )
-
-                    for k, v in ex.args[1]['studies'].items():
-                        ex_msg = _add_crits(k, v, ex_msg)
-
-                    for k, v in ex.args[1]['assays'].items():
-                        ex_msg = _add_crits(k, v, ex_msg)
-
-                    ex_msg += '</ul>'
-
-                messages.error(self.request, mark_safe(ex_msg))
-
-            else:
-                ex_msg = 'ISAtab import failed: {}'.format(ex)
-                extra_data = None
-                messages.error(self.request, ex_msg)
-
-            if tl_event:
-                tl_event.set_status(
-                    'FAILED', status_desc=ex_msg, extra_data=extra_data
-                )
-
-            if settings.DEBUG:
-                raise ex
-
-            return redirect(redirect_url)  # NOTE: Return here with failure
-
-        # If all went well..
-
-        # Update UUIDs
-        if old_inv:
-            self.object.sodar_uuid = old_inv_uuid
-            self.object.save()
-
-            for study in self.object.studies.all():
-                if study.identifier in old_study_uuids:
-                    study.sodar_uuid = old_study_uuids[study.identifier]
-                    study.save()
-
-                for assay in study.assays.all():
-                    if assay.get_name() in old_assay_uuids:
-                        assay.sodar_uuid = old_assay_uuids[assay.get_name()]
-                        assay.save()
-
-        # Set current import active status to True
-        self.object.active = True
-        self.object.save()
-
-        # Add investigation data in Timeline
         if tl_event:
             tl_event.add_object(
                 obj=self.object, label='investigation', name=self.object.title
             )
 
-            extra_data = (
-                {'warnings': self.object.parser_warnings}
-                if self.object.parser_warnings
-                and not self.object.parser_warnings['all_ok']
-                else None
-            )
-            status_desc = WARNING_STATUS_MSG if extra_data else None
-            tl_event.set_status(
-                'OK', status_desc=status_desc, extra_data=extra_data
-            )
+        # Handle replace
+        old_inv = Investigation.objects.filter(
+            project=project, active=True
+        ).first()
 
-        success_msg = '{}d sample sheets from ISAtab import'.format(
-            form_action.capitalize()
-        )
-
-        if self.object.parser_warnings:
-            success_msg += (
-                ' (<strong>Note:</strong> '
-                '<a href="#/warnings">parser warnings raised</a>)'
+        if form_action == 'replace' and old_inv:
+            # NOTE: This function handles error/timeline reporting internally
+            self.object = self.handle_replace(
+                investigation=self.object, old_inv=old_inv, tl_event=tl_event
             )
 
-        # Update project cache if replacing sheets and iRODS collections exists
-        if (
-            form_action == 'replace'
-            and self.object.irods_status
-            and settings.SHEETS_ENABLE_CACHE
-        ):
-            update_project_cache_task.delay(
-                project_uuid=str(project.sodar_uuid),
-                user_uuid=str(self.request.user.sodar_uuid),
+        # If all went well, finalize import
+        if self.object:
+            self.object = self.finalize_import(
+                investigation=self.object, action=form_action, tl_event=tl_event
             )
-            success_msg += ', initiated iRODS cache update'
 
-        messages.success(self.request, mark_safe(success_msg))
         return redirect(redirect_url)
 
 
@@ -508,17 +545,47 @@ class SampleSheetISAExportView(
         timeline = get_backend_api('timeline_backend')
         tl_event = None
         project = self.get_project()
-        redirect_url = get_sheets_url(project)
         sheet_io = SampleSheetIO()
-        investigation = Investigation.objects.filter(project=project).first()
 
-        if not investigation:
-            messages.error(request, 'No sample sheets available for project')
-            return redirect(redirect_url)
+        isa_version = None
+        version_uuid = kwargs.get('isatab')
 
-        if not investigation.parser_version or version.parse(
-            investigation.parser_version
-        ) < version.parse(TARGET_ALTAMISA_VERSION):
+        if version_uuid:
+            redirect_url = reverse(
+                'samplesheets:versions', kwargs={'project': project.sodar_uuid}
+            )
+
+            try:
+                isa_version = ISATab.objects.get(
+                    project=project, sodar_uuid=version_uuid
+                )
+                investigation = Investigation.objects.get(
+                    sodar_uuid=isa_version.investigation_uuid
+                )
+
+            except (ISATab.DoesNotExist, Investigation.DoesNotExist):
+                messages.error(
+                    request, 'Unable to retrieve sample sheet version'
+                )
+                return redirect(redirect_url)
+
+        else:
+            redirect_url = get_sheets_url(project)
+
+            try:
+                investigation = Investigation.objects.get(project=project)
+
+            except Investigation.DoesNotExist:
+                messages.error(
+                    request, 'No sample sheets available for project'
+                )
+                return redirect(redirect_url)
+
+        if not isa_version and (
+            not investigation.parser_version
+            or version.parse(investigation.parser_version)
+            < version.parse(TARGET_ALTAMISA_VERSION)
+        ):
             messages.error(
                 request,
                 'Exporting ISAtabs imported using altamISA < {} is not '
@@ -529,25 +596,43 @@ class SampleSheetISAExportView(
             return redirect(redirect_url)
 
         # Set up archive file name
-        if investigation.archive_name:
-            file_name = investigation.archive_name
+        archive_name = (
+            isa_version.archive_name
+            if isa_version
+            else investigation.archive_name
+        )
+
+        if archive_name:
+            file_name = archive_name.split('.zip')[0]
 
         else:
-            file_name = '{}.zip'.format(
-                re.sub(
-                    r'[\s]+',
-                    '_',
-                    re.sub(r'[^\w\s-]', '', project.title).strip(),
-                )
+            file_name = re.sub(
+                r'[\s]+', '_', re.sub(r'[^\w\s-]', '', project.title).strip()
             )
 
+        if isa_version:
+            file_name += '_' + isa_version.date_created.strftime(
+                '%Y-%m-%d_%H%M%S'
+            )
+
+            if isa_version.user:
+                file_name += '_' + slugify(isa_version.user.username)
+
+        file_name += '.zip'
+
         if timeline:
+            if isa_version:
+                tl_desc = 'export {investigation} version {isatab}'
+
+            else:
+                tl_desc = 'export {investigation} as ISAtab'
+
             tl_event = timeline.add_event(
                 project=project,
                 app_name=APP_NAME,
                 user=self.request.user,
-                event_name='sheet_export_isa',
-                description='export {investigation} as ISAtab',
+                event_name='sheet_export',
+                description=tl_desc,
                 classified=True,
             )
 
@@ -557,9 +642,18 @@ class SampleSheetISAExportView(
                 name=investigation.title,
             )
 
+            if isa_version:
+                tl_event.add_object(
+                    obj=isa_version, label='isatab', name=isa_version.get_name()
+                )
+
         # Initiate export
         try:
-            export_data = sheet_io.export_isa(investigation)
+            if isa_version:
+                export_data = isa_version.data
+
+            else:
+                export_data = sheet_io.export_isa(investigation)
 
             # Build Zip archive
             zip_io = io.BytesIO()
@@ -720,6 +814,8 @@ class SampleSheetDeleteView(
             investigation.delete()
 
         if delete_success:
+            # TODO: Delete related ISATab versions
+
             # Delete sheet configuration
             app_settings.set_app_setting(
                 APP_NAME, 'sheet_config', {}, project=project
@@ -863,6 +959,198 @@ class IrodsDirsView(
     def get(self, request, *args, **kwargs):
         super().get(request, *args, **kwargs)
         return super().render_to_response(self.get_context_data())
+
+
+class SampleSheetVersionListView(
+    LoginRequiredMixin,
+    LoggedInPermissionMixin,
+    ProjectPermissionMixin,
+    InvestigationContextMixin,
+    TemplateView,
+):
+    """Sample Sheet version list view"""
+
+    permission_required = 'samplesheets.edit_sheet'
+    template_name = 'samplesheets/sheet_versions.html'
+
+    def get_context_data(self, *args, **kwargs):
+        context = super().get_context_data(*args, **kwargs)
+        context['sheet_versions'] = None
+        context['current_version'] = None
+
+        if context['investigation']:
+            context['sheet_versions'] = ISATab.objects.filter(
+                project=self.get_project(),
+                investigation_uuid=context['investigation'].sodar_uuid,
+            ).order_by('-date_created')
+
+        if context['sheet_versions']:
+            context['current_version'] = context['sheet_versions'][0]
+
+        return context
+
+
+class SampleSheetVersionRestoreView(
+    LoginRequiredMixin,
+    LoggedInPermissionMixin,
+    InvestigationContextMixin,
+    ProjectPermissionMixin,
+    SampleSheetImportMixin,
+    TemplateView,
+):
+    """Sample Sheet version restoring view"""
+
+    template_name = 'samplesheets/version_confirm_restore.html'
+    permission_required = 'samplesheets.manage_sheet'
+
+    def get_context_data(self, *args, **kwargs):
+        context = super().get_context_data(*args, **kwargs)
+        investigation = context['investigation']
+
+        if not investigation:
+            return context
+
+        context['sheet_version'] = ISATab.objects.filter(
+            sodar_uuid=self.kwargs['isatab']
+        ).first()
+        return context
+
+    def post(self, request, **kwargs):
+        timeline = get_backend_api('timeline_backend')
+        tl_event = None
+        project = self.get_project()
+        sheet_io = SampleSheetIO(allow_critical=settings.SHEETS_ALLOW_CRITICAL)
+        new_inv = None
+        redirect_url = reverse(
+            'samplesheets:versions', kwargs={'project': project.sodar_uuid}
+        )
+
+        old_inv = Investigation.objects.filter(
+            project=project, active=True
+        ).first()
+
+        if not old_inv:
+            # This shouldn't happen, but just in case
+            messages.error(
+                request, 'Existing sheet not found, unable to restore'
+            )
+            return redirect(redirect_url)
+
+        isa_version = ISATab.objects.filter(
+            sodar_uuid=self.kwargs.get('isatab')
+        ).first()
+
+        if not isa_version:
+            messages.error(
+                request, 'ISATab version not found, unable to restore'
+            )
+            return redirect(redirect_url)
+
+        if timeline:
+            tl_event = timeline.add_event(
+                project=project,
+                app_name=APP_NAME,
+                user=self.request.user,
+                event_name='sheet_restore',
+                description='restore investigation from version {isatab}',
+            )
+            tl_event.add_object(
+                obj=isa_version, label='isatab', name=isa_version.get_name()
+            )
+
+        try:
+            new_inv = sheet_io.import_isa(
+                isa_data=isa_version.data,
+                project=project,
+                archive_name=isa_version.archive_name,
+                user=request.user,
+                replace=True if old_inv else False,
+                replace_uuid=old_inv.sodar_uuid if old_inv else None,
+                save_isa=False,  # Already exists as isa_version
+            )
+
+        except Exception as ex:
+            self.handle_import_exception(ex, tl_event)
+
+        if new_inv:
+            new_inv = self.handle_replace(
+                investigation=new_inv, old_inv=old_inv, tl_event=tl_event
+            )
+
+        if new_inv:
+            new_inv = self.finalize_import(
+                investigation=new_inv,
+                action='restore',
+                tl_event=tl_event,
+                isa_version=isa_version,
+            )
+
+        # If successful, edit isa_version to bump it in the list
+        if new_inv:
+            if 'RESTORE' not in isa_version.tags:
+                isa_version.tags.append('RESTORE')
+
+            isa_version.save()
+
+        return redirect(
+            reverse(
+                'samplesheets:project_sheets',
+                kwargs={'project': project.sodar_uuid},
+            )
+        )
+
+
+class SampleSheetVersionDeleteView(
+    LoginRequiredMixin,
+    LoggedInPermissionMixin,
+    ProjectPermissionMixin,
+    InvestigationContextMixin,
+    DeleteView,
+):
+    """Sample sheet version deletion view"""
+
+    permission_required = 'samplesheets.manage_sheet'
+    template_name = 'samplesheets/version_confirm_delete.html'
+    model = ISATab
+    slug_url_kwarg = 'isatab'
+    slug_field = 'sodar_uuid'
+
+    def get_context_data(self, *args, **kwargs):
+        context = super().get_context_data(*args, **kwargs)
+        investigation = context['investigation']
+
+        if not investigation:
+            return context
+
+        context['sheet_version'] = ISATab.objects.filter(
+            sodar_uuid=self.kwargs['isatab']
+        ).first()
+        return context
+
+    def get_success_url(self):
+        timeline = get_backend_api('timeline_backend')
+        project = self.get_project()
+
+        if timeline:
+            tl_event = timeline.add_event(
+                project=project,
+                app_name=APP_NAME,
+                user=self.request.user,
+                event_name='version_delete',
+                description='delete sample sheet version {isatab}',
+                status_type='OK',
+            )
+            tl_event.add_object(
+                obj=self.object, label='isatab', name=self.object.get_name()
+            )
+
+        messages.success(
+            self.request,
+            'Deleted sample sheet version: {}'.format(self.object.get_name()),
+        )
+        return reverse(
+            'samplesheets:versions', kwargs={'project': project.sodar_uuid}
+        )
 
 
 # Ajax API Views ---------------------------------------------------------------
@@ -1353,7 +1641,6 @@ class SampleSheetEditPostAPIView(
         return Response({'message': 'ok'}, status=200)
 
 
-# TODO: Test
 class SampleSheetEditFinishAPIView(
     LoginRequiredMixin, ProjectPermissionMixin, APIPermissionMixin, APIView
 ):
@@ -1383,7 +1670,8 @@ class SampleSheetEditFinishAPIView(
         try:
             isa_data = sheet_io.export_isa(investigation)
             isa_copy = sheet_io.save_isa(
-                investigation=investigation,
+                project=project,
+                inv_uuid=investigation.sodar_uuid,
                 isa_data=isa_data,
                 tags=['EDIT'],
                 user=request.user,

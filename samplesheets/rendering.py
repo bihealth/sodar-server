@@ -735,7 +735,18 @@ class SampleSheetTableBuilder:
             'samplesheets', 'sheet_config', project=study.get_project()
         )
 
-        if self._sheet_config:
+        # HACK: In case of deletion from database bypassing the database,
+        # HACK: make sure the correct UUIDs are in the config
+        if (
+            self._sheet_config
+            and str(study.sodar_uuid) not in self._sheet_config['studies']
+        ):
+            logger.warning(
+                'Unable to use sheet configuration, study UUID not found'
+            )
+            self._sheet_config = None
+
+        elif self._sheet_config:
             logger.debug('Using sheet configuration from app settings')
 
         else:

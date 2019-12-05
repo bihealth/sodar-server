@@ -475,7 +475,14 @@ class SampleSheetIO:
 
     @transaction.atomic
     def import_isa(
-        self, isa_data, project, archive_name=None, user=None, replace=False
+        self,
+        isa_data,
+        project,
+        archive_name=None,
+        user=None,
+        replace=False,
+        replace_uuid=None,
+        save_isa=True,
     ):
         """
         Import ISA investigation and its studies/assays from a dictionary of
@@ -486,6 +493,8 @@ class SampleSheetIO:
         :param archive_name: Name of the original archive (string, optional)
         :param user: User initiating the operation (User or None)
         :param replace: Whether replacing an existing sheet (bool)
+        :param replace_uuid: Investigation UUID if replacing (UUID or string)
+        :param save_isa: Save ISATab as backup after importing (bool)
         :return: Investigation, ISATab
         :raise: SampleSheetExportException if critical warnings are raised
         """
@@ -766,18 +775,22 @@ class SampleSheetIO:
 
         # Save original ISAtab data
         # TODO: TBD: Prevent saving if previous data matches current one?
-        tags = ['IMPORT']
+        if save_isa:
+            tags = ['IMPORT']
 
-        if replace:
-            tags.append('REPLACE')
+            if replace:
+                tags.append('REPLACE')
 
-        self.save_isa(
-            investigation=db_investigation,
-            isa_data=isa_data,
-            tags=tags,
-            user=user,
-            archive_name=archive_name,
-        )
+            self.save_isa(
+                project=project,
+                inv_uuid=replace_uuid
+                if replace and replace_uuid
+                else db_investigation.sodar_uuid,
+                isa_data=isa_data,
+                tags=tags,
+                user=user,
+                archive_name=archive_name,
+            )
 
         return db_investigation
 
@@ -1395,12 +1408,19 @@ class SampleSheetIO:
 
     @classmethod
     def save_isa(
-        cls, investigation, isa_data, tags=None, user=None, archive_name=None
+        cls,
+        project,
+        inv_uuid,
+        isa_data,
+        tags=None,
+        user=None,
+        archive_name=None,
     ):
         """
         Save a copy of an ISAtab investigation into the SODAR database.
 
-        :param investigation: Investigation object
+        :param project: Project object
+        :param inv_uuid: Investigation UUID (UUID or string)
         :param isa_data: ISAtab file contents (dict)
         :param tags: Tags for the ISAtab (optional)
         :param user: User saving the ISAtab (optional)
@@ -1408,8 +1428,8 @@ class SampleSheetIO:
         :return: ISATab object
         """
         db_isatab = ISATab.objects.create(
-            project=investigation.project,
-            investigation_uuid=investigation.sodar_uuid,
+            project=project,
+            investigation_uuid=inv_uuid,
             data=isa_data,
             tags=tags or [],
             user=user,

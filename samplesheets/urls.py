@@ -32,6 +32,11 @@ urlpatterns = [
         name='export_isa',
     ),
     url(
+        regex=r'^export/version/(?P<isatab>[0-9a-f-]+)$',
+        view=views.SampleSheetISAExportView.as_view(),
+        name='export_isa',
+    ),
+    url(
         regex=r'^dirs/(?P<project>[0-9a-f-]+)$',
         view=views.IrodsDirsView.as_view(),
         name='dirs',
@@ -45,6 +50,21 @@ urlpatterns = [
         regex=r'^cache/update/(?P<project>[0-9a-f-]+)$',
         view=views.SampleSheetCacheUpdateView.as_view(),
         name='cache_update',
+    ),
+    url(
+        regex=r'^versions/(?P<project>[0-9a-f-]+)$',
+        view=views.SampleSheetVersionListView.as_view(),
+        name='versions',
+    ),
+    url(
+        regex=r'^version/restore/(?P<isatab>[0-9a-f-]+)$',
+        view=views.SampleSheetVersionRestoreView.as_view(),
+        name='version_restore',
+    ),
+    url(
+        regex=r'^version/delete/(?P<isatab>[0-9a-f-]+)$',
+        view=views.SampleSheetVersionDeleteView.as_view(),
+        name='version_delete',
     ),
     # Ajax API views
     url(

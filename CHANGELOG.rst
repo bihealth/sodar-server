@@ -17,6 +17,9 @@ Added
     - ``manage_sheet`` permission (#696)
     - Column management UI for sample sheet configuring (#698)
     - ``get_name()`` helper in ``ISATab``
+    - Saved sample sheet version browsing and deletion (#662)
+    - Sample sheet version export (#739)
+    - Sample sheet version restoring (#701)
 
 Changed
 -------
@@ -33,6 +36,8 @@ Changed
     - Rename ``getGridOptions()`` to ``initGridOptions()`` (#721)
     - Dynamically add/omit cell unit, link and tooltip in rendering (#708)
     - Improve column type detection (#730)
+    - Refactor sample sheet import/replace handling in views (#701)
+    - Enable exporting ``ISATab`` versions in ``SampleSheetISAExportView`` (#739)
 
 Fixed
 -----
@@ -43,6 +48,7 @@ Fixed
 - **Samplesheets**
     - ``getGridOptionsByUuid()`` returned column API instead of grid options (#706)
     - ``getGridOptionsByUuid()`` returned initial options without applied updates (#721)
+    - Incorrect Investigation UUID passed to ``ISATab`` on replace (#742)
 
 Removed
 -------

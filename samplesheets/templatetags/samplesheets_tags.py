@@ -5,11 +5,25 @@ from django.urls import reverse
 # Projectroles dependency
 from projectroles.plugins import get_backend_api
 
-from ..models import Investigation, Study, Assay, GENERIC_MATERIAL_TYPES
+from samplesheets.models import (
+    Investigation,
+    Study,
+    Assay,
+    GENERIC_MATERIAL_TYPES,
+)
+
+
+# Local constants
+TAG_COLORS = {
+    'IMPORT': 'info',
+    'EDIT': 'warning',
+    'REPLACE': 'danger',
+    'RESTORE': 'danger',
+}
+DEFAULT_TAG_COLOR = 'secondary'
 
 
 irods_backend = get_backend_api('omics_irods')
-
 register = template.Library()
 
 
@@ -68,7 +82,8 @@ def get_irods_tree(investigation):
 @register.simple_tag
 def get_irods_path(obj, sub_path=None):
     """
-    Return iRODS path for an object or None if not found
+    Return iRODS path for an object or None if not found.
+
     :param obj: Study, Assay etc. type object
     :param sub_path: If defined, add a sub path below object
     :return: String or none
@@ -112,7 +127,8 @@ def get_assay_list_url(assay, path=None):
 @register.simple_tag
 def get_icon(obj):
     """
-    Get Study or Assay icon
+    Get Study or Assay icon.
+
     :param obj: Study or Assay object
     :return: String (contains HTML)
     """
@@ -121,3 +137,28 @@ def get_icon(obj):
 
     elif type(obj) == Assay:
         return '<i class="fa fa-fw fa-table text-danger"></i>'
+
+
+@register.simple_tag
+def get_isatab_tag_html(isatab):
+    """
+    Return tags for an ISATab as HTML to be displayed in the sheet version list.
+
+    :param isatab: ISATab object
+    :return: String (contains HTML)
+    """
+    if not isatab.tags:
+        return '<span class="text-muted">N/A</span>'
+
+    ret = ''
+
+    for tag in sorted(isatab.tags):
+        ret += (
+            '<span class="badge badge-pill badge-{} mr-1">'
+            '{}</span>\n'.format(
+                TAG_COLORS[tag] if tag in TAG_COLORS else DEFAULT_TAG_COLOR,
+                tag.capitalize(),
+            )
+        )
+
+    return ret

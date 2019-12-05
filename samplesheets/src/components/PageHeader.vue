@@ -131,6 +131,13 @@
           <span v-if="app.sodarContext['irods_status']">Update</span><span v-else>Create</span> iRODS Directories
         </b-dropdown-item>
         <b-dropdown-item
+            v-if="app.sheetsAvailable"
+            class="sodar-ss-op-item"
+            :href="'versions/' + app.projectUuid"
+            :disabled="app.editMode">
+          <i class="fa fa-fw fa-files-o"></i> Sheet Versions
+        </b-dropdown-item>
+        <b-dropdown-item
             v-if="app.sheetsAvailable &&
                   app.sodarContext['perms']['delete_sheet']"
             class="sodar-ss-op-item"

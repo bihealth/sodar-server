@@ -6,7 +6,8 @@ from django.conf import settings
 # Projectroles dependency
 from projectroles.models import Project
 
-from .io import SampleSheetIO
+from samplesheets.io import SampleSheetIO
+from samplesheets.models import Investigation
 
 
 # Local constants
@@ -40,11 +41,7 @@ class SampleSheetImportForm(forms.Form):
         )
 
         if project:
-            try:
-                self.project = Project.objects.get(sodar_uuid=project)
-
-            except Project.DoesNotExist:
-                pass
+            self.project = Project.objects.filter(sodar_uuid=project).first()
 
     def clean(self):
         files = self.files.getlist('file_upload')
@@ -154,6 +151,15 @@ class SampleSheetImportForm(forms.Form):
                         'tsv': file.read().decode('utf-8')
                     }
 
+        replace_uuid = None
+
+        if self.replace:
+            replace_uuid = (
+                Investigation.objects.filter(project=self.project, active=True)
+                .first()
+                .sodar_uuid
+            )
+
         # NOTE: May raise an exception, caught and handled in the view
         investigation = self.sheet_io.import_isa(
             isa_data=isa_data,
@@ -161,6 +167,7 @@ class SampleSheetImportForm(forms.Form):
             archive_name=self.isa_zip.filename if self.isa_zip else None,
             user=self.current_user,
             replace=self.replace,
+            replace_uuid=replace_uuid,
         )
 
         return investigation

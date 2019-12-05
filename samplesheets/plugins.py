@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.urls import reverse
 
 from djangoplugins.point import PluginPoint
 from irods.exception import NetworkException
@@ -7,7 +8,13 @@ from irods.exception import NetworkException
 from projectroles.models import Project, SODAR_CONSTANTS
 from projectroles.plugins import ProjectAppPluginPoint, get_backend_api
 
-from samplesheets.models import Investigation, Study, Assay, GenericMaterial
+from samplesheets.models import (
+    Investigation,
+    Study,
+    Assay,
+    GenericMaterial,
+    ISATab,
+)
 from samplesheets.urls import urlpatterns
 from samplesheets.utils import (
     get_sample_dirs,
@@ -123,15 +130,22 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         """
         obj = self.get_object(eval(model_str), uuid)
 
-        if not obj or obj.__class__ not in [Investigation, Study, Assay]:
-            return None
+        if obj and obj.__class__ in [Investigation, Study, Assay]:
+            return {
+                'url': get_sheets_url(obj),
+                'label': obj.title
+                if obj.__class__ == Investigation
+                else obj.get_display_name(),
+            }
 
-        return {
-            'url': get_sheets_url(obj),
-            'label': obj.title
-            if obj.__class__ == Investigation
-            else obj.get_display_name(),
-        }
+        elif obj and obj.__class__ == ISATab:
+            return {
+                'url': reverse(
+                    'samplesheets:versions',
+                    kwargs={'project': obj.project.sodar_uuid},
+                ),
+                'label': obj.get_name(),
+            }
 
     def search(self, search_term, user, search_type=None, keywords=None):
         """
