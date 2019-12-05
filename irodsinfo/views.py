@@ -107,6 +107,7 @@ class IrodsConfigView(LoggedInPermissionMixin, HTTPRefererMixin, View):
             'irods_user_name': user_name,
             'irods_cwd': home_path,
             'irods_home': home_path,
+            'irods_default_hash_scheme': 'MD5',
         }
         irods_env.update(env_opt)
         env_json = json.dumps(irods_env, indent=2)

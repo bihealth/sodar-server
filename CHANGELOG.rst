@@ -11,6 +11,8 @@ Unreleased
 Added
 -----
 
+- **Irodsbackend**
+    - Enforce MD5 hash scheme in client configuration (#740)
 - **Samplesheets**
     - Editing of selected sample sheet column values (#550)
     - Project settings for sample sheet configuration (#687)
