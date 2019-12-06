@@ -63,6 +63,7 @@ Removed
     - Support for old style comments parsing (#631)
     - Redundant ``columnValues`` structure (#711)
     - Unused ``link_file`` parameter from rendering (#708)
+    - ``get_assay_list_url()`` template tag (#737)
 
 
 v0.6.1 (2019-11-15)

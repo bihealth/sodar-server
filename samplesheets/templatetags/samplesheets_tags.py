@@ -99,31 +99,6 @@ def get_irods_path(obj, sub_path=None):
     return None
 
 
-# TODO: Remove once rewriting assay apps for vue.js
-@register.simple_tag
-def get_assay_list_url(assay, path=None):
-    """
-    Return iRODS file list querying URL for assay
-    :param assay: Assay object
-    :param path: iRODS path: if None, default path for assay will be used
-    :return: String
-    """
-    if not irods_backend:
-        return None
-
-    if not path:
-        path = irods_backend.get_path(assay)
-
-    return reverse(
-        'irodsbackend:list',
-        kwargs={
-            'project': assay.get_project().sodar_uuid,
-            'path': path,
-            'md5': 0,
-        },
-    )
-
-
 @register.simple_tag
 def get_icon(obj):
     """
