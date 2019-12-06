@@ -22,6 +22,7 @@ Added
     - Saved sample sheet version browsing and deletion (#662)
     - Sample sheet version export (#739)
     - Sample sheet version restoring (#701)
+    - Save and restore sheet configuration with ``ISATab`` version
 
 Changed
 -------

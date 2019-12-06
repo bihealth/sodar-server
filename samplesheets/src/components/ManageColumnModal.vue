@@ -638,6 +638,7 @@ export default {
           }
           this.app.handleCellEdit(upData)
         }
+        this.app.setDataUpdated(true)
       }
       this.$refs.manageColumnModal.hide()
     }

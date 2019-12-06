@@ -23,6 +23,9 @@ import warnings
 
 from django.db import transaction
 
+# Projectroles dependency
+from projectroles.app_settings import AppSettingAPI
+
 from samplesheets.models import (
     Investigation,
     Study,
@@ -37,6 +40,7 @@ from samplesheets.utils import get_alt_names
 
 
 # Local constants
+APP_NAME = 'samplesheets'
 ALTAMISA_MATERIAL_TYPE_SAMPLE = 'Sample Name'
 
 MATERIAL_TYPE_MAP = {
@@ -69,6 +73,7 @@ SAMPLE_SEARCH_SUBSTR = '-sample-'
 PROTOCOL_UNKNOWN_NAME = 'Unknown'
 
 
+app_settings = AppSettingAPI()
 logger = logging.getLogger(__name__)
 
 
@@ -1415,6 +1420,7 @@ class SampleSheetIO:
         tags=None,
         user=None,
         archive_name=None,
+        config=None,
     ):
         """
         Save a copy of an ISAtab investigation into the SODAR database.

@@ -1129,6 +1129,10 @@ export default {
       this.editStudyConfig = null
     },
 
+    setDataUpdated (updated) {
+      this.editDataUpdated = updated
+    },
+
     /* Data and App Access -------------------------------------------------- */
 
     getGridOptionsByUuid (uuid) {

@@ -256,6 +256,39 @@ class SampleSheetImportMixin:
                 '<a href="#/warnings">parser warnings raised</a>)'
             )
 
+        # Build sheet configuration, also save it to the related ISATab
+        # NOTE: For now, this has to be done when we replace sheets, in case the
+        #       columns have been altered
+        # TODO: A smarter update method which detects removed/added/moved cols
+        logger.debug(
+            '{} sheet configuration..'.format(
+                'Replacing' if action != 'create' else 'Building'
+            )
+        )
+
+        if isa_version:
+            sheet_config = isa_version.data.get('sheet_config')
+
+        if not sheet_config:
+            sheet_config = build_sheet_config(investigation)
+
+            if isa_version:
+                isa_version.data['sheet_config'] = sheet_config
+                isa_version.save()
+
+        app_settings.set_app_setting(
+            APP_NAME, 'sheet_config', sheet_config, project=project
+        )
+        logger.info(
+            'Sheet configuration {}'.format(
+                'replaced' if action != 'create' else 'built'
+            )
+        )
+
+        if isa_version:
+            isa_version.data['sheet_config'] = sheet_config
+            logger.info('Sheet configuration added into ISATab version')
+
         # Update project cache if replacing sheets and iRODS collections exists
         if (
             action in ['replace', 'restore']
@@ -427,8 +460,17 @@ class SampleSheetImportView(
 
         # If all went well, finalize import
         if self.object:
+            isa_version = (
+                ISATab.objects.filter(investigation_uuid=self.object.sodar_uuid)
+                .order_by('-date_created')
+                .first()
+            )
+
             self.object = self.finalize_import(
-                investigation=self.object, action=form_action, tl_event=tl_event
+                investigation=self.object,
+                action=form_action,
+                tl_event=tl_event,
+                isa_version=isa_version,
             )
 
         return redirect(redirect_url)
@@ -1085,8 +1127,7 @@ class SampleSheetVersionRestoreView(
                 isa_version=isa_version,
             )
 
-        # If successful, edit isa_version to bump it in the list
-        if new_inv:
+            # Edit isa_version to bump it in the list
             if 'RESTORE' not in isa_version.tags:
                 isa_version.tags.append('RESTORE')
 
@@ -1641,6 +1682,7 @@ class SampleSheetEditPostAPIView(
         return Response({'message': 'ok'}, status=200)
 
 
+# TODO: Add tests
 class SampleSheetEditFinishAPIView(
     LoginRequiredMixin, ProjectPermissionMixin, APIPermissionMixin, APIView
 ):
@@ -1659,7 +1701,7 @@ class SampleSheetEditFinishAPIView(
             return Response({'message': 'ok'}, status=200)  # Nothing to do
 
         timeline = get_backend_api('timeline_backend')
-        isa_copy = None
+        isa_version = None
         sheet_io = SampleSheetIO()
         project = self.get_project()
         investigation = Investigation.objects.filter(
@@ -1669,7 +1711,12 @@ class SampleSheetEditFinishAPIView(
 
         try:
             isa_data = sheet_io.export_isa(investigation)
-            isa_copy = sheet_io.save_isa(
+
+            # Save sheet config with ISATab version
+            isa_data['sheet_config'] = app_settings.get_app_setting(
+                APP_NAME, 'sheet_config', project=project
+            )
+            isa_version = sheet_io.save_isa(
                 project=project,
                 inv_uuid=investigation.sodar_uuid,
                 isa_data=isa_data,
@@ -1698,14 +1745,14 @@ class SampleSheetEditFinishAPIView(
                 status_desc=export_ex if tl_status == 'FAILED' else None,
             )
 
-            if not export_ex and isa_copy:
+            if not export_ex and isa_version:
                 tl_event.add_object(
-                    obj=isa_copy, label='isatab', name=isa_copy.get_name()
+                    obj=isa_version, label='isatab', name=isa_version.get_name()
                 )
 
         if not export_ex:
             logger.info(
-                log_msg + 'Saved ISATab "{}"'.format(isa_copy.get_name())
+                log_msg + 'Saved ISATab "{}"'.format(isa_version.get_name())
             )
             return Response({'message': 'ok'}, status=200)
 
