@@ -555,6 +555,7 @@ class TestSampleSheetDeleteView(TestViewsBase):
         """Test deleting the project sample sheets"""
 
         self.assertEqual(Investigation.objects.all().count(), 1)
+        self.assertEqual(ISATab.objects.all().count(), 1)
 
         with self.login(self.user):
             response = self.client.post(
@@ -573,6 +574,7 @@ class TestSampleSheetDeleteView(TestViewsBase):
             )
 
         self.assertEqual(Investigation.objects.all().count(), 0)
+        self.assertEqual(ISATab.objects.all().count(), 0)
 
 
 class TestSampleSheetVersionListView(TestViewsBase):

@@ -856,7 +856,15 @@ class SampleSheetDeleteView(
             investigation.delete()
 
         if delete_success:
-            # TODO: Delete related ISATab versions
+            # Delete ISATab versions
+            isa_versions = ISATab.objects.filter(project=project)
+            v_count = isa_versions.count()
+            isa_versions.delete()
+            logger.debug(
+                'Deleted {} ISATab version{}'.format(
+                    v_count, 's' if v_count != 1 else ''
+                )
+            )
 
             # Delete sheet configuration
             app_settings.set_app_setting(
