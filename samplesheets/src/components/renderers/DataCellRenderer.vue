@@ -5,16 +5,14 @@
        :row-id="params.node.id"
        @mouseover="onMouseOver"
        @mouseout="onMouseOut">
-    <!-- Plain/empty value -->
-    <span v-if="!colType">
-      {{ value.value }}
-    </span>
     <!-- Value with unit -->
     <span v-if="colType === 'UNIT'">
       {{ value.value }} <span v-if="value.hasOwnProperty('unit') && value.unit" class="text-muted">{{ value.unit }}</span>
     </span>
     <!-- Ontology links -->
-    <span v-else-if="colType === 'ONTOLOGY' && renderData">
+    <span v-else-if="colType === 'ONTOLOGY' &&
+                     renderData &&
+                     renderData['links'].length > 0">
       <span v-if="headerName === 'hpo terms'">
         <b-button
             class="btn sodar-list-btn"
@@ -51,6 +49,10 @@
          :title="getTooltip()"
          v-b-tooltip.hover.d300
          target="_blank">{{ renderData.value }}</a>
+    </span>
+    <!-- Plain/empty/undetected value -->
+    <span v-else>
+      {{ value.value }}
     </span>
   </div>
 </template>
