@@ -1,6 +1,5 @@
 from django import template
 from django.conf import settings
-from django.urls import reverse
 
 # Projectroles dependency
 from projectroles.plugins import get_backend_api
