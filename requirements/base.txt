@@ -81,7 +81,7 @@ celery<4.2  # pyup: <4.2  # blocker: https://github.com/celery/celery/issues/487
 ####################
 
 # CUBI AltamISA parser
-altamisa==0.2.5
+altamisa==0.2.6
 # -e git+https://github.com/bihealth/altamisa.git@9aa7e76b0d079f89edc076b5d1fbd4b734cbb9b4#egg=altamisa
 
 # Python iRODS client for irodsbackend
