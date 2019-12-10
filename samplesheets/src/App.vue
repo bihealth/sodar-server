@@ -474,6 +474,9 @@ export default {
     },
 
     buildColDef (table, assayMode, uuid, editMode) {
+      // Currently uneditable fields
+      const uneditableFields = ['name', 'protocol', 'performer', 'perform date']
+
       // Default columns
       let colDef = []
       let editFieldConfig
@@ -628,7 +631,7 @@ export default {
           if (editMode) {
             // Set header renderer for fields we can manage
             if (this.sodarContext['perms']['manage_sheet'] &&
-                !['Name', 'Protocol'].includes(fieldHeader['value']) &&
+                !uneditableFields.includes(fieldHeader['value'].toLowerCase()) &&
                 !['EXTERNAL_LINKS', 'ONTOLOGY'].includes(colType)) {
               let configAssayUuid = assayMode ? uuid : null
               let configNodeIdx = i
