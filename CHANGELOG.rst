@@ -13,6 +13,8 @@ Added
 
 - **Irodsbackend**
     - Enforce MD5 hash scheme in client configuration (#740)
+- **Landingzones**
+    - Extra columns for project list (#579)
 - **Samplesheets**
     - Editing of selected sample sheet column values (#550)
     - Project settings for sample sheet configuration (#687)
@@ -24,6 +26,7 @@ Added
     - Sample sheet version restoring (#701)
     - Save and restore sheet configuration with ``ISATab`` version
     - Deletion of ``ISATab`` versions on sheet delete (#746)
+    - Extra columns for project list (#579)
 
 Changed
 -------

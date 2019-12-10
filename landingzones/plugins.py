@@ -7,7 +7,7 @@ from projectroles.plugins import ProjectAppPluginPoint, get_backend_api
 
 # Samplesheets dependency
 from samplesheets.io import get_assay_dirs
-from samplesheets.models import Assay
+from samplesheets.models import Investigation, Assay
 
 from .models import LandingZone
 from landingzones.urls import urlpatterns
@@ -64,6 +64,17 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
 
     #: Position in plugin ordering
     plugin_ordering = 20
+
+    #: Project list columns
+    project_list_columns = {
+        'zones': {
+            'title': 'Zones',
+            'width': 70,
+            'description': None,
+            'active': True,
+            'align': 'center',
+        }
+    }
 
     def get_taskflow_sync_data(self):
         """
@@ -141,6 +152,53 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                 + str(obj.sodar_uuid),
                 'label': obj.get_display_name(),
             }
+
+    def get_project_list_value(self, column_id, project, user):
+        """
+        Return a value for the optional additional project list column specific
+        to a project.
+
+        :param column_id: ID of the column (string)
+        :param project: Project object
+        :param user: User object (current user)
+        :return: String (may contain HTML), integer or None
+        """
+        investigation = Investigation.objects.filter(project=project).first()
+
+        if (
+            column_id == 'zones'
+            and investigation
+            and investigation.irods_status
+        ):
+            if user.is_superuser:
+                zones = LandingZone.objects.filter(project=project)
+
+            else:
+                zones = LandingZone.objects.filter(project=project, user=user)
+
+            zone_count = zones.count()
+            active_count = zones.exclude(
+                status__in=['MOVED', 'DELETED']
+            ).count()
+
+            if zone_count > 0:
+                return (
+                    '<a href="{}" title="{}" data-toggle="tooltip" '
+                    'data-placement="top"><i class="fa fa-database {}">'
+                    '</i></a>'.format(
+                        reverse(
+                            'landingzones:list',
+                            kwargs={'project': project.sodar_uuid},
+                        ),
+                        '{} landing zone{} {} ({} active)'.format(
+                            zone_count,
+                            's' if zone_count != 1 else '',
+                            'in total' if user.is_superuser else 'owned by you',
+                            active_count,
+                        ),
+                        'text-danger' if active_count == 0 else '',
+                    )
+                )
 
 
 # Landingzones configuration sub-app plugin ------------------------------------

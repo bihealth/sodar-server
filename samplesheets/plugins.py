@@ -102,6 +102,24 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
     #: Position in plugin ordering
     plugin_ordering = 10
 
+    #: Project list columns
+    project_list_columns = {
+        'sheets': {
+            'title': 'Sheets',
+            'width': 70,
+            'description': None,
+            'active': True,
+            'align': 'center',
+        },
+        'data': {
+            'title': 'Data',
+            'width': 70,
+            'description': None,
+            'active': True,
+            'align': 'center',
+        },
+    }
+
     def get_taskflow_sync_data(self):
         """
         Return data for syncing taskflow operations
@@ -291,6 +309,53 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         }
 
         return results
+
+    def get_project_list_value(self, column_id, project, user):
+        """
+        Return a value for the optional additional project list column specific
+        to a project.
+
+        :param column_id: ID of the column (string)
+        :param project: Project object
+        :param user: User object (current user)
+        :return: String (may contain HTML), integer or None
+        """
+        investigation = Investigation.objects.filter(project=project).first()
+
+        if column_id == 'sheets' and investigation:
+            return (
+                '<a href="{}" title="{}" data-toggle="tooltip" '
+                'data-placement="top"><i class="fa fa-list-alt text-info">'
+                '</i></a>'.format(
+                    reverse(
+                        'samplesheets:project_sheets',
+                        kwargs={'project': project.sodar_uuid},
+                    ),
+                    'Sample sheets available',
+                )
+            )
+
+        elif (
+            column_id == 'data'
+            and settings.IRODS_WEBDAV_ENABLED
+            and investigation
+            and investigation.irods_status
+        ):
+            irods_backend = get_backend_api('omics_irods')
+            return (
+                (
+                    '<a href="{}" target="_blank" title="{}" '
+                    'data-toggle="tooltip" data-placement="top">'
+                    '<i class="fa fa-folder-open '
+                    'text-secondary"></i></a>'.format(
+                        settings.IRODS_WEBDAV_URL
+                        + irods_backend.get_sample_path(project),
+                        'Sample data repository available in iRODS',
+                    )
+                )
+                if irods_backend
+                else None
+            )
 
     def update_cache(self, name=None, project=None, user=None):
         """
