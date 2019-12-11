@@ -28,7 +28,7 @@
     <!-- Unit select (in popup) -->
     <select :ref="'unitText'"
             v-if="editConfig.hasOwnProperty('unit') &&
-                  editConfig['unit'].length > 1"
+                  editConfig['unit'].length > 0"
             v-model="editUnit"
             class="ag-cell-edit-input sodar-ss-vue-popup-input"
             :style="unitStyle">
