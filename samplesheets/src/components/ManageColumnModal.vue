@@ -3,7 +3,9 @@
            ref="manageColumnModal"
            body-class="sodar-ss-vue-col-manage-body"
            centered no-fade hide-footer
-           size="md">
+           size="md"
+           no-close-on-backdrop
+           no-close-on-esc>
     <template slot="modal-header">
       <div class="w-100">
       <h5 class="modal-title text-nowrap" id="sodar-ss-vue-col-modal-title">
@@ -245,6 +247,7 @@ export default {
       ],
       fieldDisplayName: null,
       fieldConfig: null,
+      newConfig: false,
       baseCellClasses: null,
       assayUuid: null,
       configNodeIdx: null,
@@ -252,6 +255,8 @@ export default {
       defNodeIdx: null,
       defFieldIdx: null,
       col: null,
+      colType: null,
+      gridOptions: null,
       valueOptions: '',
       unitEnabled: false,
       unitOptions: '',
@@ -534,7 +539,8 @@ export default {
     /* Modal showing/hiding ------------------------------------------------- */
     showModal (data, col) {
       this.fieldDisplayName = data['fieldDisplayName']
-      this.fieldConfig = JSON.parse(JSON.stringify(data['fieldConfig'])) // Copy
+      this.fieldConfig = data['fieldConfig']
+      this.newConfig = data['newConfig']
       this.baseCellClasses = data['baseCellClasses']
       this.assayUuid = data['assayUuid']
       this.configNodeIdx = data['configNodeIdx']
@@ -542,6 +548,9 @@ export default {
       this.defNodeIdx = data['defNodeIdx']
       this.defFieldIdx = data['defFieldIdx']
       this.col = col
+      this.colType = data['colType']
+      let gridUuid = !this.assayUuid ? this.studyUuid : this.assayUuid
+      this.gridOptions = this.app.getGridOptionsByUuid(gridUuid)
 
       // Reset internal variables
       this.valueOptions = ''
@@ -551,6 +560,44 @@ export default {
       // Set up fieldConfig
       if (!this.fieldConfig.hasOwnProperty('default')) {
         this.fieldConfig['default'] = ''
+      }
+
+      if (this.newConfig) {
+        let field = this.col.colDef.field
+
+        // Unit and numeric column
+        if (['UNIT', 'NUMERIC'].includes(this.colType)) {
+          // TODO: Also support double
+          this.fieldConfig['format'] = 'integer'
+
+          if (this.colType === 'UNIT') {
+            this.fieldConfig['unit'] = []
+          }
+
+          for (let i = 0; i < this.gridOptions.rowData.length; i++) {
+            let cell = this.gridOptions.rowData[i][field]
+
+            // TODO: TBD: Guess range or not?
+            /*
+            let valNum = parseInt(cell['value'])
+
+            if (this.fieldConfig['range'][0] === null ||
+                this.fieldConfig['range'][0] > valNum) {
+              this.fieldConfig['range'][0] = valNum
+            }
+            if (this.fieldConfig['range'][1] === null ||
+                this.fieldConfig['range'][1] < valNum) {
+              this.fieldConfig['range'][1] = valNum
+            }
+            */
+
+            if (this.colType === 'UNIT' &&
+                cell.hasOwnProperty('unit') &&
+                !this.fieldConfig['unit'].includes(cell['unit'])) {
+              this.fieldConfig['unit'].push(cell['unit'])
+            }
+          }
+        }
       }
 
       // Set up certain data for the form widgets
@@ -614,14 +661,13 @@ export default {
             this.fieldConfig.hasOwnProperty('default') &&
             this.fieldConfig['default'].length > 0) {
           // Collect column cell data
-          let gridUuid = !this.assayUuid ? this.studyUuid : this.assayUuid
-          let gridOptions = this.app.getGridOptionsByUuid(gridUuid)
           let field = this.col.colDef.field
           let cellUuids = [] // Store found cell UUIDs
           let upData = [] // The actual update data
 
-          for (let i = 0; i < gridOptions.rowData.length; i++) {
-            let row = gridOptions.rowData[i]
+          for (let i = 0; i < this.gridOptions.rowData.length; i++) {
+            let row = this.gridOptions.rowData[i]
+
             if (row.hasOwnProperty(field) &&
                 !cellUuids.includes(row[field]['uuid'])) {
               if (!row[field]['value'] || row[field]['value'].length === 0) {

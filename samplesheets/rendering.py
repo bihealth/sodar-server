@@ -200,7 +200,6 @@ class SampleSheetTableBuilder:
             if isinstance(obj, GenericMaterial)
             else None,
             'num_col': False,  # Will be checked for sorting later
-            'align': 'left',
         }
         field_config = None
 
@@ -224,7 +223,6 @@ class SampleSheetTableBuilder:
 
         if field_config and field_config.get('format') == 'integer':
             header['col_type'] = 'UNIT'
-            header['align'] = 'right'  # TODO: Should not be required for UNIT
 
         # Else detect type without config
         elif 'contact' in name.lower():
@@ -605,20 +603,19 @@ class SampleSheetTableBuilder:
         for i in range(len(self._field_header)):
             header_name = self._field_header[i]['value'].lower()
 
-            # Right align if values are all numbers or empty (except if name)
+            # Set column type to NUMERIC if values are all numeric or empty
+            # (except if name)
             # Skip check if column is already defined as UNIT
             if (
-                self._field_header[i]['col_type'] != 'UNIT'
+                header_name != 'name'
+                and self._field_header[i]['col_type'] != 'UNIT'
                 and any(_is_num(x[i]['value']) for x in self._table_data)
                 and all(
                     (_is_num(x[i]['value']) or not x[i]['value'])
                     for x in self._table_data
                 )
             ):
-                self._field_header[i]['num_col'] = True
-
-                if header_name != 'name':
-                    self._field_header[i]['align'] = 'right'
+                self._field_header[i]['col_type'] = 'NUMERIC'
 
             # Maximum column value length for column width estimate
             header_len = round(_get_length(self._field_header[i]['value']))

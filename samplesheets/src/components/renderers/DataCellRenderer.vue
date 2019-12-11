@@ -179,7 +179,7 @@ export default Vue.extend(
         this.value = this.params.value
 
         // Handle special column type
-        this.colType = this.params.colType
+        this.colType = this.params.value.colType
 
         // Enable/disable hover overflow
         this.enableHover = (this.params.enableHover === undefined)

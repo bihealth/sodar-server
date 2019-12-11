@@ -427,7 +427,7 @@ export default {
       let valueB = dataB['value']
 
       // Integer/float sort
-      if (dataA['num_col']) {
+      if (dataA['colType']) {
         return parseFloat(valueA) - parseFloat(valueB)
       }
 
@@ -538,6 +538,14 @@ export default {
           // Define special column properties
           let maxValueLen = fieldHeader['max_value_len']
           let colType = fieldHeader['col_type']
+
+          let colAlign
+          if (['UNIT', 'NUMERIC'].includes(colType)) {
+            colAlign = 'right'
+          } else {
+            colAlign = 'left'
+          }
+
           let minW = this.sodarContext['min_col_width']
           let maxW = this.sodarContext['max_col_width']
           let calcW = maxValueLen * 10 + 25 // Default
@@ -597,12 +605,11 @@ export default {
             headerClass: ['sodar-ss-data-header'],
             cellRendererFramework: DataCellRenderer,
             cellRendererParams: {
-              'app': this,
-              'colType': colType
+              'app': this // NOTE: colType no longer necessary, passed to cell
             },
             cellClass: [
               'sodar-ss-data-cell',
-              'text-' + fieldHeader['align']
+              'text-' + colAlign
             ],
             comparator: this.dataCellCompare,
             filterValueGetter: this.dataCellFilterValue
@@ -654,6 +661,7 @@ export default {
               header.headerComponentFramework = FieldHeaderEditRenderer
               header.headerComponentParams = {
                 'modalComponent': this.$refs.manageColumnModalRef,
+                'colType': colType,
                 'fieldConfig': editFieldConfig,
                 'baseCellClasses': header.cellClass,
                 'assayUuid': configAssayUuid,
@@ -681,7 +689,7 @@ export default {
                   'obj_cls': fieldHeader['obj_cls']
                 },
                 'renderInfo': {
-                  'align': fieldHeader['align'],
+                  'align': colAlign,
                   'width': colWidth
                 },
                 // Editor configuration to be passed to DataCellEditor
@@ -816,8 +824,8 @@ export default {
         }
         for (let j = 0; j < rowCells.length; j++) {
           let cellVal = rowCells[j]
-          // Copy num_col info to each cell (comparator can't access colDef)
-          cellVal['num_col'] = table['field_header'][j]['num_col']
+          // Copy col_type info to each cell (comparator can't access colDef)
+          cellVal['colType'] = table['field_header'][j]['col_type']
           row['col' + j.toString()] = cellVal
         }
 

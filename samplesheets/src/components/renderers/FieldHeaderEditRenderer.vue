@@ -34,25 +34,30 @@ export default Vue.extend({
     },
     onModalClick () {
       // Refresh fieldConfig in case it's changed
-      this.fieldConfig = this.params.column.colDef.headerComponentParams['fieldConfig']
+      let fieldConfig = JSON.parse(
+        JSON.stringify(this.params.column.colDef.headerComponentParams['fieldConfig'])) // Copy
+      let newConfig = false
 
       // Add default values for fieldConfig if they are not present
-      if (!this.fieldConfig.hasOwnProperty('editable')) {
-        this.fieldConfig['editable'] = false
+      if (!fieldConfig.hasOwnProperty('format')) {
+        fieldConfig['format'] = 'string'
+        newConfig = true // No existing config found
       }
-      if (!this.fieldConfig.hasOwnProperty('format')) {
-        this.fieldConfig['format'] = 'string'
+      if (!fieldConfig.hasOwnProperty('editable')) {
+        fieldConfig['editable'] = false
       }
-      if (!this.fieldConfig.hasOwnProperty('range')) {
-        this.fieldConfig['range'] = [null, null]
+      if (!fieldConfig.hasOwnProperty('range')) {
+        fieldConfig['range'] = [null, null]
       }
-      if (!this.fieldConfig.hasOwnProperty('regex')) {
-        this.fieldConfig['regex'] = ''
+      if (!fieldConfig.hasOwnProperty('regex')) {
+        fieldConfig['regex'] = ''
       }
 
       this.modalComponent.showModal({
+        'fieldConfig': fieldConfig,
+        'newConfig': newConfig,
+        'colType': this.params.colType,
         'fieldDisplayName': this.displayName,
-        'fieldConfig': this.fieldConfig,
         'baseCellClasses': this.params.baseCellClasses,
         'assayUuid': this.params.assayUuid,
         'configNodeIdx': this.params.configNodeIdx,
