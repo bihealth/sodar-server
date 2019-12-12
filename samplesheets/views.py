@@ -1685,12 +1685,11 @@ class SampleSheetEditPostAPIView(
                 )
                 return Response({'message': 'failed'}, status=500)
 
-        # TODO: Log edits in timeline
+        # TODO: Log edits in timeline here, once saving in bulk
 
         return Response({'message': 'ok'}, status=200)
 
 
-# TODO: Add tests
 class SampleSheetEditFinishAPIView(
     LoginRequiredMixin, ProjectPermissionMixin, APIPermissionMixin, APIView
 ):
@@ -1775,7 +1774,9 @@ class SampleSheetManagePostAPIView(
     permission_required = 'samplesheets.manage_sheet'
     renderer_classes = [JSONRenderer]
 
+    # TODO: Add node name for logging/timeline
     def post(self, request, *args, **kwargs):
+        timeline = get_backend_api('timeline_backend')
         project = self.get_project()
         fields = request.data.get('fields')
         sheet_config = app_settings.get_app_setting(
@@ -1818,28 +1819,68 @@ class SampleSheetManagePostAPIView(
                 logger.error(msg)
                 return Response({'message': msg}, status=500)
 
+            # Cleanup data
+            c = field['config']
+
+            if c['format'] != 'integer':
+                c.pop('range', None)
+                c.pop('unit', None)
+                c.pop('unit_default', None)
+
+            elif 'range' in c and not c['range'][0] and not c['range'][1]:
+                c.pop('range', None)
+
+            if c['format'] == 'select':
+                c.pop('regex', None)
+
+            else:  # Select
+                c.pop('options', None)
+
             if a_uuid:
                 sheet_config['studies'][s_uuid]['assays'][a_uuid]['nodes'][
                     n_idx
-                ]['fields'][f_idx] = field['config']
+                ]['fields'][f_idx] = c
 
             else:
                 sheet_config['studies'][s_uuid]['nodes'][n_idx]['fields'][
                     f_idx
-                ] = field['config']
+                ] = c
 
             app_settings.set_app_setting(
                 APP_NAME, 'sheet_config', sheet_config, project=project
             )
             logger.info(
                 'Updated field config for "{}" ({}) in {} {}'.format(
-                    field['config']['name'],
-                    field['config']['type'],
+                    c['name'],
+                    c['type'],
                     'assay' if a_uuid else 'study',
                     a_uuid if a_uuid else s_uuid,
                 )
             )
-            # TODO: Add timeline event
+
+            if timeline:
+                if a_uuid:
+                    tl_obj = Assay.objects.filter(sodar_uuid=a_uuid).first()
+
+                else:
+                    tl_obj = Study.objects.filter(sodar_uuid=s_uuid).first()
+
+                tl_label = tl_obj.__class__.__name__.lower()
+
+                tl_event = timeline.add_event(
+                    project=project,
+                    app_name=APP_NAME,
+                    user=request.user,
+                    event_name='field_update',
+                    description='update field config for "{}" in {{{}}}'.format(
+                        c['name'].title(), tl_label
+                    ),
+                    status_type='OK',
+                    extra_data={'config': c},
+                )
+                tl_event.add_object(
+                    obj=tl_obj, label=tl_label, name=tl_obj.get_display_name()
+                )
 
         return Response({'message': 'ok'}, status=200)
 

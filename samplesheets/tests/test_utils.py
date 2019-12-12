@@ -1,4 +1,6 @@
 """Tests for utility functions in the samplesheets app"""
+import json
+import os
 
 from test_plus.test import TestCase
 from unittest import skipIf
@@ -10,7 +12,7 @@ from projectroles.models import Role, SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
 from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
 
-from samplesheets.models import GenericMaterial, Process
+from samplesheets.models import Study, Assay, GenericMaterial, Process
 from samplesheets.rendering import SampleSheetTableBuilder
 from samplesheets.utils import (
     get_alt_names,
@@ -23,14 +25,60 @@ from .test_io import SampleSheetIOMixin, SHEET_DIR
 
 
 # Local constants
-SHEET_PATH = SHEET_DIR + 'i_small2.zip'
+SHEET_PATH = SHEET_DIR + 'i_small.zip'
+SHEET_PATH_SMALL2 = SHEET_DIR + 'i_small2.zip'
 OBJ_NAME = 'AA_BB_01'
 OBJ_ALT_NAMES = ['aa-bb-01', 'aabb01', 'aa_bb_01']
+
+CONFIG_STUDY_UUID = '11111111-1111-1111-1111-111111111111'
+CONFIG_ASSAY_UUID = '22222222-2222-2222-2222-222222222222'
+CONFIG_DIR = os.path.dirname(__file__) + '/config/'
+CONFIG_PATH_DEFAULT = CONFIG_DIR + 'i_small_default.json'
+
+with open(CONFIG_PATH_DEFAULT) as fp:
+    CONFIG_DATA_DEFAULT = json.load(fp)
 
 IRODS_BACKEND_ENABLED = (
     True if 'omics_irods' in settings.ENABLED_BACKEND_PLUGINS else False
 )
 IRODS_BACKEND_SKIP_MSG = 'iRODS backend not enabled in settings'
+
+
+# TODO: TBD: Best location for this?
+class SheetConfigMixin:
+    """Mixin for sheet config testing helpers"""
+
+    @classmethod
+    def _update_uuids(cls, investigation, sheet_config):
+        """
+        Update study and assay UUIDs in the database to match a test sheet
+        config file.
+
+        :param investigation: Investigation object
+        :param sheet_config: Dict
+        """
+        study_names = {}
+        assay_names = {}
+
+        for study in investigation.studies.all():
+            study_names[study.get_display_name()] = str(study.sodar_uuid)
+
+            for assay in study.assays.all():
+                assay_names[assay.get_display_name()] = str(assay.sodar_uuid)
+
+        for s_uuid, sc in sheet_config['studies'].items():
+            study = Study.objects.get(
+                sodar_uuid=study_names[sc['display_name']]
+            )
+            study.sodar_uuid = s_uuid
+            study.save()
+
+            for a_uuid, ac in sc['assays'].items():
+                assay = Assay.objects.get(
+                    sodar_uuid=assay_names[ac['display_name']]
+                )
+                assay.sodar_uuid = a_uuid
+                assay.save()
 
 
 class TestUtilsBase(
@@ -55,7 +103,7 @@ class TestUtilsBase(
 
         # Import investigation
         self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
+            SHEET_PATH_SMALL2, self.project
         )
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
@@ -176,7 +224,11 @@ class TestGetLastMaterialName(TestUtilsBase):
 
 
 class TestBuildSheetConfig(
-    ProjectMixin, RoleAssignmentMixin, SampleSheetIOMixin, TestCase
+    ProjectMixin,
+    RoleAssignmentMixin,
+    SampleSheetIOMixin,
+    SheetConfigMixin,
+    TestCase,
 ):
     """Tests for build_sheet_config()"""
 
@@ -198,6 +250,14 @@ class TestBuildSheetConfig(
         self.assignment_owner = self._make_assignment(
             self.project, self.user_owner, self.role_owner
         )
+
+    def test_build_sheet_config(self):
+        """Test sheet building against the default i_small JSON config file"""
+        investigation = self._import_isa_from_file(SHEET_PATH, self.project)
+        # Update study and assay UUIDs to match JSON file
+        self._update_uuids(investigation, CONFIG_DATA_DEFAULT)
+        sheet_config = build_sheet_config(investigation)
+        self.assertEqual(sheet_config, CONFIG_DATA_DEFAULT)
 
     # TODO: Test fields once we are finished with the notation
     def test_build_sheet_config_batch(self):

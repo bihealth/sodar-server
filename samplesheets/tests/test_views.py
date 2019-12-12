@@ -22,6 +22,9 @@ from projectroles.tests.test_models import (
 from projectroles.tests.test_views import KnoxAuthMixin
 from projectroles.utils import build_secret
 
+# Timeline dependency
+from timeline.models import ProjectEvent
+
 from samplesheets.io import SampleSheetIO
 from samplesheets.models import (
     Investigation,
@@ -38,6 +41,12 @@ from samplesheets.tests.test_io import (
     SHEET_DIR,
     SHEET_DIR_SPECIAL,
 )
+from samplesheets.tests.test_utils import (
+    SheetConfigMixin,
+    CONFIG_DIR,
+    CONFIG_STUDY_UUID,  # CONFIG_ASSAY_UUID,
+)
+from samplesheets.utils import build_sheet_config
 
 
 # App settings API
@@ -76,6 +85,10 @@ REMOTE_SITE_URL = 'https://sodar.bihealth.org'
 REMOTE_SITE_DESC = 'description'
 REMOTE_SITE_SECRET = build_secret()
 EDIT_NEW_VALUE_STR = 'edited value'
+CONFIG_PATH_DEFAULT = CONFIG_DIR + 'i_small_default.json'
+
+with open(CONFIG_PATH_DEFAULT) as fp:
+    CONFIG_DATA_DEFAULT = json.load(fp)
 
 IRODS_BACKEND_ENABLED = (
     True if 'omics_irods' in settings.ENABLED_BACKEND_PLUGINS else False
@@ -190,8 +203,10 @@ class TestSampleSheetImportView(TestViewsBase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(Investigation.objects.all().count(), 1)
         self.assertEqual(ISATab.objects.all().count(), 1)
-        self.assertListEqual(ISATab.objects.first().tags, ['IMPORT'])
-        self.assertIsNotNone(ISATab.objects.first().data['sheet_config'])
+
+        isa_version = ISATab.objects.first()
+        self.assertListEqual(isa_version.tags, ['IMPORT'])
+        self.assertIsNotNone(isa_version.data['sheet_config'])
 
     def test_post_replace(self):
         """Test replacing an existing investigation by posting"""
@@ -1116,6 +1131,108 @@ class TestSampleSheetEditFinishAPIView(TestViewsBase):
         # Asert postconditions
         self.assertEqual(response.status_code, 200)
         self.assertEqual(ISATab.objects.all().count(), 1)
+
+
+# TODO: Test with assay updates (needs a better test ISAtab)
+class TestSampleSheetManagePostAPIView(TestViewsBase, SheetConfigMixin):
+    """Tests for SampleSheetManagePostAPIView"""
+
+    def setUp(self):
+        super().setUp()
+
+        # Import investigation
+        self.investigation = self._import_isa_from_file(
+            SHEET_PATH, self.project
+        )
+        # Set up UUIDs and default config
+        self._update_uuids(self.investigation, CONFIG_DATA_DEFAULT)
+        app_settings.set_app_setting(
+            'samplesheets',
+            'sheet_config',
+            build_sheet_config(self.investigation),
+            project=self.project,
+        )
+        self.study = self.investigation.studies.first()
+        self.assay = self.study.assays.first()
+
+    def test_post_update_study_column(self):
+        """Test posting a study column update"""
+
+        # Assert preconditions
+        sheet_config = app_settings.get_app_setting(
+            'samplesheets', 'sheet_config', project=self.project
+        )
+        self.assertEqual(sheet_config, CONFIG_DATA_DEFAULT)
+        self.assertEqual(
+            ProjectEvent.objects.filter(
+                project=self.project,
+                app='samplesheets',
+                event_name='field_update',
+            ).count(),
+            0,
+        )
+
+        values = {
+            'fields': [
+                {
+                    'action': 'update',
+                    'study': CONFIG_STUDY_UUID,
+                    'assay': None,
+                    'node_idx': 0,
+                    'field_idx': 2,
+                    'config': {
+                        'name': 'age',
+                        'type': 'characteristics',
+                        'editable': True,
+                        'format': 'integer',
+                        'range': [None, None],
+                        'regex': '',
+                        'default': '',
+                        'unit': ['day'],
+                        'unit_default': 'day',
+                    },
+                }
+            ]
+        }
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:api_manage_post',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                json.dumps(values),
+                content_type='application/json',
+            )
+
+        # Assert postconditions
+        self.assertEqual(response.status_code, 200)
+
+        sheet_config = app_settings.get_app_setting(
+            'samplesheets', 'sheet_config', project=self.project
+        )
+        expected = {
+            'name': 'age',
+            'type': 'characteristics',
+            'editable': True,
+            'format': 'integer',
+            'regex': '',
+            'default': '',
+            'unit': ['day'],
+            'unit_default': 'day',
+        }
+        self.assertEqual(
+            sheet_config['studies'][CONFIG_STUDY_UUID]['nodes'][0]['fields'][2],
+            expected,
+        )
+        self.assertEqual(
+            ProjectEvent.objects.filter(
+                project=self.project,
+                app='samplesheets',
+                event_name='field_update',
+            ).count(),
+            1,
+        )
 
 
 class TestSourceIDQueryAPIView(KnoxAuthMixin, TestViewsBase):
