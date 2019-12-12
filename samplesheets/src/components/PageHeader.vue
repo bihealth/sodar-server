@@ -29,6 +29,7 @@
             :class='"badge badge-pill mr-3 badge-" + editVariant'>
         <i class="fa fa-pencil"></i> {{ editMessage }}
       </span>
+      <!-- Nav dropdown -->
       <b-dropdown
           id="sodar-ss-nav-dropdown"
           :disabled="!app.sheetsAvailable || app.gridsBusy"
@@ -65,7 +66,9 @@
           <i class="fa fa-fw fa-sitemap"></i> Overview
         </b-dropdown-item>
       </b-dropdown>
+      <!-- Operations dropdown (only show if not in edit mode -->
       <b-dropdown
+          v-if="!app.editMode"
           id="sodar-ss-op-dropdown"
           :disabled="app.gridsBusy || !app.sodarContext['perms']['edit_sheet']"
           right
@@ -78,24 +81,16 @@
           <i class="fa fa-fw fa-upload"></i> Import ISAtab
         </b-dropdown-item>
         <b-dropdown-item
-            v-if="app.sheetsAvailable &&
-                  !app.editMode"
+            v-if="app.sheetsAvailable"
             class="sodar-ss-op-item"
             @click="toggleEditMode"
             :disabled="!app.sodarContext['allow_editing']">
           <i class="fa fa-fw fa-pencil"></i> Edit Sheet
         </b-dropdown-item>
         <b-dropdown-item
-            v-if="app.sheetsAvailable &&
-                  app.editMode"
-            class="sodar-ss-op-item"
-            @click="toggleEditMode">
-          <i class="fa fa-fw fa-check"></i> Finish Editing Sheet
-        </b-dropdown-item>
-        <b-dropdown-item
             v-if="app.sheetsAvailable"
             class="sodar-ss-op-item"
-            :disabled="app.editMode || !app.sodarContext['parser_warnings']"
+            :disabled="!app.sodarContext['parser_warnings']"
             @click="app.showSubPage('warnings')">
           <i class="fa fa-fw fa-exclamation-circle"></i> View Parser Warnings
         </b-dropdown-item>
@@ -103,38 +98,33 @@
             v-if="app.sheetsAvailable &&
                   app.sodarContext['irods_status']"
             class="sodar-ss-op-item"
-            :href="'cache/update/' + app.projectUuid"
-            :disabled="app.editMode">
+            :href="'cache/update/' + app.projectUuid">
           <i class="fa fa-fw fa-refresh"></i> Update Sheet Cache
         </b-dropdown-item>
         <b-dropdown-item
             v-if="app.sheetsAvailable"
             class="sodar-ss-op-item"
-            :href="'import/' + app.projectUuid"
-            :disabled="app.editMode">
+            :href="'import/' + app.projectUuid">
           <i class="fa fa-fw fa-upload"></i> Replace ISAtab
         </b-dropdown-item>
         <b-dropdown-item
             v-if="app.sheetsAvailable"
             class="sodar-ss-op-item"
-            :href="'export/isa/' + app.projectUuid"
-            :disabled="app.editMode">
+            :href="'export/isa/' + app.projectUuid">
           <i class="fa fa-fw fa-download"></i> Export ISAtab
         </b-dropdown-item>
         <b-dropdown-item
             v-if="app.sheetsAvailable &&
                   !app.renderError"
             class="sodar-ss-op-item"
-            :href="'dirs/' + app.projectUuid"
-            :disabled="app.editMode">
+            :href="'dirs/' + app.projectUuid">
           <i class="fa fa-fw fa-database"></i>
           <span v-if="app.sodarContext['irods_status']">Update</span><span v-else>Create</span> iRODS Directories
         </b-dropdown-item>
         <b-dropdown-item
             v-if="app.sheetsAvailable"
             class="sodar-ss-op-item"
-            :href="'versions/' + app.projectUuid"
-            :disabled="app.editMode">
+            :href="'versions/' + app.projectUuid">
           <i class="fa fa-fw fa-files-o"></i> Sheet Versions
         </b-dropdown-item>
         <b-dropdown-item
@@ -142,11 +132,19 @@
                   app.sodarContext['perms']['delete_sheet']"
             class="sodar-ss-op-item"
             variant="danger"
-            :href="'delete/' + app.projectUuid"
-            :disabled="app.editMode">
+            :href="'delete/' + app.projectUuid">
           <i class="fa fa-fw fa-close"></i> Delete Sheet and Data
         </b-dropdown-item>
       </b-dropdown>
+      <!-- Finish editing button (replace op dropdown in edit mode) -->
+      <b-button
+          v-if="app.editMode"
+          variant="primary"
+          class="text-left"
+          id="sodar-ss-vue-btn-edit-finish"
+          @click="toggleEditMode">
+        Finish Editing <span class="pull-right"><i class="fa fa-check"></i></span>
+      </b-button>
     </div>
   </div>
 </template>
@@ -223,6 +221,10 @@ export default {
 /* Force bg-success to active nav link (not supported by boostrap-vue) */
 ul.sodar-ss-nav li a.active {
   background-color: #28a745 !important;
+}
+
+button#sodar-ss-vue-btn-edit-finish {
+  width: 162px;
 }
 
 /* Hide navbar if browser is too narrow */
