@@ -181,9 +181,8 @@ export default Vue.extend({
     // Set up unit value
     // TODO: Support ontology references for units
     if (this.editConfig.hasOwnProperty('unit') &&
-        this.editConfig['unit'].length > 0 &&
-        this.value.hasOwnProperty('unit')) {
-      if (this.value['unit']) {
+        this.editConfig['unit'].length > 0) {
+      if (this.value.hasOwnProperty('unit') && this.value['unit']) {
         this.editUnit = this.value['unit']
         this.ogEditUnit = this.value['unit']
       }
@@ -253,7 +252,7 @@ export default Vue.extend({
     this.valid = this.getValidState()
     this.setInputClasses()
     this.value['value'] = this.editValue
-    if (this.editUnitEnabled && this.value.hasOwnProperty('unit')) {
+    if (this.editUnitEnabled) {
       this.value['unit'] = this.editUnit
     }
   },
