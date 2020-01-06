@@ -1,28 +1,67 @@
 """UI tests for the samplesheets app"""
+import json
 
-# from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
+
+# from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
 
 from django.urls import reverse
 
 # Projectroles dependency
+from projectroles.app_settings import AppSettingAPI
 from projectroles.tests.test_ui import TestUIBase
 
-from .test_io import SampleSheetIOMixin, SHEET_DIR
+from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
+from samplesheets.tests.test_utils import (
+    SheetConfigMixin,
+    CONFIG_PATH_DEFAULT,
+    CONFIG_PATH_UPDATED,
+)
 
 
 # Local constants
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
 DEFAULT_WAIT_ID = 'sodar-ss-vue-content'
 
+with open(CONFIG_PATH_DEFAULT) as fp:
+    CONFIG_DATA_DEFAULT = json.load(fp)
 
-class TestProjectSheetsView(SampleSheetIOMixin, TestUIBase):
-    """Tests for the project sheets view UI"""
+with open(CONFIG_PATH_UPDATED) as fp:
+    CONFIG_DATA_UPDATED = json.load(fp)
+
+
+# App settings API
+app_settings = AppSettingAPI()
+
+
+class TestProjectSheetsVueAppBase(
+    SampleSheetIOMixin, SheetConfigMixin, TestUIBase
+):
+    """Base view for the project sheets vue app UI"""
 
     # Helper functions ---------------------------------------------------------
+
+    def _setup_investigation(self, config_data=None):
+        """Setup Investigation, Study and Assay"""
+        self.investigation = self._import_isa_from_file(
+            SHEET_PATH, self.project
+        )
+
+        if config_data:
+            # Set up UUIDs and default config
+            self._update_uuids(self.investigation, config_data)
+            app_settings.set_app_setting(
+                'samplesheets',
+                'sheet_config',
+                config_data,
+                project=self.project,
+            )
+
+        self.study = self.investigation.studies.first()
+        self.assay = self.study.assays.first()
 
     def _login_and_render(self, user, wait_elem=DEFAULT_WAIT_ID, url_suffix=''):
         """Login into the sheets view and wait for it to render"""
@@ -51,21 +90,54 @@ class TestProjectSheetsView(SampleSheetIOMixin, TestUIBase):
         elif elem.tag_name == 'a':
             return False if 'disabled' in elem.get_attribute('class') else True
 
+    def _start_editing(self, wait_for_study=True):
+        """Enable edit mode in the UI"""
+
+        op_div = self.selenium.find_element_by_id('sodar-ss-op-dropdown')
+        op_div.click()
+        WebDriverWait(self.selenium, self.wait_time).until(
+            ec.presence_of_element_located((By.ID, 'sodar-ss-op-item-edit'))
+        )
+        elem = op_div.find_element_by_id('sodar-ss-op-item-edit')
+        # NOTE: Must use execute_script() due to bootstrap-vue wrapping
+        self.selenium.execute_script("arguments[0].click();", elem)
+
+        WebDriverWait(self.selenium, self.wait_time).until(
+            ec.presence_of_element_located(
+                (By.ID, 'sodar-ss-vue-btn-edit-finish')
+            )
+        )
+
+        if wait_for_study:
+            WebDriverWait(self.selenium, self.wait_time).until(
+                ec.presence_of_element_located((By.ID, 'sodar-ss-grid-study'))
+            )
+
+    def _stop_editing(self, wait_for_study=True):
+        """Finish editing and exit from edit mode"""
+        self.selenium.find_element_by_id('sodar-ss-vue-btn-edit-finish').click()
+        WebDriverWait(self.selenium, self.wait_time).until(
+            ec.presence_of_element_located((By.ID, 'sodar-ss-op-dropdown'))
+        )
+
+        if wait_for_study:
+            WebDriverWait(self.selenium, self.wait_time).until(
+                ec.presence_of_element_located((By.ID, 'sodar-ss-grid-study'))
+            )
+
     # Setup --------------------------------------------------------------------
 
     def setUp(self):
         super().setUp()
-
         self.default_user = self.as_contributor.user
 
-        # Import investigation
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
-        self.study = self.investigation.studies.first()
-        self.assay = self.study.assays.first()
 
-    # Tests --------------------------------------------------------------------
+class TestProjectSheetsView(TestProjectSheetsVueAppBase):
+    """Tests for the project sheets view UI"""
+
+    def setUp(self):
+        super().setUp()
+        self._setup_investigation()
 
     def test_render(self):
         """Test rendering the view with study and assay grids"""
@@ -388,20 +460,39 @@ class TestProjectSheetsView(SampleSheetIOMixin, TestUIBase):
             self.assertEqual(self._get_enabled_state(btn), True)
 
 
-class TestSampleSheetVersionListView(SampleSheetIOMixin, TestUIBase):
+class TestProjectSheetsEditModeDefault(TestProjectSheetsVueAppBase):
+    """Tests for the samplesheets UI edit mode with a default config"""
+
+    def setUp(self):
+        # self.chrome_options.remove('headless')  # DEBUG
+        super().setUp()
+        app_settings.set_app_setting(
+            'samplesheets', 'allow_editing', True, project=self.project
+        )
+        self._setup_investigation(config_data=CONFIG_DATA_DEFAULT)
+
+    def test_edit_mode(self):
+        """Test entering and exiting edit mode"""
+        self._login_and_render(self.default_user)
+        self._start_editing()
+        self.assertIsNotNone(
+            self.selenium.find_element_by_xpath(
+                '//span[contains(., "Edit Mode")]'
+            )
+        )
+        self._stop_editing()
+        with self.assertRaises(NoSuchElementException):
+            self.selenium.find_element_by_xpath(
+                '//span[contains(., "Edit Mode")]'
+            )
+
+
+class TestSampleSheetVersionListView(TestProjectSheetsVueAppBase):
     """Tests for the sheet version list view UI"""
 
     def setUp(self):
         super().setUp()
-
-        self.default_user = self.as_contributor.user
-
-        # Import investigation
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
-        self.study = self.investigation.studies.first()
-        self.assay = self.study.assays.first()
+        self._setup_investigation()
         self.url = reverse(
             'samplesheets:versions', kwargs={'project': self.project.sodar_uuid}
         )

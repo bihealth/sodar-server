@@ -34,6 +34,7 @@ CONFIG_STUDY_UUID = '11111111-1111-1111-1111-111111111111'
 CONFIG_ASSAY_UUID = '22222222-2222-2222-2222-222222222222'
 CONFIG_DIR = os.path.dirname(__file__) + '/config/'
 CONFIG_PATH_DEFAULT = CONFIG_DIR + 'i_small_default.json'
+CONFIG_PATH_UPDATED = CONFIG_DIR + 'i_small_updated.json'
 
 with open(CONFIG_PATH_DEFAULT) as fp:
     CONFIG_DATA_DEFAULT = json.load(fp)

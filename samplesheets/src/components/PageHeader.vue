@@ -26,7 +26,8 @@
     <div class="ml-auto">
       <notify-badge ref="notifyBadge"></notify-badge>
       <span v-if="app.editMode"
-            :class='"badge badge-pill mr-3 badge-" + editVariant'>
+            :class='"badge badge-pill mr-3 badge-" + editVariant'
+            id="sodar-ss-vue-badge-edit">
         <i class="fa fa-pencil"></i> {{ editMessage }}
       </span>
       <!-- Nav dropdown -->
@@ -83,6 +84,7 @@
         <b-dropdown-item
             v-if="app.sheetsAvailable"
             class="sodar-ss-op-item"
+            id="sodar-ss-op-item-edit"
             @click="toggleEditMode"
             :disabled="!app.sodarContext['allow_editing']">
           <i class="fa fa-fw fa-pencil"></i> Edit Sheet

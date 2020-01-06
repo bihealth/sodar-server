@@ -43,8 +43,8 @@ from samplesheets.tests.test_io import (
 )
 from samplesheets.tests.test_utils import (
     SheetConfigMixin,
-    CONFIG_DIR,
-    CONFIG_STUDY_UUID,  # CONFIG_ASSAY_UUID,
+    CONFIG_PATH_DEFAULT,
+    CONFIG_STUDY_UUID,
 )
 from samplesheets.utils import build_sheet_config
 
@@ -85,7 +85,6 @@ REMOTE_SITE_URL = 'https://sodar.bihealth.org'
 REMOTE_SITE_DESC = 'description'
 REMOTE_SITE_SECRET = build_secret()
 EDIT_NEW_VALUE_STR = 'edited value'
-CONFIG_PATH_DEFAULT = CONFIG_DIR + 'i_small_default.json'
 
 with open(CONFIG_PATH_DEFAULT) as fp:
     CONFIG_DATA_DEFAULT = json.load(fp)
@@ -1134,7 +1133,7 @@ class TestSampleSheetEditFinishAPIView(TestViewsBase):
 
 
 # TODO: Test with assay updates (needs a better test ISAtab)
-class TestSampleSheetManagePostAPIView(TestViewsBase, SheetConfigMixin):
+class TestSampleSheetManagePostAPIView(SheetConfigMixin, TestViewsBase):
     """Tests for SampleSheetManagePostAPIView"""
 
     def setUp(self):
