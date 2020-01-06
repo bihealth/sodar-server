@@ -32,6 +32,7 @@ Changed
 -------
 
 - **General**
+    - Upgrade site to django-sodar-core v0.7.1
     - Upgrade to python-irodsclient v0.8.2 (#731)
     - Upgrade to altamISA v0.2.6
     - Upgrade to Chromedriver v79
