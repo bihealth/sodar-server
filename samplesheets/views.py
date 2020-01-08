@@ -1663,7 +1663,9 @@ class SampleSheetEditPostAPIView(
                     attr[header_name]['value'] = cell['value']
 
                     # TODO: Support ontology ref in unit
-                    if isinstance(attr[header_name]['unit'], str):
+                    if not hasattr(attr[header_name], 'unit') or isinstance(
+                        attr[header_name]['unit'], str
+                    ):
                         attr[header_name]['unit'] = cell.get('unit')
 
                     elif isinstance(attr[header_name]['unit'], dict):
