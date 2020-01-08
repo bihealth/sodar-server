@@ -199,7 +199,7 @@ export default Vue.extend({
 
       let inputWidth = this.renderInfo['width']
       if (this.editUnitEnabled) {
-        let unitWidth = Math.max(0, ...this.editConfig['unit'].map(el => el.length)) * 15 + 20
+        let unitWidth = Math.max(0, ...this.editConfig['unit'].map(el => el.length)) * 15 + 30
         inputWidth = Math.max(inputWidth - unitWidth, 120)
         this.unitStyle = 'width: ' + unitWidth.toString() + 'px !important;'
       }
