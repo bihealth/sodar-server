@@ -513,6 +513,7 @@ export default {
           .children[this.defFieldIdx]
       }
 
+      colDef.headerComponentParams['colType'] = this.colType
       colDef.headerComponentParams['fieldConfig'] = this.fieldConfig
       colDef.cellEditorParams['editConfig'] = this.fieldConfig
       colDef.editable = this.fieldConfig['editable']
@@ -536,6 +537,69 @@ export default {
         )
       }
     },
+    handleUpdate () {
+      // Determine current colType
+      if (['integer', 'double'].includes(this.fieldConfig['format'])) {
+        if (this.fieldConfig.hasOwnProperty('unit') &&
+            this.fieldConfig['unit']) {
+          this.colType = 'UNIT'
+        } else {
+          this.colType = 'NUMERIC'
+        }
+      } else { // TODO: Other column types
+        this.colType = null
+      }
+
+      // console.log('colType: ' + this.ogColType + ' -> ' + this.colType) // DEBUG
+
+      // Update column definitions in all tables
+      if (this.defNodeIdx < this.app.columnDefs['study'].length) {
+        this.updateColDefs(this.app.currentStudyUuid, false) // Update study
+      }
+      for (let k in this.app.columnDefs['assays']) { // Update assays
+        this.updateColDefs(k, true)
+      }
+
+      // Fill default value to empty cells in column if selected
+      if (this.defaultFill &&
+          this.fieldConfig.hasOwnProperty('default') &&
+          this.fieldConfig['default'].length > 0) {
+        // Collect column cell data
+        let field = this.col.colDef.field
+        let cellUuids = [] // Store found cell UUIDs
+        let upData = [] // The actual update data
+        let refreshCells = true
+
+        if (this.colType !== this.ogColType) {
+          refreshCells = false
+        }
+
+        for (let i = 0; i < this.gridOptions.rowData.length; i++) {
+          let row = this.gridOptions.rowData[i]
+
+          if (row.hasOwnProperty(field) &&
+              !cellUuids.includes(row[field]['uuid'])) {
+            if (!row[field]['value'] || row[field]['value'].length === 0) {
+              let cell = row[field]
+              let ogValue = cell['value']
+              cell['value'] = this.fieldConfig['default']
+              upData.push(Object.assign(
+                cell,
+                {'og_value': ogValue},
+                this.col.colDef.cellEditorParams['headerInfo']))
+            }
+            cellUuids.push(row[field]['uuid'])
+          }
+        }
+        this.app.handleCellEdit(upData, refreshCells)
+      }
+
+      // If column type has changed, update colType and alignment
+      if (this.colType !== this.ogColType) {
+        this.app.updateColType(this.col.colDef.field, this.colType, true)
+      }
+      this.app.setDataUpdated(true)
+    },
     /* Modal showing/hiding ------------------------------------------------- */
     showModal (data, col) {
       this.fieldDisplayName = data['fieldDisplayName']
@@ -549,6 +613,7 @@ export default {
       this.defFieldIdx = data['defFieldIdx']
       this.col = col
       this.colType = data['colType']
+      this.ogColType = data['colType'] // Save original colType
       let gridUuid = !this.assayUuid ? this.studyUuid : this.assayUuid
       this.gridOptions = this.app.getGridOptionsByUuid(gridUuid)
 
@@ -612,14 +677,6 @@ export default {
         this.fieldConfig = this.cleanupFieldConfig(
           this.fieldConfig, this.valueOptions, this.unitOptions)
 
-        // Update fieldConfig in all tables (if study field in multiple tables)
-        if (this.defNodeIdx < this.app.columnDefs['study'].length) {
-          this.updateColDefs(this.app.currentStudyUuid, false) // Update study
-        }
-        for (let k in this.app.columnDefs['assays']) { // Update assays
-          this.updateColDefs(k, true)
-        }
-
         // Save config on server
         let upData = {
           'fields': [
@@ -646,6 +703,7 @@ export default {
           .then(
             data => {
               if (data['message'] === 'ok') {
+                this.handleUpdate() // Handle successful update here
                 this.app.showNotification('Column Updated', 'success', 1000)
               } else {
                 console.log('Update status: ' + data['message'])
@@ -655,36 +713,6 @@ export default {
           ).catch(function (error) {
             console.log('Error updating field: ' + error.message)
           })
-
-        // Fill default value to empty cells in column if selected
-        if (this.defaultFill &&
-            this.fieldConfig.hasOwnProperty('default') &&
-            this.fieldConfig['default'].length > 0) {
-          // Collect column cell data
-          let field = this.col.colDef.field
-          let cellUuids = [] // Store found cell UUIDs
-          let upData = [] // The actual update data
-
-          for (let i = 0; i < this.gridOptions.rowData.length; i++) {
-            let row = this.gridOptions.rowData[i]
-
-            if (row.hasOwnProperty(field) &&
-                !cellUuids.includes(row[field]['uuid'])) {
-              if (!row[field]['value'] || row[field]['value'].length === 0) {
-                let cell = row[field]
-                let ogValue = cell['value']
-                cell['value'] = this.fieldConfig['default']
-                upData.push(Object.assign(
-                  cell,
-                  {'og_value': ogValue},
-                  this.col.colDef.cellEditorParams['headerInfo']))
-              }
-              cellUuids.push(row[field]['uuid'])
-            }
-          }
-          this.app.handleCellEdit(upData)
-        }
-        this.app.setDataUpdated(true)
       }
       this.$refs.manageColumnModal.hide()
     }

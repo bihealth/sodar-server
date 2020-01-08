@@ -50,7 +50,7 @@
          v-b-tooltip.hover.d300
          target="_blank">{{ renderData.value }}</a>
     </span>
-    <!-- Plain/empty/undetected value -->
+    <!-- Plain/numeric/empty/undetected value -->
     <span v-else>
       {{ value.value }}
     </span>

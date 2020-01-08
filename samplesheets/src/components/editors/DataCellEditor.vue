@@ -20,7 +20,7 @@
     <span v-else>
       <input :ref="'input'"
              v-model="editValue"
-             :class="'ag-cell-edit-input ' + inputClasses"
+             :class="'ag-cell-edit-input ' + getInputClasses()"
              :style="inputStyle"
              @keydown="onKeyDown($event)"
              :placeholder="getInputPlaceholder('Value')" />
@@ -66,7 +66,6 @@ export default Vue.extend({
       editUnit: '',
       ogEditUnit: '',
       containerClasses: '',
-      inputClasses: '',
       inputStyle: '',
       unitStyle: ''
     }
@@ -124,16 +123,12 @@ export default Vue.extend({
     getKeyCode (event) {
       return (typeof event.which === 'undefined') ? event.keyCode : event.which
     },
-    setInputClasses () {
+    getInputClasses () {
       let classes = ''
-      // Alignment does not get inherited in case of popup
-      if (this.isPopup()) {
-        classes = classes + 'sodar-ss-vue-popup-input text-' + this.renderInfo['align']
-      }
       if (!this.valid) {
         classes = classes + ' text-danger'
       }
-      this.inputClasses = classes
+      return classes + ' text-' + this.renderInfo['align']
     },
     getInputPlaceholder (text) {
       if (this.isPopup() && this.editUnitEnabled) {
@@ -201,7 +196,6 @@ export default Vue.extend({
     // Set classes and styling for popup
     if (this.isPopup()) {
       this.containerClasses = 'sodar-ss-vue-edit-popup text-nowrap'
-      this.setInputClasses()
 
       let inputWidth = this.renderInfo['width']
       if (this.editUnitEnabled) {
@@ -250,7 +244,6 @@ export default Vue.extend({
   },
   updated () {
     this.valid = this.getValidState()
-    this.setInputClasses()
     this.value['value'] = this.editValue
     if (this.editUnitEnabled) {
       this.value['unit'] = this.editUnit
@@ -267,7 +260,7 @@ export default Vue.extend({
       if (this.value['unit'] === '') {
         this.value['unit'] = null
       }
-      this.app.handleCellEdit(this.getUpdateData())
+      this.app.handleCellEdit(this.getUpdateData(), true)
     }
     this.params.colDef.suppressKeyboardEvent = false
     this.app.selectEnabled = true
@@ -295,7 +288,6 @@ input.ag-cell-edit-input {
   padding-right: 15px;
   padding-top: 0;
   padding-bottom: 2px;
-  text-align: inherit;
 }
 
 select.ag-cell-edit-input {
@@ -313,7 +305,6 @@ select.ag-cell-edit-input {
   padding-right: 18px;
   padding-top: 0;
   padding-bottom: 2px !important;
-  text-align: inherit;
 
   background-image: url("data:image/svg+xml;charset=utf-8, \
     <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 40'> \

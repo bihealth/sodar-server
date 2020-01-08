@@ -1052,7 +1052,7 @@ export default {
 
     /* Editing -------------------------------------------------------------- */
 
-    handleCellEdit (upDataArr) {
+    handleCellEdit (upDataArr, refreshCells) {
       // TODO: Add timeout / retrying
       // TODO: Cleanup unnecessary fields from JSON
       // TODO: In the future, add edited info in a queue and save periodically
@@ -1077,11 +1077,11 @@ export default {
               this.editDataUpdated = true
 
               // Update other occurrences of cell in UI
-              this.updateCellUIValues(
-                this.getGridOptionsByUuid(this.currentStudyUuid).api, upDataArr)
-
-              for (var k in this.columnDefs['assays']) {
-                this.updateCellUIValues(this.getGridOptionsByUuid(k).api, upDataArr)
+              let gridUuids = this.getStudyGridUuids()
+              for (let i = 0; i < gridUuids.length; i++) {
+                this.updateCellUIValues(
+                  this.getGridOptionsByUuid(
+                    gridUuids[i]).api, upDataArr, refreshCells)
               }
             } else {
               console.log('Save status: ' + data['message']) // DEBUG
@@ -1094,10 +1094,11 @@ export default {
         })
     },
 
-    updateCellUIValues (gridApi, upDataArr) {
+    updateCellUIValues (gridApi, upDataArr, refreshCells) {
       for (let i = 0; i < upDataArr.length; i++) {
         let upData = upDataArr[i]
         let field = upData['header_field']
+
         gridApi.forEachNode(function (rowNode) {
           let value = rowNode.data[field]
           if (value &&
@@ -1108,7 +1109,45 @@ export default {
             rowNode.setDataValue(field, value)
           }
         })
-        gridApi.refreshCells({'columns': [field], 'force': true})
+
+        if (refreshCells) {
+          gridApi.refreshCells({'columns': [field], 'force': true})
+        }
+      }
+    },
+
+    // Update column type and alignment for a field
+    updateColType (fieldId, colType, refreshCells) {
+      let gridUuids = this.getStudyGridUuids()
+      let colAlign = 'left'
+      if (['UNIT', 'NUMERIC'].includes(colType)) {
+        colAlign = 'right'
+      }
+
+      for (let i = 0; i < gridUuids.length; i++) {
+        let gridOptions = this.getGridOptionsByUuid(gridUuids[i])
+        let gridApi = gridOptions.api
+        let col = gridOptions.columnApi.getColumn(fieldId)
+        if (!col) continue // Skip this grid if the column is not present
+        let colDef = gridOptions.columnApi.getColumn(fieldId).colDef
+
+        // Update alignment for column
+        colDef.cellClass = ['sodar-ss-data-cell', 'text-' + colAlign]
+        colDef.cellEditorParams['renderInfo']['align'] = colAlign
+
+        // Update colType for each cell (needed for comparator)
+        gridApi.forEachNode(function (rowNode) {
+          if (rowNode.data.hasOwnProperty(fieldId)) {
+            let value = rowNode.data[fieldId]
+            value['colType'] = colType
+            rowNode.setDataValue(fieldId, value)
+          }
+        })
+
+        if (refreshCells) {
+          // NOTE: gridApi.refreshCells() does not work with cellClass
+          gridApi.redrawRows()
+        }
       }
     },
 
@@ -1145,6 +1184,18 @@ export default {
     },
 
     /* Data and App Access -------------------------------------------------- */
+
+    // Return array of UUIDs for the current study and all assays
+    getStudyGridUuids () {
+      if (!this.currentStudyUuid) {
+        return null
+      }
+      let uuids = [this.currentStudyUuid]
+      for (var k in this.columnDefs['assays']) {
+        uuids.push(k)
+      }
+      return uuids
+    },
 
     getGridOptionsByUuid (uuid) {
       if (uuid === this.currentStudyUuid) {

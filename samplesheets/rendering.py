@@ -222,7 +222,9 @@ class SampleSheetTableBuilder:
                 ]['nodes'][a_node_idx]['fields'][self._field_idx]
 
         if field_config and field_config.get('format') == 'integer':
-            header['col_type'] = 'UNIT'
+            header['col_type'] = (
+                'UNIT' if field_config.get('unit') else 'NUMERIC'
+            )
 
         # Else detect type without config
         elif 'contact' in name.lower():
@@ -606,9 +608,10 @@ class SampleSheetTableBuilder:
             # Set column type to NUMERIC if values are all numeric or empty
             # (except if name)
             # Skip check if column is already defined as UNIT
+            # TODO: Skip this if configuration exists (issue #757)
             if (
                 header_name != 'name'
-                and self._field_header[i]['col_type'] != 'UNIT'
+                and self._field_header[i]['col_type'] not in ['NUMERIC', 'UNIT']
                 and any(_is_num(x[i]['value']) for x in self._table_data)
                 and all(
                     (_is_num(x[i]['value']) or not x[i]['value'])
