@@ -93,6 +93,7 @@ class SampleSheetTableBuilder:
         self._row = []
         self._top_header = []
         self._field_header = []
+        self._field_configs = []
         self._table_data = []
         self._first_row = True
         self._col_values = []
@@ -200,11 +201,11 @@ class SampleSheetTableBuilder:
             if isinstance(obj, GenericMaterial)
             else None,
             'num_col': False,  # Will be checked for sorting later
+            'config_set': False,
         }
         field_config = None
 
-        # Column type (the ones we can determine at this point)
-        # Override by config setting if present
+        # Get existing field config
         if self._sheet_config:
             study_config = self._sheet_config['studies'][
                 str(self._study.sodar_uuid)
@@ -221,6 +222,14 @@ class SampleSheetTableBuilder:
                     str(self._assay.sodar_uuid)
                 ]['nodes'][a_node_idx]['fields'][self._field_idx]
 
+        # Save info on whether a pre-existing config is set for this field
+        if field_config and field_config.get('format'):
+            self._field_configs.append(True)
+
+        else:
+            self._field_configs.append(False)
+
+        # Column type (the ones we can determine at this point)
         if field_config and field_config.get('format') == 'integer':
             header['col_type'] = (
                 'UNIT' if field_config.get('unit') else 'NUMERIC'
@@ -549,6 +558,7 @@ class SampleSheetTableBuilder:
         self._row = []
         self._top_header = []
         self._field_header = []
+        self._field_configs = []
         self._table_data = []
         self._first_row = True
         self._col_values = []
@@ -608,9 +618,9 @@ class SampleSheetTableBuilder:
             # Set column type to NUMERIC if values are all numeric or empty
             # (except if name)
             # Skip check if column is already defined as UNIT
-            # TODO: Skip this if configuration exists (issue #757)
             if (
                 header_name != 'name'
+                and not self._field_configs[i]
                 and self._field_header[i]['col_type'] not in ['NUMERIC', 'UNIT']
                 and any(_is_num(x[i]['value']) for x in self._table_data)
                 and all(
