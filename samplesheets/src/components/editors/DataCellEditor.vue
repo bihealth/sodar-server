@@ -254,10 +254,12 @@ export default Vue.extend({
       this.value['value'] = this.ogEditValue
       this.value['unit'] = this.ogEditUnit
       this.app.showNotification(this.invalidMsg || 'Invalid value', 'danger', 1000)
-    } else if (this.ogEditValue !== this.editValue ||
-          (this.editUnitEnabled && this.ogEditUnit !== this.editUnit)) {
-      // HACK: Force empty unit to null
-      if (this.value['unit'] === '') {
+    } else if (this.ogEditValue !== this.editValue || (
+      this.editUnitEnabled &&
+      this.editValue &&
+      this.ogEditUnit !== this.editUnit)) {
+      // Force empty unit to null, also remove unit
+      if (this.value['unit'] === '' || !this.value['value']) {
         this.value['unit'] = null
       }
       this.app.handleCellEdit(this.getUpdateData(), true)
