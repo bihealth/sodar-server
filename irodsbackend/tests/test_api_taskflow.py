@@ -36,7 +36,7 @@ IRODS_PORT = settings.IRODS_PORT
 IRODS_ZONE = settings.IRODS_ZONE
 SAMPLE_DIR = settings.IRODS_SAMPLE_DIR
 LANDING_ZONE_DIR = settings.IRODS_LANDING_ZONE_DIR
-SERVER_AVAILABLE = 'available'
+SERVER_AVAILABLE = 'Available'
 
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
 ZONE_TITLE = '20180503_1724_test_zone'
@@ -80,10 +80,12 @@ class TestIrodsBackendAPITaskflow(
         """Test get_info()"""
         info = self.irods_backend.get_info()
         self.assertIsNotNone(info)
+        self.assertEqual(info['server_ok'], True)
         self.assertEqual(info['server_status'], SERVER_AVAILABLE)
         self.assertEqual(info['server_host'], IRODS_HOST)
         self.assertEqual(info['server_port'], IRODS_PORT)
         self.assertEqual(info['server_zone'], IRODS_ZONE)
+        self.assertIsNotNone(info['server_version'])
 
     @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_get_objects(self):

@@ -29,15 +29,33 @@ class IrodsInfoView(LoggedInPermissionMixin, HTTPRefererMixin, TemplateView):
         irods_backend = get_backend_api('omics_irods')
 
         if irods_backend:
+            unavail_info = {
+                'server_ok': False,
+                'server_host': settings.IRODS_HOST,
+                'server_port': settings.IRODS_PORT,
+                'server_zone': settings.IRODS_ZONE,
+                'server_version': None,
+            }
+            unavail_status = None
+
             try:
                 context['server_info'] = irods_backend.get_info()
 
-            except (
-                NetworkException,
-                CAT_INVALID_AUTHENTICATION,
-                irods_backend.IrodsQueryException,
-            ):
-                context['server_info'] = None
+            except NetworkException:
+                unavail_status = 'Server Unreachable'
+
+            except CAT_INVALID_AUTHENTICATION:
+                unavail_status = 'Invalid Authentication'
+
+            except irods_backend.IrodsQueryException:
+                unavail_status = 'Invalid iRODS Query'
+
+            finally:
+                if unavail_status:
+                    unavail_info['server_status'] = 'Unavailable: {}'.format(
+                        unavail_status
+                    )
+                    context['server_info'] = unavail_info
 
         context['irods_backend'] = get_backend_api('omics_irods')
 

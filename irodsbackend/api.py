@@ -607,22 +607,24 @@ class IrodsAPI:
 
     @init_irods
     def get_info(self):
-        """Return iRODS server info"""
-        ret = {}
+        """
+        Return iRODS server info.
 
-        if self.irods:
-            ret['server_status'] = 'available'
-            ret['server_host'] = self.irods.host
-            ret['server_port'] = self.irods.port
-            ret['server_zone'] = self.irods.zone
-            ret['server_version'] = '.'.join(
+        :return: Dict
+        :raise: NetworkException if iRODS is unreachable
+        :raise: CAT_INVALID_AUTHENTICATION if iRODS authentication is invalid
+        :raise: irods_backend.IrodsQueryException for iRODS query errors
+        """
+        return {
+            'server_ok': True,
+            'server_status': 'Available',
+            'server_host': self.irods.host,
+            'server_port': self.irods.port,
+            'server_zone': self.irods.zone,
+            'server_version': '.'.join(
                 str(x) for x in self.irods.pool.get_connection().server_version
-            )
-
-        else:
-            ret['server_status'] = 'unavailable'
-
-        return ret
+            ),
+        }
 
     @init_irods
     def get_objects(self, path, check_md5=False, name_like=None, limit=None):

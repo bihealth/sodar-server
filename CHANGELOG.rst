@@ -36,6 +36,10 @@ Changed
     - Upgrade to python-irodsclient v0.8.2 (#731)
     - Upgrade to altamISA v0.2.6
     - Upgrade to Chromedriver v79
+- **Irodsbackend**
+    - Refactor ``api.get_info()``
+- **Irodsinfo**
+    - Display iRODS server information when connection fails (#761)
 - **Samplesheets**
     - Rename ``table_data`` member to ``tables`` in rendered table data (#219)
     - Move ``_get_isatab_files()`` and ``_fail_isa()`` into ``SampleSheetIOMixin``
