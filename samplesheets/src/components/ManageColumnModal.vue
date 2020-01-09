@@ -296,13 +296,7 @@ export default {
       this.validate('default')
     },
     onDefaultChange () {
-      if (!this.fieldConfig['default'] ||
-          this.fieldConfig['default'].length === 0) {
-        this.defaultFill = false
-        this.defaultFillEnable = false
-      } else {
-        this.defaultFillEnable = true
-      }
+      this.toggleDefaultFill()
     },
     onPasteInput (val) {
       let pasteData
@@ -356,6 +350,15 @@ export default {
       console.log('Copy Error: ' + event)
     },
     /* Helpers -------------------------------------------------------------- */
+    toggleDefaultFill () {
+      if (!this.fieldConfig.hasOwnProperty('default') ||
+          this.fieldConfig['default'].length === 0) {
+        this.defaultFill = false
+        this.defaultFillEnable = false
+      } else {
+        this.defaultFillEnable = true
+      }
+    },
     setWidgetData () {
       // Set up certain data for the form widgets
       if (this.fieldConfig.hasOwnProperty('options')) {
@@ -434,10 +437,14 @@ export default {
             this.formClasses['default'] = invalidClasses
             this.defaultFillEnable = false
           }
-        } else {
+        } else if (this.fieldConfig['default'].length === 0) {
           this.inputValid['default'] = true
           this.formClasses['default'] = ''
           this.defaultFillEnable = false
+        } else {
+          this.inputValid['default'] = true
+          this.formClasses['default'] = ''
+          this.defaultFillEnable = true
         }
       }
 
@@ -667,6 +674,7 @@ export default {
 
       // Set up certain data for the form widgets
       this.setWidgetData()
+      this.toggleDefaultFill()
 
       // Show modal
       this.$refs.manageColumnModal.show()
