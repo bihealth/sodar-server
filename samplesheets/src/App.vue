@@ -1097,57 +1097,31 @@ export default {
     updateCellUIValues (gridApi, upDataArr, refreshCells) {
       for (let i = 0; i < upDataArr.length; i++) {
         let upData = upDataArr[i]
-        let field = upData['header_field']
+        let fieldId = upData['header_field']
 
         gridApi.forEachNode(function (rowNode) {
-          let value = rowNode.data[field]
+          let value = rowNode.data[fieldId]
           if (value &&
               value['uuid'] === upData['uuid'] &&
               value['value'] === upData['og_value']) {
             value['value'] = upData['value']
             value['unit'] = upData['unit']
-            rowNode.setDataValue(field, value)
-          }
-        })
-
-        if (refreshCells) {
-          gridApi.refreshCells({'columns': [field], 'force': true})
-        }
-      }
-    },
-
-    // Update column type and alignment for a field
-    updateColType (fieldId, colType, refreshCells) {
-      let gridUuids = this.getStudyGridUuids()
-      let colAlign = 'left'
-      if (['UNIT', 'NUMERIC'].includes(colType)) {
-        colAlign = 'right'
-      }
-
-      for (let i = 0; i < gridUuids.length; i++) {
-        let gridOptions = this.getGridOptionsByUuid(gridUuids[i])
-        let gridApi = gridOptions.api
-        let col = gridOptions.columnApi.getColumn(fieldId)
-        if (!col) continue // Skip this grid if the column is not present
-        let colDef = gridOptions.columnApi.getColumn(fieldId).colDef
-
-        // Update alignment for column
-        colDef.cellClass = ['sodar-ss-data-cell', 'text-' + colAlign]
-        colDef.cellEditorParams['renderInfo']['align'] = colAlign
-
-        // Update colType for each cell (needed for comparator)
-        gridApi.forEachNode(function (rowNode) {
-          if (rowNode.data.hasOwnProperty(fieldId)) {
-            let value = rowNode.data[fieldId]
-            value['colType'] = colType
             rowNode.setDataValue(fieldId, value)
           }
         })
 
         if (refreshCells) {
-          // NOTE: gridApi.refreshCells() does not work with cellClass
-          gridApi.redrawRows()
+          gridApi.refreshCells({'columns': [fieldId], 'force': true})
         }
+      }
+    },
+
+    refreshField (fieldId) {
+      let gridUuids = this.getStudyGridUuids()
+
+      for (let i = 0; i < gridUuids.length; i++) {
+        this.getGridOptionsByUuid(gridUuids[i]).api.refreshCells(
+          {'columns': [fieldId], 'force': true})
       }
     },
 

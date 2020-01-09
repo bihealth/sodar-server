@@ -508,6 +508,7 @@ export default {
         this.cleanupFieldConfig(
           copyConfig, this.valueOptions, this.unitOptions))
     },
+    // Update column definition for the field in one grid by UUID
     updateColDefs (uuid, assayMode) {
       let gridOptions = this.app.getGridOptionsByUuid(uuid)
 
@@ -525,12 +526,20 @@ export default {
       colDef.cellEditorParams['editConfig'] = this.fieldConfig
       colDef.editable = this.fieldConfig['editable']
 
-      if (this.fieldConfig['editable']) {
-        colDef.cellClass = this.baseCellClasses
-      } else {
-        colDef.cellClass = this.baseCellClasses.concat(
-          ['bg-light', 'text-muted']
-        )
+      // Determine alignment
+      let colAlign = 'left'
+      if (['UNIT', 'NUMERIC'].includes(this.colType)) {
+        colAlign = 'right'
+      }
+
+      // Update alignment for editor
+      colDef.cellEditorParams['renderInfo']['align'] = colAlign
+
+      // Set classes
+      colDef.cellClass = this.baseCellClasses
+      colDef.cellClass = colDef.cellClass.concat(['text-' + colAlign])
+      if (!this.fieldConfig['editable']) {
+        colDef.cellClass = this.baseCellClasses.concat(['bg-light', 'text-muted'])
       }
 
       if (!assayMode) {
@@ -544,7 +553,32 @@ export default {
         )
       }
     },
+    // Update column type for a field in all grids
+    // TODO: Remove once refactoring colType and comparators (see #747)
+    updateColType (fieldId, colType) {
+      let gridUuids = this.app.getStudyGridUuids()
+
+      for (let i = 0; i < gridUuids.length; i++) {
+        let gridOptions = this.app.getGridOptionsByUuid(gridUuids[i])
+        let gridApi = gridOptions.api
+
+        if (!gridOptions.columnApi.getColumn(fieldId)) {
+          continue // Skip this grid if the column is not present
+        }
+
+        // Update colType for each cell (needed for comparator)
+        gridApi.forEachNode(function (rowNode) {
+          if (rowNode.data.hasOwnProperty(fieldId)) {
+            let value = rowNode.data[fieldId]
+            value['colType'] = colType
+            rowNode.setDataValue(fieldId, value)
+          }
+        })
+      }
+    },
     handleUpdate () {
+      let fieldId = this.col.colDef.field
+
       // Determine current colType
       if (['integer', 'double'].includes(this.fieldConfig['format'])) {
         if (this.fieldConfig.hasOwnProperty('unit') &&
@@ -567,27 +601,26 @@ export default {
         this.updateColDefs(k, true)
       }
 
+      // Update column type if changed
+      if (this.colType !== this.ogColType) {
+        this.updateColType(fieldId, this.colType)
+      }
+
       // Fill default value to empty cells in column if selected
       if (this.defaultFill &&
           this.fieldConfig.hasOwnProperty('default') &&
           this.fieldConfig['default'].length > 0) {
         // Collect column cell data
-        let field = this.col.colDef.field
         let cellUuids = [] // Store found cell UUIDs
         let upData = [] // The actual update data
-        let refreshCells = true
-
-        if (this.colType !== this.ogColType) {
-          refreshCells = false
-        }
 
         for (let i = 0; i < this.gridOptions.rowData.length; i++) {
           let row = this.gridOptions.rowData[i]
 
-          if (row.hasOwnProperty(field) &&
-              !cellUuids.includes(row[field]['uuid'])) {
-            if (!row[field]['value'] || row[field]['value'].length === 0) {
-              let cell = row[field]
+          if (row.hasOwnProperty(fieldId) &&
+              !cellUuids.includes(row[fieldId]['uuid'])) {
+            if (!row[fieldId]['value'] || row[fieldId]['value'].length === 0) {
+              let cell = row[fieldId]
               let ogValue = cell['value']
               cell['value'] = this.fieldConfig['default']
               upData.push(Object.assign(
@@ -595,16 +628,13 @@ export default {
                 {'og_value': ogValue},
                 this.col.colDef.cellEditorParams['headerInfo']))
             }
-            cellUuids.push(row[field]['uuid'])
+            cellUuids.push(row[fieldId]['uuid'])
           }
         }
-        this.app.handleCellEdit(upData, refreshCells)
+        this.app.handleCellEdit(upData, false)
       }
 
-      // If column type has changed, update colType and alignment
-      if (this.colType !== this.ogColType) {
-        this.app.updateColType(this.col.colDef.field, this.colType, true)
-      }
+      this.app.refreshField(fieldId)
       this.app.setDataUpdated(true)
     },
     /* Modal showing/hiding ------------------------------------------------- */
