@@ -216,7 +216,7 @@
         <b-button variant="primary"
                   @click="hideModal(true)"
                   ref="updateBtn">
-          <i class="fa fa-check"></i> Update
+          <i :class="updateBtnClasses"></i> Update
         </b-button>
       </b-button-group>
     </div>
@@ -274,7 +274,9 @@ export default {
       },
       defaultFill: false,
       defaultFillEnable: false,
-      pasteData: ''
+      pasteData: '',
+      updateBtnClasses: null,
+      gridUuids: null
     }
   },
   methods: {
@@ -653,6 +655,7 @@ export default {
       this.ogColType = data['colType'] // Save original colType
       let gridUuid = !this.assayUuid ? this.studyUuid : this.assayUuid
       this.gridOptions = this.app.getGridOptionsByUuid(gridUuid)
+      this.updateBtnClasses = 'fa fa-fw fa-check'
 
       // Reset internal variables
       this.valueOptions = ''
@@ -711,6 +714,8 @@ export default {
     },
     hideModal (update) {
       if (update) {
+        this.updateBtnClasses = 'fa fa-fw fa-spin fa-refresh'
+
         // Cleanup config
         this.fieldConfig = this.cleanupFieldConfig(
           this.fieldConfig, this.valueOptions, this.unitOptions)
@@ -728,29 +733,34 @@ export default {
             }
           ]
         }
-        fetch('/samplesheets/api/manage/post/' + this.projectUuid, {
-          method: 'POST',
-          body: JSON.stringify(upData),
-          credentials: 'same-origin',
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-            'X-CSRFToken': this.app.sodarContext['csrf_token']
-          }
-        }).then(data => data.json())
-          .then(
-            data => {
-              if (data['message'] === 'ok') {
-                this.handleUpdate() // Handle successful update here
-                this.app.showNotification('Column Updated', 'success', 1000)
-              } else {
-                console.log('Update status: ' + data['message'])
-                this.app.showNotification('Update Failed', 'danger', 2000)
-              }
+
+        const postUpdate = async () => {
+          const data = await fetch('/samplesheets/api/manage/post/' + this.projectUuid, {
+            method: 'POST',
+            body: JSON.stringify(upData),
+            credentials: 'same-origin',
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+              'X-CSRFToken': this.app.sodarContext['csrf_token']
             }
-          ).catch(function (error) {
-            console.log('Error updating field: ' + error.message)
           })
+          const updateData = await data.json()
+
+          if (updateData['message'] === 'ok') {
+            this.handleUpdate() // Handle successful update here
+            this.app.showNotification('Column Updated', 'success', 1000)
+          } else {
+            console.log('Update status: ' + updateData['message'])
+            this.app.showNotification('Update Failed', 'danger', 2000)
+          }
+        }
+
+        try {
+          postUpdate()
+        } catch (error) {
+          console.log('Update error: ' + error.message)
+        }
       }
       this.$refs.manageColumnModal.hide()
     }
