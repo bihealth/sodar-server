@@ -58,7 +58,6 @@ export default Vue.extend({
         'newConfig': newConfig,
         'colType': this.params.colType,
         'fieldDisplayName': this.displayName,
-        'baseCellClasses': this.params.baseCellClasses,
         'assayUuid': this.params.assayUuid,
         'configNodeIdx': this.params.configNodeIdx,
         'configFieldIdx': this.params.configFieldIdx,

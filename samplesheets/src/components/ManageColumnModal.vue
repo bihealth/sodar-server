@@ -248,7 +248,6 @@ export default {
       fieldDisplayName: null,
       fieldConfig: null,
       newConfig: false,
-      baseCellClasses: null,
       assayUuid: null,
       configNodeIdx: null,
       configFieldIdx: null,
@@ -538,10 +537,9 @@ export default {
       colDef.cellEditorParams['renderInfo']['align'] = colAlign
 
       // Set classes
-      colDef.cellClass = this.baseCellClasses
-      colDef.cellClass = colDef.cellClass.concat(['text-' + colAlign])
+      colDef.cellClass = ['sodar-ss-data-cell', 'text-' + colAlign]
       if (!this.fieldConfig['editable']) {
-        colDef.cellClass = this.baseCellClasses.concat(['bg-light', 'text-muted'])
+        colDef.cellClass = colDef.cellClass.concat(['bg-light', 'text-muted'])
       }
 
       if (!assayMode) {
@@ -644,7 +642,6 @@ export default {
       this.fieldDisplayName = data['fieldDisplayName']
       this.fieldConfig = data['fieldConfig']
       this.newConfig = data['newConfig']
-      this.baseCellClasses = data['baseCellClasses']
       this.assayUuid = data['assayUuid']
       this.configNodeIdx = data['configNodeIdx']
       this.configFieldIdx = data['configFieldIdx']

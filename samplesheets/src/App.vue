@@ -663,7 +663,6 @@ export default {
                 'modalComponent': this.$refs.manageColumnModalRef,
                 'colType': colType,
                 'fieldConfig': editFieldConfig,
-                'baseCellClasses': header.cellClass,
                 'assayUuid': configAssayUuid,
                 'configNodeIdx': configNodeIdx,
                 'configFieldIdx': configFieldIdx,
