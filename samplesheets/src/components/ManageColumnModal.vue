@@ -578,6 +578,7 @@ export default {
     },
     handleUpdate () {
       let fieldId = this.col.colDef.field
+      let refreshCalled = false
 
       // Determine current colType
       if (['integer', 'double'].includes(this.fieldConfig['format'])) {
@@ -631,10 +632,13 @@ export default {
             cellUuids.push(row[fieldId]['uuid'])
           }
         }
-        this.app.handleCellEdit(upData, false)
+        this.app.handleCellEdit(upData, true)
+        refreshCalled = true
       }
 
-      this.app.refreshField(fieldId)
+      if (!refreshCalled) {
+        this.app.refreshField(fieldId)
+      }
       this.app.setDataUpdated(true)
     },
     /* Modal showing/hiding ------------------------------------------------- */
