@@ -130,39 +130,6 @@
               </b-input>
             </td>
           </tr>
-          <!-- Unit -->
-          <!-- TODO: Only allow for columns where this is valid -->
-          <tr v-if="fieldConfig['format'] === 'integer' ||
-                    fieldConfig['format'] === 'double'">
-            <td class="align-top pt-3">
-              Unit
-              <i class="fa fa-info-circle text-info"
-                 title="Separate options by newline"
-                 v-b-tooltip.hover>
-              </i>
-            </td>
-            <td>
-              <b-textarea v-model="unitOptions" rows="2">
-                {{ unitOptions }}
-              </b-textarea>
-            </td>
-          </tr>
-          <!-- Default unit -->
-          <tr v-if="fieldConfig['format'] === 'integer' ||
-                    fieldConfig['format'] === 'double'">
-            <td>Default Unit</td>
-            <td>
-              <b-select v-model="fieldConfig['unit_default']"
-                        :disabled="!unitOptions">
-                <option :value="null">-</option>
-                <option v-for="(option, index) in unitOptions.split('\n')"
-                        :key="index"
-                        :value="option">
-                  {{ option }}
-                </option>
-              </b-select>
-            </td>
-          </tr>
           <!-- Default value -->
           <tr>
             <td>Default Value</td>
@@ -192,7 +159,8 @@
           <tr>
             <td>Default Fill</td>
             <td>
-              <span id="sodar-ss-vue-column-wrapper-default"
+              <span class="sodar-ss-vue-column-wrapper"
+                    id="sodar-ss-vue-column-wrapper-default"
                     title="Fill empty column values with default value on update"
                     v-b-tooltip.right.hover>
                 <b-checkbox
@@ -202,6 +170,57 @@
                     id="sodar-ss-vue-column-check-default">
                 </b-checkbox>
               </span>
+            </td>
+          </tr>
+          <!-- Enable/disable unit -->
+          <tr v-if="fieldConfig['format'] === 'integer' ||
+                    fieldConfig['format'] === 'double'">
+            <td>Enable Unit</td>
+            <td>
+              <span class="sodar-ss-vue-column-wrapper"
+                    id="sodar-ss-vue-column-wrapper-unit"
+                    title="Enable/disable unit: removes existing units from column if disabled"
+                    v-b-tooltip.right.hover>
+                <b-checkbox
+                    plain
+                    v-model="unitEnabled"
+                    id="sodar-ss-vue-column-check-unit">
+                </b-checkbox>
+              </span>
+            </td>
+          </tr>
+          <!-- Unit -->
+          <tr v-if="unitEnabled &&
+                    (fieldConfig['format'] === 'integer' ||
+                    fieldConfig['format'] === 'double')">
+            <td class="align-top pt-3">
+              Unit
+              <i class="fa fa-info-circle text-info"
+                 title="Separate options by newline"
+                 v-b-tooltip.hover>
+              </i>
+            </td>
+            <td>
+              <b-textarea v-model="unitOptions" rows="2">
+                {{ unitOptions }}
+              </b-textarea>
+            </td>
+          </tr>
+          <!-- Default unit -->
+          <tr v-if="unitEnabled &&
+                    (fieldConfig['format'] === 'integer' ||
+                    fieldConfig['format'] === 'double')">
+            <td>Default Unit</td>
+            <td>
+              <b-select v-model="fieldConfig['unit_default']"
+                        :disabled="!unitOptions">
+                <option :value="null">-</option>
+                <option v-for="(option, index) in unitOptions.split('\n')"
+                        :key="index"
+                        :value="option">
+                  {{ option }}
+                </option>
+              </b-select>
             </td>
           </tr>
         </tbody>
@@ -466,11 +485,11 @@ export default {
       }
       this.$refs.copyBtn.disabled = this.$refs.updateBtn.disabled
     },
-    cleanupFieldConfig (config, valueOptions, unitOptions) {
+    cleanupFieldConfig (config) {
       // Handle regex/options depending on select format
       if (config['format'] === 'select') {
         delete config['regex']
-        config['options'] = valueOptions.split('\n')
+        config['options'] = this.valueOptions.split('\n')
       } else {
         delete config['options']
       }
@@ -480,10 +499,10 @@ export default {
         delete config['unit']
         delete config['unit_default']
       } else { // Set up unit
-        if (unitOptions.length === 0) {
+        if (!this.unitEnabled || this.unitOptions.length === 0) {
           delete config['unit']
         } else {
-          config['unit'] = unitOptions.split('\n')
+          config['unit'] = this.unitOptions.split('\n')
         }
       }
       return config
@@ -505,9 +524,7 @@ export default {
       let copyConfig = JSON.parse(JSON.stringify(this.fieldConfig)) // Copy
       delete copyConfig['name']
       delete copyConfig['type']
-      return JSON.stringify(
-        this.cleanupFieldConfig(
-          copyConfig, this.valueOptions, this.unitOptions))
+      return JSON.stringify(this.cleanupFieldConfig(copyConfig))
     },
     // Update column definition for the field in one grid by UUID
     updateColDefs (uuid, assayMode) {
@@ -582,7 +599,8 @@ export default {
 
       // Determine current colType
       if (['integer', 'double'].includes(this.fieldConfig['format'])) {
-        if (this.fieldConfig.hasOwnProperty('unit') &&
+        if (this.unitEnabled &&
+            this.fieldConfig.hasOwnProperty('unit') &&
             this.fieldConfig['unit']) {
           this.colType = 'UNIT'
         } else {
@@ -607,23 +625,49 @@ export default {
         this.updateColType(fieldId, this.colType)
       }
 
-      // Fill default value to empty cells in column if selected
+      // Cell modifications
+      let fillDefault = false
+      let removeUnit = false
       if (this.defaultFill &&
           this.fieldConfig.hasOwnProperty('default') &&
           this.fieldConfig['default'].length > 0) {
+        fillDefault = true
+      }
+      if (this.colType !== 'UNIT' && this.ogColType === 'UNIT') {
+        removeUnit = true
+      }
+
+      // Update cells for default filling and/or unit removal
+      if (fillDefault || removeUnit) {
         // Collect column cell data
         let cellUuids = [] // Store found cell UUIDs
         let upData = [] // The actual update data
 
         for (let i = 0; i < this.gridOptions.rowData.length; i++) {
           let row = this.gridOptions.rowData[i]
+          let cell = row[fieldId]
 
-          if (row.hasOwnProperty(fieldId) &&
-              !cellUuids.includes(row[fieldId]['uuid'])) {
-            if (!row[fieldId]['value'] || row[fieldId]['value'].length === 0) {
-              let cell = row[fieldId]
-              let ogValue = cell['value']
+          if (row.hasOwnProperty(fieldId) && !cellUuids.includes(cell['uuid'])) {
+            let ogValue = cell['value']
+            let modified = false
+
+            // Update default value
+            if (cell['value'].length === 0) {
               cell['value'] = this.fieldConfig['default']
+              modified = true
+            }
+
+            // Remove unit
+            if (removeUnit && cell['unit'] && cell['unit'].length > 0) {
+              if (cell['unit'].hasOwnProperty('name')) {
+                cell['unit']['name'] = null
+              } else {
+                cell['unit'] = null
+              }
+              modified = true
+            }
+
+            if (modified) {
               upData.push(Object.assign(
                 cell,
                 {'og_value': ogValue},
@@ -718,8 +762,7 @@ export default {
         this.updateBtnClasses = 'fa fa-fw fa-spin fa-refresh'
 
         // Cleanup config
-        this.fieldConfig = this.cleanupFieldConfig(
-          this.fieldConfig, this.valueOptions, this.unitOptions)
+        this.fieldConfig = this.cleanupFieldConfig(this.fieldConfig)
 
         // Save config on server
         let upData = {
@@ -771,7 +814,7 @@ export default {
 
 <style scoped>
 div.sodar-ss-vue-col-manage-content {
-  min-height: 560px !important;
+  min-height: 620px !important;
 }
 
 #sodar-ss-vue-col-input-paste {
@@ -789,7 +832,7 @@ table#sodar-ss-vue-col-manage-table tbody td:first-child {
   padding-right: 12px;
 }
 
-#sodar-ss-vue-column-wrapper-default .form-check {
+.sodar-ss-vue-column-wrapper .form-check {
   width: 20px !important;
 }
 
