@@ -180,14 +180,11 @@ export default Vue.extend({
       if (this.value.hasOwnProperty('unit') && this.value['unit']) {
         this.editUnit = this.value['unit']
         this.ogEditUnit = this.value['unit']
+      } else if (this.editConfig.hasOwnProperty('unit_default') &&
+          this.editConfig['unit_default'].length > 0) {
+        this.editUnit = this.editConfig['unit_default']
       }
       this.editUnitEnabled = true
-    }
-
-    // Set up default unit
-    if (this.editConfig.hasOwnProperty('unit_default') &&
-        this.editUnit.length === 0) {
-      this.editUnit = this.editConfig['unit_default']
     }
 
     // Get initial valid state on existing value
@@ -254,13 +251,15 @@ export default Vue.extend({
       this.value['value'] = this.ogEditValue
       this.value['unit'] = this.ogEditUnit
       this.app.showNotification(this.invalidMsg || 'Invalid value', 'danger', 1000)
-    } else if (this.ogEditValue !== this.editValue || (
-      this.editUnitEnabled &&
-      this.editValue &&
-      this.ogEditUnit !== this.editUnit)) {
-      // Force empty unit to null, also remove unit
+    } else if (this.ogEditValue !== this.editValue ||
+        (this.editUnitEnabled &&
+          this.editValue &&
+          this.ogEditUnit !== this.editUnit)) {
+      // Set unit
       if (this.value['unit'] === '' || !this.value['value']) {
         this.value['unit'] = null
+      } else {
+        this.value['unit'] = this.editUnit
       }
       this.app.handleCellEdit(this.getUpdateData(), true)
     }
