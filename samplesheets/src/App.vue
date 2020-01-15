@@ -300,6 +300,12 @@
         ref="manageColumnModalRef">
     </manage-column-modal>
 
+    <!-- Editor help modal -->
+    <editor-help-modal
+        v-if="editMode"
+        ref="editorHelpModal">
+    </editor-help-modal>
+
     <!--<router-view/>-->
   </div>
 </template>
@@ -313,6 +319,7 @@ import IrodsDirModal from './components/IrodsDirModal.vue'
 import ShortcutModal from './components/ShortcutModal.vue'
 import ColumnToggleModal from './components/ColumnToggleModal.vue'
 import ManageColumnModal from './components/ManageColumnModal.vue'
+import EditorHelpModal from './components/EditorHelpModal.vue'
 import IrodsStatsBadge from './components/IrodsStatsBadge.vue'
 import ExtraContentTable from './components/ExtraContentTable.vue'
 import {AgGridVue} from 'ag-grid-vue'
@@ -377,6 +384,7 @@ export default {
     ShortcutModal,
     ColumnToggleModal,
     ManageColumnModal,
+    EditorHelpModal,
     IrodsStatsBadge,
     ExtraContentTable,
     AgGridVue,

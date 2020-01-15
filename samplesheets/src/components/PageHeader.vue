@@ -26,10 +26,18 @@
     <div class="ml-auto">
       <notify-badge ref="notifyBadge"></notify-badge>
       <span v-if="app.editMode"
-            :class='"badge badge-pill mr-3 badge-" + editVariant'
+            :class='"badge badge-pill badge-" + editVariant'
             id="sodar-ss-vue-badge-edit">
         <i class="fa fa-pencil"></i> {{ editMessage }}
       </span>
+      <a v-if="app.editMode"
+         title="Editor status and help"
+         class="pl-1 pr-2"
+         id="sodar-ss-vue-link-edit-help"
+         @click="app.$refs.editorHelpModal.showModal()"
+         v-b-tooltip.hover>
+        <i class="fa fa-info-circle text-info"></i>
+      </a>
       <!-- Nav dropdown -->
       <b-dropdown
           id="sodar-ss-nav-dropdown"
@@ -226,7 +234,13 @@ ul.sodar-ss-nav li a.active {
 }
 
 button#sodar-ss-vue-btn-edit-finish {
-  width: 162px;
+  width: 163px;
+}
+
+/* HACK because lol bootstrap */
+a#sodar-ss-vue-link-edit-help i {
+  vertical-align: middle;
+  padding-bottom: 1px;
 }
 
 /* Hide navbar if browser is too narrow */
