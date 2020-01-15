@@ -196,7 +196,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                             'in total' if user.is_superuser else 'owned by you',
                             active_count,
                         ),
-                        'text-danger' if active_count == 0 else '',
+                        'text-danger' if active_count == 0 else 'text-success',
                     )
                 )
 

@@ -323,7 +323,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         if column_id == 'sheets' and investigation:
             return (
                 '<a href="{}" title="{}" data-toggle="tooltip" '
-                'data-placement="top"><i class="fa fa-list-alt text-info">'
+                'data-placement="top"><i class="fa fa-list-alt text-primary">'
                 '</i></a>'.format(
                     reverse(
                         'samplesheets:project_sheets',
@@ -345,7 +345,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                     '<a href="{}" target="_blank" title="{}" '
                     'data-toggle="tooltip" data-placement="top">'
                     '<i class="fa fa-folder-open '
-                    'text-secondary"></i></a>'.format(
+                    'text-primary"></i></a>'.format(
                         settings.IRODS_WEBDAV_URL
                         + irods_backend.get_sample_path(project),
                         'View project sample data in iRODS',
