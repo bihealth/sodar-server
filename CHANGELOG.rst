@@ -11,6 +11,8 @@ Unreleased
 Added
 -----
 
+- **General**
+    - Support for local third party JS/CSS includes (#770)
 - **Irodsbackend**
     - Enforce MD5 hash scheme in client configuration (#740)
 - **Landingzones**

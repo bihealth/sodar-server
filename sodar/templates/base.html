@@ -7,6 +7,9 @@
 {# Local variables #}
 {% get_django_setting 'SITE_TITLE' as site_title %}
 {% get_django_setting 'SITE_SUBTITLE' as site_subtitle %}
+{% get_django_setting 'PROJECTROLES_DISABLE_CDN_INCLUDES' as disable_cdn_includes %}
+{% get_django_setting 'PROJECTROLES_CUSTOM_JS_INCLUDES' as custom_js_includes %}
+{% get_django_setting 'PROJECTROLES_CUSTOM_CSS_INCLUDES' as custom_css_includes %}
 
 <html lang="en">
   <head>
@@ -31,21 +34,34 @@
       <!-- Critical Javascript includes -->
       {# NOTE: The rest are included under the "javascript" block at the end #}
 
-      <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
-      <!--[if lt IE 9]>
-        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv.min.js"></script>
-      <![endif]-->
+      {% if not disable_cdn_includes %}
+        <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+        <!--[if lt IE 9]>
+          <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv.min.js"></script>
+        <![endif]-->
 
-      <!-- JQuery -->
-      <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+        <!-- JQuery -->
+        <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
 
-      <!-- Required by Bootstrap v4 -->
-      <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
-      <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+        <!-- Required by Bootstrap v4 -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+
+        <!-- Shepherd -->
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.4/js/tether.js"></script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/shepherd/1.8.1/js/shepherd.min.js"></script>
+
+        <!-- Clipboard helper -->
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.0/clipboard.min.js"></script>
+      {% endif %}
+
+      {# Custom Javascript includes #}
+      {% for js_inc in custom_js_includes %}
+        <script type="text/javascript" src="{{ js_inc }}"></script>
+      {% endfor %}
     {% endblock head_javascript %}
 
     {% block css %}
-
       <!-- CSS includes -->
 
       <!-- Fix for pull-right/pull-left bug when including imports -->
@@ -59,11 +75,21 @@
         }
       </style>
 
-      <!-- Font Awesome Icons -->
-      <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" />
+      {% if not disable_cdn_includes %}
+        <!-- Font Awesome Icons -->
+        <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" />
 
-      <!-- Bootstrap 4 CSS -->
-      <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+        <!-- Bootstrap 4 CSS -->
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+
+      {% endif %}
+
+      {# Custom CSS includes #}
+      {% for css_inc in custom_css_includes %}
+        <link rel="stylesheet" type="text/css" href="{{ css_inc }}" />
+      {% endfor %}
+
+      <!-- Local CSS Includes -->
 
       <!-- Shepherd theme -->
       <link rel="stylesheet" type="text/css" href="{% static 'projectroles/css/shepherd-theme-sodar.css' %}" />
@@ -73,7 +99,6 @@
 
       <!-- Project CSS -->
       <link rel="stylesheet" type="text/css" href="{% static 'css/project.css' %}" />
-
     {% endblock css %}
 
     {% block head_extend %}
@@ -111,13 +136,6 @@
         {% get_django_setting name='PROJECTROLES_BROWSER_WARNING' js=True as browser_warning %}
         window.sodarBrowserWarning = {{ browser_warning }};
       </script>
-
-      <!-- Shepherd -->
-      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.4/js/tether.js"></script>
-      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/shepherd/1.8.1/js/shepherd.min.js"></script>
-
-      <!-- Clipboard helper -->
-      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.0/clipboard.min.js"></script>
 
       <!-- General project Javascript -->
       <script type="text/javascript" src="{% static 'js/project.js' %}"></script>
