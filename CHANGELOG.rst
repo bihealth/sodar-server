@@ -36,6 +36,7 @@ Changed
     - Upgrade to python-irodsclient v0.8.2 (#731)
     - Upgrade to altamISA v0.2.6
     - Upgrade to Chromedriver v79
+    - Upgrade to Django v1.11.27
 - **Irodsbackend**
     - Refactor ``api.get_info()``
 - **Irodsinfo**
