@@ -6,8 +6,8 @@
     <span class="ml-auto pt-1">
       <b-button
           variant="secondary"
-          class="sodar-list-btn sodar-vue-col-manage-btn"
-          title="Manage Column Editing"
+          class="sodar-list-btn sodar-vue-col-config-btn"
+          title="Configure Column"
           @click="onModalClick"
           v-b-tooltip.hover>
         <i class="fa fa-pencil"></i>
@@ -77,7 +77,7 @@ export default Vue.extend({
 
 <style scoped>
 
-.sodar-vue-col-manage-btn:focus {
+.sodar-vue-col-config-btn:focus {
   box-shadow: none !important;
 }
 

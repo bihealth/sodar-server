@@ -1102,7 +1102,7 @@ class SampleSheetVersionRestoreView(
                 app_name=APP_NAME,
                 user=self.request.user,
                 event_name='sheet_restore',
-                description='restore investigation from version {isatab}',
+                description='restore sheets from version {isatab}',
             )
             tl_event.add_object(
                 obj=isa_version, label='isatab', name=isa_version.get_name()
@@ -1397,6 +1397,7 @@ class SampleSheetStudyTablesGetAPIView(
         return super().has_permission()
 
     def get(self, request, *args, **kwargs):
+        timeline = get_backend_api('timeline_backend')
         irods_backend = get_backend_api('omics_irods')
         cache_backend = get_backend_api('sodar_cache')
         study = Study.objects.filter(sodar_uuid=self.kwargs['study']).first()
@@ -1521,6 +1522,16 @@ class SampleSheetStudyTablesGetAPIView(
             ret_data['study_config'] = sheet_config['studies'][
                 str(study.sodar_uuid)
             ]
+
+            if timeline:
+                timeline.add_event(
+                    project=project,
+                    app_name=APP_NAME,
+                    user=request.user,
+                    event_name='sheet_edit_start',
+                    description='started editing sheets',
+                    status_type='OK',
+                )
 
         return Response(ret_data, status=200)
 
@@ -1740,16 +1751,25 @@ class SampleSheetEditFinishAPIView(
             )
             export_ex = str(ex)
 
-        if timeline and updated:
+        if timeline:
             tl_status = 'FAILED' if export_ex else 'OK'
+            tl_desc = 'finish editing sheets '
+
+            if not updated:
+                tl_desc += '(no updates)'
+
+            elif not export_ex and isa_version:
+                tl_desc += 'and save version as {isatab}'
+
+            else:
+                tl_desc += '(saving version failed)'
+
             tl_event = timeline.add_event(
                 project=project,
                 app_name=APP_NAME,
                 user=request.user,
-                event_name='sheet_edit',
-                description='edit sheet' + ', save version as {isatab}'
-                if tl_status == 'OK'
-                else 'edit sheet',
+                event_name='sheet_edit_finish',
+                description=tl_desc,
                 status_type=tl_status,
                 status_desc=export_ex if tl_status == 'FAILED' else None,
             )
@@ -1874,9 +1894,8 @@ class SampleSheetManagePostAPIView(
                     app_name=APP_NAME,
                     user=request.user,
                     event_name='field_update',
-                    description='update field config for "{}" in {{{}}}'.format(
-                        c['name'].title(), tl_label
-                    ),
+                    description='update field configuration for "{}" '
+                    'in {{{}}}'.format(c['name'].title(), tl_label),
                     status_type='OK',
                     extra_data={'config': c},
                 )

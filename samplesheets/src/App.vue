@@ -291,16 +291,16 @@
         ref="columnToggleModalRef">
     </column-toggle-modal>
 
-    <!-- Editing: Modal for column management -->
-    <manage-column-modal
+    <!-- Editing: Column configuration modal -->
+    <column-config-modal
         v-if="editMode && sodarContext['perms']['manage_sheet']"
         :app="getApp()"
         :project-uuid="projectUuid"
         :study-uuid="currentStudyUuid"
-        ref="manageColumnModalRef">
-    </manage-column-modal>
+        ref="columnConfigModal">
+    </column-config-modal>
 
-    <!-- Editor help modal -->
+    <!-- Editing: Editor help modal -->
     <editor-help-modal
         v-if="editMode"
         ref="editorHelpModal">
@@ -315,11 +315,11 @@ import PageHeader from './components/PageHeader.vue'
 import Overview from './components/Overview.vue'
 import ParserWarnings from './components/ParserWarnings.vue'
 import IrodsButtons from './components/IrodsButtons.vue'
-import IrodsDirModal from './components/IrodsDirModal.vue'
-import ShortcutModal from './components/ShortcutModal.vue'
-import ColumnToggleModal from './components/ColumnToggleModal.vue'
-import ManageColumnModal from './components/ManageColumnModal.vue'
-import EditorHelpModal from './components/EditorHelpModal.vue'
+import IrodsDirModal from './components/modals/IrodsDirModal.vue'
+import ShortcutModal from './components/modals/ShortcutModal.vue'
+import ColumnToggleModal from './components/modals/ColumnToggleModal.vue'
+import ColumnConfigModal from './components/modals/ColumnConfigModal.vue'
+import EditorHelpModal from './components/modals/EditorHelpModal.vue'
 import IrodsStatsBadge from './components/IrodsStatsBadge.vue'
 import ExtraContentTable from './components/ExtraContentTable.vue'
 import {AgGridVue} from 'ag-grid-vue'
@@ -383,7 +383,7 @@ export default {
     IrodsDirModal,
     ShortcutModal,
     ColumnToggleModal,
-    ManageColumnModal,
+    ColumnConfigModal,
     EditorHelpModal,
     IrodsStatsBadge,
     ExtraContentTable,
@@ -668,7 +668,7 @@ export default {
 
               header.headerComponentFramework = FieldHeaderEditRenderer
               header.headerComponentParams = {
-                'modalComponent': this.$refs.manageColumnModalRef,
+                'modalComponent': this.$refs.columnConfigModal,
                 'colType': colType,
                 'fieldConfig': editFieldConfig,
                 'assayUuid': configAssayUuid,
@@ -1146,7 +1146,7 @@ export default {
         .then(
           data => {
             if (data['message'] === 'ok') {
-              this.showNotification('Finished Editing', 'info', 1000)
+              this.showNotification('Finished Editing', 'success', 1000)
             } else {
               console.log('Finish status: ' + data['message']) // DEBUG
               this.showNotification('Saving Version Failed', 'danger', 1000)
@@ -1261,12 +1261,6 @@ export default {
   border-right: 1px solid #dfdfdf !important;
 }
 
-/*
-.ag-header-group-cell-label {
-  vertical-align: middle !important;
-}
-*/
-
 .ag-full-width-container {
   border-bottom: 1px solid #dfdfdf !important;
 }
@@ -1306,12 +1300,6 @@ export default {
 .ag-pinned-right-header {
   border: 0 !important;
 }
-
-/*
-div.ag-popup-editor {
-  max-width: 500px !important;
-}
-*/
 
 a.sodar-ss-anchor {
   display: block;

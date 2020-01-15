@@ -274,7 +274,6 @@ export default Vue.extend({
   border: 1px solid #6c757d;
   background: #ffffff;
   padding: 10px;
-  // display: inline-block;
 }
 
 input.ag-cell-edit-input {

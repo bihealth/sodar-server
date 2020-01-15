@@ -1,7 +1,7 @@
 <template>
-  <b-modal id="sodar-ss-vue-col-manage-modal"
-           ref="manageColumnModal"
-           body-class="sodar-ss-vue-col-manage-body"
+  <b-modal id="sodar-ss-vue-col-config-modal"
+           ref="columnConfigModal"
+           body-class="sodar-ss-vue-col-config-body"
            centered no-fade hide-footer
            size="md"
            no-close-on-backdrop
@@ -40,10 +40,10 @@
         </h5>
       </div>
     </template>
-    <div class="sodar-ss-vue-col-manage-content">
+    <div class="sodar-ss-vue-col-config-content">
       <table v-if="fieldConfig"
             class="table table-borderless w-100"
-            id="sodar-ss-vue-col-manage-table">
+            id="sodar-ss-vue-col-config-table">
         <tbody>
           <!-- Editable -->
           <tr>
@@ -243,12 +243,12 @@
 </template>
 
 <script>
-import NotifyBadge from './NotifyBadge.vue'
+import NotifyBadge from '../NotifyBadge.vue'
 const integerRegex = /^(([1-9][0-9]*)|([0]?))$/
 const invalidClasses = 'text-danger'
 
 export default {
-  name: 'ManageColumnModal',
+  name: 'ColumnConfigModal',
   components: {
     NotifyBadge
   },
@@ -755,7 +755,7 @@ export default {
       this.toggleDefaultFill()
 
       // Show modal
-      this.$refs.manageColumnModal.show()
+      this.$refs.columnConfigModal.show()
     },
     hideModal (update) {
       if (update) {
@@ -806,14 +806,14 @@ export default {
           console.log('Update error: ' + error.message)
         }
       }
-      this.$refs.manageColumnModal.hide()
+      this.$refs.columnConfigModal.hide()
     }
   }
 }
 </script>
 
 <style scoped>
-div.sodar-ss-vue-col-manage-content {
+div.sodar-ss-vue-col-config-content {
   min-height: 620px !important;
 }
 
@@ -821,7 +821,7 @@ div.sodar-ss-vue-col-manage-content {
   width: 70px;
 }
 
-table#sodar-ss-vue-col-manage-table tbody td:first-child {
+table#sodar-ss-vue-col-config-table tbody td:first-child {
   width: 100px;
   max-width: 250px;
   vertical-align: middle;

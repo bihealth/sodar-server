@@ -52,9 +52,8 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
             'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT'],
             'type': 'BOOLEAN',
             'label': 'Allow Sample Sheet Editing',
-            'description': 'Allow editing of sample sheet data in this project '
-            'by authorized users (requires sample sheet '
-            'JSON configuration)',
+            'description': 'Allow editing of projet sample sheets by '
+            'authorized users',
             'user_modifiable': True,
             'default': False,
         },
@@ -63,8 +62,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
             'type': 'JSON',
             'label': 'Sample Sheet Configuration',
             'description': 'JSON configuration for sample sheet editing',
-            'user_modifiable': True,
-            'default': {},
+            'user_modifiable': False,
         },
     }
 
