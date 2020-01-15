@@ -29,7 +29,7 @@
                  !renderError &&
                  !activeSubPage"
                  :studyUuid="currentStudyUuid"
-           id="sodar-ss-vue-content">
+           :id="contentId">
 
         <!-- Study -->
         <a class="sodar-ss-anchor" :id="currentStudyUuid"></a>
@@ -229,19 +229,19 @@
       </div>
 
       <!-- Overview subpage -->
-      <div v-else-if="activeSubPage === 'overview'" id="sodar-ss-vue-content">
+      <div v-else-if="activeSubPage === 'overview'" :id="contentId">
         <Overview :app="getApp()">
         </Overview>
       </div>
 
       <!-- Parser Warnings subpage -->
-      <div v-else-if="activeSubPage === 'warnings'" id="sodar-ss-vue-content">
+      <div v-else-if="activeSubPage === 'warnings'" :id="contentId">
         <ParserWarnings :app="getApp()">
         </ParserWarnings>
       </div>
 
       <!-- Render error -->
-      <div v-else-if="renderError" id="sodar-ss-vue-content">
+      <div v-else-if="renderError" :id="contentId">
         <div class="alert alert-danger" id="sodar-ss-vue-alert-error">
           Error rendering study tables, please check your ISAtab files.
           Exception: {{ renderError }}
@@ -250,7 +250,7 @@
 
       <!-- No sheets available -->
       <div v-else-if="appSetupDone && !sheetsAvailable"
-           id="sodar-ss-vue-content">
+           :id="contentId">
         <div class="alert alert-info" id="sodar-ss-vue-alert-empty">
           No sample sheets are currently available for this project.
           <span v-if="sodarContext['perms']['edit_sheet']">
@@ -369,6 +369,7 @@ export default {
       editStudyData: false,
       editStudyConfig: null,
       editDataUpdated: false,
+      contentId: 'sodar-ss-vue-content',
       /* NOTE: cell editor only works if provided through frameworkComponents? */
       frameworkComponents: {
         dataCellEditor: DataCellEditor
