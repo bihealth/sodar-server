@@ -329,7 +329,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                         'samplesheets:project_sheets',
                         kwargs={'project': project.sodar_uuid},
                     ),
-                    'Sample sheets available',
+                    'View project sample sheets',
                 )
             )
 
@@ -348,7 +348,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                     'text-secondary"></i></a>'.format(
                         settings.IRODS_WEBDAV_URL
                         + irods_backend.get_sample_path(project),
-                        'Sample data repository available in iRODS',
+                        'View project sample data in iRODS',
                     )
                 )
                 if irods_backend
