@@ -107,6 +107,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
             'width': 70,
             'description': None,
             'active': True,
+            'ordering': 30,
             'align': 'center',
         },
         'data': {
@@ -114,6 +115,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
             'width': 70,
             'description': None,
             'active': True,
+            'ordering': 20,
             'align': 'center',
         },
     }

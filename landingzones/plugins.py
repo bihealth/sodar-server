@@ -72,6 +72,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
             'width': 70,
             'description': None,
             'active': True,
+            'ordering': 10,
             'align': 'center',
         }
     }
