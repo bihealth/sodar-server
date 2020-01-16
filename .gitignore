@@ -108,3 +108,6 @@ irods_environment.json
 
 # Vscode
 .vscode/*
+
+# Static dir for local includes in production mode
+static-local

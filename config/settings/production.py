@@ -53,6 +53,9 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 # Add Samplesheets vue.js app assets
 STATICFILES_DIRS.append(str(ROOT_DIR('samplesheets/dist')))
 
+# Add optonal custom directory for static includes at deployment stage
+STATICFILES_DIRS += env.list('CUSTOM_STATIC_DIR', default=[])
+
 # TEMPLATE CONFIGURATION
 # ------------------------------------------------------------------------------
 TEMPLATES[0]['OPTIONS']['loaders'] = [
