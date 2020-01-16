@@ -95,7 +95,7 @@
             id="sodar-ss-op-item-edit"
             @click="toggleEditMode"
             :disabled="!app.sodarContext['allow_editing']">
-          <i class="fa fa-fw fa-pencil"></i> Edit Sheet
+          <i class="fa fa-fw fa-pencil"></i> Edit Sheets
         </b-dropdown-item>
         <b-dropdown-item
             v-if="app.sheetsAvailable"
@@ -143,7 +143,7 @@
             class="sodar-ss-op-item"
             variant="danger"
             :href="'delete/' + app.projectUuid">
-          <i class="fa fa-fw fa-close"></i> Delete Sheet and Data
+          <i class="fa fa-fw fa-close"></i> Delete Sheets and Data
         </b-dropdown-item>
       </b-dropdown>
       <!-- Finish editing button (replace op dropdown in edit mode) -->
