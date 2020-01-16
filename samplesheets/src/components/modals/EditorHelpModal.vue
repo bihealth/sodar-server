@@ -27,6 +27,7 @@
         <li>Editing values and units as ontology references</li>
         <li>Modifying names of materials and processes</li>
         <li>Editing of other special case columns (contact, external links, dates, etc.)</li>
+        <li>Clipboard paste of value without double-clicking to edit field</li>
         <li>Multi-cell clipboard paste</li>
         <li>Adding, removing and renaming columns</li>
         <li>Adding and removing rows</li>
@@ -40,7 +41,30 @@
       </ul>
       <h5>Tips for Editing</h5>
       <ul>
-        <li>Values are changed as you edit them.</li>
+        <li>
+          You must select "Edit Sheets" from the "Sheet Operations" menu to
+          enter edit mode in which values and column configurations can be
+          modified.
+        </li>
+        <li>
+          Only superusers, delegates or the project owner can modify column
+          configurations and enable/disable columns for editing.
+        </li>
+        <li>To edit a cell, double-click on it or press enter on the keyboard.</li>
+        <li>
+          Edit mode displays tables differently from normal sheet browsing by
+          design.
+          <ul>
+            <li>iRODS link columns are hidden.</li>
+            <li>Sorting by columns is disabled.</li>
+            <li>Non-editable columns appear grayed out</li>
+            <li>
+              Columns with no data are visible by default as long as they have
+              been set editable.
+            </li>
+          </ul>
+        </li>
+        <li>Changes to values are saved as you edit them.</li>
         <li>
           By clicking "Finish Editing" you will save the current version of the
           sample sheet along with its configuration to "Sheet Versions".
