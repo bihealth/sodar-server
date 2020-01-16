@@ -648,7 +648,7 @@ export default {
             // Set header renderer for fields we can manage
             if (this.sodarContext['perms']['manage_sheet'] &&
                 !uneditableFields.includes(fieldHeader['value'].toLowerCase()) &&
-                !['EXTERNAL_LINKS', 'ONTOLOGY'].includes(colType)) {
+                !['EXTERNAL_LINKS', 'ONTOLOGY', 'CONTACT'].includes(colType)) {
               let configAssayUuid = assayMode ? uuid : null
               let configNodeIdx = i
               let defFieldIdx = configFieldIdx
