@@ -50,6 +50,11 @@
           Only superusers, delegates or the project owner can modify column
           configurations and enable/disable columns for editing.
         </li>
+        <li>
+          Default regular expression patterns are automatically enforced for
+          basic column types where appropriate. Adding a regex is not required
+          unless you have custom restrictions you need to enforce.
+        </li>
         <li>To edit a cell, double-click on it or press enter on the keyboard.</li>
         <li>
           Edit mode displays tables differently from normal sheet browsing by
@@ -57,7 +62,7 @@
           <ul>
             <li>iRODS link columns are hidden.</li>
             <li>Sorting by columns is disabled.</li>
-            <li>Non-editable columns appear grayed out</li>
+            <li>Non-editable columns appear grayed out.</li>
             <li>
               Columns with no data are visible by default as long as they have
               been set editable.
@@ -65,6 +70,10 @@
           </ul>
         </li>
         <li>Changes to values are saved as you edit them.</li>
+        <li>
+          If e.g. the same source appears on multiple rows, changes to one cell
+          are automatically propagated to all repeated cells.
+        </li>
         <li>
           By clicking "Finish Editing" you will save the current version of the
           sample sheet along with its configuration to "Sheet Versions".
@@ -75,6 +84,7 @@
           to <a href="mailto:mikko.nieminen@bihealth.de">mikko.nieminen@bihealth.de</a>
           along with the project URL.
         </li>
+        <li>A complete manual for editing is forthcoming as development proceeds.</li>
       </ul>
     </div>
   </b-modal>

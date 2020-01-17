@@ -83,8 +83,8 @@
         showCancelLink: true
     });
 
-    tour.addStep('new_shortcuts', {
-        title: 'New in SODAR v0.5+: Study Shortcuts',
+    tour.addStep('study_shortcuts', {
+        title: 'Study Shortcuts',
         text: 'Study shortcuts such as IGV links are no longer found in a ' +
               'separate table, but instead in the rightmost column of the ' +
               'study table. Links will be inactive if no related files are ' +
@@ -93,12 +93,23 @@
         showCancelLink: true
     });
 
-    tour.addStep('new_copying', {
-        title: 'New in SODAR v0.5+: Cell Copying',
+    tour.addStep('cell_copying', {
+        title: 'Cell Copying',
         text: 'You can copy one or several cells by clicking on a ' +
               'study/assay table and painting a selection with your mouse. ' +
               'Then press CTRL+C to copy the cells into your clipboard. ' +
               'This feature is still experimental and bugs may appear.',
+        advanceOn: '.docs-link click',
+        showCancelLink: true
+    });
+
+    tour.addStep('sheet_edit', {
+        title: 'Sheet Editing',
+        text: 'New in SODAR v0.7.0+: Limited sample sheet editing is ' +
+              'available. Currently, editing must be allowed per project by ' +
+              'project owner, delegate or a superuser in the Update ' +
+              'Project form. Further documentation is available once "Edit ' +
+              'Sheets" is selected from the Sheet Operations menu.',
         advanceOn: '.docs-link click',
         showCancelLink: true
     });
