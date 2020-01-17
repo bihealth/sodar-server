@@ -230,7 +230,7 @@ class SampleSheetTableBuilder:
             self._field_configs.append(False)
 
         # Column type (the ones we can determine at this point)
-        if field_config and field_config.get('format') == 'integer':
+        if field_config and field_config.get('format') in ['double', 'integer']:
             header['col_type'] = (
                 'UNIT' if field_config.get('unit') else 'NUMERIC'
             )
@@ -603,7 +603,7 @@ class SampleSheetTableBuilder:
             return round(len(value) - nc - wc + 0.6 * nc + 1.3 * wc)
 
         def _is_num(value):
-            """Return whether a value contains an integer/float"""
+            """Return whether a value contains an integer/double"""
             if isinstance(value, str) and '_' in value:
                 return False  # HACK because float() accepts underscore
             try:

@@ -89,8 +89,7 @@
             </td>
           </tr>
           <!-- Range -->
-          <tr v-if="fieldConfig['format'] === 'integer' ||
-                    fieldConfig['format'] === 'double'">
+          <tr v-if="['integer', 'double'].includes(fieldConfig['format'])">
             <td>Range</td>
             <td>
               <b-row>
@@ -173,8 +172,7 @@
             </td>
           </tr>
           <!-- Enable/disable unit -->
-          <tr v-if="fieldConfig['format'] === 'integer' ||
-                    fieldConfig['format'] === 'double'">
+          <tr v-if="['integer', 'double'].includes(fieldConfig['format'])">
             <td>Enable Unit</td>
             <td>
               <span class="sodar-ss-vue-column-wrapper"
@@ -191,8 +189,7 @@
           </tr>
           <!-- Unit -->
           <tr v-if="unitEnabled &&
-                    (fieldConfig['format'] === 'integer' ||
-                    fieldConfig['format'] === 'double')">
+                    ['integer', 'double'].includes(fieldConfig['format'])">
             <td class="align-top pt-3">
               Unit
               <i class="fa fa-info-circle text-info"
@@ -208,8 +205,7 @@
           </tr>
           <!-- Default unit -->
           <tr v-if="unitEnabled &&
-                    (fieldConfig['format'] === 'integer' ||
-                    fieldConfig['format'] === 'double')">
+                    ['integer', 'double'].includes(fieldConfig['format'])">
             <td>Default Unit</td>
             <td>
               <b-select v-model="fieldConfig['unit_default']"
@@ -245,6 +241,7 @@
 <script>
 import NotifyBadge from '../NotifyBadge.vue'
 const integerRegex = /^(([1-9][0-9]*)|([0]?))$/
+const doubleRegex = /^-?[0-9]+\.[0-9]+?$/
 const invalidClasses = 'text-danger'
 
 export default {
@@ -262,6 +259,7 @@ export default {
       formatOptions: [
         'string',
         'integer',
+        'double',
         'select'
       ],
       fieldDisplayName: null,
@@ -478,7 +476,7 @@ export default {
       } else if (this.fieldConfig['format'] === 'string') {
         this.$refs.updateBtn.disabled = !this.inputValid['regex'] ||
             !this.inputValid['default']
-      } else {
+      } else { // Integer and double
         this.$refs.updateBtn.disabled = !this.inputValid['regex'] ||
             !this.inputValid['range'] ||
             !this.inputValid['default']
@@ -511,6 +509,8 @@ export default {
       if (this.fieldConfig['regex'].length === 0) {
         if (this.fieldConfig['format'] === 'integer') {
           return integerRegex
+        } else if (this.fieldConfig['format'] === 'double') {
+          return doubleRegex
         }
       } else if (this.inputValid['regex']) {
         return RegExp(this.fieldConfig['regex'])
@@ -717,8 +717,8 @@ export default {
 
         // Unit and numeric column
         if (['UNIT', 'NUMERIC'].includes(this.colType)) {
-          // TODO: Also support double
-          this.fieldConfig['format'] = 'integer'
+          this.fieldConfig['format'] = 'integer' // Double checked later
+          let doubleSep = ['.', ',']
 
           if (this.colType === 'UNIT') {
             this.fieldConfig['unit'] = []
@@ -726,6 +726,10 @@ export default {
 
           for (let i = 0; i < this.gridOptions.rowData.length; i++) {
             let cell = this.gridOptions.rowData[i][field]
+
+            if (doubleSep.some(el => cell['value'].includes(el))) {
+              this.fieldConfig['format'] = 'double'
+            }
 
             // TODO: TBD: Guess range or not?
             /*

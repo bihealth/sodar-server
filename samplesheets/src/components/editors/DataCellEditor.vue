@@ -220,6 +220,8 @@ export default Vue.extend({
     } else { // Default regex for certain fields
       if (this.editConfig['format'] === 'integer') {
         this.regex = /^(([1-9][0-9]*)|([0]?))$/ // TODO: TBD: Allow negative?
+      } else if (this.editConfig['format'] === 'double') {
+        this.regex = /^-?[0-9]+\.[0-9]+?$/
       }
     }
 

@@ -15,7 +15,7 @@
       </p>
       <h5 class="text-success font-weight-bold">Available Features</h5>
       <ul>
-        <li>Editing of columns with simple values (text, integer, select)</li>
+        <li>Editing of columns with simple values (text, integer, double, select)</li>
         <li>Saving, browsing and restoring sample sheet versions</li>
         <li>Configuring columns for editing (requires owner, delegate or superuser permissions</li>
         <li>Unit support</li>
