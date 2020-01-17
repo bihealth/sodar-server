@@ -54,7 +54,6 @@ Changed
     - Dynamically add/omit cell unit, link and tooltip in rendering (#708)
     - Improve column type detection (#730)
     - Refactor sample sheet import/replace handling in views (#701)
-    - Enable exporting ``ISATab`` versions in ``SampleSheetISAExportView`` (#739)
 
 Fixed
 -----
