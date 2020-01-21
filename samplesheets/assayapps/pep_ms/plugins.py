@@ -138,32 +138,23 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
 
         return row
 
-    def get_extra_table(self, table, assay):
+    def get_shortcuts(self, assay):
         """
-        Return data for an extra content/shortcut table.
+        Return assay iRODS shortcuts.
 
-        :param table: Full table with headers (dict returned by
-                      SampleSheetTableBuilder)
         :param assay: Assay object
-        :return: Dict or None
+        :return: List or None
         """
         assay_path = self.get_assay_path(assay)
-
-        ret = {
-            'schema': {'title': 'Shortcuts for Raw Data and MaxQuant Results'},
-            'cols': [
-                {'field': 'directory', 'type': 'label', 'title': 'Directory'},
-                {'field': 'links', 'type': 'irods_buttons', 'title': 'Links'},
-            ],
-            'rows': [
-                {
-                    'directory': {'value': 'Raw Data'},
-                    'links': {'path': assay_path + '/' + self.raw_data_coll},
-                },
-                {
-                    'directory': {'value': 'MaxQuant Results'},
-                    'links': {'path': assay_path + '/' + self.max_quant_coll},
-                },
-            ],
-        }
-        return ret
+        return [
+            {
+                'id': 'raw_data',
+                'label': 'Raw Data',
+                'path': assay_path + '/' + self.raw_data_coll,
+            },
+            {
+                'id': 'maxquant_results',
+                'label': 'MaxQuant Results',
+                'path': assay_path + '/' + self.max_quant_coll,
+            },
+        ]

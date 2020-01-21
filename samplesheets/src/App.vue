@@ -166,14 +166,16 @@
             </div>
           </div>
 
-          <extra-content-table
-              v-if="!editMode && extraTables.assays[assayUuid]"
+          <assay-shortcut-card
+              v-if="!editMode &&
+                    sodarContext['irods_status'] &&
+                    assayShortcuts[assayUuid]"
               :app="getApp()"
-              :table-data="extraTables.assays[assayUuid]"
-              :irods-status="sodarContext['irods_status']"
+              :assay-info="assayInfo"
+              :shortcut-data="assayShortcuts[assayUuid]"
               :irods-backend-enabled="sodarContext['irods_backend_enabled']"
               :irods-webdav-url="sodarContext['irods_webdav_url']">
-          </extra-content-table>
+          </assay-shortcut-card>
 
           <div class="card sodar-ss-data-card sodar-ss-data-card-assay">
             <div class="card-header">
@@ -321,7 +323,7 @@ import ColumnToggleModal from './components/modals/ColumnToggleModal.vue'
 import ColumnConfigModal from './components/modals/ColumnConfigModal.vue'
 import EditorHelpModal from './components/modals/EditorHelpModal.vue'
 import IrodsStatsBadge from './components/IrodsStatsBadge.vue'
-import ExtraContentTable from './components/ExtraContentTable.vue'
+import AssayShortcutCard from './components/AssayShortcutCard.vue'
 import {AgGridVue} from 'ag-grid-vue'
 import DataCellRenderer from './components/renderers/DataCellRenderer.vue'
 import IrodsButtonsRenderer from './components/renderers/IrodsButtonsRenderer.vue'
@@ -352,10 +354,7 @@ export default {
         'study': null,
         'assays': {}
       },
-      extraTables: {
-        'study': null,
-        'assays': {}
-      },
+      assayShortcuts: {},
       currentStudyUuid: null,
       currentAssayUuid: null,
       gridsLoaded: false,
@@ -387,7 +386,7 @@ export default {
     ColumnConfigModal,
     EditorHelpModal,
     IrodsStatsBadge,
-    ExtraContentTable,
+    AssayShortcutCard,
     AgGridVue,
     AgGridDragSelect
   },
@@ -821,7 +820,7 @@ export default {
       return colDef
     },
 
-    buildRowData (table) {
+    buildRowData (table, assayMode) {
       let rowData = []
 
       // Iterate through rows
@@ -838,7 +837,7 @@ export default {
         }
 
         // Add study shortcut field
-        if (table.hasOwnProperty('shortcuts') && table['shortcuts'] != null) {
+        if (table.hasOwnProperty('shortcuts') && !assayMode && table['shortcuts']) {
           row['shortcutLinks'] = table['shortcuts']['data'][i]
         }
 
@@ -867,10 +866,7 @@ export default {
         'study': null,
         'assays': {}
       }
-      this.extraTables = {
-        'study': null,
-        'assays': {}
-      }
+      this.assayShortcuts = {}
     },
 
     getStudy (studyUuid, editMode) {
@@ -907,7 +903,7 @@ export default {
               // Build study
               this.columnDefs['study'] = this.buildColDef(
                 data['tables']['study'], false, studyUuid, editMode)
-              this.rowData['study'] = this.buildRowData(data['tables']['study'])
+              this.rowData['study'] = this.buildRowData(data['tables']['study'], false)
 
               // Build assays
               for (let assayUuid in data['tables']['assays']) {
@@ -915,12 +911,12 @@ export default {
                 this.columnDefs['assays'][assayUuid] = this.buildColDef(
                   data['tables']['assays'][assayUuid], true, assayUuid, editMode)
                 this.rowData['assays'][assayUuid] = this.buildRowData(
-                  data['tables']['assays'][assayUuid])
+                  data['tables']['assays'][assayUuid], true)
 
-                // Get extra table
-                if ('extra_table' in data['tables']['assays'][assayUuid]) {
-                  this.extraTables.assays[assayUuid] =
-                      data['tables']['assays'][assayUuid]['extra_table']
+                // Get assay shortcuts
+                if ('shortcuts' in data['tables']['assays'][assayUuid]) {
+                  this.assayShortcuts[assayUuid] =
+                      data['tables']['assays'][assayUuid]['shortcuts']
                 }
               }
 

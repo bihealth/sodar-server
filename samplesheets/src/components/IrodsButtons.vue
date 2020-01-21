@@ -9,7 +9,7 @@
         title="List files"
         :disabled="!getEnabledState()"
         @click="onDirListClick"
-        v-b-tooltip.hover.d300>
+        v-b-tooltip.hover.d300.window>
       <i class="fa fa-folder-open-o"></i>
     </b-button>
     <b-button
@@ -20,7 +20,7 @@
         v-clipboard="irodsPath"
         @click="onCopyBtnClick"
         :disabled="!getEnabledState()"
-        v-b-tooltip.hover.d300>
+        v-b-tooltip.hover.d300.window>
       <i class="fa fa-terminal"></i>
     </b-button>
     <b-button
@@ -31,7 +31,7 @@
         v-clipboard:copy="irodsWebdavUrl + irodsPath"
         v-clipboard:success="onCopyBtnClick"
         :disabled="!getEnabledState()"
-        v-b-tooltip.hover.d300>
+        v-b-tooltip.hover.d300.window>
       <i class="fa fa-clipboard"></i>
     </b-button>
     <b-button
@@ -41,7 +41,7 @@
         title="Browse Files in WebDAV"
         :href="irodsWebdavUrl + irodsPath"
         :disabled="!getEnabledState()"
-        v-b-tooltip.hover.d300>
+        v-b-tooltip.hover.d300.window>
       <i class="fa fa-external-link"></i>
     </b-button>
   </span>

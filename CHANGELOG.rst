@@ -29,6 +29,8 @@ Added
     - Save and restore sheet configuration with ``ISATab`` version
     - Deletion of ``ISATab`` versions on sheet delete (#746)
     - Extra columns for project list (#579)
+    - ``MiscFiles`` assay shortcut for all assays (#766)
+    - ``ResultsReports`` assay shortcut for all assays (#767)
 
 Changed
 -------
@@ -54,6 +56,9 @@ Changed
     - Dynamically add/omit cell unit, link and tooltip in rendering (#708)
     - Improve column type detection (#730)
     - Refactor sample sheet import/replace handling in views (#701)
+    - Replace extra content table with standard assay shortcut table (#782)
+    - Change assay sub-app ``get_extra_table()`` into ``get_shortcuts()`` (#782)
+    - Change ``ExtraContentTable.vue`` into ``AssayShortcutCard.vue`` (#782)
 
 Fixed
 -----
@@ -65,6 +70,7 @@ Fixed
     - ``getGridOptionsByUuid()`` returned column API instead of grid options (#706)
     - ``getGridOptionsByUuid()`` returned initial options without applied updates (#721)
     - Incorrect Investigation UUID passed to ``ISATab`` on replace (#742)
+    - Restrictive tooltip boundary value in ``IrodsButtons.vue``
 
 Removed
 -------

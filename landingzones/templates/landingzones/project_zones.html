@@ -113,6 +113,14 @@
     </div>
 
   {% else %}
+    <div class="alert alert-info">
+      <strong>Hint:</strong> To submit assay-wide results/reports and
+      miscellaneous files, place them under collections named
+      <code>ResultsReports</code> and/or <code>MiscFiles</code> in your landing
+      zone. The files will appear in the "Assay Shortcuts" table in the Sample
+      Sheets app.
+    </div>
+
     {# User zones #}
     {% if zones_own.count > 0 %}
       {% include 'landingzones/_zone_list.html' with zones=zones_own list_title='Your Zones' list_icon='fa-user' list_type='own' %}

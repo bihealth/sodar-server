@@ -371,6 +371,41 @@ class TestProjectSheetsView(TestProjectSheetsVueAppBase):
 
     # TODO: Test study links with ISAtab examples using BIH configs (see #434)
 
+    # TODO: Test with plugin-containing ISAtab example (see #434)
+    def test_assay_shortcuts_no_dirs(self):
+        """Test assay shortcuts table with no iRODS dirs"""
+        self._login_and_render(self.default_user)
+
+        # Assert the table exists
+        with self.assertRaises(NoSuchElementException):
+            self.assertIsNotNone(
+                self.selenium.find_element_by_class_name(
+                    'sodar-ss-vue-assay-shortcut-card'
+                )
+            )
+
+    def test_assay_shortcuts_with_dirs(self):
+        """Test assay shortcuts table with iRODS dirs"""
+        self.investigation.irods_status = True  # Fake the dir creation
+        self.investigation.save()
+
+        self._login_and_render(self.default_user)
+
+        # Assert the table exists
+        self.assertIsNotNone(
+            self.selenium.find_element_by_class_name(
+                'sodar-ss-vue-assay-shortcut-card'
+            )
+        )
+        self.assertEqual(
+            len(
+                self.selenium.find_elements_by_class_name(
+                    'sodar-ss-vue-assay-shortcut'
+                )
+            ),
+            2,
+        )
+
     # TODO: Test with realistic ISAtab examples using BIH configs (see #434)
     def test_assay_links_no_dirs(self):
         """Test assay links column with no iRODS dirs"""

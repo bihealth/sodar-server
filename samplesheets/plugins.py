@@ -21,6 +21,7 @@ from samplesheets.utils import (
     get_isa_field_name,
     get_sheets_url,
 )
+from samplesheets.views import RESULTS_COLL, MISC_FILES_COLL
 
 
 # SODAR constants
@@ -366,13 +367,68 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         :param user: User object to denote user triggering the update (optional)
         """
         irods_backend = get_backend_api('omics_irods')
+        cache_backend = get_backend_api('sodar_cache')
 
-        if not irods_backend or not irods_backend.test_connection():
+        if (
+            not cache_backend
+            or not irods_backend
+            or not irods_backend.test_connection()
+        ):
             return
 
+        # Study sub-app plugins
         for study_plugin in SampleSheetStudyPluginPoint.get_plugins():
             study_plugin.update_cache(name, project, user)
 
+        # Assay shortcuts
+        projects = (
+            [project]
+            if project
+            else Project.objects.filter(type=PROJECT_TYPE_PROJECT)
+        )
+        assays = Assay.objects.filter(
+            study__investigation__project__in=projects,
+            study__investigation__irods_status=True,
+        )
+
+        for assay in assays:
+            item_name = 'irods/shortcuts/assay/{}'.format(assay.sodar_uuid)
+
+            # Default assay shortcuts
+            assay_path = irods_backend.get_path(assay)
+            cache_data = {
+                'shortcuts': {
+                    'results_reports': irods_backend.collection_exists(
+                        assay_path + '/' + RESULTS_COLL
+                    ),
+                    'misc_files': irods_backend.collection_exists(
+                        assay_path + '/' + MISC_FILES_COLL
+                    ),
+                }
+            }
+
+            # Plugin assay shortcuts
+            assay_plugin = find_assay_plugin(
+                assay.measurement_type, assay.technology_type
+            )
+
+            if assay_plugin:
+                plugin_shortcuts = assay_plugin.get_shortcuts(assay) or []
+
+                for sc in plugin_shortcuts:
+                    cache_data['shortcuts'][
+                        sc['id']
+                    ] = irods_backend.collection_exists(sc['path'])
+
+            cache_backend.set_cache_item(
+                name=item_name,
+                app_name='samplesheets',
+                user=user,
+                data=cache_data,
+                project=assay.get_project(),
+            )
+
+        # Assay sub-app plugins
         for assay_plugin in SampleSheetAssayPluginPoint.get_plugins():
             assay_plugin.update_cache(name, project, user)
 
@@ -550,14 +606,12 @@ class SampleSheetAssayPluginPoint(PluginPoint):
         # TODO: Implement this in your assay plugin
         raise NotImplementedError('Implement update_row() in your assay plugin')
 
-    def get_extra_table(self, table, assay):
+    def get_shortcuts(self, assay):
         """
-        Return data for an extra content/shortcut table.
+        Return assay iRODS shortcuts.
 
-        :param table: Full table with headers (dict returned by
-                      SampleSheetTableBuilder)
         :param assay: Assay object
-        :return: Dict or None
+        :return: List or None
         """
         # TODO: Implement this in your app plugin
         return None

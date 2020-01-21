@@ -86,6 +86,10 @@ EDIT_FIELD_MAP = {
     'label': 'extract_label',
     'performer': 'performer',
 }
+MISC_FILES_COLL_ID = 'misc_files'
+MISC_FILES_COLL = 'MiscFiles'
+RESULTS_COLL_ID = 'results_reports'
+RESULTS_COLL = 'ResultsReports'
 
 
 # Mixins -----------------------------------------------------------------------
@@ -1464,6 +1468,21 @@ class SampleSheetStudyTablesGetAPIView(
                 assay = Assay.objects.filter(sodar_uuid=a_uuid).first()
                 assay_path = irods_backend.get_path(assay)
                 a_data['irods_paths'] = []
+
+                # Default shortcuts
+                a_data['shortcuts'] = [
+                    {
+                        'id': RESULTS_COLL_ID,
+                        'label': 'Results and Reports',
+                        'path': assay_path + '/' + RESULTS_COLL,
+                    },
+                    {
+                        'id': MISC_FILES_COLL_ID,
+                        'label': 'Misc Files',
+                        'path': assay_path + '/' + MISC_FILES_COLL,
+                    },
+                ]
+
                 assay_plugin = find_assay_plugin(
                     assay.measurement_type, assay.technology_type
                 )
@@ -1500,9 +1519,25 @@ class SampleSheetStudyTablesGetAPIView(
                         assay_plugin.update_row(row, a_data, assay)
 
                     # Add extra table if available
-                    a_data['extra_table'] = assay_plugin.get_extra_table(
-                        a_data, assay
+                    a_data['shortcuts'].extend(
+                        assay_plugin.get_shortcuts(assay) or []
                     )
+
+                # Check assay shortcut cache and set initial enabled value
+                cache_item = cache_backend.get_cache_item(
+                    name='irods/shortcuts/assay/{}'.format(a_uuid),
+                    app_name=APP_NAME,
+                    project=assay.get_project(),
+                )
+
+                if cache_item:
+                    for i in range(len(a_data['shortcuts'])):
+                        a_data['shortcuts'][i]['enabled'] = (
+                            cache_item.data['shortcuts'].get(
+                                a_data['shortcuts'][i]['id']
+                            )
+                            or False
+                        )
 
         # Get sheet configuration if editing
         if edit:
