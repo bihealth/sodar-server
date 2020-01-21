@@ -8,6 +8,9 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
 
+from unittest import skipIf
+
+from django.conf import settings
 from django.urls import reverse
 
 # Projectroles dependency
@@ -31,6 +34,11 @@ with open(CONFIG_PATH_DEFAULT) as fp:
 
 with open(CONFIG_PATH_UPDATED) as fp:
     CONFIG_DATA_UPDATED = json.load(fp)
+
+IRODS_ENABLED = (
+    True if 'omics_irods' in settings.ENABLED_BACKEND_PLUGINS else False
+)
+IRODS_SKIP_MSG = 'Irodsbackend not enabled in settings'
 
 
 # App settings API
@@ -384,6 +392,7 @@ class TestProjectSheetsView(TestProjectSheetsVueAppBase):
                 )
             )
 
+    @skipIf(not IRODS_ENABLED, IRODS_SKIP_MSG)
     def test_assay_shortcuts_with_dirs(self):
         """Test assay shortcuts table with iRODS dirs"""
         self.investigation.irods_status = True  # Fake the dir creation
