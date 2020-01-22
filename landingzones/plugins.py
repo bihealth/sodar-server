@@ -164,13 +164,11 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         :param user: User object (current user)
         :return: String (may contain HTML), integer or None
         """
-        investigation = Investigation.objects.filter(project=project).first()
+        investigation = Investigation.objects.filter(
+            project=project, active=True
+        ).first()
 
-        if (
-            column_id == 'zones'
-            and investigation
-            and investigation.irods_status
-        ):
+        if column_id == 'zones':
             if user.is_superuser:
                 zones = LandingZone.objects.filter(project=project)
 
@@ -182,7 +180,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                 status__in=['MOVED', 'DELETED']
             ).count()
 
-            if zone_count > 0:
+            if investigation and investigation.irods_status and zone_count > 0:
                 return (
                     '<a href="{}" title="{}" data-toggle="tooltip" '
                     'data-placement="top"><i class="fa fa-database {}">'
@@ -199,6 +197,29 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                         ),
                         'text-danger' if active_count == 0 else 'text-success',
                     )
+                )
+
+            elif (
+                investigation
+                and investigation.irods_status
+                and user.has_perm('landingzones.add_zones', project)
+            ):
+                return (
+                    '<a href="{}" title="Create landing zone in project" '
+                    'data-toggle="tooltip" data-placement="top">'
+                    '<i class="fa fa-plus"></i></a>'.format(
+                        reverse(
+                            'landingzones:create',
+                            kwargs={'project': project.sodar_uuid},
+                        )
+                    )
+                )
+
+            else:
+                return (
+                    '<i class="fa fa-database text-muted" '
+                    'title="No available landing zones" '
+                    'data-toggle="tooltip" data-placement="top"></i>'
                 )
 
 

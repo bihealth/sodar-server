@@ -111,8 +111,8 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
             'ordering': 30,
             'align': 'center',
         },
-        'data': {
-            'title': 'Data',
+        'files': {
+            'title': 'Files',
             'width': 70,
             'description': None,
             'active': True,
@@ -323,39 +323,63 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         """
         investigation = Investigation.objects.filter(project=project).first()
 
-        if column_id == 'sheets' and investigation:
-            return (
-                '<a href="{}" title="{}" data-toggle="tooltip" '
-                'data-placement="top"><i class="fa fa-list-alt text-primary">'
-                '</i></a>'.format(
-                    reverse(
-                        'samplesheets:project_sheets',
-                        kwargs={'project': project.sodar_uuid},
-                    ),
-                    'View project sample sheets',
+        if column_id == 'sheets':
+            if investigation:
+                return (
+                    '<a href="{}" title="View project sample sheets" '
+                    'data-toggle="tooltip" data-placement="top">'
+                    '<i class="fa fa-list-alt text-primary"></i></a>'.format(
+                        get_sheets_url(project)
+                    )
                 )
-            )
 
-        elif (
-            column_id == 'data'
-            and settings.IRODS_WEBDAV_ENABLED
-            and investigation
-            and investigation.irods_status
-        ):
+            elif user.has_perm('samplesheets.edit_sheet', project):
+                return (
+                    '<a href="{}" title="Import sample sheet into project" '
+                    'data-toggle="tooltip" data-placement="top">'
+                    '<i class="fa fa-plus text-primary"></i></a>'.format(
+                        reverse(
+                            'samplesheets:import',
+                            kwargs={'project': project.sodar_uuid},
+                        )
+                    )
+                )
+
+            else:
+                return (
+                    '<i class="fa fa-list-alt text-muted" '
+                    'title="No sample sheets in project" '
+                    'data-toggle="tooltip" data-placement="top"></i>'
+                )
+
+        elif column_id == 'files':
             irods_backend = get_backend_api('omics_irods')
-            return (
-                (
-                    '<a href="{}" target="_blank" title="{}" '
+
+            if (
+                irods_backend
+                and investigation
+                and investigation.irods_status
+                and settings.IRODS_WEBDAV_ENABLED
+            ):
+                return (
+                    '<a href="{}" target="_blank"'
+                    'title="View project files in iRODS" '
                     'data-toggle="tooltip" data-placement="top">'
                     '<i class="fa fa-folder-open '
                     'text-primary"></i></a>'.format(
                         settings.IRODS_WEBDAV_URL
-                        + irods_backend.get_sample_path(project),
-                        'View project sample data in iRODS',
+                        + irods_backend.get_sample_path(project)
                     )
                 )
-                if irods_backend
-                else None
+
+            return (
+                '<i class="fa fa-folder-open text-muted" '
+                'title="{}" data-toggle="tooltip" data-placement="top" '
+                '></i>'.format(
+                    'No project files in iRODS'
+                    if settings.IRODS_WEBDAV_URL
+                    else 'iRODS WebDAV unavailable'
+                )
             )
 
     def update_cache(self, name=None, project=None, user=None):
