@@ -79,7 +79,7 @@ SHEET_PATH_CRITICAL = SHEET_DIR_SPECIAL + SHEET_NAME_CRITICAL
 SOURCE_NAME = '0815'
 SOURCE_NAME_FAIL = 'oop5Choo'
 USER_PASSWORD = 'password'
-API_INVALID_VERSION = '5.0'
+API_INVALID_VERSION = '9.9.9'
 REMOTE_SITE_NAME = 'Test site'
 REMOTE_SITE_URL = 'https://sodar.bihealth.org'
 REMOTE_SITE_DESC = 'description'
@@ -1255,6 +1255,8 @@ class TestSourceIDQueryAPIView(KnoxAuthMixin, TestViewsBase):
                 'samplesheets:source_get', kwargs={'source_id': SOURCE_NAME}
             ),
             token=self.token,
+            media_type=settings.SODAR_API_MEDIA_TYPE,
+            version=settings.SODAR_API_DEFAULT_VERSION,
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['id_found'], True)
@@ -1267,6 +1269,8 @@ class TestSourceIDQueryAPIView(KnoxAuthMixin, TestViewsBase):
                 kwargs={'source_id': SOURCE_NAME_FAIL},
             ),
             token=self.token,
+            media_type=settings.SODAR_API_MEDIA_TYPE,
+            version=settings.SODAR_API_DEFAULT_VERSION,
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['id_found'], False)
@@ -1279,6 +1283,8 @@ class TestSourceIDQueryAPIView(KnoxAuthMixin, TestViewsBase):
                 kwargs={'source_id': SOURCE_NAME[:-1]},
             ),
             token=self.token,
+            media_type=settings.SODAR_API_MEDIA_TYPE,
+            version=settings.SODAR_API_DEFAULT_VERSION,
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['id_found'], False)
@@ -1300,6 +1306,7 @@ class TestSourceIDQueryAPIView(KnoxAuthMixin, TestViewsBase):
                 'samplesheets:source_get', kwargs={'source_id': SOURCE_NAME}
             ),
             token=self.token,
+            media_type=settings.SODAR_API_MEDIA_TYPE,
             version=API_INVALID_VERSION,
         )
         self.assertEqual(response.status_code, 406)
