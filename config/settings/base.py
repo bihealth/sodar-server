@@ -409,27 +409,27 @@ def set_logging(debug):
             'irodsbackend': {
                 'level': 'DEBUG' if debug else 'INFO',
                 'handlers': ['console'],
-                'propagate': False,
+                'propagate': True,
             },
             'landingzones': {
                 'level': 'DEBUG' if debug else 'INFO',
                 'handlers': ['console'],
-                'propagate': False,
+                'propagate': True,
             },
             'projectroles': {
                 'level': 'DEBUG' if debug else 'INFO',
                 'handlers': ['console'],
-                'propagate': False,
+                'propagate': True,
             },
             'samplesheets': {
                 'level': 'DEBUG' if debug else 'INFO',
                 'handlers': ['console'],
-                'propagate': False,
+                'propagate': True,
             },
             'sodarcache': {
                 'level': 'DEBUG' if debug else 'INFO',
                 'handlers': ['console'],
-                'propagate': False,
+                'propagate': True,
             },
         },
     }
