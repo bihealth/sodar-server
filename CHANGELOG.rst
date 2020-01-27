@@ -73,6 +73,7 @@ Fixed
     - ``getGridOptionsByUuid()`` returned initial options without applied updates (#721)
     - Incorrect Investigation UUID passed to ``ISATab`` on replace (#742)
     - Restrictive tooltip boundary value in ``IrodsButtons.vue``
+    - Study UUID changed if modifying study identifier when replacing sheets (#789)
 
 Removed
 -------

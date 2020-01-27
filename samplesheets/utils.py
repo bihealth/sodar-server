@@ -57,7 +57,9 @@ def compare_inv_replace(inv1, inv2):
     """
     try:
         for study1 in inv1.studies.all():
-            study2 = inv2.studies.get(file_name=study1.file_name)
+            study2 = inv2.studies.get(
+                identifier=study1.identifier, file_name=study1.file_name
+            )
 
             for assay1 in study1.assays.all():
                 study2.assays.get(file_name=assay1.file_name)
