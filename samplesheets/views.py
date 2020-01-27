@@ -1530,14 +1530,14 @@ class SampleSheetStudyTablesGetAPIView(
                     project=assay.get_project(),
                 )
 
-                if cache_item:
-                    for i in range(len(a_data['shortcuts'])):
-                        a_data['shortcuts'][i]['enabled'] = (
-                            cache_item.data['shortcuts'].get(
-                                a_data['shortcuts'][i]['id']
-                            )
-                            or False
-                        )
+                for i in range(len(a_data['shortcuts'])):
+                    if cache_item:
+                        a_data['shortcuts'][i]['enabled'] = cache_item.data[
+                            'shortcuts'
+                        ].get(a_data['shortcuts'][i]['id'])
+
+                    else:
+                        a_data['shortcuts'][i]['enabled'] = True
 
         # Get sheet configuration if editing
         if edit:
