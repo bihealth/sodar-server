@@ -101,13 +101,13 @@ LOGGING = set_logging(DEBUG)
 LOGGING['loggers']['django.db.backends'] = {
     'level': 'ERROR',
     'handlers': ['console'],
-    'propagate': False,
+    'propagate': True,
 }
 
 LOGGING['loggers']['django.security.DisallowedHost'] = {
     'level': 'ERROR',
     'handlers': ['console'],
-    'propagate': False,
+    'propagate': True,
 }
 
 
