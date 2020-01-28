@@ -43,6 +43,7 @@ Changed
     - Upgrade to Chromedriver v79
     - Upgrade to Django v1.11.27
     - Enable logging propagation (#792)
+    - Only log ``ERROR`` level messages if not in debug mode (#526)
 - **Irodsbackend**
     - Refactor ``api.get_info()``
 - **Irodsinfo**
