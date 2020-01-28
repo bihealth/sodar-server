@@ -15,7 +15,7 @@
 
 <script src="https://browser.sentry-cdn.com/5.11.0/bundle.min.js" integrity="sha384-jbFinqIbKkHNg+QL+yxB4VrBC0EAPTuaLGeRT0T+NfEV89YC6u1bKxHLwoo+/xxY" crossorigin="anonymous"></script>
 
-{% get_setting 'SENTRY_DSN' as sentry_dsn %}
+{% get_django_setting 'SENTRY_DSN' as sentry_dsn %}
 {% if sentry_event_id and sentry_dsn  %}
   <script>
     Sentry.init({ dsn: '{{  sentry_dsn }}' });
