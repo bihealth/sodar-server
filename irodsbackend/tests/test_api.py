@@ -48,7 +48,55 @@ IRODS_BACKEND_ENABLED = (
 IRODS_BACKEND_SKIP_MSG = 'iRODS backend not enabled in settings'
 
 
-class TestIrodsBackendAPI(
+class TestIrodsbackendAPIInit(
+    ProjectMixin,
+    RoleAssignmentMixin,
+    SampleSheetIOMixin,
+    LandingZoneMixin,
+    TestCase,
+):
+    """Tests for initializing the irodsbackend app"""
+
+    @skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
+    def test_init(self):
+        """Test initialization valid settings"""
+        self.assertIsInstance(IrodsAPI(), IrodsAPI)
+
+    @skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
+    @override_settings(IRODS_PASS='Iequ4QueOchai2ro')
+    def test_init_no_auth(self):
+        """Test initialization with invalid authentication"""
+        with self.assertRaises(Exception):
+            IrodsAPI()
+
+    @skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
+    @override_settings(IRODS_ENV_PATH=ENV_PATH)
+    def test_init_env(self):
+        """Test initialization with an iRODS environment file"""
+        self.assertIsInstance(IrodsAPI(), IrodsAPI)
+
+    @skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
+    @override_settings(IRODS_ENV_PATH=ENV_PATH_INVALID)
+    def test_init_env_invalid(self):
+        """Test initialization with an invalid iRODS environment file"""
+        with self.assertRaises(Exception):
+            IrodsAPI()
+
+    @skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
+    @override_settings(IRODS_ENV_PATH=ENV_PATH_NOT_FOUND)
+    def test_init_env_not_found(self):
+        """Test initialization with an iRODS environment file"""
+        # NOTE: Should return true, just returning a warning
+        self.assertIsInstance(IrodsAPI(), IrodsAPI)
+
+    def test_init_no_conn(self):
+        """Test initialization with disabled connection"""
+        # NOTE: Should return true, just returning a warning
+        irods_backend = IrodsAPI(conn=False)
+        self.assertEqual(irods_backend.irods, None)
+
+
+class TestIrodsbackendAPI(
     ProjectMixin,
     RoleAssignmentMixin,
     SampleSheetIOMixin,
@@ -99,36 +147,6 @@ class TestIrodsBackendAPI(
         )
 
         self.irods_backend = IrodsAPI()
-
-    @skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
-    def test_test_connection(self):
-        """Test test_connection() with valid settings"""
-        self.assertEqual(self.irods_backend.test_connection(), True)
-
-    @skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
-    @override_settings(IRODS_PASS='Iequ4QueOchai2ro')
-    def test_test_connection_no_auth(self):
-        """Test test_connection() with invalid authentication"""
-        self.assertEqual(self.irods_backend.test_connection(), False)
-
-    @skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
-    @override_settings(IRODS_ENV_PATH=ENV_PATH)
-    def test_test_connection_env(self):
-        """Test test_connection() with an iRODS environment file"""
-        self.assertEqual(self.irods_backend.test_connection(), True)
-
-    @skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
-    @override_settings(IRODS_ENV_PATH=ENV_PATH_INVALID)
-    def test_test_connection_env_invalid(self):
-        """Test test_connection() with an invalid iRODS environment file"""
-        self.assertEqual(self.irods_backend.test_connection(), False)
-
-    @skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
-    @override_settings(IRODS_ENV_PATH=ENV_PATH_NOT_FOUND)
-    def test_test_connection_not_found(self):
-        """Test test_connection() with an iRODS environment file"""
-        # NOTE: Should return true, just returning a warning
-        self.assertEqual(self.irods_backend.test_connection(), True)
 
     def test_get_path_project(self):
         """Test get_irods_path() with a Project object"""

@@ -1,6 +1,5 @@
 """iRODS backend API for SODAR Django apps"""
 
-from functools import wraps
 import json
 import logging
 import random
@@ -45,12 +44,22 @@ PATH_REGEX = {
 logger = logging.getLogger(__name__)
 
 
-# Irods init decorator ---------------------------------------------------------
+class IrodsAPI:
+    """iRODS API to be used by Django apps"""
 
+    class IrodsQueryException(Exception):
+        """Irods query exception"""
 
-def init_irods(func):
-    @wraps(func)
-    def _decorator(self, *args, **kwargs):
+        pass
+
+    def __init__(self, conn=True):
+        # conn = kwargs.get('conn') or True
+        self.irods = None
+        self.irods_env = {}
+
+        if not conn:
+            return
+
         # Get optional environment file
         if settings.IRODS_ENV_PATH:
             try:
@@ -66,7 +75,6 @@ def init_irods(func):
                     'iRODS env file not found: connecting with default '
                     'parameters (path={})'.format(settings.IRODS_ENV_PATH)
                 )
-                self.irods_env = {}
 
             except Exception as ex:
                 logger.error(
@@ -75,9 +83,6 @@ def init_irods(func):
                     )
                 )
                 raise ex
-
-        else:
-            self.irods_env = {}
 
         # Connect
         try:
@@ -96,44 +101,12 @@ def init_irods(func):
             )
 
         except Exception as ex:
-            if self.irods:
-                self.irods.cleanup()
-
             logger.error(
                 'Unable to connect to iRODS (host={}, port={}): {}'.format(
                     settings.IRODS_HOST, settings.IRODS_PORT, ex
                 )
             )
             raise ex
-
-        try:
-            result = func(self, *args, **kwargs)
-
-        except Exception as ex:
-            self.irods.cleanup()
-            raise ex
-
-        self.irods.cleanup()
-        self.irods = None
-        return result
-
-    return _decorator
-
-
-# API class --------------------------------------------------------------------
-
-
-class IrodsAPI:
-    """iRODS API to be used by Django apps"""
-
-    class IrodsQueryException(Exception):
-        """Irods query exception"""
-
-        pass
-
-    def __init__(self):
-        self.irods = None
-        self.irods_env = None
 
     def __del__(self):
         if self.irods:
@@ -575,6 +548,7 @@ class IrodsAPI:
     # iRODS Operations
     ###################
 
+    # TODO: Remove?
     def test_connection(self):
         """
         Test the iRODS connection without raising an exception on an error.
@@ -583,20 +557,15 @@ class IrodsAPI:
 
         :return: Boolean
         """
-
-        # NOTE: Don't try this at home
-        @init_irods
-        def _connect(self):
-            return True
-
         try:
-            return _connect(self)
+            return self.irods.collections.exists(
+                '/{}/home/{}'.format(settings.IRODS_ZONE, settings.IRODS_USER)
+            )
 
         except Exception as ex:
             logger.error('Exception caught in test_connection(): {}'.format(ex))
             return False
 
-    @init_irods
     def get_session(self):
         """
         Get iRODS session object for direct API access.
@@ -605,7 +574,6 @@ class IrodsAPI:
         """
         return self.irods
 
-    @init_irods
     def get_info(self):
         """
         Return iRODS server info.
@@ -626,7 +594,6 @@ class IrodsAPI:
             ),
         }
 
-    @init_irods
     def get_objects(self, path, check_md5=False, name_like=None, limit=None):
         """
         Return iRODS object list.
@@ -652,7 +619,6 @@ class IrodsAPI:
         )
         return ret
 
-    @init_irods
     def get_object_stats(self, path):
         """
         Return file count and total file size for all files within a path.
@@ -669,7 +635,6 @@ class IrodsAPI:
         ret = self._get_obj_stats(coll)
         return ret
 
-    @init_irods
     def collection_exists(self, path):
         """
         Return True/False depending if the collection defined in path exists
@@ -681,7 +646,6 @@ class IrodsAPI:
 
     # TODO: Fork python-irodsclient and implement ticket functionality there
 
-    @init_irods
     def issue_ticket(self, mode, path, ticket_str=None, expiry_date=None):
         """
         Issue ticket for a specific iRODS collection
@@ -709,7 +673,6 @@ class IrodsAPI:
 
         return ticket
 
-    @init_irods
     def delete_ticket(self, ticket_str):
         """
         Delete ticket

@@ -29,14 +29,13 @@ class BackendPlugin(BackendPluginPoint):
     #: URL of optional css file to be included
     css_url = 'irodsbackend/css/irodsbackend.css'
 
-    def get_api(self):
+    def get_api(self, **kwargs):
         """Return API entry point object."""
         try:
-            return IrodsAPI()
+            return IrodsAPI(**kwargs)
 
-        except Exception as ex:
-            print(str(ex))
-            return None  # TODO: log exception
+        except Exception:
+            return None  # Exception logged in constructor
 
     def get_statistics(self):
         if 'omics_irods' not in settings.ENABLED_BACKEND_PLUGINS:

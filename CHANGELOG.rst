@@ -16,6 +16,7 @@ Added
     - Sentry support (#476)
 - **Irodsbackend**
     - Enforce MD5 hash scheme in client configuration (#740)
+    - Enable ``conn`` keyword argument in API initialization (#793)
 - **Landingzones**
     - Extra columns for project list (#579)
 - **Samplesheets**
@@ -46,6 +47,7 @@ Changed
     - Only log ``ERROR`` level messages if not in debug mode (#526)
 - **Irodsbackend**
     - Refactor ``api.get_info()``
+    - Refactor iRODS connection handling in API (#793)
 - **Irodsinfo**
     - Display iRODS server information when connection fails (#761)
 - **Samplesheets**
