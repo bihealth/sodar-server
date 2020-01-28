@@ -54,7 +54,6 @@ urlpatterns = [
     # TODO: See if plugin URLs can be made to work now (Flynn no longer used)
     # url(r'^', include_plugins(ProjectAppPluginPoint)),
     url(r'^timeline/', include('timeline.urls')),
-    url(r'^files/', include('filesfolders.urls')),
     url(r'^samplesheets/', include('samplesheets.urls')),
     url(r'^landingzones/', include('landingzones.urls')),
     # Backend apps with API URLs

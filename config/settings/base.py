@@ -76,7 +76,6 @@ LOCAL_APPS = [
     # Custom users app
     'sodar.users.apps.UsersConfig',
     # Project apps
-    'filesfolders.apps.FilesfoldersConfig',
     'samplesheets.apps.SamplesheetsConfig',
     'landingzones.apps.LandingzonesConfig',
     # Backend apps
@@ -520,15 +519,6 @@ PROJECTROLES_CUSTOM_CSS_INCLUDES = env.list(
 
 # Timeline app settings
 TIMELINE_PAGINATION = 15
-
-
-# Filesfolders app settings
-FILESFOLDERS_MAX_UPLOAD_SIZE = env.int('FILESFOLDERS_MAX_UPLOAD_SIZE', 10485760)
-FILESFOLDERS_MAX_ARCHIVE_SIZE = env.int(
-    'FILESFOLDERS_MAX_ARCHIVE_SIZE', 52428800
-)
-FILESFOLDERS_SERVE_AS_ATTACHMENT = False
-FILESFOLDERS_LINK_BAD_REQUEST_MSG = 'Invalid request'
 
 
 # Adminalerts app settings
