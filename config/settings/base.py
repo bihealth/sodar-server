@@ -526,6 +526,7 @@ ADMINALERTS_PAGINATION = 15
 
 
 # iRODS settings shared by iRODS using apps
+ENABLE_IRODS = env.bool('ENABLE_IRODS', True)
 IRODS_HOST = env.str('IRODS_HOST', '0.0.0.0')
 IRODS_PORT = env.int('IRODS_PORT', 4477)
 IRODS_ZONE = env.str('IRODS_ZONE', 'omicsZone')

@@ -14,6 +14,7 @@ Added
 - **General**
     - Support for local third party JS/CSS includes (#770)
     - Sentry support (#476)
+    - ``ENABLE_IRODS`` Django setting (#796)
 - **Irodsbackend**
     - Enforce MD5 hash scheme in client configuration (#740)
     - Enable ``conn`` keyword argument in API initialization (#793)

@@ -32,3 +32,6 @@ ENABLED_BACKEND_PLUGINS = [
 
 # Samplesheets app settings
 SHEETS_ENABLE_CACHE = True  # Temporary, see issue #556
+
+# iRODS settings shared by iRODS using apps
+ENABLE_IRODS = True

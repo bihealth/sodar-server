@@ -83,3 +83,6 @@ PROJECTROLES_SEARCH_PAGINATION = 10  # Workaround for #360
 
 # Samplesheets app settings
 SHEETS_ENABLE_CACHE = False  # Temporarily disabled to fix CI, see issue #556
+
+# iRODS settings shared by iRODS using apps
+ENABLE_IRODS = False
