@@ -39,10 +39,10 @@ class BaseIrodsAPIView(
         """
         Return message as a dict to be returned as JSON.
 
-        :param msg: String
+        :param msg: String or Exception
         :return: Dict
         """
-        return {'message': msg}
+        return {'message': str(msg)}
 
     def _check_collection_perm(self, path):
         """
@@ -95,20 +95,14 @@ class BaseIrodsAPIView(
                 status=400,
             )
 
-        irods_backend = get_backend_api('omics_irods')
-
-        if not irods_backend:
-            return JsonResponse(
-                self._get_msg('iRODS backend not enabled'), status=500
-            )
-
-        if not irods_backend.test_connection():
-            return JsonResponse(
-                self._get_msg('Unable to connect to iRODS'), status=500
-            )
-
         if request.method == 'GET' and not path:
             return JsonResponse(self._get_msg('Path not set'), status=400)
+
+        try:
+            irods_backend = get_backend_api('omics_irods')
+
+        except Exception as ex:
+            return JsonResponse(self._get_msg(ex), status=500)
 
         # Collection checks
         # NOTE: If supplying path(s) via POST, implement these in request func
@@ -139,14 +133,13 @@ class IrodsStatisticsAPIView(BaseIrodsAPIView):
     """View for returning collection file statistics for the UI"""
 
     def get(self, *args, **kwargs):
-        irods_backend = get_backend_api('omics_irods')
-
         try:
+            irods_backend = get_backend_api('omics_irods')
             stats = irods_backend.get_object_stats(self.path)
             return Response(stats, status=200)
 
         except Exception as ex:
-            return Response(self._get_msg(str(ex)), status=500)
+            return Response(self._get_msg(ex), status=500)
 
     def post(self, request, *args, **kwargs):
         irods_backend = get_backend_api('omics_irods')
@@ -188,7 +181,12 @@ class IrodsObjectListAPIView(BaseIrodsAPIView):
     permission_required = 'irodsbackend.view_files'
 
     def get(self, request, *args, **kwargs):
-        irods_backend = get_backend_api('omics_irods')
+        try:
+            irods_backend = get_backend_api('omics_irods')
+
+        except Exception as ex:
+            return Response(self._get_msg(ex), status=500)
+
         md5 = request.GET.get('md5')
 
         # Get files
@@ -199,4 +197,4 @@ class IrodsObjectListAPIView(BaseIrodsAPIView):
             return Response(ret_data, status=200)
 
         except Exception as ex:
-            return Response(self._get_msg(str(ex)), status=500)
+            return Response(self._get_msg(ex), status=500)

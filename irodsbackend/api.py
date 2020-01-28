@@ -112,9 +112,7 @@ class IrodsAPI:
         if self.irods:
             self.irods.cleanup()
 
-    #####################
-    # Internal functions
-    #####################
+    # Internal functions -------------------------------------------------------
 
     @classmethod
     def _get_datetime(cls, naive_dt):
@@ -544,27 +542,7 @@ class IrodsAPI:
 
         return rev_url
 
-    ###################
-    # iRODS Operations
-    ###################
-
-    # TODO: Remove?
-    def test_connection(self):
-        """
-        Test the iRODS connection without raising an exception on an error.
-        Useful for e.g. making sure the connection can be made before issuing
-        multiple iRODS operations. It also assures the connection is cleaned up.
-
-        :return: Boolean
-        """
-        try:
-            return self.irods.collections.exists(
-                '/{}/home/{}'.format(settings.IRODS_ZONE, settings.IRODS_USER)
-            )
-
-        except Exception as ex:
-            logger.error('Exception caught in test_connection(): {}'.format(ex))
-            return False
+    # iRODS Operations ---------------------------------------------------------
 
     def get_session(self):
         """

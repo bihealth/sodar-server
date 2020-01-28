@@ -278,14 +278,11 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
             return
 
         cache_backend = get_backend_api('sodar_cache')
-        irods_backend = get_backend_api('omics_irods')
-        tb = SampleSheetTableBuilder()
 
         if not cache_backend:
             return
 
-        if not irods_backend or not irods_backend.test_connection():
-            return
+        tb = SampleSheetTableBuilder()
 
         projects = (
             [project]

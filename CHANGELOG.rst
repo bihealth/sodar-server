@@ -87,6 +87,8 @@ Removed
     - Unused raven requirement (#476)
 - **Filesfolders**
     - Remove app as files will be placed under ``MiscFiles`` in iRODS (#766)
+- **Irodsbackend**
+    - ``test_connection()`` helper (#795)
 - **Samplesheets**
     - Unused ``study_row_limit`` setting (#641)
     - Support for SODAR v0.5.1 parsing of characteristics lists (#619)

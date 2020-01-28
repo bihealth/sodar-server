@@ -91,7 +91,6 @@ class TestIrodsbackendAPIInit(
 
     def test_init_no_conn(self):
         """Test initialization with disabled connection"""
-        # NOTE: Should return true, just returning a warning
         irods_backend = IrodsAPI(conn=False)
         self.assertEqual(irods_backend.irods, None)
 

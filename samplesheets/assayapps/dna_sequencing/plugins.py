@@ -106,14 +106,14 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
         ):
             return
 
-        cache_backend = get_backend_api('sodar_cache')
-        irods_backend = get_backend_api('omics_irods')
+        try:
+            cache_backend = get_backend_api('sodar_cache')
+            irods_backend = get_backend_api('omics_irods')
 
-        if (
-            not cache_backend
-            or not irods_backend
-            or not irods_backend.test_connection()
-        ):
+        except Exception:
+            return
+
+        if not cache_backend or not irods_backend:
             return
 
         tb = SampleSheetTableBuilder()
