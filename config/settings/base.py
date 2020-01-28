@@ -437,6 +437,18 @@ def set_logging(debug):
 
 LOGGING = set_logging(DEBUG)
 
+
+# Sentry Client
+# ------------------------------------------------------------------------------
+
+if env.bool("ENABLE_SENTRY", False):
+    import sentry_sdk
+    from sentry_sdk.integrations.django import DjangoIntegration
+
+    SENTRY_DSN = "%s?verify_ssl=0" % env.str("SENTRY_DSN")
+    sentry_sdk.init(SENTRY_DSN, integrations=[DjangoIntegration()])
+
+
 # Django-docs Settings
 # ------------------------------------------------------------------------------
 

@@ -13,6 +13,7 @@ Added
 
 - **General**
     - Support for local third party JS/CSS includes (#770)
+    - Sentry support (#476)
 - **Irodsbackend**
     - Enforce MD5 hash scheme in client configuration (#740)
 - **Landingzones**
@@ -79,6 +80,8 @@ Fixed
 Removed
 -------
 
+- **General**
+    - Unused raven requirement (#476)
 - **Samplesheets**
     - Unused ``study_row_limit`` setting (#641)
     - Support for SODAR v0.5.1 parsing of characteristics lists (#619)

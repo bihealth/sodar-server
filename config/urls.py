@@ -1,13 +1,28 @@
+from sentry_sdk import last_event_id
+
 from django.conf import settings
 from django.conf.urls import include, url
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
+from django.shortcuts import render
 from django.views import defaults as default_views
 from django.views.generic import TemplateView
 
 from projectroles.views import HomeView
+
+
+if not settings.DEBUG:
+
+    def handler500(request, *args, **argv):
+        return render(
+            request,
+            '500.html',
+            {'sentry_event_id': last_event_id()},
+            status=500,
+        )
+
 
 urlpatterns = [
     url(r'^$', HomeView.as_view(), name='home'),
