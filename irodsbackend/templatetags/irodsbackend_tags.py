@@ -6,7 +6,7 @@ from django.utils.http import urlencode
 from ..api import IrodsAPI
 
 
-irods_backend = IrodsAPI()
+irods_backend = IrodsAPI(conn=False)
 
 register = template.Library()
 

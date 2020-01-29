@@ -145,7 +145,7 @@ class TestIrodsbackendAPI(
             config_data={},
         )
 
-        self.irods_backend = IrodsAPI()
+        self.irods_backend = IrodsAPI(conn=False)
 
     def test_get_path_project(self):
         """Test get_irods_path() with a Project object"""

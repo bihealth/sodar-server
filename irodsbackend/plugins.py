@@ -40,7 +40,10 @@ class BackendPlugin(BackendPluginPoint):
                 pass  # Exception logged in constructor, return None
 
     def get_statistics(self):
-        if 'omics_irods' not in settings.ENABLED_BACKEND_PLUGINS:
+        if (
+            not settings.ENABLE_IRODS
+            or 'omics_irods' not in settings.ENABLED_BACKEND_PLUGINS
+        ):
             return {}
 
         irods_api = IrodsAPI()
