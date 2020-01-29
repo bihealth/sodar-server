@@ -1225,7 +1225,7 @@ class SampleSheetContextGetAPIView(
         studies = Study.objects.filter(investigation=investigation).order_by(
             'pk'
         )
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = get_backend_api('omics_irods', conn=False)
 
         # Can't import at module root due to circular dependency
         from .plugins import find_study_plugin, find_assay_plugin
@@ -1241,9 +1241,7 @@ class SampleSheetContextGetAPIView(
             'irods_status': investigation.irods_status
             if investigation
             else None,
-            'irods_backend_enabled': (
-                True if get_backend_api('omics_irods') else False
-            ),
+            'irods_backend_enabled': (True if irods_backend else False),
             'parser_version': (investigation.parser_version or 'LEGACY')
             if investigation
             else None,
@@ -1402,7 +1400,7 @@ class SampleSheetStudyTablesGetAPIView(
 
     def get(self, request, *args, **kwargs):
         timeline = get_backend_api('timeline_backend')
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = get_backend_api('omics_irods', conn=False)
         cache_backend = get_backend_api('sodar_cache')
         study = Study.objects.filter(sodar_uuid=self.kwargs['study']).first()
 

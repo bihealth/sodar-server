@@ -83,7 +83,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         :return: List of dicts or None.
         """
         sync_flows = []
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = get_backend_api('omics_irods', conn=False)
 
         if irods_backend:
             # Only sync flows which are not yet moved

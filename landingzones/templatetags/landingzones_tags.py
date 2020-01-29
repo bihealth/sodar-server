@@ -8,7 +8,7 @@ from ..models import LandingZone, STATUS_STYLES
 from ..plugins import get_zone_config_plugin
 
 
-irods_backend = get_backend_api('omics_irods')
+irods_backend = get_backend_api('omics_irods', conn=False)
 register = template.Library()
 
 

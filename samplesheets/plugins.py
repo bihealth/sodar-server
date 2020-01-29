@@ -353,7 +353,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                 )
 
         elif column_id == 'files':
-            irods_backend = get_backend_api('omics_irods')
+            irods_backend = get_backend_api('omics_irods', conn=False)
 
             if (
                 irods_backend
@@ -599,7 +599,7 @@ class SampleSheetAssayPluginPoint(PluginPoint):
         :param assay: Assay object
         :return: Full iRODS path for the assay
         """
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = get_backend_api('omics_irods', conn=False)
 
         if not irods_backend:
             return None

@@ -126,7 +126,9 @@ class TestIrodsbackendPermissions(ViewPermissionMixin, TestTaskflowBase):
         self.project_path = self.irods_backend.get_path(self.project)
 
     def tearDown(self):
-        self.irods_session.cleanup()
+        if self.irods_session:
+            self.irods_session.cleanup()
+
         super().tearDown()
 
     def test_stats_get(self):

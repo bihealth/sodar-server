@@ -22,7 +22,7 @@ TAG_COLORS = {
 DEFAULT_TAG_COLOR = 'secondary'
 
 
-irods_backend = get_backend_api('omics_irods')
+irods_backend = get_backend_api('omics_irods', conn=False)
 register = template.Library()
 
 

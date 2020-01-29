@@ -140,7 +140,7 @@ class ProjectZoneView(
 
         # iRODS backend
         context['irods_backend_enabled'] = (
-            True if get_backend_api('omics_irods') else False
+            True if get_backend_api('omics_irods', conn=False) else False
         )
 
         # iRODS WebDAV
@@ -200,7 +200,7 @@ class ZoneCreateView(
     def form_valid(self, form):
         taskflow = get_backend_api('taskflow')
         timeline = get_backend_api('timeline_backend')
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = get_backend_api('omics_irods', conn=False)
         tl_event = None
         context = self.get_context_data()
         project = context['project']
@@ -359,7 +359,7 @@ class ZoneDeleteView(
     def post(self, *args, **kwargs):
         timeline = get_backend_api('timeline_backend')
         taskflow = get_backend_api('taskflow')
-        irods_backend = get_backend_api('omics_irods')  # TODO: Ensure it exists
+        irods_backend = get_backend_api('omics_irods', conn=False)
         tl_event = None
 
         zone = LandingZone.objects.get(sodar_uuid=self.kwargs['landingzone'])
@@ -491,7 +491,7 @@ class ZoneMoveView(
     def post(self, request, **kwargs):
         timeline = get_backend_api('timeline_backend')
         taskflow = get_backend_api('taskflow')
-        irods_backend = get_backend_api('omics_irods')  # TODO: Ensure it exists
+        irods_backend = get_backend_api('omics_irods', conn=False)
 
         zone = LandingZone.objects.get(sodar_uuid=self.kwargs['landingzone'])
         project = zone.project
@@ -719,7 +719,7 @@ class LandingZoneListAPIView(APIView):
     def get(self, *args, **kwargs):
         from .plugins import get_zone_config_plugin
 
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = get_backend_api('omics_irods', conn=False)
 
         if not irods_backend:
             return Response('iRODS backend not enabled', status=500)

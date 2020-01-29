@@ -45,7 +45,7 @@ class BaseCancerConfigView(
     def get(self, request, *args, **kwargs):
         """Override get() to set up stuff and return with failure if something
         is missing"""
-        irods_backend = get_backend_api('omics_irods')
+        irods_backend = get_backend_api('omics_irods', conn=False)
 
         self.redirect_url = get_sheets_url(self.get_project())
 

@@ -51,6 +51,8 @@ Changed
     - Refactor iRODS connection handling in API (#793)
 - **Irodsinfo**
     - Display iRODS server information when connection fails (#761)
+- **Landingzones**
+    - Prevent opening unnecessary iRODS connections with irodsbackend API (#796)
 - **Samplesheets**
     - Rename ``table_data`` member to ``tables`` in rendered table data (#219)
     - Move ``_get_isatab_files()`` and ``_fail_isa()`` into ``SampleSheetIOMixin``
@@ -65,6 +67,7 @@ Changed
     - Replace extra content table with standard assay shortcut table (#782)
     - Change assay sub-app ``get_extra_table()`` into ``get_shortcuts()`` (#782)
     - Change ``ExtraContentTable.vue`` into ``AssayShortcutCard.vue`` (#782)
+    - Prevent opening unnecessary iRODS connections with irodsbackend API (#796)
 
 Fixed
 -----

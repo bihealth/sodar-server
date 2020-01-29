@@ -782,9 +782,7 @@ class TestContextGetAPIView(TestViewsBase):
             'inv_file_name': self.investigation.file_name.split('/')[-1],
             'irods_status': False,
             'parser_version': self.investigation.parser_version,
-            'irods_backend_enabled': True
-            if get_backend_api('omics_irods')
-            else False,
+            'irods_backend_enabled': True if self.irods_backend else False,
             'parser_warnings': True
             if self.investigation.parser_warnings
             else False,

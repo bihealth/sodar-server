@@ -133,7 +133,7 @@ class TestGetSampleDirs(TestUtilsBase):
 
     def setUp(self):
         super().setUp()
-        self.irods_backend = get_backend_api('omics_irods')
+        self.irods_backend = get_backend_api('omics_irods', conn=False)
 
     def test_get_sample_dirs(self):
         """Test get_sample_dirs() with a minimal ISAtab example"""

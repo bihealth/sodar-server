@@ -57,7 +57,7 @@ class IrodsInfoView(LoggedInPermissionMixin, HTTPRefererMixin, TemplateView):
                     )
                     context['server_info'] = unavail_info
 
-        context['irods_backend'] = get_backend_api('omics_irods')
+        context['irods_backend'] = irods_backend
 
         # Add settings constants
         context['irods_sample_dir'] = settings.IRODS_SAMPLE_DIR

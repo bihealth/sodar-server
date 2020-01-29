@@ -35,7 +35,7 @@ def get_sample_dirs(investigation):
     :return: List
     """
     ret = []
-    irods_backend = get_backend_api('omics_irods')
+    irods_backend = get_backend_api('omics_irods', conn=False)
 
     if irods_backend:
         for study in investigation.studies.all():
