@@ -60,12 +60,6 @@ class IrodsAPI:
         if not conn:
             return
 
-        if not settings.ENABLE_IRODS:
-            logger.warning(
-                'iRODS not enabled in settings, connection will not be made'
-            )
-            return
-
         # Get optional environment file
         if settings.IRODS_ENV_PATH:
             try:

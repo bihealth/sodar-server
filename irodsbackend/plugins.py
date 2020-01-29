@@ -31,11 +31,13 @@ class BackendPlugin(BackendPluginPoint):
 
     def get_api(self, **kwargs):
         """Return API entry point object."""
-        try:
-            return IrodsAPI(**kwargs)
+        # Only init API if iRODS is enabled or in no connection mode
+        if settings.ENABLE_IRODS or kwargs.get('conn') is False:
+            try:
+                return IrodsAPI(**kwargs)
 
-        except Exception:
-            return None  # Exception logged in constructor
+            except Exception:
+                pass  # Exception logged in constructor, return None
 
     def get_statistics(self):
         if 'omics_irods' not in settings.ENABLED_BACKEND_PLUGINS:
