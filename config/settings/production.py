@@ -115,6 +115,17 @@ LOGGING['loggers']['django.security.DisallowedHost'] = {
 ADMIN_URL = env('DJANGO_ADMIN_URL', default='admin')
 
 
+# Sentry Client
+# ------------------------------------------------------------------------------
+
+if ENABLE_SENTRY:
+    import sentry_sdk
+    from sentry_sdk.integrations.django import DjangoIntegration
+
+    SENTRY_DSN = '%s?verify_ssl=0' % env.str('SENTRY_DSN')
+    sentry_sdk.init(SENTRY_DSN, integrations=[DjangoIntegration()])
+
+
 # EMAIL CONFIGURATION
 # ------------------------------------------------------------------------------
 EMAIL_URL = env.email_url('EMAIL_URL', 'smtp://0.0.0.0')

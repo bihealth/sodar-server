@@ -1,5 +1,3 @@
-from sentry_sdk import last_event_id
-
 from django.conf import settings
 from django.conf.urls import include, url
 from django.conf.urls.static import static
@@ -13,7 +11,8 @@ from django.views.generic import TemplateView
 from projectroles.views import HomeView
 
 
-if not settings.DEBUG:
+if settings.ENABLE_SENTRY and not settings.DEBUG:
+    from sentry_sdk import last_event_id
 
     def handler500(request, *args, **argv):
         return render(
