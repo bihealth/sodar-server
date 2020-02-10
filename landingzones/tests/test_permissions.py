@@ -1,4 +1,4 @@
-"""Tests for permissions in the landingzones app"""
+"""Tests for UI view permissions in the landingzones app"""
 
 from django.urls import reverse
 
@@ -27,7 +27,7 @@ SHEET_PATH = SHEET_DIR + 'i_small.zip'
 class TestLandingZonePermissions(
     LandingZoneMixin, SampleSheetIOMixin, TestProjectPermissionBase
 ):
-    """Tests for LandingZone views"""
+    """Tests for landingzones UI view permissions"""
 
     def setUp(self):
         super().setUp()
@@ -95,10 +95,41 @@ class TestLandingZonePermissions(
         self.assert_render200_ok(url, good_users)
         self.assert_redirect(url, bad_users)
 
-    def test_zone_status(self):
-        """Test permissions for landing zone status"""
+    def test_zone_move(self):
+        """Test permissions for landing zone moving"""
         url = reverse(
-            'landingzones:status',
+            'landingzones:move',
+            kwargs={'landingzone': self.landing_zone.sodar_uuid},
+        )
+        good_users = [self.superuser, self.as_owner.user, self.as_delegate.user]
+        bad_users = [
+            self.as_contributor.user,  # NOTE: not the owner of the zone
+            self.anonymous,
+            self.user_no_roles,
+        ]
+        self.assert_render200_ok(url, good_users)
+        self.assert_redirect(url, bad_users)
+
+    def test_zone_validation(self):
+        """Test permissions for landing zone validation"""
+        url = reverse(
+            'landingzones:validate',
+            kwargs={'landingzone': self.landing_zone.sodar_uuid},
+        )
+        good_users = [self.superuser, self.as_owner.user, self.as_delegate.user]
+        bad_users = [
+            self.as_contributor.user,  # NOTE: not the owner of the zone
+            self.anonymous,
+            self.user_no_roles,
+        ]
+        self.assert_render200_ok(url, good_users)
+        self.assert_redirect(url, bad_users)
+
+    # TODO: Move to separate ajax tests file
+    def test_zone_status(self):
+        """Test permissions for landing zone Ajax status view"""
+        url = reverse(
+            'landingzones:ajax_status',
             kwargs={'landingzone': self.landing_zone.sodar_uuid},
         )
         good_users = [self.superuser, self.as_owner.user, self.as_delegate.user]

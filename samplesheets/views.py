@@ -18,6 +18,7 @@ from django.utils.safestring import mark_safe
 from django.utils.text import slugify
 from django.views.generic import TemplateView, FormView, DeleteView, View
 
+from rest_framework.generics import RetrieveAPIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
@@ -35,6 +36,8 @@ from projectroles.views import (
     ProjectPermissionMixin,
     APIPermissionMixin,
     BaseTaskflowAPIView,
+    SODARAPIVersioning,
+    SODARAPIRenderer,
 )
 
 from samplesheets.forms import SampleSheetImportForm
@@ -49,6 +52,7 @@ from samplesheets.models import (
     ISATab,
 )
 from samplesheets.rendering import SampleSheetTableBuilder, EMPTY_VALUE
+from samplesheets.serializers import InvestigationSerializer
 from samplesheets.tasks import update_project_cache_task
 from samplesheets.utils import (
     get_sample_dirs,
@@ -1942,17 +1946,66 @@ class SampleSheetManagePostAPIView(
 # General API Views ------------------------------------------------------------
 
 
+# TODO: Move API views into a separate file
+
+
+# TODO: Move this to sodar_core
+# TODO: Is APIPermissionMixin required?
+class SODARAPIBaseMixin(LoginRequiredMixin, APIPermissionMixin):
+    """Base SODAR API mixin to be used by external SODAR Core based sites"""
+
+    renderer_classes = [SODARAPIRenderer]
+    versioning_class = SODARAPIVersioning
+
+
+# TODO: Move this to sodar_core
+class SODARAPIBaseProjectMixin(ProjectPermissionMixin, SODARAPIBaseMixin):
+    """ Base SODAR API mixin with a project context"""
+
+    lookup_field = 'project__sodar_uuid'  # Default to sodar_uuid?
+    lookup_url_kwarg = 'project'
+
+
+# TODO: Move this to sodar_core
+class SODARAPIGenericViewProjectMixin(SODARAPIBaseProjectMixin):
+    """Base API view mixin for generic DRF API views with serializers and a
+    SODAR project context"""
+
+    def get_serializer_context(self, *args, **kwargs):
+        result = super().get_serializer_context(*args, **kwargs)
+        result['project'] = self.get_project()
+        return result
+
+    def get_queryset(self):
+        return self.__class__.serializer_class.Meta.model.objects.filter(
+            project=self.get_project()
+        )
+
+
+class InvestigationRetrieveAPIView(
+    SODARAPIGenericViewProjectMixin, RetrieveAPIView
+):
+    """API view for retrieving information of an Investigation with its studies
+    and assays"""
+
+    permission_required = 'samplesheets.view_sheet'
+    serializer_class = InvestigationSerializer
+
+
 # NOTE: Using a specific versioner for the query API, to be generalized..
+# TODO: Remove
 class SourceIDAPIVersioning(AcceptHeaderVersioning):
     default_version = settings.SODAR_API_DEFAULT_VERSION
     allowed_versions = [settings.SODAR_API_DEFAULT_VERSION]
     version_param = 'version'
 
 
+# TODO: Remove
 class SourceIDAPIRenderer(JSONRenderer):
     media_type = 'application/vnd.bihealth.sodar+json'
 
 
+# TODO: Refactor or remove
 class SourceIDQueryAPIView(APIView):
     """Proof-of-concept source ID querying view for BeLOVE integration"""
 

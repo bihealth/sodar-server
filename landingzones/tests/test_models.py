@@ -31,7 +31,10 @@ ZONE_STATUS_INFO_INIT = DEFAULT_STATUS_INFO['CREATING']
 
 
 class LandingZoneMixin:
-    """Helper mixin for creation of LandingZone objects"""
+    """
+    Helper mixin for creation of LandingZone objects.
+    NOTE: Only creates an object in the database, not actually in iRODS
+    """
 
     @classmethod
     def _make_landing_zone(
@@ -41,8 +44,9 @@ class LandingZoneMixin:
         user,
         assay,
         description,
-        configuration,
-        config_data,
+        status='CREATING',
+        configuration=None,
+        config_data={},
     ):
         values = {
             'title': title,
@@ -50,6 +54,7 @@ class LandingZoneMixin:
             'user': user,
             'assay': assay,
             'description': description,
+            'status': status,
             'configuration': configuration,
             'config_data': config_data,
         }

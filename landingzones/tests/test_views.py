@@ -1,4 +1,4 @@
-"""Tests for views in the landingzones app"""
+"""Tests for UI views in the landingzones app"""
 
 from test_plus.test import TestCase
 
@@ -92,8 +92,7 @@ class TestViewsBase(
             user=self.as_owner.user,
             assay=self.assay,
             description=ZONE_DESC,
-            configuration=None,
-            config_data={},
+            status='ACTIVE',
         )
 
 
@@ -214,7 +213,7 @@ class TestLandingZoneStatusGetAPIView(TestViewsBase):
         with self.login(self.user):
             response = self.client.get(
                 reverse(
-                    'landingzones:status',
+                    'landingzones:ajax_status',
                     kwargs={'landingzone': self.landing_zone.sodar_uuid},
                 )
             )

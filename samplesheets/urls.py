@@ -67,6 +67,7 @@ urlpatterns = [
         name='version_delete',
     ),
     # Ajax API views
+    # TODO: Rename views and URL patterns
     url(
         regex=r'^api/context/get/(?P<project>[0-9a-f-]+)$',
         view=views.SampleSheetContextGetAPIView.as_view(),
@@ -103,6 +104,11 @@ urlpatterns = [
         name='api_manage_post',
     ),
     # General API views
+    url(
+        regex=r'^api/investigation/retrieve/(?P<project>[0-9a-f-]+)$',
+        view=views.InvestigationRetrieveAPIView.as_view(),
+        name='api_investigation_retrieve',
+    ),
     url(
         regex=r'^api/source/get/(?P<source_id>[\w\-_/]+)$',
         view=views.SourceIDQueryAPIView.as_view(),

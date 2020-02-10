@@ -14,7 +14,7 @@
     id="{{ zone.sodar_uuid }}"
     zone-uuid="{{ zone.sodar_uuid }}"
     sample-url="{% get_zone_samples_url zone %}"
-    status-url="{% url 'landingzones:status' landingzone=zone.sodar_uuid %}">
+    status-url="{% url 'landingzones:ajax_status' landingzone=zone.sodar_uuid %}">
   <td class="sodar-lz-zone-title">
     {% if zone.user != request.user %}
       {% autoescape off %}

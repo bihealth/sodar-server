@@ -18,7 +18,7 @@ from projectroles.utils import build_secret
 
 # Landingzones dependency
 from landingzones.models import LandingZone
-from landingzones.views import LandingZoneContextMixin
+from landingzones.views import ZoneContextMixin
 
 
 # Local constants
@@ -30,7 +30,7 @@ class ZoneTicketGetView(
     LoggedInPermissionMixin,
     ProjectContextMixin,
     ProjectPermissionMixin,
-    LandingZoneContextMixin,
+    ZoneContextMixin,
     TemplateView,
 ):
     """Zone iRODS ticket retrieval view"""

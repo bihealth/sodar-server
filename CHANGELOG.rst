@@ -20,6 +20,8 @@ Added
     - Enable ``conn`` keyword argument in API initialization (#793)
 - **Landingzones**
     - Extra columns for project list (#579)
+    - Missing permission tests for views
+    - Initial REST API (#780)
 - **Samplesheets**
     - Editing of selected sample sheet column values (#550)
     - Project settings for sample sheet configuration (#687)
@@ -34,6 +36,7 @@ Added
     - Extra columns for project list (#579)
     - ``MiscFiles`` assay shortcut for all assays (#766)
     - ``ResultsReports`` assay shortcut for all assays (#767)
+    - Investigation info retrieval API view (#780)
 
 Changed
 -------
@@ -53,6 +56,7 @@ Changed
     - Display iRODS server information when connection fails (#761)
 - **Landingzones**
     - Prevent opening unnecessary iRODS connections with irodsbackend API (#796)
+    - Reorganize views and URL patterns (#801)
 - **Samplesheets**
     - Rename ``table_data`` member to ``tables`` in rendered table data (#219)
     - Move ``_get_isatab_files()`` and ``_fail_isa()`` into ``SampleSheetIOMixin``

@@ -1,7 +1,6 @@
-from datetime import datetime as dt
+"""Forms for the landingzones app"""
 
 from django import forms
-from django.utils.text import slugify
 
 # Projectroles dependency
 from projectroles.models import Project
@@ -10,7 +9,8 @@ from projectroles.plugins import get_backend_api
 # Samplesheets dependency
 from samplesheets.models import Assay
 
-from .models import LandingZone
+from landingzones.models import LandingZone
+from landingzones.utils import get_zone_title
 
 
 class LandingZoneForm(forms.ModelForm):
@@ -110,14 +110,9 @@ class LandingZoneForm(forms.ModelForm):
         # Creation
         if not self.instance.pk:
             # Set full title
-            title = dt.now().strftime('%Y%m%d_%H%M%S')
-
-            if self.cleaned_data.get('title_suffix') != '':
-                title += '_' + slugify(
-                    self.cleaned_data.get('title_suffix')
-                ).replace('-', '_')
-
-            self.cleaned_data['title'] = title
+            self.cleaned_data['title'] = get_zone_title(
+                self.cleaned_data.get('title_suffix')
+            )
 
         return self.cleaned_data
 

@@ -53,6 +53,9 @@ STATUS_STYLES = {
     'DELETED': 'bg-secondary',
 }
 
+# Status types where zone validation, moving and deletion are allowed
+STATUS_ALLOW_UPDATE = ['ACTIVE', 'FAILED']
+
 
 class LandingZone(models.Model):
     """Class representing an user's iRODS landing zone for an assay"""

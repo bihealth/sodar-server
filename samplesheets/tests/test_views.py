@@ -746,6 +746,64 @@ class TestSampleSheetVersionDeleteView(TestViewsBase):
         self.assertEqual(ISATab.objects.all().count(), 0)
 
 
+class TestInvestigationRetrieveAPIView(TestViewsBase):
+    """Tests for InvestigationRetrieveAPIView"""
+
+    def setUp(self):
+        super().setUp()
+
+        # Import investigation
+        self.investigation = self._import_isa_from_file(
+            SHEET_PATH, self.project
+        )
+        self.study = self.investigation.studies.first()
+        self.assay = self.study.assays.first()
+
+    def test_get(self):
+        """Test get() in InvestigationRetrieveAPIView"""
+        with self.login(self.user):
+            response = self.client.get(
+                reverse(
+                    'samplesheets:api_investigation_retrieve',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                format='json',
+            )
+
+        self.assertEqual(response.status_code, 200)
+        expected = {
+            'sodar_uuid': str(self.investigation.sodar_uuid),
+            'identifier': self.investigation.identifier,
+            'file_name': self.investigation.file_name,
+            'project': str(self.project.sodar_uuid),
+            'title': self.investigation.title,
+            'description': self.investigation.description,
+            'irods_status': False,
+            'parser_version': self.investigation.parser_version,
+            'archive_name': self.investigation.archive_name,
+            'comments': self.investigation.comments,
+            'studies': {
+                str(self.study.sodar_uuid): {
+                    'identifier': self.study.identifier,
+                    'file_name': self.study.file_name,
+                    'title': self.study.title,
+                    'description': self.study.description,
+                    'comments': self.study.comments,
+                    'assays': {
+                        str(self.assay.sodar_uuid): {
+                            'file_name': self.assay.file_name,
+                            'technology_platform': self.assay.technology_platform,
+                            'technology_type': self.assay.technology_type,
+                            'measurement_type': self.assay.measurement_type,
+                            'comments': self.assay.comments,
+                        }
+                    },
+                }
+            },
+        }
+        self.assertEqual(response.data, expected)
+
+
 # TODO: Test with realistic ISAtab examples using BIH configs (see #434)
 @skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
 class TestContextGetAPIView(TestViewsBase):
@@ -773,7 +831,6 @@ class TestContextGetAPIView(TestViewsBase):
             )
 
         self.assertEqual(response.status_code, 200)
-        self.maxDiff = None
         response_data = json.loads(response.data)
         response_data.pop('csrf_token')  # HACK
 

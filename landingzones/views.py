@@ -4,36 +4,25 @@ from django.conf import settings
 from django.contrib import auth
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import HttpResponseRedirect
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.views.generic import TemplateView, CreateView
 
-from rest_framework.response import Response
-from rest_framework.views import APIView
-
 # Projectroles dependency
-from projectroles.email import send_generic_mail
 from projectroles.models import Project
 from projectroles.views import (
     LoggedInPermissionMixin,
     ProjectPermissionMixin,
     ProjectContextMixin,
-    BaseTaskflowAPIView,
 )
 from projectroles.plugins import get_backend_api
 
 # Samplesheets dependency
 from samplesheets.io import get_assay_dirs
-from samplesheets.models import Assay
-from samplesheets.tasks import update_project_cache_task
 from samplesheets.views import InvestigationContextMixin
 
-# Local helper for authenticating with auth basic
-from sodar.users.auth import fallback_to_auth_basic
-
-from .forms import LandingZoneForm
-from .models import LandingZone
+from landingzones.forms import LandingZoneForm
+from landingzones.models import LandingZone
 
 # Access Django user model
 User = auth.get_user_model()
@@ -42,47 +31,15 @@ User = auth.get_user_model()
 logger = logging.getLogger(__name__)
 
 
+# Local constants
 APP_NAME = 'landingzones'
 SAMPLESHEETS_APP_NAME = 'samplesheets'
 
 
-EMAIL_MESSAGE_MOVED = r'''
-Data was successfully validated and moved into the project
-sample data repository from your landing zone.
-
-You can browse the assay metadata and related files at
-the following URL:
-{url}
-
-Project: {project}
-Assay: {assay}
-Landing zone: {zone}
-Zone owner: {user} <{user_email}>
-Zone UUID: {zone_uuid}
-
-Status message:
-"{status_info}"'''.lstrip()
+# Mixins -----------------------------------------------------------------------
 
 
-EMAIL_MESSAGE_FAILED = r'''
-Validating and moving data from your landing zone into the
-project sample data repository has failed. Please verify your
-data and request for support if the problem persists.
-
-Manage your landing zone at the following URL:
-{url}
-
-Project: {project}
-Assay: {assay}
-Landing zone: {zone}
-Zone owner: {user} <{user_email}>
-Zone UUID: {zone_uuid}
-
-Status message:
-"{status_info}"'''.lstrip()
-
-
-class LandingZoneContextMixin:
+class ZoneContextMixin:
     """Context mixing for LandingZones"""
 
     def get_context_data(self, *args, **kwargs):
@@ -93,12 +50,40 @@ class LandingZoneContextMixin:
         return context
 
 
-class LandingZoneConfigPluginMixin:
+# TODO: This doesn't work, why? (see issue #812)
+'''
+class ZoneUpdatePermissionMixin:
+    """Permission override for landing zone updating views"""
+
+    def has_permission(self):
+        """Override has_permission to check perms depending on owner"""
+        try:
+            zone = LandingZone.objects.get(
+                sodar_uuid=self.kwargs['landingzone']
+            )
+
+            if zone.user == self.request.user:
+                return self.request.user.has_perm(
+                    'landingzones.update_zones_own', zone.project
+                )
+
+            else:
+                return self.request.user.has_perm(
+                    'landingzones.update_zones_all', zone.project
+                )
+
+        except LandingZone.DoesNotExist:
+            return False
+'''
+
+
+class ZoneConfigPluginMixin:
     """Landing zone configuration plugin operations"""
 
     def get_flow_data(self, zone, flow_name, data):
         """
-        Update flow data parameters according to config
+        Update flow data parameters according to config.
+
         :param zone: LandingZone object
         :param flow_name: Name of flow (string)
         :param data: Flow data parameters (dict)
@@ -116,6 +101,251 @@ class LandingZoneConfigPluginMixin:
                 }
 
         return data
+
+
+class ZoneCreateViewMixin(ZoneConfigPluginMixin):
+    """Mixin to be used in zone creation in UI and REST API views"""
+
+    def _submit_create(self, zone):
+        """
+        Handle timeline updating and taskflow initialization after a LandingZone
+        object has been created.
+
+        :param zone: LandingZone object
+        :raise: taskflow.FlowSubmitException if taskflow submit fails
+        """
+        taskflow = get_backend_api('taskflow')
+        timeline = get_backend_api('timeline_backend')
+        irods_backend = get_backend_api('omics_irods', conn=False)
+        project = zone.project
+        tl_event = None
+        config_str = (
+            ' with configuration "{}"'.format(zone.configuration)
+            if zone.configuration
+            else ''
+        )
+
+        # Add event in Timeline
+        if timeline:
+            tl_event = timeline.add_event(
+                project=project,
+                app_name=APP_NAME,
+                user=self.request.user,
+                event_name='zone_create',
+                description='create landing zone {{{}}}{} for {{{}}} in '
+                '{{{}}}'.format('zone', config_str, 'user', 'assay'),
+                status_type='SUBMIT',
+            )
+
+            tl_event.add_object(obj=zone, label='zone', name=zone.title)
+
+            tl_event.add_object(
+                obj=self.request.user,
+                label='user',
+                name=self.request.user.username,
+            )
+
+            tl_event.add_object(
+                obj=zone.assay, label='assay', name=zone.assay.get_name()
+            )
+
+        # Build assay dirs
+        dirs = get_assay_dirs(zone.assay)
+        flow_name = 'landing_zone_create'
+
+        flow_data = self.get_flow_data(
+            zone,
+            flow_name,
+            {
+                'zone_title': zone.title,
+                'zone_uuid': zone.sodar_uuid,
+                'user_name': self.request.user.username,
+                'user_uuid': self.request.user.sodar_uuid,
+                'assay_path': irods_backend.get_sub_path(
+                    zone.assay, landing_zone=True
+                ),
+                'description': zone.description,
+                'zone_config': zone.configuration,
+                'dirs': dirs,
+            },
+        )
+
+        try:
+            taskflow.submit(
+                project_uuid=project.sodar_uuid,
+                flow_name=flow_name,
+                flow_data=flow_data,
+                timeline_uuid=tl_event.sodar_uuid,
+                request_mode='async',
+                request=self.request,
+            )
+
+        except taskflow.FlowSubmitException as ex:
+            if tl_event:
+                tl_event.set_status('FAILED', str(ex))
+
+            zone.delete()
+            raise ex
+
+
+class ZoneDeleteViewMixin(ZoneConfigPluginMixin):
+    """Mixin to be used in zone creation in UI and REST API views"""
+
+    def _submit_delete(self, zone):
+        """
+        Handle timeline updating and initialize taskflow operation for
+        LandingZone deletion.
+
+        :param zone: LandingZone object
+        :raise: taskflow.FlowSubmitException if taskflow submit fails
+        """
+        timeline = get_backend_api('timeline_backend')
+        taskflow = get_backend_api('taskflow')
+        irods_backend = get_backend_api('omics_irods', conn=False)
+        tl_event = None
+        project = zone.project
+
+        # Init Timeline event
+        if timeline:
+            tl_event = timeline.add_event(
+                project=project,
+                app_name=APP_NAME,
+                user=self.request.user,
+                event_name='zone_delete',
+                description='delete landing zone {{{}}} in {{{}}} '
+                'from {{{}}}'.format('zone', 'assay', 'user'),
+            )
+            tl_event.add_object(obj=zone, label='zone', name=zone.title)
+            tl_event.add_object(
+                obj=zone.assay,
+                label='assay',
+                name=zone.assay.get_display_name(),
+            )
+            tl_event.add_object(
+                obj=zone.user, label='user', name=zone.user.username
+            )
+            tl_event.set_status('SUBMIT')
+
+        # Submit with taskflow
+        flow_name = 'landing_zone_delete'
+        flow_data = self.get_flow_data(
+            zone,
+            flow_name,
+            {
+                'zone_title': zone.title,
+                'zone_uuid': zone.sodar_uuid,
+                'zone_config': zone.configuration,
+                'assay_path': irods_backend.get_sub_path(
+                    zone.assay, landing_zone=True
+                ),
+                'user_name': zone.user.username,
+            },
+        )
+
+        try:
+            taskflow.submit(
+                project_uuid=project.sodar_uuid,
+                flow_name=flow_name,
+                flow_data=flow_data,
+                request=self.request,
+                request_mode='async',
+                timeline_uuid=tl_event.sodar_uuid if tl_event else None,
+            )
+            self.object = None
+
+        except taskflow.FlowSubmitException as ex:
+            if tl_event:
+                tl_event.set_status('FAILED', str(ex))
+
+            raise ex
+
+
+class ZoneMoveViewMixin(ZoneConfigPluginMixin):
+    """Mixin to be used in zone validation/moving in UI and REST API views"""
+
+    def _submit_validate_move(self, zone, validate_only):
+        """
+        Handle timeline updating and initialize taskflow operation for
+        LandingZone moving and/or validation.
+
+        :param zone: LandingZone object
+        :param validate_only: Only perform validation if true (bool)
+        :raise: taskflow.FlowSubmitException if taskflow submit fails
+        """
+        timeline = get_backend_api('timeline_backend')
+        taskflow = get_backend_api('taskflow')
+        irods_backend = get_backend_api('omics_irods', conn=False)
+        project = zone.project
+        tl_event = None
+        event_name = 'zone_validate' if validate_only else 'zone_move'
+
+        # Add event in Timeline
+        if timeline:
+            desc = 'validate '
+
+            if not validate_only:
+                desc += 'and move '
+
+            desc += 'files from landing zone {zone} from ' '{user} in {assay}'
+
+            tl_event = timeline.add_event(
+                project=project,
+                app_name=APP_NAME,
+                user=self.request.user,
+                event_name=event_name,
+                description=desc,
+            )
+            tl_event.add_object(obj=zone, label='zone', name=zone.title)
+            tl_event.add_object(
+                obj=zone.user, label='user', name=zone.user.username
+            )
+            tl_event.add_object(
+                obj=zone.assay,
+                label='assay',
+                name=zone.assay.get_display_name(),
+            )
+            tl_event.set_status('SUBMIT')
+
+        flow_data = self.get_flow_data(
+            zone,
+            'landing_zone_move',
+            {
+                'zone_title': str(zone.title),
+                'zone_uuid': zone.sodar_uuid,
+                'zone_config': zone.configuration,
+                'assay_path_samples': irods_backend.get_sub_path(
+                    zone.assay, landing_zone=False
+                ),
+                'assay_path_zone': irods_backend.get_sub_path(
+                    zone.assay, landing_zone=True
+                ),
+                'user_name': str(zone.user.username),
+            },
+        )
+
+        if validate_only:
+            flow_data['validate_only'] = True
+
+        try:
+            taskflow.submit(
+                project_uuid=project.sodar_uuid,
+                flow_name='landing_zone_move',
+                flow_data=flow_data,
+                request=self.request,
+                request_mode='async',
+                timeline_uuid=tl_event.sodar_uuid,
+            )
+
+        except taskflow.FlowSubmitException as ex:
+            zone.set_status('FAILED', str(ex))
+
+            if tl_event:
+                tl_event.set_status('FAILED', str(ex))
+
+            raise ex
+
+
+# UI Views ---------------------------------------------------------------------
 
 
 class ProjectZoneView(
@@ -177,10 +407,10 @@ class ZoneCreateView(
     LoggedInPermissionMixin,
     ProjectPermissionMixin,
     InvestigationContextMixin,
-    LandingZoneConfigPluginMixin,
+    ZoneCreateViewMixin,
     CreateView,
 ):
-    """ProjectInvite creation view"""
+    """LandingZone creation view"""
 
     model = LandingZone
     form_class = LandingZoneForm
@@ -199,14 +429,9 @@ class ZoneCreateView(
 
     def form_valid(self, form):
         taskflow = get_backend_api('taskflow')
-        timeline = get_backend_api('timeline_backend')
-        irods_backend = get_backend_api('omics_irods', conn=False)
-        tl_event = None
         context = self.get_context_data()
         project = context['project']
         investigation = context['investigation']
-        assay = form.cleaned_data.get('assay')
-
         error_msg = 'Unable to create zone: '
 
         if not taskflow:
@@ -227,67 +452,15 @@ class ZoneCreateView(
             # Create landing zone object in Django db
             # NOTE: We have to do this beforehand to work properly as async
             zone = form.save()
-            config_str = (
-                ' with configuration "{}"'.format(zone.configuration)
-                if zone.configuration
-                else ''
-            )
-
-            # Add event in Timeline
-            if timeline:
-                tl_event = timeline.add_event(
-                    project=project,
-                    app_name=APP_NAME,
-                    user=self.request.user,
-                    event_name='zone_create',
-                    description='create landing zone {{{}}}{} for {{{}}} in '
-                    '{{{}}}'.format('zone', config_str, 'user', 'assay'),
-                    status_type='SUBMIT',
-                )
-
-                tl_event.add_object(obj=zone, label='zone', name=zone.title)
-
-                tl_event.add_object(
-                    obj=self.request.user,
-                    label='user',
-                    name=self.request.user.username,
-                )
-
-                tl_event.add_object(
-                    obj=assay, label='assay', name=assay.get_name()
-                )
-
-            # Build assay dirs
-            dirs = get_assay_dirs(assay)
-            flow_name = 'landing_zone_create'
-
-            flow_data = self.get_flow_data(
-                zone,
-                flow_name,
-                {
-                    'zone_title': zone.title,
-                    'zone_uuid': zone.sodar_uuid,
-                    'user_name': self.request.user.username,
-                    'user_uuid': self.request.user.sodar_uuid,
-                    'assay_path': irods_backend.get_sub_path(
-                        assay, landing_zone=True
-                    ),
-                    'description': zone.description,
-                    'zone_config': zone.configuration,
-                    'dirs': dirs,
-                },
-            )
 
             try:
-                taskflow.submit(
-                    project_uuid=project.sodar_uuid,
-                    flow_name=flow_name,
-                    flow_data=flow_data,
-                    timeline_uuid=tl_event.sodar_uuid,
-                    request_mode='async',
-                    request=self.request,
+                # Create timeline event and initialize taskflow
+                self._submit_create(zone)
+                config_str = (
+                    ' with configuration "{}"'.format(zone.configuration)
+                    if zone.configuration
+                    else ''
                 )
-
                 messages.warning(
                     self.request,
                     'Landing zone "{}" creation initiated{}: '
@@ -297,17 +470,11 @@ class ZoneCreateView(
                 )
 
             except taskflow.FlowSubmitException as ex:
-                if tl_event:
-                    tl_event.set_status('FAILED', str(ex))
-
-                zone.delete()
                 messages.error(self.request, str(ex))
 
-            return redirect(
-                reverse(
-                    'landingzones:list', kwargs={'project': project.sodar_uuid}
-                )
-            )
+        return redirect(
+            reverse('landingzones:list', kwargs={'project': project.sodar_uuid})
+        )
 
 
 class ZoneDeleteView(
@@ -315,16 +482,18 @@ class ZoneDeleteView(
     LoggedInPermissionMixin,
     ProjectContextMixin,
     ProjectPermissionMixin,
-    LandingZoneConfigPluginMixin,
+    # ZoneUpdatePermissionMixin,
+    ZoneDeleteViewMixin,
     TemplateView,
 ):
-    """RoleAssignment deletion view"""
+    """LandingZone deletion view"""
 
     # NOTE: Not using DeleteView here as we don't delete the object in async
     http_method_names = ['get', 'post']
     template_name = 'landingzones/landingzone_confirm_delete.html'
     permission_required = 'landingzones.update_zones_own'
 
+    # TODO: This never gets called if implemented as mixin, why?
     def has_permission(self):
         """Override has_permission to check perms depending on owner"""
         try:
@@ -334,14 +503,12 @@ class ZoneDeleteView(
 
             if zone.user == self.request.user:
                 return self.request.user.has_perm(
-                    'landingzones.update_zones_own',
-                    self.get_permission_object(),
+                    'landingzones.update_zones_own', zone.project
                 )
 
             else:
                 return self.request.user.has_perm(
-                    'landingzones.update_zones_all',
-                    self.get_permission_object(),
+                    'landingzones.update_zones_all', zone.project
                 )
 
         except LandingZone.DoesNotExist:
@@ -357,16 +524,10 @@ class ZoneDeleteView(
         return context
 
     def post(self, *args, **kwargs):
-        timeline = get_backend_api('timeline_backend')
         taskflow = get_backend_api('taskflow')
-        irods_backend = get_backend_api('omics_irods', conn=False)
-        tl_event = None
-
         zone = LandingZone.objects.get(sodar_uuid=self.kwargs['landingzone'])
-        project = zone.project
-
         redirect_url = reverse(
-            'landingzones:list', kwargs={'project': project.sodar_uuid}
+            'landingzones:list', kwargs={'project': zone.project.sodar_uuid}
         )
 
         if not taskflow:
@@ -375,76 +536,20 @@ class ZoneDeleteView(
             )
             return redirect(redirect_url)
 
-        # Init Timeline event
-        if timeline:
-            tl_event = timeline.add_event(
-                project=project,
-                app_name=APP_NAME,
-                user=self.request.user,
-                event_name='zone_delete',
-                description='delete landing zone {{{}}} in {{{}}} '
-                'from {{{}}}'.format('zone', 'assay', 'user'),
+        try:
+            self._submit_delete(zone)
+            messages.warning(
+                self.request,
+                'Landing zone deletion initiated for "{}/{}" in '
+                'assay {}.'.format(
+                    self.request.user.username,
+                    zone.title,
+                    zone.assay.get_display_name(),
+                ),
             )
 
-            tl_event.add_object(obj=zone, label='zone', name=zone.title)
-
-            tl_event.add_object(
-                obj=zone.assay,
-                label='assay',
-                name=zone.assay.get_display_name(),
-            )
-
-            tl_event.add_object(
-                obj=zone.user, label='user', name=zone.user.username
-            )
-
-        # Submit with taskflow
-        if taskflow:
-            if tl_event:
-                tl_event.set_status('SUBMIT')
-
-            flow_name = 'landing_zone_delete'
-
-            flow_data = self.get_flow_data(
-                zone,
-                flow_name,
-                {
-                    'zone_title': zone.title,
-                    'zone_uuid': zone.sodar_uuid,
-                    'zone_config': zone.configuration,
-                    'assay_path': irods_backend.get_sub_path(
-                        zone.assay, landing_zone=True
-                    ),
-                    'user_name': zone.user.username,
-                },
-            )
-
-            try:
-                taskflow.submit(
-                    project_uuid=project.sodar_uuid,
-                    flow_name=flow_name,
-                    flow_data=flow_data,
-                    request=self.request,
-                    request_mode='async',
-                    timeline_uuid=tl_event.sodar_uuid,
-                )
-                self.object = None
-
-            except taskflow.FlowSubmitException as ex:
-                if tl_event:
-                    tl_event.set_status('FAILED', str(ex))
-
-                messages.error(self.request, str(ex))
-                return redirect(redirect_url)
-
-        messages.warning(
-            self.request,
-            'Landing zone deletion initiated for "{}/{}" in assay {}.'.format(
-                self.request.user.username,
-                zone.title,
-                zone.assay.get_display_name(),
-            ),
-        )
+        except Exception as ex:
+            messages.error(self.request, str(ex))
 
         return redirect(redirect_url)
 
@@ -460,15 +565,36 @@ class ZoneMoveView(
     LoggedInPermissionMixin,
     ProjectContextMixin,
     ProjectPermissionMixin,
-    LandingZoneConfigPluginMixin,
+    ZoneMoveViewMixin,
     TemplateView,
 ):
-    """Zone validation and moving triggering view"""
+    """LandingZone validation and moving triggering view"""
 
     http_method_names = ['get', 'post']
     template_name = 'landingzones/landingzone_confirm_move.html'
-    # NOTE: minimum perm, all checked files will be tested in post()
+    # NOTE: minimum perm, all checked files will be tested in has_permission()
     permission_required = 'landingzones.update_zones_own'
+
+    # TODO: This never gets called if implemented as mixin, why?
+    def has_permission(self):
+        """Override has_permission to check perms depending on owner"""
+        try:
+            zone = LandingZone.objects.get(
+                sodar_uuid=self.kwargs['landingzone']
+            )
+
+            if zone.user == self.request.user:
+                return self.request.user.has_perm(
+                    'landingzones.update_zones_own', zone.project
+                )
+
+            else:
+                return self.request.user.has_perm(
+                    'landingzones.update_zones_all', zone.project
+                )
+
+        except LandingZone.DoesNotExist:
+            return False
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
@@ -489,122 +615,42 @@ class ZoneMoveView(
         return context
 
     def post(self, request, **kwargs):
-        timeline = get_backend_api('timeline_backend')
         taskflow = get_backend_api('taskflow')
         irods_backend = get_backend_api('omics_irods', conn=False)
-
         zone = LandingZone.objects.get(sodar_uuid=self.kwargs['landingzone'])
         project = zone.project
-        tl_event = None
-        validate_only = False
-        event_name = 'zone_move'
+        redirect_url = reverse(
+            'landingzones:list', kwargs={'project': project.sodar_uuid}
+        )
 
-        # Validate only mode
+        if not taskflow or not irods_backend:
+            messages.error(
+                self.request,
+                'Required backends (Taskflow/Irodsbackend) not enabled, '
+                'unable to modify zone!',
+            )
+            return redirect(redirect_url)
+
+        # Validate/move or validate only
+        validate_only = False
+
         if self.request.get_full_path() == reverse(
             'landingzones:validate', kwargs={'landingzone': zone.sodar_uuid}
         ):
             validate_only = True
-            event_name = 'zone_validate'
-
-        # Add event in Timeline
-        if timeline:
-            desc = 'validate '
-
-            if not validate_only:
-                desc += 'and move '
-
-            desc += 'files from landing zone {zone} from ' '{user} in {assay}'
-
-            tl_event = timeline.add_event(
-                project=project,
-                app_name=APP_NAME,
-                user=self.request.user,
-                event_name=event_name,
-                description=desc,
-            )
-
-            tl_event.add_object(obj=zone, label='zone', name=zone.title)
-
-            tl_event.add_object(
-                obj=zone.user, label='user', name=zone.user.username
-            )
-
-            tl_event.add_object(
-                obj=zone.assay,
-                label='assay',
-                name=zone.assay.get_display_name(),
-            )
-
-        # Fail if tasflow is not available
-        if not taskflow:
-            if timeline:
-                tl_event.set_status(
-                    'FAILED', status_desc='Taskflow not enabled'
-                )
-
-            messages.error(
-                self.request, 'Unable to process zone: taskflow not enabled!'
-            )
-
-            return redirect(
-                reverse(
-                    'landingzones:list', kwargs={'project': project.sodar_uuid}
-                )
-            )
-
-        # Else go on with the creation
-        if tl_event:
-            tl_event.set_status('SUBMIT')
-
-        flow_name = 'landing_zone_move'
-
-        flow_data = self.get_flow_data(
-            zone,
-            flow_name,
-            {
-                'zone_title': str(zone.title),
-                'zone_uuid': zone.sodar_uuid,
-                'zone_config': zone.configuration,
-                'assay_path_samples': irods_backend.get_sub_path(
-                    zone.assay, landing_zone=False
-                ),
-                'assay_path_zone': irods_backend.get_sub_path(
-                    zone.assay, landing_zone=True
-                ),
-                'user_name': str(zone.user.username),
-            },
-        )
-
-        if validate_only:
-            flow_data['validate_only'] = True
 
         try:
-            taskflow.submit(
-                project_uuid=project.sodar_uuid,
-                flow_name='landing_zone_move',
-                flow_data=flow_data,
-                request=self.request,
-                request_mode='async',
-                timeline_uuid=tl_event.sodar_uuid,
-            )
-
+            self._submit_validate_move(zone, validate_only)
             messages.warning(
                 self.request,
                 'Validating {}landing zone, see job progress in the '
                 'zone list'.format('and moving ' if not validate_only else ''),
             )
 
-        except taskflow.FlowSubmitException as ex:
-            zone.set_status('FAILED', str(ex))
-
-            if tl_event:
-                tl_event.set_status('FAILED', str(ex))
-
+        except Exception as ex:
             messages.error(self.request, str(ex))
 
-        return HttpResponseRedirect(
-            reverse('landingzones:list', kwargs={'project': project.sodar_uuid})
-        )
+        return redirect(redirect_url)
 
 
 class ZoneClearView(
@@ -614,7 +660,7 @@ class ZoneClearView(
     ProjectPermissionMixin,
     TemplateView,
 ):
-    """Zone validation and moving triggering view"""
+    """LandingZone validation and moving triggering view"""
 
     http_method_names = ['get', 'post']
     template_name = 'landingzones/landingzone_confirm_clear.html'
@@ -671,208 +717,6 @@ class ZoneClearView(
             if tl_event:
                 tl_event.set_status('FAILED', str(ex))
 
-        return HttpResponseRedirect(
+        return redirect(
             reverse('landingzones:list', kwargs={'project': project.sodar_uuid})
         )
-
-
-# General API Views ------------------------------------------------------------
-
-
-class LandingZoneStatusGetAPIView(
-    LoginRequiredMixin, ProjectContextMixin, APIView
-):
-    """View for returning landing zone status for the UI"""
-
-    def get(self, *args, **kwargs):
-        zone_uuid = self.kwargs['landingzone']
-
-        try:
-            zone = LandingZone.objects.get(sodar_uuid=zone_uuid)
-
-        except LandingZone.DoesNotExist:
-            return Response('LandingZone not found', status=404)
-
-        perm = (
-            'view_zones_own'
-            if zone.user == self.request.user
-            else 'view_zones_all'
-        )
-
-        if self.request.user.has_perm(
-            'landingzones.{}'.format(perm), zone.project
-        ):
-
-            ret_data = {'status': zone.status, 'status_info': zone.status_info}
-
-            return Response(ret_data, status=200)
-
-        return Response('Not authorized', status=403)
-
-
-@fallback_to_auth_basic
-class LandingZoneListAPIView(APIView):
-    """View for returning a landing zone list based on its configuration"""
-
-    # TODO: TBD: Do we also need this to work without a configuration param?
-
-    def get(self, *args, **kwargs):
-        from .plugins import get_zone_config_plugin
-
-        irods_backend = get_backend_api('omics_irods', conn=False)
-
-        if not irods_backend:
-            return Response('iRODS backend not enabled', status=500)
-
-        zone_config = self.kwargs['configuration']
-        zones = LandingZone.objects.filter(configuration=zone_config)
-
-        if zones.count() == 0:
-            return Response('LandingZone not found', status=404)
-
-        config_plugin = get_zone_config_plugin(zones.first())
-        ret_data = {}
-
-        for zone in zones:
-            ret_data[str(zone.sodar_uuid)] = {
-                'title': zone.title,
-                'assay': zone.assay.get_name(),
-                'user': zone.user.username,
-                'status': zone.status,
-                'configuration': zone.configuration,
-                'irods_path': irods_backend.get_path(zone),
-            }
-
-            if config_plugin:
-                for field in config_plugin.api_config_data:
-                    if field in zone.config_data:
-                        ret_data[str(zone.sodar_uuid)][
-                            field
-                        ] = zone.config_data[field]
-
-        return Response(ret_data, status=200)
-
-
-# Taskflow API Views -----------------------------------------------------------
-
-
-# TODO: Integrate Taskflow API functionality with general SODAR API (see #47)
-
-
-class TaskflowZoneCreateAPIView(BaseTaskflowAPIView):
-    def post(self, request):
-        try:
-            user = User.objects.get(sodar_uuid=request.data['user_uuid'])
-            project = Project.objects.get(
-                sodar_uuid=request.data['project_uuid']
-            )
-            assay = Assay.objects.get(sodar_uuid=request.data['assay_uuid'])
-
-        except (User.DoesNotExist, Project.DoesNotExist, Assay.DoesNotExist):
-            return Response('Not found', status=404)
-
-        zone = LandingZone(
-            assay=assay,
-            title=request.data['title'],
-            project=project,
-            user=user,
-            description=request.data['description'],
-        )
-        zone.save()
-
-        return Response({'zone_uuid': zone.sodar_uuid}, status=200)
-
-
-class TaskflowZoneStatusSetAPIView(BaseTaskflowAPIView):
-    def post(self, request):
-        try:
-            zone = LandingZone.objects.get(sodar_uuid=request.data['zone_uuid'])
-
-        except LandingZone.DoesNotExist:
-            return Response('LandingZone not found', status=404)
-
-        try:
-            zone.set_status(
-                status=request.data['status'],
-                status_info=request.data['status_info']
-                if request.data['status_info']
-                else None,
-            )
-
-        except TypeError:
-            return Response('Invalid status type', status=400)
-
-        zone.refresh_from_db()
-        server_host = settings.SODAR_API_DEFAULT_HOST.geturl()
-
-        # Send email
-        if zone.status in ['MOVED', 'FAILED']:
-            subject_body = 'Landing zone {}: {} / {}'.format(
-                zone.status.lower(), zone.project.title, zone.title
-            )
-
-            message_body = (
-                EMAIL_MESSAGE_MOVED
-                if zone.status == 'MOVED'
-                else EMAIL_MESSAGE_FAILED
-            )
-
-            if zone.status == 'MOVED':
-                email_url = (
-                    server_host
-                    + reverse(
-                        'samplesheets:project_sheets',
-                        kwargs={'project': zone.project.sodar_uuid},
-                    )
-                    + '#/assay/'
-                    + str(zone.assay.sodar_uuid)
-                )
-
-            else:  # FAILED
-                email_url = (
-                    server_host
-                    + reverse(
-                        'landingzones:list',
-                        kwargs={'project': zone.project.sodar_uuid},
-                    )
-                    + '#'
-                    + str(zone.sodar_uuid)
-                )
-
-            message_body = message_body.format(
-                zone=zone.title,
-                project=zone.project.title,
-                assay=zone.assay.get_display_name(),
-                user=zone.user.username,
-                user_email=zone.user.email,
-                zone_uuid=str(zone.sodar_uuid),
-                status_info=zone.status_info,
-                url=email_url,
-            )
-
-            send_generic_mail(subject_body, message_body, [zone.user], request)
-
-        # If zone is deleted, call plugin function
-        if request.data['status'] in ['MOVED', 'DELETED']:
-            from .plugins import get_zone_config_plugin  # See issue #269
-
-            config_plugin = get_zone_config_plugin(zone)
-
-            if config_plugin:
-                try:
-                    config_plugin.cleanup_zone(zone)
-
-                except Exception as ex:
-                    logger.error(
-                        'Unable to cleanup zone "{}" with plugin '
-                        '"{}": {}'.format(zone.title, config_plugin.name, ex)
-                    )
-
-        # Update cache
-        if request.data['status'] == 'MOVED' and settings.SHEETS_ENABLE_CACHE:
-            update_project_cache_task.delay(
-                project_uuid=str(zone.project.sodar_uuid),
-                user_uuid=str(zone.user.sodar_uuid),
-            )
-
-        return Response('ok', status=200)

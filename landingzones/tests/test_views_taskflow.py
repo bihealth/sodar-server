@@ -64,7 +64,8 @@ class LandingZoneTaskflowMixin:
 
     def _make_zone_taskflow(self, zone, request=None):
         """
-        Create landing zone in iRODS using omics_taskflow
+        Create landing zone in iRODS using omics_taskflow.
+
         :param zone: LandingZone object
         :param request: HTTP request object (optional, default=None)
         :raise taskflow.FlowSubmitException if submit fails
@@ -119,7 +120,8 @@ class LandingZoneTaskflowMixin:
 
     def _make_object(self, coll, obj_name, content=None, content_length=1024):
         """
-        Create and put a data object into iRODS
+        Create and put a data object into iRODS.
+
         :param coll: iRODSCollection object
         :param obj_name: String
         :param content: Content data (optional)
@@ -134,7 +136,8 @@ class LandingZoneTaskflowMixin:
 
     def _make_md5_object(self, obj):
         """
-        Create and put an MD5 checksum object for an existing object in iRODS
+        Create and put an MD5 checksum object for an existing object in iRODS.
+
         :param obj: iRODSDataObject
         :return: iRODSDataObject
         """
@@ -144,6 +147,26 @@ class LandingZoneTaskflowMixin:
         with obj.open() as obj_fp:
             md5_content = hashlib.md5(obj_fp.read()).hexdigest()
         return make_object(self.irods_session, md5_path, md5_content)
+
+    def _wait_for_taskflow(self, zone_uuid=None, status=None, count=None):
+        """
+        Wait for async taskflow operation on a LandingZone to finish.
+
+        :param zone_uuid: LandingZone sodar_uuid to check for
+        :param status: Zone status to wait for
+        :param count: Zone count to wait for (doesn't require UUID)
+        """
+        for i in range(0, ASYNC_RETRY_COUNT):
+            time.sleep(ASYNC_WAIT_SECONDS)
+
+            if count and LandingZone.objects.count() == count:
+                break
+
+            if zone_uuid and status:
+                zone = LandingZone.objects.get(sodar_uuid=zone_uuid)
+
+                if zone.status == status:
+                    break
 
 
 class TestLandingZoneCreateView(

@@ -333,6 +333,40 @@ class TestSampleSheetsPermissions(
         self.assert_response(url, bad_users, status_code=403)
 
 
+class TestInvestigationRetrieveAPIView(
+    SampleSheetIOMixin,
+    RemoteSiteMixin,
+    RemoteProjectMixin,
+    TestProjectPermissionBase,
+):
+    """Tests for InvestigationRetrieveAPIView permissions"""
+
+    def setUp(self):
+        super().setUp()
+        self.investigation = self._import_isa_from_file(
+            SHEET_PATH, self.project
+        )
+        self.study = self.investigation.studies.first()
+        self.assay = self.study.assays.first()
+
+    def test_get(self):
+        """Test get() in InvestigationRetrieveAPIView"""
+        url = reverse(
+            'samplesheets:api_investigation_retrieve',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+        good_users = [
+            self.superuser,
+            self.as_owner.user,
+            self.as_delegate.user,
+            self.as_contributor.user,
+            self.as_guest.user,
+        ]
+        bad_users = [self.anonymous, self.user_no_roles]
+        self.assert_response(url, good_users, status_code=200)
+        self.assert_response(url, bad_users, status_code=403)
+
+
 class TestRemoteSheetGetAPIView(
     SampleSheetIOMixin,
     RemoteSiteMixin,
