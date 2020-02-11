@@ -11,6 +11,7 @@ from django.utils import timezone
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
+from projectroles.tests.test_views import SODARAPIViewMixin
 from projectroles.tests.test_views_taskflow import TestTaskflowBase
 
 # Samplesheets dependency
@@ -48,7 +49,8 @@ INVALID_UUID = '11111111-1111-1111-1111-111111111111'
 
 
 # TODO: Move to SODAR Core
-class GenericAPIViewTestMixin:
+# TODO: Combine with SODARAPIViewMixin
+class GenericAPIViewTestMixin(SODARAPIViewMixin):
     """Mixin with generic DRF API view test helpers"""
 
     @classmethod
@@ -117,6 +119,10 @@ class LandingZoneListAPIView(GenericAPIViewTestMixin, TestViewsBase):
                     kwargs={'project': self.project.sodar_uuid},
                 ),
                 format='json',
+                HTTP_ACCEPT=self.get_accept_header(
+                    media_type=settings.SODAR_API_MEDIA_TYPE,
+                    version=settings.SODAR_API_DEFAULT_VERSION,
+                ),
             )
 
         self.assertEqual(response.status_code, 200)
@@ -149,6 +155,10 @@ class LandingZoneListAPIView(GenericAPIViewTestMixin, TestViewsBase):
                     kwargs={'project': self.project.sodar_uuid},
                 ),
                 format='json',
+                HTTP_ACCEPT=self.get_accept_header(
+                    media_type=settings.SODAR_API_MEDIA_TYPE,
+                    version=settings.SODAR_API_DEFAULT_VERSION,
+                ),
             )
 
         self.assertEqual(response.status_code, 200)
@@ -170,6 +180,10 @@ class LandingZoneRetrieveAPIView(GenericAPIViewTestMixin, TestViewsBase):
                     kwargs={'landingzone': self.landing_zone.sodar_uuid},
                 ),
                 format='json',
+                HTTP_ACCEPT=self.get_accept_header(
+                    media_type=settings.SODAR_API_MEDIA_TYPE,
+                    version=settings.SODAR_API_DEFAULT_VERSION,
+                ),
             )
 
         self.assertEqual(response.status_code, 200)
@@ -218,6 +232,10 @@ class TestLandingZoneCreateAPIView(LandingZoneAPITaskflowBase):
                     kwargs={'project': self.project.sodar_uuid},
                 ),
                 data=post_data,
+                HTTP_ACCEPT=self.get_accept_header(
+                    media_type=settings.SODAR_API_MEDIA_TYPE,
+                    version=settings.SODAR_API_DEFAULT_VERSION,
+                ),
             )
 
         # Assert status after creation
@@ -252,7 +270,72 @@ class TestLandingZoneCreateAPIView(LandingZoneAPITaskflowBase):
         # NOTE: Only checking UUID
         self.assertEqual(response.data['sodar_uuid'], str(zone.sodar_uuid))
 
-    # TODO: Test with invalid values
+    def test_post_no_investigation(self):
+        """Test LandingZoneCreateAPIView post() with no investigation"""
+        self.investigation.delete()
+
+        post_data = {
+            'title': 'new zone',
+            'assay': str(self.assay.sodar_uuid),
+            'description': 'description',
+            'configuration': None,
+            'config_data': {},
+            'sodar_url': self.live_server_url,
+        }
+
+        # Assert preconditions
+        self.assertEqual(LandingZone.objects.all().count(), 0)
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'landingzones:api_create',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                data=post_data,
+                HTTP_ACCEPT=self.get_accept_header(
+                    media_type=settings.SODAR_API_MEDIA_TYPE,
+                    version=settings.SODAR_API_DEFAULT_VERSION,
+                ),
+            )
+
+        # Assert status after creation
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(LandingZone.objects.count(), 0)
+
+    def test_post_no_irods_collections(self):
+        """Test LandingZoneCreateAPIView post() with no iRODS collections"""
+        self.investigation.irods_status = False
+        self.investigation.save()
+
+        post_data = {
+            'title': 'new zone',
+            'assay': str(self.assay.sodar_uuid),
+            'description': 'description',
+            'configuration': None,
+            'config_data': {},
+            'sodar_url': self.live_server_url,
+        }
+
+        # Assert preconditions
+        self.assertEqual(LandingZone.objects.all().count(), 0)
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'landingzones:api_create',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                data=post_data,
+                HTTP_ACCEPT=self.get_accept_header(
+                    media_type=settings.SODAR_API_MEDIA_TYPE,
+                    version=settings.SODAR_API_DEFAULT_VERSION,
+                ),
+            )
+
+        # Assert status after creation
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(LandingZone.objects.count(), 0)
 
 
 @skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
@@ -289,6 +372,10 @@ class TestLandingZoneSubmitDeleteAPIView(
                     kwargs={'landingzone': self.landing_zone.sodar_uuid},
                 ),
                 data=post_data,
+                HTTP_ACCEPT=self.get_accept_header(
+                    media_type=settings.SODAR_API_MEDIA_TYPE,
+                    version=settings.SODAR_API_DEFAULT_VERSION,
+                ),
             )
 
         # Assert status after deletion
@@ -317,6 +404,10 @@ class TestLandingZoneSubmitDeleteAPIView(
                     kwargs={'landingzone': self.landing_zone.sodar_uuid},
                 ),
                 data=post_data,
+                HTTP_ACCEPT=self.get_accept_header(
+                    media_type=settings.SODAR_API_MEDIA_TYPE,
+                    version=settings.SODAR_API_DEFAULT_VERSION,
+                ),
             )
 
         # Assert status after deletion
@@ -336,10 +427,14 @@ class TestLandingZoneSubmitDeleteAPIView(
                     kwargs={'landingzone': INVALID_UUID},
                 ),
                 data=post_data,
+                HTTP_ACCEPT=self.get_accept_header(
+                    media_type=settings.SODAR_API_MEDIA_TYPE,
+                    version=settings.SODAR_API_DEFAULT_VERSION,
+                ),
             )
 
         # Assert status after deletion
-        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.status_code, 404)
         self.assertEqual(LandingZone.objects.all().count(), 1)
 
 
@@ -379,6 +474,10 @@ class TestLandingZoneSubmitMoveAPIView(
                     kwargs={'landingzone': self.landing_zone.sodar_uuid},
                 ),
                 data=post_data,
+                HTTP_ACCEPT=self.get_accept_header(
+                    media_type=settings.SODAR_API_MEDIA_TYPE,
+                    version=settings.SODAR_API_DEFAULT_VERSION,
+                ),
             )
 
         # Assert status after deletion
@@ -411,6 +510,10 @@ class TestLandingZoneSubmitMoveAPIView(
                     kwargs={'landingzone': self.landing_zone.sodar_uuid},
                 ),
                 data=post_data,
+                HTTP_ACCEPT=self.get_accept_header(
+                    media_type=settings.SODAR_API_MEDIA_TYPE,
+                    version=settings.SODAR_API_DEFAULT_VERSION,
+                ),
             )
 
         # Assert status after deletion
@@ -429,6 +532,10 @@ class TestLandingZoneSubmitMoveAPIView(
                     kwargs={'landingzone': self.landing_zone.sodar_uuid},
                 ),
                 data=post_data,
+                HTTP_ACCEPT=self.get_accept_header(
+                    media_type=settings.SODAR_API_MEDIA_TYPE,
+                    version=settings.SODAR_API_DEFAULT_VERSION,
+                ),
             )
 
         # Assert status after deletion
@@ -457,6 +564,10 @@ class TestLandingZoneSubmitMoveAPIView(
                     kwargs={'landingzone': self.landing_zone.sodar_uuid},
                 ),
                 data=post_data,
+                HTTP_ACCEPT=self.get_accept_header(
+                    media_type=settings.SODAR_API_MEDIA_TYPE,
+                    version=settings.SODAR_API_DEFAULT_VERSION,
+                ),
             )
 
         # Assert status after deletion

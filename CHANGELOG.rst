@@ -20,7 +20,7 @@ Added
     - Enable ``conn`` keyword argument in API initialization (#793)
 - **Landingzones**
     - Extra columns for project list (#579)
-    - Missing permission tests for views
+    - Missing permission and view tests
     - Initial REST API (#780)
 - **Samplesheets**
     - Editing of selected sample sheet column values (#550)
@@ -81,6 +81,7 @@ Fixed
     - Data object replicates included in file and stats queries (#722)
 - **Landingzones**
     - Cache update initiated synchronously in TaskflowZoneStatusSetAPIView (#783)
+    - Missing zone status checks in zone deletion/moving views (#813)
 - **Samplesheets**
     - ``getGridOptionsByUuid()`` returned column API instead of grid options (#706)
     - ``getGridOptionsByUuid()`` returned initial options without applied updates (#721)

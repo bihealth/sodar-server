@@ -36,8 +36,6 @@ class LandingZoneSerializer(SODARModelSerializer):
                 'Assay does not belong to project'
             )
 
-        # TODO: Add taskflow check
-        # TODO: Add iRODS status check
         return attrs
 
     def create(self, validated_data):

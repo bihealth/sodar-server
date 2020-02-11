@@ -22,7 +22,11 @@ from samplesheets.io import get_assay_dirs
 from samplesheets.views import InvestigationContextMixin
 
 from landingzones.forms import LandingZoneForm
-from landingzones.models import LandingZone
+from landingzones.models import (
+    LandingZone,
+    STATUS_ALLOW_UPDATE,
+    STATUS_ALLOW_CLEAR,
+)
 
 # Access Django user model
 User = auth.get_user_model()
@@ -50,31 +54,19 @@ class ZoneContextMixin:
         return context
 
 
-# TODO: This doesn't work, why? (see issue #812)
-'''
-class ZoneUpdatePermissionMixin:
-    """Permission override for landing zone updating views"""
+class ZoneUpdateRequiredPermissionMixin:
+    """Required permission override for landing zone updating views"""
 
-    def has_permission(self):
-        """Override has_permission to check perms depending on owner"""
-        try:
-            zone = LandingZone.objects.get(
-                sodar_uuid=self.kwargs['landingzone']
-            )
+    def get_permission_required(self):
+        """Override to return the correct landing zone permission"""
+        zone = LandingZone.objects.filter(
+            sodar_uuid=self.kwargs['landingzone']
+        ).first()
 
-            if zone.user == self.request.user:
-                return self.request.user.has_perm(
-                    'landingzones.update_zones_own', zone.project
-                )
+        if zone and zone.user == self.request.user:
+            return ['landingzones.update_zones_own']
 
-            else:
-                return self.request.user.has_perm(
-                    'landingzones.update_zones_all', zone.project
-                )
-
-        except LandingZone.DoesNotExist:
-            return False
-'''
+        return ['landingzones.update_zones_all']
 
 
 class ZoneConfigPluginMixin:
@@ -481,8 +473,8 @@ class ZoneDeleteView(
     LoginRequiredMixin,
     LoggedInPermissionMixin,
     ProjectContextMixin,
+    ZoneUpdateRequiredPermissionMixin,
     ProjectPermissionMixin,
-    # ZoneUpdatePermissionMixin,
     ZoneDeleteViewMixin,
     TemplateView,
 ):
@@ -491,28 +483,7 @@ class ZoneDeleteView(
     # NOTE: Not using DeleteView here as we don't delete the object in async
     http_method_names = ['get', 'post']
     template_name = 'landingzones/landingzone_confirm_delete.html'
-    permission_required = 'landingzones.update_zones_own'
-
-    # TODO: This never gets called if implemented as mixin, why?
-    def has_permission(self):
-        """Override has_permission to check perms depending on owner"""
-        try:
-            zone = LandingZone.objects.get(
-                sodar_uuid=self.kwargs['landingzone']
-            )
-
-            if zone.user == self.request.user:
-                return self.request.user.has_perm(
-                    'landingzones.update_zones_own', zone.project
-                )
-
-            else:
-                return self.request.user.has_perm(
-                    'landingzones.update_zones_all', zone.project
-                )
-
-        except LandingZone.DoesNotExist:
-            return False
+    # NOTE: permission_required comes from ZoneUpdateRequiredPermissionMixin
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
@@ -522,6 +493,25 @@ class ZoneDeleteView(
         )
 
         return context
+
+    def get(self, request, *args, **kwargs):
+        """Override get() to ensure the zone status"""
+        zone = LandingZone.objects.get(sodar_uuid=self.kwargs['landingzone'])
+
+        if zone.status not in STATUS_ALLOW_UPDATE:
+            messages.error(
+                request,
+                'Unable to delete a landing zone with the '
+                'status of "{}"'.format(zone.status),
+            )
+            return redirect(
+                reverse(
+                    'landingzones:list',
+                    kwargs={'project': zone.project.sodar_uuid},
+                )
+            )
+
+        return super().get(request, *args, **kwargs)
 
     def post(self, *args, **kwargs):
         taskflow = get_backend_api('taskflow')
@@ -564,6 +554,7 @@ class ZoneMoveView(
     LoginRequiredMixin,
     LoggedInPermissionMixin,
     ProjectContextMixin,
+    ZoneUpdateRequiredPermissionMixin,
     ProjectPermissionMixin,
     ZoneMoveViewMixin,
     TemplateView,
@@ -572,29 +563,7 @@ class ZoneMoveView(
 
     http_method_names = ['get', 'post']
     template_name = 'landingzones/landingzone_confirm_move.html'
-    # NOTE: minimum perm, all checked files will be tested in has_permission()
-    permission_required = 'landingzones.update_zones_own'
-
-    # TODO: This never gets called if implemented as mixin, why?
-    def has_permission(self):
-        """Override has_permission to check perms depending on owner"""
-        try:
-            zone = LandingZone.objects.get(
-                sodar_uuid=self.kwargs['landingzone']
-            )
-
-            if zone.user == self.request.user:
-                return self.request.user.has_perm(
-                    'landingzones.update_zones_own', zone.project
-                )
-
-            else:
-                return self.request.user.has_perm(
-                    'landingzones.update_zones_all', zone.project
-                )
-
-        except LandingZone.DoesNotExist:
-            return False
+    # NOTE: permission_required comes from ZoneUpdateRequiredPermissionMixin
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
@@ -613,6 +582,25 @@ class ZoneMoveView(
         context['sample_dir'] = settings.IRODS_SAMPLE_DIR
 
         return context
+
+    def get(self, request, *args, **kwargs):
+        """Override get() to ensure the zone status"""
+        zone = LandingZone.objects.get(sodar_uuid=self.kwargs['landingzone'])
+
+        if zone.status not in STATUS_ALLOW_UPDATE:
+            messages.error(
+                request,
+                'Unable to validate or move a landing zone with the '
+                'status of "{}"'.format(zone.status),
+            )
+            return redirect(
+                reverse(
+                    'landingzones:list',
+                    kwargs={'project': zone.project.sodar_uuid},
+                )
+            )
+
+        return super().get(request, *args, **kwargs)
 
     def post(self, request, **kwargs):
         taskflow = get_backend_api('taskflow')
@@ -664,7 +652,6 @@ class ZoneClearView(
 
     http_method_names = ['get', 'post']
     template_name = 'landingzones/landingzone_confirm_clear.html'
-    # NOTE: minimum perm, all checked files will be tested in post()
     permission_required = 'landingzones.update_zones_own'
 
     def post(self, request, **kwargs):
@@ -690,8 +677,7 @@ class ZoneClearView(
 
         try:
             inactive_zones = LandingZone.objects.filter(
-                user=self.request.user,
-                status__in=['MOVED', 'NOT CREATED', 'DELETED'],
+                user=self.request.user, status__in=STATUS_ALLOW_CLEAR
             )
             zone_count = inactive_zones.count()
             inactive_zones.delete()

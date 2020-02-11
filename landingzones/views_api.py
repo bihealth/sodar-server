@@ -12,9 +12,11 @@ from rest_framework.serializers import ValidationError
 from rest_framework.views import APIView
 
 # Samplesheets dependency
+from samplesheets.models import Investigation
+
 # TODO: Import from projectroles once moved into SODAR Core
 from samplesheets.views import (
-    # SODARAPIBaseProjectMixin,
+    SODARAPIBaseMixin,
     SODARAPIGenericViewProjectMixin,
 )
 
@@ -28,6 +30,7 @@ from sodar.users.auth import fallback_to_auth_basic
 from landingzones.models import LandingZone, STATUS_ALLOW_UPDATE
 from landingzones.serializers import LandingZoneSerializer
 from landingzones.views import (
+    ZoneUpdateRequiredPermissionMixin,
     ZoneCreateViewMixin,
     ZoneDeleteViewMixin,
     ZoneMoveViewMixin,
@@ -40,10 +43,10 @@ logger = logging.getLogger(__name__)
 # Mixins and Base Views --------------------------------------------------------
 
 
-# TODO: Fix has_permission() inheritance and use ZoneUpdatePermissionMixin
 class LandingZoneSubmitBaseAPIView(
+    SODARAPIBaseMixin,
+    ZoneUpdateRequiredPermissionMixin,
     ProjectPermissionMixin,
-    # ZoneUpdatePermissionMixin,  # TODO: Fix
     APIView,
 ):
     """
@@ -53,28 +56,6 @@ class LandingZoneSubmitBaseAPIView(
     """
 
     http_method_names = ['post']
-    permission_required = 'landingzones.update_zones_own'
-
-    # TODO: This never gets called if implemented as mixin, why?
-    def has_permission(self):
-        """Override has_permission to check perms depending on owner"""
-        try:
-            zone = LandingZone.objects.get(
-                sodar_uuid=self.kwargs['landingzone']
-            )
-
-            if zone.user == self.request.user:
-                return self.request.user.has_perm(
-                    'landingzones.update_zones_own', zone.project
-                )
-
-            else:
-                return self.request.user.has_perm(
-                    'landingzones.update_zones_all', zone.project
-                )
-
-        except LandingZone.DoesNotExist:
-            return False
 
     @classmethod
     def _validate_zone_obj(cls, zone, allowed_status_types, action):
@@ -168,13 +149,36 @@ class LandingZoneCreateAPIView(
     def perform_create(self, serializer):
         """Override perform_create() to add timeline event and initiate
         taskflow"""
+        ex_msg = 'Creating landing zone failed: '
+
+        # Check taskflow status
+        if not get_backend_api('taskflow'):
+            raise APIException('{}Taskflow not enabled'.format(ex_msg))
+
+        # Ensure project has investigation with iRODS collections created
+        project = self.get_project()
+        investigation = Investigation.objects.filter(
+            active=True, project=project
+        ).first()
+
+        if not investigation:
+            raise ValidationError(
+                '{}No investigation found for project'.format(ex_msg)
+            )
+
+        if not investigation.irods_status:
+            raise ValidationError(
+                '{}iRODS collections not created for project'.format(ex_msg)
+            )
+
+        # If all is OK, go forward with object creation and taskflow submission
         super().perform_create(serializer)
 
         try:
             self._submit_create(serializer.instance)
 
         except Exception as ex:
-            raise APIException('Creating landing zone failed: {}'.format(ex))
+            raise APIException('{}{}'.format(ex_msg, ex))
 
 
 class LandingZoneSubmitDeleteAPIView(

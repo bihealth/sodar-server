@@ -53,8 +53,11 @@ STATUS_STYLES = {
     'DELETED': 'bg-secondary',
 }
 
-# Status types where zone validation, moving and deletion are allowed
+# Status types for which zone validation, moving and deletion are allowed
 STATUS_ALLOW_UPDATE = ['ACTIVE', 'FAILED']
+
+# Status types for which zone clearing is allowed
+STATUS_ALLOW_CLEAR = ['MOVED', 'NOT CREATED', 'DELETED']
 
 
 class LandingZone(models.Model):

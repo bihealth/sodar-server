@@ -108,15 +108,12 @@ class TestProjectZonesView(TestViewsBase):
                     kwargs={'project': self.project.sodar_uuid},
                 )
             )
-            self.assertEqual(response.status_code, 200)
-            self.assertEqual(
-                response.context['investigation'], self.investigation
-            )
-            self.assertEqual(response.context['zones_own'].count(), 1)
-            self.assertEqual(response.context['zones_other'].count(), 0)
-            self.assertEqual(
-                response.context['zones_own'][0], self.landing_zone
-            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['investigation'], self.investigation)
+        self.assertEqual(response.context['zones_own'].count(), 1)
+        self.assertEqual(response.context['zones_other'].count(), 0)
+        self.assertEqual(response.context['zones_own'][0], self.landing_zone)
 
     def test_render_contrib(self):
         """Test rendering of project zones view as project contributor"""
@@ -127,13 +124,12 @@ class TestProjectZonesView(TestViewsBase):
                     kwargs={'project': self.project.sodar_uuid},
                 )
             )
-            self.assertEqual(response.status_code, 200)
-            self.assertEqual(
-                response.context['investigation'], self.investigation
-            )
-            # This user should have no zones
-            self.assertEqual(response.context['zones_own'].count(), 0)
-            self.assertNotIn('zones_other', response.context)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['investigation'], self.investigation)
+        # This user should have no zones
+        self.assertEqual(response.context['zones_own'].count(), 0)
+        self.assertNotIn('zones_other', response.context)
 
 
 class TestLandingZoneCreateView(TestViewsBase):
@@ -148,15 +144,78 @@ class TestLandingZoneCreateView(TestViewsBase):
                     kwargs={'project': self.project.sodar_uuid},
                 )
             )
-            self.assertEqual(response.status_code, 200)
 
-            # Assert form
-            form = response.context['form']
-            self.assertIsNotNone(form)
-            self.assertIsNotNone(form.fields['title_suffix'])
-            self.assertIsNotNone(form.fields['assay'])
-            self.assertIsNotNone(form.fields['description'])
-            self.assertIsNotNone(form.fields['configuration'])
+        self.assertEqual(response.status_code, 200)
+
+        # Assert form
+        form = response.context['form']
+        self.assertIsNotNone(form)
+        self.assertIsNotNone(form.fields['title_suffix'])
+        self.assertIsNotNone(form.fields['assay'])
+        self.assertIsNotNone(form.fields['description'])
+        self.assertIsNotNone(form.fields['configuration'])
+
+
+class TestLandingZoneMoveView(TestViewsBase):
+    """Tests for the landing zone validation and moving view"""
+
+    def test_render(self):
+        """Test rendering of the landing zone validation and moving view"""
+        with self.login(self.user):
+            response = self.client.get(
+                reverse(
+                    'landingzones:move',
+                    kwargs={'landingzone': self.landing_zone.sodar_uuid},
+                )
+            )
+
+        self.assertEqual(response.status_code, 200)
+
+    def test_render_invalid_status(self):
+        """Test rendering with an invalid zone status"""
+        self.landing_zone.status = 'DELETED'
+        self.landing_zone.save()
+
+        with self.login(self.user):
+            response = self.client.get(
+                reverse(
+                    'landingzones:move',
+                    kwargs={'landingzone': self.landing_zone.sodar_uuid},
+                )
+            )
+
+        self.assertEqual(response.status_code, 302)
+
+
+class TestLandingZoneDeleteView(TestViewsBase):
+    """Tests for the landing zone deletion view"""
+
+    def test_render(self):
+        """Test rendering of the landing zone deletion view"""
+        with self.login(self.user):
+            response = self.client.get(
+                reverse(
+                    'landingzones:delete',
+                    kwargs={'landingzone': self.landing_zone.sodar_uuid},
+                )
+            )
+
+        self.assertEqual(response.status_code, 200)
+
+    def test_render_invalid_status(self):
+        """Test rendering with an invalid zone status"""
+        self.landing_zone.status = 'DELETED'
+        self.landing_zone.save()
+
+        with self.login(self.user):
+            response = self.client.get(
+                reverse(
+                    'landingzones:delete',
+                    kwargs={'landingzone': self.landing_zone.sodar_uuid},
+                )
+            )
+
+        self.assertEqual(response.status_code, 302)
 
 
 class TestLandingZoneClearView(TestViewsBase):
@@ -176,13 +235,14 @@ class TestLandingZoneClearView(TestViewsBase):
                     kwargs={'project': self.project.sodar_uuid},
                 )
             )
-            self.assertEqual(response.status_code, 200)
+
+        self.assertEqual(response.status_code, 200)
 
     def test_post(self):
         """Test POST on the landing zone clearing view"""
 
         # Assert precondition
-        self.assertEqual(LandingZone.objects.all().count(), 1)
+        self.assertEqual(LandingZone.objects.count(), 1)
 
         with self.login(self.user):
             response = self.client.post(
@@ -202,7 +262,7 @@ class TestLandingZoneClearView(TestViewsBase):
             )
 
         # Assert postcondition
-        self.assertEqual(LandingZone.objects.all().count(), 0)
+        self.assertEqual(LandingZone.objects.count(), 0)
 
 
 class TestLandingZoneStatusGetAPIView(TestViewsBase):
@@ -218,10 +278,10 @@ class TestLandingZoneStatusGetAPIView(TestViewsBase):
                 )
             )
 
-            self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
 
-            expected = {
-                'status': self.landing_zone.status,
-                'status_info': self.landing_zone.status_info,
-            }
-            self.assertEquals(response.data, expected)
+        expected = {
+            'status': self.landing_zone.status,
+            'status_info': self.landing_zone.status_info,
+        }
+        self.assertEquals(response.data, expected)

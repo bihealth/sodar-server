@@ -46,6 +46,7 @@ class TestLandingZonePermissions(
             user=self.as_owner.user,
             assay=self.assay,
             description=ZONE_DESC,
+            status='ACTIVE',
             configuration=None,
             config_data={},
         )
