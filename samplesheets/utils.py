@@ -355,3 +355,20 @@ def build_sheet_config(investigation):
         ret['studies'][str(study.sodar_uuid)] = study_data
 
     return ret
+
+
+def get_top_header(table, field_idx):
+    """
+    Return top header by field header index.
+
+    :param table: Rendered table (dict)
+    :param field_idx: Field header index (int)
+    :return: dict or None
+    """
+    tc = 0
+
+    for th in table['top_header']:
+        tc += th['colspan']
+
+        if tc > field_idx:
+            return th

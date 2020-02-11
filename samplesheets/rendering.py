@@ -68,6 +68,9 @@ HEADER_MAP = {
     th.DATE: 'Perform Date',
 }
 
+# HACK: Special cases for inline file linking (see issue #817)
+SPECIAL_FILE_LINK_HEADERS = ['report file']
+
 header_re = re.compile(r'^([a-zA-Z\s]+)[\[](.+)[\]]$')
 contact_re = re.compile(r'(.+?)\s?(?:[<|[])(.+?)(?:[>\]])')
 logger = logging.getLogger(__name__)
@@ -242,7 +245,9 @@ class SampleSheetTableBuilder:
         elif name.lower() == 'external links':
             header['col_type'] = 'EXTERNAL_LINKS'
 
-        elif name.lower() == 'name' and header['item_type'] == 'DATA':
+        elif (
+            name.lower() == 'name' and header['item_type'] == 'DATA'
+        ) or name.lower() in SPECIAL_FILE_LINK_HEADERS:  # HACK for issue #817
             header['col_type'] = 'LINK_FILE'
 
         else:

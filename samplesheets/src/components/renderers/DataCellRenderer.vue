@@ -45,10 +45,15 @@
     </span>
     <!-- File link -->
     <span v-else-if="colType === 'LINK_FILE' && renderData">
+      <span v-if="renderData.url">
       <a :href="renderData.url"
          :title="getTooltip()"
          v-b-tooltip.hover.d300
          target="_blank">{{ renderData.value }}</a>
+      </span>
+      <span v-else class="text-muted">
+        {{ renderData.value }}
+      </span>
     </span>
     <!-- Plain/numeric/empty/undetected value -->
     <span v-else>
@@ -159,9 +164,12 @@ export default Vue.extend(
       },
       getFileLink () {
         // Get file link
+        let url = null
+        if (this.value.hasOwnProperty('link')) url = this.value.link
+
         return {
           value: this.value.value,
-          url: this.value.link ? this.value.hasOwnProperty('link') : '#'
+          url: url
         }
       },
       getTooltip () {

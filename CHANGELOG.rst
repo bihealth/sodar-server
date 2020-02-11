@@ -37,6 +37,9 @@ Added
     - ``MiscFiles`` assay shortcut for all assays (#766)
     - ``ResultsReports`` assay shortcut for all assays (#767)
     - Investigation info retrieval API view (#780)
+    - ``utils.get_top_header()`` helper (#817)
+    - Linking for metabolite assignment files in ``meta_ms`` assay app (#817)
+    - Hack for "Report File" column file linking (#817)
 
 Changed
 -------
@@ -72,6 +75,7 @@ Changed
     - Change assay sub-app ``get_extra_table()`` into ``get_shortcuts()`` (#782)
     - Change ``ExtraContentTable.vue`` into ``AssayShortcutCard.vue`` (#782)
     - Prevent opening unnecessary iRODS connections with irodsbackend API (#796)
+    - Remove file suffix restriction from assay app data file linking (#817)
 
 Fixed
 -----

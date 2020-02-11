@@ -4,6 +4,8 @@ from django.conf import settings
 
 # from samplesheets.models import GenericMaterial, Process
 from samplesheets.plugins import SampleSheetAssayPluginPoint
+from samplesheets.utils import get_top_header
+from samplesheets.views import MISC_FILES_COLL, RESULTS_COLL
 
 
 # Local constants
@@ -77,25 +79,42 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
             return row
 
         base_url = settings.IRODS_WEBDAV_URL + assay_path
+        top_header = None
+        th_colspan = 0
 
         for i in range(len(row)):
             header = table['field_header'][i]
+
+            if not top_header or i >= th_colspan:
+                top_header = get_top_header(table, i)
+                th_colspan += top_header['colspan']
 
             # Data files
             if (
                 header['obj_cls'] == 'GenericMaterial'
                 and header['item_type'] == 'DATA'
                 and header['value'].lower() == 'name'
+                and top_header['value'].lower()
+                in ['metabolite assignment file', 'raw spectral data file']
             ):
-                # .raw files
-                if row[i]['value'].split('.')[-1].lower() == 'raw':
-                    row[i]['link'] = (
-                        base_url
-                        + '/'
-                        + self.raw_data_coll
-                        + '/'
-                        + row[i]['value']
-                    )
+                if top_header['value'].lower() == 'metabolite assignment file':
+                    coll_name = MISC_FILES_COLL
+
+                else:
+                    coll_name = self.raw_data_coll
+
+                row[i]['link'] = (
+                    base_url + '/' + coll_name + '/' + row[i]['value']
+                )
+
+            # Report file links within processes
+            elif (
+                header['obj_cls'] == 'Process'
+                and header['value'].lower() == 'report file'
+            ):
+                row[i]['link'] = (
+                    base_url + '/' + RESULTS_COLL + '/' + row[i]['value']
+                )
 
         return row
 

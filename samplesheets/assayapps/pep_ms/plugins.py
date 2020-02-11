@@ -113,15 +113,10 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
                 and header['item_type'] == 'DATA'
                 and header['value'].lower() == 'name'
             ):
-                # .raw files
-                if row[i]['value'].split('.')[-1].lower() == 'raw':
-                    row[i]['link'] = (
-                        base_url
-                        + '/'
-                        + self.raw_data_coll
-                        + '/'
-                        + row[i]['value']
-                    )
+                # We assume all files to be in RawData
+                row[i]['link'] = (
+                    base_url + '/' + self.raw_data_coll + '/' + row[i]['value']
+                )
 
             # Process parameter files
             # NOTE: Currently disabled
