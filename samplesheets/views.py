@@ -1647,11 +1647,13 @@ class SampleSheetEditPostAPIView(
 
         for cell in updated_cells:
             logger.debug('Cell update: {}'.format(cell))
-            obj = (
-                eval(cell['obj_cls'])
-                .objects.filter(sodar_uuid=cell['uuid'])
-                .first()
+            obj_cls = (
+                GenericMaterial
+                if cell['obj_cls'] == 'GenericMaterial'
+                else Process
             )
+            obj = obj_cls.objects.filter(sodar_uuid=cell['uuid']).first()
+
             # TODO: Make sure given object actually belongs in project etc.
 
             if not obj:
