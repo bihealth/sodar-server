@@ -19,12 +19,10 @@ from django.utils.text import slugify
 from django.views.generic import TemplateView, FormView, DeleteView, View
 
 from rest_framework.generics import RetrieveAPIView
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import AllowAny
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.versioning import AcceptHeaderVersioning
-from knox.auth import TokenAuthentication
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
@@ -1990,39 +1988,6 @@ class InvestigationRetrieveAPIView(
 
     permission_required = 'samplesheets.view_sheet'
     serializer_class = InvestigationSerializer
-
-
-# NOTE: Using a specific versioner for the query API, to be generalized..
-# TODO: Remove
-class SourceIDAPIVersioning(AcceptHeaderVersioning):
-    default_version = settings.SODAR_API_DEFAULT_VERSION
-    allowed_versions = [settings.SODAR_API_DEFAULT_VERSION]
-    version_param = 'version'
-
-
-# TODO: Remove
-class SourceIDAPIRenderer(JSONRenderer):
-    media_type = 'application/vnd.bihealth.sodar+json'
-
-
-# TODO: Refactor or remove
-class SourceIDQueryAPIView(APIView):
-    """Proof-of-concept source ID querying view for BeLOVE integration"""
-
-    authentication_classes = (TokenAuthentication,)
-    permission_classes = (IsAuthenticated,)
-    versioning_class = SourceIDAPIVersioning
-    renderer_classes = [SourceIDAPIRenderer]
-
-    def get(self, *args, **kwargs):
-        source_id = self.kwargs['source_id']
-
-        source_count = GenericMaterial.objects.find(
-            search_term=source_id, item_type='SOURCE'
-        ).count()
-
-        ret_data = {'id_found': True if source_count > 0 else False}
-        return Response(ret_data, status=200)
 
 
 # TODO: Temporary HACK, should be replaced by real solution (sodar_core#261)

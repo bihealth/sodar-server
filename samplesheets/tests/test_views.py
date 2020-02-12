@@ -19,7 +19,6 @@ from projectroles.tests.test_models import (
     RemoteSiteMixin,
     RemoteProjectMixin,
 )
-from projectroles.tests.test_views import KnoxAuthMixin
 from projectroles.utils import build_secret
 
 # Timeline dependency
@@ -1287,84 +1286,6 @@ class TestSampleSheetManagePostAPIView(SheetConfigMixin, TestViewsBase):
             ).count(),
             1,
         )
-
-
-class TestSourceIDQueryAPIView(KnoxAuthMixin, TestViewsBase):
-    """Tests for SourceIDQueryAPIView"""
-
-    def setUp(self):
-        super().setUp()
-
-        # Import investigation
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
-
-        # Login with Knox
-        self.token = self.knox_login(self.user, USER_PASSWORD)
-
-    def test_get(self):
-        """Test HTTP GET request with an existing ID"""
-        response = self.knox_get(
-            reverse(
-                'samplesheets:source_get', kwargs={'source_id': SOURCE_NAME}
-            ),
-            token=self.token,
-            media_type=settings.SODAR_API_MEDIA_TYPE,
-            version=settings.SODAR_API_DEFAULT_VERSION,
-        )
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data['id_found'], True)
-
-    def test_get_not_found(self):
-        """Test HTTP GET request with a non-existing ID"""
-        response = self.knox_get(
-            reverse(
-                'samplesheets:source_get',
-                kwargs={'source_id': SOURCE_NAME_FAIL},
-            ),
-            token=self.token,
-            media_type=settings.SODAR_API_MEDIA_TYPE,
-            version=settings.SODAR_API_DEFAULT_VERSION,
-        )
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data['id_found'], False)
-
-    def test_get_partial_id(self):
-        """Test HTTP GET request with a partial ID (should fail)"""
-        response = self.knox_get(
-            reverse(
-                'samplesheets:source_get',
-                kwargs={'source_id': SOURCE_NAME[:-1]},
-            ),
-            token=self.token,
-            media_type=settings.SODAR_API_MEDIA_TYPE,
-            version=settings.SODAR_API_DEFAULT_VERSION,
-        )
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data['id_found'], False)
-
-    def test_get_unauthorized(self):
-        """Test HTTP GET request without a token (should fail)"""
-        response = self.client.get(
-            reverse(
-                'samplesheets:source_get',
-                kwargs={'source_id': SOURCE_NAME[:-1]},
-            )
-        )
-        self.assertEqual(response.status_code, 401)
-
-    def test_get_wrong_version(self):
-        """Test HTTP GET request with an unaccepted API version (should fail)"""
-        response = self.knox_get(
-            reverse(
-                'samplesheets:source_get', kwargs={'source_id': SOURCE_NAME}
-            ),
-            token=self.token,
-            media_type=settings.SODAR_API_MEDIA_TYPE,
-            version=API_INVALID_VERSION,
-        )
-        self.assertEqual(response.status_code, 406)
 
 
 class TestRemoteSheetGetAPIView(

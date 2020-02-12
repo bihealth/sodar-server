@@ -109,6 +109,7 @@ Removed
     - Redundant ``columnValues`` structure (#711)
     - ``link_file``, ``num_col`` and ``align`` parameters from rendering (#708)
     - ``get_assay_list_url()`` template tag (#737)
+    - Unused ``SourceIDQueryAPIView`` and related classes (#820)
 
 
 v0.6.1 (2019-11-15)

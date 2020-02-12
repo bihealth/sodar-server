@@ -110,11 +110,6 @@ urlpatterns = [
         name='api_investigation_retrieve',
     ),
     url(
-        regex=r'^api/source/get/(?P<source_id>[\w\-_/]+)$',
-        view=views.SourceIDQueryAPIView.as_view(),
-        name='source_get',
-    ),
-    url(
         regex=r'^api/remote/get/(?P<project>[0-9a-f-]+)/(?P<secret>[\w\-]+)$',
         view=views.RemoteSheetGetAPIView.as_view(),
         name='api_remote_get',
