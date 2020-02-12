@@ -507,7 +507,9 @@ class SampleSheetIO:
         logger.info('altamISA version: {}'.format(altamisa.__version__))
         logger.info(
             'Importing investigation{}..'.format(
-                'from archive "{}"'.format(archive_name) if archive_name else ''
+                ' from archive "{}"'.format(archive_name)
+                if archive_name
+                else ''
             )
         )
 

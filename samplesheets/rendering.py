@@ -775,7 +775,7 @@ class SampleSheetTableBuilder:
         )
 
         logger.debug(
-            'Import parser version: {}'.format(
+            'altamISA version at import: {}'.format(
                 self._parser_version
                 if not isinstance(self._parser_version, version.LegacyVersion)
                 else 'LEGACY'
