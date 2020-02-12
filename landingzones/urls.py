@@ -71,7 +71,7 @@ urls_api = [
         name='api_submit_move',
     ),
     url(
-        regex=r'^api/list/(?P<configuration>[\w\-_/]+)$',
+        regex=r'^api/legacy/list/(?P<configuration>[\w\-_/]+)$',
         view=views_api.LandingZoneOldListAPIView.as_view(),
         name='api_list_old',
     ),
