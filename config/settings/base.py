@@ -66,6 +66,7 @@ THIRD_PARTY_APPS = [
     # Site apps
     'userprofile.apps.UserprofileConfig',
     'adminalerts.apps.AdminalertsConfig',
+    'tokens.apps.TokensConfig',
     # Backend apps
     'taskflowbackend.apps.TaskflowbackendConfig',
     'sodarcache.apps.SodarcacheConfig',

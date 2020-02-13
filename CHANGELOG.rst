@@ -1,8 +1,24 @@
 SODAR Changelog
 ^^^^^^^^^^^^^^^
 
-Changelog for the SODAR Web UI. Loosely follows the
+Changelog for the SODAR Django site. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
+
+
+Unreleased
+==========
+
+Added
+-----
+
+- **Tokens**
+    - Enable app from django-sodar-core v0.8.0-WIP (#822)
+
+Changed
+-------
+
+- **General**
+    - Upgrade to django-sodar-core v0.8.0-WIP
 
 
 v0.7.0 (2020-02-12)
