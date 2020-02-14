@@ -18,6 +18,7 @@ from landingzones.utils import get_zone_title
 class LandingZoneSerializer(SODARModelSerializer):
     """Serializer for the LandingZone model"""
 
+    title = serializers.CharField(required=False)
     project = serializers.CharField(source='project.sodar_uuid', read_only=True)
     user = serializers.ReadOnlyField(source='user.username')
     assay = serializers.CharField(source='assay.sodar_uuid')
@@ -39,7 +40,7 @@ class LandingZoneSerializer(SODARModelSerializer):
         return attrs
 
     def create(self, validated_data):
-        validated_data['title'] = get_zone_title(validated_data['title'])
+        validated_data['title'] = get_zone_title(validated_data.get('title'))
         validated_data['project'] = self.context['project']
         validated_data['user'] = self.context['request'].user
         validated_data['assay'] = Assay.objects.get(

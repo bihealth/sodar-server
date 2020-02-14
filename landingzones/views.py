@@ -63,6 +63,7 @@ class ZoneUpdateRequiredPermissionMixin:
             sodar_uuid=self.kwargs['landingzone']
         ).first()
 
+        # NOTE: UI views with PermissionRequiredMixin expect an iterable
         if zone and zone.user == self.request.user:
             return ['landingzones.update_zones_own']
 

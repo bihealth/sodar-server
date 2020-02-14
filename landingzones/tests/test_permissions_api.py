@@ -61,10 +61,11 @@ class TestLandingZonePermissions(
             self.as_delegate.user,
             self.as_contributor.user,
         ]
-        bad_users = [self.as_guest.user, self.user_no_roles, self.anonymous]
+        bad_users = [self.as_guest.user, self.user_no_roles]
 
         self.assert_response(url, good_users, 200)
         self.assert_response(url, bad_users, 403)
+        self.assert_response(url, [self.anonymous], 401)
 
     def test_retrieve(self):
         """Test permissions for LandingZoneRetrieveAPIView"""
@@ -77,10 +78,10 @@ class TestLandingZonePermissions(
             self.as_contributor.user,
             self.as_guest.user,
             self.user_no_roles,
-            self.anonymous,
         ]
 
         self.assert_response(url, good_users, 200)
         self.assert_response(url, bad_users, 403)
+        self.assert_response(url, [self.anonymous], 401)
 
     # TODO: How to nicely test taskflow submitting API view permissions?

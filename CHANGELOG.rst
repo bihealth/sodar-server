@@ -20,6 +20,15 @@ Changed
 - **General**
     - Upgrade to django-sodar-core v0.8.0-WIP
 
+Fixed
+-----
+
+- **Landingzones**
+    - REST API view permission checks not working with Knox token auth (#823)
+    - Title suffix not optional in ``LandingZone`` serializer (#825)
+- **Samplesheets**
+    - REST API view permission checks not working with Knox token auth (#823)
+
 
 v0.7.0 (2020-02-12)
 ===================

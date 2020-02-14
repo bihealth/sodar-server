@@ -362,9 +362,9 @@ class TestInvestigationRetrieveAPIView(
             self.as_contributor.user,
             self.as_guest.user,
         ]
-        bad_users = [self.anonymous, self.user_no_roles]
         self.assert_response(url, good_users, status_code=200)
-        self.assert_response(url, bad_users, status_code=403)
+        self.assert_response(url, [self.user_no_roles], status_code=403)
+        self.assert_response(url, [self.anonymous], status_code=401)
 
 
 class TestRemoteSheetGetAPIView(

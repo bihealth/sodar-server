@@ -16,12 +16,11 @@ from samplesheets.models import Investigation
 
 # TODO: Import from projectroles once moved into SODAR Core
 from samplesheets.views import (
-    SODARAPIBaseMixin,
+    SODARAPIBaseProjectMixin,
     SODARAPIGenericViewProjectMixin,
 )
 
 # Projectroles dependency
-from projectroles.views import ProjectPermissionMixin
 from projectroles.plugins import get_backend_api
 
 # Local helper for authenticating with auth basic
@@ -44,10 +43,7 @@ logger = logging.getLogger(__name__)
 
 
 class LandingZoneSubmitBaseAPIView(
-    SODARAPIBaseMixin,
-    ZoneUpdateRequiredPermissionMixin,
-    ProjectPermissionMixin,
-    APIView,
+    ZoneUpdateRequiredPermissionMixin, SODARAPIBaseProjectMixin, APIView
 ):
     """
     Base API view for initiating LandingZone operations via SODAR Taskflow.
@@ -113,29 +109,24 @@ class LandingZoneRetrieveAPIView(
 
     lookup_field = 'sodar_uuid'
     lookup_url_kwarg = 'landingzone'
-    permission_required = 'landingzones.view_zones_own'
     serializer_class = LandingZoneSerializer
 
-    def has_permission(self):
-        """Override has_permission to check perms depending on owner"""
+    def get_permission_required(self):
+        """Override get_permission_required() to check perms depending on
+        owner"""
         obj = self.get_object()
 
         if not obj:
             return False
 
         if obj.user == self.request.user:
-            return self.request.user.has_perm(
-                'landingzones.update_zones_own', self.get_permission_object()
-            )
+            return 'landingzones.update_zones_own'
 
-        else:
-            return self.request.user.has_perm(
-                'landingzones.update_zones_all', self.get_permission_object()
-            )
+        return 'landingzones.update_zones_all'
 
 
 class LandingZoneCreateAPIView(
-    SODARAPIGenericViewProjectMixin, ZoneCreateViewMixin, CreateAPIView
+    ZoneCreateViewMixin, SODARAPIGenericViewProjectMixin, CreateAPIView
 ):
     """
     API view for initiating LandingZone creation.
@@ -207,7 +198,7 @@ class LandingZoneSubmitDeleteAPIView(
 
         return Response(
             {
-                'message': 'Landing zone deletion initiated',
+                'detail': 'Landing zone deletion initiated',
                 'sodar_uuid': str(zone.sodar_uuid),
             },
             status=status.HTTP_200_OK,
@@ -255,7 +246,7 @@ class LandingZoneSubmitMoveAPIView(
 
         return Response(
             {
-                'message': 'Landing zone {} initiated'.format(action_msg),
+                'detail': 'Landing zone {} initiated'.format(action_msg),
                 'sodar_uuid': str(zone.sodar_uuid),
             },
             status=status.HTTP_200_OK,
