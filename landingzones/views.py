@@ -18,7 +18,6 @@ from projectroles.views import (
 from projectroles.plugins import get_backend_api
 
 # Samplesheets dependency
-from samplesheets.io import get_assay_dirs
 from samplesheets.views import InvestigationContextMixin
 
 from landingzones.forms import LandingZoneForm
@@ -142,8 +141,6 @@ class ZoneCreateViewMixin(ZoneConfigPluginMixin):
                 obj=zone.assay, label='assay', name=zone.assay.get_name()
             )
 
-        # Build assay dirs
-        dirs = get_assay_dirs(zone.assay)
         flow_name = 'landing_zone_create'
 
         flow_data = self.get_flow_data(
@@ -159,7 +156,7 @@ class ZoneCreateViewMixin(ZoneConfigPluginMixin):
                 ),
                 'description': zone.description,
                 'zone_config': zone.configuration,
-                'dirs': dirs,
+                'dirs': [],
             },
         )
 
@@ -437,8 +434,7 @@ class ZoneCreateView(
 
         elif not investigation.irods_status:
             messages.error(
-                self.request,
-                error_msg + 'Sample sheet directory structure not created',
+                self.request, error_msg + 'Sample sheet collections not created'
             )
 
         else:
@@ -580,7 +576,7 @@ class ZoneMoveView(
         ):
             context['validate_only'] = True
 
-        context['sample_dir'] = settings.IRODS_SAMPLE_DIR
+        context['sample_dir'] = settings.IRODS_SAMPLE_COLL
 
         return context
 

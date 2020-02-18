@@ -16,7 +16,7 @@ from samplesheets.models import Study, Assay, GenericMaterial, Process
 from samplesheets.rendering import SampleSheetTableBuilder
 from samplesheets.utils import (
     get_alt_names,
-    get_sample_dirs,
+    get_sample_colls,
     get_index_by_header,
     get_last_material_name,
     build_sheet_config,
@@ -128,21 +128,21 @@ class TestGetAltNames(TestUtilsBase):
 
 
 @skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
-class TestGetSampleDirs(TestUtilsBase):
-    """Tests for get_sample_dirs()"""
+class TestGetSampleColls(TestUtilsBase):
+    """Tests for get_sample_colls()"""
 
     def setUp(self):
         super().setUp()
         self.irods_backend = get_backend_api('omics_irods', conn=False)
 
-    def test_get_sample_dirs(self):
-        """Test get_sample_dirs() with a minimal ISAtab example"""
+    def test_get_sample_colls(self):
+        """Test get_sample_colls() with a minimal ISAtab example"""
         expected = [
             self.irods_backend.get_sub_path(self.study),
             self.irods_backend.get_sub_path(self.assay),
         ]
 
-        self.assertEqual(get_sample_dirs(self.investigation), expected)
+        self.assertEqual(get_sample_colls(self.investigation), expected)
 
 
 # TODO: Test compare_inv_replace() (requires special ISAtabs, see #434)

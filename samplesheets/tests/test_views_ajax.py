@@ -118,7 +118,7 @@ class TestContextAjaxView(TestViewsBase):
             'perms': {
                 'edit_sheet': True,
                 'manage_sheet': True,
-                'create_dirs': True,
+                'create_colls': True,
                 'export_sheet': True,
                 'delete_sheet': True,
                 'is_superuser': True,

@@ -160,8 +160,8 @@ class SampleSheetContextAjaxView(
             'manage_sheet': request.user.has_perm(
                 'samplesheets.manage_sheet', project
             ),
-            'create_dirs': request.user.has_perm(
-                'samplesheets.create_dirs', project
+            'create_colls': request.user.has_perm(
+                'samplesheets.create_colls', project
             ),
             'export_sheet': request.user.has_perm(
                 'samplesheets.export_sheet', project

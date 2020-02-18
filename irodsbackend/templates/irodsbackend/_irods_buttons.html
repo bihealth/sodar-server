@@ -1,7 +1,7 @@
 {% load irodsbackend_tags %}
 
 {# Parameters #}
-{# irods_dirs: Whether iRODS dirs exist (boolean) #}
+{# irods_colls: Whether iRODS collections exist (boolean) #}
 {# irods_path: full iRODS path to link to #}
 {# list_url: SODAR URL for querying file list #}
 {# data_table: Whether the file is included within a data table (boolean) #}
@@ -14,7 +14,7 @@
 <span class="text-nowrap">
   {% if show_file_list and irods_backend_enabled and irods_webdav_enabled %}
     <button class="btn btn-secondary sodar-list-btn sodar-irods-btn sodar-irods-popup-list-btn
-            {% if not irods_webdav_enabled or not irods_dirs or disable_all %} no-dirs {% endif %}"
+            {% if not irods_webdav_enabled or not irods_colls or disable_all %} no-colls {% endif %}"
             irods-path="{{ irods_path }}"
             list-url="{{ list_url }}"
             webdav-url="{{ irods_webdav_url }}"
@@ -24,34 +24,34 @@
               data-tooltip="tooltip" data-placement="top"
             {% endif %}
             title="List files"
-            {% if not irods_dirs or disable_all %} disabled{% endif %}>
+            {% if not irods_colls or disable_all %} disabled{% endif %}>
       <i class="fa fa-folder-open-o"></i>
     </button>
   {% endif %}
   <button class="btn btn-secondary sodar-list-btn sodar-irods-btn sodar-irods-copy-btn sodar-irods-path-btn
-          {% if not irods_webdav_enabled or not irods_dirs or disable_all %} no-dirs {% endif %}"
+          {% if not irods_webdav_enabled or not irods_colls or disable_all %} no-colls {% endif %}"
           data-clipboard-text="{{ irods_path }}" role="submit"
           data-table="{% if data_table %}1{% else %}0{% endif %}"
           {% if not data_table %}
             data-tooltip="tooltip" data-placement="top"
           {% endif %}
           title="Copy iRODS path into clipboard"
-          {% if not irods_dirs or disable_all %} disabled{% endif %}>
+          {% if not irods_colls or disable_all %} disabled{% endif %}>
     <i class="fa fa-terminal"></i>
   </button>
   <button class="btn btn-secondary sodar-list-btn sodar-irods-btn sodar-irods-copy-btn
-          {% if not irods_webdav_enabled or not irods_dirs or disable_all %} no-dirs {% endif %}"
+          {% if not irods_webdav_enabled or not irods_colls or disable_all %} no-colls {% endif %}"
           data-clipboard-text="{{ irods_webdav_url }}{{ irods_path }}" role="submit"
           data-table="{% if data_table %}1{% else %}0{% endif %}"
           {% if not data_table %}
             data-tooltip="tooltip" data-placement="top"
           {% endif %}
           title="Copy WebDAV URL into clipboard"
-          {% if not irods_dirs or disable_all %} disabled{% endif %}>
+          {% if not irods_colls or disable_all %} disabled{% endif %}>
     <i class="fa fa-clipboard"></i>
   </button>
   <a class="btn btn-secondary sodar-list-btn sodar-irods-btn sodar-irods-dav-btn {% if data_table %}mr-1{% endif %}
-     {% if not irods_webdav_enabled or not irods_dirs or disable_all %} no-dirs disabled {% endif %}"
+     {% if not irods_webdav_enabled or not irods_colls or disable_all %} no-colls disabled {% endif %}"
      href="{{ irods_webdav_url }}{{ irods_path }}" role="button"
      data-table="{% if data_table %}1{% else %}0{% endif %}"
      {% if not data_table %}

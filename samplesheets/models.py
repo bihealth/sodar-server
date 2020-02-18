@@ -5,7 +5,6 @@ from django.contrib.postgres.fields import ArrayField, JSONField
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
-from django.utils.text import slugify
 from django.utils.timezone import localtime
 
 # Projectroles dependency
@@ -36,20 +35,6 @@ ISATAB_TAGS = {
     'IMPORT': 'Imported from an ISAtab archive',
     'REPLACE': 'Replacing a previous ISAtab',
 }
-
-
-# Utils ------------------------------------------------------------------------
-
-
-def get_zone_dir(obj):
-    """
-    Return iRODS dir friendly name for a study or an assay to be used in landing
-    zones. Used because Django's slugify uses hyphens which get confusing as
-    UUIDs are used elsewhere
-    :param obj: Study or Assay
-    :return: String
-    """
-    return slugify(obj.get_display_name()).replace('-', '_')
 
 
 # Abstract base class ----------------------------------------------------------
@@ -188,7 +173,8 @@ class Investigation(BaseSampleSheet):
         help_text='Active status of investigation (one active per project)',
     )
 
-    #: Status of iRODS directory structure creation
+    # TODO: Update irods_status help_text in the next migration
+    #: Status of iRODS collection structure creation
     irods_status = models.BooleanField(
         default=False, help_text='Status of iRODS directory structure creation'
     )

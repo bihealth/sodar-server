@@ -21,6 +21,9 @@ Changed
 
 - **General**
     - Upgrade to django-sodar-core v0.8.0-WIP
+    - Rename references to iRODS collections (#785)
+    - Rename ``IRODS_SAMPLE_COLL`` and ``IRODS_LANDING_ZONE_COLL`` settings (#785)
+    - Rename the ``samplesheets.create_colls`` permission (#785)
 - **Samplesheets**
     - Reorganize views and URL patterns (#801)
     - Refactor Ajax views and URL patterns (#736, #824)
@@ -33,6 +36,12 @@ Fixed
     - Title suffix not optional in ``LandingZone`` serializer (#825)
 - **Samplesheets**
     - REST API view permission checks not working with Knox token auth (#823)
+
+Removed
+-------
+
+- **Samplesheets**
+    - Unused ``models.get_zone_dir()`` and ``io.get_assay_dirs()`` helpers
 
 
 v0.7.0 (2020-02-12)

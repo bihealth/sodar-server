@@ -531,8 +531,8 @@ IRODS_PORT = env.int('IRODS_PORT', 4477)
 IRODS_ZONE = env.str('IRODS_ZONE', 'omicsZone')
 IRODS_USER = env.str('IRODS_USER', 'rods')
 IRODS_PASS = env.str('IRODS_PASS', 'rods')
-IRODS_SAMPLE_DIR = 'sample_data'
-IRODS_LANDING_ZONE_DIR = 'landing_zones'
+IRODS_SAMPLE_COLL = 'sample_data'
+IRODS_LANDING_ZONE_COLL = 'landing_zones'
 
 # Optional iRODS env file
 # (recommended: place in STATIC_ROOT + '/irods/irods_environment.json')

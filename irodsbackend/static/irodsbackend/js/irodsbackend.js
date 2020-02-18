@@ -96,7 +96,7 @@ var updateButtons = function() {
     var projectUUID = '';
 
     $('button.sodar-irods-path-btn').each(function () {
-        if (!$(this).hasClass('no-dirs')) {
+        if (!$(this).hasClass('no-colls')) {
             var buttonPath = $(this).attr('data-clipboard-text');
             projectUUID = buttonPath.split('/')[4];
             if (!(ipaths.includes(buttonPath))){

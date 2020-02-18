@@ -26,10 +26,10 @@ def get_alt_names(name):
     return [name.replace('_', '-'), re.sub(r'[^a-zA-Z0-9]', '', name), name]
 
 
-def get_sample_dirs(investigation):
+def get_sample_colls(investigation):
     """
-    Return study and assay directories without parent dirs for the sample data
-    directory structure.
+    Return study and assay collections without parent colls for the sample data
+    collection structure.
 
     :param investigation: Investigation object
     :return: List
@@ -66,7 +66,7 @@ def compare_inv_replace(inv1, inv2):
 
     except Exception:
         raise ValueError(
-            'iRODS directories exist but studies and assays '
+            'iRODS collections exist but studies and assays '
             'do not match: unable to replace investigation'
         )
 

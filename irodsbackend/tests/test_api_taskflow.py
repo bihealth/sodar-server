@@ -34,8 +34,8 @@ PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 IRODS_HOST = settings.IRODS_HOST
 IRODS_PORT = settings.IRODS_PORT
 IRODS_ZONE = settings.IRODS_ZONE
-SAMPLE_DIR = settings.IRODS_SAMPLE_DIR
-LANDING_ZONE_DIR = settings.IRODS_LANDING_ZONE_DIR
+SAMPLE_COLL = settings.IRODS_SAMPLE_COLL
+LANDING_ZONE_COLL = settings.IRODS_LANDING_ZONE_COLL
 SERVER_AVAILABLE = 'Available'
 
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
@@ -89,10 +89,10 @@ class TestIrodsBackendAPITaskflow(
 
     @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_get_objects(self):
-        """Test get_objects() with files in a sample dir"""
+        """Test get_objects() with files in a sample collection"""
 
-        # Create iRODS directories
-        self._make_irods_dirs(self.investigation)
+        # Create iRODS collections
+        self._make_irods_colls(self.investigation)
 
         path = self.irods_backend.get_path(self.assay)
 
@@ -117,22 +117,22 @@ class TestIrodsBackendAPITaskflow(
         self.assertEqual(obj, expected)
 
     @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
-    def test_get_objects_empty_dir(self):
-        """Test get_objects() with an empty sample directory"""
+    def test_get_objects_empty_coll(self):
+        """Test get_objects() with an empty sample collection"""
 
-        # Create iRODS directories
-        self._make_irods_dirs(self.investigation)
+        # Create iRODS collections
+        self._make_irods_colls(self.investigation)
 
-        path = self.irods_backend.get_path(self.project) + '/' + SAMPLE_DIR
+        path = self.irods_backend.get_path(self.project) + '/' + SAMPLE_COLL
         obj_list = self.irods_backend.get_objects(path)
         self.assertIsNotNone(obj_list)
         self.assertEqual(len(obj_list['data_objects']), 0)
 
     @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
-    def test_get_objects_no_dir(self):
-        """Test get_objects() with no created directories"""
+    def test_get_objects_no_coll(self):
+        """Test get_objects() with no created collections"""
 
-        path = self.irods_backend.get_path(self.project) + '/' + SAMPLE_DIR
+        path = self.irods_backend.get_path(self.project) + '/' + SAMPLE_COLL
 
         with self.assertRaises(FileNotFoundError):
             self.irods_backend.get_objects(path)
@@ -141,8 +141,8 @@ class TestIrodsBackendAPITaskflow(
     def test_get_objects_limit(self):
         """Test get_objects() with a limit applied"""
 
-        # Create iRODS directories
-        self._make_irods_dirs(self.investigation)
+        # Create iRODS collections
+        self._make_irods_colls(self.investigation)
 
         path = self.irods_backend.get_path(self.assay)
 

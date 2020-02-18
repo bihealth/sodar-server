@@ -425,28 +425,30 @@ class IrodsAPI:
             return path
 
         elif obj_class == 'Investigation':
-            path += '/{sample_dir}'.format(sample_dir=settings.IRODS_SAMPLE_DIR)
+            path += '/{sample_dir}'.format(
+                sample_dir=settings.IRODS_SAMPLE_COLL
+            )
 
         # Study (in sample data)
         elif obj_class == 'Study':
             path += '/{sample_dir}/{study}'.format(
-                sample_dir=settings.IRODS_SAMPLE_DIR,
+                sample_dir=settings.IRODS_SAMPLE_COLL,
                 study=cls.get_sub_path(obj),
             )
 
         # Assay (in sample data)
         elif obj_class == 'Assay':
             path += '/{sample_dir}/{study_assay}'.format(
-                sample_dir=settings.IRODS_SAMPLE_DIR,
+                sample_dir=settings.IRODS_SAMPLE_COLL,
                 study_assay=cls.get_sub_path(obj),
             )
 
         # LandingZone
         elif obj_class == 'LandingZone':
             path += (
-                '/{zone_dir}/{user}/{study_assay}/{zone_title}'
+                '/{zone_coll}/{user}/{study_assay}/{zone_title}'
                 '{zone_config}'.format(
-                    zone_dir=settings.IRODS_LANDING_ZONE_DIR,
+                    zone_coll=settings.IRODS_LANDING_ZONE_COLL,
                     user=obj.user.username,
                     study_assay=cls.get_sub_path(obj.assay, landing_zone=True),
                     zone_title=obj.title,
@@ -470,7 +472,7 @@ class IrodsAPI:
         if project.__class__.__name__ != 'Project':
             raise ValueError('Argument "project" is not a Project object')
 
-        return cls.get_path(project) + '/' + settings.IRODS_SAMPLE_DIR
+        return cls.get_path(project) + '/' + settings.IRODS_SAMPLE_COLL
 
     @classmethod
     def get_uuid_from_path(cls, path, obj_type):

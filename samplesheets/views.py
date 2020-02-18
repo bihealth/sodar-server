@@ -32,7 +32,7 @@ from samplesheets.models import Investigation, Study, Assay, ISATab
 from samplesheets.rendering import SampleSheetTableBuilder, EMPTY_VALUE
 from samplesheets.tasks import update_project_cache_task
 from samplesheets.utils import (
-    get_sample_dirs,
+    get_sample_colls,
     compare_inv_replace,
     get_sheets_url,
     write_excel_table,
@@ -324,7 +324,7 @@ class IrodsCollsCreateViewMixin:
                 name=investigation.title,
             )
 
-        flow_data = {'dirs': get_sample_dirs(investigation)}
+        flow_data = {'dirs': get_sample_colls(investigation)}
 
         try:
             taskflow.submit(
@@ -948,7 +948,7 @@ class SampleSheetCacheUpdateView(
         return HttpResponseRedirect(get_sheets_url(project))
 
 
-class IrodsDirsView(
+class IrodsCollectionsView(
     LoginRequiredMixin,
     LoggedInPermissionMixin,
     InvestigationContextMixin,
@@ -958,8 +958,8 @@ class IrodsDirsView(
 ):
     """iRODS collection structure creation view"""
 
-    template_name = 'samplesheets/irods_dirs_confirm.html'
-    permission_required = 'samplesheets.create_dirs'
+    template_name = 'samplesheets/irods_colls_confirm.html'
+    permission_required = 'samplesheets.create_colls'
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
@@ -968,8 +968,8 @@ class IrodsDirsView(
         if not investigation:
             return context
 
-        context['dirs'] = get_sample_dirs(investigation)
-        context['update_dirs'] = True if investigation.irods_status else False
+        context['colls'] = get_sample_colls(investigation)
+        context['update_colls'] = True if investigation.irods_status else False
         return context
 
     def post(self, request, **kwargs):
@@ -977,7 +977,7 @@ class IrodsDirsView(
         context = self.get_context_data(**kwargs)
         project = context['project']
         investigation = context['investigation']
-        action = 'update' if context['update_dirs'] else 'create'
+        action = 'update' if context['update_colls'] else 'create'
         redirect_url = get_sheets_url(project)
 
         # Fail if tasflow is not available

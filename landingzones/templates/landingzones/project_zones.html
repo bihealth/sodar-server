@@ -93,14 +93,14 @@
     <div class="alert alert-danger" role="alert" id="sodar-lz-alert-no-zones">
       <strong>Note:</strong> No sample sheets are currently available for this project.
       To create landing zones, a person with sufficient project permissions must
-      import an ISAtab investigation and create the sample directory structure in iRODS
+      import an ISAtab investigation and create the sample collections in iRODS
       using the <a href="{% url 'samplesheets:project_sheets' project=project.sodar_uuid %}">Sample Sheets</a> app.
     </div>
 
   {% elif investigation and not investigation.irods_status %}
     <div class="alert alert-danger" role="alert" id="sodar-lz-alert-no-zones">
-      <strong>Note:</strong> The iRODS directory structure for the project sample
-      sheets is not available. A user authorized for sample sheet editing must
+      <strong>Note:</strong> The iRODS collections for the project sample
+      sheets are not available. A user authorized for sample sheet editing must
       enable iRODS access by selecting <cite>"Create in iRODS"</cite> in the
       <a href="{% url 'samplesheets:project_sheets' project=project.sodar_uuid %}">Sample Sheets</a> app.
       After that landing zones can be created for the project.

@@ -6,7 +6,6 @@ from djangoplugins.point import PluginPoint
 from projectroles.plugins import ProjectAppPluginPoint, get_backend_api
 
 # Samplesheets dependency
-from samplesheets.io import get_assay_dirs
 from samplesheets.models import Investigation, Assay
 
 from .models import LandingZone
@@ -99,7 +98,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                     ),
                     'description': zone.description,
                     'zone_config': zone.configuration,
-                    'dirs': get_assay_dirs(zone.assay),
+                    'dirs': [],
                 }
 
                 config_plugin = get_zone_config_plugin(zone)

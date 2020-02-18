@@ -60,8 +60,8 @@ class IrodsInfoView(LoggedInPermissionMixin, HTTPRefererMixin, TemplateView):
         context['irods_backend'] = irods_backend
 
         # Add settings constants
-        context['irods_sample_dir'] = settings.IRODS_SAMPLE_DIR
-        context['irods_landing_zone_dir'] = settings.IRODS_LANDING_ZONE_DIR
+        context['irods_sample_coll'] = settings.IRODS_SAMPLE_COLL
+        context['irods_landing_zone_coll'] = settings.IRODS_LANDING_ZONE_COLL
         context['irods_webdav_url'] = settings.IRODS_WEBDAV_URL
         context['irods_webdav_enabled'] = settings.IRODS_WEBDAV_ENABLED
 

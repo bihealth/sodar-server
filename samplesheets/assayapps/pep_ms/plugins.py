@@ -58,7 +58,7 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
 
     def get_row_path(self, row, table, assay, assay_path):
         """Return iRODS path for an assay row in a sample sheet. If None,
-        display default directory.
+        display default path.
         :param row: List of dicts (a row returned by SampleSheetTableBuilder)
         :param table: Full table with headers (dict returned by
                       SampleSheetTableBuilder)

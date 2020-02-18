@@ -1455,18 +1455,3 @@ class SampleSheetImportException(Exception):
     """Sample sheet importing exception"""
 
     pass
-
-
-# iRODS Utils ------------------------------------------------------------------
-
-
-# TODO: Remove
-def get_assay_dirs(assay):
-    """
-    Return iRODS directory structure under an assay
-
-    :param assay: Assay object
-    :return: List
-    """
-    # TODO: Currently just an empty dir, this needs to be implemented for real
-    return []

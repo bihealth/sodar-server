@@ -127,9 +127,9 @@
             v-if="app.sheetsAvailable &&
                   !app.renderError"
             class="sodar-ss-op-item"
-            :href="'dirs/' + app.projectUuid">
+            :href="'collections/' + app.projectUuid">
           <i class="fa fa-fw fa-database"></i>
-          <span v-if="app.sodarContext['irods_status']">Update</span><span v-else>Create</span> iRODS Directories
+          <span v-if="app.sodarContext['irods_status']">Update</span><span v-else>Create</span> iRODS Collections
         </b-dropdown-item>
         <b-dropdown-item
             v-if="app.sheetsAvailable"

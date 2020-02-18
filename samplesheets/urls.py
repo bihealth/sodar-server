@@ -41,9 +41,9 @@ urls_ui = [
         name='export_isa',
     ),
     url(
-        regex=r'^dirs/(?P<project>[0-9a-f-]+)$',
-        view=views.IrodsDirsView.as_view(),
-        name='dirs',
+        regex=r'^collections/(?P<project>[0-9a-f-]+)$',
+        view=views.IrodsCollectionsView.as_view(),
+        name='collections',
     ),
     url(
         regex=r'^delete/(?P<project>[0-9a-f-]+)$',
@@ -135,13 +135,13 @@ urls_ajax = [
 urls_taskflow = [
     url(
         regex=r'^taskflow/dirs/get$',
-        view=samplesheets.views_taskflow.TaskflowDirStatusGetAPIView.as_view(),
-        name='taskflow_sheet_dirs_get',
+        view=samplesheets.views_taskflow.TaskflowCollStatusGetAPIView.as_view(),
+        name='taskflow_sheet_colls_get',
     ),
     url(
         regex=r'^taskflow/dirs/set$',
-        view=samplesheets.views_taskflow.TaskflowDirStatusSetAPIView.as_view(),
-        name='taskflow_sheet_dirs_set',
+        view=samplesheets.views_taskflow.TaskflowCollStatusSetAPIView.as_view(),
+        name='taskflow_sheet_colls_set',
     ),
     url(
         regex=r'^taskflow/delete$',

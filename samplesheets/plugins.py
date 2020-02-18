@@ -17,7 +17,7 @@ from samplesheets.models import (
 )
 from samplesheets.urls import urlpatterns
 from samplesheets.utils import (
-    get_sample_dirs,
+    get_sample_colls,
     get_isa_field_name,
     get_sheets_url,
 )
@@ -123,17 +123,18 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
 
     def get_taskflow_sync_data(self):
         """
-        Return data for syncing taskflow operations
+        Return data for syncing taskflow operations.
+
         :return: List of dicts or None
         """
         sync_flows = []
 
-        # NOTE: This only syncs previously created dirs
+        # NOTE: This only syncs previously created collections
         for investigation in Investigation.objects.filter(irods_status=True):
             flow = {
                 'flow_name': 'sheet_dirs_create',
                 'project_uuid': investigation.project.sodar_uuid,
-                'flow_data': {'dirs': get_sample_dirs(investigation)},
+                'flow_data': {'dirs': get_sample_colls(investigation)},
             }
             sync_flows.append(flow)
 
@@ -143,6 +144,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         """
         Return URL for referring to a object used by the app, along with a
         label to be shown to the user for linking.
+
         :param model_str: Object class (string)
         :param uuid: sodar_uuid of the referred object
         :return: Dict or None if not found
@@ -169,7 +171,8 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
     def search(self, search_term, user, search_type=None, keywords=None):
         """
         Return app items based on a search term, user, optional type and
-        optional keywords
+        optional keywords.
+
         :param search_term: String
         :param user: User object for user initiating the search
         :param search_type: String
@@ -264,7 +267,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                     o['path'], obj_type='project'
                 )
                 sample_subpath = '/{}/{}/'.format(
-                    project_uuid, settings.IRODS_SAMPLE_DIR
+                    project_uuid, settings.IRODS_SAMPLE_COLL
                 )
 
                 if sample_subpath not in o['path']:
@@ -608,7 +611,7 @@ class SampleSheetAssayPluginPoint(PluginPoint):
 
     def get_row_path(self, row, table, assay, assay_path):
         """Return iRODS path for an assay row in a sample sheet. If None,
-        display default directory.
+        display default path.
         :param row: List of dicts (a row returned by SampleSheetTableBuilder)
         :param table: Full table with headers (dict returned by
                       SampleSheetTableBuilder)

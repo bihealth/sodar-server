@@ -156,7 +156,7 @@ class TestIrodsCollsCreateAPIView(
         """Test post() with already created collections (should fail)"""
 
         # Set up iRODS collections
-        self._make_irods_dirs(self.investigation)
+        self._make_irods_colls(self.investigation)
 
         # Assert preconditions
         self.assertEqual(self.investigation.irods_status, True)

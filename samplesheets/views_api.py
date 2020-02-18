@@ -158,7 +158,7 @@ class IrodsCollsCreateAPIView(
 ):
     """API view for iRODS collection creation for project"""
 
-    permission_required = 'samplesheets.create_dirs'
+    permission_required = 'samplesheets.create_colls'
 
     def post(self, request, *args, **kwargs):
         """POST request for creating iRODS collections"""

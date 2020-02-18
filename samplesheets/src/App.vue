@@ -46,7 +46,7 @@
           </h4>
           <div class="ml-auto align-middle">
             <span class="mr-2">
-              <!-- iRODS dir status / stats badge -->
+              <!-- iRODS collection status / stats badge -->
               <span v-if="!editMode" class="badge-group text-nowrap">
                 <span class="badge badge-pill badge-secondary">iRODS</span>
                     <irods-stats-badge

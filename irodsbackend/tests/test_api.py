@@ -34,8 +34,8 @@ SHEET_PATH = SHEET_DIR + 'i_small.zip'
 ZONE_TITLE = '20180503_1724_test_zone'
 ZONE_DESC = 'description'
 IRODS_ZONE = settings.IRODS_ZONE
-SAMPLE_DIR = settings.IRODS_SAMPLE_DIR
-LANDING_ZONE_DIR = settings.IRODS_LANDING_ZONE_DIR
+SAMPLE_COLL = settings.IRODS_SAMPLE_COLL
+LANDING_ZONE_COLL = settings.IRODS_LANDING_ZONE_COLL
 ENV_DIR = SHEET_DIR = os.path.dirname(__file__) + '/data/'
 ENV_PATH = ENV_DIR + 'irods_env.json'
 ENV_PATH_INVALID = ENV_DIR + 'irods_env_INVALID.json'
@@ -160,12 +160,12 @@ class TestIrodsbackendAPI(
     def test_get_path_study(self):
         """Test get_irods_path() with a Study object"""
         expected = (
-            '/{zone}/projects/{uuid_prefix}/{uuid}/{sample_dir}'
+            '/{zone}/projects/{uuid_prefix}/{uuid}/{sample_coll}'
             '/{study}'.format(
                 zone=IRODS_ZONE,
                 uuid_prefix=str(self.project.sodar_uuid)[:2],
                 uuid=str(self.project.sodar_uuid),
-                sample_dir=SAMPLE_DIR,
+                sample_coll=SAMPLE_COLL,
                 study='study_' + str(self.study.sodar_uuid),
             )
         )
@@ -175,12 +175,12 @@ class TestIrodsbackendAPI(
     def test_get_path_assay(self):
         """Test get_irods_path() with an Assay object"""
         expected = (
-            '/{zone}/projects/{uuid_prefix}/{uuid}/{sample_dir}'
+            '/{zone}/projects/{uuid_prefix}/{uuid}/{sample_coll}'
             '/{study}/{assay}'.format(
                 zone=IRODS_ZONE,
                 uuid_prefix=str(self.project.sodar_uuid)[:2],
                 uuid=str(self.project.sodar_uuid),
-                sample_dir=SAMPLE_DIR,
+                sample_coll=SAMPLE_COLL,
                 study='study_' + str(self.study.sodar_uuid),
                 assay='assay_' + str(self.assay.sodar_uuid),
             )
@@ -196,7 +196,7 @@ class TestIrodsbackendAPI(
                 zone=IRODS_ZONE,
                 uuid_prefix=str(self.project.sodar_uuid)[:2],
                 uuid=str(self.project.sodar_uuid),
-                zone_dir=LANDING_ZONE_DIR,
+                zone_dir=LANDING_ZONE_COLL,
                 user=self.user.username,
                 study_assay=self.irods_backend.get_sub_path(
                     self.landing_zone.assay, landing_zone=True
@@ -209,11 +209,11 @@ class TestIrodsbackendAPI(
 
     def test_get_sample_path(self):
         """Test get_sample_path() with a Project object"""
-        expected = '/{zone}/projects/{uuid_prefix}/{uuid}/{sample_dir}'.format(
+        expected = '/{zone}/projects/{uuid_prefix}/{uuid}/{sample_coll}'.format(
             zone=IRODS_ZONE,
             uuid_prefix=str(self.project.sodar_uuid)[:2],
             uuid=str(self.project.sodar_uuid),
-            sample_dir=SAMPLE_DIR,
+            sample_coll=SAMPLE_COLL,
         )
         path = self.irods_backend.get_sample_path(self.project)
         self.assertEqual(expected, path)

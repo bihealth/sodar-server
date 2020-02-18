@@ -101,7 +101,7 @@ class LandingZoneAPITaskflowBase(
         self.assay = self.study.assays.first()
 
         # Create dirs in iRODS
-        self._make_irods_dirs(self.investigation)
+        self._make_irods_colls(self.investigation)
 
 
 @skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)

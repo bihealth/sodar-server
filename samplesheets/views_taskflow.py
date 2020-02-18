@@ -10,8 +10,8 @@ from samplesheets.models import Investigation
 from samplesheets.views import APP_NAME
 
 
-class TaskflowDirStatusGetAPIView(BaseTaskflowAPIView):
-    """View for getting the sample sheet iRODS dir status"""
+class TaskflowCollStatusGetAPIView(BaseTaskflowAPIView):
+    """View for getting the sample sheet iRODS collection status"""
 
     def post(self, request):
         try:
@@ -25,7 +25,7 @@ class TaskflowDirStatusGetAPIView(BaseTaskflowAPIView):
         return Response({'dir_status': investigation.irods_status}, 200)
 
 
-class TaskflowDirStatusSetAPIView(BaseTaskflowAPIView):
+class TaskflowCollStatusSetAPIView(BaseTaskflowAPIView):
     """View for creating or updating a role assignment based on params"""
 
     def post(self, request):

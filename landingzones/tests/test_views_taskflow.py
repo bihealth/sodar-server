@@ -202,8 +202,8 @@ class TestLandingZoneCreateView(
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
 
-        # Create dirs in iRODS
-        self._make_irods_dirs(self.investigation)
+        # Create iRODS collections
+        self._make_irods_colls(self.investigation)
 
     @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_create_zone(self):
@@ -289,8 +289,8 @@ class TestLandingZoneMoveView(
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
 
-        # Create dirs in iRODS
-        self._make_irods_dirs(self.investigation)
+        # Create iRODS collections
+        self._make_irods_colls(self.investigation)
 
         # Create zone
         self.landing_zone = self._make_landing_zone(
@@ -532,8 +532,8 @@ class TestLandingZoneDeleteView(
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
 
-        # Create dirs in iRODS
-        self._make_irods_dirs(self.investigation)
+        # Create iRODS collections
+        self._make_irods_colls(self.investigation)
 
         # Create zone
         self.landing_zone = self._make_landing_zone(

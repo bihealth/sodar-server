@@ -50,8 +50,8 @@ def get_search_item_type(item):
 
 @register.simple_tag
 def get_irods_tree(investigation):
-    """Return HTML for iRODS dirs"""
-    ret = '<ul><li>{}<ul>'.format(settings.IRODS_SAMPLE_DIR)
+    """Return HTML for iRODS collections"""
+    ret = '<ul><li>{}<ul>'.format(settings.IRODS_SAMPLE_COLL)
 
     for study in investigation.studies.all():
         ret += '<li>{}'.format(

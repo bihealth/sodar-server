@@ -50,9 +50,9 @@ rules.add_perm(
     | pr_rules.is_project_contributor,
 )
 
-# Allow creating directory structure in iRODS
+# Allow creating collection structure in iRODS
 rules.add_perm(
-    'samplesheets.create_dirs',
+    'samplesheets.create_colls',
     pr_rules.is_project_owner
     | pr_rules.is_project_delegate
     | pr_rules.is_project_contributor,

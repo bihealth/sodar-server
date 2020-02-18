@@ -380,8 +380,8 @@ class TestProjectSheetsView(TestProjectSheetsVueAppBase):
     # TODO: Test study links with ISAtab examples using BIH configs (see #434)
 
     # TODO: Test with plugin-containing ISAtab example (see #434)
-    def test_assay_shortcuts_no_dirs(self):
-        """Test assay shortcuts table with no iRODS dirs"""
+    def test_assay_shortcuts_no_colls(self):
+        """Test assay shortcuts table with no iRODS collections"""
         self._login_and_render(self.default_user)
 
         # Assert the table exists
@@ -393,9 +393,9 @@ class TestProjectSheetsView(TestProjectSheetsVueAppBase):
             )
 
     @skipIf(not IRODS_ENABLED, IRODS_SKIP_MSG)
-    def test_assay_shortcuts_with_dirs(self):
-        """Test assay shortcuts table with iRODS dirs"""
-        self.investigation.irods_status = True  # Fake the dir creation
+    def test_assay_shortcuts_with_colls(self):
+        """Test assay shortcuts table with iRODS collections"""
+        self.investigation.irods_status = True  # Fake the coll creation
         self.investigation.save()
 
         self._login_and_render(self.default_user)
@@ -416,8 +416,8 @@ class TestProjectSheetsView(TestProjectSheetsVueAppBase):
         )
 
     # TODO: Test with realistic ISAtab examples using BIH configs (see #434)
-    def test_assay_links_no_dirs(self):
-        """Test assay links column with no iRODS dirs"""
+    def test_assay_links_no_colls(self):
+        """Test assay links column with no iRODS collections"""
         self._login_and_render(self.default_user)
 
         assay_grid = self.selenium.find_element_by_id(
@@ -432,9 +432,9 @@ class TestProjectSheetsView(TestProjectSheetsVueAppBase):
                 )
             )
 
-    def test_assay_links_with_dirs(self):
-        """Test assay links column with iRODS dirs"""
-        self.investigation.irods_status = True  # Fake the dir creation
+    def test_assay_links_with_colls(self):
+        """Test assay links column with iRODS collections"""
+        self.investigation.irods_status = True  # Fake the coll creation
         self.investigation.save()
 
         self._login_and_render(self.default_user)
@@ -448,8 +448,8 @@ class TestProjectSheetsView(TestProjectSheetsVueAppBase):
             assay_grid.find_element_by_class_name('sodar-ss-data-links-header')
         )
 
-    def test_irods_buttons_no_dirs(self):
-        """Test study/assay iRODS button status with no iRODS dirs"""
+    def test_irods_buttons_no_colls(self):
+        """Test study/assay iRODS button status with no iRODS collections"""
         self._login_and_render(self.default_user)
 
         # Check study buttons
@@ -474,9 +474,9 @@ class TestProjectSheetsView(TestProjectSheetsVueAppBase):
         for btn in assay_btns:
             self.assertEqual(self._get_enabled_state(btn), False)
 
-    def test_irods_buttons_with_dirs(self):
-        """Test study/assay iRODS button status with iRODS dirs"""
-        self.investigation.irods_status = True  # Fake the dir creation
+    def test_irods_buttons_with_colls(self):
+        """Test study/assay iRODS button status with iRODS collections"""
+        self.investigation.irods_status = True  # Fake the coll creation
         self.investigation.save()
 
         self._login_and_render(self.default_user)
@@ -508,7 +508,6 @@ class TestProjectSheetsEditModeDefault(TestProjectSheetsVueAppBase):
     """Tests for the samplesheets UI edit mode with a default config"""
 
     def setUp(self):
-        # self.chrome_options.remove('headless')  # DEBUG
         super().setUp()
         app_settings.set_app_setting(
             'samplesheets', 'allow_editing', True, project=self.project

@@ -4,22 +4,22 @@
 {% load samplesheets_tags %}
 
 {% block title %}
-  Confirm Sample Sheet iRODS Directories {% if update_dirs %}Update{% else %}Creation{% endif %}
+  Confirm Sample Sheet iRODS Collections {% if update_colls %}Update{% else %}Creation{% endif %}
 {% endblock title %}
 
 {% block projectroles_extend %}
 
 <div class="container-fluid sodar-subtitle-container">
-  <h3>Confirm Sample Sheet iRODS Directories {% if update_dirs %}Update{% else %}Creation{% endif %}</h3>
+  <h3>Confirm Sample Sheet iRODS Collections {% if update_colls %}Update{% else %}Creation{% endif %}</h3>
 </div>
 
 <div class="container-fluid sodar-page-container">
   <div class="alert alert-warning" role="alert">
     <strong>Warning:</strong> Are you sure you want to
-    {% if update_dirs %}update the{% else %}create a{% endif %} sample data
-    directory structure in iRODS for the studies and assays under this project?
-    {% if update_dirs %}
-      Existing directories will not be affected. New directories will be created
+    {% if update_colls %}update the{% else %}create a{% endif %} sample data
+    collection structure in iRODS for the studies and assays under this project?
+    {% if update_colls %}
+      Existing collections will not be affected. New collections will be created
       for studies and/or assays added in the current version of the sample sheet.
     {% endif %}
   </div>
@@ -27,11 +27,11 @@
   {# Details #}
   <div class="card">
     <div class="card-header">
-      <h4>Sample Data Directory Structure</h4>
+      <h4>Sample Data Collection Structure</h4>
     </div>
     <div class="card-body">
-      {% if update_dirs %}
-        <p>After the update, the directory structure will look as follows:</p>
+      {% if update_colls %}
+        <p>After the update, the collection structure will look as follows:</p>
       {% else %}
         <p>The following structure will be created:</p>
       {% endif %}
@@ -50,8 +50,8 @@
           <i class="fa fa-arrow-circle-left"></i> Cancel
         </a>
        <button type="submit" class="btn btn-primary">
-          <i class="fa fa-database"></i> {% if update_dirs %}Update{% else %}Create{% endif %}
-        </button>
+         <i class="fa fa-database"></i> {% if update_colls %}Update{% else %}Create{% endif %}
+       </button>
       </div>
     </div>
   </form>

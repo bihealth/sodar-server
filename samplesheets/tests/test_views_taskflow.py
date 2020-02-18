@@ -14,7 +14,7 @@ from projectroles.tests.test_views_taskflow import TestTaskflowBase
 from unittest import skipIf
 
 from ..models import Investigation
-from ..utils import get_sample_dirs
+from ..utils import get_sample_colls
 from .test_io import SampleSheetIOMixin, SHEET_DIR
 
 
@@ -52,9 +52,10 @@ TEST_FILE_NAME = 'test1'
 class SampleSheetTaskflowMixin:
     """Taskflow helpers for samplesheets tests"""
 
-    def _make_irods_dirs(self, investigation, request=None):
+    def _make_irods_colls(self, investigation, request=None):
         """
-        Create iRODS directory structure for investigation
+        Create iRODS collection structure for investigation.
+
         :param investigation: Investigation object
         :param request: HTTP request object (optional, default=None)
         :raise taskflow.FlowSubmitException if submit fails
@@ -64,7 +65,7 @@ class SampleSheetTaskflowMixin:
         values = {
             'project_uuid': investigation.project.sodar_uuid,
             'flow_name': 'sheet_dirs_create',
-            'flow_data': {'dirs': get_sample_dirs(investigation)},
+            'flow_data': {'dirs': get_sample_colls(investigation)},
             'request': request,
         }
 
@@ -77,8 +78,8 @@ class SampleSheetTaskflowMixin:
         self.assertEqual(investigation.irods_status, True)
 
 
-class TestIrodsDirView(SampleSheetIOMixin, TestTaskflowBase):
-    """Tests for iRODS directory structure creation view with taskflow"""
+class TestIrodsCollectionView(SampleSheetIOMixin, TestTaskflowBase):
+    """Tests for iRODS collection structure creation view with taskflow"""
 
     def setUp(self):
         super().setUp()
@@ -99,8 +100,8 @@ class TestIrodsDirView(SampleSheetIOMixin, TestTaskflowBase):
         self.study = self.investigation.studies.first()
 
     @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
-    def test_create_dirs(self):
-        """Test directory structure creation with taskflow"""
+    def test_create_colls(self):
+        """Test collection structure creation with taskflow"""
 
         # Assert precondition
         self.assertEqual(self.investigation.irods_status, False)
@@ -113,13 +114,13 @@ class TestIrodsDirView(SampleSheetIOMixin, TestTaskflowBase):
         with self.login(self.user):
             response = self.client.post(
                 reverse(
-                    'samplesheets:dirs',
+                    'samplesheets:collections',
                     kwargs={'project': self.project.sodar_uuid},
                 ),
                 values,
             )
 
-        # Assert sample sheet dir structure state after creation
+        # Assert sample sheet collection structure state after creation
         self.investigation.refresh_from_db()
         self.assertEqual(self.investigation.irods_status, True)
 
@@ -201,7 +202,7 @@ class TestSampleSheetDeleteView(
         """Test sample sheet deleting with files in irods as owner"""
 
         # Create collections and file in iRODS
-        self._make_irods_dirs(self.investigation)
+        self._make_irods_colls(self.investigation)
         irods = self.irods_backend.get_session()
         assay_path = self.irods_backend.get_path(self.assay)
         file_path = assay_path + '/' + TEST_FILE_NAME
@@ -253,7 +254,7 @@ class TestSampleSheetDeleteView(
         )
 
         # Create collections and file in iRODS
-        self._make_irods_dirs(self.investigation)
+        self._make_irods_colls(self.investigation)
         irods = self.irods_backend.get_session()
         assay_path = self.irods_backend.get_path(self.assay)
         file_path = assay_path + '/' + TEST_FILE_NAME
