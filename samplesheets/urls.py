@@ -1,11 +1,15 @@
 from django.conf.urls import url
 
-from . import views
+import samplesheets.views_ajax
+import samplesheets.views_api
+import samplesheets.views_taskflow
+from samplesheets import views
 
 
 app_name = 'samplesheets'
 
-urlpatterns = [
+# UI views
+urls_ui = [
     url(
         regex=r'^(?P<project>[0-9a-f-]+)$',
         view=views.ProjectSheetsView.as_view(),
@@ -66,68 +70,79 @@ urlpatterns = [
         view=views.SampleSheetVersionDeleteView.as_view(),
         name='version_delete',
     ),
-    # Ajax API views
-    # TODO: Rename views and URL patterns
-    url(
-        regex=r'^api/context/get/(?P<project>[0-9a-f-]+)$',
-        view=views.SampleSheetContextGetAPIView.as_view(),
-        name='api_context_get',
-    ),
-    url(
-        regex=r'^api/study/tables/get/(?P<study>[0-9a-f-]+)$',
-        view=views.SampleSheetStudyTablesGetAPIView.as_view(),
-        name='api_study_tables_get',
-    ),
-    url(
-        regex=r'^api/study/links/get/(?P<study>[0-9a-f-]+)$',
-        view=views.SampleSheetStudyLinksGetAPIView.as_view(),
-        name='api_study_links_get',
-    ),
-    url(
-        regex=r'^api/warnings/get/(?P<project>[0-9a-f-]+)$',
-        view=views.SampleSheetWarningsGetAPIView.as_view(),
-        name='api_warnings_get',
-    ),
-    url(
-        regex=r'^api/edit/post/(?P<project>[0-9a-f-]+)$',
-        view=views.SampleSheetEditPostAPIView.as_view(),
-        name='api_edit_post',
-    ),
-    url(
-        regex=r'^api/edit/finish/(?P<project>[0-9a-f-]+)$',
-        view=views.SampleSheetEditFinishAPIView.as_view(),
-        name='api_edit_finish',
-    ),
-    url(
-        regex=r'^api/manage/post/(?P<project>[0-9a-f-]+)$',
-        view=views.SampleSheetManagePostAPIView.as_view(),
-        name='api_manage_post',
-    ),
-    # General API views
+]
+
+# REST API views
+urls_api = [
     url(
         regex=r'^api/investigation/retrieve/(?P<project>[0-9a-f-]+)$',
-        view=views.InvestigationRetrieveAPIView.as_view(),
+        view=samplesheets.views_api.InvestigationRetrieveAPIView.as_view(),
         name='api_investigation_retrieve',
     ),
     url(
         regex=r'^api/remote/get/(?P<project>[0-9a-f-]+)/(?P<secret>[\w\-]+)$',
-        view=views.RemoteSheetGetAPIView.as_view(),
+        view=samplesheets.views_api.RemoteSheetGetAPIView.as_view(),
         name='api_remote_get',
     ),
-    # Taskflow API views
+]
+
+# Ajax API views
+urls_ajax = [
+    # TODO: Rename views and URL patterns
+    url(
+        regex=r'^ajax/context/(?P<project>[0-9a-f-]+)$',
+        view=samplesheets.views_ajax.SampleSheetContextAjaxView.as_view(),
+        name='ajax_context',
+    ),
+    url(
+        regex=r'^ajax/study/tables/(?P<study>[0-9a-f-]+)$',
+        view=samplesheets.views_ajax.SampleSheetStudyTablesAjaxView.as_view(),
+        name='ajax_study_tables',
+    ),
+    url(
+        regex=r'^ajax/study/links/(?P<study>[0-9a-f-]+)$',
+        view=samplesheets.views_ajax.SampleSheetStudyLinksAjaxView.as_view(),
+        name='ajax_study_links',
+    ),
+    url(
+        regex=r'^ajax/warnings/(?P<project>[0-9a-f-]+)$',
+        view=samplesheets.views_ajax.SampleSheetWarningsAjaxView.as_view(),
+        name='ajax_warnings',
+    ),
+    url(
+        regex=r'^ajax/edit/(?P<project>[0-9a-f-]+)$',
+        view=samplesheets.views_ajax.SampleSheetEditAjaxView.as_view(),
+        name='ajax_edit',
+    ),
+    url(
+        regex=r'^ajax/edit/finish/(?P<project>[0-9a-f-]+)$',
+        view=samplesheets.views_ajax.SampleSheetEditFinishAjaxView.as_view(),
+        name='ajax_edit_finish',
+    ),
+    url(
+        regex=r'^ajax/manage/(?P<project>[0-9a-f-]+)$',
+        view=samplesheets.views_ajax.SampleSheetManageAjaxView.as_view(),
+        name='ajax_manage',
+    ),
+]
+
+# Taskflow API views
+urls_taskflow = [
     url(
         regex=r'^taskflow/dirs/get$',
-        view=views.TaskflowDirStatusGetAPIView.as_view(),
+        view=samplesheets.views_taskflow.TaskflowDirStatusGetAPIView.as_view(),
         name='taskflow_sheet_dirs_get',
     ),
     url(
         regex=r'^taskflow/dirs/set$',
-        view=views.TaskflowDirStatusSetAPIView.as_view(),
+        view=samplesheets.views_taskflow.TaskflowDirStatusSetAPIView.as_view(),
         name='taskflow_sheet_dirs_set',
     ),
     url(
         regex=r'^taskflow/delete$',
-        view=views.TaskflowSheetDeleteAPIView.as_view(),
+        view=samplesheets.views_taskflow.TaskflowSheetDeleteAPIView.as_view(),
         name='taskflow_sheet_delete',
     ),
 ]
+
+urlpatterns = urls_ui + urls_api + urls_ajax + urls_taskflow

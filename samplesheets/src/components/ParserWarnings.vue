@@ -65,7 +65,7 @@ export default {
 
     // Fetch data
     this.warnings = []
-    let apiUrl = '/samplesheets/api/warnings/get/' +
+    let apiUrl = '/samplesheets/ajax/warnings/' +
       this.app.projectUuid
 
     fetch(apiUrl, {

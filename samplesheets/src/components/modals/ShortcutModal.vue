@@ -74,7 +74,7 @@ export default {
       this.message = null
       this.modalData = null
 
-      let listUrl = '/samplesheets/api/study/links/get/' +
+      let listUrl = '/samplesheets/ajax/study/links/' +
         this.studyUuid + '?' + query['key'] + '=' + query['value']
 
       fetch(listUrl, {

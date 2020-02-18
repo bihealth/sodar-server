@@ -19,6 +19,9 @@ Changed
 
 - **General**
     - Upgrade to django-sodar-core v0.8.0-WIP
+- **Samplesheets**
+    - Reorganize views and URL patterns (#801)
+    - Refactor Ajax views and URL patterns (#736, #824)
 
 Fixed
 -----

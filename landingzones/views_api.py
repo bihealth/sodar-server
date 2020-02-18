@@ -15,7 +15,7 @@ from rest_framework.views import APIView
 from samplesheets.models import Investigation
 
 # TODO: Import from projectroles once moved into SODAR Core
-from samplesheets.views import (
+from samplesheets.views_api import (
     SODARAPIBaseProjectMixin,
     SODARAPIGenericViewProjectMixin,
 )

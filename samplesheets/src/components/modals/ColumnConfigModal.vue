@@ -783,7 +783,7 @@ export default {
         }
 
         const postUpdate = async () => {
-          const data = await fetch('/samplesheets/api/manage/post/' + this.projectUuid, {
+          const data = await fetch('/samplesheets/ajax/manage/' + this.projectUuid, {
             method: 'POST',
             body: JSON.stringify(upData),
             credentials: 'same-origin',

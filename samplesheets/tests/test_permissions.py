@@ -188,9 +188,9 @@ class TestSampleSheetsPermissions(
         self.assert_redirect(url, bad_users)
 
     def test_api_context(self):
-        """Test SampleSheetContextGetAPIView"""
+        """Test SampleSheetContextAjaxView"""
         url = reverse(
-            'samplesheets:api_context_get',
+            'samplesheets:ajax_context',
             kwargs={'project': self.project.sodar_uuid},
         )
         good_users = [
@@ -205,9 +205,9 @@ class TestSampleSheetsPermissions(
         self.assert_response(url, bad_users, status_code=403)
 
     def test_api_study_tables(self):
-        """Test SampleSheetStudyTablesGetAPIView"""
+        """Test SampleSheetStudyTablesAjaxView"""
         url = reverse(
-            'samplesheets:api_study_tables_get',
+            'samplesheets:ajax_study_tables',
             kwargs={'study': self.study.sodar_uuid},
         )
         good_users = [
@@ -222,13 +222,13 @@ class TestSampleSheetsPermissions(
         self.assert_response(url, bad_users, status_code=403)
 
     def test_api_study_tables_edit(self):
-        """Test SampleSheetStudyTablesGetAPIView with edit mode enabled"""
+        """Test SampleSheetStudyTablesAjaxView with edit mode enabled"""
         app_settings.set_app_setting(
             'samplesheets', 'allow_editing', True, project=self.project
         )
         url = (
             reverse(
-                'samplesheets:api_study_tables_get',
+                'samplesheets:ajax_study_tables',
                 kwargs={'study': self.study.sodar_uuid},
             )
             + '?edit=1'
@@ -244,13 +244,13 @@ class TestSampleSheetsPermissions(
         self.assert_response(url, bad_users, status_code=403)
 
     def test_api_study_tables_not_allowed(self):
-        """Test SampleSheetStudyTablesGetAPIView with edit mode enabled but disallowed"""
+        """Test SampleSheetStudyTablesAjaxView with edit mode enabled but disallowed"""
         app_settings.set_app_setting(
             'samplesheets', 'allow_editing', False, project=self.project
         )
         url = (
             reverse(
-                'samplesheets:api_study_tables_get',
+                'samplesheets:ajax_study_tables',
                 kwargs={'study': self.study.sodar_uuid},
             )
             + '?edit=1'
@@ -267,9 +267,9 @@ class TestSampleSheetsPermissions(
         self.assert_response(url, users, status_code=403)
 
     def test_api_study_links(self):
-        """Test SampleSheetStudyLinksGetAPIView"""
+        """Test SampleSheetStudyLinksAjaxView"""
         url = reverse(
-            'samplesheets:api_study_links_get',
+            'samplesheets:ajax_study_links',
             kwargs={'study': self.study.sodar_uuid},
         )
         good_users = [
@@ -283,10 +283,10 @@ class TestSampleSheetsPermissions(
         self.assert_response(url, good_users, status_code=404)  # No plugin
         self.assert_response(url, bad_users, status_code=403)
 
-    def test_api_edit_post(self):
-        """Test SampleSheetEditPostAPIView"""
+    def test_ajax_edit(self):
+        """Test SampleSheetEditAjaxView"""
         url = reverse(
-            'samplesheets:api_edit_post',
+            'samplesheets:ajax_edit',
             kwargs={'project': self.project.sodar_uuid},
         )
         good_users = [
@@ -299,10 +299,10 @@ class TestSampleSheetsPermissions(
         self.assert_response(url, good_users, status_code=200, method='POST')
         self.assert_response(url, bad_users, status_code=403, method='POST')
 
-    def test_api_edit_finish(self):
-        """Test SampleSheetEditFinishAPIView"""
+    def test_ajax_edit_finish(self):
+        """Test SampleSheetEditFinishAjaxView"""
         url = reverse(
-            'samplesheets:api_edit_finish',
+            'samplesheets:ajax_edit_finish',
             kwargs={'project': self.project.sodar_uuid},
         )
         good_users = [
@@ -316,9 +316,9 @@ class TestSampleSheetsPermissions(
         self.assert_response(url, bad_users, status_code=403, method='POST')
 
     def test_sheet_warnings(self):
-        """Test SampleSheetWarningsGetAPIView"""
+        """Test SampleSheetWarningsAjaxView"""
         url = reverse(
-            'samplesheets:api_warnings_get',
+            'samplesheets:ajax_warnings',
             kwargs={'project': self.project.sodar_uuid},
         )
         good_users = [

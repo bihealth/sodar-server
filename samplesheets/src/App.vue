@@ -1064,7 +1064,7 @@ export default {
         upDataArr = [upDataArr]
       }
 
-      fetch('/samplesheets/api/edit/post/' + this.projectUuid, {
+      fetch('/samplesheets/ajax/edit/' + this.projectUuid, {
         method: 'POST',
         body: JSON.stringify({'updated_cells': upDataArr}),
         credentials: 'same-origin',
@@ -1130,7 +1130,7 @@ export default {
     },
 
     handleFinishEditing () {
-      fetch('/samplesheets/api/edit/finish/' + this.projectUuid, {
+      fetch('/samplesheets/ajax/edit/finish/' + this.projectUuid, {
         method: 'POST',
         body: JSON.stringify({'updated': this.editDataUpdated}),
         credentials: 'same-origin',
