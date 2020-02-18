@@ -66,8 +66,8 @@ class GenericAPIViewTestMixin(SODARAPIViewMixin):
         ).isoformat()
 
 
-class LandingZoneAPITaskflowBase(
-    GenericAPIViewTestMixin,
+class TestLandingZoneAPITaskflowBase(
+    SODARAPIViewMixin,
     SampleSheetIOMixin,
     SampleSheetTaskflowMixin,
     LandingZoneTaskflowMixin,
@@ -208,7 +208,7 @@ class LandingZoneRetrieveAPIView(GenericAPIViewTestMixin, TestViewsBase):
 
 
 @skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
-class TestLandingZoneCreateAPIView(LandingZoneAPITaskflowBase):
+class TestLandingZoneCreateAPIView(TestLandingZoneAPITaskflowBase):
     """Tests for LandingZoneCreateAPIView"""
 
     def test_post(self):
@@ -340,7 +340,7 @@ class TestLandingZoneCreateAPIView(LandingZoneAPITaskflowBase):
 
 @skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
 class TestLandingZoneSubmitDeleteAPIView(
-    LandingZoneMixin, LandingZoneAPITaskflowBase
+    LandingZoneMixin, TestLandingZoneAPITaskflowBase
 ):
     """Tests for LandingZoneSubmitDeleteAPIView"""
 
@@ -440,7 +440,7 @@ class TestLandingZoneSubmitDeleteAPIView(
 
 @skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
 class TestLandingZoneSubmitMoveAPIView(
-    LandingZoneMixin, LandingZoneAPITaskflowBase
+    LandingZoneMixin, TestLandingZoneAPITaskflowBase
 ):
     """Tests for TestLandingZoneSubmitMoveAPIView"""
 
