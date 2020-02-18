@@ -11,6 +11,8 @@ Unreleased
 Added
 -----
 
+- **Samplesheets**
+    - ``IrodsCollsCreateAPIView`` for iRODS collections creation via API (#826)
 - **Tokens**
     - Enable app from django-sodar-core v0.8.0-WIP (#822)
 

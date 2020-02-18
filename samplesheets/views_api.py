@@ -2,6 +2,8 @@
 
 from django.core.exceptions import ImproperlyConfigured
 
+from rest_framework import status
+from rest_framework.exceptions import APIException, ValidationError
 from rest_framework.generics import RetrieveAPIView
 from rest_framework.permissions import BasePermission, AllowAny
 from rest_framework.response import Response
@@ -9,6 +11,7 @@ from rest_framework.views import APIView
 
 # Projectroles dependency
 from projectroles.models import RemoteSite
+from projectroles.plugins import get_backend_api
 from projectroles.views import (
     ProjectAccessMixin,
     SODARAPIRenderer,
@@ -19,7 +22,14 @@ from samplesheets.io import SampleSheetIO
 from samplesheets.models import Investigation
 from samplesheets.rendering import SampleSheetTableBuilder
 from samplesheets.serializers import InvestigationSerializer
-from samplesheets.views import SITE_MODE_TARGET, REMOTE_LEVEL_READ_ROLES
+from samplesheets.views import (
+    IrodsCollsCreateViewMixin,
+    SITE_MODE_TARGET,
+    REMOTE_LEVEL_READ_ROLES,
+)
+
+
+# Base Views and Mixins --------------------------------------------------------
 
 
 # TODO: Move to sodar_core
@@ -120,7 +130,19 @@ class SODARAPIGenericViewProjectMixin(
         )
 
 
-# TODO: Temporary HACK, should be replaced by proper API view
+class SheetSubmitBaseAPIView(SODARAPIBaseProjectMixin, APIView):
+    """
+    Base API view for initiating sample sheet operations via SODAR Taskflow.
+    NOTE: Not tied to serializer or generic views, as the actual object will not
+          be updated here.
+    """
+
+    http_method_names = ['post']
+
+
+# API Views --------------------------------------------------------------------
+
+
 class InvestigationRetrieveAPIView(
     SODARAPIGenericViewProjectMixin, RetrieveAPIView
 ):
@@ -131,6 +153,46 @@ class InvestigationRetrieveAPIView(
     serializer_class = InvestigationSerializer
 
 
+class IrodsCollsCreateAPIView(
+    IrodsCollsCreateViewMixin, SheetSubmitBaseAPIView
+):
+    """API view for iRODS collection creation for project"""
+
+    permission_required = 'samplesheets.create_dirs'
+
+    def post(self, request, *args, **kwargs):
+        """POST request for creating iRODS collections"""
+        irods_backend = get_backend_api('omics_irods', conn=False)
+        ex_msg = 'Creating iRODS collections failed: '
+        investigation = Investigation.objects.filter(
+            project__sodar_uuid=self.kwargs.get('project'), active=True
+        ).first()
+
+        if not investigation:
+            raise ValidationError('{}Investigation not found'.format(ex_msg))
+
+        # TODO: TBD: Also allow updating?
+        if investigation.irods_status:
+            raise ValidationError(
+                '{}iRODS collections already created'.format(ex_msg)
+            )
+
+        try:
+            self._create_colls(investigation)
+
+        except Exception as ex:
+            raise APIException('{}{}'.format(ex_msg, ex))
+
+        return Response(
+            {
+                'detail': 'iRODS collections created',
+                'path': irods_backend.get_sample_path(investigation.project),
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+# TODO: Temporary HACK, should be replaced by proper API view
 class RemoteSheetGetAPIView(APIView):
     """Temporary API view for retrieving the sample sheet as JSON by a target
     site, either as rendered tables or the original ISAtab"""

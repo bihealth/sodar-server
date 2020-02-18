@@ -1,21 +1,68 @@
 """Tests for REST API views in the samplesheets app"""
 
+from unittest.case import skipIf
+
+from django.conf import settings
 from django.urls import reverse
 
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
+from projectroles.plugins import get_backend_api
 from projectroles.tests.test_models import RemoteSiteMixin, RemoteProjectMixin
+from projectroles.tests.test_views import SODARAPIViewMixin
+from projectroles.tests.test_views_taskflow import TestTaskflowBase
 
 from samplesheets.io import SampleSheetIO
 from samplesheets.rendering import SampleSheetTableBuilder
+from samplesheets.tests.test_io import SampleSheetIOMixin
+from samplesheets.tests.test_views_taskflow import SampleSheetTaskflowMixin
 from samplesheets.tests.test_views import (
     TestViewsBase,
+    IRODS_BACKEND_ENABLED,
+    IRODS_BACKEND_SKIP_MSG,
     SHEET_PATH,
     REMOTE_SITE_NAME,
     REMOTE_SITE_URL,
     REMOTE_SITE_DESC,
     REMOTE_SITE_SECRET,
 )
+
+
+# SODAR constants
+PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
+
+
+class TestSampleSheetAPITaskflowBase(
+    SampleSheetIOMixin, SampleSheetTaskflowMixin, TestTaskflowBase
+):
+    """Base samplesheets API view test class with Taskflow enabled"""
+
+    def setUp(self):
+        super().setUp()
+
+        # Get iRODS backend for session access
+        self.irods_backend = get_backend_api('omics_irods')
+        self.assertIsNotNone(self.irods_backend)
+        # self.irods_session = self.irods_backend.get_session()
+
+        # Init project
+        # Make project with owner in Taskflow and Django
+        self.project, self.owner_as = self._make_project_taskflow(
+            title='TestProject',
+            type=PROJECT_TYPE_PROJECT,
+            parent=self.category,
+            owner=self.user,
+            description='description',
+        )
+
+        # Import investigation
+        self.investigation = self._import_isa_from_file(
+            SHEET_PATH, self.project
+        )
+        self.study = self.investigation.studies.first()
+        self.assay = self.study.assays.first()
+
+        self.post_data = {'sodar_url': self.live_server_url}
 
 
 class TestInvestigationRetrieveAPIView(TestViewsBase):
@@ -74,6 +121,60 @@ class TestInvestigationRetrieveAPIView(TestViewsBase):
             },
         }
         self.assertEqual(response.data, expected)
+
+
+@skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
+class TestIrodsCollsCreateAPIView(
+    SODARAPIViewMixin, TestSampleSheetAPITaskflowBase
+):
+    """Tests for IrodsCollsCreateAPIView"""
+
+    def test_post(self):
+        """Test post() in IrodsCollsCreateAPIView"""
+
+        # Assert preconditions
+        self.assertEqual(self.investigation.irods_status, False)
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:api_irods_colls_create',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                data=self.post_data,
+                HTTP_ACCEPT=self.get_accept_header(
+                    media_type=settings.SODAR_API_MEDIA_TYPE,
+                    version=settings.SODAR_API_DEFAULT_VERSION,
+                ),
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.investigation.refresh_from_db()
+        self.assertEqual(self.investigation.irods_status, True)
+
+    def test_post_created(self):
+        """Test post() with already created collections (should fail)"""
+
+        # Set up iRODS collections
+        self._make_irods_dirs(self.investigation)
+
+        # Assert preconditions
+        self.assertEqual(self.investigation.irods_status, True)
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:api_irods_colls_create',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                data=self.post_data,
+                HTTP_ACCEPT=self.get_accept_header(
+                    media_type=settings.SODAR_API_MEDIA_TYPE,
+                    version=settings.SODAR_API_DEFAULT_VERSION,
+                ),
+            )
+
+        self.assertEqual(response.status_code, 400)
 
 
 class TestRemoteSheetGetAPIView(

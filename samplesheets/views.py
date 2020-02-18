@@ -288,7 +288,69 @@ class SampleSheetImportMixin:
         return investigation
 
 
-# Regular Views ----------------------------------------------------------------
+class IrodsCollsCreateViewMixin:
+    """Mixin to be used in iRODS collections creation UI / API views"""
+
+    def _create_colls(self, investigation):
+        """
+        Handle iRODS collection creation via Taskflow.
+
+        NOTE: Unlike many other Taskflow operations, this action is synchronous.
+
+        :param investigation: Investigation object
+        :raise: taskflow.FlowSubmitException if taskflow submit fails
+        """
+        timeline = get_backend_api('timeline_backend')
+        taskflow = get_backend_api('taskflow')
+        project = investigation.project
+        tl_event = None
+        action = 'update' if investigation.irods_status else 'create'
+
+        # Add event in Timeline
+        if timeline:
+            tl_event = timeline.add_event(
+                project=project,
+                app_name=APP_NAME,
+                user=self.request.user,
+                event_name='sheet_colls_' + action,
+                description=action + ' irods collection structure for '
+                '{investigation}',
+                status_type='SUBMIT',
+            )
+
+            tl_event.add_object(
+                obj=investigation,
+                label='investigation',
+                name=investigation.title,
+            )
+
+        flow_data = {'dirs': get_sample_dirs(investigation)}
+
+        try:
+            taskflow.submit(
+                project_uuid=project.sodar_uuid,
+                flow_name='sheet_dirs_create',  # TODO: Rename in taskflow
+                flow_data=flow_data,
+                request=self.request,
+            )
+
+        except taskflow.FlowSubmitException as ex:
+            if tl_event:
+                tl_event.set_status('FAILED', str(ex))
+
+            raise ex
+
+        if tl_event:
+            tl_event.set_status('OK')
+
+        if settings.SHEETS_ENABLE_CACHE:
+            update_project_cache_task.delay(
+                project_uuid=str(project.sodar_uuid),
+                user_uuid=str(self.request.user.sodar_uuid),
+            )
+
+
+# Views ------------------------------------------------------------------------
 
 
 class ProjectSheetsView(
@@ -891,17 +953,16 @@ class IrodsDirsView(
     LoggedInPermissionMixin,
     InvestigationContextMixin,
     ProjectPermissionMixin,
+    IrodsCollsCreateViewMixin,
     TemplateView,
 ):
-    """iRODS directory structure creation view"""
+    """iRODS collection structure creation view"""
 
     template_name = 'samplesheets/irods_dirs_confirm.html'
-    # NOTE: minimum perm, all checked files will be tested in post()
     permission_required = 'samplesheets.create_dirs'
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
-
         investigation = context['investigation']
 
         if not investigation:
@@ -912,82 +973,40 @@ class IrodsDirsView(
         return context
 
     def post(self, request, **kwargs):
-        timeline = get_backend_api('timeline_backend')
         taskflow = get_backend_api('taskflow')
         context = self.get_context_data(**kwargs)
         project = context['project']
         investigation = context['investigation']
-        tl_event = None
         action = 'update' if context['update_dirs'] else 'create'
-
-        # Add event in Timeline
-        if timeline:
-            tl_event = timeline.add_event(
-                project=project,
-                app_name=APP_NAME,
-                user=self.request.user,
-                event_name='sheet_dirs_' + action,
-                description=action + ' irods directory structure for '
-                '{investigation}',
-            )
-
-            tl_event.add_object(
-                obj=investigation,
-                label='investigation',
-                name=investigation.title,
-            )
+        redirect_url = get_sheets_url(project)
 
         # Fail if tasflow is not available
         if not taskflow:
-            if timeline:
-                tl_event.set_status(
-                    'FAILED', status_desc='Taskflow not enabled'
-                )
-
             messages.error(
                 self.request,
-                'Unable to {} dirs: taskflow not enabled!'.format(action),
+                'Unable to {} collections: taskflow not enabled!'.format(
+                    action
+                ),
             )
-            return redirect(get_sheets_url(project))
+            return redirect(redirect_url)
 
         # Else go on with the creation
-        if tl_event:
-            tl_event.set_status('SUBMIT')
-
-        flow_data = {'dirs': context['dirs']}
-
         try:
-            taskflow.submit(
-                project_uuid=project.sodar_uuid,
-                flow_name='sheet_dirs_create',
-                flow_data=flow_data,
-                request=self.request,
-            )
-
-            if tl_event:
-                tl_event.set_status('OK')
-
+            self._create_colls(investigation)
             success_msg = (
-                'Directory structure for sample data '
+                'Collection structure for sample data '
                 '{}d in iRODS'.format(action)
             )
 
             if settings.SHEETS_ENABLE_CACHE:
-                update_project_cache_task.delay(
-                    project_uuid=str(project.sodar_uuid),
-                    user_uuid=str(self.request.user.sodar_uuid),
-                )
                 success_msg += ', initiated iRODS cache update'
 
             messages.success(self.request, success_msg)
 
         except taskflow.FlowSubmitException as ex:
-            if tl_event:
-                tl_event.set_status('FAILED', str(ex))
-
             messages.error(self.request, str(ex))
 
-        return HttpResponseRedirect(get_sheets_url(project))
+        return redirect(redirect_url)
 
     def get(self, request, *args, **kwargs):
         super().get(request, *args, **kwargs)
