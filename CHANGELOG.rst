@@ -20,6 +20,7 @@ Changed
 -------
 
 - **General**
+    - Upgrade to Django v1.11.28
     - Upgrade to django-sodar-core v0.8.0-WIP
     - Rename references to iRODS collections (#785)
     - Rename ``IRODS_SAMPLE_COLL`` and ``IRODS_LANDING_ZONE_COLL`` settings (#785)
