@@ -248,11 +248,14 @@ class SampleSheetImportMixin:
                 'Replacing' if action != 'create' else 'Building'
             )
         )
+        sheet_config = None
 
-        if isa_version:
+        if isa_version and action == 'restore':
+            logger.debug('Restoring previous configuration')
             sheet_config = isa_version.data.get('sheet_config')
 
         if not sheet_config:
+            logger.debug('Building new configuration')
             sheet_config = build_sheet_config(investigation)
 
             if isa_version:

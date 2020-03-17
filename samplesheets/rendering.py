@@ -730,12 +730,13 @@ class SampleSheetTableBuilder:
 
         return all_refs
 
-    def build_study_tables(self, study, edit=False):
+    def build_study_tables(self, study, edit=False, use_config=True):
         """
         Build study table and associated assay tables for rendering.
 
         :param study: Study object
         :param edit: Return extra data for editing if true (bool)
+        :param use_config: Use sheet configuration in building (bool)
         :return: Dict
         """
         s_start = time.time()
@@ -746,9 +747,10 @@ class SampleSheetTableBuilder:
         )
 
         # Get study config for column type detection
-        self._sheet_config = app_settings.get_app_setting(
-            'samplesheets', 'sheet_config', project=study.get_project()
-        )
+        if use_config:
+            self._sheet_config = app_settings.get_app_setting(
+                'samplesheets', 'sheet_config', project=study.get_project()
+            )
 
         # HACK: In case of deletion from database bypassing the database,
         # HACK: make sure the correct UUIDs are in the config
@@ -763,6 +765,9 @@ class SampleSheetTableBuilder:
 
         elif self._sheet_config:
             logger.debug('Using sheet configuration from app settings')
+
+        elif not use_config:
+            logger.debug('Not using sheet configuration (use_config=False)')
 
         else:
             logger.debug('No sheet configuration found in app settings')

@@ -321,7 +321,8 @@ def build_sheet_config(investigation):
             'nodes': [],
             'assays': {},
         }
-        study_tables = tb.build_study_tables(study, edit=True)
+        # Build tables (disable use_config in case we are replacing sheets)
+        study_tables = tb.build_study_tables(study, edit=True, use_config=False)
         h_idx = 0
 
         for h in study_tables['study']['top_header']:

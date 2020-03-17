@@ -37,6 +37,7 @@ Fixed
     - Title suffix not optional in ``LandingZone`` serializer (#825)
 - **Samplesheets**
     - REST API view permission checks not working with Knox token auth (#823)
+    - Crashes caused by sheet config not correctly updated on sheet replace (#829)
 
 Removed
 -------
