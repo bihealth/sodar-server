@@ -170,8 +170,9 @@ class TestSampleSheetDeleteView(
 
         # Issue POST request
         values = {
-            'sodar_url': self.live_server_url
-        }  # HACK: Override callback URL
+            'delete_host_confirm': 'testserver',
+            'sodar_url': self.live_server_url,
+        }
 
         with self.login(self.user):
             response = self.client.post(
@@ -213,8 +214,9 @@ class TestSampleSheetDeleteView(
 
         # Issue POST request
         values = {
-            'sodar_url': self.live_server_url
-        }  # HACK: Override callback URL
+            'delete_host_confirm': 'testserver',
+            'sodar_url': self.live_server_url,
+        }
 
         with self.login(self.user):
             response = self.client.post(
@@ -265,8 +267,9 @@ class TestSampleSheetDeleteView(
 
         # Issue POST request
         values = {
-            'sodar_url': self.live_server_url
-        }  # HACK: Override callback URL
+            'delete_host_confirm': 'testserver',
+            'sodar_url': self.live_server_url,
+        }
 
         with self.login(user_contributor):
             response = self.client.post(

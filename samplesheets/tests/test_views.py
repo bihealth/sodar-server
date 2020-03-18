@@ -552,7 +552,8 @@ class TestSampleSheetDeleteView(TestViewsBase):
                 reverse(
                     'samplesheets:delete',
                     kwargs={'project': self.project.sodar_uuid},
-                )
+                ),
+                data={'delete_host_confirm': 'testserver'},
             )
             self.assertEqual(response.status_code, 302)
             self.assertEqual(
@@ -565,6 +566,32 @@ class TestSampleSheetDeleteView(TestViewsBase):
 
         self.assertEqual(Investigation.objects.all().count(), 0)
         self.assertEqual(ISATab.objects.all().count(), 0)
+
+    def test_delete_invalid_host(self):
+        """Test deleting with an invalid host name supplied in form"""
+
+        self.assertEqual(Investigation.objects.all().count(), 1)
+        self.assertEqual(ISATab.objects.all().count(), 1)
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:delete',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                data={'delete_host_confirm': ''},
+            )
+            self.assertEqual(response.status_code, 302)
+            self.assertEqual(
+                response.url,
+                reverse(
+                    'samplesheets:project_sheets',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+            )
+
+        self.assertEqual(Investigation.objects.all().count(), 1)
+        self.assertEqual(ISATab.objects.all().count(), 1)
 
 
 class TestSampleSheetVersionListView(TestViewsBase):

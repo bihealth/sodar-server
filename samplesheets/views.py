@@ -803,7 +803,7 @@ class SampleSheetISAExportView(
 class SampleSheetDeleteView(
     LoginRequiredMixin,
     LoggedInPermissionMixin,
-    ProjectContextMixin,
+    InvestigationContextMixin,
     ProjectPermissionMixin,
     TemplateView,
 ):
@@ -836,6 +836,7 @@ class SampleSheetDeleteView(
         tl_event = None
         project = Project.objects.get(sodar_uuid=kwargs['project'])
         investigation = Investigation.objects.get(project=project, active=True)
+        redirect_url = get_sheets_url(project)
 
         # Don't allow deletion for everybody if files exist in iRODS
         # HACK for issue #424: This could also be implemented in rules..
@@ -869,7 +870,6 @@ class SampleSheetDeleteView(
                 user=self.request.user,
                 event_name='sheet_delete',
                 description='delete investigation {investigation}',
-                status_type='OK',
             )
 
             tl_event.add_object(
@@ -877,6 +877,22 @@ class SampleSheetDeleteView(
                 label='investigation',
                 name=investigation.title,
             )
+
+        # Don't allow deletion unless user has input the host name
+        host_confirm = request.POST.get('delete_host_confirm')
+        actual_host = request.get_host().split(':')[0]
+
+        if not host_confirm or host_confirm != actual_host:
+            msg = (
+                'Incorrect host name for confirming sheet '
+                'deletion: "{}"'.format(host_confirm)
+            )
+            tl_event.set_status('FAILED', msg)
+            logger.error(msg + ' (correct={})'.format(actual_host))
+            messages.error(
+                request, 'Host name input incorrect, deletion cancelled.'
+            )
+            return redirect(redirect_url)
 
         delete_success = True
 
@@ -904,6 +920,7 @@ class SampleSheetDeleteView(
 
         else:
             investigation.delete()
+            tl_event.set_status('OK')
 
         if delete_success:
             # Delete ISATab versions
@@ -922,7 +939,7 @@ class SampleSheetDeleteView(
             )
             messages.success(self.request, 'Sample sheets deleted.')
 
-        return HttpResponseRedirect(get_sheets_url(project))
+        return redirect(redirect_url)
 
 
 class SampleSheetCacheUpdateView(

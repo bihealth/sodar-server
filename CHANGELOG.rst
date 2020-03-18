@@ -13,6 +13,7 @@ Added
 
 - **Samplesheets**
     - ``IrodsCollsCreateAPIView`` for iRODS collections creation via API (#826)
+    - Host name input confirmation for sample sheet and data deletion (#833)
 - **Tokens**
     - Enable app from django-sodar-core v0.8.0-WIP (#822)
 
