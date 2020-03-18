@@ -198,6 +198,7 @@ class SampleSheetImportMixin:
             ex_msg = 'ISAtab import failed: {}'.format(ex)
             extra_data = None
             messages.error(self.request, ex_msg)
+            logger.error(ex_msg)
 
         if tl_event:
             tl_event.set_status(

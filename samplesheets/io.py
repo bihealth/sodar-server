@@ -586,12 +586,20 @@ class SampleSheetIO:
 
             # Parse and validate study file
             with warnings.catch_warnings(record=True) as ws:
-                s = StudyReader.from_stream(
-                    study_id=study_id,
-                    input_file=input_file,
-                    filename=input_name,
-                ).read()
-                StudyValidator(isa_inv, isa_study, s).validate()
+                try:
+                    s = StudyReader.from_stream(
+                        study_id=study_id,
+                        input_file=input_file,
+                        filename=input_name,
+                    ).read()
+                    StudyValidator(isa_inv, isa_study, s).validate()
+
+                except Exception as ex:
+                    ex_msg = 'altamISA exception in study "{}": {}'.format(
+                        isa_study.info.title, ex
+                    )
+                    logger.error(ex_msg)
+                    raise Exception(ex_msg)
 
             values = {
                 'identifier': isa_study.info.identifier,
@@ -694,13 +702,25 @@ class SampleSheetIO:
 
                 # Parse and validate assay file
                 with warnings.catch_warnings(record=True) as ws:
-                    a = AssayReader.from_stream(
-                        study_id=study_id,
-                        assay_id=assay_id,
-                        input_file=input_file,
-                        filename=input_name,
-                    ).read()
-                    AssayValidator(isa_inv, isa_study, isa_assay, a).validate()
+                    try:
+                        a = AssayReader.from_stream(
+                            study_id=study_id,
+                            assay_id=assay_id,
+                            input_file=input_file,
+                            filename=input_name,
+                        ).read()
+                        AssayValidator(
+                            isa_inv, isa_study, isa_assay, a
+                        ).validate()
+
+                    except Exception as ex:
+                        ex_msg = 'altamISA exception in assay "{}": {}'.format(
+                            isa_assay.path, ex
+                        )
+                        logger.error(ex_msg)
+                        raise Exception(ex_msg)
+
+                logger.debug('altamISA assay import OK')
 
                 values = {
                     'file_name': isa_assay.path,
