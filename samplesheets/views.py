@@ -426,10 +426,11 @@ class SampleSheetImportView(
             context['replace_sheets'] = True
             context['irods_status'] = old_inv.irods_status
 
-            # Check for active zones in case of sheet replacing
+            # Check for active/ongoing zones in case of sheet replacing
+            # TODO: Lock project and allow ACTIVE after taskflow integr. (#713)
             if (
                 old_inv.project.landing_zones.exclude(
-                    status__in=['ACTIVE', 'MOVED', 'DELETED']
+                    status__in=['MOVED', 'DELETED']
                 ).count()
                 > 0
             ):

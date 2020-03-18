@@ -36,7 +36,7 @@
 <div class="container-fluid sodar-page-container">
   {% if replace_sheets and irods_status and not zones_exist %}
     <div class="alert alert-warning">
-      <strong>Warning:</strong> because iRODS collections have already been
+      <strong>Warning:</strong> Because iRODS collections have already been
       created, replacing the ISAtab will only be accepted if studies and assays
       have not been removed. Adding new studies or assays or modifying content
       within existing studies and assays is accepted.
@@ -64,8 +64,8 @@
     </div>
   {% elif replace_sheets and zones_exist %}
     <div class="alert alert-danger">
-      <strong>Error:</strong> Landing zones with currently ongoing operations exist
-      for the project. Replacing sample sheets is not allowed. Please make sure all
+      <strong>Error:</strong> Active landing zones currently exist for the
+      project. Replacing sample sheets is not allowed. Please make sure all
       landing zones in the project are finished or deleted and try again.
     </div>
   {% endif %}

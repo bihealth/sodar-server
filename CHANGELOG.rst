@@ -25,6 +25,8 @@ Changed
     - Rename references to iRODS collections (#785)
     - Rename ``IRODS_SAMPLE_COLL`` and ``IRODS_LANDING_ZONE_COLL`` settings (#785)
     - Rename the ``samplesheets.create_colls`` permission (#785)
+- **Landingzones**
+    - Disallow replacing sample sheets if active landing zones exist (#713)
 - **Samplesheets**
     - Reorganize views and URL patterns (#801)
     - Refactor Ajax views and URL patterns (#736, #824)
@@ -36,6 +38,7 @@ Fixed
 - **Landingzones**
     - REST API view permission checks not working with Knox token auth (#823)
     - Title suffix not optional in ``LandingZone`` serializer (#825)
+    - Initial workaround for active landing zone deletion on sheet replace (#713)
 - **Samplesheets**
     - REST API view permission checks not working with Knox token auth (#823)
     - Crashes caused by sheet config not correctly updated on sheet replace (#829)
