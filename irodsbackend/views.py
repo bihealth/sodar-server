@@ -1,16 +1,12 @@
 from django.http import JsonResponse  # To return exceptions from dispatch()
 
 from rest_framework.response import Response
-from rest_framework.views import APIView
 
 # Projectroles dependency
 from projectroles.models import RoleAssignment, SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
-from projectroles.views import (
-    LoginRequiredMixin,
-    ProjectPermissionMixin,
-    APIPermissionMixin,
-)
+from projectroles.views import ProjectAccessMixin
+from projectroles.views_ajax import SODARBaseAjaxView
 
 # SODAR constants
 PROJECT_ROLE_OWNER = SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
@@ -22,10 +18,12 @@ ERROR_NOT_FOUND = 'Collection not found'
 ERROR_NO_AUTH = 'User not authorized for iRODS collection'
 
 
-class BaseIrodsAPIView(
-    LoginRequiredMixin, ProjectPermissionMixin, APIPermissionMixin, APIView
-):
-    """Base iRODS API View"""
+# TODO: Standardize Ajax reponses
+# TODO: Improve permission checks (see sodar_core#516)
+
+
+class BaseIrodsAjaxView(ProjectAccessMixin, SODARBaseAjaxView):
+    """Base iRODS Ajax API View"""
 
     permission_required = 'irodsbackend.view_stats'  # Default perm
 
@@ -86,14 +84,26 @@ class BaseIrodsAPIView(
 
     def dispatch(self, request, *args, **kwargs):
         """Perform required checks before processing a request"""
-        self.project = self.get_project()
-        path = request.GET.get('path') if request.method == 'GET' else None
+
+        # Check auth manually (see sodar_core#516)
+        if not request.user.is_authenticated:
+            return JsonResponse(self._get_msg('Not authenticated'), status=401)
+
+        self.project = self.get_project(request=request)
 
         if not self.project and not request.user.is_superuser:
             return JsonResponse(
                 self._get_msg('Project UUID required for regular user'),
                 status=400,
             )
+
+        # Check perms manually (see sodar_core#516)
+        if not request.user.is_superuser and not request.user.has_perm(
+            self.permission_required, self.project
+        ):
+            return JsonResponse(self._get_msg('Permission denied'), status=403)
+
+        path = request.GET.get('path') if request.method == 'GET' else None
 
         if request.method == 'GET' and not path:
             return JsonResponse(self._get_msg('Path not set'), status=400)
@@ -129,7 +139,7 @@ class BaseIrodsAPIView(
         return super().dispatch(request, *args, **kwargs)
 
 
-class IrodsStatisticsAPIView(BaseIrodsAPIView):
+class IrodsStatisticsAjaxView(BaseIrodsAjaxView):
     """View for returning collection file statistics for the UI"""
 
     def get(self, *args, **kwargs):
@@ -175,7 +185,7 @@ class IrodsStatisticsAPIView(BaseIrodsAPIView):
         return Response(data, status=200)
 
 
-class IrodsObjectListAPIView(BaseIrodsAPIView):
+class IrodsObjectListAjaxView(BaseIrodsAjaxView):
     """View for listing data objects in iRODS recursively"""
 
     permission_required = 'irodsbackend.view_files'

@@ -14,14 +14,12 @@ from rest_framework.views import APIView
 # Samplesheets dependency
 from samplesheets.models import Investigation
 
-# TODO: Import from projectroles once moved into SODAR Core
-from samplesheets.views_api import (
-    SODARAPIBaseProjectMixin,
-    SODARAPIGenericViewProjectMixin,
-)
-
 # Projectroles dependency
 from projectroles.plugins import get_backend_api
+from projectroles.views_api import (
+    SODARAPIBaseProjectMixin,
+    SODARAPIGenericProjectMixin,
+)
 
 # Local helper for authenticating with auth basic
 from sodar.users.auth import fallback_to_auth_basic
@@ -76,7 +74,7 @@ class LandingZoneSubmitBaseAPIView(
             )
 
 
-class LandingZoneListAPIView(SODARAPIGenericViewProjectMixin, ListAPIView):
+class LandingZoneListAPIView(SODARAPIGenericProjectMixin, ListAPIView):
     """
     API view for listing LandingZone objects for a project.
 
@@ -100,9 +98,7 @@ class LandingZoneListAPIView(SODARAPIGenericViewProjectMixin, ListAPIView):
         return ret
 
 
-class LandingZoneRetrieveAPIView(
-    SODARAPIGenericViewProjectMixin, RetrieveAPIView
-):
+class LandingZoneRetrieveAPIView(SODARAPIGenericProjectMixin, RetrieveAPIView):
     """
     API view for retrieving information of a specific LandingZone by UUID.
     """
@@ -126,7 +122,7 @@ class LandingZoneRetrieveAPIView(
 
 
 class LandingZoneCreateAPIView(
-    ZoneCreateViewMixin, SODARAPIGenericViewProjectMixin, CreateAPIView
+    ZoneCreateViewMixin, SODARAPIGenericProjectMixin, CreateAPIView
 ):
     """
     API view for initiating LandingZone creation.

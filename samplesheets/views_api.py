@@ -1,21 +1,18 @@
 """REST API views for the samplesheets app"""
 
-from django.core.exceptions import ImproperlyConfigured
-
 from rest_framework import status
 from rest_framework.exceptions import APIException, ValidationError
 from rest_framework.generics import RetrieveAPIView
-from rest_framework.permissions import BasePermission, AllowAny
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 # Projectroles dependency
 from projectroles.models import RemoteSite
 from projectroles.plugins import get_backend_api
-from projectroles.views import (
-    ProjectAccessMixin,
-    SODARAPIRenderer,
-    SODARAPIVersioning,
+from projectroles.views_api import (
+    SODARAPIBaseProjectMixin,
+    SODARAPIGenericProjectMixin,
 )
 
 from samplesheets.io import SampleSheetIO
@@ -29,135 +26,26 @@ from samplesheets.views import (
 )
 
 
-# Base Views and Mixins --------------------------------------------------------
-
-
-# TODO: Move to sodar_core
-class SODARAPIProjectPermission(ProjectAccessMixin, BasePermission):
-    """
-    Mixin for providing a basic project permission checking for API views
-    with a single permission_required attribute. Also works with Knox token
-    based views.
-
-    This must be used in the permission_classes attribute in order for token
-    authentication to work.
-
-    NOTE: Requires implementing either permission_required or
-          get_permission_required() in the view
-    """
-
-    def has_permission(self, request, view):
-        """
-        Override has_permission() for checking auth and  project permission
-        """
-        if not request.user or not request.user.is_authenticated:
-            return False
-
-        if not hasattr(view, 'permission_required') and (
-            not hasattr(view, 'get_permission_required')
-            or not callable(getattr(view, 'get_permission_required', None))
-        ):
-            raise ImproperlyConfigured(
-                '{0} is missing the permission_required attribute. '
-                'Define {0}.permission_required, or override '
-                '{0}.get_permission_required().'.format(view.__class__.__name__)
-            )
-
-        elif hasattr(view, 'permission_required'):
-            perm = view.permission_required
-
-        else:
-            perm = view.get_permission_required()
-
-        # This may return an iterable, but we are only interested in one perm
-        if isinstance(perm, (list, tuple)) and len(perm) > 0:
-            # TODO: TBD: Raise exception / log warning if given multiple perms?
-            perm = perm[0]
-
-        return request.user.has_perm(
-            perm, self.get_project(request=request, kwargs=view.kwargs)
-        )
-
-
-# TODO: Move this to sodar_core
-class SODARAPIBaseMixin:
-    """Base SODAR API mixin to be used by external SODAR Core based sites"""
-
-    renderer_classes = [SODARAPIRenderer]
-    versioning_class = SODARAPIVersioning
-
-
-# TODO: Move this to sodar_core
-class SODARAPIBaseProjectMixin(SODARAPIBaseMixin):
-    """
-    API view mixin for the base DRF APIView class with project permission
-    checking, but without serializers and other generic view functionality.
-    """
-
-    permission_classes = [SODARAPIProjectPermission]
-
-
-# TODO: Move this to sodar_core
-# TODO: Combine with SODARAPIBaseProjectMixin? Is this needed on its own?
-class SODARAPIGenericViewProjectMixin(
-    ProjectAccessMixin, SODARAPIBaseProjectMixin
-):
-    """
-    API view mixin for generic DRF API views with serializers, SODAR
-    project context and permission checkin.
-
-    NOTE: Unless overriding permission_classes with their own implementation,
-          the user MUST supply a permission_required attribute.
-
-    NOTE: Replace lookup_url_kwarg with your view's url kwarg (SODAR project
-          compatible model name in lowercase)
-
-    NOTE: If the lookup is done via the project object, change lookup_field into
-          "sodar_uuid"
-    """
-
-    lookup_field = 'project__sodar_uuid'
-    lookup_url_kwarg = 'project'  # Replace with relevant model
-
-    def get_serializer_context(self, *args, **kwargs):
-        result = super().get_serializer_context(*args, **kwargs)
-        result['project'] = self.get_project(request=result['request'])
-        return result
-
-    def get_queryset(self):
-        return self.__class__.serializer_class.Meta.model.objects.filter(
-            project=self.get_project()
-        )
-
-
-class SheetSubmitBaseAPIView(SODARAPIBaseProjectMixin, APIView):
-    """
-    Base API view for initiating sample sheet operations via SODAR Taskflow.
-    NOTE: Not tied to serializer or generic views, as the actual object will not
-          be updated here.
-    """
-
-    http_method_names = ['post']
-
-
 # API Views --------------------------------------------------------------------
 
 
 class InvestigationRetrieveAPIView(
-    SODARAPIGenericViewProjectMixin, RetrieveAPIView
+    SODARAPIGenericProjectMixin, RetrieveAPIView
 ):
     """API view for retrieving information of an Investigation with its studies
     and assays"""
 
+    lookup_field = 'project__sodar_uuid'
     permission_required = 'samplesheets.view_sheet'
     serializer_class = InvestigationSerializer
 
 
 class IrodsCollsCreateAPIView(
-    IrodsCollsCreateViewMixin, SheetSubmitBaseAPIView
+    IrodsCollsCreateViewMixin, SODARAPIBaseProjectMixin, APIView
 ):
     """API view for iRODS collection creation for project"""
 
+    http_method_names = ['post']
     permission_required = 'samplesheets.create_colls'
 
     def post(self, request, *args, **kwargs):

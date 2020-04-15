@@ -4,22 +4,19 @@ from rest_framework import serializers
 
 # Projectroles dependency
 from projectroles.plugins import get_backend_api
+from projectroles.serializers import SODARProjectModelSerializer
 
 # Samplesheets dependency
 from samplesheets.models import Assay
-
-# TODO: Import from projectroles once moved into SODAR Core
-from samplesheets.serializers import SODARModelSerializer
 
 from landingzones.models import LandingZone
 from landingzones.utils import get_zone_title
 
 
-class LandingZoneSerializer(SODARModelSerializer):
+class LandingZoneSerializer(SODARProjectModelSerializer):
     """Serializer for the LandingZone model"""
 
     title = serializers.CharField(required=False)
-    project = serializers.CharField(source='project.sodar_uuid', read_only=True)
     user = serializers.ReadOnlyField(source='user.username')
     assay = serializers.CharField(source='assay.sodar_uuid')
     irods_path = serializers.SerializerMethodField(read_only=True)
@@ -48,7 +45,7 @@ class LandingZoneSerializer(SODARModelSerializer):
         )
         return super().create(validated_data)
 
-    class Meta(SODARModelSerializer.Meta):
+    class Meta:
         model = LandingZone
         fields = [
             'title',

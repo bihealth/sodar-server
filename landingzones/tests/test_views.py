@@ -4,7 +4,8 @@ from test_plus.test import TestCase
 
 from django.conf import settings
 from django.core.urlresolvers import reverse
-from django.test import RequestFactory
+
+# from django.test import RequestFactory
 
 # Projectroles dependency
 from projectroles.models import Role, SODAR_CONSTANTS
@@ -46,7 +47,7 @@ class TestViewsBase(
     """Base class for view testing"""
 
     def setUp(self):
-        self.req_factory = RequestFactory()
+        # self.req_factory = RequestFactory()
 
         # Init roles
         self.role_owner = Role.objects.get_or_create(name=PROJECT_ROLE_OWNER)[0]

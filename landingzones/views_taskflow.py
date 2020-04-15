@@ -11,7 +11,7 @@ from rest_framework.response import Response
 # Projectroles dependency
 from projectroles.email import send_generic_mail
 from projectroles.models import Project
-from projectroles.views import BaseTaskflowAPIView
+from projectroles.views_taskflow import BaseTaskflowAPIView
 
 # Samplesheets dependency
 from samplesheets.models import Assay

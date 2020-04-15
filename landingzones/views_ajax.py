@@ -11,6 +11,7 @@ from projectroles.views import ProjectContextMixin
 from landingzones.models import LandingZone
 
 
+# TODO: Refactor to use SODAR Core v0.8 base Ajax classes
 class LandingZoneStatusRetrieveAjaxView(
     LoginRequiredMixin, ProjectContextMixin, APIView
 ):

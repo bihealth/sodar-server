@@ -43,7 +43,7 @@ class TestLandingZonePermissions(
         self.landing_zone = self._make_landing_zone(
             title=ZONE_TITLE,
             project=self.project,
-            user=self.as_owner.user,
+            user=self.owner_as.user,
             assay=self.assay,
             description=ZONE_DESC,
             status='ACTIVE',
@@ -58,13 +58,13 @@ class TestLandingZonePermissions(
         )
         good_users = [
             self.superuser,
-            self.as_owner.user,
-            self.as_delegate.user,
-            self.as_contributor.user,
+            self.owner_as.user,
+            self.delegate_as.user,
+            self.contributor_as.user,
         ]
         bad_users = [self.anonymous, self.user_no_roles]
-        self.assert_render200_ok(url, good_users)
-        self.assert_redirect(url, bad_users)
+        self.assert_response(url, good_users, 200)
+        self.assert_response(url, bad_users, 302)
 
     def test_zone_create(self):
         """Test permissions for landing zone creation"""
@@ -73,13 +73,13 @@ class TestLandingZonePermissions(
         )
         good_users = [
             self.superuser,
-            self.as_owner.user,
-            self.as_delegate.user,
-            self.as_contributor.user,
+            self.owner_as.user,
+            self.delegate_as.user,
+            self.contributor_as.user,
         ]
         bad_users = [self.anonymous, self.user_no_roles]
-        self.assert_render200_ok(url, good_users)
-        self.assert_redirect(url, bad_users)
+        self.assert_response(url, good_users, 200)
+        self.assert_response(url, bad_users, 302)
 
     def test_zone_delete(self):
         """Test permissions for landing zone deletion"""
@@ -87,14 +87,14 @@ class TestLandingZonePermissions(
             'landingzones:delete',
             kwargs={'landingzone': self.landing_zone.sodar_uuid},
         )
-        good_users = [self.superuser, self.as_owner.user, self.as_delegate.user]
+        good_users = [self.superuser, self.owner_as.user, self.delegate_as.user]
         bad_users = [
-            self.as_contributor.user,  # NOTE: not the owner of the zone
+            self.contributor_as.user,  # NOTE: not the owner of the zone
             self.anonymous,
             self.user_no_roles,
         ]
-        self.assert_render200_ok(url, good_users)
-        self.assert_redirect(url, bad_users)
+        self.assert_response(url, good_users, 200)
+        self.assert_response(url, bad_users, 302)
 
     def test_zone_move(self):
         """Test permissions for landing zone moving"""
@@ -102,14 +102,14 @@ class TestLandingZonePermissions(
             'landingzones:move',
             kwargs={'landingzone': self.landing_zone.sodar_uuid},
         )
-        good_users = [self.superuser, self.as_owner.user, self.as_delegate.user]
+        good_users = [self.superuser, self.owner_as.user, self.delegate_as.user]
         bad_users = [
-            self.as_contributor.user,  # NOTE: not the owner of the zone
+            self.contributor_as.user,  # NOTE: not the owner of the zone
             self.anonymous,
             self.user_no_roles,
         ]
-        self.assert_render200_ok(url, good_users)
-        self.assert_redirect(url, bad_users)
+        self.assert_response(url, good_users, 200)
+        self.assert_response(url, bad_users, 302)
 
     def test_zone_validation(self):
         """Test permissions for landing zone validation"""
@@ -117,14 +117,14 @@ class TestLandingZonePermissions(
             'landingzones:validate',
             kwargs={'landingzone': self.landing_zone.sodar_uuid},
         )
-        good_users = [self.superuser, self.as_owner.user, self.as_delegate.user]
+        good_users = [self.superuser, self.owner_as.user, self.delegate_as.user]
         bad_users = [
-            self.as_contributor.user,  # NOTE: not the owner of the zone
+            self.contributor_as.user,  # NOTE: not the owner of the zone
             self.anonymous,
             self.user_no_roles,
         ]
-        self.assert_render200_ok(url, good_users)
-        self.assert_redirect(url, bad_users)
+        self.assert_response(url, good_users, 200)
+        self.assert_response(url, bad_users, 302)
 
     # TODO: Move to separate ajax tests file
     def test_zone_status(self):
@@ -133,12 +133,12 @@ class TestLandingZonePermissions(
             'landingzones:ajax_status',
             kwargs={'landingzone': self.landing_zone.sodar_uuid},
         )
-        good_users = [self.superuser, self.as_owner.user, self.as_delegate.user]
+        good_users = [self.superuser, self.owner_as.user, self.delegate_as.user]
         bad_users = [
-            self.as_contributor.user,  # NOTE: not the owner of the zone
+            self.contributor_as.user,  # NOTE: not the owner of the zone
             self.user_no_roles,
         ]
         redirect_users = [self.anonymous]
-        self.assert_render200_ok(url, good_users)
+        self.assert_response(url, good_users, 200)
         self.assert_response(url, bad_users, 403)
-        self.assert_redirect(url, redirect_users)
+        self.assert_response(url, redirect_users, 302)

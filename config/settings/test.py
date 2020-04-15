@@ -86,3 +86,16 @@ SHEETS_ENABLE_CACHE = False  # Temporarily disabled to fix CI, see issue #556
 
 # iRODS settings shared by iRODS using apps
 ENABLE_IRODS = False
+
+
+# UI test settings
+PROJECTROLES_TEST_UI_CHROME_OPTIONS = [
+    'headless',
+    'no-sandbox',  # For Gitlab-CI compatibility
+    'disable-dev-shm-usage',  # For testing stability
+]
+PROJECTROLES_TEST_UI_WINDOW_SIZE = (1400, 1000)
+PROJECTROLES_TEST_UI_WAIT_TIME = 30
+PROJECTROLES_TEST_UI_LEGACY_LOGIN = env.bool(
+    'PROJECTROLES_TEST_UI_LEGACY_LOGIN', False
+)

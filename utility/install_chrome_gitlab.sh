@@ -5,7 +5,7 @@ echo "Installing Chrome + Driver for UI Testing"
 echo "***********************************************"
 
 # Version
-CHROME_DRIVER_VERSION=79.0.3945.36
+CHROME_DRIVER_VERSION=80.0.3987.106
 
 # Install dependencies
 apt-get -y install unzip libgconf-2-4 xvfb gtk2-engines-pixbuf

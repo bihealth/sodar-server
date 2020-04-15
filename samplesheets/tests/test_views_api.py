@@ -1,16 +1,16 @@
 """Tests for REST API views in the samplesheets app"""
 
+import json
 from unittest.case import skipIf
 
-from django.conf import settings
 from django.urls import reverse
 
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
 from projectroles.tests.test_models import RemoteSiteMixin, RemoteProjectMixin
-from projectroles.tests.test_views import SODARAPIViewMixin
-from projectroles.tests.test_views_taskflow import TestTaskflowBase
+from projectroles.tests.test_views_api import TestAPIViewsBase
+from projectroles.tests.test_views_api_taskflow import TestTaskflowAPIBase
 
 from samplesheets.io import SampleSheetIO
 from samplesheets.rendering import SampleSheetTableBuilder
@@ -32,8 +32,12 @@ from samplesheets.tests.test_views import (
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 
 
+class TestSampleSheetAPIBase(SampleSheetIOMixin, TestAPIViewsBase):
+    """Base view for samplesheets API views tests"""
+
+
 class TestSampleSheetAPITaskflowBase(
-    SampleSheetIOMixin, SampleSheetTaskflowMixin, TestTaskflowBase
+    SampleSheetIOMixin, SampleSheetTaskflowMixin, TestTaskflowAPIBase
 ):
     """Base samplesheets API view test class with Taskflow enabled"""
 
@@ -62,10 +66,8 @@ class TestSampleSheetAPITaskflowBase(
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
 
-        self.post_data = {'sodar_url': self.live_server_url}
 
-
-class TestInvestigationRetrieveAPIView(TestViewsBase):
+class TestInvestigationRetrieveAPIView(TestSampleSheetAPIBase):
     """Tests for InvestigationRetrieveAPIView"""
 
     def setUp(self):
@@ -80,14 +82,12 @@ class TestInvestigationRetrieveAPIView(TestViewsBase):
 
     def test_get(self):
         """Test get() in InvestigationRetrieveAPIView"""
-        with self.login(self.user):
-            response = self.client.get(
-                reverse(
-                    'samplesheets:api_investigation_retrieve',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                format='json',
-            )
+        url = reverse(
+            'samplesheets:api_investigation_retrieve',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+
+        response = self.request_knox(url)
 
         self.assertEqual(response.status_code, 200)
         expected = {
@@ -120,13 +120,11 @@ class TestInvestigationRetrieveAPIView(TestViewsBase):
                 }
             },
         }
-        self.assertEqual(response.data, expected)
+        self.assertEqual(json.loads(response.content), expected)
 
 
 @skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
-class TestIrodsCollsCreateAPIView(
-    SODARAPIViewMixin, TestSampleSheetAPITaskflowBase
-):
+class TestIrodsCollsCreateAPIView(TestSampleSheetAPITaskflowBase):
     """Tests for IrodsCollsCreateAPIView"""
 
     def test_post(self):
@@ -135,18 +133,12 @@ class TestIrodsCollsCreateAPIView(
         # Assert preconditions
         self.assertEqual(self.investigation.irods_status, False)
 
-        with self.login(self.user):
-            response = self.client.post(
-                reverse(
-                    'samplesheets:api_irods_colls_create',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                data=self.post_data,
-                HTTP_ACCEPT=self.get_accept_header(
-                    media_type=settings.SODAR_API_MEDIA_TYPE,
-                    version=settings.SODAR_API_DEFAULT_VERSION,
-                ),
-            )
+        url = reverse(
+            'samplesheets:api_irods_colls_create',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+
+        response = self.request_knox(url, method='POST', data=self.request_data)
 
         self.assertEqual(response.status_code, 200)
         self.investigation.refresh_from_db()
@@ -161,22 +153,17 @@ class TestIrodsCollsCreateAPIView(
         # Assert preconditions
         self.assertEqual(self.investigation.irods_status, True)
 
-        with self.login(self.user):
-            response = self.client.post(
-                reverse(
-                    'samplesheets:api_irods_colls_create',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                data=self.post_data,
-                HTTP_ACCEPT=self.get_accept_header(
-                    media_type=settings.SODAR_API_MEDIA_TYPE,
-                    version=settings.SODAR_API_DEFAULT_VERSION,
-                ),
-            )
+        url = reverse(
+            'samplesheets:api_irods_colls_create',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+
+        response = self.request_knox(url, method='POST', data=self.request_data)
 
         self.assertEqual(response.status_code, 400)
 
 
+# NOTE: Not yet standardized api, use old base class to test
 class TestRemoteSheetGetAPIView(
     RemoteSiteMixin, RemoteProjectMixin, TestViewsBase
 ):

@@ -91,8 +91,8 @@ class TestViewsBase(ProjectMixin, RoleAssignmentMixin, TestCase):
 
 
 @skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
-class TestIrodsStatisticsAPIView(TestViewsBase):
-    """Tests for the landing zone collection statistics API view"""
+class TestIrodsStatisticsAjaxView(TestViewsBase):
+    """Tests for the landing zone collection statistics Ajax view"""
 
     def test_get_empty_coll(self):
         """Test GET request for stats on an empty collection in iRODS"""
@@ -220,8 +220,8 @@ class TestIrodsStatisticsAPIView(TestViewsBase):
 
 
 @skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
-class TestIrodsObjectListAPIView(TestViewsBase):
-    """Tests for the landing zone data object listing API view"""
+class TestIrodsObjectListAjaxView(TestViewsBase):
+    """Tests for the landing zone data object listing Ajax view"""
 
     def setUp(self):
         super().setUp()
@@ -404,8 +404,8 @@ class TestIrodsObjectListAPIView(TestViewsBase):
 
 
 @skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
-class TestIrodsBatchStatisticsAPIView(TestViewsBase):
-    """Tests for the batch statistics API view"""
+class TestIrodsBatchStatisticsAjaxView(TestViewsBase):
+    """Tests for the batch statistics Ajax view"""
 
     def test_post_empty_coll_stats(self):
         """Test POST request for batch stats on empty collections in iRODS"""
@@ -575,14 +575,14 @@ class TestIrodsBatchStatisticsAPIView(TestViewsBase):
                 post_data,
             )
 
-            self.assertEqual(response.status_code, 200)
-            for idx in range(len(response.data['coll_objects'])):
-                self.assertEqual(
-                    response.data['coll_objects'][idx]['stats']['file_count'], 0
-                )
-                self.assertEqual(
-                    response.data['coll_objects'][idx]['stats']['total_size'], 0
-                )
+        self.assertEqual(response.status_code, 200)
+        for idx in range(len(response.data['coll_objects'])):
+            self.assertEqual(
+                response.data['coll_objects'][idx]['stats']['file_count'], 0
+            )
+            self.assertEqual(
+                response.data['coll_objects'][idx]['stats']['total_size'], 0
+            )
 
     def test_post_one_empty_coll(self):
         """Test POST request for batch stats on only one

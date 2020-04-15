@@ -4,7 +4,7 @@ from rest_framework.response import Response
 
 # Projectroles dependency
 from projectroles.plugins import get_backend_api
-from projectroles.views import BaseTaskflowAPIView
+from projectroles.views_taskflow import BaseTaskflowAPIView
 
 from samplesheets.models import Investigation
 from samplesheets.views import APP_NAME

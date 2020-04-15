@@ -43,7 +43,7 @@ class TestLandingZonePermissions(
         self.landing_zone = self._make_landing_zone(
             title=ZONE_TITLE,
             project=self.project,
-            user=self.as_owner.user,
+            user=self.owner_as.user,
             assay=self.assay,
             description=ZONE_DESC,
             configuration=None,
@@ -57,11 +57,11 @@ class TestLandingZonePermissions(
         )
         good_users = [
             self.superuser,
-            self.as_owner.user,
-            self.as_delegate.user,
-            self.as_contributor.user,
+            self.owner_as.user,
+            self.delegate_as.user,
+            self.contributor_as.user,
         ]
-        bad_users = [self.as_guest.user, self.user_no_roles]
+        bad_users = [self.guest_as.user, self.user_no_roles]
 
         self.assert_response(url, good_users, 200)
         self.assert_response(url, bad_users, 403)
@@ -73,10 +73,10 @@ class TestLandingZonePermissions(
             'landingzones:api_retrieve',
             kwargs={'landingzone': self.landing_zone.sodar_uuid},
         )
-        good_users = [self.superuser, self.as_owner.user, self.as_delegate.user]
+        good_users = [self.superuser, self.owner_as.user, self.delegate_as.user]
         bad_users = [
-            self.as_contributor.user,
-            self.as_guest.user,
+            self.contributor_as.user,
+            self.guest_as.user,
             self.user_no_roles,
         ]
 

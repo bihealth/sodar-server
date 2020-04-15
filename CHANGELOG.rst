@@ -22,13 +22,16 @@ Changed
 
 - **General**
     - Upgrade to Django v1.11.28
-    - Upgrade to django-sodar-core v0.8.0-WIP
+    - Upgrade to django-sodar-core v0.8.0 (#835)
+    - Upgrade Python requirements to match djagno-sodar-core v0.8.0 (#835)
+    - Upgrade to Chromedriver v80
     - Rename references to iRODS collections (#785)
     - Rename ``IRODS_SAMPLE_COLL`` and ``IRODS_LANDING_ZONE_COLL`` settings (#785)
     - Rename the ``samplesheets.create_colls`` permission (#785)
 - **Landingzones**
     - Disallow replacing sample sheets if active landing zones exist (#713)
 - **Samplesheets**
+    - Upgrade non-breaking Vue app dependencies (#836)
     - Reorganize views and URL patterns (#801)
     - Refactor Ajax views and URL patterns (#736, #824)
     - Improve sheet import logging (#832)
@@ -36,6 +39,8 @@ Changed
 Fixed
 -----
 
+- **Irodsbackend**
+    - Ajax view permission checking and status codes
 - **Landingzones**
     - REST API view permission checks not working with Knox token auth (#823)
     - Title suffix not optional in ``LandingZone`` serializer (#825)
@@ -47,8 +52,12 @@ Fixed
 Removed
 -------
 
+- **General**
+    - Unused ``django-db-file-storage`` requirement
 - **Samplesheets**
     - Unused ``models.get_zone_dir()`` and ``io.get_assay_dirs()`` helpers
+    - Base API view classes moved to SODAR Core (#800)
+    - Unneeded ``SheetSubmitBaseAPIView`` base class
 
 
 v0.7.0 (2020-02-12)

@@ -137,7 +137,7 @@ class TestProjectSheetsVueAppBase(
 
     def setUp(self):
         super().setUp()
-        self.default_user = self.as_contributor.user
+        self.default_user = self.contributor_as.user
 
 
 class TestProjectSheetsView(TestProjectSheetsVueAppBase):
@@ -151,10 +151,10 @@ class TestProjectSheetsView(TestProjectSheetsVueAppBase):
         """Test rendering the view with study and assay grids"""
         users = [
             self.superuser,
-            self.as_owner.user,
-            self.as_delegate.user,
-            self.as_contributor.user,
-            self.as_guest.user,
+            self.owner_as.user,
+            self.delegate_as.user,
+            self.contributor_as.user,
+            self.guest_as.user,
         ]
 
         for user in users:
@@ -176,10 +176,10 @@ class TestProjectSheetsView(TestProjectSheetsVueAppBase):
 
         users = [
             self.superuser,
-            self.as_owner.user,
-            self.as_delegate.user,
-            self.as_contributor.user,
-            self.as_guest.user,
+            self.owner_as.user,
+            self.delegate_as.user,
+            self.contributor_as.user,
+            self.guest_as.user,
         ]
 
         for user in users:
@@ -258,10 +258,10 @@ class TestProjectSheetsView(TestProjectSheetsVueAppBase):
         """Test the operations dropdown"""
         users = [
             (self.superuser, 7),
-            (self.as_owner.user, 7),
-            (self.as_delegate.user, 7),
-            (self.as_contributor.user, 7),
-            (self.as_guest.user, 6),  # Links available but disabled
+            (self.owner_as.user, 7),
+            (self.delegate_as.user, 7),
+            (self.contributor_as.user, 7),
+            (self.guest_as.user, 6),  # Links available but disabled
         ]
 
         for user in users:
@@ -269,7 +269,7 @@ class TestProjectSheetsView(TestProjectSheetsVueAppBase):
 
             nav_elem = self.selenium.find_element_by_id('sodar-ss-op-dropdown')
             nav_links = nav_elem.find_elements_by_class_name('sodar-ss-op-item')
-            enabled_state = False if user == self.as_guest.user else True
+            enabled_state = False if user == self.guest_as.user else True
 
             self.assertEqual(nav_elem.is_enabled(), enabled_state)
             self.assertEqual(len(nav_links), user[1])
@@ -563,10 +563,10 @@ class TestSampleSheetVersionListView(TestProjectSheetsVueAppBase):
         """Test list button rendering"""
         expected = [
             (self.superuser, 1),
-            (self.as_owner.user, 1),
-            (self.as_delegate.user, 1),
-            (self.as_contributor.user, 0),
-            (self.as_guest.user, 0),
+            (self.owner_as.user, 1),
+            (self.delegate_as.user, 1),
+            (self.contributor_as.user, 0),
+            (self.guest_as.user, 0),
         ]
         self.assert_element_count(
             expected, self.url, 'sodar-ss-version-btn-group', 'class'

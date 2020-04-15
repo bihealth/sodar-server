@@ -4,18 +4,15 @@ import json
 from packaging import version
 
 from django.conf import settings
-from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import transaction
 from django.middleware.csrf import get_token
 from django.urls import reverse
 
-from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
-from rest_framework.views import APIView
 
 # Projectroles dependency
 from projectroles.plugins import get_backend_api
-from projectroles.views import ProjectPermissionMixin, APIPermissionMixin
+from projectroles.views_ajax import SODARBaseProjectAjaxView
 
 from samplesheets.io import SampleSheetIO
 from samplesheets.models import (
@@ -42,13 +39,10 @@ from samplesheets.views import (
 )
 
 
-class SampleSheetContextAjaxView(
-    LoginRequiredMixin, ProjectPermissionMixin, APIPermissionMixin, APIView
-):
+class SampleSheetContextAjaxView(SODARBaseProjectAjaxView):
     """View to retrieve sample sheet context data"""
 
     permission_required = 'samplesheets.view_sheet'
-    renderer_classes = [JSONRenderer]
 
     def get(self, request, *args, **kwargs):
         project = self.get_project()
@@ -214,22 +208,15 @@ class SampleSheetContextAjaxView(
         return Response(ret_data, status=200)
 
 
-class SampleSheetStudyTablesAjaxView(
-    LoginRequiredMixin, ProjectPermissionMixin, APIPermissionMixin, APIView
-):
+class SampleSheetStudyTablesAjaxView(SODARBaseProjectAjaxView):
     """View to retrieve study tables built from the sample sheet graph"""
 
-    permission_required = 'samplesheets.view_sheet'
-    renderer_classes = [JSONRenderer]
-
-    def has_permission(self):
-        """Override has_permission() to check perms depending on edit mode"""
+    def get_permission_required(self):
+        """Override get_permisson_required() to provide the approrpiate perm"""
         if bool(self.request.GET.get('edit')):
-            return self.request.user.has_perm(
-                'samplesheets.edit_sheet', self.get_permission_object()
-            )
+            return 'samplesheets.edit_sheet'
 
-        return super().has_permission()
+        return 'samplesheets.view_sheet'
 
     def get(self, request, *args, **kwargs):
         timeline = get_backend_api('timeline_backend')
@@ -402,14 +389,11 @@ class SampleSheetStudyTablesAjaxView(
         return Response(ret_data, status=200)
 
 
-class SampleSheetStudyLinksAjaxView(
-    LoginRequiredMixin, ProjectPermissionMixin, APIPermissionMixin, APIView
-):
+class SampleSheetStudyLinksAjaxView(SODARBaseProjectAjaxView):
     """View to retrieve data for shortcut links from study apps"""
 
     # TODO: Also do this for assay apps?
     permission_required = 'samplesheets.view_sheet'
-    renderer_classes = [JSONRenderer]
 
     def get(self, request, *args, **kwargs):
         study = Study.objects.filter(sodar_uuid=self.kwargs['study']).first()
@@ -443,13 +427,10 @@ class SampleSheetStudyLinksAjaxView(
         return Response(ret_data, status=200)
 
 
-class SampleSheetWarningsAjaxView(
-    LoginRequiredMixin, ProjectPermissionMixin, APIPermissionMixin, APIView
-):
+class SampleSheetWarningsAjaxView(SODARBaseProjectAjaxView):
     """View to retrieve parser warnings for sample sheets"""
 
     permission_required = 'samplesheets.view_sheet'
-    renderer_classes = [JSONRenderer]
 
     def get(self, request, *args, **kwargs):
         investigation = Investigation.objects.filter(
@@ -464,13 +445,10 @@ class SampleSheetWarningsAjaxView(
         return Response({'warnings': investigation.parser_warnings}, status=200)
 
 
-class SampleSheetEditAjaxView(
-    LoginRequiredMixin, ProjectPermissionMixin, APIPermissionMixin, APIView
-):
+class SampleSheetEditAjaxView(SODARBaseProjectAjaxView):
     """View to edit sample sheet data"""
 
     permission_required = 'samplesheets.edit_sheet'
-    renderer_classes = [JSONRenderer]
 
     @transaction.atomic
     def post(self, request, *args, **kwargs):
@@ -571,14 +549,11 @@ class SampleSheetEditAjaxView(
         return Response({'message': 'ok'}, status=200)
 
 
-class SampleSheetEditFinishAjaxView(
-    LoginRequiredMixin, ProjectPermissionMixin, APIPermissionMixin, APIView
-):
+class SampleSheetEditFinishAjaxView(SODARBaseProjectAjaxView):
     """View for finishing editing and saving an ISAtab copy of the current
     sample sheet"""
 
     permission_required = 'samplesheets.edit_sheet'
-    renderer_classes = [JSONRenderer]
 
     def post(self, request, *args, **kwargs):
         updated = request.data.get('updated')
@@ -656,13 +631,10 @@ class SampleSheetEditFinishAjaxView(
         return Response({'message': export_ex}, status=500)
 
 
-class SampleSheetManageAjaxView(
-    LoginRequiredMixin, ProjectPermissionMixin, APIPermissionMixin, APIView
-):
+class SampleSheetManageAjaxView(SODARBaseProjectAjaxView):
     """View to manage sample sheet configuration"""
 
     permission_required = 'samplesheets.manage_sheet'
-    renderer_classes = [JSONRenderer]
 
     # TODO: Add node name for logging/timeline
     def post(self, request, *args, **kwargs):
