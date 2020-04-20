@@ -15,6 +15,7 @@ Added
     - ``IrodsCollsCreateAPIView`` for iRODS collections creation via API (#826)
     - Host name input confirmation for sample sheet and data deletion (#833)
     - ``SampleSheetImportAPIView`` for ISAtab import via REST API (#802)
+    - Study identifier display in Overview (#791)
 - **Tokens**
     - Enable app from django-sodar-core v0.8.0-WIP (#822)
 

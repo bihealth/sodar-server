@@ -112,6 +112,7 @@ class SampleSheetContextAjaxView(SODARBaseProjectAjaxView):
             study_plugin = find_study_plugin(investigation.get_configuration())
             ret_data['studies'][str(s.sodar_uuid)] = {
                 'display_name': s.get_display_name(),
+                'identifier': s.identifier,
                 'description': s.description,
                 'comments': get_comments(s),
                 'irods_path': irods_backend.get_path(s)

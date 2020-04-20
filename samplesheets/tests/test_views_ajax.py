@@ -92,6 +92,7 @@ class TestContextAjaxView(TestViewsBase):
             'studies': {
                 str(self.study.sodar_uuid): {
                     'display_name': self.study.get_display_name(),
+                    'identifier': self.study.identifier,
                     'description': self.study.description,
                     'comments': self.study.comments,
                     'irods_path': self.irods_backend.get_path(self.study),
