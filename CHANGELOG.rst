@@ -53,6 +53,7 @@ Fixed
     - REST API view permission checks not working with Knox token auth (#823)
     - Crashes caused by sheet config not correctly updated on sheet replace (#829)
     - Sample sheet version saved for unsuccessful replace (#838)
+    - Editor select box padding for Firefox and Chrome (#726)
 
 Removed
 -------

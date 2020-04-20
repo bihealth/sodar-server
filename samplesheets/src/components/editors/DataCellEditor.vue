@@ -5,7 +5,7 @@
     <span v-if="editorType === 'select'">
       <select :ref="'input'"
               v-model="editValue"
-              class="ag-cell-edit-input"
+              :class="'ag-cell-edit-input ' + getSelectClass()"
               @keydown="onKeyDown($event)">
         <option value="" :selected="selectEmptyValue(editValue)">-</option>
         <option v-for="(val, index) in editConfig['options']"
@@ -122,6 +122,11 @@ export default Vue.extend({
     },
     getKeyCode (event) {
       return (typeof event.which === 'undefined') ? event.keyCode : event.which
+    },
+    getSelectClass () {
+      if (navigator.userAgent.search('Firefox') > -1) {
+        return 'sodar-ss-vue-select-firefox'
+      }
     },
     getInputClasses () {
       let classes = ''
@@ -272,6 +277,7 @@ export default Vue.extend({
 </script>
 
 <style scoped>
+
 .sodar-ss-vue-edit-popup {
   border: 1px solid #6c757d;
   background: #ffffff;
@@ -303,7 +309,7 @@ select.ag-cell-edit-input {
   background-repeat: no-repeat;
   background-size: 0.5em auto;
   background-position: right 0.25em center;
-  padding-left: 8px;
+  padding-left: 12px;
   padding-right: 18px;
   padding-top: 0;
   padding-bottom: 2px !important;
@@ -312,6 +318,10 @@ select.ag-cell-edit-input {
     <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 40'> \
       <polygon points='0,0 60,0 30,40' style='fill:black;'/> \
     </svg>");
+}
+
+.sodar-ss-vue-select-firefox {
+  padding-left: 8px !important;
 }
 
 input.sodar-ss-vue-popup-input,
