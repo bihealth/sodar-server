@@ -40,6 +40,7 @@ Changed
     - Move ISAtab Zip archive validation to ``SampleSheetIO.get_zip_file()``
     - Move ISAtab multi-file reading to ``SampleSheetIO.get_isa_from_files()``
     - Refactor ``SampleSheetImportMixin`` to work with API views
+    - Hide path from sheet configuration information (#779)
 
 Fixed
 -----

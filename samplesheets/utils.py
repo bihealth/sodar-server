@@ -13,6 +13,9 @@ from projectroles.plugins import get_backend_api
 
 ALT_NAMES_COUNT = 3  # Needed for ArrayField hack
 
+CONFIG_LABEL_CREATE = 'Created With Configuration'
+CONFIG_LABEL_OPEN = 'Last Opened With Configuration'
+
 
 def get_alt_names(name):
     """
@@ -228,15 +231,36 @@ def get_comment(obj, key):
 def get_comments(obj):
     """
     Return comments for an object or None if they don't exist.
-    TODO: Remove once reimporting sample sheets (#629, #631)
 
     :param obj: Object parsed from ISAtab
-    :return:
+    :return: Dict
     """
     if not hasattr(obj, 'comments') or not obj.comments:
         return None
 
-    return {k: get_comment(obj, k) for k in obj.comments.keys()}
+    ret = {k: get_comment(obj, k) for k in obj.comments.keys()}
+
+    def _clean_config(k):
+        if k in ret:
+            ret[k] = get_config_name(ret[k])
+
+    _clean_config(CONFIG_LABEL_CREATE)
+    _clean_config(CONFIG_LABEL_OPEN)
+    return ret
+
+
+def get_config_name(config):
+    """
+    Return sample sheet configuration name. Remove any identifying local
+    directory information if present.
+
+    :param config_val: Original configuration name (string)
+    :return: String
+    """
+    if config.find('/') == -1 and config.find('\\') == -1:
+        return config
+
+    return re.split('[/\\\\]', config)[-1]
 
 
 def write_excel_table(table, output, display_name):

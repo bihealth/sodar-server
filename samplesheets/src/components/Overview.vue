@@ -60,11 +60,11 @@
         <h4>Study Details: {{ studyInfo['display_name'] }}</h4>
       </div>
       <div class="card-body">
-        <list-row :legend="'Title'"
-                  :value="studyInfo['display_name']">
-        </list-row>
         <list-row :legend="'Identifier'"
                   :value="studyInfo['identifier']">
+        </list-row>
+        <list-row :legend="'Title'"
+                  :value="studyInfo['display_name']">
         </list-row>
         <list-row :legend="'Description'"
                   :value="studyInfo['description']">

@@ -10,7 +10,12 @@ from django.utils.timezone import localtime
 # Projectroles dependency
 from projectroles.models import Project
 
-from .utils import get_alt_names, get_comment, ALT_NAMES_COUNT
+from samplesheets.utils import (
+    get_alt_names,
+    get_comment,
+    get_config_name,
+    ALT_NAMES_COUNT,
+)
 
 
 # Access Django user model
@@ -29,7 +34,7 @@ GENERIC_MATERIAL_TYPES = {
 
 GENERIC_MATERIAL_CHOICES = [(k, v) for k, v in GENERIC_MATERIAL_TYPES.items()]
 NOT_AVAILABLE_STR = '(N/A)'
-CONFIG_LABEL = 'Created With Configuration'
+CONFIG_LABEL_CREATE = 'Created With Configuration'
 
 ISATAB_TAGS = {
     'IMPORT': 'Imported from an ISAtab archive',
@@ -215,18 +220,10 @@ class Investigation(BaseSampleSheet):
     def get_configuration(self):
         """Return used configuration as string if found"""
         # TODO: Do this with a nice regex instead, too tired now
-        if CONFIG_LABEL not in self.comments:
+        if CONFIG_LABEL_CREATE not in self.comments:
             return None
 
-        conf = get_comment(self, CONFIG_LABEL)
-
-        if conf.find('/') == -1 and conf.find('\\') == -1:
-            return conf
-
-        elif conf.find('\\') != -1:
-            conf = conf.replace('\\', '/')
-
-        return conf.split('/')[-1]
+        return get_config_name(get_comment(self, CONFIG_LABEL_CREATE))
 
     def get_material_count(self, item_type):
         """Return matieral count of a certain type within the investigation"""

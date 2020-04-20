@@ -22,7 +22,7 @@ from samplesheets.models import (
     GenericMaterial,
     ISATab,
     NOT_AVAILABLE_STR,
-    CONFIG_LABEL,
+    CONFIG_LABEL_CREATE,
 )
 from samplesheets.utils import get_alt_names
 
@@ -326,7 +326,7 @@ class SampleSheetModelMixin:
     @classmethod
     def _set_configuration(cls, investigation, config_name):
         """Set the configuration for an investigation"""
-        investigation.comments[CONFIG_LABEL] = {
+        investigation.comments[CONFIG_LABEL_CREATE] = {
             'unit': None,
             'value': config_name,
         }
