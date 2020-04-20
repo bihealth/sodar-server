@@ -382,7 +382,6 @@ class ProjectZoneView(
             context['zones_other'] = (
                 LandingZone.objects.filter(project=context['project'])
                 .exclude(user=self.request.user)
-                .exclude(status__in=['MOVED', 'DELETED'])
                 .order_by('user__username', 'title')
             )
 
