@@ -49,6 +49,7 @@ Fixed
 
 - **Irodsbackend**
     - Ajax view permission checking and status codes
+    - Hardcoded time zone reference in ``api._get_datetime()`` (#807)
 - **Landingzones**
     - REST API view permission checks not working with Knox token auth (#823)
     - Title suffix not optional in ``LandingZone`` serializer (#825)

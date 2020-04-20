@@ -119,7 +119,7 @@ class IrodsAPI:
         """Return a printable datetime in Berlin timezone from a naive
         datetime object"""
         dt = naive_dt.replace(tzinfo=timezone('GMT'))
-        dt = dt.astimezone(timezone('Europe/Berlin'))
+        dt = dt.astimezone(timezone(settings.TIME_ZONE))
         return dt.strftime('%Y-%m-%d %H:%M')
 
     @classmethod
