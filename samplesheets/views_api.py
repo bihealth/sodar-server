@@ -1,7 +1,7 @@
 """REST API views for the samplesheets app"""
 
 from rest_framework import status
-from rest_framework.exceptions import APIException, ValidationError
+from rest_framework.exceptions import APIException, ParseError, ValidationError
 from rest_framework.generics import RetrieveAPIView
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -16,11 +16,12 @@ from projectroles.views_api import (
 )
 
 from samplesheets.io import SampleSheetIO
-from samplesheets.models import Investigation
+from samplesheets.models import Investigation, ISATab
 from samplesheets.rendering import SampleSheetTableBuilder
 from samplesheets.serializers import InvestigationSerializer
 from samplesheets.views import (
     IrodsCollsCreateViewMixin,
+    SampleSheetImportMixin,
     SITE_MODE_TARGET,
     REMOTE_LEVEL_READ_ROLES,
 )
@@ -75,6 +76,126 @@ class IrodsCollsCreateAPIView(
             {
                 'detail': 'iRODS collections created',
                 'path': irods_backend.get_sample_path(investigation.project),
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class SampleSheetImportAPIView(
+    SampleSheetImportMixin, SODARAPIBaseProjectMixin, APIView
+):
+    """
+    Upload sample sheet as separate ISAtab TSV files or a zip archive. Will
+    replace existing sheets if valid.
+
+    The request should be in format of ``multipart/form-data``. Content type
+    for each file must be provided.
+
+    **URL:** ``/sheets/api/import``
+
+    **Methods:** ``POST``
+    """
+
+    http_method_names = ['post']
+    permission_required = 'samplesheets.edit_sheet'
+
+    def post(self, request, *args, **kwargs):
+        """Handle POST request for submitting"""
+        sheet_io = SampleSheetIO()
+        project = self.get_project()
+        old_inv = Investigation.objects.filter(
+            project=project, active=True
+        ).first()
+        action = 'replace' if old_inv else 'create'
+        zip_file = None
+
+        if len(request.FILES) == 0:
+            raise ParseError('No files provided')
+
+        # Zip file handling
+        if len(request.FILES) == 1:
+            file = request.FILES[next(iter(request.FILES))]
+
+            try:
+                zip_file = sheet_io.get_zip_file(file)
+
+            except OSError as ex:
+                raise ParseError('Failed to parse zip archive: {}'.format(ex))
+
+            isa_data = sheet_io.get_isa_from_zip(zip_file)
+
+        # Multi-file handling
+        else:
+            try:
+                isa_data = sheet_io.get_isa_from_files(request.FILES.values())
+
+            except Exception as ex:
+                raise ParseError('Failed to parse TSV files: {}'.format(ex))
+
+        # Handle import
+        tl_event = self.create_timeline_event(
+            project=project, replace=True if old_inv else False
+        )
+
+        try:
+            investigation = sheet_io.import_isa(
+                isa_data=isa_data,
+                project=project,
+                archive_name=zip_file.filename if zip_file else None,
+                user=request.user,
+                replace=True if old_inv else False,
+                replace_uuid=old_inv.sodar_uuid if old_inv else None,
+            )
+
+        except Exception as ex:
+            self.handle_import_exception(ex, tl_event, ui_mode=False)
+            raise APIException(str(ex))
+
+        if tl_event:
+            tl_event.add_object(
+                obj=investigation,
+                label='investigation',
+                name=investigation.title,
+            )
+
+        # Handle replace
+        if old_inv:
+            try:
+                investigation = self.handle_replace(
+                    investigation=investigation,
+                    old_inv=old_inv,
+                    tl_event=tl_event,
+                )
+                ex_msg = None
+
+            except Exception as ex:
+                ex_msg = str(ex)
+
+            if ex_msg or not investigation:
+                raise ParseError(
+                    'Sample sheet replacing failed: {}'.format(
+                        ex_msg if ex_msg else 'See SODAR error log'
+                    )
+                )
+
+        # Finalize import
+        isa_version = (
+            ISATab.objects.filter(investigation_uuid=investigation.sodar_uuid)
+            .order_by('-date_created')
+            .first()
+        )
+        self.finalize_import(
+            investigation=investigation,
+            action=action,
+            tl_event=tl_event,
+            isa_version=isa_version,
+        )
+
+        return Response(
+            {
+                'detail': 'Sample sheets {}d for project "{}" ({})'.format(
+                    action, project.title, project.sodar_uuid
+                )
             },
             status=status.HTTP_200_OK,
         )

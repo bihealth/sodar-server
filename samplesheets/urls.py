@@ -85,6 +85,11 @@ urls_api = [
         name='api_irods_colls_create',
     ),
     url(
+        regex=r'^api/import/(?P<project>[0-9a-f-]+)$',
+        view=samplesheets.views_api.SampleSheetImportAPIView.as_view(),
+        name='api_import',
+    ),
+    url(
         regex=r'^api/remote/get/(?P<project>[0-9a-f-]+)/(?P<secret>[\w\-]+)$',
         view=samplesheets.views_api.RemoteSheetGetAPIView.as_view(),
         name='api_remote_get',

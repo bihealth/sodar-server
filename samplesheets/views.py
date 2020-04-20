@@ -95,6 +95,33 @@ class InvestigationContextMixin(ProjectContextMixin):
 class SampleSheetImportMixin:
     """Mixin for sample sheet importing/replacing helpers"""
 
+    def create_timeline_event(self, project, replace):
+        """
+        Create timeline event for sample sheet import.
+
+        :param project: Project object
+        :param replace: Boolean
+        :return: ProjectEvent object
+        """
+        timeline = get_backend_api('timeline_backend')
+
+        if not timeline:
+            return None
+
+        if replace:
+            tl_desc = 'replace previous investigation with {investigation}'
+
+        else:
+            tl_desc = 'create investigation {investigation}'
+
+        return timeline.add_event(
+            project=project,
+            app_name=APP_NAME,
+            user=self.request.user,
+            event_name='sheet_' + 'replace' if replace else 'create',
+            description=tl_desc,
+        )
+
     def handle_replace(self, investigation, old_inv, tl_event=None):
         project = investigation.project
         old_study_uuids = {}
@@ -141,6 +168,9 @@ class SampleSheetImportMixin:
                 Investigation.objects.filter(project=project).exclude(
                     pk=old_inv.pk
                 ).delete()
+                ISATab.objects.filter(project=project).order_by(
+                    '-pk'
+                ).first().delete()
 
             self.handle_import_exception(ex, tl_event)
             return None
@@ -164,7 +194,7 @@ class SampleSheetImportMixin:
 
         return investigation
 
-    def handle_import_exception(self, ex, tl_event=None):
+    def handle_import_exception(self, ex, tl_event=None, ui_mode=True):
         if isinstance(ex, SampleSheetImportException):
             ex_msg = str(ex.args[0])
             extra_data = {'warnings': ex.args[1]} if len(ex.args) > 1 else None
@@ -192,13 +222,16 @@ class SampleSheetImportMixin:
 
                 ex_msg += '</ul>'
 
-            messages.error(self.request, mark_safe(ex_msg))
+            if ui_mode:
+                messages.error(self.request, mark_safe(ex_msg))
 
         else:
             ex_msg = 'ISAtab import failed: {}'.format(ex)
             extra_data = None
-            messages.error(self.request, ex_msg)
             logger.error(ex_msg)
+
+            if ui_mode:
+                messages.error(self.request, ex_msg)
 
         if tl_event:
             tl_event.set_status(
@@ -206,9 +239,15 @@ class SampleSheetImportMixin:
             )
 
     def finalize_import(
-        self, investigation, action, tl_event=None, isa_version=None
+        self,
+        investigation,
+        action,
+        tl_event=None,
+        isa_version=None,
+        ui_mode=True,
     ):
         project = investigation.project
+        success_msg = ''
 
         # Set current import active status to True
         investigation.active = True
@@ -227,18 +266,19 @@ class SampleSheetImportMixin:
                 'OK', status_desc=status_desc, extra_data=extra_data
             )
 
-        success_msg = '{}d sample sheets from {}'.format(
-            action.capitalize(),
-            'version {}'.format(isa_version.get_name())
-            if action == 'restore'
-            else 'ISAtab import',
-        )
-
-        if investigation.parser_warnings:
-            success_msg += (
-                ' (<strong>Note:</strong> '
-                '<a href="#/warnings">parser warnings raised</a>)'
+        if ui_mode:
+            success_msg = '{}d sample sheets from {}'.format(
+                action.capitalize(),
+                'version {}'.format(isa_version.get_name())
+                if action == 'restore'
+                else 'ISAtab import',
             )
+
+            if investigation.parser_warnings:
+                success_msg += (
+                    ' (<strong>Note:</strong> '
+                    '<a href="#/warnings">parser warnings raised</a>)'
+                )
 
         # Build sheet configuration, also save it to the related ISATab
         # NOTE: For now, this has to be done when we replace sheets, in case the
@@ -286,9 +326,14 @@ class SampleSheetImportMixin:
                 project_uuid=str(project.sodar_uuid),
                 user_uuid=str(self.request.user.sodar_uuid),
             )
-            success_msg += ', initiated iRODS cache update'
 
-        messages.success(self.request, mark_safe(success_msg))
+            if ui_mode:
+                success_msg += ', initiated iRODS cache update'
+
+        if ui_mode:
+            messages.success(self.request, mark_safe(success_msg))
+
+        logger.info('Sample sheet {} OK'.format(action))
         return investigation
 
 
@@ -462,29 +507,15 @@ class SampleSheetImportView(
         return kwargs
 
     def form_valid(self, form):
-        timeline = get_backend_api('timeline_backend')
         project = self.get_project()
         form_kwargs = self.get_form_kwargs()
         form_action = 'replace' if form_kwargs['replace'] else 'create'
         redirect_url = get_sheets_url(project)
-        tl_event = None
+        tl_event = self.create_timeline_event(
+            project, True if form_kwargs['replace'] else False
+        )
 
-        if timeline:
-            if form_action == 'replace':
-                tl_desc = 'replace previous investigation with {investigation}'
-
-            else:
-                tl_desc = 'create investigation {investigation}'
-
-            tl_event = timeline.add_event(
-                project=project,
-                app_name=APP_NAME,
-                user=self.request.user,
-                event_name='sheet_' + form_action,
-                description=tl_desc,
-            )
-
-        # Try actual import
+        # Import via form
         try:
             self.object = form.save()
 

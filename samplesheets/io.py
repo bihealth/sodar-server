@@ -20,6 +20,7 @@ import io
 import logging
 import time
 import warnings
+from zipfile import ZipFile
 
 from django.db import transaction
 
@@ -41,6 +42,9 @@ from samplesheets.utils import get_alt_names
 
 # Local constants
 APP_NAME = 'samplesheets'
+ARCHIVE_TYPES = ['application/zip', 'application/x-zip-compressed']
+ISATAB_TYPES = ['text/plain', 'text/tab-separated-values']
+
 ALTAMISA_MATERIAL_TYPE_SAMPLE = 'Sample Name'
 
 MATERIAL_TYPE_MAP = {
@@ -172,6 +176,38 @@ class SampleSheetIO:
         return ret
 
     @classmethod
+    def get_zip_file(cls, file):
+        """
+        Return uploaded file as ZipFile. Raises an exception if the file is
+        corrupt or not a zip file.
+
+        :param file: UploadedFile or one of its subclasses
+        :return: ZipFile
+        :raise: OSError if the file is not a valid zip file
+        """
+
+        # Ensure file type
+        if file.content_type not in ARCHIVE_TYPES:
+            raise OSError('The file is not a zip archive')
+
+        try:
+            zip_file = ZipFile(file)
+
+        except Exception as ex:
+            raise OSError('Unable to open zip archive: {}'.format(ex))
+
+        # Get investigation file path(s)
+        inv_paths = cls.get_inv_paths(zip_file)
+
+        if len(inv_paths) == 0:
+            raise OSError('Investigation file not found in archive')
+
+        elif len(inv_paths) > 1:
+            raise OSError('Multiple investigation files found in archive')
+
+        return zip_file
+
+    @classmethod
     def get_import_file(cls, zip_file, file_name):
         file = zip_file.open(str(file_name), 'r')
         return io.TextIOWrapper(file)
@@ -212,6 +248,41 @@ class SampleSheetIO:
                 }
 
         return ret
+
+    @classmethod
+    def get_isa_from_files(cls, files):
+        """
+        Get ISAtab data from a list of text files.
+
+        :param files: List of UploadedFile objects
+        :return: Dict
+        :raise: ValueError if file content types are incorrect
+        """
+        isa_data = {'investigation': {}, 'studies': {}, 'assays': {}}
+
+        for file in files:
+            if file.content_type not in ISATAB_TYPES:
+                raise ValueError(
+                    'Invalid content type for file "{}": {}'.format(
+                        file.name, file.content_type
+                    )
+                )
+
+            if file.name.startswith('i_'):
+                isa_data['investigation']['path'] = file.name
+                isa_data['investigation']['tsv'] = file.read().decode('utf-8')
+
+            elif file.name.startswith('s_'):
+                isa_data['studies'][file.name] = {
+                    'tsv': file.read().decode('utf-8')
+                }
+
+            elif file.name.startswith('a_'):
+                isa_data['assays'][file.name] = {
+                    'tsv': file.read().decode('utf-8')
+                }
+
+        return isa_data
 
     def get_warnings(self):
         """Return warnings from previous operation"""

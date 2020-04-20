@@ -1,17 +1,11 @@
-from zipfile import ZipFile
-
 from django import forms
 from django.conf import settings
 
 # Projectroles dependency
 from projectroles.models import Project
 
-from samplesheets.io import SampleSheetIO
+from samplesheets.io import SampleSheetIO, ARCHIVE_TYPES
 from samplesheets.models import Investigation
-
-
-# Local constants
-ARCHIVE_TYPES = ['application/zip', 'application/x-zip-compressed']
 
 
 class SampleSheetImportForm(forms.Form):
@@ -50,38 +44,12 @@ class SampleSheetImportForm(forms.Form):
         if len(files) == 1:
             file = self.cleaned_data.get('file_upload')
 
-            # Ensure file type
-            if file and file.content_type not in ARCHIVE_TYPES:
-                self.add_error('file_upload', 'The file is not a Zip archive')
-                return self.cleaned_data
-
-            # Validate zip file
             try:
-                zip_file = ZipFile(file)
+                self.isa_zip = self.sheet_io.get_zip_file(file)
 
-            except Exception as ex:
-                self.add_error(
-                    'file_upload', 'Unable to open zip file: {}'.format(ex)
-                )
+            except OSError as ex:
+                self.add_error('file_upload', str(ex))
                 return self.cleaned_data
-
-            # Get investigation file path(s)
-            i_paths = self.sheet_io.get_inv_paths(zip_file)
-
-            if len(i_paths) == 0:
-                self.add_error(
-                    'file_upload', 'Investigation file not found in archive'
-                )
-                return self.cleaned_data
-
-            elif len(i_paths) > 1:
-                self.add_error(
-                    'file_upload',
-                    'Multiple investigation files found in archive',
-                )
-                return self.cleaned_data
-
-            self.isa_zip = zip_file
 
         # Multi-file checkup
         else:
@@ -131,25 +99,9 @@ class SampleSheetImportForm(forms.Form):
 
         # Multi-file
         else:
-
-            isa_data = {'investigation': {}, 'studies': {}, 'assays': {}}
-
-            for file in self.files.getlist('file_upload'):
-                if file.name.startswith('i_'):
-                    isa_data['investigation']['path'] = file.name
-                    isa_data['investigation']['tsv'] = file.read().decode(
-                        'utf-8'
-                    )
-
-                elif file.name.startswith('s_'):
-                    isa_data['studies'][file.name] = {
-                        'tsv': file.read().decode('utf-8')
-                    }
-
-                elif file.name.startswith('a_'):
-                    isa_data['assays'][file.name] = {
-                        'tsv': file.read().decode('utf-8')
-                    }
+            isa_data = self.sheet_io.get_isa_from_files(
+                self.files.getlist('file_upload')
+            )
 
         replace_uuid = None
 

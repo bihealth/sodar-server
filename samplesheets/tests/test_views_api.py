@@ -13,14 +13,14 @@ from projectroles.tests.test_views_api import TestAPIViewsBase
 from projectroles.tests.test_views_api_taskflow import TestTaskflowAPIBase
 
 from samplesheets.io import SampleSheetIO
+from samplesheets.models import Investigation, GenericMaterial, ISATab
 from samplesheets.rendering import SampleSheetTableBuilder
-from samplesheets.tests.test_io import SampleSheetIOMixin
+from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 from samplesheets.tests.test_views_taskflow import SampleSheetTaskflowMixin
 from samplesheets.tests.test_views import (
     TestViewsBase,
     IRODS_BACKEND_ENABLED,
     IRODS_BACKEND_SKIP_MSG,
-    SHEET_PATH,
     REMOTE_SITE_NAME,
     REMOTE_SITE_URL,
     REMOTE_SITE_DESC,
@@ -32,10 +32,18 @@ from samplesheets.tests.test_views import (
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 
 
+# Local constants
+SHEET_TSV_DIR = SHEET_DIR + 'i_small2/'
+SHEET_PATH = SHEET_DIR + 'i_small2.zip'
+SHEET_PATH_EDITED = SHEET_DIR + 'i_small2_edited.zip'
+SHEET_PATH_ALT = SHEET_DIR + 'i_small2_alt.zip'
+
+
 class TestSampleSheetAPIBase(SampleSheetIOMixin, TestAPIViewsBase):
     """Base view for samplesheets API views tests"""
 
 
+# TODO: Move to test_views_api_taskflow
 class TestSampleSheetAPITaskflowBase(
     SampleSheetIOMixin, SampleSheetTaskflowMixin, TestTaskflowAPIBase
 ):
@@ -123,6 +131,168 @@ class TestInvestigationRetrieveAPIView(TestSampleSheetAPIBase):
         self.assertEqual(json.loads(response.content), expected)
 
 
+class TestSampleSheetImportAPIView(TestSampleSheetAPIBase):
+    """Tests for SampleSheetImportAPIView"""
+
+    def test_post_zip(self):
+        """Test SampleSheetImportAPIView post() with a zip archive"""
+
+        # Assert preconditions
+        self.assertEqual(
+            Investigation.objects.filter(project=self.project).count(), 0
+        )
+        self.assertEqual(ISATab.objects.filter(project=self.project).count(), 0)
+
+        url = reverse(
+            'samplesheets:api_import',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+
+        with open(SHEET_PATH, 'rb') as file:
+            post_data = {'file': file}
+            response = self.request_knox(
+                url, method='POST', format='multipart', data=post_data
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            Investigation.objects.filter(project=self.project).count(), 1
+        )
+        self.assertEqual(ISATab.objects.filter(project=self.project).count(), 1)
+
+    def test_post_tsv(self):
+        """Test SampleSheetImportAPIView post() with ISAtab tsv files"""
+
+        # Assert preconditions
+        self.assertEqual(
+            Investigation.objects.filter(project=self.project).count(), 0
+        )
+        self.assertEqual(ISATab.objects.filter(project=self.project).count(), 0)
+
+        url = reverse(
+            'samplesheets:api_import',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+        tsv_file_i = open(SHEET_TSV_DIR + 'i_small2.txt', 'r')
+        tsv_file_s = open(SHEET_TSV_DIR + 's_small2.txt', 'r')
+        tsv_file_a = open(SHEET_TSV_DIR + 'a_small2.txt', 'r')
+        post_data = {
+            'file_investigation': tsv_file_i,
+            'file_study': tsv_file_s,
+            'file_assay': tsv_file_a,
+        }
+
+        response = self.request_knox(
+            url, method='POST', format='multipart', data=post_data
+        )
+
+        tsv_file_i.close()
+        tsv_file_s.close()
+        tsv_file_a.close()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            Investigation.objects.filter(project=self.project).count(), 1
+        )
+        self.assertEqual(ISATab.objects.filter(project=self.project).count(), 1)
+
+    def test_post_replace(self):
+        """Test replacing sheets"""
+
+        self.investigation = self._import_isa_from_file(
+            SHEET_PATH, self.project
+        )
+
+        # Assert preconditions
+        self.assertEqual(
+            Investigation.objects.filter(project=self.project).count(), 1
+        )
+        self.assertEqual(ISATab.objects.filter(project=self.project).count(), 1)
+        self.assertIsNone(GenericMaterial.objects.filter(name='0816').first())
+
+        url = reverse(
+            'samplesheets:api_import',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+
+        with open(SHEET_PATH_EDITED, 'rb') as file:
+            post_data = {'file': file}
+            response = self.request_knox(
+                url, method='POST', format='multipart', data=post_data
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            Investigation.objects.filter(project=self.project).count(), 1
+        )
+        self.assertEqual(ISATab.objects.filter(project=self.project).count(), 2)
+        # Added material
+        self.assertIsNotNone(
+            GenericMaterial.objects.filter(name='0816').first()
+        )
+
+    def test_post_replace_alt_sheet(self):
+        """Test replacing with an alternative sheet and irods_status=False"""
+
+        self.investigation = self._import_isa_from_file(
+            SHEET_PATH, self.project
+        )
+
+        # Assert preconditions
+        self.assertEqual(
+            Investigation.objects.filter(project=self.project).count(), 1
+        )
+        self.assertEqual(ISATab.objects.filter(project=self.project).count(), 1)
+
+        url = reverse(
+            'samplesheets:api_import',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+        with open(SHEET_PATH_ALT, 'rb') as file:
+            post_data = {'file': file}
+            response = self.request_knox(
+                url, method='POST', format='multipart', data=post_data
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            Investigation.objects.filter(project=self.project).count(), 1
+        )
+        self.assertEqual(ISATab.objects.filter(project=self.project).count(), 2)
+
+    def test_post_replace_alt_sheet_irods(self):
+        """Test replacing with an alternative sheet and irods_status=True (should fail)"""
+
+        self.investigation = self._import_isa_from_file(
+            SHEET_PATH, self.project
+        )
+        self.investigation.irods_status = True  # fake irods status
+        self.investigation.save()
+
+        # Assert preconditions
+        self.assertEqual(
+            Investigation.objects.filter(project=self.project).count(), 1
+        )
+        self.assertEqual(ISATab.objects.filter(project=self.project).count(), 1)
+
+        url = reverse(
+            'samplesheets:api_import',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+        with open(SHEET_PATH_ALT, 'rb') as file:
+            post_data = {'file': file}
+            response = self.request_knox(
+                url, method='POST', format='multipart', data=post_data
+            )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            Investigation.objects.filter(project=self.project).count(), 1
+        )
+        self.assertEqual(ISATab.objects.filter(project=self.project).count(), 1)
+
+
+# TODO: Move to test_views_api_taskflow
 @skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
 class TestIrodsCollsCreateAPIView(TestSampleSheetAPITaskflowBase):
     """Tests for IrodsCollsCreateAPIView"""

@@ -1,0 +1,15 @@
+Sample Name	Protocol REF	Extract Name	Protocol REF	Labeled Extract Name	Comment[Replicate]	Label	Protocol REF	Protocol REF	MS Assay Name	Raw Spectral Data File	Protocol REF	Data Transformation Name	Derived Data File
+0815-N1	extraction	0815-N1-Pro1	labeling	0815-N1-Pro1-A-114	A	iTRAQ reagent 114	chromatography	mass spectrometry	poolA	poolA.raw	data transformation		results.csv
+0815-T1	extraction	0815-T1-Pro1	labeling	0815-T1-Pro1-A-115	A	iTRAQ reagent 115	chromatography	mass spectrometry	poolA	poolA.raw	data transformation		results.csv
+0815-N1	extraction	0815-N1-Pro1	labeling	0815-N1-Pro1-B-114	B	iTRAQ reagent 114	chromatography	mass spectrometry		poolB.raw	data transformation		results.csv
+0815-T1	extraction	0815-T1-Pro1	labeling	0815-T1-Pro1-B-115	B	iTRAQ reagent 115	chromatography	mass spectrometry		poolB.raw	data transformation		results.csv
+# Comment for testing. The line after next is empty also for testing.
+0815-N1	extraction	0815-N1-Pro1	labeling	0815-N1-Pro1-C-114	C	iTRAQ reagent 114	chromatography	mass spectrometry	poolC		data transformation		results.csv
+
+0815-T1	extraction	0815-T1-Pro1	labeling	0815-T1-Pro1-C-115	C	iTRAQ reagent 115	chromatography	mass spectrometry	poolC		data transformation		results.csv
+0815-N1	extraction	0815-N1-Pro1	labeling	0815-N1-Pro1-D-114	D	iTRAQ reagent 114	chromatography	mass spectrometry			data transformation		results.csv
+0815-T1	extraction	0815-T1-Pro1	labeling	0815-T1-Pro1-D-115	D	iTRAQ reagent 115	chromatography	mass spectrometry			data transformation		results.csv
+0815-N1	extraction	0815-N1-Pro1	labeling	0815-N1-Pro1-E-114	E	iTRAQ reagent 114	chromatography	mass spectrometry	poolE	poolE.raw	data transformation		
+0815-T1	extraction	0815-T1-Pro1	labeling	0815-T1-Pro1-E-115	E	iTRAQ reagent 115	chromatography	mass spectrometry	poolE	poolE.raw	data transformation		
+0815-N1	extraction	0815-N1-Pro1	labeling	0815-N1-Pro1-F-114	F	iTRAQ reagent 114	chromatography	mass spectrometry	poolF		data transformation	data analysis	results.csv
+0815-T1	extraction	0815-T1-Pro1	labeling	0815-T1-Pro1-F-115	F	iTRAQ reagent 115	chromatography	mass spectrometry	poolF		data transformation	data analysis	results.csv

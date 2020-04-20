@@ -1,0 +1,93 @@
+ONTOLOGY SOURCE REFERENCE
+Term Source Name	OBI	NCBITAXON	ROLEO
+Term Source File	http://data.bioontology.org/ontologies/OBI	http://data.bioontology.org/ontologies/NCBITAXON	http://data.bioontology.org/ontologies/ROLEO
+Term Source Version	31	8	1
+Term Source Description	Ontology for Biomedical Investigations	National Center for Biotechnology Information (NCBI) Organismal Classification	Role Ontology
+INVESTIGATION
+Investigation Identifier	i_small2
+Investigation Title	Small Investigation
+Investigation Description
+Investigation Submission Date
+Investigation Public Release Date
+INVESTIGATION PUBLICATIONS
+Investigation PubMed ID
+Investigation Publication DOI
+Investigation Publication Author List
+Investigation Publication Title
+Investigation Publication Status
+Investigation Publication Status Term Accession Number
+Investigation Publication Status Term Source REF
+INVESTIGATION CONTACTS
+Investigation Person Last Name
+Investigation Person First Name
+Investigation Person Mid Initials
+Investigation Person Email
+Investigation Person Phone
+Investigation Person Fax
+Investigation Person Address
+Investigation Person Affiliation
+Investigation Person Roles
+Investigation Person Roles Term Accession Number
+Investigation Person Roles Term Source REF
+STUDY
+Study Identifier	s_small2
+Study Title	Small Germline Study
+Study Description
+Comment[Study Grant Number]
+Comment[Study Funding Agency]
+Study Submission Date
+Study Public Release Date
+Study File Name	s_small2.txt
+STUDY DESIGN DESCRIPTORS
+Study Design Type
+Study Design Type Term Accession Number
+Study Design Type Term Source REF
+STUDY PUBLICATIONS
+Study PubMed ID
+Study Publication DOI
+Study Publication Author List
+Study Publication Title
+Study Publication Status
+Study Publication Status Term Accession Number
+Study Publication Status Term Source REF
+STUDY FACTORS
+Study Factor Name
+Study Factor Type
+Study Factor Type Term Accession Number
+Study Factor Type Term Source REF
+STUDY ASSAYS
+Study Assay File Name	a_small2.txt
+Study Assay Measurement Type	protein expression profiling
+Study Assay Measurement Type Term Accession Number	http://purl.obolibrary.org/obo/OBI_0000615
+Study Assay Measurement Type Term Source REF	OBI
+Study Assay Technology Type	mass spectrometry
+Study Assay Technology Type Term Accession Number	http://purl.obolibrary.org/obo/OBI_0000470
+Study Assay Technology Type Term Source REF	OBI
+Study Assay Technology Platform	LC-MS/MS
+STUDY PROTOCOLS
+Study Protocol Name	sample collection	extraction	labeling	chromatography	mass spectrometry	data transformation
+Study Protocol Type	sample collection	extraction	labeling	chromatography	mass spectrometry	data transformation
+Study Protocol Type Term Accession Number						
+Study Protocol Type Term Source REF						
+Study Protocol Description						
+Study Protocol URI						
+Study Protocol Version						
+Study Protocol Parameters Name						
+Study Protocol Parameters Name Term Accession Number						
+Study Protocol Parameters Name Term Source REF						
+Study Protocol Components Name						
+Study Protocol Components Type						
+Study Protocol Components Type Term Accession Number						
+Study Protocol Components Type Term Source REF						
+STUDY CONTACTS
+Study Person Last Name	Doe
+Study Person First Name	John
+Study Person Mid Initials	
+Study Person Email	
+Study Person Phone	
+Study Person Fax	
+Study Person Address	
+Study Person Affiliation	
+Study Person Roles	author
+Study Person Roles Term Accession Number	http://purl.obolibrary.org/obo/RoleO_0000061
+Study Person Roles Term Source REF	ROLEO

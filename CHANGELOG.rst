@@ -14,6 +14,7 @@ Added
 - **Samplesheets**
     - ``IrodsCollsCreateAPIView`` for iRODS collections creation via API (#826)
     - Host name input confirmation for sample sheet and data deletion (#833)
+    - ``SampleSheetImportAPIView`` for ISAtab import via REST API (#802)
 - **Tokens**
     - Enable app from django-sodar-core v0.8.0-WIP (#822)
 
@@ -21,7 +22,7 @@ Changed
 -------
 
 - **General**
-    - Upgrade to Django v1.11.28
+    - Upgrade to Django v1.11.29
     - Upgrade to django-sodar-core v0.8.0 (#835)
     - Upgrade Python requirements to match djagno-sodar-core v0.8.0 (#835)
     - Upgrade to Chromedriver v80
@@ -35,6 +36,9 @@ Changed
     - Reorganize views and URL patterns (#801)
     - Refactor Ajax views and URL patterns (#736, #824)
     - Improve sheet import logging (#832)
+    - Move ISAtab Zip archive validation to ``SampleSheetIO.get_zip_file()``
+    - Move ISAtab multi-file reading to ``SampleSheetIO.get_isa_from_files()``
+    - Refactor ``SampleSheetImportMixin`` to work with API views
 
 Fixed
 -----
@@ -48,6 +52,7 @@ Fixed
 - **Samplesheets**
     - REST API view permission checks not working with Knox token auth (#823)
     - Crashes caused by sheet config not correctly updated on sheet replace (#829)
+    - Sample sheet version saved for unsuccessful replace (#838)
 
 Removed
 -------
