@@ -9,7 +9,11 @@ from projectroles.tests.test_permissions import TestProjectPermissionBase
 # Samplesheets dependency
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 
-from .test_models import LandingZoneMixin, ZONE_TITLE, ZONE_DESC
+from landingzones.tests.test_models import (
+    LandingZoneMixin,
+    ZONE_TITLE,
+    ZONE_DESC,
+)
 
 
 # Global constants
@@ -24,10 +28,10 @@ PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
 
 
-class TestLandingZonePermissions(
+class TestLandingZonePermissionsBase(
     LandingZoneMixin, SampleSheetIOMixin, TestProjectPermissionBase
 ):
-    """Tests for landingzones UI view permissions"""
+    """Base view for landingzones permissions tests"""
 
     def setUp(self):
         super().setUp()
@@ -50,6 +54,10 @@ class TestLandingZonePermissions(
             configuration=None,
             config_data={},
         )
+
+
+class TestLandingZonePermissions(TestLandingZonePermissionsBase):
+    """Tests for landingzones UI view permissions"""
 
     def test_zone_list(self):
         """Test permissions for the project landing zone list"""
@@ -125,20 +133,3 @@ class TestLandingZonePermissions(
         ]
         self.assert_response(url, good_users, 200)
         self.assert_response(url, bad_users, 302)
-
-    # TODO: Move to separate ajax tests file
-    def test_zone_status(self):
-        """Test permissions for landing zone Ajax status view"""
-        url = reverse(
-            'landingzones:ajax_status',
-            kwargs={'landingzone': self.landing_zone.sodar_uuid},
-        )
-        good_users = [self.superuser, self.owner_as.user, self.delegate_as.user]
-        bad_users = [
-            self.contributor_as.user,  # NOTE: not the owner of the zone
-            self.user_no_roles,
-        ]
-        redirect_users = [self.anonymous]
-        self.assert_response(url, good_users, 200)
-        self.assert_response(url, bad_users, 403)
-        self.assert_response(url, redirect_users, 302)

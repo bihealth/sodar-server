@@ -30,6 +30,7 @@ Changed
     - Rename references to iRODS collections (#785)
     - Rename ``IRODS_SAMPLE_COLL`` and ``IRODS_LANDING_ZONE_COLL`` settings (#785)
     - Rename the ``samplesheets.create_colls`` permission (#785)
+    - Use base Ajax API view classes from SODAR Core (#805)
 - **Landingzones**
     - Disallow replacing sample sheets if active landing zones exist (#713)
 - **Samplesheets**
