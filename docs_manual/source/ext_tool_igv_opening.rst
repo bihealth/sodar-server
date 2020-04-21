@@ -1,6 +1,5 @@
 .. _ext_tool_igv_opening:
 
-===========================
 IGV Opening Session & Files
 ===========================
 
@@ -8,7 +7,6 @@ This section documents the necessary steps for opening IGV sessions and files di
 
 The prerequisite is to have IGV open and configured to listen on port ``60151`` for "remote control" commands (see :ref:`ext_tool_igv` for details).
 
-----------------
 Open IGV Session
 ----------------
 
@@ -29,7 +27,6 @@ BAM and VCF files can be similarly loaded into the currently open IGV session by
     :width: 75%
     :align: center
 
--------------------
 Obtaining File URLs
 -------------------
 

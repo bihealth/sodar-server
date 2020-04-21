@@ -1,6 +1,5 @@
 .. _metadata_recording:
 
-==================
 Metadata Recording
 ==================
 
@@ -27,11 +26,9 @@ and defines rules to consider when editing them in Excel and co.
 .. _ISA framework: https://isa-tools.org/
 
 
-----------
 Background
 ----------
 
-~~~~~~~~~~~~~
 About ISA-Tab
 ~~~~~~~~~~~~~
 
@@ -58,8 +55,6 @@ an ISA-Tab project will consist of three files:
 In the case of several studies or assays, each study and assay is
 represented by one distinct tabular file.
 
-
-~~~~~~~~~~~~~~~~~~~~~~
 Tabular file structure
 ~~~~~~~~~~~~~~~~~~~~~~
 
@@ -136,8 +131,6 @@ A very simple assay tabular file may look like this:
 
 In practice, study and assay files will feature much more columns.
 
-
-~~~~~~~~~~~~~~~~~~~~~
 Splitting and pooling
 ~~~~~~~~~~~~~~~~~~~~~
 
@@ -197,7 +190,6 @@ the `ISA documentation`_.
 .. _ISA documentation: https://isa-specs.readthedocs.io/en/latest/
 
 
---------------
 1. Preparation
 --------------
 
@@ -264,7 +256,6 @@ might do so on your own, if you are owner of a category in SODAR) and prepare
 and provide the corresponding ISA-Tab files to fill out.
 
 
-------------
 2. Recording
 ------------
 
@@ -302,7 +293,6 @@ part of a splitting or pooling procedure. Furthermore, consider the following
 restrictions.
 
 
-~~~~~~~~~~~~~~~~~~~~
 Editing restrictions
 ~~~~~~~~~~~~~~~~~~~~
 
@@ -371,7 +361,6 @@ We will extend this list with more rules/restrictions as soon as more pitfalls
 show up.
 
 
--------------------------------
 3. Validation (post-processing)
 -------------------------------
 
@@ -388,7 +377,7 @@ with appropriate ontology identifier and sources.
 
 .. _metadata_recording_4_uploading:
 
-------------
+
 4. Uploading
 ------------
 

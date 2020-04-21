@@ -74,12 +74,22 @@ class LandingZoneSubmitBaseAPIView(
             )
 
 
+# API Views --------------------------------------------------------------------
+
+
 class LandingZoneListAPIView(SODARAPIGenericProjectMixin, ListAPIView):
     """
-    API view for listing LandingZone objects for a project.
+    List the landing zones in a project.
 
     If the user has rights to view all zones, every zone in the project will be
     listed. Otherwise only their own zones appear in the list.
+
+    **URL:** ``/landingzones/api/list/{Project.sodar_uuid}``
+
+    **Methods:** ``GET``
+
+    **Returns:** List of landing zone details
+    (see ``LandingZoneRetrieveAPIView``)
     """
 
     permission_required = 'landingzones.view_zones_own'
@@ -100,7 +110,26 @@ class LandingZoneListAPIView(SODARAPIGenericProjectMixin, ListAPIView):
 
 class LandingZoneRetrieveAPIView(SODARAPIGenericProjectMixin, RetrieveAPIView):
     """
-    API view for retrieving information of a specific LandingZone by UUID.
+    Retrieve the details of a landing zone.
+
+    **URL:** ``/landingzones/api/retrieve/{LandingZone.sodar_uuid}``
+
+    **Methods:** ``GET``
+
+    **Returns:**
+
+    - ``assay``: Assay UUID (string)
+    - ``config_data``: Data for special configuration (JSON)
+    - ``configuration``: Special configuration name (string)
+    - ``date_modified``: Last modification date of the zone (string)
+    - ``description``: Landing zone description (string)
+    - ``irods_path``: Full iRODS path to the landing zone (string)
+    - ``project``: Project UUID (string)
+    - ``sodar_uuid``: Landing zone UUID (string)
+    - ``status``: Current status of the landing zone (string)
+    - ``status_info``: Detailed description of the landing zone status (string)
+    - ``title``: Full title of the created landing zone (string)
+    - ``user``: User who owns the zone (string)
     """
 
     lookup_field = 'sodar_uuid'
@@ -125,7 +154,21 @@ class LandingZoneCreateAPIView(
     ZoneCreateViewMixin, SODARAPIGenericProjectMixin, CreateAPIView
 ):
     """
-    API view for initiating LandingZone creation.
+    Create a landing zone.
+
+    **URL:** ``/landingzones/api/create/{Project.sodar_uuid}``
+
+    **Methods:** ``POST``
+
+    **Parameters:**
+
+    - ``assay``: Assay UUID (string)
+    - ``config_data``: Data for special configuration (JSON, optional)
+    - ``configuration``: Special configuration (string, optional)
+    - ``description``: Landing zone description (string, optional)
+    - ``title``: Suffix for the zone title (string, optional)
+
+    **Returns:** Landing zone details (see ``LandingZoneRetrieveAPIView``)
     """
 
     lookup_field = 'sodar_uuid'
@@ -172,9 +215,14 @@ class LandingZoneSubmitDeleteAPIView(
     ZoneDeleteViewMixin, LandingZoneSubmitBaseAPIView
 ):
     """
-    API view for initiating LandingZone deletion via SODAR Taskflow.
-    NOTE: Not tied to serializer or generic views, as the actual object will not
-          be updated here.
+    Initiate landing zone deletion.
+
+    Initiates an asynchronous operation. The zone status can be queried using
+    ``LandingZoneRetrieveAPIView`` with the returned ``sodar_uuid``.
+
+    **URL:** ``/landingzones/api/submit/delete/{LandingZone.sodar_uuid}``
+
+    **Methods:** ``POST``
     """
 
     def post(self, request, *args, **kwargs):
@@ -205,9 +253,19 @@ class LandingZoneSubmitMoveAPIView(
     ZoneMoveViewMixin, LandingZoneSubmitBaseAPIView
 ):
     """
-    API view for initiating LandingZone validation/moving via SODAR Taskflow.
-    NOTE: Not tied to serializer or generic views, as the actual object will not
-          be updated here.
+    Initiate landing zone validation and/or moving.
+
+    Initiates an asynchronous operation. The zone status can be queried using
+    ``LandingZoneRetrieveAPIView`` with the returned ``sodar_uuid``.
+
+    For validating data without moving it to the sample repository, this view
+    should be called with ``submit/validate``.
+
+    **URL for Validation:** ``/landingzones/api/submit/validate/{LandingZone.sodar_uuid}``
+
+    **URL for Moving:** ``/landingzones/api/submit/move/{LandingZone.sodar_uuid}``
+
+    **Methods:** ``POST``
     """
 
     def post(self, request, *args, **kwargs):

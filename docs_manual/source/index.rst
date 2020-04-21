@@ -15,7 +15,7 @@ It is developed by the Core Unit Bioinformatics at the Berlin Institute of Healt
 .. toctree::
     :maxdepth: 1
     :caption: Data Transfer
-    :name: data-transfer
+    :name: data_transfer
     :hidden:
 
     data_transfer_bih_prot
@@ -23,7 +23,7 @@ It is developed by the Core Unit Bioinformatics at the Berlin Institute of Healt
 .. toctree::
     :maxdepth: 1
     :caption: External Tools
-    :name: external-tools
+    :name: external_tools
     :hidden:
     :titlesonly:
 
@@ -39,6 +39,16 @@ It is developed by the Core Unit Bioinformatics at the Berlin Institute of Healt
 
     metadata_recording
 
+.. toctree::
+    :maxdepth: 1
+    :caption: API Documentation
+    :name: api_docs
+    :hidden:
+
+    api_documentation
+    Project Management API <api_projectroles>
+    Sample Sheets API <api_samplesheets>
+    Landing Zones API <api_landingzones>
 
 Indices and tables
 ==================

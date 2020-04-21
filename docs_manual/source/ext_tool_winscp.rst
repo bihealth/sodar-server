@@ -1,6 +1,5 @@
 .. _ext_tool_winscp:
 
-===========================
 WinSCP Installation & Setup
 ===========================
 
@@ -13,7 +12,6 @@ This section describes the installation and setup for accessing your files with 
     In general, it is also possible to access files and folders through WebDAV using the Windows Explorer.
     However, we discourage you from doing this as there are important limitations to Windows Explorer's support of WebDAV, e.g., you cannot access files larger than 4 GB.
 
-----------------------------------
 Prelude: Files in your Web Browser
 ----------------------------------
 
@@ -26,7 +24,6 @@ For this, use the corresponding button next to the assay or project that you wan
 
 .. image:: _static/ext_tool_winscp/SODAR_Assay_Links.png
 
------------------
 Installing WinSCP
 -----------------
 
@@ -46,7 +43,6 @@ This is most conveniently done by installing the "portable" version which you ju
 
 4. Inside, you find a "WinSCP" program that you execute.
 
-------------
 Using WinSCP
 ------------
 

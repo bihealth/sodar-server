@@ -1,6 +1,5 @@
 .. _ext_tool_igv:
 
-========================
 IGV Installation & Setup
 ========================
 
@@ -16,7 +15,6 @@ This section documents the necessary steps for installation and setup of IGV for
     - `IGV Download Page <http://www.oracle.com/technetwork/java/javase/downloads/jce8-download-2133166.html>`_
     - `Oracle Java Cryptography Extension <http://www.oracle.com/technetwork/java/javase/downloads/jce8-download-2133166.html>`_
 
-------------------------------
 Downloading and Installing IGV
 ------------------------------
 
@@ -28,7 +26,6 @@ Extract the folder.
 **If you are in a hospital network, make sure that the final extraction target is on drive ``C:``**.
 Otherwise, your computer's policy might prevent IGV from working properly.
 
-------------
 Starting IGV
 ------------
 
@@ -40,7 +37,6 @@ Start the program by double-clicking on the ``igv.bat`` file.
 For good measure, visit `AmIBehindAProxy.com <http://amibehindaproxy.com/>`_ to see whether you are behind a proxy.
 If you are not then you can skip the section "Proxy Configuration".
 
--------------------
 Proxy Configuration
 -------------------
 
@@ -63,7 +59,6 @@ The instructions below use the configuration for the Charite network as an examp
 
 If you are outside of the Charite network then please ask your local SODAR administrator for the values to put into the ``whitelist``.
 
-------------------------------
 "Remote Control" Configuration
 ------------------------------
 
@@ -76,7 +71,6 @@ To activate this, you have to go to the ``Advanced`` tab of the preferences, tic
     :width: 75%
     :align: center
 
------------
 Restart IGV
 -----------
 

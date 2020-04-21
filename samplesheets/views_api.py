@@ -33,8 +33,31 @@ from samplesheets.views import (
 class InvestigationRetrieveAPIView(
     SODARAPIGenericProjectMixin, RetrieveAPIView
 ):
-    """API view for retrieving information of an Investigation with its studies
-    and assays"""
+    """
+    Retrieve metadata of an investigation with its studies and assays.
+
+    This view can be used to e.g. retrieve assay UUIDs for landing zone
+    operations.
+
+    **URL:** ``/samplesheets/api/investigation/retrieve/{Project.sodar_uuid}``
+
+    **Methods:** ``GET``
+
+    **Returns:**
+
+    - ``archive_name``: Original archive name if imported from a zip (string)
+    - ``comments``: Investigation comments (JSON)
+    - ``description``: Investigation description (string)
+    - ``file_name``: Investigation file name (string)
+    - ``identifier``: Locally unique investigation identifier (string)
+    - ``irods_status``: Whether iRODS collections for the investigation have
+      been created (boolean)
+    - ``parser_version``: Version of altamISA used in importing (string)
+    - ``project``: Project UUID (string)
+    - ``sodar_uuid``: Investigation UUID (string)
+    - ``studies``: Study and assay information (JSON, using study UUID as key)
+    - ``title``: Investigation title (string)
+    """
 
     lookup_field = 'project__sodar_uuid'
     permission_required = 'samplesheets.view_sheet'
@@ -44,7 +67,17 @@ class InvestigationRetrieveAPIView(
 class IrodsCollsCreateAPIView(
     IrodsCollsCreateViewMixin, SODARAPIBaseProjectMixin, APIView
 ):
-    """API view for iRODS collection creation for project"""
+    """
+    Create iRODS collections for a project.
+
+    **URL:** ``/samplesheets/api/irods/collections/create/{Project.sodar_uuid}``
+
+    **Methods:** ``POST``
+
+    **Returns:**
+
+    - ``path``: Full iRODS path to the root of created collections (string)
+    """
 
     http_method_names = ['post']
     permission_required = 'samplesheets.create_colls'
@@ -91,7 +124,7 @@ class SampleSheetImportAPIView(
     The request should be in format of ``multipart/form-data``. Content type
     for each file must be provided.
 
-    **URL:** ``/sheets/api/import``
+    **URL:** ``/samplesheets/api/import/{Project.sodar_uuid}``
 
     **Methods:** ``POST``
     """
