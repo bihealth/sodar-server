@@ -34,6 +34,7 @@ Changed
 - **Landingzones**
     - Disallow replacing sample sheets if active landing zones exist (#713)
     - Display moved and deleted zones of other users with ``view_zones_all`` perm (#806)
+    - Return landing zone iRODS path on creation (#843)
 - **Samplesheets**
     - Upgrade non-breaking Vue app dependencies (#836)
     - Reorganize views and URL patterns (#801)

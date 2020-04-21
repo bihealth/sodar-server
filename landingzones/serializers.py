@@ -69,7 +69,6 @@ class LandingZoneSerializer(SODARProjectModelSerializer):
         if irods_backend and obj.status not in [
             'MOVED',
             'DELETED',
-            'CREATING',
             'NOT CREATED',
         ]:
             return irods_backend.get_path(obj)

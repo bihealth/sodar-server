@@ -6,7 +6,6 @@ from unittest import skipIf
 
 from django.conf import settings
 from django.core.urlresolvers import reverse
-from django.forms.models import model_to_dict
 
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
@@ -82,6 +81,7 @@ class TestLandingZoneAPIViewsBase(
         )
 
 
+# TODO: Move this to separate taskflow test file
 class TestLandingZoneAPITaskflowBase(
     SampleSheetIOMixin,
     SampleSheetTaskflowMixin,
@@ -207,6 +207,7 @@ class TestLandingZoneCreateAPIView(TestLandingZoneAPITaskflowBase):
 
     def test_post(self):
         """Test LandingZoneCreateAPIView post()"""
+        irods_backend = get_backend_api('omics_irods', conn=False)
 
         # Assert preconditions
         self.assertEqual(LandingZone.objects.all().count(), 0)
@@ -236,28 +237,25 @@ class TestLandingZoneCreateAPIView(TestLandingZoneAPITaskflowBase):
             zone_uuid=response.data['sodar_uuid'], status='ACTIVE'
         )
         zone = LandingZone.objects.first()
+        response_data = json.loads(response.content)
 
         # Check result
-        zone_dict = model_to_dict(zone)
+        # NOTE: date_modified will be changend async, can't test
         expected = {
-            'id': zone.pk,
-            'title': zone.title[:16] + 'new_zone',
-            'project': self.project.pk,
-            'user': self.user.pk,
-            'assay': self.assay.pk,
-            'status': 'ACTIVE',
-            'status_info': DEFAULT_STATUS_INFO['ACTIVE'],
+            'title': zone.title,
+            'project': str(self.project.sodar_uuid),
+            'user': self.user.username,
+            'assay': str(self.assay.sodar_uuid),
+            'status': 'CREATING',
+            'status_info': DEFAULT_STATUS_INFO['CREATING'],
+            'date_modified': response_data['date_modified'],
             'description': zone.description,
             'configuration': zone.configuration,
             'config_data': zone.config_data,
-            'sodar_uuid': zone.sodar_uuid,
+            'irods_path': irods_backend.get_path(zone),
+            'sodar_uuid': str(zone.sodar_uuid),
         }
-        self.assertEqual(zone_dict, expected)
-
-        # Check API response
-        # NOTE: This is still in CREATING state with no iRODS path
-        # NOTE: Only checking UUID
-        self.assertEqual(response.data['sodar_uuid'], str(zone.sodar_uuid))
+        self.assertEqual(response_data, expected)
 
     def test_post_no_investigation(self):
         """Test LandingZoneCreateAPIView post() with no investigation"""
