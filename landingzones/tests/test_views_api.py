@@ -139,7 +139,7 @@ class LandingZoneListAPIView(TestLandingZoneAPIViewsBase):
         expected = {
             'title': self.landing_zone.title,
             'project': str(self.project.sodar_uuid),
-            'user': self.user.username,
+            'user': self.get_serialized_user(self.user),
             'assay': str(self.assay.sodar_uuid),
             'status': self.landing_zone.status,
             'status_info': self.landing_zone.status_info,
@@ -185,7 +185,7 @@ class LandingZoneRetrieveAPIView(TestLandingZoneAPIViewsBase):
         expected = {
             'title': self.landing_zone.title,
             'project': str(self.project.sodar_uuid),
-            'user': self.user.username,
+            'user': self.get_serialized_user(self.user),
             'assay': str(self.assay.sodar_uuid),
             'status': self.landing_zone.status,
             'status_info': self.landing_zone.status_info,
@@ -244,7 +244,7 @@ class TestLandingZoneCreateAPIView(TestLandingZoneAPITaskflowBase):
         expected = {
             'title': zone.title,
             'project': str(self.project.sodar_uuid),
-            'user': self.user.username,
+            'user': self.get_serialized_user(self.user),
             'assay': str(self.assay.sodar_uuid),
             'status': 'CREATING',
             'status_info': DEFAULT_STATUS_INFO['CREATING'],

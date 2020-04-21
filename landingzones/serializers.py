@@ -4,7 +4,10 @@ from rest_framework import serializers
 
 # Projectroles dependency
 from projectroles.plugins import get_backend_api
-from projectroles.serializers import SODARProjectModelSerializer
+from projectroles.serializers import (
+    SODARProjectModelSerializer,
+    SODARUserSerializer,
+)
 
 # Samplesheets dependency
 from samplesheets.models import Assay
@@ -17,7 +20,7 @@ class LandingZoneSerializer(SODARProjectModelSerializer):
     """Serializer for the LandingZone model"""
 
     title = serializers.CharField(required=False)
-    user = serializers.ReadOnlyField(source='user.username')
+    user = SODARUserSerializer(read_only=True)
     assay = serializers.CharField(source='assay.sodar_uuid')
     irods_path = serializers.SerializerMethodField(read_only=True)
 
