@@ -3,8 +3,6 @@ import json
 
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
-
-# from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
 
@@ -17,6 +15,7 @@ from django.urls import reverse
 from projectroles.app_settings import AppSettingAPI
 from projectroles.tests.test_ui import TestUIBase
 
+from samplesheets.models import ISATab
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 from samplesheets.tests.test_utils import (
     SheetConfigMixin,
@@ -551,7 +550,9 @@ class TestSampleSheetVersionListView(TestProjectSheetsVueAppBase):
 
     def test_list_no_versions(self):
         """Test UI rendering for list items with no versions"""
-        self.investigation.delete()
+        ISATab.objects.filter(
+            investigation_uuid=self.investigation.sodar_uuid
+        ).delete()
         self.assert_element_exists(
             [self.default_user], self.url, 'sodar-ss-version-list', False
         )

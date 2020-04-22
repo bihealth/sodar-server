@@ -42,7 +42,7 @@
 
 <div class="container-fluid sodar-page-container">
 
-{% if sheet_versions %}
+{% if object_list.count > 0 %}
   <div class="card" id="sodar-ss-version-list">
     <div class="card-body p-0">
       <table class="table table-striped sodar-card-table" id="sodar-ss-version-table">
@@ -58,7 +58,7 @@
           </tr>
         </thead>
         <tbody>
-          {% for sv in sheet_versions %}
+          {% for sv in object_list %}
             <tr>
               <td>
                 {% if sv == current_version %}
@@ -110,6 +110,9 @@
       </table>
     </div>
   </div>
+  {% if is_paginated %}
+    {% include 'projectroles/_pagination.html' with pg_small=False %}
+  {% endif %}
 {% else %}
   <div class="alert alert-info" id="sodar-ss-version-alert">
     No saved versions have been found for the sample sheets in this project.

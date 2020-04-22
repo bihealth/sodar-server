@@ -615,10 +615,15 @@ class TestSampleSheetVersionListView(TestViewsBase):
         self.assertEqual(response.status_code, 200)
 
         # Assert context data
-        self.assertEqual(response.context['sheet_versions'].count(), 1)
+        self.assertEqual(response.context['object_list'].count(), 1)
         self.assertEqual(
             response.context['current_version'],
-            response.context['sheet_versions'][0],
+            ISATab.objects.filter(
+                project=self.project,
+                investigation_uuid=self.investigation.sodar_uuid,
+            )
+            .order_by('-date_created')
+            .first(),
         )
 
     def test_render_no_sheets(self):
@@ -634,7 +639,7 @@ class TestSampleSheetVersionListView(TestViewsBase):
         self.assertEqual(response.status_code, 200)
 
         # Assert context data
-        self.assertIsNone(response.context['sheet_versions'])
+        self.assertEqual(response.context['object_list'].count(), 0)
         self.assertIsNone(response.context['current_version'])
 
 

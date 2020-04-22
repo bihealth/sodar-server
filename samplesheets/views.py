@@ -14,7 +14,13 @@ from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.utils.text import slugify
-from django.views.generic import TemplateView, FormView, DeleteView, View
+from django.views.generic import (
+    DeleteView,
+    FormView,
+    ListView,
+    TemplateView,
+    View,
+)
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
@@ -69,6 +75,7 @@ MISC_FILES_COLL_ID = 'misc_files'
 MISC_FILES_COLL = 'MiscFiles'
 RESULTS_COLL_ID = 'results_reports'
 RESULTS_COLL = 'ResultsReports'
+DEFAULT_VERSION_PAGINATION = 15
 
 
 # Mixins -----------------------------------------------------------------------
@@ -1071,26 +1078,35 @@ class SampleSheetVersionListView(
     LoggedInPermissionMixin,
     ProjectPermissionMixin,
     InvestigationContextMixin,
-    TemplateView,
+    ListView,
 ):
     """Sample Sheet version list view"""
 
+    model = ISATab
     permission_required = 'samplesheets.edit_sheet'
     template_name = 'samplesheets/sheet_versions.html'
+    paginate_by = getattr(
+        settings, 'SHEETS_VERSION_PAGINATION', DEFAULT_VERSION_PAGINATION
+    )
+
+    def get_queryset(self):
+        return ISATab.objects.filter(
+            project__sodar_uuid=self.kwargs['project']
+        ).order_by('-pk')
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
-        context['sheet_versions'] = None
         context['current_version'] = None
 
         if context['investigation']:
-            context['sheet_versions'] = ISATab.objects.filter(
-                project=self.get_project(),
-                investigation_uuid=context['investigation'].sodar_uuid,
-            ).order_by('-date_created')
-
-        if context['sheet_versions']:
-            context['current_version'] = context['sheet_versions'][0]
+            context['current_version'] = (
+                ISATab.objects.filter(
+                    project=self.get_project(),
+                    investigation_uuid=context['investigation'].sodar_uuid,
+                )
+                .order_by('-date_created')
+                .first()
+            )
 
         return context
 

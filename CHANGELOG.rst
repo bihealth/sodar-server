@@ -16,6 +16,7 @@ Added
     - Host name input confirmation for sample sheet and data deletion (#833)
     - ``SampleSheetImportAPIView`` for ISAtab import via REST API (#802)
     - Study identifier display in Overview (#791)
+    - Pagination in sheet version list (#743)
 - **Tokens**
     - Enable app from django-sodar-core v0.8.0-WIP (#822)
 
