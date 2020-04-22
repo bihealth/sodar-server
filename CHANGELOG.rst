@@ -63,6 +63,7 @@ Fixed
     - Crashes caused by sheet config not correctly updated on sheet replace (#829)
     - Sample sheet version saved for unsuccessful replace (#838)
     - Editor select box padding for Firefox and Chrome (#726)
+    - Workaround for ``sodar-list-btn`` CSS issue with Chrome (#844, sodar_core#529)
 
 Removed
 -------

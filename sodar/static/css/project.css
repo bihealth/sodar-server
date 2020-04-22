@@ -20,3 +20,10 @@
 [hidden][style="display: block;"] {
   display: block !important;
 }
+
+/* Temporary workaround for issue #844
+   TODO: Remove once fixed in SODAR Core
+*/
+.sodar-list-btn {
+  padding-top: 1px !important;
+}
