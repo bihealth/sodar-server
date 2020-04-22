@@ -46,6 +46,7 @@ Changed
     - Move ISAtab multi-file reading to ``SampleSheetIO.get_isa_from_files()``
     - Refactor ``SampleSheetImportMixin`` to work with API views
     - Hide path from sheet configuration information (#779)
+    - Improve notation for missing study shortcut file types (#799)
 
 Fixed
 -----

@@ -33,6 +33,9 @@
               </b-button>
             </td>
           </tr>
+          <tr v-if="!cat['files'].length">
+            <td class="text-muted" colspan="2">N/A</td>
+          </tr>
         </tbody>
       </table>
     </div>
