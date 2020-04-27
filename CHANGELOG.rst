@@ -47,6 +47,7 @@ Changed
     - Refactor ``SampleSheetImportMixin`` to work with API views
     - Hide path from sheet configuration information (#779)
     - Improve notation for missing study shortcut file types (#799)
+    - Temporarily disable Bootstrap tooltips in custom project list cells (#787)
 
 Fixed
 -----

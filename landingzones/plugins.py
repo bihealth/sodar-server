@@ -181,8 +181,9 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
 
             if investigation and investigation.irods_status and zone_count > 0:
                 return (
-                    '<a href="{}" title="{}" data-toggle="tooltip" '
-                    'data-placement="top"><i class="fa fa-database {}">'
+                    '<a href="{}" title="{}">'
+                    # 'data-toggle="tooltip" data-placement="top">'
+                    '<i class="fa fa-database {}">'
                     '</i></a>'.format(
                         reverse(
                             'landingzones:list',
@@ -204,8 +205,8 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                 and user.has_perm('landingzones.add_zones', project)
             ):
                 return (
-                    '<a href="{}" title="Create landing zone in project" '
-                    'data-toggle="tooltip" data-placement="top">'
+                    '<a href="{}" title="Create landing zone in project">'
+                    # 'data-toggle="tooltip" data-placement="top">'
                     '<i class="fa fa-plus"></i></a>'.format(
                         reverse(
                             'landingzones:create',
@@ -217,8 +218,8 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
             else:
                 return (
                     '<i class="fa fa-database text-muted" '
-                    'title="No available landing zones" '
-                    'data-toggle="tooltip" data-placement="top"></i>'
+                    'title="No available landing zones"></i>'
+                    # 'data-toggle="tooltip" data-placement="top"></i>'
                 )
 
 

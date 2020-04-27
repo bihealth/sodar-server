@@ -329,8 +329,8 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         if column_id == 'sheets':
             if investigation:
                 return (
-                    '<a href="{}" title="View project sample sheets" '
-                    'data-toggle="tooltip" data-placement="top">'
+                    '<a href="{}" title="View project sample sheets">'
+                    # 'data-toggle="tooltip" data-placement="top">'
                     '<i class="fa fa-list-alt text-primary"></i></a>'.format(
                         get_sheets_url(project)
                     )
@@ -338,8 +338,8 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
 
             elif user.has_perm('samplesheets.edit_sheet', project):
                 return (
-                    '<a href="{}" title="Import sample sheet into project" '
-                    'data-toggle="tooltip" data-placement="top">'
+                    '<a href="{}" title="Import sample sheet into project">'
+                    # 'data-toggle="tooltip" data-placement="top">'
                     '<i class="fa fa-plus text-primary"></i></a>'.format(
                         reverse(
                             'samplesheets:import',
@@ -351,8 +351,8 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
             else:
                 return (
                     '<i class="fa fa-list-alt text-muted" '
-                    'title="No sample sheets in project" '
-                    'data-toggle="tooltip" data-placement="top"></i>'
+                    'title="No sample sheets in project"></i>'
+                    # 'data-toggle="tooltip" data-placement="top"></i>'
                 )
 
         elif column_id == 'files':
@@ -366,8 +366,8 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
             ):
                 return (
                     '<a href="{}" target="_blank"'
-                    'title="View project files in iRODS" '
-                    'data-toggle="tooltip" data-placement="top">'
+                    'title="View project files in iRODS">'
+                    # 'data-toggle="tooltip" data-placement="top">'
                     '<i class="fa fa-folder-open '
                     'text-primary"></i></a>'.format(
                         settings.IRODS_WEBDAV_URL
@@ -376,8 +376,8 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                 )
 
             return (
-                '<i class="fa fa-folder-open text-muted" '
-                'title="{}" data-toggle="tooltip" data-placement="top" '
+                '<i class="fa fa-folder-open text-muted" title="{}" '
+                # 'data-toggle="tooltip" data-placement="top" '
                 '></i>'.format(
                     'No project files in iRODS'
                     if settings.IRODS_WEBDAV_URL
