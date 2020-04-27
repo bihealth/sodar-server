@@ -18,14 +18,14 @@ Added
     - Study identifier display in Overview (#791)
     - Pagination in sheet version list (#743)
 - **Tokens**
-    - Enable app from django-sodar-core v0.8.0-WIP (#822)
+    - Enable app from django-sodar-core v0.8.0+ (#822)
 
 Changed
 -------
 
 - **General**
     - Upgrade to Django v1.11.29
-    - Upgrade to django-sodar-core v0.8.0 (#835)
+    - Upgrade to django-sodar-core v0.8.1 (#835, #845)
     - Upgrade Python requirements to match djagno-sodar-core v0.8.0 (#835)
     - Upgrade to Chromedriver v80
     - Rename references to iRODS collections (#785)
@@ -63,7 +63,7 @@ Fixed
     - Crashes caused by sheet config not correctly updated on sheet replace (#829)
     - Sample sheet version saved for unsuccessful replace (#838)
     - Editor select box padding for Firefox and Chrome (#726)
-    - Workaround for ``sodar-list-btn`` CSS issue with Chrome (#844, sodar_core#529)
+    - CSS issue with ``sodar-list-btn`` and Chrome (#844, sodar_core#529)
 
 Removed
 -------
