@@ -5,8 +5,8 @@ Changelog for the SODAR Django site. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
-Unreleased
-==========
+v0.7.1 (2020-04-27)
+===================
 
 Added
 -----

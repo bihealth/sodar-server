@@ -9,7 +9,7 @@ import zipfile
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils.safestring import mark_safe
@@ -1005,7 +1005,7 @@ class SampleSheetCacheUpdateView(
                 'Cache updating initiated. This may take some time, refresh '
                 'sheet view after a while to see the results.',
             )
-        return HttpResponseRedirect(get_sheets_url(project))
+        return redirect(get_sheets_url(project))
 
 
 class IrodsCollectionsView(

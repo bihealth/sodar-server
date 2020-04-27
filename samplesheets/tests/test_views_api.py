@@ -1,26 +1,20 @@
 """Tests for REST API views in the samplesheets app"""
 
 import json
-from unittest.case import skipIf
 
 from django.urls import reverse
 
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
-from projectroles.plugins import get_backend_api
 from projectroles.tests.test_models import RemoteSiteMixin, RemoteProjectMixin
 from projectroles.tests.test_views_api import TestAPIViewsBase
-from projectroles.tests.test_views_api_taskflow import TestTaskflowAPIBase
 
 from samplesheets.io import SampleSheetIO
 from samplesheets.models import Investigation, GenericMaterial, ISATab
 from samplesheets.rendering import SampleSheetTableBuilder
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
-from samplesheets.tests.test_views_taskflow import SampleSheetTaskflowMixin
 from samplesheets.tests.test_views import (
     TestViewsBase,
-    IRODS_BACKEND_ENABLED,
-    IRODS_BACKEND_SKIP_MSG,
     REMOTE_SITE_NAME,
     REMOTE_SITE_URL,
     REMOTE_SITE_DESC,
@@ -41,38 +35,6 @@ SHEET_PATH_ALT = SHEET_DIR + 'i_small2_alt.zip'
 
 class TestSampleSheetAPIBase(SampleSheetIOMixin, TestAPIViewsBase):
     """Base view for samplesheets API views tests"""
-
-
-# TODO: Move to test_views_api_taskflow
-class TestSampleSheetAPITaskflowBase(
-    SampleSheetIOMixin, SampleSheetTaskflowMixin, TestTaskflowAPIBase
-):
-    """Base samplesheets API view test class with Taskflow enabled"""
-
-    def setUp(self):
-        super().setUp()
-
-        # Get iRODS backend for session access
-        self.irods_backend = get_backend_api('omics_irods')
-        self.assertIsNotNone(self.irods_backend)
-        # self.irods_session = self.irods_backend.get_session()
-
-        # Init project
-        # Make project with owner in Taskflow and Django
-        self.project, self.owner_as = self._make_project_taskflow(
-            title='TestProject',
-            type=PROJECT_TYPE_PROJECT,
-            parent=self.category,
-            owner=self.user,
-            description='description',
-        )
-
-        # Import investigation
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
-        self.study = self.investigation.studies.first()
-        self.assay = self.study.assays.first()
 
 
 class TestInvestigationRetrieveAPIView(TestSampleSheetAPIBase):
@@ -290,47 +252,6 @@ class TestSampleSheetImportAPIView(TestSampleSheetAPIBase):
             Investigation.objects.filter(project=self.project).count(), 1
         )
         self.assertEqual(ISATab.objects.filter(project=self.project).count(), 1)
-
-
-# TODO: Move to test_views_api_taskflow
-@skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
-class TestIrodsCollsCreateAPIView(TestSampleSheetAPITaskflowBase):
-    """Tests for IrodsCollsCreateAPIView"""
-
-    def test_post(self):
-        """Test post() in IrodsCollsCreateAPIView"""
-
-        # Assert preconditions
-        self.assertEqual(self.investigation.irods_status, False)
-
-        url = reverse(
-            'samplesheets:api_irods_colls_create',
-            kwargs={'project': self.project.sodar_uuid},
-        )
-
-        response = self.request_knox(url, method='POST', data=self.request_data)
-
-        self.assertEqual(response.status_code, 200)
-        self.investigation.refresh_from_db()
-        self.assertEqual(self.investigation.irods_status, True)
-
-    def test_post_created(self):
-        """Test post() with already created collections (should fail)"""
-
-        # Set up iRODS collections
-        self._make_irods_colls(self.investigation)
-
-        # Assert preconditions
-        self.assertEqual(self.investigation.irods_status, True)
-
-        url = reverse(
-            'samplesheets:api_irods_colls_create',
-            kwargs={'project': self.project.sodar_uuid},
-        )
-
-        response = self.request_knox(url, method='POST', data=self.request_data)
-
-        self.assertEqual(response.status_code, 400)
 
 
 # NOTE: Not yet standardized api, use old base class to test
