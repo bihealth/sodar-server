@@ -1,6 +1,7 @@
 """Celery tasks for the landingzones app"""
 
 import time
+from unittest import skipIf
 
 from django.conf import settings
 from django.contrib import auth
@@ -53,6 +54,7 @@ ASYNC_WAIT_SECONDS = 5
 ASYNC_RETRY_COUNT = 3
 
 
+@skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
 class TestTriggerZoneMoveTask(
     SampleSheetIOMixin,
     LandingZoneMixin,
