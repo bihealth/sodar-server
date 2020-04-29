@@ -218,8 +218,8 @@ serve the development version with hot reload in ``http://localhost:8080``.
 
     $ ./run_samplesheets_dev.sh
 
-4. SODAR Celery Process
------------------------
+4. SODAR Celery Processes
+-------------------------
 
 For asynchronous tasks, run the SODAR celery process in debug mode using the
 following script:
@@ -231,6 +231,13 @@ following script:
 Note that the Celery process needs to access correct Django settings. Make sure
 the variable ``DJANGO_READ_DOT_ENV=1`` is set in your environment when running
 this process!
+
+If you are developing periodic tasks, make sure to also run the Celery beat
+scheduler.
+
+.. code-block:: console
+
+    $ ./run_celerybeat.sh
 
 5. SODAR Django Site
 --------------------

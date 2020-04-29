@@ -59,6 +59,9 @@ STATUS_ALLOW_UPDATE = ['ACTIVE', 'FAILED']
 # Status types for which zone clearing is allowed
 STATUS_ALLOW_CLEAR = ['MOVED', 'NOT CREATED', 'DELETED']
 
+# Status types which lock the project in Taskflow
+STATUS_LOCKING = ['PREPARING', 'VALIDATING', 'MOVING']
+
 
 class LandingZone(models.Model):
     """Class representing an user's iRODS landing zone for an assay"""

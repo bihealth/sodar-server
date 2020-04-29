@@ -611,7 +611,13 @@ SHEETS_EXTERNAL_LINK_LABELS = {
 # Landingzones app settings
 # Status query interval in seconds
 LANDINGZONES_STATUS_INTERVAL = env.int('LANDINGZONES_STATUS_INTERVAL', 3)
-
+# Automatic move triggering check interval in seconds
+LANDINGZONES_TRIGGER_MOVE_INVERVAL = env.int(
+    'LANDINGZONES_TRIGGER_MOVE_INTERVAL', 30
+)
+LANDINGZONES_TRIGGER_FILE = env.str(
+    'LANDINGZONES_TRIGGER_FILE', '.sodar_validate_and_move'
+)
 
 # Landingzones configapp plugin settings
 LZ_BIH_PROTEOMICS_SMB_EXPIRY_DAYS = env.int(

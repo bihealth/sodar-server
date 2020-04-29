@@ -5,6 +5,24 @@ Changelog for the SODAR Django site. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+Unreleased
+==========
+
+Added
+-----
+
+- **General**
+    - Celery beat setup (#702)
+- **Landingzones**
+    - Automated triggering of landing zone validation/moving by iRODS file (#702)
+
+Changed
+-------
+
+- **Landingzones**
+    - Refactor zone modification mixins in ``landingzones.views``
+
+
 v0.7.1 (2020-04-27)
 ===================
 

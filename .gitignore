@@ -101,6 +101,7 @@ flamegraph.pl
 
 # Celery
 celerybeat-schedule
+celerybeat.pid
 
 # iRODS files
 irods_config.zip

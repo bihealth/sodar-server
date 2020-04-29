@@ -72,7 +72,8 @@ class ZoneUpdateRequiredPermissionMixin:
 class ZoneConfigPluginMixin:
     """Landing zone configuration plugin operations"""
 
-    def get_flow_data(self, zone, flow_name, data):
+    @classmethod
+    def _get_flow_data(cls, zone, flow_name, data):
         """
         Update flow data parameters according to config.
 
@@ -95,7 +96,7 @@ class ZoneConfigPluginMixin:
         return data
 
 
-class ZoneCreateViewMixin(ZoneConfigPluginMixin):
+class ZoneCreateMixin(ZoneConfigPluginMixin):
     """Mixin to be used in zone creation in UI and REST API views"""
 
     def _submit_create(self, zone):
@@ -143,7 +144,7 @@ class ZoneCreateViewMixin(ZoneConfigPluginMixin):
 
         flow_name = 'landing_zone_create'
 
-        flow_data = self.get_flow_data(
+        flow_data = self._get_flow_data(
             zone,
             flow_name,
             {
@@ -178,8 +179,8 @@ class ZoneCreateViewMixin(ZoneConfigPluginMixin):
             raise ex
 
 
-class ZoneDeleteViewMixin(ZoneConfigPluginMixin):
-    """Mixin to be used in zone creation in UI and REST API views"""
+class ZoneDeleteMixin(ZoneConfigPluginMixin):
+    """Mixin to be used in zone creation"""
 
     def _submit_delete(self, zone):
         """
@@ -218,7 +219,7 @@ class ZoneDeleteViewMixin(ZoneConfigPluginMixin):
 
         # Submit with taskflow
         flow_name = 'landing_zone_delete'
-        flow_data = self.get_flow_data(
+        flow_data = self._get_flow_data(
             zone,
             flow_name,
             {
@@ -250,18 +251,23 @@ class ZoneDeleteViewMixin(ZoneConfigPluginMixin):
             raise ex
 
 
-class ZoneMoveViewMixin(ZoneConfigPluginMixin):
-    """Mixin to be used in zone validation/moving in UI and REST API views"""
+class ZoneMoveMixin(ZoneConfigPluginMixin):
+    """Mixin to be used in zone validation/moving"""
 
-    def _submit_validate_move(self, zone, validate_only):
+    def _submit_validate_move(self, zone, validate_only, request=None):
         """
         Handle timeline updating and initialize taskflow operation for
         LandingZone moving and/or validation.
 
         :param zone: LandingZone object
         :param validate_only: Only perform validation if true (bool)
+        :param request: Request object (optional)
         :raise: taskflow.FlowSubmitException if taskflow submit fails
         """
+        if not request and hasattr(self, 'request'):
+            request = self.request
+
+        user = request.user if request else zone.user
         timeline = get_backend_api('timeline_backend')
         taskflow = get_backend_api('taskflow')
         irods_backend = get_backend_api('omics_irods', conn=False)
@@ -281,7 +287,7 @@ class ZoneMoveViewMixin(ZoneConfigPluginMixin):
             tl_event = timeline.add_event(
                 project=project,
                 app_name=APP_NAME,
-                user=self.request.user,
+                user=user,
                 event_name=event_name,
                 description=desc,
             )
@@ -296,7 +302,7 @@ class ZoneMoveViewMixin(ZoneConfigPluginMixin):
             )
             tl_event.set_status('SUBMIT')
 
-        flow_data = self.get_flow_data(
+        flow_data = self._get_flow_data(
             zone,
             'landing_zone_move',
             {
@@ -321,7 +327,7 @@ class ZoneMoveViewMixin(ZoneConfigPluginMixin):
                 project_uuid=project.sodar_uuid,
                 flow_name='landing_zone_move',
                 flow_data=flow_data,
-                request=self.request,
+                request=request,
                 request_mode='async',
                 timeline_uuid=tl_event.sodar_uuid,
             )
@@ -396,7 +402,7 @@ class ZoneCreateView(
     LoggedInPermissionMixin,
     ProjectPermissionMixin,
     InvestigationContextMixin,
-    ZoneCreateViewMixin,
+    ZoneCreateMixin,
     CreateView,
 ):
     """LandingZone creation view"""
@@ -471,7 +477,7 @@ class ZoneDeleteView(
     ProjectContextMixin,
     ZoneUpdateRequiredPermissionMixin,
     ProjectPermissionMixin,
-    ZoneDeleteViewMixin,
+    ZoneDeleteMixin,
     TemplateView,
 ):
     """LandingZone deletion view"""
@@ -552,7 +558,7 @@ class ZoneMoveView(
     ProjectContextMixin,
     ZoneUpdateRequiredPermissionMixin,
     ProjectPermissionMixin,
-    ZoneMoveViewMixin,
+    ZoneMoveMixin,
     TemplateView,
 ):
     """LandingZone validation and moving triggering view"""

@@ -28,9 +28,9 @@ from landingzones.models import LandingZone, STATUS_ALLOW_UPDATE
 from landingzones.serializers import LandingZoneSerializer
 from landingzones.views import (
     ZoneUpdateRequiredPermissionMixin,
-    ZoneCreateViewMixin,
-    ZoneDeleteViewMixin,
-    ZoneMoveViewMixin,
+    ZoneCreateMixin,
+    ZoneDeleteMixin,
+    ZoneMoveMixin,
 )
 
 # Get logger
@@ -151,7 +151,7 @@ class LandingZoneRetrieveAPIView(SODARAPIGenericProjectMixin, RetrieveAPIView):
 
 
 class LandingZoneCreateAPIView(
-    ZoneCreateViewMixin, SODARAPIGenericProjectMixin, CreateAPIView
+    ZoneCreateMixin, SODARAPIGenericProjectMixin, CreateAPIView
 ):
     """
     Create a landing zone.
@@ -212,7 +212,7 @@ class LandingZoneCreateAPIView(
 
 
 class LandingZoneSubmitDeleteAPIView(
-    ZoneDeleteViewMixin, LandingZoneSubmitBaseAPIView
+    ZoneDeleteMixin, LandingZoneSubmitBaseAPIView
 ):
     """
     Initiate landing zone deletion.
@@ -249,9 +249,7 @@ class LandingZoneSubmitDeleteAPIView(
         )
 
 
-class LandingZoneSubmitMoveAPIView(
-    ZoneMoveViewMixin, LandingZoneSubmitBaseAPIView
-):
+class LandingZoneSubmitMoveAPIView(ZoneMoveMixin, LandingZoneSubmitBaseAPIView):
     """
     Initiate landing zone validation and/or moving.
 
