@@ -21,6 +21,8 @@ Changed
 
 - **Landingzones**
     - Refactor zone modification mixins in ``landingzones.views``
+- **Sampleheets**
+    - Partial upgrade of breaking Vue app dependencies (#837)
 
 
 v0.7.1 (2020-04-27)
