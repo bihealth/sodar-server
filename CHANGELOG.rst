@@ -19,6 +19,8 @@ Added
 Changed
 -------
 
+- **General**
+    - Upgrade to django-sodar-core v0.8.2-WIP
 - **Landingzones**
     - Refactor zone modification mixins in ``landingzones.views``
 - **Sampleheets**
