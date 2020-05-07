@@ -94,4 +94,4 @@ lxml==4.2.5
 openpyxl==3.0.0
 
 # Webpack loader for Vue.js
-django-webpack-loader==0.6.0
+django-webpack-loader==0.7.0

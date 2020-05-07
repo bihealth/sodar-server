@@ -17,13 +17,8 @@
 <div id="sodar-ss-app-context" app-context="{{ app_context }}"></div>
 <div id="app"></div>
 
-{# Render manifest and vendor bundles only if running in production #}
-{% if settings_module == 'config.settings.production' %}
-  {% render_bundle 'manifest' config='SAMPLESHEETS' %}
-  {% render_bundle 'vendor' config='SAMPLESHEETS' %}
-{% endif %}
-
-{# Always render app bundle #}
+{# Render vue app #}
+{% render_bundle 'chunk-vendors' config='SAMPLESHEETS' %}
 {% render_bundle 'app' config='SAMPLESHEETS' %}
 
 {% endblock projectroles_extend %}
