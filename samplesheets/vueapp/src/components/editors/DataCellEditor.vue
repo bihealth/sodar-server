@@ -293,10 +293,11 @@ input.ag-cell-edit-input {
   appearance: none;
 
   border: 0;
+  width: 100%;
   height: 38px !important;
   background-color: #ffffd8 !important;
-  padding-left: 12px;
-  padding-right: 15px;
+  padding-left: 11px;
+  padding-right: 14px;
   padding-top: 0;
   padding-bottom: 2px;
 }
@@ -307,6 +308,7 @@ select.ag-cell-edit-input {
   appearance: none;
 
   border: 0;
+  width: 100%;
   height: 38px !important;
   background-color: #ffffd8 !important;
   background-repeat: no-repeat;
