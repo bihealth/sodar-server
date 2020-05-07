@@ -15,12 +15,15 @@ Added
     - Celery beat setup (#702)
 - **Landingzones**
     - Automated triggering of landing zone validation/moving by iRODS file (#702)
+- **Samplesheets**
+    - ISAtab export through the REST API via ``SampleSheetISAExportAPIView`` (#849)
 
 Changed
 -------
 
 - **General**
     - Upgrade to django-sodar-core v0.8.2-WIP
+    - Move ISAtab export functionality to ``SampleSheetISAExportMixin`` (#849)
 - **Landingzones**
     - Refactor zone modification mixins in ``landingzones.views``
 - **Sampleheets**

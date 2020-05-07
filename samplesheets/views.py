@@ -33,7 +33,11 @@ from projectroles.views import (
 )
 
 from samplesheets.forms import SampleSheetImportForm
-from samplesheets.io import SampleSheetIO, SampleSheetImportException
+from samplesheets.io import (
+    SampleSheetIO,
+    SampleSheetImportException,
+    SampleSheetExportException,
+)
 from samplesheets.models import Investigation, Study, Assay, ISATab
 from samplesheets.rendering import SampleSheetTableBuilder, EMPTY_VALUE
 from samplesheets.tasks import update_project_cache_task
@@ -342,6 +346,159 @@ class SampleSheetImportMixin:
 
         logger.info('Sample sheet {} OK'.format(action))
         return investigation
+
+
+class SampleSheetISAExportMixin:
+    """Mixin for exporting sample sheets in a zipped ISAtab format"""
+
+    def export_isa_zip(self, project, request, version_uuid=None):
+        """
+        Export sample sheets as zipped ISAtab.
+
+        :param project: Project object
+        :param request: Request object
+        :param version_uuid: Version UUID (optional)
+        :return: Response object
+        :raise: ISATab.DoesNotExist if version is requested but not found
+        :raise Investigation.DosNotExist if investigation is not found
+        """
+
+        timeline = get_backend_api('timeline_backend')
+        tl_event = None
+        sheet_io = SampleSheetIO()
+
+        isa_version = None
+
+        if version_uuid:
+            isa_version = ISATab.objects.get(
+                project=project, sodar_uuid=version_uuid
+            )
+            investigation = Investigation.objects.get(
+                sodar_uuid=isa_version.investigation_uuid
+            )
+
+        else:
+            investigation = Investigation.objects.get(project=project)
+
+        if not isa_version and (
+            not investigation.parser_version
+            or version.parse(investigation.parser_version)
+            < version.parse(TARGET_ALTAMISA_VERSION)
+        ):
+            raise SampleSheetExportException(
+                'Exporting ISAtabs imported using altamISA < {} is not '
+                'supported. Please replace the sheets to enable export.'.format(
+                    TARGET_ALTAMISA_VERSION
+                ),
+            )
+
+        # Set up archive file name
+        archive_name = (
+            isa_version.archive_name
+            if isa_version
+            else investigation.archive_name
+        )
+
+        if archive_name:
+            file_name = archive_name.split('.zip')[0]
+
+        else:
+            file_name = re.sub(
+                r'[\s]+', '_', re.sub(r'[^\w\s-]', '', project.title).strip()
+            )
+
+        if isa_version:
+            file_name += '_' + isa_version.date_created.strftime(
+                '%Y-%m-%d_%H%M%S'
+            )
+
+            if isa_version.user:
+                file_name += '_' + slugify(isa_version.user.username)
+
+        file_name += '.zip'
+
+        if timeline:
+            if isa_version:
+                tl_desc = 'export {investigation} version {isatab}'
+
+            else:
+                tl_desc = 'export {investigation} as ISAtab'
+
+            tl_event = timeline.add_event(
+                project=project,
+                app_name=APP_NAME,
+                user=request.user,
+                event_name='sheet_export',
+                description=tl_desc,
+                classified=True,
+            )
+
+            tl_event.add_object(
+                obj=investigation,
+                label='investigation',
+                name=investigation.title,
+            )
+
+            if isa_version:
+                tl_event.add_object(
+                    obj=isa_version, label='isatab', name=isa_version.get_name()
+                )
+
+        # Initiate export
+        try:
+            if isa_version:
+                export_data = isa_version.data
+
+            else:
+                export_data = sheet_io.export_isa(investigation)
+
+            # Build Zip archive
+            zip_io = io.BytesIO()
+            zf = zipfile.ZipFile(
+                zip_io, mode='w', compression=zipfile.ZIP_DEFLATED
+            )
+            zf.writestr(
+                export_data['investigation']['path'],
+                export_data['investigation']['tsv'],
+            )
+            inv_dir = '/'.join(
+                export_data['investigation']['path'].split('/')[:-1]
+            )
+
+            for k, v in export_data['studies'].items():
+                zf.writestr('{}/{}'.format(inv_dir, k), v['tsv'])
+
+            for k, v in export_data['assays'].items():
+                zf.writestr('{}/{}'.format(inv_dir, k), v['tsv'])
+
+            zf.close()
+
+            if tl_event:
+                export_warnings = sheet_io.get_warnings()
+                extra_data = (
+                    {'warnings': export_warnings}
+                    if not export_warnings['all_ok']
+                    else None
+                )
+                status_desc = WARNING_STATUS_MSG if extra_data else None
+                tl_event.set_status(
+                    'OK', status_desc=status_desc, extra_data=extra_data
+                )
+
+            # Set up response
+            response = HttpResponse(
+                zip_io.getvalue(), content_type='application/zip'
+            )
+            response[
+                'Content-Disposition'
+            ] = 'attachment; filename="{}"'.format(file_name)
+            return response
+
+        except Exception as ex:
+            if tl_event:
+                tl_event.set_status('FAILED', str(ex))
+
+            raise ex
 
 
 class IrodsCollsCreateViewMixin:
@@ -660,6 +817,7 @@ class SampleSheetExcelExportView(
 
 
 class SampleSheetISAExportView(
+    SampleSheetISAExportMixin,
     LoginRequiredMixin,
     LoggedInPermissionMixin,
     ProjectPermissionMixin,
@@ -672,169 +830,28 @@ class SampleSheetISAExportView(
 
     def get(self, request, *args, **kwargs):
         """Override get() to return ISAtab files as a ZIP archive"""
-        timeline = get_backend_api('timeline_backend')
-        tl_event = None
         project = self.get_project()
-        sheet_io = SampleSheetIO()
-
-        isa_version = None
         version_uuid = kwargs.get('isatab')
 
-        if version_uuid:
-            redirect_url = reverse(
-                'samplesheets:versions', kwargs={'project': project.sodar_uuid}
-            )
-
-            try:
-                isa_version = ISATab.objects.get(
-                    project=project, sodar_uuid=version_uuid
-                )
-                investigation = Investigation.objects.get(
-                    sodar_uuid=isa_version.investigation_uuid
-                )
-
-            except (ISATab.DoesNotExist, Investigation.DoesNotExist):
-                messages.error(
-                    request, 'Unable to retrieve sample sheet version'
-                )
-                return redirect(redirect_url)
-
-        else:
-            redirect_url = get_sheets_url(project)
-
-            try:
-                investigation = Investigation.objects.get(project=project)
-
-            except Investigation.DoesNotExist:
-                messages.error(
-                    request, 'No sample sheets available for project'
-                )
-                return redirect(redirect_url)
-
-        if not isa_version and (
-            not investigation.parser_version
-            or version.parse(investigation.parser_version)
-            < version.parse(TARGET_ALTAMISA_VERSION)
-        ):
-            messages.error(
-                request,
-                'Exporting ISAtabs imported using altamISA < {} is not '
-                'supported. Please replace the sheets to enable export.'.format(
-                    TARGET_ALTAMISA_VERSION
-                ),
-            )
-            return redirect(redirect_url)
-
-        # Set up archive file name
-        archive_name = (
-            isa_version.archive_name
-            if isa_version
-            else investigation.archive_name
-        )
-
-        if archive_name:
-            file_name = archive_name.split('.zip')[0]
-
-        else:
-            file_name = re.sub(
-                r'[\s]+', '_', re.sub(r'[^\w\s-]', '', project.title).strip()
-            )
-
-        if isa_version:
-            file_name += '_' + isa_version.date_created.strftime(
-                '%Y-%m-%d_%H%M%S'
-            )
-
-            if isa_version.user:
-                file_name += '_' + slugify(isa_version.user.username)
-
-        file_name += '.zip'
-
-        if timeline:
-            if isa_version:
-                tl_desc = 'export {investigation} version {isatab}'
-
-            else:
-                tl_desc = 'export {investigation} as ISAtab'
-
-            tl_event = timeline.add_event(
-                project=project,
-                app_name=APP_NAME,
-                user=self.request.user,
-                event_name='sheet_export',
-                description=tl_desc,
-                classified=True,
-            )
-
-            tl_event.add_object(
-                obj=investigation,
-                label='investigation',
-                name=investigation.title,
-            )
-
-            if isa_version:
-                tl_event.add_object(
-                    obj=isa_version, label='isatab', name=isa_version.get_name()
-                )
-
-        # Initiate export
         try:
-            if isa_version:
-                export_data = isa_version.data
-
-            else:
-                export_data = sheet_io.export_isa(investigation)
-
-            # Build Zip archive
-            zip_io = io.BytesIO()
-            zf = zipfile.ZipFile(
-                zip_io, mode='w', compression=zipfile.ZIP_DEFLATED
-            )
-            zf.writestr(
-                export_data['investigation']['path'],
-                export_data['investigation']['tsv'],
-            )
-            inv_dir = '/'.join(
-                export_data['investigation']['path'].split('/')[:-1]
-            )
-
-            for k, v in export_data['studies'].items():
-                zf.writestr('{}/{}'.format(inv_dir, k), v['tsv'])
-
-            for k, v in export_data['assays'].items():
-                zf.writestr('{}/{}'.format(inv_dir, k), v['tsv'])
-
-            zf.close()
-
-            if tl_event:
-                export_warnings = sheet_io.get_warnings()
-                extra_data = (
-                    {'warnings': export_warnings}
-                    if not export_warnings['all_ok']
-                    else None
-                )
-                status_desc = WARNING_STATUS_MSG if extra_data else None
-                tl_event.set_status(
-                    'OK', status_desc=status_desc, extra_data=extra_data
-                )
-
-            # Set up response
-            response = HttpResponse(
-                zip_io.getvalue(), content_type='application/zip'
-            )
-            response[
-                'Content-Disposition'
-            ] = 'attachment; filename="{}"'.format(file_name)
-            return response
+            return self.export_isa_zip(project, request, version_uuid)
 
         except Exception as ex:
-            if tl_event:
-                tl_event.set_status('FAILED', str(ex))
+            if version_uuid:
+                redirect_url = reverse(
+                    'samplesheets:versions',
+                    kwargs={'project': project.sodar_uuid},
+                )
 
-            if settings.DEBUG:
-                raise ex
+            else:
+                redirect_url = get_sheets_url(project)
 
-            messages.error(request, 'Unable to export ISAtab: {}'.format(ex))
+            messages.error(
+                request,
+                'Unable to export ISAtab{}: {}'.format(
+                    ' version' if version_uuid else '', ex
+                ),
+            )
             return redirect(redirect_url)
 
 

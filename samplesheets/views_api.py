@@ -1,7 +1,12 @@
 """REST API views for the samplesheets app"""
 
 from rest_framework import status
-from rest_framework.exceptions import APIException, ParseError, ValidationError
+from rest_framework.exceptions import (
+    APIException,
+    ParseError,
+    ValidationError,
+    NotFound,
+)
 from rest_framework.generics import RetrieveAPIView
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -22,6 +27,7 @@ from samplesheets.serializers import InvestigationSerializer
 from samplesheets.views import (
     IrodsCollsCreateViewMixin,
     SampleSheetImportMixin,
+    SampleSheetISAExportMixin,
     SITE_MODE_TARGET,
     REMOTE_LEVEL_READ_ROLES,
 )
@@ -112,6 +118,36 @@ class IrodsCollsCreateAPIView(
             },
             status=status.HTTP_200_OK,
         )
+
+
+class SampleSheetISAExportAPIView(
+    SampleSheetISAExportMixin, SODARAPIBaseProjectMixin, APIView
+):
+    """
+    Export sample sheets as ISAtab TSV files within a zip archive.
+
+    **URL:** ``/samplesheets/api/export/{Project.sodar_uuid}``
+
+    **Methods:** ``GET``
+    """
+
+    http_method_names = ['get']
+    permission_required = 'samplesheets.export_sheet'
+
+    def get(self, request, *args, **kwargs):
+        project = self.get_project()
+        investigation = Investigation.objects.filter(
+            project=project, active=True
+        ).first()
+
+        if not investigation:
+            raise NotFound()
+
+        try:
+            return self.export_isa_zip(project, request)
+
+        except Exception as ex:
+            raise APIException('Unable to export ISAtab: {}'.format(ex))
 
 
 class SampleSheetImportAPIView(

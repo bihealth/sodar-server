@@ -17,6 +17,8 @@ API Views
 
 .. autoclass:: SampleSheetImportAPIView
 
+.. autoclass:: SampleSheetISAExportAPIView
+
 
 Versioning
 ==========

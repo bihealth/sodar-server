@@ -254,6 +254,36 @@ class TestSampleSheetImportAPIView(TestSampleSheetAPIBase):
         self.assertEqual(ISATab.objects.filter(project=self.project).count(), 1)
 
 
+class TestSampleSheetISAExportAPIView(TestSampleSheetAPIBase):
+    """Tests for SampleSheetISAExportAPIView"""
+
+    def test_get(self):
+        """Test get() in SampleSheetISAExportAPIView"""
+
+        # Import investigation
+        self.investigation = self._import_isa_from_file(
+            SHEET_PATH, self.project
+        )
+
+        url = reverse(
+            'samplesheets:api_export_isa',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+        response = self.request_knox(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['content-type'], 'application/zip')
+
+    def test_get_no_investigation(self):
+        """Test get() with no imported investigation"""
+
+        url = reverse(
+            'samplesheets:api_export_isa',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+        response = self.request_knox(url)
+        self.assertEqual(response.status_code, 404)
+
+
 # NOTE: Not yet standardized api, use old base class to test
 class TestRemoteSheetGetAPIView(
     RemoteSiteMixin, RemoteProjectMixin, TestViewsBase

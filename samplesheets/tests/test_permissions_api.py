@@ -120,6 +120,40 @@ class TestSampleSheetImportAPIView(
         )
 
 
+class TestSampleSheetISAExportAPIView(
+    SampleSheetIOMixin,
+    RemoteSiteMixin,
+    RemoteProjectMixin,
+    TestProjectAPIPermissionBase,
+):
+    """Tests for SampleSheetISAExportAPIView permissions"""
+
+    def setUp(self):
+        super().setUp()
+        self.investigation = self._import_isa_from_file(
+            SHEET_PATH, self.project
+        )
+        self.study = self.investigation.studies.first()
+        self.assay = self.study.assays.first()
+
+    def test_get(self):
+        """Test get() in SampleSheetISAExportAPIView"""
+        url = reverse(
+            'samplesheets:api_export_isa',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+        good_users = [
+            self.superuser,
+            self.owner_as.user,
+            self.delegate_as.user,
+            self.contributor_as.user,
+        ]
+        bad_users = [self.guest_as.user, self.user_no_roles]
+        self.assert_response_api(url, good_users, 200)
+        self.assert_response_api(url, bad_users, 403)
+        self.assert_response_api(url, [self.anonymous], 401)
+
+
 class TestRemoteSheetGetAPIView(
     SampleSheetIOMixin,
     RemoteSiteMixin,

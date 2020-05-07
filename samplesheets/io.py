@@ -1546,3 +1546,9 @@ class SampleSheetImportException(Exception):
     """Sample sheet importing exception"""
 
     pass
+
+
+class SampleSheetExportException(Exception):
+    """Sample sheet exporting exception"""
+
+    pass
