@@ -25,7 +25,7 @@ Changed
     - Refactor zone modification mixins in ``landingzones.views``
 - **Sampleheets**
     - Re-initialize Vue app with Vue-CLI v4 (#837)
-    - Refactor and cleanup Vue app code (#537, #837)
+    - Partial refactoring and cleanup of Vue app code (#537, #837)
 
 
 v0.7.1 (2020-04-27)
