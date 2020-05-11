@@ -26,9 +26,15 @@ Changed
     - Move ISAtab export functionality to ``SampleSheetISAExportMixin`` (#849)
 - **Landingzones**
     - Refactor zone modification mixins in ``landingzones.views``
-- **Sampleheets**
+- **Samplesheets**
     - Re-initialize Vue app with Vue-CLI v4 (#837)
     - Partial refactoring and cleanup of Vue app code (#537, #837)
+
+Fixed
+-----
+
+- **Samplesheets**
+    - Row sorting not working with updated column type definitions (#847)
 
 
 v0.7.1 (2020-04-27)

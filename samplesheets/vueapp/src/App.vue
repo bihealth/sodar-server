@@ -420,10 +420,8 @@ export default {
 
     // Helper to get flat value for
     getFlatValue (value) {
-      if (Array.isArray(value) && value.length > 0) {
-        if ('name' in value[0]) {
-          return value.map(d => d.name).join(';')
-        }
+      if (Array.isArray(value) && value.length > 0 && 'name' in value[0]) {
+        return value.map(d => d.name).join(';')
       } else {
         return value
       }
@@ -435,7 +433,7 @@ export default {
       let valueB = dataB.value
 
       // Integer/float sort
-      if (dataA.colType) {
+      if (['UNIT', 'NUMERIC'].includes(dataA.colType)) {
         return parseFloat(valueA) - parseFloat(valueB)
       }
 
