@@ -25,7 +25,8 @@ API Views
 Versioning
 ==========
 
-For accept header versioning, the following header is expected in SODAR v0.7.1:
+For accept header versioning, the following header is expected in the current
+SODAR version:
 
 .. code-block:: console
 

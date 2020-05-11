@@ -19,7 +19,7 @@ Versioning
 ==========
 
 For accept header versioning, the following media type and version are expected
-in SODAR v0.7.1:
+in the current SODAR version:
 
 .. code-block:: console
 

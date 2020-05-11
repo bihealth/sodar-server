@@ -257,8 +257,8 @@ class TestSampleSheetImportAPIView(TestSampleSheetAPIBase):
 class TestSampleSheetISAExportAPIView(TestSampleSheetAPIBase):
     """Tests for SampleSheetISAExportAPIView"""
 
-    def test_get(self):
-        """Test get() in SampleSheetISAExportAPIView"""
+    def test_get_zip(self):
+        """Test zip export  in SampleSheetISAExportAPIView"""
 
         # Import investigation
         self.investigation = self._import_isa_from_file(
@@ -266,7 +266,7 @@ class TestSampleSheetISAExportAPIView(TestSampleSheetAPIBase):
         )
 
         url = reverse(
-            'samplesheets:api_export_isa',
+            'samplesheets:api_export_zip',
             kwargs={'project': self.project.sodar_uuid},
         )
         response = self.request_knox(url)
@@ -277,11 +277,29 @@ class TestSampleSheetISAExportAPIView(TestSampleSheetAPIBase):
         """Test get() with no imported investigation"""
 
         url = reverse(
-            'samplesheets:api_export_isa',
+            'samplesheets:api_export_zip',
             kwargs={'project': self.project.sodar_uuid},
         )
         response = self.request_knox(url)
         self.assertEqual(response.status_code, 404)
+
+    def test_get_json(self):
+        """Test json export  in SampleSheetISAExportAPIView"""
+
+        # Import investigation
+        self.investigation = self._import_isa_from_file(
+            SHEET_PATH, self.project
+        )
+
+        url = reverse(
+            'samplesheets:api_export_json',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+        response = self.request_knox(url)
+        sheet_io = SampleSheetIO()
+        expected = sheet_io.export_isa(self.investigation)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data, expected)
 
 
 # NOTE: Not yet standardized api, use old base class to test

@@ -16,7 +16,7 @@ Added
 - **Landingzones**
     - Automated triggering of landing zone validation/moving by iRODS file (#702)
 - **Samplesheets**
-    - ISAtab export through the REST API via ``SampleSheetISAExportAPIView`` (#849)
+    - ISAtab export through the REST API via ``SampleSheetISAExportAPIView`` (#849, #851)
 
 Changed
 -------

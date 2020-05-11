@@ -22,6 +22,8 @@ from django.views.generic import (
     View,
 )
 
+from rest_framework.response import Response
+
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
 from projectroles.models import Project, SODAR_CONSTANTS
@@ -349,14 +351,16 @@ class SampleSheetImportMixin:
 
 
 class SampleSheetISAExportMixin:
-    """Mixin for exporting sample sheets in a zipped ISAtab format"""
+    """Mixin for exporting sample sheets in ISAtab format"""
 
-    def export_isa_zip(self, project, request, version_uuid=None):
+    def get_isa_export(self, project, request, format='zip', version_uuid=None):
         """
-        Export sample sheets as zipped ISAtab.
+        Export sample sheets as a HTTP response as ISAtab, either in a zipped
+        archive or wrapped in a JSON structure.
 
         :param project: Project object
         :param request: Request object
+        :param format: Export format ("zip" or "json")
         :param version_uuid: Version UUID (optional)
         :return: Response object
         :raise: ISATab.DoesNotExist if version is requested but not found
@@ -366,8 +370,15 @@ class SampleSheetISAExportMixin:
         timeline = get_backend_api('timeline_backend')
         tl_event = None
         sheet_io = SampleSheetIO()
-
         isa_version = None
+        valid_formats = ['zip', 'json']
+
+        if format not in valid_formats:
+            raise ValueError(
+                'Invalid format "{}". Valid formats:'.format(
+                    format, ', '.join(valid_formats)
+                )
+            )
 
         if version_uuid:
             isa_version = ISATab.objects.get(
@@ -452,27 +463,31 @@ class SampleSheetISAExportMixin:
             else:
                 export_data = sheet_io.export_isa(investigation)
 
-            # Build Zip archive
-            zip_io = io.BytesIO()
-            zf = zipfile.ZipFile(
-                zip_io, mode='w', compression=zipfile.ZIP_DEFLATED
-            )
-            zf.writestr(
-                export_data['investigation']['path'],
-                export_data['investigation']['tsv'],
-            )
-            inv_dir = '/'.join(
-                export_data['investigation']['path'].split('/')[:-1]
-            )
+            zip_io = None
 
-            for k, v in export_data['studies'].items():
-                zf.writestr('{}/{}'.format(inv_dir, k), v['tsv'])
+            if format == 'zip':
+                # Build Zip archive
+                zip_io = io.BytesIO()
+                zf = zipfile.ZipFile(
+                    zip_io, mode='w', compression=zipfile.ZIP_DEFLATED
+                )
+                zf.writestr(
+                    export_data['investigation']['path'],
+                    export_data['investigation']['tsv'],
+                )
+                inv_dir = '/'.join(
+                    export_data['investigation']['path'].split('/')[:-1]
+                )
 
-            for k, v in export_data['assays'].items():
-                zf.writestr('{}/{}'.format(inv_dir, k), v['tsv'])
+                for k, v in export_data['studies'].items():
+                    zf.writestr('{}/{}'.format(inv_dir, k), v['tsv'])
 
-            zf.close()
+                for k, v in export_data['assays'].items():
+                    zf.writestr('{}/{}'.format(inv_dir, k), v['tsv'])
 
+                zf.close()
+
+            # Update timeline event
             if tl_event:
                 export_warnings = sheet_io.get_warnings()
                 extra_data = (
@@ -486,13 +501,17 @@ class SampleSheetISAExportMixin:
                 )
 
             # Set up response
-            response = HttpResponse(
-                zip_io.getvalue(), content_type='application/zip'
-            )
-            response[
-                'Content-Disposition'
-            ] = 'attachment; filename="{}"'.format(file_name)
-            return response
+            if format == 'zip' and zip_io:
+                response = HttpResponse(
+                    zip_io.getvalue(), content_type='application/zip'
+                )
+                response[
+                    'Content-Disposition'
+                ] = 'attachment; filename="{}"'.format(file_name)
+                return response
+
+            elif format == 'json':
+                return Response(export_data, status=200)
 
         except Exception as ex:
             if tl_event:
@@ -834,7 +853,7 @@ class SampleSheetISAExportView(
         version_uuid = kwargs.get('isatab')
 
         try:
-            return self.export_isa_zip(project, request, version_uuid)
+            return self.get_isa_export(project, request, 'zip', version_uuid)
 
         except Exception as ex:
             if version_uuid:

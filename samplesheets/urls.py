@@ -90,9 +90,14 @@ urls_api = [
         name='api_import',
     ),
     url(
-        regex=r'^api/export/(?P<project>[0-9a-f-]+)$',
+        regex=r'^api/export/zip/(?P<project>[0-9a-f-]+)$',
         view=samplesheets.views_api.SampleSheetISAExportAPIView.as_view(),
-        name='api_export_isa',
+        name='api_export_zip',
+    ),
+    url(
+        regex=r'^api/export/json/(?P<project>[0-9a-f-]+)$',
+        view=samplesheets.views_api.SampleSheetISAExportAPIView.as_view(),
+        name='api_export_json',
     ),
     url(
         regex=r'^api/remote/get/(?P<project>[0-9a-f-]+)/(?P<secret>[\w\-]+)$',

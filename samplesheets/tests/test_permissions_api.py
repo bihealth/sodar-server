@@ -139,7 +139,7 @@ class TestSampleSheetISAExportAPIView(
     def test_get(self):
         """Test get() in SampleSheetISAExportAPIView"""
         url = reverse(
-            'samplesheets:api_export_isa',
+            'samplesheets:api_export_zip',
             kwargs={'project': self.project.sodar_uuid},
         )
         good_users = [

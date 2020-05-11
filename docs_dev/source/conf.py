@@ -23,10 +23,10 @@ project = 'SODAR'
 copyright = '2020, BIH Core Unit Bioinformatics'
 author = 'Mikko Nieminen'
 
-# The short X.Y version
-version = '0.7'
-# The full version, including alpha/beta/rc tags
-release = '0.7.1'
+# The short X.Y version.
+version = '0.8'
+# The full version, including alpha/beta/rc tags.
+release = '0.8.0-WIP'
 
 
 # -- General configuration ---------------------------------------------------

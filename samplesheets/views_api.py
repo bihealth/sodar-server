@@ -1,5 +1,7 @@
 """REST API views for the samplesheets app"""
 
+from django.urls import reverse
+
 from rest_framework import status
 from rest_framework.exceptions import (
     APIException,
@@ -124,9 +126,12 @@ class SampleSheetISAExportAPIView(
     SampleSheetISAExportMixin, SODARAPIBaseProjectMixin, APIView
 ):
     """
-    Export sample sheets as ISAtab TSV files within a zip archive.
+    Export sample sheets as ISAtab TSV files, either packed in a zip archive or
+    wrapped in a JSON structure.
 
-    **URL:** ``/samplesheets/api/export/{Project.sodar_uuid}``
+    **URL for zip export:** ``/samplesheets/api/export/zip/{Project.sodar_uuid}``
+
+    **URL for JSON export:** ``/samplesheets/api/export/json/{Project.sodar_uuid}``
 
     **Methods:** ``GET``
     """
@@ -139,12 +144,19 @@ class SampleSheetISAExportAPIView(
         investigation = Investigation.objects.filter(
             project=project, active=True
         ).first()
+        export_format = 'json'
 
         if not investigation:
             raise NotFound()
 
+        if self.request.get_full_path() == reverse(
+            'samplesheets:api_export_zip',
+            kwargs={'project': project.sodar_uuid},
+        ):
+            export_format = 'zip'
+
         try:
-            return self.export_isa_zip(project, request)
+            return self.get_isa_export(project, request, export_format)
 
         except Exception as ex:
             raise APIException('Unable to export ISAtab: {}'.format(ex))
