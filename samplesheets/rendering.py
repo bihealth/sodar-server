@@ -199,6 +199,7 @@ class SampleSheetTableBuilder:
         """
         header = {
             'value': name.strip().title(),  # TODO: Better titling (#576)
+            'name': name,  # Store original field name
             'obj_cls': obj.__class__.__name__,
             'item_type': obj.item_type
             if isinstance(obj, GenericMaterial)
@@ -256,7 +257,6 @@ class SampleSheetTableBuilder:
         # Add extra data for editing
         if self._edit:
             header['type'] = header_type
-            header['name'] = name  # Store original field name
 
         self._field_header.append(header)
         self._field_idx += 1

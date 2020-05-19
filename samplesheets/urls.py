@@ -144,6 +144,11 @@ urls_ajax = [
         view=samplesheets.views_ajax.SampleSheetManageAjaxView.as_view(),
         name='ajax_manage',
     ),
+    url(
+        regex=r'^ajax/display/update/(?P<study>[0-9a-f-]+)$',
+        view=samplesheets.views_ajax.StudyDisplayConfigAjaxView.as_view(),
+        name='ajax_display_update',
+    ),
 ]
 
 # Taskflow API views

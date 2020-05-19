@@ -24,7 +24,11 @@ from samplesheets.models import (
     GenericMaterial,
 )
 from samplesheets.rendering import SampleSheetTableBuilder
-from samplesheets.utils import get_comments, build_sheet_config
+from samplesheets.utils import (
+    get_comments,
+    build_sheet_config,
+    build_display_config,
+)
 from samplesheets.views import (
     app_settings,
     APP_NAME,
@@ -219,6 +223,86 @@ class SampleSheetStudyTablesAjaxView(SODARBaseProjectAjaxView):
 
         return 'samplesheets.view_sheet'
 
+    def _get_sheet_config(self, investigation):
+        """Get or create sheet configuration for an investigation"""
+
+        sheet_config = app_settings.get_app_setting(
+            APP_NAME, 'sheet_config', project=investigation.project
+        )
+
+        if not sheet_config:
+            logger.debug('No sheet configuration found, building..')
+            sheet_config = build_sheet_config(investigation)
+            app_settings.set_app_setting(
+                APP_NAME,
+                'sheet_config',
+                sheet_config,
+                project=investigation.project,
+            )
+            logger.info('Sheet configuration built for investigation')
+
+        return sheet_config
+
+    @transaction.atomic
+    def _get_display_config(self, investigation, user, sheet_config=None):
+        """Get or create display configuration for an investigation"""
+
+        project = investigation.project
+        user_config_found = True
+
+        # Get user display config
+        display_config = app_settings.get_app_setting(
+            APP_NAME, 'display_config', project=project, user=user
+        )
+
+        # Get default configuration if user config is not found
+        if not display_config:
+            user_config_found = False
+            logger.debug(
+                'No display configuration found for user "{}", '
+                'using default..'.format(user.username)
+            )
+            display_config = app_settings.get_app_setting(
+                APP_NAME, 'display_config_default', project=project,
+            )
+
+        # If default display configuration is not found, build it
+        if not display_config:
+            logger.debug('No default display configuration found, building..')
+
+            if not sheet_config:
+                sheet_config = self._get_sheet_config(investigation)
+
+            display_config = build_display_config(investigation, sheet_config)
+
+            logger.debug(
+                'Setting default display config for project "{}" ({})'.format(
+                    project.title, project.sodar_uuid
+                )
+            )
+            app_settings.set_app_setting(
+                APP_NAME,
+                'display_config_default',
+                display_config,
+                project=project,
+            )
+
+        if not user_config_found:
+            logger.debug(
+                'Setting display config for user "{}" in project "{}" ({})'.format(
+                    user.username, project.title, project.sodar_uuid
+                )
+            )
+            app_settings.set_app_setting(
+                APP_NAME,
+                'display_config',
+                display_config,
+                project=project,
+                user=user,
+            )
+
+        return display_config
+
     def get(self, request, *args, **kwargs):
         timeline = get_backend_api('timeline_backend')
         irods_backend = get_backend_api('omics_irods', conn=False)
@@ -358,21 +442,20 @@ class SampleSheetStudyTablesAjaxView(SODARBaseProjectAjaxView):
                     else:
                         a_data['shortcuts'][i]['enabled'] = True
 
-        # Get sheet configuration if editing
+        # Get/build sheet config
+        sheet_config = self._get_sheet_config(study.investigation)
+
+        # Get/build display config
+        display_config = self._get_display_config(
+            study.investigation, request.user, sheet_config
+        )
+
+        ret_data['display_config'] = display_config['studies'][
+            str(study.sodar_uuid)
+        ]
+
+        # Set up editing
         if edit:
-            # If the config doesn't exist yet, build it
-            sheet_config = app_settings.get_app_setting(
-                APP_NAME, 'sheet_config', project=project
-            )
-
-            if not sheet_config:
-                logger.debug('No sheet configuration found, building..')
-                sheet_config = build_sheet_config(study.investigation)
-                app_settings.set_app_setting(
-                    APP_NAME, 'sheet_config', sheet_config, project=project
-                )
-                logger.info('Sheet configuration built for investigation')
-
             ret_data['study_config'] = sheet_config['studies'][
                 str(study.sodar_uuid)
             ]
@@ -633,7 +716,7 @@ class SampleSheetEditFinishAjaxView(SODARBaseProjectAjaxView):
 
 
 class SampleSheetManageAjaxView(SODARBaseProjectAjaxView):
-    """View to manage sample sheet configuration"""
+    """View to manage sample sheet editing configuration"""
 
     permission_required = 'samplesheets.manage_sheet'
 
@@ -721,6 +804,8 @@ class SampleSheetManageAjaxView(SODARBaseProjectAjaxView):
                 )
             )
 
+            # TODO: Update default display config (and user configurations?)
+
             if timeline:
                 if a_uuid:
                     tl_obj = Assay.objects.filter(sodar_uuid=a_uuid).first()
@@ -745,3 +830,72 @@ class SampleSheetManageAjaxView(SODARBaseProjectAjaxView):
                 )
 
         return Response({'message': 'ok'}, status=200)
+
+
+class StudyDisplayConfigAjaxView(SODARBaseProjectAjaxView):
+    """View to update sample sheet display configuration for a study"""
+
+    permission_required = 'samplesheets.view_sheet'
+
+    def post(self, request, *args, **kwargs):
+        timeline = get_backend_api('timeline_backend')
+        study_uuid = self.kwargs.get('study')
+        study = Study.objects.filter(sodar_uuid=study_uuid).first()
+
+        if not study:
+            return Response({'detail': 'Study not found'}, status=404)
+
+        project = study.investigation.project
+        study_config = request.data.get('study_config')
+
+        if not study_config:
+            return Response(
+                {'detail': 'No study configuration provided'}, status=400
+            )
+
+        # Set current configuration as default if selected
+        set_default = request.data.get('set_default')
+        ret_default = False
+
+        if set_default:
+            default_config = app_settings.get_app_setting(
+                APP_NAME, 'display_config_default', project=project
+            )
+            default_config['studies'][study_uuid] = study_config
+            ret_default = app_settings.set_app_setting(
+                APP_NAME,
+                'display_config_default',
+                project=project,
+                value=default_config,
+            )
+
+            if timeline and ret_default:
+                tl_event = timeline.add_event(
+                    project=project,
+                    app_name=APP_NAME,
+                    user=request.user,
+                    event_name='display_update',
+                    description='update default column display configuration '
+                    'for {study}',
+                    status_type='OK',
+                )
+                tl_event.add_object(
+                    obj=study, label='study', name=study.get_display_name()
+                )
+
+        # Get user display config
+        display_config = app_settings.get_app_setting(
+            APP_NAME, 'display_config', project=project, user=request.user
+        )
+        display_config['studies'][study_uuid] = study_config
+        ret = app_settings.set_app_setting(
+            APP_NAME,
+            'display_config',
+            project=project,
+            user=request.user,
+            value=display_config,
+        )
+        return Response(
+            {'detail': 'ok' if ret or ret_default else 'Nothing to update'},
+            status=200,
+        )

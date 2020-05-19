@@ -20,6 +20,7 @@ from samplesheets.utils import (
     get_index_by_header,
     get_last_material_name,
     build_sheet_config,
+    build_display_config,
 )
 from .test_io import SampleSheetIOMixin, SHEET_DIR
 
@@ -309,3 +310,59 @@ class TestBuildSheetConfig(
                     )
 
             investigation.delete()
+
+
+class TestBuildDisplayConfig(
+    ProjectMixin, RoleAssignmentMixin, SampleSheetIOMixin, TestCase,
+):
+    """Tests for build_display_config()"""
+
+    # NOTE: Not using TestUtilsBase
+
+    def setUp(self):
+        self.tb = SampleSheetTableBuilder()
+
+        # Make owner user
+        self.user_owner = self.make_user('owner')
+
+        # Init project, role and assignment
+        self.project = self._make_project(
+            'TestProject', SODAR_CONSTANTS['PROJECT_TYPE_PROJECT'], None
+        )
+        self.role_owner = Role.objects.get_or_create(
+            name=SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
+        )[0]
+        self.assignment_owner = self._make_assignment(
+            self.project, self.user_owner, self.role_owner
+        )
+
+    def test_build_config_batch(self):
+        """Test building default display configs for example ISAtabs"""
+        for zip_name, zip_file in self._get_isatab_files().items():
+            msg = 'file={}'.format(zip_name)
+
+            try:
+                investigation = self._import_isa_from_file(
+                    zip_file.path, self.project
+                )
+
+            except Exception as ex:
+                return self._fail_isa(zip_name, ex)
+
+            sc = build_sheet_config(investigation)
+            s_uuid = str(investigation.studies.first().sodar_uuid)
+            a_uuid = str(
+                investigation.studies.first().assays.first().sodar_uuid
+            )
+            dc = build_display_config(investigation, sc)
+            study_node_count = len(sc['studies'][s_uuid]['nodes'])
+
+            self.assertEqual(
+                len(dc['studies'][s_uuid]['nodes']), study_node_count, msg=msg,
+            )
+            self.assertEqual(
+                len(dc['studies'][s_uuid]['assays'][a_uuid]['nodes']),
+                len(sc['studies'][s_uuid]['assays'][a_uuid]['nodes'])
+                + study_node_count,
+                msg=msg,
+            )

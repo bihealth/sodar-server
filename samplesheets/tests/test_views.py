@@ -182,6 +182,7 @@ class TestSampleSheetImportView(TestViewsBase):
         isa_version = ISATab.objects.first()
         self.assertListEqual(isa_version.tags, ['IMPORT'])
         self.assertIsNotNone(isa_version.data['sheet_config'])
+        self.assertIsNotNone(isa_version.data['display_config'])
 
     def test_post_replace(self):
         """Test replacing an existing investigation by posting"""
@@ -214,6 +215,9 @@ class TestSampleSheetImportView(TestViewsBase):
         )
         self.assertIsNotNone(
             ISATab.objects.all().order_by('-pk').first().data['sheet_config']
+        )
+        self.assertIsNotNone(
+            ISATab.objects.all().order_by('-pk').first().data['display_config']
         )
 
     def test_post_replace_not_allowed(self):

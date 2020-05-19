@@ -15,6 +15,7 @@ ALT_NAMES_COUNT = 3  # Needed for ArrayField hack
 
 CONFIG_LABEL_CREATE = 'Created With Configuration'
 CONFIG_LABEL_OPEN = 'Last Opened With Configuration'
+NAME_FIELDS = ['name', 'protocol']
 
 
 def get_alt_names(name):
@@ -310,7 +311,6 @@ def write_excel_table(table, output, display_name):
 def build_sheet_config(investigation):
     """
     Build basic sample sheet configuration for editing configuration.
-    NOTE: Under heavy development, end result may change
     NOTE: Will be built from configuration template(s) eventually
 
     :param investigation: Investigation object
@@ -378,6 +378,86 @@ def build_sheet_config(investigation):
             study_data['assays'][str(assay.sodar_uuid)] = assay_data
 
         ret['studies'][str(study.sodar_uuid)] = study_data
+
+    return ret
+
+
+def build_display_config(investigation, sheet_config):
+    """
+    Build default display config for project sample sheet columns.
+
+    :param investigation: Investigation object
+    :param sheet_config: Sheet editing configuration (dict)
+    :return: Dict
+    """
+
+    # Can't import in module root
+    from samplesheets.rendering import SampleSheetTableBuilder
+
+    tb = SampleSheetTableBuilder()
+
+    ret = {'investigation': {}, 'studies': {}}
+
+    def _build_node(config_node, table, idx, assay_mode=False):
+        display_node = {'header': config_node['header'], 'fields': []}
+        n_idx = 0
+
+        for config_field in config_node['fields']:
+            display_field = {'name': config_field['name'], 'visible': False}
+
+            if n_idx == 0 or (
+                not assay_mode
+                and (
+                    config_field.get('editable') or table['col_values'][idx] > 0
+                )
+            ):
+                display_field['visible'] = True
+
+            display_node['fields'].append(display_field)
+            idx += 1
+            n_idx += 1
+
+        return display_node, idx
+
+    # Add studies
+    for study in investigation.studies.all().order_by('pk'):
+        study_uuid = str(study.sodar_uuid)
+        study_tables = tb.build_study_tables(
+            study, edit=False, use_config=False
+        )
+        h_idx = 0
+        study_data = {'nodes': [], 'assays': {}}
+
+        for config_node in sheet_config['studies'][study_uuid]['nodes']:
+            display_node, h_idx = _build_node(
+                config_node, study_tables['study'], h_idx
+            )
+            study_data['nodes'].append(display_node)
+
+        # Add study assays
+        for assay in study.assays.all().order_by('pk'):
+            assay_uuid = str(assay.sodar_uuid)
+            assay_table = study_tables['assays'][assay_uuid]
+            h_idx = 0
+            assay_data = {'nodes': []}
+
+            # Add study nodes to assay table with only first field visible
+            for config_node in sheet_config['studies'][study_uuid]['nodes']:
+                node, h_idx = _build_node(
+                    config_node, study_tables['study'], h_idx, assay_mode=True,
+                )
+                assay_data['nodes'].append(node)
+
+            # Add actual assay nodes
+            for config_node in sheet_config['studies'][study_uuid]['assays'][
+                assay_uuid
+            ]['nodes']:
+                node, h_idx = _build_node(config_node, assay_table, h_idx)
+                assay_data['nodes'].append(node)
+
+            study_data['assays'][assay_uuid] = assay_data
+
+        ret['studies'][study_uuid] = study_data
 
     return ret
 

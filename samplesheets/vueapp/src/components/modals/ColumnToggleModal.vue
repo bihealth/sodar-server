@@ -1,29 +1,42 @@
 <template>
   <b-modal id="sodar-ss-vue-col-toggle-modal" ref="columnToggleModal"
            no-fade hide-footer
-           size="md">
+           size="md"
+           @hidden="onModalHide">
 
     <template slot="modal-header">
       <h5 class="modal-title text-nowrap mr-5">{{ title }}</h5>
-      <b-input
-          id="sodar-ss-vue-col-filter"
-          size="sm"
-          placeholder="Filter"
-          @keyup="onFilterChange">
-      </b-input>
+      <b-input-group class="sodar-header-input-group">
+        <b-input-group-prepend v-if="app.sodarContext.perms.edit_sheet">
+          <b-button
+              variant="secondary"
+              class="sodar-list-btn px-2"
+              title="Save as default display configuration for all users"
+              @click="hideModal(true)"
+              v-b-tooltip.hover.bottom>
+            <i class="fa fa-save"></i>
+          </b-button>
+        </b-input-group-prepend>
+        <b-input
+            id="sodar-ss-vue-col-filter"
+            size="sm"
+            placeholder="Filter"
+            @keyup="onFilterChange">
+        </b-input>
+      </b-input-group>
       <button
           type="button"
           class="close"
-          @click="hideModal">
+          @click="hideModal(false)">
         ×
       </button>
     </template>
 
     <div v-if="columnList"
          id="sodar-ss-vue-col-toggle-modal-content">
-      <table v-for="(topHeader, index) in columnList"
-             :key="index"
-             v-show="index < columnList.length - 1 ||
+      <table v-for="(topHeader, topIdx) in columnList"
+             :key="topIdx"
+             v-show="topIdx < columnList.length - 1 ||
                      topHeader.children.length > 0"
              class="table sodar-card-table sodar-ss-vue-toggle-table">
         <tr class="sodar-ss-vue-toggle-header">
@@ -34,13 +47,13 @@
             <b-checkbox indeterminate plain
                 v-if="topHeader.children.length > 0 && !filterActive"
                 :checked="false"
-                @change="onGroupChange($event, topHeader)">
+                @change="onGroupChange($event, topHeader, topIdx)">
             </b-checkbox>
           </th>
         </tr>
-        <tr v-for="(header, index) in topHeader.children"
+        <tr v-for="(header, headerIdx) in topHeader.children"
             v-show="header.visibleInList"
-            :key="index"
+            :key="headerIdx"
             class="sodar-ss-vue-toggle-row">
           <td>
             {{ header.headerName }}
@@ -56,7 +69,7 @@
           <td>
             <b-checkbox plain
                 :checked="getColumnVisibility(header)"
-                @change="onColumnChange($event, header)">
+                @change="onColumnChange($event, header, topIdx, headerIdx)">
             </b-checkbox>
           </td>
         </tr>
@@ -81,7 +94,9 @@ export default {
       columnDefs: null,
       columnList: null,
       columnValues: null,
-      filterActive: false
+      filterActive: false,
+      columnsChanged: false,
+      setDefault: false
     }
   },
   methods: {
@@ -127,13 +142,59 @@ export default {
 
       this.$forceUpdate()
     },
-    onColumnChange (event, header) {
+
+    onColumnChange (event, header, topIdx, headerIdx) {
       this.columnApi.setColumnVisible(header.field, event)
+      // Update user display config
+      headerIdx += 1 // The first field is always skipped
+      this.displayConfig.nodes[topIdx].fields[headerIdx].visible = event
+      this.columnsChanged = true
     },
 
-    onGroupChange (event, topHeader) {
+    onGroupChange (event, topHeader, topIdx) {
       for (let i = 0; i < topHeader.children.length; i++) {
         this.columnApi.setColumnVisible(topHeader.children[i].field, event)
+      }
+      // Update user display config
+      const fieldLength = this.displayConfig.nodes[topIdx].fields.length
+      for (let i = 1; i < fieldLength; i++) {
+        this.displayConfig.nodes[topIdx].fields[i].visible = event
+      }
+      this.columnsChanged = true
+    },
+
+    onModalHide () {
+      // Update user display config in app
+      if (!this.assayMode) {
+        this.app.studyDisplayConfig = this.displayConfig
+      } else {
+        this.app.studyDisplayConfig.assays[this.uuid] = this.displayConfig
+      }
+
+      // Save changes to user display config on the server
+      if (this.columnsChanged || this.setDefault) {
+        fetch('/samplesheets/ajax/display/update/' + this.app.currentStudyUuid, {
+          method: 'POST',
+          body: JSON.stringify({
+            study_config: this.app.studyDisplayConfig,
+            set_default: this.setDefault
+          }),
+          credentials: 'same-origin',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+            'X-CSRFToken': this.app.sodarContext.csrf_token
+          }
+        }).then(data => data.json())
+          .then(
+            data => {
+              if (data.detail === 'ok') {
+                this.app.showNotification('Display Saved', 'success', 1000)
+              }
+            }
+          ).catch(function (error) {
+            console.log('Error saving display config: ' + error.message)
+          })
       }
     },
 
@@ -143,6 +204,8 @@ export default {
       this.columnList = []
       this.columnValues = null
       this.filterActive = false
+      this.columnsChanged = false
+      this.setDefault = false
 
       // Get data
       this.uuid = uuid
@@ -154,8 +217,10 @@ export default {
 
       if (!assayMode) {
         this.title = 'Toggle Study Columns'
+        this.displayConfig = Object.assign({}, this.app.studyDisplayConfig)
       } else {
         this.title = 'Toggle Assay Columns'
+        this.displayConfig = Object.assign({}, this.app.studyDisplayConfig.assays[uuid])
       }
 
       // Store current column data state
@@ -218,7 +283,8 @@ export default {
       this.$refs.columnToggleModal.show()
     },
 
-    hideModal () {
+    hideModal (setDefault) {
+      if (setDefault) this.setDefault = true
       this.$refs.columnToggleModal.hide()
     }
   }

@@ -17,6 +17,7 @@ Added
     - Automated triggering of landing zone validation/moving by iRODS file (#702)
 - **Samplesheets**
     - ISAtab export through the REST API via ``SampleSheetISAExportAPIView`` (#849, #851)
+    - Sample sheet column display configuration saving (#539)
 
 Changed
 -------
@@ -29,6 +30,7 @@ Changed
 - **Samplesheets**
     - Re-initialize Vue app with Vue-CLI v4 (#837)
     - Partial refactoring and cleanup of Vue app code (#537, #837)
+    - Always store original header name in table rendering
 
 Fixed
 -----

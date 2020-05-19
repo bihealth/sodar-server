@@ -184,12 +184,12 @@
                 <b-input-group class="sodar-header-input-group pull-right">
                   <b-input-group-prepend>
                     <b-button
-                      variant="secondary"
-                      v-b-tooltip.hover
-                      title="Toggle Assay Column Visibility"
-                      @click="onColumnToggle(assayUuid, true)">
-                    <i class="fa fa-eye"></i>
-                  </b-button>
+                        variant="secondary"
+                        v-b-tooltip.hover
+                        title="Toggle Assay Column Visibility"
+                        @click="onColumnToggle(assayUuid, true)">
+                      <i class="fa fa-eye"></i>
+                    </b-button>
                     <b-button
                         variant="secondary"
                         v-b-tooltip.hover
@@ -368,6 +368,7 @@ export default {
       editStudyData: false,
       editStudyConfig: null,
       editDataUpdated: false,
+      studyDisplayConfig: null,
       contentId: 'sodar-ss-vue-content',
       /* NOTE: cell editor only works if provided through frameworkComponents? */
       frameworkComponents: {
@@ -486,6 +487,8 @@ export default {
       // Default columns
       const colDef = []
       let editFieldConfig
+      let displayFieldConfig
+      let fieldVisible
 
       const rowHeaderGroup = {
         headerName: 'Row',
@@ -571,6 +574,37 @@ export default {
             colWidth = Math.max(calcW, minW)
           }
 
+          // Get studyDisplayConfig
+          if (this.studyDisplayConfig) {
+            let displayNode
+
+            if (!assayMode) {
+              displayNode = this.studyDisplayConfig.nodes[i]
+            } else {
+              displayNode = this.studyDisplayConfig.assays[uuid].nodes[i]
+            }
+
+            if (displayNode) {
+              for (let k = 0; k < displayNode.fields.length; k++) {
+                const f = displayNode.fields[k]
+                if (f.name === fieldHeader.name) {
+                  displayFieldConfig = f
+                  break
+                }
+              }
+            }
+          }
+
+          if (displayFieldConfig) { // Visibility from config
+            fieldVisible = displayFieldConfig.visible
+          } else if (assayMode &&
+                studySection &&
+                fieldHeader.value !== 'Name') { // Hide study data in assay
+            fieldVisible = false
+          } else { // Hide if empty and not editing
+            fieldVisible = !!(fieldEditable || table.col_values[j])
+          }
+
           // Get editFieldConfig if editing
           if (editMode && this.editStudyConfig) {
             editFieldConfig = null
@@ -606,7 +640,7 @@ export default {
             field: 'col' + j.toString(),
             width: colWidth,
             minWidth: minW,
-            hide: !fieldEditable && !table.col_values[j], // Hide if empty and not editing
+            hide: !fieldVisible,
             headerClass: ['sodar-ss-data-header'],
             cellRendererFramework: DataCellRenderer,
             cellRendererParams: {
@@ -632,11 +666,6 @@ export default {
               headerClass: ['bg-' + topHeader.colour],
               children: []
             }
-          }
-
-          // Hide source and sample columns for assay table
-          if (assayMode && studySection && header.headerName !== 'Name') {
-            header.hide = true
           }
 
           // Editing: set up field and its header for editing
@@ -892,6 +921,9 @@ export default {
               if (editMode && 'study_config' in data) {
                 this.editStudyConfig = data.study_config
               }
+
+              // Get display config
+              this.studyDisplayConfig = data.display_config
 
               // Build study
               this.columnDefs.study = this.buildColDef(

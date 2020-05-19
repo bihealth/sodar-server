@@ -58,10 +58,25 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
             'user_modifiable': True,
             'default': False,
         },
+        'display_config': {
+            'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT_USER'],
+            'type': 'JSON',
+            'label': 'Sheet Display Configuration',
+            'description': 'User specific JSON configuration for sample sheet '
+            'column display',
+        },
+        'display_config_default': {
+            'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT'],
+            'type': 'JSON',
+            'label': 'Default Sheet Display Configuration',
+            'description': 'Default JSON configuration for project sample sheet '
+            'column display',
+            'user_modifiable': False,
+        },
         'sheet_config': {
             'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT'],
             'type': 'JSON',
-            'label': 'Sample Sheet Configuration',
+            'label': 'Sheet Editing Configuration',
             'description': 'JSON configuration for sample sheet editing',
             'user_modifiable': False,
         },

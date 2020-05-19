@@ -26,7 +26,7 @@ from rest_framework.response import Response
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
-from projectroles.models import Project, SODAR_CONSTANTS
+from projectroles.models import Project, SODAR_CONSTANTS, AppSetting
 from projectroles.plugins import get_backend_api
 from projectroles.views import (
     LoggedInPermissionMixin,
@@ -49,6 +49,7 @@ from samplesheets.utils import (
     get_sheets_url,
     write_excel_table,
     build_sheet_config,
+    build_display_config,
 )
 
 # Get logger
@@ -303,31 +304,38 @@ class SampleSheetImportMixin:
             )
         )
         sheet_config = None
+        display_config = None
 
         if isa_version and action == 'restore':
-            logger.debug('Restoring previous configuration')
+            logger.debug('Restoring previous edit and display configurations')
             sheet_config = isa_version.data.get('sheet_config')
+            display_config = isa_version.data.get('display_config')
 
         if not sheet_config:
-            logger.debug('Building new configuration')
+            logger.debug('Building new sheet configuration')
             sheet_config = build_sheet_config(investigation)
 
-            if isa_version:
-                isa_version.data['sheet_config'] = sheet_config
-                isa_version.save()
+        if not display_config:
+            logger.debug('Building new display configuration')
+            display_config = build_display_config(investigation, sheet_config)
+
+        if isa_version:
+            isa_version.data['sheet_config'] = sheet_config
+            isa_version.data['display_config'] = display_config
+            isa_version.save()
+            logger.info('Sheet configurations added into ISATab version')
 
         app_settings.set_app_setting(
             APP_NAME, 'sheet_config', sheet_config, project=project
         )
+        app_settings.set_app_setting(
+            APP_NAME, 'display_config_default', display_config, project=project
+        )
         logger.info(
-            'Sheet configuration {}'.format(
+            'Sheet configurations {}'.format(
                 'replaced' if action != 'create' else 'built'
             )
         )
-
-        if isa_version:
-            isa_version.data['sheet_config'] = sheet_config
-            logger.info('Sheet configuration added into ISATab version')
 
         # Update project cache if replacing sheets and iRODS collections exists
         if (
@@ -1011,6 +1019,19 @@ class SampleSheetDeleteView(
             app_settings.set_app_setting(
                 APP_NAME, 'sheet_config', {}, project=project
             )
+
+            # Delete display configurations
+            app_settings.set_app_setting(
+                APP_NAME, 'display_config_default', {}, project=project
+            )
+
+            # TODO: Use deletion method once implemented (sodar_core#538)
+            AppSetting.objects.filter(
+                app_plugin__name=APP_NAME,
+                name='display_config',
+                project=project,
+            ).delete()
+
             messages.success(self.request, 'Sample sheets deleted.')
 
         return redirect(redirect_url)

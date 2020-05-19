@@ -30,7 +30,10 @@ from samplesheets.tests.test_views import (
     EDIT_NEW_VALUE_STR,
     CONFIG_DATA_DEFAULT,
 )
-from samplesheets.utils import build_sheet_config
+from samplesheets.utils import build_sheet_config, build_display_config
+
+
+APP_NAME = 'samplesheets'
 
 
 @skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
@@ -80,7 +83,7 @@ class TestContextAjaxView(TestViewsBase):
             'min_col_width': settings.SHEETS_MIN_COLUMN_WIDTH,
             'max_col_width': settings.SHEETS_MAX_COLUMN_WIDTH,
             'allow_editing': app_settings.get_default_setting(
-                'samplesheets', 'allow_editing'
+                APP_NAME, 'allow_editing'
             ),
             'alerts': [],
             'investigation': {
@@ -165,7 +168,7 @@ class TestStudyTablesAjaxView(TestViewsBase):
 
         # Allow sample sheet editing in project
         app_settings.set_app_setting(
-            'samplesheets', 'allow_editing', True, project=self.project
+            APP_NAME, 'allow_editing', True, project=self.project
         )
 
     def test_get(self):
@@ -190,6 +193,7 @@ class TestStudyTablesAjaxView(TestViewsBase):
         self.assertNotIn(
             'uuid', ret_data['tables']['study']['table_data'][0][0]
         )
+        self.assertIn('display_config', ret_data)
 
     def test_get_edit(self):
         """Test study tables retrieval with edit mode enabled"""
@@ -212,6 +216,7 @@ class TestStudyTablesAjaxView(TestViewsBase):
         self.assertNotIn('shortcuts', ret_data['tables']['study'])
         self.assertEqual(len(ret_data['tables']['assays']), 1)
         self.assertIn('uuid', ret_data['tables']['study']['table_data'][0][0])
+        self.assertIn('display_config', ret_data)
         self.assertIn('study_config', ret_data)
 
 
@@ -323,7 +328,7 @@ class TestSampleSheetEditAjaxView(TestViewsBase):
                 content_type='application/json',
             )
 
-        # Asert postconditions
+        # Assert postconditions
         self.assertEqual(response.status_code, 200)
         obj.refresh_from_db()
         self.assertEqual(
@@ -362,7 +367,7 @@ class TestSampleSheetEditAjaxView(TestViewsBase):
                 content_type='application/json',
             )
 
-        # Asert postconditions
+        # Assert postconditions
         self.assertEqual(response.status_code, 200)
         obj.refresh_from_db()
         self.assertEqual(
@@ -398,7 +403,7 @@ class TestSampleSheetEditFinishAjaxView(TestViewsBase):
                 content_type='application/json',
             )
 
-        # Asert postconditions
+        # Assert postconditions
         self.assertEqual(response.status_code, 200)
         self.assertEqual(ISATab.objects.all().count(), 2)
 
@@ -417,7 +422,7 @@ class TestSampleSheetEditFinishAjaxView(TestViewsBase):
                 content_type='application/json',
             )
 
-        # Asert postconditions
+        # Assert postconditions
         self.assertEqual(response.status_code, 200)
         self.assertEqual(ISATab.objects.all().count(), 1)
 
@@ -437,7 +442,7 @@ class TestSampleSheetManageAjaxView(SheetConfigMixin, TestViewsBase):
         # Set up UUIDs and default config
         self._update_uuids(self.investigation, CONFIG_DATA_DEFAULT)
         app_settings.set_app_setting(
-            'samplesheets',
+            APP_NAME,
             'sheet_config',
             build_sheet_config(self.investigation),
             project=self.project,
@@ -450,14 +455,12 @@ class TestSampleSheetManageAjaxView(SheetConfigMixin, TestViewsBase):
 
         # Assert preconditions
         sheet_config = app_settings.get_app_setting(
-            'samplesheets', 'sheet_config', project=self.project
+            APP_NAME, 'sheet_config', project=self.project
         )
         self.assertEqual(sheet_config, CONFIG_DATA_DEFAULT)
         self.assertEqual(
             ProjectEvent.objects.filter(
-                project=self.project,
-                app='samplesheets',
-                event_name='field_update',
+                project=self.project, app=APP_NAME, event_name='field_update',
             ).count(),
             0,
         )
@@ -499,7 +502,7 @@ class TestSampleSheetManageAjaxView(SheetConfigMixin, TestViewsBase):
         self.assertEqual(response.status_code, 200)
 
         sheet_config = app_settings.get_app_setting(
-            'samplesheets', 'sheet_config', project=self.project
+            APP_NAME, 'sheet_config', project=self.project
         )
         expected = {
             'name': 'age',
@@ -517,9 +520,148 @@ class TestSampleSheetManageAjaxView(SheetConfigMixin, TestViewsBase):
         )
         self.assertEqual(
             ProjectEvent.objects.filter(
-                project=self.project,
-                app='samplesheets',
-                event_name='field_update',
+                project=self.project, app=APP_NAME, event_name='field_update',
             ).count(),
             1,
+        )
+
+
+class TestStudyDisplayConfigAjaxView(TestViewsBase):
+    """Tests for StudyDisplayConfigAjaxView"""
+
+    def setUp(self):
+        super().setUp()
+
+        # Import investigation
+        self.investigation = self._import_isa_from_file(
+            SHEET_PATH, self.project
+        )
+        self.study = self.investigation.studies.first()
+        self.s_uuid = str(self.investigation.studies.first().sodar_uuid)
+        self.a_uuid = str(
+            self.investigation.studies.first().assays.first().sodar_uuid
+        )
+        # Build sheet config and default display config
+        self.sheet_config = build_sheet_config(self.investigation)
+        self.display_config = build_display_config(
+            self.investigation, self.sheet_config
+        )
+        app_settings.set_app_setting(
+            APP_NAME,
+            'display_config_default',
+            project=self.project,
+            value=self.display_config,
+        )
+        app_settings.set_app_setting(
+            APP_NAME,
+            'display_config',
+            project=self.project,
+            user=self.user,
+            value=self.display_config,
+        )
+        self.study_config = self.display_config['studies'][self.s_uuid]
+
+    def test_post(self):
+        """Test updating the sheet configuration"""
+
+        # Assert precondition
+        self.assertEqual(
+            self.study_config['nodes'][0]['fields'][2]['visible'], True
+        )
+
+        self.study_config['nodes'][0]['fields'][2]['visible'] = False
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:ajax_display_update',
+                    kwargs={'study': self.study.sodar_uuid},
+                ),
+                json.dumps(
+                    {'study_config': self.study_config, 'set_default': False}
+                ),
+                content_type='application/json',
+            )
+
+        # Assert response
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['detail'], 'ok')
+
+        # Assert config status
+        updated_config = app_settings.get_app_setting(
+            APP_NAME, 'display_config', project=self.project, user=self.user
+        )
+        self.assertEqual(
+            updated_config['studies'][self.s_uuid]['nodes'][0]['fields'][2][
+                'visible'
+            ],
+            False,
+        )
+
+    def test_post_default(self):
+        """Test updating along with the default configuration"""
+
+        # Assert precondition
+        self.assertEqual(
+            self.study_config['nodes'][0]['fields'][2]['visible'], True
+        )
+
+        self.study_config['nodes'][0]['fields'][2]['visible'] = False
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:ajax_display_update',
+                    kwargs={'study': self.study.sodar_uuid},
+                ),
+                json.dumps(
+                    {'study_config': self.study_config, 'set_default': True}
+                ),
+                content_type='application/json',
+            )
+
+        # Assert response
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['detail'], 'ok')
+
+        # Assert config status
+        updated_config = app_settings.get_app_setting(
+            APP_NAME, 'display_config', project=self.project, user=self.user
+        )
+        default_config = app_settings.get_app_setting(
+            APP_NAME, 'display_config_default', project=self.project
+        )
+        self.assertEqual(
+            updated_config['studies'][self.s_uuid]['nodes'][0]['fields'][2][
+                'visible'
+            ],
+            False,
+        )
+        self.assertEqual(updated_config, default_config)
+
+    def test_post_no_change(self):
+        """Test posting with no updates"""
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:ajax_display_update',
+                    kwargs={'study': self.study.sodar_uuid},
+                ),
+                json.dumps(
+                    {'study_config': self.study_config, 'set_default': False}
+                ),
+                content_type='application/json',
+            )
+
+        # Assert response
+        self.assertEqual(response.status_code, 200)
+        self.assertNotEqual(response.data['detail'], 'ok')
+
+        # Assert config status
+        updated_config = app_settings.get_app_setting(
+            APP_NAME, 'display_config', project=self.project, user=self.user
+        )
+        self.assertEqual(
+            updated_config, self.display_config,
         )
