@@ -6,7 +6,8 @@
         {
           "fields": [
             {
-              "name": "Name"
+              "name": "Name",
+              "type": "name"
             },
             {
               "name": "organism",
@@ -49,7 +50,8 @@
         {
           "fields": [
             {
-              "name": "Name"
+              "name": "Name",
+              "type": "name"
             },
             {
               "name": "status",
@@ -92,7 +94,8 @@
             {
               "fields": [
                 {
-                  "name": "Name"
+                  "name": "Name",
+                  "type": "name"
                 }
               ],
               "header": "Library Name"
@@ -103,7 +106,8 @@
                   "name": "Protocol"
                 },
                 {
-                  "name": "Name"
+                  "name": "Name",
+                  "type": "name"
                 }
               ],
               "header": "Process"
@@ -111,7 +115,8 @@
             {
               "fields": [
                 {
-                  "name": "Name"
+                  "name": "Name",
+                  "type": "name"
                 }
               ],
               "header": "Raw Data File"
@@ -119,7 +124,8 @@
             {
               "fields": [
                 {
-                  "name": "Name"
+                  "name": "Name",
+                  "type": "name"
                 }
               ],
               "header": "Raw Data File"
@@ -127,7 +133,8 @@
             {
               "fields": [
                 {
-                  "name": "Name"
+                  "name": "Name",
+                  "type": "name"
                 }
               ],
               "header": "Process"
@@ -135,7 +142,8 @@
             {
               "fields": [
                 {
-                  "name": "Name"
+                  "name": "Name",
+                  "type": "name"
                 }
               ],
               "header": "Derived Data File"

@@ -19,6 +19,7 @@
                       v-clipboard:copy="this.getCopyData()"
                       v-clipboard:success="onCopySuccess"
                       v-clipboard:error="onCopyError"
+                      :disabled="disableCopy()"
                       v-b-tooltip.hover>
               <i class="fa fa-clipboard"></i>
             </b-button>
@@ -30,6 +31,7 @@
               @input="onPasteInput"
               placeholder="Paste"
               title="Paste a copied configuration here"
+              :disabled="disableCopy()"
               v-b-tooltip.hover>
             </b-form-input>
           </b-input-group>
@@ -44,7 +46,27 @@
       <table v-if="fieldConfig"
             class="table table-borderless w-100"
             id="sodar-ss-vue-col-config-table">
-        <tbody>
+        <tbody v-if="nameColumn"> <!-- Table body for name column -->
+          <!-- Editable -->
+          <tr>
+            <td>Editable</td>
+            <td>
+              <b-checkbox plain v-model="fieldConfig.editable"></b-checkbox>
+            </td>
+          </tr>
+          <tr>
+            <td colspan="2"><hr class="my-1" /></td>
+          </tr>
+          <tr>
+            <td colspan="2" class="text-danger" id="sodar-ss-vue-td-name-info">
+              <strong>Warning:</strong> If you are storing project sample data
+              in iRODS, renaming certain materials or processes may cause
+              related iRODS links to stop working! When in doubt, please
+              contact SODAR administrators or the project owner.
+            </td>
+          </tr>
+        </tbody>
+        <tbody v-else> <!-- Table body for standard columns -->
           <!-- Editable -->
           <tr>
             <td>Editable</td>
@@ -262,6 +284,7 @@ export default {
         'double',
         'select'
       ],
+      nameColumn: false,
       fieldDisplayName: null,
       fieldConfig: null,
       newConfig: false,
@@ -368,6 +391,9 @@ export default {
       console.log('Copy Error: ' + event)
     },
     /* Helpers -------------------------------------------------------------- */
+    disableCopy () {
+      return this.nameColumn
+    },
     toggleDefaultFill () {
       if (!('default' in this.fieldConfig) ||
           this.fieldConfig.default.length === 0) {
@@ -606,6 +632,8 @@ export default {
         } else {
           this.colType = 'NUMERIC'
         }
+      } else if (this.nameColumn) {
+        this.colType = 'NAME'
       } else { // TODO: Other column types
         this.colType = null
       }
@@ -688,6 +716,7 @@ export default {
     /* Modal showing/hiding ------------------------------------------------- */
     showModal (data, col) {
       this.fieldDisplayName = data.fieldDisplayName
+      this.nameColumn = data.colType === 'NAME'
       this.fieldConfig = data.fieldConfig
       this.newConfig = data.newConfig
       this.assayUuid = data.assayUuid
@@ -712,7 +741,7 @@ export default {
         this.fieldConfig.default = ''
       }
 
-      if (this.newConfig) {
+      if (!this.nameColumn && this.newConfig) {
         const field = this.col.colDef.field
 
         // Unit and numeric column
@@ -838,6 +867,10 @@ table#sodar-ss-vue-col-config-table tbody td:first-child {
 
 .sodar-ss-vue-column-wrapper .form-check {
   width: 20px !important;
+}
+
+td#sodar-ss-vue-td-name-info {
+  white-space: normal !important;
 }
 
 </style>

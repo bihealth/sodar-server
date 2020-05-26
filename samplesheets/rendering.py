@@ -240,6 +240,9 @@ class SampleSheetTableBuilder:
             )
 
         # Else detect type without config
+        elif name.lower() == 'name' and header['item_type'] != 'DATA':
+            header['col_type'] = 'NAME'
+
         elif 'contact' in name.lower():
             header['col_type'] = 'CONTACT'
 
@@ -380,7 +383,7 @@ class SampleSheetTableBuilder:
 
             # Special case: Name
             elif h in ALTAMISA_MATERIAL_NAMES or h in th.DATA_FILE_HEADERS:
-                self._add_cell(obj.name, 'Name', obj=obj)
+                self._add_cell(obj.name, 'Name', header_type='name', obj=obj)
 
             # Special case: Labeled Extract Name & Label
             elif h == th.LABELED_EXTRACT_NAME and hasattr(obj, 'extract_label'):
@@ -410,7 +413,7 @@ class SampleSheetTableBuilder:
 
             # Special case: Process Name
             elif isinstance(obj, Process) and h in th.PROCESS_NAME_HEADERS:
-                self._add_cell(obj.name, 'Name', obj=obj)
+                self._add_cell(obj.name, 'Name', header_type='name', obj=obj)
 
             # Special case: First Dimension
             elif isinstance(obj, Process) and h == th.FIRST_DIMENSION:

@@ -16,6 +16,7 @@
       <h5 class="text-success font-weight-bold">Available Features</h5>
       <ul>
         <li>Editing of columns with simple values (text, integer, double, select)</li>
+        <li>Renaming materials and processes</li>
         <li>Saving, browsing and restoring sample sheet versions</li>
         <li>Configuring columns for editing (requires owner, delegate or superuser permissions</li>
         <li>Unit support</li>
@@ -25,7 +26,6 @@
       <h5 class="text-danger font-weight-bold">Under Development</h5>
       <ul>
         <li>Editing values and units as ontology references</li>
-        <li>Modifying names of materials and processes</li>
         <li>Editing of other special case columns (contact, external links, dates, etc.)</li>
         <li>Clipboard paste of value without double-clicking to edit field</li>
         <li>Multi-cell clipboard paste</li>

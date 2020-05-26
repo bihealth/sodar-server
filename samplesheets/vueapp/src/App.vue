@@ -482,7 +482,7 @@ export default {
 
     buildColDef (table, assayMode, uuid, editMode) {
       // Currently uneditable fields
-      const uneditableFields = ['name', 'protocol', 'performer', 'perform date']
+      const uneditableFields = ['protocol', 'performer', 'perform date']
 
       // Default columns
       const colDef = []
@@ -622,7 +622,7 @@ export default {
                 const f = editNode.fields[k]
 
                 if (f.name === fieldHeader.name &&
-                    f.type === fieldHeader.type) {
+                    (f.name === 'Name' || f.type === fieldHeader.type)) {
                   editFieldConfig = f
                   break
                 }
@@ -676,9 +676,13 @@ export default {
                 !['EXTERNAL_LINKS', 'ONTOLOGY', 'CONTACT'].includes(colType)) {
               let configAssayUuid = assayMode ? uuid : null
               let configNodeIdx = i
+              let defNodeIdx = i + 1 // Add 1 for row column
               let defFieldIdx = configFieldIdx
 
-              if (i === 0) { // Subtract source name if in source
+              // Add 1 for table node index from 2nd source group onwards
+              if (i > 0 || (i === 0 && configFieldIdx > 0)) defNodeIdx += 1
+              // Subtract source name if in 2nd source group
+              if (i === 0 && configFieldIdx > 0) {
                 defFieldIdx = configFieldIdx - 1
               }
 
@@ -700,7 +704,7 @@ export default {
                 assayUuid: configAssayUuid,
                 configNodeIdx: configNodeIdx,
                 configFieldIdx: configFieldIdx,
-                defNodeIdx: i + 2, // Add 2 for row & source groups
+                defNodeIdx: defNodeIdx, // Add 2 for row & source groups
                 defFieldIdx: defFieldIdx
               }
               header.width = header.width + 20 // Fit button in header
@@ -708,8 +712,7 @@ export default {
             }
 
             // Set up field editing
-            if (editFieldConfig &&
-                !['Name', 'Protocol'].includes(fieldHeader.value)) {
+            if (editFieldConfig && fieldHeader.value !== 'Protocol') {
               header.editable = fieldEditable
               header.cellEditor = 'dataCellEditor'
               header.cellEditorParams = {

@@ -297,6 +297,65 @@ class TestSampleSheetEditAjaxView(TestViewsBase):
         # Set up POST data
         self.values = {'updated_cells': []}
 
+    def test_edit_name(self):
+        """Test editing the name of a material"""
+        obj = GenericMaterial.objects.get(study=self.study, name='0816')
+        new_name = '0816aaa'
+
+        self.values['updated_cells'].append(
+            {
+                'uuid': str(obj.sodar_uuid),
+                'header_name': 'name',
+                'header_type': 'name',
+                'obj_cls': 'GenericMaterial',
+                'value': new_name,
+            }
+        )
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:ajax_edit',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                json.dumps(self.values),
+                content_type='application/json',
+            )
+
+        # Assert postconditions
+        self.assertEqual(response.status_code, 200)
+        obj.refresh_from_db()
+        self.assertEqual(obj.name, new_name)
+
+    def test_edit_name_empty(self):
+        """Test setting an empty material name (should fail)"""
+        obj = GenericMaterial.objects.get(study=self.study, name='0816')
+
+        self.values['updated_cells'].append(
+            {
+                'uuid': str(obj.sodar_uuid),
+                'header_name': 'name',
+                'header_type': 'name',
+                'obj_cls': 'GenericMaterial',
+                'value': '',
+            }
+        )
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:ajax_edit',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                json.dumps(self.values),
+                content_type='application/json',
+            )
+
+        # Assert postconditions
+        self.assertEqual(response.status_code, 500)
+        obj.refresh_from_db()
+        self.assertEqual(obj.name, '0816')
+
     def test_edit_characteristics_str(self):
         """Test editing a characteristics string value in a material"""
         obj = GenericMaterial.objects.get(study=self.study, name='0816')

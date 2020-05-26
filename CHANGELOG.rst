@@ -18,6 +18,7 @@ Added
 - **Samplesheets**
     - ISAtab export through the REST API via ``SampleSheetISAExportAPIView`` (#849, #851)
     - Sample sheet column display configuration saving (#539)
+    - Material and process renaming (#852)
 
 Changed
 -------
@@ -25,6 +26,7 @@ Changed
 - **General**
     - Upgrade to django-sodar-core v0.8.2-WIP
     - Move ISAtab export functionality to ``SampleSheetISAExportMixin`` (#849)
+    - Upgrade to Chromedriver v83
 - **Landingzones**
     - Refactor zone modification mixins in ``landingzones.views``
 - **Samplesheets**

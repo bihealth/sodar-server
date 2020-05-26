@@ -38,9 +38,21 @@ from samplesheets.views import (
     MISC_FILES_COLL_ID,
     MISC_FILES_COLL,
     logger,
-    EDIT_FIELD_MAP,
-    EDIT_JSON_ATTRS,
 )
+
+
+# Local constants
+EDIT_JSON_ATTRS = [
+    'characteristics',
+    'comments',
+    'factor_values',
+    'parameter_values',
+]
+EDIT_FIELD_MAP = {
+    'array design ref': 'array_design_ref',
+    'label': 'extract_label',
+    'performer': 'performer',
+}
 
 
 class SampleSheetContextAjaxView(SODARBaseProjectAjaxView):
@@ -532,6 +544,8 @@ class SampleSheetWarningsAjaxView(SODARBaseProjectAjaxView):
 class SampleSheetEditAjaxView(SODARBaseProjectAjaxView):
     """View to edit sample sheet data"""
 
+    # TODO: Update to support name columns
+
     permission_required = 'samplesheets.edit_sheet'
 
     @transaction.atomic
@@ -590,6 +604,17 @@ class SampleSheetEditAjaxView(SODARBaseProjectAjaxView):
 
                 obj.save()
                 logger.debug('Edited field: {}'.format(attr_name))
+
+            # Name field (special case)
+            elif header_type == 'name':
+                if len(cell['value']) == 0:
+                    logger.error('Empty name not allowed for node')
+                    return Response({'message': 'failed'}, status=500)
+
+                obj.name = cell['value']
+                # TODO: Update unique name here if needed
+                obj.save()
+                logger.debug('Edited node name: {}'.format(cell['value']))
 
             # JSON Attributes
             elif header_type in EDIT_JSON_ATTRS:
@@ -735,6 +760,7 @@ class SampleSheetManageAjaxView(SODARBaseProjectAjaxView):
             a_uuid = field['assay']
             n_idx = field['node_idx']
             f_idx = field['field_idx']
+            is_name = True if field['config']['name'] == 'Name' else False
             debug_info = 'study="{}"; assay="{}"; n={}; f={})'.format(
                 s_uuid, a_uuid, n_idx, f_idx
             )
@@ -757,7 +783,7 @@ class SampleSheetManageAjaxView(SODARBaseProjectAjaxView):
                 logger.error(msg)
                 return Response({'message': msg}, status=500)
 
-            if (
+            if not is_name and (
                 field['config']['name'] != og_config['name']
                 or field['config']['type'] != og_config['type']
             ):
@@ -768,19 +794,20 @@ class SampleSheetManageAjaxView(SODARBaseProjectAjaxView):
             # Cleanup data
             c = field['config']
 
-            if c['format'] != 'integer':
-                c.pop('range', None)
-                c.pop('unit', None)
-                c.pop('unit_default', None)
+            if not is_name:
+                if c['format'] != 'integer':
+                    c.pop('range', None)
+                    c.pop('unit', None)
+                    c.pop('unit_default', None)
 
-            elif 'range' in c and not c['range'][0] and not c['range'][1]:
-                c.pop('range', None)
+                elif 'range' in c and not c['range'][0] and not c['range'][1]:
+                    c.pop('range', None)
 
-            if c['format'] == 'select':
-                c.pop('regex', None)
+                if c['format'] == 'select':
+                    c.pop('regex', None)
 
-            else:  # Select
-                c.pop('options', None)
+                else:  # Select
+                    c.pop('options', None)
 
             if a_uuid:
                 sheet_config['studies'][s_uuid]['assays'][a_uuid]['nodes'][
@@ -798,7 +825,7 @@ class SampleSheetManageAjaxView(SODARBaseProjectAjaxView):
             logger.info(
                 'Updated field config for "{}" ({}) in {} {}'.format(
                     c['name'],
-                    c['type'],
+                    'name' if is_name else c.get('type'),
                     'assay' if a_uuid else 'study',
                     a_uuid if a_uuid else s_uuid,
                 )

@@ -67,17 +67,6 @@ REMOTE_LEVEL_READ_ROLES = SODAR_CONSTANTS['REMOTE_LEVEL_READ_ROLES']
 APP_NAME = 'samplesheets'
 WARNING_STATUS_MSG = 'OK with warnings, see extra data'
 TARGET_ALTAMISA_VERSION = '0.2.4'  # For warnings etc.
-EDIT_JSON_ATTRS = [
-    'characteristics',
-    'comments',
-    'factor_values',
-    'parameter_values',
-]
-EDIT_FIELD_MAP = {
-    'array design ref': 'array_design_ref',
-    'label': 'extract_label',
-    'performer': 'performer',
-}
 MISC_FILES_COLL_ID = 'misc_files'
 MISC_FILES_COLL = 'MiscFiles'
 RESULTS_COLL_ID = 'results_reports'

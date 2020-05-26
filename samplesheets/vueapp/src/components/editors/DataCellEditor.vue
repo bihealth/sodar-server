@@ -48,6 +48,7 @@ import Vue from 'vue'
 
 const navKeyCodes = [33, 34, 35, 36, 37, 38, 39, 40]
 
+// TODO: Update for support and validation for NAME colType
 export default Vue.extend({
   data () {
     return {
@@ -69,7 +70,8 @@ export default Vue.extend({
       ogEditUnit: '',
       containerClasses: '',
       inputStyle: '',
-      unitStyle: ''
+      unitStyle: '',
+      nameValues: []
     }
   },
   methods: {
@@ -144,11 +146,13 @@ export default Vue.extend({
       return ''
     },
     getValidState () {
-      if (this.editValue !== '') {
-        // Test Regex
-        if (this.regex && !this.regex.test(this.editValue)) {
+      if (this.headerInfo.header_type === 'name') { // Name is a special case
+        if (this.editValue.length === 0 ||
+            (this.editValue !== this.ogEditValue &&
+            this.nameValues.includes(this.editValue))) {
           return false
         }
+      } else if (this.editValue !== '') {
         // Test range
         if (['integer', 'double'].includes(this.editConfig.format) &&
             'range' in this.editConfig &&
@@ -163,11 +167,24 @@ export default Vue.extend({
           }
         }
       }
-      return true // Empty value or no failed tests
+      // Test Regex
+      return !(this.editValue !== '' &&
+          this.regex &&
+          !this.regex.test(this.editValue)
+      )
     },
     getUpdateData () {
       return Object.assign(
         this.value, this.headerInfo, { og_value: this.ogEditValue })
+    },
+    addNameValues (rowNode) {
+      if (this.params.colDef.field in rowNode.data) {
+        const value = rowNode.data[this.params.colDef.field]
+        if (value.uuid !== this.value.uuid &&
+            !this.nameValues.includes(value.value)) {
+          this.nameValues.push(value.value)
+        }
+      }
     }
   },
   created () {
@@ -225,11 +242,28 @@ export default Vue.extend({
         'regex' in this.editConfig &&
         this.editConfig.regex.length > 0) {
       this.regex = new RegExp(this.editConfig.regex)
+    } else if (this.headerInfo.header_type === 'name') { // Name is special
+      this.regex = /^([A-Za-z0-9-_]*)$/
     } else { // Default regex for certain fields
       if (this.editConfig.format === 'integer') {
         this.regex = /^(([1-9][0-9]*)|([0]?))$/ // TODO: TBD: Allow negative?
       } else if (this.editConfig.format === 'double') {
         this.regex = /^-?[0-9]+\.[0-9]+?$/
+      }
+    }
+
+    // If name, get other current values for comparison in validation
+    // TODO: Optimize by only searching in the relevant assay/study table
+    if (this.headerInfo.header_type === 'name') {
+      const gridUuids = this.app.getStudyGridUuids()
+
+      for (let i = 0; i < gridUuids.length; i++) {
+        const gridOptions = this.app.getGridOptionsByUuid(gridUuids[i])
+        const gridApi = gridOptions.api
+        if (!gridOptions.columnApi.getColumn(this.params.colDef.field)) {
+          continue // Skip this grid if the column is not present
+        }
+        gridApi.forEachNode(this.addNameValues)
       }
     }
 

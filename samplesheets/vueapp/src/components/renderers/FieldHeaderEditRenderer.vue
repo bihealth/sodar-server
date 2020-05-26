@@ -40,7 +40,7 @@ export default Vue.extend({
 
       // Add default values for fieldConfig if they are not present
       if (!('format' in fieldConfig)) {
-        fieldConfig.format = 'string'
+        fieldConfig.format = 'string' // TODO: Set format as "name" if name
         newConfig = true // No existing config found
       }
       if (!('editable' in fieldConfig)) {
