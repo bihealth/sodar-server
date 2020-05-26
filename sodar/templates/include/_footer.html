@@ -1,6 +1,12 @@
 {% load projectroles_common_tags %}
 
 {% get_django_setting 'SITE_TITLE' as site_title %}
+{% get_django_setting 'SODAR_SUPPORT_EMAIL' as support_email %}
+{% get_django_setting 'SODAR_SUPPORT_NAME' as support_name %}
 
-Developed by BIH CUBI. For support and feedback, please contact <a href="mailto:mikko.nieminen@bihealth.de">Mikko Nieminen</a>.
+Developed by BIH CUBI.
+{% if support_email %}
+  For support please contact
+  <a href="mailto:{{ support_email }}">{% if support_name %}{{ support_name }}{% else %}{{ support_email }}{% endif %}</a>.
+{% endif %}
 {{ site_title }} v{% site_version %}

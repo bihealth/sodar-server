@@ -527,6 +527,13 @@ TIMELINE_PAGINATION = 15
 ADMINALERTS_PAGINATION = 15
 
 
+# SODAR site specific settings (not derived from SODAR Core)
+SODAR_SUPPORT_EMAIL = env.str(
+    'SODAR_SUPPORT_EMAIL', 'cubi-helpdesk@bihealth.de'
+)
+SODAR_SUPPORT_NAME = env.str('SODAR_SUPPORT_NAME', 'CUBI Helpdesk')
+
+
 # iRODS settings shared by iRODS using apps
 ENABLE_IRODS = env.bool('ENABLE_IRODS', True)
 IRODS_HOST = env.str('IRODS_HOST', '0.0.0.0')

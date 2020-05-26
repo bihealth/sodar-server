@@ -13,6 +13,7 @@ Added
 
 - **General**
     - Celery beat setup (#702)
+    - Configuration of support contact info in footer via site settings (#863)
 - **Landingzones**
     - Automated triggering of landing zone validation/moving by iRODS file (#702)
 - **Samplesheets**
