@@ -86,6 +86,9 @@ export default Vue.extend({
       }
       return false
     },
+    getPopupPosition () {
+      return 'over'
+    },
     isCancelBeforeStart () {
       return false
     },
