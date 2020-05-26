@@ -5,6 +5,7 @@ import json
 from django.urls import reverse
 
 # Projectroles dependency
+from projectroles.app_settings import AppSettingAPI
 from projectroles.models import SODAR_CONSTANTS
 from projectroles.tests.test_models import RemoteSiteMixin, RemoteProjectMixin
 from projectroles.tests.test_views_api import TestAPIViewsBase
@@ -20,6 +21,7 @@ from samplesheets.tests.test_views import (
     REMOTE_SITE_DESC,
     REMOTE_SITE_SECRET,
 )
+from samplesheets.utils import build_sheet_config, build_display_config
 
 
 # SODAR constants
@@ -27,10 +29,14 @@ PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 
 
 # Local constants
+APP_NAME = 'samplesheets'
 SHEET_TSV_DIR = SHEET_DIR + 'i_small2/'
 SHEET_PATH = SHEET_DIR + 'i_small2.zip'
 SHEET_PATH_EDITED = SHEET_DIR + 'i_small2_edited.zip'
 SHEET_PATH_ALT = SHEET_DIR + 'i_small2_alt.zip'
+
+
+app_settings = AppSettingAPI()
 
 
 class TestSampleSheetAPIBase(SampleSheetIOMixin, TestAPIViewsBase):
@@ -191,6 +197,58 @@ class TestSampleSheetImportAPIView(TestSampleSheetAPIBase):
         # Added material
         self.assertIsNotNone(
             GenericMaterial.objects.filter(name='0816').first()
+        )
+
+    def test_post_replace_display_config(self):
+        """Test replacing sheets and ensure user display configs are deleted"""
+
+        self.investigation = self._import_isa_from_file(
+            SHEET_PATH, self.project
+        )
+        sheet_config = build_sheet_config(self.investigation)
+        app_settings.set_app_setting(
+            APP_NAME, 'sheet_config', sheet_config, project=self.project
+        )
+        display_config = build_display_config(self.investigation, sheet_config)
+        app_settings.set_app_setting(
+            APP_NAME,
+            'display_config',
+            display_config,
+            project=self.project,
+            user=self.user,
+        )
+
+        # Assert preconditions
+        self.assertEqual(
+            app_settings.get_app_setting(
+                APP_NAME,
+                'display_config',
+                project=self.project,
+                user=self.user,
+            ),
+            display_config,
+        )
+
+        url = reverse(
+            'samplesheets:api_import',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+
+        with open(SHEET_PATH_EDITED, 'rb') as file:
+            post_data = {'file': file}
+            response = self.request_knox(
+                url, method='POST', format='multipart', data=post_data
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            app_settings.get_app_setting(
+                APP_NAME,
+                'display_config',
+                project=self.project,
+                user=self.user,
+            ),
+            {},
         )
 
     def test_post_replace_alt_sheet(self):

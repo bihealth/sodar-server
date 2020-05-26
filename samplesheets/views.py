@@ -283,12 +283,22 @@ class SampleSheetImportMixin:
                     '<a href="#/warnings">parser warnings raised</a>)'
                 )
 
-        # Build sheet configuration, also save it to the related ISATab
+        # If replacing, delete old user display configurations
+        if action == 'replace':
+            logger.debug('Deleting existing user display configurations..')
+            # TODO: Use deletion method once implemented (sodar_core#538)
+            AppSetting.objects.filter(
+                app_plugin__name=APP_NAME,
+                name='display_config',
+                project=project,
+            ).delete()
+
+        # Build sheet and display configuratios, also save to related ISATab
         # NOTE: For now, this has to be done when we replace sheets, in case the
         #       columns have been altered
         # TODO: A smarter update method which detects removed/added/moved cols
         logger.debug(
-            '{} sheet configuration..'.format(
+            '{} sheet and display configurations..'.format(
                 'Replacing' if action != 'create' else 'Building'
             )
         )
