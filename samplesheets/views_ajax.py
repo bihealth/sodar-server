@@ -255,7 +255,6 @@ class SampleSheetStudyTablesAjaxView(SODARBaseProjectAjaxView):
 
         return sheet_config
 
-    @transaction.atomic
     def _get_display_config(self, investigation, user, sheet_config=None):
         """Get or create display configuration for an investigation"""
 
