@@ -295,7 +295,7 @@
 
     <!-- Editing: Column configuration modal -->
     <column-config-modal
-        v-if="editMode && sodarContext.perms.manage_sheet"
+        v-if="editMode && sodarContext.perms.edit_sheet"
         :app="getApp()"
         :project-uuid="projectUuid"
         :study-uuid="currentStudyUuid"
@@ -671,7 +671,7 @@ export default {
           // Editing: set up field and its header for editing
           if (editMode) {
             // Set header renderer for fields we can manage
-            if (this.sodarContext.perms.manage_sheet &&
+            if (this.sodarContext.perms.edit_sheet &&
                 !uneditableFields.includes(fieldHeader.value.toLowerCase()) &&
                 !['EXTERNAL_LINKS', 'ONTOLOGY', 'CONTACT'].includes(colType)) {
               let configAssayUuid = assayMode ? uuid : null

@@ -34,6 +34,7 @@ Changed
     - Re-initialize Vue app with Vue-CLI v4 (#837)
     - Partial refactoring and cleanup of Vue app code (#537, #837)
     - Always store original header name in table rendering
+    - Allow column config editing with ``edit_sheet`` permission (#880)
 
 Fixed
 -----

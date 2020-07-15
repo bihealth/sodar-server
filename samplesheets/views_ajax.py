@@ -742,7 +742,8 @@ class SampleSheetEditFinishAjaxView(SODARBaseProjectAjaxView):
 class SampleSheetManageAjaxView(SODARBaseProjectAjaxView):
     """View to manage sample sheet editing configuration"""
 
-    permission_required = 'samplesheets.manage_sheet'
+    # NOTE: Currently not requiring manage_sheet perm (see issue #880)
+    permission_required = 'samplesheets.edit_sheet'
 
     # TODO: Add node name for logging/timeline
     def post(self, request, *args, **kwargs):
