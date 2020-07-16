@@ -1,6 +1,9 @@
 """API view model serializers for the samplesheets app"""
 
+from rest_framework import serializers
+
 # Projectroles dependency
+from projectroles.plugins import get_backend_api
 from projectroles.serializers import (
     SODARProjectModelSerializer,
     SODARNestedListSerializer,
@@ -12,6 +15,8 @@ from samplesheets.models import Investigation, Study, Assay
 class AssaySerializer(SODARNestedListSerializer):
     """Serializer for the Assay model"""
 
+    irods_path = serializers.SerializerMethodField(read_only=True)
+
     class Meta(SODARNestedListSerializer.Meta):
         model = Assay
         fields = [
@@ -20,14 +25,22 @@ class AssaySerializer(SODARNestedListSerializer):
             'technology_type',
             'measurement_type',
             'comments',
+            'irods_path',
             'sodar_uuid',
         ]
         read_only_fields = fields
+
+    def get_irods_path(self, obj):
+        irods_backend = get_backend_api('omics_irods', conn=False)
+
+        if obj.study.investigation.irods_status:
+            return irods_backend.get_path(obj)
 
 
 class StudySerializer(SODARNestedListSerializer):
     """Serializer for the Study model"""
 
+    irods_path = serializers.SerializerMethodField(read_only=True)
     assays = AssaySerializer(read_only=True, many=True)
 
     class Meta(SODARNestedListSerializer.Meta):
@@ -40,10 +53,17 @@ class StudySerializer(SODARNestedListSerializer):
             # 'study_design',
             # 'factors',
             'comments',
+            'irods_path',
             'assays',
             'sodar_uuid',
         ]
         read_only_fields = fields
+
+    def get_irods_path(self, obj):
+        irods_backend = get_backend_api('omics_irods', conn=False)
+
+        if obj.investigation.irods_status:
+            return irods_backend.get_path(obj)
 
 
 class InvestigationSerializer(SODARProjectModelSerializer):

@@ -2,6 +2,7 @@
 Tests for REST API views in the samplesheets app with SODAR Taskflow enabled
 """
 
+import json
 from unittest.case import skipIf
 
 from django.urls import reverse
@@ -59,6 +60,60 @@ class TestSampleSheetAPITaskflowBase(
         )
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
+
+
+@skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
+class TestInvestigationRetrieveAPIView(TestSampleSheetAPITaskflowBase):
+    """Tests for InvestigationRetrieveAPIView"""
+
+    def test_get(self):
+        """Test get() in InvestigationRetrieveAPIView"""
+        self.investigation.irods_status = True
+        self.investigation.save()
+
+        url = reverse(
+            'samplesheets:api_investigation_retrieve',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+
+        response = self.request_knox(url)
+
+        self.assertEqual(response.status_code, 200)
+        expected = {
+            'sodar_uuid': str(self.investigation.sodar_uuid),
+            'identifier': self.investigation.identifier,
+            'file_name': self.investigation.file_name,
+            'project': str(self.project.sodar_uuid),
+            'title': self.investigation.title,
+            'description': self.investigation.description,
+            'irods_status': True,
+            'parser_version': self.investigation.parser_version,
+            'archive_name': self.investigation.archive_name,
+            'comments': self.investigation.comments,
+            'studies': {
+                str(self.study.sodar_uuid): {
+                    'identifier': self.study.identifier,
+                    'file_name': self.study.file_name,
+                    'title': self.study.title,
+                    'description': self.study.description,
+                    'comments': self.study.comments,
+                    'irods_path': self.irods_backend.get_path(self.study),
+                    'assays': {
+                        str(self.assay.sodar_uuid): {
+                            'file_name': self.assay.file_name,
+                            'technology_platform': self.assay.technology_platform,
+                            'technology_type': self.assay.technology_type,
+                            'measurement_type': self.assay.measurement_type,
+                            'comments': self.assay.comments,
+                            'irods_path': self.irods_backend.get_path(
+                                self.assay
+                            ),
+                        }
+                    },
+                }
+            },
+        }
+        self.assertEqual(json.loads(response.content), expected)
 
 
 @skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)

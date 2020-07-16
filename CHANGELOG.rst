@@ -20,6 +20,7 @@ Added
     - ISAtab export through the REST API via ``SampleSheetISAExportAPIView`` (#849, #851)
     - Sample sheet column display configuration saving (#539)
     - Material and process renaming (#852)
+    - Study and assay iRODS paths in ``InvestigationRetrieveAPIView`` (#895)
 
 Changed
 -------

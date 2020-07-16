@@ -84,6 +84,7 @@ class TestInvestigationRetrieveAPIView(TestSampleSheetAPIBase):
                     'title': self.study.title,
                     'description': self.study.description,
                     'comments': self.study.comments,
+                    'irods_path': None,
                     'assays': {
                         str(self.assay.sodar_uuid): {
                             'file_name': self.assay.file_name,
@@ -91,6 +92,7 @@ class TestInvestigationRetrieveAPIView(TestSampleSheetAPIBase):
                             'technology_type': self.assay.technology_type,
                             'measurement_type': self.assay.measurement_type,
                             'comments': self.assay.comments,
+                            'irods_path': None,
                         }
                     },
                 }
