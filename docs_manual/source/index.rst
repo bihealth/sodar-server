@@ -14,6 +14,21 @@ It is developed by the Core Unit Bioinformatics at the Berlin Institute of Healt
 
 .. toctree::
     :maxdepth: 1
+    :caption: User Interface
+    :name: user_interface
+    :hidden:
+
+    ui_index
+    ui_login
+    ui_user_menu
+    ui_irod_status
+    ui_api_tokens
+    ui_user_profile
+    ui_project_main
+    ui_project_update
+
+.. toctree::
+    :maxdepth: 1
     :caption: Data Transfer
     :name: data_transfer
     :hidden:
