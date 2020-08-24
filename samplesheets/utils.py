@@ -321,61 +321,85 @@ def build_sheet_config(investigation):
     from samplesheets.rendering import SampleSheetTableBuilder
 
     tb = SampleSheetTableBuilder()
-
     ret = {'investigation': {}, 'studies': {}}
 
-    def _build_node(node_header, field_header, idx):
-        node = {'header': node_header['value'], 'fields': []}
+    def _build_nodes(study_tables, assay_uuid=None):
+        from samplesheets.models import Protocol
 
-        for i in range(idx, idx + node_header['colspan']):
-            h = field_header[i]
-            f = {'name': h['name']}
+        nodes = []
+        sample_found = False
+        ti = 0
 
-            if h['type']:
-                f['type'] = h['type']
+        if not assay_uuid:
+            table = study_tables['study']
 
-            node['fields'].append(f)
+        else:
+            table = study_tables['assays'][assay_uuid]
 
-        return node, h_idx + node_header['colspan']
+        for th in table['top_header']:
+            if not assay_uuid or sample_found:
+                node = {'header': th['value'], 'fields': []}
+
+                for i in range(ti, ti + th['colspan']):
+                    h = table['field_header'][i]
+                    f = {'name': h['name']}
+
+                    if h['type']:
+                        f['type'] = h['type']
+
+                    # Set up default protocol if only one option exists in data
+                    if h['type'] == 'protocol':
+                        p_name = None
+                        p_found = False
+                        protocol = None
+
+                        for row in table['table_data']:
+                            if not p_name and row[i]['value']:
+                                p_name = row[i]['value']
+                                p_found = True
+
+                            elif p_name and row[i]['value'] != p_name:
+                                p_found = False
+                                break
+
+                        if p_found:
+                            protocol = Protocol.objects.filter(
+                                study__investigation=investigation, name=p_name
+                            ).first()
+
+                        if protocol:
+                            f['default'] = str(protocol.sodar_uuid)
+                            f['format'] = 'protocol'
+
+                    node['fields'].append(f)
+
+                nodes.append(node)
+
+            # Leave out study columns for assays
+            if assay_uuid and th['value'] == 'Sample':
+                sample_found = True
+
+            ti += th['colspan']
+
+        return nodes
 
     # Add studies
     for study in investigation.studies.all().order_by('pk'):
-        study_data = {
-            'display_name': study.get_display_name(),  # For human readability
-            'nodes': [],
-            'assays': {},
-        }
         # Build tables (disable use_config in case we are replacing sheets)
         study_tables = tb.build_study_tables(study, edit=True, use_config=False)
-        h_idx = 0
-
-        for h in study_tables['study']['top_header']:
-            node, h_idx = _build_node(
-                h, study_tables['study']['field_header'], h_idx
-            )
-            study_data['nodes'].append(node)
+        study_data = {
+            'display_name': study.get_display_name(),  # For human readability
+            'nodes': _build_nodes(study_tables, None),
+            'assays': {},
+        }
 
         # Add study assays
         for assay in study.assays.all().order_by('pk'):
-            assay_table = study_tables['assays'][str(assay.sodar_uuid)]
-            assay_data = {'display_name': assay.get_display_name(), 'nodes': []}
-            h_idx = 0
-            sample_found = False  # Leave out study columns
-
-            for h in assay_table['top_header']:
-                if sample_found:
-                    node, h_idx = _build_node(
-                        h, assay_table['field_header'], h_idx
-                    )
-                    assay_data['nodes'].append(node)
-
-                else:
-                    h_idx += h['colspan']
-
-                if h['value'] == 'Sample':
-                    sample_found = True
-
-            study_data['assays'][str(assay.sodar_uuid)] = assay_data
+            assay_uuid = str(assay.sodar_uuid)
+            study_data['assays'][assay_uuid] = {
+                'display_name': assay.get_display_name(),
+                'nodes': _build_nodes(study_tables, assay_uuid),
+            }
 
         ret['studies'][str(study.sodar_uuid)] = study_data
 

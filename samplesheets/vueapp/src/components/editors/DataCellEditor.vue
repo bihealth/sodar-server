@@ -1,6 +1,8 @@
 <template>
   <div v-if="value && renderInfo"
-       :class="containerClasses">
+       :title="containerTitle"
+       :class="containerClasses"
+       v-b-tooltip.hover>
     <!-- Value select -->
     <span v-if="editorType === 'select'">
       <select :ref="'input'"
@@ -46,13 +48,14 @@
 <script>
 import Vue from 'vue'
 
+const dateRegex = /^\d{4}-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])$/
 const navKeyCodes = [33, 34, 35, 36, 37, 38, 39, 40]
 
-// TODO: Update for support and validation for NAME colType
 export default Vue.extend({
   data () {
     return {
       app: null,
+      gridOptions: null,
       headerInfo: null,
       renderInfo: null,
       editConfig: null,
@@ -63,15 +66,20 @@ export default Vue.extend({
       objCls: null,
       headerType: null,
       value: null,
+      isValueArray: false,
       editValue: '',
       ogEditValue: '',
       editUnitEnabled: false,
       editUnit: '',
       ogEditUnit: '',
       containerClasses: '',
+      containerTitle: '',
       inputStyle: '',
       unitStyle: '',
-      nameValues: []
+      nameValues: [],
+      nameUuids: {},
+      sampleColId: null,
+      destroyCalled: false // HACK for issue #869
     }
   },
   methods: {
@@ -81,16 +89,13 @@ export default Vue.extend({
     },
     isPopup () {
       // Show popup editor if unit can be changed
-      if (this.editUnitEnabled) {
-        return true
-      }
-      return false
+      return this.editUnitEnabled
     },
     getPopupPosition () {
       return 'over'
     },
     isCancelBeforeStart () {
-      return false
+      return 'editable' in this.params.value && !this.params.value.editable
     },
     isCancelAfterEnd () {
       return true
@@ -150,8 +155,13 @@ export default Vue.extend({
     },
     getValidState () {
       if (this.headerInfo.header_type === 'name') { // Name is a special case
-        if (this.editValue.length === 0 ||
-            (this.editValue !== this.ogEditValue &&
+        // NOTE: Empty value is allowed for DATA materials
+        if ((this.editValue.length === 0 &&
+            'item_type' in this.headerInfo &&
+            this.headerInfo.item_type !== 'DATA') ||
+            (this.editValue.length > 0 &&
+            !this.value.newRow &&
+            this.editValue !== this.ogEditValue &&
             this.nameValues.includes(this.editValue))) {
           return false
         }
@@ -168,6 +178,18 @@ export default Vue.extend({
               parseInt(range[0]) + '-' + parseInt(range[1]) + ')'
             return false
           }
+        } else if (this.editConfig.format === 'date') {
+          if (!dateRegex.test(this.editValue)) {
+            return false
+          } else {
+            // Actually validate the date
+            const dateSplit = this.editValue.split('-')
+            const y = dateSplit[0]
+            const m = dateSplit[1]
+            const d = dateSplit[2]
+            if (['04', '06', '09', '11'].includes(m) && d > 30) return false
+            if ((m === 2 && d > 29) || (m === 2 && d > 28 && y % 4 !== 0)) return false
+          }
         }
       }
       // Test Regex
@@ -180,25 +202,55 @@ export default Vue.extend({
       return Object.assign(
         this.value, this.headerInfo, { og_value: this.ogEditValue })
     },
-    addNameValues (rowNode) {
-      if (this.params.colDef.field in rowNode.data) {
-        const value = rowNode.data[this.params.colDef.field]
-        if (value.uuid !== this.value.uuid &&
-            !this.nameValues.includes(value.value)) {
-          this.nameValues.push(value.value)
+    setNameData (field, value) {
+      // Set node name UUIDs and values for comparison
+      // TODO: Optimize by only searching in the relevant assay/study table
+      const gridUuids = this.app.getStudyGridUuids()
+      const nameUuids = {}
+      const nameValues = []
+
+      for (let i = 0; i < gridUuids.length; i++) {
+        const gridOptions = this.app.getGridOptionsByUuid(gridUuids[i])
+        const gridApi = gridOptions.api
+
+        if (!gridOptions.columnApi.getColumn(this.params.colDef.field)) {
+          continue // Skip this grid if the column is not present
         }
+
+        gridApi.forEachNode(function (rowNode) {
+          if (field in rowNode.data) {
+            const compValue = rowNode.data[field]
+            if (compValue.uuid !== value.uuid &&
+                !nameValues.includes(compValue.value)) {
+              nameValues.push(compValue.value)
+              nameUuids[compValue.value] = compValue.uuid
+            }
+          }
+        })
       }
+      this.nameUuids = nameUuids
+      this.nameValues = nameValues
     }
   },
   created () {
     this.app = this.params.app
     this.app.selectEnabled = false // Disable editing
     this.value = this.params.value
-    this.editValue = this.params.value.value
-    this.ogEditValue = this.editValue
+    this.editValue = this.params.value.value || ''
+    if (Array.isArray(this.editValue)) {
+      this.isValueArray = true
+      this.editValue = this.editValue.join('; ')
+    }
+    this.ogEditValue = Object.assign(this.value.value)
     this.headerInfo = this.params.headerInfo
     this.renderInfo = this.params.renderInfo
     this.editConfig = this.params.editConfig
+    this.sampleColId = this.params.sampleColId
+
+    // Get current grid options for grid/column API access
+    this.gridOptions = this.app.getGridOptionsByUuid(this.params.gridUuid)
+
+    // console.log('Edit colId/field: ' + this.params.colDef.field) // DEBUG
 
     // Set up unit value
     // TODO: Support ontology references for units
@@ -246,7 +298,7 @@ export default Vue.extend({
         this.editConfig.regex.length > 0) {
       this.regex = new RegExp(this.editConfig.regex)
     } else if (this.headerInfo.header_type === 'name') { // Name is special
-      this.regex = /^([A-Za-z0-9-_]*)$/
+      this.regex = /^([A-Za-z0-9-_/]*)$/
     } else { // Default regex for certain fields
       if (this.editConfig.format === 'integer') {
         this.regex = /^(([1-9][0-9]*)|([0]?))$/ // TODO: TBD: Allow negative?
@@ -255,19 +307,12 @@ export default Vue.extend({
       }
     }
 
-    // If name, get other current values for comparison in validation
-    // TODO: Optimize by only searching in the relevant assay/study table
+    // Special setup for the name column
     if (this.headerInfo.header_type === 'name') {
-      const gridUuids = this.app.getStudyGridUuids()
-
-      for (let i = 0; i < gridUuids.length; i++) {
-        const gridOptions = this.app.getGridOptionsByUuid(gridUuids[i])
-        const gridApi = gridOptions.api
-        if (!gridOptions.columnApi.getColumn(this.params.colDef.field)) {
-          continue // Skip this grid if the column is not present
-        }
-        gridApi.forEachNode(this.addNameValues)
-      }
+      if (this.value.newRow) this.containerTitle = 'Enter name of new or existing node'
+      else this.containerTitle = 'Rename node'
+      // If name, get other current values for comparison in validation
+      this.setNameData(this.params.colDef.field, this.value)
     }
 
     // Prevent keyboard navigation in parent when editing
@@ -281,9 +326,7 @@ export default Vue.extend({
   },
   mounted () {
     Vue.nextTick(() => {
-      if (this.$refs.input) {
-        this.$refs.input.focus()
-      }
+      if (this.$refs.input) this.$refs.input.focus()
     })
   },
   updated () {
@@ -294,86 +337,91 @@ export default Vue.extend({
     }
   },
   beforeDestroy () {
-    if (!this.valid) {
-      this.value.value = this.ogEditValue
-      this.value.unit = this.ogEditUnit
-      this.app.showNotification(this.invalidMsg || 'Invalid value', 'danger', 1000)
-    } else if (this.ogEditValue !== this.editValue ||
-        (this.editUnitEnabled &&
-          this.editValue &&
-          this.ogEditUnit !== this.editUnit)) {
-      // Set unit
-      if (this.value.unit === '' || !this.value.value) {
-        this.value.unit = null
-      } else {
-        this.value.unit = this.editUnit
+    if (!this.destroyCalled) {
+      this.destroyCalled = true // HACK for issue #869
+
+      // Convert to list value if applicable
+      if (this.editValue.includes(';') && (this.isValueArray ||
+          (!['integer', 'double'].includes(this.editConfig.format) &&
+          !this.value.unit))) { // TODO: More constraints for list values?
+        this.value.value = this.editValue.split(';')
+        for (let i = 0; i < this.value.value.length; i++) {
+          this.value.value[i] = this.value.value[i].trim()
+        }
       }
-      this.app.handleCellEdit(this.getUpdateData(), true)
+
+      // Check if we're in a named process without a protocol
+      let namedProcess = false
+      if (this.headerInfo.header_type === 'process_name') {
+        namedProcess = true
+        const groupId = this.params.column.originalParent.groupId
+        const cols = this.gridOptions.columnApi.getAllColumns()
+        for (let i = 1; i < cols.length - 1; i++) {
+          if (cols[i].originalParent.groupId === groupId &&
+              cols[i].colDef.cellEditorParams.headerInfo.header_type === 'protocol') {
+            namedProcess = false
+            break
+          }
+        }
+      }
+
+      if (!this.valid) {
+        this.value.value = this.ogEditValue
+        this.value.unit = this.ogEditUnit
+        this.app.showNotification(this.invalidMsg || 'Invalid value', 'danger', 1000)
+      } else if ((this.headerInfo.header_type === 'name' || namedProcess) &&
+            (!this.value.uuid || this.value.newRow)) {
+        // Set UUID if we are referring to an existing node (only if material)
+        if (!namedProcess && this.nameValues.includes(this.value.value)) {
+          this.value.uuid = this.nameUuids[this.value.value]
+        } else if (!namedProcess) {
+          // Clear UUID in case user switched from existing to new while editing
+          this.value.uuid = null
+        }
+        // Set newInit to false as we have data now
+        this.value.newInit = false
+
+        // Handle updating/initiating node
+        this.app.handleNodeUpdate(
+          this.value,
+          this.params.column,
+          this.params.node,
+          this.gridOptions,
+          this.params.gridUuid,
+          !(this.value.value && this.nameValues.includes(this.value.value)) // createNew
+        )
+      } else if (JSON.stringify(this.value.value) !== JSON.stringify(this.ogEditValue) ||
+          (this.editUnitEnabled &&
+          this.value.value &&
+          this.ogEditUnit !== this.editUnit)) {
+        // Set unit
+        if (this.value.unit === '' || !this.value.value) {
+          this.value.unit = null
+        } else {
+          this.value.unit = this.editUnit
+        }
+        // Update cell (only if we already have the UUID!)
+        if (this.value.uuid) {
+          this.app.handleCellEdit(this.getUpdateData(), true)
+
+          // If a sample has been renamed, update sample list for assay)
+          if (this.headerInfo.header_type === 'name' &&
+              this.params.colDef.field === this.sampleColId) {
+            for (let i = 0; i < this.app.editContext.samples.length; i++) {
+              if (this.app.editContext.samples[i].uuid === this.value.uuid) {
+                this.app.editContext.samples[i].name = this.editValue
+                break
+              }
+            }
+          }
+        }
+      }
+      this.params.colDef.suppressKeyboardEvent = false
+      this.app.selectEnabled = true
     }
-    this.params.colDef.suppressKeyboardEvent = false
-    this.app.selectEnabled = true
   }
 })
 </script>
 
 <style scoped>
-
-.sodar-ss-vue-edit-popup {
-  border: 1px solid #6c757d;
-  background: #ffffff;
-  padding: 10px;
-}
-
-input.ag-cell-edit-input {
-  -moz-appearance: none;
-  -webkit-appearance: none;
-  appearance: none;
-
-  border: 0;
-  width: 100%;
-  height: 38px !important;
-  background-color: #ffffd8 !important;
-  padding-left: 11px;
-  padding-right: 14px;
-  padding-top: 0;
-  padding-bottom: 2px;
-}
-
-select.ag-cell-edit-input {
-  -moz-appearance: none;
-  -webkit-appearance: none;
-  appearance: none;
-
-  border: 0;
-  width: 100%;
-  height: 38px !important;
-  background-color: #ffffd8 !important;
-  background-repeat: no-repeat;
-  background-size: 0.5em auto;
-  background-position: right 0.25em center;
-  padding-left: 12px;
-  padding-right: 18px;
-  padding-top: 0;
-  padding-bottom: 2px !important;
-
-  background-image: url("data:image/svg+xml;charset=utf-8, \
-    <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 40'> \
-      <polygon points='0,0 60,0 30,40' style='fill:black;'/> \
-    </svg>");
-}
-
-select#sodar-ss-vue-edit-select-unit {
-  margin-left: 4px;
-}
-
-.sodar-ss-vue-select-firefox {
-  padding-left: 8px !important;
-}
-
-input.sodar-ss-vue-popup-input,
-select.sodar-ss-vue-popup-input {
-  border: 1px solid #ced4da;
-  border-radius: .25rem;
-}
-
 </style>

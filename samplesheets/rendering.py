@@ -57,7 +57,7 @@ LIST_ATTR_MAP = {
     th.PARAMETER_VALUE: 'parameter_values',
 }
 
-# Basic fields lookup (header -> member of element)
+# Basic fields lookup (header -> member of node)
 BASIC_FIELD_MAP = {th.PERFORMER: 'performer', th.DATE: 'perform_date'}
 
 # altamISA -> SODAR header name lookup
@@ -183,9 +183,12 @@ class SampleSheetTableBuilder:
             colour = 'danger'
             value = 'Process'
 
-        self._top_header.append(
-            {'value': value.strip(), 'colour': colour, 'colspan': colspan}
-        )
+        th = {'value': value.strip(), 'colour': colour, 'colspan': colspan}
+
+        if self._edit:
+            th['headers'] = obj.headers  # Store the full header for editing
+
+        self._top_header.append(th)
         self._node_idx += 1
         self._field_idx = 0
 
@@ -240,11 +243,19 @@ class SampleSheetTableBuilder:
             )
 
         # Else detect type without config
-        elif name.lower() == 'name' and header['item_type'] != 'DATA':
+        elif (
+            name.lower() == 'name' or name in th.PROCESS_NAME_HEADERS
+        ) and header['item_type'] != 'DATA':
             header['col_type'] = 'NAME'
 
-        elif 'contact' in name.lower():
+        elif name.lower() == 'protocol':
+            header['col_type'] = 'PROTOCOL'
+
+        elif 'contact' in name.lower() or name == 'Performer':
             header['col_type'] = 'CONTACT'
+
+        elif name == 'Perform Date':
+            header['col_type'] = 'DATE'
 
         elif name.lower() == 'external links':
             header['col_type'] = 'EXTERNAL_LINKS'
@@ -311,7 +322,11 @@ class SampleSheetTableBuilder:
 
         # Add extra data for editing
         if self._edit:
-            cell['uuid'] = str(obj.sodar_uuid)
+            cell['uuid'] = str(obj.sodar_uuid)  # Node UUID
+
+            # Object reference UUID for special cases
+            if header_type == 'protocol':
+                cell['uuid_ref'] = str(obj.protocol.sodar_uuid)
 
         self._row.append(cell)
 
@@ -329,6 +344,7 @@ class SampleSheetTableBuilder:
             if (
                 not basic_val
                 or cell.get('link')
+                or header_type == 'extract_label'
                 or isinstance(cell['value'], dict)
                 or (
                     isinstance(cell['value'], list)
@@ -375,10 +391,13 @@ class SampleSheetTableBuilder:
                             obj=obj,
                         )
 
-            # Basic fields we can simply map using BASIC_FIELD_MAPE
+            # Basic fields we can simply map using BASIC_FIELD_MAP
             elif h in BASIC_FIELD_MAP and hasattr(obj, BASIC_FIELD_MAP[h]):
                 self._add_cell(
-                    getattr(obj, BASIC_FIELD_MAP[h]), HEADER_MAP[h], obj=obj
+                    getattr(obj, BASIC_FIELD_MAP[h]),
+                    HEADER_MAP[h],
+                    header_type=BASIC_FIELD_MAP[h],
+                    obj=obj,
                 )
 
             # Special case: Name
@@ -387,11 +406,11 @@ class SampleSheetTableBuilder:
 
             # Special case: Labeled Extract Name & Label
             elif h == th.LABELED_EXTRACT_NAME and hasattr(obj, 'extract_label'):
-                self._add_cell(obj.name, 'Name', obj=obj)
+                self._add_cell(obj.name, 'Name', header_type='name', obj=obj)
                 self._add_annotation(
                     {'value': obj.extract_label},
                     HEADER_MAP[th.LABELED_EXTRACT_NAME],
-                    header_type=None,
+                    header_type='extract_label',
                     obj=obj,
                 )
 
@@ -408,12 +427,15 @@ class SampleSheetTableBuilder:
                 and obj.protocol
             ):
                 self._add_cell(
-                    obj.protocol.name, HEADER_MAP[th.PROTOCOL_REF], obj=obj
+                    obj.protocol.name,
+                    HEADER_MAP[th.PROTOCOL_REF],
+                    header_type='protocol',
+                    obj=obj,
                 )
 
             # Special case: Process Name
             elif isinstance(obj, Process) and h in th.PROCESS_NAME_HEADERS:
-                self._add_cell(obj.name, 'Name', header_type='name', obj=obj)
+                self._add_cell(obj.name, h, header_type='process_name', obj=obj)
 
             # Special case: First Dimension
             elif isinstance(obj, Process) and h == th.FIRST_DIMENSION:
@@ -502,17 +524,7 @@ class SampleSheetTableBuilder:
                 )
                 val[i] = new_val
 
-        # Basic list (altamISA v0.1+)
-        elif (
-            isinstance(ann['value'], list)
-            and len(ann['value']) > 0
-            and isinstance(ann['value'][0], str)
-        ):
-            val = '; '.join(
-                [x.strip() for x in ann['value'] if isinstance(x, str)]
-            )
-
-        # Basic value string
+        # Basic value string OR a list of strings
         else:
             val = ann['value']
             basic_val = True
@@ -621,13 +633,14 @@ class SampleSheetTableBuilder:
                 return False
 
         for i in range(len(self._field_header)):
-            header_name = self._field_header[i]['value'].lower()
+            header_name = self._field_header[i]['value']
 
             # Set column type to NUMERIC if values are all numeric or empty
-            # (except if name)
+            # (except if name or process name)
             # Skip check if column is already defined as UNIT
             if (
-                header_name != 'name'
+                header_name != 'Name'
+                and header_name not in th.PROCESS_NAME_HEADERS
                 and not self._field_configs[i]
                 and self._field_header[i]['col_type'] not in ['NUMERIC', 'UNIT']
                 and any(_is_num(x[i]['value']) for x in self._table_data)
@@ -662,8 +675,8 @@ class SampleSheetTableBuilder:
 
                 max_cell_len = max(
                     [
-                        _get_length(x[i]['value'].split(';'), col_type)
-                        if x[i]['value']
+                        _get_length(x[i]['value'], col_type)
+                        if (x[i]['value'] and isinstance(x[i]['value'], list))
                         else 0
                         for x in self._table_data
                     ]

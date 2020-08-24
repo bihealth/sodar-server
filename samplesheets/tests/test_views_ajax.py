@@ -1,5 +1,6 @@
 """Tests for Ajax API views in the samplesheets app"""
 
+from altamisa.constants import table_headers as th
 import json
 from unittest.case import skipIf
 
@@ -194,6 +195,7 @@ class TestStudyTablesAjaxView(TestViewsBase):
             'uuid', ret_data['tables']['study']['table_data'][0][0]
         )
         self.assertIn('display_config', ret_data)
+        self.assertNotIn('edit_context', ret_data)
 
     def test_get_edit(self):
         """Test study tables retrieval with edit mode enabled"""
@@ -218,6 +220,9 @@ class TestStudyTablesAjaxView(TestViewsBase):
         self.assertIn('uuid', ret_data['tables']['study']['table_data'][0][0])
         self.assertIn('display_config', ret_data)
         self.assertIn('study_config', ret_data)
+        self.assertIn('edit_context', ret_data)
+        self.assertIsNotNone(ret_data['edit_context']['samples'])
+        self.assertIsNotNone(ret_data['edit_context']['protocols'])
 
 
 class TestStudyLinksAjaxView(TestViewsBase):
@@ -356,6 +361,127 @@ class TestSampleSheetEditAjaxView(TestViewsBase):
         obj.refresh_from_db()
         self.assertEqual(obj.name, '0816')
 
+    def test_edit_performer(self):
+        """Test editing the performer of a process"""
+        obj = Process.objects.filter(study=self.study, assay=None).first()
+        value = 'Alice Example <alice@example.com>'
+
+        self.values['updated_cells'].append(
+            {
+                'uuid': str(obj.sodar_uuid),
+                'header_name': 'Performer',
+                'header_type': 'performer',
+                'obj_cls': 'Process',
+                'value': value,
+            }
+        )
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:ajax_edit',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                json.dumps(self.values),
+                content_type='application/json',
+            )
+
+        # Assert postconditions
+        self.assertEqual(response.status_code, 200)
+        obj.refresh_from_db()
+        self.assertEqual(obj.performer, value)
+
+    def test_edit_perform_date(self):
+        """Test editing the perform date of a process"""
+        obj = Process.objects.filter(study=self.study, assay=None).first()
+        value = '2020-07-07'
+
+        self.values['updated_cells'].append(
+            {
+                'uuid': str(obj.sodar_uuid),
+                'header_name': 'Perform date',
+                'header_type': 'perform_date',
+                'obj_cls': 'Process',
+                'value': value,
+            }
+        )
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:ajax_edit',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                json.dumps(self.values),
+                content_type='application/json',
+            )
+
+        # Assert postconditions
+        self.assertEqual(response.status_code, 200)
+        obj.refresh_from_db()
+        self.assertEqual(obj.perform_date.strftime('%Y-%m-%d'), value)
+
+    def test_edit_perform_date_empty(self):
+        """Test editing the perform date of a process with an empty date"""
+        obj = Process.objects.filter(study=self.study, assay=None).first()
+        value = ''
+
+        self.values['updated_cells'].append(
+            {
+                'uuid': str(obj.sodar_uuid),
+                'header_name': 'Perform date',
+                'header_type': 'perform_date',
+                'obj_cls': 'Process',
+                'value': value,
+            }
+        )
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:ajax_edit',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                json.dumps(self.values),
+                content_type='application/json',
+            )
+
+        # Assert postconditions
+        self.assertEqual(response.status_code, 200)
+        obj.refresh_from_db()
+        self.assertIsNone(obj.perform_date)
+
+    def test_edit_perform_date_invalid(self):
+        """Test editing the perform date of a process with an invalid date"""
+        obj = Process.objects.filter(study=self.study, assay=None).first()
+        og_date = obj.perform_date
+        value = '2020-11-31'
+
+        self.values['updated_cells'].append(
+            {
+                'uuid': str(obj.sodar_uuid),
+                'header_name': 'Perform date',
+                'header_type': 'perform_date',
+                'obj_cls': 'Process',
+                'value': value,
+            }
+        )
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:ajax_edit',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                json.dumps(self.values),
+                content_type='application/json',
+            )
+
+        # Assert postconditions
+        self.assertEqual(response.status_code, 500)  # TODO: Should be 400?
+        obj.refresh_from_db()
+        self.assertEqual(obj.perform_date, og_date)
+
     def test_edit_characteristics_str(self):
         """Test editing a characteristics string value in a material"""
         obj = GenericMaterial.objects.get(study=self.study, name='0816')
@@ -433,6 +559,86 @@ class TestSampleSheetEditAjaxView(TestViewsBase):
             obj.parameter_values[header_name],
             {'unit': None, 'value': EDIT_NEW_VALUE_STR},
         )
+
+    def test_edit_protocol(self):
+        """Test editing the protocol reference of a process"""
+
+        obj = Process.objects.filter(
+            study=self.study, unique_name__icontains='sample collection'
+        ).first()
+        new_protocol = Protocol.objects.exclude(
+            sodar_uuid=obj.protocol.sodar_uuid
+        ).first()
+
+        # Assert preconditions
+        self.assertIsNotNone(new_protocol)
+        self.assertNotEqual(obj.protocol, new_protocol)
+
+        self.values['updated_cells'].append(
+            {
+                'uuid': str(obj.sodar_uuid),
+                'header_name': 'protocol',
+                'header_type': 'protocol',
+                'obj_cls': 'Process',
+                'value': new_protocol.name,
+                'uuid_ref': str(new_protocol.sodar_uuid),
+            }
+        )
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:ajax_edit',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                json.dumps(self.values),
+                content_type='application/json',
+            )
+
+        # Assert postconditions
+        self.assertEqual(response.status_code, 200)
+        obj.refresh_from_db()
+        self.assertEqual(obj.protocol, new_protocol)
+
+    def test_edit_process_name(self):
+        """Test editing the name of a process"""
+
+        obj = Process.objects.filter(
+            study=self.study, unique_name__icontains='sample collection'
+        ).first()
+        name_type = th.DATA_TRANSFORMATION_NAME
+        name = 'New Process'
+
+        # Assert preconditions
+        self.assertNotEqual(obj.name, name)
+        self.assertNotEqual(obj.name_type, name_type)
+
+        self.values['updated_cells'].append(
+            {
+                'uuid': str(obj.sodar_uuid),
+                'header_name': name_type,
+                'header_type': 'process_name',
+                'obj_cls': 'Process',
+                'value': name,
+                'uuid_ref': str(obj.sodar_uuid),
+            }
+        )
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:ajax_edit',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                json.dumps(self.values),
+                content_type='application/json',
+            )
+
+        # Assert postconditions
+        self.assertEqual(response.status_code, 200)
+        obj.refresh_from_db()
+        self.assertEqual(obj.name, name)
+        self.assertEqual(obj.name_type, name_type)
 
 
 class TestSampleSheetEditFinishAjaxView(TestViewsBase):

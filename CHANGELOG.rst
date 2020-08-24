@@ -21,6 +21,11 @@ Added
     - Sample sheet column display configuration saving (#539)
     - Material and process renaming (#852)
     - Study and assay iRODS paths in ``InvestigationRetrieveAPIView`` (#895)
+    - Protocol selection (#871)
+    - Editing of performer, perform date and contacts (#881)
+    - Editing of non-ontology list values (#886)
+    - Display ``name_type`` for processes
+    - Set default protocol automatically in edit config (#879)
 
 Changed
 -------
@@ -36,12 +41,15 @@ Changed
     - Partial refactoring and cleanup of Vue app code (#537, #837)
     - Always store original header name in table rendering
     - Allow column config editing with ``edit_sheet`` permission (#880)
+    - Allow empty ``DATA`` material names in editing (#898)
 
 Fixed
 -----
 
 - **Samplesheets**
     - Row sorting not working with updated column type definitions (#847)
+    - Lists of strings assigned ``ONTOLOGY`` column type in rendering (#885)
+    - Last single column node not visible in ``ColumnToggleModal`` (#877)
 
 
 v0.7.1 (2020-04-27)

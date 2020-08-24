@@ -12,7 +12,7 @@ from projectroles.models import Role, SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
 from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
 
-from samplesheets.models import Study, Assay, GenericMaterial, Process
+from samplesheets.models import Study, Assay, GenericMaterial, Process, Protocol
 from samplesheets.rendering import SampleSheetTableBuilder
 from samplesheets.utils import (
     get_alt_names,
@@ -33,6 +33,11 @@ OBJ_ALT_NAMES = ['aa-bb-01', 'aabb01', 'aa_bb_01']
 
 CONFIG_STUDY_UUID = '11111111-1111-1111-1111-111111111111'
 CONFIG_ASSAY_UUID = '22222222-2222-2222-2222-222222222222'
+CONFIG_PROTOCOL_UUIDS = [
+    '11111111-1111-1111-bbbb-000000000000',
+    '22222222-2222-2222-bbbb-111111111111',
+    '22222222-2222-2222-bbbb-000000000000',
+]
 CONFIG_DIR = os.path.dirname(__file__) + '/config/'
 CONFIG_PATH_DEFAULT = CONFIG_DIR + 'i_small_default.json'
 CONFIG_PATH_UPDATED = CONFIG_DIR + 'i_small_updated.json'
@@ -53,8 +58,8 @@ class SheetConfigMixin:
     @classmethod
     def _update_uuids(cls, investigation, sheet_config):
         """
-        Update study and assay UUIDs in the database to match a test sheet
-        config file.
+        Update study, assay and protocol UUIDs in the database to match a test
+        sheet config file.
 
         :param investigation: Investigation object
         :param sheet_config: Dict
@@ -81,6 +86,14 @@ class SheetConfigMixin:
                 )
                 assay.sodar_uuid = a_uuid
                 assay.save()
+
+            protocols = list(
+                Protocol.objects.filter(study=study).order_by('pk')
+            )
+
+            for i in range(len(protocols)):
+                protocols[i].sodar_uuid = CONFIG_PROTOCOL_UUIDS[i]
+                protocols[i].save()
 
 
 class TestUtilsBase(
@@ -256,7 +269,7 @@ class TestBuildSheetConfig(
     def test_build_sheet_config(self):
         """Test sheet building against the default i_small JSON config file"""
         investigation = self._import_isa_from_file(SHEET_PATH, self.project)
-        # Update study and assay UUIDs to match JSON file
+        # Update UUIDs to match JSON file
         self._update_uuids(investigation, CONFIG_DATA_DEFAULT)
         sheet_config = build_sheet_config(investigation)
         self.assertEqual(sheet_config, CONFIG_DATA_DEFAULT)

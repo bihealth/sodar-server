@@ -9,6 +9,7 @@
           class="sodar-list-btn sodar-vue-col-config-btn"
           title="Configure Column"
           @click="onModalClick"
+          :disabled="!isEnabled()"
           v-b-tooltip.hover>
         <i class="fa fa-pencil"></i>
       </b-button>
@@ -22,6 +23,7 @@ import Vue from 'vue'
 export default Vue.extend({
   data () {
     return {
+      app: null,
       modalComponent: null,
       displayName: null,
       fieldConfig: null
@@ -33,14 +35,37 @@ export default Vue.extend({
       return true
     },
     onModalClick () {
+      const colDef = this.params.column.colDef
+      let fieldConfig
+      let newConfig
+
       // Refresh fieldConfig in case it's changed
-      const fieldConfig = JSON.parse(
-        JSON.stringify(this.params.column.colDef.headerComponentParams.fieldConfig)) // Copy
-      let newConfig = false
+      if (colDef.headerComponentParams.fieldConfig) {
+        fieldConfig = JSON.parse(
+          JSON.stringify(colDef.headerComponentParams.fieldConfig)) // Copy
+        newConfig = false
+      } else {
+        fieldConfig = {}
+        newConfig = true
+      }
 
       // Add default values for fieldConfig if they are not present
+      // TODO: Refactor/simplify
+      // TODO: Move to ColumnConfigModal?
+      if (!('name' in fieldConfig)) {
+        fieldConfig.name = this.displayName
+      }
+      if (!('type' in fieldConfig)) {
+        fieldConfig.type = this.params.headerType
+      }
       if (!('format' in fieldConfig)) {
-        fieldConfig.format = 'string' // TODO: Set format as "name" if name
+        if (fieldConfig.type === 'protocol') {
+          fieldConfig.format = 'protocol'
+        } else if (fieldConfig.type === 'perform_date') {
+          fieldConfig.format = 'date'
+        } else {
+          fieldConfig.format = 'string'
+        }
         newConfig = true // No existing config found
       }
       if (!('editable' in fieldConfig)) {
@@ -60,13 +85,17 @@ export default Vue.extend({
         fieldDisplayName: this.displayName,
         assayUuid: this.params.assayUuid,
         configNodeIdx: this.params.configNodeIdx,
-        configFieldIdx: this.params.configFieldIdx,
-        defNodeIdx: this.params.defNodeIdx,
-        defFieldIdx: this.params.defFieldIdx
+        configFieldIdx: this.params.configFieldIdx
       }, this.params.column)
+    },
+    isEnabled () {
+      return !(this.app &&
+        this.app.unsavedRow &&
+        ['NAME', 'PROTOCOL', 'FILE_LINK'].includes(this.params.colType))
     }
   },
   beforeMount () {
+    this.app = this.params.app
     this.modalComponent = this.params.modalComponent
     this.displayName = this.params.displayName
     this.fieldConfig = this.params.fieldConfig

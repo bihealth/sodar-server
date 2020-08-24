@@ -55,6 +55,10 @@
         {{ renderData.value }}
       </span>
     </span>
+    <!-- Special cases -->
+    <span v-else-if="useDisplayValue">
+      {{ displayValue }}
+    </span>
     <!-- Plain/numeric/empty/undetected value -->
     <span v-else>
       {{ value.value }}
@@ -69,10 +73,14 @@ export default Vue.extend(
     data: function () {
       return {
         value: null,
+        displayValue: null,
+        useDisplayValue: false,
         headerName: null,
         colType: null,
         renderData: null,
-        enableHover: null
+        enableHover: null,
+        newInit: false,
+        newRow: false
       }
     },
     methods: {
@@ -145,10 +153,13 @@ export default Vue.extend(
         const linkLabels = this.params.context
           .componentParent.sodarContext.external_link_labels
         const ret = []
-        const extIds = this.value.value.split(';')
 
-        for (let i = 0; i < extIds.length; i++) {
-          const extId = extIds[i]
+        if (!Array.isArray(this.value.value)) {
+          this.value.value = [this.value.value]
+        }
+
+        for (let i = 0; i < this.value.value.length; i++) {
+          const extId = this.value.value[i]
           const splitId = extId.split(':')
 
           if (splitId.length > 1 && splitId[1] != null) {
@@ -179,13 +190,15 @@ export default Vue.extend(
       }
     },
     beforeMount () {
-      if (
-        this.params.value &&
-        this.params.value.value &&
-        this.params.value.value.length > 0
-      ) {
-        this.value = this.params.value
+      this.value = this.params.value
+      if (this.value && 'newInit' in this.value) this.newInit = this.value.newInit
+      if (this.value && 'newRow' in this.value) this.newRow = this.value.newRow
 
+      if (
+        this.value &&
+        this.value.value &&
+        this.value.value.length > 0
+      ) {
         // Handle special column type
         this.colType = this.params.value.colType
 
@@ -203,10 +216,17 @@ export default Vue.extend(
         } else if (this.colType === 'LINK_FILE') {
           this.renderData = this.getFileLink()
         }
-      } else {
-        this.value = {
-          value: '-'
+
+        // Special case: List of strings
+        if (Array.isArray(this.value.value) &&
+            !(typeof this.value.value[0] === 'object')) {
+          this.displayValue = this.value.value.join('; ')
+          this.useDisplayValue = true
         }
+      } else if (this.newInit) {
+        this.value.value = '' // TODO: Simplify?
+      } else {
+        this.value = { value: '-' }
       }
     }
   }

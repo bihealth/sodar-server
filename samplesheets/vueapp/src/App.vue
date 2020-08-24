@@ -84,6 +84,7 @@
           </div>
         </div>
 
+        <!-- Study Card -->
         <div class="card sodar-ss-data-card sodar-ss-data-card-study">
           <div class="card-header">
             <h4>Study Data
@@ -111,6 +112,14 @@
                     id="sodar-ss-data-filter-study"
                     @keyup="onFilterChange" />
               </b-input-group>
+              <b-button
+                  v-if="editMode"
+                  variant="primary"
+                  class="sodar-header-button mr-2 pull-right"
+                  :disabled="unsavedRow !== null"
+                  @click="handleRowInsert(currentStudyUuid, false)">
+                <i class="fa fa-plus"></i> Insert Row
+              </b-button>
             </h4>
           </div>
           <div class="card-body p-0">
@@ -177,6 +186,7 @@
               :irods-webdav-url="sodarContext.irods_webdav_url">
           </assay-shortcut-card>
 
+          <!-- Assay Card -->
           <div class="card sodar-ss-data-card sodar-ss-data-card-assay">
             <div class="card-header">
               <h4>
@@ -206,6 +216,14 @@
                       :assay-uuid="assayUuid"
                       @keyup="onFilterChange" />
                 </b-input-group>
+                <b-button
+                  v-if="editMode"
+                  variant="primary"
+                  class="sodar-header-button mr-2 pull-right"
+                  :disabled="unsavedRow !== null"
+                  @click="handleRowInsert(assayUuid, true)">
+                <i class="fa fa-plus"></i> Insert Row
+              </b-button>
               </h4>
             </div>
             <div class="card-body p-0">
@@ -329,7 +347,9 @@ import DataCellRenderer from './components/renderers/DataCellRenderer.vue'
 import IrodsButtonsRenderer from './components/renderers/IrodsButtonsRenderer.vue'
 import ShortcutButtonsRenderer from './components/renderers/ShortcutButtonsRenderer.vue'
 import FieldHeaderEditRenderer from './components/renderers/FieldHeaderEditRenderer'
+import RowEditRenderer from './components/renderers/RowEditRenderer.vue'
 import DataCellEditor from './components/editors/DataCellEditor.vue'
+import ObjectSelectEditor from './components/editors/ObjectSelectEditor.vue'
 import AgGridDragSelect from './components/AgGridDragSelect.vue'
 
 export default {
@@ -365,14 +385,20 @@ export default {
       appSetupDone: false,
       selectEnabled: true,
       editMode: false,
+      editContext: null,
       editStudyData: false,
       editStudyConfig: null,
       editDataUpdated: false,
       studyDisplayConfig: null,
+      sampleColId: null,
+      sampleIdx: null,
+      unsavedRow: null, // Info of currently unsaved row, or null if none
+      savingRow: false,
       contentId: 'sodar-ss-vue-content',
       /* NOTE: cell editor only works if provided through frameworkComponents? */
       frameworkComponents: {
-        dataCellEditor: DataCellEditor
+        dataCellEditor: DataCellEditor,
+        objectSelectEditor: ObjectSelectEditor
       }
     }
   },
@@ -419,10 +445,12 @@ export default {
 
     /* Grid Helpers --------------------------------------------------------- */
 
-    // Helper to get flat value for
+    // Helper to get flat value for comparator
     getFlatValue (value) {
-      if (Array.isArray(value) && value.length > 0 && 'name' in value[0]) {
-        return value.map(d => d.name).join(';')
+      if (Array.isArray(value) && value.length > 0) {
+        if (typeof value[0] === 'object' && 'name' in value[0]) {
+          return value.map(d => d.name).join(';')
+        } else return value.join(';')
       } else {
         return value
       }
@@ -432,17 +460,14 @@ export default {
     dataCellCompare (dataA, dataB) {
       let valueA = dataA.value
       let valueB = dataB.value
-
-      // Integer/float sort
       if (['UNIT', 'NUMERIC'].includes(dataA.colType)) {
-        return parseFloat(valueA) - parseFloat(valueB)
+        if (!isNaN(parseFloat(valueA)) && !isNaN(parseFloat(valueB))) {
+          return parseFloat(valueA) - parseFloat(valueB)
+        }
+      } else {
+        valueA = this.getFlatValue(valueA)
+        valueB = this.getFlatValue(valueB)
       }
-
-      // Join array values into strings
-      valueA = this.getFlatValue(valueA)
-      valueB = this.getFlatValue(valueB)
-
-      // String sort
       return valueA.localeCompare(valueB)
     },
 
@@ -481,9 +506,6 @@ export default {
     },
 
     buildColDef (table, assayMode, uuid, editMode) {
-      // Currently uneditable fields
-      const uneditableFields = ['protocol', 'performer', 'perform date']
-
       // Default columns
       const colDef = []
       let editFieldConfig
@@ -504,7 +526,8 @@ export default {
             cellClass: [
               'text-right', 'text-muted',
               'sodar-ss-data-unselectable',
-              'sodar-ss-data-row-cell'
+              'sodar-ss-data-row-cell',
+              'sodar-ss-data-rownum-cell'
             ],
             suppressSizeToFit: true,
             suppressAutoSize: true,
@@ -533,11 +556,17 @@ export default {
       // Iterate through top header
       for (let i = 0; i < topHeaderLength; i++) {
         const topHeader = table.top_header[i]
+
+        // Set up header group
         let headerGroup = {
           headerName: topHeader.value,
           headerClass: ['text-white', 'bg-' + topHeader.colour],
           children: []
         }
+        if (editMode) {
+          headerGroup.cellRendererParams = { headers: topHeader.headers }
+        }
+
         let configFieldIdx = 0 // For config management
 
         // Iterate through field headers
@@ -622,7 +651,8 @@ export default {
                 const f = editNode.fields[k]
 
                 if (f.name === fieldHeader.name &&
-                    (f.name === 'Name' || f.type === fieldHeader.type)) {
+                    (['Name', 'Protocol'].includes(f.name) ||
+                    f.type === fieldHeader.type)) {
                   editFieldConfig = f
                   break
                 }
@@ -644,14 +674,34 @@ export default {
             headerClass: ['sodar-ss-data-header'],
             cellRendererFramework: DataCellRenderer,
             cellRendererParams: {
-              app: this // NOTE: colType no longer necessary, passed to cell
+              app: this,
+              colType: colType,
+              fieldEditable: fieldEditable // Needed here to update cellClass
             },
-            cellClass: [
-              'sodar-ss-data-cell',
-              'text-' + colAlign
-            ],
             comparator: this.dataCellCompare,
             filterValueGetter: this.dataCellFilterValue
+          }
+
+          // Cell classes
+          if (!editMode) {
+            header.cellClass = ['sodar-ss-data-cell', 'text-' + colAlign]
+          } else {
+            header.cellClass = function (params) {
+              const colAlign = ['UNIT', 'NUMERIC'].includes(
+                params.colDef.cellRendererParams.colType) ? 'right' : 'left'
+              const cellClass = ['sodar-ss-data-cell', 'text-' + colAlign]
+
+              // Set extra classes if non-editable
+              if (('editable' in params.value && !params.value.editable) ||
+                  (!('editable' in params.value) &&
+                  !params.colDef.cellRendererParams.fieldEditable)) {
+                if ('newInit' in params.value && params.value.newInit) {
+                  cellClass.push('sodar-ss-data-forbidden')
+                } else cellClass.push('bg-light')
+                cellClass.push('text-muted')
+              }
+              return cellClass
+            }
           }
 
           // Make source name column pinned, disable hover
@@ -670,25 +720,23 @@ export default {
 
           // Editing: set up field and its header for editing
           if (editMode) {
+            // Store sample column ID and index
+            if (!assayMode &&
+                topHeader.value === 'Sample' &&
+                header.headerName === 'Name') {
+              this.sampleColId = header.field
+              this.sampleIdx = j + 1 // +1 for row number column
+            }
+
             // Set header renderer for fields we can manage
             if (this.sodarContext.perms.edit_sheet &&
-                !uneditableFields.includes(fieldHeader.value.toLowerCase()) &&
-                !['EXTERNAL_LINKS', 'ONTOLOGY', 'CONTACT'].includes(colType)) {
+                !['EXTERNAL_LINKS', 'ONTOLOGY'].includes(colType)) {
               let configAssayUuid = assayMode ? uuid : null
               let configNodeIdx = i
-              let defNodeIdx = i + 1 // Add 1 for row column
-              let defFieldIdx = configFieldIdx
-
-              // Add 1 for table node index from 2nd source group onwards
-              if (i > 0 || (i === 0 && configFieldIdx > 0)) defNodeIdx += 1
-              // Subtract source name if in 2nd source group
-              if (i === 0 && configFieldIdx > 0) {
-                defFieldIdx = configFieldIdx - 1
-              }
 
               if (assayMode) {
-                // NOTE: -2 because of row column and split source column
-                const studyNodeLen = this.columnDefs.study.length - 2
+                // NOTE: -3 because of row/edit cols and split source column
+                const studyNodeLen = this.columnDefs.study.length - 3
                 if (configNodeIdx < studyNodeLen) {
                   configAssayUuid = null
                 } else {
@@ -698,23 +746,65 @@ export default {
 
               header.headerComponentFramework = FieldHeaderEditRenderer
               header.headerComponentParams = {
+                app: this.getApp(),
                 modalComponent: this.$refs.columnConfigModal,
                 colType: colType,
                 fieldConfig: editFieldConfig,
                 assayUuid: configAssayUuid,
                 configNodeIdx: configNodeIdx,
                 configFieldIdx: configFieldIdx,
-                defNodeIdx: defNodeIdx, // Add 2 for row & source groups
-                defFieldIdx: defFieldIdx
+                editable: fieldEditable, // Add here to allow checking by cell
+                headerType: fieldHeader.type,
+                assayMode: assayMode // Needed for sample col in assay
               }
+
               header.width = header.width + 20 // Fit button in header
               header.minWidth = header.minWidth + 20
             }
 
             // Set up field editing
-            if (editFieldConfig && fieldHeader.value !== 'Protocol') {
-              header.editable = fieldEditable
-              header.cellEditor = 'dataCellEditor'
+            if (editFieldConfig) {
+              // Allow overriding field editability cell-by-cell
+              header.editable = function (params) {
+                if (params.colDef.field in params.node.data &&
+                    'editable' in params.node.data[params.colDef.field]) {
+                  return params.node.data[params.colDef.field].editable
+                } else if ('headerComponentParams' in params.colDef) {
+                  return params.colDef.headerComponentParams.editable
+                } else return false
+              }
+
+              // Set up cell editor selector
+              header.cellEditorSelector = function (params) {
+                // console.log('cellEditorSelector params:') // DEBUG
+                // console.dir(params) // DEBUG
+                let editorName = 'dataCellEditor'
+                // TODO: Refactor so that default params are read from header
+                const editorParams = Object.assign(
+                  params.colDef.cellEditorParams
+                )
+                const editContext = editorParams.app.editContext
+                // console.log('editContext:') // DEBUG
+                // console.dir(editContext) // DEBUG
+
+                // If sample name in an assay or an object ref, return selector
+                // TODO: Simplify?
+                if (params.colDef.headerComponentParams.assayMode &&
+                    params.column.originalParent.colGroupDef.headerName === 'Sample' &&
+                    params.colDef.headerName === 'Name' &&
+                    'newRow' in params.value &&
+                    params.value.newRow) {
+                  editorName = 'objectSelectEditor'
+                  editorParams.selectOptions = Object.assign(editContext.samples)
+                } else if (editorParams.headerInfo.header_type === 'protocol') {
+                  editorName = 'objectSelectEditor'
+                  editorParams.selectOptions = Object.assign(editContext.protocols)
+                }
+
+                return { component: editorName, params: editorParams }
+              }
+
+              // Set default cellEditorParams (may be updated in the selector)
               header.cellEditorParams = {
                 app: this.getApp(),
                 // Header information to be passed for calling server
@@ -728,31 +818,30 @@ export default {
                   align: colAlign,
                   width: colWidth
                 },
-                // Editor configuration to be passed to DataCellEditor
-                editConfig: editFieldConfig
+                editConfig: editFieldConfig, // Editor configuration
+                gridUuid: uuid, // TODO: Could get this from header params
+                sampleColId: this.sampleColId
+              }
+
+              // Add item type to generic material name
+              if (fieldHeader.obj_cls === 'GenericMaterial' &&
+                  fieldHeader.type === 'name') {
+                header.cellEditorParams.headerInfo.item_type = fieldHeader.item_type
               }
             }
-            if (!fieldEditable) { // Not editable at initial loading
-              header.cellClass = header.cellClass.concat(['bg-light', 'text-muted'])
-            }
           }
 
-          if (j > 0) {
-            headerGroup.children.push(header)
-          }
-
+          if (j > 0) headerGroup.children.push(header)
           j++
           configFieldIdx += 1
         }
 
         headerIdx = j
         colDef.push(headerGroup)
-
-        if (topHeader.value === 'Sample') {
-          studySection = false
-        }
+        if (topHeader.value === 'Sample') studySection = false
       }
 
+      // TODO: Reduce repetition in special column definitions
       // Study shortcut column
       if (!this.editMode &&
           !assayMode && 'shortcuts' in table && table.shortcuts) {
@@ -795,6 +884,7 @@ export default {
         colDef.push(shortcutHeaderGroup)
       }
 
+      // Assay iRODS button column
       if (!this.editMode && assayMode) {
         const assayContext = this.sodarContext.studies[this.currentStudyUuid].assays[uuid]
         if (this.sodarContext.irods_status && assayContext.display_row_links) {
@@ -844,6 +934,50 @@ export default {
         }
       }
 
+      // Row editing column
+      if (this.editMode) {
+        const rowEditGroup = {
+          headerName: 'Edit',
+          headerClass: [
+            'text-white',
+            'bg-secondary',
+            'sodar-ss-data-links-top'
+          ],
+          children: [
+            {
+              headerName: 'Row',
+              field: 'rowEdit',
+              editable: false,
+              headerClass: [
+                'sodar-ss-data-header',
+                'sodar-ss-data-links-header'
+              ],
+              cellClass: [
+                'sodar-ss-data-links-cell',
+                'sodar-ss-data-unselectable'
+              ],
+              suppressSizeToFit: true,
+              suppressAutoSize: true,
+              resizable: true,
+              sortable: false,
+              pinned: 'right',
+              unselectable: true,
+              cellRendererFramework: RowEditRenderer,
+              cellRendererParams: {
+                app: this,
+                gridUuid: uuid,
+                assayMode: assayMode,
+                sampleColId: this.sampleColId,
+                sampleIdx: this.sampleIdx
+              },
+              width: 80,
+              minWidth: 80
+            }
+          ]
+        }
+        colDef.push(rowEditGroup)
+      }
+
       return colDef
     },
 
@@ -879,25 +1013,22 @@ export default {
 
     // Clear current grids
     clearGrids () {
-      this.gridOptions = {
-        study: null,
-        assays: {}
-      }
-      this.columnDefs = {
-        study: null,
-        assays: {}
-      }
-      this.rowData = {
-        study: null,
-        assays: {}
-      }
+      this.gridOptions = { study: null, assays: {} }
+      this.columnDefs = { study: null, assays: {} }
+      this.rowData = { study: null, assays: {} }
       this.assayShortcuts = {}
+      this.sampleColId = null
+      this.sampleIdx = null
     },
 
     getStudy (studyUuid, editMode) {
       this.gridsLoaded = false
       this.gridsBusy = true
       this.clearGrids()
+
+      // Clear additional data
+      this.editContext = null
+      this.unsavedRow = null
 
       // Set up current study
       this.gridOptions.study = this.initGridOptions(editMode)
@@ -923,6 +1054,11 @@ export default {
               // Editing: Get study config
               if (editMode && 'study_config' in data) {
                 this.editStudyConfig = data.study_config
+              }
+
+              // Editing: Get edit context
+              if (editMode && 'edit_context' in data) {
+                this.editContext = data.edit_context
               }
 
               // Get display config
@@ -1133,9 +1269,7 @@ export default {
 
         gridApi.forEachNode(function (rowNode) {
           const value = rowNode.data[fieldId]
-          if (value &&
-              value.uuid === upData.uuid &&
-              value.value === upData.og_value) {
+          if (value && value.uuid === upData.uuid) {
             value.value = upData.value
             value.unit = upData.unit
             rowNode.setDataValue(fieldId, value)
@@ -1148,19 +1282,251 @@ export default {
       }
     },
 
-    refreshField (fieldId) {
-      const gridUuids = this.getStudyGridUuids()
-
-      for (let i = 0; i < gridUuids.length; i++) {
-        this.getGridOptionsByUuid(gridUuids[i]).api.refreshCells(
-          { columns: [fieldId], force: true })
+    getDefaultValue (colId, gridOptions, newInit, forceEmpty) {
+      // Return empty or default value for a newly created cell
+      // TODO: Cleanup and simplify
+      // console.log('getDefaultValue() called: ' + colId) // DEBUG
+      const column = gridOptions.columnApi.getColumn(colId)
+      const colType = column.colDef.cellRendererParams.colType
+      let editConfig = null
+      if ('cellEditorParams' in column.colDef) {
+        editConfig = column.colDef.cellEditorParams.editConfig
       }
+
+      if (newInit === undefined) newInit = false
+      if (forceEmpty === undefined) forceEmpty = false
+      const value = {
+        uuid: null,
+        colType: colType,
+        value: '',
+        newRow: true,
+        newInit: newInit
+      }
+      // Default value
+      if (forceEmpty === false &&
+          editConfig &&
+          'default' in editConfig &&
+          editConfig.default) {
+        if (editConfig.format === 'protocol') {
+          let name = ''
+          // TODO: Use find() instead
+          for (let i = 0; i < this.editContext.protocols.length; i++) {
+            if (this.editContext.protocols[i].uuid === editConfig.default) {
+              name = this.editContext.protocols[i].name
+              break
+            }
+          }
+          value.value = name
+          value.uuid_ref = editConfig.default
+        } else {
+          value.value = editConfig.default
+        }
+      } else { // Special value notation if default is not found
+        if (editConfig && editConfig.format === 'protocol') {
+          value.value = { name: '', uuid: null }
+        } else if (colType === 'ONTOLOGY') {
+          value.value = { name: null, accession: null, ontology_name: null }
+        }
+      }
+      // Default unit
+      if (editConfig && 'unit_default' in editConfig) {
+        value.unit = editConfig.unit_default
+      }
+
+      return value
+    },
+
+    enableNextNodes (rowNode, gridOptions, startIdx) {
+      // Enable editing for the next node(s) when inserting a new row
+      // NOTE: Can't access cellEditorParams here as they are set dynamically
+      const cols = gridOptions.columnApi.getAllColumns()
+      // console.log('enableNextNodes() called at: ' + cols[startIdx].colId) // DEBUG
+
+      // Only enable node(s) if they are in newInit mode
+      if (!rowNode.data[cols[startIdx].colId].newInit) {
+        // console.log('Nothing to enable') // DEBUG
+        return
+      }
+
+      if (startIdx && startIdx < cols.length - 1) { // -1 for edit column
+        let nextColId = cols[startIdx].colId
+        const nextGroupId = cols[startIdx].originalParent.groupId
+        const nextNodeCls = cols[startIdx].colDef.cellEditorParams.headerInfo.obj_cls
+        let enableNextIdx = null
+
+        // If the next node is a material, enable editing its name
+        // Else if it's a process, enable editing for all cells (if available)
+        if (nextNodeCls === 'GenericMaterial') {
+          const itemType = cols[startIdx].colDef.cellEditorParams.headerInfo.item_type
+          let value = this.getDefaultValue(nextColId, gridOptions, true)
+          value.editable = true
+          if (itemType === 'DATA') value.newInit = false // Empty name is OK
+          rowNode.setDataValue(nextColId, value)
+
+          // Immediately enable next node after a data node (name can be blank)
+          if (itemType === 'DATA') {
+            for (let i = startIdx + 1; i < cols.length - 1; i++) {
+              if (cols[i].originalParent.groupId !== nextGroupId) {
+                enableNextIdx = i
+                break
+              }
+              value = this.getDefaultValue(cols[i].colId, gridOptions, false, true)
+              // value.newInit = false
+              value.editable = false
+              rowNode.setDataValue(cols[i].colId, value)
+            }
+          }
+        } else if (nextNodeCls === 'Process') {
+          let i = startIdx
+          let protocolFilled = false
+          let newInit = true
+          let forceEmpty = false
+
+          while (i < cols.length &&
+              cols[i].originalParent.groupId === nextGroupId) {
+            nextColId = cols[i].colId
+            const value = this.getDefaultValue(nextColId, gridOptions, newInit, forceEmpty)
+            const headerType = cols[i].colDef.cellEditorParams.headerInfo.header_type
+
+            if (headerType === 'protocol') {
+              value.editable = true
+              if ('uuid_ref' in value && value.uuid_ref) {
+                protocolFilled = true
+                newInit = false
+                value.newInit = false // Update protocol ref column newInit
+              } else forceEmpty = true
+            } else if (headerType === 'process_name') {
+              value.editable = true // Process name should always be editable
+            } else {
+              // Only allow editing the rest of the cells if protocol is set
+              if (protocolFilled) {
+                value.editable = cols[i].colDef.cellRendererParams.fieldEditable
+              } else {
+                value.editable = false
+              }
+            }
+            rowNode.setDataValue(nextColId, value)
+            i += 1
+          }
+
+          // If default protocol was filled, enable the next node(s) too
+          if (protocolFilled) enableNextIdx = i
+        }
+        // If we can immediately enable the next node(s), proceed
+        if (enableNextIdx) this.enableNextNodes(rowNode, gridOptions, enableNextIdx)
+      }
+    },
+
+    handleNodeUpdate (
+      firstCellValue, column, rowNode, gridOptions, gridUuid, createNew
+    ) {
+      console.log('handleNodeUpdate() called; colId=' + column.colId) // DEBUG
+      const gridApi = gridOptions.api
+      const columnApi = gridOptions.columnApi
+      const firstColId = column.colId // ID of the identifying node column
+      let assayMode = false
+      // console.log('createNew=' + createNew) // DEBUG
+      // console.log('firstColId=' + firstColId) // DEBUG
+
+      if (gridUuid in this.sodarContext.studies[this.currentStudyUuid].assays) {
+        assayMode = true
+      }
+
+      // Sample in an assay is a special case
+      if (assayMode && column.originalParent.colGroupDef.headerName === 'Sample') {
+        const studyOptions = this.getGridOptionsByUuid(this.currentStudyUuid)
+        const studyApi = studyOptions.api
+        const studyCols = studyOptions.columnApi.getAllColumns()
+        let studyCopyRow = null
+        const sampleColId = this.sampleColId
+
+        // Get sample row from study table
+        studyApi.forEachNode(function (rowNode) {
+          if (!studyCopyRow &&
+              rowNode.data[sampleColId].uuid === firstCellValue.uuid_ref) {
+            studyCopyRow = rowNode
+          }
+        })
+
+        // Fill in preceeding nodes
+        for (let i = 1; i < this.sampleIdx; i++) {
+          // TODO: Create a generic helper for copying
+          const copyColId = studyCols[i].colId
+          const copyData = Object.assign(studyCopyRow.data[copyColId])
+          copyData.newRow = true
+          copyData.newInit = false
+          copyData.editable = columnApi.getColumn(copyColId).colDef.cellRendererParams.fieldEditable
+          rowNode.setDataValue(copyColId, copyData)
+        }
+      }
+
+      // Find other cells within the same node to be updated
+      const nodeCols = []
+      const cols = columnApi.getAllColumns()
+      let nextNodeStartIdx = null
+      // Since we split the source group we have to apply some trickery
+      let groupId = column.originalParent.groupId
+      if (groupId === '1') groupId = '2'
+      let startIdx
+
+      for (let i = 1; i < cols.length - 1; i++) {
+        if (cols[i].colId === firstColId) {
+          startIdx = i + 1
+          break
+        }
+      }
+
+      for (let i = startIdx; i < cols.length - 1; i++) {
+        const col = cols[i]
+        // NOTE: Must use originalParent to work with hidden columns
+        if (col.originalParent.groupId === groupId) {
+          nodeCols.push(col)
+        } else if (col.colId !== firstColId &&
+              col.originalParent.groupId !== groupId) {
+          nextNodeStartIdx = i
+          break
+        }
+      }
+
+      // IF node is new THEN fill out other cells with default/empty values
+      if (createNew) {
+        for (let i = 0; i < nodeCols.length; i++) {
+          const newColId = nodeCols[i].colId
+          const value = this.getDefaultValue(nodeCols[i].colId, gridOptions)
+          rowNode.setDataValue(newColId, value)
+        }
+      } else { // ELSE set UUIDs and update cell values (only in the same table)
+        let copyRowNode = null
+        gridApi.forEachNode(function (rowNode) {
+          if (!copyRowNode && rowNode.data[firstColId].value === firstCellValue.value) {
+            copyRowNode = rowNode
+          }
+        })
+
+        for (let i = 0; i < nodeCols.length; i++) {
+          const copyColId = nodeCols[i].colId
+          const copyData = Object.assign(copyRowNode.data[copyColId])
+          copyData.newInit = false
+          copyData.editable = columnApi.getColumn(copyColId).colDef.cellRendererParams.fieldEditable
+          rowNode.setDataValue(copyColId, copyData)
+        }
+      }
+
+      // Enable the next node(s), if we are initializing node for the 1st time
+      if (nextNodeStartIdx) {
+        this.enableNextNodes(rowNode, gridOptions, nextNodeStartIdx)
+      }
+
+      // Redraw row node for all changes to be displayed
+      gridApi.redrawRows({ rows: [rowNode] })
     },
 
     handleFinishEditing () {
       fetch('/samplesheets/ajax/edit/finish/' + this.projectUuid, {
         method: 'POST',
-        body: JSON.stringify({ updated: this.editDataUpdated }),
+        body: JSON.stringify({
+          updated: this.editDataUpdated
+        }),
         credentials: 'same-origin',
         headers: {
           Accept: 'application/json',
@@ -1189,14 +1555,160 @@ export default {
       this.editDataUpdated = updated
     },
 
+    handleRowInsert (gridUuid, assayMode) {
+      const gridOptions = this.getGridOptionsByUuid(gridUuid)
+      const gridApi = gridOptions.api
+
+      // Insert empty row
+      const row = { rowNum: 'NEW' }
+      const cols = gridOptions.columnApi.getAllColumns()
+      const emptyData = {
+        value: null,
+        uuid: null,
+        newRow: true, // Node in newly initialized row (not saved yet)
+        newInit: true, // Newly initialized node (no data yet)
+        editable: null
+      }
+
+      if (!assayMode) { // Study table
+        let editable = true
+        for (let i = 1; i < cols.length - 1; i++) {
+          row[cols[i].colId] = Object.assign(
+            {}, emptyData, { editable: editable })
+          // Initially only make first column (source ID) editable
+          if (editable) editable = false
+        }
+      } else { // Assay table
+        // Find the start of the sample node
+        // Fill cells with init data and enable sample name
+        if (this.sampleColId) {
+          for (let i = 1; i < cols.length - 1; i++) {
+            row[cols[i].colId] = Object.assign(
+              {}, emptyData, { editable: cols[i].colId === this.sampleColId })
+          }
+        } else { // Sample node not found
+          this.showNotification('Sample Not Found', 'danger', 1000)
+        }
+      }
+
+      const res = gridApi.applyTransaction({ add: [row] })
+      this.unsavedRow = {
+        gridUuid: gridUuid,
+        id: res.add[0].id
+      }
+      gridApi.ensureIndexVisible(res.add[0].rowIndex) // Scroll to inserted row
+    },
+
+    handleRowSave (gridOptions, rowNode, newRowData, assayMode) {
+      console.log('handleRowSave() called') // DEBUG
+      let newSample = false
+      if (!assayMode && !rowNode.data[this.sampleColId].uuid) newSample = true
+      this.savingRow = true
+
+      fetch('/samplesheets/ajax/edit/' + this.projectUuid, {
+        method: 'POST',
+        body: JSON.stringify({ new_row: newRowData }),
+        credentials: 'same-origin',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          'X-CSRFToken': this.sodarContext.csrf_token
+        }
+      }).then(data => data.json())
+        .then(
+          data => {
+            if (data.message === 'ok') {
+              const cols = gridOptions.columnApi.getAllColumns()
+              let nodeIdx = 0
+              let sampleUuid
+              let sampleName
+              let startIdx = 1
+              let groupId = cols[2].originalParent.groupId // 2nd source group!
+
+              // Modify starting index and group id for assay table updating
+              if (assayMode) {
+                startIdx = this.sampleIdx
+                groupId = cols[startIdx].originalParent.groupId
+              }
+
+              // Set cell data to match an existing row
+              for (let i = startIdx; i < cols.length - 1; i++) {
+                const value = rowNode.data[cols[i].colId]
+                if (!value.uuid) value.uuid = data.node_uuids[nodeIdx]
+                value.newRow = false
+                value.newInit = false
+                value.editable = cols[i].colDef.cellRendererParams.fieldEditable
+                rowNode.setDataValue(cols[i].colId, value)
+
+                // Save sample info if new sample was added in study
+                if (!assayMode && cols[i].colId === this.sampleColId) {
+                  sampleUuid = data.node_uuids[nodeIdx]
+                  sampleName = rowNode.data[cols[i].colId].value
+                }
+
+                if (i > 2 && // NOTE: Skip split source column
+                    i < cols.length - 2 &&
+                    groupId !== cols[i + 1].originalParent.groupId) {
+                  groupId = cols[i + 1].originalParent.groupId
+                  nodeIdx += 1
+                }
+              }
+
+              // Set rowNum for row
+              const rowNums = []
+              gridOptions.api.forEachNode(function (r) {
+                if (r !== rowNode) rowNums.push(parseInt(r.data[cols[0].colId]))
+              })
+              rowNode.setDataValue(cols[0].colId, Math.max(...rowNums) + 1)
+
+              // Update sample list if a new sample was added in study
+              if (!assayMode && newSample && sampleUuid) {
+                this.editContext.samples.push({
+                  uuid: sampleUuid,
+                  name: sampleName
+                })
+              }
+
+              // Finalize
+              gridOptions.api.refreshCells({ force: true }) // for cellClass
+              this.unsavedRow = null
+              this.editDataUpdated = true
+              this.showNotification('Row Inserted', 'success', 1000)
+              console.log('Row insert OK') // DEBUG
+            } else {
+              console.log('Row insert status: ' + data.message) // DEBUG
+              this.showNotification('Insert Failed', 'danger', 1000)
+            }
+
+            this.savingRow = false
+          }
+        ).catch(this.handleRowSaveError)
+    },
+
+    handleRowSaveError (error) {
+      this.savingRow = false
+      console.log('Error saving new row: ' + error.message)
+    },
+
+    handleRowDelete (gridOptions, rowNode, assayMode) {
+      console.log('handleRowDelete() called') // DEBUG
+      const newRow = rowNode.data.col0 && rowNode.data.col0.newRow
+
+      if (!newRow) { // Unsaved row
+        // TODO: Actually delete row on server side
+      }
+      gridOptions.api.applyTransaction({ remove: [rowNode.data] })
+      this.unsavedRow = null // Since we only allow editing one row for now..
+    },
+
     /* Data and App Access -------------------------------------------------- */
 
-    // Return array of UUIDs for the current study and all assays
-    getStudyGridUuids () {
+    getStudyGridUuids (assayOnly) {
+      // Return array of UUIDs for the current study and all assays
       if (!this.currentStudyUuid) {
         return null
       }
-      const uuids = [this.currentStudyUuid]
+      const uuids = assayOnly ? [] : [this.currentStudyUuid]
       for (var k in this.columnDefs.assays) {
         uuids.push(k)
       }
@@ -1212,9 +1724,23 @@ export default {
       }
     },
 
-    // Workaround for #520 where "this" doesn't always appear initialized in templates
     getApp () {
+      // Workaround for #520
       return this
+    },
+
+    findNextNodeIdx (cols, idx, maxIdx) {
+      // Find next node index or null if not found
+      // TODO: Use this wherever performing similar iteration
+      const groupId = cols[idx].originalParent.groupId
+      if (!maxIdx) maxIdx = cols.length
+      while (idx < maxIdx) {
+        if (groupId !== cols[idx].originalParent.groupId) {
+          return idx
+        }
+        idx += 1
+      }
+      return null
     }
   },
   watch: {
@@ -1363,6 +1889,16 @@ a.sodar-ss-anchor {
   border-bottom: 0 !important;
 }
 
+.sodar-ss-data-rownum-cell {
+  padding-top: 4px; /* HACK for ag-grid CSS issue */
+}
+
+.sodar-ss-data-forbidden {
+  background: repeating-linear-gradient(
+    -45deg, #ddd, #ddd 5px, #eee 5px, #eee 10px
+  );
+}
+
 .agds-selected {
   background-color: #e2f0ff !important;
 }
@@ -1391,6 +1927,70 @@ div.sodar-ss-data-hover {
   margin-top: 5px;
   padding-top: 0;
   color: #ffffff !important;
+}
+
+.sodar-ss-vue-row-btn {
+  width: 26px !important; /* Quick HACK for uniform button size */
+}
+
+/* Common editor styles */
+
+.sodar-ss-vue-edit-popup {
+  border: 1px solid #6c757d;
+  background: #ffffff;
+  padding: 10px;
+}
+
+input.ag-cell-edit-input {
+  -moz-appearance: none;
+  -webkit-appearance: none;
+  appearance: none;
+
+  border: 0;
+  width: 100%;
+  height: 38px !important;
+  background-color: #ffffd8 !important;
+  padding-left: 11px;
+  padding-right: 14px;
+  padding-top: 0;
+  padding-bottom: 2px;
+}
+
+select.ag-cell-edit-input {
+  -moz-appearance: none;
+  -webkit-appearance: none;
+  appearance: none;
+
+  border: 0;
+  width: 100%;
+  height: 38px !important;
+  background-color: #ffffd8 !important;
+  background-repeat: no-repeat;
+  background-size: 0.5em auto;
+  background-position: right 0.25em center;
+  padding-left: 12px;
+  padding-right: 18px;
+  padding-top: 0;
+  padding-bottom: 2px !important;
+
+  background-image: url("data:image/svg+xml;charset=utf-8, \
+    <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 40'> \
+      <polygon points='0,0 60,0 30,40' style='fill:black;'/> \
+    </svg>");
+}
+
+select#sodar-ss-vue-edit-select-unit {
+  margin-left: 4px;
+}
+
+.sodar-ss-vue-select-firefox {
+  padding-left: 8px !important;
+}
+
+input.sodar-ss-vue-popup-input,
+select.sodar-ss-vue-popup-input {
+  border: 1px solid #ced4da;
+  border-radius: .25rem;
 }
 
 </style>

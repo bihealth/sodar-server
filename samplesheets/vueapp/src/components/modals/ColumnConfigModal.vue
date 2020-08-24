@@ -46,19 +46,19 @@
       <table v-if="fieldConfig"
             class="table table-borderless w-100"
             id="sodar-ss-vue-col-config-table">
-        <tbody v-if="nameColumn"> <!-- Table body for name column -->
-          <!-- Editable -->
+        <!-- Editable (common for all types) -->
+        <tbody>
           <tr>
             <td>Editable</td>
             <td>
               <b-checkbox plain v-model="fieldConfig.editable"></b-checkbox>
             </td>
           </tr>
+        </tbody>
+        <!-- Name column table body -->
+        <tbody v-if="['NAME', 'LINK_FILE'].includes(colType)">
           <tr>
-            <td colspan="2"><hr class="my-1" /></td>
-          </tr>
-          <tr>
-            <td colspan="2" class="text-danger" id="sodar-ss-vue-td-name-info">
+            <td colspan="2" class="sodar-ss-vue-td-info text-danger">
               <strong>Warning:</strong> If you are storing project sample data
               in iRODS, renaming certain materials or processes may cause
               related iRODS links to stop working! When in doubt, please
@@ -66,14 +66,57 @@
             </td>
           </tr>
         </tbody>
-        <tbody v-else> <!-- Table body for standard columns -->
-          <!-- Editable -->
+        <!-- Protocol table body -->
+        <tbody v-else-if="colType === 'PROTOCOL'">
           <tr>
-            <td>Editable</td>
+            <td>Default Value</td>
             <td>
-              <b-checkbox plain v-model="fieldConfig.editable"></b-checkbox>
+              <b-select v-model="fieldConfig.default"
+                        id="sodar-ss-vue-column-select-default"
+                        @change="onDefaultChange">
+                <option :value="null">-</option>
+                <option v-for="(option, index) in app.editContext.protocols"
+                        :key="index"
+                        :value="option.uuid">
+                  {{ option.name }}
+                </option>
+              </b-select>
             </td>
           </tr>
+          <tr>
+            <td colspan="2"><hr class="my-1" /></td>
+          </tr>
+          <tr>
+            <td colspan="2" class="sodar-ss-vue-td-info text-muted">
+              <em>Protocol editing will go here..</em>
+            </td>
+          </tr>
+        </tbody>
+        <!-- Contact table body -->
+        <tbody v-else-if="colType === 'CONTACT'">
+          <tr>
+            <td colspan="2"><hr class="my-1" /></td>
+          </tr>
+          <tr>
+            <td colspan="2" class="sodar-ss-vue-td-info">
+              Enter the contact info as <code>Name &lt;email@domain.com&gt;</code>
+              for linking. Popup editor is forthcoming.
+            </td>
+          </tr>
+        </tbody>
+        <!-- Date table body -->
+        <tbody v-else-if="colType === 'DATE'">
+          <tr>
+            <td colspan="2"><hr class="my-1" /></td>
+          </tr>
+          <tr>
+            <td colspan="2" class="sodar-ss-vue-td-info">
+              Enter the date as <code>YYYY-MM-DD</code>.
+            </td>
+          </tr>
+        </tbody>
+        <!-- Basic field column table body -->
+        <tbody v-else>
           <!-- Format -->
           <tr>
             <td>Format</td>
@@ -284,15 +327,12 @@ export default {
         'double',
         'select'
       ],
-      nameColumn: false,
       fieldDisplayName: null,
       fieldConfig: null,
       newConfig: false,
       assayUuid: null,
       configNodeIdx: null,
       configFieldIdx: null,
-      defNodeIdx: null,
-      defFieldIdx: null,
       col: null,
       colType: null,
       gridOptions: null,
@@ -314,8 +354,7 @@ export default {
       defaultFill: false,
       defaultFillEnable: false,
       pasteData: '',
-      updateBtnClasses: null,
-      gridUuids: null
+      updateBtnClasses: null
     }
   },
   methods: {
@@ -392,11 +431,10 @@ export default {
     },
     /* Helpers -------------------------------------------------------------- */
     disableCopy () {
-      return this.nameColumn
+      return ['NAME', 'LINK_FILE', 'PROTOCOL'].includes(this.colType)
     },
     toggleDefaultFill () {
-      if (!('default' in this.fieldConfig) ||
-          this.fieldConfig.default.length === 0) {
+      if (!('default' in this.fieldConfig) || !this.fieldConfig.default) {
         this.defaultFill = false
         this.defaultFillEnable = false
       } else {
@@ -555,46 +593,26 @@ export default {
     // Update column definition for the field in one grid by UUID
     updateColDefs (uuid, assayMode) {
       const gridOptions = this.app.getGridOptionsByUuid(uuid)
+      const col = gridOptions.columnApi.getColumn(this.col.colDef.field)
+      if (!col) return
+      const colDef = col.colDef
 
-      let colDef
-      if (!assayMode) {
-        colDef = this.app.columnDefs.study[this.defNodeIdx]
-          .children[this.defFieldIdx]
-      } else {
-        colDef = this.app.columnDefs.assays[uuid][this.defNodeIdx]
-          .children[this.defFieldIdx]
-      }
-
+      // TODO: We shouldn't have to update colType in so many places..
+      // TODO: headerComponentParams update fails with certain columns, investigate!
       colDef.headerComponentParams.colType = this.colType
+      colDef.cellRendererParams.colType = this.colType
       colDef.headerComponentParams.fieldConfig = this.fieldConfig
       colDef.cellEditorParams.editConfig = this.fieldConfig
       colDef.editable = this.fieldConfig.editable
+      colDef.cellRendererParams.fieldEditable = this.fieldConfig.editable
 
       // Determine alignment
       let colAlign = 'left'
       if (['UNIT', 'NUMERIC'].includes(this.colType)) {
         colAlign = 'right'
       }
-
       // Update alignment for editor
       colDef.cellEditorParams.renderInfo.align = colAlign
-
-      // Set classes
-      colDef.cellClass = ['sodar-ss-data-cell', 'text-' + colAlign]
-      if (!this.fieldConfig.editable) {
-        colDef.cellClass = colDef.cellClass.concat(['bg-light', 'text-muted'])
-      }
-
-      if (!assayMode) {
-        this.app.columnDefs.study[this.defNodeIdx]
-          .children[this.defFieldIdx] = colDef
-        gridOptions.api.setColumnDefs(this.app.columnDefs.study)
-      } else {
-        this.app.columnDefs.assays[uuid][this.defNodeIdx]
-          .children[this.defFieldIdx] = colDef
-        gridOptions.api.setColumnDefs(this.app.columnDefs.assays[uuid]
-        )
-      }
     },
     // Update column type for a field in all grids
     // TODO: Remove once refactoring colType and comparators (see #747)
@@ -632,20 +650,21 @@ export default {
         } else {
           this.colType = 'NUMERIC'
         }
-      } else if (this.nameColumn) {
-        this.colType = 'NAME'
-      } else { // TODO: Other column types
+      } else if (!['NAME', 'LINK_FILE', 'PROTOCOL', 'CONTACT', 'DATE'].includes(this.colType)) {
         this.colType = null
       }
 
       // console.log('colType: ' + this.ogColType + ' -> ' + this.colType) // DEBUG
 
       // Update column definitions in all tables
-      if (this.defNodeIdx < this.app.columnDefs.study.length) {
-        this.updateColDefs(this.app.currentStudyUuid, false) // Update study
-      }
-      for (const k in this.app.columnDefs.assays) { // Update assays
-        this.updateColDefs(k, true)
+      this.updateColDefs(this.studyUuid, false) // Update study
+      const studyOptions = this.app.getGridOptionsByUuid(this.app.currentStudyUuid)
+      const assayUuids = this.app.getStudyGridUuids(true)
+      for (let i = 0; i < assayUuids.length; i++) { // Update assays
+        if (assayUuids[i] === this.assayUuid ||
+            studyOptions.columnApi.getColumn(this.col.colDef.field)) {
+          this.updateColDefs(assayUuids[i], true)
+        }
       }
 
       // Update column type if changed
@@ -709,21 +728,42 @@ export default {
       }
 
       if (!refreshCalled) {
-        this.app.refreshField(fieldId)
+        const gridUuids = this.app.getStudyGridUuids()
+        const editable = this.fieldConfig.editable
+        const colType = this.colType
+
+        for (let i = 0; i < gridUuids.length; i++) {
+          const gridApi = this.app.getGridOptionsByUuid(gridUuids[i]).api
+
+          // Update cell editability override in new rows
+          // TODO: Refactor and fix (see issue #897)
+          gridApi.forEachNode(function (rowNode) {
+            if ('newRow' in rowNode.data.col0 && fieldId in rowNode.data) {
+              const newValue = rowNode.data[fieldId]
+              if (['NAME', 'LINK_FILE', 'PROTOCOL'].includes(colType)) {
+                newValue.editable = true
+              } else if ('newInit' in newValue && !newValue.newInit) {
+                newValue.editable = editable
+              }
+              rowNode.setDataValue(fieldId, newValue)
+            }
+          })
+
+          // TODO: refreshCells doesn't work with dynamic cellClass. ag-grid bug?
+          // gridApi.refreshCells({ columns: [fieldId], force: true })
+          gridApi.redrawRows()
+        }
       }
       this.app.setDataUpdated(true)
     },
     /* Modal showing/hiding ------------------------------------------------- */
     showModal (data, col) {
       this.fieldDisplayName = data.fieldDisplayName
-      this.nameColumn = data.colType === 'NAME'
       this.fieldConfig = data.fieldConfig
       this.newConfig = data.newConfig
       this.assayUuid = data.assayUuid
       this.configNodeIdx = data.configNodeIdx
       this.configFieldIdx = data.configFieldIdx
-      this.defNodeIdx = data.defNodeIdx
-      this.defFieldIdx = data.defFieldIdx
       this.col = col
       this.colType = data.colType
       this.ogColType = data.colType // Save original colType
@@ -736,12 +776,16 @@ export default {
       this.unitEnabled = false
       this.unitOptions = ''
 
+      // console.log('colId/field=' + this.col.colDef.field) // DEBUG
+      // console.log('colType=' + this.colType) // DEBUG
+      // console.dir(this.fieldConfig) // DEBUG
+
       // Set up fieldConfig
       if (!('default' in this.fieldConfig)) {
         this.fieldConfig.default = ''
       }
 
-      if (!this.nameColumn && this.newConfig) {
+      if (!['NAME', 'LINK_FILE'].includes(this.colType) && this.newConfig) {
         const field = this.col.colDef.field
 
         // Unit and numeric column
@@ -780,6 +824,8 @@ export default {
               this.fieldConfig.unit.push(cell.unit)
             }
           }
+        } else if (this.colType === 'DATE') {
+          this.fieldConfig.format = 'date'
         }
       }
 
@@ -869,7 +915,7 @@ table#sodar-ss-vue-col-config-table tbody td:first-child {
   width: 20px !important;
 }
 
-td#sodar-ss-vue-td-name-info {
+td.sodar-ss-vue-td-info {
   white-space: normal !important;
 }
 

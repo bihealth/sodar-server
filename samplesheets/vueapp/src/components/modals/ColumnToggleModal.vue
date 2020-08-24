@@ -36,8 +36,6 @@
          id="sodar-ss-vue-col-toggle-modal-content">
       <table v-for="(topHeader, topIdx) in columnList"
              :key="topIdx"
-             v-show="topIdx < columnList.length - 1 ||
-                     topHeader.children.length > 0"
              class="table sodar-card-table sodar-ss-vue-toggle-table">
         <tr class="sodar-ss-vue-toggle-header">
           <th :class="getTopHeaderClasses(topHeader)">
@@ -57,7 +55,7 @@
             class="sodar-ss-vue-toggle-row">
           <td>
             {{ header.headerName }}
-            <span v-if="app.editMode && header.editable"
+            <span v-if="app.editMode && header.cellRendererParams.fieldEditable"
                 class="text-muted font-italic pull-right">
               Editable
             </span>
@@ -225,13 +223,13 @@ export default {
 
       // Store current column data state
       this.columnValues = {}
-      for (let i = 1; i < this.columnDefs.length; i++) {
+      for (let i = 1; i < this.columnDefs.length - 1; i++) {
         for (let j = 0; j < this.columnDefs[i].children.length; j++) {
           this.columnValues[this.columnDefs[i].children[j].field] = false
         }
       }
       for (const key in this.columnValues) {
-        for (let i = 0; i < rowData.length; i++) {
+        for (let i = 0; i < rowData.length - 1; i++) {
           if (rowData[i][key].value) {
             this.columnValues[key] = true
             break

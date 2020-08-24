@@ -1,7 +1,11 @@
 """Ajax API views for the samplesheets app"""
 
+from altamisa.constants import table_headers as th
+from datetime import datetime as dt
 import json
 from packaging import version
+import random
+import string
 
 from django.conf import settings
 from django.db import transaction
@@ -48,6 +52,12 @@ EDIT_JSON_ATTRS = [
     'factor_values',
     'parameter_values',
 ]
+ATTR_HEADER_MAP = {
+    'characteristics': th.CHARACTERISTICS,
+    'comments': th.COMMENT,
+    'factor_values': th.FACTOR_VALUE,
+    'parameter_values': th.PARAMETER_VALUE,
+}
 EDIT_FIELD_MAP = {
     'array design ref': 'array_design_ref',
     'label': 'extract_label',
@@ -467,9 +477,29 @@ class SampleSheetStudyTablesAjaxView(SODARBaseProjectAjaxView):
 
         # Set up editing
         if edit:
+            # Get study config
             ret_data['study_config'] = sheet_config['studies'][
                 str(study.sodar_uuid)
             ]
+
+            # Set up study edit context
+            ret_data['edit_context'] = {'samples': [], 'protocols': []}
+
+            # Add sample info
+            for sample in GenericMaterial.objects.filter(
+                study=study, item_type='SAMPLE'
+            ).order_by('name'):
+                ret_data['edit_context']['samples'].append(
+                    {'uuid': str(sample.sodar_uuid), 'name': sample.name}
+                )
+
+            # Add Protocol info
+            for protocol in Protocol.objects.filter(study=study).order_by(
+                'name'
+            ):
+                ret_data['edit_context']['protocols'].append(
+                    {'uuid': str(protocol.sodar_uuid), 'name': protocol.name}
+                )
 
             if timeline:
                 timeline.add_event(
@@ -543,14 +573,649 @@ class SampleSheetWarningsAjaxView(SODARBaseProjectAjaxView):
 class SampleSheetEditAjaxView(SODARBaseProjectAjaxView):
     """View to edit sample sheet data"""
 
-    # TODO: Update to support name columns
-
     permission_required = 'samplesheets.edit_sheet'
 
-    @transaction.atomic
-    def post(self, request, *args, **kwargs):
-        updated_cells = request.data.get('updated_cells') or []
+    class SheetEditException(Exception):
+        pass
 
+    def _raise_ex(self, msg):
+        logger.error(msg)
+        raise self.SheetEditException(msg)
+
+    @transaction.atomic
+    def _update_cell(self, obj, cell, save=False):
+        """
+        Update a single cell in an object.
+
+        :param obj: GenericMaterial or Process object
+        :param cell: Cell update data from the client (dict)
+        :param save: If True, save object after successful call (boolean)
+        :return: String
+        :raise: SheetEditException if the operation fails.
+        """
+        ok_msg = None
+        logger.debug(
+            'Editing {} "{}" ({})'.format(
+                obj.__class__.__name__, obj.unique_name, obj.sodar_uuid
+            )
+        )
+        # TODO: Provide the original header as one string instead
+        header_type = cell['header_type']
+        header_name = cell['header_name']
+
+        # Plain fields
+        if not header_type and header_name.lower() in EDIT_FIELD_MAP:
+            attr_name = EDIT_FIELD_MAP[header_name.lower()]
+            attr = getattr(obj, attr_name)
+
+            if isinstance(attr, str):
+                setattr(obj, attr_name, cell['value'])
+
+            elif isinstance(attr, dict):
+                attr['name'] = cell['value']
+
+                # TODO: Set accession and ontology once editing is allowed
+
+            ok_msg = 'Edited field: {}'.format(attr_name)
+
+        # Name field (special case)
+        elif header_type == 'name':
+            if len(cell['value']) == 0 and cell.get('item_type') != 'DATA':
+                self._raise_ex('Empty name not allowed for non-data node')
+
+            obj.name = cell['value']
+            # TODO: Update unique name here if needed
+            ok_msg = 'Edited node name: {}'.format(cell['value'])
+
+        # Process name and name type (special case)
+        elif header_type == 'process_name':
+            obj.name = cell['value']
+
+            if cell['header_name'] in th.PROCESS_NAME_HEADERS:
+                obj.name_type = cell['header_name']
+
+            ok_msg = 'Edited process name: {}{}'.format(
+                cell['value'],
+                ' ({})'.format(cell['header_name'])
+                if cell['header_name'] in th.PROCESS_NAME_HEADERS
+                else '',
+            )
+
+        # Protocol field (special case)
+        elif header_type == 'protocol':
+            protocol = Protocol.objects.filter(
+                sodar_uuid=cell['uuid_ref']
+            ).first()
+
+            if not protocol:
+                self._raise_ex(
+                    'Protocol not found: "{}" ({})'.format(
+                        cell['value'], cell['uuid_ref']
+                    )
+                )
+
+            obj.protocol = protocol
+            ok_msg = 'Edited protocol ref: "{}" ({})'.format(
+                cell['value'], cell['uuid_ref']
+            )
+
+        # Performer (special case)
+        elif header_type == 'performer':
+            obj.performer = cell['value']
+
+        # Perform date (special case)
+        elif header_type == 'perform_date':
+            if cell['value']:
+                try:
+                    obj.perform_date = dt.strptime(cell['value'], '%Y-%m-%d')
+
+                except ValueError as ex:
+                    self._raise_ex(ex)
+
+            else:
+                obj.perform_date = None
+
+        # JSON Attributes
+        elif header_type in EDIT_JSON_ATTRS:
+            attr = getattr(obj, header_type)
+
+            # TODO: Is this actually a thing nowadays?
+            if isinstance(attr[header_name], str):
+                attr[header_name] = cell['value']
+
+            elif isinstance(attr[header_name], dict):
+                # TODO: Ontology value and list support
+                attr[header_name]['value'] = cell['value']
+
+                # TODO: Support ontology ref in unit
+                if 'unit' not in attr[header_name] or isinstance(
+                    attr[header_name]['unit'], str
+                ):
+                    attr[header_name]['unit'] = cell.get('unit')
+
+                elif isinstance(attr[header_name]['unit'], dict):
+                    attr[header_name]['unit']['name'] = cell.get('unit')
+
+            ok_msg = 'Edited JSON attribute: {}[{}]'.format(
+                header_type, header_name
+            )
+
+        else:
+            self._raise_ex(
+                'Editing not implemented '
+                '(header_type={}; header_name={})'.format(
+                    header_type, header_name
+                )
+            )
+
+        if save:
+            obj.save()
+
+            if ok_msg:
+                logger.debug(ok_msg)
+
+        return ok_msg
+
+    @classmethod
+    def _get_name(cls, node):
+        """
+        Return non-unique name for a node retrieved from the editor for a new
+        row, or None if the name does not exist.
+
+        :param node: Dict
+        :return: String or None
+        """
+        if node['cells'][0]['obj_cls'] == 'Process':
+            for cell in node['cells']:
+                if cell['header_type'] == 'process_name':
+                    return cell['value']
+        else:  # Material
+            return node['cells'][0]['value']
+
+    @classmethod
+    def _get_unique_name(cls, study, assay, name, item_type=None):
+        """
+        Return unique name for a node.
+
+        :param study: Study object
+        :param assay: Assay object
+        :param name: Display name for material
+        :param item_type: Item type for materials (string)
+        :return: String
+        """
+
+        # HACK: This will of course not work on empty tables..
+        # TODO: Refactor once we allow creating sheets from scratch
+        study_id = study.arcs[0][0].split('-')[1][1:]
+        assay_id = 0
+
+        if assay and study.assays.all().count() > 1:
+            assay_id = sorted([a.file_name for a in study.assays.all()]).index(
+                assay.file_name
+            )
+
+        return 'p{}-s{}-{}{}{}-{}'.format(
+            study.investigation.project.pk,
+            study_id,
+            'a{}-'.format(assay_id) if assay else '',
+            '{}-'.format(item_type.lower()) if item_type else '',
+            name,
+            ''.join(
+                random.SystemRandom().choice(string.ascii_lowercase)
+                for _ in range(8)
+            ),
+        )
+
+    @classmethod
+    def _add_node_attr(cls, node_obj, cell):
+        """
+        Add common node attribute from cell in a new row node.
+
+        :param node_obj: GenericMaterial or Process
+        :param cell: Dict
+        """
+        header_name = cell['header_name']
+        header_type = cell['header_type']
+
+        if header_type in EDIT_JSON_ATTRS:
+            attr = getattr(node_obj, header_type)
+            # Check if we have ontology refs and alter value
+            h_idx = node_obj.headers.index(
+                '{}[{}]'.format(ATTR_HEADER_MAP[header_type], header_name)
+            )
+
+            if (
+                h_idx
+                and h_idx < len(node_obj.headers) - 1
+                and node_obj.headers[h_idx + 1]
+                in [th.TERM_SOURCE_REF, th.TERM_ACCESSION_NUMBER]
+                and not isinstance(cell['value'], dict)
+            ):
+                attr[header_name] = {
+                    'value': {
+                        'name': cell.get('value'),
+                        'accession': None,
+                        'ontology_name': None,
+                    }
+                }
+
+            else:
+                attr[header_name] = {'value': cell['value']}
+
+            # TODO: Support ontology ref in unit for real
+            if (
+                h_idx < len(node_obj.headers) - 2
+                and node_obj.headers[h_idx + 1] == 'Unit'
+                and node_obj.headers[h_idx + 2]
+                in [th.TERM_SOURCE_REF, th.TERM_ACCESSION_NUMBER]
+            ):
+                attr[header_name]['unit'] = {
+                    'name': cell.get('unit'),
+                    'ontology_name': None,
+                    'accession': None,
+                }
+
+            elif (
+                h_idx < len(node_obj.headers) - 2
+                and node_obj.headers[h_idx + 1] == 'Unit'
+                and cell.get('unit') != ''
+            ):
+                attr[header_name]['unit'] = cell.get('unit')
+
+            else:
+                attr[header_name]['unit'] = None
+
+            logger.debug(
+                'Set {}: {} = {}'.format(
+                    header_type, header_name, attr[header_name]
+                )
+            )
+
+        elif header_type == 'performer' and cell['value']:
+            node_obj.performer = cell['value']
+            logger.debug('Set performer: {}'.format(node_obj.performer))
+
+        elif header_type == 'perform_date' and cell['value']:
+            node_obj.perform_date = dt.strptime(cell['value'], '%Y-%m-%d')
+            logger.debug('Set perform date: {}'.format(cell['value']))
+
+        elif header_type == 'extract_label':
+            node_obj.extract_label = cell['value']
+
+    @classmethod
+    def _collapse_process(cls, row_nodes, node, node_idx, comp_table, node_obj):
+        """
+        Collapse process into an existing one.
+
+        :param row_nodes: List of dicts from editor UI
+        :param node: Dict from editor UI
+        :param comp_table: Study/assay table generated by
+                           SampleSheetTableBuilder (dict)
+        :param node_obj: Unsaved Process object
+        :return: UUID of collapsed process (String or None)
+        """
+        # First get the UUIDs of existing nodes in the current row
+        prev_new_uuid = None
+        next_new_uuid = None
+        iter_idx = 0
+
+        while iter_idx < node_idx:
+            if cls._get_name(row_nodes[iter_idx]):
+                prev_new_uuid = row_nodes[iter_idx]['cells'][0].get('uuid')
+            iter_idx += 1
+
+        if not prev_new_uuid:
+            logger.debug(
+                'Collapse: Previous named node in current row not found'
+            )
+            return None
+
+        iter_idx = node_idx + 1
+
+        while not next_new_uuid and iter_idx < len(row_nodes):
+            if cls._get_name(row_nodes[iter_idx]):
+                next_new_uuid = row_nodes[iter_idx]['cells'][0].get('uuid')
+            iter_idx += 1
+
+        if not next_new_uuid:
+            logger.debug('Collapse: Next named node in current row not found')
+            return None
+
+        # HACK: Get actual cell index
+        col_idx = int(node['cells'][0]['header_field'][3:])
+
+        for comp_row in comp_table['table_data']:
+            iter_idx = 0
+            same_protocol = False
+            prev_old_uuid = None
+            next_old_uuid = None
+
+            # TODO: Can we trust that the protocol always comes first in node?
+            if (
+                not node_obj.protocol
+                or comp_row[col_idx]['value'] == node_obj.protocol.name
+            ):
+                same_protocol = True
+
+            while iter_idx < col_idx:
+                if (
+                    comp_table['field_header'][iter_idx]['type']
+                    in ['name', 'process_name']
+                    and comp_row[iter_idx]['value']
+                ):
+                    prev_old_uuid = comp_row[iter_idx]['uuid']
+
+                iter_idx += 1
+
+            if prev_old_uuid:
+                logger.debug(
+                    'Collapse: Found previous named node "{}"'.format(
+                        comp_row[iter_idx - 1]['value']
+                    )
+                )
+
+                iter_idx = col_idx + 1
+
+                while not next_old_uuid and iter_idx < len(comp_row):
+                    if (
+                        comp_table['field_header'][iter_idx]['type']
+                        in ['name', 'process_name']
+                        and comp_row[iter_idx]['uuid']
+                        != comp_row[col_idx]['uuid']
+                        and comp_row[iter_idx]['value']
+                    ):
+                        next_old_uuid = comp_row[iter_idx]['uuid']
+                        logger.debug(
+                            'Collapse: Found next named node "{}"'.format(
+                                comp_row[iter_idx]['value']
+                            )
+                        )
+                        break
+
+                    iter_idx += 1
+
+            if (
+                prev_old_uuid
+                and next_old_uuid
+                and same_protocol
+                and (prev_old_uuid == prev_new_uuid)
+                and (next_old_uuid == next_new_uuid)
+            ):
+                logger.debug('Collapse: Comparing process objects..')
+                collapse_uuid = comp_row[col_idx]['uuid']
+                comp_obj = Process.objects.get(sodar_uuid=collapse_uuid)
+
+                # Compare parameters
+                # TODO: Compare other fields once supported
+                if node_obj.parameter_values != comp_obj.parameter_values:
+                    logger.debug('Collapse: Parameter values do not match')
+
+                elif node_obj.performer != comp_obj.performer:
+                    logger.debug('Collapse: Performer does not match')
+
+                elif node_obj.perform_date != comp_obj.perform_date:
+                    logger.debug('Collapse: Perform date does not match')
+
+                else:
+                    logger.debug('Collapse: Match found')
+                    return collapse_uuid
+
+            logger.debug('Collapse: Identical process not found')
+
+    @transaction.atomic
+    def _insert_row(self, row):
+        sheet_io = SampleSheetIO()
+        study = Study.objects.filter(sodar_uuid=row['study']).first()
+        assay = None
+        row_arcs = []
+        parent = study
+
+        if row['assay']:
+            assay = Assay.objects.filter(sodar_uuid=row['assay']).first()
+            parent = assay
+
+        logger.debug(
+            'Inserting row in {} "{}" ({})'.format(
+                parent.__class__.__name__,
+                parent.get_display_name(),
+                parent.sodar_uuid,
+            )
+        )
+
+        node_objects = []
+        node_count = 0
+        obj_kwargs = {}
+        collapse = False
+        comp_table = None
+
+        # Check if we'll need to consider collapsing of unnamed nodes
+        if len([n for n in row['nodes'] if not self._get_name(n)]) > 0:
+            logger.debug('Unnamed node(s) in row, will attempt collapsing')
+            collapse = True
+            tb = SampleSheetTableBuilder()
+
+            try:
+                comp_study = tb.build_study_tables(
+                    Study.objects.filter(sodar_uuid=row['study']).first(),
+                    edit=True,
+                )
+            except Exception as ex:
+                self._raise_ex(
+                    'Error building tables for collapsing: {}'.format(ex)
+                )
+
+            if not assay:
+                comp_table = comp_study['study']
+            else:
+                comp_table = comp_study['assays'][str(assay.sodar_uuid)]
+
+        # Retrieve/build row nodes
+        for node in row['nodes']:
+            # logger.debug('Node headers: {}'.format(node['headers']))  # DEBUG
+
+            ################
+            # Existing Node
+            ################
+
+            if node['cells'][0].get('uuid'):
+                new_node = False
+                node_obj = None
+                # Could also use eval() but it's unsafe
+                if node['cells'][0]['obj_cls'] == 'GenericMaterial':
+                    node_obj = GenericMaterial.objects.filter(
+                        sodar_uuid=node['cells'][0]['uuid']
+                    ).first()
+
+                elif node['cells'][0]['obj_cls'] == 'Process':
+                    node_obj = Process.objects.filter(
+                        sodar_uuid=node['cells'][0]['obj_cls']
+                    ).first()
+
+                if not node_obj:
+                    self._raise_ex(
+                        '{} not found (UUID={})'.format(
+                            node['cells'][0]['obj_cls'],
+                            node['cells'][0]['uuid'],
+                        )
+                    )
+
+                logger.debug(
+                    'Node {}: Existing {} {}'.format(
+                        node_count,
+                        node_obj.__class__.__name__,
+                        node_obj.sodar_uuid,
+                    )
+                )
+
+            ##############
+            # New Process
+            ##############
+
+            elif node['cells'][0]['obj_cls'] == 'Process':
+                new_node = True
+                name = self._get_name(node)
+                protocol = None
+                unique_name = (
+                    self._get_unique_name(study, assay, name) if name else None
+                )
+
+                # TODO: Can we trust that the protocol always comes first?
+                if node['cells'][0]['header_type'] == 'protocol':
+                    protocol = Protocol.objects.filter(
+                        sodar_uuid=node['cells'][0]['uuid_ref']
+                    ).first()
+
+                    if not name:
+                        unique_name = self._get_unique_name(
+                            study, assay, protocol.name
+                        )
+
+                if not name and not protocol:
+                    self._raise_ex(
+                        'Protocol and name both missing from process'
+                    )
+
+                # NOTE: We create the object in memory regardless of collapse
+                obj_kwargs = {
+                    'name': name,
+                    'unique_name': unique_name,
+                    'name_type': None,
+                    'protocol': protocol,
+                    'study': study,
+                    'assay': assay,
+                    'performer': '' if 'Performer' in node['headers'] else None,
+                    'perform_date': None,
+                    'headers': node['headers'],
+                }
+
+                # Add name_type if found in headers
+                for h in node['headers']:
+                    if h in th.PROCESS_NAME_HEADERS:
+                        obj_kwargs['name_type'] = h
+                        break
+
+                # TODO: array_design_ref
+                # TODO: first_dimension
+                # TODO: second_dimension
+                node_obj = Process(**obj_kwargs)
+
+            ###############
+            # New Material
+            ###############
+
+            else:
+                new_node = True
+                name_id = node['cells'][0]['value']
+
+                if not name_id:
+                    name_id = node['headers'][0]
+
+                obj_kwargs = {
+                    'item_type': node['cells'][0]['item_type'],
+                    'name': node['cells'][0]['value'],
+                    'unique_name': self._get_unique_name(
+                        study, assay, name_id, node['cells'][0]['item_type'],
+                    ),
+                    'study': study,
+                    'assay': assay,
+                    'material_type': node['headers'][0],
+                    'factor_values': {},
+                    'headers': node['headers'],
+                }
+                # TODO: extra_material_type
+                # TODO: extract_label
+                # TODO: alt_names
+                node_obj = GenericMaterial(**obj_kwargs)
+
+            ###################################
+            # Fill New Node / Collapse Process
+            ###################################
+
+            if new_node:
+                # Add common attributes
+                for cell in node['cells'][1:]:
+                    self._add_node_attr(node_obj, cell)
+
+                collapse_uuid = None
+
+                if (
+                    node_obj.__class__ == Process
+                    and not node_obj.name
+                    and collapse
+                    and node_count > 0
+                ):
+                    logger.debug('Unnamed process, attempting to collapse..')
+                    collapse_uuid = self._collapse_process(
+                        row['nodes'], node, node_count, comp_table, node_obj
+                    )
+
+                if collapse_uuid:  # Collapse successful
+                    node_obj = Process.objects.get(sodar_uuid=collapse_uuid)
+                    logger.debug(
+                        'Node {}: Collapsed with existing {} {}'.format(
+                            node_count,
+                            node_obj.__class__.__name__,
+                            node_obj.sodar_uuid,
+                        )
+                    )
+
+                else:
+                    node_obj.save()
+                    logger.debug(
+                        'Node {}: Created {} {}: {}'.format(
+                            node_count,
+                            node_obj.__class__.__name__,
+                            node_obj.sodar_uuid,
+                            obj_kwargs,
+                        )
+                    )
+
+            node_objects.append(node_obj)
+            node_count += 1
+
+        # Build arcs
+        for i in range(0, len(node_objects) - 1):
+            row_arcs.append(
+                [node_objects[i].unique_name, node_objects[i + 1].unique_name]
+            )
+
+        parent.arcs += row_arcs
+        logger.debug('Row Arcs: {}'.format(row_arcs))
+        parent.save()
+
+        # Attempt to export investigation with altamISA
+        try:
+            sheet_io.export_isa(study.investigation)
+
+        except Exception as ex:
+            self._raise_ex('altamISA Error: {}'.format(ex))
+
+        logger.debug('Inserting row OK')
+
+        # Return node UUIDs if successful
+        return [str(o.sodar_uuid) for o in node_objects]
+
+    def post(self, request, *args, **kwargs):
+        ok_data = {'message': 'ok'}
+        new_row = request.data.get('new_row', None)
+        updated_cells = request.data.get('updated_cells', [])
+
+        ################
+        # Row Inserting
+        ################
+        if new_row:
+            logger.debug('Row insert: {}'.format(json.dumps(new_row)))
+
+            try:
+                ok_data['node_uuids'] = self._insert_row(new_row)
+                logger.debug('node_uuids={}'.format(ok_data['node_uuids']))
+
+            except self.SheetEditException as ex:
+                return Response({'message': str(ex)}, status=500)
+
+        #######################
+        # Single Cell Updating
+        #######################
         for cell in updated_cells:
             logger.debug('Cell update: {}'.format(cell))
             obj_cls = (
@@ -559,102 +1224,26 @@ class SampleSheetEditAjaxView(SODARBaseProjectAjaxView):
                 else Process
             )
             obj = obj_cls.objects.filter(sodar_uuid=cell['uuid']).first()
-
             # TODO: Make sure given object actually belongs in project etc.
 
             if not obj:
-                logger.error(
-                    'No {} found with UUID={}'.format(
-                        cell['obj_cls'], cell['uuid']
-                    )
+                err_msg = 'Object not found: {} ({})'.format(
+                    cell['uuid'], cell['obj_cls']
                 )
+                logger.error(err_msg)
+
                 # TODO: Return list of errors when processing in batch
-                return Response(
-                    {
-                        'message': 'Object not found: {} ({})'.format(
-                            cell['uuid'], cell['obj_cls']
-                        )
-                    },
-                    status=500,
-                )
+                return Response({'message': err_msg}, status=500)
 
-            logger.debug(
-                'Editing {} "{}" ({})'.format(
-                    obj.__class__.__name__, obj.unique_name, obj.sodar_uuid
-                )
-            )
+            # Update cell, save immediately (now we are only editing one cell)
+            try:
+                self._update_cell(obj, cell, save=True)
 
-            # TODO: Provide the original header as one string instead
-            header_type = cell['header_type']
-            header_name = cell['header_name']
-
-            # Plain fields
-            if not header_type and header_name.lower() in EDIT_FIELD_MAP:
-                attr_name = EDIT_FIELD_MAP[header_name.lower()]
-                attr = getattr(obj, attr_name)
-
-                if isinstance(attr, str):
-                    setattr(obj, attr_name, cell['value'])
-
-                elif isinstance(attr, dict):
-                    attr['name'] = cell['value']
-
-                    # TODO: Set accession and ontology once editing is allowed
-
-                obj.save()
-                logger.debug('Edited field: {}'.format(attr_name))
-
-            # Name field (special case)
-            elif header_type == 'name':
-                if len(cell['value']) == 0:
-                    logger.error('Empty name not allowed for node')
-                    return Response({'message': 'failed'}, status=500)
-
-                obj.name = cell['value']
-                # TODO: Update unique name here if needed
-                obj.save()
-                logger.debug('Edited node name: {}'.format(cell['value']))
-
-            # JSON Attributes
-            elif header_type in EDIT_JSON_ATTRS:
-                attr = getattr(obj, header_type)
-
-                # TODO: Is this actually a thing nowadays?
-                if isinstance(attr[header_name], str):
-                    attr[header_name] = cell['value']
-
-                elif isinstance(attr[header_name], dict):
-                    # TODO: Ontology value and list support
-                    attr[header_name]['value'] = cell['value']
-
-                    # TODO: Support ontology ref in unit
-                    if 'unit' not in attr[header_name] or isinstance(
-                        attr[header_name]['unit'], str
-                    ):
-                        attr[header_name]['unit'] = cell.get('unit')
-
-                    elif isinstance(attr[header_name]['unit'], dict):
-                        attr[header_name]['unit']['name'] = cell.get('unit')
-
-                obj.save()
-                logger.debug(
-                    'Edited JSON attribute: {}[{}]'.format(
-                        header_type, header_name
-                    )
-                )
-
-            else:
-                logger.error(
-                    'Editing not implemented '
-                    '(header_type={}; header_name={}'.format(
-                        header_type, header_name
-                    )
-                )
-                return Response({'message': 'failed'}, status=500)
+            except self.SheetEditException as ex:
+                return Response({'message': str(ex)}, status=500)
 
         # TODO: Log edits in timeline here, once saving in bulk
-
-        return Response({'message': 'ok'}, status=200)
+        return Response(ok_data, status=200)
 
 
 class SampleSheetEditFinishAjaxView(SODARBaseProjectAjaxView):
@@ -785,7 +1374,10 @@ class SampleSheetManageAjaxView(SODARBaseProjectAjaxView):
 
             if not is_name and (
                 field['config']['name'] != og_config['name']
-                or field['config']['type'] != og_config['type']
+                or (
+                    og_config.get('type')
+                    and field['config']['type'] != og_config['type']
+                )
             ):
                 msg = 'Fields do not match ({})'.format(debug_info)
                 logger.error(msg)
@@ -803,10 +1395,10 @@ class SampleSheetManageAjaxView(SODARBaseProjectAjaxView):
                 elif 'range' in c and not c['range'][0] and not c['range'][1]:
                     c.pop('range', None)
 
-                if c['format'] == 'select':
+                if c['format'] in ['protocol', 'select']:
                     c.pop('regex', None)
 
-                else:  # Select
+                if c['format'] != 'select':
                     c.pop('options', None)
 
             if a_uuid:

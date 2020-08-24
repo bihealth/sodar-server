@@ -590,7 +590,7 @@ SHEETS_IRODS_LIMIT = env.int('SHEETS_IRODS_LIMIT', 50)  # iRODS file query limit
 SHEETS_TABLE_HEIGHT = 400  # Study/assay table height
 SHEETS_MIN_COLUMN_WIDTH = 100  # Min default column width
 SHEETS_MAX_COLUMN_WIDTH = 300  # Max default column width
-SHEETS_VERSION_PAGINATION = 4
+SHEETS_VERSION_PAGINATION = 15
 SHEETS_ONTOLOGY_URL_TEMPLATE = (
     'https://bioportal.bioontology.org/ontologies/'
     '{ontology_name}/?p=classes&conceptid={accession}'

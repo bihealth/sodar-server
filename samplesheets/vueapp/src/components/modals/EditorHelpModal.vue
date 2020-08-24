@@ -16,7 +16,10 @@
       <h5 class="text-success font-weight-bold">Available Features</h5>
       <ul>
         <li>Editing of columns with simple values (text, integer, double, select)</li>
+        <li>Special field editing (performer, perform date, contacts)</li>
         <li>Renaming materials and processes</li>
+        <li>Protocol selection</li>
+        <li>Inserting rows</li>
         <li>Saving, browsing and restoring sample sheet versions</li>
         <li>Configuring columns for editing (requires owner, delegate or superuser permissions</li>
         <li>Unit support</li>
@@ -26,11 +29,11 @@
       <h5 class="text-danger font-weight-bold">Under Development</h5>
       <ul>
         <li>Editing values and units as ontology references</li>
-        <li>Editing of other special case columns (contact, external links, dates, etc.)</li>
+        <li>Editing of other special case columns (external links)</li>
         <li>Clipboard paste of value without double-clicking to edit field</li>
         <li>Multi-cell clipboard paste</li>
         <li>Adding, removing and renaming columns</li>
-        <li>Adding and removing rows</li>
+        <li>Removing rows</li>
         <li>Adding and removing studies and assays</li>
         <li>Editing meta-data for investigation, studies and assays</li>
         <li>Creating a sample sheet from scratch</li>
@@ -74,6 +77,19 @@
           If e.g. the same source appears on multiple rows, changes to one cell
           are automatically propagated to all repeated cells.
         </li>
+        <li><u>Row Inserting</u></li>
+          <ul>
+            <li>
+              At the moment, you may only insert one row at a time. You will
+              need to either save the row or cancel the insertion.
+            </li>
+            <li>
+              New sources and samples can only be created in the study table.
+            </li>
+            <li>
+              Unnamed data materials are allowed for newly inserted rows.
+            </li>
+          </ul>
         <li>
           By clicking "Finish Editing" you will save the current version of the
           sample sheet along with its configuration to "Sheet Versions".
