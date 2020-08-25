@@ -26,6 +26,7 @@ Added
     - Editing of non-ontology list values (#886)
     - Display ``name_type`` for processes
     - Set default protocol automatically in edit config (#879)
+    - Row inserting (#834)
 
 Changed
 -------
@@ -50,6 +51,7 @@ Fixed
     - Row sorting not working with updated column type definitions (#847)
     - Lists of strings assigned ``ONTOLOGY`` column type in rendering (#885)
     - Last single column node not visible in ``ColumnToggleModal`` (#877)
+    - Column config update randomly breaking table rendering (#850)
 
 
 v0.7.1 (2020-04-27)
