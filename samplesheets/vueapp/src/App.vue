@@ -393,7 +393,7 @@ export default {
       sampleColId: null,
       sampleIdx: null,
       unsavedRow: null, // Info of currently unsaved row, or null if none
-      savingRow: false,
+      updatingRow: false, // Row update in progress (bool)
       contentId: 'sodar-ss-vue-content',
       /* NOTE: cell editor only works if provided through frameworkComponents? */
       frameworkComponents: {
@@ -795,7 +795,7 @@ export default {
                     'newRow' in params.value &&
                     params.value.newRow) {
                   editorName = 'objectSelectEditor'
-                  editorParams.selectOptions = Object.assign(editContext.samples)
+                  editorParams.selectOptions = editContext.samples
                 } else if (editorParams.headerInfo.header_type === 'protocol') {
                   editorName = 'objectSelectEditor'
                   editorParams.selectOptions = Object.assign(editContext.protocols)
@@ -1228,7 +1228,7 @@ export default {
         upDataArr = [upDataArr]
       }
 
-      fetch('/samplesheets/ajax/edit/' + this.projectUuid, {
+      fetch('/samplesheets/ajax/edit/cell/' + this.projectUuid, {
         method: 'POST',
         body: JSON.stringify({ updated_cells: upDataArr }),
         credentials: 'same-origin',
@@ -1599,13 +1599,13 @@ export default {
       gridApi.ensureIndexVisible(res.add[0].rowIndex) // Scroll to inserted row
     },
 
-    handleRowSave (gridOptions, rowNode, newRowData, assayMode) {
+    handleRowSave (gridOptions, rowNode, newRowData, assayMode, finishCallback) {
       console.log('handleRowSave() called') // DEBUG
       let newSample = false
       if (!assayMode && !rowNode.data[this.sampleColId].uuid) newSample = true
-      this.savingRow = true
+      this.updatingRow = true
 
-      fetch('/samplesheets/ajax/edit/' + this.projectUuid, {
+      fetch('/samplesheets/ajax/edit/row/insert/' + this.projectUuid, {
         method: 'POST',
         body: JSON.stringify({ new_row: newRowData }),
         credentials: 'same-origin',
@@ -1661,12 +1661,18 @@ export default {
               })
               rowNode.setDataValue(cols[0].colId, Math.max(...rowNums) + 1)
 
-              // Update sample list if a new sample was added in study
+              // Update sample list if a new sample was added in study/assay
               if (!assayMode && newSample && sampleUuid) {
-                this.editContext.samples.push({
-                  uuid: sampleUuid,
-                  name: sampleName
-                })
+                this.editContext.samples[sampleUuid] = {
+                  name: sampleName,
+                  assays: []
+                }
+              } else if (assayMode) {
+                const sampleUuid = rowNode.data[this.sampleColId].uuid
+                if (!(newRowData.assay in this.editContext.samples[sampleUuid].assays)) {
+                  this.editContext.samples[sampleUuid].assays.push(newRowData.assay)
+                  console.log('Added sample to assay') // DEBUG
+                }
               }
 
               // Finalize
@@ -1680,25 +1686,84 @@ export default {
               this.showNotification('Insert Failed', 'danger', 1000)
             }
 
-            this.savingRow = false
+            finishCallback()
+            this.updatingRow = false
           }
-        ).catch(this.handleRowSaveError)
+        ).catch(this.handleRowUpdateError)
     },
 
-    handleRowSaveError (error) {
-      this.savingRow = false
-      console.log('Error saving new row: ' + error.message)
-    },
-
-    handleRowDelete (gridOptions, rowNode, assayMode) {
+    handleRowDelete (
+      gridOptions, gridUuid, rowNode, delRowData, assayMode, finishCallback) {
       console.log('handleRowDelete() called') // DEBUG
-      const newRow = rowNode.data.col0 && rowNode.data.col0.newRow
+      const newRow = this.unsavedRow &&
+          this.unsavedRow.gridUuid === gridUuid &&
+          this.unsavedRow.id === rowNode.id
 
-      if (!newRow) { // Unsaved row
-        // TODO: Actually delete row on server side
+      // Unsaved row (simply remove from grid)
+      if (newRow) {
+        gridOptions.api.applyTransaction({ remove: [rowNode.data] })
+        this.unsavedRow = null // Since we only allow editing one row for now..
+        return
       }
-      gridOptions.api.applyTransaction({ remove: [rowNode.data] })
-      this.unsavedRow = null // Since we only allow editing one row for now..
+
+      // Else update in database
+      this.updatingRow = true
+
+      fetch('/samplesheets/ajax/edit/row/delete/' + this.projectUuid, {
+        method: 'POST',
+        body: JSON.stringify({ del_row: delRowData }),
+        credentials: 'same-origin',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          'X-CSRFToken': this.sodarContext.csrf_token
+        }
+      }).then(data => data.json())
+        .then(
+          data => {
+            if (data.message === 'ok') {
+              this.editDataUpdated = true
+
+              // Update sample list
+              const sampleUuid = rowNode.data[this.sampleColId].uuid
+
+              if (assayMode &&
+                  !(gridUuid in this.editContext.samples[sampleUuid].assays)) {
+                let sampleFound = false
+                const sampleColId = this.sampleColId
+
+                gridOptions.api.forEachNode(function (r) {
+                  if (r.data[sampleColId].uuid === sampleUuid &&
+                      r.id !== rowNode.id) {
+                    sampleFound = true
+                  }
+                })
+
+                if (!sampleFound) {
+                  this.editContext.samples[
+                    sampleUuid].assays = this.editContext.samples[
+                    sampleUuid].assays.filter(
+                    v => v !== gridUuid)
+                }
+              }
+
+              gridOptions.api.applyTransaction({ remove: [rowNode.data] })
+              this.showNotification('Row Deleted', 'success', 1000)
+              console.log('Row delete OK') // DEBUG
+            } else {
+              console.log('Row delete status: ' + data.message) // DEBUG
+              this.showNotification('Delete Failed', 'danger', 1000)
+            }
+
+            finishCallback()
+            this.updatingRow = false
+          }
+        ).catch(this.handleRowUpdateError)
+    },
+
+    handleRowUpdateError (error) {
+      this.updatingRow = false
+      console.log('Error updating row: ' + error.message)
     },
 
     /* Data and App Access -------------------------------------------------- */

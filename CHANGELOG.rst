@@ -27,6 +27,7 @@ Added
     - Display ``name_type`` for processes
     - Set default protocol automatically in edit config (#879)
     - Row inserting (#834)
+    - Row deletion (#868)
 
 Changed
 -------
@@ -34,7 +35,7 @@ Changed
 - **General**
     - Upgrade to django-sodar-core v0.8.2-WIP
     - Move ISAtab export functionality to ``SampleSheetISAExportMixin`` (#849)
-    - Upgrade to Chromedriver v83
+    - Upgrade to Chromedriver v85 (sodar_core#569)
 - **Landingzones**
     - Refactor zone modification mixins in ``landingzones.views``
 - **Samplesheets**
@@ -43,6 +44,7 @@ Changed
     - Always store original header name in table rendering
     - Allow column config editing with ``edit_sheet`` permission (#880)
     - Allow empty ``DATA`` material names in editing (#898)
+    - Refactor helpers in ``SampleSheetTableBuilder``
 
 Fixed
 -----

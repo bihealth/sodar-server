@@ -7,7 +7,7 @@
     <select :ref="'input'"
             v-model="editValue"
             :class="'ag-cell-edit-input ' + getSelectClass()">
-      <option v-for="(value, index) in selectOptions"
+      <option v-for="(value, index) in getSelectOptions()"
               :key="index"
               :value="value"
               :selected="editValue.uuid === value.uuid">
@@ -66,6 +66,18 @@ export default Vue.extend({
       if (navigator.userAgent.search('Firefox') > -1) {
         return 'sodar-ss-vue-select-firefox'
       }
+    },
+    getSelectOptions () {
+      // Convert object into array
+      if (this.selectOptions && !Array.isArray(this.selectOptions)) {
+        const opts = []
+        for (const [k, v] of Object.entries(this.selectOptions)) {
+          opts.push(Object.assign(v, { uuid: k }))
+        }
+        return opts
+      }
+
+      return this.selectOptions
     },
     getUpdateData () {
       return Object.assign(

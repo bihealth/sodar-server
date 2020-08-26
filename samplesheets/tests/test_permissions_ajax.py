@@ -133,7 +133,7 @@ class TestSampleSheetsAjaxPermissions(
     def test_ajax_edit(self):
         """Test SampleSheetEditAjaxView"""
         url = reverse(
-            'samplesheets:ajax_edit',
+            'samplesheets:ajax_edit_cell',
             kwargs={'project': self.project.sodar_uuid},
         )
         good_users = [

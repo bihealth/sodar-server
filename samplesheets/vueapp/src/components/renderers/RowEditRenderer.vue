@@ -7,7 +7,7 @@
         :disabled="!enableDelete()"
         @click="onDelete()"
         v-b-tooltip.hover.d300>
-      <i class="fa fa-times"></i>
+      <i :class="getBtnClass(false)"></i>
     </b-button>
     <b-button
         v-if="isNewRow()"
@@ -17,7 +17,7 @@
         :disabled="!enableSave()"
         @click="onSave()"
         v-b-tooltip.hover.d300>
-      <i :class="getSaveClass()"></i>
+      <i :class="getBtnClass(true)"></i>
     </b-button>
  </span>
 </template>
@@ -34,7 +34,9 @@ export default Vue.extend(
         assayMode: null,
         gridOptions: null,
         rowNode: null,
-        sampleColId: null
+        sampleColId: null,
+        inserting: false,
+        deleting: false
       }
     },
     methods: {
@@ -49,13 +51,66 @@ export default Vue.extend(
         // HACK: Force hiding the tooltip
         // TODO: This does not always work, fix?
         this.$root.$emit('bv::hide::tooltip')
+        this.inserting = true
         this.app.handleRowSave(
-          this.gridOptions, this.rowNode, this.getNewRowData(), this.assayMode)
+          this.gridOptions,
+          this.rowNode,
+          this.getNewRowData(),
+          this.assayMode,
+          this.finishUpdateCallback)
       },
       onDelete () {
-        if (confirm('Cancel row insert?')) {
-          this.app.handleRowDelete(this.gridOptions, this.rowNode, this.assayMode)
+        let msg
+        let delRowData = null
+        if (!this.isNewRow()) {
+          msg = 'Delete row? This can not be undone.'
+          this.deleting = true
+
+          if (this.assayMode && this.app.sodarContext.irods_status) {
+            msg += ' Note that If related sample data exists in iRODS, it ' +
+              'may become unreachable.'
+          }
+
+          delRowData = {
+            study: this.app.currentStudyUuid,
+            assay: this.assayMode ? this.gridUuid : null,
+            nodes: []
+          }
+
+          let currentNodeUuid = null
+          const cols = this.gridOptions.columnApi.getAllColumns()
+          let startIdx = 1
+          if (this.assayMode) {
+            startIdx = this.app.sampleIdx
+          }
+
+          for (let i = startIdx; i < cols.length - 1; i++) {
+            const cell = this.rowNode.data[cols[i].colId]
+            if ('uuid' in cell && cell.uuid && cell.uuid !== currentNodeUuid) {
+              delRowData.nodes.push({
+                uuid: cell.uuid,
+                obj_cls: cols[i].colDef.cellEditorParams.headerInfo.obj_cls
+              })
+              currentNodeUuid = cell.uuid
+            }
+          }
+        } else {
+          msg = 'Cancel row insert?'
         }
+
+        if (confirm(msg)) {
+          this.app.handleRowDelete(
+            this.gridOptions,
+            this.gridUuid,
+            this.rowNode,
+            delRowData,
+            this.assayMode,
+            this.finishUpdateCallback)
+        }
+      },
+      finishUpdateCallback () {
+        this.inserting = false
+        this.deleting = false
       },
       isNewRow () {
         return this.app.unsavedRow &&
@@ -76,16 +131,33 @@ export default Vue.extend(
         return true
 
         // NOTE: This allows saving incomplete rows (not yet implemented)
-        // return !this.rowNode.data[cols[1].colId].newInit && !this.app.savingRow
+        // return !this.rowNode.data[cols[1].colId].newInit && !this.app.updatingRow
       },
-      getSaveClass () {
-        if (this.app.savingRow) {
+      getBtnClass (insert) {
+        if ((insert && this.inserting) || ((!insert && this.deleting))) {
           return 'fa fa-spin fa-circle-o-notch'
         }
-        return 'fa fa-check'
+        if (insert) {
+          return 'fa fa-check'
+        }
+        return 'fa fa-times'
       },
       enableDelete () {
-        return this.isNewRow() && !this.app.savingRow
+        if (this.app.updatingRow ||
+            (this.app.unsavedRow && !this.isNewRow()) ||
+            this.gridOptions.api.getDisplayedRowCount() < 2) {
+          return false
+        }
+
+        let sampleOk = true
+        if (!this.assayMode && !this.isNewRow()) {
+          const sampleUuid = this.rowNode.data[this.sampleColId].uuid
+          if (this.app.editContext.samples[sampleUuid].assays.length > 0) {
+            sampleOk = false
+          }
+        }
+
+        return this.isNewRow() || sampleOk
       },
       getDeleteTitle () {
         if (this.isNewRow()) {

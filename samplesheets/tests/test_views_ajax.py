@@ -320,7 +320,7 @@ class TestSampleSheetEditAjaxView(TestViewsBase):
         with self.login(self.user):
             response = self.client.post(
                 reverse(
-                    'samplesheets:ajax_edit',
+                    'samplesheets:ajax_edit_cell',
                     kwargs={'project': self.project.sodar_uuid},
                 ),
                 json.dumps(self.values),
@@ -349,7 +349,7 @@ class TestSampleSheetEditAjaxView(TestViewsBase):
         with self.login(self.user):
             response = self.client.post(
                 reverse(
-                    'samplesheets:ajax_edit',
+                    'samplesheets:ajax_edit_cell',
                     kwargs={'project': self.project.sodar_uuid},
                 ),
                 json.dumps(self.values),
@@ -379,7 +379,7 @@ class TestSampleSheetEditAjaxView(TestViewsBase):
         with self.login(self.user):
             response = self.client.post(
                 reverse(
-                    'samplesheets:ajax_edit',
+                    'samplesheets:ajax_edit_cell',
                     kwargs={'project': self.project.sodar_uuid},
                 ),
                 json.dumps(self.values),
@@ -409,7 +409,7 @@ class TestSampleSheetEditAjaxView(TestViewsBase):
         with self.login(self.user):
             response = self.client.post(
                 reverse(
-                    'samplesheets:ajax_edit',
+                    'samplesheets:ajax_edit_cell',
                     kwargs={'project': self.project.sodar_uuid},
                 ),
                 json.dumps(self.values),
@@ -439,7 +439,7 @@ class TestSampleSheetEditAjaxView(TestViewsBase):
         with self.login(self.user):
             response = self.client.post(
                 reverse(
-                    'samplesheets:ajax_edit',
+                    'samplesheets:ajax_edit_cell',
                     kwargs={'project': self.project.sodar_uuid},
                 ),
                 json.dumps(self.values),
@@ -470,7 +470,7 @@ class TestSampleSheetEditAjaxView(TestViewsBase):
         with self.login(self.user):
             response = self.client.post(
                 reverse(
-                    'samplesheets:ajax_edit',
+                    'samplesheets:ajax_edit_cell',
                     kwargs={'project': self.project.sodar_uuid},
                 ),
                 json.dumps(self.values),
@@ -506,7 +506,7 @@ class TestSampleSheetEditAjaxView(TestViewsBase):
         with self.login(self.user):
             response = self.client.post(
                 reverse(
-                    'samplesheets:ajax_edit',
+                    'samplesheets:ajax_edit_cell',
                     kwargs={'project': self.project.sodar_uuid},
                 ),
                 json.dumps(self.values),
@@ -545,7 +545,7 @@ class TestSampleSheetEditAjaxView(TestViewsBase):
         with self.login(self.user):
             response = self.client.post(
                 reverse(
-                    'samplesheets:ajax_edit',
+                    'samplesheets:ajax_edit_cell',
                     kwargs={'project': self.project.sodar_uuid},
                 ),
                 json.dumps(self.values),
@@ -588,7 +588,7 @@ class TestSampleSheetEditAjaxView(TestViewsBase):
         with self.login(self.user):
             response = self.client.post(
                 reverse(
-                    'samplesheets:ajax_edit',
+                    'samplesheets:ajax_edit_cell',
                     kwargs={'project': self.project.sodar_uuid},
                 ),
                 json.dumps(self.values),
@@ -627,7 +627,7 @@ class TestSampleSheetEditAjaxView(TestViewsBase):
         with self.login(self.user):
             response = self.client.post(
                 reverse(
-                    'samplesheets:ajax_edit',
+                    'samplesheets:ajax_edit_cell',
                     kwargs={'project': self.project.sodar_uuid},
                 ),
                 json.dumps(self.values),

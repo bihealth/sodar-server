@@ -64,6 +64,25 @@ EDIT_FIELD_MAP = {
     'performer': 'performer',
 }
 
+# Base Ajax View Classes -------------------------------------------------------
+
+
+class BaseSheetEditAjaxView(SODARBaseProjectAjaxView):
+    """Base ajax view for editing sample sheet data"""
+
+    permission_required = 'samplesheets.edit_sheet'
+    ok_data = {'message': 'ok'}
+
+    class SheetEditException(Exception):
+        pass
+
+    def _raise_ex(self, msg):
+        logger.error(msg)
+        raise self.SheetEditException(msg)
+
+
+# Ajax Views -------------------------------------------------------------------
+
 
 class SampleSheetContextAjaxView(SODARBaseProjectAjaxView):
     """View to retrieve sample sheet context data"""
@@ -483,15 +502,30 @@ class SampleSheetStudyTablesAjaxView(SODARBaseProjectAjaxView):
             ]
 
             # Set up study edit context
-            ret_data['edit_context'] = {'samples': [], 'protocols': []}
+            ret_data['edit_context'] = {'samples': {}, 'protocols': []}
 
             # Add sample info
+            s_assays = {}
+
+            for assay in study.assays.all().order_by('pk'):
+                a_uuid = str(assay.sodar_uuid)
+
+                for n in [a[0] for a in assay.arcs]:
+                    if '-sample-' in n:
+                        if n not in s_assays:
+                            s_assays[n] = []
+                        if a_uuid not in s_assays[n]:
+                            s_assays[n].append(a_uuid)
+
             for sample in GenericMaterial.objects.filter(
                 study=study, item_type='SAMPLE'
             ).order_by('name'):
-                ret_data['edit_context']['samples'].append(
-                    {'uuid': str(sample.sodar_uuid), 'name': sample.name}
-                )
+                ret_data['edit_context']['samples'][str(sample.sodar_uuid)] = {
+                    'name': sample.name,
+                    'assays': s_assays[sample.unique_name]
+                    if sample.unique_name in s_assays
+                    else [],
+                }
 
             # Add Protocol info
             for protocol in Protocol.objects.filter(study=study).order_by(
@@ -570,17 +604,8 @@ class SampleSheetWarningsAjaxView(SODARBaseProjectAjaxView):
         return Response({'warnings': investigation.parser_warnings}, status=200)
 
 
-class SampleSheetEditAjaxView(SODARBaseProjectAjaxView):
-    """View to edit sample sheet data"""
-
-    permission_required = 'samplesheets.edit_sheet'
-
-    class SheetEditException(Exception):
-        pass
-
-    def _raise_ex(self, msg):
-        logger.error(msg)
-        raise self.SheetEditException(msg)
+class SheetCellEditAjaxView(BaseSheetEditAjaxView):
+    """Ajax view to edit sample sheet cells"""
 
     @transaction.atomic
     def _update_cell(self, obj, cell, save=False):
@@ -715,6 +740,42 @@ class SampleSheetEditAjaxView(SODARBaseProjectAjaxView):
                 logger.debug(ok_msg)
 
         return ok_msg
+
+    def post(self, request, *args, **kwargs):
+        updated_cells = request.data.get('updated_cells', [])
+
+        for cell in updated_cells:
+            logger.debug('Cell update: {}'.format(cell))
+            obj_cls = (
+                GenericMaterial
+                if cell['obj_cls'] == 'GenericMaterial'
+                else Process
+            )
+            obj = obj_cls.objects.filter(sodar_uuid=cell['uuid']).first()
+            # TODO: Make sure given object actually belongs in project etc.
+
+            if not obj:
+                err_msg = 'Object not found: {} ({})'.format(
+                    cell['uuid'], cell['obj_cls']
+                )
+                logger.error(err_msg)
+
+                # TODO: Return list of errors when processing in batch
+                return Response({'message': err_msg}, status=500)
+
+            # Update cell, save immediately (now we are only editing one cell)
+            try:
+                self._update_cell(obj, cell, save=True)
+
+            except self.SheetEditException as ex:
+                return Response({'message': str(ex)}, status=500)
+
+        # TODO: Log edits in timeline here, once saving in bulk
+        return Response(self.ok_data, status=200)
+
+
+class SheetRowInsertAjaxView(BaseSheetEditAjaxView):
+    """Ajax view for inserting rows into sample sheets"""
 
     @classmethod
     def _get_name(cls, node):
@@ -964,6 +1025,12 @@ class SampleSheetEditAjaxView(SODARBaseProjectAjaxView):
 
     @transaction.atomic
     def _insert_row(self, row):
+        """
+        Insert row into a sample sheet.
+
+        :param row: Dict from the UI
+        :raise: SheetEditException if the operation fails.
+        """
         sheet_io = SampleSheetIO()
         study = Study.objects.filter(sodar_uuid=row['study']).first()
         assay = None
@@ -1196,54 +1263,181 @@ class SampleSheetEditAjaxView(SODARBaseProjectAjaxView):
         return [str(o.sodar_uuid) for o in node_objects]
 
     def post(self, request, *args, **kwargs):
-        ok_data = {'message': 'ok'}
         new_row = request.data.get('new_row', None)
-        updated_cells = request.data.get('updated_cells', [])
 
-        ################
-        # Row Inserting
-        ################
         if new_row:
             logger.debug('Row insert: {}'.format(json.dumps(new_row)))
 
             try:
-                ok_data['node_uuids'] = self._insert_row(new_row)
-                logger.debug('node_uuids={}'.format(ok_data['node_uuids']))
+                self.ok_data['node_uuids'] = self._insert_row(new_row)
+                logger.debug('node_uuids={}'.format(self.ok_data['node_uuids']))
 
             except self.SheetEditException as ex:
                 return Response({'message': str(ex)}, status=500)
 
-        #######################
-        # Single Cell Updating
-        #######################
-        for cell in updated_cells:
-            logger.debug('Cell update: {}'.format(cell))
-            obj_cls = (
-                GenericMaterial
-                if cell['obj_cls'] == 'GenericMaterial'
-                else Process
-            )
-            obj = obj_cls.objects.filter(sodar_uuid=cell['uuid']).first()
-            # TODO: Make sure given object actually belongs in project etc.
+        return Response(self.ok_data, status=200)
 
-            if not obj:
-                err_msg = 'Object not found: {} ({})'.format(
-                    cell['uuid'], cell['obj_cls']
+
+class SheetRowDeleteAjaxView(BaseSheetEditAjaxView):
+    """Ajax view for deleting rows from sample sheets"""
+
+    def _delete_node(self, node):
+        """
+        Delete node object from the database
+
+        :param node: Dict
+        """
+        if node['obj'].id:  # It's possible we already deleted thit
+            logger.debug(
+                'Deleting node: {} {} (UUID={})'.format(
+                    node['obj'].__class__.__name__,
+                    node['unique_name'],
+                    node['uuid'],
                 )
-                logger.error(err_msg)
+            )
+            node['obj'].delete()
 
-                # TODO: Return list of errors when processing in batch
-                return Response({'message': err_msg}, status=500)
+    @transaction.atomic
+    def _delete_row(self, row):
+        """
+        Delete row from a study/assay table. Also delete node objects from the
+        database if unused after the row deletion.
 
-            # Update cell, save immediately (now we are only editing one cell)
+        :param row: Dict from the UI
+        :raise: SheetEditException if the operation fails.
+        """
+        tb = SampleSheetTableBuilder()
+        sheet_io = SampleSheetIO()
+        study = Study.objects.filter(sodar_uuid=row['study']).first()
+        parent = study
+        ui_nodes = row['nodes']
+        sample_obj = None
+
+        for node in ui_nodes:
+            if node['obj_cls'] == 'GenericMaterial':
+                node_obj = GenericMaterial.objects.filter(
+                    sodar_uuid=node['uuid']
+                ).first()
+
+            else:
+                node_obj = Process.objects.filter(
+                    sodar_uuid=node['uuid']
+                ).first()
+
+            if not node_obj:
+                self._raise_ex(
+                    '{} not found (UUID={})'.format(
+                        node['obj_cls'], node['uuid']
+                    )
+                )
+
+            node['obj'] = node_obj
+            node['unique_name'] = node_obj.unique_name
+
+            if (
+                node_obj.__class__ == GenericMaterial
+                and node_obj.item_type == 'SAMPLE'
+            ):
+                sample_obj = node_obj
+
+        if row['assay']:
+            assay = Assay.objects.filter(sodar_uuid=row['assay']).first()
+            parent = assay
+
+        # Check for invalid deletion attempts we can detect at this point
+        if parent == study:
+            for s_assay in study.assays.all():
+                if sample_obj.unique_name in [a[0] for a in s_assay.arcs]:
+                    self._raise_ex(
+                        'Sample used in assay(s), can not delete row from study'
+                    )
+
+        logger.debug(
+            'Deleting row from {} "{}" ({})'.format(
+                parent.__class__.__name__,
+                parent.get_display_name(),
+                parent.sodar_uuid,
+            )
+        )
+
+        # Build reference table
+        ref_study = Study.objects.get(sodar_uuid=row['study'])  # See issue #902
+        study_nodes = ref_study.get_nodes()
+        all_refs = tb.build_study_reference(ref_study, study_nodes)
+        sample_idx = tb.get_sample_idx(all_refs)
+
+        if parent == study:
+            table_refs = tb.get_study_refs(all_refs, sample_idx)
+
+        else:
+            assay_id = 0
+
+            for a in study.assays.all().order_by('pk'):
+                if parent == a:
+                    break
+                assay_id += 1
+
+            table_refs = tb.get_assay_refs(
+                all_refs, assay_id, sample_idx, study_cols=False
+            )
+            sample_idx = 0  # Set to 0 for further checks against the table
+
+        for i in range(1, len(ui_nodes)):
+            arc_count = 0
+            node1_name = ui_nodes[i - 1]['unique_name']
+            node2_name = ui_nodes[i]['unique_name']
+            node1_count = 0
+            node2_count = 0
+
+            for ref_row in table_refs:
+                if ref_row[i - 1] == node1_name and ref_row[i] == node2_name:
+                    arc_count += 1
+
+                if ref_row[i - 1] == node1_name:
+                    node1_count += 1
+
+                if ref_row[i] == node2_name:
+                    node2_count += 1
+
+            if arc_count == 1:
+                logger.debug(
+                    'Deleting arc: {} / {}'.format(node1_name, node2_name)
+                )
+                parent.arcs.remove([node1_name, node2_name])
+                parent.save()
+
+                if node1_count == 1 and (
+                    parent == study or i - 1 != sample_idx
+                ):
+                    self._delete_node(ui_nodes[i - 1])
+
+                if node2_count == 1 and (
+                    parent == study or i - 1 != sample_idx
+                ):
+                    self._delete_node(ui_nodes[i])
+
+        # Attempt to export investigation with altamISA
+        try:
+            sheet_io.export_isa(study.investigation)
+
+        except Exception as ex:
+            self._raise_ex('altamISA Error: {}'.format(ex))
+
+        logger.debug('Deleting row OK')
+
+    def post(self, request, *args, **kwargs):
+        del_row = request.data.get('del_row', None)
+
+        if del_row:
+            logger.debug('Row delete: {}'.format(json.dumps(del_row)))
+
             try:
-                self._update_cell(obj, cell, save=True)
+                self._delete_row(del_row)
 
             except self.SheetEditException as ex:
                 return Response({'message': str(ex)}, status=500)
 
-        # TODO: Log edits in timeline here, once saving in bulk
-        return Response(ok_data, status=200)
+        return Response(self.ok_data, status=200)
 
 
 class SampleSheetEditFinishAjaxView(SODARBaseProjectAjaxView):

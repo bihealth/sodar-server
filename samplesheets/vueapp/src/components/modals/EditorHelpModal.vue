@@ -20,6 +20,7 @@
         <li>Renaming materials and processes</li>
         <li>Protocol selection</li>
         <li>Inserting rows</li>
+        <li>Deleting rows</li>
         <li>Saving, browsing and restoring sample sheet versions</li>
         <li>Configuring columns for editing (requires owner, delegate or superuser permissions</li>
         <li>Unit support</li>
@@ -33,7 +34,6 @@
         <li>Clipboard paste of value without double-clicking to edit field</li>
         <li>Multi-cell clipboard paste</li>
         <li>Adding, removing and renaming columns</li>
-        <li>Removing rows</li>
         <li>Adding and removing studies and assays</li>
         <li>Editing meta-data for investigation, studies and assays</li>
         <li>Creating a sample sheet from scratch</li>
@@ -89,6 +89,14 @@
             <li>
               Unnamed data materials are allowed for newly inserted rows.
             </li>
+          </ul>
+        <li><u>Row Deleting</u></li>
+          <ul>
+            <li>
+              Deleting a study row is not allowed, if its sample is used in one
+              or more assays.
+            </li>
+            <li>Deleting all rows in a table is currently not allowed.</li>
           </ul>
         <li>
           By clicking "Finish Editing" you will save the current version of the

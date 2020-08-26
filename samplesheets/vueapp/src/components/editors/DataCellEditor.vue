@@ -404,15 +404,10 @@ export default Vue.extend({
         if (this.value.uuid) {
           this.app.handleCellEdit(this.getUpdateData(), true)
 
-          // If a sample has been renamed, update sample list for assay)
+          // If a sample has been renamed, update sample list for assay
           if (this.headerInfo.header_type === 'name' &&
               this.params.colDef.field === this.sampleColId) {
-            for (let i = 0; i < this.app.editContext.samples.length; i++) {
-              if (this.app.editContext.samples[i].uuid === this.value.uuid) {
-                this.app.editContext.samples[i].name = this.editValue
-                break
-              }
-            }
+            this.app.editContext.samples[this.value.uuid].name = this.editValue
           }
         }
       }

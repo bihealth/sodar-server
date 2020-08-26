@@ -559,12 +559,12 @@ class SampleSheetTableBuilder:
         self._node_idx = 0
         self._field_idx = 0
 
-    def _build_table(self, table_refs, node_map, study=None, assay=None):
+    def _build_table(self, table_refs, node_map=None, study=None, assay=None):
         """
         Function for building a table for rendering.
 
         :param table_refs: Object unique_name:s in a list of lists
-        :param node_map: Lookup dictionary containing objects
+        :param node_map: Lookup dictionary containing objects (optional)
         :param study: Study object (optional, required if rendering study)
         :param assay: Assay object (optional, required if rendering assay)
         :raise: ValueError if both study and assay are None
@@ -585,6 +585,9 @@ class SampleSheetTableBuilder:
         self._col_idx = 0
 
         row_id = 0
+
+        if not node_map:
+            node_map = self.get_node_map(self._study.get_nodes())
 
         for input_row in table_refs:
             col_pos = 0
@@ -746,6 +749,65 @@ class SampleSheetTableBuilder:
 
         return all_refs
 
+    @classmethod
+    def get_sample_idx(cls, all_refs):
+        """
+        Get sample index for a reference table.
+
+        :param all_refs: All references for a study (list).
+        :return: Integer
+        """
+        return [i for i, col in enumerate(all_refs[0]) if '-sample-' in col][0]
+
+    @classmethod
+    def get_node_map(cls, nodes):
+        """
+        Get dict mapped by unique name for a QuerySet or list of node objects.
+
+        :param nodes: QuerySet or list
+        :return: Dict
+        """
+        return {n.unique_name: n for n in nodes}
+
+    @classmethod
+    def get_study_refs(cls, all_refs, sample_idx=None):
+        """
+        Get study table references without duplicates.
+
+        :param all_refs: All references for a study.
+        :param sample_idx: Integer for sample column index (optional)
+        :return: List
+        """
+        if not sample_idx:
+            sample_idx = cls.get_sample_idx(all_refs)
+
+        sr = [row[: sample_idx + 1] for row in all_refs]
+        return list(sr for sr, _ in itertools.groupby(sr))
+
+    @classmethod
+    def get_assay_refs(cls, all_refs, assay_id, sample_idx, study_cols=True):
+        """
+        Return assay table references based on assay ID.
+
+        :param all_refs:
+        :param assay_id: Integer for assay ID
+        :param sample_idx: Integer for sample column index
+        :param study_cols: Include study columns if True (bool)
+        :return: List
+        """
+        assay_search_str = '-a{}-'.format(assay_id)
+        assay_refs = []
+        start_idx = 0 if study_cols else sample_idx
+
+        for row in all_refs:
+            if (
+                len(row) > sample_idx + 1
+                and assay_search_str in row[sample_idx + 1]
+            ):
+                assay_refs.append(row[start_idx:])
+
+        return assay_refs
+
     def build_study_tables(self, study, edit=False, use_config=True):
         """
         Build study table and associated assay tables for rendering.
@@ -806,14 +868,11 @@ class SampleSheetTableBuilder:
         ret = {'study': None, 'assays': {}}
         nodes = study.get_nodes()
         all_refs = self.build_study_reference(study, nodes)
-        sample_pos = [
-            i for i, col in enumerate(all_refs[0]) if '-sample-' in col
-        ][0]
-        node_map = {n.unique_name: n for n in nodes}
+        sample_idx = self.get_sample_idx(all_refs)
+        node_map = self.get_node_map(nodes)
 
         # Study ref table without duplicates
-        sr = [row[: sample_pos + 1] for row in all_refs]
-        study_refs = list(sr for sr, _ in itertools.groupby(sr))
+        study_refs = self.get_study_refs(all_refs, sample_idx)
 
         ret['study'] = self._build_table(study_refs, node_map, study=study)
         logger.debug(
@@ -821,7 +880,7 @@ class SampleSheetTableBuilder:
         )
 
         # Assay tables
-        assay_count = 0
+        assay_id = 0
 
         for assay in study.assays.all().order_by('pk'):
             a_start = time.time()
@@ -830,22 +889,12 @@ class SampleSheetTableBuilder:
                     assay.get_name(), assay.pk, edit
                 )
             )
-
-            assay_search_str = '-a{}-'.format(assay_count)
-            assay_refs = []
-
-            for row in all_refs:
-                if (
-                    len(row) > sample_pos + 1
-                    and assay_search_str in row[sample_pos + 1]
-                ):
-                    assay_refs.append(row)
-
+            assay_refs = self.get_assay_refs(all_refs, assay_id, sample_idx)
             ret['assays'][str(assay.sodar_uuid)] = self._build_table(
                 assay_refs, node_map, assay=assay
             )
 
-            assay_count += 1
+            assay_id += 1
             logger.debug(
                 'Building assay OK ({:.1f}s)'.format(time.time() - a_start)
             )

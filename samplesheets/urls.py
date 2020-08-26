@@ -130,9 +130,19 @@ urls_ajax = [
         name='ajax_warnings',
     ),
     url(
-        regex=r'^ajax/edit/(?P<project>[0-9a-f-]+)$',
-        view=samplesheets.views_ajax.SampleSheetEditAjaxView.as_view(),
-        name='ajax_edit',
+        regex=r'^ajax/edit/cell/(?P<project>[0-9a-f-]+)$',
+        view=samplesheets.views_ajax.SheetCellEditAjaxView.as_view(),
+        name='ajax_edit_cell',
+    ),
+    url(
+        regex=r'^ajax/edit/row/insert/(?P<project>[0-9a-f-]+)$',
+        view=samplesheets.views_ajax.SheetRowInsertAjaxView.as_view(),
+        name='ajax_edit_row_insert',
+    ),
+    url(
+        regex=r'^ajax/edit/row/delete/(?P<project>[0-9a-f-]+)$',
+        view=samplesheets.views_ajax.SheetRowDeleteAjaxView.as_view(),
+        name='ajax_edit_row_delete',
     ),
     url(
         regex=r'^ajax/edit/finish/(?P<project>[0-9a-f-]+)$',
