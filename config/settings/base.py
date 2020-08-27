@@ -588,6 +588,7 @@ SHEETS_ALLOW_CRITICAL = env.bool('SHEETS_ALLOW_CRITICAL', False)
 SHEETS_ENABLE_CACHE = True  # Temporary, see issue #556
 SHEETS_IRODS_LIMIT = env.int('SHEETS_IRODS_LIMIT', 50)  # iRODS file query limit
 SHEETS_TABLE_HEIGHT = 400  # Study/assay table height
+SHEETS_CONFIG_VERSION = '0.8.0'  # Minimum edit config version
 SHEETS_MIN_COLUMN_WIDTH = 100  # Min default column width
 SHEETS_MAX_COLUMN_WIDTH = 300  # Max default column width
 SHEETS_VERSION_PAGINATION = 15

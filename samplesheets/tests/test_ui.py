@@ -17,7 +17,7 @@ from projectroles.tests.test_ui import TestUIBase
 
 from samplesheets.models import ISATab
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
-from samplesheets.tests.test_utils import (
+from samplesheets.tests.test_sheet_config import (
     SheetConfigMixin,
     CONFIG_PATH_DEFAULT,
     CONFIG_PATH_UPDATED,

@@ -27,12 +27,9 @@ from samplesheets.models import (
     Process,
     GenericMaterial,
 )
+from samplesheets.sheet_config import SheetConfigAPI
 from samplesheets.rendering import SampleSheetTableBuilder
-from samplesheets.utils import (
-    get_comments,
-    build_sheet_config,
-    build_display_config,
-)
+from samplesheets.utils import get_comments
 from samplesheets.views import (
     app_settings,
     APP_NAME,
@@ -43,6 +40,9 @@ from samplesheets.views import (
     MISC_FILES_COLL,
     logger,
 )
+
+
+conf_api = SheetConfigAPI()
 
 
 # Local constants
@@ -264,26 +264,6 @@ class SampleSheetStudyTablesAjaxView(SODARBaseProjectAjaxView):
 
         return 'samplesheets.view_sheet'
 
-    def _get_sheet_config(self, investigation):
-        """Get or create sheet configuration for an investigation"""
-
-        sheet_config = app_settings.get_app_setting(
-            APP_NAME, 'sheet_config', project=investigation.project
-        )
-
-        if not sheet_config:
-            logger.debug('No sheet configuration found, building..')
-            sheet_config = build_sheet_config(investigation)
-            app_settings.set_app_setting(
-                APP_NAME,
-                'sheet_config',
-                sheet_config,
-                project=investigation.project,
-            )
-            logger.info('Sheet configuration built for investigation')
-
-        return sheet_config
-
     def _get_display_config(self, investigation, user, sheet_config=None):
         """Get or create display configuration for an investigation"""
 
@@ -311,9 +291,11 @@ class SampleSheetStudyTablesAjaxView(SODARBaseProjectAjaxView):
             logger.debug('No default display configuration found, building..')
 
             if not sheet_config:
-                sheet_config = self._get_sheet_config(investigation)
+                sheet_config = conf_api.get_sheet_config(investigation)
 
-            display_config = build_display_config(investigation, sheet_config)
+            display_config = conf_api.build_display_config(
+                investigation, sheet_config
+            )
 
             logger.debug(
                 'Setting default display config for project "{}" ({})'.format(
@@ -483,7 +465,7 @@ class SampleSheetStudyTablesAjaxView(SODARBaseProjectAjaxView):
                         a_data['shortcuts'][i]['enabled'] = True
 
         # Get/build sheet config
-        sheet_config = self._get_sheet_config(study.investigation)
+        sheet_config = conf_api.get_sheet_config(study.investigation)
 
         # Get/build display config
         display_config = self._get_display_config(

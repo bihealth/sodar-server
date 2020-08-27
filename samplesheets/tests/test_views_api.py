@@ -13,6 +13,7 @@ from projectroles.tests.test_views_api import TestAPIViewsBase
 from samplesheets.io import SampleSheetIO
 from samplesheets.models import Investigation, GenericMaterial, ISATab
 from samplesheets.rendering import SampleSheetTableBuilder
+from samplesheets.sheet_config import SheetConfigAPI
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 from samplesheets.tests.test_views import (
     TestViewsBase,
@@ -21,7 +22,6 @@ from samplesheets.tests.test_views import (
     REMOTE_SITE_DESC,
     REMOTE_SITE_SECRET,
 )
-from samplesheets.utils import build_sheet_config, build_display_config
 
 
 # SODAR constants
@@ -37,6 +37,7 @@ SHEET_PATH_ALT = SHEET_DIR + 'i_small2_alt.zip'
 
 
 app_settings = AppSettingAPI()
+conf_api = SheetConfigAPI()
 
 
 class TestSampleSheetAPIBase(SampleSheetIOMixin, TestAPIViewsBase):
@@ -103,6 +104,9 @@ class TestInvestigationRetrieveAPIView(TestSampleSheetAPIBase):
 
 class TestSampleSheetImportAPIView(TestSampleSheetAPIBase):
     """Tests for SampleSheetImportAPIView"""
+
+    def setUp(self):
+        super().setUp()
 
     def test_post_zip(self):
         """Test SampleSheetImportAPIView post() with a zip archive"""
@@ -207,11 +211,13 @@ class TestSampleSheetImportAPIView(TestSampleSheetAPIBase):
         self.investigation = self._import_isa_from_file(
             SHEET_PATH, self.project
         )
-        sheet_config = build_sheet_config(self.investigation)
+        sheet_config = conf_api.build_sheet_config(self.investigation)
         app_settings.set_app_setting(
             APP_NAME, 'sheet_config', sheet_config, project=self.project
         )
-        display_config = build_display_config(self.investigation, sheet_config)
+        display_config = conf_api.build_display_config(
+            self.investigation, sheet_config
+        )
         app_settings.set_app_setting(
             APP_NAME,
             'display_config',

@@ -28,6 +28,8 @@ Added
     - Set default protocol automatically in edit config (#879)
     - Row inserting (#834)
     - Row deletion (#868)
+    - Sheet config versioning (#904)
+    - Automated rebuilding of expired sheet configs (#904)
 
 Changed
 -------
@@ -45,6 +47,7 @@ Changed
     - Allow column config editing with ``edit_sheet`` permission (#880)
     - Allow empty ``DATA`` material names in editing (#898)
     - Refactor helpers in ``SampleSheetTableBuilder``
+    - Refactor sheet config helpers into ``SheetConfigAPI`` (#905)
 
 Fixed
 -----

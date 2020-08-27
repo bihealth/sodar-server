@@ -21,7 +21,11 @@ from samplesheets.models import (
     GenericMaterial,
     ISATab,
 )
-from samplesheets.tests.test_utils import SheetConfigMixin, CONFIG_STUDY_UUID
+from samplesheets.sheet_config import SheetConfigAPI
+from samplesheets.tests.test_sheet_config import (
+    SheetConfigMixin,
+    CONFIG_STUDY_UUID,
+)
 from samplesheets.tests.test_views import (
     IRODS_BACKEND_ENABLED,
     IRODS_BACKEND_SKIP_MSG,
@@ -31,7 +35,9 @@ from samplesheets.tests.test_views import (
     EDIT_NEW_VALUE_STR,
     CONFIG_DATA_DEFAULT,
 )
-from samplesheets.utils import build_sheet_config, build_display_config
+
+
+conf_api = SheetConfigAPI()
 
 
 APP_NAME = 'samplesheets'
@@ -709,7 +715,7 @@ class TestSampleSheetManageAjaxView(SheetConfigMixin, TestViewsBase):
         app_settings.set_app_setting(
             APP_NAME,
             'sheet_config',
-            build_sheet_config(self.investigation),
+            conf_api.build_sheet_config(self.investigation),
             project=self.project,
         )
         self.study = self.investigation.studies.first()
@@ -807,8 +813,8 @@ class TestStudyDisplayConfigAjaxView(TestViewsBase):
             self.investigation.studies.first().assays.first().sodar_uuid
         )
         # Build sheet config and default display config
-        self.sheet_config = build_sheet_config(self.investigation)
-        self.display_config = build_display_config(
+        self.sheet_config = conf_api.build_sheet_config(self.investigation)
+        self.display_config = conf_api.build_display_config(
             self.investigation, self.sheet_config
         )
         app_settings.set_app_setting(

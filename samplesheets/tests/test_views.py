@@ -23,7 +23,7 @@ from samplesheets.tests.test_io import (
     SHEET_DIR,
     SHEET_DIR_SPECIAL,
 )
-from samplesheets.tests.test_utils import CONFIG_PATH_DEFAULT
+from samplesheets.tests.test_sheet_config import CONFIG_PATH_DEFAULT
 
 # App settings API
 app_settings = AppSettingAPI()

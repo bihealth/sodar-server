@@ -42,21 +42,19 @@ from samplesheets.io import (
 )
 from samplesheets.models import Investigation, Study, Assay, ISATab
 from samplesheets.rendering import SampleSheetTableBuilder, EMPTY_VALUE
+from samplesheets.sheet_config import SheetConfigAPI
 from samplesheets.tasks import update_project_cache_task
 from samplesheets.utils import (
     get_sample_colls,
     compare_inv_replace,
     get_sheets_url,
     write_excel_table,
-    build_sheet_config,
-    build_display_config,
 )
 
-# Get logger
-logger = logging.getLogger(__name__)
 
-# App settings API
+logger = logging.getLogger(__name__)
 app_settings = AppSettingAPI()
+conf_api = SheetConfigAPI()
 
 
 # SODAR constants
@@ -303,6 +301,7 @@ class SampleSheetImportMixin:
             )
         )
         sheet_config = None
+        sheet_config_valid = True
         display_config = None
 
         if isa_version and action == 'restore':
@@ -310,13 +309,21 @@ class SampleSheetImportMixin:
             sheet_config = isa_version.data.get('sheet_config')
             display_config = isa_version.data.get('display_config')
 
-        if not sheet_config:
+            try:
+                conf_api.validate_sheet_config(sheet_config)
+
+            except ValueError:
+                sheet_config_valid = False
+
+        if not sheet_config or not sheet_config_valid:
             logger.debug('Building new sheet configuration')
-            sheet_config = build_sheet_config(investigation)
+            sheet_config = conf_api.build_sheet_config(investigation)
 
         if not display_config:
             logger.debug('Building new display configuration')
-            display_config = build_display_config(investigation, sheet_config)
+            display_config = conf_api.build_display_config(
+                investigation, sheet_config
+            )
 
         if isa_version:
             isa_version.data['sheet_config'] = sheet_config
