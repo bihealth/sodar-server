@@ -1748,6 +1748,14 @@ export default {
               }
 
               gridOptions.api.applyTransaction({ remove: [rowNode.data] })
+
+              // Update row numbers
+              let rowNum = 1
+              gridOptions.api.forEachNode(function (r) {
+                r.setDataValue('rowNum', rowNum)
+                rowNum += 1
+              })
+
               this.showNotification('Row Deleted', 'success', 1000)
               console.log('Row delete OK') // DEBUG
             } else {
