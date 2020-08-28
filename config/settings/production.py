@@ -142,9 +142,8 @@ EMAIL_HOST_PASSWORD = EMAIL_URL['EMAIL_HOST_PASSWORD']
 
 
 # Plugin settings
-ENABLED_BACKEND_PLUGINS = [
-    'timeline_backend',
-    'sodar_cache',
-    'taskflow',
-    'omics_irods',
-]
+ENABLED_BACKEND_PLUGINS = env.list(
+    'ENABLED_BACKEND_PLUGINS',
+    None,
+    ['timeline_backend', 'sodar_cache', 'taskflow', 'omics_irods'],
+)

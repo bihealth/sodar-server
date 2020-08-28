@@ -56,6 +56,8 @@ Changed
 Fixed
 -----
 
+- **General**
+    - Hardcoded plugin settings in ``production`` config (#910)
 - **Samplesheets**
     - Row sorting not working with updated column type definitions (#847)
     - Lists of strings assigned ``ONTOLOGY`` column type in rendering (#885)
