@@ -84,11 +84,23 @@
               need to either save the row or cancel the insertion.
             </li>
             <li>
-              New sources and samples can only be created in the study table.
+              Row ordering is not currently guaranteed. New rows will appear
+              at the bottom of the table when inserted. They <em>may</em> appear
+              with a different placement once exiting edit mode.
+            </li>
+            <li>Rows are only saved once you click the "Save row" icon.</li>
+            <li>
+              Currently, you are expected to fill in nodes from left to
+              right. New nodes will become available once preceeding nodes are
+              filled in.
             </li>
             <li>
-              Unnamed data materials are allowed for newly inserted rows.
+              Default protocols will be filled in automatically, as will default
+              values for other columns.
             </li>
+            <li>New sources and samples can only be created in the study table.</li>
+            <li>All nodes on a row must be defined to enable saving the row.</li>
+            <li>Unnamed data materials are allowed.</li>
           </ul>
         <li><u>Row Deleting</u></li>
           <ul>
