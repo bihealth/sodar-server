@@ -118,10 +118,10 @@ iinit</code></pre>
             <dd class="col-lg-11 text-muted">Unknown</dd>
           {% endif %}
         </dl>
-      {% elif not irods_backend %}
+      {% elif not irods_backend_enabled %}
         <p class="text-danger">iRODS backend not enabled!</p>
       {% else %}
-        <p class="text-danger">Unable to query iRODS server information!</p>
+        <p class="text-danger">Unknown error</p>
       {% endif %}
     </div>
   </div>

@@ -102,8 +102,11 @@ class IrodsAPI:
 
         except Exception as ex:
             logger.error(
-                'Unable to connect to iRODS (host={}, port={}): {}'.format(
-                    settings.IRODS_HOST, settings.IRODS_PORT, ex
+                'Unable to connect to iRODS (host={}, port={}): {} ({})'.format(
+                    settings.IRODS_HOST,
+                    settings.IRODS_PORT,
+                    type(ex).__name__,
+                    ex,
                 )
             )
             raise ex

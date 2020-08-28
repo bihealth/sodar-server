@@ -14,8 +14,6 @@ Added
 - **General**
     - Celery beat setup (#702)
     - Configuration of support contact info in footer via site settings (#863)
-- **Irodsinfo**
-    - Display iRODS backend status if not enabled (#908)
 - **Landingzones**
     - Automated triggering of landing zone validation/moving by iRODS file (#702)
 - **Samplesheets**
@@ -40,6 +38,10 @@ Changed
     - Upgrade to django-sodar-core v0.8.2-WIP
     - Move ISAtab export functionality to ``SampleSheetISAExportMixin`` (#849)
     - Upgrade to Chromedriver v85 (sodar_core#569)
+- **Irodsbackend**
+    - Improve connection error logging
+- **Irodsinfo**
+    - Improve iRODS server/backend status (#908, #909)
 - **Landingzones**
     - Refactor zone modification mixins in ``landingzones.views``
 - **Samplesheets**

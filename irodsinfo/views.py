@@ -25,19 +25,18 @@ class IrodsInfoView(LoggedInPermissionMixin, HTTPRefererMixin, TemplateView):
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
 
-        # Add iRODS query API
+        ib_enabled = get_backend_api('omics_irods', conn=False)  # HACK for #909
         irods_backend = get_backend_api('omics_irods')
+        unavail_info = {
+            'server_ok': False,
+            'server_host': settings.IRODS_HOST,
+            'server_port': settings.IRODS_PORT,
+            'server_zone': settings.IRODS_ZONE,
+            'server_version': None,
+        }
+        unavail_status = 'Server Unreachable'
 
         if irods_backend:
-            unavail_info = {
-                'server_ok': False,
-                'server_host': settings.IRODS_HOST,
-                'server_port': settings.IRODS_PORT,
-                'server_zone': settings.IRODS_ZONE,
-                'server_version': None,
-            }
-            unavail_status = None
-
             try:
                 context['server_info'] = irods_backend.get_info()
 
@@ -50,14 +49,14 @@ class IrodsInfoView(LoggedInPermissionMixin, HTTPRefererMixin, TemplateView):
             except irods_backend.IrodsQueryException:
                 unavail_status = 'Invalid iRODS Query'
 
-            finally:
-                if unavail_status:
-                    unavail_info['server_status'] = 'Unavailable: {}'.format(
-                        unavail_status
-                    )
-                    context['server_info'] = unavail_info
+        if not context.get('server_info'):
+            if unavail_status:
+                unavail_info['server_status'] = 'Unavailable: {}'.format(
+                    unavail_status
+                )
+                context['server_info'] = unavail_info
 
-        context['irods_backend'] = irods_backend
+        context['irods_backend_enabled'] = ib_enabled
 
         # Add settings constants
         context['irods_sample_coll'] = settings.IRODS_SAMPLE_COLL
