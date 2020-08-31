@@ -52,6 +52,7 @@ Changed
     - Allow empty ``DATA`` material names in editing (#898)
     - Refactor helpers in ``SampleSheetTableBuilder``
     - Refactor sheet config helpers into ``SheetConfigAPI`` (#905)
+    - Include top header in column width estimation for rendering (#649)
 
 Fixed
 -----

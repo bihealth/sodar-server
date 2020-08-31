@@ -635,6 +635,9 @@ class SampleSheetTableBuilder:
             except (ValueError, TypeError):
                 return False
 
+        top_idx = 0  # Top header index
+        grp_idx = 0  # Index within current top header group
+
         for i in range(len(self._field_header)):
             header_name = self._field_header[i]['value']
 
@@ -655,7 +658,20 @@ class SampleSheetTableBuilder:
                 self._field_header[i]['col_type'] = 'NUMERIC'
 
             # Maximum column value length for column width estimate
-            header_len = round(_get_length(self._field_header[i]['value']))
+            field_header_len = round(
+                _get_length(self._field_header[i]['value'])
+            )
+
+            # If there is only one column in top header, use top header length
+            if self._top_header[top_idx]['colspan'] == 1:
+                top_header_len = round(
+                    _get_length(self._top_header[top_idx]['value'])
+                )
+                header_len = max(field_header_len, top_header_len)
+
+            else:
+                header_len = field_header_len
+
             col_type = self._field_header[i]['col_type']
 
             if col_type == 'CONTACT':
@@ -698,6 +714,13 @@ class SampleSheetTableBuilder:
             self._field_header[i]['max_value_len'] = max(
                 [header_len, max_cell_len]
             )
+
+            if grp_idx == self._top_header[top_idx]['colspan'] - 1:
+                top_idx += 1
+                grp_idx = 0
+
+            else:
+                grp_idx += 1
 
         # Store index of last visible column
         col_last_vis = (
