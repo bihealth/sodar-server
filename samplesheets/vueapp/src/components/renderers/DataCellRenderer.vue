@@ -51,7 +51,7 @@
          v-b-tooltip.hover.d300
          target="_blank">{{ renderData.value }}</a>
       </span>
-      <span v-else class="text-muted">
+      <span v-else :class="getEmptyFileClass()">
         {{ renderData.value }}
       </span>
     </span>
@@ -181,6 +181,11 @@ export default Vue.extend(
         return {
           value: this.value.value,
           url: url
+        }
+      },
+      getEmptyFileClass () {
+        if (!this.params.app.editMode) {
+          return 'text-muted'
         }
       },
       getTooltip () {
