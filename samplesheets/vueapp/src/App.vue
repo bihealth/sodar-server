@@ -1336,7 +1336,7 @@ export default {
       return value
     },
 
-    enableNextNodes (rowNode, gridOptions, startIdx) {
+    enableNextNodes (rowNode, gridOptions, gridUuid, startIdx) {
       // Enable editing for the next node(s) when inserting a new row
       // NOTE: Can't access cellEditorParams here as they are set dynamically
       const cols = gridOptions.columnApi.getAllColumns()
@@ -1358,7 +1358,46 @@ export default {
         // Else if it's a process, enable editing for all cells (if available)
         if (nextNodeCls === 'GenericMaterial') {
           const itemType = cols[startIdx].colDef.cellEditorParams.headerInfo.item_type
+          const headerType = cols[startIdx].colDef.cellEditorParams.headerInfo.header_type
           let value = this.getDefaultValue(nextColId, gridOptions, true)
+
+          // If default name suffix is set, fill name, enable node and continue
+          if (headerType === 'name' &&
+              !(['SOURCE', 'DATA'].includes(itemType)) &&
+              value.value) {
+            let namePrefix = ''
+
+            for (let i = 1; i < startIdx; i++) {
+              const prevHeaderInfo = cols[i].colDef.cellEditorParams.headerInfo
+              if (prevHeaderInfo.obj_cls === 'GenericMaterial' &&
+                  prevHeaderInfo.header_type === 'name' &&
+                  prevHeaderInfo.item_type !== 'DATA') {
+                namePrefix = rowNode.data[cols[i].colId].value
+              }
+            }
+            value.value = namePrefix + value.value
+            let createNew = true
+
+            // Check if name already appears in column
+            gridOptions.api.forEachNode(function (r) {
+              if (r.data[nextColId].value === value.value) {
+                createNew = false
+              }
+            })
+
+            value.newInit = false
+            value.editable = true
+            rowNode.setDataValue(nextColId, value)
+            this.handleNodeUpdate(
+              value,
+              cols[startIdx],
+              rowNode,
+              gridOptions,
+              gridUuid,
+              createNew)
+            return
+          }
+
           value.editable = true
           if (itemType === 'DATA') value.newInit = false // Empty name is OK
           rowNode.setDataValue(nextColId, value)
@@ -1413,7 +1452,7 @@ export default {
           if (protocolFilled) enableNextIdx = i
         }
         // If we can immediately enable the next node(s), proceed
-        if (enableNextIdx) this.enableNextNodes(rowNode, gridOptions, enableNextIdx)
+        if (enableNextIdx) this.enableNextNodes(rowNode, gridOptions, gridUuid, enableNextIdx)
       }
     },
 
@@ -1514,45 +1553,11 @@ export default {
 
       // Enable the next node(s), if we are initializing node for the 1st time
       if (nextNodeStartIdx) {
-        this.enableNextNodes(rowNode, gridOptions, nextNodeStartIdx)
+        this.enableNextNodes(rowNode, gridOptions, gridUuid, nextNodeStartIdx)
       }
 
       // Redraw row node for all changes to be displayed
       gridApi.redrawRows({ rows: [rowNode] })
-    },
-
-    handleFinishEditing () {
-      fetch('/samplesheets/ajax/edit/finish/' + this.projectUuid, {
-        method: 'POST',
-        body: JSON.stringify({
-          updated: this.editDataUpdated
-        }),
-        credentials: 'same-origin',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-          'X-CSRFToken': this.sodarContext.csrf_token
-        }
-      }).then(data => data.json())
-        .then(
-          data => {
-            if (data.message === 'ok') {
-              this.showNotification('Finished Editing', 'success', 1000)
-            } else {
-              console.log('Finish status: ' + data.message) // DEBUG
-              this.showNotification('Saving Version Failed', 'danger', 1000)
-            }
-          }
-        ).catch(function (error) {
-          console.log('Error saving version: ' + error.message)
-          this.showNotification('Finishing Error', 'danger', 2000)
-        })
-
-      this.editStudyConfig = null
-    },
-
-    setDataUpdated (updated) {
-      this.editDataUpdated = updated
     },
 
     handleRowInsert (gridUuid, assayMode) {
@@ -1772,6 +1777,40 @@ export default {
     handleRowUpdateError (error) {
       this.updatingRow = false
       console.log('Error updating row: ' + error.message)
+    },
+
+    handleFinishEditing () {
+      fetch('/samplesheets/ajax/edit/finish/' + this.projectUuid, {
+        method: 'POST',
+        body: JSON.stringify({
+          updated: this.editDataUpdated
+        }),
+        credentials: 'same-origin',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          'X-CSRFToken': this.sodarContext.csrf_token
+        }
+      }).then(data => data.json())
+        .then(
+          data => {
+            if (data.message === 'ok') {
+              this.showNotification('Finished Editing', 'success', 1000)
+            } else {
+              console.log('Finish status: ' + data.message) // DEBUG
+              this.showNotification('Saving Version Failed', 'danger', 1000)
+            }
+          }
+        ).catch(function (error) {
+          console.log('Error saving version: ' + error.message)
+          this.showNotification('Finishing Error', 'danger', 2000)
+        })
+
+      this.editStudyConfig = null
+    },
+
+    setDataUpdated (updated) {
+      this.editDataUpdated = updated
     },
 
     /* Data and App Access -------------------------------------------------- */

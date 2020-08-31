@@ -25,6 +25,7 @@
         <li>Configuring columns for editing (requires owner, delegate or superuser permissions</li>
         <li>Unit support</li>
         <li>Custom regex, optional integer range, automatic filling of default value</li>
+        <li>Default suffix and automated filling of node names</li>
         <li>Clipboard copy/paste of column configuration</li>
       </ul>
       <h5 class="text-danger font-weight-bold">Under Development</h5>

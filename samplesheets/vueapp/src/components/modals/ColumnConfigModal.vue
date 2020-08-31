@@ -57,6 +57,24 @@
         </tbody>
         <!-- Name column table body -->
         <tbody v-if="['NAME', 'LINK_FILE'].includes(colType)">
+          <tr v-if="colType === 'NAME' &&
+              headerInfo.obj_cls === 'GenericMaterial' &&
+              headerInfo.item_type !== 'SOURCE'">
+            <td>Default Suffix
+              <i class="fa fa-info-circle text-info"
+                 title="Pre-fill with previous material's name plus a suffix if set"
+                 v-b-tooltip.hover>
+              </i>
+            </td>
+            <td>
+              <b-input
+                  v-model="fieldConfig.default"
+                  @input="onDefaultInput"
+                  id="sodar-ss-vue-column-input-default"
+                  :class="formClasses.default">
+              </b-input>
+            </td>
+          </tr>
           <tr>
             <td colspan="2" class="sodar-ss-vue-td-info text-danger">
               <strong>Warning:</strong> If you are storing project sample data
@@ -335,6 +353,7 @@ export default {
       configFieldIdx: null,
       col: null,
       colType: null,
+      headerInfo: null,
       gridOptions: null,
       valueOptions: '',
       unitEnabled: false,
@@ -766,6 +785,7 @@ export default {
       this.configFieldIdx = data.configFieldIdx
       this.col = col
       this.colType = data.colType
+      this.headerInfo = this.col.colDef.cellEditorParams.headerInfo
       this.ogColType = data.colType // Save original colType
       const gridUuid = !this.assayUuid ? this.studyUuid : this.assayUuid
       this.gridOptions = this.app.getGridOptionsByUuid(gridUuid)

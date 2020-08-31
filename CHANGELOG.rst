@@ -30,6 +30,7 @@ Added
     - Row deletion (#868)
     - Sheet config versioning (#904)
     - Automated rebuilding of expired sheet configs (#904)
+    - Material name suffix config and automated filling (#912)
 
 Changed
 -------
