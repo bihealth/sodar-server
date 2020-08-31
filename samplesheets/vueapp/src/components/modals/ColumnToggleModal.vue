@@ -213,6 +213,12 @@ export default {
       this.columnDefs = this.gridOptions.columnDefs
       const rowData = this.gridOptions.rowData
 
+      // Top column group length for iteration
+      const lastColName = this.columnDefs[this.columnDefs.length - 1].headerName.toLowerCase()
+      const rightColumn = ['irods', 'links', 'edit'].includes(lastColName)
+      let topColLen = this.columnDefs.length
+      if (rightColumn) topColLen -= 1
+
       if (!assayMode) {
         this.title = 'Toggle Study Columns'
         this.displayConfig = Object.assign({}, this.app.studyDisplayConfig)
@@ -223,7 +229,7 @@ export default {
 
       // Store current column data state
       this.columnValues = {}
-      for (let i = 1; i < this.columnDefs.length - 1; i++) {
+      for (let i = 1; i < topColLen; i++) {
         for (let j = 0; j < this.columnDefs[i].children.length; j++) {
           this.columnValues[this.columnDefs[i].children[j].field] = false
         }
@@ -265,15 +271,9 @@ export default {
       )
 
       const firstTopIdx = 3 // First top header index for modification
-      const lastColName = this.columnDefs[this.columnDefs.length - 1].headerName.toLowerCase()
-      let lastColIdx = this.columnDefs.length // Last column index to include in list
-
-      if (['irods', 'links'].includes(lastColName)) {
-        lastColIdx -= 1
-      }
 
       // Iterate through the rest of the columns
-      for (let i = firstTopIdx; i < lastColIdx; i++) {
+      for (let i = firstTopIdx; i < topColLen; i++) {
         this.columnList.push(getListGroup(this.columnDefs[i], 1))
       }
 
