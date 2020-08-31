@@ -63,6 +63,7 @@ Fixed
     - Lists of strings assigned ``ONTOLOGY`` column type in rendering (#885)
     - Last single column node not visible in ``ColumnToggleModal`` (#877)
     - Column config update randomly breaking table rendering (#850)
+    - Whole cell copying active when in cell edit mode (#882)
 
 
 v0.7.1 (2020-04-27)

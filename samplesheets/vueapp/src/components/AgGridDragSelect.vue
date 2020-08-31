@@ -184,6 +184,9 @@ export default {
     },
 
     onCopy () {
+      // Cancel copy if cell editing is active
+      if (!this.app.selectEnabled) return
+
       let copyData = ''
       const gridApi = this.app.getGridOptionsByUuid(this.uuid).api
       const focusedCell = gridApi.getFocusedCell()
