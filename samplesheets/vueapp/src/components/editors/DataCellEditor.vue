@@ -297,7 +297,10 @@ export default Vue.extend({
         'regex' in this.editConfig &&
         this.editConfig.regex.length > 0) {
       this.regex = new RegExp(this.editConfig.regex)
-    } else if (this.headerInfo.header_type === 'name') { // Name is special
+    } else if (this.headerInfo.header_type === 'name' &&
+        this.headerInfo.item_type === 'DATA') { // Data name is a special case
+      this.regex = /^[\w\-.]+$/
+    } else if (this.headerInfo.header_type === 'name') { // Other names
       this.regex = /^([A-Za-z0-9-_/]*)$/
     } else { // Default regex for certain fields
       if (this.editConfig.format === 'integer') {

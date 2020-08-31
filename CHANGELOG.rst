@@ -67,6 +67,7 @@ Fixed
     - Column config update randomly breaking table rendering (#850)
     - Whole cell copying active when in cell edit mode (#882)
     - File link CSS in edit mode (#896)
+    - Data material name regex not accepting common file name characters (#875)
 
 
 v0.7.1 (2020-04-27)
