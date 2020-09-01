@@ -68,6 +68,22 @@ HEADER_MAP = {
     th.DATE: 'Perform Date',
 }
 
+# JSON attribute list
+EDIT_JSON_ATTRS = [
+    'characteristics',
+    'comments',
+    'factor_values',
+    'parameter_values',
+]
+
+# Map JSON attributes to altamISA headers
+ATTR_HEADER_MAP = {
+    'characteristics': th.CHARACTERISTICS,
+    'comments': th.COMMENT,
+    'factor_values': th.FACTOR_VALUE,
+    'parameter_values': th.PARAMETER_VALUE,
+}
+
 # HACK: Special cases for inline file linking (see issue #817)
 SPECIAL_FILE_LINK_HEADERS = ['report file']
 
@@ -264,6 +280,22 @@ class SampleSheetTableBuilder:
             name.lower() == 'name' and header['item_type'] == 'DATA'
         ) or name.lower() in SPECIAL_FILE_LINK_HEADERS:  # HACK for issue #817
             header['col_type'] = 'LINK_FILE'
+
+        # Recognize UNIT by header (see issues #889, #914)
+        elif header_type in EDIT_JSON_ATTRS and isinstance(
+            obj, GenericMaterial
+        ):
+            col_type = None
+            h_search = '{}[{}]'.format(ATTR_HEADER_MAP[header_type], name)
+            h_idx = obj.headers.index(h_search)
+
+            if (
+                h_idx < len(obj.headers) - 1
+                and obj.headers[h_idx + 1] == 'Unit'
+            ):
+                col_type = 'UNIT'
+
+            header['col_type'] = col_type
 
         else:
             header['col_type'] = None  # Default / to be determined later

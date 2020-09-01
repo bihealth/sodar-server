@@ -54,6 +54,7 @@ Changed
     - Refactor helpers in ``SampleSheetTableBuilder``
     - Refactor sheet config helpers into ``SheetConfigAPI`` (#905)
     - Include top header in column width estimation for rendering (#649)
+    - Use node header for recognizing unit enabled columns without data (#914)
 
 Fixed
 -----
@@ -69,6 +70,7 @@ Fixed
     - File link CSS in edit mode (#896)
     - Data material name regex not accepting common file name characters (#875)
     - Incorrect padding for edit button in field header CSS (#862)
+    - Prevent user for enabling unit for columns where it isn't supported (#889)
 
 
 v0.7.1 (2020-04-27)

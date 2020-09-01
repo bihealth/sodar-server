@@ -19,7 +19,7 @@
                       v-clipboard:copy="this.getCopyData()"
                       v-clipboard:success="onCopySuccess"
                       v-clipboard:error="onCopyError"
-                      :disabled="disableCopy()"
+                      :disabled="!enableCopy()"
                       v-b-tooltip.hover>
               <i class="fa fa-clipboard"></i>
             </b-button>
@@ -31,7 +31,7 @@
               @input="onPasteInput"
               placeholder="Paste"
               title="Paste a copied configuration here"
-              :disabled="disableCopy()"
+              :disabled="enableCopy()"
               v-b-tooltip.hover>
             </b-form-input>
           </b-input-group>
@@ -255,6 +255,8 @@
             </td>
           </tr>
           <!-- Enable/disable unit -->
+          <!-- NOTE: Commented out as temporary fix for issue #889 -->
+          <!--
           <tr v-if="['integer', 'double'].includes(fieldConfig.format)">
             <td>Enable Unit</td>
             <td>
@@ -265,11 +267,13 @@
                 <b-checkbox
                     plain
                     v-model="unitEnabled"
+                    :disabled="!enableUnitSelect()"
                     id="sodar-ss-vue-column-check-unit">
                 </b-checkbox>
               </span>
             </td>
           </tr>
+          -->
           <!-- Unit -->
           <tr v-if="unitEnabled &&
                     ['integer', 'double'].includes(fieldConfig.format)">
@@ -339,12 +343,7 @@ export default {
   ],
   data () {
     return {
-      formatOptions: [
-        'string',
-        'integer',
-        'double',
-        'select'
-      ],
+      formatOptions: null,
       fieldDisplayName: null,
       fieldConfig: null,
       newConfig: false,
@@ -449,9 +448,14 @@ export default {
       console.log('Copy Error: ' + event)
     },
     /* Helpers -------------------------------------------------------------- */
-    disableCopy () {
-      return ['NAME', 'LINK_FILE', 'PROTOCOL'].includes(this.colType)
+    enableCopy () {
+      return !(['NAME', 'LINK_FILE', 'PROTOCOL'].includes(this.colType))
     },
+    /*
+    enableUnitSelect () {
+      return this.colType === 'UNIT' // HACK for issue #889
+    },
+    */
     toggleDefaultFill () {
       if (!('default' in this.fieldConfig) || !this.fieldConfig.default) {
         this.defaultFill = false
@@ -725,7 +729,7 @@ export default {
 
             // Remove unit
             if (removeUnit && cell.unit && cell.unit.length > 0) {
-              if ('name' in cell.unit) {
+              if (typeof cell.unit === 'object' && 'name' in cell.unit) {
                 cell.unit.name = null
               } else {
                 cell.unit = null
@@ -795,6 +799,12 @@ export default {
       this.valueOptions = ''
       this.unitEnabled = false
       this.unitOptions = ''
+
+      if (this.colType !== 'UNIT') {
+        this.formatOptions = ['string', 'integer', 'double', 'select']
+      } else {
+        this.formatOptions = ['integer', 'double'] // HACK for issue #889
+      }
 
       // console.log('colId/field=' + this.col.colDef.field) // DEBUG
       // console.log('colType=' + this.colType) // DEBUG

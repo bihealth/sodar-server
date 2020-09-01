@@ -28,7 +28,11 @@ from samplesheets.models import (
     GenericMaterial,
 )
 from samplesheets.sheet_config import SheetConfigAPI
-from samplesheets.rendering import SampleSheetTableBuilder
+from samplesheets.rendering import (
+    SampleSheetTableBuilder,
+    EDIT_JSON_ATTRS,
+    ATTR_HEADER_MAP,
+)
 from samplesheets.utils import get_comments
 from samplesheets.views import (
     app_settings,
@@ -46,18 +50,6 @@ conf_api = SheetConfigAPI()
 
 
 # Local constants
-EDIT_JSON_ATTRS = [
-    'characteristics',
-    'comments',
-    'factor_values',
-    'parameter_values',
-]
-ATTR_HEADER_MAP = {
-    'characteristics': th.CHARACTERISTICS,
-    'comments': th.COMMENT,
-    'factor_values': th.FACTOR_VALUE,
-    'parameter_values': th.PARAMETER_VALUE,
-}
 EDIT_FIELD_MAP = {
     'array design ref': 'array_design_ref',
     'label': 'extract_label',
