@@ -15,7 +15,7 @@
                      renderData.links.length > 0">
       <span v-if="headerName === 'hpo terms'">
         <b-button
-            class="btn sodar-list-btn"
+            class="btn sodar-list-btn mr-1"
             title="Copy HPO term IDs to clipboard"
             @click="onCopyHpoTerms"
             v-b-tooltip.hover.d300>

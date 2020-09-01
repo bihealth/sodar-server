@@ -31,7 +31,7 @@
               @input="onPasteInput"
               placeholder="Paste"
               title="Paste a copied configuration here"
-              :disabled="enableCopy()"
+              :disabled="!enableCopy()"
               v-b-tooltip.hover>
             </b-form-input>
           </b-input-group>
@@ -242,14 +242,14 @@
             <td>Default Fill</td>
             <td>
               <span class="sodar-ss-vue-column-wrapper"
-                    id="sodar-ss-vue-column-wrapper-default"
-                    title="Fill empty column values with default value on update"
-                    v-b-tooltip.right.hover>
+                    id="sodar-ss-vue-column-wrapper-default">
                 <b-checkbox
                     plain
                     v-model="defaultFill"
                     :disabled="!defaultFillEnable"
-                    id="sodar-ss-vue-column-check-default">
+                    title="Fill empty column values with default value on update"
+                    id="sodar-ss-vue-column-check-default"
+                    v-b-tooltip.right.hover>
                 </b-checkbox>
               </span>
             </td>
