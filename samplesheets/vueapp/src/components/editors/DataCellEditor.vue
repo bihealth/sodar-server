@@ -23,7 +23,8 @@
              v-model="editValue"
              :class="'ag-cell-edit-input ' + getInputClasses()"
              :style="inputStyle"
-             :placeholder="getInputPlaceholder('Value')" />
+             :placeholder="getInputPlaceholder('Value')"
+             @copy="onCopy"/>
     </span>
     <!-- Unit select (in popup) -->
     <select :ref="'unitText'"
@@ -97,6 +98,12 @@ export default Vue.extend({
     },
     isCancelAfterEnd () {
       return true
+    },
+    /* Event handling ------------------------------------------------------- */
+    onCopy (event) {
+      if (event.currentTarget.selectionEnd > event.currentTarget.selectionStart) {
+        this.app.showNotification('Copied', 'success', 1000)
+      }
     },
     /* Helpers -------------------------------------------------------------- */
     selectEmptyValue (value) {
