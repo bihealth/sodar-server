@@ -211,7 +211,13 @@ export default Vue.extend({
       this.isValueArray = true
       this.editValue = this.editValue.join('; ')
     }
-    this.ogEditValue = Object.assign(this.value.value)
+
+    if (this.value.value) {
+      this.ogEditValue = Object.assign(this.value.value)
+    } else {
+      this.ogEditValue = null
+    }
+
     this.headerInfo = this.params.headerInfo
     this.renderInfo = this.params.renderInfo
     this.editConfig = this.params.editConfig
