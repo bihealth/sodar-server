@@ -385,6 +385,13 @@ export default Vue.extend({
         // Set newInit to false as we have data now
         this.value.newInit = false
 
+        // Set unit
+        if (this.value.unit === '' || !this.value.value) {
+          this.value.unit = null
+        } else {
+          this.value.unit = this.editUnit
+        }
+
         // Handle updating/initiating node
         this.app.handleNodeUpdate(
           this.value,
@@ -398,12 +405,6 @@ export default Vue.extend({
           (this.editUnitEnabled &&
           this.value.value &&
           this.ogEditUnit !== this.editUnit)) {
-        // Set unit
-        if (this.value.unit === '' || !this.value.value) {
-          this.value.unit = null
-        } else {
-          this.value.unit = this.editUnit
-        }
         // Update cell (only if we already have the UUID!)
         if (this.value.uuid) {
           this.app.handleCellEdit(this.getUpdateData(), true)

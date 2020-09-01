@@ -6,8 +6,8 @@
        @mouseover="onMouseOver"
        @mouseout="onMouseOut">
     <!-- Value with unit -->
-    <span v-if="colType === 'UNIT'">
-      {{ value.value }} <span v-if="value.hasOwnProperty('unit') && value.unit" class="text-muted">{{ value.unit }}</span>
+    <span v-if="'unit' in value && value.unit">
+      {{ value.value }} <span class="text-muted">{{ value.unit }}</span>
     </span>
     <!-- Ontology links -->
     <span v-else-if="colType === 'ONTOLOGY' &&
