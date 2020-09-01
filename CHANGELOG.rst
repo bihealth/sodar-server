@@ -71,7 +71,7 @@ Fixed
     - Data material name regex not accepting common file name characters (#875)
     - Incorrect padding for edit button in field header CSS (#862)
     - Prevent user for enabling unit for columns where it isn't supported (#889)
-    - Errors in handling keyboard events for option select in ``DataCellEditor`` (#917)
+    - Keyboard event handling issues in ``DataCellEditor`` (#690, #917, #919)
 
 
 v0.7.1 (2020-04-27)

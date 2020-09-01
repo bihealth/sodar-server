@@ -7,8 +7,7 @@
     <span v-if="editorType === 'select'">
       <select :ref="'input'"
               v-model="editValue"
-              :class="'ag-cell-edit-input ' + getSelectClass()"
-              @keydown="onKeyDown($event)">
+              :class="'ag-cell-edit-input ' + getSelectClass()">
         <option value="" :selected="selectEmptyValue(editValue)">-</option>
         <option v-for="(val, index) in editConfig.options"
                 :key="index"
@@ -24,7 +23,6 @@
              v-model="editValue"
              :class="'ag-cell-edit-input ' + getInputClasses()"
              :style="inputStyle"
-             @keydown="onKeyDown($event)"
              :placeholder="getInputPlaceholder('Value')" />
     </span>
     <!-- Unit select (in popup) -->
@@ -99,35 +97,6 @@ export default Vue.extend({
     },
     isCancelAfterEnd () {
       return true
-    },
-    /* Event handling ------------------------------------------------------- */
-    onKeyDown (event) {
-      if (this.editorType === 'select') return // Omit this if not in text edit
-      const keyCode = this.getKeyCode(event)
-
-      // Handle navigation keycodes
-      // TODO: Better way to do this? event.stopPropagation() fails (see #690)
-      if (navKeyCodes.indexOf(keyCode) !== -1) {
-        let caretPos = event.currentTarget.selectionStart
-
-        if (keyCode === 33 || keyCode === 36) { // PgUp/Home
-          caretPos = 0
-        } else if (keyCode === 34 || keyCode === 35) { // PgDown/End
-          caretPos = event.currentTarget.value.length
-        } else if (keyCode === 37) { // Left
-          if (caretPos >= 1) {
-            caretPos = caretPos - 1
-          } else {
-            caretPos = 0
-          }
-        } else if (keyCode === 39) { // Right
-          caretPos = caretPos + 1
-        }
-
-        this.$nextTick(() => {
-          event.currentTarget.setSelectionRange(caretPos, caretPos)
-        })
-      }
     },
     /* Helpers -------------------------------------------------------------- */
     selectEmptyValue (value) {
@@ -320,7 +289,6 @@ export default Vue.extend({
     }
 
     // Prevent keyboard navigation in parent when editing
-    // See onKeyDown() for manual in-cell editing
     this.params.colDef.suppressKeyboardEvent = function (params) {
       if (params.event.shiftKey) { // Key combinations break event keyCode
         return false
