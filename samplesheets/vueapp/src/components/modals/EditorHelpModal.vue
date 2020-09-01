@@ -89,7 +89,7 @@
               at the bottom of the table when inserted. They <em>may</em> appear
               with a different placement once exiting edit mode.
             </li>
-            <li>Rows are only saved once you click the "Save row" icon.</li>
+            <li>Rows are only saved when you click the "Save row" icon.</li>
             <li>
               Currently, you are expected to fill in nodes from left to
               right. New nodes will become available once preceeding nodes are
@@ -99,9 +99,19 @@
               Default protocols will be filled in automatically, as will default
               values for other columns.
             </li>
+            <li>
+              You can set a <em>default suffix</em> for materials (other than
+              sources or data files) which enables automatically creating
+              material nodes on row insert.
+            </li>
             <li>New sources and samples can only be created in the study table.</li>
             <li>All nodes on a row must be defined to enable saving the row.</li>
             <li>Unnamed data materials are allowed.</li>
+            <li>
+              <strong>Hint:</strong> It is recommended to first configure the
+              editing of columns for desired format and default values, before
+              going forward with row insertion.
+            </li>
           </ul>
         <li><u>Row Deleting</u></li>
           <ul>
