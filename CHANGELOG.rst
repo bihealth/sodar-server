@@ -68,6 +68,7 @@ Fixed
     - Whole cell copying active when in cell edit mode (#882)
     - File link CSS in edit mode (#896)
     - Data material name regex not accepting common file name characters (#875)
+    - Incorrect padding for edit button in field header CSS (#862)
 
 
 v0.7.1 (2020-04-27)

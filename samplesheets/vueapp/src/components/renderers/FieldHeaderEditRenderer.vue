@@ -3,7 +3,7 @@
     <span class="ag-header-group-text">
       {{ displayName }}
     </span>
-    <span class="ml-auto pt-1">
+    <span class="ml-auto">
       <b-button
           variant="secondary"
           class="sodar-list-btn sodar-vue-col-config-btn"
