@@ -102,6 +102,7 @@ export default Vue.extend({
     },
     /* Event handling ------------------------------------------------------- */
     onKeyDown (event) {
+      if (this.editorType === 'select') return // Omit this if not in text edit
       const keyCode = this.getKeyCode(event)
 
       // Handle navigation keycodes
