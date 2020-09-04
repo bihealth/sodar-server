@@ -167,7 +167,6 @@ export default Vue.extend(
       },
       getCellData (col) {
         // If referencing an existing node, only provide the UUID
-        // console.dir(col) // DEBUG
         let headerInfo = null
         let objCls = null
 

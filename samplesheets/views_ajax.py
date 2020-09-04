@@ -4,8 +4,6 @@ from altamisa.constants import table_headers as th
 from datetime import datetime as dt
 import json
 from packaging import version
-import random
-import string
 
 from django.conf import settings
 from django.db import transaction
@@ -33,7 +31,7 @@ from samplesheets.rendering import (
     EDIT_JSON_ATTRS,
     ATTR_HEADER_MAP,
 )
-from samplesheets.utils import get_comments
+from samplesheets.utils import get_comments, get_unique_name
 from samplesheets.views import (
     app_settings,
     APP_NAME,
@@ -768,40 +766,6 @@ class SheetRowInsertAjaxView(BaseSheetEditAjaxView):
             return node['cells'][0]['value']
 
     @classmethod
-    def _get_unique_name(cls, study, assay, name, item_type=None):
-        """
-        Return unique name for a node.
-
-        :param study: Study object
-        :param assay: Assay object
-        :param name: Display name for material
-        :param item_type: Item type for materials (string)
-        :return: String
-        """
-
-        # HACK: This will of course not work on empty tables..
-        # TODO: Refactor once we allow creating sheets from scratch
-        study_id = study.arcs[0][0].split('-')[1][1:]
-        assay_id = 0
-
-        if assay and study.assays.all().count() > 1:
-            assay_id = sorted([a.file_name for a in study.assays.all()]).index(
-                assay.file_name
-            )
-
-        return 'p{}-s{}-{}{}{}-{}'.format(
-            study.investigation.project.pk,
-            study_id,
-            'a{}-'.format(assay_id) if assay else '',
-            '{}-'.format(item_type.lower()) if item_type else '',
-            name,
-            ''.join(
-                random.SystemRandom().choice(string.ascii_lowercase)
-                for _ in range(8)
-            ),
-        )
-
-    @classmethod
     def _add_node_attr(cls, node_obj, cell):
         """
         Add common node attribute from cell in a new row node.
@@ -1097,7 +1061,7 @@ class SheetRowInsertAjaxView(BaseSheetEditAjaxView):
                 name = self._get_name(node)
                 protocol = None
                 unique_name = (
-                    self._get_unique_name(study, assay, name) if name else None
+                    get_unique_name(study, assay, name) if name else None
                 )
 
                 # TODO: Can we trust that the protocol always comes first?
@@ -1106,10 +1070,14 @@ class SheetRowInsertAjaxView(BaseSheetEditAjaxView):
                         sodar_uuid=node['cells'][0]['uuid_ref']
                     ).first()
 
-                    if not name:
-                        unique_name = self._get_unique_name(
-                            study, assay, protocol.name
+                    if not protocol:
+                        self._raise_ex(
+                            'Protocol not found with UUID={}'.format(
+                                node['cells'][0]['uuid_ref']
+                            )
                         )
+
+                    unique_name = get_unique_name(study, assay, protocol.name)
 
                 if not name and not protocol:
                     self._raise_ex(
@@ -1154,7 +1122,7 @@ class SheetRowInsertAjaxView(BaseSheetEditAjaxView):
                 obj_kwargs = {
                     'item_type': node['cells'][0]['item_type'],
                     'name': node['cells'][0]['value'],
-                    'unique_name': self._get_unique_name(
+                    'unique_name': get_unique_name(
                         study, assay, name_id, node['cells'][0]['item_type'],
                     ),
                     'study': study,

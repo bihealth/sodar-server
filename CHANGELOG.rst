@@ -31,6 +31,7 @@ Added
     - Sheet config versioning (#904)
     - Automated rebuilding of expired sheet configs (#904)
     - Material name suffix config and automated filling (#912)
+    - ``get_node_obj()`` helper (#922)
 
 Changed
 -------
@@ -72,6 +73,7 @@ Fixed
     - Incorrect padding for edit button in field header CSS (#862)
     - Prevent user for enabling unit for columns where it isn't supported (#889)
     - Keyboard event handling issues in ``DataCellEditor`` (#690, #917, #919)
+    - Do not look for iRODS link columns in vue app if in edit mode (#866)
 
 
 v0.7.1 (2020-04-27)

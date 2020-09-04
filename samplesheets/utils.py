@@ -2,7 +2,9 @@
 
 from openpyxl import Workbook
 from openpyxl.workbook.child import INVALID_TITLE_REGEX
+import random
 import re
+import string
 
 from django.db.models import QuerySet
 from django.urls import reverse
@@ -248,6 +250,59 @@ def get_comments(obj):
     _clean_config(CONFIG_LABEL_CREATE)
     _clean_config(CONFIG_LABEL_OPEN)
     return ret
+
+
+def get_unique_name(study, assay, name, item_type=None):
+    """
+    Return unique name for a node.
+
+    :param study: Study object
+    :param assay: Assay object
+    :param name: Display name for material
+    :param item_type: Item type for materials (string)
+    :return: String
+    """
+
+    # HACK: This will of course not work on empty tables..
+    # TODO: Refactor once we allow creating sheets from scratch
+    study_id = study.arcs[0][0].split('-')[1][1:]
+    assay_id = 0
+
+    if assay and study.assays.all().count() > 1:
+        assay_id = sorted([a.file_name for a in study.assays.all()]).index(
+            assay.file_name
+        )
+
+    return 'p{}-s{}-{}{}{}-{}'.format(
+        study.investigation.project.pk,
+        study_id,
+        'a{}-'.format(assay_id) if assay else '',
+        '{}-'.format(item_type.lower()) if item_type else '',
+        name,
+        ''.join(
+            random.SystemRandom().choice(string.ascii_lowercase + string.digits)
+            for _ in range(8)
+        ),
+    )
+
+
+def get_node_obj(**query_kwargs):
+    """
+    Get either a GenericMaterial or Process based on query kwargs.
+
+    :param query_kwargs: Django query parameters
+    :return: GenericMaterial, Process or None
+    """
+    # TODO: Implement in models as a manager instead? (see issue #922)
+    # TODO: Add parameter to optionally use get() and raise *.DoesNotExist?
+    from samplesheets.models import GenericMaterial, Process
+
+    obj = GenericMaterial.objects.filter(**query_kwargs).first()
+
+    if not obj:
+        obj = Process.objects.filter(**query_kwargs).first()
+
+    return obj
 
 
 def get_config_name(config):

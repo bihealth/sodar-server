@@ -135,8 +135,7 @@
                     :columnDefs="columnDefs.study"
                     :rowData="rowData.study"
                     :gridOptions="gridOptions.study"
-                    :frameworkComponents="frameworkComponents"
-                    @grid-ready="onGridReady">
+                    :frameworkComponents="frameworkComponents">
                 </ag-grid-vue>
               </template>
             </ag-grid-drag-select>
@@ -238,8 +237,7 @@
                     :columnDefs="columnDefs.assays[assayUuid]"
                     :rowData="rowData.assays[assayUuid]"
                     :gridOptions="gridOptions.assays[assayUuid]"
-                    :frameworkComponents="frameworkComponents"
-                    @grid-ready="onGridReady">
+                    :frameworkComponents="frameworkComponents">
                 </ag-grid-vue>
               </ag-grid-drag-select>
             </div>
@@ -417,13 +415,22 @@ export default {
     AgGridVue,
     AgGridDragSelect
   },
+  created () {
+    window.addEventListener('beforeunload', this.onBeforeUnload)
+  },
+  beforeDestroy () {
+    window.removeEventListener('beforeunload', this.onBeforeUnload)
+  },
   methods: {
 
     /* Event Handlers ------------------------------------------------------- */
 
-    onGridReady (params) {
-      // this.gridApi = params.api
-      // this.columnApi = params.columnApi
+    onBeforeUnload (event) {
+      if (this.editMode &&
+          (this.unsavedRow || this.updatingRow)) {
+        event.preventDefault()
+        event.returnValue = ''
+      }
     },
 
     onFilterChange (event) {
@@ -776,16 +783,12 @@ export default {
 
               // Set up cell editor selector
               header.cellEditorSelector = function (params) {
-                // console.log('cellEditorSelector params:') // DEBUG
-                // console.dir(params) // DEBUG
                 let editorName = 'dataCellEditor'
                 // TODO: Refactor so that default params are read from header
                 const editorParams = Object.assign(
                   params.colDef.cellEditorParams
                 )
                 const editContext = editorParams.app.editContext
-                // console.log('editContext:') // DEBUG
-                // console.dir(editContext) // DEBUG
 
                 // If sample name in an assay or an object ref, return selector
                 // TODO: Simplify?
@@ -996,12 +999,17 @@ export default {
         }
 
         // Add study shortcut field
-        if ('shortcuts' in table && !assayMode && table.shortcuts) {
+        if (!this.editMode &&
+            !assayMode &&
+            'shortcuts' in table &&
+            table.shortcuts) {
           row.shortcutLinks = table.shortcuts.data[i]
         }
 
         // Add iRODS field
-        if (this.sodarContext.irods_status && 'irods_paths' in table &&
+        if (!this.editMode &&
+            this.sodarContext.irods_status &&
+            'irods_paths' in table &&
             table.irods_paths.length > 0) {
           row.irodsLinks = table.irods_paths[i]
         }
@@ -1459,13 +1467,11 @@ export default {
     handleNodeUpdate (
       firstCellValue, column, rowNode, gridOptions, gridUuid, createNew
     ) {
-      console.log('handleNodeUpdate() called; colId=' + column.colId) // DEBUG
+      // console.log('handleNodeUpdate() called; colId=' + column.colId) // DEBUG
       const gridApi = gridOptions.api
       const columnApi = gridOptions.columnApi
       const firstColId = column.colId // ID of the identifying node column
       let assayMode = false
-      // console.log('createNew=' + createNew) // DEBUG
-      // console.log('firstColId=' + firstColId) // DEBUG
 
       if (gridUuid in this.sodarContext.studies[this.currentStudyUuid].assays) {
         assayMode = true
@@ -1605,7 +1611,6 @@ export default {
     },
 
     handleRowSave (gridOptions, rowNode, newRowData, assayMode, finishCallback) {
-      console.log('handleRowSave() called') // DEBUG
       let newSample = false
       if (!assayMode && !rowNode.data[this.sampleColId].uuid) newSample = true
       this.updatingRow = true
@@ -1676,7 +1681,6 @@ export default {
                 const sampleUuid = rowNode.data[this.sampleColId].uuid
                 if (!(newRowData.assay in this.editContext.samples[sampleUuid].assays)) {
                   this.editContext.samples[sampleUuid].assays.push(newRowData.assay)
-                  console.log('Added sample to assay') // DEBUG
                 }
               }
 
@@ -1685,7 +1689,6 @@ export default {
               this.unsavedRow = null
               this.editDataUpdated = true
               this.showNotification('Row Inserted', 'success', 1000)
-              console.log('Row insert OK') // DEBUG
             } else {
               console.log('Row insert status: ' + data.message) // DEBUG
               this.showNotification('Insert Failed', 'danger', 1000)
@@ -1699,7 +1702,6 @@ export default {
 
     handleRowDelete (
       gridOptions, gridUuid, rowNode, delRowData, assayMode, finishCallback) {
-      console.log('handleRowDelete() called') // DEBUG
       const newRow = this.unsavedRow &&
           this.unsavedRow.gridUuid === gridUuid &&
           this.unsavedRow.id === rowNode.id
@@ -1762,7 +1764,6 @@ export default {
               })
 
               this.showNotification('Row Deleted', 'success', 1000)
-              console.log('Row delete OK') // DEBUG
             } else {
               console.log('Row delete status: ' + data.message) // DEBUG
               this.showNotification('Delete Failed', 'danger', 1000)

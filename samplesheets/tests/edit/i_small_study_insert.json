@@ -1,0 +1,122 @@
+{
+  "study": "11111111-1111-1111-1111-111111111111",
+  "assay": null,
+  "nodes": [
+    {
+      "cells": [
+        {
+          "value": "0818",
+          "uuid": null,
+          "unit": "",
+          "header_name": "Name",
+          "header_type": "name",
+          "header_field": "col0",
+          "obj_cls": "GenericMaterial",
+          "item_type": "SOURCE"
+        },
+        {
+          "value": {
+            "name": null,
+            "accession": null,
+            "ontology_name": null
+          },
+          "header_name": "organism",
+          "header_type": "characteristics",
+          "header_field": "col1",
+          "obj_cls": "GenericMaterial"
+        },
+        {
+          "value": "170",
+          "unit": "day",
+          "header_name": "age",
+          "header_type": "characteristics",
+          "header_field": "col2",
+          "obj_cls": "GenericMaterial"
+        }
+      ],
+      "headers": [
+        "Source Name",
+        "Characteristics[organism]",
+        "Term Source REF",
+        "Term Accession Number",
+        "Characteristics[age]",
+        "Unit",
+        "Term Source REF",
+        "Term Accession Number"
+      ]
+    },
+    {
+      "cells": [
+        {
+          "uuid": null,
+          "value": "sample collection",
+          "uuid_ref": "11111111-1111-1111-bbbb-000000000000",
+          "header_name": "Protocol",
+          "header_type": "protocol",
+          "header_field": "col3",
+          "obj_cls": "Process"
+        },
+        {
+          "value": "scalpel",
+          "header_name": "instrument",
+          "header_type": "parameter_values",
+          "header_field": "col4",
+          "obj_cls": "Process"
+        },
+        {
+          "value": "John Doe",
+          "header_name": "Performer",
+          "header_type": "performer",
+          "header_field": "col5",
+          "obj_cls": "Process"
+        },
+        {
+          "value": "2020-09-03",
+          "header_name": "Perform Date",
+          "header_type": "perform_date",
+          "header_field": "col6",
+          "obj_cls": "Process"
+        }
+      ],
+      "headers": [
+        "Protocol REF",
+        "Parameter Value[instrument]",
+        "Performer",
+        "Date"
+      ]
+    },
+    {
+      "cells": [
+        {
+          "uuid": null,
+          "value": "0818-N1",
+          "unit": "",
+          "header_name": "Name",
+          "header_type": "name",
+          "header_field": "col7",
+          "obj_cls": "GenericMaterial",
+          "item_type": "SAMPLE"
+        },
+        {
+          "value": "0",
+          "header_name": "status",
+          "header_type": "characteristics",
+          "header_field": "col8",
+          "obj_cls": "GenericMaterial"
+        },
+        {
+          "value": "yes",
+          "header_name": "treatment",
+          "header_type": "factor_values",
+          "header_field": "col9",
+          "obj_cls": "GenericMaterial"
+        }
+      ],
+      "headers": [
+        "Sample Name",
+        "Characteristics[status]",
+        "Factor Value[treatment]"
+      ]
+    }
+  ]
+}
