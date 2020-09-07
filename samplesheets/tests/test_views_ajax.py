@@ -49,6 +49,8 @@ APP_NAME = 'samplesheets'
 EDIT_DIR = os.path.dirname(__file__) + '/edit/'
 STUDY_INSERT_PATH = EDIT_DIR + 'i_small_study_insert.json'
 ASSAY_INSERT_PATH = EDIT_DIR + 'i_small_assay_insert.json'
+ASSAY_INSERT_SPLIT_PATH = EDIT_DIR + 'i_small_assay_insert_split.json'
+ASSAY_INSERT_POOL_PATH = EDIT_DIR + 'i_small_assay_insert_pool.json'
 STUDY_DELETE_PATH = EDIT_DIR + 'i_small_study_delete.json'
 ASSAY_DELETE_PATH = EDIT_DIR + 'i_small_assay_delete.json'
 EDIT_SOURCE_NAME = '0818'
@@ -57,6 +59,89 @@ EDIT_STUDY_PROC_UUID = '11111111-1111-1111-1111-000000000001'
 EDIT_SAMPLE_NAME = '0818-N1'
 EDIT_SAMPLE_UUID = '11111111-1111-1111-5555-000000000000'
 SHEET_PATH_INSERTED = SHEET_DIR_SPECIAL + 'i_small_insert.zip'
+
+
+class RowEditMixin:
+    """Helpers for row insert/deletion"""
+
+    def _insert_row(self, path=None, data=None):
+        """
+        Insert row into database, based on file path or dictionary.
+
+        :param path: String
+        :param data: Dict
+        :return: Response
+        """
+        if not path and not data:
+            raise ValueError('Either path or data required')
+        if path and data:
+            raise ValueError('Provide either path or data')
+
+        values = {'new_row': {}}
+
+        if path:
+            with open(path) as fp:
+                values['new_row'] = json.load(fp)
+        else:
+            values['new_row'] = data
+
+        with self.login(self.user):
+            return self.client.post(
+                reverse(
+                    'samplesheets:ajax_edit_row_insert',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                json.dumps(values),
+                content_type='application/json',
+            )
+
+    def _delete_row(self, path):
+        values = {'del_row': {}}
+
+        with open(path) as fp:
+            values['del_row'] = json.load(fp)
+
+        with self.login(self.user):
+            return self.client.post(
+                reverse(
+                    'samplesheets:ajax_edit_row_delete',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                json.dumps(values),
+                content_type='application/json',
+            )
+
+    def _update_assay_row_uuids(self, update_sample=True):
+        """
+        Update UUIDs for freshly added assay row, set self.row_uuids and
+        self.row_names.
+        """
+        self.assay.refresh_from_db()
+
+        # Update UUIDs in assay
+        self.row_uuids = [
+            '22222222-2222-2222-2222-00000000000' + str(i) for i in range(1, 8)
+        ]
+        self.row_names = []
+
+        n_uuid = EDIT_SAMPLE_UUID
+        u_name = GenericMaterial.objects.get(
+            study=self.study, name=EDIT_SAMPLE_NAME
+        ).unique_name
+
+        for i in range(len(self.row_uuids) + 1):
+            if i > 0 or update_sample:
+                obj = get_node_obj(study=self.study, unique_name=u_name)
+                obj.sodar_uuid = n_uuid
+                obj.save()
+
+            if i < len(self.row_uuids):
+                for a in self.assay.arcs:
+                    if a[0] == u_name:
+                        u_name = a[1]
+                        self.row_names.append(a[1])
+                        break
+                n_uuid = self.row_uuids[i]
 
 
 @skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
@@ -663,7 +748,7 @@ class TestSampleSheetEditAjaxView(TestViewsBase):
         self.assertEqual(obj.name_type, name_type)
 
 
-class TestSheetRowInsertAjaxView(SheetConfigMixin, TestViewsBase):
+class TestSheetRowInsertAjaxView(RowEditMixin, SheetConfigMixin, TestViewsBase):
     """Tests for SheetRowInsertAjaxView"""
 
     def setUp(self):
@@ -684,9 +769,6 @@ class TestSheetRowInsertAjaxView(SheetConfigMixin, TestViewsBase):
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
 
-        # Set up POST data
-        self.values = {'new_row': {}}
-
     def test_insert_study_row(self):
         """Test inserting a new row into a study"""
 
@@ -703,22 +785,29 @@ class TestSheetRowInsertAjaxView(SheetConfigMixin, TestViewsBase):
         protocol = Protocol.objects.get(
             study=self.study, name='sample collection'
         )
+        mat_count = GenericMaterial.objects.filter(
+            study=self.study, assay=None
+        ).count()
+        proc_count = Process.objects.filter(
+            study=self.study, assay=None
+        ).count()
 
-        with open(STUDY_INSERT_PATH) as fp:
-            self.values['new_row'] = json.load(fp)
-
-        with self.login(self.user):
-            response = self.client.post(
-                reverse(
-                    'samplesheets:ajax_edit_row_insert',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                json.dumps(self.values),
-                content_type='application/json',
-            )
+        # Insert row
+        response = self._insert_row(path=STUDY_INSERT_PATH)
 
         # Assert postconditions
         self.assertEqual(response.status_code, 200)
+
+        self.assertEqual(
+            GenericMaterial.objects.filter(
+                study=self.study, assay=None
+            ).count(),
+            mat_count + 2,
+        )
+        self.assertEqual(
+            Process.objects.filter(study=self.study, assay=None).count(),
+            proc_count + 1,
+        )
 
         source = GenericMaterial.objects.get(
             study=self.study, name='0818', item_type='SOURCE'
@@ -751,19 +840,7 @@ class TestSheetRowInsertAjaxView(SheetConfigMixin, TestViewsBase):
         """Test inserting a new row into an assay"""
 
         # Insert study row
-        with open(STUDY_INSERT_PATH) as fp:
-            self.values['new_row'] = json.load(fp)
-
-        with self.login(self.user):
-            response = self.client.post(
-                reverse(
-                    'samplesheets:ajax_edit_row_insert',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                json.dumps(self.values),
-                content_type='application/json',
-            )
-
+        response = self._insert_row(path=STUDY_INSERT_PATH)
         self.assertEqual(response.status_code, 200)
 
         # Update sample UUID
@@ -773,24 +850,39 @@ class TestSheetRowInsertAjaxView(SheetConfigMixin, TestViewsBase):
         sample.sodar_uuid = EDIT_SAMPLE_UUID
         sample.save()
 
-        # Insert assay row
-        with open(ASSAY_INSERT_PATH) as fp:
-            self.values['new_row'] = json.load(fp)
+        mat_count = GenericMaterial.objects.filter(assay=self.assay).count()
+        proc_count = Process.objects.filter(assay=self.assay).count()
+        arc_count = len(self.assay.arcs)
 
-        with self.login(self.user):
-            response = self.client.post(
-                reverse(
-                    'samplesheets:ajax_edit_row_insert',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                json.dumps(self.values),
-                content_type='application/json',
-            )
+        # Insert assay row
+        response = self._insert_row(path=ASSAY_INSERT_PATH)
 
         # Assert postconditions
         self.assertEqual(response.status_code, 200)
         self.assay.refresh_from_db()
         node_names = []
+
+        self.assertEqual(
+            GenericMaterial.objects.filter(assay=self.assay).count(),
+            mat_count + 4,
+        )
+        self.assertEqual(
+            Process.objects.filter(assay=self.assay).count(), proc_count + 3,
+        )
+
+        self.assertEqual(
+            GenericMaterial.objects.filter(
+                name=EDIT_SOURCE_NAME, item_type='SOURCE'
+            ).count(),
+            1,
+        )
+        self.assertEqual(
+            GenericMaterial.objects.filter(
+                name=EDIT_SAMPLE_NAME, item_type='SAMPLE'
+            ).count(),
+            1,
+        )
+        self.assertEqual(len(self.assay.arcs), arc_count + 7)
 
         for uuid in response.data['node_uuids']:
             obj = GenericMaterial.objects.filter(sodar_uuid=uuid).first()
@@ -804,8 +896,72 @@ class TestSheetRowInsertAjaxView(SheetConfigMixin, TestViewsBase):
         for i in range(len(node_names) - 1):
             self.assertIn([node_names[i], node_names[i + 1]], self.assay.arcs)
 
+    def test_insert_assay_row_split(self):
+        """Test inserting a row with splitting into an assay"""
 
-class TestSheetRowDeleteAjaxView(SheetConfigMixin, TestViewsBase):
+        # Insert study and assay rows
+        self._insert_row(path=STUDY_INSERT_PATH)
+        sample = GenericMaterial.objects.get(
+            study=self.study, name=EDIT_SAMPLE_NAME
+        )
+        sample.sodar_uuid = EDIT_SAMPLE_UUID
+        sample.save()
+        self._insert_row(path=ASSAY_INSERT_PATH)
+
+        self._update_assay_row_uuids(update_sample=False)
+        mat_count = GenericMaterial.objects.filter(assay=self.assay).count()
+        proc_count = Process.objects.filter(assay=self.assay).count()
+        arc_count = len(self.assay.arcs)
+
+        # Insert new row
+        response = self._insert_row(path=ASSAY_INSERT_SPLIT_PATH)
+
+        # Assert postconditions
+        self.assertEqual(response.status_code, 200)
+        self.assay.refresh_from_db()
+        self.assertEqual(
+            GenericMaterial.objects.filter(assay=self.assay).count(),
+            mat_count + 1,
+        )
+        self.assertEqual(
+            Process.objects.filter(assay=self.assay).count(), proc_count
+        )
+        self.assertEqual(len(self.assay.arcs), arc_count + 1)
+
+    def test_insert_assay_row_pool(self):
+        """Test inserting a row with pooling into an assay"""
+
+        # Insert study and assay rows
+        self._insert_row(path=STUDY_INSERT_PATH)
+        sample = GenericMaterial.objects.get(
+            study=self.study, name=EDIT_SAMPLE_NAME
+        )
+        sample.sodar_uuid = EDIT_SAMPLE_UUID
+        sample.save()
+        self._insert_row(path=ASSAY_INSERT_PATH)
+
+        self._update_assay_row_uuids(update_sample=False)
+        mat_count = GenericMaterial.objects.filter(assay=self.assay).count()
+        proc_count = Process.objects.filter(assay=self.assay).count()
+        arc_count = len(self.assay.arcs)
+
+        # Insert new row
+        response = self._insert_row(path=ASSAY_INSERT_POOL_PATH)
+
+        # Assert postconditions
+        self.assertEqual(response.status_code, 200)
+        self.assay.refresh_from_db()
+        self.assertEqual(
+            GenericMaterial.objects.filter(assay=self.assay).count(),
+            mat_count + 3,
+        )
+        self.assertEqual(
+            Process.objects.filter(assay=self.assay).count(), proc_count + 3
+        )
+        self.assertEqual(len(self.assay.arcs), arc_count + 7)
+
+
+class TestSheetRowDeleteAjaxView(RowEditMixin, SheetConfigMixin, TestViewsBase):
     """Tests for SheetRowDeleteAjaxView"""
 
     def setUp(self):
@@ -844,47 +1000,11 @@ class TestSheetRowDeleteAjaxView(SheetConfigMixin, TestViewsBase):
         proc.save()
 
         # Update UUIDs in assay
-        self.row_uuids = [
-            '22222222-2222-2222-2222-00000000000' + str(i) for i in range(1, 8)
-        ]
-        self.row_names = []
-
-        n_uuid = EDIT_SAMPLE_UUID
-        u_name = GenericMaterial.objects.get(
-            study=self.study, name=EDIT_SAMPLE_NAME
-        ).unique_name
-
-        for i in range(len(self.row_uuids) + 1):
-            obj = get_node_obj(study=self.study, unique_name=u_name)
-            obj.sodar_uuid = n_uuid
-            obj.save()
-
-            if i < len(self.row_uuids):
-                for a in self.assay.arcs:
-                    if a[0] == u_name:
-                        u_name = a[1]
-                        self.row_names.append(a[1])
-                        break
-                n_uuid = self.row_uuids[i]
-
-        # Set up POST data
-        self.values = {'del_row': {}}
+        self._update_assay_row_uuids()
 
     def test_delete_assay_row(self):
         """Test row deletion from assay"""
-
-        with open(ASSAY_DELETE_PATH) as fp:
-            self.values['del_row'] = json.load(fp)
-
-        with self.login(self.user):
-            response = self.client.post(
-                reverse(
-                    'samplesheets:ajax_edit_row_delete',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                json.dumps(self.values),
-                content_type='application/json',
-            )
+        response = self._delete_row(ASSAY_DELETE_PATH)
 
         # Assert postconditions
         self.assertEqual(response.status_code, 200)
@@ -907,34 +1027,11 @@ class TestSheetRowDeleteAjaxView(SheetConfigMixin, TestViewsBase):
         """Test row deletion from study"""
 
         # First delete the assay row
-        with open(ASSAY_DELETE_PATH) as fp:
-            self.values['del_row'] = json.load(fp)
-
-        with self.login(self.user):
-            response = self.client.post(
-                reverse(
-                    'samplesheets:ajax_edit_row_delete',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                json.dumps(self.values),
-                content_type='application/json',
-            )
-
+        response = self._delete_row(ASSAY_DELETE_PATH)
         self.assertEqual(response.status_code, 200)
 
         # Delete the study row
-        with open(STUDY_DELETE_PATH) as fp:
-            self.values['del_row'] = json.load(fp)
-
-        with self.login(self.user):
-            response = self.client.post(
-                reverse(
-                    'samplesheets:ajax_edit_row_delete',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                json.dumps(self.values),
-                content_type='application/json',
-            )
+        response = self._delete_row(STUDY_DELETE_PATH)
 
         # Assert postconditions
         self.assertEqual(response.status_code, 200)
@@ -958,18 +1055,7 @@ class TestSheetRowDeleteAjaxView(SheetConfigMixin, TestViewsBase):
         """Test study row deletion with sample used in asssay (should fail)"""
 
         # Delete the study row
-        with open(STUDY_DELETE_PATH) as fp:
-            self.values['del_row'] = json.load(fp)
-
-        with self.login(self.user):
-            response = self.client.post(
-                reverse(
-                    'samplesheets:ajax_edit_row_delete',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                json.dumps(self.values),
-                content_type='application/json',
-            )
+        response = self._delete_row(STUDY_DELETE_PATH)
 
         # Assert postconditions
         self.assertEqual(response.status_code, 500)
@@ -989,7 +1075,7 @@ class TestSheetRowDeleteAjaxView(SheetConfigMixin, TestViewsBase):
             ).first()
         )
 
-    # TODO: Test deletion with splitting/pooling after fixing #923 and #924
+    # TODO: Test deletion with splitting/pooling
 
 
 class TestSampleSheetEditFinishAjaxView(TestViewsBase):

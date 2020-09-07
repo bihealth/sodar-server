@@ -30,18 +30,10 @@
     {
       "cells": [
         {
-          "uuid": null,
-          "value": "0818-N1-DNA1",
-          "unit": "",
-          "header_name": "Name",
-          "header_type": "name",
-          "header_field": "col11",
+          "uuid": "22222222-2222-2222-2222-000000000002",
           "obj_cls": "GenericMaterial",
-          "item_type": "MATERIAL"
+          "value": "0818-N1-DNA1"
         }
-      ],
-      "headers": [
-        "Library Name"
       ]
     },
     {
@@ -72,35 +64,19 @@
     {
       "cells": [
         {
-          "uuid": null,
-          "value": "0818-N1-DNA1-WES1-R1.fastq.qz",
-          "unit": "",
-          "header_name": "Name",
-          "header_type": "name",
-          "header_field": "col14",
+          "uuid": "22222222-2222-2222-2222-000000000004",
           "obj_cls": "GenericMaterial",
-          "item_type": "DATA"
+          "value": "0818-N1-DNA1-WES1-R1.fastq.qz"
         }
-      ],
-      "headers": [
-        "Raw Data File"
       ]
     },
     {
       "cells": [
         {
-          "uuid": null,
-          "value": "0818-N1-DNA1-WES1-R2.fastq.qz",
-          "unit": "",
-          "header_name": "Name",
-          "header_type": "name",
-          "header_field": "col15",
+          "uuid": "22222222-2222-2222-2222-000000000005",
           "obj_cls": "GenericMaterial",
-          "item_type": "DATA"
+          "value": "0818-N1-DNA1-WES1-R2.fastq.qz"
         }
-      ],
-      "headers": [
-        "Raw Data File"
       ]
     },
     {
@@ -123,7 +99,7 @@
       "cells": [
         {
           "uuid": null,
-          "value": "new-somatic.vcf.gz",
+          "value": "0818-somatic_SPLIT_HERE.vcf.gz",
           "unit": "",
           "header_name": "Name",
           "header_type": "name",

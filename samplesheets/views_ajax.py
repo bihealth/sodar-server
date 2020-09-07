@@ -887,6 +887,7 @@ class SheetRowInsertAjaxView(BaseSheetEditAjaxView):
             iter_idx = 0
             same_protocol = False
             prev_old_uuid = None
+            prev_old_name = None
             next_old_uuid = None
 
             # TODO: Can we trust that the protocol always comes first in node?
@@ -903,13 +904,14 @@ class SheetRowInsertAjaxView(BaseSheetEditAjaxView):
                     and comp_row[iter_idx]['value']
                 ):
                     prev_old_uuid = comp_row[iter_idx]['uuid']
+                    prev_old_name = comp_row[iter_idx]['value']
 
                 iter_idx += 1
 
             if prev_old_uuid:
                 logger.debug(
-                    'Collapse: Found previous named node "{}"'.format(
-                        comp_row[iter_idx - 1]['value']
+                    'Collapse: Found previous named node "{}" (UUID={})'.format(
+                        prev_old_name, prev_old_uuid
                     )
                 )
 
@@ -925,8 +927,9 @@ class SheetRowInsertAjaxView(BaseSheetEditAjaxView):
                     ):
                         next_old_uuid = comp_row[iter_idx]['uuid']
                         logger.debug(
-                            'Collapse: Found next named node "{}"'.format(
-                                comp_row[iter_idx]['value']
+                            'Collapse: Found next named node "{}" '
+                            '(UUID={})'.format(
+                                comp_row[iter_idx]['value'], next_old_uuid
                             )
                         )
                         break
@@ -1017,33 +1020,40 @@ class SheetRowInsertAjaxView(BaseSheetEditAjaxView):
         # Retrieve/build row nodes
         for node in row['nodes']:
             # logger.debug('Node headers: {}'.format(node['headers']))  # DEBUG
+            name = self._get_name(node)
+            new_node = True
+            node_obj = None
+            obj_cls = node['cells'][0]['obj_cls']
+            uuid = node['cells'][0].get('uuid')
 
             ################
             # Existing Node
             ################
 
-            if node['cells'][0].get('uuid'):
-                new_node = False
-                node_obj = None
+            if uuid:
                 # Could also use eval() but it's unsafe
-                if node['cells'][0]['obj_cls'] == 'GenericMaterial':
+                if obj_cls == 'GenericMaterial':
                     node_obj = GenericMaterial.objects.filter(
-                        sodar_uuid=node['cells'][0]['uuid']
+                        sodar_uuid=uuid
                     ).first()
 
-                elif node['cells'][0]['obj_cls'] == 'Process':
-                    node_obj = Process.objects.filter(
-                        sodar_uuid=node['cells'][0]['obj_cls']
-                    ).first()
+                elif obj_cls == 'Process':
+                    node_obj = Process.objects.filter(sodar_uuid=uuid).first()
 
                 if not node_obj:
                     self._raise_ex(
-                        '{} not found (UUID={})'.format(
-                            node['cells'][0]['obj_cls'],
-                            node['cells'][0]['uuid'],
-                        )
+                        '{} not found (UUID={})'.format(obj_cls, uuid)
                     )
 
+            # Named process is a special case
+            # TODO: Also check column!
+            elif obj_cls == 'Process' and name:
+                node_obj = Process.objects.filter(
+                    study=study, assay=assay, name=name
+                ).first()
+
+            if node_obj:
+                new_node = False
                 logger.debug(
                     'Node {}: Existing {} {}'.format(
                         node_count,
@@ -1056,9 +1066,7 @@ class SheetRowInsertAjaxView(BaseSheetEditAjaxView):
             # New Process
             ##############
 
-            elif node['cells'][0]['obj_cls'] == 'Process':
-                new_node = True
-                name = self._get_name(node)
+            if not node_obj and obj_cls == 'Process':
                 protocol = None
                 unique_name = (
                     get_unique_name(study, assay, name) if name else None
@@ -1112,8 +1120,7 @@ class SheetRowInsertAjaxView(BaseSheetEditAjaxView):
             # New Material
             ###############
 
-            else:
-                new_node = True
+            elif not node_obj and obj_cls == 'GenericMaterial':
                 name_id = node['cells'][0]['value']
 
                 if not name_id:
@@ -1188,8 +1195,13 @@ class SheetRowInsertAjaxView(BaseSheetEditAjaxView):
                 [node_objects[i].unique_name, node_objects[i + 1].unique_name]
             )
 
-        parent.arcs += row_arcs
         logger.debug('Row Arcs: {}'.format(row_arcs))
+
+        # Add new arcs to parent
+        for a in row_arcs:
+            if a not in parent.arcs:
+                parent.arcs.append(a)
+
         parent.save()
 
         # Attempt to export investigation with altamISA
@@ -1307,6 +1319,7 @@ class SheetRowDeleteAjaxView(BaseSheetEditAjaxView):
         study_nodes = ref_study.get_nodes()
         all_refs = tb.build_study_reference(ref_study, study_nodes)
         sample_idx = tb.get_sample_idx(all_refs)
+        arc_del_count = 0
 
         if parent == study:
             table_refs = tb.get_study_refs(all_refs, sample_idx)
@@ -1357,6 +1370,11 @@ class SheetRowDeleteAjaxView(BaseSheetEditAjaxView):
                     parent == study or i - 1 != sample_idx
                 ):
                     self._delete_node(ui_nodes[i])
+
+                arc_del_count += 1
+
+        if arc_del_count == 0:
+            self._raise_ex('Did not find arcs to remove')
 
         # Attempt to export investigation with altamISA
         try:
