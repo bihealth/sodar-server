@@ -27,6 +27,7 @@ export default Vue.extend({
       gridOptions: null,
       headerInfo: null,
       renderInfo: null,
+      editAllowed: true,
       editConfig: null,
       selectOptions: null,
       headerType: null,
@@ -86,7 +87,15 @@ export default Vue.extend({
   },
   created () {
     this.app = this.params.app
-    this.app.selectEnabled = false // Disable editing
+    this.gridOptions = this.app.getGridOptionsByUuid(this.params.gridUuid)
+
+    // Cancel editing if editingCell is true
+    if (this.app.editingCell) {
+      this.editAllowed = false
+      this.gridOptions.api.stopEditing(true)
+    }
+
+    this.app.selectEnabled = false // Disable cell selection
     this.value = this.params.value
     this.editValue = { uuid: this.value.uuid_ref, name: this.value.value }
     this.ogEditValue = Object.assign(this.editValue)
@@ -96,7 +105,6 @@ export default Vue.extend({
     this.selectOptions = this.params.selectOptions
 
     // Get current grid options for grid/column API access
-    this.gridOptions = this.app.getGridOptionsByUuid(this.params.gridUuid)
 
     // Special setup for the name column
     /*
@@ -134,6 +142,7 @@ export default Vue.extend({
       } else {
         this.app.handleCellEdit(this.getUpdateData(), true)
       }
+      if (this.editAllowed) this.app.editingCell = false
       this.app.selectEnabled = true
     }
   }

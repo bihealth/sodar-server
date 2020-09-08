@@ -57,6 +57,7 @@ export default Vue.extend({
       gridOptions: null,
       headerInfo: null,
       renderInfo: null,
+      editAllowed: true,
       editConfig: null,
       editorType: 'text',
       regex: null,
@@ -211,7 +212,16 @@ export default Vue.extend({
   },
   created () {
     this.app = this.params.app
-    this.app.selectEnabled = false // Disable editing
+    this.gridOptions = this.app.getGridOptionsByUuid(this.params.gridUuid)
+
+    // Cancel editing if editingCell is true
+    if (this.app.editingCell) {
+      this.editAllowed = false
+      this.gridOptions.api.stopEditing(true)
+    }
+
+    this.app.editingCell = true // Disallow editing multiple cells
+    this.app.selectEnabled = false // Disable cell selection
     this.value = this.params.value
     this.editValue = this.params.value.value || ''
     if (Array.isArray(this.editValue)) {
@@ -229,9 +239,6 @@ export default Vue.extend({
     this.renderInfo = this.params.renderInfo
     this.editConfig = this.params.editConfig
     this.sampleColId = this.params.sampleColId
-
-    // Get current grid options for grid/column API access
-    this.gridOptions = this.app.getGridOptionsByUuid(this.params.gridUuid)
 
     // console.log('Edit colId/field: ' + this.params.colDef.field) // DEBUG
 
@@ -397,6 +404,7 @@ export default Vue.extend({
           }
         }
       }
+      if (this.editAllowed) this.app.editingCell = false
       this.params.colDef.suppressKeyboardEvent = false
       this.app.selectEnabled = true
     }

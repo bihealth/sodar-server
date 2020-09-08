@@ -392,6 +392,7 @@ export default {
       sampleIdx: null,
       unsavedRow: null, // Info of currently unsaved row, or null if none
       updatingRow: false, // Row update in progress (bool)
+      editingCell: false, // Cell editing in progress (bool)
       contentId: 'sodar-ss-vue-content',
       /* NOTE: cell editor only works if provided through frameworkComponents? */
       frameworkComponents: {
