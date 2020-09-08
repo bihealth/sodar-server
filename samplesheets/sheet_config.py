@@ -7,6 +7,7 @@ from django.conf import settings
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
 
+from samplesheets.models import Protocol
 from samplesheets.rendering import SampleSheetTableBuilder
 
 
@@ -24,11 +25,66 @@ APP_NAME = 'samplesheets'
 class SheetConfigAPI:
     """API for sample sheet edit and display configuration management"""
 
-    def get_sheet_config(self, investigation):
+    @classmethod
+    def _get_default_protocol(cls, investigation, render_table, idx):
+        """
+        Get UUID of a default protocol for a column.
+
+        :param investigation: Investigation object
+        :param render_table: Table from SampleSheetTableBuilder (dict)
+        :param idx: Index for lookup (int)
+        :return: String or None
+        """
+        p_name = None
+        p_found = False
+        protocol = None
+
+        for row in render_table['table_data']:
+            if not p_name and row[idx]['value']:
+                p_name = row[idx]['value']
+                p_found = True
+
+            elif p_name and row[idx]['value'] != p_name:
+                p_found = False
+                break
+
+        if p_found:
+            protocol = Protocol.objects.filter(
+                study__investigation=investigation, name=p_name,
+            ).first()
+
+        if protocol:
+            return str(protocol.sodar_uuid)
+
+    @classmethod
+    def _restore_config_table(
+        cls, investigation, render_table, config_table, start_idx=0
+    ):
+        """
+        Update sheet config for a restore action for a single study/assay table.
+
+        :param investigation: Investigation object
+        :param render_table: Table from SampleSheetTableBuilder (dict)
+        :param config_table: Table in an existing sheet config (dict)
+        :param start_idx: Starting index for table
+        """
+        i = start_idx
+        for node in config_table['nodes']:
+            for field in node['fields']:
+                if field.get('type') == 'protocol':
+                    field['default'] = cls._get_default_protocol(
+                        investigation, render_table, i
+                    )
+                    field['format'] = 'protocol'
+                i += 1
+        return config_table
+
+    def get_sheet_config(self, investigation, restore=False):
         """
         Get or build a sheet edit configuration for an investigation.
 
         :param investigation: Investigation object
+        :param restore: Process config for restore if true (bool)
         :return: Dict
         """
         sheet_config = app_settings.get_app_setting(
@@ -82,8 +138,6 @@ class SheetConfigAPI:
         }
 
         def _build_nodes(study_tables, assay_uuid=None):
-            from samplesheets.models import Protocol
-
             nodes = []
             sample_found = False
             ti = 0
@@ -107,28 +161,10 @@ class SheetConfigAPI:
 
                         # Set up default protocol if only one option in data
                         if h['type'] == 'protocol':
-                            p_name = None
-                            p_found = False
-                            protocol = None
-
-                            for row in table['table_data']:
-                                if not p_name and row[i]['value']:
-                                    p_name = row[i]['value']
-                                    p_found = True
-
-                                elif p_name and row[i]['value'] != p_name:
-                                    p_found = False
-                                    break
-
-                            if p_found:
-                                protocol = Protocol.objects.filter(
-                                    study__investigation=investigation,
-                                    name=p_name,
-                                ).first()
-
-                            if protocol:
-                                f['default'] = str(protocol.sodar_uuid)
-                                f['format'] = 'protocol'
+                            f['format'] = 'protocol'
+                            f['default'] = cls._get_default_protocol(
+                                investigation, table, i
+                            )
 
                         node['fields'].append(f)
 
@@ -190,6 +226,47 @@ class SheetConfigAPI:
                     cfg_version, min_version
                 )
             )
+
+    @classmethod
+    def restore_sheet_config(cls, investigation, sheet_config):
+        """
+        Update sheet config on sample sheet restore.
+
+        :param investigation: Investigation object
+        :param sheet_config: Sheet editing configuration (dict)
+        """
+        logger.info('Updating restored sheet config..')
+        tb = SampleSheetTableBuilder()
+
+        for study in investigation.studies.all():
+            study_tables = tb.build_study_tables(
+                study, edit=True, use_config=False
+            )
+            s_uuid = str(study.sodar_uuid)
+            sheet_config['studies'][s_uuid] = cls._restore_config_table(
+                investigation,
+                study_tables['study'],
+                sheet_config['studies'][s_uuid],
+            )
+
+            for assay in study.assays.all():
+                a_uuid = str(assay.sodar_uuid)
+                sheet_config['studies'][s_uuid]['assays'][
+                    a_uuid
+                ] = cls._restore_config_table(
+                    investigation,
+                    study_tables['assays'][a_uuid],
+                    sheet_config['studies'][s_uuid]['assays'][a_uuid],
+                    start_idx=len(study_tables['study']['field_header']),
+                )
+
+        app_settings.set_app_setting(
+            APP_NAME,
+            'sheet_config',
+            sheet_config,
+            project=investigation.project,
+        )
+        logger.info('Restored sheet config updated')
 
     @classmethod
     def build_display_config(cls, investigation, sheet_config):

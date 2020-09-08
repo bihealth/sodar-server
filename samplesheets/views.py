@@ -311,6 +311,7 @@ class SampleSheetImportMixin:
 
             try:
                 conf_api.validate_sheet_config(sheet_config)
+                conf_api.restore_sheet_config(investigation, sheet_config)
 
             except ValueError:
                 sheet_config_valid = False

@@ -1,6 +1,7 @@
 """Tests for SheetConfigAPI"""
 import json
 import os
+import uuid
 
 from test_plus.test import TestCase
 
@@ -86,6 +87,54 @@ class SheetConfigMixin:
             for i in range(len(protocols)):
                 protocols[i].sodar_uuid = CONFIG_PROTOCOL_UUIDS[i]
                 protocols[i].save()
+
+    @classmethod
+    def _randomize_protocol_uuids(cls, sheet_config):
+        """
+        Randomize protocol UUIDs to simulate configuration restore from an
+        older version.
+
+        :param sheet_config: Dict
+        """
+
+        def _randomize_table(t):
+            for n in t['nodes']:
+                for f in n['fields']:
+                    if f['type'] == 'protocol':
+                        f['default'] = str(uuid.uuid4())
+
+        for s in sheet_config['studies'].values():
+            _randomize_table(s)
+
+            for a in s['assays'].values():
+                _randomize_table(a)
+
+    def _assert_protocol_uuids(self, sheet_config, expected=True):
+        """
+        Assert validity of protocol references in sheet config.
+
+        :param sheet_config: Dict
+        :param expected: Whether reference should be correct (bool)
+        :return:
+        """
+
+        def _assert_table(t):
+            for n in t['nodes']:
+                for f in n['fields']:
+                    if f['type'] == 'protocol':
+                        p = Protocol.objects.filter(
+                            sodar_uuid=f.get('default')
+                        ).first()
+                        if expected:
+                            self.assertIsNotNone(p)
+                        else:
+                            self.assertIsNone(p)
+
+        for s in sheet_config['studies'].values():
+            _assert_table(s)
+
+            for a in s['assays'].values():
+                _assert_table(a)
 
 
 class TestSheetConfig(
@@ -227,6 +276,20 @@ class TestSheetConfig(
         self.assertEqual(
             sheet_config['version'], settings.SHEETS_CONFIG_VERSION
         )
+
+    def test_restore_sheet_config(self):
+        """Test restore_sheet_config()"""
+        sheet_config = conf_api.build_sheet_config(self.investigation)
+        # Set invalid protocol UUIDs
+        self._randomize_protocol_uuids(sheet_config)
+
+        # Assert preconditions
+        self._assert_protocol_uuids(sheet_config, expected=False)
+
+        conf_api.restore_sheet_config(self.investigation, sheet_config)
+
+        # Assert postconditions
+        self._assert_protocol_uuids(sheet_config, expected=True)
 
 
 class TestDisplayConfig(
