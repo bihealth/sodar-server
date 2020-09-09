@@ -133,6 +133,7 @@ export default Vue.extend({
     },
     getValidState () {
       if (this.headerInfo.header_type === 'name') { // Name is a special case
+        // TODO: Cleanup/simplify
         // NOTE: Empty value is allowed for DATA materials
         if ((this.editValue.length === 0 &&
             'item_type' in this.headerInfo &&
@@ -141,6 +142,12 @@ export default Vue.extend({
             !this.value.newRow &&
             this.editValue !== this.ogEditValue &&
             this.nameValues.includes(this.editValue))) {
+          return false
+        }
+        // Prevent pooling of samples
+        if (this.params.colDef.field === this.sampleColId &&
+            this.editValue !== this.ogEditValue &&
+            this.nameValues.includes(this.editValue)) {
           return false
         }
       } else if (this.editValue !== '') {
