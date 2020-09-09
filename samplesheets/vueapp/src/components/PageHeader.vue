@@ -118,9 +118,15 @@
           <i class="fa fa-fw fa-upload"></i> Replace ISAtab
         </b-dropdown-item>
         <b-dropdown-item
-            v-if="app.sheetsAvailable"
+            v-if="app.sheetsAvailable && !app.windowsOs"
             class="sodar-ss-op-item"
             :href="'export/isa/' + app.projectUuid">
+          <i class="fa fa-fw fa-download"></i> Export ISAtab
+        </b-dropdown-item>
+        <b-dropdown-item
+            v-if="app.sheetsAvailable && app.windowsOs"
+            class="sodar-ss-op-item"
+            @click="app.$refs.winExportModal.showModal()">
           <i class="fa fa-fw fa-download"></i> Export ISAtab
         </b-dropdown-item>
         <b-dropdown-item
@@ -181,6 +187,9 @@ export default {
     }
   },
   methods: {
+    onWindowsExportClick (event) {
+      console.log('Clicked on windows!')
+    },
     getStudyNavTitle (studyName) {
       if (studyName.length > 20) {
         return studyName

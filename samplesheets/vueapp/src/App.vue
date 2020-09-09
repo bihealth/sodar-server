@@ -285,6 +285,13 @@
 
     </div> <!-- Main container -->
 
+    <!-- Editing: Editor help modal -->
+    <win-export-modal
+        v-if="windowsOs"
+        :app="getApp()"
+        ref="winExportModal">
+    </win-export-modal>
+
     <!-- iRODS directory listing modal -->
     <irods-dir-modal
         v-if="sodarContext"
@@ -338,6 +345,7 @@ import ShortcutModal from './components/modals/ShortcutModal.vue'
 import ColumnToggleModal from './components/modals/ColumnToggleModal.vue'
 import ColumnConfigModal from './components/modals/ColumnConfigModal.vue'
 import EditorHelpModal from './components/modals/EditorHelpModal.vue'
+import WinExportModal from './components/modals/WinExportModal.vue'
 import IrodsStatsBadge from './components/IrodsStatsBadge.vue'
 import AssayShortcutCard from './components/AssayShortcutCard.vue'
 import { AgGridVue } from 'ag-grid-vue'
@@ -349,6 +357,8 @@ import RowEditRenderer from './components/renderers/RowEditRenderer.vue'
 import DataCellEditor from './components/editors/DataCellEditor.vue'
 import ObjectSelectEditor from './components/editors/ObjectSelectEditor.vue'
 import AgGridDragSelect from './components/AgGridDragSelect.vue'
+
+const windowsPlatforms = ['Win32', 'Win64', 'Windows', 'WinCE']
 
 export default {
   name: 'App',
@@ -394,6 +404,7 @@ export default {
       updatingRow: false, // Row update in progress (bool)
       editingCell: false, // Cell editing in progress (bool)
       contentId: 'sodar-ss-vue-content',
+      windowsOs: false,
       /* NOTE: cell editor only works if provided through frameworkComponents? */
       frameworkComponents: {
         dataCellEditor: DataCellEditor,
@@ -411,12 +422,16 @@ export default {
     ColumnToggleModal,
     ColumnConfigModal,
     EditorHelpModal,
+    WinExportModal,
     IrodsStatsBadge,
     AssayShortcutCard,
     AgGridVue,
     AgGridDragSelect
   },
   created () {
+    if (windowsPlatforms.includes(window.navigator.platform)) {
+      this.windowsOs = true
+    }
     window.addEventListener('beforeunload', this.onBeforeUnload)
   },
   beforeDestroy () {

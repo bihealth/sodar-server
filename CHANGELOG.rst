@@ -33,6 +33,7 @@ Added
     - Material name suffix config and automated filling (#912)
     - ``get_node_obj()`` helper (#922)
     - Update sheet config default protocols on sheet restore (#901)
+    - Export unarchiving notification for Windows users (#894)
 
 Changed
 -------
