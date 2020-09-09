@@ -38,7 +38,7 @@ Changed
 -------
 
 - **General**
-    - Upgrade to django-sodar-core v0.8.2-WIP
+    - Upgrade to django-sodar-core v0.8.3-WIP
     - Move ISAtab export functionality to ``SampleSheetISAExportMixin`` (#849)
     - Upgrade to Chromedriver v85 (sodar_core#569)
 - **Irodsbackend**
@@ -76,6 +76,11 @@ Fixed
     - Prevent user for enabling unit for columns where it isn't supported (#889)
     - Keyboard event handling issues in ``DataCellEditor`` (#690, #917, #919)
     - Do not look for iRODS link columns in vue app if in edit mode (#866)
+
+Removed
+-------
+
+    - Unused ``Pillow`` dependency (sodar_core#575)
 
 
 v0.7.1 (2020-04-27)
