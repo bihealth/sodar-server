@@ -1624,6 +1624,8 @@ export default {
         id: res.add[0].id
       }
       gridApi.ensureIndexVisible(res.add[0].rowIndex) // Scroll to inserted row
+      if (!assayMode) gridApi.ensureColumnVisible('col2') // Scroll to column
+      else gridApi.ensureColumnVisible(this.sampleColId)
     },
 
     handleRowSave (gridOptions, rowNode, newRowData, assayMode, finishCallback) {
