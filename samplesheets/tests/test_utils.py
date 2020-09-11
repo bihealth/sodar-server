@@ -16,13 +16,20 @@ from samplesheets.utils import (
     get_sample_colls,
     get_index_by_header,
     get_last_material_name,
+    compare_inv_replace,
 )
-from .test_io import SampleSheetIOMixin, SHEET_DIR
+from samplesheets.tests.test_io import (
+    SampleSheetIOMixin,
+    SHEET_DIR,
+    SHEET_DIR_SPECIAL,
+)
 
 
 # Local constants
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
+SHEET_PATH_INSERTED = SHEET_DIR_SPECIAL + 'i_small_insert.zip'
 SHEET_PATH_SMALL2 = SHEET_DIR + 'i_small2.zip'
+SHEET_PATH_SMALL2_ALT = SHEET_DIR + 'i_small2_alt.zip'
 OBJ_NAME = 'AA_BB_01'
 OBJ_ALT_NAMES = ['aa-bb-01', 'aabb01', 'aa_bb_01']
 
@@ -101,7 +108,34 @@ class TestGetSampleColls(TestUtilsBase):
         self.assertEqual(get_sample_colls(self.investigation), expected)
 
 
-# TODO: Test compare_inv_replace() (requires special ISAtabs, see #434)
+class TestCompareInvReplace(TestUtilsBase):
+    """Tests for compare_inv_replace()"""
+
+    def test_inserted_rows(self):
+        """Test comparison with inserted rows"""
+        inv1 = self._import_isa_from_file(SHEET_PATH, project=self.project)
+        inv2 = self._import_isa_from_file(
+            SHEET_PATH_INSERTED, project=self.project
+        )
+        self.assertTrue(compare_inv_replace(inv1, inv2))
+
+    def test_modified_sheet(self):
+        """Test comparison with modified studies/assays (should fail)"""
+        inv1 = self._import_isa_from_file(
+            SHEET_PATH_SMALL2, project=self.project
+        )
+        inv2 = self._import_isa_from_file(
+            SHEET_PATH_SMALL2_ALT, project=self.project
+        )
+        self.assertFalse(compare_inv_replace(inv1, inv2))
+
+    def test_different_sheet(self):
+        """Test comparison with a different sheet (should fail)"""
+        inv1 = self._import_isa_from_file(SHEET_PATH, project=self.project)
+        inv2 = self._import_isa_from_file(
+            SHEET_PATH_SMALL2, project=self.project
+        )
+        self.assertFalse(compare_inv_replace(inv1, inv2))
 
 
 class TestGetIndexByHeader(TestUtilsBase):
