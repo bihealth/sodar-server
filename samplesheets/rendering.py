@@ -714,9 +714,8 @@ class SampleSheetTableBuilder:
                             _get_length(
                                 re.findall(contact_re, x[i]['value'])[0][0]
                             )
-                            if x[i]['value']
-                            and re.findall(contact_re, x[i]['value'])
-                            else 0
+                            if re.findall(contact_re, x[i].get('value'))
+                            else len(x[i].get('value') or '')
                         )
                         for x in self._table_data
                     ]

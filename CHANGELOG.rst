@@ -78,6 +78,7 @@ Fixed
     - Prevent user for enabling unit for columns where it isn't supported (#889)
     - Keyboard event handling issues in ``DataCellEditor`` (#690, #917, #919)
     - Do not look for iRODS link columns in vue app if in edit mode (#866)
+    - Contact column width estimation (#887)
 
 Removed
 -------
