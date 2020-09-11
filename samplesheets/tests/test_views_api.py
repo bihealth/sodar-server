@@ -176,6 +176,12 @@ class TestSampleSheetImportAPIView(TestSampleSheetAPIBase):
         self.investigation = self._import_isa_from_file(
             SHEET_PATH, self.project
         )
+        app_settings.set_app_setting(
+            APP_NAME,
+            'sheet_config',
+            conf_api.get_sheet_config(self.investigation),
+            project=self.project,
+        )
 
         # Assert preconditions
         self.assertEqual(
@@ -205,8 +211,8 @@ class TestSampleSheetImportAPIView(TestSampleSheetAPIBase):
             GenericMaterial.objects.filter(name='0816').first()
         )
 
-    def test_post_replace_display_config(self):
-        """Test replacing sheets and ensure user display configs are deleted"""
+    def test_post_replace_display_config_keep(self):
+        """Test replacing sheets and ensure user display configs are kept"""
 
         self.investigation = self._import_isa_from_file(
             SHEET_PATH, self.project
@@ -217,6 +223,12 @@ class TestSampleSheetImportAPIView(TestSampleSheetAPIBase):
         )
         display_config = conf_api.build_display_config(
             self.investigation, sheet_config
+        )
+        app_settings.set_app_setting(
+            APP_NAME,
+            'display_config_default',
+            display_config,
+            project=self.project,
         )
         app_settings.set_app_setting(
             APP_NAME,
@@ -256,6 +268,66 @@ class TestSampleSheetImportAPIView(TestSampleSheetAPIBase):
                 project=self.project,
                 user=self.user,
             ),
+            display_config,
+        )
+
+    def test_post_replace_display_config_delete(self):
+        """Test replacing sheets and ensure user display configs are deleted"""
+
+        self.investigation = self._import_isa_from_file(
+            SHEET_PATH, self.project
+        )
+        sheet_config = conf_api.build_sheet_config(self.investigation)
+        app_settings.set_app_setting(
+            APP_NAME, 'sheet_config', sheet_config, project=self.project
+        )
+        display_config = conf_api.build_display_config(
+            self.investigation, sheet_config
+        )
+        app_settings.set_app_setting(
+            APP_NAME,
+            'display_config_default',
+            display_config,
+            project=self.project,
+        )
+        app_settings.set_app_setting(
+            APP_NAME,
+            'display_config',
+            display_config,
+            project=self.project,
+            user=self.user,
+        )
+
+        # Assert preconditions
+        self.assertEqual(
+            app_settings.get_app_setting(
+                APP_NAME,
+                'display_config',
+                project=self.project,
+                user=self.user,
+            ),
+            display_config,
+        )
+
+        url = reverse(
+            'samplesheets:api_import',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+
+        with open(SHEET_PATH_ALT, 'rb') as file:
+            post_data = {'file': file}
+            response = self.request_knox(
+                url, method='POST', format='multipart', data=post_data
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            app_settings.get_app_setting(
+                APP_NAME,
+                'display_config',
+                project=self.project,
+                user=self.user,
+            ),
             {},
         )
 
@@ -264,6 +336,12 @@ class TestSampleSheetImportAPIView(TestSampleSheetAPIBase):
 
         self.investigation = self._import_isa_from_file(
             SHEET_PATH, self.project
+        )
+        app_settings.set_app_setting(
+            APP_NAME,
+            'sheet_config',
+            conf_api.get_sheet_config(self.investigation),
+            project=self.project,
         )
 
         # Assert preconditions

@@ -18,6 +18,7 @@ from projectroles.utils import build_secret
 
 from samplesheets.io import SampleSheetIO
 from samplesheets.models import Investigation, ISATab
+from samplesheets.sheet_config import SheetConfigAPI
 from samplesheets.tests.test_io import (
     SampleSheetIOMixin,
     SHEET_DIR,
@@ -25,8 +26,9 @@ from samplesheets.tests.test_io import (
 )
 from samplesheets.tests.test_sheet_config import CONFIG_PATH_DEFAULT
 
-# App settings API
+
 app_settings = AppSettingAPI()
+conf_api = SheetConfigAPI()
 
 
 # SODAR constants
@@ -46,6 +48,7 @@ SUBMIT_STATUS_PENDING_TASKFLOW = SODAR_CONSTANTS[
 # Local constants
 SHEET_NAME = 'i_small.zip'
 SHEET_PATH = SHEET_DIR + SHEET_NAME
+SHEET_PATH_INSERTED = SHEET_DIR_SPECIAL + 'i_small_insert.zip'
 SHEET_NAME_SMALL2 = 'i_small2.zip'
 SHEET_PATH_SMALL2 = SHEET_DIR + SHEET_NAME_SMALL2
 SHEET_NAME_MINIMAL = 'i_minimal.zip'
@@ -218,6 +221,55 @@ class TestSampleSheetImportView(TestViewsBase):
         )
         self.assertIsNotNone(
             ISATab.objects.all().order_by('-pk').first().data['display_config']
+        )
+
+    def test_post_replace_config_keep(self):
+        """Test keeping configs when replacing"""
+        inv = self._import_isa_from_file(SHEET_PATH, self.project)
+        s_uuid = str(inv.studies.first().sodar_uuid)
+
+        # Get and update config
+        edited_field = {
+            'name': 'age',
+            'type': 'characteristics',
+            'unit': ['day'],
+            'regex': '',
+            'format': 'integer',
+            'default': '',
+            'editable': True,
+        }
+        sheet_config = conf_api.get_sheet_config(inv)
+        sheet_config['studies'][s_uuid]['nodes'][0]['fields'][2] = edited_field
+        app_settings.set_app_setting(
+            'samplesheets', 'sheet_config', sheet_config, project=self.project
+        )
+
+        with open(SHEET_PATH_INSERTED, 'rb') as file:
+            with self.login(self.user):
+                values = {'file_upload': file}
+                response = self.client.post(
+                    reverse(
+                        'samplesheets:import',
+                        kwargs={'project': self.project.sodar_uuid},
+                    ),
+                    values,
+                )
+
+        # Assert postconditions
+        self.assertEqual(response.status_code, 302)
+        sheet_config = app_settings.get_app_setting(
+            'samplesheets', 'sheet_config', project=self.project
+        )
+        version_config = (
+            ISATab.objects.all().order_by('-pk').first().data['sheet_config']
+        )
+        self.assertEqual(
+            sheet_config['studies'][s_uuid]['nodes'][0]['fields'][2],
+            edited_field,
+        )
+        self.assertEqual(
+            version_config['studies'][s_uuid]['nodes'][0]['fields'][2],
+            edited_field,
         )
 
     def test_post_replace_not_allowed(self):

@@ -59,6 +59,7 @@ Changed
     - Include top header in column width estimation for rendering (#649)
     - Use node header for recognizing unit enabled columns without data (#914)
     - Prevent simultaneous editing of cells in multiple tables (#765)
+    - Preserve display configs on sheet replace if headers match (#906)
 
 Fixed
 -----

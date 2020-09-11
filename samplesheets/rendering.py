@@ -16,6 +16,7 @@ from django.conf import settings
 from projectroles.app_settings import AppSettingAPI
 
 from samplesheets.models import Process, GenericMaterial
+from samplesheets.utils import get_node_obj
 
 
 TOP_HEADER_MATERIAL_COLOURS = {
@@ -953,5 +954,42 @@ class SampleSheetTableBuilder:
             logger.debug(
                 'Building assay OK ({:.1f}s)'.format(time.time() - a_start)
             )
+
+        return ret
+
+    def get_headers(self, investigation):
+        """
+        Return lists of headers for the studies and assays in an investigation.
+
+        :param investigation: Investigation object
+        :return: Dict
+        """
+        ret = {'studies': []}
+
+        for study in investigation.studies.all().order_by('pk'):
+            study_data = {'headers': [], 'assays': []}
+            all_refs = self.build_study_reference(study, study.get_nodes())
+            sample_idx = self.get_sample_idx(all_refs)
+            study_refs = self.get_study_refs(all_refs, sample_idx)
+            assay_id = 0
+
+            for n in study_refs[0]:
+                study_data['headers'] += get_node_obj(
+                    study=study, unique_name=n
+                ).headers
+
+            for assay in study.assays.all().order_by('pk'):
+                assay_refs = self.get_assay_refs(all_refs, assay_id, sample_idx)
+                assay_headers = []
+
+                for i in range(sample_idx + 1, len(assay_refs[0])):
+                    assay_headers += get_node_obj(
+                        assay=assay, unique_name=assay_refs[0][i]
+                    ).headers
+
+                study_data['assays'].append(assay_headers)
+                assay_id += 1
+
+            ret['studies'].append(study_data)
 
         return ret

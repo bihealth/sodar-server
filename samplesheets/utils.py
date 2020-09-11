@@ -59,7 +59,7 @@ def compare_inv_replace(inv1, inv2):
 
     :param inv1: Investigation object
     :param inv2: Investigation object
-    :raise: ValueError if a problem is detected
+    :return: Bool
     """
     try:
         for study1 in inv1.studies.all():
@@ -71,10 +71,9 @@ def compare_inv_replace(inv1, inv2):
                 study2.assays.get(file_name=assay1.file_name)
 
     except Exception:
-        raise ValueError(
-            'iRODS collections exist but studies and assays '
-            'do not match: unable to replace investigation'
-        )
+        return False
+
+    return True
 
 
 def get_index_by_header(

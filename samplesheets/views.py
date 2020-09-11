@@ -96,6 +96,9 @@ class InvestigationContextMixin(ProjectContextMixin):
 class SampleSheetImportMixin:
     """Mixin for sample sheet importing/replacing helpers"""
 
+    #: Whether configs should be regenerated on sheet replace
+    replace_configs = True
+
     def create_timeline_event(self, project, replace):
         """
         Create timeline event for sample sheet import.
@@ -124,14 +127,20 @@ class SampleSheetImportMixin:
         )
 
     def handle_replace(self, investigation, old_inv, tl_event=None):
+        tb = SampleSheetTableBuilder()
         project = investigation.project
         old_study_uuids = {}
         old_assay_uuids = {}
 
+        # Ensure existing studies and assays are found in new inv
+        compare_ok = compare_inv_replace(old_inv, investigation)
+
         try:
-            # Ensure existing studies and assays are found in new inv
-            if old_inv.irods_status:
-                compare_inv_replace(old_inv, investigation)
+            if old_inv.irods_status and not compare_ok:
+                raise ValueError(
+                    'iRODS collections exist but studies and assays '
+                    'do not match: unable to replace investigation'
+                )
 
             # Save UUIDs
             old_inv_uuid = old_inv.sodar_uuid
@@ -145,6 +154,13 @@ class SampleSheetImportMixin:
             # Set irods_status to our previous sheet's state
             investigation.irods_status = old_inv.irods_status
             investigation.save()
+
+            # Check if we can keep existing configurations
+            if (
+                tb.get_headers(investigation) == tb.get_headers(old_inv)
+                and compare_ok
+            ):
+                self.replace_configs = False
 
             # Delete old investigation
             old_inv.delete()
@@ -281,28 +297,31 @@ class SampleSheetImportMixin:
                     '<a href="#/warnings">parser warnings raised</a>)'
                 )
 
+        # Build/restore/keep sheet and display configurations
+        sheet_config = None
+        display_config = None
+        sheet_config_valid = True
+
         # If replacing, delete old user display configurations
         if action == 'replace':
-            logger.debug('Deleting existing user display configurations..')
-            # TODO: Use deletion method once implemented (sodar_core#538)
-            AppSetting.objects.filter(
-                app_plugin__name=APP_NAME,
-                name='display_config',
-                project=project,
-            ).delete()
+            if self.replace_configs:
+                logger.debug('Deleting existing user display configurations..')
+                # TODO: Use deletion method once implemented (sodar_core#538)
+                AppSetting.objects.filter(
+                    app_plugin__name=APP_NAME,
+                    name='display_config',
+                    project=project,
+                ).delete()
 
-        # Build sheet and display configuratios, also save to related ISATab
-        # NOTE: For now, this has to be done when we replace sheets, in case the
-        #       columns have been altered
-        # TODO: A smarter update method which detects removed/added/moved cols
-        logger.debug(
-            '{} sheet and display configurations..'.format(
-                'Replacing' if action != 'create' else 'Building'
-            )
-        )
-        sheet_config = None
-        sheet_config_valid = True
-        display_config = None
+            else:
+                logger.debug('Keeping existing configurations')
+                sheet_config = app_settings.get_app_setting(
+                    APP_NAME, 'sheet_config', project=project
+                )
+                conf_api.restore_sheet_config(investigation, sheet_config)
+                display_config = app_settings.get_app_setting(
+                    APP_NAME, 'display_config_default', project=project
+                )
 
         if isa_version and action == 'restore':
             logger.debug('Restoring previous edit and display configurations')
@@ -326,7 +345,16 @@ class SampleSheetImportMixin:
                 investigation, sheet_config
             )
 
-        if isa_version:
+        # Save configs to isa version if we are creating the sheet
+        # (or if the version is missing these configs for some reason)
+        if (
+            isa_version
+            and action != 'restore'
+            and (
+                not isa_version.data.get('sheet_config')
+                or not isa_version.data.get('display_config')
+            )
+        ):
             isa_version.data['sheet_config'] = sheet_config
             isa_version.data['display_config'] = display_config
             isa_version.save()
@@ -336,13 +364,9 @@ class SampleSheetImportMixin:
             APP_NAME, 'sheet_config', sheet_config, project=project
         )
         app_settings.set_app_setting(
-            APP_NAME, 'display_config_default', display_config, project=project
+            APP_NAME, 'display_config_default', display_config, project=project,
         )
-        logger.info(
-            'Sheet configurations {}'.format(
-                'replaced' if action != 'create' else 'built'
-            )
-        )
+        logger.info('Sheet configurations updated')
 
         # Update project cache if replacing sheets and iRODS collections exists
         if (

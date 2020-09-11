@@ -6,13 +6,19 @@ from test_plus.test import TestCase
 from projectroles.models import Role, SODAR_CONSTANTS
 from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
 
-from ..models import GenericMaterial
-from ..rendering import SampleSheetTableBuilder
-from .test_io import SampleSheetIOMixin, SHEET_DIR
+from samplesheets.models import GenericMaterial
+from samplesheets.rendering import SampleSheetTableBuilder
+from samplesheets.tests.test_io import (
+    SampleSheetIOMixin,
+    SHEET_DIR,
+    SHEET_DIR_SPECIAL,
+)
 
 
 # Local constants
-SHEET_PATH = SHEET_DIR + 'i_small2.zip'
+SHEET_PATH = SHEET_DIR + 'i_small.zip'
+SHEET_PATH_INSERTED = SHEET_DIR_SPECIAL + 'i_small_insert.zip'
+SHEET_PATH_ALT = SHEET_DIR + 'i_small2.zip'
 
 
 class TestRenderingBase(
@@ -100,3 +106,32 @@ class TestTableBuilder(TestRenderingBase):
         # Test assay tables
         for k, assay_table in tables['assays'].items():
             assert_row_length(assay_table)
+
+    def test_get_headers(self):
+        """Test get_headers()"""
+        h = self.tb.get_headers(self.investigation)
+        self.assertIsNotNone(h)
+        self.assertEqual(len(h['studies'][0]['headers']), 15)
+        self.assertEqual(len(h['studies'][0]['assays'][0]), 8)
+
+    def test_get_headers_compare_row(self):
+        """Test comparing get_headers() results for inserted rows"""
+        investigation2 = self._import_isa_from_file(
+            SHEET_PATH_INSERTED, self.project
+        )
+        h1 = self.tb.get_headers(self.investigation)
+        h2 = self.tb.get_headers(investigation2)
+
+        self.assertIsNotNone(h2)
+        self.assertEqual(h1, h2)
+
+    def test_get_headers_compare_col(self):
+        """Test comparing get_headers() for different columns (should fail)"""
+        investigation2 = self._import_isa_from_file(
+            SHEET_PATH_ALT, self.project
+        )
+        h1 = self.tb.get_headers(self.investigation)
+        h2 = self.tb.get_headers(investigation2)
+
+        self.assertIsNotNone(h2)
+        self.assertNotEqual(h1, h2)
