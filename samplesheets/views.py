@@ -131,6 +131,14 @@ class SampleSheetImportMixin:
         project = investigation.project
         old_study_uuids = {}
         old_assay_uuids = {}
+        old_study_count = old_inv.studies.all().count()
+        old_assay_count = Assay.objects.filter(
+            study__investigation=old_inv
+        ).count()
+        new_study_count = investigation.studies.all().count()
+        new_assay_count = Assay.objects.filter(
+            study__investigation=investigation
+        ).count()
 
         # Ensure existing studies and assays are found in new inv
         compare_ok = compare_inv_replace(old_inv, investigation)
@@ -159,6 +167,8 @@ class SampleSheetImportMixin:
             if (
                 tb.get_headers(investigation) == tb.get_headers(old_inv)
                 and compare_ok
+                and old_study_count == new_study_count
+                and old_assay_count == new_assay_count
             ):
                 self.replace_configs = False
 
