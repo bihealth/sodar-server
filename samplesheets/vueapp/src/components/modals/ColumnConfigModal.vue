@@ -58,11 +58,10 @@
         <!-- Name column table body -->
         <tbody v-if="['NAME', 'LINK_FILE'].includes(colType)">
           <tr v-if="colType === 'NAME' &&
-              headerInfo.obj_cls === 'GenericMaterial' &&
               headerInfo.item_type !== 'SOURCE'">
             <td>Default Suffix
               <i class="fa fa-info-circle text-info"
-                 title="Pre-fill with previous material's name plus a suffix if set"
+                 title="Pre-fill with the name of previous node plus a suffix if set"
                  v-b-tooltip.hover>
               </i>
             </td>

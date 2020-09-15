@@ -1360,6 +1360,19 @@ export default {
       return value
     },
 
+    getNamePrefix (rowNode, cols, startIdx) {
+      // Get name prefix for suffix name filling
+      let namePrefix
+      for (let i = 1; i < startIdx; i++) {
+        const prevHeaderInfo = cols[i].colDef.cellEditorParams.headerInfo
+        if (['name', 'process_name'].includes(prevHeaderInfo.header_type) &&
+            prevHeaderInfo.item_type !== 'DATA') {
+          namePrefix = rowNode.data[cols[i].colId].value
+        }
+      }
+      return namePrefix
+    },
+
     enableNextNodes (rowNode, gridOptions, gridUuid, startIdx) {
       // Enable editing for the next node(s) when inserting a new row
       // NOTE: Can't access cellEditorParams here as they are set dynamically
@@ -1389,17 +1402,7 @@ export default {
           if (headerType === 'name' &&
               !(['SOURCE', 'DATA'].includes(itemType)) &&
               value.value) {
-            let namePrefix = ''
-
-            for (let i = 1; i < startIdx; i++) {
-              const prevHeaderInfo = cols[i].colDef.cellEditorParams.headerInfo
-              if (prevHeaderInfo.obj_cls === 'GenericMaterial' &&
-                  prevHeaderInfo.header_type === 'name' &&
-                  prevHeaderInfo.item_type !== 'DATA') {
-                namePrefix = rowNode.data[cols[i].colId].value
-              }
-            }
-            value.value = namePrefix + value.value
+            value.value = this.getNamePrefix(rowNode, cols, startIdx) + value.value
             let createNew = true
 
             // Check if name already appears in column
@@ -1441,7 +1444,7 @@ export default {
           }
         } else if (nextNodeCls === 'Process') {
           let i = startIdx
-          let protocolFilled = false
+          let processActive = false
           let newInit = true
           let forceEmpty = false
 
@@ -1454,15 +1457,25 @@ export default {
             if (headerType === 'protocol') {
               value.editable = true
               if ('uuid_ref' in value && value.uuid_ref) {
-                protocolFilled = true
+                processActive = true
                 newInit = false
                 value.newInit = false // Update protocol ref column newInit
               } else forceEmpty = true
             } else if (headerType === 'process_name') {
+              // Fill process name with default suffix if set
+              const namePrefix = this.getNamePrefix(rowNode, cols, i)
+              if (namePrefix && value.value) {
+                value.value = namePrefix + value.value
+                newInit = false
+                value.newInit = false
+                processActive = true
+              } else {
+                value.value = '' // HACK: Reset default value if not filled
+              }
               value.editable = true // Process name should always be editable
             } else {
               // Only allow editing the rest of the cells if protocol is set
-              if (protocolFilled) {
+              if (processActive) {
                 value.editable = cols[i].colDef.cellRendererParams.fieldEditable
               } else {
                 value.editable = false
@@ -1472,8 +1485,8 @@ export default {
             i += 1
           }
 
-          // If default protocol was filled, enable the next node(s) too
-          if (protocolFilled) enableNextIdx = i
+          // If default protocol or name was filled, enable the next node(s) too
+          if (processActive) enableNextIdx = i
         }
         // If we can immediately enable the next node(s), proceed
         if (enableNextIdx) this.enableNextNodes(rowNode, gridOptions, gridUuid, enableNextIdx)
