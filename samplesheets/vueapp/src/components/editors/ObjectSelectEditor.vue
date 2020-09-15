@@ -75,9 +75,8 @@ export default Vue.extend({
         for (const [k, v] of Object.entries(this.selectOptions)) {
           opts.push(Object.assign(v, { uuid: k }))
         }
-        return opts
+        return opts.sort((a, b) => a.name.localeCompare(b.name))
       }
-
       return this.selectOptions
     },
     getUpdateData () {
