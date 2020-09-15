@@ -5,8 +5,8 @@ Changelog for the SODAR Django site. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
-Unreleased
-==========
+v0.8.0 (2020-09-15)
+===================
 
 Added
 -----
@@ -26,11 +26,11 @@ Added
     - Editing of non-ontology list values (#886)
     - Display ``name_type`` for processes
     - Set default protocol automatically in edit config (#879)
-    - Row inserting (#834)
+    - Row insertion (#834)
     - Row deletion (#868)
     - Sheet config versioning (#904)
     - Automated rebuilding of expired sheet configs (#904)
-    - Material name suffix config and automated filling (#912)
+    - Node name suffix config and automated filling (#912, #925)
     - ``get_node_obj()`` helper (#922)
     - Update sheet config default protocols on sheet restore (#901)
     - Export unarchiving notification for Windows users (#894)

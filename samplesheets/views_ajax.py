@@ -28,7 +28,7 @@ from samplesheets.models import (
 from samplesheets.sheet_config import SheetConfigAPI
 from samplesheets.rendering import (
     SampleSheetTableBuilder,
-    EDIT_JSON_ATTRS,
+    MODEL_JSON_ATTRS,
     ATTR_HEADER_MAP,
 )
 from samplesheets.utils import get_comments, get_unique_name
@@ -513,7 +513,7 @@ class SampleSheetStudyTablesAjaxView(SODARBaseProjectAjaxView):
                     app_name=APP_NAME,
                     user=request.user,
                     event_name='sheet_edit_start',
-                    description='started editing sheets',
+                    description='start editing sheets',
                     status_type='OK',
                 )
 
@@ -673,7 +673,7 @@ class SheetCellEditAjaxView(BaseSheetEditAjaxView):
                 obj.perform_date = None
 
         # JSON Attributes
-        elif header_type in EDIT_JSON_ATTRS:
+        elif header_type in MODEL_JSON_ATTRS:
             attr = getattr(obj, header_type)
 
             # TODO: Is this actually a thing nowadays?
@@ -776,7 +776,7 @@ class SheetRowInsertAjaxView(BaseSheetEditAjaxView):
         header_name = cell['header_name']
         header_type = cell['header_type']
 
-        if header_type in EDIT_JSON_ATTRS:
+        if header_type in MODEL_JSON_ATTRS:
             attr = getattr(node_obj, header_type)
             # Check if we have ontology refs and alter value
             h_idx = node_obj.headers.index(

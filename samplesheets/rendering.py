@@ -69,8 +69,8 @@ HEADER_MAP = {
     th.DATE: 'Perform Date',
 }
 
-# JSON attribute list
-EDIT_JSON_ATTRS = [
+# Map JSON attributes to model attributes
+MODEL_JSON_ATTRS = [
     'characteristics',
     'comments',
     'factor_values',
@@ -283,7 +283,7 @@ class SampleSheetTableBuilder:
             header['col_type'] = 'LINK_FILE'
 
         # Recognize UNIT by header (see issues #889, #914)
-        elif header_type in EDIT_JSON_ATTRS and isinstance(
+        elif header_type in MODEL_JSON_ATTRS and isinstance(
             obj, GenericMaterial
         ):
             col_type = None
