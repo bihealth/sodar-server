@@ -83,6 +83,7 @@ Fixed
 Removed
 -------
 
+- **General**
     - Unused ``Pillow`` dependency (sodar_core#575)
 
 
