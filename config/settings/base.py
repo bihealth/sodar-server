@@ -84,6 +84,7 @@ LOCAL_APPS = [
     # General site apps
     'siteinfo.apps.SiteinfoConfig',
     'irodsinfo.apps.IrodsinfoConfig',
+    'ontologyaccess.apps.OntologyaccessConfig',
     # Samplesheets study sub-apps
     'samplesheets.studyapps.germline.apps.GermlineConfig',
     'samplesheets.studyapps.cancer.apps.CancerConfig',
@@ -416,6 +417,11 @@ def set_logging(debug):
                 'handlers': ['console'],
                 'propagate': True,
             },
+            'ontologyaccess': {
+                'level': 'DEBUG' if debug else 'ERROR',
+                'handlers': ['console'],
+                'propagate': True,
+            },
             'projectroles': {
                 'level': 'DEBUG' if debug else 'ERROR',
                 'handlers': ['console'],
@@ -637,6 +643,10 @@ LZ_BIH_PROTEOMICS_SMB_USER = env.str(
 LZ_BIH_PROTEOMICS_SMB_PASS = env.str(
     'LZ_BIH_PROTEOMICS_SMB_PASS', 'eech1Iekvaivai6A'
 )
+
+
+# Ontologyaccess settings
+ONTOLOGYACCESS_BULK_CREATE = env.int('ONTOLOGYACCESS_BULK_CREATE', 5000)
 
 
 # Settings for HTTP AuthBasic

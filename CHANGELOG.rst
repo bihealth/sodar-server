@@ -5,6 +5,17 @@ Changelog for the SODAR Django site. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+Unreleased
+==========
+
+Added
+-----
+
+- **Ontologyaccess**
+    - Add site app for ontology storage and access (#937)
+    - Add ``importobo`` management command (#937)
+
+
 v0.8.0 (2020-09-15)
 ===================
 

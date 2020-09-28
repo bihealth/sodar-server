@@ -1,0 +1,61 @@
+{% extends 'projectroles/base.html' %}
+
+{# Projectroles dependency #}
+{% load projectroles_common_tags %}
+
+{% load rules %}
+
+{% block title %}OBO Ontology: {{ object.title }}{% endblock %}
+
+{% block projectroles %}
+
+<div class="row sodar-subtitle-container">
+  <h2><i class="fa fa-tag"></i> {{ object.title }}</h2>
+  <a role="button" class="btn btn-secondary ml-auto pull-right"
+       href="{{ request.session.real_referer }}">
+      <i class="fa fa-arrow-circle-left"></i> Back
+    </a>
+</div>
+
+<div class="container-fluid sodar-page-container">
+  <div class="card" id="sodar-oa-obo-details">
+    <div class="card-body px-0">
+      <dl class="row pb-0">
+        <dt class="col-md-3">Ontology ID</dt>
+        <dd class="col-md-9">{{ object.ontology_id }}</dd>
+        <dt class="col-md-3">Title</dt>
+        <dd class="col-md-9">{{ object.title }}</dd>
+        <dt class="col-md-3">Description</dt>
+        {% if object.description %}
+          <dd class="col-md-9">{{ object.description }}</dd>
+        {% else %}
+          <dd class="col-md-9 text-muted">N/A</dd>
+        {% endif %}
+        <dt class="col-md-3">Format Version</dt>
+        <dd class="col-md-9">{{ object.format_version }}</dd>
+        <dt class="col-md-3">Data Version</dt>
+        {% if object.data_version %}
+          <dd class="col-md-9">{{ object.data_version }}</dd>
+        {% else %}
+          <dd class="col-md-9 text-muted">N/A</dd>
+        {% endif %}
+        <dt class="col-md-3">Default Namespace</dt>
+        {% if object.default_namespace %}
+          <dd class="col-md-9">{{ object.default_namespace }}</dd>
+        {% else %}
+          <dd class="col-md-9 text-muted">N/A</dd>
+        {% endif %}
+        <dt class="col-md-3">Term URL</dt>
+        <dd class="col-md-9"><code>{{ object.term_url }}</code></dd>
+        <dt class="col-md-3">SODAR Import Version</dt>
+        <dd class="col-md-9">{{ object.sodar_version }}</dd>
+        <dt class="col-md-3">Imported</dt>
+        <dd class="col-md-9">{{ object.date_created|date:'Y-m-d H:i' }}</dd>
+        <dt class="col-md-3">Term Count</dt>
+        <dd class="col-md-9">{{ object.terms.all.count }}</dd>
+      </dl>
+    </div>
+  </div>
+</div>
+
+{% endblock projectroles %}

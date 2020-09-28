@@ -1,0 +1,119 @@
+{% extends 'projectroles/base.html' %}
+{% load rules %}
+
+{# Projectroles dependency #}
+{% load projectroles_common_tags %}
+
+{% block title %}Ontology Access{% endblock %}
+
+{% block css %}
+  {{ block.super }}
+  <style type="text/css">
+    table#sodar-oa-list-table thead tr th:nth-child(4),
+    table#sodar-oa-list-table tbody tr td:nth-child(4) {
+      width: 170px;
+      white-space: nowrap;
+    }
+
+    table#sodar-oa-list-table thead tr th:nth-child(5),
+    table#sodar-oa-list-table tbody tr td:nth-child(5) {
+      width: 75px;
+    }
+
+    /* Responsive modifications */
+    @media screen and (max-width: 900px) {
+      table#sodar-oa-list-table thead tr th:nth-child(4),
+      table#sodar-oa-list-table tbody tr td:nth-child(4) {
+        display: none;
+      }
+    }
+
+    @media screen and (max-width: 800px) {
+      table#sodar-oa-list-table thead tr th:nth-child(3),
+      table#sodar-oa-list-table tbody tr td:nth-child(3) {
+        display: none;
+      }
+    }
+
+    @media screen and (max-width: 650px) {
+      table#sodar-oa-list-table thead tr th:nth-child(2),
+      table#sodar-oa-list-table tbody tr td:nth-child(2) {
+        display: none;
+      }
+    }
+  </style>
+{% endblock css %}
+
+
+{% block projectroles %}
+
+<div class="row sodar-subtitle-container bg-white sticky-top">
+  <h2><i class="fa fa-tags"></i> Ontology Access</h2>
+
+  <a role="button" class="btn btn-primary ml-auto"
+     href="{% url 'ontologyaccess:obo_import' %}">
+    <i class="fa fa-upload"></i> Import OBO Ontology
+  </a>
+</div>
+
+<div class="container-fluid sodar-page-container">
+
+  {% if object_list.count > 0 %}
+    <div class="card" id="sodar-oa-alert-list">
+      <div class="card-header">
+        <h4><i class="fa fa-tag"></i> OBO Format Ontologies</h4>
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-striped sodar-card-table" id="sodar-oa-list-table">
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>ID</th>
+              <th class="text-right">Terms</th>
+              <th>Imported</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for o in object_list %}
+              <tr>
+                <td><a href="{% url 'ontologyaccess:obo_detail' oboformatontology=o.sodar_uuid %}">{{ o.title }}</a></td>
+                <td>{{ o.ontology_id }}</td>
+                <td class="text-right">{{ o.terms.all.count }}</td>
+                <td>{{ o.date_created | date:'Y-m-d H:i' }}</td>
+                <td>
+                  <div class="btn-group sodar-list-btn-group" id="sodar-oa-alert-buttons-{{ a.pk }}">
+                    <button class="btn btn-secondary dropdown-toggle sodar-list-dropdown"
+                            type="button" data-toggle="dropdown" aria-expanded="false">
+                      <i class="fa fa-cog"></i>
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-right">
+                      <a class="dropdown-item"
+                         href="{% url 'ontologyaccess:obo_update' oboformatontology=o.sodar_uuid %}">
+                        <i class="fa fa-fw fa-pencil"></i> Update Ontology
+                      </a>
+                      <a class="dropdown-item text-danger"
+                         href="{% url 'ontologyaccess:obo_delete' oboformatontology=o.sodar_uuid %}">
+                        <i class="fa fa-fw fa-close"></i> Delete Ontology
+                      </a>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  {% else %} {# if object_list.count == 0 #}
+    <div class="container-fluid">
+      <div class="alert alert-info" role="alert">
+        No imported ontologies found.
+      </div>
+    </div>
+  {% endif %}
+
+</div>
+
+{% endblock projectroles %}

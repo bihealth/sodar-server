@@ -13,7 +13,7 @@
     <span v-else-if="colType === 'ONTOLOGY' &&
                      renderData &&
                      renderData.links.length > 0">
-      <span v-if="headerName === 'hpo terms'">
+      <span v-if="!params.app.editMode && headerName === 'hpo terms'">
         <b-button
             class="btn sodar-list-btn mr-1"
             title="Copy HPO term IDs to clipboard"
@@ -23,10 +23,15 @@
         </b-button>
       </span>
       <span v-for="(link, index) in links = renderData.links" :key="index">
-        <a :href="link.url"
-           :title="getTooltip()"
-           v-b-tooltip.hover.d300
-           target="_blank">{{ link.value }}</a><span v-if="index + 1 < links.length">; </span>
+        <span v-if="!params.app.editMode">
+          <a :href="link.url"
+             :title="getTooltip()"
+             v-b-tooltip.hover.d300
+             target="_blank">{{ link.value }}</a><span v-if="index + 1 < links.length">; </span>
+        </span>
+        <span v-else>
+          {{ link.value }}<span v-if="index + 1 < links.length">; </span>
+        </span>
       </span>
     </span>
     <!-- Contacts with email -->

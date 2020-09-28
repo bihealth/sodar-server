@@ -1,0 +1,48 @@
+format-version: 1.2
+data-version: ex/releases/2020-09-24
+default-namespace: example_ontology
+ontology: ex.obo
+property_value: http://purl.org/dc/elements/1.1/description "Minimal example ontology for testing" xsd:string
+property_value: http://purl.org/dc/elements/1.1/title "Example Ontology" xsd:string
+
+[Term]
+id: EX:0000001
+name: All
+comment: Root of all terms in the Example Ontology.
+
+[Term]
+id: EX:0000002
+name: Example term 0000002
+def: "Example term 0000002 with synonyms" []
+synonym: "First synonym for example term 0000002" EXACT []
+synonym: "Second synonym for example term 0000002" EXACT []
+
+[Term]
+id: EX:0000003
+name: Example term 0000003
+def: "Example term 0000003 with alternative IDs" []
+alt_id: EX:8888883
+alt_id: EX:9999993
+
+[Term]
+id: EX:0000004
+name: Example term 0000004
+def: "Example term 0000004 with a comment" []
+comment: This is a comment. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+
+[Term]
+id: EX:0000005
+name: Example term 0000005
+def: "Example term 0000005 which specifies a namespace" []
+namespace: specific_namespace
+
+[Term]
+id: EX:0000006
+name: Example term 0000006
+def: "Example term 0000006 which is obsolete" []
+is_obsolete: true
+replaced_by: EX:0000005
+
+[Term]
+id: EX:0000007
+name: Example term 0000007 without a definition

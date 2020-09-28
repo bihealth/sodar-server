@@ -48,6 +48,7 @@ urlpatterns = [
     url(r'^siteinfo/', include('siteinfo.urls')),
     url(r'^irods/', include('irodsinfo.urls')),
     url(r'^tokens/', include('tokens.urls')),
+    url(r'^ontology/', include('ontologyaccess.urls')),
     # Projectroles URLs
     url(r'^project/', include('projectroles.urls')),
     # App plugin URLs
