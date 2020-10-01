@@ -15,6 +15,7 @@ from samplesheets.models import (
     GenericMaterial,
     ISATab,
 )
+from samplesheets.rendering import SampleSheetTableBuilder
 from samplesheets.urls import urlpatterns
 from samplesheets.utils import (
     get_sample_colls,
@@ -668,6 +669,95 @@ class SampleSheetAssayPluginPoint(PluginPoint):
         """
         # TODO: Implement this in your app plugin
         return None
+
+    # Common cache update utilities --------------------------------------
+
+    def _update_cache_rows(self, app_name, name=None, project=None, user=None):
+        """
+        Update cache for row-based iRODS links using get_row_path().
+
+        :param app_name: Application name (string)
+        :param name: Item name to limit update to (string, optional)
+        :param project: Project object to limit update to (optional)
+        :param user: User object to denote user triggering the update (optional)
+        """
+        if name and (
+            name.split('/')[0] != 'irods' or name.split('/')[1] != 'rows'
+        ):
+            return
+
+        try:
+            cache_backend = get_backend_api('sodar_cache')
+            irods_backend = get_backend_api('omics_irods')
+
+        except Exception:
+            return
+
+        if not cache_backend or not irods_backend:
+            return
+
+        tb = SampleSheetTableBuilder()
+        projects = (
+            [project]
+            if project
+            else Project.objects.filter(type=PROJECT_TYPE_PROJECT)
+        )
+        all_assays = Assay.objects.filter(
+            study__investigation__project__in=projects,
+            study__investigation__irods_status=True,
+        )
+        config_assays = []
+
+        # Filter assays by measurement and technology type
+        for assay in all_assays:
+            search_fields = {
+                'measurement_type': get_isa_field_name(assay.measurement_type),
+                'technology_type': get_isa_field_name(assay.technology_type),
+            }
+
+            if search_fields in self.assay_fields:
+                config_assays.append(assay)
+
+        # Iterate through studies so we don't have to rebuild too many tables
+        studies = list(set([a.study for a in config_assays]))
+
+        # Get assay paths
+        for study in studies:
+            study_tables = tb.build_study_tables(study)
+
+            for assay in [a for a in study.assays.all() if a in config_assays]:
+                assay_table = study_tables['assays'][str(assay.sodar_uuid)]
+                assay_path = irods_backend.get_path(assay)
+                row_paths = []
+                item_name = 'irods/rows/{}'.format(assay.sodar_uuid)
+
+                for row in assay_table['table_data']:
+                    path = self.get_row_path(
+                        row, assay_table, assay, assay_path
+                    )
+
+                    if path not in row_paths:
+                        row_paths.append(path)
+
+                # Build cache for paths
+                cache_data = {'paths': {}}
+
+                for path in row_paths:
+                    try:
+                        cache_data['paths'][
+                            path
+                        ] = irods_backend.get_object_stats(path)
+
+                    except FileNotFoundError:
+                        cache_data['paths'][path] = None
+
+                cache_backend.set_cache_item(
+                    name=item_name,
+                    app_name=app_name,
+                    user=user,
+                    data=cache_data,
+                    project=assay.get_project(),
+                )
 
 
 def get_assay_plugin(plugin_name):

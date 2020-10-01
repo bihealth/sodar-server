@@ -14,12 +14,22 @@ Added
 - **Ontologyaccess**
     - Add site app for ontology storage and access (#937)
     - Add ``importobo`` management command (#937)
+- **Samplesheets**
+    - Add ``microarray`` assay app (#941)
+    - ``_update_cache_rows()`` helper for assay app plugins (#954)
 
 Changed
 -------
 
 - **Samplesheets**
     - Display assay plugin icon for all users with sheet edit permissions (#940)
+    - Refactor assay row cache updating (#954)
+
+Fixed
+-----
+
+- **Samplesheets**
+    - Assay iRODS links enabled if null path is returned by assay app (#951)
 
 
 v0.8.0 (2020-09-15)

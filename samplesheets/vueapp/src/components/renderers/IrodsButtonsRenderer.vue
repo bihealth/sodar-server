@@ -30,9 +30,10 @@ export default Vue.extend(
       },
       getEnabledState (params) {
         if (params.value) {
+          if (!params.value.path) return false // Disable buttons if path=null
           return params.value.enabled
         } else {
-          return 1 // TODO: Store assay path file count somewhere instead?
+          return true // TODO: Store assay path file count somewhere instead?
         }
       }
     },

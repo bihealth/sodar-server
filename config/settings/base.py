@@ -91,6 +91,7 @@ LOCAL_APPS = [
     # Samplesheets assay sub-apps
     'samplesheets.assayapps.dna_sequencing.apps.DnaSequencingConfig',
     'samplesheets.assayapps.meta_ms.apps.MetaMsConfig',
+    'samplesheets.assayapps.microarray.apps.MicroarrayConfig',
     'samplesheets.assayapps.pep_ms.apps.PepMsConfig',
     # Landingzones config sub-apps
     'landingzones.configapps.bih_proteomics_smb.apps.BihProteomicsSmbConfig',
