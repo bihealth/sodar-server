@@ -15,6 +15,12 @@ Added
     - Add site app for ontology storage and access (#937)
     - Add ``importobo`` management command (#937)
 
+Changed
+-------
+
+- **Samplesheets**
+    - Display assay plugin icon for all users with sheet edit permissions (#940)
+
 
 v0.8.0 (2020-09-15)
 ===================

@@ -151,10 +151,14 @@
             <h4 class="font-weight-bold mb-0 text-danger">
               <i class="fa fa-fw fa-table"></i>
               Assay: {{ assayInfo.display_name }}
-              <i v-if="sodarContext.perms.is_superuser &&
-                       assayInfo.plugin"
+              <i v-if="sodarContext.perms.edit_sheet && assayInfo.plugin"
                  class="fa fa-puzzle-piece text-danger ml-1"
                  :title="assayInfo.plugin"
+                 v-b-tooltip.hover>
+              </i>
+              <i v-else-if="sodarContext.perms.edit_sheet && !assayInfo.plugin"
+                 class="fa fa-puzzle-piece text-muted ml-1"
+                 title="No assay plugin found: displaying default iRODS links"
                  v-b-tooltip.hover>
               </i>
             </h4>
