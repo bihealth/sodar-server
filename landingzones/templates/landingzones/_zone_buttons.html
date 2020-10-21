@@ -41,6 +41,12 @@
         <i class="fa fa-fw fa-arrow-right"></i> Validate and Move
       </a>
 
+      <a class="dropdown-item sodar-lz-zone-btn-copy"
+         href="#"
+         data-clipboard-text="{{ zone.sodar_uuid }}">
+        <i class="fa fa-fw fa-clipboard"></i> Copy Zone UUID
+      </a>
+
       <a class="dropdown-item text-danger" href="{% url 'landingzones:delete' landingzone=zone.sodar_uuid %}">
         <i class="fa fa-fw fa-close"></i> Delete Zone
       </a>

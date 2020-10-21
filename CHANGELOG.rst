@@ -11,6 +11,8 @@ Unreleased
 Added
 -----
 
+- **Landingzones**
+    - Zone UUID clipboard copying link (#970)
 - **Ontologyaccess**
     - Add site app for ontology storage and access (#937, #947)
     - Add ``importobo`` management command (#937)

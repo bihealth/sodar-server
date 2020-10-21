@@ -105,4 +105,7 @@ $(document).ready(function() {
     setInterval(function () {
         updateZoneStatus();
     }, statusInterval);
+
+    // Set up zone UUID copy button
+    new ClipboardJS('.sodar-lz-zone-btn-copy');
 });
