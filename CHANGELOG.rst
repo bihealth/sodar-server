@@ -25,6 +25,8 @@ Added
 Changed
 -------
 
+- **General**
+    - Upgrade to altamISA v0.2.7
 - **Samplesheets**
     - Display assay plugin icon for all users with sheet edit permissions (#940)
     - Refactor assay row cache updating (#954)
