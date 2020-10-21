@@ -111,7 +111,7 @@ class Command(BaseCommand):
         obo_io.import_obo(
             obo_doc=obo_doc,
             name=name,
-            file=path,
+            file=options['url'] if options.get('url') else path,
             title=options['title'],
             term_url=options['term_url'],
         )
