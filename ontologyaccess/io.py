@@ -53,20 +53,23 @@ class OBOFormatOntologyIO:
 
     @classmethod
     @transaction.atomic
-    def import_obo(cls, obo_doc, file_name, title=None, term_url=None):
+    def import_obo(cls, obo_doc, name, file, title=None, term_url=None):
         """
         Import data from an OBO format ontology into the SODAR database.
 
         :param obo_doc: OboDoc object
-        :param file_name: Name of the original .obo file (string)
+        :param name: Ontology name as it appears in sample sheets (string)
+        :param file: File name or URL (string)
         :param title: Title for the obo file (string, optional)
         :param term_url: Term URL for the object (string)
         :return: OBOFormatOntology object
         """
         logger.info(
-            'Importing OBO format ontology from file: {}'.format(file_name)
+            'Importing OBO format ontology "{}" from {}'.format(name, file)
         )
         o_kwargs = {
+            'name': name,
+            'file': file,
             'term_url': term_url or DEFAULT_TERM_URL,
             'sodar_version': site.__version__,
         }
@@ -92,8 +95,8 @@ class OBOFormatOntologyIO:
 
         # If some optional values were missing, fill them
         if not o_kwargs.get('ontology_id'):
-            logger.debug('Ontology ID missing, using file name')
-            o_kwargs['ontology_id'] = file_name
+            logger.debug('Ontology ID missing, using name')
+            o_kwargs['ontology_id'] = name
 
         if not o_kwargs.get('title'):
             logger.debug('Title missing, using ontology ID')
@@ -165,7 +168,9 @@ class OBOFormatOntologyIO:
 
         logger.debug('Parsing terms OK')
         logger.info(
-            'Imported OBOFormatOntology "{}" with {} term{} (UUID={})'.format(
+            'Imported OBOFormatOntology "{}" ({}) with {} term{} '
+            '(UUID={})'.format(
+                obo_obj.name,
                 obo_obj.title,
                 term_count,
                 's' if term_count != 1 else '',

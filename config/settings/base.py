@@ -469,6 +469,7 @@ ENABLED_BACKEND_PLUGINS = env.list(
     [
         'timeline_backend',
         'sodar_cache',
+        'ontologyaccess_backend',
         # 'taskflow',
         # 'omics_irods',
     ],
@@ -648,6 +649,7 @@ LZ_BIH_PROTEOMICS_SMB_PASS = env.str(
 
 # Ontologyaccess settings
 ONTOLOGYACCESS_BULK_CREATE = env.int('ONTOLOGYACCESS_BULK_CREATE', 5000)
+ONTOLOGYACCESS_QUERY_LIMIT = env.int('ONTOLOGYACCESS_QUERY_LIMIT', 250)
 
 
 # Settings for HTTP AuthBasic

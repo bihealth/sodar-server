@@ -28,13 +28,14 @@ class OBOFormatOntologyForm(forms.ModelForm):
 
     class Meta:
         model = OBOFormatOntology
-        fields = ['file_upload', 'title', 'term_url']
+        fields = ['file_upload', 'name', 'title', 'term_url']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         # Creation modifications
         if not self.instance.pk:
+            self.initial['name'] = ''
             self.initial['term_url'] = DEFAULT_TERM_URL
 
         # Update modifications
@@ -43,6 +44,8 @@ class OBOFormatOntologyForm(forms.ModelForm):
             self.fields['file_upload'].required = False
 
     def clean(self):
+        self.cleaned_data['name'] = self.cleaned_data['name'].upper()
+
         if self.cleaned_data.get('file_upload'):
             try:
                 file_data = self.files.get('file_upload').read().decode()
@@ -60,12 +63,14 @@ class OBOFormatOntologyForm(forms.ModelForm):
             obo_io = OBOFormatOntologyIO()
             self.instance = obo_io.import_obo(
                 obo_doc=self.obo_doc,
-                file_name=self.cleaned_data.get('file_upload'),
+                name=self.cleaned_data.get('name'),
+                file=self.cleaned_data.get('file_upload'),
                 title=self.cleaned_data.get('title'),
                 term_url=self.cleaned_data.get('term_url'),
             )
 
         if self.instance.pk:
+            self.instance.name = self.cleaned_data.get('name')
             if self.cleaned_data.get('title'):
                 self.instance.title = self.cleaned_data['title']
             self.instance.term_url = self.cleaned_data.get('term_url')

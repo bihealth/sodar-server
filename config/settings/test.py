@@ -73,6 +73,7 @@ LOGGING['handlers']['console']['level'] = 'ERROR'
 ENABLED_BACKEND_PLUGINS = [
     'timeline_backend',
     'sodar_cache',
+    'ontologyaccess_backend',
     # 'taskflow',
     # 'omics_irods',
 ]

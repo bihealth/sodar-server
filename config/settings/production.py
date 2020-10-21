@@ -145,5 +145,11 @@ EMAIL_HOST_PASSWORD = EMAIL_URL['EMAIL_HOST_PASSWORD']
 ENABLED_BACKEND_PLUGINS = env.list(
     'ENABLED_BACKEND_PLUGINS',
     None,
-    ['timeline_backend', 'sodar_cache', 'taskflow', 'omics_irods'],
+    [
+        'timeline_backend',
+        'ontologyaccess_backend',
+        'sodar_cache',
+        'taskflow',
+        'omics_irods',
+    ],
 )

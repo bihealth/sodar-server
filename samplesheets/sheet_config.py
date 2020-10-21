@@ -166,6 +166,19 @@ class SheetConfigAPI:
                                 investigation, table, i
                             )
 
+                        # Set up ontology config
+                        if h['col_type'] == 'ONTOLOGY':
+                            f['format'] = 'ontology'
+
+                            # HPO terms is a special case
+                            # TODO: TBD: More special cases?
+                            if h['name'].lower() == 'hpo terms':
+                                f['allow_list'] = True
+                                f['ontologies'] = ['HP']
+                            else:
+                                f['allow_list'] = False
+                                f['ontologies'] = []
+
                         node['fields'].append(f)
 
                     nodes.append(node)

@@ -18,6 +18,14 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
+            '-n',
+            '--name',
+            dest='name',
+            type=str,
+            required=True,
+            help='Ontology name as it appears in sample sheets',
+        )
+        parser.add_argument(
             '-p',
             '--path',
             dest='path',
@@ -50,7 +58,8 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        logger.info('Importing OBO Format ontology..')
+        name = options['name'].upper()
+        logger.info('Importing OBO Format ontology "{}"..'.format(name))
         logger.debug('Using options: {}'.format(options))
         obo_io = OBOFormatOntologyIO()
 
@@ -64,11 +73,9 @@ class Command(BaseCommand):
         # Load .obo
         if options['url']:
             path = urlopen(options['url'])
-            file_name = options['url']
 
         else:
             path = options['path']
-            file_name = options['path']
 
         try:
             obo_doc = fastobo.load(path)
@@ -77,17 +84,15 @@ class Command(BaseCommand):
             logger.error('Fastobo exception: {}'.format(ex))
             return
 
-        ontology_id = obo_io.get_header(obo_doc, 'ontology')
+        # ontology_id = obo_io.get_header(obo_doc, 'ontology')
         data_version = obo_io.get_header(obo_doc, 'data-version')
-        obo_obj = OBOFormatOntology.objects.filter(
-            ontology_id=ontology_id
-        ).first()
+        obo_obj = OBOFormatOntology.objects.filter(name=name).first()
 
         if obo_obj:
             if obo_obj.data_version == data_version:
                 logger.info(
                     'Identical version of ontology "{}" already exists'.format(
-                        ontology_id
+                        name
                     )
                 )
 
@@ -95,7 +100,7 @@ class Command(BaseCommand):
                 logger.info(
                     'Version "{}" of ontology "{}" already exists, please'
                     'delete the existing version before importing'.format(
-                        obo_obj.data_version, ontology_id
+                        obo_obj.data_version, name
                     )
                 )
                 # TODO: Implement replacing if needed
@@ -105,7 +110,8 @@ class Command(BaseCommand):
 
         obo_io.import_obo(
             obo_doc=obo_doc,
-            file_name=file_name.replace('\\', '/').split('/')[-1],
+            name=name,
+            file=path,
             title=options['title'],
             term_url=options['term_url'],
         )

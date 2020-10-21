@@ -28,7 +28,7 @@ class OBOFormatOntologyListView(LoggedInPermissionMixin, ListView):
     template_name = 'ontologyaccess/list.html'
 
     def get_queryset(self):
-        return OBOFormatOntology.objects.all().order_by('title')
+        return OBOFormatOntology.objects.all().order_by('name')
 
 
 class OBOFormatOntologyDetailView(

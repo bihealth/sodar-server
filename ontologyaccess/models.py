@@ -3,6 +3,7 @@
 import uuid
 
 from django.contrib.postgres.fields import ArrayField
+from django.core.exceptions import ValidationError
 from django.db import models
 
 # Local constants
@@ -17,6 +18,24 @@ TERM_URL_HELP = (
 class OBOFormatOntology(models.Model):
     """Ontology originating from the Open Biological and Biomedical Ontologies
     (OBO) format"""
+
+    #: Ontology name
+    name = models.CharField(
+        max_length=DEFAULT_LENGTH,
+        unique=True,
+        blank=False,
+        default='ONTOLOGY',  # Needed for migration
+        help_text='Ontology name as it appears in sample sheets',
+    )
+
+    #: Ontology file name or URL
+    file = models.CharField(
+        max_length=2000,
+        unique=False,
+        blank=True,
+        null=True,
+        help_text='Ontology file name or URL',
+    )
 
     #: Ontology ID
     ontology_id = models.CharField(
@@ -94,16 +113,28 @@ class OBOFormatOntology(models.Model):
     )
 
     class Meta:
-        pass
+        ordering = ['name']
 
     def __str__(self):
-        return '{}: {}'.format(self.ontology_id, self.title)
+        return '{}: {} ({})'.format(self.name, self.title, self.ontology_id)
 
     def __repr__(self):
-        values = [self.ontology_id, self.title]
+        values = [self.name, self.title, self.ontology_id]
         return 'OBOFormatOntology({})'.format(
             ', '.join(repr(v) for v in values)
         )
+
+    def save(self, *args, **kwargs):
+        """Version of save() to include custom validation"""
+        self._validate_name_case()
+        super().save(*args, **kwargs)
+
+    def _validate_name_case(self):
+        """Validate name_case"""
+        if not self.name.isupper():
+            raise ValidationError(
+                'Ontology name "{}" is not in upper case'.format(self.name)
+            )
 
     # Custom row-level functions
 
@@ -208,6 +239,12 @@ class OBOFormatOntologyTerm(models.Model):
         """Return local ID for term name"""
         return self.term_id.split(':')[1]
 
+    def get_url(self):
+        """Return URL for this specific term"""
+        return self.ontology.term_url.format(
+            id_space=self.get_id_space(), local_id=self.get_local_id()
+        )
+
     class Meta:
         pass
 
@@ -215,7 +252,7 @@ class OBOFormatOntologyTerm(models.Model):
         return '{} ({})'.format(self.term_id, self.name)
 
     def __repr__(self):
-        values = [self.ontology.ontology_id, self.term_id, self.name]
+        values = [self.ontology.name, self.term_id, self.name]
         return 'OBOFormatOntologyTerm({})'.format(
             ', '.join(repr(v) for v in values)
         )

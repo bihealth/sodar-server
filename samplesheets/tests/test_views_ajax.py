@@ -1,12 +1,18 @@
 """Tests for Ajax API views in the samplesheets app"""
 
 from altamisa.constants import table_headers as th
+import fastobo
 import json
 import os
 from unittest.case import skipIf
 
 from django.conf import settings
 from django.urls import reverse
+
+# Ontologyaccess dependency
+from ontologyaccess.io import OBOFormatOntologyIO
+from ontologyaccess.models import DEFAULT_TERM_URL
+from ontologyaccess.tests.test_io import OBO_PATH, OBO_NAME
 
 # Projectroles dependency
 from projectroles.plugins import get_backend_api
@@ -33,6 +39,7 @@ from samplesheets.tests.test_views import (
     TestViewsBase,
     SHEET_DIR_SPECIAL,
     SHEET_PATH,
+    SHEET_PATH_SMALL2,
     app_settings,
     EDIT_NEW_VALUE_STR,
     CONFIG_DATA_DEFAULT,
@@ -58,6 +65,10 @@ EDIT_SOURCE_UUID = '11111111-1111-1111-1111-000000000000'
 EDIT_STUDY_PROC_UUID = '11111111-1111-1111-1111-000000000001'
 EDIT_SAMPLE_NAME = '0818-N1'
 EDIT_SAMPLE_UUID = '11111111-1111-1111-5555-000000000000'
+EMPTY_ONTOLOGY_VAL = {
+    'unit': None,
+    'value': {'name': None, 'accession': None, 'ontology_name': None},
+}
 SHEET_PATH_INSERTED = SHEET_DIR_SPECIAL + 'i_small_insert.zip'
 
 
@@ -328,6 +339,7 @@ class TestStudyTablesAjaxView(TestViewsBase):
         self.assertIn('display_config', ret_data)
         self.assertIn('study_config', ret_data)
         self.assertIn('edit_context', ret_data)
+        self.assertIn('sodar_ontologies', ret_data['edit_context'])
         self.assertIsNotNone(ret_data['edit_context']['samples'])
         self.assertIsNotNone(ret_data['edit_context']['protocols'])
 
@@ -388,14 +400,23 @@ class TestSampleSheetWarningsAjaxView(TestViewsBase):
         )
 
 
-class TestSampleSheetEditAjaxView(TestViewsBase):
-    """Tests for SampleSheetEditAjaxView"""
+class TestSheetCellEditAjaxView(TestViewsBase):
+    """Tests for SheetCellEditAjaxView"""
 
-    # TODO: Test with multiple cells
-    # TODO: Test with realistic ISAtab examples using BIH configs (see #434)
-    # TODO: Add helper to create update data
-    # TODO: Test all value types
-    # TODO: Unify tests once saving a list of values is implemented
+    @classmethod
+    def _convert_ontology_value(cls, value):
+        """
+        Convert ontology value data sent in an edit request into a format
+        expected in the database.
+        NOTE: Regarding empty units, see issue #973
+        """
+        if isinstance(value, list) and len(value) == 1:
+            value = {'value': value[0]}
+        elif isinstance(value, list):
+            value = {'value': value}
+        if 'unit' not in value:
+            value['unit'] = None
+        return value
 
     def setUp(self):
         super().setUp()
@@ -747,6 +768,326 @@ class TestSampleSheetEditAjaxView(TestViewsBase):
         self.assertEqual(obj.name, name)
         self.assertEqual(obj.name_type, name_type)
 
+    def test_edit_ontology_term(self):
+        """Test editing an ontology term with a single term"""
+
+        obj = GenericMaterial.objects.get(study=self.study, name='0817')
+        name = 'organism'
+        value = [
+            {
+                'name': 'Homo sapiens',
+                'ontology_name': 'NCBITAXON',
+                'accession': 'http://purl.bioontology.org/ontology/NCBITAXON/9606',
+            }
+        ]
+
+        # Assert preconditions
+        self.assertEqual(obj.characteristics[name], EMPTY_ONTOLOGY_VAL)
+
+        self.values['updated_cells'].append(
+            {
+                'uuid': str(obj.sodar_uuid),
+                'header_name': name,
+                'header_type': 'characteristics',
+                'obj_cls': 'GenericMaterial',
+                'colType': 'ONTOLOGY',
+                'value': value,
+                'og_value': None,
+            }
+        )
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:ajax_edit_cell',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                json.dumps(self.values),
+                content_type='application/json',
+            )
+
+        # Assert postconditions
+        self.assertEqual(response.status_code, 200)
+        obj.refresh_from_db()
+        self.assertEqual(
+            obj.characteristics[name], self._convert_ontology_value(value)
+        )
+
+    def test_edit_ontology_term_replace(self):
+        """Test replacing an existing ontology term"""
+
+        obj = GenericMaterial.objects.get(study=self.study, name='0815')
+        name = 'organism'
+        og_value = {
+            'name': 'Mus musculus',
+            'ontology_name': 'NCBITAXON',
+            'accession': 'http://purl.bioontology.org/ontology/NCBITAXON/10090',
+        }
+        value = [
+            {
+                'name': 'Homo sapiens',
+                'ontology_name': 'NCBITAXON',
+                'accession': 'http://purl.bioontology.org/ontology/NCBITAXON/9606',
+            }
+        ]
+
+        # Assert preconditions
+        self.assertEqual(
+            obj.characteristics[name], {'value': og_value, 'unit': None}
+        )
+
+        self.values['updated_cells'].append(
+            {
+                'uuid': str(obj.sodar_uuid),
+                'header_name': name,
+                'header_type': 'characteristics',
+                'obj_cls': 'GenericMaterial',
+                'colType': 'ONTOLOGY',
+                'value': value,
+                'og_value': [og_value],
+            }
+        )
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:ajax_edit_cell',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                json.dumps(self.values),
+                content_type='application/json',
+            )
+
+        # Assert postconditions
+        self.assertEqual(response.status_code, 200)
+        obj.refresh_from_db()
+        self.assertEqual(
+            obj.characteristics[name], self._convert_ontology_value(value)
+        )
+
+    def test_edit_ontology_term_list(self):
+        """Test editing an ontology term with a list of terms"""
+
+        obj = GenericMaterial.objects.get(study=self.study, name='0817')
+        name = 'organism'
+        value = [
+            {
+                'name': 'Homo sapiens',
+                'ontology_name': 'NCBITAXON',
+                'accession': 'http://purl.bioontology.org/ontology/NCBITAXON/9606',
+            },
+            {
+                'name': 'Mus musculus',
+                'ontology_name': 'NCBITAXON',
+                'accession': 'http://purl.bioontology.org/ontology/NCBITAXON/10090',
+            },
+        ]
+
+        # Assert preconditions
+        self.assertEqual(obj.characteristics[name], EMPTY_ONTOLOGY_VAL)
+
+        self.values['updated_cells'].append(
+            {
+                'uuid': str(obj.sodar_uuid),
+                'header_name': name,
+                'header_type': 'characteristics',
+                'obj_cls': 'GenericMaterial',
+                'colType': 'ONTOLOGY',
+                'value': value,
+                'og_value': None,
+            }
+        )
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:ajax_edit_cell',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                json.dumps(self.values),
+                content_type='application/json',
+            )
+
+        # Assert postconditions
+        self.assertEqual(response.status_code, 200)
+        obj.refresh_from_db()
+        self.assertEqual(
+            obj.characteristics[name], self._convert_ontology_value(value)
+        )
+
+    def test_edit_ontology_term_empty(self):
+        """Test editing an ontology term with an empty value"""
+
+        obj = GenericMaterial.objects.get(study=self.study, name='0815')
+        name = 'organism'
+        og_value = {
+            'name': 'Mus musculus',
+            'ontology_name': 'NCBITAXON',
+            'accession': 'http://purl.bioontology.org/ontology/NCBITAXON/10090',
+        }
+
+        # Assert preconditions
+        self.assertNotEqual(obj.characteristics[name], EMPTY_ONTOLOGY_VAL)
+
+        self.values['updated_cells'].append(
+            {
+                'uuid': str(obj.sodar_uuid),
+                'header_name': name,
+                'header_type': 'characteristics',
+                'obj_cls': 'GenericMaterial',
+                'colType': 'ONTOLOGY',
+                'value': [],
+                'og_value': og_value,
+            }
+        )
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:ajax_edit_cell',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                json.dumps(self.values),
+                content_type='application/json',
+            )
+
+        # Assert postconditions
+        self.assertEqual(response.status_code, 200)
+        obj.refresh_from_db()
+        self.assertEqual(obj.characteristics[name], EMPTY_ONTOLOGY_VAL)
+
+    def test_edit_ontology_term_ref(self):
+        """Test ontology source ref updating when editing term value"""
+
+        # Set up ontology
+        obo_doc = fastobo.load(OBO_PATH)
+        ontology = OBOFormatOntologyIO().import_obo(
+            obo_doc=obo_doc, name=OBO_NAME, file=OBO_PATH
+        )
+        obj = GenericMaterial.objects.get(study=self.study, name='0817')
+        name = 'organism'
+        value = [
+            {
+                'name': 'Mus musculus',
+                'ontology_name': 'NCBITAXON',
+                'accession': 'http://purl.bioontology.org/ontology/NCBITAXON/10090',
+            },
+            {
+                'name': 'Example term 0000002',
+                'ontology_name': ontology.name,
+                'accession': DEFAULT_TERM_URL.format(
+                    id_space=ontology.name, local_id='0000002'
+                ),
+            },
+        ]
+
+        # Assert preconditions
+        self.assertEqual(obj.characteristics[name], EMPTY_ONTOLOGY_VAL)
+        self.assertEqual(len(self.investigation.ontology_source_refs), 4)
+
+        self.values['updated_cells'].append(
+            {
+                'uuid': str(obj.sodar_uuid),
+                'header_name': name,
+                'header_type': 'characteristics',
+                'obj_cls': 'GenericMaterial',
+                'colType': 'ONTOLOGY',
+                'value': value,
+                'og_value': None,
+            }
+        )
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:ajax_edit_cell',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                json.dumps(self.values),
+                content_type='application/json',
+            )
+
+        # Assert postconditions
+        self.assertEqual(response.status_code, 200)
+        obj.refresh_from_db()
+        self.investigation.refresh_from_db()
+        self.assertEqual(
+            obj.characteristics[name], self._convert_ontology_value(value)
+        )
+        self.assertEqual(len(self.investigation.ontology_source_refs), 5)
+        ref = next(
+            r
+            for r in self.investigation.ontology_source_refs
+            if r['name'] == ontology.name
+        )
+        expected = {
+            'file': ontology.file,
+            'name': ontology.name,
+            'version': ontology.data_version,
+            'description': ontology.title,
+            'comments': [],
+            'headers': [
+                'Term Source Name',
+                'Term Source File',
+                'Term Source Version',
+                'Term Source Description',
+            ],
+        }
+        self.assertEqual(ref, expected)
+
+
+class TestSheetCellEditAjaxViewSpecial(TestViewsBase):
+    """Tests for SheetCellEditAjaxView with special columns"""
+
+    def setUp(self):
+        super().setUp()
+
+        # Import investigation
+        self.investigation = self._import_isa_from_file(
+            SHEET_PATH_SMALL2, self.project
+        )
+        self.study = self.investigation.studies.first()
+
+        # Set up POST data
+        self.values = {'updated_cells': []}
+
+    def test_edit_extract_label_string(self):
+        """Test updating the extract label field with a string value"""
+        label = 'New label'
+        name_type = th.LABELED_EXTRACT_NAME
+
+        # Assert preconditions
+        obj = GenericMaterial.objects.get(
+            study=self.study, name='0815-N1-Pro1-A-114'
+        )
+        self.assertEqual(obj.extract_label, 'iTRAQ reagent 114')
+
+        self.values['updated_cells'].append(
+            {
+                'uuid': str(obj.sodar_uuid),
+                'header_name': name_type,
+                'header_type': 'extract_label',
+                'obj_cls': 'GenericMaterial',
+                'value': label,
+                'uuid_ref': str(obj.sodar_uuid),
+            }
+        )
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:ajax_edit_cell',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                json.dumps(self.values),
+                content_type='application/json',
+            )
+
+        # Assert postconditions
+        self.assertEqual(response.status_code, 200)
+        obj.refresh_from_db()
+        self.assertEqual(obj.extract_label, label)
+
 
 class TestSheetRowInsertAjaxView(RowEditMixin, SheetConfigMixin, TestViewsBase):
     """Tests for SheetRowInsertAjaxView"""
@@ -959,6 +1300,8 @@ class TestSheetRowInsertAjaxView(RowEditMixin, SheetConfigMixin, TestViewsBase):
             Process.objects.filter(assay=self.assay).count(), proc_count + 3
         )
         self.assertEqual(len(self.assay.arcs), arc_count + 7)
+
+    # TODO: Test ontology ref updating
 
 
 class TestSheetRowDeleteAjaxView(RowEditMixin, SheetConfigMixin, TestViewsBase):

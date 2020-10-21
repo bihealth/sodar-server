@@ -11,6 +11,8 @@ from ontologyaccess.tests.test_models import OBOFormatOntologyModelMixin
 
 # Local constants
 OBO_ONTOLOGY_ID = 'tst.obo'
+OBO_NAME = 'TST'
+OBO_FILE = 'tst.obo'
 OBO_TITLE = 'Test Ontology'
 OBO_DESCRIPTION = 'Ontology for testing.'
 OBO_FORMAT_VERSION = '1.2'
@@ -45,6 +47,8 @@ class TestOntologyAccessPermissionBase(
 
         # Create Ontology and term
         self.ontology = self._make_obo_ontology(
+            name=OBO_NAME,
+            file=OBO_FILE,
             ontology_id=OBO_ONTOLOGY_ID,
             title=OBO_TITLE,
             description=OBO_DESCRIPTION,

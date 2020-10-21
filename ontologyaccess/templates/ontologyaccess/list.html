@@ -9,35 +9,35 @@
 {% block css %}
   {{ block.super }}
   <style type="text/css">
-    table#sodar-oa-list-table thead tr th:nth-child(4),
-    table#sodar-oa-list-table tbody tr td:nth-child(4) {
+    table#sodar-oa-list-table thead tr th:nth-child(5),
+    table#sodar-oa-list-table tbody tr td:nth-child(5) {
       width: 170px;
       white-space: nowrap;
     }
 
-    table#sodar-oa-list-table thead tr th:nth-child(5),
-    table#sodar-oa-list-table tbody tr td:nth-child(5) {
+    table#sodar-oa-list-table thead tr th:nth-child(6),
+    table#sodar-oa-list-table tbody tr td:nth-child(6) {
       width: 75px;
     }
 
     /* Responsive modifications */
-    @media screen and (max-width: 900px) {
+    @media screen and (max-width: 1200px) {
+      table#sodar-oa-list-table thead tr th:nth-child(5),
+      table#sodar-oa-list-table tbody tr td:nth-child(5) {
+        display: none;
+      }
+    }
+
+    @media screen and (max-width: 1100px) {
       table#sodar-oa-list-table thead tr th:nth-child(4),
       table#sodar-oa-list-table tbody tr td:nth-child(4) {
         display: none;
       }
     }
 
-    @media screen and (max-width: 800px) {
+    @media screen and (max-width: 650px) {
       table#sodar-oa-list-table thead tr th:nth-child(3),
       table#sodar-oa-list-table tbody tr td:nth-child(3) {
-        display: none;
-      }
-    }
-
-    @media screen and (max-width: 650px) {
-      table#sodar-oa-list-table thead tr th:nth-child(2),
-      table#sodar-oa-list-table tbody tr td:nth-child(2) {
         display: none;
       }
     }
@@ -67,6 +67,7 @@
         <table class="table table-striped sodar-card-table" id="sodar-oa-list-table">
           <thead>
             <tr>
+              <th>Name</th>
               <th>Title</th>
               <th>ID</th>
               <th class="text-right">Terms</th>
@@ -77,7 +78,8 @@
           <tbody>
             {% for o in object_list %}
               <tr>
-                <td><a href="{% url 'ontologyaccess:obo_detail' oboformatontology=o.sodar_uuid %}">{{ o.title }}</a></td>
+                <td><a href="{% url 'ontologyaccess:obo_detail' oboformatontology=o.sodar_uuid %}">{{ o.name }}</a></td>
+                <td>{{ o.title }}</td>
                 <td>{{ o.ontology_id }}</td>
                 <td class="text-right">{{ o.terms.all.count }}</td>
                 <td>{{ o.date_created | date:'Y-m-d H:i' }}</td>

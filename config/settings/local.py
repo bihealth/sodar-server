@@ -90,6 +90,7 @@ TEST_RUNNER = 'django.test.runner.DiscoverRunner'
 # Plugin settings
 ENABLED_BACKEND_PLUGINS = [
     'timeline_backend',
+    'ontologyaccess_backend',
     'taskflow',
     'omics_irods',
     'sodar_cache',

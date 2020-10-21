@@ -4,6 +4,7 @@ from importlib import import_module
 from test_plus.test import TestCase
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.forms.models import model_to_dict
 
 from ontologyaccess.models import (
@@ -18,6 +19,8 @@ site = import_module(settings.SITE_PACKAGE)
 
 # Local constants
 OBO_ONTOLOGY_ID = 'tst.obo'
+OBO_FILE = 'tst.obo'
+OBO_NAME = 'TST'
 OBO_TITLE = 'Test Ontology'
 OBO_DESCRIPTION = 'Ontology for testing.'
 OBO_FORMAT_VERSION = '1.2'
@@ -41,6 +44,8 @@ class OBOFormatOntologyModelMixin:
     @classmethod
     def _make_obo_ontology(
         cls,
+        name,
+        file,
         ontology_id,
         title,
         format_version=OBO_FORMAT_VERSION,
@@ -52,6 +57,8 @@ class OBOFormatOntologyModelMixin:
     ):
         """Create OBOFormatOntology in database"""
         values = {
+            'name': name,
+            'file': file,
             'ontology_id': ontology_id,
             'title': title,
             'format_version': format_version,
@@ -99,6 +106,8 @@ class TestOBOFormatOntologyBase(OBOFormatOntologyModelMixin, TestCase):
     def setUp(self):
         self.ontology = self._make_obo_ontology(
             ontology_id=OBO_ONTOLOGY_ID,
+            name=OBO_NAME,
+            file=OBO_FILE,
             title=OBO_TITLE,
             description=OBO_DESCRIPTION,
             format_version=OBO_FORMAT_VERSION,
@@ -125,6 +134,8 @@ class TestOBOFormatOntology(TestOBOFormatOntologyBase):
         """Test OBOFormatOntology initialization"""
         expected = {
             'id': self.ontology.pk,
+            'name': OBO_NAME,
+            'file': OBO_FILE,
             'ontology_id': OBO_ONTOLOGY_ID,
             'title': OBO_TITLE,
             'description': OBO_DESCRIPTION,
@@ -139,15 +150,15 @@ class TestOBOFormatOntology(TestOBOFormatOntologyBase):
 
     def test__str__(self):
         """Test OBOFormatOntology __str__() function"""
-        expected = '{}: {}'.format(
-            self.ontology.ontology_id, self.ontology.title,
+        expected = '{}: {} ({})'.format(
+            self.ontology.name, self.ontology.title, self.ontology.ontology_id
         )
         self.assertEqual(str(self.ontology), expected)
 
     def test__repr__(self):
         """Test OBOFormatOntology __repr__() function"""
-        expected = "OBOFormatOntology('{}', '{}')".format(
-            self.ontology.ontology_id, self.ontology.title,
+        expected = "OBOFormatOntology('{}', '{}', '{}')".format(
+            self.ontology.name, self.ontology.title, self.ontology.ontology_id
         )
         self.assertEqual(repr(self.ontology), expected)
 
@@ -180,15 +191,21 @@ class TestOBOFormatOntologyTerm(TestOBOFormatOntologyBase):
 
     def test__str__(self):
         """Test OBOFormatOntologyTerm __str__() function"""
-        expected = '{} ({})'.format(self.term.term_id, self.term.name,)
+        expected = '{} ({})'.format(self.term.term_id, self.term.name)
         self.assertEqual(str(self.term), expected)
 
     def test__repr__(self):
         """Test OBOFormatOntologyTerm __repr__() function"""
         expected = "OBOFormatOntologyTerm('{}', '{}', '{}')".format(
-            self.term.ontology.ontology_id, self.term.term_id, self.term.name,
+            self.term.ontology.name, self.term.term_id, self.term.name,
         )
         self.assertEqual(repr(self.term), expected)
+
+    def validate_name_case(self):
+        """Test _validate_name_case()"""
+        self.ontology.name = self.ontology.name.lower()
+        with self.assertRaises(ValidationError):
+            self.ontology.save()
 
     def test_get_id_space(self):
         """Test get_id_space()"""
@@ -200,4 +217,14 @@ class TestOBOFormatOntologyTerm(TestOBOFormatOntologyBase):
         """Test get_local_id()"""
         self.assertEqual(
             self.term.get_local_id(), self.term.term_id.split(':')[1]
+        )
+
+    def test_get_url(self):
+        """Test get_url()"""
+        self.assertEqual(
+            self.term.get_url(),
+            self.ontology.term_url.format(
+                id_space=self.term.get_id_space(),
+                local_id=self.term.get_local_id(),
+            ),
         )

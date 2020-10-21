@@ -289,7 +289,7 @@
 
     </div> <!-- Main container -->
 
-    <!-- Editing: Editor help modal -->
+    <!-- Windows export notification modal -->
     <win-export-modal
         v-if="windowsOs"
         :app="getApp()"
@@ -335,6 +335,13 @@
         ref="editorHelpModal">
     </editor-help-modal>
 
+    <!-- Editing: Ontology value edit modal -->
+    <ontology-edit-modal
+        v-if="editMode"
+        :app="getApp()"
+        ref="ontologyEditModal">
+    </ontology-edit-modal>
+
     <!--<router-view/>-->
   </div>
 </template>
@@ -350,6 +357,7 @@ import ColumnToggleModal from './components/modals/ColumnToggleModal.vue'
 import ColumnConfigModal from './components/modals/ColumnConfigModal.vue'
 import EditorHelpModal from './components/modals/EditorHelpModal.vue'
 import WinExportModal from './components/modals/WinExportModal.vue'
+import OntologyEditModal from './components/modals/OntologyEditModal'
 import IrodsStatsBadge from './components/IrodsStatsBadge.vue'
 import AssayShortcutCard from './components/AssayShortcutCard.vue'
 import { AgGridVue } from 'ag-grid-vue'
@@ -360,6 +368,7 @@ import FieldHeaderEditRenderer from './components/renderers/FieldHeaderEditRende
 import RowEditRenderer from './components/renderers/RowEditRenderer.vue'
 import DataCellEditor from './components/editors/DataCellEditor.vue'
 import ObjectSelectEditor from './components/editors/ObjectSelectEditor.vue'
+import OntologyEditor from './components/editors/OntologyEditor.vue'
 import AgGridDragSelect from './components/AgGridDragSelect.vue'
 
 const windowsPlatforms = ['Win32', 'Win64', 'Windows', 'WinCE']
@@ -406,13 +415,15 @@ export default {
       sampleIdx: null,
       unsavedRow: null, // Info of currently unsaved row, or null if none
       updatingRow: false, // Row update in progress (bool)
+      unsavedData: false, // Other updated data (bool)
       editingCell: false, // Cell editing in progress (bool)
       contentId: 'sodar-ss-vue-content',
       windowsOs: false,
       /* NOTE: cell editor only works if provided through frameworkComponents? */
       frameworkComponents: {
         dataCellEditor: DataCellEditor,
-        objectSelectEditor: ObjectSelectEditor
+        objectSelectEditor: ObjectSelectEditor,
+        ontologyEditor: OntologyEditor
       }
     }
   },
@@ -427,6 +438,7 @@ export default {
     ColumnConfigModal,
     EditorHelpModal,
     WinExportModal,
+    OntologyEditModal,
     IrodsStatsBadge,
     AssayShortcutCard,
     AgGridVue,
@@ -447,7 +459,7 @@ export default {
 
     onBeforeUnload (event) {
       if (this.editMode &&
-          (this.unsavedRow || this.updatingRow)) {
+          (this.unsavedRow || this.updatingRow || this.unsavedData)) {
         event.preventDefault()
         event.returnValue = ''
       }
@@ -757,7 +769,7 @@ export default {
 
             // Set header renderer for fields we can manage
             if (this.sodarContext.perms.edit_sheet &&
-                !['EXTERNAL_LINKS', 'ONTOLOGY'].includes(colType)) {
+                colType !== 'EXTERNAL_LINKS') {
               let configAssayUuid = assayMode ? uuid : null
               let configNodeIdx = i
 
@@ -822,6 +834,9 @@ export default {
                 } else if (editorParams.headerInfo.header_type === 'protocol') {
                   editorName = 'objectSelectEditor'
                   editorParams.selectOptions = Object.assign(editContext.protocols)
+                } else if (colType === 'ONTOLOGY') {
+                  editorName = 'ontologyEditor'
+                  editorParams.sodarOntologies = editContext.sodar_ontologies
                 }
 
                 return { component: editorName, params: editorParams }
@@ -1353,7 +1368,7 @@ export default {
         if (editConfig && editConfig.format === 'protocol') {
           value.value = { name: '', uuid: null }
         } else if (colType === 'ONTOLOGY') {
-          value.value = { name: null, accession: null, ontology_name: null }
+          value.value = [] // By default, send empty list to server
         }
       }
       // Default unit
@@ -2125,6 +2140,11 @@ select.ag-cell-edit-input {
     <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 40'> \
       <polygon points='0,0 60,0 30,40' style='fill:black;'/> \
     </svg>");
+}
+
+div.sodar-ss-vue-edit-busy {
+  line-height: 38px !important;
+  vertical-align: middle;
 }
 
 select#sodar-ss-vue-edit-select-unit {

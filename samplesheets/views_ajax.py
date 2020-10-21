@@ -29,9 +29,12 @@ from samplesheets.sheet_config import SheetConfigAPI
 from samplesheets.rendering import (
     SampleSheetTableBuilder,
     MODEL_JSON_ATTRS,
-    ATTR_HEADER_MAP,
 )
-from samplesheets.utils import get_comments, get_unique_name
+from samplesheets.utils import (
+    get_comments,
+    get_unique_name,
+    get_node_obj,
+)
 from samplesheets.views import (
     app_settings,
     APP_NAME,
@@ -70,6 +73,147 @@ class BaseSheetEditAjaxView(SODARBaseProjectAjaxView):
         logger.error(msg)
         raise self.SheetEditException(msg)
 
+    @classmethod
+    def _get_attr_value(cls, node_obj, cell, header_name, header_type):
+        """
+        Get node object attribute value in a format saveable into the database.
+
+        :param node_obj: GenericMaterial or Process object
+        :param cell: Cell update data from the client (dict)
+        :param header_name: Header name (string)
+        :param header_type: Header type (string)
+        :return: String, dict or list
+        """
+        if isinstance(cell['value'], list) and len(cell['value']) == 1:
+            val = cell['value'][0]
+
+        # Handle empty list
+        elif isinstance(cell['value'], list) and len(cell['value']) == 0:
+            val = None
+            if node_obj.is_ontology_field(header_name, header_type):
+                val = {
+                    'name': None,
+                    'accession': None,
+                    'ontology_name': None,
+                }
+
+        else:
+            val = cell['value']
+
+        return val
+
+    @classmethod
+    def _get_ontology_names(cls, cells=None, nodes=None):
+        """
+        Return unique ontology names from ontology field in a list of nodes.
+
+        :param cells: List of dicts
+        :param nodes: List of dicts
+        :return: List
+        """
+        if not cells and not nodes:
+            raise ValueError('Must define either cells or nodes')
+
+        if not cells:
+            cells = []
+            for n in nodes:
+                cells += n['cells']
+
+        ret = []
+
+        for c in cells:
+            if (
+                c.get('value')
+                and isinstance(c['value'], list)
+                and len(c['value']) > 0
+                and isinstance(c['value'][0], dict)
+            ):
+                for t in c['value']:
+                    o_name = t.get('ontology_name')
+                    if o_name and o_name not in ret:
+                        ret.append(o_name)
+
+        logger.debug('Ontologies in edit data: {}'.format(', '.join(ret)))
+        return ret
+
+    @classmethod
+    @transaction.atomic
+    def _update_ontology_refs(cls, investigation, edit_names):
+        """
+        Update investigation ontology refs, adding references to ontologies
+        currently missing.
+
+        :param investigation: Investigation object
+        :param edit_names: Ontology names from editing (list)
+        """
+        # TODO: Implement removal of unused ontologies (see issue #967)
+        # TODO: Update existing refs for SODAR ontology data?
+
+        ontology_backend = get_backend_api('ontologyaccess_backend')
+        if not ontology_backend:
+            logger.error(
+                'Ontologyaccess backend not enabled, unable to update '
+                'ontology refs'
+            )
+            return
+
+        i_names = [
+            o['name']
+            for o in investigation.ontology_source_refs
+            if o.get('name')
+        ]
+        sodar_obos = ontology_backend.get_obo_dict(key='name')
+        updated = False
+
+        for o_name in edit_names:
+            if o_name not in i_names and o_name:
+                logger.debug(
+                    'Inserting ontology reference for "{}"'.format(o_name)
+                )
+
+                if o_name not in sodar_obos.keys():
+                    logger.warning(
+                        'Ontology "{}" not imported to SODAR, unable to '
+                        'update ontology reference'.format(o_name)
+                    )
+                    continue
+
+                investigation.ontology_source_refs.append(
+                    {
+                        'file': sodar_obos[o_name]['file'],
+                        'name': o_name,
+                        'version': sodar_obos[o_name]['data_version'] or '',
+                        'description': sodar_obos[o_name]['title'],
+                        'comments': [],
+                        'headers': [
+                            'Term Source Name',
+                            'Term Source File',
+                            'Term Source Version',
+                            'Term Source Description',
+                        ],
+                    }
+                )
+                updated = True
+                logger.debug(
+                    'Inserted ontology reference for "{}" '
+                    '(investigation={})'.format(
+                        o_name, investigation.sodar_uuid
+                    )
+                )
+
+        if updated:
+            investigation.save()
+            logger.info(
+                'Ontology references updated (investigation={})'.format(
+                    investigation.sodar_uuid
+                )
+            )
+        else:
+            logger.debug(
+                'No updates for ontology references '
+                '(investigation={})'.format(investigation.sodar_uuid)
+            )
+
 
 # Ajax Views -------------------------------------------------------------------
 
@@ -81,12 +225,8 @@ class SampleSheetContextAjaxView(SODARBaseProjectAjaxView):
 
     def get(self, request, *args, **kwargs):
         project = self.get_project()
-        investigation = Investigation.objects.filter(
-            project=project, active=True
-        ).first()
-        studies = Study.objects.filter(investigation=investigation).order_by(
-            'pk'
-        )
+        inv = Investigation.objects.filter(project=project, active=True).first()
+        studies = Study.objects.filter(investigation=inv).order_by('pk')
         irods_backend = get_backend_api('omics_irods', conn=False)
 
         # Can't import at module root due to circular dependency
@@ -94,24 +234,12 @@ class SampleSheetContextAjaxView(SODARBaseProjectAjaxView):
 
         # General context data for Vue app
         ret_data = {
-            'configuration': investigation.get_configuration()
-            if investigation
-            else None,
-            'inv_file_name': investigation.file_name.split('/')[-1]
-            if investigation
-            else None,
-            'irods_status': investigation.irods_status
-            if investigation
-            else None,
+            'configuration': None,
+            'inv_file_name': None,
+            'irods_status': None,
             'irods_backend_enabled': (True if irods_backend else False),
-            'parser_version': (investigation.parser_version or 'LEGACY')
-            if investigation
-            else None,
-            'parser_warnings': True
-            if investigation
-            and investigation.parser_warnings
-            and 'use_file_names' in investigation.parser_warnings
-            else False,
+            'parser_version': None,
+            'parser_warnings': False,
             'irods_webdav_enabled': settings.IRODS_WEBDAV_ENABLED,
             'irods_webdav_url': settings.IRODS_WEBDAV_URL.rstrip('/'),
             'external_link_labels': settings.SHEETS_EXTERNAL_LINK_LABELS,
@@ -123,11 +251,33 @@ class SampleSheetContextAjaxView(SODARBaseProjectAjaxView):
             ),
             'alerts': [],
             'csrf_token': get_token(request),
+            'investigation': {},
         }
 
-        if investigation and (
-            not investigation.parser_version
-            or version.parse(investigation.parser_version)
+        if inv:
+            inv_data = {
+                'configuration': inv.get_configuration(),
+                'inv_file_name': inv.file_name.split('/')[-1],
+                'irods_status': inv.irods_status,
+                'parser_version': inv.parser_version or 'LEGACY',
+                'parser_warnings': True
+                if inv.parser_warnings
+                and 'use_file_names' in inv.parser_warnings
+                else False,
+                'investigation': {
+                    'identifier': inv.identifier,
+                    'title': inv.title,
+                    'description': inv.description
+                    if inv.description != project.description
+                    else None,
+                    'comments': get_comments(inv),
+                },
+            }
+            ret_data.update(inv_data)
+
+        if inv and (
+            not inv.parser_version
+            or version.parse(inv.parser_version)
             < version.parse(TARGET_ALTAMISA_VERSION)
         ):
             ret_data['alerts'].append(
@@ -144,7 +294,7 @@ class SampleSheetContextAjaxView(SODARBaseProjectAjaxView):
         ret_data['studies'] = {}
 
         for s in studies:
-            study_plugin = find_study_plugin(investigation.get_configuration())
+            study_plugin = find_study_plugin(inv.get_configuration())
             ret_data['studies'][str(s.sodar_uuid)] = {
                 'display_name': s.get_display_name(),
                 'identifier': s.identifier,
@@ -202,41 +352,25 @@ class SampleSheetContextAjaxView(SODARBaseProjectAjaxView):
             'is_superuser': request.user.is_superuser,
         }
 
-        # Overview data
-        ret_data['investigation'] = (
-            {
-                'identifier': investigation.identifier,
-                'title': investigation.title,
-                'description': investigation.description
-                if investigation.description != project.description
-                else None,
-                'comments': get_comments(investigation),
-            }
-            if investigation
-            else {}
-        )
-
         # Statistics
         ret_data['sheet_stats'] = (
             {
-                'study_count': Study.objects.filter(
-                    investigation=investigation
-                ).count(),
+                'study_count': Study.objects.filter(investigation=inv).count(),
                 'assay_count': Assay.objects.filter(
-                    study__investigation=investigation
+                    study__investigation=inv
                 ).count(),
                 'protocol_count': Protocol.objects.filter(
-                    study__investigation=investigation
+                    study__investigation=inv
                 ).count(),
                 'process_count': Process.objects.filter(
-                    protocol__study__investigation=investigation
+                    protocol__study__investigation=inv
                 ).count(),
-                'source_count': investigation.get_material_count('SOURCE'),
-                'material_count': investigation.get_material_count('MATERIAL'),
-                'sample_count': investigation.get_material_count('SAMPLE'),
-                'data_count': investigation.get_material_count('DATA'),
+                'source_count': inv.get_material_count('SOURCE'),
+                'material_count': inv.get_material_count('MATERIAL'),
+                'sample_count': inv.get_material_count('SAMPLE'),
+                'data_count': inv.get_material_count('DATA'),
             }
-            if investigation
+            if inv
             else {}
         )
 
@@ -330,8 +464,10 @@ class SampleSheetStudyTablesAjaxView(SODARBaseProjectAjaxView):
                 status=404,
             )
 
+        inv = study.investigation
+        project = inv.project
+
         # Return extra edit mode data
-        project = study.investigation.project
         edit = bool(request.GET.get('edit'))
         allow_editing = app_settings.get_app_setting(
             APP_NAME, 'allow_editing', project=project
@@ -362,15 +498,13 @@ class SampleSheetStudyTablesAjaxView(SODARBaseProjectAjaxView):
             return Response(ret_data, status=200)
 
         # Get iRODS content if NOT editing and collections have been created
-        if not edit and study.investigation.irods_status and irods_backend:
+        if not edit and inv.irods_status and irods_backend:
             # Can't import at module root due to circular dependency
             from .plugins import find_study_plugin
             from .plugins import find_assay_plugin
 
             # Get study plugin for shortcut data
-            study_plugin = find_study_plugin(
-                study.investigation.get_configuration()
-            )
+            study_plugin = find_study_plugin(inv.get_configuration())
 
             if study_plugin:
                 shortcuts = study_plugin.get_shortcut_column(
@@ -455,11 +589,11 @@ class SampleSheetStudyTablesAjaxView(SODARBaseProjectAjaxView):
                         a_data['shortcuts'][i]['enabled'] = True
 
         # Get/build sheet config
-        sheet_config = conf_api.get_sheet_config(study.investigation)
+        sheet_config = conf_api.get_sheet_config(inv)
 
         # Get/build display config
         display_config = self._get_display_config(
-            study.investigation, request.user, sheet_config
+            inv, request.user, sheet_config
         )
 
         ret_data['display_config'] = display_config['studies'][
@@ -468,13 +602,19 @@ class SampleSheetStudyTablesAjaxView(SODARBaseProjectAjaxView):
 
         # Set up editing
         if edit:
+            ontology_backend = get_backend_api('ontologyaccess_backend')
+
             # Get study config
             ret_data['study_config'] = sheet_config['studies'][
                 str(study.sodar_uuid)
             ]
 
             # Set up study edit context
-            ret_data['edit_context'] = {'samples': {}, 'protocols': []}
+            ret_data['edit_context'] = {
+                'sodar_ontologies': ontology_backend.get_obo_dict(key='name'),
+                'samples': {},
+                'protocols': [],
+            }
 
             # Add sample info
             s_assays = {}
@@ -564,27 +704,25 @@ class SampleSheetWarningsAjaxView(SODARBaseProjectAjaxView):
     permission_required = 'samplesheets.view_sheet'
 
     def get(self, request, *args, **kwargs):
-        investigation = Investigation.objects.filter(
-            project=self.get_project()
-        ).first()
+        inv = Investigation.objects.filter(project=self.get_project()).first()
 
-        if not investigation:
+        if not inv:
             return Response(
                 {'message': 'Investigation not found for project'}, status=404
             )
 
-        return Response({'warnings': investigation.parser_warnings}, status=200)
+        return Response({'warnings': inv.parser_warnings}, status=200)
 
 
 class SheetCellEditAjaxView(BaseSheetEditAjaxView):
     """Ajax view to edit sample sheet cells"""
 
     @transaction.atomic
-    def _update_cell(self, obj, cell, save=False):
+    def _update_cell(self, node_obj, cell, save=False):
         """
         Update a single cell in an object.
 
-        :param obj: GenericMaterial or Process object
+        :param node_obj: GenericMaterial or Process object
         :param cell: Cell update data from the client (dict)
         :param save: If True, save object after successful call (boolean)
         :return: String
@@ -593,7 +731,9 @@ class SheetCellEditAjaxView(BaseSheetEditAjaxView):
         ok_msg = None
         logger.debug(
             'Editing {} "{}" ({})'.format(
-                obj.__class__.__name__, obj.unique_name, obj.sodar_uuid
+                node_obj.__class__.__name__,
+                node_obj.unique_name,
+                node_obj.sodar_uuid,
             )
         )
         # TODO: Provide the original header as one string instead
@@ -603,10 +743,10 @@ class SheetCellEditAjaxView(BaseSheetEditAjaxView):
         # Plain fields
         if not header_type and header_name.lower() in EDIT_FIELD_MAP:
             attr_name = EDIT_FIELD_MAP[header_name.lower()]
-            attr = getattr(obj, attr_name)
+            attr = getattr(node_obj, attr_name)
 
             if isinstance(attr, str):
-                setattr(obj, attr_name, cell['value'])
+                setattr(node_obj, attr_name, cell['value'])
 
             elif isinstance(attr, dict):
                 attr['name'] = cell['value']
@@ -620,16 +760,16 @@ class SheetCellEditAjaxView(BaseSheetEditAjaxView):
             if len(cell['value']) == 0 and cell.get('item_type') != 'DATA':
                 self._raise_ex('Empty name not allowed for non-data node')
 
-            obj.name = cell['value']
+            node_obj.name = cell['value']
             # TODO: Update unique name here if needed
             ok_msg = 'Edited node name: {}'.format(cell['value'])
 
         # Process name and name type (special case)
         elif header_type == 'process_name':
-            obj.name = cell['value']
+            node_obj.name = cell['value']
 
             if cell['header_name'] in th.PROCESS_NAME_HEADERS:
-                obj.name_type = cell['header_name']
+                node_obj.name_type = cell['header_name']
 
             ok_msg = 'Edited process name: {}{}'.format(
                 cell['value'],
@@ -651,47 +791,54 @@ class SheetCellEditAjaxView(BaseSheetEditAjaxView):
                     )
                 )
 
-            obj.protocol = protocol
+            node_obj.protocol = protocol
             ok_msg = 'Edited protocol ref: "{}" ({})'.format(
                 cell['value'], cell['uuid_ref']
             )
 
         # Performer (special case)
         elif header_type == 'performer':
-            obj.performer = cell['value']
+            node_obj.performer = cell['value']
 
         # Perform date (special case)
         elif header_type == 'perform_date':
             if cell['value']:
                 try:
-                    obj.perform_date = dt.strptime(cell['value'], '%Y-%m-%d')
+                    node_obj.perform_date = dt.strptime(
+                        cell['value'], '%Y-%m-%d'
+                    )
 
                 except ValueError as ex:
                     self._raise_ex(ex)
 
             else:
-                obj.perform_date = None
+                node_obj.perform_date = None
+
+        # Extract label (special case)
+        elif header_type == 'extract_label':
+            node_obj.extract_label = cell['value']
 
         # JSON Attributes
         elif header_type in MODEL_JSON_ATTRS:
-            attr = getattr(obj, header_type)
+            attr = getattr(node_obj, header_type)
 
             # TODO: Is this actually a thing nowadays?
             if isinstance(attr[header_name], str):
                 attr[header_name] = cell['value']
 
-            elif isinstance(attr[header_name], dict):
-                # TODO: Ontology value and list support
-                attr[header_name]['value'] = cell['value']
+            else:
+                attr[header_name]['value'] = self._get_attr_value(
+                    node_obj, cell, header_name, header_type
+                )
 
                 # TODO: Support ontology ref in unit
-                if 'unit' not in attr[header_name] or isinstance(
-                    attr[header_name]['unit'], str
-                ):
-                    attr[header_name]['unit'] = cell.get('unit')
-
-                elif isinstance(attr[header_name]['unit'], dict):
+                if node_obj.has_ontology_unit(
+                    header_name, header_type
+                ) and isinstance(attr[header_name]['unit'], dict):
                     attr[header_name]['unit']['name'] = cell.get('unit')
+
+                elif node_obj.has_unit(header_name, header_type):
+                    attr[header_name]['unit'] = cell.get('unit')
 
             ok_msg = 'Edited JSON attribute: {}[{}]'.format(
                 header_type, header_name
@@ -706,7 +853,7 @@ class SheetCellEditAjaxView(BaseSheetEditAjaxView):
             )
 
         if save:
-            obj.save()
+            node_obj.save()
 
             if ok_msg:
                 logger.debug(ok_msg)
@@ -714,19 +861,17 @@ class SheetCellEditAjaxView(BaseSheetEditAjaxView):
         return ok_msg
 
     def post(self, request, *args, **kwargs):
+        inv = Investigation.objects.filter(
+            project=self.get_project(), active=True
+        ).first()
         updated_cells = request.data.get('updated_cells', [])
 
         for cell in updated_cells:
             logger.debug('Cell update: {}'.format(cell))
-            obj_cls = (
-                GenericMaterial
-                if cell['obj_cls'] == 'GenericMaterial'
-                else Process
-            )
-            obj = obj_cls.objects.filter(sodar_uuid=cell['uuid']).first()
+            node_obj = get_node_obj(sodar_uuid=cell['uuid'])
             # TODO: Make sure given object actually belongs in project etc.
 
-            if not obj:
+            if not node_obj:
                 err_msg = 'Object not found: {} ({})'.format(
                     cell['uuid'], cell['obj_cls']
                 )
@@ -737,9 +882,18 @@ class SheetCellEditAjaxView(BaseSheetEditAjaxView):
 
             # Update cell, save immediately (now we are only editing one cell)
             try:
-                self._update_cell(obj, cell, save=True)
+                self._update_cell(node_obj, cell, save=True)
 
             except self.SheetEditException as ex:
+                return Response({'message': str(ex)}, status=500)
+
+        # Update investigation ontology refs
+        if updated_cells:
+            try:
+                self._update_ontology_refs(
+                    inv, self._get_ontology_names(cells=updated_cells)
+                )
+            except Exception as ex:
                 return Response({'message': str(ex)}, status=500)
 
         # TODO: Log edits in timeline here, once saving in bulk
@@ -779,35 +933,15 @@ class SheetRowInsertAjaxView(BaseSheetEditAjaxView):
         if header_type in MODEL_JSON_ATTRS:
             attr = getattr(node_obj, header_type)
             # Check if we have ontology refs and alter value
-            h_idx = node_obj.headers.index(
-                '{}[{}]'.format(ATTR_HEADER_MAP[header_type], header_name)
-            )
 
-            if (
-                h_idx
-                and h_idx < len(node_obj.headers) - 1
-                and node_obj.headers[h_idx + 1]
-                in [th.TERM_SOURCE_REF, th.TERM_ACCESSION_NUMBER]
-                and not isinstance(cell['value'], dict)
-            ):
-                attr[header_name] = {
-                    'value': {
-                        'name': cell.get('value'),
-                        'accession': None,
-                        'ontology_name': None,
-                    }
-                }
-
-            else:
-                attr[header_name] = {'value': cell['value']}
+            attr[header_name] = {
+                'value': cls._get_attr_value(
+                    node_obj, cell, header_name, header_type
+                )
+            }
 
             # TODO: Support ontology ref in unit for real
-            if (
-                h_idx < len(node_obj.headers) - 2
-                and node_obj.headers[h_idx + 1] == 'Unit'
-                and node_obj.headers[h_idx + 2]
-                in [th.TERM_SOURCE_REF, th.TERM_ACCESSION_NUMBER]
-            ):
+            if node_obj.has_ontology_unit(header_name, header_type):
                 attr[header_name]['unit'] = {
                     'name': cell.get('unit'),
                     'ontology_name': None,
@@ -815,8 +949,7 @@ class SheetRowInsertAjaxView(BaseSheetEditAjaxView):
                 }
 
             elif (
-                h_idx < len(node_obj.headers) - 2
-                and node_obj.headers[h_idx + 1] == 'Unit'
+                node_obj.has_unit(header_name, header_type)
                 and cell.get('unit') != ''
             ):
                 attr[header_name]['unit'] = cell.get('unit')
@@ -1032,14 +1165,7 @@ class SheetRowInsertAjaxView(BaseSheetEditAjaxView):
 
             if uuid:
                 # Could also use eval() but it's unsafe
-                if obj_cls == 'GenericMaterial':
-                    node_obj = GenericMaterial.objects.filter(
-                        sodar_uuid=uuid
-                    ).first()
-
-                elif obj_cls == 'Process':
-                    node_obj = Process.objects.filter(sodar_uuid=uuid).first()
-
+                node_obj = get_node_obj(sodar_uuid=uuid)
                 if not node_obj:
                     self._raise_ex(
                         '{} not found (UUID={})'.format(obj_cls, uuid)
@@ -1217,6 +1343,9 @@ class SheetRowInsertAjaxView(BaseSheetEditAjaxView):
         return [str(o.sodar_uuid) for o in node_objects]
 
     def post(self, request, *args, **kwargs):
+        inv = Investigation.objects.filter(
+            project=self.get_project(), active=True
+        ).first()
         new_row = request.data.get('new_row', None)
 
         if new_row:
@@ -1226,7 +1355,15 @@ class SheetRowInsertAjaxView(BaseSheetEditAjaxView):
                 self.ok_data['node_uuids'] = self._insert_row(new_row)
                 logger.debug('node_uuids={}'.format(self.ok_data['node_uuids']))
 
-            except self.SheetEditException as ex:
+                # Update investigation ontology refs
+                try:
+                    self._update_ontology_refs(
+                        inv, self._get_ontology_names(nodes=new_row['nodes'])
+                    )
+                except Exception as ex:
+                    return Response({'message': str(ex)}, status=500)
+
+            except Exception as ex:
                 return Response({'message': str(ex)}, status=500)
 
         return Response(self.ok_data, status=200)
@@ -1418,13 +1555,11 @@ class SampleSheetEditFinishAjaxView(SODARBaseProjectAjaxView):
         isa_version = None
         sheet_io = SampleSheetIO()
         project = self.get_project()
-        investigation = Investigation.objects.filter(
-            project=project, active=True
-        ).first()
+        inv = Investigation.objects.filter(project=project, active=True).first()
         export_ex = None
 
         try:
-            isa_data = sheet_io.export_isa(investigation)
+            isa_data = sheet_io.export_isa(inv)
 
             # Save sheet config with ISATab version
             isa_data['sheet_config'] = app_settings.get_app_setting(
@@ -1432,11 +1567,11 @@ class SampleSheetEditFinishAjaxView(SODARBaseProjectAjaxView):
             )
             isa_version = sheet_io.save_isa(
                 project=project,
-                inv_uuid=investigation.sodar_uuid,
+                inv_uuid=inv.sodar_uuid,
                 isa_data=isa_data,
                 tags=['EDIT'],
                 user=request.user,
-                archive_name=investigation.archive_name,
+                archive_name=inv.archive_name,
             )
 
         except Exception as ex:
@@ -1601,6 +1736,8 @@ class SampleSheetManageAjaxView(SODARBaseProjectAjaxView):
                 tl_event.add_object(
                     obj=tl_obj, label=tl_label, name=tl_obj.get_display_name()
                 )
+
+        # TODO: Update investigation ontology reference, return list
 
         return Response({'message': 'ok'}, status=200)
 

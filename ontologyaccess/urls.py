@@ -49,9 +49,9 @@ urls_ajax = [
         name='ajax_obo_term_query',
     ),
     url(
-        regex=r'^ajax/obo/term/query/(?P<oboformatontology>[0-9a-f-]+)$',
-        view=views_ajax.OBOTermQueryAjaxView.as_view(),
-        name='ajax_obo_term_query',
+        regex=r'^ajax/obo/term/list$',
+        view=views_ajax.OBOTermListAjaxView.as_view(),
+        name='ajax_obo_term_list',
     ),
 ]
 

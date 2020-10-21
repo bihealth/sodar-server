@@ -1,3 +1,4 @@
+from altamisa.constants import table_headers as th
 import uuid
 
 from django.conf import settings
@@ -31,6 +32,21 @@ GENERIC_MATERIAL_TYPES = {
     'SAMPLE': 'Sample',
     'DATA': 'Data File',
 }
+
+# Map JSON attributes to altamISA headers
+ATTR_HEADER_MAP = {
+    'characteristics': th.CHARACTERISTICS,
+    'comments': th.COMMENT,
+    'factor_values': th.FACTOR_VALUE,
+    'parameter_values': th.PARAMETER_VALUE,
+}
+
+# Special field attributes not a part of JSON attributes
+SPECIAL_FIELD_ATTRS = [
+    'extract_label',
+    'first_dimension',
+    'second_dimension',
+]
 
 GENERIC_MATERIAL_CHOICES = [(k, v) for k, v in GENERIC_MATERIAL_TYPES.items()]
 NOT_AVAILABLE_STR = '(N/A)'
@@ -477,6 +493,88 @@ class Assay(BaseSampleSheet):
 # Materials and data files -----------------------------------------------------
 
 
+class NodeMixin:
+    """
+    Mixin for general row-level GenericMaterial and Process helpers.
+    TODO: Eventually should go into a node base class (see issue #922)
+    """
+
+    def get_header_idx(self, header_name, header_type=None):
+        """
+        Return index of a header in headers.
+
+        :param header_name: Header name (string)
+        :param header_type: Header type (string, optional)
+        :return: Integer or None
+        """
+        if not header_type or header_type in SPECIAL_FIELD_ATTRS:
+            return self.headers.index(header_name)
+        return self.headers.index(
+            '{}[{}]'.format(ATTR_HEADER_MAP[header_type], header_name)
+        )
+
+    def is_ontology_field(self, header_name, header_type=None):
+        """
+        Return true if an ontology value is expected for a field according to
+        the node header.
+
+        :param header_type: Header type (string)
+        :param header_name: Header name (string)
+        :return: Boolean or None
+        """
+        idx = self.get_header_idx(header_name, header_type)
+
+        if (
+            idx
+            and idx <= len(self.headers) - 3
+            and self.headers[idx + 1]
+            in [th.TERM_SOURCE_REF, th.TERM_ACCESSION_NUMBER]
+        ):
+            return True
+
+    def has_unit(self, header_name, header_type=None):
+        """
+        Return true if a unit is expected for a field according to the node
+        header.
+        :param header_type: Header type (string)
+        :param header_name: Header name (string)
+        :return: Boolean or None
+        """
+        idx = self.get_header_idx(header_name, header_type)
+
+        if (
+            idx
+            and idx <= len(self.headers) - 2
+            and self.headers[idx + 1] == th.UNIT
+        ):
+            return True
+        return False
+
+    def has_ontology_unit(self, header_name, header_type=None):
+        """
+        Return true if an unit ontology reference is expected for a field
+        according to the node header.
+
+        :param header_type: Header type (string)
+        :param header_name: Header name (string)
+        :return: Boolean or None
+        """
+        idx = self.get_header_idx(header_name, header_type)
+
+        if idx and self.is_ontology_field(header_name, header_type):
+            idx += 2
+
+        if (
+            idx
+            and idx <= len(self.headers) - 4
+            and self.headers[idx + 1] == th.UNIT
+            and self.headers[idx + 2]
+            in [th.TERM_SOURCE_REF, th.TERM_ACCESSION_NUMBER]
+        ):
+            return True
+        return False
+
+
 class GenericMaterialManager(models.Manager):
     """Manager for custom table-level GenericMaterial queries"""
 
@@ -518,7 +616,7 @@ class GenericMaterialManager(models.Manager):
         return objects
 
 
-class GenericMaterial(BaseSampleSheet):
+class GenericMaterial(NodeMixin, BaseSampleSheet):
     """Generic model for materials in the ISA specification. Contains required
     properties for Source, Material, Sample and Data objects"""
 
@@ -708,7 +806,7 @@ class GenericMaterial(BaseSampleSheet):
 # Process ----------------------------------------------------------------------
 
 
-class Process(BaseSampleSheet):
+class Process(NodeMixin, BaseSampleSheet):
     """ISA model compatible process"""
 
     #: Process name (optional)

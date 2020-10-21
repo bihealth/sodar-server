@@ -13,8 +13,9 @@ from django.urls import reverse
 from projectroles.models import Project
 from projectroles.plugins import get_backend_api
 
-ALT_NAMES_COUNT = 3  # Needed for ArrayField hack
 
+# Local constants
+ALT_NAMES_COUNT = 3  # Needed for ArrayField hack
 CONFIG_LABEL_CREATE = 'Created With Configuration'
 CONFIG_LABEL_OPEN = 'Last Opened With Configuration'
 NAME_FIELDS = ['name', 'protocol']
@@ -320,7 +321,8 @@ def get_config_name(config):
 
 def write_excel_table(table, output, display_name):
     """
-    Write an Excel 2010 file (.xlsx) from a rendered study/assay table
+    Write an Excel 2010 file (.xlsx) from a rendered study/assay table.
+
     :param table:
     :param output:
     :return:

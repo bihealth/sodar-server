@@ -14,7 +14,10 @@
             },
             {
               "name": "organism",
-              "type": "characteristics"
+              "type": "characteristics",
+              "format": "ontology",
+              "allow_list": false,
+              "ontologies": []
             },
             {
               "name": "age",

@@ -209,6 +209,3 @@ class TestGetLastMaterialName(TestUtilsBase):
             get_last_material_name(study_table['table_data'][0], study_table),
             ['0815-N1', '0815-T1'],
         )
-
-
-# TODO: Decent way to test get_sample_libraries()?

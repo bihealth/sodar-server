@@ -15,6 +15,8 @@ from ontologyaccess.tests.test_models import OBOFormatOntologyModelMixin
 
 # Local constants
 OBO_ONTOLOGY_ID = 'tst.obo'
+OBO_NAME = 'TST'
+OBO_FILE = 'tst.obo'
 OBO_TITLE = 'Test Ontology'
 OBO_DESCRIPTION = 'Ontology for testing.'
 OBO_FORMAT_VERSION = '1.2'
@@ -50,6 +52,8 @@ class TestOntologyAccessViewBase(OBOFormatOntologyModelMixin, TestCase):
 
         # Create Ontology and term
         self.ontology = self._make_obo_ontology(
+            name=OBO_NAME,
+            file=OBO_FILE,
             ontology_id=OBO_ONTOLOGY_ID,
             title=OBO_TITLE,
             description=OBO_DESCRIPTION,
@@ -120,7 +124,8 @@ class TestOBOFormatOntologyImportView(TestOntologyAccessViewBase):
         with open(OBO_PATH) as file:
             post_data = {
                 'file_upload': file,
-                'title': None,
+                'name': 'EX',
+                'title': 'Example Ontology',
                 'term_url': DEFAULT_TERM_URL,
             }
 
@@ -157,6 +162,7 @@ class TestOBOFormatOntologyUpdateView(TestOntologyAccessViewBase):
         self.assertEqual(OBOFormatOntology.objects.all().count(), 1)
 
         post_data = {
+            'name': OBO_NAME,
             'title': OBO_TITLE_UPDATED,
             'term_url': OBO_TERM_URL_ALT,
         }

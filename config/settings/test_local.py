@@ -25,6 +25,7 @@ IRODS_ZONE = 'omicsZone'
 ENABLED_BACKEND_PLUGINS = [
     'sodar_cache',
     'timeline_backend',
+    'ontologyaccess_backend',
     'taskflow',
     'omics_irods',
 ]

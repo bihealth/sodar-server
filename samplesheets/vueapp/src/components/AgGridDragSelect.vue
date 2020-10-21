@@ -11,6 +11,9 @@
 <script>
 /*
  Modified from vue-drag-select to work with ag-grid
+ TODO: Refactor and cleanup
+ TODO: Reorder functions
+ TODO: Make this work with scrolling
  */
 
 export default {
@@ -183,6 +186,24 @@ export default {
       this.endPoint = null
     },
 
+    convertCopyValue (value) {
+      // Convert value if not a string
+      if (Array.isArray(value)) {
+        if (value.length === 0) return ''
+        let retVal = ''
+        for (let i = 0; i < value.length; i++) {
+          if (i > 0) retVal += ';'
+          if (typeof value[i] === 'object' && 'name' in value[i]) {
+            retVal += value[i].name
+          } else {
+            retVal += value[i]
+          }
+        }
+        return retVal
+      }
+      return value
+    },
+
     onCopy () {
       // Cancel copy if cell editing is active
       if (!this.app.selectEnabled) return
@@ -232,12 +253,13 @@ export default {
               copyData += '\t'
             }
           }
-          copyData += o.value
+          copyData += this.convertCopyValue(o.value)
           prevTop = o.top
         }
       } else if (focusedCell) { // Single cell copy
         const row = gridApi.getDisplayedRowAtIndex(focusedCell.rowIndex)
-        copyData = gridApi.getValue(focusedCell.column.colId, row).value
+        copyData = this.convertCopyValue(
+          gridApi.getValue(focusedCell.column.colId, row).value)
       }
       this.$copyText(copyData) // Use vue-clipboard2
       this.clearSelected()

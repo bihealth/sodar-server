@@ -13,6 +13,7 @@ from ontologyaccess.models import OBOFormatOntology, OBOFormatOntologyTerm
 # Local constants
 OBO_DIR = os.path.dirname(__file__) + '/obo/'
 OBO_PATH = OBO_DIR + 'ex.obo'
+OBO_NAME = 'EX'
 EX_OBO_TERM_IDS = {
     'synonyms': 'EX:0000002',
     'alt_ids': 'EX:0000003',
@@ -45,7 +46,9 @@ class TestOBOFormatOntologyIO(TestCase):
         self.assertEqual(OBOFormatOntologyTerm.objects.count(), 0)
 
         obo_doc = fastobo.load(OBO_PATH)
-        ontology = self.obo_io.import_obo(obo_doc=obo_doc, file_name='ex.obo')
+        ontology = self.obo_io.import_obo(
+            obo_doc=obo_doc, name=OBO_NAME, file=OBO_PATH
+        )
 
         # Assert postconditions
         self.assertEqual(OBOFormatOntology.objects.count(), 1)
@@ -85,7 +88,7 @@ class TestOBOFormatOntologyIO(TestCase):
             file_name = url.split('/')[-1]
             obo_doc = fastobo.load(urlopen(url))
             ontology = self.obo_io.import_obo(
-                obo_doc=obo_doc, file_name=file_name
+                obo_doc=obo_doc, name=file_name.split('.')[0].upper(), file=url
             )
 
             # Assert postconditions

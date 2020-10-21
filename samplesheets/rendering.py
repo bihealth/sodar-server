@@ -77,14 +77,6 @@ MODEL_JSON_ATTRS = [
     'parameter_values',
 ]
 
-# Map JSON attributes to altamISA headers
-ATTR_HEADER_MAP = {
-    'characteristics': th.CHARACTERISTICS,
-    'comments': th.COMMENT,
-    'factor_values': th.FACTOR_VALUE,
-    'parameter_values': th.PARAMETER_VALUE,
-}
-
 # HACK: Special cases for inline file linking (see issue #817)
 SPECIAL_FILE_LINK_HEADERS = ['report file']
 
@@ -157,8 +149,7 @@ class SampleSheetTableBuilder:
             return accession
 
         # HACK: "HPO" is "HP" in bioontology.org
-        # TODO: If there are more exceptions like this,
-        # TODO: create a proper map in settings
+        # TODO: This is actually an error in sample sheets, it should be "HP"
         if (
             'bioontology.org' in settings.SHEETS_ONTOLOGY_URL_TEMPLATE
             and ontology_name == 'HPO'
@@ -282,21 +273,13 @@ class SampleSheetTableBuilder:
         ) or name.lower() in SPECIAL_FILE_LINK_HEADERS:  # HACK for issue #817
             header['col_type'] = 'LINK_FILE'
 
-        # Recognize UNIT by header (see issues #889, #914)
-        elif header_type in MODEL_JSON_ATTRS and isinstance(
-            obj, GenericMaterial
-        ):
-            col_type = None
-            h_search = '{}[{}]'.format(ATTR_HEADER_MAP[header_type], name)
-            h_idx = obj.headers.index(h_search)
+        # Recognize ONTOLOGY by headers
+        elif obj.is_ontology_field(name, header_type):
+            header['col_type'] = 'ONTOLOGY'
 
-            if (
-                h_idx < len(obj.headers) - 1
-                and obj.headers[h_idx + 1] == 'Unit'
-            ):
-                col_type = 'UNIT'
-
-            header['col_type'] = col_type
+        # Recognize UNIT by headers
+        elif obj.has_unit(name, header_type):
+            header['col_type'] = 'UNIT'
 
         else:
             header['col_type'] = None  # Default / to be determined later
@@ -371,24 +354,6 @@ class SampleSheetTableBuilder:
 
         elif col_value == 1 and self._col_values[self._col_idx] == 0:
             self._col_values[self._col_idx] = 1
-
-        # Modify column type according to data
-        if not self._field_header[self._col_idx]['col_type']:
-            if (
-                not basic_val
-                or cell.get('link')
-                or header_type == 'extract_label'
-                or isinstance(cell['value'], dict)
-                or (
-                    isinstance(cell['value'], list)
-                    and len(cell['value']) > 0
-                    and isinstance(cell['value'][0], dict)
-                )
-            ):
-                self._field_header[self._col_idx]['col_type'] = 'ONTOLOGY'
-
-            elif cell.get('unit'):
-                self._field_header[self._col_idx]['col_type'] = 'UNIT'
 
         self._col_idx += 1
 
@@ -475,7 +440,7 @@ class SampleSheetTableBuilder:
                 self._add_annotation(
                     {'value': obj.first_dimension},
                     'First Dimension',
-                    header_type='field',
+                    header_type='first_dimension',
                     obj=obj,
                 )
 
@@ -484,7 +449,7 @@ class SampleSheetTableBuilder:
                 self._add_annotation(
                     {'value': obj.second_dimension},
                     'Second Dimension',
-                    header_type='field',
+                    header_type='second_dimension',
                     obj=obj,
                 )
 
@@ -494,18 +459,15 @@ class SampleSheetTableBuilder:
 
     def _add_annotation(self, ann, header, header_type, obj):
         """
-        Append a single annotation to row as multiple cells. To be used with
-        altamISA v0.1+.
+        Append an ontology annotation or list of values to a row as a single
+        cell.
 
         :param ann: Annotation value (string or Dict)
         :param header: Name of the column header (string)
         :param header_type: Header type (string or None)
         :param obj: GenericMaterial or Pocess object the annotation belongs to
         """
-        val = ''
         unit = None
-        link = None
-        tooltip = None
         basic_val = False
 
         # Special case: Comments as parsed in SODAR v0.5.2 (see #629)
@@ -514,59 +476,49 @@ class SampleSheetTableBuilder:
             val = ann
             basic_val = True
 
-        # Ontology reference
-        # TODO: add original accession and ontology name when editing
-        elif (
-            isinstance(ann['value'], dict)
-            and 'name' in ann['value']
-            and ann['value']['name']
-        ):
-            if ann['value']['ontology_name']:
-                tooltip = ann['value']['ontology_name']
-
-            val = ann['value']['name']
-
-            if ann['value']['ontology_name'] and ann['value']['accession']:
-                link = self._get_ontology_link(
-                    ann['value']['ontology_name'], ann['value']['accession']
-                )
-
-        # Empty ontology reference (this can happen with altamISA v0.1)
-        elif isinstance(ann['value'], dict) and (
-            'name' not in ann['value'] or not ann['value']['name']
-        ):
-            val = ''
-
-        # List of dicts (altamISA v0.1+, SODAR v0.5.2+)
-        # TODO: Refactor
-        elif (
+        # Ontology reference(s) (altamISA v0.1+, SODAR v0.5.2+)
+        elif isinstance(ann['value'], dict) or (
             isinstance(ann['value'], list)
             and len(ann['value']) > 0
             and isinstance(ann['value'][0], dict)
         ):
-            val = list(ann['value'])
+            val = []
+            tmp_val = ann['value']
 
-            for i in range(len(val)):
-                new_val = dict(val[i])
+            # Make single reference into a list for simpler rendering
+            if isinstance(ann['value'], dict):
+                tmp_val = [ann['value']]
 
-                if isinstance(new_val['name'], str):
-                    new_val['name'] = new_val['name'].strip()
+            if not tmp_val[0].get('name'):
+                val = ''
 
-                new_val['accession'] = self._get_ontology_url(
-                    new_val['ontology_name'], new_val['accession']
-                )
-                val[i] = new_val
+            else:
+                for v in tmp_val:
+                    v = dict(v)
+
+                    if isinstance(v['name'], str):
+                        v['name'] = v['name'].strip()  # Cleanup name
+                    elif v['name'] is None:
+                        v['name'] = ''
+
+                    if not self._edit:
+                        # If not editing, provide user friendly ontology URL
+                        v['accession'] = self._get_ontology_url(
+                            v['ontology_name'], v['accession']
+                        )
+
+                    val.append(v)
 
         # Basic value string OR a list of strings
         else:
             val = ann['value']
             basic_val = True
 
-        # Add unit if present
+        # Add unit if present (only for non-list values)
+        # TODO: provide full ontology value for editing once supporting
         if isinstance(ann, dict) and 'unit' in ann:
             if isinstance(ann['unit'], dict):
                 unit = ann['unit']['name']
-
             else:
                 unit = ann['unit']
 
@@ -574,10 +526,10 @@ class SampleSheetTableBuilder:
             val,
             header,
             unit=unit,
-            link=link,
+            link=None,  # Link will be retrieved from each ontology term
             header_type=header_type,
             obj=obj,
-            tooltip=tooltip,
+            tooltip=None,  # Tooltip will be retrieved from each ontology term
             basic_val=basic_val,
         )
 

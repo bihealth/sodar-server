@@ -15,14 +15,15 @@
       </p>
       <h5 class="text-success font-weight-bold">Available Features</h5>
       <ul>
-        <li>Editing of columns with simple values (text, integer, double, select)</li>
+        <li>Editing of simple values (text, integer/double, select)</li>
+        <li>Editing values as ontology term references</li>
         <li>Special field editing (performer, perform date, contacts)</li>
         <li>Renaming materials and processes</li>
         <li>Protocol selection</li>
         <li>Inserting rows</li>
         <li>Deleting rows</li>
         <li>Saving, browsing and restoring sample sheet versions</li>
-        <li>Configuring columns for editing (requires owner, delegate or superuser permissions</li>
+        <li>Configuring columns for editing</li>
         <li>Unit support</li>
         <li>Custom regex, optional integer range, automatic filling of default value</li>
         <li>Default suffix and automated filling of node names</li>
@@ -30,7 +31,7 @@
       </ul>
       <h5 class="text-danger font-weight-bold">Under Development</h5>
       <ul>
-        <li>Editing values and units as ontology references</li>
+        <li>Editing units as ontology term references</li>
         <li>Editing of other special case columns (external links)</li>
         <li>Clipboard paste of value without double-clicking to edit field</li>
         <li>Multi-cell clipboard paste</li>
@@ -78,6 +79,38 @@
           If e.g. the same source appears on multiple rows, changes to one cell
           are automatically propagated to all repeated cells.
         </li>
+        <li><u>Ontology Term Value Editing</u></li>
+          <ul>
+            <li>
+              Editing ontology term values happens in a modal opened by double
+              clicking a cell in an ontology value column.
+            </li>
+            <li>
+              Terms are queried from ontologies imported into the local SODAR
+              database.
+            </li>
+            <li>
+              It is also possible for free text entry of terms not in the
+              SODAR database.
+            </li>
+            <li>
+              In column configuration, valid ontologies for a column can be
+              defined along with a boolean flag for allowing multiple terms per
+              cell.
+            </li>
+            <li>
+              Obsolete terms and unknown ontologies are flagged in the UI.
+            </li>
+            <li>
+              If you want to copy/paste full ontology term references from one
+              cell to another, use the copy-paste function in the ontology term
+              editor modal.
+            </li>
+            <li>
+              If an ontology you use is not included in the SODAR database for
+              querying, please contact helpdesk and request it to be added.
+            </li>
+          </ul>
         <li><u>Row Inserting</u></li>
           <ul>
             <li>

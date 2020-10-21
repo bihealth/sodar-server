@@ -1,9 +1,10 @@
 """Plugins for the ontologyaccess app"""
 
 # Projectroles dependency
-from projectroles.plugins import SiteAppPluginPoint
+from projectroles.plugins import SiteAppPluginPoint, BackendPluginPoint
 
-# from ontologyaccess.models import BioOntology
+from ontologyaccess.api import OntologyAccessAPI
+from ontologyaccess.models import OBOFormatOntology, OBOFormatOntologyTerm
 from ontologyaccess.urls import urlpatterns
 
 
@@ -30,3 +31,35 @@ class SiteAppPlugin(SiteAppPluginPoint):
 
     #: Required permission for displaying the app
     app_permission = 'ontologyaccess.view_list'
+
+
+class BackendPlugin(BackendPluginPoint):
+    """Plugin for registering backend app with Projectroles"""
+
+    #: Name (slug-safe, used in URLs)
+    name = 'ontologyaccess_backend'
+
+    #: Title (used in templates)
+    title = 'Ontology Access Backend'
+
+    #: FontAwesome icon ID string
+    icon = 'tags'
+
+    #: Description string
+    description = 'Backend for imported ontology access'
+
+    def get_api(self, **kwargs):
+        """Return API entry point object."""
+        return OntologyAccessAPI()
+
+    def get_statistics(self):
+        return {
+            'obo_ontology_count': {
+                'label': 'OBO ontologies',
+                'value': OBOFormatOntology.objects.count(),
+            },
+            'obo_term_count': {
+                'label': 'OBO ontology terms',
+                'value': OBOFormatOntologyTerm.objects.count(),
+            },
+        }

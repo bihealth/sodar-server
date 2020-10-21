@@ -5,12 +5,12 @@
 
 {% load rules %}
 
-{% block title %}OBO Ontology: {{ object.title }}{% endblock %}
+{% block title %}OBO Ontology: {{ object.title }} ({{ object.name }}){% endblock %}
 
 {% block projectroles %}
 
 <div class="row sodar-subtitle-container">
-  <h2><i class="fa fa-tag"></i> {{ object.title }}</h2>
+  <h2><i class="fa fa-tag"></i> {{ object.title }} ({{ object.name }})</h2>
   <a role="button" class="btn btn-secondary ml-auto pull-right"
        href="{{ request.session.real_referer }}">
       <i class="fa fa-arrow-circle-left"></i> Back
@@ -21,6 +21,8 @@
   <div class="card" id="sodar-oa-obo-details">
     <div class="card-body px-0">
       <dl class="row pb-0">
+        <dt class="col-md-3">Ontology Name</dt>
+        <dd class="col-md-9">{{ object.name }}</dd>
         <dt class="col-md-3">Ontology ID</dt>
         <dd class="col-md-9">{{ object.ontology_id }}</dd>
         <dt class="col-md-3">Title</dt>
@@ -47,6 +49,8 @@
         {% endif %}
         <dt class="col-md-3">Term URL</dt>
         <dd class="col-md-9"><code>{{ object.term_url }}</code></dd>
+        <dt class="col-md-3">Ontology File/URL</dt>
+        <dd class="col-md-9"><code>{{ object.file }}</code></dd>
         <dt class="col-md-3">SODAR Import Version</dt>
         <dd class="col-md-9">{{ object.sodar_version }}</dd>
         <dt class="col-md-3">Imported</dt>

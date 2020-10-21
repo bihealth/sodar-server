@@ -9,10 +9,8 @@
     <span v-if="'unit' in value && value.unit">
       {{ value.value }} <span class="text-muted">{{ value.unit }}</span>
     </span>
-    <!-- Ontology links -->
-    <span v-else-if="colType === 'ONTOLOGY' &&
-                     renderData &&
-                     renderData.links.length > 0">
+    <!-- Ontology term(s) -->
+    <span v-else-if="colType === 'ONTOLOGY' && value.value.length > 0">
       <span v-if="!params.app.editMode && headerName === 'hpo terms'">
         <b-button
             class="btn sodar-list-btn mr-1"
@@ -22,15 +20,15 @@
           <i class="fa fa-clipboard"></i>
         </b-button>
       </span>
-      <span v-for="(link, index) in links = renderData.links" :key="index">
+      <span v-for="(term, termIndex) in value.value" :key="termIndex">
         <span v-if="!params.app.editMode">
-          <a :href="link.url"
-             :title="getTooltip()"
+          <a :href="term.accession"
+             :title="term.ontology_name"
              v-b-tooltip.hover.d300
-             target="_blank">{{ link.value }}</a><span v-if="index + 1 < links.length">; </span>
+             target="_blank">{{ term.name }}</a><span v-if="termIndex + 1 < value.value.length">; </span>
         </span>
         <span v-else>
-          {{ link.value }}<span v-if="index + 1 < links.length">; </span>
+          {{ term.name }}<span v-if="termIndex + 1 < value.value.length">; </span>
         </span>
       </span>
     </span>
@@ -101,11 +99,10 @@ export default Vue.extend(
       },
       onCopyHpoTerms () {
         const hpoIds = []
-
-        for (let i = 0; i < this.renderData.links.length; i++) {
-          const link = this.renderData.links[i]
-          const splitUrl = link.url.split('/')
-          hpoIds.push(splitUrl[splitUrl.length - 1])
+        for (let i = 0; i < this.value.value.length; i++) {
+          const term = this.value.value[i]
+          const splitUrl = term.accession.split('/')
+          hpoIds.push(splitUrl[splitUrl.length - 1].replace('_', ':'))
         }
 
         this.$copyText(hpoIds.join(';'))
@@ -115,32 +112,6 @@ export default Vue.extend(
       getHeaderName () {
         // Get header name and place in this.headerName
         return this.params.colDef.headerName.toLowerCase()
-      },
-      getOntologyLinks () {
-        // Return one or more ontology links for field
-        const links = []
-
-        if (Array.isArray(this.value.value)) {
-          for (let i = 0; i < this.value.value.length; i++) {
-            links.push({
-              value: this.value.value[i].name,
-              url: this.value.value[i].accession // ,
-              // ontologyName: this.value.value[i]['ontology_name'] // TODO: Use this?
-            })
-          }
-        } else if (this.value.value.indexOf(';') !== -1 &&
-            'link' in this.value &&
-            this.value.link.indexOf(';') !== -1) { // Legacy altamISA implementation
-          const values = this.value.value.split(';')
-          const urls = this.value.link.split(';')
-
-          for (let i = 0; i < values.length; i++) {
-            links.push({ value: values[i], url: urls[i] })
-          }
-        } else if ('link' in this.value) {
-          links.push({ value: this.value.value, url: this.value.link })
-        }
-        return { links: links }
       },
       getContact () {
         // Return contact name and email
@@ -210,7 +181,7 @@ export default Vue.extend(
         this.value.value.length > 0
       ) {
         // Handle special column type
-        this.colType = this.params.value.colType
+        this.colType = this.params.colType
 
         // Enable/disable hover overflow
         this.enableHover = (this.params.enableHover === undefined)
@@ -218,7 +189,6 @@ export default Vue.extend(
 
         if (this.colType === 'ONTOLOGY') {
           this.headerName = this.getHeaderName()
-          this.renderData = this.getOntologyLinks()
         } else if (this.colType === 'CONTACT') {
           this.renderData = this.getContact()
         } else if (this.colType === 'EXTERNAL_LINKS') {

@@ -12,11 +12,15 @@ Added
 -----
 
 - **Ontologyaccess**
-    - Add site app for ontology storage and access (#937)
+    - Add site app for ontology storage and access (#937, #947)
     - Add ``importobo`` management command (#937)
+    - Add ``ontologyaccess_backend`` backend plugin (#958)
 - **Samplesheets**
     - Add ``microarray`` assay app (#941)
     - ``_update_cache_rows()`` helper for assay app plugins (#954)
+    - ``NodeMixin`` for node field/header helpers (#922)
+    - Ontology term editing (#688, #699)
+    - Extract label editing as string (#964)
 
 Changed
 -------
@@ -24,12 +28,23 @@ Changed
 - **Samplesheets**
     - Display assay plugin icon for all users with sheet edit permissions (#940)
     - Refactor assay row cache updating (#954)
+    - Refactor ontology value rendering (#693)
+    - Move ``ATTR_HEADER_MAP`` to ``models``
+    - Refactor recognizing ontology/unit columns in rendering (#962)
 
 Fixed
 -----
 
 - **Samplesheets**
     - Assay iRODS links enabled if null path is returned by assay app (#951)
+    - Empty ontology/unit column type not recognized in rendering (#962)
+    - Legacy ``field`` header type still in use
+
+Removed
+-------
+
+- **Samplesheets**
+    - Workarounds for legacy sample sheet imports (#946)
 
 
 v0.8.0 (2020-09-15)
