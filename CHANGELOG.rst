@@ -43,6 +43,7 @@ Fixed
     - Assay iRODS links enabled if null path is returned by assay app (#951)
     - Empty ontology/unit column type not recognized in rendering (#962)
     - Legacy ``field`` header type still in use
+    - Row insert failing if the last node is a process (#974, #975)
 
 Removed
 -------

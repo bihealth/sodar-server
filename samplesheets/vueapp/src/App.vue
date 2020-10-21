@@ -1467,7 +1467,7 @@ export default {
           let newInit = true
           let forceEmpty = false
 
-          while (i < cols.length &&
+          while (i < cols.length - 1 &&
               cols[i].originalParent.groupId === nextGroupId) {
             nextColId = cols[i].colId
             const value = this.getDefaultValue(nextColId, gridOptions, newInit, forceEmpty)
@@ -1508,7 +1508,9 @@ export default {
           if (processActive) enableNextIdx = i
         }
         // If we can immediately enable the next node(s), proceed
-        if (enableNextIdx) this.enableNextNodes(rowNode, gridOptions, gridUuid, enableNextIdx)
+        if (enableNextIdx && enableNextIdx < cols.length - 1) {
+          this.enableNextNodes(rowNode, gridOptions, gridUuid, enableNextIdx)
+        }
       }
     },
 
