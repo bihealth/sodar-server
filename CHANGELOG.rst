@@ -11,6 +11,8 @@ Unreleased
 Added
 -----
 
+- **General**
+    - Missing user model migration
 - **Landingzones**
     - Zone UUID clipboard copying link (#970)
 - **Ontologyaccess**
