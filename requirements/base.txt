@@ -93,5 +93,6 @@ openpyxl==3.0.0
 # Webpack loader for Vue.js
 django-webpack-loader==0.7.0
 
-# OBO ontology file parser
+# OBO ontology file parsing
 fastobo==0.9.2
+pronto==2.3.1  # For OWL conversion

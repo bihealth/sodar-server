@@ -104,6 +104,8 @@ class TestOBOFormatOntologyDetailView(TestOntologyAccessViewBase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context['object'], self.ontology)
+        self.assertIsNotNone(response.context['ex_term'])
+        self.assertIsNotNone(response.context['ex_term_acc'])
 
 
 class TestOBOFormatOntologyImportView(TestOntologyAccessViewBase):
@@ -139,6 +141,8 @@ class TestOBOFormatOntologyImportView(TestOntologyAccessViewBase):
 
         # Assert postconditions
         self.assertEqual(OBOFormatOntology.objects.all().count(), 2)
+
+    # TODO: Add test for OWL import
 
 
 class TestOBOFormatOntologyUpdateView(TestOntologyAccessViewBase):

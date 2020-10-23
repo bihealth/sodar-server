@@ -23,7 +23,8 @@ class OBOFormatOntologyForm(forms.ModelForm):
 
     #: Field for file upload
     file_upload = forms.FileField(
-        allow_empty_file=False, help_text='OBO format file',
+        allow_empty_file=False,
+        help_text='OBO or OWL file (OWL will be converted to OBO)',
     )
 
     class Meta:
@@ -32,6 +33,7 @@ class OBOFormatOntologyForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.obo_io = OBOFormatOntologyIO()
 
         # Creation modifications
         if not self.instance.pk:
@@ -44,24 +46,43 @@ class OBOFormatOntologyForm(forms.ModelForm):
             self.fields['file_upload'].required = False
 
     def clean(self):
-        self.cleaned_data['name'] = self.cleaned_data['name'].upper()
+        # TODO: Validate term_url
+        if not self.cleaned_data.get('file_upload'):
+            return self.cleaned_data
 
-        if self.cleaned_data.get('file_upload'):
+        o_format = 'obo'
+
+        if self.cleaned_data['file_upload'].name.split('.')[-1] == 'owl':
+            o_format = 'owl'
+
             try:
-                file_data = self.files.get('file_upload').read().decode()
-                self.obo_doc = fastobo.loads(file_data)
-
+                file_data = self.obo_io.owl_to_obo(
+                    self.cleaned_data['file_upload']
+                )
             except Exception as ex:
                 # NOTE: Can't bind to FileField
-                self.add_error(None, 'Fastobo exception: {}'.format(ex))
+                print('DEBUG: OWL convert exception: {}'.format(ex))  # DEBUG
+                self.add_error(None, 'OWL convert exception: {}'.format(ex))
+                return self.cleaned_data
 
-        # TODO: Validate term_url
+        else:
+            file_data = self.files.get('file_upload').read().decode()
+
+        try:
+            if o_format == 'owl':
+                self.obo_doc = fastobo.load(file_data)
+            else:
+                self.obo_doc = fastobo.loads(file_data)
+
+        except Exception as ex:
+            print('DEBUG: Fastobo exception: {}'.format(ex))  # DEBUG
+            self.add_error(None, 'Fastobo exception: {}'.format(ex))
+
         return self.cleaned_data
 
     def save(self, *args, **kwargs):
         if not self.instance.pk and self.cleaned_data.get('file_upload'):
-            obo_io = OBOFormatOntologyIO()
-            self.instance = obo_io.import_obo(
+            self.instance = self.obo_io.import_obo(
                 obo_doc=self.obo_doc,
                 name=self.cleaned_data.get('name'),
                 file=self.cleaned_data.get('file_upload'),

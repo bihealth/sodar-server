@@ -1,9 +1,13 @@
 """Import and export utilities for the ontologyaccess app"""
 
+import csv
 import fastobo.header as fh
 from fastobo.term import TermFrame
 from importlib import import_module
+import io
 import logging
+import pronto
+import sys
 
 from django.conf import settings
 from django.db import transaction
@@ -34,6 +38,10 @@ OBO_PROPERTY_MAP = {
     'dc-title': 'title',
 }
 OBO_RAW_TERMS = ['comment', 'name', 'namespace', 'replaced_by']
+OMIM_NAME = 'OMIM'
+OMIM_TITLE = 'Online Mendelian Inheritance in Man'
+OMIM_URL = 'http://purl.bioontology.org/ontology/{id_space}/{local_id}'
+LOCAL_ID_PREFIX = 'MTHU'
 
 
 class OBOFormatOntologyIO:
@@ -50,6 +58,34 @@ class OBOFormatOntologyIO:
         OBOFormatOntologyTerm.objects.bulk_create(
             [OBOFormatOntologyTerm(**v) for v in term_vals]
         )
+
+    @classmethod
+    def owl_to_obo(cls, owl, verbose=False):
+        """
+        Convert an OWL format ontology into the OBO format.
+
+        :param owl: Path, URL or file pointer to an OWL file
+        :param verbose: Display pronto output if True (bool)
+        :return: File pointer
+        """
+        logger.info('Converting OWL format ontology to OBO..'.format(owl))
+
+        if not verbose:
+            sys.stdout = io.StringIO()
+            sys.stderr = io.StringIO()
+
+        o = pronto.Ontology(owl)
+
+        if not verbose:
+            sys.stdout = sys.__stdout__
+            sys.stderr = sys.__stderr__
+
+        logger.info('Parsed OWL ontology with {} terms'.format(len(o.terms())))
+        f = io.BytesIO()
+        o.dump(f, format='obo')
+        logger.info('Converted OWL ontology into OBO')
+        f.seek(0)
+        return f
 
     @classmethod
     @transaction.atomic
@@ -111,12 +147,27 @@ class OBOFormatOntologyIO:
         )
 
         logger.debug('Parsing terms..')
+        db_term_ids = OBOFormatOntologyTerm.objects.all().values_list(
+            'term_id', flat=True
+        )
         term_count = 0
         term_vals = []
 
         for term in obo_doc:
             if not isinstance(term, TermFrame):
                 continue  # Skip typedefs
+
+            if str(term.id) in db_term_ids:
+                logger.warning(
+                    'Skipping term already in database: {}'.format(term.id)
+                )
+                continue
+
+            if ':' not in str(term.id):
+                logger.warning(
+                    'Skipping term without id space: {}'.format(term.id)
+                )
+                continue
 
             t_kwargs = {'ontology': obo_obj, 'term_id': str(term.id)}
 
@@ -166,7 +217,11 @@ class OBOFormatOntologyIO:
         if len(term_vals) > 0:
             cls._create_terms(term_vals)
 
-        logger.debug('Parsing terms OK')
+        if term_count == 0:
+            logger.warning(
+                '0 terms imported for OBOFormatOntology "{}", '
+                'this is probably not what you wanted'.format(obo_obj.name)
+            )
         logger.info(
             'Imported OBOFormatOntology "{}" ({}) with {} term{} '
             '(UUID={})'.format(
@@ -180,7 +235,7 @@ class OBOFormatOntologyIO:
         return obo_obj
 
     @classmethod
-    def get_header(cls, obo_doc, raw_tag, raw_value=True):
+    def get_obo_header(cls, obo_doc, raw_tag, raw_value=True):
         """
         Get header from an OBO format ontology parsed by fastobo.
 
@@ -192,3 +247,93 @@ class OBOFormatOntologyIO:
         for h in obo_doc.header:
             if h.raw_tag() == raw_tag:
                 return h.raw_value() if raw_value else h
+
+    @classmethod
+    @transaction.atomic
+    def import_omim(cls, csv_data, file):
+        """
+        Import OMIM data as a "fake" OBO ontology in the SODAR database.
+
+        :param csv_data: File handle to CSV data
+        :param file: File name (string)
+        :return: OBOFormatOntology object
+        """
+        logger.info(
+            'Importing CSV data into ontology "{}" from {}'.format(
+                OMIM_NAME, file
+            )
+        )
+
+        csv.field_size_limit(sys.maxsize)
+        r = csv.reader(csv_data, delimiter=',')
+
+        o_kwargs = {
+            'name': OMIM_NAME,
+            'file': file,
+            'ontology_id': file.split('/')[-1],
+            'title': OMIM_TITLE,
+            'term_url': OMIM_URL,
+            'sodar_version': site.__version__,
+        }
+        obo_obj = OBOFormatOntology.objects.create(**o_kwargs)
+        logger.debug(
+            'OBOFormatOntology created: {} (UUID={})'.format(
+                o_kwargs, obo_obj.sodar_uuid
+            )
+        )
+
+        logger.debug('Parsing terms..')
+        db_term_ids = OBOFormatOntologyTerm.objects.all().values_list(
+            'term_id', flat=True
+        )
+        term_count = 0
+        current_ids = []
+        term_vals = []
+
+        for row in r:
+            ts = str(row[0]).split('/')
+
+            # Skip non-disease terms
+            if not ts[-1].startswith(LOCAL_ID_PREFIX):
+                continue
+
+            term_id = ts[-2] + ':' + ts[-1]
+
+            if term_id in db_term_ids:
+                logger.warning(
+                    'Skipping term already in database: {}'.format(term_id)
+                )
+                continue
+            elif term_id in current_ids:
+                logger.warning(
+                    'Skipping subject already inserted: {}'.format(term_id)
+                )
+                continue
+
+            t_kwargs = {'ontology': obo_obj, 'term_id': term_id, 'name': row[1]}
+
+            term_vals.append(t_kwargs)
+            current_ids.append(term_id)
+            term_count += 1
+
+            # Bulk create in batches
+            if len(term_vals) == settings.ONTOLOGYACCESS_BULK_CREATE:
+                cls._create_terms(term_vals)
+                term_vals = []
+
+        # Create remaining
+        if len(term_vals) > 0:
+            cls._create_terms(term_vals)
+
+        if term_count == 0:
+            logger.warning(
+                '0 OMIM disease terms imported, this is probably not what '
+                'you wanted'
+            )
+        logger.info(
+            'Imported OMIM diseases as OBOFormatOntology with {} term{} '
+            '(UUID={})'.format(
+                term_count, 's' if term_count != 1 else '', obo_obj.sodar_uuid,
+            )
+        )
+        return obo_obj

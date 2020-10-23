@@ -178,10 +178,7 @@ class OBOFormatOntologyTerm(models.Model):
 
     #: Term name
     name = models.CharField(
-        max_length=DEFAULT_LENGTH,
-        unique=False,
-        blank=False,
-        help_text='Term name',
+        max_length=1024, unique=False, blank=False, help_text='Term name',
     )
 
     #: Term definition

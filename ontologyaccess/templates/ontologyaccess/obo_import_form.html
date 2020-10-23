@@ -3,7 +3,7 @@
 {% load rules %}
 {% load crispy_forms_filters %}
 
-{% block title %}{% if object.pk %}Update{% else %}Import{% endif %} OBO Format Ontology{% endblock %}
+{% block title %}{% if object.pk %}Update{% else %}Import{% endif %} OBO/OWL Format Ontology{% endblock %}
 
 {% block css %}
   {{ block.super }}
@@ -21,7 +21,7 @@
 {% block projectroles %}
 
 <div class="row sodar-subtitle-container">
-  <h2>{% if object.pk %}Update{% else %}Import{% endif %} OBO Format Ontology</h2>
+  <h2>{% if object.pk %}Update{% else %}Import{% endif %} OBO/OWL Format Ontology</h2>
 </div>
 
 <div class="container-fluid sodar-page-container">

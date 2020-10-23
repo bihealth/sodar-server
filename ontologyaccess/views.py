@@ -1,5 +1,7 @@
 """UI views for the ontologyaccess app"""
 
+import random
+
 from django.contrib import messages
 from django.shortcuts import redirect
 from django.urls import reverse
@@ -15,7 +17,7 @@ from django.views.generic import (
 from projectroles.views import HTTPRefererMixin, LoggedInPermissionMixin
 
 from ontologyaccess.forms import OBOFormatOntologyForm
-from ontologyaccess.models import OBOFormatOntology
+from ontologyaccess.models import OBOFormatOntology, OBOFormatOntologyTerm
 
 
 class OBOFormatOntologyListView(LoggedInPermissionMixin, ListView):
@@ -41,6 +43,25 @@ class OBOFormatOntologyDetailView(
     slug_url_kwarg = 'oboformatontology'
     slug_field = 'sodar_uuid'
     template_name = 'ontologyaccess/obo_detail.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Get a random term to test accession URL in the UI
+        o = OBOFormatOntology.objects.get(
+            sodar_uuid=self.kwargs['oboformatontology']
+        )
+        terms = OBOFormatOntologyTerm.objects.filter(ontology=o)
+        term_count = terms.count()
+        if term_count > 100:
+            term_count = 100
+        random.seed()
+        t = terms[random.randint(0, term_count - 1)]
+        context['ex_term'] = t
+        context['ex_term_acc'] = o.term_url.format(
+            id_space=t.get_id_space(), local_id=t.get_local_id()
+        )
+        return context
 
 
 class OBOFormatOntologyImportView(

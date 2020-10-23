@@ -31,6 +31,11 @@ OBO_BATCH_URLS = [
     # TODO: Also see issue #944
 ]
 
+OWL_BATCH_URLS = [
+    'http://purl.obolibrary.org/obo/duo.owl',
+    'http://data.bioontology.org/ontologies/ROLEO/submissions/3/download?apikey=8b5b7825-538d-40e0-9e9e-5ab9274a9aeb',
+]
+
 
 class TestOBOFormatOntologyIO(TestCase):
     """Tests for the OBOFormatOntologyIO class"""
@@ -101,3 +106,31 @@ class TestOBOFormatOntologyIO(TestCase):
             )
 
             ontology.delete()
+
+    def test_import_batch_owl(self):
+        """Test converting and importing OWL ontologies in a batch (this may take a while)"""
+
+        for url in OWL_BATCH_URLS:
+            # Assert preconditions
+            self.assertEqual(OBOFormatOntology.objects.count(), 0)
+            self.assertEqual(OBOFormatOntologyTerm.objects.count(), 0)
+
+            file_name = url.split('/')[-1]
+            file = self.obo_io.owl_to_obo(url)
+            obo_doc = fastobo.load(file)
+            ontology = self.obo_io.import_obo(
+                obo_doc=obo_doc, name=file_name.split('.')[0].upper(), file=url
+            )
+
+            # Assert postconditions
+            self.assertIsNotNone(ontology, msg=file_name)
+            self.assertEqual(
+                OBOFormatOntology.objects.count(), 1, msg=file_name
+            )
+            self.assertNotEqual(
+                OBOFormatOntologyTerm.objects.count(), 0, msg=file_name
+            )
+
+            ontology.delete()
+
+    # TODO: Test import_omim()

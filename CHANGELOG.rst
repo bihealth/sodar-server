@@ -17,7 +17,7 @@ Added
     - Zone UUID clipboard copying link (#970)
 - **Ontologyaccess**
     - Add site app for ontology storage and access (#937, #947)
-    - Add ``importobo`` management command (#937)
+    - Add ``importobo`` and ``importomim`` management commands (#937, #980)
     - Add ``ontologyaccess_backend`` backend plugin (#958)
 - **Samplesheets**
     - Add ``microarray`` assay app (#941)

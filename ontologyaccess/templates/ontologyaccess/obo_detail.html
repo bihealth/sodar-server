@@ -19,6 +19,9 @@
 
 <div class="container-fluid sodar-page-container">
   <div class="card" id="sodar-oa-obo-details">
+    <div class="card-header">
+      <h4>Ontology Information</h4>
+    </div>
     <div class="card-body px-0">
       <dl class="row pb-0">
         <dt class="col-md-3">Ontology Name</dt>
@@ -61,5 +64,51 @@
     </div>
   </div>
 </div>
+
+{% if ex_term %}
+  <div class="container-fluid sodar-page-container">
+    <div class="card" id="sodar-oa-obo-details-term">
+      <div class="card-header">
+        <h4>Term Example</h4>
+      </div>
+      <div class="card-body px-0">
+        <dl class="row pb-0">
+          <dt class="col-md-3">ID</dt>
+          <dd class="col-md-9">{{ ex_term.term_id }}</dd>
+          <dt class="col-md-3">Name</dt>
+          <dd class="col-md-9">{{ ex_term.name }}</dd>
+          <dt class="col-md-3">Accession</dt>
+          <dd class="col-md-9"><a href="{{ ex_term_acc }}" target="_blank">{{ ex_term_acc }}</a></dd>
+          {% if ex_term.definition %}
+            <dt class="col-md-3">Definition</dt>
+            <dd class="col-md-9">{{ ex_term.definition }}</dd>
+          {% endif %}
+          {% if ex_term.is_obsolete %}
+            <dt class="col-md-3">Obsolete</dt>
+            <dd class="col-md-9 text-danger">
+              Yes{% if ex_term.replaced_by %}, replaced by {{ ex_term.replaced_by }}{% endif %}
+            </dd>
+          {% endif %}
+          {% if ex_term.alt_ids %}
+            <dt class="col-md-3">Alternative IDs</dt>
+            <dd class="col-md-9">{{ ex_term.alt_ids | join:"; " }}</dd>
+          {% endif %}
+          {% if ex_term.synonyms %}
+            <dt class="col-md-3">Synonyms</dt>
+            <dd class="col-md-9">{{ ex_term.synonyms | join:"; " }}</dd>
+          {% endif %}
+          {% if ex_term.namespace %}
+            <dt class="col-md-3">Namespace</dt>
+            <dd class="col-md-9">{{ ex_term.namespace }}</dd>
+          {% endif %}
+          {% if ex_term.comment %}
+            <dt class="col-md-3">Comment</dt>
+            <dd class="col-md-9">{{ ex_term.comment }}</dd>
+          {% endif %}
+        </dl>
+      </div>
+    </div>
+  </div>
+{% endif %}
 
 {% endblock projectroles %}
