@@ -992,13 +992,13 @@ export default {
         this.fieldConfig.format = 'ontology'
         const headerName = this.headerInfo.header_name.toLowerCase()
         if (headerName === 'hpo terms') {
-          this.fieldConfig.allow_list = true
+          if (this.newConfig) this.fieldConfig.allow_list = true
           this.fieldConfig.ontologies = ['HP']
         } else if (headerName === 'omim disease') {
-          this.fieldConfig.allow_list = false
+          if (this.newConfig) this.fieldConfig.allow_list = false
           this.fieldConfig.ontologies = ['OMIM']
         } else if (headerName === 'orphanet disease') {
-          this.fieldConfig.allow_list = false
+          if (this.newConfig) this.fieldConfig.allow_list = false
           this.fieldConfig.ontologies = ['ORDO']
         }
       } else if (this.newConfig && this.colType === 'ONTOLOGY') {
