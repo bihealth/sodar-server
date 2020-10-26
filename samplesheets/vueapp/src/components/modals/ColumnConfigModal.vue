@@ -141,12 +141,10 @@
         <tbody v-else-if="colType === 'ONTOLOGY'">
           <tr>
             <td>Allow List</td>
-            <td>
-              <!-- TODO: Fix tooltip position! -->
+            <td id="sodar-ss-vue-td-allow-list">
               <b-checkbox
                   plain
                   v-model="fieldConfig.allow_list"
-                  :disabled="specialOntologyCol"
                   title="Allow entering a list of ontology terms if enabled"
                   id="sodar-ss-vue-column-check-list"
                   v-b-tooltip.right.hover>
@@ -1151,6 +1149,10 @@ table#sodar-ss-vue-col-config-table tbody td:first-child {
 
 td.sodar-ss-vue-td-info {
   white-space: normal !important;
+}
+
+td#sodar-ss-vue-td-allow-list div.form-check {
+  width: 15px !important;
 }
 
 table#sodar-ss-vue-col-ontology-table tbody td:nth-child(2) {
