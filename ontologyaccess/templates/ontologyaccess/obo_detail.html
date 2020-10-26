@@ -65,13 +65,13 @@
   </div>
 </div>
 
-{% if ex_term %}
-  <div class="container-fluid sodar-page-container">
-    <div class="card" id="sodar-oa-obo-details-term">
-      <div class="card-header">
-        <h4>Term Example</h4>
-      </div>
-      <div class="card-body px-0">
+<div class="container-fluid sodar-page-container">
+  <div class="card" id="sodar-oa-obo-details-term">
+    <div class="card-header">
+      <h4>Term Example</h4>
+    </div>
+    <div class="card-body px-0">
+      {% if ex_term %}
         <dl class="row pb-0">
           <dt class="col-md-3">ID</dt>
           <dd class="col-md-9">{{ ex_term.term_id }}</dd>
@@ -106,9 +106,14 @@
             <dd class="col-md-9">{{ ex_term.comment }}</dd>
           {% endif %}
         </dl>
-      </div>
+      {% else %}
+        <p class="px-3 text-danger">
+          No terms found for ontology! Maybe something has gone wrong during
+          import?
+        </p>
+      {% endif %}
     </div>
   </div>
-{% endif %}
+</div>
 
 {% endblock projectroles %}

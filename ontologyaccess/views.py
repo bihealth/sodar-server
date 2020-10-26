@@ -53,14 +53,17 @@ class OBOFormatOntologyDetailView(
         )
         terms = OBOFormatOntologyTerm.objects.filter(ontology=o)
         term_count = terms.count()
-        if term_count > 100:
-            term_count = 100
-        random.seed()
-        t = terms[random.randint(0, term_count - 1)]
-        context['ex_term'] = t
-        context['ex_term_acc'] = o.term_url.format(
-            id_space=t.get_id_space(), local_id=t.get_local_id()
-        )
+
+        if term_count > 0:
+            if term_count > 100:
+                term_count = 100
+            random.seed()
+            t = terms[random.randint(0, term_count - 1)]
+            context['ex_term'] = t
+            context['ex_term_acc'] = o.term_url.format(
+                id_space=t.get_id_space(), local_id=t.get_local_id()
+            )
+
         return context
 
 

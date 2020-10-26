@@ -107,6 +107,17 @@ class TestOBOFormatOntologyDetailView(TestOntologyAccessViewBase):
         self.assertIsNotNone(response.context['ex_term'])
         self.assertIsNotNone(response.context['ex_term_acc'])
 
+    def test_render_no_terms(self):
+        """Test rendering the ontology detail view with no terms"""
+        with self.login(self.superuser):
+            response = self.client.get(
+                reverse(
+                    'ontologyaccess:obo_detail',
+                    kwargs={'oboformatontology': self.ontology.sodar_uuid},
+                )
+            )
+        self.assertEqual(response.status_code, 200)
+
 
 class TestOBOFormatOntologyImportView(TestOntologyAccessViewBase):
     """Tests for OBOFormatOntologyImportView"""
