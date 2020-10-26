@@ -146,7 +146,7 @@
               <b-checkbox
                   plain
                   v-model="fieldConfig.allow_list"
-                  :disabled="hpoTerms"
+                  :disabled="specialOntologyCol"
                   title="Allow entering a list of ontology terms if enabled"
                   id="sodar-ss-vue-column-check-list"
                   v-b-tooltip.right.hover>
@@ -386,13 +386,13 @@
                   class="sodar-list-btn sodar-ss-vue-row-btn"
                   title="Delete ontology"
                   @click="onOntologyDelete(ontology, oIdx)"
-                  :disabled="hpoTerms"
+                  :disabled="specialOntologyCol"
                   v-b-tooltip.hover.left.d300>
                 <i class="fa fa-times"></i>
               </b-button>
             </td>
           </tr>
-          <tr v-if="!hpoTerms">
+          <tr v-if="!specialOntologyCol">
             <td>
               <b-form-select
                   v-model="insertOntology"
@@ -424,7 +424,7 @@
               </b-button>
             </td>
           </tr>
-          <tr v-if="!hpoTerms &&
+          <tr v-if="!specialOntologyCol &&
                     fieldConfig &&
                     (!('ontologies' in fieldConfig) ||
                     fieldConfig.ontologies.length === 0)">
@@ -460,6 +460,11 @@ import NotifyBadge from '../NotifyBadge.vue'
 const integerRegex = /^(([1-9][0-9]*)|([0]?))$/
 const doubleRegex = /^-?[0-9]+\.[0-9]+?$/
 const invalidClasses = 'text-danger'
+const specialOntologyCols = [
+  'hpo terms',
+  'omim disease',
+  'orphanet disease'
+]
 
 export default {
   name: 'ColumnConfigModal',
@@ -503,7 +508,7 @@ export default {
       defaultFillEnable: false,
       pasteData: '',
       updateBtnClasses: null,
-      hpoTerms: false, // Special case of "HPO terms" column
+      specialOntologyCol: false, // Special cases of ontology columns
       selectOntologies: [],
       insertOntology: null
     }
@@ -959,7 +964,8 @@ export default {
       const gridUuid = !this.assayUuid ? this.studyUuid : this.assayUuid
       this.gridOptions = this.app.getGridOptionsByUuid(gridUuid)
       this.updateBtnClasses = 'fa fa-fw fa-check'
-      this.hpoTerms = this.headerInfo.header_name.toLowerCase() === 'hpo terms'
+      this.specialOntologyCol = this.colType === 'ONTOLOGY' &&
+        specialOntologyCols.includes(this.headerInfo.header_name.toLowerCase())
       this.selectOntologies = []
       this.insertOntology = null
 
@@ -983,11 +989,20 @@ export default {
         this.fieldConfig.default = ''
       }
 
-      // HACK: Force allowed ontology and allow_list for HPO terms
-      if (this.hpoTerms) {
+      if (this.specialOntologyCol) {
+        // Force allowed ontology and allow_list for specific ontology columns
         this.fieldConfig.format = 'ontology'
-        this.fieldConfig.allow_list = true
-        this.fieldConfig.ontologies.push('HP')
+        const headerName = this.headerInfo.header_name.toLowerCase()
+        if (headerName === 'hpo terms') {
+          this.fieldConfig.allow_list = true
+          this.fieldConfig.ontologies = ['HP']
+        } else if (headerName === 'omim disease') {
+          this.fieldConfig.allow_list = false
+          this.fieldConfig.ontologies = ['OMIM']
+        } else if (headerName === 'orphanet disease') {
+          this.fieldConfig.allow_list = false
+          this.fieldConfig.ontologies = ['ORDO']
+        }
       } else if (this.newConfig && this.colType === 'ONTOLOGY') {
         // Set up new fieldConfig for ontologies
         this.fieldConfig.format = 'ontology'

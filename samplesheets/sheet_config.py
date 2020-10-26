@@ -20,6 +20,11 @@ app_settings = AppSettingAPI()
 
 # Local constants
 APP_NAME = 'samplesheets'
+ONTOLOGY_COLS = {
+    'hpo terms': {'allow_list': True, 'ontologies': ['HP']},
+    'omim disease': {'allow_list': False, 'ontologies': ['OMIM']},
+    'orphanet disease': {'allow_list': False, 'ontologies': ['ORDO']},
+}
 
 
 class SheetConfigAPI:
@@ -170,11 +175,9 @@ class SheetConfigAPI:
                         if h['col_type'] == 'ONTOLOGY':
                             f['format'] = 'ontology'
 
-                            # HPO terms is a special case
-                            # TODO: TBD: More special cases?
-                            if h['name'].lower() == 'hpo terms':
-                                f['allow_list'] = True
-                                f['ontologies'] = ['HP']
+                            # Special cases
+                            if h['name'].lower() in ONTOLOGY_COLS:
+                                f.update(ONTOLOGY_COLS[h['name'].lower()])
                             else:
                                 f['allow_list'] = False
                                 f['ontologies'] = []
