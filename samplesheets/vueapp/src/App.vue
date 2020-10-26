@@ -413,6 +413,7 @@ export default {
       studyDisplayConfig: null,
       sampleColId: null,
       sampleIdx: null,
+      sourceColSpan: null,
       unsavedRow: null, // Info of currently unsaved row, or null if none
       updatingRow: false, // Row update in progress (bool)
       unsavedData: false, // Other updated data (bool)
@@ -595,6 +596,7 @@ export default {
       // Iterate through top header
       for (let i = 0; i < topHeaderLength; i++) {
         const topHeader = table.top_header[i]
+        if (i === 0) this.sourceColSpan = topHeader.colspan // Store source span
 
         // Set up header group
         let headerGroup = {
@@ -1560,8 +1562,9 @@ export default {
       const cols = columnApi.getAllColumns()
       let nextNodeStartIdx = null
       // Since we split the source group we have to apply some trickery
-      let groupId = column.originalParent.groupId
-      if (groupId === '1') groupId = '2'
+      const parent = column.originalParent
+      let groupId = parent.groupId
+      if (groupId === '1' && this.sourceColSpan > 1) groupId = '2'
       let startIdx
 
       for (let i = 1; i < cols.length - 1; i++) {
@@ -1685,7 +1688,9 @@ export default {
               let sampleUuid
               let sampleName
               let startIdx = 1
-              let groupId = cols[2].originalParent.groupId // 2nd source group!
+              let sourceColIdx = 1
+              if (this.sourceColSpan > 1) sourceColIdx = 2 // 2nd source group
+              let groupId = cols[sourceColIdx].originalParent.groupId
 
               // Modify starting index and group id for assay table updating
               if (assayMode) {
@@ -1708,7 +1713,9 @@ export default {
                   sampleName = rowNode.data[cols[i].colId].value
                 }
 
-                if (i > 2 && // NOTE: Skip split source column
+                let lastSourceCol = 1
+                if (this.sourceColSpan > 1) lastSourceCol = 2
+                if (i > lastSourceCol && // NOTE: Skip split source column
                     i < cols.length - 2 &&
                     groupId !== cols[i + 1].originalParent.groupId) {
                   groupId = cols[i + 1].originalParent.groupId

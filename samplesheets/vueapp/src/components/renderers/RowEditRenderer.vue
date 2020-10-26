@@ -228,20 +228,25 @@ export default Vue.extend(
         // Construct source node manually because we split the column groups
         if (!this.assayMode) {
           const sourceNode = { cells: [this.getCellData(cols[1])] }
-          const sourceGroupId = cols[2].originalParent.groupId
-          let i = 2
-
-          // If the node is new, get remaining fields
           if (!sourceNode.cells[0].uuid) {
             sourceNode.headers = cols[1].originalParent.colGroupDef.cellRendererParams.headers
+          }
+          let i = 1
 
-            while (i < cols.length - 1) {
-              if (cols[i].originalParent.groupId !== sourceGroupId) {
-                startIdx = i
-                break
+          // Only add more source columns if we actually have a split source
+          if (this.app.sourceColSpan > 1) {
+            const sourceGroupId = cols[2].originalParent.groupId
+
+            // If the node is new, get remaining fields
+            if (!sourceNode.cells[0].uuid) {
+              while (i < cols.length - 1) {
+                if (cols[i].originalParent.groupId !== sourceGroupId) {
+                  startIdx = i
+                  break
+                }
+                sourceNode.cells.push(this.getCellData(cols[i]))
+                i += 1
               }
-              sourceNode.cells.push(this.getCellData(cols[i]))
-              i += 1
             }
           }
           newRowData.nodes.push(sourceNode)
