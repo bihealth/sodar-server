@@ -611,7 +611,9 @@ class SampleSheetStudyTablesAjaxView(SODARBaseProjectAjaxView):
 
             # Set up study edit context
             ret_data['edit_context'] = {
-                'sodar_ontologies': ontology_backend.get_obo_dict(key='name'),
+                'sodar_ontologies': ontology_backend.get_obo_dict(key='name')
+                if ontology_backend
+                else {},
                 'samples': {},
                 'protocols': [],
             }
