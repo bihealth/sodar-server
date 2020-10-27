@@ -152,6 +152,18 @@
             </td>
           </tr>
         </tbody>
+        <!-- External links column table body -->
+        <tbody v-else-if="colType === 'EXTERNAL_LINKS'">
+          <tr>
+            <td colspan="2"><hr class="my-1" /></td>
+          </tr>
+          <tr>
+            <td colspan="2" class="sodar-ss-vue-td-info">
+              Enter IDs as <code>id-type:id</code> separated by <code>;</code>
+              (semicolon).
+            </td>
+          </tr>
+        </tbody>
         <!-- Basic field column table body -->
         <tbody v-else>
           <!-- Format (hide for extract label) -->
@@ -1005,6 +1017,8 @@ export default {
         // Set up new fieldConfig for ontologies
         this.fieldConfig.format = 'ontology'
         this.fieldConfig.ontologies = []
+      } else if (this.newConfig && this.colType === 'EXTERNAL_LINKS') {
+        this.fieldConfig.format = 'external_links'
       } else if (this.newConfig && !['NAME', 'LINK_FILE'].includes(this.colType)) {
         // Set up other types
         // TODO: Couldn't this be "if UNIT, NUMERIC, DATE includes.."?

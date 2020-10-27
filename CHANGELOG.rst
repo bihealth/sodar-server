@@ -25,6 +25,7 @@ Added
     - ``NodeMixin`` for node field/header helpers (#922)
     - Ontology term editing (#688, #699)
     - Extract label editing as string (#964)
+    - Simple editing for external links columns (#976)
 
 Changed
 -------

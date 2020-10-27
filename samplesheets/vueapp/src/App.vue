@@ -633,7 +633,7 @@ export default {
 
           // External links are a special case
           if (colType === 'EXTERNAL_LINKS') {
-            minW = 140
+            minW = 150
             calcW = maxValueLen * 120
           }
 
@@ -770,8 +770,7 @@ export default {
             }
 
             // Set header renderer for fields we can manage
-            if (this.sodarContext.perms.edit_sheet &&
-                colType !== 'EXTERNAL_LINKS') {
+            if (this.sodarContext.perms.edit_sheet) {
               let configAssayUuid = assayMode ? uuid : null
               let configNodeIdx = i
 

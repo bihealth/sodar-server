@@ -172,7 +172,7 @@ class SheetConfigAPI:
                             )
 
                         # Set up ontology config
-                        if h['col_type'] == 'ONTOLOGY':
+                        elif h['col_type'] == 'ONTOLOGY':
                             f['format'] = 'ontology'
 
                             # Special cases
@@ -181,6 +181,10 @@ class SheetConfigAPI:
                             else:
                                 f['allow_list'] = False
                                 f['ontologies'] = []
+
+                        # Set up external links
+                        elif h['col_type'] == 'EXTERNAL_LINKS':
+                            f['format'] = 'external_links'
 
                         node['fields'].append(f)
 

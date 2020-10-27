@@ -48,6 +48,7 @@
 import Vue from 'vue'
 
 const dateRegex = /^\d{4}-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])$/
+const exLinkRegex = /^([\w-]+:[\w\-_]+)(;[\w-]+:[\w-_]+)*$/
 const navKeyCodes = [33, 34, 35, 36, 37, 38, 39, 40]
 
 export default Vue.extend({
@@ -175,6 +176,8 @@ export default Vue.extend({
             if (['04', '06', '09', '11'].includes(m) && d > 30) return false
             if ((m === 2 && d > 29) || (m === 2 && d > 28 && y % 4 !== 0)) return false
           }
+        } else if (this.editConfig.format === 'external_links') {
+          if (!exLinkRegex.test(this.editValue)) return false
         }
       }
       // Test Regex
