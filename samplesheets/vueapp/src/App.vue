@@ -1790,24 +1790,34 @@ export default {
 
               // Update sample list
               const sampleUuid = rowNode.data[this.sampleColId].uuid
+              const sampleColId = this.sampleColId
 
               if (assayMode &&
                   !(gridUuid in this.editContext.samples[sampleUuid].assays)) {
                 let sampleFound = false
-                const sampleColId = this.sampleColId
-
                 gridOptions.api.forEachNode(function (r) {
                   if (r.data[sampleColId].uuid === sampleUuid &&
                       r.id !== rowNode.id) {
                     sampleFound = true
                   }
                 })
-
                 if (!sampleFound) {
                   this.editContext.samples[
                     sampleUuid].assays = this.editContext.samples[
                     sampleUuid].assays.filter(
                     v => v !== gridUuid)
+                }
+              } else if (!assayMode) {
+                // Delete sample from editcontext if deleted from study
+                let sampleFound = false
+                gridOptions.api.forEachNode(function (r) {
+                  if (r.data[sampleColId].uuid === sampleUuid &&
+                      r.id !== rowNode.id) {
+                    sampleFound = true
+                  }
+                })
+                if (!sampleFound) {
+                  delete this.editContext.samples[sampleUuid]
                 }
               }
 

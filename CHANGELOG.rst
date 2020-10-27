@@ -48,6 +48,7 @@ Fixed
     - Legacy ``field`` header type still in use
     - Row insert failing if the last node is a process (#974, #975)
     - Row insert failing with single column source node (#965, #986)
+    - Sample deleted from study not removed from assay sample selection (#988)
 
 Removed
 -------
