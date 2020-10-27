@@ -38,6 +38,7 @@ Changed
     - Refactor ontology value rendering (#693)
     - Move ``ATTR_HEADER_MAP`` to ``models``
     - Refactor recognizing ontology/unit columns in rendering (#962)
+    - Disable "Finish Editing" link with unsaved rows (#987)
 
 Fixed
 -----

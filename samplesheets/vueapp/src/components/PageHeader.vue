@@ -158,6 +158,7 @@
           variant="primary"
           class="text-left"
           id="sodar-ss-vue-btn-edit-finish"
+          :disabled="app.unsavedRow !== null"
           @click="toggleEditMode">
         Finish Editing <span class="pull-right"><i class="fa fa-check"></i></span>
       </b-button>
