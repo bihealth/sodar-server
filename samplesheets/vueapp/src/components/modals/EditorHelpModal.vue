@@ -17,7 +17,7 @@
       <ul>
         <li>Editing of simple values (text, integer/double, select)</li>
         <li>Editing values as ontology term references</li>
-        <li>Special field editing (performer, perform date, contacts)</li>
+        <li>Special field editing (performer, perform date, contacts, external links)</li>
         <li>Renaming materials and processes</li>
         <li>Protocol selection</li>
         <li>Inserting rows</li>
@@ -32,7 +32,6 @@
       <h5 class="text-danger font-weight-bold">Under Development</h5>
       <ul>
         <li>Editing units as ontology term references</li>
-        <li>Editing of other special case columns (external links)</li>
         <li>Clipboard paste of value without double-clicking to edit field</li>
         <li>Multi-cell clipboard paste</li>
         <li>Adding, removing and renaming columns</li>
@@ -42,7 +41,6 @@
         <li>Providing default configurations for sample sheets</li>
         <li>Combo box editing for selectable values</li>
         <li>Full screen table editor</li>
-        <li>Tour help for editing</li>
       </ul>
       <h5>Tips for Editing</h5>
       <ul>
