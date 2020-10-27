@@ -47,7 +47,7 @@ Fixed
     - Empty ontology/unit column type not recognized in rendering (#962)
     - Legacy ``field`` header type still in use
     - Row insert failing if the last node is a process (#974, #975)
-    - Row insert failing with single column source node (#965)
+    - Row insert failing with single column source node (#965, #986)
 
 Removed
 -------

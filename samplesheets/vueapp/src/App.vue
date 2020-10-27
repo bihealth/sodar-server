@@ -1687,9 +1687,10 @@ export default {
               let sampleUuid
               let sampleName
               let startIdx = 1
-              let sourceColIdx = 1
-              if (this.sourceColSpan > 1) sourceColIdx = 2 // 2nd source group
-              let groupId = cols[sourceColIdx].originalParent.groupId
+              let lastSourceGroupIdx = 1
+              if (this.sourceColSpan > 1) lastSourceGroupIdx = 2 // 2nd source group
+              const lastSourceGroupId = cols[lastSourceGroupIdx].originalParent.groupId
+              let groupId = cols[1].originalParent.groupId
 
               // Modify starting index and group id for assay table updating
               if (assayMode) {
@@ -1712,11 +1713,9 @@ export default {
                   sampleName = rowNode.data[cols[i].colId].value
                 }
 
-                let lastSourceCol = 1
-                if (this.sourceColSpan > 1) lastSourceCol = 2
-                if (i > lastSourceCol && // NOTE: Skip split source column
-                    i < cols.length - 2 &&
-                    groupId !== cols[i + 1].originalParent.groupId) {
+                if (i < cols.length - 2 &&
+                    groupId !== cols[i + 1].originalParent.groupId &&
+                    cols[i + 1].originalParent.groupId !== lastSourceGroupId) {
                   groupId = cols[i + 1].originalParent.groupId
                   nodeIdx += 1
                 }

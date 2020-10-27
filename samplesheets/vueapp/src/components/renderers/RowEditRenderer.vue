@@ -235,6 +235,7 @@ export default Vue.extend(
 
           // Only add more source columns if we actually have a split source
           if (this.app.sourceColSpan > 1) {
+            i = 2
             const sourceGroupId = cols[2].originalParent.groupId
 
             // If the node is new, get remaining fields
