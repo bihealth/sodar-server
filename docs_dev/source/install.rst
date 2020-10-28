@@ -32,16 +32,28 @@ Requirements
 - Python 3.6
 - Postgres 9.6+
 
-System Installation
--------------------
+Project Setup
+-------------
 
-First you need to install OS dependencies, PostgreSQL 9.6 and Python3.6.
+Clone the repository and install the OS dependencies, PostgreSQL 9.6 and Python3.6.
 
 .. code-block:: console
 
+    $ git clone git@cubi-gitlab.bihealth.org:CUBI_Engineering/CUBI_Data_Mgmt/sodar.git
+    $ cd sodar
     $ sudo utility/install_os_dependencies.sh
     $ sudo utility/install_python.sh
     $ sudo utility/install_postgres.sh
+
+Next, setup and activate the virtual environment. Once in
+the environment, install Python requirements for the project:
+
+.. code-block:: console
+
+    $ pip install virtualenv
+    $ virtualenv -p python3.6 .venv
+    $ source .venv/bin/activate
+    $ utility/install_python_dependencies.sh
 
 Database Setup
 --------------
@@ -72,21 +84,6 @@ Example in .env file:
 
     DATABASE_URL=postgres://sodar:sodar@127.0.0.1/sodar
 
-Project Setup
--------------
-
-Clone the repository, setup and activate the virtual environment. Once in
-the environment, install Python requirements for the project:
-
-.. code-block:: console
-
-    $ git clone git@cubi-gitlab.bihealth.org:CUBI_Engineering/CUBI_Data_Mgmt/sodar.git
-    $ cd sodar
-    $ pip install virtualenv
-    $ virtualenv -p python3.6 .venv
-    $ source .venv/bin/activate
-    $ utility/install_python_dependencies.sh
-
 LDAP Setup (Optional)
 ---------------------
 
@@ -105,13 +102,13 @@ prerequisites using the following command:
 
 .. code-block:: console
 
-    $ utility/install_vue_dev.sh
+    $ sudo utility/install_vue_dev.sh
 
 Once NPM has been set up, install the app requirements:
 
 .. code-block:: console
 
-    $ cd samplesheets
+    $ cd samplesheets/vueapp
     $ npm install
 
 Final Setup
