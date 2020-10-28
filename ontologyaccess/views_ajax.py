@@ -37,7 +37,7 @@ class OBOOntologyTermMixin:
             'ontology_name': term.ontology.name,
             'term_id': term.term_id,
             'name': term.name,
-            'definition': term.definition,
+            # 'definition': term.definition,  # NOTE: Currently omitted
             'is_obsolete': term.is_obsolete,
             'replaced_by': term.replaced_by,
             'accession': term.get_url(),
