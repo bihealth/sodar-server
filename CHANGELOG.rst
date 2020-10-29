@@ -13,7 +13,6 @@ Added
 
 - **General**
     - Missing user model migration
-    - LDAP python requirements now moved to ``requirements/ldap.txt`` (#608)
 - **Landingzones**
     - Zone UUID clipboard copying link (#970)
 - **Ontologyaccess**

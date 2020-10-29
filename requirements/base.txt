@@ -70,6 +70,11 @@ mistune==0.8.4
 # Celery
 celery<4.2  # pyup: <4.2  # blocker: https://github.com/celery/celery/issues/4878
 
+# LDAP requirements (to be installed from ldap.txt
+# See https://github.com/bihealth/ansible-role-sodar-core-app/issues/6
+django-auth-ldap==1.2.8
+pyldap==2.4.25.1
+
 ####################
 # SODAR app imports
 ####################
