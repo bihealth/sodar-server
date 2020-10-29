@@ -36,4 +36,4 @@ script:
   - coverage run --rcfile=.coveragerc manage.py test -v 2 --settings=config.settings.test
   - coverage report
   - flake8 .
-  - ./black.sh --check
+  - make black arg=--check

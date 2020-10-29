@@ -13,6 +13,7 @@ Added
 
 - **General**
     - Missing user model migration
+    - Replaced management scripts with ``Makefile`` (#989)
 - **Landingzones**
     - Zone UUID clipboard copying link (#970)
 - **Ontologyaccess**

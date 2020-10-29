@@ -1,0 +1,76 @@
+SHELL = /bin/bash
+MANAGE = python manage.py
+define USAGE=
+@echo -e
+@echo -e "Usage:"
+@echo -e "\tmake black [arg=--<arg>]                 -- black formatting"
+@echo -e "\tmake serve [arg=sync]                    -- start server"
+@echo -e "\tmake celery                              -- start celery & celerybeat"
+@echo -e "\tmake demo                                -- start demo server"
+@echo -e "\tmake samplesheets                        -- start samplesheet vue.js app"
+@echo -e "\tmake collectstatic                       -- run collectstatic"
+@echo -e "\tmake test [arg=<test_object>]            -- run all tests or specify module/class/function"
+@echo -e "\tmake test_coverage                       -- run all tests and provide coverage html report"
+@echo -e "\tmake sync_taskflow                       -- sync taskflow"
+@echo -e
+endef
+
+# Argument passed from commandline, optional for some rules, mandatory for others.
+arg =
+
+
+.PHONY: black
+black:
+	black . -l 80 --skip-string-normalization --exclude ".git|.venv|.tox|env|src|docs|migrations|versioneer.py" $(arg)
+
+
+.PHONY: sync_taskflow
+sync_taskflow:
+	$(MANAGE) synctaskflow
+
+
+.PHONY: serve
+ifeq ($(arg),sync)
+serve: sync_taskflow
+else
+serve:
+endif
+	$(MANAGE) runserver --settings=config.settings.local
+
+
+.PHONY: celery
+celery:
+	celery -A config worker -l info --beat
+
+
+.PHONY: demo
+demo:
+	DJANGO_DEBUG=0 $(MANAGE) runserver --settings=config.settings.local --insecure
+
+
+.PHONY: samplesheets
+samplesheets:
+	npm run --prefix samplesheets/vueapp serve
+
+
+.PHONY: collectstatic
+collectstatic:
+	$(MANAGE) collectstatic --no-input
+
+
+.PHONY: test
+test: collectstatic
+	$(MANAGE) test -v 2 --settings=config.settings.test_local $(arg)
+
+
+.PHONY: test_coverage
+test_coverage: collectstatic
+	coverage run --source="." manage.py test -v 2 --settings=config.settings.test_local
+	coverage report
+	coverage html
+
+
+.PHONY: usage
+usage:
+	$(USAGE)
+

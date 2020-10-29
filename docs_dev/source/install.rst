@@ -213,7 +213,7 @@ serve the development version with hot reload in ``http://localhost:8080``.
 
 .. code-block::
 
-    $ ./run_samplesheets_dev.sh
+    $ make samplesheets
 
 4. SODAR Celery Processes
 -------------------------
@@ -223,18 +223,11 @@ following script:
 
 .. code-block:: console
 
-    $ ./run_celery.sh
+    $ make celery
 
 Note that the Celery process needs to access correct Django settings. Make sure
 the variable ``DJANGO_READ_DOT_ENV=1`` is set in your environment when running
-this process!
-
-If you are developing periodic tasks, make sure to also run the Celery beat
-scheduler.
-
-.. code-block:: console
-
-    $ ./run_celerybeat.sh
+this process! This will also start the Celery beat scheduler.
 
 5. SODAR Django Site
 --------------------
@@ -244,7 +237,7 @@ directory, start the site in debug mode with ``local`` settings.
 
 .. code-block:: console
 
-    $ ./run.sh
+    $ make serve
 
 **NOTE:** If existing data on your development iRODS server has been wiped out
 due to e.g. rebooting the Docker environment project metadata and collections
@@ -252,13 +245,13 @@ due to e.g. rebooting the Docker environment project metadata and collections
 
 .. code-block:: console
 
-    $ ./manage.py synctaskflow
+    $ make sync_taskflow
 
 There is also a shortcut for syncing iRODS data and starting the server:
 
 .. code-block:: console
 
-    $ ./run.sh sync
+    $ make serve arg=sync
 
 Now you should be able to browse to http://localhost:8000 and see your site.
 iRODS and Taskflow functionalities should also be available.
