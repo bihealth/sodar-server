@@ -76,7 +76,10 @@ class OBOTermQueryAjaxView(OBOOntologyTermMixin, SODARBasePermissionAjaxView):
         # Filter by specific ontologies
         if request.GET.get('o'):
             o_list = request.GET.getlist('o')
-            filter_kwargs['ontology__name__in'] = o_list
+            if len(o_list) == 1:
+                filter_kwargs['ontology__name'] = o_list[0]
+            else:
+                filter_kwargs['ontology__name__in'] = o_list
 
         logger.debug('Term query: {}'.format(filter_kwargs))
 

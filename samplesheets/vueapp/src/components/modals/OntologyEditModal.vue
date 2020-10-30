@@ -552,7 +552,7 @@ export default {
         encodeURIComponent(searchValue)
       if (this.queryOntologyLimit) {
         url += '&o=' + encodeURIComponent(this.queryOntologyLimit)
-      } else {
+      } else if (this.editConfig.ontologies.length > 0) {
         for (let i = 0; i < this.searchOntologies.length; i++) {
           url += '&o=' + encodeURIComponent(this.searchOntologies[i])
         }
