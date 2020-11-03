@@ -95,6 +95,8 @@ LOCAL_APPS = [
     'samplesheets.assayapps.pep_ms.apps.PepMsConfig',
     # Landingzones config sub-apps
     'landingzones.configapps.bih_proteomics_smb.apps.BihProteomicsSmbConfig',
+    # Admin apps
+    'irodsadmin.apps.IrodsadminConfig',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS

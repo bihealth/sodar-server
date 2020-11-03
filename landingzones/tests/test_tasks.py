@@ -45,7 +45,7 @@ TASKFLOW_ENABLED = (
 )
 TASKFLOW_SKIP_MSG = 'Taskflow not enabled in settings'
 
-ZONE_TITLE = '20190703_1724'
+ZONE_TITLE = '20190703_172456'
 ZONE_SUFFIX = 'Test Zone'
 ZONE_DESC = 'description'
 TEST_OBJ_NAME = 'test1.txt'

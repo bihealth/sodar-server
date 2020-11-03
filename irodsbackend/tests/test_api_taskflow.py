@@ -39,7 +39,7 @@ LANDING_ZONE_COLL = settings.IRODS_LANDING_ZONE_COLL
 SERVER_AVAILABLE = 'Available'
 
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
-ZONE_TITLE = '20180503_1724_test_zone'
+ZONE_TITLE = '20180503_172456_test_zone'
 ZONE_DESC = 'description'
 TEST_FILE_NAME = 'test1'
 TEST_FILE_NAME2 = 'test2'

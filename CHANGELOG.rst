@@ -13,7 +13,10 @@ Added
 
 - **General**
     - Missing user model migration
-    - Replaced management scripts with ``Makefile`` (#989)
+    - ``Makefile`` for selected management commands (#989)
+- **Irodsadmin**
+    - Add app for iRODS data administration (#972)
+    - ``irodsorphans`` management command to detect orphan collections (#972)
 - **Landingzones**
     - Zone UUID clipboard copying link (#970)
 - **Ontologyaccess**
@@ -55,6 +58,8 @@ Fixed
 Removed
 -------
 
+- **General**
+    - Management commands replaced by ``Makefile`` (#989)
 - **Samplesheets**
     - Workarounds for legacy sample sheet imports (#946)
 
