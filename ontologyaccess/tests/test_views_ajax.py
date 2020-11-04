@@ -66,7 +66,7 @@ class TestOBOTermQueryAjaxView(TestOntologyAccessViewBase):
 
     def test_query(self):
         """Test querying for a single term"""
-        query_data = {'name': self.term.name}
+        query_data = {'s': self.term.name}
 
         with self.login(self.superuser):
             response = self.client.get(
@@ -89,7 +89,7 @@ class TestOBOTermQueryAjaxView(TestOntologyAccessViewBase):
 
     def test_query_multiple(self):
         """Test querying for multiple terms"""
-        query_data = {'name': 'term'}
+        query_data = {'s': 'term'}
 
         with self.login(self.superuser):
             response = self.client.get(
@@ -102,7 +102,7 @@ class TestOBOTermQueryAjaxView(TestOntologyAccessViewBase):
 
     def test_query_limit(self):
         """Test querying limited to a specific ontology"""
-        query_data = {'name': 'term', 'o': self.ontology2.name}
+        query_data = {'s': 'term', 'o': self.ontology2.name}
 
         with self.login(self.superuser):
             response = self.client.get(
@@ -126,7 +126,7 @@ class TestOBOTermQueryAjaxView(TestOntologyAccessViewBase):
     def test_query_limit_multiple(self):
         """Test querying limited to a multiple ontologies"""
         query_data = {
-            'name': 'term',
+            's': 'term',
             'o': [self.ontology.name, self.ontology2.name],
         }
 
@@ -153,7 +153,7 @@ class TestOBOTermQueryAjaxView(TestOntologyAccessViewBase):
     def test_query_order(self):
         """Test querying with ordering by ontology"""
         query_data = {
-            'name': 'term',
+            's': 'term',
             'o': [self.ontology2.name, self.ontology.name],
             'order': '1',
         }
@@ -174,6 +174,29 @@ class TestOBOTermQueryAjaxView(TestOntologyAccessViewBase):
             'is_obsolete': self.term2.is_obsolete,
             'replaced_by': self.term2.replaced_by,
             'accession': self.term2.get_url(),
+        }
+        self.assertEqual(response_data['terms'][0], expected)
+
+    def test_query_id(self):
+        """Test querying for a single term with term id"""
+        query_data = {'s': self.term.term_id}
+
+        with self.login(self.superuser):
+            response = self.client.get(
+                reverse('ontologyaccess:ajax_obo_term_query'), data=query_data
+            )
+
+        self.assertEqual(response.status_code, 200)
+        response_data = json.loads(response.content)
+        self.assertEqual(len(response_data['terms']), 1)
+        expected = {
+            'ontology_name': self.ontology.name,
+            'term_id': self.term.term_id,
+            'name': self.term.name,
+            # 'definition': self.term.definition,
+            'is_obsolete': self.term.is_obsolete,
+            'replaced_by': self.term.replaced_by,
+            'accession': self.term.get_url(),
         }
         self.assertEqual(response_data['terms'][0], expected)
 

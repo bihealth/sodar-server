@@ -65,11 +65,14 @@ class OBOTermQueryAjaxView(OBOOntologyTermMixin, SODARBasePermissionAjaxView):
     permission_required = 'ontologyaccess.query_ontology'
 
     def get(self, request, *args, **kwargs):
-        if not request.GET.get('name'):
+        if not request.GET.get('s'):
             return Response({'detail': 'Incorrect query string'}, status=400)
 
         ret_data = {'terms': []}
-        filter_kwargs = {'name__icontains': request.GET['name']}
+        filter_q = Q(name__icontains=request.GET['s']) | Q(
+            term_id__icontains=request.GET['s']
+        )
+        filter_kwargs = {}
         query_limit = settings.ONTOLOGYACCESS_QUERY_LIMIT
         o_list = None
 
@@ -81,7 +84,7 @@ class OBOTermQueryAjaxView(OBOOntologyTermMixin, SODARBasePermissionAjaxView):
             else:
                 filter_kwargs['ontology__name__in'] = o_list
 
-        logger.debug('Term query: {}'.format(filter_kwargs))
+        logger.debug('Term query: {} {}'.format(filter_q, filter_kwargs))
 
         # Order by ontology list order if set
         order = []
@@ -98,9 +101,9 @@ class OBOTermQueryAjaxView(OBOOntologyTermMixin, SODARBasePermissionAjaxView):
             logger.debug('Order by ontology: {}'.format(', '.join(o_list)))
 
         order.append('name')
-        terms = OBOFormatOntologyTerm.objects.filter(**filter_kwargs).order_by(
-            *order
-        )
+        terms = OBOFormatOntologyTerm.objects.filter(
+            filter_q, **filter_kwargs
+        ).order_by(*order)
         logger.debug('Term count: {}'.format(terms.count()))
 
         if terms.count() > query_limit:

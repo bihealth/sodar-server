@@ -22,7 +22,7 @@ class TestOntologyAccessAjaxPermissions(TestOntologyAccessPermissionBase):
     def test_term_query(self):
         """Test permissions for OBOTermQueryAjaxView"""
         url = reverse('ontologyaccess:ajax_obo_term_query')
-        request_data = {'name': OBO_TERM_NAME}
+        request_data = {'s': OBO_TERM_NAME}
         good_users = [self.superuser, self.regular_user]
         bad_users = [self.anonymous]
         self.assert_response(url, good_users, 200, data=request_data)

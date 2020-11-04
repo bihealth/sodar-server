@@ -548,7 +548,7 @@ export default {
     getQueryUrl (searchValue) {
       // TODO: Should get root URL from backend and server
       // TODO: Probably some faster way in Javascript to build querystring?
-      let url = '/ontology/ajax/obo/term/query?name=' +
+      let url = '/ontology/ajax/obo/term/query?s=' +
         encodeURIComponent(searchValue)
       if (this.queryOntologyLimit) {
         url += '&o=' + encodeURIComponent(this.queryOntologyLimit)
@@ -580,7 +580,7 @@ export default {
           .then(data => {
             if ('detail' in data) {
               this.responseDetail = data.detail
-              this.responseDetailType = data.detail_type
+              this.responseDetailType = data.detail_type || 'danger'
             } else {
               this.responseDetail = null
               this.responseDetailType = null
