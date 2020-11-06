@@ -100,6 +100,11 @@ urls_api = [
         name='api_export_json',
     ),
     url(
+        regex=r'^api/file/exists$',
+        view=samplesheets.views_api.SampleDataFileExistsAPIView.as_view(),
+        name='api_file_exists',
+    ),
+    url(
         regex=r'^api/remote/get/(?P<project>[0-9a-f-]+)/(?P<secret>[\w\-]+)$',
         view=samplesheets.views_api.RemoteSheetGetAPIView.as_view(),
         name='api_remote_get',

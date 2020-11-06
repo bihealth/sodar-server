@@ -1,6 +1,11 @@
 """REST API views for the samplesheets app"""
+import re
 
+from django.conf import settings
 from django.urls import reverse
+
+from irods.exception import CAT_NO_ROWS_FOUND
+from irods.models import DataObject
 
 from rest_framework import status
 from rest_framework.exceptions import (
@@ -10,7 +15,7 @@ from rest_framework.exceptions import (
     NotFound,
 )
 from rest_framework.generics import RetrieveAPIView
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -18,6 +23,7 @@ from rest_framework.views import APIView
 from projectroles.models import RemoteSite
 from projectroles.plugins import get_backend_api
 from projectroles.views_api import (
+    SODARAPIBaseMixin,
     SODARAPIBaseProjectMixin,
     SODARAPIGenericProjectMixin,
 )
@@ -33,6 +39,9 @@ from samplesheets.views import (
     SITE_MODE_TARGET,
     REMOTE_LEVEL_READ_ROLES,
 )
+
+
+MD5_RE = re.compile(r'([a-fA-F\d]{32})')
 
 
 # API Views --------------------------------------------------------------------
@@ -280,6 +289,71 @@ class SampleSheetImportAPIView(
             },
             status=status.HTTP_200_OK,
         )
+
+
+class SampleDataFileExistsAPIView(SODARAPIBaseMixin, APIView):
+    """
+    Return status of data object existing in sample data of any project by MD5
+    checksum.
+
+    **URL:** ``/samplesheets/api/file/exists/{Project.sodar_uuid}``
+
+    **Methods:** ``GET``
+
+    **Parameters:**
+
+    - ``checksum``: MD5 checksum (string)
+
+    **Returns:**
+
+    - ``detail``: String
+    - ``status``: Boolean
+    """
+
+    http_method_names = ['get']
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request, *args, **kwargs):
+        if not settings.ENABLE_IRODS:
+            raise APIException('iRODS not enabled')
+
+        irods_backend = get_backend_api('omics_irods')
+
+        if not irods_backend:
+            raise APIException('iRODS backend not enabled')
+
+        c = request.query_params.get('checksum')
+
+        if not c or not re.match(MD5_RE, c):
+            raise ParseError('Invalid MD5 checksum: "{}"'.format(c))
+
+        ret = {'detail': 'File does not exist', 'status': False}
+        sql = (
+            'SELECT DISTINCT ON (data_id) data_name '
+            'FROM r_data_main JOIN r_coll_main USING (coll_id) '
+            'WHERE (coll_name LIKE \'%/{coll}\' '
+            'OR coll_name LIKE \'%/{coll}/%\') '
+            'AND r_data_main.data_checksum = \'{sum}\''.format(
+                coll=settings.IRODS_SAMPLE_COLL, sum=c
+            )
+        )
+        # print('QUERY: {}'.format(sql))  # DEBUG
+        columns = [DataObject.name]
+        query = irods_backend.get_query(sql, columns)
+
+        try:
+            results = query.get_results()
+            if sum(1 for _ in results) > 0:
+                ret['detail'] = 'File exists'
+                ret['status'] = True
+        except CAT_NO_ROWS_FOUND:
+            pass  # No results, this is OK
+        except Exception as ex:
+            raise APIException('iRODS query exception: {}'.format(ex))
+        finally:
+            query.remove()
+
+        return Response(ret, status=status.HTTP_200_OK)
 
 
 # TODO: Temporary HACK, should be replaced by proper API view

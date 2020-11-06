@@ -154,6 +154,26 @@ class TestSampleSheetISAExportAPIView(
         self.assert_response_api(url, [self.anonymous], 401)
 
 
+class TestSampleDataFileExistsAPIView(TestProjectAPIPermissionBase):
+    """Tests for SampleDataFileExistsAPIView permissions"""
+
+    def test_get(self):
+        """Test get() in SampleDataFileExistsAPIView"""
+        url = reverse('samplesheets:api_file_exists')
+        request_data = {'checksum': None}
+        good_users = [
+            self.superuser,
+            self.owner_as.user,
+            self.delegate_as.user,
+            self.contributor_as.user,
+            self.guest_as.user,
+            self.user_no_roles,
+        ]
+        # No MD5 given so good users get 400 -> still ok for auth :)
+        self.assert_response_api(url, good_users, 400, data=request_data)
+        self.assert_response_api(url, [self.anonymous], 401, data=request_data)
+
+
 class TestRemoteSheetGetAPIView(
     SampleSheetIOMixin,
     RemoteSiteMixin,

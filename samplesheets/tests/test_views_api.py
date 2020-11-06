@@ -2,6 +2,7 @@
 
 import json
 
+from django.test import override_settings
 from django.urls import reverse
 
 # Projectroles dependency
@@ -34,6 +35,7 @@ SHEET_TSV_DIR = SHEET_DIR + 'i_small2/'
 SHEET_PATH = SHEET_DIR + 'i_small2.zip'
 SHEET_PATH_EDITED = SHEET_DIR + 'i_small2_edited.zip'
 SHEET_PATH_ALT = SHEET_DIR + 'i_small2_alt.zip'
+IRODS_FILE_MD5 = '0b26e313ed4a7ca6904b0e9369e5b957'
 
 
 app_settings = AppSettingAPI()
@@ -444,6 +446,17 @@ class TestSampleSheetISAExportAPIView(TestSampleSheetAPIBase):
         expected = sheet_io.export_isa(self.investigation)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data, expected)
+
+
+class TestSampleDataFileExistsAPIView(TestSampleSheetAPIBase):
+    """Tests for SampleDataFileExistsAPIView"""
+
+    @override_settings(ENABLE_IRODS=False)
+    def test_get_no_irods(self):
+        """Test getting file existence info with iRODS not enabled (should fail)"""
+        url = reverse('samplesheets:api_file_exists')
+        response = self.request_knox(url, data={'checksum': IRODS_FILE_MD5})
+        self.assertEqual(response.status_code, 500)
 
 
 # NOTE: Not yet standardized api, use old base class to test

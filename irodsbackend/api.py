@@ -207,8 +207,7 @@ class IrodsAPI:
             DataObject.modify_time,
             Collection.name,
         ]
-        query = SpecificQuery(self.irods, sql, self._get_query_alias(), columns)
-        _ = query.register()
+        query = self.get_query(sql, columns)
 
         try:
             results = query.get_results()
@@ -237,7 +236,9 @@ class IrodsAPI:
                 )
             )
 
-        _ = query.remove()  # noqa
+        finally:
+            query.remove()
+
         return sorted(ret, key=lambda x: x['path'])
 
     def _get_obj_list(self, coll, check_md5=False, name_like=None, limit=None):
@@ -299,8 +300,7 @@ class IrodsAPI:
             )
         )
         # logger.debug('Object stats query = "{}"'.format(sql))
-        query = SpecificQuery(self.irods, sql, self._get_query_alias())
-        _ = query.register()
+        query = self.get_query(sql)
 
         try:
             result = next(query.get_results())
@@ -317,7 +317,9 @@ class IrodsAPI:
                 )
             )
 
-        _ = query.remove()  # noqa
+        finally:
+            query.remove()
+
         return ret
 
     # TODO: Fork python-irodsclient and implement ticket functionality there
@@ -626,6 +628,21 @@ class IrodsAPI:
         :return: Boolean
         """
         return self.irods.collections.exists(self._sanitize_coll_path(path))
+
+    def get_query(self, sql, columns=None, register=True):
+        """
+        Return a SpecificQuery object with a standard query alias. If
+        registered, should be removed with remove() after use.
+
+        :param sql: SQL (string)
+        :param columns: List of columns to return (optional)
+        :param register: Register query before returning (bool, default=True)
+        :return: SpecificQuery
+        """
+        query = SpecificQuery(self.irods, sql, self._get_query_alias(), columns)
+        if register:
+            query.register()
+        return query
 
     # TODO: Fork python-irodsclient and implement ticket functionality there
 

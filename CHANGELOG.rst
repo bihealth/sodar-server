@@ -17,6 +17,8 @@ Added
 - **Irodsadmin**
     - Add app for iRODS data administration (#972)
     - ``irodsorphans`` management command to detect orphan collections (#972)
+- **Irodsbackend**
+    - ``get_query()`` helper for ``SpecificQuery`` initialization (#1003)
 - **Landingzones**
     - Zone UUID clipboard copying link (#970)
 - **Ontologyaccess**
@@ -30,6 +32,7 @@ Added
     - Ontology term editing (#688, #699)
     - Extract label editing as string (#964)
     - Simple editing for external links columns (#976)
+    - ``SampleDataFileExistsAPIView`` for querying file status by checksum (#1003)
 
 Changed
 -------
