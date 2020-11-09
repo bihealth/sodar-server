@@ -1,4 +1,5 @@
 """REST API views for the samplesheets app"""
+import logging
 import re
 
 from django.conf import settings
@@ -39,6 +40,9 @@ from samplesheets.views import (
     SITE_MODE_TARGET,
     REMOTE_LEVEL_READ_ROLES,
 )
+
+
+logger = logging.getLogger(__name__)
 
 
 MD5_RE = re.compile(r'([a-fA-F\d]{32})')
@@ -293,10 +297,10 @@ class SampleSheetImportAPIView(
 
 class SampleDataFileExistsAPIView(SODARAPIBaseMixin, APIView):
     """
-    Return status of data object existing in sample data of any project by MD5
-    checksum.
+    Return status of data object existing in SODAR iRODS by MD5 checksum.
+    Includes all projects in search regardless of user permissions.
 
-    **URL:** ``/samplesheets/api/file/exists/{Project.sodar_uuid}``
+    **URL:** ``/samplesheets/api/file/exists``
 
     **Methods:** ``GET``
 
@@ -349,7 +353,15 @@ class SampleDataFileExistsAPIView(SODARAPIBaseMixin, APIView):
         except CAT_NO_ROWS_FOUND:
             pass  # No results, this is OK
         except Exception as ex:
-            raise APIException('iRODS query exception: {}'.format(ex))
+            logger.error(
+                '{} iRODS query exception: {}'.format(
+                    self.__class__.__name__, ex
+                )
+            )
+            raise APIException(
+                'iRODS query exception, please contact an admin if issue '
+                'persists'
+            )
         finally:
             query.remove()
 

@@ -1,5 +1,6 @@
 """Tests for REST API View permissions in the samplesheets app"""
 
+from django.test import override_settings
 from django.urls import reverse
 
 from projectroles.models import SODAR_CONSTANTS
@@ -157,6 +158,7 @@ class TestSampleSheetISAExportAPIView(
 class TestSampleDataFileExistsAPIView(TestProjectAPIPermissionBase):
     """Tests for SampleDataFileExistsAPIView permissions"""
 
+    @override_settings(ENABLE_IRODS=False)
     def test_get(self):
         """Test get() in SampleDataFileExistsAPIView"""
         url = reverse('samplesheets:api_file_exists')
@@ -169,8 +171,8 @@ class TestSampleDataFileExistsAPIView(TestProjectAPIPermissionBase):
             self.guest_as.user,
             self.user_no_roles,
         ]
-        # No MD5 given so good users get 400 -> still ok for auth :)
-        self.assert_response_api(url, good_users, 400, data=request_data)
+        # No iRODS so good users get 500 -> still ok for auth :)
+        self.assert_response_api(url, good_users, 500, data=request_data)
         self.assert_response_api(url, [self.anonymous], 401, data=request_data)
 
 
