@@ -139,6 +139,7 @@ class TestProjectSheetsVueAppBase(
         self.default_user = self.contributor_as.user
 
 
+# TODO: Remove all those we can test in vue app tests
 class TestProjectSheetsView(TestProjectSheetsVueAppBase):
     """Tests for the project sheets view UI"""
 

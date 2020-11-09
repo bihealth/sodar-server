@@ -6,23 +6,23 @@
       </div>
       <div class="card-body">
         <list-row :legend="'Identifier'"
-                  :value="app.sodarContext.investigation.identifier">
+                  :value="sodarContext.investigation.identifier">
         </list-row>
         <list-row :legend="'Title'"
-                  :value="app.sodarContext.investigation.title">
+                  :value="sodarContext.investigation.title">
         </list-row>
         <list-row :legend="'Description'"
-                  :value="app.sodarContext.investigation.description">
+                  :value="sodarContext.investigation.description">
         </list-row>
         <list-row :legend="'Parser Version'"
-                  :value="app.sodarContext.parser_version">
+                  :value="sodarContext.parser_version">
         </list-row>
         <dl class="row pb-0">
           <dt class="col-md-3">Configuration</dt>
           <dd class="col-md-9">
-            <span v-if="app.sodarContext.configuration"
+            <span v-if="sodarContext.configuration"
                   class="badge badge-pill badge-info">
-              {{ app.sodarContext.configuration }}
+              {{ sodarContext.configuration }}
             </span>
             <span v-else
                   class="badge badge-pill badge-danger">
@@ -33,7 +33,7 @@
         <dl class="row pb-0">
           <dt class="col-md-3">iRODS Repository</dt>
           <dd class="col-md-9">
-            <span v-if="app.sodarContext.irods_status"
+            <span v-if="sodarContext.irods_status"
                   class="badge badge-pill badge-success">
               Available
             </span>
@@ -45,16 +45,16 @@
           </dd>
         </dl>
         <span v-for="(val, key, index) in
-                     app.sodarContext.investigation.comments"
+                     sodarContext.investigation.comments"
               :key="index">
           <list-row :legend="key" :value="val"></list-row>
         </span>
       </div>
     </div>
 
-    <div v-for="(studyInfo, studyUuid, index) in app.sodarContext.studies"
+    <div v-for="(studyInfo, studyUuid, index) in sodarContext.studies"
          :key="index"
-         class="card"
+         class="card sodar-ss-overview-study"
          :id="'sodar-ss-overview-study-' + studyUuid">
       <div class="card-header">
         <h4>Study Details: {{ studyInfo.display_name }}</h4>
@@ -97,14 +97,14 @@
             </thead>
             <tbody>
               <tr>
-                <td>{{ app.sodarContext.sheet_stats.study_count }}</td>
-                <td>{{ app.sodarContext.sheet_stats.assay_count }}</td>
-                <td>{{ app.sodarContext.sheet_stats.protocol_count }}</td>
-                <td>{{ app.sodarContext.sheet_stats.process_count }}</td>
-                <td>{{ app.sodarContext.sheet_stats.source_count }}</td>
-                <td>{{ app.sodarContext.sheet_stats.material_count }}</td>
-                <td>{{ app.sodarContext.sheet_stats.sample_count }}</td>
-                <td>{{ app.sodarContext.sheet_stats.data_count }}</td>
+                <td>{{ sodarContext.sheet_stats.study_count }}</td>
+                <td>{{ sodarContext.sheet_stats.assay_count }}</td>
+                <td>{{ sodarContext.sheet_stats.protocol_count }}</td>
+                <td>{{ sodarContext.sheet_stats.process_count }}</td>
+                <td>{{ sodarContext.sheet_stats.source_count }}</td>
+                <td>{{ sodarContext.sheet_stats.material_count }}</td>
+                <td>{{ sodarContext.sheet_stats.sample_count }}</td>
+                <td>{{ sodarContext.sheet_stats.data_count }}</td>
               </tr>
             </tbody>
           </table>
@@ -119,14 +119,8 @@ import ListRow from './ListRow.vue'
 
 export default {
   name: 'Overview',
-  components: {
-    ListRow
-  },
-  props: [
-    'app'
-  ],
-  methods: {
-  }
+  components: { ListRow },
+  props: ['sodarContext']
 }
 </script>
 

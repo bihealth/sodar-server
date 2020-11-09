@@ -375,6 +375,7 @@ class SampleSheetContextAjaxView(SODARBaseProjectAjaxView):
         )
 
         ret_data = json.dumps(ret_data)
+        # logger.debug('SODAR Context: {}'.format(ret_data))
         return Response(ret_data, status=200)
 
 
@@ -713,6 +714,9 @@ class SampleSheetWarningsAjaxView(SODARBaseProjectAjaxView):
                 {'message': 'Investigation not found for project'}, status=404
             )
 
+        logger.debug(
+            'Parser Warnings: {}'.format(json.dumps(inv.parser_warnings))
+        )
         return Response({'warnings': inv.parser_warnings}, status=200)
 
 

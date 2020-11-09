@@ -1,0 +1,66 @@
+{
+  "configuration": null,
+  "inv_file_name": "i_small.txt",
+  "irods_status": true,
+  "irods_backend_enabled": true,
+  "parser_version": "0.2.7",
+  "parser_warnings": true,
+  "irods_webdav_enabled": true,
+  "irods_webdav_url": "http://davrods.local",
+  "external_link_labels": {
+    "x-generic-remote": "External ID"
+  },
+  "table_height": 400,
+  "min_col_width": 100,
+  "max_col_width": 300,
+  "allow_editing": true,
+  "alerts": [],
+  "csrf_token": "k73YXvYB9kB8FXCaE3NO2tUGMGzsJCxW4YAk7Ga9jyUiLqh1a3jCY59n2lUelyZm",
+  "investigation": {
+    "identifier": "i_small",
+    "title": "Small Investigation",
+    "description": "",
+    "comments": null
+  },
+  "studies": {
+    "11111111-1111-1111-1111-111111111111": {
+      "display_name": "Small Germline Study",
+      "identifier": "s_small",
+      "description": "",
+      "comments": {
+        "Study Grant Number": "",
+        "Study Funding Agency": ""
+      },
+      "irods_path": "/omicsZone/projects/00/00000000-0000-0000-0000-000000000000/sample_data/study_11111111-1111-1111-1111-111111111111",
+      "table_url": "http://0.0.0.0:8000/samplesheets/ajax/study/tables/11111111-1111-1111-1111-111111111111",
+      "plugin": null,
+      "assays": {
+        "22222222-2222-2222-2222-222222222222": {
+          "name": "small",
+          "display_name": "Small",
+          "irods_path": "/omicsZone/projects/00/00000000-0000-0000-0000-000000000000/sample_data/study_11111111-1111-1111-1111-111111111111/assay_22222222-2222-2222-2222-222222222222",
+          "display_row_links": true,
+          "plugin": null
+        }
+      }
+    }
+  },
+  "perms": {
+    "edit_sheet": true,
+    "manage_sheet": true,
+    "create_colls": true,
+    "export_sheet": true,
+    "delete_sheet": true,
+    "is_superuser": true
+  },
+  "sheet_stats": {
+    "study_count": 1,
+    "assay_count": 1,
+    "protocol_count": 3,
+    "process_count": 9,
+    "source_count": 4,
+    "material_count": 2,
+    "sample_count": 5,
+    "data_count": 5
+  }
+}

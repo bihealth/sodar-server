@@ -213,7 +213,7 @@ serve the development version with hot reload in ``http://localhost:8080``.
 
 .. code-block::
 
-    $ make samplesheets
+    $ make samplesheets_vue
 
 4. SODAR Celery Processes
 -------------------------

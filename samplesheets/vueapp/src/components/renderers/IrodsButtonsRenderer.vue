@@ -1,13 +1,14 @@
 <template>
   <irods-buttons
-      :app="params.app"
       :irods-status="params.irodsStatus"
       :irods-backend-enabled="params.irodsBackendEnabled"
       :irods-webdav-url="params.irodsWebdavUrl"
       :irods-path="getIrodsPath(params)"
       :show-file-list="params.showFileList"
       :modal-component="params.modalComponent"
-      :enabled="getEnabledState(params)">
+      :enabled="getEnabledState(params)"
+      :edit-mode="params.app.editMode"
+      :notify-callback="params.app.showNotification">
   </irods-buttons>
 </template>
 

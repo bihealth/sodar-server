@@ -9,11 +9,11 @@
     "lint": "vue-cli-service lint"
   },
   "dependencies": {
-    "bootstrap-vue": "^2.15.0",
+    "bootstrap-vue": "^2.18.1",
     "core-js": "^3.6.4",
-    "vue": "^2.6.11",
+    "vue": "^2.6.12",
     "vue-clipboard2": "^0.3.1",
-    "vue-router": "^3.3.4"
+    "vue-router": "^3.4.8"
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "~4.3.0",
@@ -27,13 +27,13 @@
     "ag-grid-vue": "^23.2.1",
     "babel-eslint": "^10.1.0",
     "eslint": "^6.7.2",
-    "eslint-plugin-import": "^2.22.0",
+    "eslint-plugin-import": "^2.22.1",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-promise": "^4.2.1",
-    "eslint-plugin-standard": "^4.0.0",
+    "eslint-plugin-standard": "^4.0.2",
     "eslint-plugin-vue": "^6.2.2",
     "vue-property-decorator": "^8.5.1",
-    "vue-template-compiler": "^2.6.11",
+    "vue-template-compiler": "^2.6.12",
     "webpack-bundle-tracker": "^0.4.3"
   },
   "eslintConfig": {
@@ -67,6 +67,11 @@
     "not dead"
   ],
   "jest": {
-    "preset": "@vue/cli-plugin-unit-jest"
+    "preset": "@vue/cli-plugin-unit-jest",
+    "globals": {
+      "vue-jest": {
+        "hideStyleWarn": true
+      }
+    }
   }
 }

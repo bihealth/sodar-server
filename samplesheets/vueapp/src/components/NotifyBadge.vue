@@ -4,7 +4,7 @@
       <span v-if="notifyVisible"
             ref="notifyBadge"
             :class="notifyClasses">
-        {{ this.notifyMessage }}
+        {{ notifyMessage }}
       </span>
     </transition>
   </span>
@@ -16,8 +16,6 @@
 
 export default {
   name: 'NotifyBadge',
-  props: [
-  ],
   data () {
     return {
       notifyVisible: false,
@@ -29,11 +27,8 @@ export default {
     show (message, variant, delay) {
       this.notifyClasses = 'badge badge-pill sodar-ss-vue-nofify mx-2 badge-'
 
-      if (variant) {
-        this.notifyClasses += variant
-      } else {
-        this.notifyClasses += 'light'
-      }
+      if (variant) this.notifyClasses += variant
+      else this.notifyClasses += 'light'
 
       this.notifyMessage = message
       this.notifyVisible = true

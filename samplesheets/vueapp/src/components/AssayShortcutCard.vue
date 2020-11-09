@@ -1,31 +1,31 @@
 <template>
-  <span v-if="shortcutData">
+  <span v-if="assayShortcuts">
     <div class="card sodar-ss-vue-assay-shortcut-card">
       <div class="card-header">
         <h4>Assay Shortcuts</h4>
       </div>
       <div class="card-body px-3 py-4 sodar-ss-vue-assay-shortcut-body">
-        <span v-for="(shortcut, idx) in shortcutData"
-             :key="idx"
-             class="rounded border bg-light text-nowrap mr-3
-                    sodar-ss-vue-assay-shortcut">
+        <span v-for="(shortcut, idx) in assayShortcuts"
+              :key="idx"
+              class="rounded border bg-light text-nowrap mr-3
+                     sodar-ss-vue-assay-shortcut">
           <span :class="getTextClasses(shortcut)">
-            {{ shortcut['label'] }}
-            <i v-if="app.sodarContext.perms.is_superuser && idx > 1"
-                class="fa fa-puzzle-piece text-danger ml-1"
-                title="Defined in assay plugin"
-                v-b-tooltip.hover.window>
+            {{ shortcut.label }}
+            <i v-if="sodarContext.perms.is_superuser && idx > 1"
+               class="fa fa-puzzle-piece text-danger ml-1"
+               title="Defined in assay plugin"
+               v-b-tooltip.hover.window>
             </i>
           </span>
           <irods-buttons
-              :app="app"
-              :irods-status="app.sodarContext.irods_status"
-              :irods-backend-enabled="app.sodarContext.irods_backend_enabled"
-              :irods-webdav-url="app.sodarContext.irods_webdav_url"
+              :irods-backend-enabled="sodarContext.irods_backend_enabled"
+              :irods-status="sodarContext.irods_status"
+              :irods-webdav-url="sodarContext.irods_webdav_url"
               :irods-path="shortcut.path"
               :show-file-list="true"
-              :modal-component="app.$refs.dirModalRef"
-              :enabled="shortcut.enabled">
+              :modal-component="modalComponent"
+              :enabled="shortcut.enabled"
+              :notify-callback="notifyCallback">
             </irods-buttons>
         </span>
       </div>
@@ -42,11 +42,10 @@ export default {
     IrodsButtons
   },
   props: [
-    'app',
-    'assayInfo',
-    'shortcutData',
-    'irodsBackendEnabled',
-    'irodsWebdavUrl'
+    'sodarContext',
+    'assayShortcuts',
+    'modalComponent',
+    'notifyCallback'
   ],
   methods: {
     getTextClasses (shortcut) {

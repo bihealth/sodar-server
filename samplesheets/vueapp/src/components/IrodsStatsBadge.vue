@@ -1,7 +1,7 @@
 <template>
   <span v-if="irodsStatus"
         class="badge badge-pill badge-info sodar-vue-irods-stats">
-    <span v-if="fileCount != null">
+    <span v-if="fileCount !== null">
       {{ fileCount }} file<span v-if="fileCount !== 1">s</span>
       ({{ totalSize | prettyBytes }})
     </span>
@@ -21,10 +21,8 @@ export default {
   ],
   data () {
     return {
-      dirStats: null,
       fileCount: null,
-      totalSize: null,
-      timer: null
+      totalSize: null
     }
   },
   methods: {

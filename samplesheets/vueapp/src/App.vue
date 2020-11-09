@@ -1,9 +1,12 @@
 <template>
   <div id="app">
     <!-- Header -->
-    <PageHeader v-if="sodarContext"
-                ref="pageHeader"
-                :app="getApp()">
+    <PageHeader
+        v-if="sodarContext"
+        ref="pageHeader"
+        :app="getApp()"
+        :editor-help-modal="$refs.editorHelpModal"
+        :win-export-modal="$refs.winExportModal">
     </PageHeader>
 
     <!-- Main container -->
@@ -74,12 +77,13 @@
               </span>
             </span>
             <irods-buttons
-                :app="getApp()"
                 :irods-status="sodarContext.irods_status"
                 :irods-backend-enabled="sodarContext.irods_backend_enabled"
                 :irods-webdav-url="sodarContext.irods_webdav_url"
                 :irods-path="sodarContext.studies[currentStudyUuid].irods_path"
-                :show-file-list="false">
+                :show-file-list="false"
+                :edit-mode="editMode"
+                :notify-callback="showNotification">
             </irods-buttons>
           </div>
         </div>
@@ -168,12 +172,13 @@
                         gridsLoaded &&
                         !renderError &&
                         !activeSubPage"
-                  :app="getApp()"
                   :irods-status="sodarContext.irods_status"
                   :irods-backend-enabled="sodarContext.irods_backend_enabled"
                   :irods-webdav-url="sodarContext.irods_webdav_url"
                   :irodsPath="assayInfo.irods_path"
-                  :showFileList="false">
+                  :showFileList="false"
+                  :edit-mode="editMode"
+                  :notify-callback="showNotification">
               </irods-buttons>
             </div>
           </div>
@@ -182,11 +187,11 @@
               v-if="!editMode &&
                     sodarContext.irods_status &&
                     assayShortcuts[assayUuid]"
-              :app="getApp()"
+              :sodar-context="sodarContext"
               :assay-info="assayInfo"
-              :shortcut-data="assayShortcuts[assayUuid]"
-              :irods-backend-enabled="sodarContext.irods_backend_enabled"
-              :irods-webdav-url="sodarContext.irods_webdav_url">
+              :assay-shortcuts="assayShortcuts[assayUuid]"
+              :modal-component="$refs.dirModalRef"
+              :notify-callback="showNotification">
           </assay-shortcut-card>
 
           <!-- Assay Card -->
@@ -252,13 +257,15 @@
 
       <!-- Overview subpage -->
       <div v-else-if="activeSubPage === 'overview'" :id="contentId">
-        <Overview :app="getApp()">
+        <Overview :sodar-context="sodarContext">
         </Overview>
       </div>
 
       <!-- Parser Warnings subpage -->
       <div v-else-if="activeSubPage === 'warnings'" :id="contentId">
-        <ParserWarnings :app="getApp()">
+        <ParserWarnings
+            :project-uuid="projectUuid"
+            :sodar-context="sodarContext">
         </ParserWarnings>
       </div>
 
@@ -1863,7 +1870,7 @@ export default {
         .then(
           data => {
             if (data.message === 'ok') {
-              this.showNotification('Finished Editing', 'success', 1000)
+              this.showNotification('Finished Editing', 'success', 1500)
             } else {
               console.log('Finish status: ' + data.message) // DEBUG
               this.showNotification('Saving Version Failed', 'danger', 1000)

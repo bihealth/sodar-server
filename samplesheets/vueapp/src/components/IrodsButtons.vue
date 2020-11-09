@@ -52,24 +52,19 @@
 export default {
   name: 'IrodsButtons',
   props: [
-    'app',
     'irodsBackendEnabled',
     'irodsStatus',
     'irodsWebdavUrl',
     'irodsPath',
     'showFileList',
     'modalComponent',
-    'enabled'
+    'enabled',
+    'editMode',
+    'notifyCallback'
   ],
   methods: {
     getEnabledState () {
-      if (!this.app ||
-          this.app.editMode ||
-          !this.irodsStatus ||
-          this.enabled === false) {
-        return false
-      }
-      return true
+      return !this.editMode && this.irodsStatus && this.enabled !== false
     },
     onDirListClick (event) {
       const modalTitle = 'Files in iRODS: ' + this.irodsPath.split('/').pop()
@@ -77,7 +72,7 @@ export default {
       this.modalComponent.showModal(this.irodsPath)
     },
     onCopyBtnClick (event) {
-      this.app.showNotification('Copied', 'success', 1000)
+      this.notifyCallback('Copied', 'success', 1000)
     }
   }
 }

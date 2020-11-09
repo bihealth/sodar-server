@@ -3,15 +3,16 @@ MANAGE = python manage.py
 define USAGE=
 @echo -e
 @echo -e "Usage:"
-@echo -e "\tmake black [arg=--<arg>]                 -- black formatting"
-@echo -e "\tmake serve [arg=sync]                    -- start server"
-@echo -e "\tmake celery                              -- start celery & celerybeat"
-@echo -e "\tmake demo                                -- start demo server"
-@echo -e "\tmake samplesheets                        -- start samplesheet vue.js app"
-@echo -e "\tmake collectstatic                       -- run collectstatic"
-@echo -e "\tmake test [arg=<test_object>]            -- run all tests or specify module/class/function"
-@echo -e "\tmake test_coverage                       -- run all tests and provide coverage html report"
-@echo -e "\tmake sync_taskflow                       -- sync taskflow"
+@echo -e "\tmake black [arg=--<arg>]                    -- format python with black"
+@echo -e "\tmake serve [arg=sync]                       -- start server"
+@echo -e "\tmake celery                                 -- start celery & celerybeat"
+@echo -e "\tmake demo                                   -- start demo server"
+@echo -e "\tmake samplesheets_vue                       -- start samplesheet vue.js app"
+@echo -e "\tmake collectstatic                          -- run collectstatic"
+@echo -e "\tmake test [arg=<test_object>]               -- run all django tests or specify module/class/function"
+@echo -e "\tmake test_coverage                          -- run all django tests and provide coverage html report"
+@echo -e "\tmake test_samplesheets_vue [arg=<target>]   -- run all samplesheets vue app tests or specify target"
+@echo -e "\tmake sync_taskflow                          -- sync taskflow"
 @echo -e
 endef
 
@@ -48,8 +49,8 @@ demo:
 	DJANGO_DEBUG=0 $(MANAGE) runserver --settings=config.settings.local --insecure
 
 
-.PHONY: samplesheets
-samplesheets:
+.PHONY: samplesheets_vue
+samplesheets_vue:
 	npm run --prefix samplesheets/vueapp serve
 
 
@@ -68,6 +69,11 @@ test_coverage: collectstatic
 	coverage run --source="." manage.py test -v 2 --settings=config.settings.test_local
 	coverage report
 	coverage html
+
+
+.PHONY: test_samplesheets_vue
+test_samplesheets_vue:
+	npm run --prefix samplesheets/vueapp test:unit $(arg)
 
 
 .PHONY: usage

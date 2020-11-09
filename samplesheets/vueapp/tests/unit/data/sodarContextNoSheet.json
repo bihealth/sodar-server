@@ -1,0 +1,30 @@
+{
+  "configuration": null,
+  "inv_file_name": null,
+  "irods_status": null,
+  "irods_backend_enabled": true,
+  "parser_version": null,
+  "parser_warnings": false,
+  "irods_webdav_enabled": true,
+  "irods_webdav_url": "http://davrods.local",
+  "external_link_labels": {
+    "x-generic-remote": "External ID"
+  },
+  "table_height": 400,
+  "min_col_width": 100,
+  "max_col_width": 300,
+  "allow_editing": false,
+  "alerts": [],
+  "csrf_token": "NSNt4pE6xONuH8niHIe9naHhwT6rRqaRxJkPeAQEH26ENB29dIKXjMWYMyrdtmCh",
+  "investigation": {},
+  "studies": {},
+  "perms": {
+    "edit_sheet": true,
+    "manage_sheet": true,
+    "create_colls": true,
+    "export_sheet": true,
+    "delete_sheet": true,
+    "is_superuser": true
+  },
+  "sheet_stats": {}
+}

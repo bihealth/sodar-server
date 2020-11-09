@@ -1,6 +1,7 @@
 <template>
   <span>
-    <div v-if="warnings && warnings.length > 0" class="card" id="sodar-ss-warnings-card">
+    <div v-if="warnings && warnings.length > 0"
+         class="card" id="sodar-ss-warnings-card">
       <div class="card-header">
         <h4>Parser Warnings</h4>
       </div>
@@ -14,7 +15,9 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="(warning, index) in warnings" :key="index">
+            <tr v-for="(warning, index) in warnings"
+                :key="index"
+                class="sodar-ss-warnings-item">
               <td class="text-monospace">{{ warning.source }}</td>
               <td class="text-monospace">{{ warning.message }}</td>
               <td class="text-monospace">{{ warning.category }}</td>
@@ -23,7 +26,7 @@
         </table>
       </div>
     </div>
-    <div v-else-if="message">
+    <div v-else-if="message" id="sodar-ss-warnings-message">
       {{ message }}
     </div>
     <div v-else>
@@ -35,7 +38,8 @@
 export default {
   name: 'ParserWarnings',
   props: [
-    'app'
+    'projectUuid',
+    'sodarContext'
   ],
   data () {
     return {
@@ -43,14 +47,8 @@ export default {
       message: null
     }
   },
-  beforeMount () {
-    // No warnings stated by the context -> don't bother fetching
-    if (this.app.sodarContext.parser_warnings === false) {
-      return
-    }
-
-    // Helper function for building table data
-    function buildWarnings (warnings, source) {
+  methods: {
+    buildWarnings (warnings, source) {
       const ret = []
       for (let i = 0; i < warnings.length; i++) {
         const warning = warnings[i]
@@ -61,52 +59,60 @@ export default {
         })
       }
       return ret
+    },
+    handleWarningsResponse (response) {
+      if ('warnings' in response) {
+        if (response.warnings.investigation.length > 0) {
+          this.warnings.push.apply(
+            this.warnings,
+            this.buildWarnings(
+              response.warnings.investigation,
+              this.sodarContext.inv_file_name
+            )
+          )
+        }
+        for (const studyFileName in response.warnings.studies) {
+          this.warnings.push.apply(
+            this.warnings,
+            this.buildWarnings(
+              response.warnings.studies[studyFileName], studyFileName
+            )
+          )
+        }
+        for (const assayFileName in response.warnings.assays) {
+          this.warnings.push.apply(
+            this.warnings,
+            this.buildWarnings(
+              response.warnings.assays[assayFileName],
+              assayFileName
+            )
+          )
+        }
+      } else if ('message' in response) {
+        this.message = response.message
+      }
+    },
+    getWarnings () {
+      this.warnings = []
+      const apiUrl = '/samplesheets/ajax/warnings/' + this.projectUuid
+      fetch(apiUrl, {
+        credentials: 'same-origin'
+      })
+        .then(response => response.json())
+        .then(
+          response => {
+            this.handleWarningsResponse(response)
+          }).catch(function (error) {
+          this.message = 'Error fetching data: ' + error.message
+        })
     }
+  },
+  beforeMount () {
+    // No warnings stated by the context -> don't bother fetching
+    if (!this.sodarContext.parser_warnings) return
 
     // Fetch data
-    this.warnings = []
-    const apiUrl = '/samplesheets/ajax/warnings/' +
-      this.app.projectUuid
-
-    fetch(apiUrl, {
-      credentials: 'same-origin'
-    })
-      .then(response => response.json())
-      .then(
-        response => {
-          if ('warnings' in response) {
-            if (response.warnings.investigation.length > 0) {
-              this.warnings.push.apply(
-                this.warnings,
-                buildWarnings(
-                  response.warnings.investigation,
-                  this.app.sodarContext.inv_file_name
-                )
-              )
-            }
-            for (const studyFileName in response.warnings.studies) {
-              this.warnings.push.apply(
-                this.warnings,
-                buildWarnings(
-                  response.warnings.studies[studyFileName], studyFileName
-                )
-              )
-            }
-            for (const assayFileName in response.warnings.assays) {
-              this.warnings.push.apply(
-                this.warnings,
-                buildWarnings(
-                  response.warnings.assays[assayFileName],
-                  assayFileName
-                )
-              )
-            }
-          } else if ('message' in response) {
-            this.message = response.message
-          }
-        }).catch(function (error) {
-        this.message = 'Error fetching data: ' + error.message
-      })
+    this.getWarnings()
   }
 }
 </script>

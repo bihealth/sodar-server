@@ -35,4 +35,5 @@ all_tests:
     - coverage report
     - make black arg=--check
     - flake8 .
+    - make test_samplesheets_vue
   when: on_success
