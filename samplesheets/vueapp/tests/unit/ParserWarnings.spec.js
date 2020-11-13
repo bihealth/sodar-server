@@ -30,32 +30,28 @@ describe('ParserWarnings.vue', () => {
     jest.clearAllMocks()
   })
 
-  it('renders parser warnings', () => {
+  it('renders parser warnings', async () => {
     const wrapper = mount(ParserWarnings, {
       localVue,
       propsData: propsData,
       methods: { getWarnings: jest.fn() }
     })
-    wrapper.vm.handleWarningsResponse(parserWarnings)
+    await wrapper.vm.handleWarningsResponse(parserWarnings)
 
-    setTimeout(() => {
-      expect(wrapper.find('#sodar-ss-warnings-card').exists()).toBe(true)
-      expect(wrapper.findAll('.sodar-ss-warnings-item').length).toBe(3)
-    }, 100)
+    expect(wrapper.find('#sodar-ss-warnings-card').exists()).toBe(true)
+    expect(wrapper.findAll('.sodar-ss-warnings-item').length).toBe(3)
   })
 
-  it('renders parser message', () => {
+  it('renders parser message', async () => {
     const wrapper = mount(ParserWarnings, {
       localVue,
       propsData: propsData,
       methods: { getWarnings: jest.fn() }
     })
-    wrapper.vm.handleWarningsResponse({ message: 'message' })
+    await wrapper.vm.handleWarningsResponse({ message: 'message' })
 
-    setTimeout(() => {
-      expect(wrapper.find('#sodar-ss-warnings-message').exists()).toBe(true)
-      expect(wrapper.find('#sodar-ss-warnings-message').text()).toBe('message')
-      expect(wrapper.find('#sodar-ss-warnings-card').exists()).toBe(false)
-    }, 100)
+    expect(wrapper.find('#sodar-ss-warnings-message').exists()).toBe(true)
+    expect(wrapper.find('#sodar-ss-warnings-message').text()).toBe('message')
+    expect(wrapper.find('#sodar-ss-warnings-card').exists()).toBe(false)
   })
 })

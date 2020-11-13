@@ -1,8 +1,9 @@
 <template>
-  <b-modal id="sodar-vue-irods-modal" ref="irodsDirModal"
-           no-fade hide-footer
-           size="xl">
-
+  <b-modal
+      id="sodar-vue-irods-modal" ref="irodsDirModal"
+      no-fade hide-footer
+      size="xl"
+      :static="true">
     <template slot="modal-header">
       <h5 class="modal-title text-nowrap mr-5">{{ title }}</h5>
       <b-input
@@ -10,7 +11,7 @@
           size="sm"
           placeholder="Filter"
           class="ml-auto"
-          @keyup="onFilterChange">
+          @update="onFilterUpdate">
       </b-input>
       <button
           type="button"
@@ -19,7 +20,6 @@
         ×
       </button>
     </template>
-
     <!-- Object list -->
     <div v-if="objectList"
          id="sodar-vue-irods-modal-content">
@@ -34,7 +34,8 @@
         <tbody>
           <tr v-for="(objInfo, index) in objectList"
               :key="index"
-              v-show="objInfo.visibleInList">
+              v-show="objInfo.visibleInList"
+              class="sodar-ss-vue-irods-obj">
             <td>
               <a :href="irodsWebdavUrl + objInfo.path">
                 <span class="text-muted">{{ getRelativePath(objInfo.path) }}/</span>{{ objInfo.name }}
@@ -47,15 +48,21 @@
       </table>
     </div>
     <!-- Empty -->
-    <div v-else-if="empty" class="text-muted font-italic">
+    <div v-else-if="empty"
+         class="text-muted font-italic"
+         id="sodar-ss-vue-irods-empty">
       Empty collection
     </div>
     <!-- Message/error -->
-    <div v-else-if="message" class="text-danger font-italic">
+    <div v-else-if="message"
+         class="text-danger font-italic"
+         id="sodar-ss-vue-irods-message">
       {{ this.message }}
     </div>
     <!-- Waiting -->
-    <div v-else class="text-center">
+    <div v-else
+         class="text-center"
+         id="sodar-ss-vue-irods-wait">
       <i class="fa fa-spin fa-circle-o-notch fa-3x text-muted"></i>
     </div>
   </b-modal>
@@ -79,29 +86,52 @@ export default {
     }
   },
   methods: {
-    onFilterChange (event) {
-      const inputVal = event.currentTarget.value.toLowerCase()
-
+    onFilterUpdate (event) {
       for (let i = 0; i < this.objectList.length; i++) {
-        if (inputVal === '' || this.objectList[i].displayPath.toLowerCase().includes(inputVal)) {
-          this.$set(this.objectList[i], 'visibleInList', true)
-        } else {
-          this.$set(this.objectList[i], 'visibleInList', false)
-        }
+        const vis = event === '' ||
+          this.objectList[i].displayPath.toLowerCase().includes(event)
+        this.$set(this.objectList[i], 'visibleInList', vis)
       }
-
-      this.$forceUpdate() // TODO: Why is this necessary even when using $set?
+      this.$forceUpdate()
     },
-
     setTitle (title) {
       this.title = title
     },
-
     getRelativePath (path) {
       const pathSplit = path.split('/')
       return pathSplit.slice(this.dirPathLength, pathSplit.length - 1).join('/')
     },
+    handleObjListResponse (response) {
+      if ('data_objects' in response) {
+        if (response.data_objects.length > 0) {
+          this.objectList = response.data_objects
 
+          for (let i = 0; i < this.objectList.length; i++) {
+            this.objectList[i].visibleInList = true
+            this.objectList[i].displayPath =
+              this.getRelativePath(this.objectList[i].path) +
+                this.objectList[i].name
+          }
+        } else {
+          this.message = 'Empty collection'
+          this.empty = true
+        }
+      } else if ('message' in response) {
+        this.message = response.message
+      }
+    },
+    getObjList (path) {
+      const listUrl = '/irodsbackend/api/list/' +
+      this.projectUuid + '?path=' + encodeURIComponent(path) + '&md5=0'
+
+      fetch(listUrl, { credentials: 'same-origin' })
+        .then(response => response.json())
+        .then(response => {
+          this.handleObjListResponse(response)
+        }).catch(function (error) {
+          this.message = 'Error fetching data: ' + error.message
+        })
+    },
     showModal (path) {
       const modalElement = this.$refs.irodsDirModal
 
@@ -112,36 +142,7 @@ export default {
       this.dirPath = path
       this.dirPathLength = this.dirPath.split('/').length
 
-      const listUrl = '/irodsbackend/api/list/' +
-        this.projectUuid + '?path=' + encodeURIComponent(path) + '&md5=0'
-
-      fetch(listUrl, {
-        credentials: 'same-origin'
-      })
-        .then(response => response.json())
-        .then(
-          response => {
-            if ('data_objects' in response) {
-              if (response.data_objects.length > 0) {
-                this.objectList = response.data_objects
-
-                for (let i = 0; i < this.objectList.length; i++) {
-                  this.objectList[i].visibleInList = true
-                  this.objectList[i].displayPath =
-                    this.getRelativePath(this.objectList[i].path) +
-                      this.objectList[i].name
-                }
-              } else {
-                this.message = 'Empty collection'
-                this.empty = true
-              }
-            } else if ('message' in response) {
-              this.message = response.message
-            }
-          }).catch(function (error) {
-          this.message = 'Error fetching data: ' + error.message
-        })
-
+      this.getObjList(path)
       modalElement.show()
     },
 

@@ -1,24 +1,26 @@
 {
-  "all_ok": false,
-  "assays": {
-    "a_small.txt": [
-      {
-        "message": "Can't validate parameter values and names for process with undeclared protocol \"Unknown\" and name type \"Data Transformation Name\"",
-        "category": "ModerateIsaValidationWarning"
-      }
-    ]
-  },
-  "studies": {},
-  "investigation": [
-    {
-      "message": "Investigation with only one study contains metadata:\n\tID:\ti_small\n\tTitle:\tSmall Investigation\n\tPath:\ti_small.txt\n\tSubmission Date:\t\n\tPublic Release Date:\tNone\n\tPrefer recording metadata in the study section.",
-      "category": "ModerateIsaValidationWarning"
+  "warnings": {
+    "all_ok": false,
+    "assays": {
+      "a_small.txt": [
+        {
+          "message": "Can't validate parameter values and names for process with undeclared protocol \"Unknown\" and name type \"Data Transformation Name\"",
+          "category": "ModerateIsaValidationWarning"
+        }
+      ]
     },
-    {
-      "message": "Assay without platform:\nPath:\ta_small.txt\nMeasurement Type:\texome sequencing assay\nTechnology Type:\tnucleotide sequencing\nTechnology Platform:\t",
-      "category": "AdvisoryIsaValidationWarning"
-    }
-  ],
-  "critical_count": 0,
-  "use_file_names": true
+    "studies": {},
+    "investigation": [
+      {
+        "message": "Investigation with only one study contains metadata:\n\tID:\ti_small\n\tTitle:\tSmall Investigation\n\tPath:\ti_small.txt\n\tSubmission Date:\t\n\tPublic Release Date:\tNone\n\tPrefer recording metadata in the study section.",
+        "category": "ModerateIsaValidationWarning"
+      },
+      {
+        "message": "Assay without platform:\nPath:\ta_small.txt\nMeasurement Type:\texome sequencing assay\nTechnology Type:\tnucleotide sequencing\nTechnology Platform:\t",
+        "category": "AdvisoryIsaValidationWarning"
+      }
+    ],
+    "critical_count": 0,
+    "use_file_names": true
+  }
 }

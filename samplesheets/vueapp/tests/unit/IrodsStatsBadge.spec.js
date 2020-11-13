@@ -1,11 +1,9 @@
 import { createLocalVue, mount } from '@vue/test-utils'
 import IrodsStatsBadge from '@/components/IrodsStatsBadge.vue'
-// TODO: Import prettybytes filter
+import '@/filters/prettyBytes.js'
 
 // Set up extended Vue constructor
 const localVue = createLocalVue()
-// Mock filter
-localVue.filter('prettyBytes', function (num) { return num + ' B' })
 
 // Init data
 let propsData
@@ -36,15 +34,13 @@ describe('IrodsStatsBadge.vue', () => {
     expect(wrapper.find('.sodar-vue-irods-stats').find('span').text()).toBe('Updating..')
   })
 
-  it('updates and renders stats in badge', () => {
+  it('updates and renders stats in badge', async () => {
     const wrapper = mount(IrodsStatsBadge, { localVue, propsData: propsData })
 
-    wrapper.vm.setStats({ file_count: 2, total_size: 170 })
+    await wrapper.vm.setStats({ file_count: 2, total_size: 170 })
     expect(wrapper.vm.fileCount).toBe(2)
     expect(wrapper.vm.totalSize).toBe(170)
-    wrapper.vm.$nextTick(() => {
-      expect(wrapper.find('.sodar-vue-irods-stats').find(
-        'span').text().replace(/\s+/g, ' ')).toBe('2 files (170 B)')
-    })
+    expect(wrapper.find('.sodar-vue-irods-stats').find(
+      'span').text().replace(/\s+/g, ' ')).toBe('2 files (170 B)')
   })
 })

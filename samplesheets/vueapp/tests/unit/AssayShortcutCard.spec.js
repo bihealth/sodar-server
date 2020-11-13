@@ -80,6 +80,7 @@ describe('AssayShortcutCard.vue', () => {
     const spyNotifyCallback = jest.spyOn(wrapper.vm, 'notifyCallback')
     wrapper.setMethods({ notifyCallback: spyNotifyCallback })
 
+    expect(spyNotifyCallback).not.toHaveBeenCalled()
     wrapper.find('.sodar-irods-copy-path-btn').trigger('click')
     expect(spyNotifyCallback).toHaveBeenCalled()
   })
@@ -87,13 +88,15 @@ describe('AssayShortcutCard.vue', () => {
   it('opens modal component on iRODS dir list button click', () => {
     propsData.showFileList = true
     propsData.modalComponent = {
-      setTitle: () => {},
-      showModal: () => {}
+      setTitle: jest.fn(),
+      showModal: jest.fn()
     }
     const wrapper = mount(AssayShortcutCard, { localVue, propsData: propsData })
     const spySetTitle = jest.spyOn(wrapper.props().modalComponent, 'setTitle')
     const spyShowModal = jest.spyOn(wrapper.props().modalComponent, 'showModal')
 
+    expect(spySetTitle).not.toHaveBeenCalled()
+    expect(spyShowModal).not.toHaveBeenCalled()
     wrapper.find('.sodar-vue-popup-list-btn').trigger('click')
     expect(spySetTitle).toHaveBeenCalled()
     expect(spyShowModal).toHaveBeenCalled()

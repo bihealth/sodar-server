@@ -62,6 +62,7 @@ export default {
     },
     handleWarningsResponse (response) {
       if ('warnings' in response) {
+        this.warnings = []
         if (response.warnings.investigation.length > 0) {
           this.warnings.push.apply(
             this.warnings,
@@ -93,7 +94,6 @@ export default {
       }
     },
     getWarnings () {
-      this.warnings = []
       const apiUrl = '/samplesheets/ajax/warnings/' + this.projectUuid
       fetch(apiUrl, {
         credentials: 'same-origin'

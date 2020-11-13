@@ -20,16 +20,16 @@ describe('PageHeader.vue', () => {
         currentStudyUuid: '11111111-1111-1111-1111-111111111111',
         editMode: false,
         gridsBusy: false,
-        handleStudyNavigation: jest.fn(),
         projectUuid: '00000000-0000-0000-0000-000000000000',
         renderError: false,
         sheetsAvailable: true,
-        showSubPage: jest.fn(),
         sodarContext: JSON.parse(JSON.stringify(sodarContext)),
-        toggleEditMode: jest.fn(),
-        unsavedRow: false,
+        unsavedRow: null,
         windowsOs: false
       },
+      handleNavCallback: jest.fn(),
+      showSubPageCallback: jest.fn(),
+      toggleEditModeCallback: jest.fn(),
       editorHelpModal: {
         showModal: jest.fn()
       },
@@ -186,97 +186,102 @@ describe('PageHeader.vue', () => {
     expect(wrapper.find('#sodar-ss-op-item-delete').exists()).toBe(false)
   })
 
-  it('calls handleStudyNavigation() when study tab is clicked', () => {
-    // Add extra study
-    /*
-    propsData.app.sodarContext.studies['11111111-1111-1111-1111-222222222222'] = {
-      display_name: 'Second Study',
-      identifier: 's_small2',
-      description: ''
-    }
-    */
+  it('calls handleNavCallback() when study tab is clicked', async () => {
+    propsData.app.handleStudyNavigation = jest.fn()
     const wrapper = mount(PageHeader, { localVue, propsData: propsData })
-    const spyHandleStudyNav = jest.spyOn(wrapper.props().app, 'handleStudyNavigation')
+    const spyHandleStudyNav = jest.spyOn(wrapper.vm, 'handleNavCallback')
 
     expect(wrapper.findAll('.sodar-ss-tab-study').at(0).find('a').classes()).not.toContain('disabled')
-    wrapper.findAll('.sodar-ss-tab-study').at(0).trigger('click')
-    setTimeout(() => { expect(spyHandleStudyNav).toHaveBeenCalled() }, 100)
+    expect(spyHandleStudyNav).not.toHaveBeenCalled()
+    await wrapper.findAll('.sodar-ss-tab-study').at(0).find('a').trigger('click')
+    expect(spyHandleStudyNav).toHaveBeenCalled()
   })
 
-  it('calls handleStudyNavigation() when nav dropdown study link is clicked', () => {
+  it('calls handleNavCallback() when nav dropdown study link is clicked', async () => {
     const wrapper = mount(PageHeader, { localVue, propsData: propsData })
-    const spyHandleStudyNav = jest.spyOn(wrapper.props().app, 'handleStudyNavigation')
+    const spyHandleStudyNav = jest.spyOn(wrapper.vm, 'handleNavCallback')
 
-    wrapper.findAll('.sodar-ss-nav-item').at(0).trigger('click') // Study
-    setTimeout(() => { expect(spyHandleStudyNav).toHaveBeenCalled() }, 100)
-    wrapper.findAll('.sodar-ss-nav-item').at(1).trigger('click') // Assay
-    setTimeout(() => { expect(spyHandleStudyNav).toHaveBeenCalled() }, 100)
+    expect(spyHandleStudyNav).toBeCalledTimes(0)
+    await wrapper.findAll('.sodar-ss-nav-item').at(0).find('a').trigger('click') // Study
+    expect(spyHandleStudyNav).toBeCalledTimes(1)
+    await wrapper.findAll('.sodar-ss-nav-item').at(1).find('a').trigger('click') // Assay
+    expect(spyHandleStudyNav).toBeCalledTimes(2)
   })
 
-  it('calls showSubPage() when overview tab is clicked', () => {
+  it('calls showSubPageCallback() when overview tab is clicked', async () => {
     const wrapper = mount(PageHeader, { localVue, propsData: propsData })
-    const spyHandleStudyNav = jest.spyOn(wrapper.props().app, 'handleStudyNavigation')
+    const spyShowSubPage = jest.spyOn(wrapper.vm, 'showSubPageCallback')
 
-    wrapper.find('#sodar-ss-tab-overview').trigger('click')
-    setTimeout(() => { expect(spyHandleStudyNav).toHaveBeenCalled() }, 100)
+    expect(spyShowSubPage).not.toHaveBeenCalled()
+    await wrapper.find('#sodar-ss-tab-overview').find('a').trigger('click')
+    expect(spyShowSubPage).toHaveBeenCalled()
   })
 
-  it('calls showSubPage() when nav dropdown overview link is clicked', () => {
+  it('calls showSubPage() when nav dropdown overview link is clicked', async () => {
     const wrapper = mount(PageHeader, { localVue, propsData: propsData })
-    const spyHandleStudyNav = jest.spyOn(wrapper.props().app, 'handleStudyNavigation')
+    const spyShowSubPage = jest.spyOn(wrapper.vm, 'showSubPageCallback')
 
-    wrapper.find('#sodar-ss-nav-overview').trigger('click')
-    setTimeout(() => { expect(spyHandleStudyNav).toHaveBeenCalled() }, 100)
+    expect(spyShowSubPage).not.toHaveBeenCalled()
+    await wrapper.find('#sodar-ss-nav-overview').find('a').trigger('click')
+    expect(spyShowSubPage).toHaveBeenCalled()
   })
 
-  it('calls showSubPage() when op dropdown warnings link is clicked', () => {
+  it('calls showSubPage() when op dropdown warnings link is clicked', async () => {
     const wrapper = mount(PageHeader, { localVue, propsData: propsData })
-    const spyHandleStudyNav = jest.spyOn(wrapper.props().app, 'handleStudyNavigation')
+    const spyShowSubPage = jest.spyOn(wrapper.vm, 'showSubPageCallback')
 
-    wrapper.find('#sodar-ss-op-item-warnings').trigger('click')
-    setTimeout(() => { expect(spyHandleStudyNav).toHaveBeenCalled() }, 100)
+    expect(spyShowSubPage).not.toHaveBeenCalled()
+    await wrapper.find('#sodar-ss-op-item-warnings').trigger('click')
+    expect(spyShowSubPage).toHaveBeenCalled()
   })
 
-  it('calls toggleEditMode() when op dropdown edit link is clicked', () => {
+  it('calls toggleEditModeCallback() when op dropdown edit link is clicked', async () => {
     const wrapper = mount(PageHeader, { localVue, propsData: propsData })
-    const spyHandleStudyNav = jest.spyOn(wrapper.props().app, 'handleStudyNavigation')
+    const spyToggleEditMode = jest.spyOn(wrapper.vm, 'toggleEditModeCallback')
 
-    wrapper.find('#sodar-ss-op-item-edit').trigger('click')
-    setTimeout(() => { expect(spyHandleStudyNav).toHaveBeenCalled() }, 100)
+    expect(spyToggleEditMode).not.toHaveBeenCalled()
+    await wrapper.find('#sodar-ss-op-item-edit').trigger('click')
+    expect(spyToggleEditMode).toHaveBeenCalled()
   })
 
-  it('calls toggleEditMode() when finish editing button is clicked', () => {
+  it('calls toggleEditModeCallback() when finish editing button is clicked', async () => {
     propsData.app.editMode = true
     const wrapper = mount(PageHeader, { localVue, propsData: propsData })
-    const spyHandleStudyNav = jest.spyOn(wrapper.props().app, 'handleStudyNavigation')
+    const spyToggleEditMode = jest.spyOn(wrapper.vm, 'toggleEditModeCallback')
 
-    wrapper.find('#sodar-ss-vue-btn-edit-finish').trigger('click')
-    setTimeout(() => { expect(spyHandleStudyNav).toHaveBeenCalled() }, 100)
+    expect(wrapper.find('#sodar-ss-vue-btn-edit-finish').exists()).toBe(true)
+    expect(wrapper.find('#sodar-ss-vue-btn-edit-finish').classes()).not.toContain('disabled')
+    expect(spyToggleEditMode).not.toHaveBeenCalled()
+    await wrapper.find('#sodar-ss-vue-btn-edit-finish').trigger('click')
+    expect(spyToggleEditMode).toHaveBeenCalled()
   })
 
-  it('opens editorHelpModal when editor help icon is clicked', () => {
+  it('opens editorHelpModal when editor help icon is clicked', async () => {
     propsData.app.editMode = true
     const wrapper = mount(PageHeader, { localVue, propsData: propsData })
     const spyShowModal = jest.spyOn(wrapper.props().editorHelpModal, 'showModal')
 
-    wrapper.find('#sodar-ss-vue-btn-edit-finish').trigger('click')
-    setTimeout(() => { expect(spyShowModal).toHaveBeenCalled() }, 100)
+    expect(spyShowModal).not.toHaveBeenCalled()
+    await wrapper.find('#sodar-ss-vue-link-edit-help').trigger('click')
+    expect(spyShowModal).toHaveBeenCalled()
   })
 
-  it('opens winExportModal when export link is clicked', () => {
+  it('opens winExportModal when export link is clicked', async () => {
     propsData.app.windowsOs = true
     const wrapper = mount(PageHeader, { localVue, propsData: propsData })
     const spyShowModal = jest.spyOn(wrapper.props().winExportModal, 'showModal')
 
-    wrapper.find('#sodar-ss-op-item-export').trigger('click')
-    setTimeout(() => { expect(spyShowModal).toHaveBeenCalled() }, 100)
+    expect(spyShowModal).not.toHaveBeenCalled()
+    await wrapper.find('#sodar-ss-op-item-export').trigger('click')
+    expect(spyShowModal).toHaveBeenCalled()
+
   })
 
-  it('does not open winExportModal if os is not windows', () => {
+  it('does not open winExportModal if os is not windows', async () => {
     const wrapper = mount(PageHeader, { localVue, propsData: propsData })
     const spyShowModal = jest.spyOn(wrapper.props().winExportModal, 'showModal')
 
-    wrapper.find('#sodar-ss-op-item-export').trigger('click')
-    setTimeout(() => { expect(spyShowModal).not.toHaveBeenCalled() }, 100)
+    await wrapper.find('#sodar-ss-op-item-export').trigger('click')
+    expect(spyShowModal).not.toHaveBeenCalled()
   })
 })

@@ -1,13 +1,16 @@
 <template>
   <div id="app">
     <!-- Header -->
-    <PageHeader
+    <page-header
         v-if="sodarContext"
         ref="pageHeader"
         :app="getApp()"
+        :handle-nav-callback="handleStudyNavigation"
+        :show-sub-page-callback="showSubPage"
+        :toggle-edit-mode-callback="toggleEditMode"
         :editor-help-modal="$refs.editorHelpModal"
         :win-export-modal="$refs.winExportModal">
-    </PageHeader>
+    </page-header>
 
     <!-- Main container -->
     <div class="container-fluid sodar-page-container"
@@ -312,13 +315,13 @@
     </irods-dir-modal>
 
     <!-- Modal for study shortcuts -->
-    <shortcut-modal
+    <study-shortcut-modal
         v-if="sodarContext && currentStudyUuid"
         :project-uuid="projectUuid"
         :study-uuid="currentStudyUuid"
         :irods-webdav-url="sodarContext.irods_webdav_url"
-        ref="shortcutModalRef">
-    </shortcut-modal>
+        ref="studyShortcutModal">
+    </study-shortcut-modal>
 
     <!-- Modal for column visibility toggling -->
     <column-toggle-modal
@@ -345,7 +348,7 @@
     <!-- Editing: Ontology value edit modal -->
     <ontology-edit-modal
         v-if="editMode"
-        :app="getApp()"
+        :unsaved-data-cb="setUnsavedData"
         ref="ontologyEditModal">
     </ontology-edit-modal>
 
@@ -359,7 +362,7 @@ import Overview from './components/Overview.vue'
 import ParserWarnings from './components/ParserWarnings.vue'
 import IrodsButtons from './components/IrodsButtons.vue'
 import IrodsDirModal from './components/modals/IrodsDirModal.vue'
-import ShortcutModal from './components/modals/ShortcutModal.vue'
+import StudyShortcutModal from './components/modals/StudyShortcutModal.vue'
 import ColumnToggleModal from './components/modals/ColumnToggleModal.vue'
 import ColumnConfigModal from './components/modals/ColumnConfigModal.vue'
 import EditorHelpModal from './components/modals/EditorHelpModal.vue'
@@ -441,7 +444,7 @@ export default {
     ParserWarnings,
     IrodsButtons,
     IrodsDirModal,
-    ShortcutModal,
+    StudyShortcutModal,
     ColumnToggleModal,
     ColumnConfigModal,
     EditorHelpModal,
@@ -922,7 +925,7 @@ export default {
               cellRendererFramework: ShortcutButtonsRenderer,
               cellRendererParams: {
                 schema: table.shortcuts.schema,
-                modalComponent: this.$refs.shortcutModalRef
+                modalComponent: this.$refs.studyShortcutModal
               }
             }
           ]
@@ -1888,6 +1891,10 @@ export default {
       this.editDataUpdated = updated
     },
 
+    setUnsavedData (unsaved) {
+      this.unsavedData = unsaved
+    },
+
     /* Data and App Access -------------------------------------------------- */
 
     getStudyGridUuids (assayOnly) {
@@ -2183,6 +2190,11 @@ input.sodar-ss-vue-popup-input,
 select.sodar-ss-vue-popup-input {
   border: 1px solid #ced4da;
   border-radius: .25rem;
+}
+
+/* Fix forced outline on modal close buttons in Chrome */
+button.close:focus {
+  outline: none !important;
 }
 
 </style>

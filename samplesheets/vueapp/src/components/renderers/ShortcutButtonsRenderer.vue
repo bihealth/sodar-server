@@ -50,7 +50,7 @@ export default Vue.extend(
         return false
       },
       onModalClick (schemaId) {
-        this.modalComponent.getLinks(this.value[schemaId].query)
+        this.modalComponent.showModal(this.value[schemaId].query)
       }
     },
     beforeMount () {

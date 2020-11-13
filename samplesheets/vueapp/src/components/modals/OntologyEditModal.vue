@@ -3,6 +3,7 @@
       id="sodar-vue-ontology-edit-modal" ref="ontologyEditModal"
       centered no-fade hide-footer
       size="xl"
+      :static="true"
       no-close-on-backdrop
       no-close-on-esc>
     <template slot="modal-header">
@@ -132,7 +133,9 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="(term, termIdx) in value" :key="termIdx">
+            <tr v-for="(term, termIdx) in value"
+                :key="termIdx"
+                class="sodar-ss-vue-ontology-term-item">
               <!-- Normal term display -->
               <td v-if="!term.editing"
                   :class="getTermNameClass(term)">
@@ -190,7 +193,8 @@
                 <b-button
                     v-if="editConfig && editConfig.allow_list"
                     variant="primary"
-                    class="sodar-list-btn sodar-ss-vue-row-btn mr-1"
+                    class="sodar-list-btn sodar-ss-vue-row-btn
+                           sodar-ss-vue-btn-up mr-1"
                     title="Move term backwards in list"
                     @click="onTermMoveClick(termIdx, true)"
                     :disabled="!enableMove(termIdx, true)"
@@ -200,7 +204,8 @@
                 <b-button
                     v-if="editConfig && editConfig.allow_list"
                     variant="primary"
-                    class="sodar-list-btn sodar-ss-vue-row-btn mr-1"
+                    class="sodar-list-btn sodar-ss-vue-row-btn
+                           sodar-ss-vue-btn-down mr-1"
                     title="Move term forward in list"
                     @click="onTermMoveClick(termIdx, false)"
                     :disabled="!enableMove(termIdx, false)"
@@ -210,7 +215,8 @@
                 <b-button
                     v-if="term.editing"
                     variant="primary"
-                    class="sodar-list-btn sodar-ss-vue-row-btn mr-1"
+                    class="sodar-list-btn sodar-ss-vue-row-btn
+                           sodar-ss-vue-btn-stop mr-1"
                     title="Stop editing term"
                     @click="onTermEditClick(termIdx)"
                     :disabled="!enableEditSave(termIdx) || !editDataValid"
@@ -220,7 +226,8 @@
                 <b-button
                     v-else
                     variant="primary"
-                    class="sodar-list-btn sodar-ss-vue-row-btn mr-1"
+                    class="sodar-list-btn sodar-ss-vue-row-btn
+                           sodar-ss-vue-btn-edit mr-1"
                     title="Edit term"
                     @click="onTermEditClick(termIdx)"
                     :disabled="!enableEdit()"
@@ -229,7 +236,7 @@
                 </b-button>
                 <b-button
                     variant="danger"
-                    class="sodar-list-btn sodar-ss-vue-row-btn"
+                    class="sodar-list-btn sodar-ss-vue-row-btn sodar-ss-vue-btn-delete"
                     title="Delete term"
                     @click="onTermDeleteClick(termIdx)"
                     :disabled="!enableDelete(termIdx)"
@@ -266,6 +273,7 @@
                 <b-button
                     variant="primary"
                     class="sodar-list-btn sodar-ss-vue-row-btn"
+                    id="sodar-ss-vue-btn-insert"
                     title="Insert ontology term"
                     @click="onTermInsertClick()"
                     :disabled="!enableInsertSave() || !insertDataValid"
@@ -282,12 +290,17 @@
       <b-button-group
           class="pull-right"
           id="sodar-ss-vue-ontology-btn-group">
-        <b-button variant="secondary" @click="hideModal(false)">
+        <b-button
+            variant="secondary"
+            id="sodar-ss-vue-btn-cancel"
+            @click="hideModal(false)">
           <i class="fa fa-times"></i> Cancel
         </b-button>
         <b-button
             variant="primary"
+            id="sodar-ss-vue-btn-update"
             @click="hideModal(true)"
+            :disabled="!enableUpdate()"
             ref="updateBtn">
           <i class="fa fa-fw fa-check"></i> Update
         </b-button>
@@ -303,12 +316,8 @@ const minSearchLength = 4
 
 export default {
   name: 'OntologyEditModal',
-  components: {
-    NotifyBadge
-  },
-  props: [
-    'app'
-  ],
+  components: { NotifyBadge },
+  props: ['unsavedDataCb'],
   data () {
     return {
       value: null,
@@ -333,6 +342,7 @@ export default {
       insertDataValid: null,
       editDataValid: null,
       editIdx: null,
+      editTermValue: null,
       updated: false,
       refreshingTerms: false
     }
@@ -418,12 +428,17 @@ export default {
     },
     onTermEditClick (idx) {
       if (this.editIdx === null) {
+        this.editTermValue = JSON.stringify(this.value[idx])
         this.value[idx].editing = true
         this.editIdx = idx
       } else {
         this.value[idx].editing = false
         this.editIdx = null
         this.value[idx].ontology_name = this.value[idx].ontology_name.toUpperCase()
+        if (JSON.stringify(this.value[idx]) !== this.editTermValue) {
+          this.setUpdateStatus(true)
+        }
+        this.editTermValue = null
       }
       this.editDataValid = true
     },
@@ -431,6 +446,8 @@ export default {
       this.value.splice(idx, 1)
       this.setUpdateStatus(true)
       this.editDataValid = true
+      this.editIdx = null
+      this.editTermValue = null
     },
     /* Helpers -------------------------------------------------------------- */
     getTitle () {
@@ -458,6 +475,9 @@ export default {
     enableSearch () {
       return this.editIdx === null
     },
+    enableUpdate () {
+      return this.editIdx === null && this.updated
+    },
     getTermNameClass (term) {
       if (term.obsolete) return 'text-danger'
       return ''
@@ -484,7 +504,7 @@ export default {
     enableMove (idx, up) {
       return (
         !this.refreshingTerms &&
-        !this.editIdx &&
+        this.editIdx === null &&
         this.value.length > 1 &&
         ((idx > 0 && up) ||
         (idx !== this.value.length - 1 && !up)))
@@ -518,7 +538,7 @@ export default {
     },
     enableDelete (termIdx) {
       return (!this.refreshingTerms &&
-        (!this.editIdx || termIdx === this.editIdx))
+        (this.editIdx === null || termIdx === this.editIdx))
     },
     enableInsert () {
       return this.editConfig &&
@@ -627,14 +647,50 @@ export default {
     },
     setUpdateStatus (val) {
       this.updated = val
-      this.app.unsavedData = true // Prevent navigation before saving
+      this.unsavedDataCb(true) // Prevent navigation before saving
     },
     handleRefreshError (error) {
       console.log('Error refreshing terms: ' + error.message)
       this.refreshingTerms = false
     },
+    getInitialTermInfo () {
+      let listUrl = '/ontology/ajax/obo/term/list?'
+      for (let i = 0; i < this.value.length; i++) {
+        if (i > 0) listUrl += '&'
+        listUrl += 't=' + encodeURIComponent(this.value[i].name)
+      }
+      fetch(listUrl, {
+        method: 'GET',
+        credentials: 'same-origin',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json'
+        }
+      }).then(response => response.json())
+        .then(response => {
+          this.handleInitialTermResponse(response)
+        }).catch(this.handleRefreshError)
+    },
+    handleInitialTermResponse (data) {
+      for (let i = 0; i < this.value.length; i++) {
+        for (let j = 0; j < data.terms.length; j++) {
+          if (this.value[i].name.toLowerCase() === data.terms[j].name.toLowerCase() &&
+              this.value[i].ontology_name === data.terms[j].ontology_name) {
+            // console.log('Updating term ' + this.value[i].name) // DEBUG
+            if (data.terms[j].is_obsolete) {
+              this.value[i].obsolete = data.terms[j].is_obsolete
+            }
+            break
+          }
+        }
+      }
+      this.$forceUpdate()
+      this.refreshingTerms = false
+    },
     /* Modal showing and hiding --------------------------------------------- */
     showModal (params, finishEditCallback) {
+      // console.log(JSON.stringify(params))
+
       // Copy value into a local array
       if (Array.isArray(params.value)) {
         this.value = []
@@ -662,6 +718,7 @@ export default {
       this.editDataValid = true
       this.insertDataValid = true
       this.editIdx = null
+      this.editTermValue = null
       this.updated = false
       this.refreshingTerms = true
       this.finishEditCallback = finishEditCallback
@@ -691,36 +748,7 @@ export default {
 
       // Get full term data from database, update obsolete status
       if (this.value.length > 0) {
-        let listUrl = '/ontology/ajax/obo/term/list?'
-        for (let i = 0; i < this.value.length; i++) {
-          if (i > 0) listUrl += '&'
-          listUrl += 't=' + encodeURIComponent(this.value[i].name)
-        }
-
-        fetch(listUrl, {
-          method: 'GET',
-          credentials: 'same-origin',
-          headers: {
-            Accept: 'application/json',
-            'Content-Type': 'application/json'
-          }
-        }).then(data => data.json())
-          .then(data => {
-            for (let i = 0; i < this.value.length; i++) {
-              for (let j = 0; j < data.terms.length; j++) {
-                if (this.value[i].name.toLowerCase() === data.terms[j].name.toLowerCase() &&
-                    this.value[i].ontology_name === data.terms[j].ontology_name) {
-                  // console.log('Updating term ' + this.value[i].name) // DEBUG
-                  if (data.terms[j].is_obsolete) {
-                    this.value[i].obsolete = data.terms[j].is_obsolete
-                  }
-                  break
-                }
-              }
-            }
-            this.$forceUpdate()
-            this.refreshingTerms = false
-          }).catch(this.handleRefreshError)
+        this.getInitialTermInfo()
       } else {
         this.refreshingTerms = false
       }

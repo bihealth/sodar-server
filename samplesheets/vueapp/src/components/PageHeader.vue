@@ -12,7 +12,7 @@
           class="sodar-ss-tab-study"
           :id="'sodar-ss-tab-study-' + studyUuid"
           :key="index"
-          @click="app.handleStudyNavigation(studyUuid)"
+          @click="handleNavCallback(studyUuid)"
           v-b-tooltip.hover
           :title="getStudyNavTitle(studyInfo.display_name)"
           :active="studyUuid === app.currentStudyUuid && !app.activeSubPage"
@@ -21,7 +21,7 @@
       </b-nav-item>
       <b-nav-item
           id="sodar-ss-tab-overview"
-          @click="app.showSubPage('overview')"
+          @click="showSubPageCallback('overview')"
           :active="app.activeSubPage === 'overview'"
           :disabled="!app.sheetsAvailable || app.gridsBusy || app.editMode">
         <i class="fa fa-sitemap"></i> Overview
@@ -57,7 +57,7 @@
               href="#"
               :id="'sodar-ss-nav-study-' + studyUuid"
               class="sodar-ss-nav-item"
-              @click="app.handleStudyNavigation(studyUuid)">
+              @click="handleNavCallback(studyUuid)">
             <i class="fa fa-fw fa-list-alt text-info"></i> {{ studyInfo.display_name }}
           </b-dropdown-item>
           <b-dropdown-item
@@ -66,7 +66,7 @@
               href="#"
               :id="'sodar-ss-nav-assay-' + assayUuid"
               class="sodar-ss-nav-item"
-              @click="app.handleStudyNavigation(studyUuid, assayUuid)">
+              @click="handleNavCallback(studyUuid, assayUuid)">
             <i class="fa fa-fw fa-table text-danger ml-4"></i> {{ assayInfo.display_name }}
           </b-dropdown-item>
         </span>
@@ -75,7 +75,7 @@
           id="sodar-ss-nav-overview"
           class="sodar-ss-nav-item"
           :disabled="app.editMode"
-          @click="app.showSubPage('overview')">
+          @click="showSubPageCallback('overview')">
           <i class="fa fa-fw fa-sitemap"></i> Overview
         </b-dropdown-item>
       </b-dropdown>
@@ -98,7 +98,7 @@
             v-if="app.sheetsAvailable"
             class="sodar-ss-op-item"
             id="sodar-ss-op-item-edit"
-            @click="app.toggleEditMode"
+            @click="toggleEditModeCallback"
             :disabled="!app.sodarContext.allow_editing">
           <i class="fa fa-fw fa-pencil"></i> Edit Sheets
         </b-dropdown-item>
@@ -107,7 +107,7 @@
             class="sodar-ss-op-item"
             id="sodar-ss-op-item-warnings"
             :disabled="!app.sodarContext.parser_warnings"
-            @click="app.showSubPage('warnings')">
+            @click="showSubPageCallback('warnings')">
           <i class="fa fa-fw fa-exclamation-circle"></i> View Parser Warnings
         </b-dropdown-item>
         <b-dropdown-item
@@ -172,7 +172,7 @@
           class="text-left"
           id="sodar-ss-vue-btn-edit-finish"
           :disabled="app.unsavedRow !== null"
-          @click="app.toggleEditMode">
+          @click="toggleEditModeCallback">
         Finish Editing <span class="pull-right"><i class="fa fa-check"></i></span>
       </b-button>
     </div>
@@ -187,6 +187,9 @@ export default {
   components: { NotifyBadge },
   props: [
     'app',
+    'handleNavCallback',
+    'showSubPageCallback',
+    'toggleEditModeCallback',
     'editorHelpModal',
     'winExportModal'
   ],
