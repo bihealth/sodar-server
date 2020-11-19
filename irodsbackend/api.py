@@ -154,7 +154,7 @@ class IrodsAPI:
         return path
 
     @classmethod
-    def _get_colls_recursively(cls, coll):
+    def get_colls_recursively(cls, coll):
         """
         Return all subcollections for a coll efficiently (without multiple
         queries).
@@ -266,14 +266,14 @@ class IrodsAPI:
         data = {'data_objects': []}
         md5_paths = None
 
-        data_objs = self._get_objs_recursively(
+        data_objs = self.get_objs_recursively(
             coll, name_like=name_like, limit=limit
         )
 
         if data_objs and check_md5:
             md5_paths = [
                 o['path']
-                for o in self._get_objs_recursively(
+                for o in self.get_objs_recursively(
                     coll, md5=True, name_like=name_like
                 )
             ]

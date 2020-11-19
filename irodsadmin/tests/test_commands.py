@@ -1,3 +1,4 @@
+import os
 import uuid
 from unittest import skipIf
 
@@ -90,6 +91,7 @@ class TestIrodsOrphans(
             *irodsorphans.get_assay_collections(),
             *irodsorphans.get_study_collections(),
             *irodsorphans.get_zone_collections(),
+            *irodsorphans.get_project_collections(),
         )
 
     def tearDown(self):
@@ -114,6 +116,12 @@ class TestIrodsOrphans(
             irodsorphans.get_zone_collections(), [self.landing_zone.title],
         )
 
+    def test_get_project_collections(self):
+        self.assertListEqual(
+            irodsorphans.get_project_collections(),
+            [str(self.project.sodar_uuid)],
+        )
+
     def test_is_landingzone(self):
         collection = self.irods_session.collections.get(
             self.irods_backend.get_path(self.landing_zone)
@@ -132,6 +140,12 @@ class TestIrodsOrphans(
         )
         self.assertTrue(irodsorphans.is_assay_or_study(collection))
 
+    def test_is_project(self):
+        collection = self.irods_session.collections.get(
+            self.irods_backend.get_path(self.project)
+        )
+        self.assertTrue(irodsorphans.is_project(collection))
+
     def test_is_no_landingzone(self):
         collection = self.irods_session.collections.get(
             self.irods_backend.get_path(self.project)
@@ -147,7 +161,9 @@ class TestIrodsOrphans(
     def test_no_orphans(self):
         self.assertListEqual(
             irodsorphans.get_orphans(
-                self.irods_session, self.expected_collections
+                self.irods_session,
+                self.irods_backend,
+                self.expected_collections,
             ),
             [],
         )
@@ -159,7 +175,9 @@ class TestIrodsOrphans(
         self.irods_session.collections.create(orphan_path)
         self.assertListEqual(
             irodsorphans.get_orphans(
-                self.irods_session, self.expected_collections
+                self.irods_session,
+                self.irods_backend,
+                self.expected_collections,
             ),
             [orphan_path],
         )
@@ -171,7 +189,9 @@ class TestIrodsOrphans(
         self.irods_session.collections.create(orphan_path)
         self.assertListEqual(
             irodsorphans.get_orphans(
-                self.irods_session, self.expected_collections
+                self.irods_session,
+                self.irods_backend,
+                self.expected_collections,
             ),
             [orphan_path],
         )
@@ -187,7 +207,27 @@ class TestIrodsOrphans(
         self.irods_session.collections.create(orphan_path)
         self.assertListEqual(
             irodsorphans.get_orphans(
-                self.irods_session, self.expected_collections
+                self.irods_session,
+                self.irods_backend,
+                self.expected_collections,
+            ),
+            [orphan_path],
+        )
+
+    def test_orphanated_project(self):
+        collection = 'aa/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
+        orphan_path = '{}/{}'.format(
+            os.path.dirname(
+                os.path.dirname(self.irods_backend.get_path(self.project))
+            ),
+            collection,
+        )
+        self.irods_session.collections.create(orphan_path)
+        self.assertListEqual(
+            irodsorphans.get_orphans(
+                self.irods_session,
+                self.irods_backend,
+                self.expected_collections,
             ),
             [orphan_path],
         )
@@ -221,6 +261,19 @@ class TestIrodsOrphans(
             self.irods_backend.get_path(self.project),
             self.user.username,
             self.study.get_display_name().replace(' ', '_').lower(),
+            collection,
+        )
+        self.irods_session.collections.create(orphan_path)
+        out = StringIO()
+        call_command('irodsorphans', stdout=out)
+        self.assertEqual(orphan_path + '\n', out.getvalue())
+
+    def test_command_irodsorphans_orphanated_project(self):
+        collection = 'aa/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
+        orphan_path = '{}/{}'.format(
+            os.path.dirname(
+                os.path.dirname(self.irods_backend.get_path(self.project))
+            ),
             collection,
         )
         self.irods_session.collections.create(orphan_path)
