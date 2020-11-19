@@ -40,6 +40,7 @@ Changed
 - **General**
     - Upgrade to altamISA v0.2.7
     - Upgrade to Bootstrap v4.5.3 and jQuery v3.5.1 (#1011)
+    - Upgrade to Chromedriver v87
 - **Samplesheets**
     - Display assay plugin icon for all users with sheet edit permissions (#940)
     - Refactor assay row cache updating (#954)
