@@ -22,8 +22,7 @@ from samplesheets.utils import (
     get_isa_field_name,
     get_sheets_url,
 )
-from samplesheets.views import RESULTS_COLL, MISC_FILES_COLL
-
+from samplesheets.views import RESULTS_COLL, MISC_FILES_COLL, TRACK_HUBS_COLL
 
 # SODAR constants
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
@@ -462,6 +461,13 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                     cache_data['shortcuts'][
                         sc['id']
                     ] = irods_backend.collection_exists(sc['path'])
+
+            cache_data['shortcuts']['track_hubs'] = [
+                track_hub_coll.path
+                for track_hub_coll in irods_backend.get_child_colls_by_path(
+                    assay_path + '/' + TRACK_HUBS_COLL
+                )
+            ]
 
             cache_backend.set_cache_item(
                 name=item_name,

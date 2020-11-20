@@ -1,0 +1,186 @@
+{# Projectroles dependency #}
+{% extends 'projectroles/project_base.html' %}
+{% load projectroles_common_tags %}
+
+{% load static %}
+{% load rules %}
+{% load samplesheets_tags %}
+{% load irodsbackend_tags %}
+
+{% is_webdav_enabled as irods_webdav_enabled %}
+
+{% block title %}
+  iRODS Access Tickets for {{ project.title }}
+{% endblock title %}
+
+{% block css %}
+  {{ block.super }}
+  <style type="text/css">
+
+    table#sodar-ss-ticket-table thead tr th:nth-child(3),
+    table#sodar-ss-ticket-table tbody tr td:nth-child(3),
+    table#sodar-ss-ticket-table thead tr th:nth-child(4),
+    table#sodar-ss-ticket-table tbody tr td:nth-child(4) {
+      white-space: nowrap;
+    }
+
+    table#sodar-ss-ticket-table thead tr th:nth-child(5),
+    table#sodar-ss-ticket-table tbody tr td:nth-child(5) {
+      width: 100px;
+    }
+
+    /* Created column */
+    @media screen and (max-width: 1200px) {
+      table#sodar-ss-ticket-table thead tr th:nth-child(4),
+      table#sodar-ss-ticket-table tbody tr td:nth-child(4) {
+        display: none;
+      }
+    }
+
+    /* Ticket column */
+    @media screen and (max-width: 1000px) {
+      table#sodar-ss-ticket-table thead tr th:nth-child(2),
+      table#sodar-ss-ticket-table tbody tr td:nth-child(2) {
+        display: none;
+      }
+    }
+
+    /* User column */
+    @media screen and (max-width: 800px) {
+      table#sodar-ss-ticket-table thead tr th:nth-child(3),
+      table#sodar-ss-ticket-table tbody tr td:nth-child(3) {
+        display: none;
+      }
+    }
+
+    /* Expiry column */
+    @media screen and (max-width: 600px) {
+      table#sodar-ss-ticket-table thead tr th:nth-child(4),
+      table#sodar-ss-ticket-table tbody tr td:nth-child(4) {
+        display: none;
+      }
+    }
+  </style>
+{% endblock css %}
+
+{% block projectroles_extend %}
+{% has_perm 'samplesheets.view_sheet' request.user project as can_view_ticket %}
+
+<div class="row sodar-subtitle-container">
+  <h3>
+    iRODS Access Tickets
+  </h3>
+  <div class="input-group sodar-header-input-group ml-auto mt-1">
+    <a href="{% url 'samplesheets:ticket_create' project=project.sodar_uuid %}"
+       class="btn btn-primary ml-auto {% if not track_hubs_available %}disabled{% endif %}" role="button">
+     <i class="fa fa-plus-circle"></i> Create Ticket
+    </a>
+    <a href="{% url 'samplesheets:project_sheets' project=project.sodar_uuid %}"
+       class="btn btn-secondary ml-auto" role="button">
+     <i class="fa fa-arrow-circle-left"></i> Project Sheets
+    </a>
+  </div>
+</div>
+
+<div class="container-fluid sodar-page-container">
+
+{% if object_list.count > 0 %}
+  <div class="card" id="sodar-ss-version-list">
+    <div class="card-body p-0">
+      <table class="table table-striped sodar-card-table" id="sodar-ss-ticket-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Ticket</th>
+            <th>User</th>
+            <th>Created</th>
+            <th>Expires</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for ticket in object_list %}
+            <tr>
+              <td>
+                <strong>
+                  <a href="{{ ticket.get_webdav_link }}" target="_blank">
+                    {{ ticket.get_display_name }}
+                  </a>
+                </strong>
+                <button
+                    role="submit"
+                    class="btn btn-secondary sodar-list-btn sodar-copy-btn pull-right"
+                    data-clipboard-text="{{ ticket.get_webdav_link }}"
+                    data-tooltip="tooltip" data-placement="top"
+                    title="Copy WebDAV URL into clipboard">
+                  <i class="fa fa-clipboard"></i>
+                </button>
+              </td>
+              <td>{{ ticket.ticket }}</td>
+              {% if ticket.user %}
+                <td>
+                  {% get_user_html ticket.user as user_html %}{{ user_html | safe }}
+                </td>
+              {% else %}
+                <td class="text-muted">N/A</td>
+              {% endif %}
+              <td class="nowrap">{{ ticket.get_date_created }}</td>
+              <td class="nowrap">
+                {% if ticket.date_expires %}
+                  {{ ticket.get_date_expires }}
+                {% else %}
+                  never
+                {% endif %}
+              </td>
+              <td class="text-right">
+                <button class="btn btn-secondary dropdown-toggle sodar-list-dropdown"
+                        type="button" data-toggle="dropdown" aria-expanded="false">
+                  <i class="fa fa-cog"></i>
+                </button>
+                <div class="dropdown-menu dropdown-menu-right">
+                  <a class="dropdown-item"
+                     href="{% url 'samplesheets:ticket_update' irodsaccessticket=ticket.sodar_uuid %}">
+                    <i class="fa fa-fw fa-edit"></i> Update Ticket
+                  </a>
+                  <a class="dropdown-item text-danger"
+                     href="{% url 'samplesheets:ticket_delete' irodsaccessticket=ticket.sodar_uuid %}">
+                    <i class="fa fa-fw fa-close"></i> Delete Ticket
+                  </a>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% if is_paginated %}
+    {% include 'projectroles/_pagination.html' with pg_small=False %}
+  {% endif %}
+{% else %}
+  <div class="alert alert-info" id="sodar-ss-version-alert">
+    No iRODS access tickets have been found for the sample sheets in this project.
+  </div>
+{% endif %}
+{% if not track_hubs_available %}
+  <div class="alert alert-info" id="sodar-ss-version-alert">
+    No track hub collections found in iRODS for this project.
+    To create one, upload data via a landing zone under the collection
+    <code>TrackHubs/<em>{track_hub_name}</em></code>.
+    Replace <em>{track_hub_name}</em> with your desired track hub name.
+  </div>
+{% endif %}
+</div>
+
+{% endblock projectroles_extend %}
+
+{% block javascript %}
+  {{ block.super }}
+
+  {# Tour content #}
+  <script type="text/javascript">
+    tourEnabled = false;
+    // TODO: Tour
+  </script>
+
+{% endblock javascript %}

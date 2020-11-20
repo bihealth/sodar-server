@@ -50,3 +50,15 @@ def is_webdav_enabled():
 def get_webdav_url():
     if settings.IRODS_WEBDAV_ENABLED:
         return settings.IRODS_WEBDAV_URL.rstrip('/')
+
+
+@register.simple_tag
+def get_webdav_url_anon():
+    if settings.IRODS_WEBDAV_ENABLED:
+        return settings.IRODS_WEBDAV_URL_ANON.rstrip('/')
+
+
+@register.simple_tag
+def get_webdav_user_anon():
+    if settings.IRODS_WEBDAV_ENABLED:
+        return settings.IRODS_WEBDAV_USER_ANON

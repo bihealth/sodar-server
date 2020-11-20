@@ -1,6 +1,17 @@
 <template>
   <span class="text-nowrap sodar-ss-irods-links">
     <b-button
+        v-for="extraLink in extraLinks"
+        :key="extraLink.id"
+        variant="secondary"
+        :class="'sodar-list-btn sodar-ss-irods-btn sodar-irods-copy-btn ' + extraLink.class"
+        :title="extraLink.title"
+        :href="extraLink.url"
+        :disabled="!(getEnabledState() && extraLink.enabled)"
+        v-b-tooltip.hover.d300.window>
+      <i :class="'fa ' + extraLink.icon"></i>
+    </b-button>
+    <b-button
         v-if="showFileList &&
               irodsBackendEnabled &&
               irodsWebdavUrl"
@@ -60,7 +71,8 @@ export default {
     'modalComponent',
     'enabled',
     'editMode',
-    'notifyCallback'
+    'notifyCallback',
+    'extraLinks'
   ],
   methods: {
     getEnabledState () {

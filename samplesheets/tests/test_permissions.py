@@ -1,6 +1,9 @@
 """Tests for UI view permissions in the samplesheets app"""
 
+from django.conf import settings
 from django.urls import reverse
+
+from unittest import skipIf
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
@@ -12,6 +15,8 @@ from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 
 
 # App settings API
+from samplesheets.tests.test_views_ajax import IrodsAccessTicketMixin
+
 app_settings = AppSettingAPI()
 
 
@@ -21,10 +26,14 @@ REMOTE_SITE_NAME = 'Test site'
 REMOTE_SITE_URL = 'https://sodar.bihealth.org'
 REMOTE_SITE_SECRET = build_secret()
 INVALID_SECRET = build_secret()
+IRODS_ENABLED = (
+    True if 'omics_irods' in settings.ENABLED_BACKEND_PLUGINS else False
+)
+IRODS_SKIP_MSG = 'Irodsbackend not enabled in settings'
 
 
 class TestSampleSheetsPermissions(
-    SampleSheetIOMixin, TestProjectPermissionBase
+    SampleSheetIOMixin, IrodsAccessTicketMixin, TestProjectPermissionBase
 ):
     """Tests for samplesheets view permissions"""
 
@@ -35,6 +44,13 @@ class TestSampleSheetsPermissions(
         )
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
+        self.ticket = self._make_irodsaccessticket(
+            project=self.project,
+            path='/some/path',
+            study=self.study,
+            assay=self.assay,
+            user=self.user_owner,
+        )
 
     def test_project_sheets(self):
         """Test the project sheets view"""
@@ -198,3 +214,72 @@ class TestSampleSheetsPermissions(
         bad_users = [self.anonymous, self.user_no_roles]
         self.assert_response(url, good_users, status_code=200)
         self.assert_response(url, bad_users, status_code=403)
+
+    @skipIf(not IRODS_ENABLED, IRODS_SKIP_MSG)
+    def test_ticket_list(self):
+        """Test ticket list view"""
+
+        url = reverse(
+            'samplesheets:tickets', kwargs={'project': self.project.sodar_uuid}
+        )
+        good_users = [
+            self.superuser,
+            self.owner_as.user,
+            self.delegate_as.user,
+            self.contributor_as.user,
+            self.guest_as.user,
+        ]
+        bad_users = [self.anonymous, self.user_no_roles]
+        self.assert_response(url, good_users, status_code=200)
+        self.assert_response(url, bad_users, status_code=302)
+
+    def test_ticket_create(self):
+        """Test ticket create view"""
+
+        url = reverse(
+            'samplesheets:ticket_create',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+        good_users = [
+            self.superuser,
+            self.owner_as.user,
+            self.delegate_as.user,
+            self.contributor_as.user,
+        ]
+        bad_users = [self.guest_as.user, self.anonymous, self.user_no_roles]
+        self.assert_response(url, good_users, status_code=200)
+        self.assert_response(url, bad_users, status_code=302)
+
+    def test_ticket_update(self):
+        """Test ticket update view"""
+
+        url = reverse(
+            'samplesheets:ticket_update',
+            kwargs={'irodsaccessticket': self.ticket.sodar_uuid},
+        )
+        good_users = [
+            self.superuser,
+            self.owner_as.user,
+            self.delegate_as.user,
+            self.contributor_as.user,
+        ]
+        bad_users = [self.guest_as.user, self.anonymous, self.user_no_roles]
+        self.assert_response(url, good_users, status_code=200)
+        self.assert_response(url, bad_users, status_code=302)
+
+    def test_ticket_delete(self):
+        """Test ticket delete view"""
+
+        url = reverse(
+            'samplesheets:ticket_delete',
+            kwargs={'irodsaccessticket': self.ticket.sodar_uuid},
+        )
+        good_users = [
+            self.superuser,
+            self.owner_as.user,
+            self.delegate_as.user,
+            self.contributor_as.user,
+        ]
+        bad_users = [self.guest_as.user, self.anonymous, self.user_no_roles]
+        self.assert_response(url, good_users, status_code=200)
+        self.assert_response(url, bad_users, status_code=302)

@@ -1,0 +1,37 @@
+{# Projectroles dependency #}
+{% extends 'projectroles/project_base.html' %}
+{% load rules %}
+{% load samplesheets_tags %}
+{% load projectroles_common_tags %}
+{% load crispy_forms_filters %}
+
+{% block title %}
+  {% if object.pk %}Update{% else %}Create{% endif %} iRODS Access Ticket
+{% endblock title %}
+
+{% block projectroles_extend %}
+
+
+<div class="container-fluid sodar-subtitle-container">
+  <h3>{% if object.pk %}Update{% else %}Create{% endif %} iRODS Access Ticket</h3>
+</div>
+
+<div class="container-fluid sodar-page-container">
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form | crispy }}
+    <div class="row">
+      <div class="btn-group ml-auto">
+        <a role="button" class="btn btn-secondary"
+           href="{{ request.session.real_referer }}">
+          <i class="fa fa-arrow-circle-left"></i> Cancel
+        </a>
+        <button type="submit" class="btn btn-primary" id="sodar-ss-btn-import-submit">
+          <i class="fa fa-check"></i> {% if object.pk %}Update{% else %}Create{% endif %}
+        </button>
+      </div>
+    </div>
+  </form>
+</div>
+
+{% endblock projectroles_extend %}

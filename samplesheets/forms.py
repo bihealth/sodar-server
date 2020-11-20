@@ -1,11 +1,16 @@
+import re
+
 from django import forms
 from django.conf import settings
 
 # Projectroles dependency
+from django.core.exceptions import ObjectDoesNotExist
+from django.utils import timezone
 from projectroles.models import Project
+from projectroles.plugins import get_backend_api
 
 from samplesheets.io import SampleSheetIO, ARCHIVE_TYPES
-from samplesheets.models import Investigation
+from samplesheets.models import Investigation, IrodsAccessTicket, Assay
 
 
 class SampleSheetImportForm(forms.Form):
@@ -123,3 +128,79 @@ class SampleSheetImportForm(forms.Form):
         )
 
         return investigation
+
+
+class IrodsAccessTicketForm(forms.ModelForm):
+    """Form for the irods access ticket creation and editing.
+    """
+
+    class Meta:
+        model = IrodsAccessTicket
+        fields = ('path', 'label', 'date_expires')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        from samplesheets.views import TRACK_HUBS_COLL
+
+        # Add selection to path field
+        irods_backend = get_backend_api('omics_irods')
+
+        assays = Assay.objects.filter(
+            study__investigation__project=kwargs['initial']['project']
+        )
+
+        if irods_backend:
+            choices = [
+                (
+                    track_hub.path,
+                    "{} / {}".format(assay.get_display_name(), track_hub.name),
+                )
+                for assay in assays
+                for track_hub in irods_backend.get_child_colls_by_path(
+                    irods_backend.get_path(assay) + '/' + TRACK_HUBS_COLL
+                )
+            ]
+        else:
+            choices = []
+
+        # Hide path in update or make it a dropdown with available track hubs
+        # on creation
+        if self.instance.path:
+            self.fields['path'].widget = forms.widgets.HiddenInput()
+        else:
+            self.fields['path'].widget = forms.widgets.Select(choices=choices)
+
+        # Add date input widget to expiry date field
+        self.fields['date_expires'].label = 'Expiry date'
+        self.fields['date_expires'].widget = forms.widgets.DateInput(
+            attrs={'type': 'date'}, format='%Y-%m-%d'
+        )
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        # Check if expiry date is in the past
+        if (
+            cleaned_data.get('date_expires')
+            and cleaned_data.get('date_expires') <= timezone.now()
+        ):
+            self.add_error(
+                'date_expires', 'Expiry date should not lie in the past'
+            )
+
+        match = re.search(
+            r'/assay_([0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12})/',
+            cleaned_data['path'],
+        )
+        if not match:
+            self.add_error('path', 'No valid TrackHubs path')
+        else:
+            try:
+                cleaned_data['assay'] = Assay.objects.get(
+                    sodar_uuid=match.group(1)
+                )
+            except ObjectDoesNotExist:
+                self.add_error('path', 'Assay not found')
+
+        return cleaned_data

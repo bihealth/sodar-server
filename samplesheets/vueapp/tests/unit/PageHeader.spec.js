@@ -164,7 +164,7 @@ describe('PageHeader.vue', () => {
     const wrapper = mount(PageHeader, { localVue, propsData: propsData })
 
     // Operations dropdown
-    expect(wrapper.findAll('.sodar-ss-op-item').length).toBe(7)
+    expect(wrapper.findAll('.sodar-ss-op-item').length).toBe(8)
     expect(wrapper.find('#sodar-ss-op-item-irods').exists()).toBe(false)
   })
 
@@ -182,7 +182,7 @@ describe('PageHeader.vue', () => {
     const wrapper = mount(PageHeader, { localVue, propsData: propsData })
 
     // Operations dropdown
-    expect(wrapper.findAll('.sodar-ss-op-item').length).toBe(7)
+    expect(wrapper.findAll('.sodar-ss-op-item').length).toBe(8)
     expect(wrapper.find('#sodar-ss-op-item-delete').exists()).toBe(false)
   })
 

@@ -27,6 +27,7 @@ from samplesheets.models import (
     Process,
     GenericMaterial,
     ISATab,
+    IrodsAccessTicket,
 )
 from samplesheets.sheet_config import SheetConfigAPI
 from samplesheets.tests.test_sheet_config import (
@@ -155,6 +156,26 @@ class RowEditMixin:
                 n_uuid = self.row_uuids[i]
 
 
+class IrodsAccessTicketMixin:
+    """Helpers for creating IrodsAccessTicket object."""
+
+    @classmethod
+    def _make_irodsaccessticket(
+        cls, path, user, project, assay, study, label=None, date_expires=None
+    ):
+        obj = IrodsAccessTicket(
+            path=path,
+            project=project,
+            user=user,
+            assay=assay,
+            study=study,
+            label=label,
+            date_expires=date_expires,
+        )
+        obj.save()
+        return obj
+
+
 @skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
 class TestContextAjaxView(TestViewsBase):
     """Tests for SampleSheetContextAjaxView"""
@@ -270,7 +291,7 @@ class TestContextAjaxView(TestViewsBase):
         self.assertEqual(response_data, expected)
 
 
-class TestStudyTablesAjaxView(TestViewsBase):
+class TestStudyTablesAjaxView(IrodsAccessTicketMixin, TestViewsBase):
     """Tests for SampleSheetStudyTablesAjaxView"""
 
     # TODO: Test with realistic ISAtab examples using BIH configs (see #434)
@@ -342,6 +363,31 @@ class TestStudyTablesAjaxView(TestViewsBase):
         self.assertIn('sodar_ontologies', ret_data['edit_context'])
         self.assertIsNotNone(ret_data['edit_context']['samples'])
         self.assertIsNotNone(ret_data['edit_context']['protocols'])
+
+    def test_get_with_track_hubs(self):
+        """Test study tables retrieval"""
+
+        self._make_irodsaccessticket(
+            path='/some/path',
+            project=self.project,
+            assay=self.assay,
+            study=self.study,
+            user=self.user,
+        )
+        self.investigation.irods_status = True
+        self.investigation.save()
+
+        with self.login(self.user):
+            response = self.client.get(
+                reverse(
+                    'samplesheets:ajax_study_tables',
+                    kwargs={'study': self.study.sodar_uuid},
+                )
+            )
+
+        self.assertEqual(response.status_code, 200)
+
+        # TODO fill out ... assays are not yet tested, as well as shortcuts
 
 
 class TestStudyLinksAjaxView(TestViewsBase):

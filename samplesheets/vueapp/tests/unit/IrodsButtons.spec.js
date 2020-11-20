@@ -22,7 +22,8 @@ describe('IrodsButtons.vue', () => {
       modalComponent: null,
       enabled: null,
       editMode: false,
-      notifyCallback: null
+      notifyCallback: null,
+      extraLinks: null
     }
   }
 
@@ -134,5 +135,26 @@ describe('IrodsButtons.vue', () => {
     expect(spyOnDirListClick).toHaveBeenCalled()
     expect(spySetTitle).toHaveBeenCalled()
     expect(spyShowModal).toHaveBeenCalled()
+  })
+
+  it('creates extra links', () => {
+    propsData.showFileList = true
+    propsData.extraLinks = {
+      url: 'https://ticket:xzy123@0.0.0.0/omicsZone/projects/00/00000000-0000-0000-0000-000000000000/sample_data/study_11111111-1111-1111-1111-111111111111/assay_22222222-2222-2222-2222-222222222222/TrackHubs/track1',
+      icon: 'fa-ticket',
+      id: 'icket_access_1',
+      class: 'sodar-irods-ticket-access-1-btn',
+      title: 'Latest Access Ticket for track1',
+      enabled: true
+    }
+    const wrapper = mount(IrodsButtons, { localVue, propsData: propsData })
+
+    expect(wrapper.find('.sodar-vue-popup-list-btn').exists()).toBe(true)
+    expect(wrapper.find('.sodar-irods-copy-path-btn')).not.toContain('disabled')
+    expect(wrapper.find('.sodar-irods-copy-path-btn')).not.toContain('disabled')
+    expect(wrapper.find('.sodar-irods-copy-dav-btn')).not.toContain('disabled')
+    expect(wrapper.find('.sodar-irods-dav-btn')).not.toContain('disabled')
+    expect(wrapper.find('.sodar-irods-ticket-access-1-btn')).not.toContain('enabled')
+    expect(wrapper.vm.getEnabledState()).toBe(true)
   })
 })

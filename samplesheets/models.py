@@ -1,3 +1,5 @@
+import os
+
 from altamisa.constants import table_headers as th
 import uuid
 
@@ -6,6 +8,7 @@ from django.contrib.postgres.fields import ArrayField, JSONField
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
+from django.utils import timezone
 from django.utils.timezone import localtime
 
 # Projectroles dependency
@@ -1042,4 +1045,152 @@ class ISATab(models.Model):
 
         return name + ' ({})'.format(
             localtime(self.date_created).strftime('%Y-%m-%d %H:%M:%S')
+        )
+
+
+class IrodsAccessTicketActiveManager(models.Manager):
+    """
+    Manager to return only tickets that are not expired.
+    """
+
+    def get_queryset(self):
+        return (
+            super()
+            .get_queryset()
+            .filter(Q(date_expires__gt=timezone.now()) | Q(date_expires=None))
+        )
+
+
+class IrodsAccessTicket(models.Model):
+    """
+    Model for managing tickets in irods
+    """
+
+    class Meta:
+        ordering = ['-date_created']
+
+    objects = models.Manager()
+    active_objects = IrodsAccessTicketActiveManager()
+
+    #: Internal UUID for the object
+    sodar_uuid = models.UUIDField(
+        default=uuid.uuid4, unique=True, help_text='SODAR UUID for the object'
+    )
+
+    #: Project the ticket belongs to
+    project = models.ForeignKey(
+        Project,
+        related_name='irods_access_ticket',
+        help_text='Project the ticket belongs to',
+    )
+
+    #: Study the ticket belongs to
+    study = models.ForeignKey(
+        Study,
+        related_name='irods_access_ticket',
+        help_text='Study the ticket belongs to',
+    )
+
+    #: Assay the ticket belongs to (optional)
+    assay = models.ForeignKey(
+        Assay,
+        related_name='irods_access_ticket',
+        null=True,
+        blank=True,
+        help_text='Assay the ticket belongs to (optional)',
+    )
+
+    #: Ticket token
+    ticket = models.CharField(
+        max_length=DEFAULT_LENGTH, help_text='Ticket token'
+    )
+
+    #: Path
+    path = models.CharField(
+        max_length=DEFAULT_LENGTH, help_text='Path to iRODS collection'
+    )
+
+    #: Label for ticket (optional)
+    label = models.CharField(
+        max_length=DEFAULT_LENGTH,
+        null=True,
+        blank=True,
+        help_text='Ticket label (optional)',
+    )
+
+    #: User that created the ticket
+    user = models.ForeignKey(
+        AUTH_USER_MODEL,
+        related_name='irods_access_ticket',
+        null=True,
+        help_text='User that created the ticket',
+    )
+
+    #: Date created
+    date_created = models.DateTimeField(
+        auto_now_add=True, help_text='DateTime of ticket creation'
+    )
+
+    #: Date ticket expires
+    date_expires = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='DateTime of ticket expiration (leave unset to never '
+        'expire; click x on righthand-side of field to unset)',
+    )
+
+    def get_track_hub_name(self):
+        return os.path.basename(self.path)
+
+    def get_date_created(self):
+        return localtime(self.date_created).strftime('%Y-%m-%d %H:%M')
+
+    def get_date_expires(self):
+        if self.date_expires:
+            return localtime(self.date_expires).strftime('%Y-%m-%d')
+        return None
+
+    def get_label(self):
+        return self.label or self.get_date_created()
+
+    def get_display_name(self):
+        assay_name = ''
+        if (
+            Assay.objects.filter(
+                study__investigation__project=self.project
+            ).count()
+            > 1
+        ):
+            assay_name = '{} / '.format(self.assay.get_display_name())
+        return '{}{} / {}'.format(
+            assay_name, self.get_track_hub_name(), self.get_label()
+        )
+
+    def get_webdav_link(self):
+        return settings.IRODS_WEBDAV_URL_ANON_TMPL.format(
+            user=settings.IRODS_WEBDAV_USER_ANON,
+            ticket=self.ticket,
+            path=self.path,
+        )
+
+    def is_active(self):
+        return self.date_expires is None or self.date_expires >= timezone.now()
+
+    def __str__(self):
+        return '{} / {} / {} / {}'.format(
+            self.project.title,
+            self.assay.get_display_name(),
+            self.get_track_hub_name(),
+            self.get_label(),
+        )
+
+    def __repr__(self):
+        values = (
+            self.project.title,
+            self.assay.get_display_name(),
+            self.get_track_hub_name(),
+            self.get_label(),
+        )
+        return 'IrodsAccessTicket({})'.format(
+            ', '.join(repr(v) for v in values)
         )

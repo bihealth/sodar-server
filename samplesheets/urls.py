@@ -70,6 +70,26 @@ urls_ui = [
         view=views.SampleSheetVersionDeleteView.as_view(),
         name='version_delete',
     ),
+    url(
+        regex=r'^tickets/(?P<project>[0-9a-f-]+)$',
+        view=views.IrodsAccessTicketListView.as_view(),
+        name='tickets',
+    ),
+    url(
+        regex=r'^tickets/(?P<project>[0-9a-f-]+)/create$',
+        view=views.IrodsAccessTicketCreateView.as_view(),
+        name='ticket_create',
+    ),
+    url(
+        regex=r'^ticket/update/(?P<irodsaccessticket>[0-9a-f-]+)$',
+        view=views.IrodsAccessTicketUpdateView.as_view(),
+        name='ticket_update',
+    ),
+    url(
+        regex=r'^ticket/delete/(?P<irodsaccessticket>[0-9a-f-]+)$',
+        view=views.IrodsAccessTicketDeleteView.as_view(),
+        name='ticket_delete',
+    ),
 ]
 
 # REST API views

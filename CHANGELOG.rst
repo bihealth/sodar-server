@@ -33,6 +33,7 @@ Added
     - Extract label editing as string (#964)
     - Simple editing for external links columns (#976)
     - ``SampleDataFileExistsAPIView`` for querying file status by checksum (#1003)
+    - Track hub and iRODS ticket support for UCSC Genome Browser integration (#238)
 
 Changed
 -------

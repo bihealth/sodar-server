@@ -1,4 +1,5 @@
 """Ajax API views for the samplesheets app"""
+import os
 
 from altamisa.constants import table_headers as th
 from datetime import datetime as dt
@@ -24,6 +25,7 @@ from samplesheets.models import (
     Protocol,
     Process,
     GenericMaterial,
+    IrodsAccessTicket,
 )
 from samplesheets.sheet_config import SheetConfigAPI
 from samplesheets.rendering import (
@@ -525,11 +527,13 @@ class SampleSheetStudyTablesAjaxView(SODARBaseProjectAjaxView):
                         'id': RESULTS_COLL_ID,
                         'label': 'Results and Reports',
                         'path': assay_path + '/' + RESULTS_COLL,
+                        'assay_plugin': False,
                     },
                     {
                         'id': MISC_FILES_COLL_ID,
                         'label': 'Misc Files',
                         'path': assay_path + '/' + MISC_FILES_COLL,
+                        'assay_plugin': False,
                     },
                 ]
 
@@ -568,10 +572,16 @@ class SampleSheetStudyTablesAjaxView(SODARBaseProjectAjaxView):
                         # Update row links
                         assay_plugin.update_row(row, a_data, assay)
 
+                    assay_shortcuts = assay_plugin.get_shortcuts(assay) or []
+
+                    # Add visual notification to all shortcuts coming from an assay plugin
+                    for a in assay_shortcuts:
+                        a['icon'] = 'fa-puzzle-piece'
+                        a['title'] = 'Defined in assay plugin'
+                        a['assay_plugin'] = True
+
                     # Add extra table if available
-                    a_data['shortcuts'].extend(
-                        assay_plugin.get_shortcuts(assay) or []
-                    )
+                    a_data['shortcuts'].extend(assay_shortcuts)
 
                 # Check assay shortcut cache and set initial enabled value
                 cache_item = cache_backend.get_cache_item(
@@ -579,6 +589,41 @@ class SampleSheetStudyTablesAjaxView(SODARBaseProjectAjaxView):
                     app_name=APP_NAME,
                     project=assay.get_project(),
                 )
+
+                # Add track hub shortcuts
+                track_hubs = (
+                    cache_item
+                    and cache_item.data['shortcuts'].get('track_hubs')
+                ) or []
+
+                for i, track_hub in enumerate(track_hubs):
+                    tickets = IrodsAccessTicket.active_objects.filter(
+                        path=track_hub
+                    ) or IrodsAccessTicket.objects.filter(path=track_hub)
+                    ticket = tickets and tickets.first()
+                    a_data['shortcuts'].append(
+                        {
+                            'id': 'track_hub_%d' % i,
+                            'label': os.path.basename(track_hub),
+                            'icon': 'fa-road',
+                            'title': 'Track Hub',
+                            'assay_plugin': False,
+                            'path': track_hub,
+                            'extra_links': [
+                                {
+                                    'url': ticket.get_webdav_link(),
+                                    'icon': 'fa-ticket',
+                                    'id': 'ticket_access_%d' % i,
+                                    'class': 'sodar-irods-ticket-access-%d-btn'
+                                    % i,
+                                    'title': ' iRODS Access Ticket',
+                                    'enabled': ticket.is_active(),
+                                }
+                            ]
+                            if ticket
+                            else [],
+                        }
+                    )
 
                 for i in range(len(a_data['shortcuts'])):
                     if cache_item:

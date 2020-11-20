@@ -167,6 +167,18 @@ class IrodsAPI:
         )
         return [iRODSCollection(coll.manager, row) for row in query]
 
+    def get_coll_by_path(self, path):
+        try:
+            return self.irods.collections.get(path)
+        except CollectionDoesNotExist:
+            return None
+
+    def get_child_colls_by_path(self, path):
+        coll = self.get_coll_by_path(path)
+        if coll:
+            return coll.subcollections
+        return []
+
     def _get_objs_recursively(
         self, coll, md5=False, name_like=None, limit=None
     ):
@@ -678,4 +690,7 @@ class IrodsAPI:
         Delete ticket
         :param ticket_str: String
         """
-        self._send_request('TICKET_ADMIN_AN', 'delete', ticket_str)
+        try:
+            self._send_request('TICKET_ADMIN_AN', 'delete', ticket_str)
+        except Exception:
+            raise Exception('Failed to delete iRODS ticket %s' % ticket_str)

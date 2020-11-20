@@ -2,8 +2,14 @@
 
 # NOTE: Retraction and sharing data not yet tested, to be implemented
 # TODO: Test validation rules and uniqueness constraints
+import re
+from datetime import timedelta
 
 import altamisa
+import pytz
+from django.conf import settings
+from django.utils.datetime_safe import datetime
+from django.utils.timezone import localtime
 from test_plus.test import TestCase
 
 from django.forms.models import model_to_dict
@@ -23,6 +29,7 @@ from samplesheets.models import (
     ISATab,
     NOT_AVAILABLE_STR,
     CONFIG_LABEL_CREATE,
+    IrodsAccessTicket,
 )
 from samplesheets.utils import get_alt_names
 
@@ -61,6 +68,10 @@ ASSAY_FILE_NAME = 'a_assay.txt'
 ASSAY_MEASURE_TYPE = 'environmental gene survey'
 ASSAY_TECH_PLATFORM = '454 GS FLX'
 ASSAY_TECH_TYPE = 'nucleotide sequencing'
+ASSAY2_FILE_NAME = 'a_assay2.txt'
+ASSAY2_MEASURE_TYPE = 'environmental gene survey'
+ASSAY2_TECH_PLATFORM = '454 GS FLX'
+ASSAY2_TECH_TYPE = 'nucleotide sequencing'
 
 SOURCE_NAME = 'patient0'
 SOURCE_UNIQUE_NAME = 'p1-s1-a1-patient0-1-1'
@@ -357,6 +368,33 @@ class SampleSheetModelMixin:
             'extra_data': extra_data,
         }
         obj = ISATab(**values)
+        obj.save()
+        return obj
+
+    @classmethod
+    def _make_irods_access_ticket(
+        cls,
+        project,
+        study,
+        assay,
+        ticket,
+        path,
+        label=None,
+        user=None,
+        date_expires=None,  # never expires
+    ):
+        """Create an ISATab object in the database"""
+        values = {
+            'project': project,
+            'study': study,
+            'assay': assay,
+            'ticket': ticket,
+            'path': path,
+            'label': label,
+            'user': user,
+            'date_expires': date_expires,
+        }
+        obj = IrodsAccessTicket(**values)
         obj.save()
         return obj
 
@@ -1135,3 +1173,184 @@ class TestISATab(TestSampleSheetBase):
             ),
         )
         self.assertEqual(self.isatab.get_name(), expected)
+
+
+class TestIrodsAccessTicket(TestSampleSheetBase):
+    """Tests for the IrodsAccessTicket model"""
+
+    def setUp(self):
+        super().setUp()
+        self.path = '/path/to/some/trackhub'
+        self.label = 'Some Ticket'
+        self.ticket = 'abcdef'
+        self.date_expires = None
+        self.irods_access_ticket = self._make_irods_access_ticket(
+            project=self.project,
+            study=self.study,
+            assay=self.assay,
+            ticket=self.ticket,
+            path=self.path,
+            label=self.label,
+            user=self.user_owner,
+            date_expires=self.date_expires,
+        )
+
+    def _get_expiry_today(self):
+        return (
+            datetime.now()
+            .replace(hour=0, minute=0, second=0, microsecond=0)
+            .astimezone(pytz.utc)
+        )
+
+    def test_initialization(self):
+        """Test IrodsAccessTicket initialization"""
+        self.maxDiff = None
+        expected = {
+            'id': self.irods_access_ticket.pk,
+            'project': self.project.pk,
+            'study': self.study.pk,
+            'assay': self.assay.pk,
+            'label': self.label,
+            'ticket': self.ticket,
+            'path': self.path,
+            'user': self.user_owner.pk,
+            'sodar_uuid': self.irods_access_ticket.sodar_uuid,
+            'date_expires': self.date_expires,
+        }
+        self.assertEqual(model_to_dict(self.irods_access_ticket), expected)
+
+    def test__str__(self):
+        """Test IrodsAccessTicket __str__()"""
+        expected = '{} / {} / {} / {}'.format(
+            self.irods_access_ticket.project.title,
+            self.irods_access_ticket.assay.get_display_name(),
+            self.irods_access_ticket.get_track_hub_name(),
+            self.irods_access_ticket.get_label(),
+        )
+        self.assertEqual(str(self.irods_access_ticket), expected)
+
+    def test__repr__(self):
+        """Test IrodsAccessTicket __repr__()"""
+        expected = 'IrodsAccessTicket({})'.format(
+            ', '.join(
+                repr(v)
+                for v in [
+                    self.irods_access_ticket.project.title,
+                    self.irods_access_ticket.assay.get_display_name(),
+                    self.irods_access_ticket.get_track_hub_name(),
+                    self.irods_access_ticket.get_label(),
+                ]
+            )
+        )
+        self.assertEqual(repr(self.irods_access_ticket), expected)
+
+    def test_get_display_name_one_assay(self):
+        """Test get_display_name()"""
+        expected = '{} / {}'.format(
+            self.irods_access_ticket.get_track_hub_name(),
+            self.irods_access_ticket.get_label(),
+        )
+        self.assertEqual(self.irods_access_ticket.get_display_name(), expected)
+
+    def test_get_display_name_two_assays(self):
+        """Test get_display_name()"""
+        self._make_assay(
+            file_name=ASSAY2_FILE_NAME,
+            study=self.study,
+            tech_platform=ASSAY2_TECH_PLATFORM,
+            tech_type=ASSAY2_TECH_TYPE,
+            measurement_type=ASSAY2_MEASURE_TYPE,
+            arcs=[],
+            comments=DEFAULT_COMMENTS,
+        )
+        expected = '{} / {} / {}'.format(
+            self.irods_access_ticket.assay.get_display_name(),
+            self.irods_access_ticket.get_track_hub_name(),
+            self.irods_access_ticket.get_label(),
+        )
+        self.assertEqual(self.irods_access_ticket.get_display_name(), expected)
+
+    def test_get_webdav_link(self):
+        """Test get_webdav_link()"""
+        m = re.search(r'^(https?://)', settings.IRODS_WEBDAV_URL_ANON)
+        self.assertTrue(m)
+        url = re.sub(m.group(1), '', settings.IRODS_WEBDAV_URL_ANON)
+        expected = (
+            m.group(1)
+            + settings.IRODS_WEBDAV_USER_ANON
+            + ':'
+            + self.ticket
+            + '@'
+            + url
+            + self.path
+        )
+        self.assertEqual(self.irods_access_ticket.get_webdav_link(), expected)
+
+    def test_is_active_no_expiry_date(self):
+        """Test is_active()"""
+        self.irods_access_ticket.date_expires = None
+        self.irods_access_ticket.save()
+        self.assertTrue(self.irods_access_ticket.is_active())
+
+    def test_is_active_expired(self):
+        """Test is_active()"""
+        self.irods_access_ticket.date_expires = self._get_expiry_today() - timedelta(
+            days=1
+        )
+        self.irods_access_ticket.save()
+        self.assertFalse(self.irods_access_ticket.is_active())
+
+    def test_is_active_expires_today(self):
+        """Test is_active()"""
+        # Ugly timezone conversion
+        self.irods_access_ticket.date_expires = self._get_expiry_today()
+        self.irods_access_ticket.save()
+        self.assertFalse(self.irods_access_ticket.is_active())
+
+    def test_is_active_expires_tomorrow(self):
+        """Test is_active()"""
+        self.irods_access_ticket.date_expires = self._get_expiry_today() + timedelta(
+            days=1
+        )
+        self.irods_access_ticket.save()
+        self.assertTrue(self.irods_access_ticket.is_active())
+
+    def test_get_track_hub_name(self):
+        """Test get_track_hub_name()"""
+        self.assertEqual(
+            self.irods_access_ticket.get_track_hub_name(),
+            self.path.split('/')[-1],
+        )
+
+    def test_get_label(self):
+        """Test get_label()"""
+        self.assertEqual(self.irods_access_ticket.get_label(), self.label)
+
+    def test_get_label_none(self):
+        """Test get_label()"""
+        self.irods_access_ticket.label = None
+        self.irods_access_ticket.save()
+        self.assertEqual(
+            self.irods_access_ticket.get_label(),
+            self.irods_access_ticket.get_date_created(),
+        )
+
+    def test_get_date_created(self):
+        """Test get_date_created()"""
+        self.assertEqual(
+            self.irods_access_ticket.get_date_created(),
+            localtime(self.irods_access_ticket.date_created).strftime(
+                '%Y-%m-%d %H:%M'
+            ),
+        )
+
+    def test_get_date_expires(self):
+        """Test get_date_expires()"""
+        self.irods_access_ticket.date_expires = self._get_expiry_today()
+        self.irods_access_ticket.save()
+        self.assertEqual(
+            self.irods_access_ticket.get_date_expires(),
+            localtime(self.irods_access_ticket.date_expires).strftime(
+                '%Y-%m-%d'
+            ),
+        )

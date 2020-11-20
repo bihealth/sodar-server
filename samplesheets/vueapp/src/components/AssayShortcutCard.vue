@@ -5,15 +5,20 @@
         <h4>Assay Shortcuts</h4>
       </div>
       <div class="card-body px-3 py-4 sodar-ss-vue-assay-shortcut-body">
-        <span v-for="(shortcut, idx) in assayShortcuts"
+        <span v-for="(shortcut, idx) of assayShortcuts"
               :key="idx"
               class="rounded border bg-light text-nowrap mr-3
                      sodar-ss-vue-assay-shortcut">
           <span :class="getTextClasses(shortcut)">
             {{ shortcut.label }}
-            <i v-if="sodarContext.perms.is_superuser && idx > 1"
-               class="fa fa-puzzle-piece text-danger ml-1"
-               title="Defined in assay plugin"
+            <i v-if="shortcut.id.startsWith('track_hub')"
+               :class="'fa ' + shortcut.icon + ' text-info ml-1'"
+               :title="shortcut.title"
+               v-b-tooltip.hover.window>
+            </i>
+            <i v-else-if="sodarContext.perms.is_superuser && shortcut.assay_plugin"
+               :class="'fa ' + shortcut.icon + ' text-danger ml-1'"
+               :title="shortcut.title"
                v-b-tooltip.hover.window>
             </i>
           </span>
@@ -25,7 +30,8 @@
               :show-file-list="true"
               :modal-component="modalComponent"
               :enabled="shortcut.enabled"
-              :notify-callback="notifyCallback">
+              :notify-callback="notifyCallback"
+              :extra-links="shortcut.extra_links">
             </irods-buttons>
         </span>
       </div>

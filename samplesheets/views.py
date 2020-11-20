@@ -20,7 +20,9 @@ from django.views.generic import (
     ListView,
     TemplateView,
     View,
+    UpdateView,
 )
+from projectroles.utils import build_secret
 
 from rest_framework.response import Response
 
@@ -34,13 +36,19 @@ from projectroles.views import (
     ProjectPermissionMixin,
 )
 
-from samplesheets.forms import SampleSheetImportForm
+from samplesheets.forms import SampleSheetImportForm, IrodsAccessTicketForm
 from samplesheets.io import (
     SampleSheetIO,
     SampleSheetImportException,
     SampleSheetExportException,
 )
-from samplesheets.models import Investigation, Study, Assay, ISATab
+from samplesheets.models import (
+    Investigation,
+    Study,
+    Assay,
+    ISATab,
+    IrodsAccessTicket,
+)
 from samplesheets.rendering import SampleSheetTableBuilder, EMPTY_VALUE
 from samplesheets.sheet_config import SheetConfigAPI
 from samplesheets.tasks import update_project_cache_task
@@ -67,6 +75,7 @@ WARNING_STATUS_MSG = 'OK with warnings, see extra data'
 TARGET_ALTAMISA_VERSION = '0.2.4'  # For warnings etc.
 MISC_FILES_COLL_ID = 'misc_files'
 MISC_FILES_COLL = 'MiscFiles'
+TRACK_HUBS_COLL = 'TrackHubs'
 RESULTS_COLL_ID = 'results_reports'
 RESULTS_COLL = 'ResultsReports'
 DEFAULT_VERSION_PAGINATION = 15
@@ -1369,3 +1378,160 @@ class SampleSheetVersionDeleteView(
         return reverse(
             'samplesheets:versions', kwargs={'project': project.sodar_uuid}
         )
+
+
+class IrodsAccessTicketListView(
+    LoginRequiredMixin,
+    LoggedInPermissionMixin,
+    ProjectPermissionMixin,
+    InvestigationContextMixin,
+    ListView,
+):
+    """Sample Sheet version list view"""
+
+    model = IrodsAccessTicket
+    permission_required = 'samplesheets.view_sheet'
+    template_name = 'samplesheets/irods_access_tickets.html'
+    paginate_by = getattr(
+        settings, 'SHEETS_VERSION_PAGINATION', DEFAULT_VERSION_PAGINATION
+    )
+
+    def get_queryset(self):
+        return IrodsAccessTicket.objects.filter(
+            project__sodar_uuid=self.kwargs['project']
+        )
+
+    def get_context_data(self, *args, **kwargs):
+        context = super().get_context_data(*args, **kwargs)
+        irods_backend = get_backend_api('omics_irods')
+        assays = Assay.objects.filter(
+            study__investigation__project__sodar_uuid=self.kwargs['project']
+        )
+        context['track_hubs_available'] = bool(
+            [
+                track_hub
+                for assay in assays
+                for track_hub in irods_backend.get_child_colls_by_path(
+                    irods_backend.get_path(assay) + '/' + TRACK_HUBS_COLL
+                )
+            ]
+        )
+        return context
+
+
+class IrodsAccessTicketCreateView(
+    LoginRequiredMixin,
+    LoggedInPermissionMixin,
+    InvestigationContextMixin,
+    ProjectPermissionMixin,
+    SampleSheetImportMixin,
+    FormView,
+):
+    """Sample Sheet version restoring view"""
+
+    permission_required = 'samplesheets.edit_sheet'
+    template_name = 'samplesheets/irodsaccessticket_form.html'
+    form_class = IrodsAccessTicketForm
+
+    def get_initial(self):
+        return {'project': self.get_project()}
+
+    def form_valid(self, form):
+        # Create iRODS ticket
+        irods_backend = get_backend_api('omics_irods')
+        ticket = irods_backend.issue_ticket(
+            'read',
+            form.cleaned_data['path'],
+            ticket_str=build_secret(16),
+            expiry_date=form.cleaned_data.get('date_expires'),
+        )
+
+        # Create database object
+        obj = form.save(commit=False)
+        obj.project = self.get_project()
+        obj.assay = form.cleaned_data['assay']
+        obj.study = obj.assay.study
+        obj.user = self.request.user
+        obj.ticket = ticket.ticket
+        obj.save()
+
+        messages.success(
+            self.request,
+            'iRODS access ticket "{}" created.'.format(obj.get_display_name()),
+        )
+        return redirect(
+            reverse(
+                'samplesheets:tickets',
+                kwargs={'project': self.kwargs['project']},
+            )
+        )
+
+
+class IrodsAccessTicketUpdateView(
+    LoginRequiredMixin,
+    LoggedInPermissionMixin,
+    ProjectPermissionMixin,
+    InvestigationContextMixin,
+    UpdateView,
+):
+    """Sample sheet version deletion view"""
+
+    permission_required = 'samplesheets.edit_sheet'
+    model = IrodsAccessTicket
+    form_class = IrodsAccessTicketForm
+    template_name = 'samplesheets/irodsaccessticket_form.html'
+    slug_url_kwarg = 'irodsaccessticket'
+    slug_field = 'sodar_uuid'
+
+    def get_initial(self):
+        return {'project': self.get_project()}
+
+    def form_valid(self, form):
+        obj = form.save()
+        messages.success(
+            self.request,
+            'iRODS access ticket "{}" updated.'.format(obj.get_display_name()),
+        )
+        return redirect(
+            reverse(
+                'samplesheets:tickets',
+                kwargs={'project': self.get_project().sodar_uuid},
+            )
+        )
+
+
+class IrodsAccessTicketDeleteView(
+    LoginRequiredMixin,
+    LoggedInPermissionMixin,
+    ProjectPermissionMixin,
+    InvestigationContextMixin,
+    DeleteView,
+):
+    """Sample sheet version deletion view"""
+
+    permission_required = 'samplesheets.delete_sheet'
+    template_name = 'samplesheets/irodsaccessticket_confirm_delete.html'
+    model = IrodsAccessTicket
+    slug_url_kwarg = 'irodsaccessticket'
+    slug_field = 'sodar_uuid'
+
+    def get_success_url(self):
+        return reverse(
+            'samplesheets:tickets',
+            kwargs={'project': self.object.project.sodar_uuid},
+        )
+
+    def delete(self, request, *args, **kwargs):
+        obj = self.get_object()
+        irods_backend = get_backend_api('omics_irods')
+        try:
+            irods_backend.delete_ticket(obj.ticket)
+            messages.success(
+                request,
+                'iRODS access ticket "{}" deleted.'.format(
+                    obj.get_display_name()
+                ),
+            )
+        except Exception as e:
+            messages.error(request, '%s. Maybe it didn\'t exist.' % e)
+        return super().delete(request, *args, **kwargs)

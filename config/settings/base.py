@@ -7,6 +7,8 @@ https://docs.djangoproject.com/en/dev/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/1.11/ref/settings/
 """
+import re
+
 import environ
 
 SITE_PACKAGE = 'sodar'
@@ -575,6 +577,11 @@ TASKFLOW_TEST_MODE = False  # Important to protect iRODS data
 # Samplesheets and Landingzones link settings
 IRODS_WEBDAV_ENABLED = env.bool('IRODS_WEBDAV_ENABLED', True)
 IRODS_WEBDAV_URL = env.str('IRODS_WEBDAV_URL', 'https://0.0.0.0')
+IRODS_WEBDAV_URL_ANON = env.str('IRODS_WEBDAV_URL_ANON', IRODS_WEBDAV_URL)
+IRODS_WEBDAV_URL_ANON_TMPL = re.sub(
+    r'^(https?://)(.*)$', r'\1{user}:{ticket}@\2{path}', IRODS_WEBDAV_URL_ANON
+)
+IRODS_WEBDAV_USER_ANON = env.str('IRODS_WEBDAV_USER_ANON', 'ticket')
 
 
 # Irodsbackend settings

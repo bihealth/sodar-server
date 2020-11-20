@@ -156,6 +156,12 @@
           <i class="fa fa-fw fa-files-o"></i> Sheet Versions
         </b-dropdown-item>
         <b-dropdown-item
+            v-if="app.sheetsAvailable && app.sodarContext.irods_status"
+            class="sodar-ss-op-item"
+            :href="'tickets/' + app.projectUuid">
+          <i class="fa fa-fw fa-ticket"></i> iRODS Access Tickets
+        </b-dropdown-item>
+        <b-dropdown-item
             v-if="app.sheetsAvailable &&
                   app.sodarContext.perms.delete_sheet"
             class="sodar-ss-op-item"
