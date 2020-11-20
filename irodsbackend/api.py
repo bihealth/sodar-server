@@ -153,106 +153,6 @@ class IrodsAPI:
 
         return path
 
-    @classmethod
-    def _get_colls_recursively(cls, coll):
-        """
-        Return all subcollections for a coll efficiently (without multiple
-        queries).
-
-        :param coll: Collection object
-        :return: List
-        """
-        query = coll.manager.sess.query(Collection).filter(
-            Criterion('like', Collection.parent_name, coll.path + '%')
-        )
-        return [iRODSCollection(coll.manager, row) for row in query]
-
-    def get_coll_by_path(self, path):
-        try:
-            return self.irods.collections.get(path)
-        except CollectionDoesNotExist:
-            return None
-
-    def get_child_colls_by_path(self, path):
-        coll = self.get_coll_by_path(path)
-        if coll:
-            return coll.subcollections
-        return []
-
-    def _get_objs_recursively(
-        self, coll, md5=False, name_like=None, limit=None
-    ):
-        """
-        Return objects below a coll recursively (replacement for the
-        non-scalable walk() function in the API).
-
-        :param coll: Collection object
-        :param md5: if True, return .md5 files, otherwise anything but them
-        :param name_like: Filtering of file names (string)
-        :param limit: Limit search to n rows (int)
-        :return: List
-        """
-        ret = []
-        md5_filter = 'LIKE' if md5 else 'NOT LIKE'
-
-        sql = (
-            'SELECT DISTINCT ON (data_id) data_name, data_size, '
-            'r_data_main.modify_ts as modify_ts, coll_name '
-            'FROM r_data_main JOIN r_coll_main USING (coll_id) '
-            'WHERE (coll_name = \'{coll_path}\' '
-            'OR coll_name LIKE \'{coll_path}/%\') '
-            'AND data_name {md5_filter} \'%.md5\''.format(
-                coll_path=coll.path, md5_filter=md5_filter
-            )
-        )
-
-        if name_like:
-            sql += ' AND data_name LIKE \'%{}%\''.format(name_like)
-
-        if not md5 and limit:
-            sql += ' LIMIT {}'.format(limit)
-
-        # logger.debug('Object list query = "{}"'.format(sql))
-        columns = [
-            DataObject.name,
-            DataObject.size,
-            DataObject.modify_time,
-            Collection.name,
-        ]
-        query = self.get_query(sql, columns)
-
-        try:
-            results = query.get_results()
-
-            for row in results:
-                ret.append(
-                    {
-                        'name': row[DataObject.name],
-                        'path': row[Collection.name]
-                        + '/'
-                        + row[DataObject.name],
-                        'size': row[DataObject.size],
-                        'modify_time': self._get_datetime(
-                            row[DataObject.modify_time]
-                        ),
-                    }
-                )
-
-        except CAT_NO_ROWS_FOUND:
-            pass
-
-        except Exception as ex:
-            logger.error(
-                'iRODS exception in _get_objs_recursively(): {}'.format(
-                    ex.__class__.__name__
-                )
-            )
-
-        finally:
-            query.remove()
-
-        return sorted(ret, key=lambda x: x['path'])
-
     def _get_obj_list(self, coll, check_md5=False, name_like=None, limit=None):
         """
         Return a list of data objects within an iRODS collection.
@@ -266,14 +166,14 @@ class IrodsAPI:
         data = {'data_objects': []}
         md5_paths = None
 
-        data_objs = self._get_objs_recursively(
+        data_objs = self.get_objs_recursively(
             coll, name_like=name_like, limit=limit
         )
 
         if data_objs and check_md5:
             md5_paths = [
                 o['path']
-                for o in self._get_objs_recursively(
+                for o in self.get_objs_recursively(
                     coll, md5=True, name_like=name_like
                 )
             ]
@@ -640,6 +540,92 @@ class IrodsAPI:
         :return: Boolean
         """
         return self.irods.collections.exists(self._sanitize_coll_path(path))
+
+    @classmethod
+    def get_colls_recursively(cls, coll):
+        """
+        Return all subcollections for a coll efficiently (without multiple
+        queries).
+
+        :param coll: Collection object
+        :return: List
+        """
+        query = coll.manager.sess.query(Collection).filter(
+            Criterion('like', Collection.parent_name, coll.path + '%')
+        )
+        return [iRODSCollection(coll.manager, row) for row in query]
+
+    def get_objs_recursively(self, coll, md5=False, name_like=None, limit=None):
+        """
+        Return objects below a coll recursively (replacement for the
+        non-scalable walk() function in the API).
+
+        :param coll: Collection object
+        :param md5: if True, return .md5 files, otherwise anything but them
+        :param name_like: Filtering of file names (string)
+        :param limit: Limit search to n rows (int)
+        :return: List
+        """
+        ret = []
+        md5_filter = 'LIKE' if md5 else 'NOT LIKE'
+
+        sql = (
+            'SELECT DISTINCT ON (data_id) data_name, data_size, '
+            'r_data_main.modify_ts as modify_ts, coll_name '
+            'FROM r_data_main JOIN r_coll_main USING (coll_id) '
+            'WHERE (coll_name = \'{coll_path}\' '
+            'OR coll_name LIKE \'{coll_path}/%\') '
+            'AND data_name {md5_filter} \'%.md5\''.format(
+                coll_path=coll.path, md5_filter=md5_filter
+            )
+        )
+
+        if name_like:
+            sql += ' AND data_name LIKE \'%{}%\''.format(name_like)
+
+        if not md5 and limit:
+            sql += ' LIMIT {}'.format(limit)
+
+        # logger.debug('Object list query = "{}"'.format(sql))
+        columns = [
+            DataObject.name,
+            DataObject.size,
+            DataObject.modify_time,
+            Collection.name,
+        ]
+        query = self.get_query(sql, columns)
+
+        try:
+            results = query.get_results()
+
+            for row in results:
+                ret.append(
+                    {
+                        'name': row[DataObject.name],
+                        'path': row[Collection.name]
+                        + '/'
+                        + row[DataObject.name],
+                        'size': row[DataObject.size],
+                        'modify_time': self._get_datetime(
+                            row[DataObject.modify_time]
+                        ),
+                    }
+                )
+
+        except CAT_NO_ROWS_FOUND:
+            pass
+
+        except Exception as ex:
+            logger.error(
+                'iRODS exception in _get_objs_recursively(): {}'.format(
+                    ex.__class__.__name__
+                )
+            )
+
+        finally:
+            query.remove()
+
+        return sorted(ret, key=lambda x: x['path'])
 
     def get_query(self, sql, columns=None, register=True):
         """

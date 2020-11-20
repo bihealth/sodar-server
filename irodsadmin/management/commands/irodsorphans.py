@@ -2,6 +2,7 @@ import re
 
 from django.core.management.base import BaseCommand
 from django.db.models import Q
+from projectroles.models import Project
 
 from projectroles.plugins import get_backend_api
 
@@ -35,6 +36,11 @@ def get_zone_collections():
     ]
 
 
+def get_project_collections():
+    """Return a list of all study collection names."""
+    return [str(p.sodar_uuid) for p in Project.objects.all()]
+
+
 def is_zone(collection):
     """
     Check if a given collection matches the format of path to a landing zone
@@ -56,7 +62,18 @@ def is_assay_or_study(collection):
     )
 
 
-def get_orphans(session, expected):
+def is_project(collection):
+    """
+    Check if a given collection matches the format of path to a project
+    collection.
+    """
+    return re.search(
+        r'projects/([a-f0-9]{2})/\1[a-f0-9]{6}-([a-f0-9]{4}-){3}[a-f0-9]{12}$',
+        collection.path,
+    )
+
+
+def get_orphans(session, irods_backend, expected):
     """
     Return a list of orphans in a given irods session that are not in a given
     list of expected collections.
@@ -64,8 +81,12 @@ def get_orphans(session, expected):
     orphans = []
     collections = session.collections.get('/{}/projects'.format(session.zone))
 
-    for collection, _, _ in collections.walk():
-        if is_zone(collection) or is_assay_or_study(collection):
+    for collection in irods_backend.get_colls_recursively(collections):
+        if (
+            is_zone(collection)
+            or is_assay_or_study(collection)
+            or is_project(collection)
+        ):
             if collection.name in expected:
                 continue
             orphans.append(collection.path)
@@ -85,6 +106,7 @@ class Command(BaseCommand):
             *get_assay_collections(),
             *get_study_collections(),
             *get_zone_collections(),
+            *get_project_collections(),
         )
-        orphans = get_orphans(session, expected)
+        orphans = get_orphans(session, irods_backend, expected)
         self.stdout.write('\n'.join(orphans))
