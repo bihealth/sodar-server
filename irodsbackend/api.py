@@ -627,6 +627,18 @@ class IrodsAPI:
 
         return sorted(ret, key=lambda x: x['path'])
 
+    def get_coll_by_path(self, path):
+        try:
+            return self.irods.collections.get(path)
+        except CollectionDoesNotExist:
+            return None
+
+    def get_child_colls_by_path(self, path):
+        coll = self.get_coll_by_path(path)
+        if coll:
+            return coll.subcollections
+        return []
+
     def get_query(self, sql, columns=None, register=True):
         """
         Return a SpecificQuery object with a standard query alias. If
