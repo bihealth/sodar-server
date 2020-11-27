@@ -43,6 +43,8 @@ class TestIrodsOrphans(
     def setUp(self):
         super().setUp()
 
+        self.maxDiff = None
+
         # Init super user
         self.user = self.make_user('user')
         self.user.is_superuser = True
@@ -63,8 +65,13 @@ class TestIrodsOrphans(
         self.investigation = self._import_isa_from_file(
             SHEET_PATH, self.project
         )
+        self.investigation.irods_status = True
+        self.investigation.save()
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
+        self.assay.measurement_type = 'genome sequencing'
+        self.assay.technology_type = 'nucleotide sequencing'
+        self.assay.save()
 
         # Create LandingZone
         self.landing_zone = self._make_landing_zone(
@@ -88,10 +95,17 @@ class TestIrodsOrphans(
         )
 
         self.expected_collections = (
-            *irodsorphans.get_assay_collections(),
-            *irodsorphans.get_study_collections(),
-            *irodsorphans.get_zone_collections(),
-            *irodsorphans.get_project_collections(),
+            *irodsorphans.get_assay_collections(
+                [self.assay], self.irods_backend
+            ),
+            *irodsorphans.get_study_collections(
+                [self.study], self.irods_backend
+            ),
+            *irodsorphans.get_zone_collections(self.irods_backend),
+            *irodsorphans.get_project_collections(self.irods_backend),
+            *irodsorphans.get_assay_subcollections(
+                [self.study], self.irods_backend
+            ),
         )
 
     def tearDown(self):
@@ -101,25 +115,45 @@ class TestIrodsOrphans(
 
     def test_get_assay_collections(self):
         self.assertListEqual(
-            irodsorphans.get_assay_collections(),
-            ['assay_{}'.format(self.assay.sodar_uuid)],
+            irodsorphans.get_assay_collections(
+                [self.assay], self.irods_backend
+            ),
+            [self.irods_backend.get_path(self.assay)],
         )
 
     def test_get_study_collections(self):
         self.assertListEqual(
-            irodsorphans.get_study_collections(),
-            ['study_{}'.format(self.study.sodar_uuid)],
+            irodsorphans.get_study_collections(
+                [self.study], self.irods_backend
+            ),
+            [self.irods_backend.get_path(self.study)],
         )
 
     def test_get_landingzone_collections(self):
         self.assertListEqual(
-            irodsorphans.get_zone_collections(), [self.landing_zone.title],
+            irodsorphans.get_zone_collections(self.irods_backend),
+            [self.irods_backend.get_path(self.landing_zone)],
         )
 
     def test_get_project_collections(self):
         self.assertListEqual(
-            irodsorphans.get_project_collections(),
-            [str(self.project.sodar_uuid)],
+            irodsorphans.get_project_collections(self.irods_backend),
+            [self.irods_backend.get_path(self.project)],
+        )
+
+    def test_get_assay_subcollections(self):
+        assay_path = self.irods_backend.get_path(self.assay)
+        self.assertListEqual(
+            irodsorphans.get_assay_subcollections(
+                [self.study], self.irods_backend
+            ),
+            [
+                assay_path + '/0815-N1-DNA1',
+                assay_path + '/0815-T1-DNA1',
+                assay_path + '/TrackHubs',
+                assay_path + '/ResultsReports',
+                assay_path + '/MiscFiles',
+            ],
         )
 
     def test_is_landingzone(self):
@@ -164,6 +198,7 @@ class TestIrodsOrphans(
                 self.irods_session,
                 self.irods_backend,
                 self.expected_collections,
+                [self.assay],
             ),
             [],
         )
@@ -178,6 +213,7 @@ class TestIrodsOrphans(
                 self.irods_session,
                 self.irods_backend,
                 self.expected_collections,
+                [self.assay],
             ),
             [orphan_path],
         )
@@ -192,6 +228,7 @@ class TestIrodsOrphans(
                 self.irods_session,
                 self.irods_backend,
                 self.expected_collections,
+                [self.assay],
             ),
             [orphan_path],
         )
@@ -210,6 +247,7 @@ class TestIrodsOrphans(
                 self.irods_session,
                 self.irods_backend,
                 self.expected_collections,
+                [self.assay],
             ),
             [orphan_path],
         )
@@ -228,6 +266,23 @@ class TestIrodsOrphans(
                 self.irods_session,
                 self.irods_backend,
                 self.expected_collections,
+                [self.assay],
+            ),
+            [orphan_path],
+        )
+
+    def test_orphanated_assay_subs(self):
+        collection = 'UnexpectedCollection'
+        orphan_path = '{}/{}'.format(
+            self.irods_backend.get_path(self.assay), collection
+        )
+        self.irods_session.collections.create(orphan_path)
+        self.assertListEqual(
+            irodsorphans.get_orphans(
+                self.irods_session,
+                self.irods_backend,
+                self.expected_collections,
+                [self.assay],
             ),
             [orphan_path],
         )
@@ -235,7 +290,7 @@ class TestIrodsOrphans(
     def test_command_irodsorphans_no_orphans(self):
         out = StringIO()
         call_command('irodsorphans', stdout=out)
-        self.assertEqual('\n', out.getvalue())
+        self.assertEqual('', out.getvalue())
 
     def test_command_irodsorphans_orphanated_assay(self):
         orphan_path = '{}/assay_{}'.format(
@@ -275,6 +330,16 @@ class TestIrodsOrphans(
                 os.path.dirname(self.irods_backend.get_path(self.project))
             ),
             collection,
+        )
+        self.irods_session.collections.create(orphan_path)
+        out = StringIO()
+        call_command('irodsorphans', stdout=out)
+        self.assertEqual(orphan_path + '\n', out.getvalue())
+
+    def test_command_irodsorphans_orphanated_assay_sub(self):
+        collection = 'UnexpectedCollection'
+        orphan_path = '{}/{}'.format(
+            self.irods_backend.get_path(self.assay), collection
         )
         self.irods_session.collections.create(orphan_path)
         out = StringIO()

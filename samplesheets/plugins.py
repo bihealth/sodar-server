@@ -1,3 +1,6 @@
+import os
+from copy import deepcopy
+
 from django.conf import settings
 from django.urls import reverse
 
@@ -14,6 +17,7 @@ from samplesheets.models import (
     Assay,
     GenericMaterial,
     ISATab,
+    IrodsAccessTicket,
 )
 from samplesheets.rendering import SampleSheetTableBuilder
 from samplesheets.urls import urlpatterns
@@ -22,7 +26,14 @@ from samplesheets.utils import (
     get_isa_field_name,
     get_sheets_url,
 )
-from samplesheets.views import RESULTS_COLL, MISC_FILES_COLL, TRACK_HUBS_COLL
+from samplesheets.views import (
+    RESULTS_COLL,
+    MISC_FILES_COLL,
+    TRACK_HUBS_COLL,
+    RESULTS_COLL_ID,
+    MISC_FILES_COLL_ID,
+    APP_NAME,
+)
 
 # SODAR constants
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
@@ -799,3 +810,138 @@ def find_assay_plugin(measurement_type, technology_type):
             return plugin
 
     return None
+
+
+def get_irods_content(inv, study, irods_backend, ret_data):
+    ret_data = deepcopy(ret_data)
+
+    if not (inv.irods_status and irods_backend):
+        return ret_data
+
+    # Can't import at module root due to circular dependency
+    from .plugins import find_study_plugin
+    from .plugins import find_assay_plugin
+
+    cache_backend = get_backend_api('sodar_cache')
+
+    # Get study plugin for shortcut data
+    study_plugin = find_study_plugin(inv.get_configuration())
+
+    if study_plugin:
+        shortcuts = study_plugin.get_shortcut_column(study, ret_data['tables'])
+        ret_data['tables']['study']['shortcuts'] = shortcuts
+
+    # Get assay content if corresponding assay plugin exists
+    for a_uuid, a_data in ret_data['tables']['assays'].items():
+        assay = Assay.objects.filter(sodar_uuid=a_uuid).first()
+        assay_path = irods_backend.get_path(assay)
+        a_data['irods_paths'] = []
+
+        # Default shortcuts
+        a_data['shortcuts'] = [
+            {
+                'id': RESULTS_COLL_ID,
+                'label': 'Results and Reports',
+                'path': assay_path + '/' + RESULTS_COLL,
+                'assay_plugin': False,
+            },
+            {
+                'id': MISC_FILES_COLL_ID,
+                'label': 'Misc Files',
+                'path': assay_path + '/' + MISC_FILES_COLL,
+                'assay_plugin': False,
+            },
+        ]
+
+        assay_plugin = find_assay_plugin(
+            assay.measurement_type, assay.technology_type
+        )
+
+        if assay_plugin:
+            cache_item = cache_backend.get_cache_item(
+                name='irods/rows/{}'.format(a_uuid),
+                app_name=assay_plugin.app_name,
+                project=assay.get_project(),
+            )
+
+            for row in a_data['table_data']:
+                # Update assay links column
+                path = assay_plugin.get_row_path(row, a_data, assay, assay_path)
+                enabled = True
+
+                # Set initial state to disabled by cached value
+                if (
+                    cache_item
+                    and path in cache_item.data['paths']
+                    and (
+                        not cache_item.data['paths'][path]
+                        or cache_item.data['paths'][path] == 0
+                    )
+                ):
+                    enabled = False
+
+                a_data['irods_paths'].append({'path': path, 'enabled': enabled})
+                # Update row links
+                assay_plugin.update_row(row, a_data, assay)
+
+            assay_shortcuts = assay_plugin.get_shortcuts(assay) or []
+
+            # Add visual notification to all shortcuts coming from an assay plugin
+            for a in assay_shortcuts:
+                a['icon'] = 'fa-puzzle-piece'
+                a['title'] = 'Defined in assay plugin'
+                a['assay_plugin'] = True
+
+            # Add extra table if available
+            a_data['shortcuts'].extend(assay_shortcuts)
+
+        # Check assay shortcut cache and set initial enabled value
+        cache_item = cache_backend.get_cache_item(
+            name='irods/shortcuts/assay/{}'.format(a_uuid),
+            app_name=APP_NAME,
+            project=assay.get_project(),
+        )
+
+        # Add track hub shortcuts
+        track_hubs = (
+            cache_item and cache_item.data['shortcuts'].get('track_hubs')
+        ) or []
+
+        for i, track_hub in enumerate(track_hubs):
+            tickets = IrodsAccessTicket.active_objects.filter(
+                path=track_hub
+            ) or IrodsAccessTicket.objects.filter(path=track_hub)
+            ticket = tickets and tickets.first()
+            a_data['shortcuts'].append(
+                {
+                    'id': 'track_hub_%d' % i,
+                    'label': os.path.basename(track_hub),
+                    'icon': 'fa-road',
+                    'title': 'Track Hub',
+                    'assay_plugin': False,
+                    'path': track_hub,
+                    'extra_links': [
+                        {
+                            'url': ticket.get_webdav_link(),
+                            'icon': 'fa-ticket',
+                            'id': 'ticket_access_%d' % i,
+                            'class': 'sodar-irods-ticket-access-%d-btn' % i,
+                            'title': ' iRODS Access Ticket',
+                            'enabled': ticket.is_active(),
+                        }
+                    ]
+                    if ticket
+                    else [],
+                }
+            )
+
+        for i in range(len(a_data['shortcuts'])):
+            if cache_item:
+                a_data['shortcuts'][i]['enabled'] = cache_item.data[
+                    'shortcuts'
+                ].get(a_data['shortcuts'][i]['id'])
+
+            else:
+                a_data['shortcuts'][i]['enabled'] = True
+
+    return ret_data

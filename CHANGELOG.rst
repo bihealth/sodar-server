@@ -17,6 +17,7 @@ Added
 - **Irodsadmin**
     - Add app for iRODS data administration (#972)
     - ``irodsorphans`` management command to detect orphan collections (#972)
+    - ``irodsorphans`` management command to detect assay subcollections (#997)
 - **Irodsbackend**
     - ``get_query()`` helper for ``SpecificQuery`` initialization (#1003)
 - **Landingzones**
@@ -35,6 +36,7 @@ Added
     - Simple editing for external links columns (#976)
     - ``SampleDataFileExistsAPIView`` for querying file status by checksum (#1003)
     - Track hub and iRODS ticket support for UCSC Genome Browser integration (#238)
+    - Cut out get IRODS content code from ``views_ajax.SampleSheetsStudyTableAjaxView`` and moved it to ``plugins.get_irods_content``
 
 Changed
 -------
