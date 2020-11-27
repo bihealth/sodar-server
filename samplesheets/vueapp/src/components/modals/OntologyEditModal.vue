@@ -254,13 +254,13 @@
               <td>
                 <b-input
                     class="sodar-ss-vue-ontology-input-row"
-                    v-model="insertData.name"
+                    v-model.trim="insertData.name"
                     :disabled="!enableInsertInputs()">
                 </b-input>
               </td>
               <td>
                 <b-input
-                    v-model="insertData.ontologyName"
+                    v-model.trim="insertData.ontologyName"
                     :class="getOntologyNameInputClass(false)"
                     @input="onOntologyNameInput($event, false)"
                     :disabled="!enableInsertInputs()">
@@ -269,7 +269,7 @@
               <td>
                 <b-input
                     class="sodar-ss-vue-ontology-input-row"
-                    v-model="insertData.accession"
+                    v-model.trim="insertData.accession"
                     :disabled="!enableInsertInputs()">
                 </b-input>
               </td>
@@ -438,7 +438,9 @@ export default {
       } else {
         this.value[idx].editing = false
         this.editIdx = null
-        this.value[idx].ontology_name = this.value[idx].ontology_name.toUpperCase()
+        this.value[idx].name = this.value[idx].name.trim()
+        this.value[idx].ontology_name = this.value[idx].ontology_name.trim().toUpperCase()
+        this.value[idx].accession = this.value[idx].accession.trim()
         if (JSON.stringify(this.value[idx]) !== this.editTermValue) {
           this.setUpdateStatus(true)
         }

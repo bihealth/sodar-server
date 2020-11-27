@@ -20,7 +20,7 @@
     <!-- Value basic input -->
     <span v-else>
       <input :ref="'input'"
-             v-model="editValue"
+             v-model.trim="editValue"
              :class="'ag-cell-edit-input ' + getInputClasses()"
              :style="inputStyle"
              :placeholder="getInputPlaceholder('Value')"

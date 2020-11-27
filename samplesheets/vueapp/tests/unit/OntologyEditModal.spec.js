@@ -257,6 +257,38 @@ describe('OntologyEditModal.vue', () => {
     expect(wrapper.find('#sodar-ss-vue-btn-update').attributes().disabled).toBe(undefined)
   })
 
+  it('trims input on term edit', async () => {
+    const updateName = 'Updated'
+    const updateAcc = 'https://some.accession/001234'
+    const wrapper = mount(OntologyEditModal, {
+      localVue,
+      propsData: propsData,
+      methods: { getInitialTermInfo: jest.fn() }
+    })
+    wrapper.vm.showModal(copy(ontologyEditParamsHp), jest.fn())
+    wrapper.setData({ refreshingTerms: false })
+    await waitNT(wrapper.vm)
+    await waitRAF()
+
+    await wrapper.findAll(
+      '.sodar-ss-vue-ontology-term-item').at(0).find(
+      '.sodar-ss-vue-btn-edit').trigger('click')
+    await waitNT(wrapper.vm)
+    await waitRAF()
+
+    await wrapper.findAll('.sodar-ss-vue-ontology-input-row').at(0).setValue(
+      updateName + '\t')
+    await wrapper.findAll('.sodar-ss-vue-ontology-input-row').at(2).setValue(
+      updateAcc + '\t')
+    await wrapper.find('.sodar-ss-vue-btn-stop').trigger('click')
+    await waitNT(wrapper.vm)
+    await waitRAF()
+
+    // Changed values
+    expect(wrapper.vm.value[0].name).toBe(updateName)
+    expect(wrapper.vm.value[0].accession).toBe(updateAcc)
+  })
+
   it('reorders terms on down arrow click', async () => {
     const firstTermName = ontologyEditParamsHp.value[0].name
     const secondTermName = ontologyEditParamsHp.value[1].name
@@ -353,9 +385,12 @@ describe('OntologyEditModal.vue', () => {
     let termItems = wrapper.findAll('.sodar-ss-vue-ontology-term-item')
     expect(termItems.length).toBe(3)
 
-    await wrapper.findAll('.sodar-ss-vue-ontology-input-row').at(0).setValue(newName)
-    await wrapper.findAll('.sodar-ss-vue-ontology-input-row').at(1).setValue(ontologyName)
-    await wrapper.findAll('.sodar-ss-vue-ontology-input-row').at(2).setValue('http://purl.obolibrary.org/obo/HP_9999999')
+    await wrapper.findAll('.sodar-ss-vue-ontology-input-row').at(0).setValue(
+      newName)
+    await wrapper.findAll('.sodar-ss-vue-ontology-input-row').at(1).setValue(
+      ontologyName)
+    await wrapper.findAll('.sodar-ss-vue-ontology-input-row').at(2).setValue(
+      'http://purl.obolibrary.org/obo/HP_9999999')
     await wrapper.find('#sodar-ss-vue-btn-insert').trigger('click')
     await waitNT(wrapper.vm)
     await waitRAF()
@@ -364,6 +399,37 @@ describe('OntologyEditModal.vue', () => {
     expect(termItems.length).toBe(4)
     expect(termItems.at(3).findAll('td').at(0).text()).toBe(newName)
     expect(wrapper.find('#sodar-ss-vue-btn-update').attributes().disabled).toBe(undefined)
+  })
+
+  it('trims new term input in free entry', async () => {
+    const newName = 'New name'
+    const ontologyName = 'HP'
+    const accession = 'http://purl.obolibrary.org/obo/HP_9999999'
+    const wrapper = mount(OntologyEditModal, {
+      localVue,
+      propsData: propsData,
+      methods: { getInitialTermInfo: jest.fn() }
+    })
+    wrapper.vm.showModal(copy(ontologyEditParamsHp), jest.fn())
+    wrapper.setData({ refreshingTerms: false })
+    await waitNT(wrapper.vm)
+    await waitRAF()
+
+    expect(wrapper.vm.value.length).toBe(3)
+
+    await wrapper.findAll('.sodar-ss-vue-ontology-input-row').at(0).setValue(
+      newName + '\t')
+    await wrapper.findAll('.sodar-ss-vue-ontology-input-row').at(1).setValue(
+      ontologyName)
+    await wrapper.findAll('.sodar-ss-vue-ontology-input-row').at(2).setValue(
+      accession + '\t')
+    await wrapper.find('#sodar-ss-vue-btn-insert').trigger('click')
+    await waitNT(wrapper.vm)
+    await waitRAF()
+
+    expect(wrapper.vm.value.length).toBe(4)
+    expect(wrapper.vm.value[3].name).toBe(newName)
+    expect(wrapper.vm.value[3].accession).toBe(accession)
   })
 
   it('prevents new term insert with incorrect ontology name', async () => {
