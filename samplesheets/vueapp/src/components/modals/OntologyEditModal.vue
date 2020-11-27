@@ -75,11 +75,11 @@
               </b-form-select>
             </b-col>
             <b-col class="col-md-3 pl-3 text-nowrap">
-              <div id="sodar-ss-vue-ontology-sort">
+              <div id="sodar-ss-vue-ontology-order">
                 <b-form-checkbox
-                    v-model="queryOntologySort"
+                    v-model="queryOntologyOrder"
                     @change="onSearchParamUpdate()"
-                    id="sodar-ss-vue-ontology-sort-check"
+                    id="sodar-ss-vue-ontology-order-check"
                     :disabled="queryOntologyLimit !== null">
                   Sort by ontology
                 </b-form-checkbox>
@@ -105,7 +105,9 @@
             </option>
           </b-select>
         </div>
-        <div v-else class="alert alert-warning">
+        <div v-else
+             class="alert alert-warning"
+             id="sodar-ss-vue-ontology-no-imports">
           No imported ontologies found! Only manual ontology value entry is
           available. Ontologies can be imported using the
           <code>ontologyaccess</code> app.
@@ -117,7 +119,8 @@
         </div>
         <div
             v-else-if="!enableInsert()"
-            class="alert alert-warning sodar-ss-vue-ontology-alert">
+            class="alert alert-warning sodar-ss-vue-ontology-alert"
+            id="sodar-ss-vue-ontology-no-list">
           Multiple terms not allowed in this column, current entry will be
           overwritten.
         </div>
@@ -236,7 +239,8 @@
                 </b-button>
                 <b-button
                     variant="danger"
-                    class="sodar-list-btn sodar-ss-vue-row-btn sodar-ss-vue-btn-delete"
+                    class="sodar-list-btn sodar-ss-vue-row-btn
+                           sodar-ss-vue-btn-delete"
                     title="Delete term"
                     @click="onTermDeleteClick(termIdx)"
                     :disabled="!enableDelete(termIdx)"
@@ -327,11 +331,11 @@ export default {
       columnOntologies: null,
       sodarOntologies: null,
       searchOntologies: null,
-      finishEditCallback: null,
+      finishEditCb: null,
       pasteData: '',
       querying: false,
       queryOntologyLimit: null,
-      queryOntologySort: false,
+      queryOntologyOrder: false,
       colOntologyLimit: false,
       searchValue: null,
       prevSearchValue: null,
@@ -577,13 +581,13 @@ export default {
           url += '&o=' + encodeURIComponent(this.searchOntologies[i])
         }
       }
-      if (!this.queryOntologyLimit && this.queryOntologySort) {
+      if (!this.queryOntologyLimit && this.queryOntologyOrder) {
         url += '&order=1'
       }
       return url
     },
     submitTermQuery (delay) {
-      if (delay === null) delay = 350
+      if (delay === undefined) delay = 350
       this.querying = true
 
       setTimeout(() => {
@@ -688,7 +692,7 @@ export default {
       this.refreshingTerms = false
     },
     /* Modal showing and hiding --------------------------------------------- */
-    showModal (params, finishEditCallback) {
+    showModal (params, finishEditCb) {
       // console.log(JSON.stringify(params))
 
       // Copy value into a local array
@@ -708,7 +712,7 @@ export default {
       this.sodarOntologies = params.sodarOntologies
       this.querying = false
       this.queryOntologyLimit = null
-      this.queryOntologySort = false
+      this.queryOntologyOrder = false
       this.searchValue = ''
       this.prevSearchValue = ''
       this.termOptions = []
@@ -721,7 +725,7 @@ export default {
       this.editTermValue = null
       this.updated = false
       this.refreshingTerms = true
-      this.finishEditCallback = finishEditCallback
+      this.finishEditCb = finishEditCb
 
       // Set up ontologies available to the column
       const sodarOntologyKeys = Object.keys(this.sodarOntologies)
@@ -762,7 +766,7 @@ export default {
           delete editValue[i].obsolete
         }
       }
-      this.finishEditCallback(editValue)
+      this.finishEditCb(editValue)
       this.$refs.ontologyEditModal.hide()
     }
   }
@@ -779,7 +783,7 @@ div#sodar-vue-ontology-modal-ui {
   width: 70px;
 }
 
-div#sodar-ss-vue-ontology-sort {
+div#sodar-ss-vue-ontology-order {
   white-space: nowrap !important;
   padding-top: 7px;
 }

@@ -1,4 +1,5 @@
 import { createLocalVue, mount } from '@vue/test-utils'
+import { studyUuid } from '../testUtils.js'
 import BootstrapVue from 'bootstrap-vue'
 import VueClipboard from 'vue-clipboard2'
 import IrodsButtons from '@/components/IrodsButtons.vue'
@@ -17,7 +18,7 @@ describe('IrodsButtons.vue', () => {
       irodsBackendEnabled: true,
       irodsStatus: true,
       irodsWebdavUrl: 'http://davrods.local',
-      irodsPath: '/omicsZone/projects/f1/11111111-1111-1111-1111-111111111111',
+      irodsPath: '/omicsZone/projects/11/' + studyUuid,
       showFileList: false,
       modalComponent: null,
       enabled: null,
@@ -140,7 +141,10 @@ describe('IrodsButtons.vue', () => {
   it('creates extra links', () => {
     propsData.showFileList = true
     propsData.extraLinks = {
-      url: 'https://ticket:xzy123@0.0.0.0/omicsZone/projects/00/00000000-0000-0000-0000-000000000000/sample_data/study_11111111-1111-1111-1111-111111111111/assay_22222222-2222-2222-2222-222222222222/TrackHubs/track1',
+      url: 'https://ticket:xzy123@0.0.0.0/omicsZone/projects/00/' +
+           '00000000-0000-0000-0000-000000000000/sample_data/' +
+           'study_11111111-1111-1111-1111-111111111111/' +
+           'assay_22222222-2222-2222-2222-222222222222/TrackHubs/track1',
       icon: 'fa-ticket',
       id: 'icket_access_1',
       class: 'sodar-irods-ticket-access-1-btn',

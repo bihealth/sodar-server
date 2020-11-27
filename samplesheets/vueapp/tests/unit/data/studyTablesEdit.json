@@ -1,0 +1,1401 @@
+{
+  "study": {
+    "display_name": "Small Germline Study"
+  },
+  "tables": {
+    "study": {
+      "top_header": [
+        {
+          "value": "Source",
+          "colour": "info",
+          "colspan": 3,
+          "headers": [
+            "Source Name",
+            "Characteristics[organism]",
+            "Term Source REF",
+            "Term Accession Number",
+            "Characteristics[age]",
+            "Unit",
+            "Term Source REF",
+            "Term Accession Number"
+          ]
+        },
+        {
+          "value": "Process",
+          "colour": "danger",
+          "colspan": 4,
+          "headers": [
+            "Protocol REF",
+            "Parameter Value[instrument]",
+            "Performer",
+            "Date"
+          ]
+        },
+        {
+          "value": "Sample",
+          "colour": "warning",
+          "colspan": 3,
+          "headers": [
+            "Sample Name",
+            "Characteristics[status]",
+            "Factor Value[treatment]"
+          ]
+        }
+      ],
+      "field_header": [
+        {
+          "value": "Name",
+          "name": "Name",
+          "obj_cls": "GenericMaterial",
+          "item_type": "SOURCE",
+          "num_col": false,
+          "config_set": false,
+          "col_type": "NAME",
+          "type": "name",
+          "max_value_len": 5
+        },
+        {
+          "value": "Organism",
+          "name": "organism",
+          "obj_cls": "GenericMaterial",
+          "item_type": "SOURCE",
+          "num_col": false,
+          "config_set": false,
+          "col_type": "ONTOLOGY",
+          "type": "characteristics",
+          "max_value_len": 26
+        },
+        {
+          "value": "Age",
+          "name": "age",
+          "obj_cls": "GenericMaterial",
+          "item_type": "SOURCE",
+          "num_col": false,
+          "config_set": false,
+          "col_type": "UNIT",
+          "type": "characteristics",
+          "max_value_len": 7
+        },
+        {
+          "value": "Protocol",
+          "name": "Protocol",
+          "obj_cls": "Process",
+          "item_type": null,
+          "num_col": false,
+          "config_set": false,
+          "col_type": "PROTOCOL",
+          "type": "protocol",
+          "max_value_len": 16
+        },
+        {
+          "value": "Instrument",
+          "name": "instrument",
+          "obj_cls": "Process",
+          "item_type": null,
+          "num_col": false,
+          "config_set": false,
+          "col_type": null,
+          "type": "parameter_values",
+          "max_value_len": 29
+        },
+        {
+          "value": "Performer",
+          "name": "Performer",
+          "obj_cls": "Process",
+          "item_type": null,
+          "num_col": false,
+          "config_set": false,
+          "col_type": "CONTACT",
+          "type": "performer",
+          "max_value_len": 9
+        },
+        {
+          "value": "Perform Date",
+          "name": "Perform Date",
+          "obj_cls": "Process",
+          "item_type": null,
+          "num_col": false,
+          "config_set": false,
+          "col_type": "DATE",
+          "type": "perform_date",
+          "max_value_len": 12
+        },
+        {
+          "value": "Name",
+          "name": "Name",
+          "obj_cls": "GenericMaterial",
+          "item_type": "SAMPLE",
+          "num_col": false,
+          "config_set": false,
+          "col_type": "NAME",
+          "type": "name",
+          "max_value_len": 8
+        },
+        {
+          "value": "Status",
+          "name": "status",
+          "obj_cls": "GenericMaterial",
+          "item_type": "SAMPLE",
+          "num_col": false,
+          "config_set": false,
+          "col_type": "NUMERIC",
+          "type": "characteristics",
+          "max_value_len": 6
+        },
+        {
+          "value": "Treatment",
+          "name": "treatment",
+          "obj_cls": "GenericMaterial",
+          "item_type": "SAMPLE",
+          "num_col": false,
+          "config_set": false,
+          "col_type": null,
+          "type": "factor_values",
+          "max_value_len": 8
+        }
+      ],
+      "table_data": [
+        [
+          {
+            "value": "0814",
+            "uuid": "fd93b0d1-a6f8-4204-8951-cd94be5a20fe"
+          },
+          {
+            "value": [
+              {
+                "name": "Mus musculus",
+                "accession": "http://purl.bioontology.org/ontology/NCBITAXON/10090",
+                "ontology_name": "NCBITAXON"
+              },
+              {
+                "name": "Homo sapiens",
+                "accession": "http://purl.bioontology.org/ontology/NCBITAXON/9606",
+                "ontology_name": "NCBITAXON"
+              }
+            ],
+            "uuid": "fd93b0d1-a6f8-4204-8951-cd94be5a20fe"
+          },
+          {
+            "value": "90",
+            "unit": "day",
+            "uuid": "fd93b0d1-a6f8-4204-8951-cd94be5a20fe"
+          },
+          {
+            "value": "sample collection",
+            "uuid": "f4993303-7506-4c0f-abbb-a53bef523c70",
+            "uuid_ref": "48ae08c2-4fcf-4d92-934c-1c596d42a1a1"
+          },
+          {
+            "value": "scalpel",
+            "uuid": "f4993303-7506-4c0f-abbb-a53bef523c70"
+          },
+          {
+            "value": "John Doe",
+            "uuid": "f4993303-7506-4c0f-abbb-a53bef523c70"
+          },
+          {
+            "value": "2018-02-02",
+            "uuid": "f4993303-7506-4c0f-abbb-a53bef523c70"
+          },
+          {
+            "value": "0814-N1",
+            "uuid": "ad389965-8fee-4d6f-bc32-96631eab75d6"
+          },
+          {
+            "value": "0",
+            "uuid": "ad389965-8fee-4d6f-bc32-96631eab75d6"
+          },
+          {
+            "value": "yes",
+            "uuid": "ad389965-8fee-4d6f-bc32-96631eab75d6"
+          }
+        ],
+        [
+          {
+            "value": "0815",
+            "uuid": "20469c00-c8d2-43bd-a02d-8d877eda253c"
+          },
+          {
+            "value": [
+              {
+                "name": "Mus musculus",
+                "accession": "http://purl.bioontology.org/ontology/NCBITAXON/10090",
+                "ontology_name": "NCBITAXON"
+              }
+            ],
+            "uuid": "20469c00-c8d2-43bd-a02d-8d877eda253c"
+          },
+          {
+            "value": "90",
+            "unit": "day",
+            "uuid": "20469c00-c8d2-43bd-a02d-8d877eda253c"
+          },
+          {
+            "value": "sample collection",
+            "uuid": "4f9dde67-252d-4945-80af-1f8b1eba957c",
+            "uuid_ref": "48ae08c2-4fcf-4d92-934c-1c596d42a1a1"
+          },
+          {
+            "value": "scalpel",
+            "uuid": "4f9dde67-252d-4945-80af-1f8b1eba957c"
+          },
+          {
+            "value": "John Doe",
+            "uuid": "4f9dde67-252d-4945-80af-1f8b1eba957c"
+          },
+          {
+            "value": "2018-02-02",
+            "uuid": "4f9dde67-252d-4945-80af-1f8b1eba957c"
+          },
+          {
+            "value": "0815-N1",
+            "uuid": "55127c53-bc7b-4eb1-9de5-be319173ffab"
+          },
+          {
+            "value": "0",
+            "uuid": "55127c53-bc7b-4eb1-9de5-be319173ffab"
+          },
+          {
+            "value": "yes",
+            "uuid": "55127c53-bc7b-4eb1-9de5-be319173ffab"
+          }
+        ],
+        [
+          {
+            "value": "0815",
+            "uuid": "20469c00-c8d2-43bd-a02d-8d877eda253c"
+          },
+          {
+            "value": [
+              {
+                "name": "Mus musculus",
+                "accession": "http://purl.bioontology.org/ontology/NCBITAXON/10090",
+                "ontology_name": "NCBITAXON"
+              }
+            ],
+            "uuid": "20469c00-c8d2-43bd-a02d-8d877eda253c"
+          },
+          {
+            "value": "90",
+            "unit": "day",
+            "uuid": "20469c00-c8d2-43bd-a02d-8d877eda253c"
+          },
+          {
+            "value": "sample collection",
+            "uuid": "94fc3037-1bac-459c-9056-58c8a4b3b506",
+            "uuid_ref": "48ae08c2-4fcf-4d92-934c-1c596d42a1a1"
+          },
+          {
+            "value": [
+              "scalpel type A",
+              "scalpel type B"
+            ],
+            "uuid": "94fc3037-1bac-459c-9056-58c8a4b3b506"
+          },
+          {
+            "value": "John Doe",
+            "uuid": "94fc3037-1bac-459c-9056-58c8a4b3b506"
+          },
+          {
+            "value": "2018-02-02",
+            "uuid": "94fc3037-1bac-459c-9056-58c8a4b3b506"
+          },
+          {
+            "value": "0815-T1",
+            "uuid": "8d4d43aa-f97f-4583-b197-ee2d0fd95aa0"
+          },
+          {
+            "value": "2",
+            "uuid": "8d4d43aa-f97f-4583-b197-ee2d0fd95aa0"
+          },
+          {
+            "value": "",
+            "uuid": "8d4d43aa-f97f-4583-b197-ee2d0fd95aa0"
+          }
+        ],
+        [
+          {
+            "value": "0816",
+            "uuid": "654959de-478f-448b-8b10-cb5c2718f0b1"
+          },
+          {
+            "value": [
+              {
+                "name": "Mus musculus",
+                "accession": null,
+                "ontology_name": null
+              }
+            ],
+            "uuid": "654959de-478f-448b-8b10-cb5c2718f0b1"
+          },
+          {
+            "value": "",
+            "unit": "day",
+            "uuid": "654959de-478f-448b-8b10-cb5c2718f0b1"
+          },
+          {
+            "value": "sample collection",
+            "uuid": "f4596327-6251-4a72-96ca-5c5d932559c8",
+            "uuid_ref": "48ae08c2-4fcf-4d92-934c-1c596d42a1a1"
+          },
+          {
+            "value": "scalpel",
+            "uuid": "f4596327-6251-4a72-96ca-5c5d932559c8"
+          },
+          {
+            "value": "John Doe",
+            "uuid": "f4596327-6251-4a72-96ca-5c5d932559c8"
+          },
+          {
+            "value": "2018-02-02",
+            "uuid": "f4596327-6251-4a72-96ca-5c5d932559c8"
+          },
+          {
+            "value": "0816-T1",
+            "uuid": "55a1c903-a02d-47b6-8520-e082a8d2fb54"
+          },
+          {
+            "value": "1",
+            "uuid": "55a1c903-a02d-47b6-8520-e082a8d2fb54"
+          },
+          {
+            "value": "yes",
+            "uuid": "55a1c903-a02d-47b6-8520-e082a8d2fb54"
+          }
+        ],
+        [
+          {
+            "value": "0817",
+            "uuid": "eccb8a64-d93f-4bc8-afc6-30fc12c2e417"
+          },
+          {
+            "value": "",
+            "uuid": "eccb8a64-d93f-4bc8-afc6-30fc12c2e417"
+          },
+          {
+            "value": "150",
+            "unit": "day",
+            "uuid": "eccb8a64-d93f-4bc8-afc6-30fc12c2e417"
+          },
+          {
+            "value": "sample collection",
+            "uuid": "544eb9f9-9ac7-475a-9052-f224657744b4",
+            "uuid_ref": "48ae08c2-4fcf-4d92-934c-1c596d42a1a1"
+          },
+          {
+            "value": "scalpel",
+            "uuid": "544eb9f9-9ac7-475a-9052-f224657744b4"
+          },
+          {
+            "value": "John Doe",
+            "uuid": "544eb9f9-9ac7-475a-9052-f224657744b4"
+          },
+          {
+            "value": "2018-02-02",
+            "uuid": "544eb9f9-9ac7-475a-9052-f224657744b4"
+          },
+          {
+            "value": "",
+            "uuid": "fdcdadb0-af8a-4f1b-9621-d563465252a3"
+          },
+          {
+            "value": "",
+            "uuid": "fdcdadb0-af8a-4f1b-9621-d563465252a3"
+          },
+          {
+            "value": "",
+            "uuid": "fdcdadb0-af8a-4f1b-9621-d563465252a3"
+          }
+        ]
+      ],
+      "col_values": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "col_last_vis": 9
+    },
+    "assays": {
+      "22222222-2222-2222-2222-222222222222": {
+        "top_header": [
+          {
+            "value": "Source",
+            "colour": "info",
+            "colspan": 3,
+            "headers": [
+              "Source Name",
+              "Characteristics[organism]",
+              "Term Source REF",
+              "Term Accession Number",
+              "Characteristics[age]",
+              "Unit",
+              "Term Source REF",
+              "Term Accession Number"
+            ]
+          },
+          {
+            "value": "Process",
+            "colour": "danger",
+            "colspan": 4,
+            "headers": [
+              "Protocol REF",
+              "Parameter Value[instrument]",
+              "Performer",
+              "Date"
+            ]
+          },
+          {
+            "value": "Sample",
+            "colour": "warning",
+            "colspan": 3,
+            "headers": [
+              "Sample Name",
+              "Characteristics[status]",
+              "Factor Value[treatment]"
+            ]
+          },
+          {
+            "value": "Process",
+            "colour": "danger",
+            "colspan": 1,
+            "headers": [
+              "Protocol REF"
+            ]
+          },
+          {
+            "value": "Library Name",
+            "colour": "success",
+            "colspan": 1,
+            "headers": [
+              "Library Name"
+            ]
+          },
+          {
+            "value": "Process",
+            "colour": "danger",
+            "colspan": 2,
+            "headers": [
+              "Protocol REF",
+              "Assay Name"
+            ]
+          },
+          {
+            "value": "Raw Data File",
+            "colour": "success",
+            "colspan": 1,
+            "headers": [
+              "Raw Data File"
+            ]
+          },
+          {
+            "value": "Raw Data File",
+            "colour": "success",
+            "colspan": 1,
+            "headers": [
+              "Raw Data File"
+            ]
+          },
+          {
+            "value": "Process",
+            "colour": "danger",
+            "colspan": 1,
+            "headers": [
+              "Data Transformation Name"
+            ]
+          },
+          {
+            "value": "Derived Data File",
+            "colour": "success",
+            "colspan": 1,
+            "headers": [
+              "Derived Data File"
+            ]
+          }
+        ],
+        "field_header": [
+          {
+            "value": "Name",
+            "name": "Name",
+            "obj_cls": "GenericMaterial",
+            "item_type": "SOURCE",
+            "num_col": false,
+            "config_set": false,
+            "col_type": "NAME",
+            "type": "name",
+            "max_value_len": 5
+          },
+          {
+            "value": "Organism",
+            "name": "organism",
+            "obj_cls": "GenericMaterial",
+            "item_type": "SOURCE",
+            "num_col": false,
+            "config_set": false,
+            "col_type": "ONTOLOGY",
+            "type": "characteristics",
+            "max_value_len": 13
+          },
+          {
+            "value": "Age",
+            "name": "age",
+            "obj_cls": "GenericMaterial",
+            "item_type": "SOURCE",
+            "num_col": false,
+            "config_set": false,
+            "col_type": "UNIT",
+            "type": "characteristics",
+            "max_value_len": 6
+          },
+          {
+            "value": "Protocol",
+            "name": "Protocol",
+            "obj_cls": "Process",
+            "item_type": null,
+            "num_col": false,
+            "config_set": false,
+            "col_type": "PROTOCOL",
+            "type": "protocol",
+            "max_value_len": 16
+          },
+          {
+            "value": "Instrument",
+            "name": "instrument",
+            "obj_cls": "Process",
+            "item_type": null,
+            "num_col": false,
+            "config_set": false,
+            "col_type": null,
+            "type": "parameter_values",
+            "max_value_len": 29
+          },
+          {
+            "value": "Performer",
+            "name": "Performer",
+            "obj_cls": "Process",
+            "item_type": null,
+            "num_col": false,
+            "config_set": false,
+            "col_type": "CONTACT",
+            "type": "performer",
+            "max_value_len": 9
+          },
+          {
+            "value": "Perform Date",
+            "name": "Perform Date",
+            "obj_cls": "Process",
+            "item_type": null,
+            "num_col": false,
+            "config_set": false,
+            "col_type": "DATE",
+            "type": "perform_date",
+            "max_value_len": 12
+          },
+          {
+            "value": "Name",
+            "name": "Name",
+            "obj_cls": "GenericMaterial",
+            "item_type": "SAMPLE",
+            "num_col": false,
+            "config_set": false,
+            "col_type": "NAME",
+            "type": "name",
+            "max_value_len": 8
+          },
+          {
+            "value": "Status",
+            "name": "status",
+            "obj_cls": "GenericMaterial",
+            "item_type": "SAMPLE",
+            "num_col": false,
+            "config_set": false,
+            "col_type": "NUMERIC",
+            "type": "characteristics",
+            "max_value_len": 6
+          },
+          {
+            "value": "Treatment",
+            "name": "treatment",
+            "obj_cls": "GenericMaterial",
+            "item_type": "SAMPLE",
+            "num_col": false,
+            "config_set": false,
+            "col_type": null,
+            "type": "factor_values",
+            "max_value_len": 8
+          },
+          {
+            "value": "Protocol",
+            "name": "Protocol",
+            "obj_cls": "Process",
+            "item_type": null,
+            "num_col": false,
+            "config_set": false,
+            "col_type": "PROTOCOL",
+            "type": "protocol",
+            "max_value_len": 18
+          },
+          {
+            "value": "Name",
+            "name": "Name",
+            "obj_cls": "GenericMaterial",
+            "item_type": "MATERIAL",
+            "num_col": false,
+            "config_set": false,
+            "col_type": "NAME",
+            "type": "name",
+            "max_value_len": 14
+          },
+          {
+            "value": "Protocol",
+            "name": "Protocol",
+            "obj_cls": "Process",
+            "item_type": null,
+            "num_col": false,
+            "config_set": false,
+            "col_type": "PROTOCOL",
+            "type": "protocol",
+            "max_value_len": 22
+          },
+          {
+            "value": "Assay Name",
+            "name": "Assay Name",
+            "obj_cls": "Process",
+            "item_type": null,
+            "num_col": false,
+            "config_set": false,
+            "col_type": "NAME",
+            "type": "process_name",
+            "max_value_len": 20
+          },
+          {
+            "value": "Name",
+            "name": "Name",
+            "obj_cls": "GenericMaterial",
+            "item_type": "DATA",
+            "num_col": false,
+            "config_set": false,
+            "col_type": "LINK_FILE",
+            "type": "name",
+            "max_value_len": 41
+          },
+          {
+            "value": "Name",
+            "name": "Name",
+            "obj_cls": "GenericMaterial",
+            "item_type": "DATA",
+            "num_col": false,
+            "config_set": false,
+            "col_type": "LINK_FILE",
+            "type": "name",
+            "max_value_len": 41
+          },
+          {
+            "value": "Data Transformation Name",
+            "name": "Data Transformation Name",
+            "obj_cls": "Process",
+            "item_type": null,
+            "num_col": false,
+            "config_set": false,
+            "col_type": "NAME",
+            "type": "process_name",
+            "max_value_len": 23
+          },
+          {
+            "value": "Name",
+            "name": "Name",
+            "obj_cls": "GenericMaterial",
+            "item_type": "DATA",
+            "num_col": false,
+            "config_set": false,
+            "col_type": "LINK_FILE",
+            "type": "name",
+            "max_value_len": 18
+          }
+        ],
+        "table_data": [
+          [
+            {
+              "value": "0815",
+              "uuid": "20469c00-c8d2-43bd-a02d-8d877eda253c"
+            },
+            {
+              "value": [
+                {
+                  "name": "Mus musculus",
+                  "accession": "http://purl.bioontology.org/ontology/NCBITAXON/10090",
+                  "ontology_name": "NCBITAXON"
+                }
+              ],
+              "uuid": "20469c00-c8d2-43bd-a02d-8d877eda253c"
+            },
+            {
+              "value": "90",
+              "unit": "day",
+              "uuid": "20469c00-c8d2-43bd-a02d-8d877eda253c"
+            },
+            {
+              "value": "sample collection",
+              "uuid": "4f9dde67-252d-4945-80af-1f8b1eba957c",
+              "uuid_ref": "48ae08c2-4fcf-4d92-934c-1c596d42a1a1"
+            },
+            {
+              "value": "scalpel",
+              "uuid": "4f9dde67-252d-4945-80af-1f8b1eba957c"
+            },
+            {
+              "value": "John Doe",
+              "uuid": "4f9dde67-252d-4945-80af-1f8b1eba957c"
+            },
+            {
+              "value": "2018-02-02",
+              "uuid": "4f9dde67-252d-4945-80af-1f8b1eba957c"
+            },
+            {
+              "value": "0815-N1",
+              "uuid": "55127c53-bc7b-4eb1-9de5-be319173ffab"
+            },
+            {
+              "value": "0",
+              "uuid": "55127c53-bc7b-4eb1-9de5-be319173ffab"
+            },
+            {
+              "value": "yes",
+              "uuid": "55127c53-bc7b-4eb1-9de5-be319173ffab"
+            },
+            {
+              "value": "library preparation",
+              "uuid": "e6dc7864-7c6b-4a2b-8c27-264d7bdb28da",
+              "uuid_ref": "0a9dd154-c9b9-407e-a1b4-2bf8dc41a25a"
+            },
+            {
+              "value": "0815-N1-DNA1",
+              "uuid": "60f1c503-71aa-4eba-9c65-2ed64abbd21f"
+            },
+            {
+              "value": "nucleic acid sequencing",
+              "uuid": "9338d2bb-4a20-427a-a6b7-0a1a418ec307",
+              "uuid_ref": "789e2ab4-fc7c-4ce0-80ad-93bedcecf588"
+            },
+            {
+              "value": "0815-N1-DNA1-WES1",
+              "uuid": "9338d2bb-4a20-427a-a6b7-0a1a418ec307"
+            },
+            {
+              "value": "0815-N1-DNA1-WES1_L???_???_R1.fastq.gz",
+              "uuid": "bce60a0e-ee05-4742-86cc-7faeb782dd96"
+            },
+            {
+              "value": "0815-N1-DNA1-WES1_L???_???_R2.fastq.gz",
+              "uuid": "42c22902-eb5f-45f3-a132-ded36ffb8e63"
+            },
+            {
+              "value": "somatic variant calling-1",
+              "uuid": "3a0ba0d3-4942-439d-bae0-53befd55bf7c"
+            },
+            {
+              "value": "0815-somatic.vcf.gz",
+              "uuid": "1c684042-a609-483f-9f60-b9678f4c15cf"
+            }
+          ],
+          [
+            {
+              "value": "0815",
+              "uuid": "20469c00-c8d2-43bd-a02d-8d877eda253c"
+            },
+            {
+              "value": [
+                {
+                  "name": "Mus musculus",
+                  "accession": "http://purl.bioontology.org/ontology/NCBITAXON/10090",
+                  "ontology_name": "NCBITAXON"
+                }
+              ],
+              "uuid": "20469c00-c8d2-43bd-a02d-8d877eda253c"
+            },
+            {
+              "value": "90",
+              "unit": "day",
+              "uuid": "20469c00-c8d2-43bd-a02d-8d877eda253c"
+            },
+            {
+              "value": "sample collection",
+              "uuid": "94fc3037-1bac-459c-9056-58c8a4b3b506",
+              "uuid_ref": "48ae08c2-4fcf-4d92-934c-1c596d42a1a1"
+            },
+            {
+              "value": [
+                "scalpel type A",
+                "scalpel type B"
+              ],
+              "uuid": "94fc3037-1bac-459c-9056-58c8a4b3b506"
+            },
+            {
+              "value": "John Doe",
+              "uuid": "94fc3037-1bac-459c-9056-58c8a4b3b506"
+            },
+            {
+              "value": "2018-02-02",
+              "uuid": "94fc3037-1bac-459c-9056-58c8a4b3b506"
+            },
+            {
+              "value": "0815-T1",
+              "uuid": "8d4d43aa-f97f-4583-b197-ee2d0fd95aa0"
+            },
+            {
+              "value": "2",
+              "uuid": "8d4d43aa-f97f-4583-b197-ee2d0fd95aa0"
+            },
+            {
+              "value": "",
+              "uuid": "8d4d43aa-f97f-4583-b197-ee2d0fd95aa0"
+            },
+            {
+              "value": "library preparation",
+              "uuid": "6517e146-1031-46e1-b22e-efd0b175956e",
+              "uuid_ref": "0a9dd154-c9b9-407e-a1b4-2bf8dc41a25a"
+            },
+            {
+              "value": "0815-T1-DNA1",
+              "uuid": "0fa049fc-2f93-41df-8659-009beda12312"
+            },
+            {
+              "value": "nucleic acid sequencing",
+              "uuid": "33e740d7-2e55-4011-88f2-a7f86d766893",
+              "uuid_ref": "789e2ab4-fc7c-4ce0-80ad-93bedcecf588"
+            },
+            {
+              "value": "0815-T1-DNA1-WES1",
+              "uuid": "33e740d7-2e55-4011-88f2-a7f86d766893"
+            },
+            {
+              "value": "0815-T1-DNA1-WES1_L???_???_R1.fastq.gz",
+              "uuid": "3ac11af4-257b-4a5b-8326-2bb4068c40f4"
+            },
+            {
+              "value": "0815-T1-DNA1-WES1_L???_???_R2.fastq.gz",
+              "uuid": "55d965b2-c07b-489f-8150-4e7e7d1e42ff"
+            },
+            {
+              "value": "somatic variant calling-1",
+              "uuid": "3a0ba0d3-4942-439d-bae0-53befd55bf7c"
+            },
+            {
+              "value": "0815-somatic.vcf.gz",
+              "uuid": "1c684042-a609-483f-9f60-b9678f4c15cf"
+            }
+          ]
+        ],
+        "col_values": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "col_last_vis": 17
+      }
+    }
+  },
+  "display_config": {
+    "nodes": [
+      {
+        "fields": [
+          {
+            "name": "Name",
+            "visible": true
+          },
+          {
+            "name": "organism",
+            "visible": true
+          },
+          {
+            "name": "age",
+            "visible": true
+          }
+        ],
+        "header": "Source"
+      },
+      {
+        "fields": [
+          {
+            "name": "Protocol",
+            "visible": true
+          },
+          {
+            "name": "instrument",
+            "visible": true
+          },
+          {
+            "name": "Performer",
+            "visible": true
+          },
+          {
+            "name": "Perform Date",
+            "visible": true
+          }
+        ],
+        "header": "Process"
+      },
+      {
+        "fields": [
+          {
+            "name": "Name",
+            "visible": true
+          },
+          {
+            "name": "status",
+            "visible": true
+          },
+          {
+            "name": "treatment",
+            "visible": true
+          }
+        ],
+        "header": "Sample"
+      }
+    ],
+    "assays": {
+      "22222222-2222-2222-2222-222222222222": {
+        "nodes": [
+          {
+            "fields": [
+              {
+                "name": "Name",
+                "visible": true
+              },
+              {
+                "name": "organism",
+                "visible": false
+              },
+              {
+                "name": "age",
+                "visible": false
+              }
+            ],
+            "header": "Source"
+          },
+          {
+            "fields": [
+              {
+                "name": "Protocol",
+                "visible": true
+              },
+              {
+                "name": "instrument",
+                "visible": false
+              },
+              {
+                "name": "Performer",
+                "visible": false
+              },
+              {
+                "name": "Perform Date",
+                "visible": false
+              }
+            ],
+            "header": "Process"
+          },
+          {
+            "fields": [
+              {
+                "name": "Name",
+                "visible": true
+              },
+              {
+                "name": "status",
+                "visible": false
+              },
+              {
+                "name": "treatment",
+                "visible": false
+              }
+            ],
+            "header": "Sample"
+          },
+          {
+            "fields": [
+              {
+                "name": "Protocol",
+                "visible": true
+              }
+            ],
+            "header": "Process"
+          },
+          {
+            "fields": [
+              {
+                "name": "Name",
+                "visible": true
+              }
+            ],
+            "header": "Library Name"
+          },
+          {
+            "fields": [
+              {
+                "name": "Protocol",
+                "visible": true
+              },
+              {
+                "name": "Assay Name",
+                "visible": true
+              }
+            ],
+            "header": "Process"
+          },
+          {
+            "fields": [
+              {
+                "name": "Name",
+                "visible": true
+              }
+            ],
+            "header": "Raw Data File"
+          },
+          {
+            "fields": [
+              {
+                "name": "Name",
+                "visible": true
+              }
+            ],
+            "header": "Raw Data File"
+          },
+          {
+            "fields": [
+              {
+                "name": "Data Transformation Name",
+                "visible": true
+              }
+            ],
+            "header": "Process"
+          },
+          {
+            "fields": [
+              {
+                "name": "Name",
+                "visible": true
+              }
+            ],
+            "header": "Derived Data File"
+          }
+        ]
+      }
+    }
+  },
+  "study_config": {
+    "nodes": [
+      {
+        "fields": [
+          {
+            "name": "Name",
+            "type": "name"
+          },
+          {
+            "name": "organism",
+            "type": "characteristics",
+            "format": "ontology",
+            "allow_list": false,
+            "ontologies": []
+          },
+          {
+            "name": "age",
+            "type": "characteristics"
+          }
+        ],
+        "header": "Source"
+      },
+      {
+        "fields": [
+          {
+            "name": "Protocol",
+            "type": "protocol",
+            "format": "protocol",
+            "default": "48ae08c2-4fcf-4d92-934c-1c596d42a1a1"
+          },
+          {
+            "name": "instrument",
+            "type": "parameter_values"
+          },
+          {
+            "name": "Performer",
+            "type": "performer"
+          },
+          {
+            "name": "Perform Date",
+            "type": "perform_date"
+          }
+        ],
+        "header": "Process"
+      },
+      {
+        "fields": [
+          {
+            "name": "Name",
+            "type": "name"
+          },
+          {
+            "name": "status",
+            "type": "characteristics"
+          },
+          {
+            "name": "treatment",
+            "type": "factor_values"
+          }
+        ],
+        "header": "Sample"
+      }
+    ],
+    "assays": {
+      "22222222-2222-2222-2222-222222222222": {
+        "nodes": [
+          {
+            "fields": [
+              {
+                "name": "Protocol",
+                "type": "protocol",
+                "format": "protocol",
+                "default": "0a9dd154-c9b9-407e-a1b4-2bf8dc41a25a"
+              }
+            ],
+            "header": "Process"
+          },
+          {
+            "fields": [
+              {
+                "name": "Name",
+                "type": "name"
+              }
+            ],
+            "header": "Library Name"
+          },
+          {
+            "fields": [
+              {
+                "name": "Protocol",
+                "type": "protocol",
+                "format": "protocol",
+                "default": "789e2ab4-fc7c-4ce0-80ad-93bedcecf588"
+              },
+              {
+                "name": "Assay Name",
+                "type": "process_name"
+              }
+            ],
+            "header": "Process"
+          },
+          {
+            "fields": [
+              {
+                "name": "Name",
+                "type": "name"
+              }
+            ],
+            "header": "Raw Data File"
+          },
+          {
+            "fields": [
+              {
+                "name": "Name",
+                "type": "name"
+              }
+            ],
+            "header": "Raw Data File"
+          },
+          {
+            "fields": [
+              {
+                "name": "Data Transformation Name",
+                "type": "process_name"
+              }
+            ],
+            "header": "Process"
+          },
+          {
+            "fields": [
+              {
+                "name": "Name",
+                "type": "name"
+              }
+            ],
+            "header": "Derived Data File"
+          }
+        ],
+        "display_name": "Small"
+      }
+    },
+    "display_name": "Small Germline Study"
+  },
+  "edit_context": {
+    "sodar_ontologies": {
+      "CL": {
+        "file": "http://purl.obolibrary.org/obo/cl.obo",
+        "title": "Cell Ontology",
+        "ontology_id": "cl",
+        "description": "An ontology of cell types.",
+        "data_version": "releases/2020-10-20",
+        "term_url": "http://purl.obolibrary.org/obo/{id_space}_{local_id}",
+        "sodar_uuid": "6778f96a-01ee-43ad-a60f-e38d6da8a820"
+      },
+      "DUO": {
+        "file": "http://purl.obolibrary.org/obo/duo.owl",
+        "title": "Data Use Ontology",
+        "ontology_id": "duo",
+        "description": null,
+        "data_version": "releases/2020-02-03",
+        "term_url": "http://purl.obolibrary.org/obo/{id_space}_{local_id}",
+        "sodar_uuid": "b9389171-5945-409b-8a92-e6da45edce75"
+      },
+      "EX": {
+        "file": "ex.obo",
+        "title": "Example",
+        "ontology_id": "ex.obo",
+        "description": "Minimal example ontology for testing",
+        "data_version": "ex/releases/2020-09-24",
+        "term_url": "http://purl.obolibrary.org/obo/{id_space}_{local_id}",
+        "sodar_uuid": "444be90c-6e46-4748-9605-4e51dd15729c"
+      },
+      "HP": {
+        "file": "http://purl.obolibrary.org/obo/hp.obo",
+        "title": "Human Phenotype Ontology",
+        "ontology_id": "hp.obo",
+        "description": "The Human Phenotype Ontology (HPO) provides a standardized vocabulary of phenotypic abnormalities and clinical features encountered in human disease.",
+        "data_version": "hp/releases/2020-10-12",
+        "term_url": "http://purl.obolibrary.org/obo/{id_space}_{local_id}",
+        "sodar_uuid": "f7b73119-3a0c-40df-86ca-8a898ad49828"
+      },
+      "MS": {
+        "file": "http://purl.obolibrary.org/obo/ms.obo",
+        "title": "Mass Spectrometry Ontology",
+        "ontology_id": "ms",
+        "description": null,
+        "data_version": "4.1.35",
+        "term_url": "http://purl.obolibrary.org/obo/{id_space}_{local_id}",
+        "sodar_uuid": "898bf144-1715-412d-aa58-78e81242bbac"
+      },
+      "NCBITAXON": {
+        "file": "https://github.com/obophenotype/ncbitaxon/releases/download/current/taxslim.obo",
+        "title": "NCBI Taxonomy",
+        "ontology_id": "ncbitaxon/subsets/taxslim",
+        "description": null,
+        "data_version": null,
+        "term_url": "http://purl.bioontology.org/ontology/NCBITAXON/{local_id}",
+        "sodar_uuid": "cef03618-f464-40ef-a249-193bf3ea1635"
+      },
+      "OMIM": {
+        "file": "/home/mnieminen/code/data/obo/OMIM.csv",
+        "title": "Online Mendelian Inheritance in Man",
+        "ontology_id": "OMIM.csv",
+        "description": null,
+        "data_version": null,
+        "term_url": "http://purl.bioontology.org/ontology/{id_space}/{local_id}",
+        "sodar_uuid": "3f972a87-13d9-49c5-a065-984f7747703b"
+      },
+      "ORDO": {
+        "file": "/home/mnieminen/code/data/obo/orphanet_ordo_fix.obo",
+        "title": "Orphanet Rare Disease Ontology",
+        "ontology_id": "http://www.orpha.net/ontology/orphanet.owl",
+        "description": null,
+        "data_version": "http://www.orpha.net/version1.0",
+        "term_url": "http://www.orpha.net/ORDO/{id_space}_{local_id}",
+        "sodar_uuid": "f742b90c-4c5f-416a-9a41-a323cd349482"
+      },
+      "PATO": {
+        "file": "http://purl.obolibrary.org/obo/pato.obo",
+        "title": "Phenotype And Trait Ontology",
+        "ontology_id": "pato",
+        "description": "An ontology of phenotypic qualities (properties, attributes or characteristics).",
+        "data_version": "releases/2020-08-02/pato.obo",
+        "term_url": "http://purl.obolibrary.org/obo/{id_space}_{local_id}",
+        "sodar_uuid": "dd435dae-19cb-4a1a-b059-66ade5653500"
+      },
+      "PRIDE": {
+        "file": "/home/mnieminen/code/data/obo/pride_cv_fix.obo",
+        "title": "PRoteomics IDEntifications",
+        "ontology_id": "PRIDE",
+        "description": null,
+        "data_version": null,
+        "term_url": "http://purl.obolibrary.org/obo/{id_space}_{local_id}",
+        "sodar_uuid": "976296ae-1357-47cb-a0a2-de02cd57e5fb"
+      },
+      "ROLEO": {
+        "file": "http://data.bioontology.org/ontologies/ROLEO/submissions/3/download?apikey=8b5b7825-538d-40e0-9e9e-5ab9274a9aeb",
+        "title": "Role Ontology",
+        "ontology_id": "roleo",
+        "description": "The Role Ontology (RoleO) is a ontology in the domain of role classification. RoleO aims to standardize role classification and support computer-assisted reasoning.  RoleO is a community-based ontology, and its development follows the OBO Foundry principles.",
+        "data_version": null,
+        "term_url": "http://purl.obolibrary.org/obo/{id_space}_{local_id}",
+        "sodar_uuid": "445c6c9b-f7cb-4e35-82cd-808d5f3ce504"
+      },
+      "UBERON": {
+        "file": "/home/mnieminen/code/data/obo/uberon_basic_fix.obo",
+        "title": "Uberon",
+        "ontology_id": "uberon/basic",
+        "description": null,
+        "data_version": "uberon/releases/2020-06-30/basic.owl",
+        "term_url": "http://purl.obolibrary.org/obo/{id_space}_{local_id}",
+        "sodar_uuid": "159caa7d-8941-46ab-b105-977c31bf334b"
+      }
+    },
+    "samples": {
+      "fdcdadb0-af8a-4f1b-9621-d563465252a3": {
+        "name": "",
+        "assays": []
+      },
+      "ad389965-8fee-4d6f-bc32-96631eab75d6": {
+        "name": "0814-N1",
+        "assays": []
+      },
+      "55127c53-bc7b-4eb1-9de5-be319173ffab": {
+        "name": "0815-N1",
+        "assays": [
+          "22222222-2222-2222-2222-222222222222"
+        ]
+      },
+      "8d4d43aa-f97f-4583-b197-ee2d0fd95aa0": {
+        "name": "0815-T1",
+        "assays": [
+          "22222222-2222-2222-2222-222222222222"
+        ]
+      },
+      "55a1c903-a02d-47b6-8520-e082a8d2fb54": {
+        "name": "0816-T1",
+        "assays": []
+      }
+    },
+    "protocols": [
+      {
+        "uuid": "0a9dd154-c9b9-407e-a1b4-2bf8dc41a25a",
+        "name": "library preparation"
+      },
+      {
+        "uuid": "789e2ab4-fc7c-4ce0-80ad-93bedcecf588",
+        "name": "nucleic acid sequencing"
+      },
+      {
+        "uuid": "48ae08c2-4fcf-4d92-934c-1c596d42a1a1",
+        "name": "sample collection"
+      }
+    ]
+  }
+}

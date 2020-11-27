@@ -1,0 +1,36 @@
+{
+  "terms": [
+    {
+      "ontology_name": "HP",
+      "term_id": "HP:0030199",
+      "name": "Fatigable weakness of neck muscles",
+      "is_obsolete": false,
+      "replaced_by": null,
+      "accession": "http://purl.obolibrary.org/obo/HP_0030199"
+    },
+    {
+      "ontology_name": "HP",
+      "term_id": "HP:0012893",
+      "name": "Neck muscle hypertrophy",
+      "is_obsolete": false,
+      "replaced_by": null,
+      "accession": "http://purl.obolibrary.org/obo/HP_0012893"
+    },
+    {
+      "ontology_name": "HP",
+      "term_id": "HP:0008984",
+      "name": "Neck muscle hypoplasia",
+      "is_obsolete": false,
+      "replaced_by": null,
+      "accession": "http://purl.obolibrary.org/obo/HP_0008984"
+    },
+    {
+      "ontology_name": "HP",
+      "term_id": "HP:0000467",
+      "name": "Neck muscle weakness",
+      "is_obsolete": false,
+      "replaced_by": null,
+      "accession": "http://purl.obolibrary.org/obo/HP_0000467"
+    }
+  ]
+}

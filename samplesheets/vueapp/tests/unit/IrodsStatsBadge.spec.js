@@ -1,4 +1,5 @@
 import { createLocalVue, mount } from '@vue/test-utils'
+import { projectUuid } from '../testUtils.js'
 import IrodsStatsBadge from '@/components/IrodsStatsBadge.vue'
 import '@/filters/prettyBytes.js'
 
@@ -11,9 +12,10 @@ let propsData
 describe('IrodsStatsBadge.vue', () => {
   function getPropsData () {
     return {
-      projectUuid: '00000000-0000-0000-0000-000000000000',
+      projectUuid: projectUuid,
       irodsStatus: true,
-      irodsPath: '/omicsZone/projects/00/00000000-0000-0000-0000-000000000000/sample_data/study_11111111-1111-1111-1111-111111111111'
+      irodsPath: '/omicsZone/projects/00/00000000-0000-0000-0000-000000000000' +
+                 '/sample_data/study_11111111-1111-1111-1111-111111111111'
     }
   }
 

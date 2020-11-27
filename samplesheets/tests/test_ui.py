@@ -448,61 +448,6 @@ class TestProjectSheetsView(TestProjectSheetsVueAppBase):
             assay_grid.find_element_by_class_name('sodar-ss-data-links-header')
         )
 
-    def test_irods_buttons_no_colls(self):
-        """Test study/assay iRODS button status with no iRODS collections"""
-        self._login_and_render(self.default_user)
-
-        # Check study buttons
-        study_header = self.selenium.find_element_by_id(
-            'sodar-ss-section-study'
-        )
-        study_btns = study_header.find_element_by_class_name(
-            'sodar-ss-irods-links'
-        ).find_elements_by_class_name('sodar-ss-irods-btn')
-
-        for btn in study_btns:
-            self.assertEqual(self._get_enabled_state(btn), False)
-
-        # Check assay buttons
-        assay_header = self.selenium.find_element_by_id(
-            'sodar-ss-section-assay-{}'.format(self.assay.sodar_uuid)
-        )
-        assay_btns = assay_header.find_element_by_class_name(
-            'sodar-ss-irods-links'
-        ).find_elements_by_class_name('sodar-ss-irods-btn')
-
-        for btn in assay_btns:
-            self.assertEqual(self._get_enabled_state(btn), False)
-
-    def test_irods_buttons_with_colls(self):
-        """Test study/assay iRODS button status with iRODS collections"""
-        self.investigation.irods_status = True  # Fake the coll creation
-        self.investigation.save()
-
-        self._login_and_render(self.default_user)
-
-        # Check study buttons
-        study_header = self.selenium.find_element_by_id(
-            'sodar-ss-section-study'
-        )
-        study_btns = study_header.find_element_by_class_name(
-            'sodar-ss-irods-links'
-        ).find_elements_by_class_name('sodar-ss-irods-btn')
-
-        for btn in study_btns:
-            self.assertEqual(self._get_enabled_state(btn), True)
-
-        # Check assay buttons
-        assay_header = self.selenium.find_element_by_id(
-            'sodar-ss-section-assay-{}'.format(self.assay.sodar_uuid)
-        )
-        assay_btns = assay_header.find_element_by_class_name(
-            'sodar-ss-irods-links'
-        ).find_elements_by_class_name('sodar-ss-irods-btn')
-
-        for btn in assay_btns:
-            self.assertEqual(self._get_enabled_state(btn), True)
-
 
 class TestProjectSheetsEditModeDefault(TestProjectSheetsVueAppBase):
     """Tests for the samplesheets UI edit mode with a default config"""

@@ -1,0 +1,44 @@
+{
+  "value": [
+    {
+      "name": "Homo sapiens",
+      "accession": "http://purl.bioontology.org/ontology/NCBITAXON/9606",
+      "ontology_name": "NCBITAXON"
+    }
+  ],
+  "nodeName": "LB18_1975",
+  "headerName": "Organism",
+  "editConfig": {
+    "name": "Organism",
+    "type": "characteristics",
+    "regex": "",
+    "format": "ontology",
+    "default": "",
+    "editable": true,
+    "allow_list": false,
+    "ontologies": [
+      "NCBITAXON",
+      "CL"
+    ]
+  },
+  "sodarOntologies": {
+    "CL": {
+      "file": "http://purl.obolibrary.org/obo/cl.obo",
+      "title": "Cell Ontology",
+      "ontology_id": "cl",
+      "description": "An ontology of cell types.",
+      "data_version": "releases/2020-10-20",
+      "term_url": "http://purl.obolibrary.org/obo/{id_space}_{local_id}",
+      "sodar_uuid": "6778f96a-01ee-43ad-a60f-e38d6da8a820"
+    },
+    "NCBITAXON": {
+      "file": "https://github.com/obophenotype/ncbitaxon/releases/download/current/taxslim.obo",
+      "title": "NCBI Taxonomy",
+      "ontology_id": "ncbitaxon/subsets/taxslim",
+      "description": null,
+      "data_version": null,
+      "term_url": "http://purl.bioontology.org/ontology/NCBITAXON/{local_id}",
+      "sodar_uuid": "cef03618-f464-40ef-a249-193bf3ea1635"
+    }
+  }
+}

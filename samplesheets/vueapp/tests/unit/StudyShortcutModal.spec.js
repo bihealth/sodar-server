@@ -1,5 +1,11 @@
 import { createLocalVue, mount } from '@vue/test-utils'
-import { waitNT, waitRAF } from '../utils.js'
+import {
+  projectUuid,
+  studyUuid,
+  assayUuid,
+  waitNT,
+  waitRAF
+} from '../testUtils.js'
 import BootstrapVue from 'bootstrap-vue'
 import StudyShortcutModal from '@/components/modals/StudyShortcutModal.vue'
 import studyShortcuts from './data/studyShortcutsCancer.json'
@@ -15,8 +21,8 @@ describe('StudyShortcutModal.vue', () => {
   function getPropsData () {
     return {
       irodsWebdavUrl: 'http://davrods.local',
-      projectUuid: '00000000-0000-0000-0000-000000000000',
-      studyUuid: '11111111-1111-1111-1111-111111111111'
+      projectUuid: projectUuid,
+      studyUuid: studyUuid
     }
   }
 

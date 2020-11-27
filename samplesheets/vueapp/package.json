@@ -72,6 +72,9 @@
       "vue-jest": {
         "hideStyleWarn": true
       }
-    }
+    },
+    "transformIgnorePatterns": [
+      "node_modules/(?!(ag-grid-vue)/)"
+    ]
   }
 }

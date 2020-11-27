@@ -705,6 +705,12 @@ class SampleSheetStudyTablesAjaxView(SODARBaseProjectAjaxView):
                     status_type='OK',
                 )
 
+        '''
+        def c(o):
+            return o.__str__()
+
+        logger.debug(json.dumps(ret_data, default=c))
+        '''
         return Response(ret_data, status=200)
 
 

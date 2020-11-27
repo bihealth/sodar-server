@@ -1,21 +1,23 @@
 <template>
   <b-modal
-      id="sodar-ss-vue-col-config-modal"
+      id="sodar-ss-col-modal"
       ref="columnConfigModal"
-      body-class="sodar-ss-vue-col-config-body"
+      body-class="sodar-ss-col-body"
       centered no-fade hide-footer
       size="md"
+      :static="true"
       no-close-on-backdrop
       no-close-on-esc>
     <template slot="modal-header">
       <div class="w-100">
-      <h5 class="modal-title text-nowrap" id="sodar-ss-vue-col-modal-title">
+      <h5 class="modal-title text-nowrap" id="sodar-ss-col-modal-title">
         {{ fieldDisplayName }}
         <span class="pull-right">
           <b-input-group class="sodar-header-input-group">
             <b-input-group-prepend>
               <b-button
                   class="sodar-list-btn"
+                  id="sodar-ss-col-btn-copy"
                   ref="copyBtn"
                   title="Copy configuration to clipboard"
                   v-clipboard:copy="getCopyData()"
@@ -27,7 +29,7 @@
               </b-button>
             </b-input-group-prepend>
             <b-form-input
-                id="sodar-ss-vue-col-input-paste"
+                id="sodar-ss-col-input-paste"
                 ref="pasteInput"
                 v-model="pasteData"
                 @input="onPasteInput"
@@ -44,24 +46,30 @@
         </h5>
       </div>
     </template>
-    <div class="sodar-ss-vue-col-config-content">
+    <div id="sodar-ss-col-content">
       <table
           v-if="fieldConfig"
           class="table table-borderless w-100"
-          id="sodar-ss-vue-col-config-table">
+          id="sodar-ss-col-table">
         <!-- Editable (common for all types) -->
         <tbody>
           <tr>
             <td>Editable</td>
             <td>
-              <b-checkbox plain v-model="fieldConfig.editable"></b-checkbox>
+              <b-checkbox
+                  v-model="fieldConfig.editable"
+                  id="sodar-ss-col-editable"
+                  plain>
+              </b-checkbox>
             </td>
           </tr>
         </tbody>
         <!-- Name column table body -->
-        <tbody v-if="['NAME', 'LINK_FILE'].includes(colType)">
-          <tr v-if="colType === 'NAME' &&
-              headerInfo.item_type !== 'SOURCE'">
+        <tbody
+            v-if="['NAME', 'LINK_FILE'].includes(colType)"
+            id="sodar-ss-col-table-name">
+          <tr v-if="colType === 'NAME' && headerInfo.item_type !== 'SOURCE'"
+              id="sodar-ss-col-tr-name-suffix">
             <td>Default Suffix
               <i class="fa fa-info-circle text-info"
                  title="Pre-fill with the name of previous node plus a suffix if set"
@@ -72,13 +80,13 @@
               <b-input
                   v-model="fieldConfig.default"
                   @input="onDefaultInput"
-                  id="sodar-ss-vue-column-input-default"
+                  id="sodar-ss-col-input-default"
                   :class="formClasses.default">
               </b-input>
             </td>
           </tr>
           <tr>
-            <td colspan="2" class="sodar-ss-vue-td-info text-danger">
+            <td colspan="2" class="sodar-ss-td-info text-danger">
               <strong>Warning:</strong> If you are storing project sample data
               in iRODS, renaming certain materials or processes may cause
               related iRODS links to stop working! When in doubt, please
@@ -87,13 +95,15 @@
           </tr>
         </tbody>
         <!-- Protocol table body -->
-        <tbody v-else-if="colType === 'PROTOCOL'">
+        <tbody
+            v-else-if="colType === 'PROTOCOL'"
+            id="sodar-ss-col-table-protocol">
           <tr>
             <td>Default Value</td>
             <td>
               <b-select
                   v-model="fieldConfig.default"
-                  id="sodar-ss-vue-column-select-default"
+                  id="sodar-ss-col-select-default"
                   @change="onDefaultChange">
                 <option :value="null">-</option>
                 <option
@@ -109,44 +119,50 @@
             <td colspan="2"><hr class="my-1" /></td>
           </tr>
           <tr>
-            <td colspan="2" class="sodar-ss-vue-td-info text-muted">
+            <td colspan="2" class="sodar-ss-td-info text-muted">
               <em>Protocol editing will go here..</em>
             </td>
           </tr>
         </tbody>
         <!-- Contact table body -->
-        <tbody v-else-if="colType === 'CONTACT'">
+        <tbody
+            v-else-if="colType === 'CONTACT'"
+            id="sodar-ss-col-table-contact">
           <tr>
             <td colspan="2"><hr class="my-1" /></td>
           </tr>
           <tr>
-            <td colspan="2" class="sodar-ss-vue-td-info">
+            <td colspan="2" class="sodar-ss-td-info">
               Enter the contact info as <code>Name &lt;email@domain.com&gt;</code>
               for linking. Popup editor is forthcoming.
             </td>
           </tr>
         </tbody>
         <!-- Date table body -->
-        <tbody v-else-if="colType === 'DATE'">
+        <tbody
+            v-else-if="colType === 'DATE'"
+            id="sodar-ss-col-table-date">
           <tr>
             <td colspan="2"><hr class="my-1" /></td>
           </tr>
           <tr>
-            <td colspan="2" class="sodar-ss-vue-td-info">
+            <td colspan="2" class="sodar-ss-td-info">
               Enter the date as <code>YYYY-MM-DD</code>.
             </td>
           </tr>
         </tbody>
         <!-- Ontology table body -->
-        <tbody v-else-if="colType === 'ONTOLOGY'">
+        <tbody
+            v-else-if="colType === 'ONTOLOGY'"
+            id="sodar-ss-col-table-ontology">
           <tr>
             <td>Allow List</td>
-            <td id="sodar-ss-vue-td-allow-list">
+            <td id="sodar-ss-col-td-allow-list">
               <b-checkbox
                   plain
                   v-model="fieldConfig.allow_list"
                   title="Allow entering a list of ontology terms if enabled"
-                  id="sodar-ss-vue-column-check-list"
+                  id="sodar-ss-col-check-list"
                   v-b-tooltip.right.hover>
               </b-checkbox>
             </td>
@@ -158,20 +174,21 @@
             <td colspan="2"><hr class="my-1" /></td>
           </tr>
           <tr>
-            <td colspan="2" class="sodar-ss-vue-td-info">
+            <td colspan="2" class="sodar-ss-td-info">
               Enter IDs as <code>id-type:id</code> separated by <code>;</code>
               (semicolon).
             </td>
           </tr>
         </tbody>
         <!-- Basic field column table body -->
-        <tbody v-else>
+        <tbody v-else id="sodar-ss-col-table-basic">
           <!-- Format (hide for extract label) -->
-          <tr v-if="headerInfo.header_type !== 'extract_label'">
+          <tr v-if="headerInfo.header_type !== 'extract_label'"
+              id="sodar-ss-col-tr-format">
             <td>Format</td>
             <td>
               <b-select
-                  id="sodar-ss-vue-col-select-format"
+                  id="sodar-ss-col-select-format"
                   v-model="fieldConfig.format"
                   @change="onFormatChange">
                 <option
@@ -188,7 +205,8 @@
             <td colspan="2"><hr class="my-1" /></td>
           </tr>
           <!-- Select -->
-          <tr v-if="fieldConfig.format === 'select'">
+          <tr v-if="fieldConfig.format === 'select'"
+              id="sodar-ss-col-tr-select">
             <td class="align-top pt-3">
               Options
               <i class="fa fa-info-circle text-info"
@@ -206,13 +224,14 @@
             </td>
           </tr>
           <!-- Range -->
-          <tr v-if="['integer', 'double'].includes(fieldConfig.format)">
+          <tr v-if="['integer', 'double'].includes(fieldConfig.format)"
+              id="sodar-ss-col-tr-range">
             <td>Range</td>
             <td>
               <b-row>
                 <b-col sm="5" class="p-0">
                   <b-input
-                      id="sodar-ss-vue-col-range-min"
+                      id="sodar-ss-col-input-range-min"
                       class="text-right"
                       v-model="fieldConfig.range[0]"
                       placeholder="Min"
@@ -225,7 +244,7 @@
                 <b-col sm="2" class="text-center align-middle pt-1">-</b-col>
                 <b-col sm="5" class="p-0">
                   <b-input
-                      id="sodar-ss-vue-col-range-max"
+                      id="sodar-ss-col-input-range-max"
                       class="text-right"
                       v-model="fieldConfig.range[1]"
                       placeholder="Max"
@@ -239,7 +258,8 @@
             </td>
           </tr>
           <!-- Regex -->
-          <tr v-if="fieldConfig.format !== 'select'">
+          <tr v-if="fieldConfig.format !== 'select'"
+              id="sodar-ss-col-tr-regex">
             <td>Regex</td>
             <td>
               <b-input
@@ -250,7 +270,7 @@
             </td>
           </tr>
           <!-- Default value -->
-          <tr>
+          <tr id="sodar-ss-col-tr-default">
             <td>Default Value</td>
             <td>
               <!-- String/integer/double default -->
@@ -258,14 +278,14 @@
                   v-if="fieldConfig.format !== 'select'"
                   v-model="fieldConfig.default"
                   @input="onDefaultInput"
-                  id="sodar-ss-vue-column-input-default"
+                  id="sodar-ss-col-input-default"
                   :class="formClasses.default">
               </b-input>
               <!-- Selection default -->
               <b-select
                   v-else
                   v-model="fieldConfig.default"
-                  id="sodar-ss-vue-column-select-default"
+                  id="sodar-ss-col-select-default"
                   @change="onDefaultChange"
                   :disabled="!valueOptions">
                 <option :value="null">-</option>
@@ -282,14 +302,14 @@
             <td>Default Fill</td>
             <td>
               <span
-                  class="sodar-ss-vue-column-wrapper"
-                  id="sodar-ss-vue-column-wrapper-default">
+                  class="sodar-ss-col-wrapper"
+                  id="sodar-ss-col-wrapper-default">
                 <b-checkbox
                     plain
                     v-model="defaultFill"
                     :disabled="!defaultFillEnable"
                     title="Fill empty column values with default value on update"
-                    id="sodar-ss-vue-column-check-default"
+                    id="sodar-ss-col-check-default"
                     v-b-tooltip.right.hover>
                 </b-checkbox>
               </span>
@@ -317,7 +337,8 @@
           -->
           <!-- Unit -->
           <tr v-if="unitEnabled &&
-                    ['integer', 'double'].includes(fieldConfig.format)">
+                    ['integer', 'double'].includes(fieldConfig.format)"
+              id="sodar-ss-col-tr-unit">
             <td class="align-top pt-3">
               Unit
               <i class="fa fa-info-circle text-info"
@@ -333,7 +354,8 @@
           </tr>
           <!-- Default unit -->
           <tr v-if="unitEnabled &&
-                    ['integer', 'double'].includes(fieldConfig.format)">
+                    ['integer', 'double'].includes(fieldConfig.format)"
+              id="sodar-ss-col-tr-unit-default">
             <td>Default Unit</td>
             <td>
               <b-select
@@ -355,7 +377,7 @@
       <table
           v-if="colType === 'ONTOLOGY'"
           class="table sodar-card-table mt-3"
-          id="sodar-ss-vue-col-ontology-table">
+          id="sodar-ss-col-post-ontology">
         <thead>
           <tr>
             <th colspan="2">
@@ -370,12 +392,14 @@
         </thead>
         <tbody>
           <tr v-for="(ontology, oIdx) in fieldConfig.ontologies"
-              :key="oIdx">
-            <td>{{ ontology }}</td>
+              :key="oIdx"
+              class="sodar-ss-col-tr-ontology-enabled">
+            <td class="sodar-ss-col-td-ontology-name">{{ ontology }}</td>
             <td class="text-right">
               <b-button
                   variant="primary"
-                  class="sodar-list-btn sodar-ss-vue-row-btn mr-1"
+                  class="sodar-list-btn sodar-ss-vue-row-btn
+                         sodar-ss-btn-ontology-up  mr-1"
                   title="Move ontology backwards in list"
                   @click="onOntologyMove(oIdx, true)"
                   :disabled="!enableOntologyMove(oIdx, true)"
@@ -384,7 +408,8 @@
               </b-button>
               <b-button
                   variant="primary"
-                  class="sodar-list-btn sodar-ss-vue-row-btn mr-1"
+                  class="sodar-list-btn sodar-ss-vue-row-btn
+                         sodar-ss-btn-ontology-down mr-1"
                   title="Move ontology forward in list"
                   @click="onOntologyMove(oIdx, false)"
                   :disabled="!enableOntologyMove(oIdx, false)"
@@ -393,7 +418,8 @@
               </b-button>
               <b-button
                   variant="danger"
-                  class="sodar-list-btn sodar-ss-vue-row-btn"
+                  class="sodar-list-btn sodar-ss-vue-row-btn
+                         sodar-ss-btn-ontology-delete"
                   title="Delete ontology"
                   @click="onOntologyDelete(ontology, oIdx)"
                   :disabled="specialOntologyCol"
@@ -406,7 +432,7 @@
             <td>
               <b-form-select
                   v-model="insertOntology"
-                  id="sodar-ss-vue-col-ontology-select-add"
+                  id="sodar-ss-col-ontology-select-insert"
                   :disabled="selectOntologies.length === 0"
                   :select-size="1">
                 <b-form-select-option
@@ -426,6 +452,7 @@
               <b-button
                   variant="primary"
                   class="sodar-list-btn sodar-ss-vue-row-btn"
+                  id="sodar-ss-col-ontology-btn-insert"
                   title="Insert ontology"
                   @click="onOntologyInsert"
                   :disabled="!insertOntology"
@@ -450,14 +477,18 @@
     <div>
       <b-button-group
           class="pull-right"
-          id="sodar-ss-vue-col-btn-group">
-        <b-button variant="secondary" @click="hideModal(false)">
+          id="sodar-ss-col-btn-group">
+        <b-button
+            variant="secondary"
+            id="sodar-ss-col-btn-cancel"
+            @click="hideModal(false)">
           <i class="fa fa-times"></i> Cancel
         </b-button>
         <b-button
             variant="primary"
-            @click="hideModal(true)"
-            ref="updateBtn">
+            id="sodar-ss-col-btn-update"
+            ref="updateBtn"
+            @click="hideModal(true)">
           <i :class="updateBtnClasses"></i> Update
         </b-button>
       </b-button-group>
@@ -470,6 +501,7 @@ import NotifyBadge from '../NotifyBadge.vue'
 const integerRegex = /^(([1-9][0-9]*)|([0]?))$/
 const doubleRegex = /^-?[0-9]+\.[0-9]+?$/
 const invalidClasses = 'text-danger'
+const numFormats = ['integer', 'double']
 const specialOntologyCols = [
   'hpo terms',
   'omim disease',
@@ -544,12 +576,12 @@ export default {
     onDefaultChange () {
       this.toggleDefaultFill()
     },
-    onPasteInput (val) {
+    onPasteInput () {
       let pasteData
       let pasteValid = true
 
       try {
-        pasteData = JSON.parse(val)
+        pasteData = JSON.parse(this.pasteData)
       } catch (error) {
         this.$refs.notifyBadge.show('Invalid JSON', 'danger', 1000)
         pasteValid = false
@@ -566,7 +598,6 @@ export default {
           'format', 'editable', 'regex', 'options', 'range', 'default',
           'unit', 'unit_default'
         ]
-
         // Copy data from pasted content
         for (const i in copyableKeys) {
           const k = copyableKeys[i]
@@ -700,14 +731,19 @@ export default {
         }
       }
 
-      // Default
-      if (!inputParam || inputParam === 'default') {
+      // Default (also validate for range input)
+      if (!inputParam || ['default', 'range'].includes(inputParam)) {
         const valueRegex = this.getRegex()
         if ('default' in this.fieldConfig &&
-            this.fieldConfig.default.length > 0 &&
-            valueRegex &&
-            this.inputValid.regex) {
-          if (valueRegex.test(this.fieldConfig.default)) {
+            this.fieldConfig.default.length > 0) {
+          const df = parseFloat(this.fieldConfig.default)
+          if ((!valueRegex || (
+            this.inputValid.regex &&
+            valueRegex.test(this.fieldConfig.default))) && (
+            !numFormats.includes(this.fieldConfig.format) || (
+              df >= parseFloat(this.fieldConfig.range[0]) &&
+              df <= parseFloat(this.fieldConfig.range[1])
+            ))) {
             this.inputValid.default = true
             this.formClasses.default = ''
             this.defaultFillEnable = true
@@ -716,14 +752,10 @@ export default {
             this.formClasses.default = invalidClasses
             this.defaultFillEnable = false
           }
-        } else if (this.fieldConfig.default.length === 0) {
-          this.inputValid.default = true
-          this.formClasses.default = ''
-          this.defaultFillEnable = false
         } else {
           this.inputValid.default = true
           this.formClasses.default = ''
-          this.defaultFillEnable = true
+          this.defaultFillEnable = this.fieldConfig.default.length !== 0
         }
       }
 
@@ -794,6 +826,19 @@ export default {
         ((idx > 0 && up) ||
         (idx !== this.fieldConfig.ontologies.length - 1 && !up)))
     },
+    /* Data updating -------------------------------------------------------- */
+    postUpdate (upData) {
+      return fetch('/samplesheets/ajax/manage/' + this.projectUuid, {
+        method: 'POST',
+        body: JSON.stringify(upData),
+        credentials: 'same-origin',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          'X-CSRFToken': this.app.sodarContext.csrf_token
+        }
+      })
+    },
     // Update column definition for the field in one grid by UUID
     updateColDefs (uuid, assayMode) {
       const gridOptions = this.app.getGridOptionsByUuid(uuid)
@@ -850,13 +895,8 @@ export default {
             'unit' in this.fieldConfig &&
             this.fieldConfig.unit) {
           this.colType = 'UNIT'
-        } else {
-          this.colType = 'NUMERIC'
-        }
-      } else if (!this.colType) {
-        this.colType = null
-      }
-
+        } else this.colType = 'NUMERIC'
+      } else if (!this.colType) this.colType = null
       // console.log('colType: ' + this.ogColType + ' -> ' + this.colType) // DEBUG
 
       // Update column definitions in all tables
@@ -911,9 +951,7 @@ export default {
             if (removeUnit && cell.unit && cell.unit.length > 0) {
               if (typeof cell.unit === 'object' && 'name' in cell.unit) {
                 cell.unit.name = null
-              } else {
-                cell.unit = null
-              }
+              } else cell.unit = null
               modified = true
             }
 
@@ -960,17 +998,23 @@ export default {
       this.app.setDataUpdated(true)
     },
     /* Modal showing/hiding ------------------------------------------------- */
-    showModal (data, col) {
-      this.fieldDisplayName = data.fieldDisplayName
-      this.fieldConfig = data.fieldConfig
-      this.newConfig = data.newConfig
-      this.assayUuid = data.assayUuid
-      this.configNodeIdx = data.configNodeIdx
-      this.configFieldIdx = data.configFieldIdx
-      this.col = col
-      this.colType = data.colType
+    showModal (params) {
+      this.col = params.col
+
+      // Temp debug stuff for testing
+      // console.log('colId/field=' + this.col.colDef.field) // DEBUG
+      // params.col = null // DEBUG
+      // console.log(JSON.stringify(params)) // DEBUG
+
+      this.fieldDisplayName = params.fieldDisplayName
+      this.fieldConfig = params.fieldConfig
+      this.newConfig = params.newConfig
+      this.assayUuid = params.assayUuid
+      this.configNodeIdx = params.configNodeIdx
+      this.configFieldIdx = params.configFieldIdx
+      this.colType = params.colType
       this.headerInfo = this.col.colDef.cellEditorParams.headerInfo
-      this.ogColType = data.colType // Save original colType
+      this.ogColType = params.colType // Save original colType
       const gridUuid = !this.assayUuid ? this.studyUuid : this.assayUuid
       this.gridOptions = this.app.getGridOptionsByUuid(gridUuid)
       this.updateBtnClasses = 'fa fa-fw fa-check'
@@ -1103,19 +1147,9 @@ export default {
             }
           ]
         }
-        const postUpdate = async () => {
-          const data = await fetch('/samplesheets/ajax/manage/' + this.projectUuid, {
-            method: 'POST',
-            body: JSON.stringify(upData),
-            credentials: 'same-origin',
-            headers: {
-              Accept: 'application/json',
-              'Content-Type': 'application/json',
-              'X-CSRFToken': this.app.sodarContext.csrf_token
-            }
-          })
+        const doUpdate = async () => {
+          const data = await this.postUpdate(upData)
           const updateData = await data.json()
-
           if (updateData.message === 'ok') {
             this.handleUpdate() // Handle successful update here
             this.app.showNotification('Column Updated', 'success', 1000)
@@ -1124,10 +1158,7 @@ export default {
             this.app.showNotification('Update Failed', 'danger', 2000)
           }
         }
-
-        try {
-          postUpdate()
-        } catch (error) {
+        try { doUpdate() } catch (error) {
           console.log('Update error: ' + error.message)
         }
       }
@@ -1138,43 +1169,43 @@ export default {
 </script>
 
 <style scoped>
-div.sodar-ss-vue-col-config-content {
+div#sodar-ss-col-content {
   min-height: 620px !important;
 }
 
-#sodar-ss-vue-col-input-paste {
+#sodar-ss-col-input-paste {
   width: 70px;
 }
 
-table#sodar-ss-vue-col-config-table tbody td:first-child {
+table#sodar-ss-col-table tbody td:first-child {
   width: 100px;
   max-width: 250px;
   vertical-align: middle;
   white-space: nowrap;
 }
 
-#sodar-ss-vue-col-btn-group {
+#sodar-ss-col-btn-group {
   padding-right: 12px;
 }
 
-.sodar-ss-vue-column-wrapper .form-check {
+.sodar-ss-column-wrapper .form-check {
   width: 20px !important;
 }
 
-td.sodar-ss-vue-td-info {
+td.sodar-ss-td-info {
   white-space: normal !important;
 }
 
-td#sodar-ss-vue-td-allow-list div.form-check {
+td#sodar-ss-col-td-allow-list div.form-check {
   width: 15px !important;
 }
 
-table#sodar-ss-vue-col-ontology-table tbody td:nth-child(2) {
+table#sodar-ss-col-post-ontology tbody td:nth-child(2) {
   white-space: nowrap !important;
   width: 120px;
 }
 
-table#sodar-ss-vue-col-ontology-table tbody tr td {
+table#sodar-ss-col-post-ontology tbody tr td {
   vertical-align: middle;
   height: 63px;
 }

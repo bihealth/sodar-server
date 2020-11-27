@@ -79,6 +79,7 @@ export default Vue.extend({
       }
 
       this.modalComponent.showModal({
+        col: this.params.column,
         fieldConfig: fieldConfig,
         newConfig: newConfig,
         colType: this.params.colType,
@@ -86,7 +87,7 @@ export default Vue.extend({
         assayUuid: this.params.assayUuid,
         configNodeIdx: this.params.configNodeIdx,
         configFieldIdx: this.params.configFieldIdx
-      }, this.params.column)
+      })
     },
     isEnabled () {
       return !(this.app &&

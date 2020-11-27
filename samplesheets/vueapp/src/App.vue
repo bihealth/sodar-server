@@ -39,152 +39,27 @@
 
         <!-- Study -->
         <a class="sodar-ss-anchor" :id="currentStudyUuid"></a>
-        <div class="row mb-4" id="sodar-ss-section-study">
-          <h4 class="font-weight-bold mb-0 text-info">
-            <i class="fa fa-fw fa-list-alt"></i>
-            Study: {{ sodarContext.studies[currentStudyUuid].display_name }}
-            <i v-if="sodarContext.perms.is_superuser &&
-                     sodarContext.studies[currentStudyUuid].plugin"
-               class="fa fa-puzzle-piece text-info ml-1"
-               :title="sodarContext.studies[currentStudyUuid].plugin"
-               v-b-tooltip.hover>
-            </i>
-          </h4>
-          <div class="ml-auto align-middle">
-            <span class="mr-2">
-              <!-- iRODS collection status / stats badge -->
-              <span v-if="!editMode" class="badge-group text-nowrap">
-                <span class="badge badge-pill badge-secondary">iRODS</span>
-                    <irods-stats-badge
-                        v-if="sodarContext.irods_status"
-                        ref="studyStatsBadge"
-                        :project-uuid="projectUuid"
-                        :irods-status="sodarContext.irods_status"
-                        :irods-path="sodarContext.studies[currentStudyUuid].irods_path">
-                    </irods-stats-badge>
-                <span v-if="!sodarContext.irods_status"
-                      class="badge badge-pill badge-danger">
-                  Not Created
-                </span>
-              </span>
-              <!-- Configuration -->
-              <span class="badge-group">
-                <span class="badge badge-pill badge-secondary">Config</span>
-                <span v-if="sodarContext.configuration"
-                      class="badge badge-pill badge-info">
-                  {{ sodarContext.configuration }}
-                </span>
-                <span v-else class="badge badge-pill badge-danger">
-                  Unknown
-                </span>
-              </span>
-            </span>
-            <irods-buttons
-                :irods-status="sodarContext.irods_status"
-                :irods-backend-enabled="sodarContext.irods_backend_enabled"
-                :irods-webdav-url="sodarContext.irods_webdav_url"
-                :irods-path="sodarContext.studies[currentStudyUuid].irods_path"
-                :show-file-list="false"
-                :edit-mode="editMode"
-                :notify-callback="showNotification">
-            </irods-buttons>
-          </div>
-        </div>
+        <sheet-table-header
+            :params="getTableHeaderParams(currentStudyUuid, false)">
+        </sheet-table-header>
 
-        <!-- Study Card -->
-        <div class="card sodar-ss-data-card sodar-ss-data-card-study">
-          <div class="card-header">
-            <h4>Study Data
-              <b-input-group class="sodar-header-input-group pull-right">
-                <b-input-group-prepend>
-                  <b-button
-                      variant="secondary"
-                      v-b-tooltip.hover
-                      title="Toggle Study Column Visibility"
-                      @click="onColumnToggle(currentStudyUuid, false)">
-                    <i class="fa fa-eye"></i>
-                  </b-button>
-                  <b-button
-                      variant="secondary"
-                      v-b-tooltip.hover
-                      title="Download table as Excel file (Note: not ISAtab compatible)"
-                      :href="'export/excel/study/' + currentStudyUuid">
-                    <i class="fa fa-file-excel-o"></i>
-                  </b-button>
-                </b-input-group-prepend>
-                <b-form-input
-                    class="sodar-ss-data-filter"
-                    type="text"
-                    placeholder="Filter"
-                    id="sodar-ss-data-filter-study"
-                    @keyup="onFilterChange" />
-              </b-input-group>
-              <b-button
-                  v-if="editMode"
-                  variant="primary"
-                  class="sodar-header-button mr-2 pull-right"
-                  :disabled="unsavedRow !== null"
-                  @click="handleRowInsert(currentStudyUuid, false)">
-                <i class="fa fa-plus"></i> Insert Row
-              </b-button>
-            </h4>
-          </div>
-          <div class="card-body p-0">
-            <ag-grid-drag-select
-                :app="getApp()"
-                :uuid="currentStudyUuid">
-              <template>
-                <ag-grid-vue
-                    class="ag-theme-bootstrap"
-                    id="sodar-ss-grid-study"
-                    ref="studyGrid"
-                    :style="getGridStyle()"
-                    :columnDefs="columnDefs.study"
-                    :rowData="rowData.study"
-                    :gridOptions="gridOptions.study"
-                    :frameworkComponents="frameworkComponents">
-                </ag-grid-vue>
-              </template>
-            </ag-grid-drag-select>
-          </div>
-        </div>
+        <sheet-table
+            :app="getApp()"
+            :assay-mode="false"
+            :column-defs="columnDefs.study"
+            :grid-options="gridOptions.study"
+            :grid-uuid="currentStudyUuid"
+            :row-data="rowData.study">
+        </sheet-table>
 
         <!-- Assays -->
         <span v-for="(assayInfo, assayUuid, index) in
                      sodarContext.studies[currentStudyUuid].assays"
               :key="index">
           <a class="sodar-ss-anchor" :id="assayUuid"></a>
-          <div class="row mb-4" :id="'sodar-ss-section-assay-' + assayUuid">
-            <h4 class="font-weight-bold mb-0 text-danger">
-              <i class="fa fa-fw fa-table"></i>
-              Assay: {{ assayInfo.display_name }}
-              <i v-if="sodarContext.perms.edit_sheet && assayInfo.plugin"
-                 class="fa fa-puzzle-piece text-danger ml-1"
-                 :title="assayInfo.plugin"
-                 v-b-tooltip.hover>
-              </i>
-              <i v-else-if="sodarContext.perms.edit_sheet && !assayInfo.plugin"
-                 class="fa fa-puzzle-piece text-muted ml-1"
-                 title="No assay plugin found: displaying default iRODS links"
-                 v-b-tooltip.hover>
-              </i>
-            </h4>
-            <div class="ml-auto">
-              <irods-buttons
-                  v-if="sodarContext &&
-                        gridsLoaded &&
-                        !renderError &&
-                        !activeSubPage"
-                  :irods-status="sodarContext.irods_status"
-                  :irods-backend-enabled="sodarContext.irods_backend_enabled"
-                  :irods-webdav-url="sodarContext.irods_webdav_url"
-                  :irodsPath="assayInfo.irods_path"
-                  :showFileList="false"
-                  :edit-mode="editMode"
-                  :notify-callback="showNotification">
-              </irods-buttons>
-            </div>
-          </div>
+          <sheet-table-header
+              :params="getTableHeaderParams(assayUuid, true)">
+          </sheet-table-header>
 
           <assay-shortcut-card
               v-if="!editMode &&
@@ -197,63 +72,14 @@
               :notify-callback="showNotification">
           </assay-shortcut-card>
 
-          <!-- Assay Card -->
-          <div class="card sodar-ss-data-card sodar-ss-data-card-assay">
-            <div class="card-header">
-              <h4>
-                Assay Data
-                <b-input-group class="sodar-header-input-group pull-right">
-                  <b-input-group-prepend>
-                    <b-button
-                        variant="secondary"
-                        v-b-tooltip.hover
-                        title="Toggle Assay Column Visibility"
-                        @click="onColumnToggle(assayUuid, true)">
-                      <i class="fa fa-eye"></i>
-                    </b-button>
-                    <b-button
-                        variant="secondary"
-                        v-b-tooltip.hover
-                        title="Download table as Excel file (Note: not ISAtab compatible)"
-                        :href="'export/excel/assay/' + assayUuid">
-                      <i class="fa fa-file-excel-o"></i>
-                    </b-button>
-                  </b-input-group-prepend>
-                  <b-form-input
-                      class="sodar-ss-data-filter"
-                      type="text"
-                      placeholder="Filter"
-                      :id="'sodar-ss-data-filter-assay-' + assayUuid"
-                      :assay-uuid="assayUuid"
-                      @keyup="onFilterChange" />
-                </b-input-group>
-                <b-button
-                  v-if="editMode"
-                  variant="primary"
-                  class="sodar-header-button mr-2 pull-right"
-                  :disabled="unsavedRow !== null"
-                  @click="handleRowInsert(assayUuid, true)">
-                <i class="fa fa-plus"></i> Insert Row
-              </b-button>
-              </h4>
-            </div>
-            <div class="card-body p-0">
-              <ag-grid-drag-select
-                  :app="getApp()"
-                  :uuid="assayUuid">
-                <ag-grid-vue
-                    class="ag-theme-bootstrap"
-                    :id="'sodar-ss-grid-assay-' + assayUuid"
-                    :ref="'assayGrid' + assayUuid"
-                    :style="getGridStyle()"
-                    :columnDefs="columnDefs.assays[assayUuid]"
-                    :rowData="rowData.assays[assayUuid]"
-                    :gridOptions="gridOptions.assays[assayUuid]"
-                    :frameworkComponents="frameworkComponents">
-                </ag-grid-vue>
-              </ag-grid-drag-select>
-            </div>
-          </div>
+          <sheet-table
+            :app="getApp()"
+            :assay-mode="true"
+            :column-defs="columnDefs.assays[assayUuid]"
+            :grid-options="gridOptions.assays[assayUuid]"
+            :grid-uuid="assayUuid"
+            :row-data="rowData.assays[assayUuid]">
+          </sheet-table>
         </span>
 
       </div>
@@ -358,9 +184,10 @@
 
 <script>
 import PageHeader from './components/PageHeader.vue'
+import SheetTableHeader from './components/SheetTableHeader.vue'
+import SheetTable from './components/SheetTable.vue'
 import Overview from './components/Overview.vue'
 import ParserWarnings from './components/ParserWarnings.vue'
-import IrodsButtons from './components/IrodsButtons.vue'
 import IrodsDirModal from './components/modals/IrodsDirModal.vue'
 import StudyShortcutModal from './components/modals/StudyShortcutModal.vue'
 import ColumnToggleModal from './components/modals/ColumnToggleModal.vue'
@@ -368,18 +195,15 @@ import ColumnConfigModal from './components/modals/ColumnConfigModal.vue'
 import EditorHelpModal from './components/modals/EditorHelpModal.vue'
 import WinExportModal from './components/modals/WinExportModal.vue'
 import OntologyEditModal from './components/modals/OntologyEditModal'
-import IrodsStatsBadge from './components/IrodsStatsBadge.vue'
 import AssayShortcutCard from './components/AssayShortcutCard.vue'
-import { AgGridVue } from 'ag-grid-vue'
-import DataCellRenderer from './components/renderers/DataCellRenderer.vue'
-import IrodsButtonsRenderer from './components/renderers/IrodsButtonsRenderer.vue'
-import ShortcutButtonsRenderer from './components/renderers/ShortcutButtonsRenderer.vue'
-import FieldHeaderEditRenderer from './components/renderers/FieldHeaderEditRenderer'
-import RowEditRenderer from './components/renderers/RowEditRenderer.vue'
 import DataCellEditor from './components/editors/DataCellEditor.vue'
 import ObjectSelectEditor from './components/editors/ObjectSelectEditor.vue'
 import OntologyEditor from './components/editors/OntologyEditor.vue'
-import AgGridDragSelect from './components/AgGridDragSelect.vue'
+import {
+  initGridOptions,
+  buildColDef,
+  buildRowData
+} from './utils/gridUtils.js'
 
 const windowsPlatforms = ['Win32', 'Win64', 'Windows', 'WinCE']
 
@@ -389,8 +213,6 @@ export default {
     return {
       projectUuid: null,
       sodarContext: null,
-      // Initial grid options
-      // NOTE: These will NOT be updated, use getGridOptionsByUuid() instead
       gridOptions: {
         study: null,
         assays: {}
@@ -440,9 +262,10 @@ export default {
   },
   components: {
     PageHeader,
+    SheetTableHeader,
+    SheetTable,
     Overview,
     ParserWarnings,
-    IrodsButtons,
     IrodsDirModal,
     StudyShortcutModal,
     ColumnToggleModal,
@@ -450,10 +273,7 @@ export default {
     EditorHelpModal,
     WinExportModal,
     OntologyEditModal,
-    IrodsStatsBadge,
-    AssayShortcutCard,
-    AgGridVue,
-    AgGridDragSelect
+    AssayShortcutCard
   },
   created () {
     if (windowsPlatforms.includes(window.navigator.platform)) {
@@ -476,594 +296,21 @@ export default {
       }
     },
 
-    onFilterChange (event) {
-      let gridApi
-      if (event.currentTarget.id === 'sodar-ss-data-filter-study') {
-        gridApi = this.getGridOptionsByUuid(this.currentStudyUuid).api
-      } else if (event.currentTarget.id.indexOf('sodar-ss-data-filter-assay') !== -1) {
-        const assayUuid = event.currentTarget.getAttribute('assay-uuid')
-        gridApi = this.getGridOptionsByUuid(assayUuid).api
-      }
-      if (gridApi) {
-        gridApi.setQuickFilter(event.currentTarget.value)
-      }
-    },
-
-    onColumnToggle (uuid, assayMode) {
-      this.$refs.columnToggleModalRef.showModal(uuid, assayMode)
-    },
-
     /* Grid Helpers --------------------------------------------------------- */
 
-    // Helper to get flat value for comparator
-    getFlatValue (value) {
-      if (Array.isArray(value) && value.length > 0) {
-        if (typeof value[0] === 'object' && 'name' in value[0]) {
-          return value.map(d => d.name).join(';')
-        } else return value.join(';')
-      } else {
-        return value
+    getTableHeaderParams (gridUuid, assayMode) {
+      return {
+        assayMode: assayMode,
+        editMode: this.editMode,
+        gridUuid: gridUuid,
+        projectUuid: this.projectUuid,
+        sodarContext: this.sodarContext,
+        studyUuid: this.currentStudyUuid,
+        showNotificationCb: this.showNotification
       }
-    },
-
-    // Custom comparator for data cells
-    dataCellCompare (dataA, dataB) {
-      let valueA = dataA.value
-      let valueB = dataB.value
-      if (['UNIT', 'NUMERIC'].includes(dataA.colType)) {
-        if (!isNaN(parseFloat(valueA)) && !isNaN(parseFloat(valueB))) {
-          return parseFloat(valueA) - parseFloat(valueB)
-        }
-      } else {
-        valueA = this.getFlatValue(valueA)
-        valueB = this.getFlatValue(valueB)
-      }
-      return valueA.localeCompare(valueB)
-    },
-
-    // Custom filter value for data cells (fix for #686)
-    dataCellFilterValue (params) {
-      return this.getFlatValue(params.data[params.column.colId].value)
     },
 
     /* Grid Setup ----------------------------------------------------------- */
-
-    initGridOptions (editMode) {
-      return {
-        // debug: true,
-        pagination: false,
-        animateRows: false,
-        rowSelection: 'single',
-        suppressMovableColumns: true,
-        suppressColumnMoveAnimation: true,
-        singleClickEdit: false,
-        headerHeight: 38,
-        rowHeight: 38,
-        suppressColumnVirtualisation: false,
-        context: {
-          componentParent: this
-        },
-        defaultColDef: {
-          editable: false,
-          resizable: true,
-          sortable: !editMode
-        }
-      }
-    },
-
-    getGridStyle () {
-      return 'height: ' + this.sodarContext.table_height + 'px;'
-    },
-
-    buildColDef (table, assayMode, uuid, editMode) {
-      // Default columns
-      const colDef = []
-      let editFieldConfig
-      let displayFieldConfig
-      let fieldVisible
-
-      const rowHeaderGroup = {
-        headerName: 'Row',
-        headerClass: ['bg-secondary', 'text-white'],
-        suppressSizeToFit: true,
-        suppressAutoSize: true,
-        children: [
-          {
-            headerName: '#',
-            field: 'rowNum',
-            editable: false,
-            headerClass: ['sodar-ss-data-header'],
-            cellClass: [
-              'text-right', 'text-muted',
-              'sodar-ss-data-unselectable',
-              'sodar-ss-data-row-cell',
-              'sodar-ss-data-rownum-cell'
-            ],
-            suppressSizeToFit: true,
-            suppressAutoSize: true,
-            pinned: 'left',
-            unselectable: true,
-            cellRendererFramework: null,
-            minWidth: 65,
-            maxWidth: 100,
-            width: 65
-          }
-        ]
-      }
-
-      // Editing: gray out row column to avoid confusion
-      if (this.editMode) {
-        rowHeaderGroup.children[0].cellClass.push('bg-light')
-      }
-      colDef.push(rowHeaderGroup)
-
-      // Sample sheet columns
-      const topHeaderLength = table.top_header.length
-      let headerIdx = 0
-      let j = headerIdx
-      let studySection = true
-
-      // Iterate through top header
-      for (let i = 0; i < topHeaderLength; i++) {
-        const topHeader = table.top_header[i]
-        if (i === 0) this.sourceColSpan = topHeader.colspan // Store source span
-
-        // Set up header group
-        let headerGroup = {
-          headerName: topHeader.value,
-          headerClass: ['text-white', 'bg-' + topHeader.colour],
-          children: []
-        }
-        if (editMode) {
-          headerGroup.cellRendererParams = { headers: topHeader.headers }
-        }
-
-        let configFieldIdx = 0 // For config management
-
-        // Iterate through field headers
-        while (j < headerIdx + topHeader.colspan) {
-          const fieldHeader = table.field_header[j]
-
-          // Define special column properties
-          const maxValueLen = fieldHeader.max_value_len
-          const colType = fieldHeader.col_type
-
-          let colAlign
-          if (['UNIT', 'NUMERIC'].includes(colType)) {
-            colAlign = 'right'
-          } else {
-            colAlign = 'left'
-          }
-
-          let minW = this.sodarContext.min_col_width
-          const maxW = this.sodarContext.max_col_width
-          let calcW = maxValueLen * 10 + 25 // Default
-          let colWidth
-          let fieldEditable = false
-
-          // External links are a special case
-          if (colType === 'EXTERNAL_LINKS') {
-            minW = 150
-            calcW = maxValueLen * 120
-          }
-
-          // Set the final column width
-          if (j < table.col_last_vis) {
-            colWidth = calcW < minW ? minW : (calcW > maxW ? maxW : calcW)
-          } else { // Last visible column is a special case
-            colWidth = Math.max(calcW, minW)
-          }
-
-          // Get studyDisplayConfig
-          if (this.studyDisplayConfig) {
-            let displayNode
-
-            if (!assayMode) {
-              displayNode = this.studyDisplayConfig.nodes[i]
-            } else {
-              displayNode = this.studyDisplayConfig.assays[uuid].nodes[i]
-            }
-
-            if (displayNode) {
-              for (let k = 0; k < displayNode.fields.length; k++) {
-                const f = displayNode.fields[k]
-                if (f.name === fieldHeader.name) {
-                  displayFieldConfig = f
-                  break
-                }
-              }
-            }
-          }
-
-          if (displayFieldConfig) { // Visibility from config
-            fieldVisible = displayFieldConfig.visible
-          } else if (assayMode &&
-                studySection &&
-                fieldHeader.value !== 'Name') { // Hide study data in assay
-            fieldVisible = false
-          } else { // Hide if empty and not editing
-            fieldVisible = !!(fieldEditable || table.col_values[j])
-          }
-
-          // Get editFieldConfig if editing
-          if (editMode && this.editStudyConfig) {
-            editFieldConfig = null
-            let editNode = null
-            const studyNodeLen = this.editStudyConfig.nodes.length
-
-            if (!assayMode || i < studyNodeLen) {
-              editNode = this.editStudyConfig.nodes[i]
-            } else {
-              editNode = this.editStudyConfig.assays[uuid].nodes[i - studyNodeLen]
-            }
-
-            if (editNode) {
-              for (let k = 0; k < editNode.fields.length; k++) {
-                const f = editNode.fields[k]
-
-                if (f.name === fieldHeader.name &&
-                    (['Name', 'Protocol'].includes(f.name) ||
-                    f.type === fieldHeader.type)) {
-                  editFieldConfig = f
-                  break
-                }
-              }
-            }
-          }
-
-          if (editFieldConfig && 'editable' in editFieldConfig) {
-            fieldEditable = editFieldConfig.editable
-          }
-
-          // Create data header
-          const header = {
-            headerName: fieldHeader.value,
-            field: 'col' + j.toString(),
-            width: colWidth,
-            minWidth: minW,
-            hide: !fieldVisible,
-            headerClass: ['sodar-ss-data-header'],
-            cellRendererFramework: DataCellRenderer,
-            cellRendererParams: {
-              app: this,
-              colType: colType,
-              fieldEditable: fieldEditable // Needed here to update cellClass
-            },
-            comparator: this.dataCellCompare,
-            filterValueGetter: this.dataCellFilterValue
-          }
-
-          // Cell classes
-          if (!editMode) {
-            header.cellClass = ['sodar-ss-data-cell', 'text-' + colAlign]
-          } else {
-            header.cellClass = function (params) {
-              const colAlign = ['UNIT', 'NUMERIC'].includes(
-                params.colDef.cellRendererParams.colType) ? 'right' : 'left'
-              const cellClass = ['sodar-ss-data-cell', 'text-' + colAlign]
-
-              // Set extra classes if non-editable
-              if (('editable' in params.value && !params.value.editable) ||
-                  (!('editable' in params.value) &&
-                  !params.colDef.cellRendererParams.fieldEditable)) {
-                if ('newInit' in params.value && params.value.newInit) {
-                  cellClass.push('sodar-ss-data-forbidden')
-                } else cellClass.push('bg-light')
-                cellClass.push('text-muted')
-              }
-              return cellClass
-            }
-          }
-
-          // Make source name column pinned, disable hover
-          // HACK: also create new header group to avoid name duplication
-          if (j === 0) {
-            header.pinned = 'left'
-            header.cellRendererParams.enableHover = false
-            headerGroup.children.push(header)
-            colDef.push(headerGroup)
-            headerGroup = {
-              headerName: '',
-              headerClass: ['bg-' + topHeader.colour],
-              children: []
-            }
-          }
-
-          // Editing: set up field and its header for editing
-          if (editMode) {
-            // Store sample column ID and index
-            if (!assayMode &&
-                topHeader.value === 'Sample' &&
-                header.headerName === 'Name') {
-              this.sampleColId = header.field
-              this.sampleIdx = j + 1 // +1 for row number column
-            }
-
-            // Set header renderer for fields we can manage
-            if (this.sodarContext.perms.edit_sheet) {
-              let configAssayUuid = assayMode ? uuid : null
-              let configNodeIdx = i
-
-              if (assayMode) {
-                // NOTE: -3 because of row/edit cols and split source column
-                const studyNodeLen = this.columnDefs.study.length - 3
-                if (configNodeIdx < studyNodeLen) {
-                  configAssayUuid = null
-                } else {
-                  configNodeIdx = i - studyNodeLen
-                }
-              }
-
-              header.headerComponentFramework = FieldHeaderEditRenderer
-              header.headerComponentParams = {
-                app: this.getApp(),
-                modalComponent: this.$refs.columnConfigModal,
-                colType: colType,
-                fieldConfig: editFieldConfig,
-                assayUuid: configAssayUuid,
-                configNodeIdx: configNodeIdx,
-                configFieldIdx: configFieldIdx,
-                editable: fieldEditable, // Add here to allow checking by cell
-                headerType: fieldHeader.type,
-                assayMode: assayMode // Needed for sample col in assay
-              }
-
-              header.width = header.width + 20 // Fit button in header
-              header.minWidth = header.minWidth + 20
-            }
-
-            // Set up field editing
-            if (editFieldConfig) {
-              // Allow overriding field editability cell-by-cell
-              header.editable = function (params) {
-                if (params.colDef.field in params.node.data &&
-                    'editable' in params.node.data[params.colDef.field]) {
-                  return params.node.data[params.colDef.field].editable
-                } else if ('headerComponentParams' in params.colDef) {
-                  return params.colDef.headerComponentParams.editable
-                } else return false
-              }
-
-              // Set up cell editor selector
-              header.cellEditorSelector = function (params) {
-                let editorName = 'dataCellEditor'
-                // TODO: Refactor so that default params are read from header
-                const editorParams = Object.assign(
-                  params.colDef.cellEditorParams
-                )
-                const editContext = editorParams.app.editContext
-
-                // If sample name in an assay or an object ref, return selector
-                // TODO: Simplify?
-                if (params.colDef.headerComponentParams.assayMode &&
-                    params.column.originalParent.colGroupDef.headerName === 'Sample' &&
-                    params.colDef.headerName === 'Name' &&
-                    'newRow' in params.value &&
-                    params.value.newRow) {
-                  editorName = 'objectSelectEditor'
-                  editorParams.selectOptions = editContext.samples
-                } else if (editorParams.headerInfo.header_type === 'protocol') {
-                  editorName = 'objectSelectEditor'
-                  editorParams.selectOptions = Object.assign(editContext.protocols)
-                } else if (colType === 'ONTOLOGY') {
-                  editorName = 'ontologyEditor'
-                  editorParams.sodarOntologies = editContext.sodar_ontologies
-                }
-
-                return { component: editorName, params: editorParams }
-              }
-
-              // Set default cellEditorParams (may be updated in the selector)
-              header.cellEditorParams = {
-                app: this.getApp(),
-                // Header information to be passed for calling server
-                headerInfo: {
-                  header_name: fieldHeader.name,
-                  header_type: fieldHeader.type,
-                  header_field: header.field, // For updating other cells
-                  obj_cls: fieldHeader.obj_cls
-                },
-                renderInfo: {
-                  align: colAlign,
-                  width: colWidth
-                },
-                editConfig: editFieldConfig, // Editor configuration
-                gridUuid: uuid, // TODO: Could get this from header params
-                sampleColId: this.sampleColId
-              }
-
-              // Add item type to generic material name
-              if (fieldHeader.obj_cls === 'GenericMaterial' &&
-                  fieldHeader.type === 'name') {
-                header.cellEditorParams.headerInfo.item_type = fieldHeader.item_type
-              }
-            }
-          }
-
-          if (j > 0) headerGroup.children.push(header)
-          j++
-          configFieldIdx += 1
-        }
-
-        headerIdx = j
-        colDef.push(headerGroup)
-        if (topHeader.value === 'Sample') studySection = false
-      }
-
-      // TODO: Reduce repetition in special column definitions
-      // Study shortcut column
-      if (!this.editMode &&
-          !assayMode && 'shortcuts' in table && table.shortcuts) {
-        const shortcutHeaderGroup = {
-          headerName: 'Links',
-          headerClass: [
-            'text-white',
-            'bg-secondary',
-            'sodar-ss-data-links-top'
-          ],
-          children: [
-            {
-              headerName: 'Study',
-              field: 'shortcutLinks',
-              editable: false,
-              headerClass: [
-                'sodar-ss-data-header',
-                'sodar-ss-data-links-header'
-              ],
-              cellClass: [
-                'sodar-ss-data-links-cell',
-                'sodar-ss-data-unselectable'
-              ],
-              suppressSizeToFit: true,
-              suppressAutoSize: true,
-              resizable: true,
-              sortable: false,
-              pinned: 'right',
-              unselectable: true,
-              width: 45 * Object.keys(table.shortcuts.schema).length,
-              minWidth: 90,
-              cellRendererFramework: ShortcutButtonsRenderer,
-              cellRendererParams: {
-                schema: table.shortcuts.schema,
-                modalComponent: this.$refs.studyShortcutModal
-              }
-            }
-          ]
-        }
-        colDef.push(shortcutHeaderGroup)
-      }
-
-      // Assay iRODS button column
-      if (!this.editMode && assayMode) {
-        const assayContext = this.sodarContext.studies[this.currentStudyUuid].assays[uuid]
-        if (this.sodarContext.irods_status && assayContext.display_row_links) {
-          const assayIrodsPath = assayContext.irods_path
-          const irodsHeaderGroup = {
-            headerName: 'iRODS',
-            headerClass: [
-              'text-white',
-              'bg-secondary',
-              'sodar-ss-data-links-top'
-            ],
-            children: [
-              {
-                headerName: 'Links',
-                field: 'irodsLinks',
-                editable: false,
-                headerClass: [
-                  'sodar-ss-data-header',
-                  'sodar-ss-data-links-header'
-                ],
-                cellClass: [
-                  'sodar-ss-data-links-cell',
-                  'sodar-ss-data-unselectable'
-                ],
-                suppressSizeToFit: true,
-                suppressAutoSize: true,
-                resizable: true,
-                sortable: false,
-                pinned: 'right',
-                unselectable: true,
-                cellRendererFramework: IrodsButtonsRenderer,
-                cellRendererParams: {
-                  app: this,
-                  irodsStatus: this.sodarContext.irods_status,
-                  irodsBackendEnabled: this.sodarContext.irods_backend_enabled,
-                  irodsWebdavUrl: this.sodarContext.irods_webdav_url,
-                  assayIrodsPath: assayIrodsPath,
-                  showFileList: true,
-                  modalComponent: this.$refs.dirModalRef
-                },
-                width: 152, // TODO: Attempt to calculate this somehow?
-                minWidth: 152
-              }
-            ]
-          }
-          colDef.push(irodsHeaderGroup)
-        }
-      }
-
-      // Row editing column
-      if (this.editMode) {
-        const rowEditGroup = {
-          headerName: 'Edit',
-          headerClass: [
-            'text-white',
-            'bg-secondary',
-            'sodar-ss-data-links-top'
-          ],
-          children: [
-            {
-              headerName: 'Row',
-              field: 'rowEdit',
-              editable: false,
-              headerClass: [
-                'sodar-ss-data-header',
-                'sodar-ss-data-links-header'
-              ],
-              cellClass: [
-                'sodar-ss-data-links-cell',
-                'sodar-ss-data-unselectable'
-              ],
-              suppressSizeToFit: true,
-              suppressAutoSize: true,
-              resizable: true,
-              sortable: false,
-              pinned: 'right',
-              unselectable: true,
-              cellRendererFramework: RowEditRenderer,
-              cellRendererParams: {
-                app: this,
-                gridUuid: uuid,
-                assayMode: assayMode,
-                sampleColId: this.sampleColId,
-                sampleIdx: this.sampleIdx
-              },
-              width: 80,
-              minWidth: 80
-            }
-          ]
-        }
-        colDef.push(rowEditGroup)
-      }
-
-      return colDef
-    },
-
-    buildRowData (table, assayMode) {
-      const rowData = []
-
-      // Iterate through rows
-      for (let i = 0; i < table.table_data.length; i++) {
-        const rowCells = table.table_data[i]
-        const row = { rowNum: i + 1 }
-        for (let j = 0; j < rowCells.length; j++) {
-          const cellVal = rowCells[j]
-          // Copy col_type info to each cell (comparator can't access colDef)
-          cellVal.colType = table.field_header[j].col_type
-          row['col' + j.toString()] = cellVal
-        }
-
-        // Add study shortcut field
-        if (!this.editMode &&
-            !assayMode &&
-            'shortcuts' in table &&
-            table.shortcuts) {
-          row.shortcutLinks = table.shortcuts.data[i]
-        }
-
-        // Add iRODS field
-        if (!this.editMode &&
-            this.sodarContext.irods_status &&
-            'irods_paths' in table &&
-            table.irods_paths.length > 0) {
-          row.irodsLinks = table.irods_paths[i]
-        }
-
-        rowData.push(row)
-      }
-      return rowData
-    },
 
     // Clear current grids
     clearGrids () {
@@ -1085,77 +332,115 @@ export default {
       this.unsavedRow = null
 
       // Set up current study
-      this.gridOptions.study = this.initGridOptions(editMode)
+      this.gridOptions.study = initGridOptions(this, editMode)
       this.setCurrentStudy(studyUuid)
       this.setPath()
 
       // Retrieve study and assay tables for current study
       // TODO: Add timeout/retrying
       let url = this.sodarContext.studies[studyUuid].table_url
-
-      if (editMode) {
-        url = url + '?edit=1'
-      }
+      if (editMode) url = url + '?edit=1'
 
       fetch(url, { credentials: 'same-origin' })
         .then(data => data.json())
-        .then(
-          data => {
-            if ('render_error' in data) {
-              this.renderError = data.render_error
-              this.gridsLoaded = false
-            } else {
-              // Editing: Get study config
-              if (editMode && 'study_config' in data) {
-                this.editStudyConfig = data.study_config
-              }
+        .then(data => { this.buildStudy(data) })
+    },
 
-              // Editing: Get edit context
-              if (editMode && 'edit_context' in data) {
-                this.editContext = data.edit_context
-              }
+    getColDefParams (tables, uuid, assayMode) {
+      const params = {
+        app: this,
+        assayMode: assayMode,
+        currentStudyUuid: this.currentStudyUuid,
+        editContext: this.editContext,
+        editMode: this.editMode,
+        editStudyConfig: this.editStudyConfig,
+        gridUuid: uuid,
+        sampleColId: this.sampleColId,
+        sampleIdx: this.sampleIdx,
+        sodarContext: this.sodarContext,
+        studyDisplayConfig: this.studyDisplayConfig,
+        studyNodeLen: null,
+        table: null
+      }
+      if (assayMode) {
+        params.studyNodeLen = this.columnDefs.study.length - 3
+        params.table = tables.assays[uuid]
+      } else params.table = tables.study
+      return params
+    },
 
-              // Get display config
-              this.studyDisplayConfig = data.display_config
+    buildStudy (data) {
+      if ('render_error' in data) {
+        this.renderError = data.render_error
+        this.gridsLoaded = false
+      } else {
+        // Editing: Get study config
+        if (this.editMode && 'study_config' in data) {
+          this.editStudyConfig = data.study_config
+        }
 
-              // Build study
-              this.columnDefs.study = this.buildColDef(
-                data.tables.study, false, studyUuid, editMode)
-              this.rowData.study = this.buildRowData(data.tables.study, false)
+        // Editing: Get edit context
+        if (this.editMode && 'edit_context' in data) {
+          this.editContext = data.edit_context
+        }
 
-              // Build assays
-              for (const assayUuid in data.tables.assays) {
-                this.gridOptions.assays[assayUuid] = this.initGridOptions(editMode)
-                this.columnDefs.assays[assayUuid] = this.buildColDef(
-                  data.tables.assays[assayUuid], true, assayUuid, editMode)
-                this.rowData.assays[assayUuid] = this.buildRowData(
-                  data.tables.assays[assayUuid], true)
+        // Get display config
+        this.studyDisplayConfig = data.display_config
 
-                // Get assay shortcuts
-                if ('shortcuts' in data.tables.assays[assayUuid]) {
-                  this.assayShortcuts[assayUuid] =
-                      data.tables.assays[assayUuid].shortcuts
-                }
-              }
+        // Store colspan
+        this.sourceColSpan = data.tables.study.top_header[0].colspan
 
-              this.editStudyData = this.editMode
-              this.renderError = null
-              this.gridsLoaded = true
-            }
-            this.gridsBusy = false
-
-            // Perform actions after render
-            this.$nextTick(() => {
-              // Scroll to assay anchor if set
-              this.scrollToCurrentTable()
-
-              // Update study badge stats
-              if (this.sodarContext.irods_status && this.$refs.studyStatsBadge) {
-                this.$refs.studyStatsBadge.updateStats() // TODO: Set up timer
-              }
-            })
+        // Store sampleColId & sampleIdx
+        let colSpan = 0
+        for (let i = 0; i < data.tables.study.top_header.length; i++) {
+          if (data.tables.study.top_header[i].value === 'Sample') {
+            this.sampleColId = 'col' + colSpan
+            this.sampleIdx = colSpan + 1
+            break
           }
-        )
+          colSpan += data.tables.study.top_header[i].colspan
+        }
+
+        // Build study
+        this.columnDefs.study = buildColDef(
+          this.getColDefParams(data.tables, this.currentStudyUuid, false))
+        this.rowData.study = buildRowData({
+          table: data.tables.study,
+          editMode: this.editMode,
+          assayMode: false,
+          sodarContext: this.sodarContext
+        })
+
+        // Build assays
+        for (const assayUuid in data.tables.assays) {
+          this.gridOptions.assays[assayUuid] = initGridOptions(this.editMode)
+          this.columnDefs.assays[assayUuid] = buildColDef(
+            this.getColDefParams(data.tables, assayUuid, true))
+          this.rowData.assays[assayUuid] = buildRowData({
+            table: data.tables.assays[assayUuid],
+            editMode: this.editMode,
+            assayMode: true,
+            sodarContext: this.sodarContext
+          })
+
+          // Get assay shortcuts
+          if ('shortcuts' in data.tables.assays[assayUuid]) {
+            this.assayShortcuts[assayUuid] =
+                data.tables.assays[assayUuid].shortcuts
+          }
+        }
+
+        this.editStudyData = this.editMode
+        this.renderError = null
+        this.gridsLoaded = true
+      }
+      this.gridsBusy = false
+
+      // Perform actions after render
+      this.$nextTick(() => {
+        // Scroll to assay anchor if set
+        this.scrollToCurrentTable()
+      })
     },
 
     /* Navigation ----------------------------------------------------------- */
@@ -1198,9 +483,7 @@ export default {
       this.activeSubPage = pageId
       this.setPath()
       this.clearGrids() // TODO: Should keep in memory
-      this.$nextTick(() => {
-        this.scrollToCurrentTable()
-      })
+      this.$nextTick(() => { this.scrollToCurrentTable() })
     },
 
     // Set path in current URL
@@ -1437,9 +720,7 @@ export default {
 
             // Check if name already appears in column
             gridOptions.api.forEachNode(function (r) {
-              if (r.data[nextColId].value === value.value) {
-                createNew = false
-              }
+              if (r.data[nextColId].value === value.value) createNew = false
             })
 
             value.newInit = false
@@ -1499,17 +780,13 @@ export default {
                 newInit = false
                 value.newInit = false
                 processActive = true
-              } else {
-                value.value = '' // HACK: Reset default value if not filled
-              }
+              } else value.value = '' // HACK: Reset default value if not filled
               value.editable = true // Process name should always be editable
             } else {
               // Only allow editing the rest of the cells if protocol is set
               if (processActive) {
                 value.editable = cols[i].colDef.cellRendererParams.fieldEditable
-              } else {
-                value.editable = false
-              }
+              } else value.editable = false
             }
             rowNode.setDataValue(nextColId, value)
             i += 1
@@ -1665,10 +942,7 @@ export default {
       }
 
       const res = gridApi.applyTransaction({ add: [row] })
-      this.unsavedRow = {
-        gridUuid: gridUuid,
-        id: res.add[0].id
-      }
+      this.unsavedRow = { gridUuid: gridUuid, id: res.add[0].id }
       gridApi.ensureIndexVisible(res.add[0].rowIndex) // Scroll to inserted row
       if (!assayMode) gridApi.ensureColumnVisible('col2') // Scroll to column
       else gridApi.ensureColumnVisible(this.sampleColId)
@@ -1741,8 +1015,7 @@ export default {
               // Update sample list if a new sample was added in study/assay
               if (!assayMode && newSample && sampleUuid) {
                 this.editContext.samples[sampleUuid] = {
-                  name: sampleName,
-                  assays: []
+                  name: sampleName, assays: []
                 }
               } else if (assayMode) {
                 const sampleUuid = rowNode.data[this.sampleColId].uuid
@@ -1826,9 +1099,7 @@ export default {
                     sampleFound = true
                   }
                 })
-                if (!sampleFound) {
-                  delete this.editContext.samples[sampleUuid]
-                }
+                if (!sampleFound) delete this.editContext.samples[sampleUuid]
               }
 
               gridOptions.api.applyTransaction({ remove: [rowNode.data] })
@@ -1860,9 +1131,7 @@ export default {
     handleFinishEditing () {
       fetch('/samplesheets/ajax/edit/finish/' + this.projectUuid, {
         method: 'POST',
-        body: JSON.stringify({
-          updated: this.editDataUpdated
-        }),
+        body: JSON.stringify({ updated: this.editDataUpdated }),
         credentials: 'same-origin',
         headers: {
           Accept: 'application/json',
@@ -1899,27 +1168,24 @@ export default {
 
     getStudyGridUuids (assayOnly) {
       // Return array of UUIDs for the current study and all assays
-      if (!this.currentStudyUuid) {
-        return null
-      }
+      if (!this.currentStudyUuid) return null
       const uuids = assayOnly ? [] : [this.currentStudyUuid]
-      for (var k in this.columnDefs.assays) {
-        uuids.push(k)
-      }
+      for (const k in this.columnDefs.assays) uuids.push(k)
       return uuids
     },
 
     getGridOptionsByUuid (uuid) {
+      // TODO: Make sure this new method works! (If not, use $refs)
       if (uuid === this.currentStudyUuid) {
-        return this.$refs.studyGrid.gridOptions
+        return this.gridOptions.study
       } else if (uuid in this.columnDefs.assays) {
-        // TODO: Why is this an array?
-        return this.$refs['assayGrid' + uuid][0].gridOptions
+        return this.gridOptions.assays[uuid]
       }
     },
 
     getApp () {
       // Workaround for #520
+      // TODO: Still needed?
       return this
     },
 
@@ -1929,12 +1195,10 @@ export default {
       const groupId = cols[idx].originalParent.groupId
       if (!maxIdx) maxIdx = cols.length
       while (idx < maxIdx) {
-        if (groupId !== cols[idx].originalParent.groupId) {
-          return idx
-        }
+        if (groupId !== cols[idx].originalParent.groupId) return idx
         idx += 1
       }
-      return null
+      return null // TODO: Undefined ok?
     }
   },
   watch: {
@@ -1973,10 +1237,7 @@ export default {
 
       if (this.currentStudyUuid) {
         this.sheetsAvailable = true
-
-        if (!this.activeSubPage) {
-          this.getStudy(this.currentStudyUuid)
-        }
+        if (!this.activeSubPage) this.getStudy(this.currentStudyUuid)
       } else {
         this.sheetsAvailable = false
       }

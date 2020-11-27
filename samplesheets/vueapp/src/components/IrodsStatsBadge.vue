@@ -38,10 +38,10 @@ export default {
       fetch(statsUrl, {
         credentials: 'same-origin'
       })
-        .then(
-          response => response.json())
-        .then(response => {
-          this.setStats(response)
+        .then(response => response.json())
+        .then(response => { this.setStats(response) })
+        .catch(function (error) {
+          console.log('irodsStatsBadge error: ' + error.message)
         })
     }
   }

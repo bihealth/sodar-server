@@ -50,6 +50,7 @@ Changed
     - Move ``ATTR_HEADER_MAP`` to ``models``
     - Refactor recognizing ontology/unit columns in rendering (#962)
     - Disable "Finish Editing" link with unsaved rows (#987)
+    - General vue app refactoring (#747)
 
 Fixed
 -----
@@ -61,6 +62,7 @@ Fixed
     - Row insert failing if the last node is a process (#974, #975)
     - Row insert failing with single column source node (#965, #986)
     - Sample deleted from study not removed from assay sample selection (#988)
+    - Default value in column config not validated against range (#1031)
 
 Removed
 -------

@@ -1,5 +1,5 @@
 import { createLocalVue, mount } from '@vue/test-utils'
-import { createContainer, waitNT, waitRAF } from '../utils.js'
+import { createContainer, waitNT, waitRAF } from '../testUtils.js'
 import BootstrapVue from 'bootstrap-vue'
 import IrodsDirModal from '@/components/modals/IrodsDirModal.vue'
 import irodsObjectList from './data/irodsObjectList.json'

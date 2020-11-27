@@ -1,0 +1,932 @@
+{
+  "study": {
+    "display_name": "Small Germline Study"
+  },
+  "tables": {
+    "study": {
+      "top_header": [
+        {
+          "value": "Source",
+          "colour": "info",
+          "colspan": 3
+        },
+        {
+          "value": "Process",
+          "colour": "danger",
+          "colspan": 4
+        },
+        {
+          "value": "Sample",
+          "colour": "warning",
+          "colspan": 3
+        }
+      ],
+      "field_header": [
+        {
+          "value": "Name",
+          "name": "Name",
+          "obj_cls": "GenericMaterial",
+          "item_type": "SOURCE",
+          "num_col": false,
+          "config_set": false,
+          "col_type": "NAME",
+          "max_value_len": 5
+        },
+        {
+          "value": "Organism",
+          "name": "organism",
+          "obj_cls": "GenericMaterial",
+          "item_type": "SOURCE",
+          "num_col": false,
+          "config_set": false,
+          "col_type": "ONTOLOGY",
+          "max_value_len": 26
+        },
+        {
+          "value": "Age",
+          "name": "age",
+          "obj_cls": "GenericMaterial",
+          "item_type": "SOURCE",
+          "num_col": false,
+          "config_set": false,
+          "col_type": "UNIT",
+          "max_value_len": 7
+        },
+        {
+          "value": "Protocol",
+          "name": "Protocol",
+          "obj_cls": "Process",
+          "item_type": null,
+          "num_col": false,
+          "config_set": false,
+          "col_type": "PROTOCOL",
+          "max_value_len": 16
+        },
+        {
+          "value": "Instrument",
+          "name": "instrument",
+          "obj_cls": "Process",
+          "item_type": null,
+          "num_col": false,
+          "config_set": false,
+          "col_type": null,
+          "max_value_len": 29
+        },
+        {
+          "value": "Performer",
+          "name": "Performer",
+          "obj_cls": "Process",
+          "item_type": null,
+          "num_col": false,
+          "config_set": false,
+          "col_type": "CONTACT",
+          "max_value_len": 9
+        },
+        {
+          "value": "Perform Date",
+          "name": "Perform Date",
+          "obj_cls": "Process",
+          "item_type": null,
+          "num_col": false,
+          "config_set": false,
+          "col_type": "DATE",
+          "max_value_len": 12
+        },
+        {
+          "value": "Name",
+          "name": "Name",
+          "obj_cls": "GenericMaterial",
+          "item_type": "SAMPLE",
+          "num_col": false,
+          "config_set": false,
+          "col_type": "NAME",
+          "max_value_len": 8
+        },
+        {
+          "value": "Status",
+          "name": "status",
+          "obj_cls": "GenericMaterial",
+          "item_type": "SAMPLE",
+          "num_col": false,
+          "config_set": false,
+          "col_type": "NUMERIC",
+          "max_value_len": 6
+        },
+        {
+          "value": "Treatment",
+          "name": "treatment",
+          "obj_cls": "GenericMaterial",
+          "item_type": "SAMPLE",
+          "num_col": false,
+          "config_set": false,
+          "col_type": null,
+          "max_value_len": 8
+        }
+      ],
+      "table_data": [
+        [
+          {
+            "value": "0814"
+          },
+          {
+            "value": [
+              {
+                "name": "Mus musculus",
+                "accession": "http://purl.bioontology.org/ontology/NCBITAXON/10090",
+                "ontology_name": "NCBITAXON"
+              },
+              {
+                "name": "Homo sapiens",
+                "accession": "http://purl.bioontology.org/ontology/NCBITAXON/9606",
+                "ontology_name": "NCBITAXON"
+              }
+            ]
+          },
+          {
+            "value": "90",
+            "unit": "day"
+          },
+          {
+            "value": "sample collection"
+          },
+          {
+            "value": "scalpel"
+          },
+          {
+            "value": "John Doe"
+          },
+          {
+            "value": "2018-02-02"
+          },
+          {
+            "value": "0814-N1"
+          },
+          {
+            "value": "0"
+          },
+          {
+            "value": "yes"
+          }
+        ],
+        [
+          {
+            "value": "0815"
+          },
+          {
+            "value": [
+              {
+                "name": "Mus musculus",
+                "accession": "http://purl.bioontology.org/ontology/NCBITAXON/10090",
+                "ontology_name": "NCBITAXON"
+              }
+            ]
+          },
+          {
+            "value": "90",
+            "unit": "day"
+          },
+          {
+            "value": "sample collection"
+          },
+          {
+            "value": "scalpel"
+          },
+          {
+            "value": "John Doe"
+          },
+          {
+            "value": "2018-02-02"
+          },
+          {
+            "value": "0815-N1"
+          },
+          {
+            "value": "0"
+          },
+          {
+            "value": "yes"
+          }
+        ],
+        [
+          {
+            "value": "0815"
+          },
+          {
+            "value": [
+              {
+                "name": "Mus musculus",
+                "accession": "http://purl.bioontology.org/ontology/NCBITAXON/10090",
+                "ontology_name": "NCBITAXON"
+              }
+            ]
+          },
+          {
+            "value": "90",
+            "unit": "day"
+          },
+          {
+            "value": "sample collection"
+          },
+          {
+            "value": [
+              "scalpel type A",
+              "scalpel type B"
+            ]
+          },
+          {
+            "value": "John Doe"
+          },
+          {
+            "value": "2018-02-02"
+          },
+          {
+            "value": "0815-T1"
+          },
+          {
+            "value": "2"
+          },
+          {
+            "value": ""
+          }
+        ],
+        [
+          {
+            "value": "0816"
+          },
+          {
+            "value": [
+              {
+                "name": "Mus musculus",
+                "accession": "http://purl.bioontology.org/ontology/NCBITAXON/10090",
+                "ontology_name": null
+              }
+            ]
+          },
+          {
+            "value": "",
+            "unit": "day"
+          },
+          {
+            "value": "sample collection"
+          },
+          {
+            "value": "scalpel"
+          },
+          {
+            "value": "John Doe"
+          },
+          {
+            "value": "2018-02-02"
+          },
+          {
+            "value": "0816-T1"
+          },
+          {
+            "value": "1"
+          },
+          {
+            "value": "yes"
+          }
+        ],
+        [
+          {
+            "value": "0817"
+          },
+          {
+            "value": ""
+          },
+          {
+            "value": "150",
+            "unit": "day"
+          },
+          {
+            "value": "sample collection"
+          },
+          {
+            "value": "scalpel"
+          },
+          {
+            "value": "John Doe"
+          },
+          {
+            "value": "2018-02-02"
+          },
+          {
+            "value": ""
+          },
+          {
+            "value": ""
+          },
+          {
+            "value": ""
+          }
+        ]
+      ],
+      "col_values": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "col_last_vis": 9
+    },
+    "assays": {
+      "22222222-2222-2222-2222-222222222222": {
+        "top_header": [
+          {
+            "value": "Source",
+            "colour": "info",
+            "colspan": 3
+          },
+          {
+            "value": "Process",
+            "colour": "danger",
+            "colspan": 4
+          },
+          {
+            "value": "Sample",
+            "colour": "warning",
+            "colspan": 3
+          },
+          {
+            "value": "Process",
+            "colour": "danger",
+            "colspan": 1
+          },
+          {
+            "value": "Library Name",
+            "colour": "success",
+            "colspan": 1
+          },
+          {
+            "value": "Process",
+            "colour": "danger",
+            "colspan": 2
+          },
+          {
+            "value": "Raw Data File",
+            "colour": "success",
+            "colspan": 1
+          },
+          {
+            "value": "Raw Data File",
+            "colour": "success",
+            "colspan": 1
+          },
+          {
+            "value": "Process",
+            "colour": "danger",
+            "colspan": 1
+          },
+          {
+            "value": "Derived Data File",
+            "colour": "success",
+            "colspan": 1
+          }
+        ],
+        "field_header": [
+          {
+            "value": "Name",
+            "name": "Name",
+            "obj_cls": "GenericMaterial",
+            "item_type": "SOURCE",
+            "num_col": false,
+            "config_set": false,
+            "col_type": "NAME",
+            "max_value_len": 5
+          },
+          {
+            "value": "Organism",
+            "name": "organism",
+            "obj_cls": "GenericMaterial",
+            "item_type": "SOURCE",
+            "num_col": false,
+            "config_set": false,
+            "col_type": "ONTOLOGY",
+            "max_value_len": 13
+          },
+          {
+            "value": "Age",
+            "name": "age",
+            "obj_cls": "GenericMaterial",
+            "item_type": "SOURCE",
+            "num_col": false,
+            "config_set": false,
+            "col_type": "UNIT",
+            "max_value_len": 6
+          },
+          {
+            "value": "Protocol",
+            "name": "Protocol",
+            "obj_cls": "Process",
+            "item_type": null,
+            "num_col": false,
+            "config_set": false,
+            "col_type": "PROTOCOL",
+            "max_value_len": 16
+          },
+          {
+            "value": "Instrument",
+            "name": "instrument",
+            "obj_cls": "Process",
+            "item_type": null,
+            "num_col": false,
+            "config_set": false,
+            "col_type": null,
+            "max_value_len": 29
+          },
+          {
+            "value": "Performer",
+            "name": "Performer",
+            "obj_cls": "Process",
+            "item_type": null,
+            "num_col": false,
+            "config_set": false,
+            "col_type": "CONTACT",
+            "max_value_len": 9
+          },
+          {
+            "value": "Perform Date",
+            "name": "Perform Date",
+            "obj_cls": "Process",
+            "item_type": null,
+            "num_col": false,
+            "config_set": false,
+            "col_type": "DATE",
+            "max_value_len": 12
+          },
+          {
+            "value": "Name",
+            "name": "Name",
+            "obj_cls": "GenericMaterial",
+            "item_type": "SAMPLE",
+            "num_col": false,
+            "config_set": false,
+            "col_type": "NAME",
+            "max_value_len": 8
+          },
+          {
+            "value": "Status",
+            "name": "status",
+            "obj_cls": "GenericMaterial",
+            "item_type": "SAMPLE",
+            "num_col": false,
+            "config_set": false,
+            "col_type": "NUMERIC",
+            "max_value_len": 6
+          },
+          {
+            "value": "Treatment",
+            "name": "treatment",
+            "obj_cls": "GenericMaterial",
+            "item_type": "SAMPLE",
+            "num_col": false,
+            "config_set": false,
+            "col_type": null,
+            "max_value_len": 8
+          },
+          {
+            "value": "Protocol",
+            "name": "Protocol",
+            "obj_cls": "Process",
+            "item_type": null,
+            "num_col": false,
+            "config_set": false,
+            "col_type": "PROTOCOL",
+            "max_value_len": 18
+          },
+          {
+            "value": "Name",
+            "name": "Name",
+            "obj_cls": "GenericMaterial",
+            "item_type": "MATERIAL",
+            "num_col": false,
+            "config_set": false,
+            "col_type": "NAME",
+            "max_value_len": 14
+          },
+          {
+            "value": "Protocol",
+            "name": "Protocol",
+            "obj_cls": "Process",
+            "item_type": null,
+            "num_col": false,
+            "config_set": false,
+            "col_type": "PROTOCOL",
+            "max_value_len": 22
+          },
+          {
+            "value": "Assay Name",
+            "name": "Assay Name",
+            "obj_cls": "Process",
+            "item_type": null,
+            "num_col": false,
+            "config_set": false,
+            "col_type": "NAME",
+            "max_value_len": 20
+          },
+          {
+            "value": "Name",
+            "name": "Name",
+            "obj_cls": "GenericMaterial",
+            "item_type": "DATA",
+            "num_col": false,
+            "config_set": false,
+            "col_type": "LINK_FILE",
+            "max_value_len": 41
+          },
+          {
+            "value": "Name",
+            "name": "Name",
+            "obj_cls": "GenericMaterial",
+            "item_type": "DATA",
+            "num_col": false,
+            "config_set": false,
+            "col_type": "LINK_FILE",
+            "max_value_len": 41
+          },
+          {
+            "value": "Data Transformation Name",
+            "name": "Data Transformation Name",
+            "obj_cls": "Process",
+            "item_type": null,
+            "num_col": false,
+            "config_set": false,
+            "col_type": "NAME",
+            "max_value_len": 23
+          },
+          {
+            "value": "Name",
+            "name": "Name",
+            "obj_cls": "GenericMaterial",
+            "item_type": "DATA",
+            "num_col": false,
+            "config_set": false,
+            "col_type": "LINK_FILE",
+            "max_value_len": 18
+          }
+        ],
+        "table_data": [
+          [
+            {
+              "value": "0815"
+            },
+            {
+              "value": [
+                {
+                  "name": "Mus musculus",
+                  "accession": "http://purl.bioontology.org/ontology/NCBITAXON/10090",
+                  "ontology_name": "NCBITAXON"
+                }
+              ]
+            },
+            {
+              "value": "90",
+              "unit": "day"
+            },
+            {
+              "value": "sample collection"
+            },
+            {
+              "value": "scalpel"
+            },
+            {
+              "value": "John Doe"
+            },
+            {
+              "value": "2018-02-02"
+            },
+            {
+              "value": "0815-N1"
+            },
+            {
+              "value": "0"
+            },
+            {
+              "value": "yes"
+            },
+            {
+              "value": "library preparation"
+            },
+            {
+              "value": "0815-N1-DNA1"
+            },
+            {
+              "value": "nucleic acid sequencing"
+            },
+            {
+              "value": "0815-N1-DNA1-WES1"
+            },
+            {
+              "value": "0815-N1-DNA1-WES1_L???_???_R1.fastq.gz"
+            },
+            {
+              "value": "0815-N1-DNA1-WES1_L???_???_R2.fastq.gz"
+            },
+            {
+              "value": "somatic variant calling-1"
+            },
+            {
+              "value": "0815-somatic.vcf.gz"
+            }
+          ],
+          [
+            {
+              "value": "0815"
+            },
+            {
+              "value": [
+                {
+                  "name": "Mus musculus",
+                  "accession": "http://purl.bioontology.org/ontology/NCBITAXON/10090",
+                  "ontology_name": "NCBITAXON"
+                }
+              ]
+            },
+            {
+              "value": "90",
+              "unit": "day"
+            },
+            {
+              "value": "sample collection"
+            },
+            {
+              "value": [
+                "scalpel type A",
+                "scalpel type B"
+              ]
+            },
+            {
+              "value": "John Doe"
+            },
+            {
+              "value": "2018-02-02"
+            },
+            {
+              "value": "0815-T1"
+            },
+            {
+              "value": "2"
+            },
+            {
+              "value": ""
+            },
+            {
+              "value": "library preparation"
+            },
+            {
+              "value": "0815-T1-DNA1"
+            },
+            {
+              "value": "nucleic acid sequencing"
+            },
+            {
+              "value": "0815-T1-DNA1-WES1"
+            },
+            {
+              "value": "0815-T1-DNA1-WES1_L???_???_R1.fastq.gz"
+            },
+            {
+              "value": "0815-T1-DNA1-WES1_L???_???_R2.fastq.gz"
+            },
+            {
+              "value": "somatic variant calling-1"
+            },
+            {
+              "value": "0815-somatic.vcf.gz"
+            }
+          ]
+        ],
+        "col_values": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "col_last_vis": 17,
+        "irods_paths": [],
+        "shortcuts": [
+          {
+            "id": "results_reports",
+            "label": "Results and Reports",
+            "path": "/omicsZone/projects/00/00000000-0000-0000-0000-000000000000/sample_data/study_11111111-1111-1111-1111-111111111111/assay_22222222-2222-2222-2222-222222222222/ResultsReports",
+            "enabled": false
+          },
+          {
+            "id": "misc_files",
+            "label": "Misc Files",
+            "path": "/omicsZone/projects/00/00000000-0000-0000-0000-000000000000/sample_data/study_11111111-1111-1111-1111-111111111111/assay_22222222-2222-2222-2222-222222222222/MiscFiles",
+            "enabled": false
+          }
+        ]
+      }
+    }
+  },
+  "display_config": {
+    "nodes": [
+      {
+        "fields": [
+          {
+            "name": "Name",
+            "visible": true
+          },
+          {
+            "name": "organism",
+            "visible": true
+          },
+          {
+            "name": "age",
+            "visible": true
+          }
+        ],
+        "header": "Source"
+      },
+      {
+        "fields": [
+          {
+            "name": "Protocol",
+            "visible": true
+          },
+          {
+            "name": "instrument",
+            "visible": true
+          },
+          {
+            "name": "Performer",
+            "visible": true
+          },
+          {
+            "name": "Perform Date",
+            "visible": true
+          }
+        ],
+        "header": "Process"
+      },
+      {
+        "fields": [
+          {
+            "name": "Name",
+            "visible": true
+          },
+          {
+            "name": "status",
+            "visible": true
+          },
+          {
+            "name": "treatment",
+            "visible": true
+          }
+        ],
+        "header": "Sample"
+      }
+    ],
+    "assays": {
+      "22222222-2222-2222-2222-222222222222": {
+        "nodes": [
+          {
+            "fields": [
+              {
+                "name": "Name",
+                "visible": true
+              },
+              {
+                "name": "organism",
+                "visible": false
+              },
+              {
+                "name": "age",
+                "visible": false
+              }
+            ],
+            "header": "Source"
+          },
+          {
+            "fields": [
+              {
+                "name": "Protocol",
+                "visible": true
+              },
+              {
+                "name": "instrument",
+                "visible": false
+              },
+              {
+                "name": "Performer",
+                "visible": false
+              },
+              {
+                "name": "Perform Date",
+                "visible": false
+              }
+            ],
+            "header": "Process"
+          },
+          {
+            "fields": [
+              {
+                "name": "Name",
+                "visible": true
+              },
+              {
+                "name": "status",
+                "visible": false
+              },
+              {
+                "name": "treatment",
+                "visible": false
+              }
+            ],
+            "header": "Sample"
+          },
+          {
+            "fields": [
+              {
+                "name": "Protocol",
+                "visible": true
+              }
+            ],
+            "header": "Process"
+          },
+          {
+            "fields": [
+              {
+                "name": "Name",
+                "visible": true
+              }
+            ],
+            "header": "Library Name"
+          },
+          {
+            "fields": [
+              {
+                "name": "Protocol",
+                "visible": true
+              },
+              {
+                "name": "Assay Name",
+                "visible": true
+              }
+            ],
+            "header": "Process"
+          },
+          {
+            "fields": [
+              {
+                "name": "Name",
+                "visible": true
+              }
+            ],
+            "header": "Raw Data File"
+          },
+          {
+            "fields": [
+              {
+                "name": "Name",
+                "visible": true
+              }
+            ],
+            "header": "Raw Data File"
+          },
+          {
+            "fields": [
+              {
+                "name": "Data Transformation Name",
+                "visible": true
+              }
+            ],
+            "header": "Process"
+          },
+          {
+            "fields": [
+              {
+                "name": "Name",
+                "visible": true
+              }
+            ],
+            "header": "Derived Data File"
+          }
+        ]
+      }
+    }
+  }
+}

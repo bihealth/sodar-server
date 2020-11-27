@@ -1,6 +1,8 @@
 """Ajax API views for the ontologyaccess app"""
 
 from functools import reduce
+
+# import json
 import logging
 
 from django.conf import settings
@@ -116,6 +118,7 @@ class OBOTermQueryAjaxView(OBOOntologyTermMixin, SODARBasePermissionAjaxView):
         for t in terms[:query_limit]:
             ret_data['terms'].append(self.get_term_dict(t))
 
+        # logger.debug('Return data: {}'.format(json.dumps(ret_data)))
         return Response(ret_data, status=200)
 
 

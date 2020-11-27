@@ -1,0 +1,229 @@
+{
+  "studies": {
+    "11111111-1111-1111-1111-111111111111": {
+      "nodes": [
+        {
+          "fields": [
+            {
+              "name": "Name",
+              "type": "name",
+              "regex": "",
+              "format": "string",
+              "default": "",
+              "editable": true
+            },
+            {
+              "name": "organism",
+              "type": "characteristics",
+              "regex": "",
+              "format": "ontology",
+              "default": "",
+              "editable": true,
+              "allow_list": false,
+              "ontologies": [
+                "NCBITAXON"
+              ]
+            },
+            {
+              "name": "age",
+              "type": "characteristics",
+              "unit": [
+                "day",
+                "year"
+              ],
+              "range": [
+                "0",
+                "150"
+              ],
+              "regex": "",
+              "format": "integer",
+              "default": "",
+              "editable": true,
+              "unit_default": "day"
+            }
+          ],
+          "header": "Source"
+        },
+        {
+          "fields": [
+            {
+              "name": "Protocol",
+              "type": "protocol",
+              "format": "protocol",
+              "default": "48ae08c2-4fcf-4d92-934c-1c596d42a1a1",
+              "editable": true
+            },
+            {
+              "name": "instrument",
+              "type": "parameter_values",
+              "regex": "",
+              "format": "string",
+              "default": "",
+              "editable": true
+            },
+            {
+              "name": "Performer",
+              "type": "performer",
+              "regex": "",
+              "format": "string",
+              "default": "",
+              "editable": true
+            },
+            {
+              "name": "Perform Date",
+              "type": "perform_date",
+              "regex": "",
+              "format": "date",
+              "default": "",
+              "editable": true
+            }
+          ],
+          "header": "Process"
+        },
+        {
+          "fields": [
+            {
+              "name": "Name",
+              "type": "name",
+              "regex": "",
+              "format": "string",
+              "default": "-N1",
+              "editable": true
+            },
+            {
+              "name": "status",
+              "type": "characteristics",
+              "range": [
+                "0",
+                "2"
+              ],
+              "regex": "",
+              "format": "integer",
+              "default": "0",
+              "editable": true
+            },
+            {
+              "name": "treatment",
+              "type": "factor_values",
+              "format": "select",
+              "default": "",
+              "options": [
+                "yes",
+                "no"
+              ],
+              "editable": true
+            }
+          ],
+          "header": "Sample"
+        }
+      ],
+      "assays": {
+        "22222222-2222-2222-2222-222222222222": {
+          "nodes": [
+            {
+              "fields": [
+                {
+                  "name": "Protocol",
+                  "type": "protocol",
+                  "format": "protocol",
+                  "default": "0a9dd154-c9b9-407e-a1b4-2bf8dc41a25a",
+                  "editable": true
+                }
+              ],
+              "header": "Process"
+            },
+            {
+              "fields": [
+                {
+                  "name": "Name",
+                  "type": "name",
+                  "regex": "",
+                  "format": "string",
+                  "default": "-N1-DNA1",
+                  "editable": true
+                }
+              ],
+              "header": "Library Name"
+            },
+            {
+              "fields": [
+                {
+                  "name": "Protocol",
+                  "type": "protocol",
+                  "format": "protocol",
+                  "default": "789e2ab4-fc7c-4ce0-80ad-93bedcecf588",
+                  "editable": true
+                },
+                {
+                  "name": "Assay Name",
+                  "type": "process_name",
+                  "regex": "",
+                  "format": "string",
+                  "default": "-N1-DNA1-WES1",
+                  "editable": true
+                }
+              ],
+              "header": "Process"
+            },
+            {
+              "fields": [
+                {
+                  "name": "Name",
+                  "type": "name",
+                  "regex": "",
+                  "format": "string",
+                  "default": "",
+                  "editable": true
+                }
+              ],
+              "header": "Raw Data File"
+            },
+            {
+              "fields": [
+                {
+                  "name": "Name",
+                  "type": "name",
+                  "regex": "",
+                  "format": "string",
+                  "default": "",
+                  "editable": true
+                }
+              ],
+              "header": "Raw Data File"
+            },
+            {
+              "fields": [
+                {
+                  "name": "Data Transformation Name",
+                  "type": "process_name",
+                  "regex": "",
+                  "format": "string",
+                  "default": "",
+                  "editable": true
+                }
+              ],
+              "header": "Process"
+            },
+            {
+              "fields": [
+                {
+                  "name": "Name",
+                  "type": "name",
+                  "regex": "",
+                  "format": "string",
+                  "default": "",
+                  "editable": true
+                }
+              ],
+              "header": "Derived Data File"
+            }
+          ],
+          "display_name": "Small"
+        }
+      },
+      "display_name": "Small Germline Study"
+    }
+  },
+  "version": "0.8.0",
+  "investigation": {}
+}
