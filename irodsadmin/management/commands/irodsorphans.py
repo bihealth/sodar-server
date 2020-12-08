@@ -1,3 +1,4 @@
+import logging
 import re
 
 from django.core.management.base import BaseCommand
@@ -6,7 +7,7 @@ from projectroles.models import Project
 
 from projectroles.plugins import get_backend_api
 
-# Landingzone dependency
+# Landingzones dependency
 from landingzones.models import LandingZone
 
 # Samplesheets dependency
@@ -14,6 +15,9 @@ from samplesheets.models import Assay, Study
 from samplesheets.plugins import find_assay_plugin
 from samplesheets.rendering import SampleSheetTableBuilder
 from samplesheets.views import TRACK_HUBS_COLL, RESULTS_COLL, MISC_FILES_COLL
+
+
+logger = logging.getLogger(__name__)
 
 
 def get_assay_collections(assays, irods_backend):
@@ -28,13 +32,27 @@ def get_assay_subcollections(studies, irods_backend):
     collections = []
 
     for study in studies:
-        study_tables = tb.build_study_tables(study)
+        try:
+            study_tables = tb.build_study_tables(study)
+        except Exception as ex:
+            logger.error(
+                'Study table building exception for "{}" '
+                'in project "{}" ({}): {}'.format(
+                    study.get_display_name(),
+                    study.investigation.project.title,
+                    study.investigation.project.sodar_uuid,
+                    ex,
+                )
+            )
+            continue
+
         for assay in study.assays.all():
             assay_table = study_tables['assays'][str(assay.sodar_uuid)]
             assay_plugin = find_assay_plugin(
                 assay.measurement_type, assay.technology_type
             )
             assay_path = irods_backend.get_path(assay)
+
             if assay_plugin:
                 for row in assay_table['table_data']:
                     row_path = assay_plugin.get_row_path(

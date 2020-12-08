@@ -16,8 +16,7 @@ Added
     - ``Makefile`` for selected management commands (#989)
 - **Irodsadmin**
     - Add app for iRODS data administration (#972)
-    - ``irodsorphans`` management command to detect orphan collections (#972)
-    - ``irodsorphans`` management command to detect assay subcollections (#997)
+    - ``irodsorphans`` management command (#972, #997, #1035)
 - **Irodsbackend**
     - ``get_query()`` helper for ``SpecificQuery`` initialization (#1003)
 - **Landingzones**

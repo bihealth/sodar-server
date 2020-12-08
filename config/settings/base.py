@@ -442,6 +442,11 @@ def set_logging(debug):
                 'handlers': ['console'],
                 'propagate': True,
             },
+            'irodsadmin': {
+                'level': 'ERROR',
+                'handlers': ['console'],
+                'propagate': True,
+            },
         },
     }
 
