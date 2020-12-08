@@ -361,13 +361,34 @@ export default {
       console.log('Copy Error: ' + event)
     },
     onPasteInput (val) {
+      let pasteValue
+      let pasteOk = true
       try {
-        this.value = JSON.parse(val)
+        pasteValue = JSON.parse(val)
       } catch (error) {
         this.$refs.notifyBadge.show('Invalid JSON', 'danger', 1000)
+        pasteOk = false
       }
-      this.setUpdateStatus(true)
-      this.$refs.notifyBadge.show('Term Pasted', 'success', 1000)
+      if (pasteValue && this.editConfig.ontologies.length > 0) {
+        for (let i = 0; i < pasteValue.length; i++) {
+          if (!(this.editConfig.ontologies.includes(
+            pasteValue[i].ontology_name))) {
+            this.$refs.notifyBadge.show('Invalid Ontology', 'danger', 1000)
+            console.error(
+              'Invalid ontology for column: ' + pasteValue[i].ontology_name)
+            pasteOk = false
+          }
+        }
+      }
+      if (pasteValue && !this.editConfig.allow_list && pasteValue.length > 1) {
+        this.$refs.notifyBadge.show('List Disllowed', 'danger', 1000)
+        pasteOk = false
+      }
+      if (pasteOk) {
+        this.value = pasteValue
+        this.$refs.notifyBadge.show('Term Pasted', 'success', 1000)
+        this.setUpdateStatus(true)
+      }
       this.$nextTick(() => { this.pasteData = '' })
     },
     onSearchUpdate () {

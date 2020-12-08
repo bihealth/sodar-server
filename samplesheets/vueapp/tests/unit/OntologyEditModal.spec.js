@@ -889,7 +889,7 @@ describe('OntologyEditModal.vue', () => {
     expect(wrapper.vm.getQueryUrl(queryString)).toBe(url)
   })
 
-  it('builds query url with ontology-based orderingy', async () => {
+  it('builds query url with ontology-based ordering', async () => {
     const url = queryUrlPrefix + queryString + '&o=NCBITAXON&o=CL&order=1'
     const wrapper = mount(OntologyEditModal, {
       localVue,
@@ -903,6 +903,159 @@ describe('OntologyEditModal.vue', () => {
     await wrapper.find('#sodar-ss-ontology-order-check').trigger('click')
 
     expect(wrapper.vm.getQueryUrl(queryString)).toBe(url)
+  })
+
+  it('handles term paste', async () => {
+    const newValue = [
+      {
+        name: 'Aggressive behavior',
+        ontology_name: 'HP',
+        accession: 'http://purl.obolibrary.org/obo/HP_0000718'
+      },
+      {
+        name: 'Short neck',
+        ontology_name: 'HP',
+        accession: 'http://purl.obolibrary.org/obo/HP_0000470'
+      }
+    ]
+    const modalParams = copy(ontologyEditParamsHp)
+    const wrapper = mount(OntologyEditModal, {
+      localVue,
+      propsData: propsData,
+      methods: { getInitialTermInfo: jest.fn() }
+    })
+    wrapper.vm.showModal(modalParams, jest.fn())
+    wrapper.setData({ refreshingTerms: false })
+    await waitNT(wrapper.vm)
+    await waitRAF()
+
+    await wrapper.vm.onPasteInput(JSON.stringify(newValue))
+    for (let i = 0; i < newValue.length; i++) {
+      expect(wrapper.vm.value[i].name).toBe(newValue[i].name)
+      expect(wrapper.vm.value[i].ontology_name).toBe(newValue[i].ontology_name)
+      expect(wrapper.vm.value[i].accession).toBe(newValue[i].accession)
+    }
+  })
+
+  it('handles term paste with disallowed list (should fail)', async () => {
+    const newValue = [
+      {
+        name: 'Aggressive behavior',
+        ontology_name: 'HP',
+        accession: 'http://purl.obolibrary.org/obo/HP_0000718'
+      },
+      {
+        name: 'Short neck',
+        ontology_name: 'HP',
+        accession: 'http://purl.obolibrary.org/obo/HP_0000470'
+      }
+    ]
+    const modalParams = copy(ontologyEditParamsHp)
+    modalParams.editConfig.allow_list = false
+    const wrapper = mount(OntologyEditModal, {
+      localVue,
+      propsData: propsData,
+      methods: { getInitialTermInfo: jest.fn() }
+    })
+    wrapper.vm.showModal(modalParams, jest.fn())
+    wrapper.setData({ refreshingTerms: false })
+    await waitNT(wrapper.vm)
+    await waitRAF()
+
+    await wrapper.vm.onPasteInput(JSON.stringify(newValue))
+    for (let i = 0; i < wrapper.vm.value.length; i++) {
+      expect(wrapper.vm.value[i].name).toBe(modalParams.value[i].name)
+      expect(wrapper.vm.value[i].ontology_name).toBe(modalParams.value[i].ontology_name)
+      expect(wrapper.vm.value[i].accession).toBe(modalParams.value[i].accession)
+    }
+  })
+
+  it('handles term paste with disallowed ontologies (should fail)', async () => {
+    jest.spyOn(console, 'error').mockImplementation(jest.fn())
+    const newValue = [
+      {
+        name: 'Aggressive behavior',
+        ontology_name: 'ORDO',
+        accession: 'http://purl.obolibrary.org/obo/HP_0000718'
+      },
+      {
+        name: 'Short neck',
+        ontology_name: 'NCBITAXON',
+        accession: 'http://purl.obolibrary.org/obo/HP_0000470'
+      }
+    ]
+    const modalParams = copy(ontologyEditParamsHp)
+    const wrapper = mount(OntologyEditModal, {
+      localVue,
+      propsData: propsData,
+      methods: { getInitialTermInfo: jest.fn() }
+    })
+    wrapper.vm.showModal(modalParams, jest.fn())
+    wrapper.setData({ refreshingTerms: false })
+    await waitNT(wrapper.vm)
+    await waitRAF()
+
+    await wrapper.vm.onPasteInput(JSON.stringify(newValue))
+    for (let i = 0; i < wrapper.vm.value.length; i++) {
+      expect(wrapper.vm.value[i].name).toBe(modalParams.value[i].name)
+      expect(wrapper.vm.value[i].ontology_name).toBe(modalParams.value[i].ontology_name)
+      expect(wrapper.vm.value[i].accession).toBe(modalParams.value[i].accession)
+    }
+  })
+
+  it('handles term paste with no ontology limit', async () => {
+    const newValue = [
+      {
+        name: 'Aggressive behavior',
+        ontology_name: 'ORDO',
+        accession: 'http://purl.obolibrary.org/obo/HP_0000718'
+      },
+      {
+        name: 'Short neck',
+        ontology_name: 'NCBITAXON',
+        accession: 'http://purl.obolibrary.org/obo/HP_0000470'
+      }
+    ]
+    const modalParams = copy(ontologyEditParamsHp)
+    modalParams.editConfig.ontologies = []
+    const wrapper = mount(OntologyEditModal, {
+      localVue,
+      propsData: propsData,
+      methods: { getInitialTermInfo: jest.fn() }
+    })
+    wrapper.vm.showModal(modalParams, jest.fn())
+    wrapper.setData({ refreshingTerms: false })
+    await waitNT(wrapper.vm)
+    await waitRAF()
+
+    await wrapper.vm.onPasteInput(JSON.stringify(newValue))
+    for (let i = 0; i < newValue.length; i++) {
+      expect(wrapper.vm.value[i].name).toBe(newValue[i].name)
+      expect(wrapper.vm.value[i].ontology_name).toBe(newValue[i].ontology_name)
+      expect(wrapper.vm.value[i].accession).toBe(newValue[i].accession)
+    }
+  })
+
+  it('handles term paste with invalid JSON (should fail)', async () => {
+    jest.spyOn(console, 'error').mockImplementation(jest.fn())
+    const newValue = 'qwertyuiop;"asdfghjk'
+    const modalParams = copy(ontologyEditParamsHp)
+    const wrapper = mount(OntologyEditModal, {
+      localVue,
+      propsData: propsData,
+      methods: { getInitialTermInfo: jest.fn() }
+    })
+    wrapper.vm.showModal(modalParams, jest.fn())
+    wrapper.setData({ refreshingTerms: false })
+    await waitNT(wrapper.vm)
+    await waitRAF()
+
+    await wrapper.vm.onPasteInput(newValue)
+    for (let i = 0; i < wrapper.vm.value.length; i++) {
+      expect(wrapper.vm.value[i].name).toBe(modalParams.value[i].name)
+      expect(wrapper.vm.value[i].ontology_name).toBe(modalParams.value[i].ontology_name)
+      expect(wrapper.vm.value[i].accession).toBe(modalParams.value[i].accession)
+    }
   })
 
   // TODO: Test values returned to finishEditCb
