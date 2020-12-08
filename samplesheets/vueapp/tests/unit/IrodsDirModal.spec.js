@@ -48,11 +48,11 @@ describe('IrodsDirModal.vue', () => {
     await waitNT(wrapper.vm)
     await waitRAF()
 
-    expect(wrapper.find('#sodar-vue-irods-modal-content').exists()).toBe(true)
-    expect(wrapper.findAll('.sodar-ss-vue-irods-obj').length).toBe(2)
-    expect(wrapper.find('#sodar-ss-vue-irods-empty').exists()).toBe(false)
-    expect(wrapper.find('#sodar-ss-vue-irods-message').exists()).toBe(false)
-    expect(wrapper.find('#sodar-ss-vue-irods-wait').exists()).toBe(false)
+    expect(wrapper.find('#sodar-irods-modal-content').exists()).toBe(true)
+    expect(wrapper.findAll('.sodar-ss-irods-obj').length).toBe(2)
+    expect(wrapper.find('#sodar-ss-irods-empty').exists()).toBe(false)
+    expect(wrapper.find('#sodar-ss-irods-message').exists()).toBe(false)
+    expect(wrapper.find('#sodar-ss-irods-wait').exists()).toBe(false)
   })
 
   it('renders modal with empty object list', async () => {
@@ -66,9 +66,9 @@ describe('IrodsDirModal.vue', () => {
 
     expect(wrapper.vm.message).toBe('Empty collection')
     expect(wrapper.find('#sodar-irods-obj-table').exists()).toBe(false)
-    expect(wrapper.find('#sodar-ss-vue-irods-empty').exists()).toBe(true)
-    expect(wrapper.find('#sodar-ss-vue-irods-message').exists()).toBe(false)
-    expect(wrapper.find('#sodar-ss-vue-irods-wait').exists()).toBe(false)
+    expect(wrapper.find('#sodar-ss-irods-empty').exists()).toBe(true)
+    expect(wrapper.find('#sodar-ss-irods-message').exists()).toBe(false)
+    expect(wrapper.find('#sodar-ss-irods-wait').exists()).toBe(false)
   })
 
   it('renders modal with a returned message', async () => {
@@ -81,10 +81,10 @@ describe('IrodsDirModal.vue', () => {
     await waitRAF()
 
     expect(wrapper.find('#sodar-irods-obj-table').exists()).toBe(false)
-    expect(wrapper.find('#sodar-ss-vue-irods-empty').exists()).toBe(false)
-    expect(wrapper.find('#sodar-ss-vue-irods-message').exists()).toBe(true)
-    expect(wrapper.find('#sodar-ss-vue-irods-message').text()).toBe('Message')
-    expect(wrapper.find('#sodar-ss-vue-irods-wait').exists()).toBe(false)
+    expect(wrapper.find('#sodar-ss-irods-empty').exists()).toBe(false)
+    expect(wrapper.find('#sodar-ss-irods-message').exists()).toBe(true)
+    expect(wrapper.find('#sodar-ss-irods-message').text()).toBe('Message')
+    expect(wrapper.find('#sodar-ss-irods-wait').exists()).toBe(false)
   })
 
   it('renders modal while waiting for data', async () => {
@@ -95,10 +95,10 @@ describe('IrodsDirModal.vue', () => {
     await waitNT(wrapper.vm)
     await waitRAF()
 
-    expect(wrapper.find('#sodar-vue-irods-modal-content').exists()).toBe(false)
-    expect(wrapper.find('#sodar-ss-vue-irods-empty').exists()).toBe(false)
-    expect(wrapper.find('#sodar-ss-vue-irods-message').exists()).toBe(false)
-    expect(wrapper.find('#sodar-ss-vue-irods-wait').exists()).toBe(true)
+    expect(wrapper.find('#sodar-irods-modal-content').exists()).toBe(false)
+    expect(wrapper.find('#sodar-ss-irods-empty').exists()).toBe(false)
+    expect(wrapper.find('#sodar-ss-irods-message').exists()).toBe(false)
+    expect(wrapper.find('#sodar-ss-irods-wait').exists()).toBe(true)
   })
 
   it('updates list on onFilterUpdate()', async () => {
@@ -112,12 +112,12 @@ describe('IrodsDirModal.vue', () => {
 
     await wrapper.vm.onFilterUpdate('test2')
     expect(wrapper.find('.sodar-irods-obj-table').exists()).toBe(true)
-    expect(wrapper.findAll('.sodar-ss-vue-irods-obj').length).toBe(2)
-    expect(wrapper.findAll('.sodar-ss-vue-irods-obj').at(0).isVisible()).toBe(false)
-    expect(wrapper.findAll('.sodar-ss-vue-irods-obj').at(1).isVisible()).toBe(true)
+    expect(wrapper.findAll('.sodar-ss-irods-obj').length).toBe(2)
+    expect(wrapper.findAll('.sodar-ss-irods-obj').at(0).isVisible()).toBe(false)
+    expect(wrapper.findAll('.sodar-ss-irods-obj').at(1).isVisible()).toBe(true)
     await wrapper.vm.onFilterUpdate('')
-    expect(wrapper.findAll('.sodar-ss-vue-irods-obj').at(0).isVisible()).toBe(true)
-    expect(wrapper.findAll('.sodar-ss-vue-irods-obj').at(1).isVisible()).toBe(true)
+    expect(wrapper.findAll('.sodar-ss-irods-obj').at(0).isVisible()).toBe(true)
+    expect(wrapper.findAll('.sodar-ss-irods-obj').at(1).isVisible()).toBe(true)
   })
 
   it('updates modal title on setTitle()', async () => {

@@ -223,10 +223,10 @@ export default {
         selectedElems.forEach(function (cell) {
           const cellRect = cell.getBoundingClientRect()
           const rowId = parseInt(cell.querySelector(
-            '.sodar-ss-data').getAttribute('row-id')
+            '.sodar-ss-data').getAttribute('data-row-id')
           )
           const colId = 'col' + cell.querySelector(
-            '.sodar-ss-data').getAttribute('col-num')
+            '.sodar-ss-data').getAttribute('data-col-num')
 
           selectedObjs.push({
             value: gridApi.getValue(colId, gridApi.getRowNode(rowId)).value,

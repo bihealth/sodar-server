@@ -1,11 +1,12 @@
 <template>
-  <b-modal id="sodar-vue-editor-help-modal" ref="editorHelpModal"
-           centered no-fade hide-footer
-           size="xl"
-           title="Sample Sheet Editor Help">
-
+  <b-modal
+      id="sodar-ss-editor-help-modal" ref="editorHelpModal"
+      centered no-fade hide-footer
+      size="xl"
+      title="Sample Sheet Editor Help"
+      :static="true">
     <!-- Object list -->
-    <div id="sodar-vue-irods-modal-content">
+    <div id="sodar-ss-editor-help-modal-content">
       <p>
         The sample sheet editor is under incremental development. Certain
         features are available, while others will be enabled later. Bugs and
@@ -171,15 +172,10 @@
 <script>
 export default {
   name: 'EditorHelpModal',
-  data () {
-    return {
-    }
-  },
   methods: {
     showModal () {
       this.$refs.editorHelpModal.show()
     },
-
     hideModal () {
       this.$refs.editorHelpModal.hide()
     }

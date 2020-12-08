@@ -31,10 +31,35 @@ Commits
   track
 
 
-Testing
-=======
+Python Testing
+==============
 
 - For tests utilizing Taskflow or iRODS, please decorate with ``@skipIf``
+
+
+Vue App Unit Testing Hints
+==========================
+
+- How to test Bootstrap-vue modals
+    * Set ``:static="true"`` on modal
+    * Use ``async ()`` on test case
+    * **After modal.show():** to make sure modal renders, call ``waitNT()`` and
+      ``waitRAF()`` from ``utils.js`` (taken from official bootstrap-vue tests)
+- Best way to test for ``disabled="disabled"``:
+    * True: ``expect(wrapper.find('#id').attributes().disabled).toBe('disabled')``
+    * False: ``expect(wrapper.find('#id').attributes().disabled).toBe(undefined)``
+    * ``*.props().disabled`` MAY work if target is a vue component with the
+      ``disabled`` property.. but not always!
+- How to update ``select option``
+    * ``await wrapper.find('#id').findAll('option').at(idx).setSelected()``
+    * **Note:** Will **not** work with bootstrap-vue select!
+- Testing ``@input`` event in bootstrap-vue elements
+    * ``wrapper.setData({ vModel: 'value' })``
+    * ``wrapper.find('#id').vm.$emit('input')``
+- Beware of using ``.not`` in your tests
+    * If used on e.g. an attribute of an element, this may return ``true`` even
+      ff the element itself does not exist at all!
+    * Better to check for the exact value of the attribute/property instead.
 
 
 App Relationships and Plugins

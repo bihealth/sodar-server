@@ -54,7 +54,7 @@ describe('PageHeader.vue', () => {
     const wrapper = mount(PageHeader, { localVue, propsData: propsData })
 
     // Basic elements and nav
-    expect(wrapper.find('#sodar-ss-vue-subtitle').exists()).toBe(true)
+    expect(wrapper.find('#sodar-ss-subtitle').exists()).toBe(true)
     expect(wrapper.findAll('.sodar-ss-tab-study').length).toBe(1)
     expect(wrapper.find('#sodar-ss-tab-overview').exists()).toBe(true)
 
@@ -64,8 +64,8 @@ describe('PageHeader.vue', () => {
     expect(wrapper.findAll('.sodar-ss-nav-item').length).toBe(3)
 
     // Edit badge
-    expect(wrapper.find('#sodar-ss-vue-badge-edit').exists()).toBe(false)
-    expect(wrapper.find('#sodar-ss-vue-link-edit-help').exists()).toBe(false)
+    expect(wrapper.find('#sodar-ss-badge-edit').exists()).toBe(false)
+    expect(wrapper.find('#sodar-ss-link-edit-help').exists()).toBe(false)
 
     // Operations dropdown
     expect(wrapper.find('#sodar-ss-op-dropdown').exists()).toBe(true)
@@ -80,7 +80,7 @@ describe('PageHeader.vue', () => {
     expect(wrapper.find('#sodar-ss-op-item-delete').exists()).toBe(true)
 
     // Finish editing button
-    expect(wrapper.find('#sodar-ss-vue-btn-edit-finish').exists()).toBe(false)
+    expect(wrapper.find('#sodar-ss-btn-edit-finish').exists()).toBe(false)
   })
 
   it('renders page header with no sample sheet', () => {
@@ -116,14 +116,14 @@ describe('PageHeader.vue', () => {
     expect(wrapper.findAll('.sodar-ss-nav-item').at(2).find('a').classes()).toContain('disabled')
 
     // Edit badge
-    expect(wrapper.find('#sodar-ss-vue-badge-edit').exists()).toBe(true)
-    expect(wrapper.find('#sodar-ss-vue-link-edit-help').exists()).toBe(true)
+    expect(wrapper.find('#sodar-ss-badge-edit').exists()).toBe(true)
+    expect(wrapper.find('#sodar-ss-link-edit-help').exists()).toBe(true)
 
     // Operations dropdown
     expect(wrapper.find('#sodar-ss-op-dropdown').exists()).toBe(false)
 
     // Finish editing button
-    expect(wrapper.find('#sodar-ss-vue-btn-edit-finish').exists()).toBe(true)
+    expect(wrapper.find('#sodar-ss-btn-edit-finish').exists()).toBe(true)
   })
 
   it('renders disabled finish editing button with unsaved row', () => {
@@ -132,8 +132,8 @@ describe('PageHeader.vue', () => {
     const wrapper = mount(PageHeader, { localVue, propsData: propsData })
 
     // Finish editing button
-    expect(wrapper.find('#sodar-ss-vue-btn-edit-finish').exists()).toBe(true)
-    expect(wrapper.find('#sodar-ss-vue-btn-edit-finish').classes()).toContain('disabled')
+    expect(wrapper.find('#sodar-ss-btn-edit-finish').exists()).toBe(true)
+    expect(wrapper.find('#sodar-ss-btn-edit-finish').classes()).toContain('disabled')
   })
 
   it('renders page header while rendering grid', () => {
@@ -148,15 +148,15 @@ describe('PageHeader.vue', () => {
     expect(wrapper.find('#sodar-ss-nav-dropdown').find('button').classes()).toContain('disabled')
 
     // Edit badge
-    expect(wrapper.find('#sodar-ss-vue-badge-edit').exists()).toBe(false)
-    expect(wrapper.find('#sodar-ss-vue-link-edit-help').exists()).toBe(false)
+    expect(wrapper.find('#sodar-ss-badge-edit').exists()).toBe(false)
+    expect(wrapper.find('#sodar-ss-link-edit-help').exists()).toBe(false)
 
     // Operations dropdown
     expect(wrapper.find('#sodar-ss-op-dropdown').exists()).toBe(true)
     expect(wrapper.find('#sodar-ss-op-dropdown').find('button').classes()).toContain('disabled')
 
     // Finish editing button
-    expect(wrapper.find('#sodar-ss-vue-btn-edit-finish').exists()).toBe(false)
+    expect(wrapper.find('#sodar-ss-btn-edit-finish').exists()).toBe(false)
   })
 
   it('renders operations dropdown header with sheet render error', () => {
@@ -249,10 +249,10 @@ describe('PageHeader.vue', () => {
     const wrapper = mount(PageHeader, { localVue, propsData: propsData })
     const spyToggleEditMode = jest.spyOn(wrapper.vm, 'toggleEditModeCallback')
 
-    expect(wrapper.find('#sodar-ss-vue-btn-edit-finish').exists()).toBe(true)
-    expect(wrapper.find('#sodar-ss-vue-btn-edit-finish').classes()).not.toContain('disabled')
+    expect(wrapper.find('#sodar-ss-btn-edit-finish').exists()).toBe(true)
+    expect(wrapper.find('#sodar-ss-btn-edit-finish').classes()).not.toContain('disabled')
     expect(spyToggleEditMode).not.toHaveBeenCalled()
-    await wrapper.find('#sodar-ss-vue-btn-edit-finish').trigger('click')
+    await wrapper.find('#sodar-ss-btn-edit-finish').trigger('click')
     expect(spyToggleEditMode).toHaveBeenCalled()
   })
 
@@ -262,7 +262,7 @@ describe('PageHeader.vue', () => {
     const spyShowModal = jest.spyOn(wrapper.props().editorHelpModal, 'showModal')
 
     expect(spyShowModal).not.toHaveBeenCalled()
-    await wrapper.find('#sodar-ss-vue-link-edit-help').trigger('click')
+    await wrapper.find('#sodar-ss-link-edit-help').trigger('click')
     expect(spyShowModal).toHaveBeenCalled()
   })
 

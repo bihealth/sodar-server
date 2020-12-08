@@ -13,6 +13,7 @@ export const studyUuid = '11111111-1111-1111-1111-111111111111'
 export const assayUuid = '22222222-2222-2222-2222-222222222222'
 
 // App.vue stub to be provided as prop for callbacks and general data access
+// TODO: Update to get full params
 export function getAppStub (params = {}) {
   if (!params.sodarContext) params.sodarContext = copy(sodarContext)
   return {
@@ -24,8 +25,9 @@ export function getAppStub (params = {}) {
       objectSelectEditor: ObjectSelectEditor,
       ontologyEditor: OntologyEditor
     },
+    projectUuid: projectUuid,
     sodarContext: params.sodarContext,
-    unsavedRow: null,
+    unsavedRow: params.unsavedRow || null,
     handleRowInsert: () => {},
     getGridOptionsByUuid: () => {},
     setDataUpdated: () => {},
@@ -33,7 +35,8 @@ export function getAppStub (params = {}) {
     $refs: params.$refs || {
       columnConfigModal: null,
       columnToggleModalRef: null,
-      dirModalRef: null
+      dirModalRef: null,
+      ontologyEditModal: null
     }
   }
 }
@@ -147,6 +150,19 @@ export const waitAG = wrapper => new Promise(function (resolve, reject) {(
     setTimeout(waitForGridReady, 10)
   })()
 })
+
+// Wait for at least n elements to be present by selector
+export const waitSelector = (wrapper, selector, count) =>
+  new Promise(function (resolve, reject) {(
+    function waitForSelectorCount () {
+      if (count === undefined) count = 1
+      if ((count > 0 && wrapper.findAll(selector).length >= count) ||
+          (count === 0 && wrapper.findAll(selector).length === count)) {
+        return resolve()
+      }
+      setTimeout(waitForSelectorCount, 10)
+    })()
+  })
 
 // Bootstrap-vue modal helpers
 // From: https://github.com/bootstrap-vue/bootstrap-vue/blob/dev/tests/utils.js

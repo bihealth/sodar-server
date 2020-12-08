@@ -1,8 +1,8 @@
 // Helpers for SODAR ag-grid setup
 
 import DataCellRenderer from '@/components/renderers/DataCellRenderer'
-import FieldHeaderEditRenderer from '@/components/renderers/FieldHeaderEditRenderer'
-import ShortcutButtonsRenderer from '@/components/renderers/ShortcutButtonsRenderer'
+import HeaderEditRenderer from '@/components/renderers/HeaderEditRenderer'
+import StudyShortcutsRenderer from '@/components/renderers/StudyShortcutsRenderer'
 import IrodsButtonsRenderer from '@/components/renderers/IrodsButtonsRenderer'
 import RowEditRenderer from '@/components/renderers/RowEditRenderer'
 
@@ -281,7 +281,7 @@ export function buildColDef (params) {
             else configNodeIdx = i - params.studyNodeLen
           }
 
-          header.headerComponentFramework = FieldHeaderEditRenderer
+          header.headerComponentFramework = HeaderEditRenderer
           header.headerComponentParams = {
             app: params.app,
             modalComponent: params.app.$refs.columnConfigModal,
@@ -396,7 +396,7 @@ export function buildColDef (params) {
           unselectable: true,
           width: 45 * Object.keys(params.table.shortcuts.schema).length,
           minWidth: 90,
-          cellRendererFramework: ShortcutButtonsRenderer,
+          cellRendererFramework: StudyShortcutsRenderer,
           cellRendererParams: {
             schema: params.table.shortcuts.schema,
             modalComponent: params.app.$refs.studyShortcutModal

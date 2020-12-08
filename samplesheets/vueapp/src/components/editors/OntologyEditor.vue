@@ -1,5 +1,5 @@
 <template>
-  <div class="sodar-ss-vue-edit-busy text-muted text-center">
+  <div class="sodar-ss-data-cell-busy text-muted text-center">
     <i class="fa fa-spin fa-circle-o-notch"></i>
   </div>
 </template>
@@ -104,16 +104,13 @@ export default Vue.extend({
       this.ogEditValue = null
     }
 
-    this.app.$refs.ontologyEditModal.showModal(
-      {
-        value: this.value.value,
-        nodeName: this.nodeName,
-        headerName: this.params.column.colDef.headerName,
-        editConfig: this.params.editConfig,
-        sodarOntologies: this.params.sodarOntologies
-      },
-      this.finishEditCallback
-    )
+    this.app.$refs.ontologyEditModal.showModal({
+      value: this.value.value,
+      nodeName: this.nodeName,
+      headerName: this.params.column.colDef.headerName,
+      editConfig: this.params.editConfig,
+      sodarOntologies: this.params.sodarOntologies
+    }, this.finishEditCallback)
   },
   updated () {
   },

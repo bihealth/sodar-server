@@ -22,8 +22,7 @@ localVue.use(VueClipboard)
 
 describe('SheetTable.vue', () => {
   beforeAll(() => {
-    // TODO: Why do we get bootstrap-vue errors?
-    // TODO: See https://stackoverflow.com/questions/51536537/running-jest-with-bootstrap-vue
+    // NOTE: Workaround for bootstrap-vue "Vue warn" errors, see issue #1034
     jest.spyOn(console, 'error').mockImplementation(jest.fn())
     // Disable warnings
     jest.spyOn(console, 'warn').mockImplementation(jest.fn())
@@ -96,6 +95,19 @@ describe('SheetTable.vue', () => {
     // Ag-grid sanity checks
     expect(wrapper.find('#sodar-ss-grid-assay-' + assayUuid).exists()).toBe(true)
     expect(wrapper.findAll('.ag-row').length).toBe(6)
+  })
+
+  it('renders row number', async () => {
+    const wrapper = mount(SheetTable, {
+      localVue,
+      propsData: getSheetTablePropsData()
+    })
+    await waitAG(wrapper)
+
+    const cells = wrapper.findAll('.sodar-ss-data-row-cell')
+    expect(cells.at(0).text()).toBe('1')
+    expect(cells.at(0).classes()).toContain('text-right')
+    expect(cells.at(0).classes()).toContain('text-muted')
   })
 
   it('calls onColumnToggle() on study table button click', async () => {

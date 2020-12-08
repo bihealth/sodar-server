@@ -48,9 +48,9 @@ describe('StudyShortcutModal.vue', () => {
     await waitNT(wrapper.vm)
     await waitRAF()
 
-    expect(wrapper.find('#sodar-vue-shortcut-modal').exists()).toBe(true)
-    expect(wrapper.findAll('.sodar-ss-vue-shortcut-item').length).toBe(3)
-    expect(wrapper.findAll('.sodar-ss-vue-shortcut-extra').length).toBe(4)
+    expect(wrapper.find('#sodar-ss-shortcut-modal').exists()).toBe(true)
+    expect(wrapper.findAll('.sodar-ss-shortcut-item').length).toBe(3)
+    expect(wrapper.findAll('.sodar-ss-shortcut-extra').length).toBe(4)
   })
 
   it('renders modal with message', async () => {
@@ -64,9 +64,9 @@ describe('StudyShortcutModal.vue', () => {
     await waitNT(wrapper.vm)
     await waitRAF()
 
-    expect(wrapper.find('.sodar-ss-vue-shortcut-table').exists()).toBe(false)
-    expect(wrapper.find('#sodar-ss-vue-shortcuts-message').exists()).toBe(true)
-    expect(wrapper.find('#sodar-ss-vue-shortcuts-message').text()).toBe('Message')
+    expect(wrapper.find('.sodar-ss-shortcut-table').exists()).toBe(false)
+    expect(wrapper.find('#sodar-ss-shortcuts-message').exists()).toBe(true)
+    expect(wrapper.find('#sodar-ss-shortcuts-message').text()).toBe('Message')
   })
 
   it('renders modal while waiting for data', async () => {
@@ -79,8 +79,8 @@ describe('StudyShortcutModal.vue', () => {
     await waitNT(wrapper.vm)
     await waitRAF()
 
-    expect(wrapper.find('.sodar-ss-vue-shortcut-table').exists()).toBe(false)
-    expect(wrapper.find('#sodar-ss-vue-shortcuts-message').exists()).toBe(false)
-    expect(wrapper.find('#sodar-ss-vue-shortcuts-wait').exists()).toBe(true)
+    expect(wrapper.find('.sodar-ss-shortcut-table').exists()).toBe(false)
+    expect(wrapper.find('#sodar-ss-shortcuts-message').exists()).toBe(false)
+    expect(wrapper.find('#sodar-ss-shortcuts-wait').exists()).toBe(true)
   })
 })

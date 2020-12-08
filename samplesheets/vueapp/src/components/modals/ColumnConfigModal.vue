@@ -321,15 +321,15 @@
           <tr v-if="['integer', 'double'].includes(fieldConfig.format)">
             <td>Enable Unit</td>
             <td>
-              <span class="sodar-ss-vue-column-wrapper"
-                    id="sodar-ss-vue-column-wrapper-unit"
+              <span class="sodar-ss-column-wrapper"
+                    id="sodar-ss-column-wrapper-unit"
                     title="Enable/disable unit: removes existing units from column if disabled"
                     v-b-tooltip.right.hover>
                 <b-checkbox
                     plain
                     v-model="unitEnabled"
                     :disabled="!enableUnitSelect()"
-                    id="sodar-ss-vue-column-check-unit">
+                    id="sodar-ss-column-check-unit">
                 </b-checkbox>
               </span>
             </td>
@@ -398,8 +398,8 @@
             <td class="text-right">
               <b-button
                   variant="primary"
-                  class="sodar-list-btn sodar-ss-vue-row-btn
-                         sodar-ss-btn-ontology-up  mr-1"
+                  class="sodar-list-btn sodar-ss-row-btn
+                         sodar-ss-btn-ontology-up mr-1"
                   title="Move ontology backwards in list"
                   @click="onOntologyMove(oIdx, true)"
                   :disabled="!enableOntologyMove(oIdx, true)"
@@ -408,7 +408,7 @@
               </b-button>
               <b-button
                   variant="primary"
-                  class="sodar-list-btn sodar-ss-vue-row-btn
+                  class="sodar-list-btn sodar-ss-row-btn
                          sodar-ss-btn-ontology-down mr-1"
                   title="Move ontology forward in list"
                   @click="onOntologyMove(oIdx, false)"
@@ -418,7 +418,7 @@
               </b-button>
               <b-button
                   variant="danger"
-                  class="sodar-list-btn sodar-ss-vue-row-btn
+                  class="sodar-list-btn sodar-ss-row-btn
                          sodar-ss-btn-ontology-delete"
                   title="Delete ontology"
                   @click="onOntologyDelete(ontology, oIdx)"
@@ -451,7 +451,7 @@
             <td class="text-right">
               <b-button
                   variant="primary"
-                  class="sodar-list-btn sodar-ss-vue-row-btn"
+                  class="sodar-list-btn sodar-ss-row-btn"
                   id="sodar-ss-col-ontology-btn-insert"
                   title="Insert ontology"
                   @click="onOntologyInsert"

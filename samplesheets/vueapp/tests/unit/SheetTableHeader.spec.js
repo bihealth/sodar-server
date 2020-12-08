@@ -30,7 +30,7 @@ describe('SheetTableHeader.vue', () => {
   function getStubs () {
     return {
       IrodsStatsBadge: {
-        template: '<div class="sodar-vue-irods-stats" />',
+        template: '<div class="sodar-ss-irods-stats" />',
         methods: { updateStats: jest.fn() }
       }
     }
@@ -60,7 +60,7 @@ describe('SheetTableHeader.vue', () => {
     expect(wrapper.find('i.fa-puzzle-piece').exists()).toBe(false)
 
     // Badges
-    expect(wrapper.find('.sodar-vue-irods-stats').exists()).toBe(true)
+    expect(wrapper.find('.sodar-ss-irods-stats').exists()).toBe(true)
     expect(wrapper.find('#sodar-ss-badge-sheet-config').find(
       '.badge-danger').text()).toBe('Unknown')
 
@@ -85,7 +85,7 @@ describe('SheetTableHeader.vue', () => {
     expect(wrapper.find('i.fa-puzzle-piece').exists()).toBe(true)
 
     // Badges
-    expect(wrapper.find('.sodar-vue-irods-stats').exists()).toBe(false)
+    expect(wrapper.find('.sodar-ss-irods-stats').exists()).toBe(false)
 
     // IrodsButtons
     expect(wrapper.find('.sodar-ss-irods-links').exists()).toBe(true)
@@ -100,7 +100,7 @@ describe('SheetTableHeader.vue', () => {
       stubs: getStubs()
     })
 
-    expect(wrapper.find('.sodar-vue-irods-stats').exists()).toBe(false)
+    expect(wrapper.find('.sodar-ss-irods-stats').exists()).toBe(false)
     expect(wrapper.find('.sodar-ss-irods-links').exists()).toBe(true)
     expect(wrapper.find('.sodar-irods-copy-path-btn')
       .attributes().disabled).toBe('disabled')
@@ -113,7 +113,7 @@ describe('SheetTableHeader.vue', () => {
       stubs: getStubs()
     })
 
-    expect(wrapper.find('.sodar-vue-irods-stats').exists()).toBe(false)
+    expect(wrapper.find('.sodar-ss-irods-stats').exists()).toBe(false)
     expect(wrapper.find('.sodar-ss-irods-links').exists()).toBe(true)
     expect(wrapper.find('.sodar-irods-copy-path-btn')
       .attributes().disabled).toBe('disabled')
@@ -128,7 +128,7 @@ describe('SheetTableHeader.vue', () => {
       stubs: getStubs()
     })
 
-    expect(wrapper.find('.sodar-vue-irods-stats').exists()).toBe(false)
+    expect(wrapper.find('.sodar-ss-irods-stats').exists()).toBe(false)
     expect(wrapper.find('.sodar-ss-irods-links').exists()).toBe(true)
     expect(wrapper.find('.sodar-irods-copy-path-btn')
       .attributes().disabled).toBe('disabled')
@@ -143,7 +143,7 @@ describe('SheetTableHeader.vue', () => {
       stubs: getStubs()
     })
 
-    expect(wrapper.find('.sodar-vue-irods-stats').exists()).toBe(false)
+    expect(wrapper.find('.sodar-ss-irods-stats').exists()).toBe(false)
     expect(wrapper.find('.sodar-ss-irods-links').exists()).toBe(true)
     expect(wrapper.find('.sodar-irods-copy-path-btn')
       .attributes().disabled).toBe('disabled')

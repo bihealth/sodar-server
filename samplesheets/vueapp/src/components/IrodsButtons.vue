@@ -4,7 +4,7 @@
         v-for="extraLink in extraLinks"
         :key="extraLink.id"
         variant="secondary"
-        :class="'sodar-list-btn sodar-ss-irods-btn sodar-irods-copy-btn ' + extraLink.class"
+        :class="'sodar-list-btn sodar-ss-irods-btn ' + extraLink.class"
         :title="extraLink.title"
         :href="extraLink.url"
         :disabled="!(getEnabledState() && extraLink.enabled)"
@@ -16,7 +16,7 @@
               irodsBackendEnabled &&
               irodsWebdavUrl"
         variant="secondary"
-        class="sodar-list-btn sodar-ss-irods-btn sodar-vue-popup-list-btn"
+        class="sodar-list-btn sodar-ss-irods-btn sodar-ss-popup-list-btn"
         title="List files"
         :disabled="!getEnabledState()"
         @click="onDirListClick"

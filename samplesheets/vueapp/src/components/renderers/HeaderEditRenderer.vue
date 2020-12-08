@@ -1,14 +1,14 @@
 <template>
-  <div class="ag-header-group-cell-label">
+  <div class="ag-header-group-cell-label sodar-ss-header-edit">
     <span class="ag-header-group-text">
       {{ displayName }}
     </span>
     <span class="ml-auto">
       <b-button
           variant="secondary"
-          class="sodar-list-btn sodar-vue-col-config-btn"
+          class="sodar-list-btn sodar-ss-col-config-btn"
           title="Configure Column"
-          @click="onModalClick"
+          @click="onModalShow"
           :disabled="!isEnabled()"
           v-b-tooltip.hover>
         <i class="fa fa-pencil"></i>
@@ -34,7 +34,7 @@ export default Vue.extend({
       this.params = params
       return true
     },
-    onModalClick () {
+    onModalShow () {
       const colDef = this.params.column.colDef
       let fieldConfig
       let newConfig
@@ -63,20 +63,12 @@ export default Vue.extend({
           fieldConfig.format = 'protocol'
         } else if (fieldConfig.type === 'perform_date') {
           fieldConfig.format = 'date'
-        } else {
-          fieldConfig.format = 'string'
-        }
+        } else fieldConfig.format = 'string'
         newConfig = true // No existing config found
       }
-      if (!('editable' in fieldConfig)) {
-        fieldConfig.editable = false
-      }
-      if (!('range' in fieldConfig)) {
-        fieldConfig.range = [null, null]
-      }
-      if (!('regex' in fieldConfig)) {
-        fieldConfig.regex = ''
-      }
+      if (!('editable' in fieldConfig)) fieldConfig.editable = false
+      if (!('range' in fieldConfig)) fieldConfig.range = [null, null]
+      if (!('regex' in fieldConfig)) fieldConfig.regex = ''
 
       this.modalComponent.showModal({
         col: this.params.column,
@@ -90,6 +82,7 @@ export default Vue.extend({
       })
     },
     isEnabled () {
+      // Temporary workaround for issue #897
       return !(this.app &&
         this.app.unsavedRow &&
         ['NAME', 'PROTOCOL', 'FILE_LINK'].includes(this.params.colType))
@@ -106,9 +99,7 @@ export default Vue.extend({
 </script>
 
 <style scoped>
-
-.sodar-vue-col-config-btn:focus {
+.sodar-ss-col-config-btn:focus {
   box-shadow: none !important;
 }
-
 </style>

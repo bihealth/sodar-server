@@ -21,10 +21,10 @@
                  sodarContext.perms.edit_sheet &&
                  sodarContext.alerts.length"
            class="pb-2"
-           id="sodar-ss-vue-alert-container">
+           id="sodar-ss-alert-container">
         <div v-for="(alertData, alertIdx) in sodarContext.alerts"
              :key="alertIdx"
-             :class="'alert sodar ss-vue-alert alert-' + alertData.level">
+             :class="'alert sodar-ss-alert alert-' + alertData.level">
           {{ alertData.text }}
         </div>
       </div>
@@ -100,7 +100,7 @@
 
       <!-- Render error -->
       <div v-else-if="renderError" :id="contentId">
-        <div class="alert alert-danger" id="sodar-ss-vue-alert-error">
+        <div class="alert alert-danger" id="sodar-ss-alert-error">
           Error rendering study tables, please check your ISAtab files.
           Exception: {{ renderError }}
         </div>
@@ -109,7 +109,7 @@
       <!-- No sheets available -->
       <div v-else-if="appSetupDone && !sheetsAvailable"
            :id="contentId">
-        <div class="alert alert-info" id="sodar-ss-vue-alert-empty">
+        <div class="alert alert-info" id="sodar-ss-alert-empty">
           No sample sheets are currently available for this project.
           <span v-if="sodarContext.perms.edit_sheet">
             To add sample sheets, please import it from an existing ISAtab
@@ -119,7 +119,7 @@
       </div>
 
       <!-- Loading/busy -->
-      <div v-else class="w-100 text-center" id="sodar-ss-vue-wait">
+      <div v-else class="w-100 text-center" id="sodar-ss-wait">
         <i class="fa fa-4x fa-spin fa-circle-o-notch text-muted mt-5"></i>
       </div>
 
@@ -1384,13 +1384,13 @@ div.sodar-ss-data-hover {
   color: #ffffff !important;
 }
 
-.sodar-ss-vue-row-btn {
+.sodar-ss-row-btn {
   width: 26px !important; /* Quick HACK for uniform button size */
 }
 
 /* Common editor styles */
 
-.sodar-ss-vue-edit-popup {
+.sodar-ss-data-cell-popup {
   border: 1px solid #6c757d;
   background: #ffffff;
   padding: 10px;
@@ -1434,21 +1434,21 @@ select.ag-cell-edit-input {
     </svg>");
 }
 
-div.sodar-ss-vue-edit-busy {
+div.sodar-ss-data-cell-busy {
   line-height: 38px !important;
   vertical-align: middle;
 }
 
-select#sodar-ss-vue-edit-select-unit {
+select#sodar-ss-data-cell-unit {
   margin-left: 4px;
 }
 
-.sodar-ss-vue-select-firefox {
+.sodar-ss-select-firefox {
   padding-left: 8px !important;
 }
 
-input.sodar-ss-vue-popup-input,
-select.sodar-ss-vue-popup-input {
+input.sodar-ss-popup-input,
+select.sodar-ss-popup-input {
   border: 1px solid #ced4da;
   border-radius: .25rem;
 }

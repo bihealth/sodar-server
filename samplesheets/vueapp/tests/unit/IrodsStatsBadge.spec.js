@@ -33,7 +33,7 @@ describe('IrodsStatsBadge.vue', () => {
   it('renders default badge', () => {
     const wrapper = mount(IrodsStatsBadge, { localVue, propsData: propsData })
 
-    expect(wrapper.find('.sodar-vue-irods-stats').find('span').text()).toBe('Updating..')
+    expect(wrapper.find('.sodar-ss-irods-stats').find('span').text()).toBe('Updating..')
   })
 
   it('updates and renders stats in badge', async () => {
@@ -42,7 +42,7 @@ describe('IrodsStatsBadge.vue', () => {
     await wrapper.vm.setStats({ file_count: 2, total_size: 170 })
     expect(wrapper.vm.fileCount).toBe(2)
     expect(wrapper.vm.totalSize).toBe(170)
-    expect(wrapper.find('.sodar-vue-irods-stats').find(
+    expect(wrapper.find('.sodar-ss-irods-stats').find(
       'span').text().replace(/\s+/g, ' ')).toBe('2 files (170 B)')
   })
 })

@@ -1,6 +1,6 @@
 <template>
   <b-modal
-      id="sodar-vue-ontology-edit-modal" ref="ontologyEditModal"
+      id="sodar-ss-ontology-edit-modal" ref="ontologyEditModal"
       centered no-fade hide-footer
       size="xl"
       :static="true"
@@ -8,7 +8,7 @@
       no-close-on-esc>
     <template slot="modal-header">
       <div class="w-100">
-        <h5 class="modal-title text-nowrap" id="sodar-ss-vue-ontology-title">
+        <h5 class="modal-title text-nowrap" id="sodar-ss-ontology-title">
           {{ getTitle() }}
           <span class="pull-right">
             <b-input-group class="sodar-header-input-group">
@@ -25,7 +25,7 @@
                 </b-button>
               </b-input-group-prepend>
               <b-form-input
-                  id="sodar-ss-vue-ontology-input-paste"
+                  id="sodar-ss-ontology-input-paste"
                   v-model="pasteData"
                   @input="onPasteInput"
                   placeholder="Paste"
@@ -40,14 +40,14 @@
         </h5>
       </div>
     </template>
-    <div id="sodar-vue-ontology-modal-content">
-      <div class="w-100" id="sodar-vue-ontology-modal-ui">
+    <div id="sodar-ss-ontology-modal-content">
+      <div class="w-100" id="sodar-ss-ontology-modal-ui">
         <!-- Ontology term search -->
         <div v-if="searchOntologies && searchOntologies.length > 0">
           <b-row>
             <b-col class="col-md-3 pl-0 pr-2">
               <b-input
-                  id="sodar-ss-vue-ontology-input-search"
+                  id="sodar-ss-ontology-input-search"
                   v-model="searchValue"
                   placeholder="Search for term"
                   @update="onSearchUpdate()"
@@ -57,7 +57,7 @@
             <b-col class="col-md-2 px-0">
               <b-form-select
                   v-model="queryOntologyLimit"
-                  id="sodar-ss-vue-ontology-select-limit"
+                  id="sodar-ss-ontology-select-limit"
                   @change="onSearchParamUpdate()"
                   :disabled="!enableSearch() || searchOntologies.length === 1"
                   :select-size="1">
@@ -75,11 +75,11 @@
               </b-form-select>
             </b-col>
             <b-col class="col-md-3 pl-3 text-nowrap">
-              <div id="sodar-ss-vue-ontology-order">
+              <div id="sodar-ss-ontology-order">
                 <b-form-checkbox
                     v-model="queryOntologyOrder"
                     @change="onSearchParamUpdate()"
-                    id="sodar-ss-vue-ontology-order-check"
+                    id="sodar-ss-ontology-order-check"
                     :disabled="queryOntologyLimit !== null">
                   Sort by ontology
                 </b-form-checkbox>
@@ -88,13 +88,13 @@
             <b-col class="col-md-4 px-0 align-right align-middle">
               <i v-if="querying"
                  class="fa fa-spin fa-circle-o-notch pull-right text-muted"
-                 id="sodar-ss-vue-ontology-spin">
+                 id="sodar-ss-ontology-spin">
               </i>
             </b-col>
           </b-row>
           <!-- TODO: Refactor as above -->
           <b-select
-              id="sodar-ss-vue-ontology-select-term"
+              id="sodar-ss-ontology-select-term"
               :disabled="!enableSearch()"
               :select-size="8">
             <option
@@ -107,26 +107,26 @@
         </div>
         <div v-else
              class="alert alert-warning"
-             id="sodar-ss-vue-ontology-no-imports">
+             id="sodar-ss-ontology-no-imports">
           No imported ontologies found! Only manual ontology value entry is
           available. Ontologies can be imported using the
           <code>ontologyaccess</code> app.
         </div>
         <div
             v-if="responseDetail"
-            :class="'alert alert-' + responseDetailType + ' sodar-ss-vue-ontology-alert'">
+            :class="'alert alert-' + responseDetailType + ' sodar-ss-ontology-alert'">
           {{ responseDetail }}
         </div>
         <div
             v-else-if="!enableInsert()"
-            class="alert alert-warning sodar-ss-vue-ontology-alert"
-            id="sodar-ss-vue-ontology-no-list">
+            class="alert alert-warning sodar-ss-ontology-alert"
+            id="sodar-ss-ontology-no-list">
           Multiple terms not allowed in this column, current entry will be
           overwritten.
         </div>
-        <div v-else id="sodar-ss-vue-alert-placeholder"></div>
+        <div v-else id="sodar-ss-alert-placeholder"></div>
         <!-- List of current values and manual entry -->
-        <table class="table sodar-card-table" id="sodar-ss-vue-ontology-term-table">
+        <table class="table sodar-card-table" id="sodar-ss-ontology-term-table">
           <thead>
             <tr>
               <th>Name</th>
@@ -138,7 +138,7 @@
           <tbody>
             <tr v-for="(term, termIdx) in value"
                 :key="termIdx"
-                class="sodar-ss-vue-ontology-term-item">
+                class="sodar-ss-ontology-term-item">
               <!-- Normal term display -->
               <td v-if="!term.editing"
                   :class="getTermNameClass(term)">
@@ -167,14 +167,14 @@
                 </i>
               </td>
               <td v-if="!term.editing">
-                <div class="sodar-ss-vue-ontology-url">
+                <div class="sodar-ss-ontology-url">
                   <a :href="term.accession" target="_blank">{{ term.accession }}</a>
                 </div>
               </td>
               <!-- Editing display -->
               <td v-if="term.editing">
                 <b-input
-                    class="sodar-ss-vue-ontology-input-row"
+                    class="sodar-ss-ontology-input-row"
                     v-model="value[termIdx].name">
                 </b-input>
               </td>
@@ -187,7 +187,7 @@
               </td>
               <td v-if="term.editing">
                 <b-input
-                    class="sodar-ss-vue-ontology-input-row"
+                    class="sodar-ss-ontology-input-row"
                     v-model="value[termIdx].accession">
                 </b-input>
               </td>
@@ -196,8 +196,8 @@
                 <b-button
                     v-if="editConfig && editConfig.allow_list"
                     variant="primary"
-                    class="sodar-list-btn sodar-ss-vue-row-btn
-                           sodar-ss-vue-btn-up mr-1"
+                    class="sodar-list-btn sodar-ss-row-btn
+                           sodar-ss-btn-up mr-1"
                     title="Move term backwards in list"
                     @click="onTermMoveClick(termIdx, true)"
                     :disabled="!enableMove(termIdx, true)"
@@ -207,8 +207,8 @@
                 <b-button
                     v-if="editConfig && editConfig.allow_list"
                     variant="primary"
-                    class="sodar-list-btn sodar-ss-vue-row-btn
-                           sodar-ss-vue-btn-down mr-1"
+                    class="sodar-list-btn sodar-ss-row-btn
+                           sodar-ss-btn-down mr-1"
                     title="Move term forward in list"
                     @click="onTermMoveClick(termIdx, false)"
                     :disabled="!enableMove(termIdx, false)"
@@ -218,8 +218,8 @@
                 <b-button
                     v-if="term.editing"
                     variant="primary"
-                    class="sodar-list-btn sodar-ss-vue-row-btn
-                           sodar-ss-vue-btn-stop mr-1"
+                    class="sodar-list-btn sodar-ss-row-btn
+                           sodar-ss-btn-stop mr-1"
                     title="Stop editing term"
                     @click="onTermEditClick(termIdx)"
                     :disabled="!enableEditSave(termIdx) || !editDataValid"
@@ -229,8 +229,8 @@
                 <b-button
                     v-else
                     variant="primary"
-                    class="sodar-list-btn sodar-ss-vue-row-btn
-                           sodar-ss-vue-btn-edit mr-1"
+                    class="sodar-list-btn sodar-ss-row-btn
+                           sodar-ss-btn-edit mr-1"
                     title="Edit term"
                     @click="onTermEditClick(termIdx)"
                     :disabled="!enableEdit()"
@@ -239,8 +239,8 @@
                 </b-button>
                 <b-button
                     variant="danger"
-                    class="sodar-list-btn sodar-ss-vue-row-btn
-                           sodar-ss-vue-btn-delete"
+                    class="sodar-list-btn sodar-ss-row-btn
+                           sodar-ss-btn-delete"
                     title="Delete term"
                     @click="onTermDeleteClick(termIdx)"
                     :disabled="!enableDelete(termIdx)"
@@ -250,10 +250,10 @@
               </td>
             </tr>
             <tr v-if="enableInsert() && insertData"
-                id="sodar-ss-vue-ontology-free-row">
+                id="sodar-ss-ontology-free-row">
               <td>
                 <b-input
-                    class="sodar-ss-vue-ontology-input-row"
+                    class="sodar-ss-ontology-input-row"
                     v-model.trim="insertData.name"
                     :disabled="!enableInsertInputs()">
                 </b-input>
@@ -268,7 +268,7 @@
               </td>
               <td>
                 <b-input
-                    class="sodar-ss-vue-ontology-input-row"
+                    class="sodar-ss-ontology-input-row"
                     v-model.trim="insertData.accession"
                     :disabled="!enableInsertInputs()">
                 </b-input>
@@ -276,8 +276,8 @@
               <td class="text-right">
                 <b-button
                     variant="primary"
-                    class="sodar-list-btn sodar-ss-vue-row-btn"
-                    id="sodar-ss-vue-btn-insert"
+                    class="sodar-list-btn sodar-ss-row-btn"
+                    id="sodar-ss-btn-insert"
                     title="Insert ontology term"
                     @click="onTermInsertClick()"
                     :disabled="!enableInsertSave() || !insertDataValid"
@@ -293,16 +293,16 @@
     <div>
       <b-button-group
           class="pull-right"
-          id="sodar-ss-vue-ontology-btn-group">
+          id="sodar-ss-ontology-btn-group">
         <b-button
             variant="secondary"
-            id="sodar-ss-vue-btn-cancel"
+            id="sodar-ss-btn-cancel"
             @click="hideModal(false)">
           <i class="fa fa-times"></i> Cancel
         </b-button>
         <b-button
             variant="primary"
-            id="sodar-ss-vue-btn-update"
+            id="sodar-ss-btn-update"
             @click="hideModal(true)"
             :disabled="!enableUpdate()"
             ref="updateBtn">
@@ -497,7 +497,7 @@ export default {
       return ''
     },
     getOntologyNameInputClass (edit) {
-      let cls = 'sodar-ss-vue-ontology-input-row'
+      let cls = 'sodar-ss-ontology-input-row'
       if ((edit && !this.editDataValid) || (!edit && !this.insertDataValid)) {
         cls += ' text-danger'
       }
@@ -777,44 +777,44 @@ export default {
 
 <style scoped>
 
-div#sodar-vue-ontology-modal-ui {
+div#sodar-ss-ontology-modal-ui {
   min-height: 620px !important;
 }
 
-#sodar-ss-vue-ontology-input-paste {
+#sodar-ss-ontology-input-paste {
   width: 70px;
 }
 
-div#sodar-ss-vue-ontology-order {
+div#sodar-ss-ontology-order {
   white-space: nowrap !important;
   padding-top: 7px;
 }
 
-table#sodar-ss-vue-ontology-term-table {
+table#sodar-ss-ontology-term-table {
 }
 
-table#sodar-ss-vue-ontology-term-table tbody tr td:not(:last-child) {
+table#sodar-ss-ontology-term-table tbody tr td:not(:last-child) {
   padding-top: 14px; /* Hack for padding vs button */
 }
 
-table#sodar-ss-vue-ontology-term-table tbody tr td:nth-child(1) {
+table#sodar-ss-ontology-term-table tbody tr td:nth-child(1) {
   width: 450px;
 }
 
-table#sodar-ss-vue-ontology-term-table tbody tr td:nth-child(2) {
+table#sodar-ss-ontology-term-table tbody tr td:nth-child(2) {
   width: 150px;
 }
 
-table#sodar-ss-vue-ontology-term-table tbody tr td:nth-child(3) {
+table#sodar-ss-ontology-term-table tbody tr td:nth-child(3) {
   max-width: 275px;
 }
 
-table#sodar-ss-vue-ontology-term-table tbody tr td:nth-child(4) {
+table#sodar-ss-ontology-term-table tbody tr td:nth-child(4) {
   white-space: nowrap !important;
   width: 150px;
 }
 
-div.sodar-ss-vue-ontology-url {
+div.sodar-ss-ontology-url {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -822,41 +822,41 @@ div.sodar-ss-vue-ontology-url {
   min-width: 75px;
 }
 
-tr#sodar-ss-vue-ontology-free-row td {
+tr#sodar-ss-ontology-free-row td {
   vertical-align: middle;
 }
 
-input.sodar-ss-vue-ontology-input-row {
+input.sodar-ss-ontology-input-row {
   height: 23px;
 }
 
-input#sodar-ss-vue-ontology-input-search,
-select#sodar-ss-vue-ontology-select-limit,
-select#sodar-ss-vue-ontology-select-term {
+input#sodar-ss-ontology-input-search,
+select#sodar-ss-ontology-select-limit,
+select#sodar-ss-ontology-select-term {
   margin-bottom: 8px;
 }
 
-select#sodar-ss-vue-ontology-select-term {
+select#sodar-ss-ontology-select-term {
   height: 155px;
 }
 
-i#sodar-ss-vue-ontology-spin {
+i#sodar-ss-ontology-spin {
   line-height: 36px;
 }
 
-div.sodar-ss-vue-ontology-alert {
+div.sodar-ss-ontology-alert {
   margin-bottom: 0;
 }
 
-div#sodar-ss-vue-alert-placeholder {
+div#sodar-ss-alert-placeholder {
   height: 50px;
 }
 
-tr#sodar-ss-vue-ontology-free-row td:last-child {
+tr#sodar-ss-ontology-free-row td:last-child {
     padding-top: 14px;
 }
 
-div#sodar-ss-vue-ontology-btn-group {
+div#sodar-ss-ontology-btn-group {
   margin-top: 16px;
 }
 

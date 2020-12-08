@@ -1,4 +1,5 @@
 import { createLocalVue, mount } from '@vue/test-utils'
+import { waitSelector } from '../testUtils.js'
 import NotifyBadge from '@/components/NotifyBadge.vue'
 import BootstrapVue from 'bootstrap-vue'
 
@@ -21,26 +22,20 @@ describe('NotifyBadge.vue', () => {
   it('renders empty element by default', () => {
     const wrapper = mount(NotifyBadge, { localVue })
 
-    expect(wrapper.find('.sodar-ss-vue-notify').exists()).toBe(false)
+    expect(wrapper.find('.sodar-ss-notify-badge').exists()).toBe(false)
   })
 
-  // TODO: Fix
-  /*
-  it('renders badge temporarily when show() is called', done => {
+  it('renders badge when show() is called', async () => {
     const wrapper = mount(NotifyBadge, { localVue })
 
-    expect(wrapper.find('.sodar-ss-vue-notify').exists()).toBe(false)
+    expect(wrapper.find('.sodar-ss-notify-badge').exists()).toBe(false)
     wrapper.vm.show('Message', 'primary', 3000)
-    setTimeout(() => {
-      expect(wrapper.find('.sodar-ss-vue-notify').exists()).toBe(true)
-      expect(wrapper.find('.sodar-ss-vue-notify').text()).toBe('Message')
-      expect(wrapper.find('.sodar-ss-vue-notify').classes()).not.toContain('badge-primary')
-      done()
-    }, 100)
-    setTimeout(() => {
-      expect(wrapper.find('.sodar-ss-vue-notify').exists()).toBe(false)
-      done()
-    }, 2000)
+    await waitSelector(wrapper, '.sodar-ss-notify-badge', 1)
+    expect(wrapper.find('.sodar-ss-notify-badge').exists()).toBe(true)
+    expect(wrapper.find('.sodar-ss-notify-badge').text()).toBe('Message')
+    expect(wrapper.find('.sodar-ss-notify-badge')
+      .classes()).toContain('badge-primary')
+    await waitSelector(wrapper, '.sodar-ss-notify-badge', 0)
+    expect(wrapper.find('.sodar-ss-notify-badge').exists()).toBe(false)
   })
-  */
 })

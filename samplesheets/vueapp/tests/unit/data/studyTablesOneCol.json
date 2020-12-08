@@ -1,0 +1,115 @@
+{
+  "study": {
+    "display_name": "Small Germline Study"
+  },
+  "tables": {
+    "study": {
+      "top_header": [
+        {
+          "value": "Source",
+          "colour": "info",
+          "colspan": 1
+        }
+      ],
+      "field_header": [
+        {
+          "value": "Name",
+          "name": "Name",
+          "obj_cls": "GenericMaterial",
+          "item_type": "SOURCE",
+          "num_col": false,
+          "config_set": false,
+          "col_type": "NAME",
+          "max_value_len": 5
+        }
+      ],
+      "table_data": [
+        [
+          {
+            "value": "0814"
+          }
+        ]
+      ],
+      "col_values": [
+        1
+      ],
+      "col_last_vis": 1
+    },
+    "assays": {
+      "22222222-2222-2222-2222-222222222222": {
+        "top_header": [
+          {
+            "value": "Source",
+            "colour": "info",
+            "colspan": 1
+          }
+        ],
+        "field_header": [
+          {
+            "value": "Name",
+            "name": "Name",
+            "obj_cls": "GenericMaterial",
+            "item_type": "SOURCE",
+            "num_col": false,
+            "config_set": false,
+            "col_type": "NAME",
+            "max_value_len": 5
+          }
+        ],
+        "table_data": [
+          [
+            {
+              "value": "0815"
+            }
+          ]
+        ],
+        "col_values": [
+          1
+        ],
+        "col_last_vis": 1,
+        "irods_paths": [],
+        "shortcuts": [
+          {
+            "id": "results_reports",
+            "label": "Results and Reports",
+            "path": "/omicsZone/projects/00/00000000-0000-0000-0000-000000000000/sample_data/study_11111111-1111-1111-1111-111111111111/assay_22222222-2222-2222-2222-222222222222/ResultsReports",
+            "enabled": false
+          },
+          {
+            "id": "misc_files",
+            "label": "Misc Files",
+            "path": "/omicsZone/projects/00/00000000-0000-0000-0000-000000000000/sample_data/study_11111111-1111-1111-1111-111111111111/assay_22222222-2222-2222-2222-222222222222/MiscFiles",
+            "enabled": false
+          }
+        ]
+      }
+    }
+  },
+  "display_config": {
+    "nodes": [
+      {
+        "fields": [
+          {
+            "name": "Name",
+            "visible": true
+          }
+        ],
+        "header": "Source"
+      }
+    ],
+    "assays": {
+      "22222222-2222-2222-2222-222222222222": {
+        "nodes": [
+          {
+            "fields": [
+              {
+                "name": "Name",
+                "visible": true
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

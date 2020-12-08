@@ -1,5 +1,5 @@
 <template>
-  <span class="sodar-ss-vue-notify-container align-middle mr-1">
+  <span class="sodar-ss-notify-container align-middle mr-1">
     <transition name="fade" mode="out-in">
       <span v-if="notifyVisible"
             ref="notifyBadge"
@@ -20,12 +20,12 @@ export default {
     return {
       notifyVisible: false,
       notifyMessage: null,
-      notifyClasses: 'badge badge-pill sodar-ss-vue-nofify mx-2'
+      notifyClasses: 'badge badge-pill sodar-ss-notify-badge mx-2'
     }
   },
   methods: {
     show (message, variant, delay) {
-      this.notifyClasses = 'badge badge-pill sodar-ss-vue-nofify mx-2 badge-'
+      this.notifyClasses = 'badge badge-pill sodar-ss-notify-badge mx-2 badge-'
 
       if (variant) this.notifyClasses += variant
       else this.notifyClasses += 'light'
@@ -44,7 +44,7 @@ export default {
 
 <style scoped>
 
-span.sodar-ss-vue-notify-container {
+span.sodar-ss-notify-container {
   display: inline-block;
   width: 150px;
   text-align: right;

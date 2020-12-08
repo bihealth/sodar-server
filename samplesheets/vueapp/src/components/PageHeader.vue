@@ -1,6 +1,6 @@
 <template>
   <div class="row sodar-subtitle-container bg-white sticky-top"
-       id="sodar-ss-vue-subtitle">
+       id="sodar-ss-subtitle">
     <h3><i class="fa fa-flask"></i> Sample Sheets</h3>
     <b-nav
         v-if="app.sheetsAvailable"
@@ -31,13 +31,13 @@
       <notify-badge ref="notifyBadge"></notify-badge>
       <span v-if="app.editMode"
             :class='"badge badge-pill badge-info"'
-            id="sodar-ss-vue-badge-edit">
+            id="sodar-ss-badge-edit">
         <i class="fa fa-pencil"></i> Edit Mode
       </span>
       <a v-if="app.editMode"
          title="Editor status and help"
          class="pl-1 pr-2"
-         id="sodar-ss-vue-link-edit-help"
+         id="sodar-ss-link-edit-help"
          @click="editorHelpModal.showModal()"
          v-b-tooltip.hover>
         <i class="fa fa-info-circle text-info"></i>
@@ -176,7 +176,7 @@
           v-if="app.editMode"
           variant="primary"
           class="text-left"
-          id="sodar-ss-vue-btn-edit-finish"
+          id="sodar-ss-btn-edit-finish"
           :disabled="app.unsavedRow !== null"
           @click="toggleEditModeCallback">
         Finish Editing <span class="pull-right"><i class="fa fa-check"></i></span>
@@ -203,7 +203,7 @@ export default {
     return {
       notifyVisible: false,
       notifyMessage: null,
-      notifyClasses: 'badge badge-pill sodar-ss-vue-nofify mx-2',
+      notifyClasses: 'badge badge-pill sodar-ss-nofify mx-2',
       editMessage: null,
       editVariant: 'info'
     }
@@ -213,7 +213,7 @@ export default {
       if (studyName.length > 20) return studyName
     },
     showNotification (message, variant, delay) {
-      this.notifyClasses = 'badge badge-pill sodar-ss-vue-nofify mx-2 badge-'
+      this.notifyClasses = 'badge badge-pill sodar-ss-nofify mx-2 badge-'
       if (variant) this.notifyClasses += variant
       else this.notifyClasses += 'light'
 
@@ -239,13 +239,13 @@ ul.sodar-ss-nav li a.active {
   background-color: #28a745 !important;
 }
 
-button#sodar-ss-vue-btn-edit-finish {
+button#sodar-ss-btn-edit-finish {
   margin-left: 4px;
   width: 163px;
 }
 
 /* HACK because lol bootstrap */
-a#sodar-ss-vue-link-edit-help i {
+a#sodar-ss-link-edit-help i {
   vertical-align: middle;
   padding-bottom: 1px;
 }

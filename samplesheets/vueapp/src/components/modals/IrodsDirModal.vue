@@ -1,13 +1,13 @@
 <template>
   <b-modal
-      id="sodar-vue-irods-modal" ref="irodsDirModal"
+      id="sodar-ss-irods-modal" ref="irodsDirModal"
       no-fade hide-footer
       size="xl"
       :static="true">
     <template slot="modal-header">
       <h5 class="modal-title text-nowrap mr-5">{{ title }}</h5>
       <b-input
-          id="sodar-ss-vue-irods-filter"
+          id="sodar-ss-irods-filter"
           size="sm"
           placeholder="Filter"
           class="ml-auto"
@@ -22,7 +22,7 @@
     </template>
     <!-- Object list -->
     <div v-if="objectList"
-         id="sodar-vue-irods-modal-content">
+         id="sodar-irods-modal-content">
       <table class="table sodar-card-table sodar-irods-obj-table">
         <thead>
           <tr>
@@ -35,7 +35,7 @@
           <tr v-for="(objInfo, index) in objectList"
               :key="index"
               v-show="objInfo.visibleInList"
-              class="sodar-ss-vue-irods-obj">
+              class="sodar-ss-irods-obj">
             <td>
               <a :href="irodsWebdavUrl + objInfo.path">
                 <span class="text-muted">{{ getRelativePath(objInfo.path) }}/</span>{{ objInfo.name }}
@@ -50,19 +50,19 @@
     <!-- Empty -->
     <div v-else-if="empty"
          class="text-muted font-italic"
-         id="sodar-ss-vue-irods-empty">
+         id="sodar-ss-irods-empty">
       Empty collection
     </div>
     <!-- Message/error -->
     <div v-else-if="message"
          class="text-danger font-italic"
-         id="sodar-ss-vue-irods-message">
+         id="sodar-ss-irods-message">
       {{ this.message }}
     </div>
     <!-- Waiting -->
     <div v-else
          class="text-center"
-         id="sodar-ss-vue-irods-wait">
+         id="sodar-ss-irods-wait">
       <i class="fa fa-spin fa-circle-o-notch fa-3x text-muted"></i>
     </div>
   </b-modal>
@@ -185,7 +185,7 @@ h5 {
   width: 100%;
 }
 
-input#sodar-ss-vue-irods-filter {
+input#sodar-ss-irods-filter {
   max-width: 200px;
 }
 

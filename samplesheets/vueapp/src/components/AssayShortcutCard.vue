@@ -1,14 +1,14 @@
 <template>
   <span v-if="assayShortcuts">
-    <div class="card sodar-ss-vue-assay-shortcut-card">
+    <div class="card sodar-ss-assay-shortcut-card">
       <div class="card-header">
         <h4>Assay Shortcuts</h4>
       </div>
-      <div class="card-body px-3 py-4 sodar-ss-vue-assay-shortcut-body">
+      <div class="card-body px-3 py-4 sodar-ss-assay-shortcut-body">
         <span v-for="(shortcut, idx) of assayShortcuts"
               :key="idx"
               class="rounded border bg-light text-nowrap mr-3
-                     sodar-ss-vue-assay-shortcut">
+                     sodar-ss-assay-shortcut">
           <span :class="getTextClasses(shortcut)">
             {{ shortcut.label }}
             <i v-if="shortcut.id.startsWith('track_hub')"
@@ -55,7 +55,7 @@ export default {
   ],
   methods: {
     getTextClasses (shortcut) {
-      let classes = 'mr-2 sodar-ss-vue-assay-shortcut-text'
+      let classes = 'mr-2 sodar-ss-assay-shortcut-text'
       if (!shortcut.enabled) {
         classes = classes + ' text-muted'
       }
@@ -66,11 +66,11 @@ export default {
 </script>
 
 <style scoped>
-div.sodar-ss-vue-assay-shortcut-body {
+div.sodar-ss-assay-shortcut-body {
   overflow-x: scroll;
 }
 
-span.sodar-ss-vue-assay-shortcut {
+span.sodar-ss-assay-shortcut {
   border: 1px solid #ced4da;
   padding: 12px;
 }

@@ -1,16 +1,16 @@
 <template>
   <b-modal
-      id="sodar-vue-shortcut-modal"
+      id="sodar-ss-shortcut-modal"
       ref="shortcutModal"
       centered no-fade hide-footer
       size="md"
       :title="title"
       :static="true">
-    <div v-if="modalData" id="sodar-vue-shortcut-modal-content">
+    <div v-if="modalData" id="sodar-ss-shortcut-modal-content">
       <table
           v-for="(cat, index) in modalData"
           :key="index"
-          class="table sodar-card-table pb-3 sodar-ss-vue-shortcut-table">
+          class="table sodar-card-table pb-3 sodar-ss-shortcut-table">
         <thead>
           <tr>
             <th colspan="2">{{ cat.title }}</th>
@@ -19,12 +19,12 @@
         <tbody>
           <tr v-for="(file, fileIdx) in cat.files"
               :key="fileIdx"
-              class="sodar-ss-vue-shortcut-item">
+              class="sodar-ss-shortcut-item">
             <td>
               <a :href="file.url"
                  target="_blank"
                  :title="file.title"
-                 class="sodar-ss-vue-shortcut-link"
+                 class="sodar-ss-shortcut-link"
                  v-b-tooltip.hover>
                 {{ file.label }}
               </a>
@@ -34,7 +34,8 @@
                   v-for="(extraLink, extraIdx) in file.extra_links"
                   :key="extraIdx"
                   variant="secondary"
-                  class="sodar-list-btn sodar-ss-irods-btn sodar-ss-vue-shortcut-extra ml-1"
+                  class="sodar-list-btn sodar-ss-irods-btn
+                         sodar-ss-shortcut-extra ml-1"
                   :title="extraLink.label"
                   :href="extraLink.url"
                   v-b-tooltip.hover>
@@ -51,13 +52,13 @@
     <!-- Message/error -->
     <div v-else-if="message"
          class="text-danger font-italic"
-         id="sodar-ss-vue-shortcuts-message">
+         id="sodar-ss-shortcuts-message">
       {{ this.message }}
     </div>
     <!-- Waiting -->
     <div v-else
          class="text-center"
-         id="sodar-ss-vue-shortcuts-wait">
+         id="sodar-ss-shortcuts-wait">
       <i class="fa fa-spin fa-circle-o-notch fa-3x text-muted"></i>
     </div>
   </b-modal>

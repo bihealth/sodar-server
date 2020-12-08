@@ -6,8 +6,6 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
 
-from unittest import skipIf
-
 from django.conf import settings
 from django.urls import reverse
 
@@ -139,7 +137,6 @@ class TestProjectSheetsVueAppBase(
         self.default_user = self.contributor_as.user
 
 
-# TODO: Remove all those we can test in vue app tests
 class TestProjectSheetsView(TestProjectSheetsVueAppBase):
     """Tests for the project sheets view UI"""
 
@@ -168,7 +165,7 @@ class TestProjectSheetsView(TestProjectSheetsVueAppBase):
             )
             # Ensure error alert is not generated
             with self.assertRaises(NoSuchElementException):
-                self.selenium.find_element_by_id('sodar-ss-vue-alert-error')
+                self.selenium.find_element_by_id('sodar-ss-alert-error')
 
     def test_render_no_sheet(self):
         """Test rendering the view with no sheet"""
@@ -187,7 +184,7 @@ class TestProjectSheetsView(TestProjectSheetsVueAppBase):
 
             # Ensure alert is shown
             self.assertIsNotNone(
-                self.selenium.find_element_by_id('sodar-ss-vue-alert-empty')
+                self.selenium.find_element_by_id('sodar-ss-alert-empty')
             )
             # Ensure no grids are present
             with self.assertRaises(NoSuchElementException):
@@ -195,284 +192,7 @@ class TestProjectSheetsView(TestProjectSheetsVueAppBase):
                     'sodar-ss-grid-assay-{}'.format(self.assay.sodar_uuid)
                 )
 
-    def test_overview(self):
-        """Test rendering the overview view"""
-        self._login_and_render(self.default_user, url_suffix='#/overview')
-
-        # Ensure the overview elements exist
-        self.assertIsNotNone(
-            self.selenium.find_element_by_id('sodar-ss-overview-investigation')
-        )
-        self.assertIsNotNone(
-            self.selenium.find_element_by_id(
-                'sodar-ss-overview-study-{}'.format(self.study.sodar_uuid)
-            )
-        )
-        self.assertIsNotNone(
-            self.selenium.find_element_by_id('sodar-ss-overview-stats')
-        )
-
-    # TODO: Test overview redirect if no ISAtab is available (pending #496)
-
-    def test_nav_tabs(self):
-        """Test rendering the navigation tabs"""
-        self._login_and_render(self.default_user)
-
-        self.assertIsNotNone(
-            self.selenium.find_element_by_id('sodar-ss-nav-tabs')
-        )
-
-    def test_nav_tabs_no_sheet(self):
-        """Test rendering the navigation tabs with no ISAtab"""
-        self.investigation.delete()
-        self._login_and_render(self.default_user)
-
-        with self.assertRaises(NoSuchElementException):
-            self.assertIsNotNone(
-                self.selenium.find_element_by_id('sodar-ss-nav-tabs')
-            )
-
-    def test_nav_dropdown(self):
-        """Test rendering the navigation dropdown"""
-        self._login_and_render(self.default_user)
-
-        nav_elem = self.selenium.find_element_by_id('sodar-ss-nav-dropdown')
-        nav_btn = nav_elem.find_element_by_tag_name('button')
-        nav_links = nav_elem.find_elements_by_class_name('sodar-ss-nav-item')
-
-        self.assertEqual(nav_btn.is_enabled(), True)
-        self.assertEqual(len(nav_links), 3)
-
-    def test_nav_dropdown_no_sheet(self):
-        """Test rendering the navigation dropdown with no ISAtab"""
-        self.investigation.delete()
-        self._login_and_render(self.default_user)
-
-        elem = self.selenium.find_element_by_id(
-            'sodar-ss-nav-dropdown'
-        ).find_element_by_tag_name('button')
-
-        self.assertEqual(elem.is_enabled(), False)
-
-    def test_op_dropdown(self):
-        """Test the operations dropdown"""
-        users = [
-            (self.superuser, 7),
-            (self.owner_as.user, 7),
-            (self.delegate_as.user, 7),
-            (self.contributor_as.user, 7),
-            (self.guest_as.user, 6),  # Links available but disabled
-        ]
-
-        for user in users:
-            self._login_and_render(user[0])
-
-            nav_elem = self.selenium.find_element_by_id('sodar-ss-op-dropdown')
-            nav_links = nav_elem.find_elements_by_class_name('sodar-ss-op-item')
-            enabled_state = False if user == self.guest_as.user else True
-
-            self.assertEqual(nav_elem.is_enabled(), enabled_state)
-            self.assertEqual(len(nav_links), user[1])
-
-    def test_navigation_from_tabs(self):
-        """Test navigation from tabs"""
-        self._login_and_render(self.default_user)
-
-        # Navigate to overview
-        ov_tab = self.selenium.find_element_by_id('sodar-ss-tab-overview')
-        ov_link = ov_tab.find_element_by_tag_name('a')
-        ov_link.click()
-
-        # Wait and assert overview
-        WebDriverWait(self.selenium, self.wait_time).until(
-            ec.presence_of_element_located(
-                (By.ID, 'sodar-ss-overview-investigation')
-            )
-        )
-        self.assertIsNotNone(
-            self.selenium.find_element_by_id('sodar-ss-overview-investigation')
-        )
-        self.assertEqual(self._get_route(), '/overview')
-
-        # Navigate back to study
-        study_tab = self.selenium.find_element_by_id(
-            'sodar-ss-tab-study-{}'.format(self.study.sodar_uuid)
-        )
-        study_link = study_tab.find_element_by_tag_name('a')
-        study_link.click()
-
-        # Wait and assert presence of study
-        WebDriverWait(self.selenium, self.wait_time).until(
-            ec.presence_of_element_located((By.ID, 'sodar-ss-grid-study'))
-        )
-        self.assertIsNotNone(
-            self.selenium.find_element_by_id('sodar-ss-grid-study')
-        )
-        self.assertEqual(
-            self._get_route(), '/study/{}'.format(self.study.sodar_uuid)
-        )
-
-    def test_navigation_from_dropdown(self):
-        """Test navigation from dropdown"""
-        self._login_and_render(self.default_user)
-        dd_btn = self.selenium.find_element_by_id('sodar-ss-nav-dropdown')
-
-        # Open dropdown
-        dd_btn.click()
-
-        # Navigate to overview
-        ov_link = self.selenium.find_element_by_id('sodar-ss-nav-overview')
-        ov_link.click()
-
-        # Wait and assert overview
-        WebDriverWait(self.selenium, self.wait_time).until(
-            ec.presence_of_element_located(
-                (By.ID, 'sodar-ss-overview-investigation')
-            )
-        )
-        self.assertIsNotNone(
-            self.selenium.find_element_by_id('sodar-ss-overview-investigation')
-        )
-        self.assertEqual(self._get_route(), '/overview')
-
-        # Open dropdown
-        dd_btn.click()
-
-        # Navigate to study
-        study_link = self.selenium.find_element_by_id(
-            'sodar-ss-nav-study-{}'.format(self.study.sodar_uuid)
-        )
-        study_link.click()
-
-        # Wait and assert presence of study
-        WebDriverWait(self.selenium, self.wait_time).until(
-            ec.presence_of_element_located((By.ID, 'sodar-ss-grid-study'))
-        )
-        self.assertIsNotNone(
-            self.selenium.find_element_by_id('sodar-ss-grid-study')
-        )
-        self.assertEqual(
-            self._get_route(), '/study/{}'.format(self.study.sodar_uuid)
-        )
-
-        # Open dropdown
-        dd_btn.click()
-
-        # Navigate to assay
-        assay_link = self.selenium.find_element_by_id(
-            'sodar-ss-nav-assay-{}'.format(self.assay.sodar_uuid)
-        )
-        assay_link.click()
-
-        # Wait and assert presence of study & assay
-        WebDriverWait(self.selenium, self.wait_time).until(
-            ec.presence_of_element_located((By.ID, 'sodar-ss-grid-study'))
-        )
-        self.assertIsNotNone(
-            self.selenium.find_element_by_id(
-                'sodar-ss-grid-assay-{}'.format(self.assay.sodar_uuid)
-            )
-        )
-        self.assertEqual(
-            self._get_route(), '/assay/{}'.format(self.assay.sodar_uuid)
-        )
-
-    # TODO: Test study links with ISAtab examples using BIH configs (see #434)
-
-    # TODO: Test with plugin-containing ISAtab example (see #434)
-    def test_assay_shortcuts_no_colls(self):
-        """Test assay shortcuts table with no iRODS collections"""
-        self._login_and_render(self.default_user)
-
-        # Assert the table exists
-        with self.assertRaises(NoSuchElementException):
-            self.assertIsNotNone(
-                self.selenium.find_element_by_class_name(
-                    'sodar-ss-vue-assay-shortcut-card'
-                )
-            )
-
-    @skipIf(not IRODS_ENABLED, IRODS_SKIP_MSG)
-    def test_assay_shortcuts_with_colls(self):
-        """Test assay shortcuts table with iRODS collections"""
-        self.investigation.irods_status = True  # Fake the coll creation
-        self.investigation.save()
-
-        self._login_and_render(self.default_user)
-
-        # Assert the table exists
-        self.assertIsNotNone(
-            self.selenium.find_element_by_class_name(
-                'sodar-ss-vue-assay-shortcut-card'
-            )
-        )
-        self.assertEqual(
-            len(
-                self.selenium.find_elements_by_class_name(
-                    'sodar-ss-vue-assay-shortcut'
-                )
-            ),
-            2,
-        )
-
-    # TODO: Test with realistic ISAtab examples using BIH configs (see #434)
-    def test_assay_links_no_colls(self):
-        """Test assay links column with no iRODS collections"""
-        self._login_and_render(self.default_user)
-
-        assay_grid = self.selenium.find_element_by_id(
-            'sodar-ss-grid-assay-{}'.format(self.assay.sodar_uuid)
-        )
-
-        # Assert the link column exists
-        with self.assertRaises(NoSuchElementException):
-            self.assertIsNotNone(
-                assay_grid.find_element_by_class_name(
-                    'sodar-ss-data-links-header'
-                )
-            )
-
-    def test_assay_links_with_colls(self):
-        """Test assay links column with iRODS collections"""
-        self.investigation.irods_status = True  # Fake the coll creation
-        self.investigation.save()
-
-        self._login_and_render(self.default_user)
-
-        assay_grid = self.selenium.find_element_by_id(
-            'sodar-ss-grid-assay-{}'.format(self.assay.sodar_uuid)
-        )
-
-        # Assert the link column exists
-        self.assertIsNotNone(
-            assay_grid.find_element_by_class_name('sodar-ss-data-links-header')
-        )
-
-
-class TestProjectSheetsEditModeDefault(TestProjectSheetsVueAppBase):
-    """Tests for the samplesheets UI edit mode with a default config"""
-
-    def setUp(self):
-        super().setUp()
-        app_settings.set_app_setting(
-            'samplesheets', 'allow_editing', True, project=self.project
-        )
-        self._setup_investigation(config_data=CONFIG_DATA_DEFAULT)
-
-    def test_edit_mode(self):
-        """Test entering and exiting edit mode"""
-        self._login_and_render(self.default_user)
-        self._start_editing()
-        self.assertIsNotNone(
-            self.selenium.find_element_by_xpath(
-                '//span[contains(., "Edit Mode")]'
-            )
-        )
-        self._stop_editing()
-        with self.assertRaises(NoSuchElementException):
-            self.selenium.find_element_by_xpath(
-                '//span[contains(., "Edit Mode")]'
-            )
+    # NOTE: For further vue app tests, see samplesheets/vueapp/tests
 
 
 class TestSampleSheetVersionListView(TestProjectSheetsVueAppBase):

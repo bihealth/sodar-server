@@ -103,8 +103,7 @@ describe('ColumnConfigModal.vue', () => {
   }
 
   beforeAll(() => {
-    // TODO: Why do we get bootstrap-vue errors?
-    // TODO: See https://stackoverflow.com/questions/51536537/running-jest-with-bootstrap-vue
+    // NOTE: Workaround for bootstrap-vue "Vue warn" errors, see issue #1034
     jest.spyOn(console, 'error').mockImplementation(jest.fn())
     // Disable warnings
     jest.spyOn(console, 'warn').mockImplementation(jest.fn())

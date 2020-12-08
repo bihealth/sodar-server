@@ -1,43 +1,51 @@
 <template>
   <div v-if="value && renderInfo"
        :title="containerTitle"
-       :class="containerClasses"
+       :class="'sodar-ss-data-cell-editor ' + containerClasses"
        v-b-tooltip.hover>
     <!-- Value select -->
     <span v-if="editorType === 'select'">
-      <select :ref="'input'"
-              v-model="editValue"
-              :class="'ag-cell-edit-input ' + getSelectClass()">
-        <option value="" :selected="selectEmptyValue(editValue)">-</option>
-        <option v-for="(val, index) in editConfig.options"
-                :key="index"
-                :value="val"
-                :selected="editValue === val">
+      <select
+          :ref="'input'"
+          v-model="editValue"
+          :class="'ag-cell-edit-input ' + getSelectClass()">
+        <option
+            value=""
+            :selected="selectEmptyValue(editValue)">
+          -
+        </option>
+        <option
+            v-for="(val, index) in editConfig.options"
+            :key="index"
+            :value="val"
+            :selected="editValue === val">
           {{ val }}
         </option>
       </select>
     </span>
     <!-- Value basic input -->
     <span v-else>
-      <input :ref="'input'"
-             v-model.trim="editValue"
-             :class="'ag-cell-edit-input ' + getInputClasses()"
-             :style="inputStyle"
-             :placeholder="getInputPlaceholder('Value')"
-             @copy="onCopy"/>
+      <input
+          :ref="'input'"
+          v-model.trim="editValue"
+          :class="'ag-cell-edit-input ' + getInputClasses()"
+          :style="inputStyle"
+          :placeholder="getInputPlaceholder('Value')"
+          @copy="onCopy"/>
     </span>
     <!-- Unit select (in popup) -->
-    <select :ref="'unitText'"
-            v-if="editConfig.hasOwnProperty('unit') &&
-                  editConfig.unit.length > 0"
-            v-model="editUnit"
-            id="sodar-ss-vue-edit-select-unit"
-            class="ag-cell-edit-input sodar-ss-vue-popup-input"
-            :style="unitStyle">
+    <select
+        ref="unitText"
+        v-if="'unit' in editConfig && editConfig.unit.length > 0"
+        v-model="editUnit"
+        id="sodar-ss-data-cell-unit"
+        class="ag-cell-edit-input sodar-ss-popup-input"
+        :style="unitStyle">
       <option :value="null">-</option>
-      <option v-for="(unit, index) in editConfig.unit"
-              :key="index"
-              :value="unit">
+      <option
+          v-for="(unit, index) in editConfig.unit"
+          :key="index"
+          :value="unit">
         {{ unit }}
       </option>
     </select>
@@ -116,20 +124,17 @@ export default Vue.extend({
     },
     getSelectClass () {
       if (navigator.userAgent.search('Firefox') > -1) {
-        return 'sodar-ss-vue-select-firefox'
+        return 'sodar-ss-select-firefox'
       }
+      return ''
     },
     getInputClasses () {
       let classes = ''
-      if (!this.valid) {
-        classes = classes + ' text-danger'
-      }
+      if (!this.valid) classes = classes + ' text-danger'
       return classes + ' text-' + this.renderInfo.align
     },
     getInputPlaceholder (text) {
-      if (this.isPopup() && this.editUnitEnabled) {
-        return text
-      }
+      if (this.isPopup() && this.editUnitEnabled) return text
       return ''
     },
     getValidState () {
@@ -272,11 +277,12 @@ export default Vue.extend({
 
     // Set classes and styling for popup
     if (this.isPopup()) {
-      this.containerClasses = 'sodar-ss-vue-edit-popup text-nowrap'
+      this.containerClasses = 'sodar-ss-data-cell-popup text-nowrap'
 
       let inputWidth = this.renderInfo.width
       if (this.editUnitEnabled) {
-        const unitWidth = Math.max(0, ...this.editConfig.unit.map(el => el.length)) * 15 + 30
+        const unitWidth = Math.max(
+          0, ...this.editConfig.unit.map(el => el.length)) * 15 + 30
         inputWidth = Math.max(inputWidth - unitWidth, 120)
         this.unitStyle = 'width: ' + unitWidth.toString() + 'px !important;'
       }
@@ -320,9 +326,8 @@ export default Vue.extend({
 
     // Prevent keyboard navigation in parent when editing
     this.params.colDef.suppressKeyboardEvent = function (params) {
-      if (params.event.shiftKey) { // Key combinations break event keyCode
-        return false
-      }
+      // Key combinations break event keyCode
+      if (params.event.shiftKey) return false
       return navKeyCodes.indexOf(params.event.keyCode) !== -1
     }
   },
@@ -334,9 +339,7 @@ export default Vue.extend({
   updated () {
     this.valid = this.getValidState()
     this.value.value = this.editValue
-    if (this.editUnitEnabled) {
-      this.value.unit = this.editUnit
-    }
+    if (this.editUnitEnabled) this.value.unit = this.editUnit
   },
   beforeDestroy () {
     if (!this.destroyCalled) {
@@ -384,11 +387,8 @@ export default Vue.extend({
         this.value.newInit = false
 
         // Set unit
-        if (this.value.unit === '' || !this.value.value) {
-          this.value.unit = null
-        } else {
-          this.value.unit = this.editUnit
-        }
+        if (this.value.unit === '' || !this.value.value) this.value.unit = null
+        else this.value.unit = this.editUnit
 
         // Handle updating/initiating node
         this.app.handleNodeUpdate(

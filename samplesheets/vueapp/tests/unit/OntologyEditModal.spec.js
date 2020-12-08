@@ -46,46 +46,46 @@ describe('OntologyEditModal.vue', () => {
     await waitRAF()
 
     // General
-    expect(wrapper.find('#sodar-vue-ontology-edit-modal').exists()).toBe(true)
+    expect(wrapper.find('#sodar-ss-ontology-edit-modal').exists()).toBe(true)
     expect(wrapper.find('h5').text()).toBe(wrapper.vm.getTitle())
 
     // Term search
-    expect(wrapper.find('#sodar-ss-vue-ontology-input-search').attributes().disabled).toBe(undefined)
-    expect(wrapper.find('#sodar-ss-vue-ontology-select-limit').attributes().disabled).toBe('disabled')
-    expect(wrapper.find('#sodar-ss-vue-ontology-order-check').attributes().disabled).toBe('disabled')
-    expect(wrapper.find('#sodar-ss-vue-ontology-select-term').attributes().disabled).toBe(undefined)
+    expect(wrapper.find('#sodar-ss-ontology-input-search').attributes().disabled).toBe(undefined)
+    expect(wrapper.find('#sodar-ss-ontology-select-limit').attributes().disabled).toBe('disabled')
+    expect(wrapper.find('#sodar-ss-ontology-order-check').attributes().disabled).toBe('disabled')
+    expect(wrapper.find('#sodar-ss-ontology-select-term').attributes().disabled).toBe(undefined)
 
     // Alerts
-    expect(wrapper.find('.sodar-ss-vue-ontology-alert').exists()).toBe(false)
-    expect(wrapper.find('#sodar-ss-vue-ontology-no-imports').exists()).toBe(false)
+    expect(wrapper.find('.sodar-ss-ontology-alert').exists()).toBe(false)
+    expect(wrapper.find('#sodar-ss-ontology-no-imports').exists()).toBe(false)
 
     // Existing terms
-    const termItems = wrapper.findAll('.sodar-ss-vue-ontology-term-item')
+    const termItems = wrapper.findAll('.sodar-ss-ontology-term-item')
     expect(termItems.length).toBe(3)
     for (let i = 0; i < termItems.length; i++) {
       let upDisabled
       let downDisabled
       if (i === 0) upDisabled = 'disabled'
       if (i === termItems.length - 1) downDisabled = 'disabled'
-      expect(termItems.at(i).find('.sodar-ss-vue-btn-up').attributes().disabled).toBe(upDisabled)
-      expect(termItems.at(i).find('.sodar-ss-vue-btn-down').attributes().disabled).toBe(downDisabled)
-      expect(termItems.at(i).find('.sodar-ss-vue-btn-edit').attributes().disabled).toBe(undefined)
-      expect(termItems.at(i).find('.sodar-ss-vue-btn-delete').attributes().disabled).toBe(undefined)
-      expect(termItems.at(i).find('.sodar-ss-vue-btn-stop').exists()).toBe(false)
+      expect(termItems.at(i).find('.sodar-ss-btn-up').attributes().disabled).toBe(upDisabled)
+      expect(termItems.at(i).find('.sodar-ss-btn-down').attributes().disabled).toBe(downDisabled)
+      expect(termItems.at(i).find('.sodar-ss-btn-edit').attributes().disabled).toBe(undefined)
+      expect(termItems.at(i).find('.sodar-ss-btn-delete').attributes().disabled).toBe(undefined)
+      expect(termItems.at(i).find('.sodar-ss-btn-stop').exists()).toBe(false)
     }
 
     // Term insert row
-    expect(wrapper.findAll('.sodar-ss-vue-ontology-input-row').length).toBe(3)
-    expect(wrapper.find('#sodar-ss-vue-ontology-free-row').exists()).toBe(true)
-    const termInputs = wrapper.find('#sodar-ss-vue-ontology-free-row').findAll(
-      '.sodar-ss-vue-ontology-input-row')
+    expect(wrapper.findAll('.sodar-ss-ontology-input-row').length).toBe(3)
+    expect(wrapper.find('#sodar-ss-ontology-free-row').exists()).toBe(true)
+    const termInputs = wrapper.find('#sodar-ss-ontology-free-row').findAll(
+      '.sodar-ss-ontology-input-row')
     for (let i = 0; i < termInputs.length; i++) {
       expect(termInputs.at(i).attributes().disabled).toBe(undefined)
     }
-    expect(wrapper.find('#sodar-ss-vue-btn-insert').attributes().disabled).toBe('disabled')
+    expect(wrapper.find('#sodar-ss-btn-insert').attributes().disabled).toBe('disabled')
 
     // Bottom buttons
-    expect(wrapper.find('#sodar-ss-vue-btn-update').attributes().disabled).toBe('disabled')
+    expect(wrapper.find('#sodar-ss-btn-update').attributes().disabled).toBe('disabled')
   })
 
   it('renders modal when editing existing term', async () => {
@@ -99,47 +99,47 @@ describe('OntologyEditModal.vue', () => {
     await waitNT(wrapper.vm)
     await waitRAF()
     await wrapper.findAll(
-      '.sodar-ss-vue-ontology-term-item').at(0).find(
-      '.sodar-ss-vue-btn-edit').trigger('click')
+      '.sodar-ss-ontology-term-item').at(0).find(
+      '.sodar-ss-btn-edit').trigger('click')
     await waitNT(wrapper.vm)
     await waitRAF()
 
     // Term search
-    expect(wrapper.find('#sodar-ss-vue-ontology-input-search').attributes().disabled).toBe('disabled')
-    expect(wrapper.find('#sodar-ss-vue-ontology-select-limit').attributes().disabled).toBe('disabled')
-    expect(wrapper.find('#sodar-ss-vue-ontology-order-check').attributes().disabled).toBe('disabled')
-    expect(wrapper.find('#sodar-ss-vue-ontology-select-term').attributes().disabled).toBe('disabled')
+    expect(wrapper.find('#sodar-ss-ontology-input-search').attributes().disabled).toBe('disabled')
+    expect(wrapper.find('#sodar-ss-ontology-select-limit').attributes().disabled).toBe('disabled')
+    expect(wrapper.find('#sodar-ss-ontology-order-check').attributes().disabled).toBe('disabled')
+    expect(wrapper.find('#sodar-ss-ontology-select-term').attributes().disabled).toBe('disabled')
 
     // Existing terms
-    const termItems = wrapper.findAll('.sodar-ss-vue-ontology-term-item')
+    const termItems = wrapper.findAll('.sodar-ss-ontology-term-item')
     expect(termItems.length).toBe(3)
     for (let i = 0; i < termItems.length; i++) {
-      expect(termItems.at(i).find('.sodar-ss-vue-btn-up').attributes().disabled).toBe('disabled')
-      expect(termItems.at(i).find('.sodar-ss-vue-btn-down').attributes().disabled).toBe('disabled')
+      expect(termItems.at(i).find('.sodar-ss-btn-up').attributes().disabled).toBe('disabled')
+      expect(termItems.at(i).find('.sodar-ss-btn-down').attributes().disabled).toBe('disabled')
       if (i === 0) {
-        expect(termItems.at(i).find('.sodar-ss-vue-btn-edit').exists()).toBe(false)
-        expect(termItems.at(i).find('.sodar-ss-vue-btn-stop').exists()).toBe(true)
-        expect(termItems.at(i).find('.sodar-ss-vue-btn-stop').attributes().disabled).toBe(undefined)
-        expect(termItems.at(i).find('.sodar-ss-vue-btn-delete').attributes().disabled).toBe(undefined)
+        expect(termItems.at(i).find('.sodar-ss-btn-edit').exists()).toBe(false)
+        expect(termItems.at(i).find('.sodar-ss-btn-stop').exists()).toBe(true)
+        expect(termItems.at(i).find('.sodar-ss-btn-stop').attributes().disabled).toBe(undefined)
+        expect(termItems.at(i).find('.sodar-ss-btn-delete').attributes().disabled).toBe(undefined)
       } else {
-        expect(termItems.at(i).find('.sodar-ss-vue-btn-edit').exists()).toBe(true)
-        expect(termItems.at(i).find('.sodar-ss-vue-btn-edit').attributes().disabled).toBe('disabled')
-        expect(termItems.at(i).find('.sodar-ss-vue-btn-stop').exists()).toBe(false)
-        expect(termItems.at(i).find('.sodar-ss-vue-btn-delete').attributes().disabled).toBe('disabled')
+        expect(termItems.at(i).find('.sodar-ss-btn-edit').exists()).toBe(true)
+        expect(termItems.at(i).find('.sodar-ss-btn-edit').attributes().disabled).toBe('disabled')
+        expect(termItems.at(i).find('.sodar-ss-btn-stop').exists()).toBe(false)
+        expect(termItems.at(i).find('.sodar-ss-btn-delete').attributes().disabled).toBe('disabled')
       }
     }
 
     // Term insert row
-    const termInputs = wrapper.find('#sodar-ss-vue-ontology-free-row').findAll(
-      '.sodar-ss-vue-ontology-input-row')
+    const termInputs = wrapper.find('#sodar-ss-ontology-free-row').findAll(
+      '.sodar-ss-ontology-input-row')
     expect(termInputs.length).toBe(3)
     for (let i = 0; i < termInputs.length; i++) {
       expect(termInputs.at(i).attributes().disabled).toBe('disabled')
     }
-    expect(wrapper.find('#sodar-ss-vue-btn-insert').attributes().disabled).toBe('disabled')
+    expect(wrapper.find('#sodar-ss-btn-insert').attributes().disabled).toBe('disabled')
 
     // Bottom buttons
-    expect(wrapper.find('#sodar-ss-vue-btn-update').attributes().disabled).toBe('disabled')
+    expect(wrapper.find('#sodar-ss-btn-update').attributes().disabled).toBe('disabled')
   })
 
   it('renders modal after exiting term edit with unchanged values', async () => {
@@ -154,46 +154,46 @@ describe('OntologyEditModal.vue', () => {
     await waitRAF()
 
     await wrapper.findAll(
-      '.sodar-ss-vue-ontology-term-item').at(0).find(
-      '.sodar-ss-vue-btn-edit').trigger('click')
+      '.sodar-ss-ontology-term-item').at(0).find(
+      '.sodar-ss-btn-edit').trigger('click')
     await waitNT(wrapper.vm)
     await waitRAF()
 
-    await wrapper.find('.sodar-ss-vue-btn-stop').trigger('click')
+    await wrapper.find('.sodar-ss-btn-stop').trigger('click')
     await waitNT(wrapper.vm)
     await waitRAF()
 
     // Term search
-    expect(wrapper.find('#sodar-ss-vue-ontology-input-search').attributes().disabled).toBe(undefined)
-    expect(wrapper.find('#sodar-ss-vue-ontology-select-limit').attributes().disabled).toBe('disabled')
-    expect(wrapper.find('#sodar-ss-vue-ontology-order-check').attributes().disabled).toBe('disabled')
-    expect(wrapper.find('#sodar-ss-vue-ontology-select-term').attributes().disabled).toBe(undefined)
+    expect(wrapper.find('#sodar-ss-ontology-input-search').attributes().disabled).toBe(undefined)
+    expect(wrapper.find('#sodar-ss-ontology-select-limit').attributes().disabled).toBe('disabled')
+    expect(wrapper.find('#sodar-ss-ontology-order-check').attributes().disabled).toBe('disabled')
+    expect(wrapper.find('#sodar-ss-ontology-select-term').attributes().disabled).toBe(undefined)
 
     // Existing terms
-    const termItems = wrapper.findAll('.sodar-ss-vue-ontology-term-item')
+    const termItems = wrapper.findAll('.sodar-ss-ontology-term-item')
     expect(termItems.length).toBe(3)
     for (let i = 0; i < termItems.length; i++) {
       let upDisabled
       let downDisabled
       if (i === 0) upDisabled = 'disabled'
       if (i === termItems.length - 1) downDisabled = 'disabled'
-      expect(termItems.at(i).find('.sodar-ss-vue-btn-up').attributes().disabled).toBe(upDisabled)
-      expect(termItems.at(i).find('.sodar-ss-vue-btn-down').attributes().disabled).toBe(downDisabled)
-      expect(termItems.at(i).find('.sodar-ss-vue-btn-edit').attributes().disabled).toBe(undefined)
-      expect(termItems.at(i).find('.sodar-ss-vue-btn-delete').attributes().disabled).toBe(undefined)
-      expect(termItems.at(i).find('.sodar-ss-vue-btn-stop').exists()).toBe(false)
+      expect(termItems.at(i).find('.sodar-ss-btn-up').attributes().disabled).toBe(upDisabled)
+      expect(termItems.at(i).find('.sodar-ss-btn-down').attributes().disabled).toBe(downDisabled)
+      expect(termItems.at(i).find('.sodar-ss-btn-edit').attributes().disabled).toBe(undefined)
+      expect(termItems.at(i).find('.sodar-ss-btn-delete').attributes().disabled).toBe(undefined)
+      expect(termItems.at(i).find('.sodar-ss-btn-stop').exists()).toBe(false)
     }
 
     // Term insert row
-    const termInputs = wrapper.find('#sodar-ss-vue-ontology-free-row').findAll(
-      '.sodar-ss-vue-ontology-input-row')
+    const termInputs = wrapper.find('#sodar-ss-ontology-free-row').findAll(
+      '.sodar-ss-ontology-input-row')
     for (let i = 0; i < termInputs.length; i++) {
       expect(termInputs.at(i).attributes().disabled).toBe(undefined)
     }
-    expect(wrapper.find('#sodar-ss-vue-btn-insert').attributes().disabled).toBe('disabled')
+    expect(wrapper.find('#sodar-ss-btn-insert').attributes().disabled).toBe('disabled')
 
     // Bottom buttons
-    expect(wrapper.find('#sodar-ss-vue-btn-update').attributes().disabled).toBe('disabled')
+    expect(wrapper.find('#sodar-ss-btn-update').attributes().disabled).toBe('disabled')
   })
 
   it('renders modal after exiting term edit with modified values', async () => {
@@ -209,52 +209,52 @@ describe('OntologyEditModal.vue', () => {
     await waitRAF()
 
     await wrapper.findAll(
-      '.sodar-ss-vue-ontology-term-item').at(0).find(
-      '.sodar-ss-vue-btn-edit').trigger('click')
+      '.sodar-ss-ontology-term-item').at(0).find(
+      '.sodar-ss-btn-edit').trigger('click')
     await waitNT(wrapper.vm)
     await waitRAF()
 
-    await wrapper.findAll('.sodar-ss-vue-ontology-input-row').at(0).setValue(updateVal)
-    await wrapper.find('.sodar-ss-vue-btn-stop').trigger('click')
+    await wrapper.findAll('.sodar-ss-ontology-input-row').at(0).setValue(updateVal)
+    await wrapper.find('.sodar-ss-btn-stop').trigger('click')
     await waitNT(wrapper.vm)
     await waitRAF()
 
     // Changed value
     expect(wrapper.findAll(
-      '.sodar-ss-vue-ontology-term-item').at(0).findAll(
+      '.sodar-ss-ontology-term-item').at(0).findAll(
       'td').at(0).text()).toBe(updateVal)
 
     // Term search
-    expect(wrapper.find('#sodar-ss-vue-ontology-input-search').attributes().disabled).toBe(undefined)
-    expect(wrapper.find('#sodar-ss-vue-ontology-select-limit').attributes().disabled).toBe('disabled')
-    expect(wrapper.find('#sodar-ss-vue-ontology-order-check').attributes().disabled).toBe('disabled')
-    expect(wrapper.find('#sodar-ss-vue-ontology-select-term').attributes().disabled).toBe(undefined)
+    expect(wrapper.find('#sodar-ss-ontology-input-search').attributes().disabled).toBe(undefined)
+    expect(wrapper.find('#sodar-ss-ontology-select-limit').attributes().disabled).toBe('disabled')
+    expect(wrapper.find('#sodar-ss-ontology-order-check').attributes().disabled).toBe('disabled')
+    expect(wrapper.find('#sodar-ss-ontology-select-term').attributes().disabled).toBe(undefined)
 
     // Existing terms
-    const termItems = wrapper.findAll('.sodar-ss-vue-ontology-term-item')
+    const termItems = wrapper.findAll('.sodar-ss-ontology-term-item')
     expect(termItems.length).toBe(3)
     for (let i = 0; i < termItems.length; i++) {
       let upDisabled
       let downDisabled
       if (i === 0) upDisabled = 'disabled'
       if (i === termItems.length - 1) downDisabled = 'disabled'
-      expect(termItems.at(i).find('.sodar-ss-vue-btn-up').attributes().disabled).toBe(upDisabled)
-      expect(termItems.at(i).find('.sodar-ss-vue-btn-down').attributes().disabled).toBe(downDisabled)
-      expect(termItems.at(i).find('.sodar-ss-vue-btn-edit').attributes().disabled).toBe(undefined)
-      expect(termItems.at(i).find('.sodar-ss-vue-btn-delete').attributes().disabled).toBe(undefined)
-      expect(termItems.at(i).find('.sodar-ss-vue-btn-stop').exists()).toBe(false)
+      expect(termItems.at(i).find('.sodar-ss-btn-up').attributes().disabled).toBe(upDisabled)
+      expect(termItems.at(i).find('.sodar-ss-btn-down').attributes().disabled).toBe(downDisabled)
+      expect(termItems.at(i).find('.sodar-ss-btn-edit').attributes().disabled).toBe(undefined)
+      expect(termItems.at(i).find('.sodar-ss-btn-delete').attributes().disabled).toBe(undefined)
+      expect(termItems.at(i).find('.sodar-ss-btn-stop').exists()).toBe(false)
     }
 
     // Term insert row
-    const termInputs = wrapper.find('#sodar-ss-vue-ontology-free-row').findAll(
-      '.sodar-ss-vue-ontology-input-row')
+    const termInputs = wrapper.find('#sodar-ss-ontology-free-row').findAll(
+      '.sodar-ss-ontology-input-row')
     for (let i = 0; i < termInputs.length; i++) {
       expect(termInputs.at(i).attributes().disabled).toBe(undefined)
     }
-    expect(wrapper.find('#sodar-ss-vue-btn-insert').attributes().disabled).toBe('disabled')
+    expect(wrapper.find('#sodar-ss-btn-insert').attributes().disabled).toBe('disabled')
 
     // Bottom buttons (update should be allowed now)
-    expect(wrapper.find('#sodar-ss-vue-btn-update').attributes().disabled).toBe(undefined)
+    expect(wrapper.find('#sodar-ss-btn-update').attributes().disabled).toBe(undefined)
   })
 
   it('trims input on term edit', async () => {
@@ -271,16 +271,16 @@ describe('OntologyEditModal.vue', () => {
     await waitRAF()
 
     await wrapper.findAll(
-      '.sodar-ss-vue-ontology-term-item').at(0).find(
-      '.sodar-ss-vue-btn-edit').trigger('click')
+      '.sodar-ss-ontology-term-item').at(0).find(
+      '.sodar-ss-btn-edit').trigger('click')
     await waitNT(wrapper.vm)
     await waitRAF()
 
-    await wrapper.findAll('.sodar-ss-vue-ontology-input-row').at(0).setValue(
+    await wrapper.findAll('.sodar-ss-ontology-input-row').at(0).setValue(
       updateName + '\t')
-    await wrapper.findAll('.sodar-ss-vue-ontology-input-row').at(2).setValue(
+    await wrapper.findAll('.sodar-ss-ontology-input-row').at(2).setValue(
       updateAcc + '\t')
-    await wrapper.find('.sodar-ss-vue-btn-stop').trigger('click')
+    await wrapper.find('.sodar-ss-btn-stop').trigger('click')
     await waitNT(wrapper.vm)
     await waitRAF()
 
@@ -302,19 +302,19 @@ describe('OntologyEditModal.vue', () => {
     await waitNT(wrapper.vm)
     await waitRAF()
 
-    let termItems = wrapper.findAll('.sodar-ss-vue-ontology-term-item')
+    let termItems = wrapper.findAll('.sodar-ss-ontology-term-item')
     expect(termItems.at(0).findAll('td').at(0).text()).toBe(firstTermName)
     expect(termItems.at(1).findAll('td').at(0).text()).toBe(secondTermName)
-    expect(wrapper.find('#sodar-ss-vue-btn-update').attributes().disabled).toBe('disabled')
+    expect(wrapper.find('#sodar-ss-btn-update').attributes().disabled).toBe('disabled')
 
-    await termItems.at(0).find('.sodar-ss-vue-btn-down').trigger('click')
+    await termItems.at(0).find('.sodar-ss-btn-down').trigger('click')
     await waitNT(wrapper.vm)
     await waitRAF()
 
-    termItems = wrapper.findAll('.sodar-ss-vue-ontology-term-item')
+    termItems = wrapper.findAll('.sodar-ss-ontology-term-item')
     expect(termItems.at(0).findAll('td').at(0).text()).toBe(secondTermName)
     expect(termItems.at(1).findAll('td').at(0).text()).toBe(firstTermName)
-    expect(wrapper.find('#sodar-ss-vue-btn-update').attributes().disabled).toBe(undefined)
+    expect(wrapper.find('#sodar-ss-btn-update').attributes().disabled).toBe(undefined)
   })
 
   it('reorders terms on up arrow click', async () => {
@@ -330,19 +330,19 @@ describe('OntologyEditModal.vue', () => {
     await waitNT(wrapper.vm)
     await waitRAF()
 
-    let termItems = wrapper.findAll('.sodar-ss-vue-ontology-term-item')
+    let termItems = wrapper.findAll('.sodar-ss-ontology-term-item')
     expect(termItems.at(0).findAll('td').at(0).text()).toBe(firstTermName)
     expect(termItems.at(1).findAll('td').at(0).text()).toBe(secondTermName)
-    expect(wrapper.find('#sodar-ss-vue-btn-update').attributes().disabled).toBe('disabled')
+    expect(wrapper.find('#sodar-ss-btn-update').attributes().disabled).toBe('disabled')
 
-    await termItems.at(1).find('.sodar-ss-vue-btn-up').trigger('click')
+    await termItems.at(1).find('.sodar-ss-btn-up').trigger('click')
     await waitNT(wrapper.vm)
     await waitRAF()
 
-    termItems = wrapper.findAll('.sodar-ss-vue-ontology-term-item')
+    termItems = wrapper.findAll('.sodar-ss-ontology-term-item')
     expect(termItems.at(0).findAll('td').at(0).text()).toBe(secondTermName)
     expect(termItems.at(1).findAll('td').at(0).text()).toBe(firstTermName)
-    expect(wrapper.find('#sodar-ss-vue-btn-update').attributes().disabled).toBe(undefined)
+    expect(wrapper.find('#sodar-ss-btn-update').attributes().disabled).toBe(undefined)
   })
 
   it('removes term on delete click', async () => {
@@ -357,16 +357,16 @@ describe('OntologyEditModal.vue', () => {
     await waitNT(wrapper.vm)
     await waitRAF()
 
-    let termItems = wrapper.findAll('.sodar-ss-vue-ontology-term-item')
+    let termItems = wrapper.findAll('.sodar-ss-ontology-term-item')
     expect(termItems.length).toBe(3)
-    await termItems.at(0).find('.sodar-ss-vue-btn-delete').trigger('click')
+    await termItems.at(0).find('.sodar-ss-btn-delete').trigger('click')
     await waitNT(wrapper.vm)
     await waitRAF()
 
-    termItems = wrapper.findAll('.sodar-ss-vue-ontology-term-item')
+    termItems = wrapper.findAll('.sodar-ss-ontology-term-item')
     expect(termItems.length).toBe(2)
     expect(termItems.at(0).findAll('td').at(0).text()).toBe(secondTermName)
-    expect(wrapper.find('#sodar-ss-vue-btn-update').attributes().disabled).toBe(undefined)
+    expect(wrapper.find('#sodar-ss-btn-update').attributes().disabled).toBe(undefined)
   })
 
   it('inserts new term from free entry', async () => {
@@ -382,23 +382,23 @@ describe('OntologyEditModal.vue', () => {
     await waitNT(wrapper.vm)
     await waitRAF()
 
-    let termItems = wrapper.findAll('.sodar-ss-vue-ontology-term-item')
+    let termItems = wrapper.findAll('.sodar-ss-ontology-term-item')
     expect(termItems.length).toBe(3)
 
-    await wrapper.findAll('.sodar-ss-vue-ontology-input-row').at(0).setValue(
+    await wrapper.findAll('.sodar-ss-ontology-input-row').at(0).setValue(
       newName)
-    await wrapper.findAll('.sodar-ss-vue-ontology-input-row').at(1).setValue(
+    await wrapper.findAll('.sodar-ss-ontology-input-row').at(1).setValue(
       ontologyName)
-    await wrapper.findAll('.sodar-ss-vue-ontology-input-row').at(2).setValue(
+    await wrapper.findAll('.sodar-ss-ontology-input-row').at(2).setValue(
       'http://purl.obolibrary.org/obo/HP_9999999')
-    await wrapper.find('#sodar-ss-vue-btn-insert').trigger('click')
+    await wrapper.find('#sodar-ss-btn-insert').trigger('click')
     await waitNT(wrapper.vm)
     await waitRAF()
 
-    termItems = wrapper.findAll('.sodar-ss-vue-ontology-term-item')
+    termItems = wrapper.findAll('.sodar-ss-ontology-term-item')
     expect(termItems.length).toBe(4)
     expect(termItems.at(3).findAll('td').at(0).text()).toBe(newName)
-    expect(wrapper.find('#sodar-ss-vue-btn-update').attributes().disabled).toBe(undefined)
+    expect(wrapper.find('#sodar-ss-btn-update').attributes().disabled).toBe(undefined)
   })
 
   it('trims new term input in free entry', async () => {
@@ -417,13 +417,13 @@ describe('OntologyEditModal.vue', () => {
 
     expect(wrapper.vm.value.length).toBe(3)
 
-    await wrapper.findAll('.sodar-ss-vue-ontology-input-row').at(0).setValue(
+    await wrapper.findAll('.sodar-ss-ontology-input-row').at(0).setValue(
       newName + '\t')
-    await wrapper.findAll('.sodar-ss-vue-ontology-input-row').at(1).setValue(
+    await wrapper.findAll('.sodar-ss-ontology-input-row').at(1).setValue(
       ontologyName)
-    await wrapper.findAll('.sodar-ss-vue-ontology-input-row').at(2).setValue(
+    await wrapper.findAll('.sodar-ss-ontology-input-row').at(2).setValue(
       accession + '\t')
-    await wrapper.find('#sodar-ss-vue-btn-insert').trigger('click')
+    await wrapper.find('#sodar-ss-btn-insert').trigger('click')
     await waitNT(wrapper.vm)
     await waitRAF()
 
@@ -445,13 +445,13 @@ describe('OntologyEditModal.vue', () => {
     await waitNT(wrapper.vm)
     await waitRAF()
 
-    await wrapper.findAll('.sodar-ss-vue-ontology-input-row').at(0).setValue(newName)
-    await wrapper.findAll('.sodar-ss-vue-ontology-input-row').at(1).setValue(ontologyName)
-    await wrapper.findAll('.sodar-ss-vue-ontology-input-row').at(2).setValue('http://purl.obolibrary.org/obo/HP_9999999')
+    await wrapper.findAll('.sodar-ss-ontology-input-row').at(0).setValue(newName)
+    await wrapper.findAll('.sodar-ss-ontology-input-row').at(1).setValue(ontologyName)
+    await wrapper.findAll('.sodar-ss-ontology-input-row').at(2).setValue('http://purl.obolibrary.org/obo/HP_9999999')
     await waitNT(wrapper.vm)
     await waitRAF()
 
-    expect(wrapper.find('#sodar-ss-vue-btn-insert').attributes().disabled).toBe('disabled')
+    expect(wrapper.find('#sodar-ss-btn-insert').attributes().disabled).toBe('disabled')
   })
 
   it('renders term search options', async () => {
@@ -471,7 +471,7 @@ describe('OntologyEditModal.vue', () => {
     await waitNT(wrapper.vm)
     await waitRAF()
 
-    const termOptions = wrapper.find('#sodar-ss-vue-ontology-select-term').findAll('Option')
+    const termOptions = wrapper.find('#sodar-ss-ontology-select-term').findAll('Option')
     expect(termOptions.length).toBe(4)
 
     for (let i = 0; i < ontologyTermResponseHp.terms.length; i++) {
@@ -503,7 +503,7 @@ describe('OntologyEditModal.vue', () => {
     await waitNT(wrapper.vm)
     await waitRAF()
 
-    const termOptions = wrapper.find('#sodar-ss-vue-ontology-select-term').findAll('Option')
+    const termOptions = wrapper.find('#sodar-ss-ontology-select-term').findAll('Option')
     expect(termOptions.length).toBe(1)
     expect(termOptions.at(0).text()).toContain('<OBSOLETE>')
   })
@@ -525,17 +525,17 @@ describe('OntologyEditModal.vue', () => {
     await waitNT(wrapper.vm)
     await waitRAF()
 
-    let termItems = wrapper.findAll('.sodar-ss-vue-ontology-term-item')
+    let termItems = wrapper.findAll('.sodar-ss-ontology-term-item')
     expect(termItems.length).toBe(3)
-    const termOptions = wrapper.find('#sodar-ss-vue-ontology-select-term').findAll('Option')
+    const termOptions = wrapper.find('#sodar-ss-ontology-select-term').findAll('Option')
     await termOptions.at(0).trigger('dblclick')
     await waitNT(wrapper.vm)
     await waitRAF()
 
-    termItems = wrapper.findAll('.sodar-ss-vue-ontology-term-item')
+    termItems = wrapper.findAll('.sodar-ss-ontology-term-item')
     expect(termItems.length).toBe(4)
     expect(termItems.at(3).find('td').text()).toBe(ontologyTermResponseHp.terms[0].name)
-    expect(wrapper.find('#sodar-ss-vue-btn-update').attributes().disabled).toBe(undefined)
+    expect(wrapper.find('#sodar-ss-btn-update').attributes().disabled).toBe(undefined)
   })
 
   it('handles option selection of existing term', async () => {
@@ -560,16 +560,16 @@ describe('OntologyEditModal.vue', () => {
     await waitNT(wrapper.vm)
     await waitRAF()
 
-    let termItems = wrapper.findAll('.sodar-ss-vue-ontology-term-item')
+    let termItems = wrapper.findAll('.sodar-ss-ontology-term-item')
     expect(termItems.length).toBe(3)
-    const termOptions = wrapper.find('#sodar-ss-vue-ontology-select-term').findAll('Option')
+    const termOptions = wrapper.find('#sodar-ss-ontology-select-term').findAll('Option')
     await termOptions.at(0).trigger('dblclick')
     await waitNT(wrapper.vm)
     await waitRAF()
 
-    termItems = wrapper.findAll('.sodar-ss-vue-ontology-term-item')
+    termItems = wrapper.findAll('.sodar-ss-ontology-term-item')
     expect(termItems.length).toBe(3) // Nothing should be added
-    expect(wrapper.find('#sodar-ss-vue-btn-update').attributes().disabled).toBe('disabled')
+    expect(wrapper.find('#sodar-ss-btn-update').attributes().disabled).toBe('disabled')
   })
 
   it('renders modal with term with disallowed list value', async () => {
@@ -587,24 +587,24 @@ describe('OntologyEditModal.vue', () => {
     await waitRAF()
 
     // Alerts
-    expect(wrapper.find('#sodar-ss-vue-ontology-no-list').exists()).toBe(true)
-    expect(wrapper.find('#sodar-ss-vue-ontology-no-imports').exists()).toBe(false)
+    expect(wrapper.find('#sodar-ss-ontology-no-list').exists()).toBe(true)
+    expect(wrapper.find('#sodar-ss-ontology-no-imports').exists()).toBe(false)
 
     // Existing terms
-    const termItems = wrapper.findAll('.sodar-ss-vue-ontology-term-item')
+    const termItems = wrapper.findAll('.sodar-ss-ontology-term-item')
     expect(termItems.length).toBe(1)
-    const termItem = wrapper.find('.sodar-ss-vue-ontology-term-item')
-    expect(termItem.find('.sodar-ss-vue-btn-up').exists()).toBe(false)
-    expect(termItem.find('.sodar-ss-vue-btn-down').exists()).toBe(false)
-    expect(termItem.find('.sodar-ss-vue-btn-edit').exists()).toBe(true)
-    expect(termItem.find('.sodar-ss-vue-btn-edit').attributes().disabled).toBe(undefined)
-    expect(termItem.find('.sodar-ss-vue-btn-stop').exists()).toBe(false)
-    expect(termItem.find('.sodar-ss-vue-btn-delete').exists()).toBe(true)
-    expect(termItem.find('.sodar-ss-vue-btn-delete').attributes().disabled).toBe(undefined)
-    expect(wrapper.find('#sodar-ss-vue-ontology-free-row').exists()).toBe(false)
+    const termItem = wrapper.find('.sodar-ss-ontology-term-item')
+    expect(termItem.find('.sodar-ss-btn-up').exists()).toBe(false)
+    expect(termItem.find('.sodar-ss-btn-down').exists()).toBe(false)
+    expect(termItem.find('.sodar-ss-btn-edit').exists()).toBe(true)
+    expect(termItem.find('.sodar-ss-btn-edit').attributes().disabled).toBe(undefined)
+    expect(termItem.find('.sodar-ss-btn-stop').exists()).toBe(false)
+    expect(termItem.find('.sodar-ss-btn-delete').exists()).toBe(true)
+    expect(termItem.find('.sodar-ss-btn-delete').attributes().disabled).toBe(undefined)
+    expect(wrapper.find('#sodar-ss-ontology-free-row').exists()).toBe(false)
 
     // Bottom buttons
-    expect(wrapper.find('#sodar-ss-vue-btn-update').attributes().disabled).toBe('disabled')
+    expect(wrapper.find('#sodar-ss-btn-update').attributes().disabled).toBe('disabled')
   })
 
   it('renders modal with empty value with disallowed list value', async () => {
@@ -621,9 +621,9 @@ describe('OntologyEditModal.vue', () => {
     await waitNT(wrapper.vm)
     await waitRAF()
 
-    expect(wrapper.find('#sodar-ss-vue-ontology-no-list').exists()).toBe(false)
-    expect(wrapper.find('.sodar-ss-vue-ontology-term-item').exists()).toBe(false)
-    expect(wrapper.find('#sodar-ss-vue-ontology-free-row').exists()).toBe(true)
+    expect(wrapper.find('#sodar-ss-ontology-no-list').exists()).toBe(false)
+    expect(wrapper.find('.sodar-ss-ontology-term-item').exists()).toBe(false)
+    expect(wrapper.find('#sodar-ss-ontology-free-row').exists()).toBe(true)
   })
 
   it('replaces existing term with disallowed list value', async () => {
@@ -646,17 +646,17 @@ describe('OntologyEditModal.vue', () => {
     await waitNT(wrapper.vm)
     await waitRAF()
 
-    let termItems = wrapper.findAll('.sodar-ss-vue-ontology-term-item')
+    let termItems = wrapper.findAll('.sodar-ss-ontology-term-item')
     expect(termItems.length).toBe(1)
-    const termOptions = wrapper.find('#sodar-ss-vue-ontology-select-term').findAll('Option')
+    const termOptions = wrapper.find('#sodar-ss-ontology-select-term').findAll('Option')
     await termOptions.at(0).trigger('dblclick')
     await waitNT(wrapper.vm)
     await waitRAF()
 
-    termItems = wrapper.findAll('.sodar-ss-vue-ontology-term-item')
+    termItems = wrapper.findAll('.sodar-ss-ontology-term-item')
     expect(termItems.length).toBe(1)
     expect(termItems.at(0).find('td').text()).toBe(ontologyTermResponseHp.terms[0].name)
-    expect(wrapper.find('#sodar-ss-vue-btn-update').attributes().disabled).toBe(undefined)
+    expect(wrapper.find('#sodar-ss-btn-update').attributes().disabled).toBe(undefined)
   })
 
   it('inserts term with disallowed list value', async () => {
@@ -679,24 +679,24 @@ describe('OntologyEditModal.vue', () => {
     await waitNT(wrapper.vm)
     await waitRAF()
 
-    let termItems = wrapper.findAll('.sodar-ss-vue-ontology-term-item')
+    let termItems = wrapper.findAll('.sodar-ss-ontology-term-item')
     expect(termItems.length).toBe(0)
-    expect(wrapper.find('#sodar-ss-vue-ontology-no-list').exists()).toBe(false)
-    expect(wrapper.find('.sodar-ss-vue-ontology-term-item').exists()).toBe(false)
-    expect(wrapper.find('#sodar-ss-vue-ontology-free-row').exists()).toBe(true)
+    expect(wrapper.find('#sodar-ss-ontology-no-list').exists()).toBe(false)
+    expect(wrapper.find('.sodar-ss-ontology-term-item').exists()).toBe(false)
+    expect(wrapper.find('#sodar-ss-ontology-free-row').exists()).toBe(true)
 
-    const termOptions = wrapper.find('#sodar-ss-vue-ontology-select-term').findAll('Option')
+    const termOptions = wrapper.find('#sodar-ss-ontology-select-term').findAll('Option')
     await termOptions.at(0).trigger('dblclick')
     await waitNT(wrapper.vm)
     await waitRAF()
 
-    termItems = wrapper.findAll('.sodar-ss-vue-ontology-term-item')
+    termItems = wrapper.findAll('.sodar-ss-ontology-term-item')
     expect(termItems.length).toBe(1)
     expect(termItems.at(0).find('td').text()).toBe(ontologyTermResponseHp.terms[0].name)
-    expect(wrapper.find('#sodar-ss-vue-ontology-no-list').exists()).toBe(true)
-    expect(wrapper.find('.sodar-ss-vue-ontology-term-item').exists()).toBe(true)
-    expect(wrapper.find('#sodar-ss-vue-ontology-free-row').exists()).toBe(false)
-    expect(wrapper.find('#sodar-ss-vue-btn-update').attributes().disabled).toBe(undefined)
+    expect(wrapper.find('#sodar-ss-ontology-no-list').exists()).toBe(true)
+    expect(wrapper.find('.sodar-ss-ontology-term-item').exists()).toBe(true)
+    expect(wrapper.find('#sodar-ss-ontology-free-row').exists()).toBe(false)
+    expect(wrapper.find('#sodar-ss-btn-update').attributes().disabled).toBe(undefined)
   })
 
   it('renders modal after deleting term with disallowed list value', async () => {
@@ -716,22 +716,22 @@ describe('OntologyEditModal.vue', () => {
     await waitNT(wrapper.vm)
     await waitRAF()
 
-    let termItems = wrapper.findAll('.sodar-ss-vue-ontology-term-item')
+    let termItems = wrapper.findAll('.sodar-ss-ontology-term-item')
     expect(termItems.length).toBe(1)
-    expect(wrapper.find('#sodar-ss-vue-ontology-no-list').exists()).toBe(true)
-    expect(wrapper.find('.sodar-ss-vue-ontology-term-item').exists()).toBe(true)
-    expect(wrapper.find('#sodar-ss-vue-ontology-free-row').exists()).toBe(false)
+    expect(wrapper.find('#sodar-ss-ontology-no-list').exists()).toBe(true)
+    expect(wrapper.find('.sodar-ss-ontology-term-item').exists()).toBe(true)
+    expect(wrapper.find('#sodar-ss-ontology-free-row').exists()).toBe(false)
 
-    await wrapper.find('.sodar-ss-vue-btn-delete').trigger('click')
+    await wrapper.find('.sodar-ss-btn-delete').trigger('click')
     await waitNT(wrapper.vm)
     await waitRAF()
 
-    termItems = wrapper.findAll('.sodar-ss-vue-ontology-term-item')
+    termItems = wrapper.findAll('.sodar-ss-ontology-term-item')
     expect(termItems.length).toBe(0)
-    expect(wrapper.find('#sodar-ss-vue-ontology-no-list').exists()).toBe(false)
-    expect(wrapper.find('.sodar-ss-vue-ontology-term-item').exists()).toBe(false)
-    expect(wrapper.find('#sodar-ss-vue-ontology-free-row').exists()).toBe(true)
-    expect(wrapper.find('#sodar-ss-vue-btn-update').attributes().disabled).toBe(undefined)
+    expect(wrapper.find('#sodar-ss-ontology-no-list').exists()).toBe(false)
+    expect(wrapper.find('.sodar-ss-ontology-term-item').exists()).toBe(false)
+    expect(wrapper.find('#sodar-ss-ontology-free-row').exists()).toBe(true)
+    expect(wrapper.find('#sodar-ss-btn-update').attributes().disabled).toBe(undefined)
   })
 
   it('renders modal with no imported ontologies', async () => {
@@ -748,18 +748,18 @@ describe('OntologyEditModal.vue', () => {
     await waitRAF()
 
     // Term search
-    expect(wrapper.find('#sodar-ss-vue-ontology-input-search').exists()).toBe(false)
-    expect(wrapper.find('#sodar-ss-vue-ontology-select-limit').exists()).toBe(false)
-    expect(wrapper.find('#sodar-ss-vue-ontology-order-check').exists()).toBe(false)
-    expect(wrapper.find('#sodar-ss-vue-ontology-select-term').exists()).toBe(false)
+    expect(wrapper.find('#sodar-ss-ontology-input-search').exists()).toBe(false)
+    expect(wrapper.find('#sodar-ss-ontology-select-limit').exists()).toBe(false)
+    expect(wrapper.find('#sodar-ss-ontology-order-check').exists()).toBe(false)
+    expect(wrapper.find('#sodar-ss-ontology-select-term').exists()).toBe(false)
 
     // Alerts
-    expect(wrapper.find('#sodar-ss-vue-ontology-no-imports').exists()).toBe(true)
+    expect(wrapper.find('#sodar-ss-ontology-no-imports').exists()).toBe(true)
 
     // Terms
-    const termItems = wrapper.findAll('.sodar-ss-vue-ontology-term-item')
+    const termItems = wrapper.findAll('.sodar-ss-ontology-term-item')
     expect(termItems.length).toBe(3)
-    expect(wrapper.find('#sodar-ss-vue-ontology-free-row').exists()).toBe(true)
+    expect(wrapper.find('#sodar-ss-ontology-free-row').exists()).toBe(true)
   })
 
   it('renders modal with ontology term data', async () => {
@@ -774,46 +774,46 @@ describe('OntologyEditModal.vue', () => {
     await waitRAF()
 
     // General
-    expect(wrapper.find('#sodar-vue-ontology-edit-modal').exists()).toBe(true)
+    expect(wrapper.find('#sodar-ss-ontology-edit-modal').exists()).toBe(true)
     expect(wrapper.find('h5').text()).toBe(wrapper.vm.getTitle())
 
     // Term search
-    expect(wrapper.find('#sodar-ss-vue-ontology-input-search').attributes().disabled).toBe(undefined)
-    expect(wrapper.find('#sodar-ss-vue-ontology-select-limit').attributes().disabled).toBe('disabled')
-    expect(wrapper.find('#sodar-ss-vue-ontology-order-check').attributes().disabled).toBe('disabled')
-    expect(wrapper.find('#sodar-ss-vue-ontology-select-term').attributes().disabled).toBe(undefined)
+    expect(wrapper.find('#sodar-ss-ontology-input-search').attributes().disabled).toBe(undefined)
+    expect(wrapper.find('#sodar-ss-ontology-select-limit').attributes().disabled).toBe('disabled')
+    expect(wrapper.find('#sodar-ss-ontology-order-check').attributes().disabled).toBe('disabled')
+    expect(wrapper.find('#sodar-ss-ontology-select-term').attributes().disabled).toBe(undefined)
 
     // Alerts
-    expect(wrapper.find('.sodar-ss-vue-ontology-alert').exists()).toBe(false)
-    expect(wrapper.find('#sodar-ss-vue-ontology-no-imports').exists()).toBe(false)
+    expect(wrapper.find('.sodar-ss-ontology-alert').exists()).toBe(false)
+    expect(wrapper.find('#sodar-ss-ontology-no-imports').exists()).toBe(false)
 
     // Existing terms
-    const termItems = wrapper.findAll('.sodar-ss-vue-ontology-term-item')
+    const termItems = wrapper.findAll('.sodar-ss-ontology-term-item')
     expect(termItems.length).toBe(3)
     for (let i = 0; i < termItems.length; i++) {
       let upDisabled
       let downDisabled
       if (i === 0) upDisabled = 'disabled'
       if (i === termItems.length - 1) downDisabled = 'disabled'
-      expect(termItems.at(i).find('.sodar-ss-vue-btn-up').attributes().disabled).toBe(upDisabled)
-      expect(termItems.at(i).find('.sodar-ss-vue-btn-down').attributes().disabled).toBe(downDisabled)
-      expect(termItems.at(i).find('.sodar-ss-vue-btn-edit').attributes().disabled).toBe(undefined)
-      expect(termItems.at(i).find('.sodar-ss-vue-btn-delete').attributes().disabled).toBe(undefined)
-      expect(termItems.at(i).find('.sodar-ss-vue-btn-stop').exists()).toBe(false)
+      expect(termItems.at(i).find('.sodar-ss-btn-up').attributes().disabled).toBe(upDisabled)
+      expect(termItems.at(i).find('.sodar-ss-btn-down').attributes().disabled).toBe(downDisabled)
+      expect(termItems.at(i).find('.sodar-ss-btn-edit').attributes().disabled).toBe(undefined)
+      expect(termItems.at(i).find('.sodar-ss-btn-delete').attributes().disabled).toBe(undefined)
+      expect(termItems.at(i).find('.sodar-ss-btn-stop').exists()).toBe(false)
     }
 
     // Term insert row
-    expect(wrapper.findAll('.sodar-ss-vue-ontology-input-row').length).toBe(3)
-    expect(wrapper.find('#sodar-ss-vue-ontology-free-row').exists()).toBe(true)
-    const termInputs = wrapper.find('#sodar-ss-vue-ontology-free-row').findAll(
-      '.sodar-ss-vue-ontology-input-row')
+    expect(wrapper.findAll('.sodar-ss-ontology-input-row').length).toBe(3)
+    expect(wrapper.find('#sodar-ss-ontology-free-row').exists()).toBe(true)
+    const termInputs = wrapper.find('#sodar-ss-ontology-free-row').findAll(
+      '.sodar-ss-ontology-input-row')
     for (let i = 0; i < termInputs.length; i++) {
       expect(termInputs.at(i).attributes().disabled).toBe(undefined)
     }
-    expect(wrapper.find('#sodar-ss-vue-btn-insert').attributes().disabled).toBe('disabled')
+    expect(wrapper.find('#sodar-ss-btn-insert').attributes().disabled).toBe('disabled')
 
     // Bottom buttons
-    expect(wrapper.find('#sodar-ss-vue-btn-update').attributes().disabled).toBe('disabled')
+    expect(wrapper.find('#sodar-ss-btn-update').attributes().disabled).toBe('disabled')
   })
 
   it('renders modal with multiple allowed ontologies', async () => {
@@ -828,10 +828,10 @@ describe('OntologyEditModal.vue', () => {
     await waitRAF()
 
     // Term search
-    const selectLimit = wrapper.find('#sodar-ss-vue-ontology-select-limit')
+    const selectLimit = wrapper.find('#sodar-ss-ontology-select-limit')
     expect(selectLimit.attributes().disabled).toBe(undefined)
     expect(selectLimit.findAll('option').length).toBe(3) // Includes null
-    expect(wrapper.find('#sodar-ss-vue-ontology-select-limit').attributes().disabled).toBe(undefined)
+    expect(wrapper.find('#sodar-ss-ontology-select-limit').attributes().disabled).toBe(undefined)
   })
 
   it('builds query url with a single allowed ontology', async () => {
@@ -900,7 +900,7 @@ describe('OntologyEditModal.vue', () => {
     wrapper.setData({ refreshingTerms: false })
     await waitNT(wrapper.vm)
     await waitRAF()
-    await wrapper.find('#sodar-ss-vue-ontology-order-check').trigger('click')
+    await wrapper.find('#sodar-ss-ontology-order-check').trigger('click')
 
     expect(wrapper.vm.getQueryUrl(queryString)).toBe(url)
   })

@@ -1,16 +1,18 @@
 <template>
   <div v-if="value"
        :title="containerTitle"
-       :class="containerClasses"
+       class="sodar-ss-data-object-select"
        v-b-tooltip.hover>
     <!-- Value select -->
-    <select :ref="'input'"
-            v-model="editValue"
-            :class="'ag-cell-edit-input ' + getSelectClass()">
-      <option v-for="(value, index) in getSelectOptions()"
-              :key="index"
-              :value="value"
-              :selected="editValue.uuid === value.uuid">
+    <select
+        ref="input"
+        v-model="editValue"
+        :class="'ag-cell-edit-input ' + getSelectClass()">
+      <option
+          v-for="(value, index) in getSelectOptions()"
+          :key="index"
+          :value="value"
+          :selected="editValue.uuid === value.uuid">
         {{ value.name }}
       </option>
     </select>
@@ -34,7 +36,6 @@ export default Vue.extend({
       value: null,
       editValue: null,
       ogEditValue: null,
-      containerClasses: '',
       containerTitle: '',
       inputStyle: '',
       unitStyle: '',
@@ -65,7 +66,7 @@ export default Vue.extend({
     },
     getSelectClass () {
       if (navigator.userAgent.search('Firefox') > -1) {
-        return 'sodar-ss-vue-select-firefox'
+        return 'sodar-ss-select-firefox'
       }
     },
     getSelectOptions () {

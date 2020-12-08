@@ -16,34 +16,23 @@
 import Vue from 'vue'
 import IrodsButtons from '../IrodsButtons.vue'
 
-export default Vue.extend(
-  {
-    components: {
-      IrodsButtons
+export default Vue.extend({
+  components: {
+    IrodsButtons
+  },
+  methods: {
+    getIrodsPath (params) {
+      if (params.value) return params.value.path
+      return params.assayIrodsPath
     },
-    methods: {
-      getIrodsPath (params) {
-        if (params.value) {
-          return params.value.path
-        } else {
-          return params.assayIrodsPath
-        }
-      },
-      getEnabledState (params) {
-        if (params.value) {
-          if (!params.value.path) return false // Disable buttons if path=null
-          return params.value.enabled
-        } else {
-          return true // TODO: Store assay path file count somewhere instead?
-        }
-      }
-    },
-    beforeMount () {
+    getEnabledState (params) {
+      if (!params.value) return true
+      if (!params.value.path) return false // Disable buttons if path=null
+      return params.value.enabled
     }
   }
-)
+})
 </script>
 
 <style scoped>
-
 </style>

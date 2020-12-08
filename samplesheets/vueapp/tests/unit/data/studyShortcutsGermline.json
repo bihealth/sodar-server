@@ -1,0 +1,81 @@
+{
+  "schema": {
+    "igv": {
+      "type": "link",
+      "icon": "fa-share-square-o",
+      "title": "Open IGV session file for pedigree in IGV"
+    },
+    "files": {
+      "type": "modal",
+      "icon": "fa-folder-open-o",
+      "title": "View links to pedigree BAM, VCF and IGV session files"
+    }
+  },
+  "data": [
+    {
+      "igv": {
+        "url": "http://127.0.0.1:60151/load?genome=b37&merge=false&file=http://davrods.local/__sodar/samplesheets/study/germline/render/igv/99999999-0000-0000-0814-999999999999.xml",
+        "enabled": false
+      },
+      "files": {
+        "query": {
+          "key": "source",
+          "value": "0814"
+        },
+        "enabled": false
+      }
+    },
+    {
+      "igv": {
+        "url": "http://127.0.0.1:60151/load?genome=b37&merge=false&file=http://davrods.local/__sodar/samplesheets/study/germline/render/igv/99999999-0000-0000-0815-999999999999.xml",
+        "enabled": false
+      },
+      "files": {
+        "query": {
+          "key": "source",
+          "value": "0815"
+        },
+        "enabled": false
+      }
+    },
+    {
+      "igv": {
+        "url": "http://127.0.0.1:60151/load?genome=b37&merge=false&file=http://davrods.local/__sodar/samplesheets/study/germline/render/igv/99999999-0000-0000-0815-999999999999.xml",
+        "enabled": false
+      },
+      "files": {
+        "query": {
+          "key": "source",
+          "value": "0815"
+        },
+        "enabled": false
+      }
+    },
+    {
+      "igv": {
+        "url": "http://127.0.0.1:60151/load?genome=b37&merge=false&file=http://davrods.local/__sodar/samplesheets/study/germline/render/igv/99999999-0000-0000-0816-999999999999.xml",
+        "enabled": false
+      },
+      "files": {
+        "query": {
+          "key": "source",
+          "value": "0816"
+        },
+        "enabled": false
+      }
+    },
+    {
+      "igv": {
+        "url": "http://127.0.0.1:60151/load?genome=b37&merge=false&file=http://davrods.local/__sodar/samplesheets/study/germline/render/igv/99999999-0000-0000-0817-999999999999.xml",
+        "enabled": false
+      },
+      "files": {
+        "query": {
+          "key": "source",
+          "value": "0817"
+        },
+        "enabled": false
+      }
+    }
+  ]
+}

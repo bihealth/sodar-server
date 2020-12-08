@@ -42,13 +42,13 @@ describe('IrodsButtons.vue', () => {
   it('renders default buttons in enabled state', () => {
     const wrapper = mount(IrodsButtons, { localVue, propsData: propsData })
 
-    expect(wrapper.find('.sodar-vue-popup-list-btn').exists()).toBe(false)
+    expect(wrapper.find('.sodar-ss-popup-list-btn').exists()).toBe(false)
     expect(wrapper.find('.sodar-irods-copy-path-btn').exists()).toBe(true)
-    expect(wrapper.find('.sodar-irods-copy-path-btn')).not.toContain('disabled')
+    expect(wrapper.find('.sodar-irods-copy-path-btn').attributes().disabled).toBe(undefined)
     expect(wrapper.find('.sodar-irods-copy-dav-btn').exists()).toBe(true)
-    expect(wrapper.find('.sodar-irods-copy-dav-btn')).not.toContain('disabled')
+    expect(wrapper.find('.sodar-irods-copy-dav-btn').attributes().disabled).toBe(undefined)
     expect(wrapper.find('.sodar-irods-dav-btn').exists()).toBe(true)
-    expect(wrapper.find('.sodar-irods-dav-btn')).not.toContain('disabled')
+    expect(wrapper.find('.sodar-irods-dav-btn').attributes().disabled).toBe(undefined)
     expect(wrapper.vm.getEnabledState()).toBe(true)
   })
 
@@ -56,7 +56,7 @@ describe('IrodsButtons.vue', () => {
     propsData.enabled = false
     const wrapper = mount(IrodsButtons, { localVue, propsData: propsData })
 
-    expect(wrapper.find('.sodar-vue-popup-list-btn').exists()).toBe(false)
+    expect(wrapper.find('.sodar-ss-popup-list-btn').exists()).toBe(false)
     expect(wrapper.find('.sodar-irods-copy-path-btn').exists()).toBe(true)
     expect(wrapper.find('.sodar-irods-copy-path-btn').attributes().disabled).toBe('disabled')
     expect(wrapper.find('.sodar-irods-copy-dav-btn').exists()).toBe(true)
@@ -70,7 +70,7 @@ describe('IrodsButtons.vue', () => {
     propsData.editMode = true
     const wrapper = mount(IrodsButtons, { localVue, propsData: propsData })
 
-    expect(wrapper.find('.sodar-vue-popup-list-btn').exists()).toBe(false)
+    expect(wrapper.find('.sodar-ss-popup-list-btn').exists()).toBe(false)
     expect(wrapper.find('.sodar-irods-copy-path-btn').attributes().disabled).toBe('disabled')
     expect(wrapper.find('.sodar-irods-copy-dav-btn').attributes().disabled).toBe('disabled')
     expect(wrapper.find('.sodar-irods-dav-btn').classes()).toContain('disabled')
@@ -81,7 +81,7 @@ describe('IrodsButtons.vue', () => {
     propsData.irodsStatus = false
     const wrapper = mount(IrodsButtons, { localVue, propsData: propsData })
 
-    expect(wrapper.find('.sodar-vue-popup-list-btn').exists()).toBe(false)
+    expect(wrapper.find('.sodar-ss-popup-list-btn').exists()).toBe(false)
     expect(wrapper.find('.sodar-irods-copy-path-btn').attributes().disabled).toBe('disabled')
     expect(wrapper.find('.sodar-irods-copy-dav-btn').attributes().disabled).toBe('disabled')
     expect(wrapper.find('.sodar-irods-dav-btn').classes()).toContain('disabled')
@@ -92,11 +92,11 @@ describe('IrodsButtons.vue', () => {
     propsData.showFileList = true
     const wrapper = mount(IrodsButtons, { localVue, propsData: propsData })
 
-    expect(wrapper.find('.sodar-vue-popup-list-btn').exists()).toBe(true)
-    expect(wrapper.find('.sodar-irods-copy-path-btn')).not.toContain('disabled')
-    expect(wrapper.find('.sodar-irods-copy-path-btn')).not.toContain('disabled')
-    expect(wrapper.find('.sodar-irods-copy-dav-btn')).not.toContain('disabled')
-    expect(wrapper.find('.sodar-irods-dav-btn')).not.toContain('disabled')
+    expect(wrapper.find('.sodar-ss-popup-list-btn').exists()).toBe(true)
+    expect(wrapper.find('.sodar-irods-copy-path-btn').attributes().disabled).toBe(undefined)
+    expect(wrapper.find('.sodar-irods-copy-path-btn').attributes().disabled).toBe(undefined)
+    expect(wrapper.find('.sodar-irods-copy-dav-btn').attributes().disabled).toBe(undefined)
+    expect(wrapper.find('.sodar-irods-dav-btn').attributes().disabled).toBe(undefined)
     expect(wrapper.vm.getEnabledState()).toBe(true)
   })
 
@@ -132,15 +132,15 @@ describe('IrodsButtons.vue', () => {
     expect(spyOnDirListClick).not.toHaveBeenCalled()
     expect(spySetTitle).not.toHaveBeenCalled()
     expect(spyShowModal).not.toHaveBeenCalled()
-    wrapper.find('.sodar-vue-popup-list-btn').trigger('click')
+    wrapper.find('.sodar-ss-popup-list-btn').trigger('click')
     expect(spyOnDirListClick).toHaveBeenCalled()
     expect(spySetTitle).toHaveBeenCalled()
     expect(spyShowModal).toHaveBeenCalled()
   })
 
-  it('creates extra links', () => {
+  it('renders extra links', () => {
     propsData.showFileList = true
-    propsData.extraLinks = {
+    propsData.extraLinks = [{
       url: 'https://ticket:xzy123@0.0.0.0/omicsZone/projects/00/' +
            '00000000-0000-0000-0000-000000000000/sample_data/' +
            'study_11111111-1111-1111-1111-111111111111/' +
@@ -150,15 +150,15 @@ describe('IrodsButtons.vue', () => {
       class: 'sodar-irods-ticket-access-1-btn',
       title: 'Latest Access Ticket for track1',
       enabled: true
-    }
+    }]
     const wrapper = mount(IrodsButtons, { localVue, propsData: propsData })
 
-    expect(wrapper.find('.sodar-vue-popup-list-btn').exists()).toBe(true)
-    expect(wrapper.find('.sodar-irods-copy-path-btn')).not.toContain('disabled')
-    expect(wrapper.find('.sodar-irods-copy-path-btn')).not.toContain('disabled')
-    expect(wrapper.find('.sodar-irods-copy-dav-btn')).not.toContain('disabled')
-    expect(wrapper.find('.sodar-irods-dav-btn')).not.toContain('disabled')
-    expect(wrapper.find('.sodar-irods-ticket-access-1-btn')).not.toContain('enabled')
+    expect(wrapper.find('.sodar-ss-popup-list-btn').exists()).toBe(true)
+    expect(wrapper.find('.sodar-irods-copy-path-btn').attributes().disabled).toBe(undefined)
+    expect(wrapper.find('.sodar-irods-copy-path-btn').attributes().disabled).toBe(undefined)
+    expect(wrapper.find('.sodar-irods-copy-dav-btn').attributes().disabled).toBe(undefined)
+    expect(wrapper.find('.sodar-irods-dav-btn').attributes().disabled).toBe(undefined)
+    expect(wrapper.find('.sodar-irods-ticket-access-1-btn').attributes().disabled).toBe(undefined)
     expect(wrapper.vm.getEnabledState()).toBe(true)
   })
 })
