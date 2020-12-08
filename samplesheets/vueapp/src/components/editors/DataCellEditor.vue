@@ -56,7 +56,7 @@
 import Vue from 'vue'
 
 const dateRegex = /^\d{4}-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])$/
-const exLinkRegex = /^([\w-]+:[\w\-_]+)(;[\w-]+:[\w-_]+)*$/
+const exLinkRegex = /^([\w-]+:[\w\-_]+)(;\s*[\w-]+:[\w-_]+)*$/
 const navKeyCodes = [33, 34, 35, 36, 37, 38, 39, 40]
 
 export default Vue.extend({
