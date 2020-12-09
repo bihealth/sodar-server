@@ -105,7 +105,7 @@ export default Vue.extend({
           delRowData,
           this.assayMode,
           this.finishUpdateCallback)
-      }
+      } else this.deleting = false // Cancel
     },
     finishUpdateCallback () {
       this.inserting = false

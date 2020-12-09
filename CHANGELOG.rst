@@ -66,6 +66,7 @@ Fixed
     - Sample deleted from study not removed from assay sample selection (#988)
     - Default value in column config not validated against range (#1031)
     - Editor input not correctly trimmed (#1032)
+    - Icon updating on row deletion cancel (#1012)
 
 Removed
 -------
