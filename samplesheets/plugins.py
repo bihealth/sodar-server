@@ -753,7 +753,7 @@ class SampleSheetAssayPluginPoint(PluginPoint):
                         row, assay_table, assay, assay_path
                     )
 
-                    if path not in row_paths:
+                    if path and path not in row_paths:
                         row_paths.append(path)
 
                 # Build cache for paths

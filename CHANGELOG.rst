@@ -69,6 +69,7 @@ Fixed
     - Editor input not correctly trimmed (#1032)
     - Icon updating on row deletion cancel (#1012)
     - Ontology URL template forced on incompatible accession URLs (#1022)
+    - Redundant iRODS queries for empty paths in ``_update_cache_rows()`` (#957)
 
 Removed
 -------
