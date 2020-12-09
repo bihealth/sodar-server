@@ -35,7 +35,7 @@ Added
     - Simple editing for external links columns (#976)
     - ``SampleDataFileExistsAPIView`` for querying file status by checksum (#1003)
     - Track hub and iRODS ticket support for UCSC Genome Browser integration (#238)
-    - Cut out get IRODS content code from ``views_ajax.SampleSheetsStudyTableAjaxView`` and moved it to ``plugins.get_irods_content``
+    - Django setting ``SHEETS_ONTOLOGY_URL_SKIP`` for template skip patterns (#1022)
 
 Changed
 -------
@@ -53,6 +53,7 @@ Changed
     - Refactor recognizing ontology/unit columns in rendering (#962)
     - Disable "Finish Editing" link with unsaved rows (#987)
     - General vue app refactoring (#747)
+    - Move iRODS content setup for ajax views to ``plugins.get_irods_content()``
 
 Fixed
 -----
@@ -67,6 +68,7 @@ Fixed
     - Default value in column config not validated against range (#1031)
     - Editor input not correctly trimmed (#1032)
     - Icon updating on row deletion cancel (#1012)
+    - Ontology URL template forced on incompatible accession URLs (#1022)
 
 Removed
 -------

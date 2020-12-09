@@ -145,15 +145,15 @@ class SampleSheetTableBuilder:
         :param accession: String (contains an URL)
         :return: String
         """
-        if not settings.SHEETS_ONTOLOGY_URL_TEMPLATE:
+        if (
+            not settings.SHEETS_ONTOLOGY_URL_TEMPLATE
+            or not accession
+            or any(s in accession for s in settings.SHEETS_ONTOLOGY_URL_SKIP)
+        ):
             return accession
 
-        # HACK: "HPO" is "HP" in bioontology.org
-        # TODO: This is actually an error in sample sheets, it should be "HP"
-        if (
-            'bioontology.org' in settings.SHEETS_ONTOLOGY_URL_TEMPLATE
-            and ontology_name == 'HPO'
-        ):
+        # HACK: "HP" is commonly incorrectly provided as "HPO"
+        if ontology_name == 'HPO':
             ontology_name = 'HP'
 
         return settings.SHEETS_ONTOLOGY_URL_TEMPLATE.format(

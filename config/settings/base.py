@@ -618,6 +618,8 @@ SHEETS_ONTOLOGY_URL_TEMPLATE = (
     'https://bioportal.bioontology.org/ontologies/'
     '{ontology_name}/?p=classes&conceptid={accession}'
 )
+# Skip URL template modification if substring found in accession
+SHEETS_ONTOLOGY_URL_SKIP = ['bioontology.org']
 
 SHEETS_EXTERNAL_LINK_LABELS = {
     'x-bih-buch-genomics-wetlab-id': 'Wetlab-ID assigned by BIH genomics unit '
