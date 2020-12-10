@@ -36,6 +36,7 @@ Added
     - ``SampleDataFileExistsAPIView`` for querying file status by checksum (#1003)
     - Track hub and iRODS ticket support for UCSC Genome Browser integration (#238)
     - Django setting ``SHEETS_ONTOLOGY_URL_SKIP`` for template skip patterns (#1022)
+    - Prevent insertion of identical rows (#1023)
 
 Changed
 -------

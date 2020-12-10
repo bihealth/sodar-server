@@ -24,6 +24,7 @@
 
 <script>
 import Vue from 'vue'
+const nodeIdTypes = ['name', 'process_name', 'protocol']
 
 export default Vue.extend({
   data () {
@@ -46,11 +47,45 @@ export default Vue.extend({
       this.app.handleRowInsert(this.gridOptions, this.assayMode)
     },
     */
+    getNodeNames (rowNode, cols) {
+      let ret = ''
+      let i = 1
+      while (i < cols.length - 1) {
+        const headerInfo = cols[i].colDef.cellEditorParams.headerInfo
+        if (nodeIdTypes.includes(headerInfo.header_type)) {
+          if (i > 1) ret += ';'
+          ret += rowNode.data[cols[i].colId].value
+          const nextNodeIdx = this.app.findNextNodeIdx(cols, i, cols.length - 1)
+          if (!nextNodeIdx) break
+          i = nextNodeIdx
+        } else i += 1
+      }
+      return ret
+    },
     onSave () {
       // HACK: Force hiding the tooltip
       // TODO: This does not always work, fix?
       this.$root.$emit('bv::hide::tooltip')
       this.inserting = true
+
+      // Prevent insertion if an identical row exists
+      const oldRowNodes = []
+      let newRowNodes = null
+      const currentRowNode = this.rowNode
+      const getNodeNames = this.getNodeNames
+      // Get node IDs for existing nodes
+      const cols = this.gridOptions.columnApi.getAllColumns()
+      this.gridOptions.api.forEachNode(function (r) {
+        if (r.id !== currentRowNode.id) {
+          oldRowNodes.push(getNodeNames(r, cols))
+        } else newRowNodes = getNodeNames(r, cols)
+      })
+      if (oldRowNodes.includes(newRowNodes)) {
+        this.app.showNotification('Identical Row', 'danger', 2000)
+        this.inserting = false
+        return
+      }
+
       this.app.handleRowSave(
         this.gridOptions,
         this.rowNode,
@@ -297,7 +332,8 @@ export default Vue.extend({
     this.gridUuid = this.params.gridUuid
     this.assayMode = this.params.assayMode
     this.gridOptions = this.app.getGridOptionsByUuid(this.gridUuid)
-    this.rowNode = this.gridOptions.api.getRowNode(this.params.node.id)
+    // this.rowNode = this.gridOptions.api.getRowNode(this.params.node.id)
+    this.rowNode = this.params.node
     this.sampleColId = this.params.sampleColId
     this.sampleIdx = this.params.sampleIdx
   }
