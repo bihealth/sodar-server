@@ -71,6 +71,7 @@ Fixed
     - Icon updating on row deletion cancel (#1012)
     - Ontology URL template forced on incompatible accession URLs (#1022)
     - Redundant iRODS queries for empty paths in ``_update_cache_rows()`` (#957)
+    - Saving multi-column node for a new row using default suffix (#1040)
 
 Removed
 -------

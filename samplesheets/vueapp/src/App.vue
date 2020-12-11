@@ -718,9 +718,12 @@ export default {
             value.value = this.getNamePrefix(rowNode, cols, startIdx) + value.value
             let createNew = true
 
-            // Check if name already appears in column
+            // Check if name already appears in column, update UUID if found
             gridOptions.api.forEachNode(function (r) {
-              if (r.data[nextColId].value === value.value) createNew = false
+              if (r.data[nextColId].value === value.value) {
+                createNew = false
+                value.uuid = r.data[nextColId].uuid
+              }
             })
 
             value.newInit = false
