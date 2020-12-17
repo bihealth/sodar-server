@@ -59,6 +59,8 @@ Changed
 Fixed
 -----
 
+- **General**
+    - Missing raven dependency in production config (#1048)
 - **Samplesheets**
     - Assay iRODS links enabled if null path is returned by assay app (#951)
     - Empty ontology/unit column type not recognized in rendering (#962)
