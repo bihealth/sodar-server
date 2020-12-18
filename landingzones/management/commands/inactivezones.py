@@ -10,7 +10,7 @@ def get_inactive_zones(weeks=2):
     """Return list of landing zone modified old than n weeks."""
     return LandingZone.objects.filter(
         date_modified__lte=localtime() - timedelta(weeks=weeks)
-    )
+    ).exclude(status__in=('DELETED', 'MOVED'))
 
 
 def get_zone_str(zone):

@@ -28,6 +28,12 @@ ZONE1_DESC = 'description'
 ZONE2_TITLE = '20201123_143323_test_zone'
 ZONE2_DESC = 'description'
 
+ZONE3_TITLE = '20201218_172740_test_zone_moved'
+ZONE3_DESC = 'description'
+
+ZONE4_TITLE = '20201218_172743_test_zone_deleted'
+ZONE4_DESC = 'description'
+
 
 class TestInactiveZones(
     ProjectMixin,
@@ -79,6 +85,30 @@ class TestInactiveZones(
                 description=ZONE1_DESC,
                 configuration=None,
                 config_data={},
+            )
+
+            # Create LandingZone 3 from 3 weeks ago but status MOVED
+            self.landing_zone3 = self._make_landing_zone(
+                title=ZONE3_TITLE,
+                project=self.project,
+                user=self.as_owner.user,
+                assay=self.assay,
+                description=ZONE3_DESC,
+                configuration=None,
+                config_data={},
+                status='MOVED',
+            )
+
+            # Create LandingZone 3 from 3 weeks ago but status DELETED
+            self.landing_zone4 = self._make_landing_zone(
+                title=ZONE4_TITLE,
+                project=self.project,
+                user=self.as_owner.user,
+                assay=self.assay,
+                description=ZONE4_DESC,
+                configuration=None,
+                config_data={},
+                status='DELETED',
             )
 
             mock_now.return_value = testtime2
