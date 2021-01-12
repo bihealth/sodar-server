@@ -148,6 +148,11 @@
                    title="This term is obsolete!"
                    v-b-tooltip.hover.d300>
                 </i>
+                <i v-else-if="term.unknown"
+                   class="fa fa-warning"
+                   title="Term name not found in given ontologies!"
+                   v-b-tooltip.hover.d300>
+                </i>
               </td>
               <td v-if="!term.editing"
                   :class="getOntologyNameClass(term.ontology_name)">
@@ -462,6 +467,8 @@ export default {
         this.value[idx].name = this.value[idx].name.trim()
         this.value[idx].ontology_name = this.value[idx].ontology_name.trim().toUpperCase()
         this.value[idx].accession = this.value[idx].accession.trim()
+        // TODO: Query for new value and set/unset unknown accordingly
+        if ('unknown' in this.value[idx]) delete this.value[idx].unknown
         if (JSON.stringify(this.value[idx]) !== this.editTermValue) {
           this.setUpdateStatus(true)
         }
@@ -506,7 +513,7 @@ export default {
       return this.editIdx === null && this.updated
     },
     getTermNameClass (term) {
-      if (term.obsolete) return 'text-danger'
+      if (term.obsolete || term.unknown) return 'text-danger'
       return ''
     },
     getOntologyNameClass (name) {
@@ -700,6 +707,10 @@ export default {
     },
     handleInitialTermResponse (data) {
       for (let i = 0; i < this.value.length; i++) {
+        if (!(data.terms.map(x => x.name.toLowerCase()).includes(
+          this.value[i].name.toLowerCase()))) {
+          this.value[i].unknown = true
+        }
         for (let j = 0; j < data.terms.length; j++) {
           if (this.value[i].name.toLowerCase() === data.terms[j].name.toLowerCase() &&
               this.value[i].ontology_name === data.terms[j].ontology_name) {
@@ -787,6 +798,7 @@ export default {
         for (let i = 0; i < editValue.length; i++) {
           delete editValue[i].editing
           delete editValue[i].obsolete
+          delete editValue[i].unknown
         }
       }
       this.finishEditCb(editValue)
