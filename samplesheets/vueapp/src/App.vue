@@ -577,7 +577,7 @@ export default {
       }).then(data => data.json())
         .then(
           data => {
-            if (data.message === 'ok') {
+            if (data.detail === 'ok') {
               this.showNotification('Changes Saved', 'success', 1000)
               this.editDataUpdated = true
 
@@ -589,13 +589,13 @@ export default {
                     gridUuids[i]).api, upDataArr, refreshCells)
               }
             } else {
-              console.log('Save status: ' + data.message) // DEBUG
+              console.log('Save status: ' + data.detail) // DEBUG
               this.showNotification('Saving Failed', 'danger', 1000)
               // TODO: Mark invalid/unsaved field(s) in UI
             }
           }
         ).catch(function (error) {
-          console.log('Error saving data: ' + error.message)
+          console.log('Error saving data: ' + error.detail)
         })
     },
 
@@ -968,7 +968,7 @@ export default {
       }).then(data => data.json())
         .then(
           data => {
-            if (data.message === 'ok') {
+            if (data.detail === 'ok') {
               const cols = gridOptions.columnApi.getAllColumns()
               let nodeIdx = 0
               let sampleUuid
@@ -1033,7 +1033,7 @@ export default {
               this.editDataUpdated = true
               this.showNotification('Row Inserted', 'success', 1000)
             } else {
-              console.log('Row insert status: ' + data.message) // DEBUG
+              console.log('Row insert status: ' + data.detail) // DEBUG
               this.showNotification('Insert Failed', 'danger', 1000)
             }
 
@@ -1069,66 +1069,60 @@ export default {
           'X-CSRFToken': this.sodarContext.csrf_token
         }
       }).then(data => data.json())
-        .then(
-          data => {
-            if (data.message === 'ok') {
-              this.editDataUpdated = true
+        .then(data => {
+          if (data.detail === 'ok') {
+            this.editDataUpdated = true
+            // Update sample list
+            const sampleUuid = rowNode.data[this.sampleColId].uuid
+            const sampleColId = this.sampleColId
 
-              // Update sample list
-              const sampleUuid = rowNode.data[this.sampleColId].uuid
-              const sampleColId = this.sampleColId
-
-              if (assayMode &&
-                  !(gridUuid in this.editContext.samples[sampleUuid].assays)) {
-                let sampleFound = false
-                gridOptions.api.forEachNode(function (r) {
-                  if (r.data[sampleColId].uuid === sampleUuid &&
-                      r.id !== rowNode.id) {
-                    sampleFound = true
-                  }
-                })
-                if (!sampleFound) {
-                  this.editContext.samples[
-                    sampleUuid].assays = this.editContext.samples[
-                    sampleUuid].assays.filter(
-                    v => v !== gridUuid)
-                }
-              } else if (!assayMode) {
-                // Delete sample from editcontext if deleted from study
-                let sampleFound = false
-                gridOptions.api.forEachNode(function (r) {
-                  if (r.data[sampleColId].uuid === sampleUuid &&
-                      r.id !== rowNode.id) {
-                    sampleFound = true
-                  }
-                })
-                if (!sampleFound) delete this.editContext.samples[sampleUuid]
-              }
-
-              gridOptions.api.applyTransaction({ remove: [rowNode.data] })
-
-              // Update row numbers
-              let rowNum = 1
+            if (assayMode &&
+                !(gridUuid in this.editContext.samples[sampleUuid].assays)) {
+              let sampleFound = false
               gridOptions.api.forEachNode(function (r) {
-                r.setDataValue('rowNum', rowNum)
-                rowNum += 1
+                if (r.data[sampleColId].uuid === sampleUuid &&
+                    r.id !== rowNode.id) {
+                  sampleFound = true
+                }
               })
-
-              this.showNotification('Row Deleted', 'success', 1000)
-            } else {
-              console.log('Row delete status: ' + data.message) // DEBUG
-              this.showNotification('Delete Failed', 'danger', 1000)
+              if (!sampleFound) {
+                this.editContext.samples[
+                  sampleUuid].assays = this.editContext.samples[
+                  sampleUuid].assays.filter(
+                  v => v !== gridUuid)
+              }
+            } else if (!assayMode) {
+              // Delete sample from editcontext if deleted from study
+              let sampleFound = false
+              gridOptions.api.forEachNode(function (r) {
+                if (r.data[sampleColId].uuid === sampleUuid &&
+                    r.id !== rowNode.id) {
+                  sampleFound = true
+                }
+              })
+              if (!sampleFound) delete this.editContext.samples[sampleUuid]
             }
 
-            finishCallback()
-            this.updatingRow = false
+            gridOptions.api.applyTransaction({ remove: [rowNode.data] })
+            // Update row numbers
+            let rowNum = 1
+            gridOptions.api.forEachNode(function (r) {
+              r.setDataValue('rowNum', rowNum)
+              rowNum += 1
+            })
+            this.showNotification('Row Deleted', 'success', 1000)
+          } else {
+            console.log('Row delete status: ' + data.detail) // DEBUG
+            this.showNotification('Delete Failed', 'danger', 1000)
           }
-        ).catch(this.handleRowUpdateError)
+          finishCallback()
+          this.updatingRow = false
+        }).catch(this.handleRowUpdateError)
     },
 
     handleRowUpdateError (error) {
       this.updatingRow = false
-      console.log('Error updating row: ' + error.message)
+      console.log('Error updating row: ' + error.detail)
     },
 
     handleFinishEditing () {
@@ -1142,20 +1136,17 @@ export default {
           'X-CSRFToken': this.sodarContext.csrf_token
         }
       }).then(data => data.json())
-        .then(
-          data => {
-            if (data.message === 'ok') {
-              this.showNotification('Finished Editing', 'success', 1500)
-            } else {
-              console.log('Finish status: ' + data.message) // DEBUG
-              this.showNotification('Saving Version Failed', 'danger', 1000)
-            }
+        .then(data => {
+          if (data.detail === 'ok') {
+            this.showNotification('Finished Editing', 'success', 1500)
+          } else {
+            console.log('Finish status: ' + data.detail) // DEBUG
+            this.showNotification('Saving Version Failed', 'danger', 1000)
           }
-        ).catch(function (error) {
-          console.log('Error saving version: ' + error.message)
+        }).catch(function (error) {
+          console.log('Error saving version: ' + error.detail)
           this.showNotification('Finishing Error', 'danger', 2000)
         })
-
       this.editStudyConfig = null
     },
 

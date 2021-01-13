@@ -684,7 +684,7 @@ export default {
       this.unsavedDataCb(true) // Prevent navigation before saving
     },
     handleRefreshError (error) {
-      console.log('Error refreshing terms: ' + error.message)
+      console.log('Error refreshing terms: ' + error.detail)
       this.refreshingTerms = false
     },
     getInitialTermInfo () {

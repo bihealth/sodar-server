@@ -33,14 +33,14 @@ class BaseIrodsAjaxView(ProjectAccessMixin, SODARBaseAjaxView):
         self.path = None
 
     @staticmethod
-    def _get_msg(msg):
+    def _get_detail(msg):
         """
-        Return message as a dict to be returned as JSON.
+        Return detail message as a dict to be returned as JSON.
 
         :param msg: String or Exception
         :return: Dict
         """
-        return {'message': str(msg)}
+        return {'detail': str(msg)}
 
     def _check_collection_perm(self, path):
         """
@@ -87,13 +87,15 @@ class BaseIrodsAjaxView(ProjectAccessMixin, SODARBaseAjaxView):
 
         # Check auth manually (see sodar_core#516)
         if not request.user.is_authenticated:
-            return JsonResponse(self._get_msg('Not authenticated'), status=401)
+            return JsonResponse(
+                self._get_detail('Not authenticated'), status=401
+            )
 
         self.project = self.get_project(request=request)
 
         if not self.project and not request.user.is_superuser:
             return JsonResponse(
-                self._get_msg('Project UUID required for regular user'),
+                self._get_detail('Project UUID required for regular user'),
                 status=400,
             )
 
@@ -101,18 +103,20 @@ class BaseIrodsAjaxView(ProjectAccessMixin, SODARBaseAjaxView):
         if not request.user.is_superuser and not request.user.has_perm(
             self.permission_required, self.project
         ):
-            return JsonResponse(self._get_msg('Permission denied'), status=403)
+            return JsonResponse(
+                self._get_detail('Permission denied'), status=403
+            )
 
         path = request.GET.get('path') if request.method == 'GET' else None
 
         if request.method == 'GET' and not path:
-            return JsonResponse(self._get_msg('Path not set'), status=400)
+            return JsonResponse(self._get_detail('Path not set'), status=400)
 
         try:
             irods_backend = get_backend_api('omics_irods')
 
         except Exception as ex:
-            return JsonResponse(self._get_msg(ex), status=500)
+            return JsonResponse(self._get_detail(ex), status=500)
 
         # Collection checks
         # NOTE: If supplying path(s) via POST, implement these in request func
@@ -122,18 +126,20 @@ class BaseIrodsAjaxView(ProjectAccessMixin, SODARBaseAjaxView):
                 and irods_backend.get_path(self.project) not in path
             ):
                 return JsonResponse(
-                    self._get_msg(ERROR_NOT_IN_PROJECT), status=400
+                    self._get_detail(ERROR_NOT_IN_PROJECT), status=400
                 )
 
             if not irods_backend.collection_exists(path):
-                return JsonResponse(self._get_msg(ERROR_NOT_FOUND), status=404)
+                return JsonResponse(
+                    self._get_detail(ERROR_NOT_FOUND), status=404
+                )
 
             if (
                 request.user.is_authenticated
                 and not request.user.is_superuser
                 and not self._check_collection_perm(path)
             ):
-                return JsonResponse(self._get_msg(ERROR_NO_AUTH), status=403)
+                return JsonResponse(self._get_detail(ERROR_NO_AUTH), status=403)
 
         self.path = path
         return super().dispatch(request, *args, **kwargs)
@@ -149,7 +155,7 @@ class IrodsStatisticsAjaxView(BaseIrodsAjaxView):
             return Response(stats, status=200)
 
         except Exception as ex:
-            return Response(self._get_msg(ex), status=500)
+            return Response(self._get_detail(ex), status=500)
 
     def post(self, request, *args, **kwargs):
         irods_backend = get_backend_api('omics_irods')
@@ -195,7 +201,7 @@ class IrodsObjectListAjaxView(BaseIrodsAjaxView):
             irods_backend = get_backend_api('omics_irods')
 
         except Exception as ex:
-            return Response(self._get_msg(ex), status=500)
+            return Response(self._get_detail(ex), status=500)
 
         md5 = request.GET.get('md5')
 
@@ -207,4 +213,4 @@ class IrodsObjectListAjaxView(BaseIrodsAjaxView):
             return Response(ret_data, status=200)
 
         except Exception as ex:
-            return Response(self._get_msg(ex), status=500)
+            return Response(self._get_detail(ex), status=500)

@@ -178,7 +178,7 @@ class IrodsAccessTicketMixin:
 
 @skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
 class TestContextAjaxView(TestViewsBase):
-    """Tests for SampleSheetContextAjaxView"""
+    """Tests for SheetContextAjaxView"""
 
     # TODO: Test with realistic ISAtab examples using BIH configs (see #434)
 
@@ -292,7 +292,7 @@ class TestContextAjaxView(TestViewsBase):
 
 
 class TestStudyTablesAjaxView(IrodsAccessTicketMixin, TestViewsBase):
-    """Tests for SampleSheetStudyTablesAjaxView"""
+    """Tests for StudyTablesAjaxView"""
 
     # TODO: Test with realistic ISAtab examples using BIH configs (see #434)
 
@@ -391,7 +391,7 @@ class TestStudyTablesAjaxView(IrodsAccessTicketMixin, TestViewsBase):
 
 
 class TestStudyLinksAjaxView(TestViewsBase):
-    """Tests for SampleSheetStudyLinksAjaxView"""
+    """Tests for StudyLinksAjaxView"""
 
     # TODO: Test with realistic ISAtab examples using BIH configs (see #434)
 
@@ -417,8 +417,8 @@ class TestStudyLinksAjaxView(TestViewsBase):
         self.assertEqual(response.status_code, 404)  # No plugin for test ISAtab
 
 
-class TestSampleSheetWarningsAjaxView(TestViewsBase):
-    """Tests for SampleSheetWarningsAjaxView"""
+class TestSheetWarningsAjaxView(TestViewsBase):
+    """Tests for SheetWarningsAjaxView"""
 
     # TODO: Test with realistic ISAtab examples using BIH configs (see #434)
 
@@ -1467,8 +1467,8 @@ class TestSheetRowDeleteAjaxView(RowEditMixin, SheetConfigMixin, TestViewsBase):
     # TODO: Test deletion with splitting/pooling
 
 
-class TestSampleSheetEditFinishAjaxView(TestViewsBase):
-    """Tests for SampleSheetEditFinishAjaxView"""
+class TestSheetEditFinishAjaxView(TestViewsBase):
+    """Tests for SheetEditFinishAjaxView"""
 
     def setUp(self):
         super().setUp()
@@ -1518,8 +1518,8 @@ class TestSampleSheetEditFinishAjaxView(TestViewsBase):
         self.assertEqual(ISATab.objects.all().count(), 1)
 
 
-class TestSampleSheetManageAjaxView(SheetConfigMixin, TestViewsBase):
-    """Tests for SampleSheetManageAjaxView"""
+class TestSheetEditConfigAjaxView(SheetConfigMixin, TestViewsBase):
+    """Tests for SheetEditConfigAjaxView"""
 
     # TODO: Test with assay updates (needs a better test ISAtab)
 
@@ -1582,7 +1582,7 @@ class TestSampleSheetManageAjaxView(SheetConfigMixin, TestViewsBase):
         with self.login(self.user):
             response = self.client.post(
                 reverse(
-                    'samplesheets:ajax_manage',
+                    'samplesheets:ajax_config_update',
                     kwargs={'project': self.project.sodar_uuid},
                 ),
                 json.dumps(values),

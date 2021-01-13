@@ -89,8 +89,8 @@ export default {
             )
           )
         }
-      } else if ('message' in response) {
-        this.message = response.message
+      } else if ('detail' in response) {
+        this.message = response.detail
       }
     },
     getWarnings () {
@@ -103,7 +103,7 @@ export default {
           response => {
             this.handleWarningsResponse(response)
           }).catch(function (error) {
-          this.message = 'Error fetching data: ' + error.message
+          this.message = 'Error fetching data: ' + error.detail
         })
     }
   },

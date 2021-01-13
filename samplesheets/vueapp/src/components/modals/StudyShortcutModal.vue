@@ -95,8 +95,8 @@ export default {
         }
         if (filesFound) this.modalData = response.data
         else this.message = 'No files found'
-      } else if ('message' in response) {
-        this.message = response.message
+      } else if ('detail' in response) {
+        this.message = response.detail
       }
     },
     getShortcuts (query) {
@@ -108,7 +108,7 @@ export default {
         .then(response => {
           this.handleShortcutResponse(response)
         }).catch(function (error) {
-          this.message = 'Error fetching data: ' + error.message
+          this.message = 'Error fetching data: ' + error.detail
         })
     },
     showModal (query) {

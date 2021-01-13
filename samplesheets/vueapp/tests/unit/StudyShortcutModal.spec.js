@@ -60,7 +60,7 @@ describe('StudyShortcutModal.vue', () => {
       methods: { getShortcuts: jest.fn() }
     })
     wrapper.vm.showModal({ key: 'case', value: 'A001' })
-    wrapper.vm.handleShortcutResponse({ message: 'Message' })
+    wrapper.vm.handleShortcutResponse({ detail: 'Message' })
     await waitNT(wrapper.vm)
     await waitRAF()
 

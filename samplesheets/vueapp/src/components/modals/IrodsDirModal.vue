@@ -116,8 +116,8 @@ export default {
           this.message = 'Empty collection'
           this.empty = true
         }
-      } else if ('message' in response) {
-        this.message = response.message
+      } else if ('detail' in response) {
+        this.message = response.detail
       }
     },
     getObjList (path) {
@@ -129,7 +129,7 @@ export default {
         .then(response => {
           this.handleObjListResponse(response)
         }).catch(function (error) {
-          this.message = 'Error fetching data: ' + error.message
+          this.message = 'Error fetching data: ' + error.detail
         })
     },
     showModal (path) {

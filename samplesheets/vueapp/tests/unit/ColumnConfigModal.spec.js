@@ -99,7 +99,7 @@ describe('ColumnConfigModal.vue', () => {
   }
 
   function mockPostUpdate () {
-    return { json: function () { return { message: 'ok' } } }
+    return { json: function () { return { detail: 'ok' } } }
   }
 
   beforeAll(() => {

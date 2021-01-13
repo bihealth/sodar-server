@@ -46,6 +46,8 @@ Changed
     - Upgrade to Bootstrap v4.5.3 and jQuery v3.5.1 (#1011)
     - Upgrade to Chromedriver v87
     - Upgrade to python-irodsclient v0.8.5 (#1009)
+- **Irodsbackend**
+    - Standardize Ajax view output (#841)
 - **Samplesheets**
     - Display assay plugin icon for all users with sheet edit permissions (#940)
     - Refactor assay row cache updating (#954)
@@ -55,6 +57,7 @@ Changed
     - Disable "Finish Editing" link with unsaved rows (#987)
     - General vue app refactoring (#747)
     - Move iRODS content setup for ajax views to ``plugins.get_irods_content()``
+    - Rename Ajax views and standardize output (#857, #858)
 
 Fixed
 -----

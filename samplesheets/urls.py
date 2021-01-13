@@ -133,25 +133,24 @@ urls_api = [
 
 # Ajax API views
 urls_ajax = [
-    # TODO: Rename views and URL patterns
     url(
         regex=r'^ajax/context/(?P<project>[0-9a-f-]+)$',
-        view=samplesheets.views_ajax.SampleSheetContextAjaxView.as_view(),
+        view=samplesheets.views_ajax.SheetContextAjaxView.as_view(),
         name='ajax_context',
     ),
     url(
         regex=r'^ajax/study/tables/(?P<study>[0-9a-f-]+)$',
-        view=samplesheets.views_ajax.SampleSheetStudyTablesAjaxView.as_view(),
+        view=samplesheets.views_ajax.StudyTablesAjaxView.as_view(),
         name='ajax_study_tables',
     ),
     url(
         regex=r'^ajax/study/links/(?P<study>[0-9a-f-]+)$',
-        view=samplesheets.views_ajax.SampleSheetStudyLinksAjaxView.as_view(),
+        view=samplesheets.views_ajax.StudyLinksAjaxView.as_view(),
         name='ajax_study_links',
     ),
     url(
         regex=r'^ajax/warnings/(?P<project>[0-9a-f-]+)$',
-        view=samplesheets.views_ajax.SampleSheetWarningsAjaxView.as_view(),
+        view=samplesheets.views_ajax.SheetWarningsAjaxView.as_view(),
         name='ajax_warnings',
     ),
     url(
@@ -171,13 +170,13 @@ urls_ajax = [
     ),
     url(
         regex=r'^ajax/edit/finish/(?P<project>[0-9a-f-]+)$',
-        view=samplesheets.views_ajax.SampleSheetEditFinishAjaxView.as_view(),
+        view=samplesheets.views_ajax.SheetEditFinishAjaxView.as_view(),
         name='ajax_edit_finish',
     ),
     url(
-        regex=r'^ajax/manage/(?P<project>[0-9a-f-]+)$',
-        view=samplesheets.views_ajax.SampleSheetManageAjaxView.as_view(),
-        name='ajax_manage',
+        regex=r'^ajax/config/update/(?P<project>[0-9a-f-]+)$',
+        view=samplesheets.views_ajax.SheetEditConfigAjaxView.as_view(),
+        name='ajax_config_update',
     ),
     url(
         regex=r'^ajax/display/update/(?P<study>[0-9a-f-]+)$',

@@ -60,7 +60,7 @@ class BaseSheetEditAjaxView(SODARBaseProjectAjaxView):
     """Base ajax view for editing sample sheet data"""
 
     permission_required = 'samplesheets.edit_sheet'
-    ok_data = {'message': 'ok'}
+    ok_data = {'detail': 'ok'}
 
     class SheetEditException(Exception):
         pass
@@ -214,7 +214,7 @@ class BaseSheetEditAjaxView(SODARBaseProjectAjaxView):
 # Ajax Views -------------------------------------------------------------------
 
 
-class SampleSheetContextAjaxView(SODARBaseProjectAjaxView):
+class SheetContextAjaxView(SODARBaseProjectAjaxView):
     """View to retrieve sample sheet context data"""
 
     permission_required = 'samplesheets.view_sheet'
@@ -375,7 +375,7 @@ class SampleSheetContextAjaxView(SODARBaseProjectAjaxView):
         return Response(ret_data, status=200)
 
 
-class SampleSheetStudyTablesAjaxView(SODARBaseProjectAjaxView):
+class StudyTablesAjaxView(SODARBaseProjectAjaxView):
     """View to retrieve study tables built from the sample sheet graph"""
 
     def get_permission_required(self):
@@ -580,7 +580,7 @@ class SampleSheetStudyTablesAjaxView(SODARBaseProjectAjaxView):
         return Response(ret_data, status=200)
 
 
-class SampleSheetStudyLinksAjaxView(SODARBaseProjectAjaxView):
+class StudyLinksAjaxView(SODARBaseProjectAjaxView):
     """View to retrieve data for shortcut links from study apps"""
 
     # TODO: Also do this for assay apps?
@@ -598,7 +598,7 @@ class SampleSheetStudyLinksAjaxView(SODARBaseProjectAjaxView):
 
         if not study_plugin:
             return Response(
-                {'message': 'Plugin not found for study'}, status=404
+                {'detail': 'Plugin not found for study'}, status=404
             )
 
         ret_data = {'study': {'display_name': study.get_display_name()}}
@@ -618,7 +618,7 @@ class SampleSheetStudyLinksAjaxView(SODARBaseProjectAjaxView):
         return Response(ret_data, status=200)
 
 
-class SampleSheetWarningsAjaxView(SODARBaseProjectAjaxView):
+class SheetWarningsAjaxView(SODARBaseProjectAjaxView):
     """View to retrieve parser warnings for sample sheets"""
 
     permission_required = 'samplesheets.view_sheet'
@@ -628,7 +628,7 @@ class SampleSheetWarningsAjaxView(SODARBaseProjectAjaxView):
 
         if not inv:
             return Response(
-                {'message': 'Investigation not found for project'}, status=404
+                {'detail': 'Investigation not found for project'}, status=404
             )
 
         logger.debug(
@@ -801,14 +801,14 @@ class SheetCellEditAjaxView(BaseSheetEditAjaxView):
                 logger.error(err_msg)
 
                 # TODO: Return list of errors when processing in batch
-                return Response({'message': err_msg}, status=500)
+                return Response({'detail': err_msg}, status=500)
 
             # Update cell, save immediately (now we are only editing one cell)
             try:
                 self._update_cell(node_obj, cell, save=True)
 
             except self.SheetEditException as ex:
-                return Response({'message': str(ex)}, status=500)
+                return Response({'detail': str(ex)}, status=500)
 
         # Update investigation ontology refs
         if updated_cells:
@@ -817,7 +817,7 @@ class SheetCellEditAjaxView(BaseSheetEditAjaxView):
                     inv, self._get_ontology_names(cells=updated_cells)
                 )
             except Exception as ex:
-                return Response({'message': str(ex)}, status=500)
+                return Response({'detail': str(ex)}, status=500)
 
         # TODO: Log edits in timeline here, once saving in bulk
         return Response(self.ok_data, status=200)
@@ -1284,10 +1284,10 @@ class SheetRowInsertAjaxView(BaseSheetEditAjaxView):
                         inv, self._get_ontology_names(nodes=new_row['nodes'])
                     )
                 except Exception as ex:
-                    return Response({'message': str(ex)}, status=500)
+                    return Response({'detail': str(ex)}, status=500)
 
             except Exception as ex:
-                return Response({'message': str(ex)}, status=500)
+                return Response({'detail': str(ex)}, status=500)
 
         return Response(self.ok_data, status=200)
 
@@ -1455,12 +1455,12 @@ class SheetRowDeleteAjaxView(BaseSheetEditAjaxView):
                 self._delete_row(del_row)
 
             except self.SheetEditException as ex:
-                return Response({'message': str(ex)}, status=500)
+                return Response({'detail': str(ex)}, status=500)
 
         return Response(self.ok_data, status=200)
 
 
-class SampleSheetEditFinishAjaxView(SODARBaseProjectAjaxView):
+class SheetEditFinishAjaxView(SODARBaseProjectAjaxView):
     """View for finishing editing and saving an ISAtab copy of the current
     sample sheet"""
 
@@ -1472,7 +1472,7 @@ class SampleSheetEditFinishAjaxView(SODARBaseProjectAjaxView):
 
         if not updated:
             logger.info(log_msg + 'nothing updated')
-            return Response({'message': 'ok'}, status=200)  # Nothing to do
+            return Response({'detail': 'ok'}, status=200)  # Nothing to do
 
         timeline = get_backend_api('timeline_backend')
         isa_version = None
@@ -1535,13 +1535,13 @@ class SampleSheetEditFinishAjaxView(SODARBaseProjectAjaxView):
             logger.info(
                 log_msg + 'Saved ISATab "{}"'.format(isa_version.get_name())
             )
-            return Response({'message': 'ok'}, status=200)
+            return Response({'detail': 'ok'}, status=200)
 
-        return Response({'message': export_ex}, status=500)
+        return Response({'detail': export_ex}, status=500)
 
 
-class SampleSheetManageAjaxView(SODARBaseProjectAjaxView):
-    """View to manage sample sheet editing configuration"""
+class SheetEditConfigAjaxView(SODARBaseProjectAjaxView):
+    """View to update sample sheet editing configuration"""
 
     # NOTE: Currently not requiring manage_sheet perm (see issue #880)
     permission_required = 'samplesheets.edit_sheet'
@@ -1582,7 +1582,7 @@ class SampleSheetManageAjaxView(SODARBaseProjectAjaxView):
                     debug_info, ex
                 )
                 logger.error(msg)
-                return Response({'message': msg}, status=500)
+                return Response({'detail': msg}, status=500)
 
             if not is_name and (
                 field['config']['name'] != og_config['name']
@@ -1593,7 +1593,7 @@ class SampleSheetManageAjaxView(SODARBaseProjectAjaxView):
             ):
                 msg = 'Fields do not match ({})'.format(debug_info)
                 logger.error(msg)
-                return Response({'message': msg}, status=500)
+                return Response({'detail': msg}, status=500)
 
             # Cleanup data
             c = field['config']
@@ -1662,7 +1662,7 @@ class SampleSheetManageAjaxView(SODARBaseProjectAjaxView):
 
         # TODO: Update investigation ontology reference, return list
 
-        return Response({'message': 'ok'}, status=200)
+        return Response({'detail': 'ok'}, status=200)
 
 
 class StudyDisplayConfigAjaxView(SODARBaseProjectAjaxView):

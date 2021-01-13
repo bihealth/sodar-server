@@ -828,7 +828,7 @@ export default {
     },
     /* Data updating -------------------------------------------------------- */
     postUpdate (upData) {
-      return fetch('/samplesheets/ajax/manage/' + this.projectUuid, {
+      return fetch('/samplesheets/ajax/config/update/' + this.projectUuid, {
         method: 'POST',
         body: JSON.stringify(upData),
         credentials: 'same-origin',
@@ -1150,16 +1150,16 @@ export default {
         const doUpdate = async () => {
           const data = await this.postUpdate(upData)
           const updateData = await data.json()
-          if (updateData.message === 'ok') {
+          if (updateData.detail === 'ok') {
             this.handleUpdate() // Handle successful update here
             this.app.showNotification('Column Updated', 'success', 1000)
           } else {
-            console.log('Update status: ' + updateData.message)
+            console.log('Update status: ' + updateData.detail)
             this.app.showNotification('Update Failed', 'danger', 2000)
           }
         }
         try { doUpdate() } catch (error) {
-          console.log('Update error: ' + error.message)
+          console.log('Update error: ' + error.detail)
         }
       }
       this.$refs.columnConfigModal.hide()

@@ -76,7 +76,7 @@ describe('IrodsDirModal.vue', () => {
       localVue, propsData: propsData, methods: { getObjList: jest.fn() }
     })
     wrapper.vm.showModal(rootIrodsPath)
-    wrapper.vm.handleObjListResponse({ message: 'Message' })
+    wrapper.vm.handleObjListResponse({ detail: 'Message' })
     await waitNT(wrapper.vm)
     await waitRAF()
 

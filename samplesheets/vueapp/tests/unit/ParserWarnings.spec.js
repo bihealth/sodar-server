@@ -48,7 +48,7 @@ describe('ParserWarnings.vue', () => {
       propsData: propsData,
       methods: { getWarnings: jest.fn() }
     })
-    await wrapper.vm.handleWarningsResponse({ message: 'message' })
+    await wrapper.vm.handleWarningsResponse({ detail: 'message' })
 
     expect(wrapper.find('#sodar-ss-warnings-message').exists()).toBe(true)
     expect(wrapper.find('#sodar-ss-warnings-message').text()).toBe('message')

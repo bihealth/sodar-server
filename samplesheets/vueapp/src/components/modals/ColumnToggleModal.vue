@@ -194,7 +194,7 @@ export default {
             this.app.showNotification('Display Saved', 'success', 1000)
           }
         }).catch(function (error) {
-          console.log('Error saving display config: ' + error.message)
+          console.log('Error saving display config: ' + error.detail)
         })
     },
     showModal (uuid, assayMode) {
