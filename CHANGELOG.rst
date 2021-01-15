@@ -77,6 +77,7 @@ Fixed
     - Ontology URL template forced on incompatible accession URLs (#1022)
     - Redundant iRODS queries for empty paths in ``_update_cache_rows()`` (#957)
     - Saving multi-column node for a new row using default suffix (#1040)
+    - ``UNIT`` column type override if empty unit given in config (#1052)
 
 Removed
 -------

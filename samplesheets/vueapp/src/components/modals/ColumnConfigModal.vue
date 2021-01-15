@@ -674,9 +674,11 @@ export default {
       if ('options' in this.fieldConfig) {
         this.valueOptions = this.fieldConfig.options.join('\n')
       }
-      if ('unit' in this.fieldConfig) {
+      if (this.colType === 'UNIT') {
         this.unitEnabled = true
-        this.unitOptions = this.fieldConfig.unit.join('\n')
+        if ('unit' in this.fieldConfig) {
+          this.unitOptions = this.fieldConfig.unit.join('\n')
+        }
       }
     },
     validate (inputParam) {
@@ -890,12 +892,10 @@ export default {
       let refreshCalled = false
 
       // Determine current colType
-      if (['integer', 'double'].includes(this.fieldConfig.format)) {
-        if (this.unitEnabled &&
-            'unit' in this.fieldConfig &&
-            this.fieldConfig.unit) {
-          this.colType = 'UNIT'
-        } else this.colType = 'NUMERIC'
+      // NOTE: If unit exists in headers, colType will not be changed
+      if (['integer', 'double'].includes(this.fieldConfig.format) &&
+          this.ogColType !== 'UNIT') {
+        this.colType = 'NUMERIC'
       } else if (!this.colType) this.colType = null
       // console.log('colType: ' + this.ogColType + ' -> ' + this.colType) // DEBUG
 

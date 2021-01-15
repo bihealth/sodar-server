@@ -245,10 +245,12 @@ class SampleSheetTableBuilder:
             self._field_configs.append(False)
 
         # Column type (the ones we can determine at this point)
-        if field_config and field_config.get('format') in ['double', 'integer']:
-            header['col_type'] = (
-                'UNIT' if field_config.get('unit') else 'NUMERIC'
-            )
+        if (
+            field_config
+            and field_config.get('format') in ['double', 'integer']
+            and not obj.has_unit(name, header_type)
+        ):
+            header['col_type'] = 'NUMERIC'
 
         # Else detect type without config
         elif (
