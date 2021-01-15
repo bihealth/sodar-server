@@ -79,7 +79,6 @@ Fixed
     - Saving multi-column node for a new row using default suffix (#1040)
     - ``UNIT`` column type override if empty unit given in config (#1052)
     - Column config copy/paste enabled for contact, date and external links (#1053)
-    - Ontology list not pasted in ontology column config pste (#1054)
     - Incompatible format not handle in column config paste (#1029)
 
 Removed
