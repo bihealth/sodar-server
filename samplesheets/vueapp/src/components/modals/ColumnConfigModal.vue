@@ -507,6 +507,25 @@ const specialOntologyCols = [
   'omim disease',
   'orphanet disease'
 ]
+const disableCopyColTypes = [
+  'CONTACT',
+  'DATE',
+  'EXTERNAL_LINKS',
+  'LINK_FILE',
+  'NAME',
+  'PROTOCOL'
+]
+const copyableFormatKeys = [
+  'default',
+  'editable',
+  'format',
+  'ontologies',
+  'options',
+  'regex',
+  'range',
+  'unit',
+  'unit_default'
+]
 
 export default {
   name: 'ColumnConfigModal',
@@ -577,32 +596,35 @@ export default {
       this.toggleDefaultFill()
     },
     onPasteInput () {
-      let pasteData
+      let p
       let pasteValid = true
 
       try {
-        pasteData = JSON.parse(this.pasteData)
+        p = JSON.parse(this.pasteData)
       } catch (error) {
         this.$refs.notifyBadge.show('Invalid JSON', 'danger', 1000)
         pasteValid = false
       }
 
-      if (pasteValid && (!('format' in pasteData) ||
-          !('editable' in pasteData))) {
+      // Reject paste if invalid data or incompatible format
+      if (pasteValid && (!('format' in p) || !('editable' in p))) {
         pasteValid = false
         this.$refs.notifyBadge.show('Invalid Data', 'danger', 2000)
-      } // TODO: Other checks for required fields
+      } else if (
+        (this.colType === 'ONTOLOGY' && p.format !== 'ontology') ||
+        (this.colType !== 'ONTOLOGY' && p.format === 'ontology') ||
+        (this.colType === 'UNIT' && !(['integer', 'double'].contains(p.format)))) {
+        pasteValid = false
+        this.$refs.notifyBadge.show('Wrong Format', 'danger', 2000)
+        console.log('Invalid format: ' + p.format + ' / ' + this.colType)
+      }
 
+      // Copy data from pasted content if valid
       if (pasteValid) {
-        const copyableKeys = [
-          'format', 'editable', 'regex', 'options', 'range', 'default',
-          'unit', 'unit_default'
-        ]
-        // Copy data from pasted content
-        for (const i in copyableKeys) {
-          const k = copyableKeys[i]
-          if (k in pasteData) {
-            this.fieldConfig[k] = pasteData[k]
+        for (const i in copyableFormatKeys) {
+          const k = copyableFormatKeys[i]
+          if (k in p) {
+            this.fieldConfig[k] = p[k]
           } else if (k === 'range') { // Range is a special case
             this.fieldConfig[k] = [null, null]
           } else if (['options', 'unit'].includes(k)) { // Options too
@@ -654,7 +676,7 @@ export default {
     },
     /* Helpers -------------------------------------------------------------- */
     enableCopy () {
-      return !(['NAME', 'LINK_FILE', 'PROTOCOL'].includes(this.colType))
+      return !(disableCopyColTypes.includes(this.colType))
     },
     /*
     enableUnitSelect () {

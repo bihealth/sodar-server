@@ -261,8 +261,8 @@ describe('ColumnConfigModal.vue', () => {
     await waitNT(wrapper.vm)
     await waitRAF()
 
-    expect(wrapper.find('#sodar-ss-col-btn-copy').attributes().disabled).toBe(undefined)
-    expect(wrapper.find('#sodar-ss-col-input-paste').attributes().disabled).toBe(undefined)
+    expect(wrapper.find('#sodar-ss-col-btn-copy').attributes().disabled).toBe('disabled')
+    expect(wrapper.find('#sodar-ss-col-input-paste').attributes().disabled).toBe('disabled')
     expect(wrapper.vm.fieldConfig.editable).toBe(true)
     expect(wrapper.find('#sodar-ss-col-td-allow-list').exists()).toBe(false)
     expect(wrapper.find('#sodar-ss-col-table-contact').exists()).toBe(true)
@@ -281,8 +281,8 @@ describe('ColumnConfigModal.vue', () => {
     await waitNT(wrapper.vm)
     await waitRAF()
 
-    expect(wrapper.find('#sodar-ss-col-btn-copy').attributes().disabled).toBe(undefined)
-    expect(wrapper.find('#sodar-ss-col-input-paste').attributes().disabled).toBe(undefined)
+    expect(wrapper.find('#sodar-ss-col-btn-copy').attributes().disabled).toBe('disabled')
+    expect(wrapper.find('#sodar-ss-col-input-paste').attributes().disabled).toBe('disabled')
     expect(wrapper.vm.fieldConfig.editable).toBe(true)
     expect(wrapper.find('#sodar-ss-col-td-allow-list').exists()).toBe(false)
     expect(wrapper.find('#sodar-ss-col-table-date').exists()).toBe(true)
@@ -922,7 +922,7 @@ describe('ColumnConfigModal.vue', () => {
       format: 'string',
       editable: false,
       regex: '',
-      default: '',
+      default: ''
     }
     await wrapper.setData({ pasteData: JSON.stringify(pasteData) })
     const inputField = wrapper.find('#sodar-ss-col-input-paste')
@@ -942,6 +942,100 @@ describe('ColumnConfigModal.vue', () => {
     expect(wrapper.find('#sodar-ss-col-tr-unit-default').exists()).toBe(false)
   })
 
-  // TODO: Test clipboard paste with incompatible columns (see issue #1029)
+  it('handles non-ontology config paste to ontology column (should fail)', async () => {
+    mountSheetTable()
+    const wrapper = mount(ColumnConfigModal, {
+      localVue, propsData: getPropsData({ app: app })
+    })
+    const spyOnPasteInput = jest.spyOn(wrapper.vm, 'onPasteInput')
+    wrapper.vm.showModal(getShowModalParams('col1', {
+      colType: 'ONTOLOGY',
+      configNodeIdx: 0,
+      configFieldIdx: 1
+    }))
+    await waitNT(wrapper.vm)
+    await waitRAF()
+
+    const pasteData = {
+      format: 'string',
+      editable: true,
+      regex: '',
+      default: ''
+    }
+    await wrapper.setData({ pasteData: JSON.stringify(pasteData) })
+    const inputField = wrapper.find('#sodar-ss-col-input-paste')
+    await inputField.vm.$emit('input')
+
+    expect(spyOnPasteInput).toBeCalled()
+    expect(wrapper.find('#sodar-ss-col-table-ontology').exists()).toBe(true)
+    expect(wrapper.find('#sodar-ss-col-td-allow-list').exists()).toBe(true)
+    expect(wrapper.find('#sodar-ss-col-post-ontology').exists()).toBe(true)
+  })
+
+  it('handles ontology config paste to non-ontology column (should fail)', async () => {
+    mountSheetTable()
+    const wrapper = mount(ColumnConfigModal, {
+      localVue, propsData: getPropsData({ app: app })
+    })
+    const spyOnPasteInput = jest.spyOn(wrapper.vm, 'onPasteInput')
+    wrapper.vm.showModal(getShowModalParams('col9', {
+      colType: null,
+      configNodeIdx: 2,
+      configFieldIdx: 2
+    }))
+    await waitNT(wrapper.vm)
+    await waitRAF()
+
+    const pasteData = {
+      format: 'ontology',
+      editable: true,
+      regex: '',
+      default: '',
+      allow_list: false,
+      ontologies: ['NCBITAXON']
+    }
+    await wrapper.setData({ pasteData: JSON.stringify(pasteData) })
+    const inputField = wrapper.find('#sodar-ss-col-input-paste')
+    await inputField.vm.$emit('input')
+
+    expect(spyOnPasteInput).toBeCalled()
+    expect(wrapper.find('#sodar-ss-col-table-basic').exists()).toBe(true)
+    expect(wrapper.find('#sodar-ss-col-tr-format').exists()).toBe(true)
+    expect(wrapper.find('#sodar-ss-col-tr-select').exists()).toBe(true)
+    expect(wrapper.find('#sodar-ss-col-select-default').exists()).toBe(true)
+  })
+
+  it('handles ontology list paste to ontology column', async () => {
+    mountSheetTable()
+    const wrapper = mount(ColumnConfigModal, {
+      localVue, propsData: getPropsData({ app: app })
+    })
+    const spyOnPasteInput = jest.spyOn(wrapper.vm, 'onPasteInput')
+    wrapper.vm.showModal(getShowModalParams('col1', {
+      colType: 'ONTOLOGY',
+      configNodeIdx: 0,
+      configFieldIdx: 1
+    }))
+    await waitNT(wrapper.vm)
+    await waitRAF()
+
+    expect(wrapper.findAll('.sodar-ss-col-tr-ontology-enabled').length).toBe(1)
+
+    const pasteData = {
+      format: 'ontology',
+      editable: true,
+      regex: '',
+      default: '',
+      allow_list: false,
+      ontologies: ['NCBITAXON', 'OMIM', 'ORDO']
+    }
+    await wrapper.setData({ pasteData: JSON.stringify(pasteData) })
+    const inputField = wrapper.find('#sodar-ss-col-input-paste')
+    await inputField.vm.$emit('input')
+
+    expect(spyOnPasteInput).toBeCalled()
+    expect(wrapper.findAll('.sodar-ss-col-tr-ontology-enabled').length).toBe(3)
+  })
+
   // TODO: Test cell updating and redrawing
 })
