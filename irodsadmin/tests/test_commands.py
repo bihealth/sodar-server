@@ -287,6 +287,28 @@ class TestIrodsOrphans(
             [orphan_path],
         )
 
+    def test_get_output(self):
+        orphan_path = '{}/assay_{}'.format(
+            self.irods_backend.get_path(self.study), str(uuid.uuid4())
+        )
+        self.irods_session.collections.create(orphan_path)
+        orphans = irodsorphans.get_orphans(
+            self.irods_session,
+            self.irods_backend,
+            self.expected_collections,
+            [self.assay],
+        )
+        self.assertListEqual(
+            irodsorphans.get_output(orphans, self.irods_backend),
+            [
+                '{};{};{};0;0 bytes'.format(
+                    str(self.project.sodar_uuid),
+                    self.project.get_full_title(),
+                    orphan_path,
+                )
+            ],
+        )
+
     def test_command_irodsorphans_no_orphans(self):
         out = StringIO()
         call_command('irodsorphans', stdout=out)
@@ -299,7 +321,12 @@ class TestIrodsOrphans(
         self.irods_session.collections.create(orphan_path)
         out = StringIO()
         call_command('irodsorphans', stdout=out)
-        self.assertEqual(orphan_path + '\n', out.getvalue())
+        expected = '{};{};{};0;0 bytes\n'.format(
+            str(self.project.sodar_uuid),
+            self.project.get_full_title(),
+            orphan_path,
+        )
+        self.assertEqual(expected, out.getvalue())
 
     def test_command_irodsorphans_orphanated_study(self):
         orphan_path = '{}/sample_data/study_{}'.format(
@@ -308,7 +335,12 @@ class TestIrodsOrphans(
         self.irods_session.collections.create(orphan_path)
         out = StringIO()
         call_command('irodsorphans', stdout=out)
-        self.assertEqual(orphan_path + '\n', out.getvalue())
+        expected = '{};{};{};0;0 bytes\n'.format(
+            str(self.project.sodar_uuid),
+            self.project.get_full_title(),
+            orphan_path,
+        )
+        self.assertEqual(expected, out.getvalue())
 
     def test_command_irodsorphans_orphanated_landingzone(self):
         collection = '20201031_123456'
@@ -321,7 +353,12 @@ class TestIrodsOrphans(
         self.irods_session.collections.create(orphan_path)
         out = StringIO()
         call_command('irodsorphans', stdout=out)
-        self.assertEqual(orphan_path + '\n', out.getvalue())
+        expected = '{};{};{};0;0 bytes\n'.format(
+            str(self.project.sodar_uuid),
+            self.project.get_full_title(),
+            orphan_path,
+        )
+        self.assertEqual(expected, out.getvalue())
 
     def test_command_irodsorphans_orphanated_project(self):
         collection = 'aa/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
@@ -334,7 +371,8 @@ class TestIrodsOrphans(
         self.irods_session.collections.create(orphan_path)
         out = StringIO()
         call_command('irodsorphans', stdout=out)
-        self.assertEqual(orphan_path + '\n', out.getvalue())
+        expected = 'N/A;N/A;{};0;0 bytes\n'.format(orphan_path)
+        self.assertEqual(expected, out.getvalue())
 
     def test_command_irodsorphans_orphanated_assay_sub(self):
         collection = 'UnexpectedCollection'
@@ -344,7 +382,12 @@ class TestIrodsOrphans(
         self.irods_session.collections.create(orphan_path)
         out = StringIO()
         call_command('irodsorphans', stdout=out)
-        self.assertEqual(orphan_path + '\n', out.getvalue())
+        expected = '{};{};{};0;0 bytes\n'.format(
+            str(self.project.sodar_uuid),
+            self.project.get_full_title(),
+            orphan_path,
+        )
+        self.assertEqual(expected, out.getvalue())
 
     def test_command_irodsorphans_multiple(self):
         orphan_path = '{}/sample_data/study_{}'.format(
@@ -361,6 +404,14 @@ class TestIrodsOrphans(
         self.irods_session.collections.create(orphan_path2)
         out = StringIO()
         call_command('irodsorphans', stdout=out)
-        self.assertEqual(
-            '{}\n{}\n'.format(orphan_path2, orphan_path), out.getvalue()
+        expected = '{};{};{};0;0 bytes\n'.format(
+            str(self.project.sodar_uuid),
+            self.project.get_full_title(),
+            orphan_path2,
         )
+        expected += '{};{};{};0;0 bytes\n'.format(
+            str(self.project.sodar_uuid),
+            self.project.get_full_title(),
+            orphan_path,
+        )
+        self.assertEqual(expected, out.getvalue())

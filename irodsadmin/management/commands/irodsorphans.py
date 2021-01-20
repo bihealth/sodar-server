@@ -3,6 +3,7 @@ import re
 
 from django.core.management.base import BaseCommand
 from django.db.models import Q
+from django.template.defaultfilters import filesizeformat
 from projectroles.models import Project
 
 from projectroles.plugins import get_backend_api
@@ -160,6 +161,37 @@ def get_orphans(session, irods_backend, expected, assays):
     return orphans
 
 
+def get_output(orphans, irods_backend):
+    lines = []
+    for orphan in orphans:
+        stats = irods_backend.get_object_stats(orphan)
+        m = re.search(r'/projects/([^/]{2})/(\1[^/]+)/', orphan)
+
+        if m:
+            uuid = m.group(2)
+            try:
+                project = Project.objects.get(sodar_uuid=uuid)
+                title = project.get_full_title()
+            except Project.DoesNotExist:
+                title = 'N/A'
+        else:
+            uuid = 'N/A'
+            title = 'N/A'
+
+        lines.append(
+            ';'.join(
+                [
+                    uuid,
+                    title,
+                    orphan,
+                    str(stats['file_count']),
+                    filesizeformat(stats['total_size']).replace(u'\xa0', ' '),
+                ]
+            )
+        )
+    return lines
+
+
 class Command(BaseCommand):
     """Command to find orphans in iRODS collections."""
 
@@ -179,5 +211,6 @@ class Command(BaseCommand):
         )
 
         orphans = get_orphans(session, irods_backend, expected, assays)
-        if orphans:
-            self.stdout.write('\n'.join(orphans))
+        output = get_output(orphans, irods_backend)
+        if output:
+            self.stdout.write('\n'.join(output))

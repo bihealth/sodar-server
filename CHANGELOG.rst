@@ -17,6 +17,7 @@ Added
 - **Irodsadmin**
     - Add app for iRODS data administration (#972)
     - ``irodsorphans`` management command (#972, #997, #1035)
+    - Increased output of ``irodsorphans`` command (#1045)
 - **Irodsbackend**
     - ``get_query()`` helper for ``SpecificQuery`` initialization (#1003)
 - **Landingzones**
