@@ -1,17 +1,19 @@
 from datetime import timedelta
-from unittest import mock
+from unittest import mock, skipIf
 
+from django.conf import settings
 from django.core.management import call_command
 from django.utils.six import StringIO
 from django.utils.timezone import localtime
 from projectroles.constants import SODAR_CONSTANTS
 from projectroles.models import Role
+from projectroles.plugins import get_backend_api
 from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
 from test_plus.test import TestCase
 
 from landingzones.management.commands.inactivezones import (
     get_inactive_zones,
-    get_zone_str,
+    get_output,
 )
 from landingzones.tests.test_models import LandingZoneMixin
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
@@ -34,7 +36,13 @@ ZONE3_DESC = 'description'
 ZONE4_TITLE = '20201218_172743_test_zone_deleted'
 ZONE4_DESC = 'description'
 
+IRODS_BACKEND_ENABLED = (
+    True if 'omics_irods' in settings.ENABLED_BACKEND_PLUGINS else False
+)
+IRODS_BACKEND_SKIP_MSG = 'iRODS backend not enabled in settings'
 
+
+@skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
 class TestInactiveZones(
     ProjectMixin,
     SampleSheetIOMixin,
@@ -124,13 +132,53 @@ class TestInactiveZones(
                 config_data={},
             )
 
+        self.irods_backend = get_backend_api('omics_irods')
+        self.irods_session = self.irods_backend.get_session()
+
+        # Create the irods collections
+        self.irods_session.collections.create(
+            self.irods_backend.get_path(self.landing_zone1)
+        )
+        self.irods_session.collections.create(
+            self.irods_backend.get_path(self.landing_zone2)
+        )
+        self.irods_session.collections.create(
+            self.irods_backend.get_path(self.landing_zone3)
+        )
+        self.irods_session.collections.create(
+            self.irods_backend.get_path(self.landing_zone4)
+        )
+
+    def tearDown(self):
+        self.irods_session.collections.get('/omicsZone/projects').remove(
+            force=True
+        )
+
     def test_get_inactive_zones(self):
         zones = get_inactive_zones()
         self.assertEqual(zones.count(), 1)
 
+    def test_get_output(self):
+        zones = get_inactive_zones()
+        self.assertListEqual(
+            get_output(zones, self.irods_backend),
+            [
+                '{};{};{};{};0;0 bytes'.format(
+                    str(self.project.sodar_uuid),
+                    self.project.get_full_title(),
+                    self.landing_zone1.user.username,
+                    self.irods_backend.get_path(self.landing_zone1),
+                )
+            ],
+        )
+
     def test_command_inactivezones(self):
         out = StringIO()
         call_command('inactivezones', stdout=out)
-        self.assertEqual(
-            '{}\n'.format(get_zone_str(self.landing_zone1)), out.getvalue()
+        expected = '{};{};{};{};0;0 bytes\n'.format(
+            str(self.project.sodar_uuid),
+            self.project.get_full_title(),
+            self.landing_zone1.user.username,
+            self.irods_backend.get_path(self.landing_zone1),
         )
+        self.assertEqual(expected, out.getvalue())

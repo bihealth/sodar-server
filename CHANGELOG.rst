@@ -23,6 +23,7 @@ Added
 - **Landingzones**
     - Zone UUID clipboard copying link (#970)
     - Add ``inactivezones`` management command (#1010)
+    - Extended output of ``inactivatezones`` command (#1046)
 - **Ontologyaccess**
     - Add site app for ontology storage and access (#937, #947)
     - Add ``importobo`` and ``importomim`` management commands (#937, #980)

@@ -1,7 +1,9 @@
 from datetime import timedelta
 
 from django.core.management.base import BaseCommand
+from django.template.defaultfilters import filesizeformat
 from django.utils.timezone import localtime
+from projectroles.plugins import get_backend_api
 
 from landingzones.models import LandingZone
 
@@ -13,14 +15,25 @@ def get_inactive_zones(weeks=2):
     ).exclude(status__in=('DELETED', 'MOVED'))
 
 
-def get_zone_str(zone):
-    """Return LandingZone string output for management command"""
-    return '{} ({}): {}/{}'.format(
-        zone.project.sodar_uuid,
-        zone.project.title,
-        zone.user.username,
-        zone.title,
-    )
+def get_output(zones, irods_backend):
+    """Return list of enriched inactive landing zones."""
+    lines = []
+    for zone in zones:
+        path = irods_backend.get_path(zone)
+        stats = irods_backend.get_object_stats(path)
+        lines.append(
+            ';'.join(
+                [
+                    str(zone.project.sodar_uuid),
+                    zone.project.get_full_title(),
+                    zone.user.username,
+                    path,
+                    str(stats['file_count']),
+                    filesizeformat(stats['total_size']).replace(u'\xa0', ' '),
+                ]
+            )
+        )
+    return lines
 
 
 class Command(BaseCommand):
@@ -29,6 +42,8 @@ class Command(BaseCommand):
     help = 'Find landingzones last modified more than two weeks ago.'
 
     def handle(self, *args, **options):
+        irods_backend = get_backend_api('omics_irods')
         zones = get_inactive_zones()
-        for zone in zones:
-            self.stdout.write(get_zone_str(zone))
+        output = get_output(zones, irods_backend)
+        if output:
+            self.stdout.write('\n'.join(output))
