@@ -55,7 +55,8 @@ class SheetConfigAPI:
 
         if p_found:
             protocol = Protocol.objects.filter(
-                study__investigation=investigation, name=p_name,
+                study__investigation=investigation,
+                name=p_name,
             ).first()
 
         if protocol:

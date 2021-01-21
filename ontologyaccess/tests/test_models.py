@@ -197,7 +197,9 @@ class TestOBOFormatOntologyTerm(TestOBOFormatOntologyBase):
     def test__repr__(self):
         """Test OBOFormatOntologyTerm __repr__() function"""
         expected = "OBOFormatOntologyTerm('{}', '{}', '{}')".format(
-            self.term.ontology.name, self.term.term_id, self.term.name,
+            self.term.ontology.name,
+            self.term.term_id,
+            self.term.name,
         )
         self.assertEqual(repr(self.term), expected)
 

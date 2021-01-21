@@ -268,7 +268,7 @@ class TestLandingZoneSubmitDeleteAPIView(TestLandingZoneAPITaskflowBase):
         response = self.request_knox(url, method='POST', data=self.request_data)
 
         # Assert status after deletion
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 403)
         self.assertEqual(LandingZone.objects.all().count(), 1)
 
 

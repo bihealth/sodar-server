@@ -383,7 +383,10 @@ class SampleSheetImportMixin:
             APP_NAME, 'sheet_config', sheet_config, project=project
         )
         app_settings.set_app_setting(
-            APP_NAME, 'display_config_default', display_config, project=project,
+            APP_NAME,
+            'display_config_default',
+            display_config,
+            project=project,
         )
         logger.info('Sheet configurations updated')
 
@@ -433,7 +436,7 @@ class SampleSheetISAExportMixin:
 
         if format not in valid_formats:
             raise ValueError(
-                'Invalid format "{}". Valid formats:'.format(
+                'Invalid format "{}". Valid formats: {}'.format(
                     format, ', '.join(valid_formats)
                 )
             )

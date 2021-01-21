@@ -1254,7 +1254,8 @@ class TestSheetRowInsertAjaxView(RowEditMixin, SheetConfigMixin, TestViewsBase):
             mat_count + 4,
         )
         self.assertEqual(
-            Process.objects.filter(assay=self.assay).count(), proc_count + 3,
+            Process.objects.filter(assay=self.assay).count(),
+            proc_count + 3,
         )
 
         self.assertEqual(
@@ -1551,7 +1552,9 @@ class TestSheetEditConfigAjaxView(SheetConfigMixin, TestViewsBase):
         self.assertEqual(sheet_config, CONFIG_DATA_DEFAULT)
         self.assertEqual(
             ProjectEvent.objects.filter(
-                project=self.project, app=APP_NAME, event_name='field_update',
+                project=self.project,
+                app=APP_NAME,
+                event_name='field_update',
             ).count(),
             0,
         )
@@ -1611,7 +1614,9 @@ class TestSheetEditConfigAjaxView(SheetConfigMixin, TestViewsBase):
         )
         self.assertEqual(
             ProjectEvent.objects.filter(
-                project=self.project, app=APP_NAME, event_name='field_update',
+                project=self.project,
+                app=APP_NAME,
+                event_name='field_update',
             ).count(),
             1,
         )
@@ -1754,5 +1759,6 @@ class TestStudyDisplayConfigAjaxView(TestViewsBase):
             APP_NAME, 'display_config', project=self.project, user=self.user
         )
         self.assertEqual(
-            updated_config, self.display_config,
+            updated_config,
+            self.display_config,
         )

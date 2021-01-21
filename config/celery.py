@@ -13,7 +13,7 @@ app = Celery('sodar')
 app.config_from_object('django.conf:settings', namespace='CELERY')
 
 if 'production' in os.environ.get('DJANGO_SETTINGS_MODULE'):
-    '''
+    """
     # Configure routing as we nee different degrees of concurrency for the background job processing.
     app.conf.task_routes = {
         # The bulk import jobs share a common name pattern and should go to the "import" queue.
@@ -21,7 +21,7 @@ if 'production' in os.environ.get('DJANGO_SETTINGS_MODULE'):
         # The filter tasks go to the "query" queue.
         "*.*_filter_task": {"queue": "query"},
     }
-    '''
+    """
 
     # Explicitely set the name of the default queue to default (is celery).
     app.conf.task_default_queue = 'default'

@@ -55,7 +55,9 @@ class OBOFormatOntology(models.Model):
 
     #: Ontology description (optional)
     description = models.TextField(
-        blank=True, null=True, help_text='Ontology description (optional)',
+        blank=True,
+        null=True,
+        help_text='Ontology description (optional)',
     )
 
     #: Format version
@@ -178,12 +180,18 @@ class OBOFormatOntologyTerm(models.Model):
 
     #: Term name
     name = models.CharField(
-        max_length=1024, unique=False, blank=False, help_text='Term name',
+        max_length=1024,
+        unique=False,
+        blank=False,
+        help_text='Term name',
     )
 
     #: Term definition
     definition = models.TextField(
-        unique=False, blank=True, null=True, help_text='Term definition',
+        unique=False,
+        blank=True,
+        null=True,
+        help_text='Term definition',
     )
 
     #: Term synonyms
@@ -204,12 +212,16 @@ class OBOFormatOntologyTerm(models.Model):
 
     #: Term comment
     comment = models.TextField(
-        unique=False, blank=True, null=True, help_text='Term comment',
+        unique=False,
+        blank=True,
+        null=True,
+        help_text='Term comment',
     )
 
     #: Obsolete or deprecated term
     is_obsolete = models.BooleanField(
-        default=False, help_text='Obsolete or deprecated term',
+        default=False,
+        help_text='Obsolete or deprecated term',
     )
 
     #: Replaced by ID in case of an obsolete term

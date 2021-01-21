@@ -131,8 +131,7 @@ class SampleSheetImportForm(forms.Form):
 
 
 class IrodsAccessTicketForm(forms.ModelForm):
-    """Form for the irods access ticket creation and editing.
-    """
+    """Form for the irods access ticket creation and editing."""
 
     class Meta:
         model = IrodsAccessTicket

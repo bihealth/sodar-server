@@ -193,7 +193,8 @@ class TestSampleDataFileExistsAPIView(TestSampleSheetAPITaskflowBase):
         s_path = self.irods_backend.get_sample_path(self.project)
         self.irods_session.collections.create(s_path + '/sub')
         self.irods_session.data_objects.put(
-            IRODS_FILE_PATH, s_path + '/sub/',
+            IRODS_FILE_PATH,
+            s_path + '/sub/',
         )
 
         url = reverse('samplesheets:api_file_exists')

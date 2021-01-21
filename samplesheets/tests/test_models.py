@@ -1294,8 +1294,8 @@ class TestIrodsAccessTicket(TestSampleSheetBase):
 
     def test_is_active_expired(self):
         """Test is_active()"""
-        self.irods_access_ticket.date_expires = self._get_expiry_today() - timedelta(
-            days=1
+        self.irods_access_ticket.date_expires = (
+            self._get_expiry_today() - timedelta(days=1)
         )
         self.irods_access_ticket.save()
         self.assertFalse(self.irods_access_ticket.is_active())
@@ -1309,8 +1309,8 @@ class TestIrodsAccessTicket(TestSampleSheetBase):
 
     def test_is_active_expires_tomorrow(self):
         """Test is_active()"""
-        self.irods_access_ticket.date_expires = self._get_expiry_today() + timedelta(
-            days=1
+        self.irods_access_ticket.date_expires = (
+            self._get_expiry_today() + timedelta(days=1)
         )
         self.irods_access_ticket.save()
         self.assertTrue(self.irods_access_ticket.is_active())

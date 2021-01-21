@@ -293,7 +293,10 @@ class TestSheetConfig(
 
 
 class TestDisplayConfig(
-    ProjectMixin, RoleAssignmentMixin, SampleSheetIOMixin, TestCase,
+    ProjectMixin,
+    RoleAssignmentMixin,
+    SampleSheetIOMixin,
+    TestCase,
 ):
     """Tests for diplay config operations"""
 
@@ -338,7 +341,9 @@ class TestDisplayConfig(
             study_node_count = len(sc['studies'][s_uuid]['nodes'])
 
             self.assertEqual(
-                len(dc['studies'][s_uuid]['nodes']), study_node_count, msg=msg,
+                len(dc['studies'][s_uuid]['nodes']),
+                study_node_count,
+                msg=msg,
             )
             self.assertEqual(
                 len(dc['studies'][s_uuid]['assays'][a_uuid]['nodes']),

@@ -106,7 +106,8 @@ class TestOBOTermQueryAjaxView(TestOntologyAccessViewBase):
 
         with self.login(self.superuser):
             response = self.client.get(
-                reverse('ontologyaccess:ajax_obo_term_query'), data=query_data,
+                reverse('ontologyaccess:ajax_obo_term_query'),
+                data=query_data,
             )
 
         self.assertEqual(response.status_code, 200)
@@ -132,7 +133,8 @@ class TestOBOTermQueryAjaxView(TestOntologyAccessViewBase):
 
         with self.login(self.superuser):
             response = self.client.get(
-                reverse('ontologyaccess:ajax_obo_term_query'), data=query_data,
+                reverse('ontologyaccess:ajax_obo_term_query'),
+                data=query_data,
             )
 
         self.assertEqual(response.status_code, 200)
@@ -145,7 +147,8 @@ class TestOBOTermQueryAjaxView(TestOntologyAccessViewBase):
 
         with self.login(self.superuser):
             response = self.client.get(
-                reverse('ontologyaccess:ajax_obo_term_query'), data=query_data,
+                reverse('ontologyaccess:ajax_obo_term_query'),
+                data=query_data,
             )
 
         self.assertEqual(response.status_code, 400)
@@ -160,7 +163,8 @@ class TestOBOTermQueryAjaxView(TestOntologyAccessViewBase):
 
         with self.login(self.superuser):
             response = self.client.get(
-                reverse('ontologyaccess:ajax_obo_term_query'), data=query_data,
+                reverse('ontologyaccess:ajax_obo_term_query'),
+                data=query_data,
             )
 
         self.assertEqual(response.status_code, 200)
@@ -228,7 +232,8 @@ class TestOBOTermListAjaxView(TestOntologyAccessViewBase):
 
         with self.login(self.superuser):
             response = self.client.get(
-                reverse('ontologyaccess:ajax_obo_term_list'), data=query_data,
+                reverse('ontologyaccess:ajax_obo_term_list'),
+                data=query_data,
             )
 
         self.assertEqual(response.status_code, 200)
@@ -264,7 +269,8 @@ class TestOBOTermListAjaxView(TestOntologyAccessViewBase):
 
         with self.login(self.superuser):
             response = self.client.get(
-                reverse('ontologyaccess:ajax_obo_term_list'), data=query_data,
+                reverse('ontologyaccess:ajax_obo_term_list'),
+                data=query_data,
             )
 
         self.assertEqual(response.status_code, 200)

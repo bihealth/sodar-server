@@ -105,7 +105,9 @@ class OBOFormatOntologyUpdateView(
         self.object = form.save()
         messages.success(
             self.request,
-            'OBO Ontology "{}" updated'.format(self.object.title,),
+            'OBO Ontology "{}" updated'.format(
+                self.object.title,
+            ),
         )
         return redirect(redirect_url)
 

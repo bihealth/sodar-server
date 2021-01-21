@@ -68,7 +68,7 @@ class OBOFormatOntologyIO:
         :param verbose: Display pronto output if True (bool)
         :return: File pointer
         """
-        logger.info('Converting OWL format ontology to OBO..'.format(owl))
+        logger.info('Converting OWL format ontology to OBO..')
 
         if not verbose:
             sys.stdout = io.StringIO()
@@ -333,7 +333,9 @@ class OBOFormatOntologyIO:
         logger.info(
             'Imported OMIM diseases as OBOFormatOntology with {} term{} '
             '(UUID={})'.format(
-                term_count, 's' if term_count != 1 else '', obo_obj.sodar_uuid,
+                term_count,
+                's' if term_count != 1 else '',
+                obo_obj.sodar_uuid,
             )
         )
         return obo_obj

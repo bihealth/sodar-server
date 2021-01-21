@@ -404,7 +404,9 @@ class StudyTablesAjaxView(SODARBaseProjectAjaxView):
                 'using default..'.format(user.username)
             )
             display_config = app_settings.get_app_setting(
-                APP_NAME, 'display_config_default', project=project,
+                APP_NAME,
+                'display_config_default',
+                project=project,
             )
 
         # If default display configuration is not found, build it
@@ -1179,7 +1181,10 @@ class SheetRowInsertAjaxView(BaseSheetEditAjaxView):
                     'item_type': node['cells'][0]['item_type'],
                     'name': node['cells'][0]['value'],
                     'unique_name': get_unique_name(
-                        study, assay, name_id, node['cells'][0]['item_type'],
+                        study,
+                        assay,
+                        name_id,
+                        node['cells'][0]['item_type'],
                     ),
                     'study': study,
                     'assay': assay,

@@ -14,16 +14,16 @@ django-crispy-forms==1.7.2
 django-model-utils==3.2.0
 
 # Password storage
-argon2-cffi==19.2.0
+argon2-cffi==20.1.0
 
 # Python-PostgreSQL Database Adapter
-psycopg2-binary==2.8.4
+psycopg2-binary==2.8.6
 
 # Unicode slugification
 awesome-slugify==1.6.5
 
 # Time zones support
-pytz==2019.3
+pytz==2020.5
 
 # Redis support
 redis==3.3.8
@@ -32,12 +32,12 @@ redis==3.3.8
 django-cprofile-middleware==1.0.4
 
 # Versioning
-versioneer==0.18
+versioneer==0.19
 
 # Online documentation via django-docs.
-Sphinx==2.4.4
+Sphinx==3.4.3
 django-docs==0.3.1
-sphinx-rtd-theme==0.4.3
+sphinx-rtd-theme==0.5.1
 
 #####################
 # SODAR Core imports
@@ -47,7 +47,7 @@ sphinx-rtd-theme==0.4.3
 rules==2.2
 
 # REST framework
-djangorestframework==3.11.0
+djangorestframework==3.11.2
 
 # Keyed list addon for DRF
 drf-keyed-list==0.0.2
@@ -56,7 +56,7 @@ drf-keyed-list==0.0.2
 django-rest-knox==4.1.0
 
 # Markdown field support
-markdown==3.2.1
+markdown==3.3.3
 django-markupfield==1.5.1
 django-pagedown==1.0.6
 mistune==0.8.4
@@ -65,10 +65,10 @@ mistune==0.8.4
 -e git+https://github.com/mikkonie/django-plugins.git@1bc07181e6ab68b0f9ed3a00382eb1f6519e1009#egg=django-plugins
 
 # SODAR Core
--e git+ssh://git@cubi-gitlab.bihealth.org/CUBI_Engineering/CUBI_Data_Mgmt/sodar_core.git@v0.8.3#egg=django-sodar-core
+-e git+ssh://git@cubi-gitlab.bihealth.org/CUBI_Engineering/CUBI_Data_Mgmt/sodar_core.git@50b1096ae9e67fb96e8fcf8973a5db4d26304159#egg=django-sodar-core
 
 # Celery
-celery<4.2  # pyup: <4.2  # blocker: https://github.com/celery/celery/issues/4878
+celery==5.0.5
 
 # LDAP requirements (to be installed from ldap.txt
 # See https://github.com/bihealth/ansible-role-sodar-core-app/issues/6

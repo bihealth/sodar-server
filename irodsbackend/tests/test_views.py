@@ -586,7 +586,7 @@ class TestIrodsBatchStatisticsAjaxView(TestViewsBase):
 
     def test_post_one_empty_coll(self):
         """Test POST request for batch stats on only one
-         (empty) collection in iRODS"""
+        (empty) collection in iRODS"""
         post_data = {'paths': [self.irods_path], 'md5': ['0']}
 
         with self.login(self.user):
