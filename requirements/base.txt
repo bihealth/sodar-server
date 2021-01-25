@@ -68,7 +68,7 @@ mistune==0.8.4
 -e git+ssh://git@cubi-gitlab.bihealth.org/CUBI_Engineering/CUBI_Data_Mgmt/sodar_core.git@50b1096ae9e67fb96e8fcf8973a5db4d26304159#egg=django-sodar-core
 
 # Celery
-celery==5.0.5
+celery<4.2  # celery==5.0.5
 
 # LDAP requirements (to be installed from ldap.txt
 # See https://github.com/bihealth/ansible-role-sodar-core-app/issues/6
