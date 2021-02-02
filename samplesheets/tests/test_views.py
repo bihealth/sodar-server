@@ -3,6 +3,7 @@
 import json
 import os
 from test_plus.test import TestCase
+from urllib.parse import urlencode
 from zipfile import ZipFile
 
 from django.conf import settings
@@ -808,3 +809,115 @@ class TestSampleSheetVersionDeleteView(TestViewsBase):
         # Assert postconditions
         self.assertEqual(response.status_code, 302)
         self.assertEqual(ISATab.objects.all().count(), 0)
+
+
+class TestProjectSearchView(TestViewsBase):
+    """Tests for the search results view with sample sheet input"""
+
+    def _get_items(self, response):
+        return response.context['app_search_data'][0]['results']['materials'][
+            'items'
+        ]
+
+    def setUp(self):
+        super().setUp()
+
+        # Import investigation
+        self.investigation = self._import_isa_from_file(
+            SHEET_PATH, self.project
+        )
+        self.study = self.investigation.studies.first()
+        self.source = self.study.materials.filter(item_type='SOURCE').first()
+        self.sample = (
+            self.study.materials.filter(item_type='SAMPLE')
+            .exclude(name='')
+            .first()
+        )
+
+    def test_search_source(self):
+        """Test simple search with source"""
+        with self.login(self.user):
+            response = self.client.get(
+                reverse('projectroles:search')
+                + '?'
+                + urlencode({'s': self.source.name})
+            )
+        self.assertEqual(response.status_code, 200)
+        items = self._get_items(response)
+        self.assertEqual(len(items), 1)
+        self.assertEqual(items[0]['name'], self.source.name)
+
+    def test_search_source_type_source(self):
+        """Test simple search with source and source type"""
+        with self.login(self.user):
+            response = self.client.get(
+                reverse('projectroles:search')
+                + '?'
+                + urlencode({'s': self.source.name + ' type:source'})
+            )
+        self.assertEqual(response.status_code, 200)
+        items = self._get_items(response)
+        self.assertEqual(len(items), 1)
+        self.assertEqual(items[0]['name'], self.source.name)
+
+    def test_search_source_type_sample(self):
+        """Test simple search with source and sample type (should fail)"""
+        with self.login(self.user):
+            response = self.client.get(
+                reverse('projectroles:search')
+                + '?'
+                + urlencode({'s': self.source.name + ' type:sample'})
+            )
+        self.assertEqual(response.status_code, 200)
+        items = self._get_items(response)
+        self.assertEqual(len(items), 0)
+
+    def test_search_sample(self):
+        """Test simple search with sample"""
+        with self.login(self.user):
+            response = self.client.get(
+                reverse('projectroles:search')
+                + '?'
+                + urlencode({'s': self.sample.name})
+            )
+        self.assertEqual(response.status_code, 200)
+        items = self._get_items(response)
+        self.assertEqual(len(items), 1)
+        self.assertEqual(items[0]['name'], self.sample.name)
+
+    def test_search_sample_type_sample(self):
+        """Test simple search with sample and sample type"""
+        with self.login(self.user):
+            response = self.client.get(
+                reverse('projectroles:search')
+                + '?'
+                + urlencode({'s': self.sample.name + ' type:sample'})
+            )
+        self.assertEqual(response.status_code, 200)
+        items = self._get_items(response)
+        self.assertEqual(len(items), 1)
+        self.assertEqual(items[0]['name'], self.sample.name)
+
+    def test_search_sample_type_source(self):
+        """Test simple search with sample and source type (should fail)"""
+        with self.login(self.user):
+            response = self.client.get(
+                reverse('projectroles:search')
+                + '?'
+                + urlencode({'s': self.sample.name + ' type:source'})
+            )
+        self.assertEqual(response.status_code, 200)
+        items = self._get_items(response)
+        self.assertEqual(len(items), 0)
+
+    def test_search_multi(self):
+        """Test simple search with multiple terms"""
+        with self.login(self.user):
+            response = self.client.get(
+                reverse('projectroles:search')
+                + '?'
+                + urlencode({'m': self.source.name + '\r\n' + self.sample.name})
+            )
+        self.assertEqual(response.status_code, 200)
+        items = self._get_items(response)
+        self.assertEqual(len(items), 2)

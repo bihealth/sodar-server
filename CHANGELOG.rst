@@ -20,6 +20,7 @@ Added
     - Increased output of ``irodsorphans`` command (#1045)
 - **Irodsbackend**
     - ``get_query()`` helper for ``SpecificQuery`` initialization (#1003)
+    - Support for multi-term search (#1065)
 - **Landingzones**
     - Zone UUID clipboard copying link (#970)
     - Add ``inactivezones`` management command (#1010)
@@ -39,6 +40,7 @@ Added
     - Track hub and iRODS ticket support for UCSC Genome Browser integration (#238)
     - Django setting ``SHEETS_ONTOLOGY_URL_SKIP`` for template skip patterns (#1022)
     - Prevent insertion of identical rows (#1023)
+    - Support for multi-term search (#1065)
 
 Changed
 -------
@@ -49,8 +51,10 @@ Changed
     - Upgrade to Chromedriver v87
     - Upgrade to python-irodsclient v0.8.5 (#1009)
     - Upgrade to django-sodar-core v0.9.0-WIP (#1051)
+    - Refactor ``Project.get_full_title()`` usage (#1062)
 - **Irodsbackend**
     - Standardize Ajax view output (#841)
+    - Support ``name_like`` as a list in ``get_objs_recursively()`` (#1065)
 - **Samplesheets**
     - Display assay plugin icon for all users with sheet edit permissions (#940)
     - Refactor assay row cache updating (#954)
@@ -89,6 +93,8 @@ Removed
 
 - **General**
     - Management commands replaced by ``Makefile`` (#989)
+- **Irodsbackend**
+    - ``_get_obj_list()`` and ``_get_obj_stats()`` helpers (#1066)
 - **Samplesheets**
     - Workarounds for legacy sample sheet imports (#946)
 

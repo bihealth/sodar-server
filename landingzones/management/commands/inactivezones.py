@@ -25,7 +25,7 @@ def get_output(zones, irods_backend):
             ';'.join(
                 [
                     str(zone.project.sodar_uuid),
-                    zone.project.get_full_title(),
+                    zone.project.full_title,
                     zone.user.username,
                     path,
                     str(stats['file_count']),

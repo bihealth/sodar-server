@@ -303,7 +303,7 @@ class TestIrodsOrphans(
             [
                 '{};{};{};0;0 bytes'.format(
                     str(self.project.sodar_uuid),
-                    self.project.get_full_title(),
+                    self.project.full_title,
                     orphan_path,
                 )
             ],
@@ -323,7 +323,7 @@ class TestIrodsOrphans(
         call_command('irodsorphans', stdout=out)
         expected = '{};{};{};0;0 bytes\n'.format(
             str(self.project.sodar_uuid),
-            self.project.get_full_title(),
+            self.project.full_title,
             orphan_path,
         )
         self.assertEqual(expected, out.getvalue())
@@ -337,7 +337,7 @@ class TestIrodsOrphans(
         call_command('irodsorphans', stdout=out)
         expected = '{};{};{};0;0 bytes\n'.format(
             str(self.project.sodar_uuid),
-            self.project.get_full_title(),
+            self.project.full_title,
             orphan_path,
         )
         self.assertEqual(expected, out.getvalue())
@@ -355,7 +355,7 @@ class TestIrodsOrphans(
         call_command('irodsorphans', stdout=out)
         expected = '{};{};{};0;0 bytes\n'.format(
             str(self.project.sodar_uuid),
-            self.project.get_full_title(),
+            self.project.full_title,
             orphan_path,
         )
         self.assertEqual(expected, out.getvalue())
@@ -384,7 +384,7 @@ class TestIrodsOrphans(
         call_command('irodsorphans', stdout=out)
         expected = '{};{};{};0;0 bytes\n'.format(
             str(self.project.sodar_uuid),
-            self.project.get_full_title(),
+            self.project.full_title,
             orphan_path,
         )
         self.assertEqual(expected, out.getvalue())
@@ -406,12 +406,12 @@ class TestIrodsOrphans(
         call_command('irodsorphans', stdout=out)
         expected = '{};{};{};0;0 bytes\n'.format(
             str(self.project.sodar_uuid),
-            self.project.get_full_title(),
+            self.project.full_title,
             orphan_path2,
         )
         expected += '{};{};{};0;0 bytes\n'.format(
             str(self.project.sodar_uuid),
-            self.project.get_full_title(),
+            self.project.full_title,
             orphan_path,
         )
         self.assertEqual(expected, out.getvalue())

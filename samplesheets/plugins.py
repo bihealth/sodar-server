@@ -194,12 +194,13 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                 'label': obj.get_name(),
             }
 
-    def search(self, search_term, user, search_type=None, keywords=None):
+    def search(self, search_terms, user, search_type=None, keywords=None):
         """
-        Return app items based on a search term, user, optional type and
-        optional keywords.
+        Return app items based on one or more search terms, user, optional type
+        and optional keywords.
 
-        :param search_term: String
+        :param search_terms: Search terms to be joined with the OR operator
+                             (list of strings)
         :param user: User object for user initiating the search
         :param search_type: String
         :param keywords: List (optional)
@@ -211,15 +212,12 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         # Materials
         def get_materials(materials):
             ret = []
-
             for m in materials:
                 if user.has_perm('samplesheets.view_sheet', m.get_project()):
                     if m.item_type == 'SAMPLE':
                         assays = m.get_sample_assays()
-
                     else:
                         assays = [m.assay]
-
                     ret.append(
                         {
                             'name': m.name,
@@ -229,27 +227,17 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                             'assays': assays,
                         }
                     )
-
             return ret
 
-        material_items = []
+        item_types = ['SOURCE', 'SAMPLE']
+        if search_type in ['source', 'sample']:
+            item_types = [search_type.upper()]
 
-        if not search_type or search_type == 'source':
-            material_items += get_materials(
-                GenericMaterial.objects.find(
-                    search_term, keywords, item_type='SOURCE'
-                )
+        material_items = get_materials(
+            GenericMaterial.objects.find(
+                search_terms, keywords, item_types=item_types
             )
-
-        if not search_type or search_type == 'sample':
-            material_items += get_materials(
-                GenericMaterial.objects.find(
-                    search_term, keywords, item_type='SAMPLE'
-                )
-            )
-
-        if material_items:
-            material_items.sort(key=lambda x: x['name'].lower())
+        )
 
         results['materials'] = {
             'title': 'Sources and Samples',
@@ -264,10 +252,9 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
             try:
                 obj_data = irods_backend.get_objects(
                     path='/{}/projects'.format(settings.IRODS_ZONE),
-                    name_like=search_term,
+                    name_like=search_terms,
                     limit=settings.SHEETS_IRODS_LIMIT,
                 )
-
             # Skip rest if no data objects were found or iRODS is unreachable
             except (FileNotFoundError, NetworkException):
                 return results
@@ -295,7 +282,6 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                 sample_subpath = '/{}/{}/'.format(
                     project_uuid, settings.IRODS_SAMPLE_COLL
                 )
-
                 if sample_subpath not in o['path']:
                     continue  # Skip files not in sample data repository
 
@@ -311,7 +297,6 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                             o['path'], obj_type='assay'
                         )
                     ]
-
                 except KeyError:
                     continue  # Skip file if the project/etc is not found
 
@@ -325,7 +310,6 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                         'irods_path': o['path'],
                     }
                 )
-
                 if len(file_items) == settings.SHEETS_IRODS_LIMIT:
                     break
 

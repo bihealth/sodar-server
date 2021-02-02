@@ -171,7 +171,7 @@ def get_output(orphans, irods_backend):
             uuid = m.group(2)
             try:
                 project = Project.objects.get(sodar_uuid=uuid)
-                title = project.get_full_title()
+                title = project.full_title
             except Project.DoesNotExist:
                 title = 'N/A'
         else:

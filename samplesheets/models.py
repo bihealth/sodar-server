@@ -581,40 +581,36 @@ class NodeMixin:
 class GenericMaterialManager(models.Manager):
     """Manager for custom table-level GenericMaterial queries"""
 
-    def find(self, search_term, keywords=None, item_type=None):
+    def find(self, search_terms, keywords=None, item_types=None):
         """
         Return objects matching the query.
-        :param search_term: Search term (string)
+
+        :param search_terms: Search terms (list of strings)
         :param keywords: Optional search keywords as key/value pairs (dict)
-        :param item_type: Restrict to a specific item_type
-        :return: Python list of GenericMaterial objects
+        :param item_types: Restrict to zero or more specific item types (list)
+        :return: QuerySet
         """
 
-        # NOTE: Exlude intermediate materials and data files, at least for now
+        # NOTE: Exclude intermediate materials and data files, at least for now
         objects = (
-            super()
-            .get_queryset()
-            .exclude(item_type__in=['DATA', 'MATERIAL'])
-            .order_by('name')
+            super().get_queryset().exclude(item_type__in=['DATA', 'MATERIAL'])
         )
 
-        q_filters = None
+        if item_types:
+            if not isinstance(item_types, list):
+                item_types = [item_types]
+            objects = objects.filter(item_type__in=item_types)
 
         # HACK for ArrayField
         # NOTE: Only look for alt_names as they also contain lowercase name
+        # TODO: Why not just use iexact?
+        term_query = Q()
         for i in range(0, ALT_NAMES_COUNT):
-            q_alt_name = Q(**{'alt_names__{}'.format(i): search_term.lower()})
-
-            if q_filters:
-                q_filters |= q_alt_name
-
-            else:
-                q_filters = q_alt_name
-
-        objects = objects.filter(q_filters)
-
-        if item_type:
-            objects = objects.filter(item_type=item_type)
+            for t in search_terms:
+                term_query.add(
+                    Q(**{'alt_names__{}'.format(i): t.lower()}), Q.OR
+                )
+        objects = objects.filter(term_query).order_by('name')
 
         return objects
 

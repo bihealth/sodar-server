@@ -24,7 +24,7 @@ EX_OBO_TERM_IDS = {
 }
 OBO_BATCH_URLS = [
     'http://purl.obolibrary.org/obo/hp.obo',
-    'http://purl.obolibrary.org/obo/cl.obo',
+    # 'http://purl.obolibrary.org/obo/cl.obo',  # TODO: Fix (see #1064)
     'https://github.com/obophenotype/ncbitaxon/releases/download/current/taxslim.obo',
     # 'http://purl.obolibrary.org/obo/go.obo',  # Large and slow to parse
     # TODO: Add more imports to test in batch here

@@ -117,6 +117,47 @@ class TestIrodsBackendAPITaskflow(
         self.assertEqual(obj, expected)
 
     @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
+    def test_get_objects_multi(self):
+        """Test get_objects() with multiple search terms"""
+
+        # Create iRODS collections
+        self._make_irods_colls(self.investigation)
+
+        path = self.irods_backend.get_path(self.assay)
+
+        # Create objects
+        # TODO: Test with actual files and put() instead
+        irods = self.irods_backend.get_session()
+        irods.data_objects.create(path + '/' + TEST_FILE_NAME)
+        irods.data_objects.create(path + '/{}.md5'.format(TEST_FILE_NAME))
+        irods.data_objects.create(path + '/' + TEST_FILE_NAME2)
+        irods.data_objects.create(path + '/{}.md5'.format(TEST_FILE_NAME2))
+
+        obj_list = self.irods_backend.get_objects(
+            path, name_like=[TEST_FILE_NAME, TEST_FILE_NAME2], check_md5=True
+        )
+        self.assertIsNotNone(obj_list)
+        self.assertEqual(len(obj_list['data_objects']), 2)  # md5 not listed
+
+        expected = [
+            {
+                'name': TEST_FILE_NAME,
+                'path': path + '/' + TEST_FILE_NAME,
+                'size': 0,
+                'md5_file': True,
+                'modify_time': obj_list['data_objects'][0]['modify_time'],
+            },
+            {
+                'name': TEST_FILE_NAME2,
+                'path': path + '/' + TEST_FILE_NAME2,
+                'size': 0,
+                'md5_file': True,
+                'modify_time': obj_list['data_objects'][1]['modify_time'],
+            },
+        ]
+        self.assertEqual(obj_list['data_objects'], expected)
+
+    @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_get_objects_empty_coll(self):
         """Test get_objects() with an empty sample collection"""
 

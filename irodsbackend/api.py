@@ -153,87 +153,6 @@ class IrodsAPI:
 
         return path
 
-    def _get_obj_list(self, coll, check_md5=False, name_like=None, limit=None):
-        """
-        Return a list of data objects within an iRODS collection.
-
-        :param coll: iRODS collection object
-        :param check_md5: Whether to add md5 checksum file info (bool)
-        :param name_like: Filtering of file names (string)
-        :param limit: Limit search to n rows (int)
-        :return: Dict
-        """
-        data = {'data_objects': []}
-        md5_paths = None
-
-        data_objs = self.get_objs_recursively(
-            coll, name_like=name_like, limit=limit
-        )
-
-        if data_objs and check_md5:
-            md5_paths = [
-                o['path']
-                for o in self.get_objs_recursively(
-                    coll, md5=True, name_like=name_like
-                )
-            ]
-
-        for o in data_objs:
-            if check_md5:
-                if o['path'] + '.md5' in md5_paths:
-                    o['md5_file'] = True
-
-                else:
-                    o['md5_file'] = False
-
-            data['data_objects'].append(o)
-
-        return data
-
-    def _get_obj_stats(self, coll):
-        """
-        Return statistics for data objects within an iRODS collection.
-
-        :param coll: iRODS collection object
-        :return: Dict
-        """
-        ret = {'file_count': 0, 'total_size': 0}
-
-        sql = (
-            'SELECT COUNT(data_id) as file_count, '
-            'SUM(data_size) as total_size '
-            'FROM (SELECT data_id, data_size FROM r_data_main '
-            'JOIN r_coll_main USING (coll_id) '
-            'WHERE (coll_name = \'{coll_path}\' '
-            'OR coll_name LIKE \'{coll_path}/%\') '
-            'AND data_name NOT LIKE \'%.md5\' '
-            'GROUP BY data_id, data_size) AS sub_query'.format(
-                coll_path=coll.path
-            )
-        )
-        # logger.debug('Object stats query = "{}"'.format(sql))
-        query = self.get_query(sql)
-
-        try:
-            result = next(query.get_results())
-            ret['file_count'] = int(result[0]) if result[0] else 0
-            ret['total_size'] = int(result[1]) if result[1] else 0
-
-        except CAT_NO_ROWS_FOUND:
-            pass
-
-        except Exception as ex:
-            logger.error(
-                'iRODS exception in _get_obj_stats(): {}; SQL = "{}"'.format(
-                    ex.__class__.__name__, sql
-                )
-            )
-
-        finally:
-            query.remove()
-
-        return ret
-
     # TODO: Fork python-irodsclient and implement ticket functionality there
     def _send_request(self, api_id, *args):
         """
@@ -497,23 +416,42 @@ class IrodsAPI:
 
         :param path: Full path to iRODS collection
         :param check_md5: Whether to add md5 checksum file info (bool)
-        :param name_like: Filtering of file names (string)
+        :param name_like: Filtering of file names (string or list of strings)
         :param limit: Limit search to n rows (int)
         :return: Dict
         :raise: FileNotFoundError if collection is not found
         """
         try:
             coll = self.irods.collections.get(self._sanitize_coll_path(path))
-
         except CollectionDoesNotExist:
             raise FileNotFoundError('iRODS collection not found')
 
         if name_like:
-            name_like = name_like.replace('_', '\_')  # noqa
+            if not isinstance(name_like, list):
+                name_like = [name_like]
+            name_like = [n.replace('_', '\_') for n in name_like]  # noqa
+        ret = {'data_objects': []}
+        md5_paths = None
 
-        ret = self._get_obj_list(
-            coll, check_md5, name_like=name_like, limit=limit
+        data_objs = self.get_objs_recursively(
+            coll, name_like=name_like, limit=limit
         )
+        if data_objs and check_md5:
+            md5_paths = [
+                o['path']
+                for o in self.get_objs_recursively(
+                    coll, md5=True, name_like=name_like
+                )
+            ]
+
+        for o in data_objs:
+            if check_md5:
+                if o['path'] + '.md5' in md5_paths:
+                    o['md5_file'] = True
+                else:
+                    o['md5_file'] = False
+            ret['data_objects'].append(o)
+
         return ret
 
     def get_object_stats(self, path):
@@ -525,11 +463,40 @@ class IrodsAPI:
         """
         try:
             coll = self.irods.collections.get(self._sanitize_coll_path(path))
-
         except CollectionDoesNotExist:
             raise FileNotFoundError('iRODS collection not found')
 
-        ret = self._get_obj_stats(coll)
+        ret = {'file_count': 0, 'total_size': 0}
+        sql = (
+            'SELECT COUNT(data_id) as file_count, '
+            'SUM(data_size) as total_size '
+            'FROM (SELECT data_id, data_size FROM r_data_main '
+            'JOIN r_coll_main USING (coll_id) '
+            'WHERE (coll_name = \'{coll_path}\' '
+            'OR coll_name LIKE \'{coll_path}/%\') '
+            'AND data_name NOT LIKE \'%.md5\' '
+            'GROUP BY data_id, data_size) AS sub_query'.format(
+                coll_path=coll.path
+            )
+        )
+        # logger.debug('Object stats query = "{}"'.format(sql))
+        query = self.get_query(sql)
+
+        try:
+            result = next(query.get_results())
+            ret['file_count'] = int(result[0]) if result[0] else 0
+            ret['total_size'] = int(result[1]) if result[1] else 0
+        except CAT_NO_ROWS_FOUND:
+            pass
+        except Exception as ex:
+            logger.error(
+                'iRODS exception in get_object_stats(): {}; SQL = "{}"'.format(
+                    ex.__class__.__name__, sql
+                )
+            )
+        finally:
+            query.remove()
+
         return ret
 
     def collection_exists(self, path):
@@ -562,13 +529,12 @@ class IrodsAPI:
 
         :param coll: Collection object
         :param md5: if True, return .md5 files, otherwise anything but them
-        :param name_like: Filtering of file names (string)
+        :param name_like: Filtering of file names (string or list of strings)
         :param limit: Limit search to n rows (int)
         :return: List
         """
         ret = []
         md5_filter = 'LIKE' if md5 else 'NOT LIKE'
-
         sql = (
             'SELECT DISTINCT ON (data_id) data_name, data_size, '
             'r_data_main.modify_ts as modify_ts, coll_name '
@@ -581,7 +547,14 @@ class IrodsAPI:
         )
 
         if name_like:
-            sql += ' AND data_name LIKE \'%{}%\''.format(name_like)
+            if not isinstance(name_like, list):
+                name_like = [name_like]
+            sql += ' AND ('
+            for i, n in enumerate(name_like):
+                if i > 0:
+                    sql += ' OR '
+                sql += 'data_name LIKE \'%{}%\''.format(n)
+            sql += ')'
 
         if not md5 and limit:
             sql += ' LIMIT {}'.format(limit)

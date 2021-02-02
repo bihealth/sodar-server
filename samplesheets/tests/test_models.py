@@ -990,6 +990,128 @@ class TestDataFile(TestSampleSheetBase):
         self.assertEqual(self.material.get_parent(), self.assay)
 
 
+class TestGenericMaterialManager(TestSampleSheetBase):
+    """Tests for GenericMaterialManager"""
+
+    def setUp(self):
+        super().setUp()
+
+        # Set up SOURCE GenericMaterial
+        self.source = self._make_material(
+            item_type='SOURCE',
+            name=SOURCE_NAME,
+            unique_name=SOURCE_UNIQUE_NAME,
+            characteristics=SOURCE_CHARACTERISTICS,
+            study=self.study,
+            assay=None,
+            material_type=None,
+            extra_material_type=None,
+            factor_values=None,
+            extract_label={},
+            comments=DEFAULT_COMMENTS,
+        )
+
+        # Set up SAMPLE GenericMaterial
+        self.sample = self._make_material(
+            item_type='SAMPLE',
+            name=SAMPLE_NAME,
+            unique_name=SAMPLE_UNIQUE_NAME,
+            characteristics=SAMPLE_CHARACTERISTICS,
+            study=self.study,
+            assay=None,
+            material_type=None,
+            extra_material_type=None,
+            factor_values=None,
+            extract_label={},
+            comments=DEFAULT_COMMENTS,
+        )
+
+    def test_find_source(self):
+        """Test find() by source name"""
+        result = GenericMaterial.objects.find([SOURCE_NAME])
+        self.assertEqual(result.count(), 1)
+        self.assertEqual(result.first(), self.source)
+
+    def test_find_source_type_source(self):
+        """Test find() by source name with item_type=SOURCE"""
+        result = GenericMaterial.objects.find(
+            [SOURCE_NAME], item_types=['SOURCE']
+        )
+        self.assertEqual(result.count(), 1)
+        self.assertEqual(result.first(), self.source)
+
+    def test_find_source_type_sample(self):
+        """Test find() by source name with item_type=SAMPLE (should fail)"""
+        result = GenericMaterial.objects.find(
+            [SOURCE_NAME], item_types=['SAMPLE']
+        )
+        self.assertEqual(result.count(), 0)
+
+    def test_find_source_partial(self):
+        """Test find() by partial source name (should fail)"""
+        result = GenericMaterial.objects.find([SOURCE_NAME[:-2]])
+        self.assertEqual(result.count(), 0)
+
+    def test_find_source_alt(self):
+        """Test find() by alt source name"""
+        result = GenericMaterial.objects.find([get_alt_names(SOURCE_NAME)[0]])
+        self.assertEqual(result.count(), 1)
+        self.assertEqual(result.first(), self.source)
+
+    def test_find_sample(self):
+        """Test find() by sample name"""
+        result = GenericMaterial.objects.find([SAMPLE_NAME])
+        self.assertEqual(result.count(), 1)
+        self.assertEqual(result.first(), self.sample)
+
+    def test_find_sample_type_sample(self):
+        """Test find() by sample name with item_type=SAMPLE"""
+        result = GenericMaterial.objects.find(
+            [SAMPLE_NAME], item_types=['SAMPLE']
+        )
+        self.assertEqual(result.count(), 1)
+        self.assertEqual(result.first(), self.sample)
+
+    def test_find_sample_type_source(self):
+        """Test find() by sample name with item_type=SOURCE (should fail)"""
+        result = GenericMaterial.objects.find(
+            [SAMPLE_NAME], item_types=['SOURCE']
+        )
+        self.assertEqual(result.count(), 0)
+
+    def test_find_sample_partial(self):
+        """Test find() by partial sample name (should fail)"""
+        result = GenericMaterial.objects.find([SAMPLE_NAME[:-2]])
+        self.assertEqual(result.count(), 0)
+
+    def test_find_sample_alt(self):
+        """Test find() by alt sample name"""
+        result = GenericMaterial.objects.find([get_alt_names(SAMPLE_NAME)[0]])
+        self.assertEqual(result.count(), 1)
+        self.assertEqual(result.first(), self.sample)
+
+    def test_find_multi(self):
+        """Test find() with multiple terms"""
+        result = GenericMaterial.objects.find([SOURCE_NAME, SAMPLE_NAME])
+        self.assertEqual(result.count(), 2)
+
+    def test_find_multi_type_source(self):
+        """Test find() with multiple terms and item_type=SOURCE"""
+        result = GenericMaterial.objects.find(
+            [SOURCE_NAME, SAMPLE_NAME], item_types=['SOURCE']
+        )
+        self.assertEqual(result.count(), 1)
+        self.assertEqual(result.first(), self.source)
+
+    def test_find_multi_type_sample(self):
+        """Test find() with multiple terms and item_type=SAMPLE"""
+        result = GenericMaterial.objects.find(
+            [SOURCE_NAME, SAMPLE_NAME], item_types=['SAMPLE']
+        )
+        self.assertEqual(result.count(), 1)
+        self.assertEqual(result.first(), self.sample)
+
+
 class TestProcess(TestSampleSheetBase):
     """Tests for the Process model"""
 
