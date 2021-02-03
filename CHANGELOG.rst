@@ -50,7 +50,7 @@ Changed
     - Upgrade to Bootstrap v4.5.3 and jQuery v3.5.1 (#1011)
     - Upgrade to Chromedriver v87
     - Upgrade to python-irodsclient v0.8.5 (#1009)
-    - Upgrade to django-sodar-core v0.9.0-WIP (#1051)
+    - Upgrade to django-sodar-core v0.9.0 (#1051)
     - Refactor ``Project.get_full_title()`` usage (#1062)
 - **Irodsbackend**
     - Standardize Ajax view output (#841)
