@@ -49,7 +49,7 @@ Changed
     - Upgrade to altamISA v0.2.7
     - Upgrade to Bootstrap v4.5.3 and jQuery v3.5.1 (#1011)
     - Upgrade to Chromedriver v87
-    - Upgrade to python-irodsclient v0.8.5 (#1009)
+    - Upgrade to python-irodsclient v0.8.6 (#1009, #1058)
     - Upgrade to django-sodar-core v0.9.0 (#1051)
     - Refactor ``Project.get_full_title()`` usage (#1062)
 - **Irodsbackend**
