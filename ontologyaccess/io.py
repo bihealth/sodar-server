@@ -41,7 +41,7 @@ OBO_RAW_TERMS = ['comment', 'name', 'namespace', 'replaced_by']
 OMIM_NAME = 'OMIM'
 OMIM_TITLE = 'Online Mendelian Inheritance in Man'
 OMIM_URL = 'http://purl.bioontology.org/ontology/{id_space}/{local_id}'
-LOCAL_ID_PREFIX = 'MTHU'
+MTHU_PREFIX = 'MTHU'
 
 
 class OBOFormatOntologyIO:
@@ -266,6 +266,7 @@ class OBOFormatOntologyIO:
 
         csv.field_size_limit(sys.maxsize)
         r = csv.reader(csv_data, delimiter=',')
+        next(r, None)  # Skip header
 
         o_kwargs = {
             'name': OMIM_NAME,
@@ -292,9 +293,8 @@ class OBOFormatOntologyIO:
 
         for row in r:
             ts = str(row[0]).split('/')
-
-            # Skip non-disease terms
-            if not ts[-1].startswith(LOCAL_ID_PREFIX):
+            # Skip disease terms
+            if ts[-1].startswith(MTHU_PREFIX):
                 continue
 
             term_id = ts[-2] + ':' + ts[-1]
@@ -311,7 +311,6 @@ class OBOFormatOntologyIO:
                 continue
 
             t_kwargs = {'ontology': obo_obj, 'term_id': term_id, 'name': row[1]}
-
             term_vals.append(t_kwargs)
             current_ids.append(term_id)
             term_count += 1
