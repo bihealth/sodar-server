@@ -10,6 +10,7 @@ from samplesheets.views import MISC_FILES_COLL, RESULTS_COLL
 
 # Local constants
 APP_NAME = 'samplesheets.assayapps.meta_ms'
+RAW_DATA_COLL = 'RawData'
 
 
 class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
@@ -46,25 +47,26 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
     #: Toggle displaying of row-based iRODS links in the assay table
     display_row_links = False
 
-    #: Raw data collection name
-    raw_data_coll = 'RawData'
-
     def get_row_path(self, row, table, assay, assay_path):
-        """Return iRODS path for an assay row in a sample sheet. If None,
+        """
+        Return iRODS path for an assay row in a sample sheet. If None,
         display default path.
+
         :param row: List of dicts (a row returned by SampleSheetTableBuilder)
         :param table: Full table with headers (dict returned by
                       SampleSheetTableBuilder)
         :param assay: Assay object
         :param assay_path: Root path for assay
         :return: String with full iRODS path or None
+
         """
         # TODO: Alternatives for RawData?
-        return assay_path + '/' + self.raw_data_coll
+        return assay_path + '/' + RAW_DATA_COLL
 
     def update_row(self, row, table, assay):
         """
-        Update render table row with e.g. links. Return the modified row
+        Update render table row with e.g. links. Return the modified row.
+
         :param row: Original row (list of dicts)
         :param table: Full table (dict)
         :param assay: Assay object
@@ -101,7 +103,7 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
                     coll_name = MISC_FILES_COLL
 
                 else:
-                    coll_name = self.raw_data_coll
+                    coll_name = RAW_DATA_COLL
 
                 row[i]['link'] = (
                     base_url + '/' + coll_name + '/' + row[i]['value']
@@ -130,6 +132,6 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
             {
                 'id': 'raw_data',
                 'label': 'Raw Data',
-                'path': assay_path + '/' + self.raw_data_coll,
+                'path': assay_path + '/' + RAW_DATA_COLL,
             }
         ]

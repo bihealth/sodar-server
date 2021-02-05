@@ -5,8 +5,8 @@ Changelog for the SODAR Django site. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
-Unreleased
-==========
+v0.9.0 (2021-02-05)
+===================
 
 Added
 -----
@@ -16,21 +16,19 @@ Added
     - ``Makefile`` for selected management commands (#989)
 - **Irodsadmin**
     - Add app for iRODS data administration (#972)
-    - ``irodsorphans`` management command (#972, #997, #1035)
-    - Increased output of ``irodsorphans`` command (#1045)
+    - ``irodsorphans`` management command (#972, #997, #1035, #1045)
 - **Irodsbackend**
     - ``get_query()`` helper for ``SpecificQuery`` initialization (#1003)
     - Support for multi-term search (#1065)
 - **Landingzones**
     - Zone UUID clipboard copying link (#970)
-    - Add ``inactivezones`` management command (#1010)
-    - Extended output of ``inactivatezones`` command (#1046)
+    - ``inactivezones`` management command (#1010, #1046)
 - **Ontologyaccess**
     - Add site app for ontology storage and access (#937, #947)
-    - Add ``importobo`` and ``importomim`` management commands (#937, #980)
-    - Add ``ontologyaccess_backend`` backend plugin (#958)
+    - ``importobo`` and ``importomim`` management commands (#937, #980)
+    - ``ontologyaccess_backend`` backend plugin (#958)
 - **Samplesheets**
-    - Add ``microarray`` assay app (#941)
+    - ``microarray`` assay app (#941)
     - ``_update_cache_rows()`` helper for assay app plugins (#954)
     - ``NodeMixin`` for node field/header helpers (#922)
     - Ontology term editing (#688, #699)
@@ -39,7 +37,6 @@ Added
     - ``SampleDataFileExistsAPIView`` for querying file status by checksum (#1003)
     - Track hub and iRODS ticket support for UCSC Genome Browser integration (#238)
     - Django setting ``SHEETS_ONTOLOGY_URL_SKIP`` for template skip patterns (#1022)
-    - Prevent insertion of identical rows (#1023)
     - Support for multi-term search (#1065)
 
 Changed
@@ -52,7 +49,7 @@ Changed
     - Upgrade to python-irodsclient v0.8.6 (#1009, #1058)
     - Upgrade to django-sodar-core v0.9.0 (#1051)
     - Refactor ``Project.get_full_title()`` usage (#1062)
-    - Update iRODS install instructions in `docs_dev` (#1028)
+    - Update iRODS install instructions in ``docs_dev`` (#1028)
 - **Irodsbackend**
     - Standardize Ajax view output (#841)
     - Support ``name_like`` as a list in ``get_objs_recursively()`` (#1065)
@@ -66,9 +63,10 @@ Changed
     - Refactor recognizing ontology/unit columns in rendering (#962)
     - Disable "Finish Editing" link with unsaved rows (#987)
     - General vue app refactoring (#747)
+    - Prevent insertion of identical rows (#1023)
     - Move iRODS content setup for ajax views to ``plugins.get_irods_content()``
     - Rename Ajax views and standardize output (#857, #858)
-    - Change default value of `allow_editing` to `True` (#1069)
+    - Change default value of ``allow_editing`` to ``True`` (#1069)
 
 Fixed
 -----

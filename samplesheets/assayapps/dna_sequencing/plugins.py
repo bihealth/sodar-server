@@ -63,8 +63,10 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
     display_row_links = True
 
     def get_row_path(self, row, table, assay, assay_path):
-        """Return iRODS path for an assay row in a sample sheet. If None,
+        """
+        Return iRODS path for an assay row in a sample sheet. If None,
         display default path.
+
         :param row: List of dicts (a row returned by SampleSheetTableBuilder)
         :param table: Full table with headers (dict returned by
                       SampleSheetTableBuilder)
@@ -82,7 +84,8 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
 
     def update_row(self, row, table, assay):
         """
-        Update render table row with e.g. links. Return the modified row
+        Update render table row with e.g. links. Return the modified row.
+
         :param row: Original row (list of dicts)
         :param table: Full table (dict)
         :param assay: Assay object

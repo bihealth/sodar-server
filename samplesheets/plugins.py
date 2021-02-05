@@ -544,7 +544,8 @@ class SampleSheetStudyPluginPoint(PluginPoint):
 
 def get_study_plugin(plugin_name):
     """
-    Return active study plugin
+    Return active study plugin.
+
     :param plugin_name: Plugin name (string)
     :return: SampleSheetStudyPlugin object or None if not found
     """
@@ -557,7 +558,8 @@ def get_study_plugin(plugin_name):
 
 def find_study_plugin(config_name):
     """
-    Find active study plugin with a config name
+    Find active study plugin with a config name.
+
     :param config_name: Configuration name (string)
     :return: SampleSheetStudyPlugin object or None if not found
     """
@@ -615,7 +617,8 @@ class SampleSheetAssayPluginPoint(PluginPoint):
 
     def get_assay_path(self, assay):
         """
-        Helper for getting the assay path
+        Helper for getting the assay path.
+
         :param assay: Assay object
         :return: Full iRODS path for the assay
         """
@@ -627,8 +630,10 @@ class SampleSheetAssayPluginPoint(PluginPoint):
         return irods_backend.get_path(assay)
 
     def get_row_path(self, row, table, assay, assay_path):
-        """Return iRODS path for an assay row in a sample sheet. If None,
+        """
+        Return iRODS path for an assay row in a sample sheet. If None,
         display default path.
+
         :param row: List of dicts (a row returned by SampleSheetTableBuilder)
         :param table: Full table with headers (dict returned by
                       SampleSheetTableBuilder)
@@ -641,7 +646,8 @@ class SampleSheetAssayPluginPoint(PluginPoint):
 
     def update_row(self, row, table, assay):
         """
-        Update render table row with e.g. links. Return the modified row
+        Update render table row with e.g. links. Return the modified row.
+
         :param row: Original row (list of dicts)
         :param table: Full table (list of lists)
         :param assay: Assay object
@@ -763,7 +769,8 @@ class SampleSheetAssayPluginPoint(PluginPoint):
 
 def get_assay_plugin(plugin_name):
     """
-    Return active assay plugin
+    Return active assay plugin.
+
     :param plugin_name: Plugin name (string)
     :return: SampleSheetAssayPlugin object or None if not found
     """
@@ -776,7 +783,8 @@ def get_assay_plugin(plugin_name):
 
 def find_assay_plugin(measurement_type, technology_type):
     """
-    Find active assay plugin with a measurement type and technology type
+    Find active assay plugin with a measurement type and technology type.
+
     :param measurement_type: Measurement type (string or ontology dict)
     :param technology_type: Technology type (string or ontology dict)
     :return: SampleSheetAssayPlugin object or None if not found

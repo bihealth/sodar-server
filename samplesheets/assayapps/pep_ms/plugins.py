@@ -8,6 +8,8 @@ from samplesheets.plugins import SampleSheetAssayPluginPoint
 
 # Local constants
 APP_NAME = 'samplesheets.assayapps.pep_ms'
+RAW_DATA_COLL = 'RawData'
+MAX_QUANT_COLL = 'MaxQuantResults'
 
 
 class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
@@ -50,15 +52,11 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
     #: Toggle displaying of row-based iRODS links in the assay table
     display_row_links = False
 
-    #: Raw data collection name
-    raw_data_coll = 'RawData'
-
-    #: MaxQuant results collection name
-    max_quant_coll = 'MaxQuantResults'
-
     def get_row_path(self, row, table, assay, assay_path):
-        """Return iRODS path for an assay row in a sample sheet. If None,
+        """
+        Return iRODS path for an assay row in a sample sheet. If None,
         display default path.
+
         :param row: List of dicts (a row returned by SampleSheetTableBuilder)
         :param table: Full table with headers (dict returned by
                       SampleSheetTableBuilder)
@@ -67,11 +65,12 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
         :return: String with full iRODS path or None
         """
         # TODO: Alternatives for RawData?
-        return assay_path + '/' + self.raw_data_coll
+        return assay_path + '/' + RAW_DATA_COLL
 
     def update_row(self, row, table, assay):
         """
-        Update render table row with e.g. links. Return the modified row
+        Update render table row with e.g. links. Return the modified row.
+
         :param row: Original row (list of dicts)
         :param table: Full table (dict)
         :param assay: Assay object
@@ -115,7 +114,7 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
             ):
                 # We assume all files to be in RawData
                 row[i]['link'] = (
-                    base_url + '/' + self.raw_data_coll + '/' + row[i]['value']
+                    base_url + '/' + RAW_DATA_COLL + '/' + row[i]['value']
                 )
 
             # Process parameter files
@@ -127,7 +126,7 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
                 and header['value'].lower() == 'analysis database file'
             ):
                 row[i]['link'] = (
-                    base_url + '/' + self.max_quant_coll + '/' + row[i]['value']
+                    base_url + '/' + MAX_QUANT_COLL + '/' + row[i]['value']
                 )
             '''
 
@@ -145,11 +144,11 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
             {
                 'id': 'raw_data',
                 'label': 'Raw Data',
-                'path': assay_path + '/' + self.raw_data_coll,
+                'path': assay_path + '/' + RAW_DATA_COLL,
             },
             {
                 'id': 'maxquant_results',
                 'label': 'MaxQuant Results',
-                'path': assay_path + '/' + self.max_quant_coll,
+                'path': assay_path + '/' + RAW_DATA_COLL,
             },
         ]
