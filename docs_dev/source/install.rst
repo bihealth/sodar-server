@@ -145,11 +145,9 @@ environment in
 As a downside, the environment does not currently provide permanent storage for
 the default iRODS server.
 
-If you want to set up an iRODS server manually, it must be configured with the
-`omics.re <https://cubi-gitlab.bihealth.org/CUBI_Operations/Ansible_Playbooks/blob/master/roles/cubi.irods-setup/files/etc/irods/omics.re>`_
-rule set file and MD5 set as the default hash scheme in ``server_config.json``.
-In the Docker environment setup CUBI Ansible playbooks these settings are
-already pre-configured.
+If you want to set up an iRODS server locally, you must have ``MD5`` set as the
+default hash scheme in ``server_config.json``. In the Docker environment setup
+CUBI Ansible playbooks this is already pre-configured.
 
 SODAR Taskflow
 --------------

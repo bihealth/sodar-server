@@ -52,9 +52,12 @@ Changed
     - Upgrade to python-irodsclient v0.8.6 (#1009, #1058)
     - Upgrade to django-sodar-core v0.9.0 (#1051)
     - Refactor ``Project.get_full_title()`` usage (#1062)
+    - Update iRODS install instructions in `docs_dev` (#1028)
 - **Irodsbackend**
     - Standardize Ajax view output (#841)
     - Support ``name_like`` as a list in ``get_objs_recursively()`` (#1065)
+- **Irodsinfo**
+    - Update iCommands instructions (#1028)
 - **Samplesheets**
     - Display assay plugin icon for all users with sheet edit permissions (#940)
     - Refactor assay row cache updating (#954)
