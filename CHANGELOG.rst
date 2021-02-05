@@ -68,6 +68,7 @@ Changed
     - General vue app refactoring (#747)
     - Move iRODS content setup for ajax views to ``plugins.get_irods_content()``
     - Rename Ajax views and standardize output (#857, #858)
+    - Change default value of `allow_editing` to `True` (#1069)
 
 Fixed
 -----

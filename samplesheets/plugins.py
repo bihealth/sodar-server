@@ -67,7 +67,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
             'description': 'Allow editing of projet sample sheets by '
             'authorized users',
             'user_modifiable': True,
-            'default': False,
+            'default': True,
         },
         'display_config': {
             'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT_USER'],
