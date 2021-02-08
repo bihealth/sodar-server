@@ -5,6 +5,16 @@ Changelog for the SODAR Django site. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+Unreleased
+==========
+
+Fixed
+-----
+
+- **Samplesheets**
+    - MaxQuant results not correctly linked in ``pep_ms`` assay app (#1072)
+
+
 v0.9.0 (2021-02-05)
 ===================
 

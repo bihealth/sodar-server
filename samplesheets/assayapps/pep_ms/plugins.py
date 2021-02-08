@@ -149,6 +149,6 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
             {
                 'id': 'maxquant_results',
                 'label': 'MaxQuant Results',
-                'path': assay_path + '/' + RAW_DATA_COLL,
+                'path': assay_path + '/' + MAX_QUANT_COLL,
             },
         ]
