@@ -56,6 +56,8 @@ SHEET_NAME_MINIMAL = 'i_minimal.zip'
 SHEET_PATH_MINIMAL = SHEET_DIR + SHEET_NAME_MINIMAL
 SHEET_NAME_CRITICAL = 'BII-I-1_critical.zip'
 SHEET_PATH_CRITICAL = SHEET_DIR_SPECIAL + SHEET_NAME_CRITICAL
+SHEET_NAME_EMPTY_ASSAY = 'i_small_assay_empty.zip'
+SHEET_PATH_EMPTY_ASSAY = SHEET_DIR_SPECIAL + SHEET_NAME_EMPTY_ASSAY
 SOURCE_NAME = '0815'
 SOURCE_NAME_FAIL = 'oop5Choo'
 USER_PASSWORD = 'password'
@@ -439,6 +441,27 @@ class TestSampleSheetImportView(TestViewsBase):
                 ),
                 values,
             )
+
+        # Assert postconditions
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Investigation.objects.all().count(), 0)
+
+    def test_post_empty_assay(self):
+        """Test posting an ISAtab with an empty assay table (should fail)"""
+
+        # Assert precondition
+        self.assertEqual(Investigation.objects.all().count(), 0)
+
+        with open(SHEET_PATH_EMPTY_ASSAY, 'rb') as file:
+            with self.login(self.user):
+                values = {'file_upload': file}
+                response = self.client.post(
+                    reverse(
+                        'samplesheets:import',
+                        kwargs={'project': self.project.sodar_uuid},
+                    ),
+                    values,
+                )
 
         # Assert postconditions
         self.assertEqual(response.status_code, 302)

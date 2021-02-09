@@ -419,6 +419,15 @@ class SampleSheetIO:
         material_vals = []
         study = cls._get_study(db_parent)
 
+        # Fail if attempting to import an empty table
+        if len(materials.values()) == 0:
+            raise SampleSheetImportException(
+                'No materials in {} "{}": Importing sheets with tables '
+                'containing zero lines is currently not supported.'.format(
+                    db_parent.__class__.__name__.lower(), db_parent.file_name
+                )
+            )
+
         for m in materials.values():
             item_type = MATERIAL_TYPE_MAP[m.type]
 

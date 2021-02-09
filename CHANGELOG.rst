@@ -8,6 +8,12 @@ Changelog for the SODAR Django site. Loosely follows the
 Unreleased
 ==========
 
+Changed
+-------
+
+- **Samplesheets**
+    - Fail gracefully for ISAtab import with empty tables (#903, #1075)
+
 Fixed
 -----
 
