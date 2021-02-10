@@ -7,6 +7,7 @@ from urllib.parse import urlencode
 from zipfile import ZipFile
 
 from django.conf import settings
+from django.contrib.messages import get_messages
 from django.test import override_settings
 from django.urls import reverse
 
@@ -18,7 +19,7 @@ from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
 from projectroles.utils import build_secret
 
 from samplesheets.io import SampleSheetIO
-from samplesheets.models import Investigation, ISATab
+from samplesheets.models import Investigation, Assay, ISATab
 from samplesheets.sheet_config import SheetConfigAPI
 from samplesheets.tests.test_io import (
     SampleSheetIOMixin,
@@ -26,6 +27,7 @@ from samplesheets.tests.test_io import (
     SHEET_DIR_SPECIAL,
 )
 from samplesheets.tests.test_sheet_config import CONFIG_PATH_DEFAULT
+from samplesheets.views import SampleSheetImportMixin
 
 
 app_settings = AppSettingAPI()
@@ -58,6 +60,8 @@ SHEET_NAME_CRITICAL = 'BII-I-1_critical.zip'
 SHEET_PATH_CRITICAL = SHEET_DIR_SPECIAL + SHEET_NAME_CRITICAL
 SHEET_NAME_EMPTY_ASSAY = 'i_small_assay_empty.zip'
 SHEET_PATH_EMPTY_ASSAY = SHEET_DIR_SPECIAL + SHEET_NAME_EMPTY_ASSAY
+SHEET_NAME_NO_PLUGIN_ASSAY = 'i_small_assay_no_plugin.zip'
+SHEET_PATH_NO_PLUGIN_ASSAY = SHEET_DIR_SPECIAL + SHEET_NAME_NO_PLUGIN_ASSAY
 SOURCE_NAME = '0815'
 SOURCE_NAME_FAIL = 'oop5Choo'
 USER_PASSWORD = 'password'
@@ -147,7 +151,7 @@ class TestProjectSheetsView(TestViewsBase):
             self.assertNotIn('tables', response.context)
 
 
-class TestSampleSheetImportView(TestViewsBase):
+class TestSampleSheetImportView(SampleSheetImportMixin, TestViewsBase):
     """Tests for the investigation import view"""
 
     def test_render(self):
@@ -466,6 +470,31 @@ class TestSampleSheetImportView(TestViewsBase):
         # Assert postconditions
         self.assertEqual(response.status_code, 302)
         self.assertEqual(Investigation.objects.all().count(), 0)
+
+    def test_post_no_plugin_assay(self):
+        """Test posting an ISAtab with an assay without plugin"""
+
+        # Assert precondition
+        self.assertEqual(Investigation.objects.all().count(), 0)
+
+        with open(SHEET_PATH_NO_PLUGIN_ASSAY, 'rb') as file:
+            with self.login(self.user):
+                values = {'file_upload': file}
+                response = self.client.post(
+                    reverse(
+                        'samplesheets:import',
+                        kwargs={'project': self.project.sodar_uuid},
+                    ),
+                    values,
+                )
+
+        # Assert postconditions
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Investigation.objects.all().count(), 1)
+        self.assertEqual(
+            list(get_messages(response.wsgi_request))[1].message,
+            self.get_assay_plugin_warning(Assay.objects.all().first()),
+        )
 
 
 class TestSampleSheetExcelExportView(TestViewsBase):

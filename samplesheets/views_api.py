@@ -110,10 +110,8 @@ class IrodsCollsCreateAPIView(
         investigation = Investigation.objects.filter(
             project__sodar_uuid=self.kwargs.get('project'), active=True
         ).first()
-
         if not investigation:
             raise ValidationError('{}Investigation not found'.format(ex_msg))
-
         # TODO: TBD: Also allow updating?
         if investigation.irods_status:
             raise ValidationError(
@@ -122,7 +120,6 @@ class IrodsCollsCreateAPIView(
 
         try:
             self._create_colls(investigation)
-
         except Exception as ex:
             raise APIException('{}{}'.format(ex_msg, ex))
 
@@ -157,11 +154,10 @@ class SampleSheetISAExportAPIView(
         investigation = Investigation.objects.filter(
             project=project, active=True
         ).first()
-        export_format = 'json'
-
         if not investigation:
             raise NotFound()
 
+        export_format = 'json'
         if self.request.get_full_path() == reverse(
             'samplesheets:api_export_zip',
             kwargs={'project': project.sodar_uuid},
@@ -170,7 +166,6 @@ class SampleSheetISAExportAPIView(
 
         try:
             return self.get_isa_export(project, request, export_format)
-
         except Exception as ex:
             raise APIException('Unable to export ISAtab: {}'.format(ex))
 
@@ -188,6 +183,11 @@ class SampleSheetImportAPIView(
     **URL:** ``/samplesheets/api/import/{Project.sodar_uuid}``
 
     **Methods:** ``POST``
+
+    **Return:**
+
+    - ``detail``: Detail of project success (string)
+    - ``sodar_warnings``: SODAR import issue warnings (list of srings, optional)
     """
 
     http_method_names = ['post']
@@ -209,20 +209,16 @@ class SampleSheetImportAPIView(
         # Zip file handling
         if len(request.FILES) == 1:
             file = request.FILES[next(iter(request.FILES))]
-
             try:
                 zip_file = sheet_io.get_zip_file(file)
-
             except OSError as ex:
                 raise ParseError('Failed to parse zip archive: {}'.format(ex))
-
             isa_data = sheet_io.get_isa_from_zip(zip_file)
 
         # Multi-file handling
         else:
             try:
                 isa_data = sheet_io.get_isa_from_files(request.FILES.values())
-
             except Exception as ex:
                 raise ParseError('Failed to parse TSV files: {}'.format(ex))
 
@@ -240,7 +236,6 @@ class SampleSheetImportAPIView(
                 replace=True if old_inv else False,
                 replace_uuid=old_inv.sodar_uuid if old_inv else None,
             )
-
         except Exception as ex:
             self.handle_import_exception(ex, tl_event, ui_mode=False)
             raise APIException(str(ex))
@@ -261,10 +256,8 @@ class SampleSheetImportAPIView(
                     tl_event=tl_event,
                 )
                 ex_msg = None
-
             except Exception as ex:
                 ex_msg = str(ex)
-
             if ex_msg or not investigation:
                 raise ParseError(
                     'Sample sheet replacing failed: {}'.format(
@@ -285,14 +278,17 @@ class SampleSheetImportAPIView(
             isa_version=isa_version,
         )
 
-        return Response(
-            {
-                'detail': 'Sample sheets {}d for project "{}" ({})'.format(
-                    action, project.title, project.sodar_uuid
-                )
-            },
-            status=status.HTTP_200_OK,
-        )
+        ret_data = {
+            'detail': 'Sample sheets {}d for project "{}" ({})'.format(
+                action, project.title, project.sodar_uuid
+            )
+        }
+        no_plugin_assays = self.get_assays_without_plugins(investigation)
+        if no_plugin_assays:
+            ret_data['sodar_warnings'] = [
+                self.get_assay_plugin_warning(a) for a in no_plugin_assays
+            ]
+        return Response(ret_data, status=status.HTTP_200_OK)
 
 
 class SampleDataFileExistsAPIView(SODARAPIBaseMixin, APIView):
@@ -320,12 +316,9 @@ class SampleDataFileExistsAPIView(SODARAPIBaseMixin, APIView):
     def get(self, request, *args, **kwargs):
         if not settings.ENABLE_IRODS:
             raise APIException('iRODS not enabled')
-
         irods_backend = get_backend_api('omics_irods')
-
         if not irods_backend:
             raise APIException('iRODS backend not enabled')
-
         c = request.query_params.get('checksum')
 
         if not c or not re.match(MD5_RE, c):
@@ -383,7 +376,6 @@ class RemoteSheetGetAPIView(APIView):
             target_site = RemoteSite.objects.get(
                 mode=SITE_MODE_TARGET, secret=secret
             )
-
         except RemoteSite.DoesNotExist:
             return Response('Remote site not found, unauthorized', status=401)
 
@@ -403,7 +395,6 @@ class RemoteSheetGetAPIView(APIView):
             investigation = Investigation.objects.get(
                 project=target_project.get_project(), active=True
             )
-
         except Investigation.DoesNotExist:
             return Response(
                 'No ISA investigation found for project', status=404
@@ -419,19 +410,15 @@ class RemoteSheetGetAPIView(APIView):
             for study in investigation.studies.all():
                 try:
                     tables = tb.build_study_tables(study)
-
                 except Exception as ex:
                     return Response(str(ex), status=500)
-
                 ret['studies'][str(study.sodar_uuid)] = tables
 
         # Original ISAtab
         else:
             sheet_io = SampleSheetIO()
-
             try:
                 ret = sheet_io.export_isa(investigation)
-
             except Exception as ex:
                 return Response(str(ex), status=500)
 

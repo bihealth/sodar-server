@@ -12,10 +12,14 @@ from projectroles.tests.test_models import RemoteSiteMixin, RemoteProjectMixin
 from projectroles.tests.test_views_api import TestAPIViewsBase
 
 from samplesheets.io import SampleSheetIO
-from samplesheets.models import Investigation, GenericMaterial, ISATab
+from samplesheets.models import Investigation, Assay, GenericMaterial, ISATab
 from samplesheets.rendering import SampleSheetTableBuilder
 from samplesheets.sheet_config import SheetConfigAPI
-from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
+from samplesheets.tests.test_io import (
+    SampleSheetIOMixin,
+    SHEET_DIR,
+    SHEET_DIR_SPECIAL,
+)
 from samplesheets.tests.test_views import (
     TestViewsBase,
     REMOTE_SITE_NAME,
@@ -23,6 +27,7 @@ from samplesheets.tests.test_views import (
     REMOTE_SITE_DESC,
     REMOTE_SITE_SECRET,
 )
+from samplesheets.views import SampleSheetImportMixin
 
 
 # SODAR constants
@@ -35,6 +40,7 @@ SHEET_TSV_DIR = SHEET_DIR + 'i_small2/'
 SHEET_PATH = SHEET_DIR + 'i_small2.zip'
 SHEET_PATH_EDITED = SHEET_DIR + 'i_small2_edited.zip'
 SHEET_PATH_ALT = SHEET_DIR + 'i_small2_alt.zip'
+SHEET_PATH_NO_PLUGIN_ASSAY = SHEET_DIR_SPECIAL + 'i_small_assay_no_plugin.zip'
 IRODS_FILE_MD5 = '0b26e313ed4a7ca6904b0e9369e5b957'
 
 
@@ -104,7 +110,9 @@ class TestInvestigationRetrieveAPIView(TestSampleSheetAPIBase):
         self.assertEqual(json.loads(response.content), expected)
 
 
-class TestSampleSheetImportAPIView(TestSampleSheetAPIBase):
+class TestSampleSheetImportAPIView(
+    SampleSheetImportMixin, TestSampleSheetAPIBase
+):
     """Tests for SampleSheetImportAPIView"""
 
     def setUp(self):
@@ -398,6 +406,34 @@ class TestSampleSheetImportAPIView(TestSampleSheetAPIBase):
             Investigation.objects.filter(project=self.project).count(), 1
         )
         self.assertEqual(ISATab.objects.filter(project=self.project).count(), 1)
+
+    def test_post_no_plugin_assay(self):
+        """Test post() with an assay without plugin"""
+
+        # Assert preconditions
+        self.assertEqual(
+            Investigation.objects.filter(project=self.project).count(), 0
+        )
+
+        url = reverse(
+            'samplesheets:api_import',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+
+        with open(SHEET_PATH_NO_PLUGIN_ASSAY, 'rb') as file:
+            post_data = {'file': file}
+            response = self.request_knox(
+                url, method='POST', format='multipart', data=post_data
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            Investigation.objects.filter(project=self.project).count(), 1
+        )
+        self.assertEqual(
+            response.data['sodar_warnings'],
+            [self.get_assay_plugin_warning(Assay.objects.all().first())],
+        )
 
 
 class TestSampleSheetISAExportAPIView(TestSampleSheetAPIBase):

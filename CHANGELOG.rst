@@ -8,17 +8,31 @@ Changelog for the SODAR Django site. Loosely follows the
 Unreleased
 ==========
 
+Added
+-----
+
+- **Samplesheets**
+    - Warning for unrecognized assay plugin in sample sheet import (#1070)
+
 Changed
 -------
 
 - **Samplesheets**
     - Fail gracefully for ISAtab import with empty tables (#903, #1075)
+    - Implement study/assay app retrieval in model ``get_plugin()`` helpers (#1076)
 
 Fixed
 -----
 
 - **Samplesheets**
     - MaxQuant results not correctly linked in ``pep_ms`` assay app (#1072)
+
+Removed
+-------
+
+- **Samplesheets**
+    - ``find_study_plugin()`` helper, use ``Study.get_plugin()`` instead (#1076)
+    - ``find_assay_plugin()`` helper, use ``Assay.get_plugin()`` instead (#1076)
 
 
 v0.9.0 (2021-02-05)

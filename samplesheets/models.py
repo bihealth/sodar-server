@@ -18,6 +18,7 @@ from samplesheets.utils import (
     get_alt_names,
     get_comment,
     get_config_name,
+    get_isa_field_name,
     ALT_NAMES_COUNT,
 )
 
@@ -361,6 +362,14 @@ class Study(BaseSampleSheet):
             study=self, item_type='SOURCE'
         ).order_by('name')
 
+    def get_plugin(self):
+        """Return active study app plugin or None if not found"""
+        from samplesheets.plugins import SampleSheetStudyPluginPoint
+
+        for plugin in SampleSheetStudyPluginPoint.get_plugins():
+            if plugin.config_name == self.investigation.get_configuration():
+                return plugin
+
 
 # Protocol ---------------------------------------------------------------------
 
@@ -491,6 +500,21 @@ class Assay(BaseSampleSheet):
     def get_display_name(self):
         """Return display name for assay"""
         return ' '.join(s for s in self.get_name().split('_')).title()
+
+    def get_plugin(self):
+        """
+        Get active assay app plugin or None if not found.
+        """
+        # TODO: Log warning if there are multiple plugins found?
+        from samplesheets.plugins import SampleSheetAssayPluginPoint
+
+        search_fields = {
+            'measurement_type': get_isa_field_name(self.measurement_type),
+            'technology_type': get_isa_field_name(self.technology_type),
+        }
+        for plugin in SampleSheetAssayPluginPoint.get_plugins():
+            if search_fields in plugin.assay_fields:
+                return plugin
 
 
 # Materials and data files -----------------------------------------------------

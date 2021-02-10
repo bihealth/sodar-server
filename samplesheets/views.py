@@ -57,6 +57,7 @@ from samplesheets.utils import (
     compare_inv_replace,
     get_sheets_url,
     write_excel_table,
+    get_isa_field_name,
 )
 
 
@@ -117,13 +118,11 @@ class SampleSheetImportMixin:
         :return: ProjectEvent object
         """
         timeline = get_backend_api('timeline_backend')
-
         if not timeline:
             return None
 
         if replace:
             tl_desc = 'replace previous investigation with {investigation}'
-
         else:
             tl_desc = 'create investigation {investigation}'
 
@@ -249,13 +248,10 @@ class SampleSheetImportMixin:
                 ex_msg = _add_crits(
                     'Investigation', ex.args[1]['investigation'], ex_msg
                 )
-
                 for k, v in ex.args[1]['studies'].items():
                     ex_msg = _add_crits(k, v, ex_msg)
-
                 for k, v in ex.args[1]['assays'].items():
                     ex_msg = _add_crits(k, v, ex_msg)
-
                 ex_msg += '</ul>'
 
             if ui_mode:
@@ -265,7 +261,6 @@ class SampleSheetImportMixin:
             ex_msg = 'ISAtab import failed: {}'.format(ex)
             extra_data = None
             logger.error(ex_msg)
-
             if ui_mode:
                 messages.error(self.request, ex_msg)
 
@@ -284,7 +279,6 @@ class SampleSheetImportMixin:
     ):
         project = investigation.project
         success_msg = ''
-
         # Set current import active status to True
         investigation.active = True
         investigation.save()
@@ -309,7 +303,6 @@ class SampleSheetImportMixin:
                 if action == 'restore'
                 else 'ISAtab import',
             )
-
             if investigation.parser_warnings:
                 success_msg += (
                     ' (<strong>Note:</strong> '
@@ -331,7 +324,6 @@ class SampleSheetImportMixin:
                     name='display_config',
                     project=project,
                 ).delete()
-
             else:
                 logger.debug('Keeping existing configurations')
                 sheet_config = app_settings.get_app_setting(
@@ -350,7 +342,6 @@ class SampleSheetImportMixin:
             try:
                 conf_api.validate_sheet_config(sheet_config)
                 conf_api.restore_sheet_config(investigation, sheet_config)
-
             except ValueError:
                 sheet_config_valid = False
 
@@ -400,15 +391,35 @@ class SampleSheetImportMixin:
                 project_uuid=str(project.sodar_uuid),
                 user_uuid=str(self.request.user.sodar_uuid),
             )
-
             if ui_mode:
                 success_msg += ', initiated iRODS cache update'
 
         if ui_mode:
             messages.success(self.request, mark_safe(success_msg))
-
         logger.info('Sample sheet {} OK'.format(action))
         return investigation
+
+    @classmethod
+    def get_assays_without_plugins(cls, investigation):
+        """Return list of assays with no associated plugins"""
+        ret = []
+        for s in investigation.studies.all():
+            for a in s.assays.all():
+                if not a.get_plugin():
+                    ret.append(a)
+        return ret
+
+    @classmethod
+    def get_assay_plugin_warning(cls, assay):
+        """Return warning message for missing assay plugin"""
+        return (
+            'No plugin found for assay "{}": measurement_type="{}", '
+            'technology_type="{}"'.format(
+                assay.get_display_name(),
+                get_isa_field_name(assay.measurement_type),
+                get_isa_field_name(assay.technology_type),
+            )
+        )
 
 
 class SampleSheetISAExportMixin:
@@ -762,7 +773,6 @@ class SampleSheetImportView(
         # Import via form
         try:
             self.object = form.save()
-
         except Exception as ex:
             self.handle_import_exception(ex, tl_event)
             return redirect(redirect_url)  # Return with error here
@@ -790,13 +800,16 @@ class SampleSheetImportView(
                 .order_by('-date_created')
                 .first()
             )
-
             self.object = self.finalize_import(
                 investigation=self.object,
                 action=form_action,
                 tl_event=tl_event,
                 isa_version=isa_version,
             )
+
+            # Display warnings if assay plugins are not found
+            for a in self.get_assays_without_plugins(self.object):
+                messages.warning(self.request, self.get_assay_plugin_warning(a))
 
         return redirect(redirect_url)
 

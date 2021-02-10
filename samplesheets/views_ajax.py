@@ -225,9 +225,6 @@ class SheetContextAjaxView(SODARBaseProjectAjaxView):
         studies = Study.objects.filter(investigation=inv).order_by('pk')
         irods_backend = get_backend_api('omics_irods', conn=False)
 
-        # Can't import at module root due to circular dependency
-        from .plugins import find_study_plugin, find_assay_plugin
-
         # General context data for Vue app
         ret_data = {
             'configuration': None,
@@ -290,7 +287,7 @@ class SheetContextAjaxView(SODARBaseProjectAjaxView):
         ret_data['studies'] = {}
 
         for s in studies:
-            study_plugin = find_study_plugin(inv.get_configuration())
+            study_plugin = s.get_plugin()
             ret_data['studies'][str(s.sodar_uuid)] = {
                 'display_name': s.get_display_name(),
                 'identifier': s.identifier,
@@ -311,9 +308,7 @@ class SheetContextAjaxView(SODARBaseProjectAjaxView):
 
             # Set up assay data
             for a in s.assays.all().order_by('pk'):
-                assay_plugin = find_assay_plugin(
-                    a.measurement_type, a.technology_type
-                )
+                assay_plugin = a.get_plugin()
                 ret_data['studies'][str(s.sodar_uuid)]['assays'][
                     str(a.sodar_uuid)
                 ] = {
@@ -590,13 +585,7 @@ class StudyLinksAjaxView(SODARBaseProjectAjaxView):
 
     def get(self, request, *args, **kwargs):
         study = Study.objects.filter(sodar_uuid=self.kwargs['study']).first()
-
-        # Get study plugin for shortcut data
-        from .plugins import find_study_plugin
-
-        study_plugin = find_study_plugin(
-            study.investigation.get_configuration()
-        )
+        study_plugin = study.get_plugin()
 
         if not study_plugin:
             return Response(

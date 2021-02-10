@@ -13,7 +13,6 @@ from landingzones.models import LandingZone
 
 # Samplesheets dependency
 from samplesheets.models import Assay, Study
-from samplesheets.plugins import find_assay_plugin
 from samplesheets.rendering import SampleSheetTableBuilder
 from samplesheets.views import TRACK_HUBS_COLL, RESULTS_COLL, MISC_FILES_COLL
 
@@ -49,9 +48,7 @@ def get_assay_subcollections(studies, irods_backend):
 
         for assay in study.assays.all():
             assay_table = study_tables['assays'][str(assay.sodar_uuid)]
-            assay_plugin = find_assay_plugin(
-                assay.measurement_type, assay.technology_type
-            )
+            assay_plugin = assay.get_plugin()
             assay_path = irods_backend.get_path(assay)
 
             if assay_plugin:
@@ -149,7 +146,7 @@ def get_orphans(session, irods_backend, expected, assays):
                 orphans.append(collection.path)
 
     for assay in assays:
-        if not find_assay_plugin(assay.measurement_type, assay.technology_type):
+        if not assay.get_plugin():
             continue
 
         for collection in irods_backend.get_child_colls_by_path(

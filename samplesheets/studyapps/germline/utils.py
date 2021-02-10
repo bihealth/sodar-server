@@ -3,7 +3,6 @@
 from projectroles.plugins import get_backend_api
 
 from samplesheets.models import GenericMaterial
-from samplesheets.plugins import find_assay_plugin
 from samplesheets.utils import get_index_by_header
 from samplesheets.studyapps.utils import FILE_TYPE_SUFFIXES
 
@@ -28,9 +27,7 @@ def get_pedigree_file_path(file_type, source, study_tables):
 
     for assay in source.study.assays.all():
         assay_table = study_tables['assays'][str(assay.sodar_uuid)]
-        assay_plugin = find_assay_plugin(
-            assay.measurement_type, assay.technology_type
-        )
+        assay_plugin = assay.get_plugin()
         assay_path = irods_backend.get_path(assay)
         source_fam = None
 

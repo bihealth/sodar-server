@@ -406,10 +406,8 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         try:
             cache_backend = get_backend_api('sodar_cache')
             irods_backend = get_backend_api('omics_irods')
-
         except Exception:
             return
-
         if not cache_backend or not irods_backend:
             return
 
@@ -430,9 +428,10 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
 
         for assay in assays:
             item_name = 'irods/shortcuts/assay/{}'.format(assay.sodar_uuid)
+            assay_path = irods_backend.get_path(assay)
+            assay_plugin = assay.get_plugin()
 
             # Default assay shortcuts
-            assay_path = irods_backend.get_path(assay)
             cache_data = {
                 'shortcuts': {
                     'results_reports': irods_backend.collection_exists(
@@ -445,10 +444,6 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
             }
 
             # Plugin assay shortcuts
-            assay_plugin = find_assay_plugin(
-                assay.measurement_type, assay.technology_type
-            )
-
             if assay_plugin:
                 plugin_shortcuts = assay_plugin.get_shortcuts(assay) or []
 
@@ -554,20 +549,6 @@ def get_study_plugin(plugin_name):
 
     except SampleSheetStudyPluginPoint.DoesNotExist:
         return None
-
-
-def find_study_plugin(config_name):
-    """
-    Find active study plugin with a config name.
-
-    :param config_name: Configuration name (string)
-    :return: SampleSheetStudyPlugin object or None if not found
-    """
-    for plugin in SampleSheetStudyPluginPoint.get_plugins():
-        if plugin.config_name == config_name:
-            return plugin
-
-    return None
 
 
 # Samplesheets assay sub-app plugin --------------------------------------------
@@ -781,44 +762,15 @@ def get_assay_plugin(plugin_name):
         return None
 
 
-def find_assay_plugin(measurement_type, technology_type):
-    """
-    Find active assay plugin with a measurement type and technology type.
-
-    :param measurement_type: Measurement type (string or ontology dict)
-    :param technology_type: Technology type (string or ontology dict)
-    :return: SampleSheetAssayPlugin object or None if not found
-    """
-
-    # TODO: Log warning if there are multiple plugins found?
-
-    search_fields = {
-        'measurement_type': get_isa_field_name(measurement_type),
-        'technology_type': get_isa_field_name(technology_type),
-    }
-
-    for plugin in SampleSheetAssayPluginPoint.get_plugins():
-        if search_fields in plugin.assay_fields:
-            return plugin
-
-    return None
-
-
 def get_irods_content(inv, study, irods_backend, ret_data):
+    cache_backend = get_backend_api('sodar_cache')
     ret_data = deepcopy(ret_data)
 
     if not (inv.irods_status and irods_backend):
         return ret_data
 
-    # Can't import at module root due to circular dependency
-    from .plugins import find_study_plugin
-    from .plugins import find_assay_plugin
-
-    cache_backend = get_backend_api('sodar_cache')
-
     # Get study plugin for shortcut data
-    study_plugin = find_study_plugin(inv.get_configuration())
-
+    study_plugin = study.get_plugin()
     if study_plugin:
         shortcuts = study_plugin.get_shortcut_column(study, ret_data['tables'])
         ret_data['tables']['study']['shortcuts'] = shortcuts
@@ -827,6 +779,7 @@ def get_irods_content(inv, study, irods_backend, ret_data):
     for a_uuid, a_data in ret_data['tables']['assays'].items():
         assay = Assay.objects.filter(sodar_uuid=a_uuid).first()
         assay_path = irods_backend.get_path(assay)
+        assay_plugin = assay.get_plugin()
         a_data['irods_paths'] = []
 
         # Default shortcuts
@@ -844,10 +797,6 @@ def get_irods_content(inv, study, irods_backend, ret_data):
                 'assay_plugin': False,
             },
         ]
-
-        assay_plugin = find_assay_plugin(
-            assay.measurement_type, assay.technology_type
-        )
 
         if assay_plugin:
             cache_item = cache_backend.get_cache_item(
