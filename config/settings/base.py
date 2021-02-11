@@ -556,6 +556,7 @@ ENABLE_IRODS = env.bool('ENABLE_IRODS', True)
 IRODS_HOST = env.str('IRODS_HOST', '0.0.0.0')
 IRODS_PORT = env.int('IRODS_PORT', 4477)
 IRODS_ZONE = env.str('IRODS_ZONE', 'omicsZone')
+IRODS_ROOT_PATH = env.str('IRODS_ROOT_PATH', None)
 IRODS_USER = env.str('IRODS_USER', 'rods')
 IRODS_PASS = env.str('IRODS_PASS', 'rods')
 IRODS_SAMPLE_COLL = 'sample_data'

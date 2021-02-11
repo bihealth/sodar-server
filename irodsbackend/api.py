@@ -33,13 +33,6 @@ ACCEPTED_PATH_TYPES = [
     'Study',
 ]
 
-PATH_REGEX = {
-    'project': '/{}/'.format(settings.IRODS_ZONE)
-    + 'projects/[a-zA-Z0-9]{2}/(.+?)(?:/|$)',
-    'study': '/study_(.+?)(?:/|$)',
-    'assay': '/assay_(.+?)(?:/|$)',
-}
-
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +49,6 @@ class IrodsAPI:
         # conn = kwargs.get('conn') or True
         self.irods = None
         self.irods_env = {}
-
         if not conn:
             return
 
@@ -69,13 +61,11 @@ class IrodsAPI:
                 logger.debug(
                     'Loaded iRODS env from file: {}'.format(self.irods_env)
                 )
-
             except FileNotFoundError:
                 logger.warning(
                     'iRODS env file not found: connecting with default '
                     'parameters (path={})'.format(settings.IRODS_ENV_PATH)
                 )
-
             except Exception as ex:
                 logger.error(
                     'Unable to read iRODS env file (path={}): {}'.format(
@@ -94,12 +84,10 @@ class IrodsAPI:
                 zone=settings.IRODS_ZONE,
                 **self.irods_env,
             )
-
             # Ensure we have a connection
             self.irods.collections.exists(
                 '/{}/home/{}'.format(settings.IRODS_ZONE, settings.IRODS_USER)
             )
-
         except Exception as ex:
             logger.error(
                 'Unable to connect to iRODS (host={}, port={}): {} ({})'.format(
@@ -147,10 +135,8 @@ class IrodsAPI:
         if path:
             if path[0] != '/':
                 path = '/' + path
-
             if path[-1] == '/':
                 path = path[:-1]
-
         return path
 
     # TODO: Fork python-irodsclient and implement ticket functionality there
@@ -174,7 +160,6 @@ class IrodsAPI:
         with self.irods.pool.get_connection() as conn:
             conn.send(msg)
             response = conn.recv()
-
         return response
 
     ##########
@@ -210,7 +195,6 @@ class IrodsAPI:
                 return '{}_{}'.format(
                     obj.__class__.__name__.lower(), obj.sodar_uuid
                 )
-
             else:
                 return slugify(obj.get_display_name()).replace('-', '_')
 
@@ -232,7 +216,6 @@ class IrodsAPI:
         :raise: ValueError if project is not found
         """
         obj_class = obj.__class__.__name__
-
         if obj_class not in ACCEPTED_PATH_TYPES:
             raise TypeError(
                 'Object of type "{}" not supported! Accepted models: {}'.format(
@@ -242,15 +225,15 @@ class IrodsAPI:
 
         if obj_class == 'Project':
             project = obj
-
         else:
             project = obj.get_project()
-
         if not project:
             raise ValueError('Project not found for given object')
 
         # Base path (project)
-        path = '/{zone}/projects/{uuid_prefix}/{uuid}'.format(
+        rp = settings.IRODS_ROOT_PATH
+        path = '/{zone}/projects/{root_prefix}{uuid_prefix}/{uuid}'.format(
+            root_prefix=rp + '/' if rp else '',
             zone=settings.IRODS_ZONE,
             uuid_prefix=str(project.sodar_uuid)[:2],
             uuid=project.sodar_uuid,
@@ -260,6 +243,7 @@ class IrodsAPI:
         if obj_class == 'Project':
             return path
 
+        # Investigation (sample data root)
         elif obj_class == 'Investigation':
             path += '/{sample_dir}'.format(
                 sample_dir=settings.IRODS_SAMPLE_COLL
@@ -307,8 +291,20 @@ class IrodsAPI:
         """
         if project.__class__.__name__ != 'Project':
             raise ValueError('Argument "project" is not a Project object')
-
         return cls.get_path(project) + '/' + settings.IRODS_SAMPLE_COLL
+
+    @classmethod
+    def get_root_path(cls):
+        """Return the root path for SODAR data"""
+        root_prefix = (
+            '/' + settings.IRODS_ROOT_PATH if settings.IRODS_ROOT_PATH else ''
+        )
+        return '/{}{}'.format(settings.IRODS_ZONE, root_prefix)
+
+    @classmethod
+    def get_projects_path(cls):
+        """Return the SODAR projects collection path"""
+        return cls.get_root_path() + '/projects'
 
     @classmethod
     def get_uuid_from_path(cls, path, obj_type):
@@ -321,15 +317,22 @@ class IrodsAPI:
         :return: String or None
         :raise: ValueError if obj_type is not accepted
         """
+        root_prefix = (
+            settings.IRODS_ROOT_PATH + '/' if settings.IRODS_ROOT_PATH else ''
+        )
+        path_regex = {
+            'project': '/{}/'.format(settings.IRODS_ZONE)
+            + root_prefix
+            + 'projects/[a-zA-Z0-9]{2}/(.+?)(?:/|$)',
+            'study': '/study_(.+?)(?:/|$)',
+            'assay': '/assay_(.+?)(?:/|$)',
+        }
         obj_type = obj_type.lower()
-
-        if obj_type not in PATH_REGEX.keys():
+        if obj_type not in path_regex.keys():
             raise ValueError(
-                'Invalid argument for obj_type ("{}"'.format(obj_type)
+                'Invalid argument for obj_type "{}"'.format(obj_type)
             )
-
-        s = re.search(PATH_REGEX[obj_type], cls._sanitize_coll_path(path))
-
+        s = re.search(path_regex[obj_type], cls._sanitize_coll_path(path))
         if s:
             return s.group(1)
 
@@ -360,7 +363,6 @@ class IrodsAPI:
         """
         if view not in ['list', 'stats']:
             raise ValueError('Invalid type "{}" for view'.format(view))
-
         if method not in ['GET', 'POST']:
             raise ValueError('Invalid method "{}"'.format(method))
 
@@ -369,10 +371,8 @@ class IrodsAPI:
 
         if method == 'GET':
             query_string = {'path': cls._sanitize_coll_path(path)}
-
             if view == 'list':
                 query_string['md5'] = int(md5)
-
             rev_url += '?' + urlencode(query_string)
 
         if absolute and request:
@@ -570,7 +570,6 @@ class IrodsAPI:
 
         try:
             results = query.get_results()
-
             for row in results:
                 ret.append(
                     {
@@ -584,17 +583,14 @@ class IrodsAPI:
                         ),
                     }
                 )
-
         except CAT_NO_ROWS_FOUND:
             pass
-
         except Exception as ex:
             logger.error(
                 'iRODS exception in _get_objs_recursively(): {}'.format(
                     ex.__class__.__name__
                 )
             )
-
         finally:
             query.remove()
 

@@ -5,7 +5,8 @@ from django.template.defaultfilters import filesizeformat
 
 # Projectroles dependency
 from projectroles.plugins import BackendPluginPoint
-from .api import IrodsAPI
+
+from irodsbackend.api import IrodsAPI
 
 
 class BackendPlugin(BackendPluginPoint):
@@ -35,7 +36,6 @@ class BackendPlugin(BackendPluginPoint):
         if settings.ENABLE_IRODS or kwargs.get('conn') is False:
             try:
                 return IrodsAPI(**kwargs)
-
             except Exception:
                 pass  # Exception logged in constructor, return None
 
@@ -47,15 +47,12 @@ class BackendPlugin(BackendPluginPoint):
             return {}
 
         irods_api = IrodsAPI()
-
         try:
             project_stats = irods_api.get_object_stats(
-                '/{}/projects'.format(settings.IRODS_ZONE)
+                irods_api.get_projects_path()
             )
-
         except Exception:
             return {}
-
         return {
             'irods_data_size': {
                 'label': 'Project Data in iRODS',

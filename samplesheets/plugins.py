@@ -251,7 +251,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         if irods_backend and (not search_type or search_type == 'file'):
             try:
                 obj_data = irods_backend.get_objects(
-                    path='/{}/projects'.format(settings.IRODS_ZONE),
+                    path=irods_backend.get_projects_path(),
                     name_like=search_terms,
                     limit=settings.SHEETS_IRODS_LIMIT,
                 )

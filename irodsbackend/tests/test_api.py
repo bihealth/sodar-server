@@ -18,7 +18,7 @@ from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 # Landingzones dependency
 from landingzones.tests.test_models import LandingZoneMixin
 
-from ..api import IrodsAPI
+from irodsbackend.api import IrodsAPI
 
 
 # Global constants
@@ -34,6 +34,7 @@ SHEET_PATH = SHEET_DIR + 'i_small.zip'
 ZONE_TITLE = '20180503_172456_test_zone'
 ZONE_DESC = 'description'
 IRODS_ZONE = settings.IRODS_ZONE
+IRODS_ROOT_PATH = 'sodar/root'
 SAMPLE_COLL = settings.IRODS_SAMPLE_COLL
 LANDING_ZONE_COLL = settings.IRODS_LANDING_ZONE_COLL
 ENV_DIR = SHEET_DIR = os.path.dirname(__file__) + '/data/'
@@ -157,6 +158,18 @@ class TestIrodsbackendAPI(
         path = self.irods_backend.get_path(self.project)
         self.assertEqual(expected, path)
 
+    @override_settings(IRODS_ROOT_PATH=IRODS_ROOT_PATH)
+    def test_get_path_project_root_path(self):
+        """Test get_irods_path() with a Project object and root path"""
+        expected = '/{zone}/projects/{root_path}/{uuid_prefix}/{uuid}'.format(
+            zone=IRODS_ZONE,
+            root_path=IRODS_ROOT_PATH,
+            uuid_prefix=str(self.project.sodar_uuid)[:2],
+            uuid=str(self.project.sodar_uuid),
+        )
+        path = self.irods_backend.get_path(self.project)
+        self.assertEqual(expected, path)
+
     def test_get_path_study(self):
         """Test get_irods_path() with a Study object"""
         expected = (
@@ -223,6 +236,28 @@ class TestIrodsbackendAPI(
         with self.assertRaises(ValueError):
             self.irods_backend.get_sample_path(self.study)
 
+    def test_get_root_path(self):
+        """Test get_root_path() with default settings"""
+        expected = '/' + IRODS_ZONE
+        self.assertEqual(self.irods_backend.get_root_path(), expected)
+
+    @override_settings(IRODS_ROOT_PATH=IRODS_ROOT_PATH)
+    def test_get_root_path_with_path(self):
+        """Test get_root_path() with root path setting"""
+        expected = '/{}/{}'.format(IRODS_ZONE, IRODS_ROOT_PATH)
+        self.assertEqual(self.irods_backend.get_root_path(), expected)
+
+    def test_get_projects_path(self):
+        """Test get_projects_path() with default settings"""
+        expected = '/{}/projects'.format(IRODS_ZONE)
+        self.assertEqual(self.irods_backend.get_projects_path(), expected)
+
+    @override_settings(IRODS_ROOT_PATH=IRODS_ROOT_PATH)
+    def test_get_projects_path_with_root_path(self):
+        """Test get_projects_path() with root path setting"""
+        expected = '/{}/{}/projects'.format(IRODS_ZONE, IRODS_ROOT_PATH)
+        self.assertEqual(self.irods_backend.get_projects_path(), expected)
+
     def test_get_uuid_from_path_assay(self):
         """Test get_uuid_from_path() with an assay path"""
         path = self.irods_backend.get_path(self.assay)
@@ -247,3 +282,10 @@ class TestIrodsbackendAPI(
         path = self.irods_backend.get_path(self.project)
         uuid = self.irods_backend.get_uuid_from_path(path, 'study')
         self.assertIsNone(uuid)
+
+    @override_settings(IRODS_ROOT_PATH=IRODS_ROOT_PATH)
+    def test_get_uuid_from_path_root_path(self):
+        """Test get_uuid_from_path() including root path"""
+        path = self.irods_backend.get_path(self.assay)
+        uuid = self.irods_backend.get_uuid_from_path(path, 'assay')
+        self.assertEqual(uuid, str(self.assay.sodar_uuid))

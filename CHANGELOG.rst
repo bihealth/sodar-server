@@ -11,6 +11,9 @@ Unreleased
 Added
 -----
 
+- **Irodsbackend**
+    - Support for ``IRODS_ROOT_PATH`` setting (#1067)
+    - ``get_root_path()`` and ``get_projects_path()`` helpers (#1067)
 - **Samplesheets**
     - Warning for unrecognized assay plugin in sample sheet import (#1070)
 
