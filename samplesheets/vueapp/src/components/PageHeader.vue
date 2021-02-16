@@ -90,9 +90,16 @@
         <b-dropdown-item
             v-if="!app.sheetsAvailable"
             class="sodar-ss-op-item"
+            id="sodar-ss-op-item-create"
+            :href="'template/select/' + app.projectUuid">
+          <i class="fa fa-fw fa-magic"></i> Create from Template
+        </b-dropdown-item>
+        <b-dropdown-item
+            v-if="!app.sheetsAvailable"
+            class="sodar-ss-op-item"
             id="sodar-ss-op-item-import"
             :href="'import/' + app.projectUuid">
-          <i class="fa fa-fw fa-upload"></i> Import ISAtab
+          <i class="fa fa-fw fa-upload"></i> Import ISA-Tab
         </b-dropdown-item>
         <b-dropdown-item
             v-if="app.sheetsAvailable"
@@ -123,21 +130,21 @@
             class="sodar-ss-op-item"
             id="sodar-ss-op-item-replace"
             :href="'import/' + app.projectUuid">
-          <i class="fa fa-fw fa-upload"></i> Replace ISAtab
+          <i class="fa fa-fw fa-upload"></i> Replace ISA-Tab
         </b-dropdown-item>
         <b-dropdown-item
             v-if="app.sheetsAvailable && !app.windowsOs"
             class="sodar-ss-op-item"
             id="sodar-ss-op-item-export"
             :href="'export/isa/' + app.projectUuid">
-          <i class="fa fa-fw fa-download"></i> Export ISAtab
+          <i class="fa fa-fw fa-download"></i> Export ISA-Tab
         </b-dropdown-item>
         <b-dropdown-item
             v-else-if="app.sheetsAvailable && app.windowsOs"
             class="sodar-ss-op-item"
             id="sodar-ss-op-item-export"
             @click="winExportModal.showModal()">
-          <i class="fa fa-fw fa-download"></i> Export ISAtab
+          <i class="fa fa-fw fa-download"></i> Export ISA-Tab
         </b-dropdown-item>
         <b-dropdown-item
             v-if="app.sheetsAvailable &&

@@ -136,7 +136,7 @@ class SampleSheetISAExportAPIView(
     SampleSheetISAExportMixin, SODARAPIBaseProjectMixin, APIView
 ):
     """
-    Export sample sheets as ISAtab TSV files, either packed in a zip archive or
+    Export sample sheets as ISA-Tab TSV files, either packed in a zip archive or
     wrapped in a JSON structure.
 
     **URL for zip export:** ``/samplesheets/api/export/zip/{Project.sodar_uuid}``
@@ -167,14 +167,14 @@ class SampleSheetISAExportAPIView(
         try:
             return self.get_isa_export(project, request, export_format)
         except Exception as ex:
-            raise APIException('Unable to export ISAtab: {}'.format(ex))
+            raise APIException('Unable to export ISA-Tab: {}'.format(ex))
 
 
 class SampleSheetImportAPIView(
     SampleSheetImportMixin, SODARAPIBaseProjectMixin, APIView
 ):
     """
-    Upload sample sheet as separate ISAtab TSV files or a zip archive. Will
+    Upload sample sheet as separate ISA-Tab TSV files or a zip archive. Will
     replace existing sheets if valid.
 
     The request should be in format of ``multipart/form-data``. Content type
@@ -224,7 +224,7 @@ class SampleSheetImportAPIView(
 
         # Handle import
         tl_event = self.create_timeline_event(
-            project=project, replace=True if old_inv else False
+            project=project, action='replace' if old_inv else 'import'
         )
 
         try:
@@ -364,7 +364,7 @@ class SampleDataFileExistsAPIView(SODARAPIBaseMixin, APIView):
 # TODO: Temporary HACK, should be replaced by proper API view
 class RemoteSheetGetAPIView(APIView):
     """Temporary API view for retrieving the sample sheet as JSON by a target
-    site, either as rendered tables or the original ISAtab"""
+    site, either as rendered tables or the original ISA-Tab"""
 
     permission_classes = (AllowAny,)  # We check the secret in get()/post()
 
@@ -414,7 +414,7 @@ class RemoteSheetGetAPIView(APIView):
                     return Response(str(ex), status=500)
                 ret['studies'][str(study.sodar_uuid)] = tables
 
-        # Original ISAtab
+        # Original ISA-Tab
         else:
             sheet_io = SampleSheetIO()
             try:

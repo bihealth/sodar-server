@@ -145,7 +145,7 @@ class TestSampleSheetImportAPIView(
         self.assertEqual(ISATab.objects.filter(project=self.project).count(), 1)
 
     def test_post_tsv(self):
-        """Test SampleSheetImportAPIView post() with ISAtab tsv files"""
+        """Test SampleSheetImportAPIView post() with ISA-Tab tsv files"""
 
         # Assert preconditions
         self.assertEqual(
@@ -549,7 +549,7 @@ class TestRemoteSheetGetAPIView(
         self.assertEqual(response.data, expected)
 
     def test_get_isatab(self):
-        """Test getting the investigation as ISAtab"""
+        """Test getting the investigation as ISA-Tab"""
         response = self.client.get(
             reverse(
                 'samplesheets:api_remote_get',

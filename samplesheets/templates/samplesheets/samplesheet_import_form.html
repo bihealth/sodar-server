@@ -4,9 +4,9 @@
 
 {% block title %}
   {% if replace_sheets %}
-    Replace Current Sample Sheets with ISAtab
+    Replace Current Sample Sheets with ISA-Tab
   {% else %}
-    Import Sample Sheets from ISAtab
+    Import Sample Sheets from ISA-Tab
   {% endif %}
   into {{ project.title }}
 {% endblock title %}
@@ -26,18 +26,24 @@
 <div class="container-fluid sodar-subtitle-container">
   <h3>
     {% if replace_sheets %}
-      Replace Current Sample Sheets with ISAtab
+      Replace Current Sample Sheets with ISA-Tab
     {% else %}
-      Import Sample Sheets from ISAtab
+      Import Sample Sheets from ISA-Tab
     {% endif %}
   </h3>
 </div>
 
 <div class="container-fluid sodar-page-container">
+  <div class="alert alert-info">
+    Please select an ISA-Tab zip archive or individual files for sample sheet
+    import. Alternatively, you can
+    <a href="{% url 'samplesheets:template_select' project=project.sodar_uuid %}">
+    create sample sheets from a template here</a>.
+  </div>
   {% if replace_sheets and irods_status and not zones_exist %}
     <div class="alert alert-warning">
       <strong>Warning:</strong> Because iRODS collections have already been
-      created, replacing the ISAtab will only be accepted if studies and assays
+      created, replacing the ISA-Tab will only be accepted if studies and assays
       have not been removed. Adding new studies or assays or modifying content
       within existing studies and assays is accepted.
     </div>
@@ -79,7 +85,7 @@
     <div class="row">
       <div class="btn-group ml-auto">
         <a role="button" class="btn btn-secondary"
-           href="{{ request.session.real_referer }}">
+           href="{% url 'samplesheets:project_sheets' project=project.sodar_uuid %}">
           <i class="fa fa-arrow-circle-left"></i> Cancel
         </a>
         {% if replace_sheets and not zones_exist %}

@@ -21,6 +21,16 @@ urls_ui = [
         name='import',
     ),
     url(
+        regex=r'^template/select/(?P<project>[0-9a-f-]+)$',
+        view=views.SheetTemplateSelectView.as_view(),
+        name='template_select',
+    ),
+    url(
+        regex=r'^template/create/(?P<project>[0-9a-f-]+)$',
+        view=views.SheetTemplateCreateFormView.as_view(),
+        name='template_create',
+    ),
+    url(
         regex=r'^export/excel/study/(?P<study>[0-9a-f-]+)$',
         view=views.SampleSheetExcelExportView.as_view(),
         name='export_excel',

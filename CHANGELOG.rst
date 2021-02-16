@@ -16,19 +16,25 @@ Added
     - ``get_root_path()`` and ``get_projects_path()`` helpers (#1067)
 - **Samplesheets**
     - Warning for unrecognized assay plugin in sample sheet import (#1070)
+    - Sheet creation from templates using cubi-tk (#1068)
+    - ``clean_sheet_dir_name()`` helper
 
 Changed
 -------
 
+- **General**
+    - Unify ISA-Tab naming (#1082)
 - **Samplesheets**
     - Fail gracefully for ISAtab import with empty tables (#903, #1075)
     - Implement study/assay app retrieval in model ``get_plugin()`` helpers (#1076)
+    - Change timeline event names for sheet import/create/replace (#1079)
 
 Fixed
 -----
 
 - **Samplesheets**
     - MaxQuant results not correctly linked in ``pep_ms`` assay app (#1072)
+    - Incorrect timeline event for ``sheet_create`` (#1080)
 
 Removed
 -------

@@ -99,7 +99,7 @@ class TestGetSampleColls(TestUtilsBase):
         self.irods_backend = get_backend_api('omics_irods', conn=False)
 
     def test_get_sample_colls(self):
-        """Test get_sample_colls() with a minimal ISAtab example"""
+        """Test get_sample_colls() with a minimal ISA-Tab example"""
         expected = [
             self.irods_backend.get_sub_path(self.study),
             self.irods_backend.get_sub_path(self.assay),

@@ -2,8 +2,8 @@
 
 from django.conf import settings
 from django.urls import reverse
-
 from unittest import skipIf
+from urllib.parse import urlencode
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
@@ -83,6 +83,45 @@ class TestSampleSheetsPermissions(
         bad_users = [self.guest_as.user, self.anonymous, self.user_no_roles]
         self.assert_response(url, good_users, 200)
         self.assert_response(url, bad_users, 302)
+
+    def test_sheet_template_select(self):
+        """Test sheet template select view"""
+        self.investigation.delete()
+        url = reverse(
+            'samplesheets:template_select',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+        good_users = [
+            self.superuser,
+            self.owner_as.user,
+            self.delegate_as.user,
+            self.contributor_as.user,
+        ]
+        bad_users = [self.guest_as.user, self.anonymous, self.user_no_roles]
+        self.assert_response(url, good_users, 200)
+        self.assert_response(url, bad_users, 302)
+
+    def test_sheet_template_create(self):
+        """Test sheet template creation view"""
+        self.investigation.delete()
+        url = (
+            reverse(
+                'samplesheets:template_create',
+                kwargs={'project': self.project.sodar_uuid},
+            )
+            + '?'
+            + urlencode({'sheet_tpl': 'generic'})
+        )
+        good_users = [
+            self.superuser,
+            self.owner_as.user,
+            self.delegate_as.user,
+            self.contributor_as.user,
+        ]
+        # bad_users = [self.guest_as.user, self.anonymous, self.user_no_roles]
+        self.assert_response(url, good_users, 200)
+        # TODO: Test bad_users redirect once sodar_core#635 has been fixed
+        # self.assert_response(url, bad_users, 302)
 
     def test_sheet_export_excel_study(self):
         """Test the project sheets Excel export view for study table"""

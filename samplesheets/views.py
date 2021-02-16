@@ -1,9 +1,9 @@
+from cubi_tk.isa_tpl import _TEMPLATES as TK_TEMPLATES
 import io
 import json
 import logging
 import os
 from packaging import version
-import re
 import zipfile
 
 from django.conf import settings
@@ -22,21 +22,25 @@ from django.views.generic import (
     View,
     UpdateView,
 )
-from projectroles.utils import build_secret
-
 from rest_framework.response import Response
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
 from projectroles.models import Project, SODAR_CONSTANTS, AppSetting
 from projectroles.plugins import get_backend_api
+from projectroles.utils import build_secret
 from projectroles.views import (
     LoggedInPermissionMixin,
     ProjectContextMixin,
     ProjectPermissionMixin,
+    CurrentUserFormMixin,
 )
 
-from samplesheets.forms import SampleSheetImportForm, IrodsAccessTicketForm
+from samplesheets.forms import (
+    SampleSheetImportForm,
+    SheetTemplateCreateForm,
+    IrodsAccessTicketForm,
+)
 from samplesheets.io import (
     SampleSheetIO,
     SampleSheetImportException,
@@ -58,6 +62,7 @@ from samplesheets.utils import (
     get_sheets_url,
     write_excel_table,
     get_isa_field_name,
+    clean_sheet_dir_name,
 )
 
 
@@ -109,28 +114,35 @@ class SampleSheetImportMixin:
     #: Whether configs should be regenerated on sheet replace
     replace_configs = True
 
-    def create_timeline_event(self, project, replace):
+    def create_timeline_event(self, project, action, tpl_name=None):
         """
-        Create timeline event for sample sheet import.
+        Create timeline event for sample sheet import, replace or create.
 
         :param project: Project object
-        :param replace: Boolean
+        :param action: "import", "create" or "replace" (string)
+        :param tpl_name: Optional template name (string)
         :return: ProjectEvent object
         """
+        if action not in ['create', 'import', 'replace']:
+            raise ValueError('Invalid action "{}"'.format(action))
         timeline = get_backend_api('timeline_backend')
         if not timeline:
             return None
 
-        if replace:
+        if action == 'replace':
             tl_desc = 'replace previous investigation with {investigation}'
+        elif action == 'import':
+            tl_desc = 'import investigation {investigation}'
         else:
             tl_desc = 'create investigation {investigation}'
+            if tpl_name:
+                tl_desc += ' from template "{}"'.format(tpl_name)
 
         return timeline.add_event(
             project=project,
             app_name=APP_NAME,
             user=self.request.user,
-            event_name='sheet_' + 'replace' if replace else 'create',
+            event_name='sheet_{}'.format('action'),
             description=tl_desc,
         )
 
@@ -258,7 +270,7 @@ class SampleSheetImportMixin:
                 messages.error(self.request, mark_safe(ex_msg))
 
         else:
-            ex_msg = 'ISAtab import failed: {}'.format(ex)
+            ex_msg = 'ISA-Tab import failed: {}'.format(ex)
             extra_data = None
             logger.error(ex_msg)
             if ui_mode:
@@ -301,7 +313,7 @@ class SampleSheetImportMixin:
                 action.capitalize(),
                 'version {}'.format(isa_version.get_name())
                 if action == 'restore'
-                else 'ISAtab import',
+                else 'ISA-Tab import',
             )
             if investigation.parser_warnings:
                 success_msg += (
@@ -368,7 +380,7 @@ class SampleSheetImportMixin:
             isa_version.data['sheet_config'] = sheet_config
             isa_version.data['display_config'] = display_config
             isa_version.save()
-            logger.info('Sheet configurations added into ISATab version')
+            logger.info('Sheet configurations added into ISA-Tab version')
 
         app_settings.set_app_setting(
             APP_NAME, 'sheet_config', sheet_config, project=project
@@ -423,11 +435,11 @@ class SampleSheetImportMixin:
 
 
 class SampleSheetISAExportMixin:
-    """Mixin for exporting sample sheets in ISAtab format"""
+    """Mixin for exporting sample sheets in ISA-Tab format"""
 
     def get_isa_export(self, project, request, format='zip', version_uuid=None):
         """
-        Export sample sheets as a HTTP response as ISAtab, either in a zipped
+        Export sample sheets as a HTTP response as ISA-Tab, either in a zipped
         archive or wrapped in a JSON structure.
 
         :param project: Project object
@@ -469,7 +481,7 @@ class SampleSheetISAExportMixin:
             < version.parse(TARGET_ALTAMISA_VERSION)
         ):
             raise SampleSheetExportException(
-                'Exporting ISAtabs imported using altamISA < {} is not '
+                'Exporting ISA-Tabs imported using altamISA < {} is not '
                 'supported. Please replace the sheets to enable export.'.format(
                     TARGET_ALTAMISA_VERSION
                 ),
@@ -484,11 +496,8 @@ class SampleSheetISAExportMixin:
 
         if archive_name:
             file_name = archive_name.split('.zip')[0]
-
         else:
-            file_name = re.sub(
-                r'[\s]+', '_', re.sub(r'[^\w\s-]', '', project.title).strip()
-            )
+            file_name = clean_sheet_dir_name(project.title)
 
         if isa_version:
             file_name += '_' + isa_version.date_created.strftime(
@@ -503,10 +512,8 @@ class SampleSheetISAExportMixin:
         if timeline:
             if isa_version:
                 tl_desc = 'export {investigation} version {isatab}'
-
             else:
-                tl_desc = 'export {investigation} as ISAtab'
-
+                tl_desc = 'export {investigation} as ISA-Tab'
             tl_event = timeline.add_event(
                 project=project,
                 app_name=APP_NAME,
@@ -515,13 +522,11 @@ class SampleSheetISAExportMixin:
                 description=tl_desc,
                 classified=True,
             )
-
             tl_event.add_object(
                 obj=investigation,
                 label='investigation',
                 name=investigation.title,
             )
-
             if isa_version:
                 tl_event.add_object(
                     obj=isa_version, label='isatab', name=isa_version.get_name()
@@ -531,10 +536,8 @@ class SampleSheetISAExportMixin:
         try:
             if isa_version:
                 export_data = isa_version.data
-
             else:
                 export_data = sheet_io.export_isa(investigation)
-
             zip_io = None
 
             if format == 'zip':
@@ -588,7 +591,6 @@ class SampleSheetISAExportMixin:
         except Exception as ex:
             if tl_event:
                 tl_event.set_status('FAILED', str(ex))
-
             raise ex
 
 
@@ -710,7 +712,7 @@ class SampleSheetImportView(
     SampleSheetImportMixin,
     FormView,
 ):
-    """Sample sheet ISATab import view"""
+    """Sample sheet ISA-Tab import view"""
 
     permission_required = 'samplesheets.edit_sheet'
     model = Investigation
@@ -766,9 +768,7 @@ class SampleSheetImportView(
         form_kwargs = self.get_form_kwargs()
         form_action = 'replace' if form_kwargs['replace'] else 'create'
         redirect_url = get_sheets_url(project)
-        tl_event = self.create_timeline_event(
-            project, True if form_kwargs['replace'] else False
-        )
+        tl_event = self.create_timeline_event(project, form_action)
 
         # Import via form
         try:
@@ -812,6 +812,151 @@ class SampleSheetImportView(
                 messages.warning(self.request, self.get_assay_plugin_warning(a))
 
         return redirect(redirect_url)
+
+
+class SheetTemplateSelectView(
+    LoginRequiredMixin,
+    LoggedInPermissionMixin,
+    ProjectPermissionMixin,
+    ProjectContextMixin,
+    TemplateView,
+):
+    """Sample sheet template selection view for template-based creation"""
+
+    template_name = 'samplesheets/sheet_template_select.html'
+    permission_required = 'samplesheets.edit_sheet'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        templates = []
+        # HACK: Skip non-working templates in cubi-tk
+        for t in [
+            t
+            for t in TK_TEMPLATES
+            if t.name in settings.SHEETS_ENABLED_TEMPLATES
+        ]:
+            templates.append(
+                {
+                    'name': t.name,
+                    'description': t.description[0].upper() + t.description[1:],
+                }
+            )
+        context['sheet_templates'] = sorted(
+            templates, key=lambda x: x['description']
+        )
+        return context
+
+    def get(self, request, *args, **kwargs):
+        super().get(request, *args, **kwargs)
+        project = self.get_project()
+        investigation = Investigation.objects.filter(project=project).first()
+        if investigation:
+            messages.error(
+                request, 'Sheets already exist in project, creation not allowed'
+            )
+            return redirect(
+                reverse(
+                    'samplesheets:project_sheets',
+                    kwargs={'project': project.sodar_uuid},
+                )
+            )
+        return super().render_to_response(self.get_context_data())
+
+
+class SheetTemplateCreateFormView(
+    LoginRequiredMixin,
+    LoggedInPermissionMixin,
+    ProjectPermissionMixin,
+    ProjectContextMixin,
+    CurrentUserFormMixin,
+    SampleSheetImportMixin,
+    FormView,
+):
+    """Sample sheet ISA-Tab import view"""
+
+    permission_required = 'samplesheets.edit_sheet'
+    form_class = SheetTemplateCreateForm
+    template_name = 'samplesheets/sheet_template_form.html'
+
+    def _get_sheet_template(self):
+        t_name = self.request.GET.get('sheet_tpl')
+        return {t.name: t for t in TK_TEMPLATES}[t_name]
+
+    def get_context_data(self, *args, **kwargs):
+        context = super().get_context_data(*args, **kwargs)
+        sheet_tpl = self._get_sheet_template()
+        context['description'] = (
+            sheet_tpl.description[0].upper() + sheet_tpl.description[1:]
+        )
+        return context
+
+    def get_form_kwargs(self):
+        """Pass kwargs to form"""
+        kwargs = super().get_form_kwargs()
+        kwargs.update(
+            {
+                'project': self.get_project(),
+                'sheet_tpl': self._get_sheet_template(),
+            }
+        )
+        return kwargs
+
+    def form_valid(self, form):
+        project = self.get_project()
+        redirect_url = get_sheets_url(project)
+        tl_event = self.create_timeline_event(
+            project, 'create', tpl_name=self._get_sheet_template()
+        )
+
+        # Create via form
+        try:
+            self.object = form.save()
+        except Exception as ex:
+            self.handle_import_exception(ex, tl_event)
+            return redirect(redirect_url)  # Return with error here
+
+        if tl_event:
+            tl_event.add_object(
+                obj=self.object, label='investigation', name=self.object.title
+            )
+
+        # If all went well, finalize import
+        if self.object:
+            isa_version = (
+                ISATab.objects.filter(investigation_uuid=self.object.sodar_uuid)
+                .order_by('-date_created')
+                .first()
+            )
+            self.object = self.finalize_import(
+                investigation=self.object,
+                action='create',
+                tl_event=tl_event,
+                isa_version=isa_version,
+            )
+
+            # Display warnings if assay plugins are not found
+            for a in self.get_assays_without_plugins(self.object):
+                messages.warning(self.request, self.get_assay_plugin_warning(a))
+
+        return redirect(redirect_url)
+
+    def get(self, request, *args, **kwargs):
+        redirect_url = reverse(
+            'samplesheets:template_select',
+            kwargs={'project': self.get_project().sodar_uuid},
+        )
+        t_name = self.request.GET.get('sheet_tpl')
+
+        if not t_name:
+            messages.error(request, 'Template name not provided.')
+            return redirect(redirect_url)
+        elif t_name not in settings.SHEETS_ENABLED_TEMPLATES:
+            messages.error(
+                request, 'Template "{}" is not supported.'.format(t_name)
+            )
+            return redirect(redirect_url)
+
+        return super().render_to_response(self.get_context_data())
 
 
 class SampleSheetExcelExportView(
@@ -917,12 +1062,12 @@ class SampleSheetISAExportView(
     ProjectContextMixin,
     View,
 ):
-    """Sample sheet table ISAtab export view"""
+    """Sample sheet table ISA-Tab export view"""
 
     permission_required = 'samplesheets.export_sheet'
 
     def get(self, request, *args, **kwargs):
-        """Override get() to return ISAtab files as a ZIP archive"""
+        """Override get() to return ISA-Tab files as a ZIP archive"""
         project = self.get_project()
         version_uuid = kwargs.get('isatab')
 
@@ -941,7 +1086,7 @@ class SampleSheetISAExportView(
 
             messages.error(
                 request,
-                'Unable to export ISAtab{}: {}'.format(
+                'Unable to export ISA-Tab{}: {}'.format(
                     ' version' if version_uuid else '', ex
                 ),
             )
@@ -1071,12 +1216,12 @@ class SampleSheetDeleteView(
             tl_event.set_status('OK')
 
         if delete_success:
-            # Delete ISATab versions
+            # Delete ISA-Tab versions
             isa_versions = ISATab.objects.filter(project=project)
             v_count = isa_versions.count()
             isa_versions.delete()
             logger.debug(
-                'Deleted {} ISATab version{}'.format(
+                'Deleted {} ISA-Tab version{}'.format(
                     v_count, 's' if v_count != 1 else ''
                 )
             )
@@ -1286,7 +1431,7 @@ class SampleSheetVersionRestoreView(
 
         if not isa_version:
             messages.error(
-                request, 'ISATab version not found, unable to restore'
+                request, 'ISA-Tab version not found, unable to restore'
             )
             return redirect(redirect_url)
 

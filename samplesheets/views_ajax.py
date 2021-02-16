@@ -277,7 +277,7 @@ class SheetContextAjaxView(SODARBaseProjectAjaxView):
                 {
                     'level': 'danger',
                     'text': 'This sample sheet has been imported with an '
-                    'old altamISA version (< {}). Please replace the ISAtab '
+                    'old altamISA version (< {}). Please replace the ISA-Tab '
                     'to enable all features and ensure full '
                     'functionality.'.format(TARGET_ALTAMISA_VERSION),
                 }
@@ -1455,7 +1455,7 @@ class SheetRowDeleteAjaxView(BaseSheetEditAjaxView):
 
 
 class SheetEditFinishAjaxView(SODARBaseProjectAjaxView):
-    """View for finishing editing and saving an ISAtab copy of the current
+    """View for finishing editing and saving an ISA-Tab copy of the current
     sample sheet"""
 
     permission_required = 'samplesheets.edit_sheet'
@@ -1478,7 +1478,7 @@ class SheetEditFinishAjaxView(SODARBaseProjectAjaxView):
         try:
             isa_data = sheet_io.export_isa(inv)
 
-            # Save sheet config with ISATab version
+            # Save sheet config with ISA-Tab version
             isa_data['sheet_config'] = app_settings.get_app_setting(
                 APP_NAME, 'sheet_config', project=project
             )
@@ -1493,7 +1493,7 @@ class SheetEditFinishAjaxView(SODARBaseProjectAjaxView):
 
         except Exception as ex:
             logger.error(
-                log_msg + 'Unable to export sheet to ISAtab: {}'.format(ex)
+                log_msg + 'Unable to export sheet to ISA-Tab: {}'.format(ex)
             )
             export_ex = str(ex)
 
@@ -1527,7 +1527,7 @@ class SheetEditFinishAjaxView(SODARBaseProjectAjaxView):
 
         if not export_ex:
             logger.info(
-                log_msg + 'Saved ISATab "{}"'.format(isa_version.get_name())
+                log_msg + 'Saved ISA-Tab "{}"'.format(isa_version.get_name())
             )
             return Response({'detail': 'ok'}, status=200)
 

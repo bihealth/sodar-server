@@ -101,7 +101,7 @@
       <!-- Render error -->
       <div v-else-if="renderError" :id="contentId">
         <div class="alert alert-danger" id="sodar-ss-alert-error">
-          Error rendering study tables, please check your ISAtab files.
+          Error rendering study tables, please check your ISA-Tab files.
           Exception: {{ renderError }}
         </div>
       </div>
@@ -112,7 +112,7 @@
         <div class="alert alert-info" id="sodar-ss-alert-empty">
           No sample sheets are currently available for this project.
           <span v-if="sodarContext.perms.edit_sheet">
-            To add sample sheets, please import it from an existing ISAtab
+            To add sample sheets, please import it from an existing ISA-Tab
             investigation.
           </span>
         </div>

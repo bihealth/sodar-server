@@ -57,8 +57,8 @@ NOT_AVAILABLE_STR = '(N/A)'
 CONFIG_LABEL_CREATE = 'Created With Configuration'
 
 ISATAB_TAGS = {
-    'IMPORT': 'Imported from an ISAtab archive',
-    'REPLACE': 'Replacing a previous ISAtab',
+    'IMPORT': 'Imported from an ISA-Tab archive',
+    'REPLACE': 'Replacing a previous ISA-Tab',
 }
 
 
@@ -966,14 +966,14 @@ class Process(NodeMixin, BaseSampleSheet):
             return self.study
 
 
-# ISAtab File Saving -----------------------------------------------------------
+# ISA-Tab File Saving ----------------------------------------------------------
 
 
 class ISATab(models.Model):
-    """Class for storing ISAtab files for one investigation, including its
+    """Class for storing ISA-Tab files for one investigation, including its
     studies and assays"""
 
-    #: Project to which the ISAtab belongs
+    #: Project to which the ISA-Tab belongs
     project = models.ForeignKey(
         Project,
         null=False,
@@ -990,7 +990,7 @@ class ISATab(models.Model):
     )
     # NOTE: No ForeignKey because the investigations may have been deleted
 
-    #: File name of ISAtab archive (optional)
+    #: File name of ISA-Tab archive (optional)
     archive_name = models.CharField(
         max_length=DEFAULT_LENGTH,
         unique=False,
@@ -999,17 +999,17 @@ class ISATab(models.Model):
         help_text='File name of ISAtab archive (optional)',
     )
 
-    #: Data from ISAtab files as a dict
+    #: Data from ISA-Tab files as a dict
     data = JSONField(default=dict, help_text='Data from ISAtab files as a dict')
 
-    #: Tags for categorizing the ISAtab
+    #: Tags for categorizing the ISA-Tab
     tags = ArrayField(
         models.CharField(max_length=DEFAULT_LENGTH, blank=True),
         default=list,
         help_text='Tags for categorizing the ISAtab',
     )
 
-    #: User saving of this ISAtab (optional)
+    #: User saving of this ISA-Tab (optional)
     user = models.ForeignKey(
         AUTH_USER_MODEL,
         related_name='isatabs',
@@ -1017,12 +1017,12 @@ class ISATab(models.Model):
         help_text='User saving this ISAtab (optional)',
     )
 
-    #: DateTime of ISAtab creation
+    #: DateTime of ISA-Tab creation
     date_created = models.DateTimeField(
         auto_now=True, help_text='DateTime of ISAtab creation'
     )
 
-    #: Version of altamISA used when processing this ISAtab
+    #: Version of altamISA used when processing this ISA-Tab
     parser_version = models.CharField(
         max_length=DEFAULT_LENGTH,
         blank=True,

@@ -640,6 +640,13 @@ SHEETS_EXTERNAL_LINK_LABELS = {
     'x-generic-remote': 'External ID',
 }
 
+# HACK: Supported cubi-tk templates, excluding ones which altamISA cannot parse
+SHEETS_ENABLED_TEMPLATES = [
+    'generic',
+    'germline',
+    'ms_meta_biocrates',
+]
+
 
 # Landingzones app settings
 # Status query interval in seconds

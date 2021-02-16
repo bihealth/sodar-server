@@ -57,7 +57,7 @@ class SampleSheetIOMixin:
     @classmethod
     def _read_isa(cls, path, project):
         """
-        Read ISAtab into the altamISA API
+        Read ISA-Tab into the altamISA API
 
         :param path: Path to zip file
         :param project: Project object
@@ -129,7 +129,7 @@ class SampleSheetIOMixin:
     @classmethod
     def _get_isatab_files(cls):
         """
-        Return all test ISAtab files.
+        Return all test ISA-Tab files.
 
         :return: Dict
         """
@@ -142,7 +142,7 @@ class SampleSheetIOMixin:
         }
 
     def _fail_isa(self, zip_name, ex):
-        """Fail with exception message and ISAtab zip file name"""
+        """Fail with exception message and ISA-Tab zip file name"""
         self.fail('Exception in {}: {}'.format(zip_name, ex))
 
 
@@ -186,7 +186,7 @@ class TestSampleSheetIOBatch(TestSampleSheetIOBase):
     """Batch import/export tests for sample sheets"""
 
     def test_isa_import_batch(self):
-        """Test ISAtab import in batch"""
+        """Test ISA-Tab import in batch"""
         self.assertEqual(Investigation.objects.count(), 0)
         self.assertEqual(ISATab.objects.count(), 0)
 
@@ -210,7 +210,7 @@ class TestSampleSheetIOBatch(TestSampleSheetIOBase):
             self.assertEqual(ISATab.objects.count(), 0, msg=msg)
 
     def test_isa_export_batch(self):
-        """Test ISAtab export in batch"""
+        """Test ISA-Tab export in batch"""
         sheet_io = SampleSheetIO(warn=False, allow_critical=True)
 
         for zip_name, zip_file in self._get_isatab_files().items():
@@ -294,7 +294,7 @@ class TestSampleSheetIOBatch(TestSampleSheetIOBase):
             investigation.delete()
 
     def test_isa_saving_batch(self):
-        """Test original ISAtab saving in batch"""
+        """Test original ISA-Tab saving in batch"""
         for zip_name, zip_file in self._get_isatab_files().items():
             try:
                 investigation = self._import_isa_from_file(

@@ -99,8 +99,9 @@ describe('PageHeader.vue', () => {
 
     // Operations dropdown
     expect(wrapper.find('#sodar-ss-op-dropdown').exists()).toBe(true)
-    expect(wrapper.findAll('.sodar-ss-op-item').length).toBe(1)
+    expect(wrapper.findAll('.sodar-ss-op-item').length).toBe(2)
     expect(wrapper.find('#sodar-ss-op-item-import').exists()).toBe(true)
+    expect(wrapper.find('#sodar-ss-op-item-create').exists()).toBe(true)
   })
 
   it('renders page header in edit mode', () => {

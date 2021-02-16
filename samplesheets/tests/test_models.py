@@ -383,7 +383,7 @@ class SampleSheetModelMixin:
         user=None,
         date_expires=None,  # never expires
     ):
-        """Create an ISATab object in the database"""
+        """Create an iRODS access ticket object in the database"""
         values = {
             'project': project,
             'study': study,

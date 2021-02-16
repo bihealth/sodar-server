@@ -15,7 +15,7 @@
             <b-button
                 variant="secondary"
                 v-b-tooltip.hover
-                title="Download table as Excel file (Note: not ISAtab compatible)"
+                title="Download table as Excel file (Note: not ISA-Tab compatible)"
                 class="sodar-ss-excel-export-btn"
                 :href="excelExportUrl">
               <i class="fa fa-file-excel-o"></i>

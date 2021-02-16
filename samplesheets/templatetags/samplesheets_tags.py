@@ -116,7 +116,8 @@ def get_icon(obj):
 @register.simple_tag
 def get_isatab_tag_html(isatab):
     """
-    Return tags for an ISATab as HTML to be displayed in the sheet version list.
+    Return tags for an ISA-Tab as HTML to be displayed in the sheet version
+    list.
 
     :param isatab: ISATab object
     :return: String (contains HTML)

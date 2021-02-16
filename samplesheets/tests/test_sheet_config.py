@@ -320,7 +320,7 @@ class TestDisplayConfig(
         )
 
     def test_build_config_batch(self):
-        """Test building default display configs for example ISAtabs"""
+        """Test building default display configs for example ISA-Tabs"""
         for zip_name, zip_file in self._get_isatab_files().items():
             msg = 'file={}'.format(zip_name)
 

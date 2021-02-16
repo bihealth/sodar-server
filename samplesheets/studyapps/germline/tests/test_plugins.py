@@ -66,4 +66,4 @@ class TestGermlinePlugins(SampleSheetModelMixin, TestRenderingBase):
         self.assertEqual(plugin.get_model().title, PLUGIN_TITLE_GERMLINE)
         self.assertEqual(plugin.title, PLUGIN_TITLE_GERMLINE)
 
-    # TODO: Plugin function tests (requires example germline ISAtab)
+    # TODO: Plugin function tests (requires example germline ISA-Tab)

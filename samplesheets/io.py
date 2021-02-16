@@ -70,7 +70,7 @@ MATERIAL_TYPE_MAP = {
     'Array Data Matrix File': 'DATA',
 }
 
-# For old ISAtabs where this field was not always filled out
+# For old ISA-Tabs where this field was not always filled out
 MATERIAL_TYPE_EXPORT_MAP = {'SOURCE': 'Source Name', 'SAMPLE': 'Sample Name'}
 
 SAMPLE_SEARCH_SUBSTR = '-sample-'
@@ -215,7 +215,7 @@ class SampleSheetIO:
     @classmethod
     def get_isa_from_zip(cls, zip_file):
         """
-        Read ISAtab files from a Zip archive into a dictionary.
+        Read ISA-Tab files from a Zip archive into a dictionary.
 
         :param zip_file: ZipFile object
         :return: Dict
@@ -252,7 +252,7 @@ class SampleSheetIO:
     @classmethod
     def get_isa_from_files(cls, files):
         """
-        Get ISAtab data from a list of text files.
+        Get ISA-Tab data from a list of text files.
 
         :param files: List of UploadedFile objects
         :return: Dict
@@ -571,16 +571,16 @@ class SampleSheetIO:
     ):
         """
         Import ISA investigation and its studies/assays from a dictionary of
-        ISAtab files into the SODAR database using the altamISA parser.
+        ISA-Tab files into the SODAR database using the altamISA parser.
 
-        :param isa_data: Dictionary of files for a single ISAtab investigation
+        :param isa_data: Dictionary of files for a single ISA-Tab investigation
         :param project: Project object
         :param archive_name: Name of the original archive (string, optional)
         :param user: User initiating the operation (User or None)
         :param replace: Whether replacing an existing sheet (bool)
         :param replace_uuid: Investigation UUID if replacing (UUID or string)
-        :param save_isa: Save ISATab as backup after importing (bool)
-        :return: Investigation, ISATab
+        :param save_isa: Save ISA-Tab as backup after importing (bool)
+        :return: Investigation
         :raise: SampleSheetExportException if critical warnings are raised
         """
         t_start = time.time()
@@ -880,7 +880,7 @@ class SampleSheetIO:
             )
         )
 
-        # Save original ISAtab data
+        # Save original ISA-Tab data
         # TODO: TBD: Prevent saving if previous data matches current one?
         if save_isa:
             tags = ['IMPORT']
@@ -1266,7 +1266,7 @@ class SampleSheetIO:
     def export_isa(self, investigation):
         """
         Import ISA investigation and its studies/assays from the SODAR database
-        model into an ISAtab archive.
+        model into an ISA-Tab archive.
 
         :param investigation: Investigation object
         :return: Dict
@@ -1525,14 +1525,14 @@ class SampleSheetIO:
         config=None,
     ):
         """
-        Save a copy of an ISAtab investigation into the SODAR database.
+        Save a copy of an ISA-Tab investigation into the SODAR database.
 
         :param project: Project object
         :param inv_uuid: Investigation UUID (UUID or string)
         :param isa_data: ISAtab file contents (dict)
-        :param tags: Tags for the ISAtab (optional)
-        :param user: User saving the ISAtab (optional)
-        :param archive_name: File name of ISAtab archive (optional)
+        :param tags: Tags for the ISA-Tab (optional)
+        :param user: User saving the ISA-Tab (optional)
+        :param archive_name: File name of ISA-Tab archive (optional)
         :return: ISATab object
         """
         db_isatab = ISATab.objects.create(
@@ -1544,7 +1544,7 @@ class SampleSheetIO:
             archive_name=archive_name,
             parser_version=altamisa.__version__,
         )
-        logger.info('ISAtab saved (UUID={})'.format(db_isatab.sodar_uuid))
+        logger.info('ISA-Tab saved (UUID={})'.format(db_isatab.sodar_uuid))
         return db_isatab
 
 

@@ -3,7 +3,7 @@
       id="sodar-ss-win-export-modal" ref="winExportModal"
       centered no-fade hide-footer
       size="m"
-      title="Windows ISAtab Export Note"
+      title="Windows ISA-Tab Export Note"
       :static="true">
     <div id="sodar-ss-irods-modal-content">
       <p>
@@ -20,7 +20,7 @@
           class="pull-right"
           id="sodar-ss-win-export-btn"
           @click="onExport">
-        <i class="fa fa-fw fa-download"></i> Export ISAtab
+        <i class="fa fa-fw fa-download"></i> Export ISA-Tab
       </b-button>
     </div>
   </b-modal>

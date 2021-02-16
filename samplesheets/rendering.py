@@ -751,7 +751,7 @@ class SampleSheetTableBuilder:
         if not all_refs:
             error_msg = (
                 'RefTableBuilder failed to build a table from graph, unable to '
-                'render study. Please ensure the validity of your ISAtab files'
+                'render study. Please ensure the validity of your ISA-Tab files'
             )
             logger.error(error_msg)
             raise SampleSheetRenderingException(error_msg)

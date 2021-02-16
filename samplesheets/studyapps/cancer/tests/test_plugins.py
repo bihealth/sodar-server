@@ -66,4 +66,4 @@ class TestCancerPlugins(TestSampleSheetBase):
         self.assertEqual(plugin.get_model().title, PLUGIN_TITLE_CANCER)
         self.assertEqual(plugin.title, PLUGIN_TITLE_CANCER)
 
-    # TODO: Plugin function tests (requires example cancer ISAtab)
+    # TODO: Plugin function tests (requires example cancer ISA-Tab)

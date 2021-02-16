@@ -214,7 +214,7 @@ def get_comment(obj, key):
     Return comment value for object based on key or None if not found.
     TODO: Remove once reimporting sample sheets (#629, #631)
 
-    :param obj: Object parsed from ISAtab
+    :param obj: Object parsed from ISA-Tab
     :param key: Key for comment
     :return:
     """
@@ -235,7 +235,7 @@ def get_comments(obj):
     """
     Return comments for an object or None if they don't exist.
 
-    :param obj: Object parsed from ISAtab
+    :param obj: Object parsed from ISA-Tab
     :return: Dict
     """
     if not hasattr(obj, 'comments') or not obj.comments:
@@ -379,3 +379,13 @@ def get_top_header(table, field_idx):
 
         if tc > field_idx:
             return th
+
+
+def clean_sheet_dir_name(name):
+    """
+    Clean up / sanitize sample sheet directory name.
+
+    :param name: String
+    :return: String
+    """
+    return re.sub(r'[\s]+', '_', re.sub(r'[^\w\s-]', '', name).strip())

@@ -98,3 +98,7 @@ django-webpack-loader==0.7.0
 # OBO ontology file parsing
 fastobo==0.9.3
 pronto==2.3.1  # For OWL conversion
+
+# CUBI-TK for sheet templates
+# TODO: This installs a LOT of dependencies we don't actually need, separate?
+-e git+https://github.com/bihealth/cubi-tk.git@77e996dc6ad4326ef2de9c144c5d72d61380d762#egg=cubi-tk

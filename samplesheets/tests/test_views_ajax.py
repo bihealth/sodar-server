@@ -180,7 +180,7 @@ class IrodsAccessTicketMixin:
 class TestContextAjaxView(TestViewsBase):
     """Tests for SheetContextAjaxView"""
 
-    # TODO: Test with realistic ISAtab examples using BIH configs (see #434)
+    # TODO: Test with realistic ISA-Tab examples using BIH configs (see #434)
 
     def setUp(self):
         super().setUp()
@@ -294,7 +294,7 @@ class TestContextAjaxView(TestViewsBase):
 class TestStudyTablesAjaxView(IrodsAccessTicketMixin, TestViewsBase):
     """Tests for StudyTablesAjaxView"""
 
-    # TODO: Test with realistic ISAtab examples using BIH configs (see #434)
+    # TODO: Test with realistic ISA-Tab examples using BIH configs (see #434)
 
     def setUp(self):
         super().setUp()
@@ -393,7 +393,7 @@ class TestStudyTablesAjaxView(IrodsAccessTicketMixin, TestViewsBase):
 class TestStudyLinksAjaxView(TestViewsBase):
     """Tests for StudyLinksAjaxView"""
 
-    # TODO: Test with realistic ISAtab examples using BIH configs (see #434)
+    # TODO: Test with realistic ISA-Tab examples using BIH configs (see #434)
 
     def setUp(self):
         super().setUp()
@@ -414,13 +414,13 @@ class TestStudyLinksAjaxView(TestViewsBase):
                     kwargs={'study': self.study.sodar_uuid},
                 )
             )
-        self.assertEqual(response.status_code, 404)  # No plugin for test ISAtab
+        self.assertEqual(response.status_code, 404)  # No plugin for ISA-Tab
 
 
 class TestSheetWarningsAjaxView(TestViewsBase):
     """Tests for SheetWarningsAjaxView"""
 
-    # TODO: Test with realistic ISAtab examples using BIH configs (see #434)
+    # TODO: Test with realistic ISA-Tab examples using BIH configs (see #434)
 
     def setUp(self):
         super().setUp()
@@ -1522,7 +1522,7 @@ class TestSheetEditFinishAjaxView(TestViewsBase):
 class TestSheetEditConfigAjaxView(SheetConfigMixin, TestViewsBase):
     """Tests for SheetEditConfigAjaxView"""
 
-    # TODO: Test with assay updates (needs a better test ISAtab)
+    # TODO: Test with assay updates (needs a better test ISA-Tab)
 
     def setUp(self):
         super().setUp()

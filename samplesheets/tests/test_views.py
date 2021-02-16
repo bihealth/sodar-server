@@ -1,5 +1,6 @@
 """Tests for UI views in the samplesheets app"""
 
+from cubi_tk.isa_tpl import _TEMPLATES as TK_TEMPLATES
 import json
 import os
 from test_plus.test import TestCase
@@ -27,6 +28,7 @@ from samplesheets.tests.test_io import (
     SHEET_DIR_SPECIAL,
 )
 from samplesheets.tests.test_sheet_config import CONFIG_PATH_DEFAULT
+from samplesheets.utils import clean_sheet_dir_name
 from samplesheets.views import SampleSheetImportMixin
 
 
@@ -167,7 +169,7 @@ class TestSampleSheetImportView(SampleSheetImportMixin, TestViewsBase):
             self.assertEqual(response.status_code, 200)
 
     def test_post(self):
-        """Test posting an ISAtab zip file in the import form"""
+        """Test posting an ISA-Tab zip file in the import form"""
 
         # Assert preconditions
         self.assertEqual(Investigation.objects.all().count(), 0)
@@ -307,7 +309,7 @@ class TestSampleSheetImportView(SampleSheetImportMixin, TestViewsBase):
         self.assertEqual(uuid, new_inv.sodar_uuid)  # Should not have changed
 
     def test_post_critical_warnings(self):
-        """Test posting an ISAtab which raises critical warnings in altamISA"""
+        """Test posting an ISA-Tab which raises critical warnings in altamISA"""
         timeline = get_backend_api('timeline_backend')
 
         # Assert precondition
@@ -335,7 +337,7 @@ class TestSampleSheetImportView(SampleSheetImportMixin, TestViewsBase):
 
     @override_settings(SHEETS_ALLOW_CRITICAL=True)
     def test_post_critical_warnings_allowed(self):
-        """Test posting an ISAtab with critical warnings allowed"""
+        """Test posting an ISA-Tab with critical warnings allowed"""
         timeline = get_backend_api('timeline_backend')
 
         # Assert precondition
@@ -362,7 +364,7 @@ class TestSampleSheetImportView(SampleSheetImportMixin, TestViewsBase):
         self.assertIsNotNone(tl_status.extra_data['warnings'])
 
     def test_post_multiple(self):
-        """Test posting an ISAtab as multiple files"""
+        """Test posting an ISA-Tab as multiple files"""
 
         # Assert preconditions
         self.assertEqual(Investigation.objects.all().count(), 0)
@@ -391,7 +393,7 @@ class TestSampleSheetImportView(SampleSheetImportMixin, TestViewsBase):
         self.assertListEqual(ISATab.objects.first().tags, ['IMPORT'])
 
     def test_post_multiple_no_study(self):
-        """Test posting an ISAtab as multiple files without required study"""
+        """Test posting an ISA-Tab as multiple files without required study"""
 
         # Assert preconditions
         self.assertEqual(Investigation.objects.all().count(), 0)
@@ -421,7 +423,7 @@ class TestSampleSheetImportView(SampleSheetImportMixin, TestViewsBase):
         self.assertEqual(Investigation.objects.all().count(), 0)
 
     def test_post_multiple_no_assay(self):
-        """Test posting an ISAtab as multiple files without required assay"""
+        """Test posting an ISA-Tab as multiple files without required assay"""
 
         # Assert preconditions
         self.assertEqual(Investigation.objects.all().count(), 0)
@@ -451,7 +453,7 @@ class TestSampleSheetImportView(SampleSheetImportMixin, TestViewsBase):
         self.assertEqual(Investigation.objects.all().count(), 0)
 
     def test_post_empty_assay(self):
-        """Test posting an ISAtab with an empty assay table (should fail)"""
+        """Test posting an ISA-Tab with an empty assay table (should fail)"""
 
         # Assert precondition
         self.assertEqual(Investigation.objects.all().count(), 0)
@@ -472,7 +474,7 @@ class TestSampleSheetImportView(SampleSheetImportMixin, TestViewsBase):
         self.assertEqual(Investigation.objects.all().count(), 0)
 
     def test_post_no_plugin_assay(self):
-        """Test posting an ISAtab with an assay without plugin"""
+        """Test posting an ISA-Tab with an assay without plugin"""
 
         # Assert precondition
         self.assertEqual(Investigation.objects.all().count(), 0)
@@ -495,6 +497,137 @@ class TestSampleSheetImportView(SampleSheetImportMixin, TestViewsBase):
             list(get_messages(response.wsgi_request))[1].message,
             self.get_assay_plugin_warning(Assay.objects.all().first()),
         )
+
+
+class TestSheetTemplateSelectView(TestViewsBase):
+    """Tests for SheetTemplateSelectView"""
+
+    def test_render(self):
+        """Test rendering the template select view"""
+        with self.login(self.user):
+            response = self.client.get(
+                reverse(
+                    'samplesheets:template_select',
+                    kwargs={'project': self.project.sodar_uuid},
+                )
+            )
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(
+                len(response.context['sheet_templates']),
+                len(settings.SHEETS_ENABLED_TEMPLATES),
+            )
+
+    def test_render_with_sheets(self):
+        """Test rendering with sheets in project (should fail)"""
+        self._import_isa_from_file(SHEET_PATH, self.project)
+
+        with self.login(self.user):
+            response = self.client.get(
+                reverse(
+                    'samplesheets:template_select',
+                    kwargs={'project': self.project.sodar_uuid},
+                )
+            )
+            self.assertRedirects(
+                response,
+                reverse(
+                    'samplesheets:project_sheets',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+            )
+
+
+class TestSheetTemplateCreateFormView(TestViewsBase):
+    """Tests for SheetTemplateCreateFormView"""
+
+    def test_render_batch(self):
+        """Test rendering the view with supported templates"""
+        for t in settings.SHEETS_ENABLED_TEMPLATES:
+            with self.login(self.user):
+                response = self.client.get(
+                    reverse(
+                        'samplesheets:template_create',
+                        kwargs={'project': self.project.sodar_uuid},
+                    ),
+                    data={'sheet_tpl': t},
+                )
+            self.assertEqual(response.status_code, 200, msg=t)
+
+    def test_render_invalid_template(self):
+        """Test rendering the view with invalid template (should redirect)"""
+        with self.login(self.user):
+            response = self.client.get(
+                reverse(
+                    'samplesheets:template_create',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                data={'sheet_tpl': 'NOT_A_REAL_TEMPLATE'},
+            )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(
+            response.url,
+            reverse(
+                'samplesheets:template_select',
+                kwargs={'project': self.project.sodar_uuid},
+            ),
+        )
+
+    def test_render_no_template(self):
+        """Test rendering the view with out template name (should redirect)"""
+        with self.login(self.user):
+            response = self.client.get(
+                reverse(
+                    'samplesheets:template_create',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                data={'sheet_tpl': ''},
+            )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(
+            response.url,
+            reverse(
+                'samplesheets:template_select',
+                kwargs={'project': self.project.sodar_uuid},
+            ),
+        )
+
+    def test_post_batch(self):
+        """Test POST request with supported templates and default values"""
+        templates = {
+            t.name: t
+            for t in TK_TEMPLATES
+            if t.name in settings.SHEETS_ENABLED_TEMPLATES
+        }
+
+        for t in settings.SHEETS_ENABLED_TEMPLATES:
+            # Assert preconditions
+            self.assertIsNone(self.project.investigations.first())
+
+            sheet_tpl = templates[t]
+            post_data = {'i_dir_name': clean_sheet_dir_name(self.project.title)}
+            for k, v in sheet_tpl.configuration.items():
+                if isinstance(v, str):
+                    if '{{' in v or '{%' in v:
+                        continue
+                    post_data[k] = v
+                elif isinstance(v, list):
+                    post_data[k] = v[0]
+                elif isinstance(v, dict):
+                    post_data[k] = json.dumps(v)
+
+            with self.login(self.user):
+                response = self.client.post(
+                    reverse(
+                        'samplesheets:template_create',
+                        kwargs={'project': self.project.sodar_uuid},
+                    )
+                    + '?sheet_tpl='
+                    + t,
+                    data=post_data,
+                )
+            self.assertEqual(response.status_code, 302, msg=t)
+            self.assertIsNotNone(self.project.investigations.first())
+            self.project.investigations.first().delete()
 
 
 class TestSampleSheetExcelExportView(TestViewsBase):
@@ -550,7 +683,7 @@ class TestSampleSheetExcelExportView(TestViewsBase):
 
 
 class TestSampleSheetISAExportView(TestViewsBase):
-    """Tests for the investigation ISAtab export view"""
+    """Tests for the investigation ISA-Tab export view"""
 
     def setUp(self):
         super().setUp()
@@ -561,7 +694,7 @@ class TestSampleSheetISAExportView(TestViewsBase):
         )
 
     def test_get(self):
-        """Test requesting a file from the ISAtab export view"""
+        """Test requesting a file from the ISA-Tab export view"""
         timeline = get_backend_api('timeline_backend')
 
         with self.login(self.user):
@@ -586,7 +719,7 @@ class TestSampleSheetISAExportView(TestViewsBase):
         self.assertIsNotNone(tl_status.extra_data['warnings'])
 
     def test_get_no_investigation(self):
-        """Test requesting an ISAtab export with no investigation provided"""
+        """Test requesting an ISA-Tab export with no investigation provided"""
         self.investigation.delete()
 
         with self.login(self.user):
@@ -600,7 +733,7 @@ class TestSampleSheetISAExportView(TestViewsBase):
         self.assertEqual(response.status_code, 302)
 
     def test_get_version(self):
-        """Test requesting export of an ISATab version"""
+        """Test requesting export of an ISA-Tab version"""
         isa_version = ISATab.objects.get(
             investigation_uuid=self.investigation.sodar_uuid
         )
