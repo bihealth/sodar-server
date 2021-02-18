@@ -162,7 +162,7 @@ def get_output(orphans, irods_backend):
     lines = []
     for orphan in orphans:
         stats = irods_backend.get_object_stats(orphan)
-        m = re.search(r'/projects/([^/]{2})/(\1[^/]+)/', orphan)
+        m = re.search(r'/projects/([^/]{2})/(\1[^/]+)', orphan)
 
         if m:
             uuid = m.group(2)
@@ -170,10 +170,10 @@ def get_output(orphans, irods_backend):
                 project = Project.objects.get(sodar_uuid=uuid)
                 title = project.full_title
             except Project.DoesNotExist:
-                title = 'N/A'
+                title = '<DELETED>'
         else:
-            uuid = 'N/A'
-            title = 'N/A'
+            uuid = '<ERROR>'
+            title = '<ERROR>'
 
         lines.append(
             ';'.join(

@@ -37,6 +37,8 @@ Fixed
 - **Samplesheets**
     - MaxQuant results not correctly linked in ``pep_ms`` assay app (#1072)
     - Incorrect timeline event for ``sheet_create`` (#1080)
+- **Irodsadmin**
+    - Irodsorphans project UUID not returned if path ends in project UUID (#1071)
 
 Removed
 -------

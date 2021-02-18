@@ -309,6 +309,33 @@ class TestIrodsOrphans(
             ],
         )
 
+    def test_get_output_deleted_project(self):
+        project_uuid = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
+        collection = 'aa/' + project_uuid
+        orphan_path = '{}/{}'.format(
+            os.path.dirname(
+                os.path.dirname(self.irods_backend.get_path(self.project))
+            ),
+            collection,
+        )
+        self.irods_session.collections.create(orphan_path)
+
+        orphans = irodsorphans.get_orphans(
+            self.irods_session,
+            self.irods_backend,
+            self.expected_collections,
+            [self.assay],
+        )
+        self.assertListEqual(
+            irodsorphans.get_output(orphans, self.irods_backend),
+            [
+                '{};<DELETED>;{};0;0 bytes'.format(
+                    project_uuid,
+                    orphan_path,
+                )
+            ],
+        )
+
     def test_command_irodsorphans_no_orphans(self):
         out = StringIO()
         call_command('irodsorphans', stdout=out)
@@ -361,7 +388,8 @@ class TestIrodsOrphans(
         self.assertEqual(expected, out.getvalue())
 
     def test_command_irodsorphans_orphanated_project(self):
-        collection = 'aa/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
+        project_uuid = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
+        collection = 'aa/' + project_uuid
         orphan_path = '{}/{}'.format(
             os.path.dirname(
                 os.path.dirname(self.irods_backend.get_path(self.project))
@@ -371,7 +399,9 @@ class TestIrodsOrphans(
         self.irods_session.collections.create(orphan_path)
         out = StringIO()
         call_command('irodsorphans', stdout=out)
-        expected = 'N/A;N/A;{};0;0 bytes\n'.format(orphan_path)
+        expected = '{};<DELETED>;{};0;0 bytes\n'.format(
+            project_uuid, orphan_path
+        )
         self.assertEqual(expected, out.getvalue())
 
     def test_command_irodsorphans_orphanated_assay_sub(self):
