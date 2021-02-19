@@ -1,5 +1,5 @@
 import { createLocalVue, mount } from '@vue/test-utils'
-import { createContainer, waitNT, waitRAF } from '../testUtils.js'
+import { copy, getAppStub, waitNT, waitRAF } from '../testUtils.js'
 import BootstrapVue from 'bootstrap-vue'
 import IrodsDirModal from '@/components/modals/IrodsDirModal.vue'
 import irodsObjectList from './data/irodsObjectList.json'
@@ -11,6 +11,7 @@ localVue.use(BootstrapVue)
 
 // Init data
 let propsData
+let objList
 const rootIrodsPath = (
   '/omicsZone/projects/00/00000000-0000-0000-0000-000000000000/sample_data/' +
   'study_11111111-1111-1111-1111-111111111111/' +
@@ -21,7 +22,8 @@ describe('IrodsDirModal.vue', () => {
   function getPropsData () {
     return {
       irodsWebdavUrl: 'http://davrods.local',
-      projectUuid: '00000000-0000-0000-0000-000000000000'
+      projectUuid: '00000000-0000-0000-0000-000000000000',
+      app: getAppStub()
     }
   }
 
@@ -32,6 +34,7 @@ describe('IrodsDirModal.vue', () => {
 
   beforeEach(() => {
     propsData = getPropsData()
+    objList = copy(irodsObjectList)
     jest.resetModules()
     jest.clearAllMocks()
   })
@@ -40,11 +43,10 @@ describe('IrodsDirModal.vue', () => {
     const wrapper = mount(IrodsDirModal, {
       localVue,
       propsData: propsData,
-      attachTo: createContainer(), // NOTE: Doesn't seem to be required?
       methods: { getObjList: jest.fn() }
     })
     wrapper.vm.showModal(rootIrodsPath)
-    wrapper.vm.handleObjListResponse(irodsObjectList)
+    wrapper.vm.handleObjListResponse(objList)
     await waitNT(wrapper.vm)
     await waitRAF()
 
@@ -53,6 +55,8 @@ describe('IrodsDirModal.vue', () => {
     expect(wrapper.find('#sodar-ss-irods-empty').exists()).toBe(false)
     expect(wrapper.find('#sodar-ss-irods-message').exists()).toBe(false)
     expect(wrapper.find('#sodar-ss-irods-wait').exists()).toBe(false)
+    expect(wrapper.findAll('.sodar-ss-request-delete-btn').length).toBe(1)
+    expect(wrapper.findAll('.sodar-ss-request-cancel-btn').length).toBe(1)
   })
 
   it('renders modal with empty object list', async () => {
@@ -106,7 +110,7 @@ describe('IrodsDirModal.vue', () => {
       localVue, propsData: propsData, methods: { getObjList: jest.fn() }
     })
     wrapper.vm.showModal(rootIrodsPath)
-    wrapper.vm.handleObjListResponse(irodsObjectList)
+    wrapper.vm.handleObjListResponse(objList)
     await waitNT(wrapper.vm)
     await waitRAF()
 
@@ -126,7 +130,7 @@ describe('IrodsDirModal.vue', () => {
       localVue, propsData: propsData, methods: { getObjList: jest.fn() }
     })
     wrapper.vm.showModal(rootIrodsPath)
-    wrapper.vm.handleObjListResponse(irodsObjectList)
+    wrapper.vm.handleObjListResponse(objList)
     await waitNT(wrapper.vm)
     await waitRAF()
 
@@ -147,7 +151,68 @@ describe('IrodsDirModal.vue', () => {
       methods: { getObjList: jest.fn() }
     })
     wrapper.vm.showModal(rootIrodsPath)
-    expect(wrapper.vm.getRelativePath(irodsObjectList.data_objects[0].path)).toBe('')
+    expect(wrapper.vm.getRelativePath(objList.data_objects[0].path)).toBe('')
     expect(wrapper.vm.getRelativePath(subCollPath)).toBe('subcoll')
+  })
+
+  it('renders cancel request button as active for correct user', async () => {
+    const wrapper = mount(IrodsDirModal, {
+      localVue,
+      propsData: propsData,
+      methods: { getObjList: jest.fn() }
+    })
+    wrapper.vm.showModal(rootIrodsPath)
+    wrapper.vm.handleObjListResponse(objList)
+    await waitNT(wrapper.vm)
+    await waitRAF()
+    expect(wrapper.find('.sodar-ss-request-cancel-btn').classes()).not.toContain('disabled')
+  })
+
+  it('renders cancel request button as inactive for different user', async () => {
+    objList.data_objects[0].irods_request_user = '66666666-6666-6666-6666-777777777777'
+    const wrapper = mount(IrodsDirModal, {
+      localVue,
+      propsData: propsData,
+      methods: { getObjList: jest.fn() }
+    })
+    wrapper.vm.showModal(rootIrodsPath)
+    wrapper.vm.handleObjListResponse(objList)
+    await waitNT(wrapper.vm)
+    await waitRAF()
+    expect(wrapper.find('.sodar-ss-request-cancel-btn').classes()).not.toContain('disabled')
+  })
+
+  it('handles delete request issuing', async () => {
+    const wrapper = mount(IrodsDirModal, {
+      localVue,
+      propsData: propsData,
+      methods: { getObjList: jest.fn() }
+    })
+    wrapper.vm.showModal(rootIrodsPath)
+    wrapper.vm.handleObjListResponse(objList)
+    await waitNT(wrapper.vm)
+    await waitRAF()
+    expect(wrapper.findAll('.sodar-ss-request-cancel-btn').length).toBe(1)
+
+    wrapper.vm.handleDeleteRequestResponse({ detail: 'ok', status: 'ACTIVE' }, 1)
+    await waitNT(wrapper.vm)
+    expect(wrapper.findAll('.sodar-ss-request-cancel-btn').length).toBe(2)
+  })
+
+  it('handles delete request cancelling', async () => {
+    const wrapper = mount(IrodsDirModal, {
+      localVue,
+      propsData: propsData,
+      methods: { getObjList: jest.fn() }
+    })
+    wrapper.vm.showModal(rootIrodsPath)
+    wrapper.vm.handleObjListResponse(objList)
+    await waitNT(wrapper.vm)
+    await waitRAF()
+    expect(wrapper.findAll('.sodar-ss-request-cancel-btn').length).toBe(1)
+
+    wrapper.vm.handleDeleteRequestResponse({ detail: 'ok', status: null }, 0)
+    await waitNT(wrapper.vm)
+    expect(wrapper.findAll('.sodar-ss-request-cancel-btn').length).toBe(0)
   })
 })

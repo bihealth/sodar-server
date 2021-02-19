@@ -16,6 +16,7 @@
   "allow_editing": true,
   "alerts": [],
   "csrf_token": "k73YXvYB9kB8FXCaE3NO2tUGMGzsJCxW4YAk7Ga9jyUiLqh1a3jCY59n2lUelyZm",
+  "user_uuid": "66666666-6666-6666-6666-666666666666",
   "investigation": {
     "identifier": "i_small",
     "title": "Small Investigation",

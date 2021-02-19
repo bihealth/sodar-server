@@ -614,7 +614,9 @@ SHEETS_TABLE_HEIGHT = 400  # Study/assay table height
 SHEETS_CONFIG_VERSION = '0.8.0'  # Minimum edit config version
 SHEETS_MIN_COLUMN_WIDTH = 100  # Min default column width
 SHEETS_MAX_COLUMN_WIDTH = 300  # Max default column width
-SHEETS_VERSION_PAGINATION = 15
+SHEETS_VERSION_PAGINATION = env.int('SHEETS_VERSION_PAGINATION', 15)
+SHEETS_IRODS_TICKET_PAGINATION = env.int('SHEETS_IRODS_TICKET_PAGINATION', 15)
+SHEETS_IRODS_REQUEST_PAGINATION = env.int('SHEETS_IRODS_REQUEST_PAGINATION', 15)
 SHEETS_ONTOLOGY_URL_TEMPLATE = (
     'https://bioportal.bioontology.org/ontologies/'
     '{ontology_name}/?p=classes&conceptid={accession}'

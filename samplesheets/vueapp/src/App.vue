@@ -135,6 +135,7 @@
     <!-- iRODS directory listing modal -->
     <irods-dir-modal
         v-if="sodarContext"
+        :app="getApp()"
         :project-uuid="projectUuid"
         :irods-webdav-url="sodarContext.irods_webdav_url"
         ref="dirModalRef">

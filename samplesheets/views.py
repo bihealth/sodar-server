@@ -3,6 +3,7 @@ import io
 import json
 import logging
 import os
+
 from packaging import version
 import zipfile
 
@@ -22,11 +23,18 @@ from django.views.generic import (
     View,
     UpdateView,
 )
+
 from rest_framework.response import Response
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
-from projectroles.models import Project, SODAR_CONSTANTS, AppSetting
+from projectroles.email import send_generic_mail
+from projectroles.models import (
+    Project,
+    SODAR_CONSTANTS,
+    AppSetting,
+    RoleAssignment,
+)
 from projectroles.plugins import get_backend_api
 from projectroles.utils import build_secret
 from projectroles.views import (
@@ -40,6 +48,8 @@ from samplesheets.forms import (
     SampleSheetImportForm,
     SheetTemplateCreateForm,
     IrodsAccessTicketForm,
+    IrodsRequestForm,
+    IrodsRequestAcceptForm,
 )
 from samplesheets.io import (
     SampleSheetIO,
@@ -52,6 +62,7 @@ from samplesheets.models import (
     Assay,
     ISATab,
     IrodsAccessTicket,
+    IrodsDataRequest,
 )
 from samplesheets.rendering import SampleSheetTableBuilder, EMPTY_VALUE
 from samplesheets.sheet_config import SheetConfigAPI
@@ -84,7 +95,25 @@ MISC_FILES_COLL = 'MiscFiles'
 TRACK_HUBS_COLL = 'TrackHubs'
 RESULTS_COLL_ID = 'results_reports'
 RESULTS_COLL = 'ResultsReports'
-DEFAULT_VERSION_PAGINATION = 15
+
+EMAIL_DELETE_REQUEST_ACCEPT = r'''
+Your delete request has been accepted.
+
+Project: {project}
+Path: {path}
+User: {user} <{user_email}>
+
+All data has been removed.
+'''.lstrip()
+EMAIL_DELETE_REQUEST_REJECT = r'''
+Your delete request has been rejected.
+
+Project: {project}
+Path: {path}
+User: {user} <{user_email}>
+
+No data has been removed.
+'''.lstrip()
 
 
 # Mixins -----------------------------------------------------------------------
@@ -1353,9 +1382,7 @@ class SampleSheetVersionListView(
     model = ISATab
     permission_required = 'samplesheets.edit_sheet'
     template_name = 'samplesheets/sheet_versions.html'
-    paginate_by = getattr(
-        settings, 'SHEETS_VERSION_PAGINATION', DEFAULT_VERSION_PAGINATION
-    )
+    paginate_by = settings.SHEETS_VERSION_PAGINATION
 
     def get_queryset(self):
         return ISATab.objects.filter(
@@ -1553,12 +1580,10 @@ class IrodsAccessTicketListView(
     model = IrodsAccessTicket
     permission_required = 'samplesheets.view_sheet'
     template_name = 'samplesheets/irods_access_tickets.html'
-    paginate_by = getattr(
-        settings, 'SHEETS_VERSION_PAGINATION', DEFAULT_VERSION_PAGINATION
-    )
+    paginate_by = settings.SHEETS_IRODS_TICKET_PAGINATION
 
     def get_queryset(self):
-        return IrodsAccessTicket.objects.filter(
+        return self.model.objects.filter(
             project__sodar_uuid=self.kwargs['project']
         )
 
@@ -1696,3 +1721,370 @@ class IrodsAccessTicketDeleteView(
         except Exception as e:
             messages.error(request, '%s. Maybe it didn\'t exist.' % e)
         return super().delete(request, *args, **kwargs)
+
+
+class IrodsRequestCreateView(
+    LoginRequiredMixin,
+    LoggedInPermissionMixin,
+    ProjectPermissionMixin,
+    InvestigationContextMixin,
+    FormView,
+):
+    """View for creating an iRODS data request"""
+
+    permission_required = 'samplesheets.edit_sheet'
+    template_name = 'samplesheets/irods_request_form.html'
+    form_class = IrodsRequestForm
+
+    def form_valid(self, form):
+        timeline = get_backend_api('timeline_backend')
+
+        # Create database object
+        obj = form.save(commit=False)
+        obj.user = self.request.user
+        obj.project = self.get_project()
+        obj.save()
+
+        if timeline:
+            tl_event = timeline.add_event(
+                project=self.get_project(),
+                app_name=APP_NAME,
+                user=self.request.user,
+                event_name='irods_request_create',
+                description='create iRODS data request {irods_request}',
+                status_type='OK',
+            )
+            tl_event.add_object(
+                obj=obj, label='irods_request', name=obj.get_display_name()
+            )
+
+        messages.success(
+            self.request,
+            'iRODS data request "{}" created.'.format(obj.get_display_name()),
+        )
+        return redirect(
+            reverse(
+                'samplesheets:irods_requests',
+                kwargs={'project': self.kwargs['project']},
+            )
+        )
+
+
+class IrodsRequestUpdateView(
+    LoginRequiredMixin,
+    LoggedInPermissionMixin,
+    ProjectPermissionMixin,
+    InvestigationContextMixin,
+    UpdateView,
+):
+    """View for updating an iRODS data request"""
+
+    permission_required = 'samplesheets.edit_sheet'
+    template_name = 'samplesheets/irods_request_form.html'
+    model = IrodsDataRequest
+    form_class = IrodsRequestForm
+    slug_url_kwarg = 'irodsdatarequest'
+    slug_field = 'sodar_uuid'
+
+    def form_valid(self, form):
+        timeline = get_backend_api('timeline_backend')
+
+        # Create database object
+        obj = form.save(commit=False)
+        obj.user = self.request.user
+        obj.project = self.get_project()
+        obj.save()
+
+        if timeline:
+            tl_event = timeline.add_event(
+                project=self.get_project(),
+                app_name=APP_NAME,
+                user=self.request.user,
+                event_name='irods_request_update',
+                description='update iRODS data request {irods_request}',
+                status_type='OK',
+            )
+            tl_event.add_object(
+                obj=obj, label='irods_request', name=obj.get_display_name()
+            )
+
+        messages.success(
+            self.request,
+            'iRODS data request "{}" updated.'.format(obj.get_display_name()),
+        )
+        return redirect(
+            reverse(
+                'samplesheets:irods_requests',
+                kwargs={'project': self.get_project().sodar_uuid},
+            )
+        )
+
+
+class IrodsRequestDeleteView(
+    LoginRequiredMixin,
+    LoggedInPermissionMixin,
+    ProjectPermissionMixin,
+    InvestigationContextMixin,
+    DeleteView,
+):
+    """View for deleting an iRODS data request"""
+
+    permission_required = 'samplesheets.delete_sheet'
+    template_name = 'samplesheets/irods_request_confirm_delete.html'
+    model = IrodsDataRequest
+    slug_url_kwarg = 'irodsdatarequest'
+    slug_field = 'sodar_uuid'
+
+    def get_success_url(self):
+        timeline = get_backend_api('timeline_backend')
+        if timeline:
+            tl_event = timeline.add_event(
+                project=self.get_project(),
+                app_name=APP_NAME,
+                user=self.request.user,
+                event_name='irods_request_delete',
+                description='delete iRODS data request {irods_request}',
+                status_type='OK',
+            )
+            tl_event.add_object(
+                obj=self.object,
+                label='irods_request',
+                name=self.object.get_display_name(),
+            )
+        messages.success(
+            self.request,
+            'iRODS data request deleted.',
+        )
+        return reverse(
+            'samplesheets:irods_requests',
+            kwargs={'project': self.object.project.sodar_uuid},
+        )
+
+
+class IrodsRequestAcceptView(
+    LoginRequiredMixin,
+    LoggedInPermissionMixin,
+    ProjectPermissionMixin,
+    InvestigationContextMixin,
+    FormView,
+):
+    """View for accepting an iRODS data request"""
+
+    permission_required = 'samplesheets.manage_sheet'
+    template_name = 'samplesheets/irods_request_accept_form.html'
+    form_class = IrodsRequestAcceptForm
+
+    def get_context_data(self, *args, **kwargs):
+        context_data = super().get_context_data(*args, **kwargs)
+        context_data['irods_request'] = IrodsDataRequest.objects.filter(
+            sodar_uuid=self.kwargs['irodsdatarequest']
+        ).first()
+        return context_data
+
+    def form_valid(self, request, *args, **kwargs):
+        timeline = get_backend_api('timeline_backend')
+        taskflow = get_backend_api('taskflow')
+        project = self.get_project()
+        tl_event = None
+
+        try:
+            obj = IrodsDataRequest.objects.get(
+                sodar_uuid=self.kwargs['irodsdatarequest']
+            )
+        except IrodsDataRequest.DoesNotExist:
+            messages.error(
+                self.request,
+                'iRODS data request {} doesn\' exist.'.format(
+                    self.kwargs['irodsdatarequest']
+                ),
+            )
+            return redirect(
+                reverse(
+                    'samplesheets:irods_requests',
+                    kwargs={'project': project.sodar_uuid},
+                )
+            )
+
+        if timeline:
+            tl_event = timeline.add_event(
+                project=project,
+                app_name=APP_NAME,
+                user=self.request.user,
+                event_name='irods_request_accept',
+                description='accept iRODS data request {irods_request}',
+                status_type='OK',
+            )
+            tl_event.add_object(
+                obj=obj, label='irods_request', name=obj.get_display_name()
+            )
+
+        flow_name = 'data_delete'
+        flow_data = {
+            'paths': [obj.path],
+        }
+        if obj.is_data_object():
+            flow_data['paths'].append(obj.path + '.md5')
+        try:
+            taskflow.submit(
+                project_uuid=project.sodar_uuid,
+                flow_name=flow_name,
+                flow_data=flow_data,
+                timeline_uuid=tl_event.sodar_uuid,
+                request_mode='sync',
+                request=self.request,
+            )
+            obj.status = 'ACCEPTED'
+            obj.save()
+
+        except taskflow.FlowSubmitException as ex:
+            if tl_event:
+                tl_event.set_status('FAILED', str(ex))
+            obj.status = 'FAILED'
+            obj.save()
+            raise ex
+
+        # Update cache
+        if settings.SHEETS_ENABLE_CACHE:
+            update_project_cache_task.delay(
+                project_uuid=str(project.sodar_uuid),
+                user_uuid=str(self.request.user.sodar_uuid),
+            )
+
+        # Prepare and send notification email
+        if settings.PROJECTROLES_SEND_EMAIL:
+            subject_body = 'iRODS delete request accepted'
+            message_body = EMAIL_DELETE_REQUEST_ACCEPT.format(
+                project=obj.project.title,
+                user=obj.user.username,
+                user_email=obj.user.email,
+                path=obj.path,
+            )
+            send_generic_mail(
+                subject_body, message_body, [obj.user.email], request
+            )
+
+        messages.success(
+            self.request,
+            'iRODS data request "{}" accepted.'.format(obj.get_display_name()),
+        )
+
+        return redirect(
+            reverse(
+                'samplesheets:irods_requests',
+                kwargs={'project': project.sodar_uuid},
+            )
+        )
+
+
+class IrodsRequestRejectView(
+    LoginRequiredMixin,
+    LoggedInPermissionMixin,
+    ProjectPermissionMixin,
+    InvestigationContextMixin,
+    View,
+):
+    """View for accepting an iRODS data request"""
+
+    permission_required = 'samplesheets.manage_sheet'
+
+    def get(self, request, *args, **kwargs):
+        timeline = get_backend_api('timeline_backend')
+        project = self.get_project()
+
+        try:
+            obj = IrodsDataRequest.objects.get(
+                sodar_uuid=self.kwargs['irodsdatarequest']
+            )
+        except IrodsDataRequest.DoesNotExist:
+            messages.error(
+                self.request,
+                'iRODS data request "{}" doesn\'t exist.'.format(
+                    self.kwargs['irodsdatarequest']
+                ),
+            )
+            return redirect(
+                reverse(
+                    'samplesheets:irods_requests',
+                    kwargs={'project': project.sodar_uuid},
+                )
+            )
+
+        obj.status = 'REJECTED'
+        obj.save()
+
+        if timeline:
+            tl_event = timeline.add_event(
+                project=project,
+                app_name=APP_NAME,
+                user=self.request.user,
+                event_name='irods_request_reject',
+                description='reject data iRODS request {irods_request}',
+                status_type='OK',
+            )
+            tl_event.add_object(
+                obj=obj, label='irods_request', name=obj.get_display_name()
+            )
+
+        messages.success(
+            self.request,
+            'iRODS data request "{}" rejected.'.format(obj.get_display_name()),
+        )
+
+        # Prepare and send notification email
+        if settings.PROJECTROLES_SEND_EMAIL:
+            subject_body = 'iRODS delete request rejected'
+            message_body = EMAIL_DELETE_REQUEST_REJECT.format(
+                project=obj.project.title,
+                user=obj.user.username,
+                user_email=obj.user.email,
+                path=obj.path,
+            )
+            send_generic_mail(
+                subject_body, message_body, [obj.user.email], request
+            )
+
+        return redirect(
+            reverse(
+                'samplesheets:irods_requests',
+                kwargs={'project': project.sodar_uuid},
+            )
+        )
+
+
+class IrodsDataRequestListView(
+    LoginRequiredMixin,
+    LoggedInPermissionMixin,
+    ProjectPermissionMixin,
+    InvestigationContextMixin,
+    ListView,
+):
+    """View for listing iRODS data requests"""
+
+    model = IrodsDataRequest
+    permission_required = 'samplesheets.edit_sheet'
+    template_name = 'samplesheets/irods_requests.html'
+    paginate_by = settings.SHEETS_IRODS_REQUEST_PAGINATION
+
+    def get_context_data(self, *args, **kwargs):
+        context_data = super().get_context_data(*args, **kwargs)
+        assign = RoleAssignment.objects.filter(
+            project=self.get_project(),
+            user=self.request.user,
+            role__name=SODAR_CONSTANTS['PROJECT_ROLE_CONTRIBUTOR'],
+        )
+        context_data['is_contributor'] = bool(assign)
+        return context_data
+
+    def get_queryset(self):
+        project = self.get_project()
+        queryset = self.model.objects.filter(project=project)
+        # For superusers, owners and delegates,
+        # display active/failed requests from all users
+        if (
+            self.request.user.is_superuser
+            or project.is_delegate(self.request.user)
+            or project.is_owner(self.request.user)
+        ):
+            return queryset.filter(status__in=['ACTIVE', 'FAILED'])
+        # For regular users, dispaly their own requests regardless of status
+        return queryset.filter(user=self.request.user)

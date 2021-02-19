@@ -82,7 +82,8 @@ class TestOBOFormatOntologyIO(TestCase):
         term = ontology.get_term_by_id(EX_OBO_TERM_IDS['no_def'])
         self.assertIsNone(term.definition)
 
-    def test_import_batch(self):
+    # TODO reactive me once URLs are available again
+    def INACTIVE_test_import_batch(self):
         """Test importing ontologies in a batch (this may take a while)"""
 
         for url in OBO_BATCH_URLS:
@@ -107,7 +108,8 @@ class TestOBOFormatOntologyIO(TestCase):
 
             ontology.delete()
 
-    def test_import_batch_owl(self):
+    # TODO reactive me once URLs are available again
+    def INACTIVE_test_import_batch_owl(self):
         """Test converting and importing OWL ontologies in a batch (this may take a while)"""
 
         for url in OWL_BATCH_URLS:

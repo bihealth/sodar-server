@@ -46,6 +46,7 @@ logger = logging.getLogger(__name__)
 
 
 MD5_RE = re.compile(r'([a-fA-F\d]{32})')
+APP_NAME = 'samplesheets'
 
 
 # API Views --------------------------------------------------------------------

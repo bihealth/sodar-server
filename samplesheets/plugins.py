@@ -18,6 +18,7 @@ from samplesheets.models import (
     GenericMaterial,
     ISATab,
     IrodsAccessTicket,
+    IrodsDataRequest,
 )
 from samplesheets.rendering import SampleSheetTableBuilder
 from samplesheets.urls import urlpatterns
@@ -192,6 +193,15 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                     kwargs={'project': obj.project.sodar_uuid},
                 ),
                 'label': obj.get_name(),
+            }
+
+        elif obj and obj.__class__ == IrodsDataRequest:
+            return {
+                'url': reverse(
+                    'samplesheets:irods_requests',
+                    kwargs={'project': obj.project.sodar_uuid},
+                ),
+                'label': obj.get_display_name(),
             }
 
     def search(self, search_terms, user, search_type=None, keywords=None):

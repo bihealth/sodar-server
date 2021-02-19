@@ -13,6 +13,7 @@ from django.utils.timezone import localtime
 
 # Projectroles dependency
 from projectroles.models import Project
+from projectroles.plugins import get_backend_api
 
 from samplesheets.utils import (
     get_alt_names,
@@ -61,6 +62,11 @@ ISATAB_TAGS = {
     'REPLACE': 'Replacing a previous ISA-Tab',
 }
 
+IRODS_DATA_REQUEST_STATUS_CHOICES = [
+    ('ACTIVE', 'active'),
+    ('ACCEPTED', 'accepted'),
+    ('FAILED', 'failed'),
+]
 
 # Abstract base class ----------------------------------------------------------
 
@@ -1214,3 +1220,136 @@ class IrodsAccessTicket(models.Model):
         return 'IrodsAccessTicket({})'.format(
             ', '.join(repr(v) for v in values)
         )
+
+
+class IrodsDataRequest(models.Model):
+    """
+    Model for iRODS data requests.
+    """
+
+    class Meta:
+        ordering = ['-date_created']
+
+    #: Project to which the iRODS data request belongs
+    project = models.ForeignKey(
+        Project,
+        null=False,
+        related_name='irods_data_request',
+        help_text='Project to which the iRODS delete request belongs',
+    )
+
+    #: Action to be performed (default currently supported)
+    action = models.CharField(
+        max_length=64,
+        unique=False,
+        blank=False,
+        default='delete',
+        help_text='Action to be performed',
+    )
+
+    #: Target path for action (to be implemented for move requests)
+    target_path = models.CharField(
+        max_length=512,
+        unique=False,
+        blank=True,
+        null=True,
+        help_text='Target path for action',
+    )
+
+    #: Full path to iRODS data object or collection
+    path = models.CharField(
+        max_length=1024,
+        unique=False,
+        blank=False,
+        help_text='Full path to iRODS data object or collection',
+    )
+
+    #: User initiating the request
+    user = models.ForeignKey(
+        AUTH_USER_MODEL,
+        null=False,
+        related_name='irods_data_request',
+        help_text='User initiating the request',
+    )
+
+    #: Status of the request
+    status = models.CharField(
+        max_length=16,
+        null=False,
+        choices=IRODS_DATA_REQUEST_STATUS_CHOICES,
+        default=IRODS_DATA_REQUEST_STATUS_CHOICES[0][0],
+        help_text='Status of the request',
+    )
+
+    #: Optional information regarding current status
+    status_info = models.TextField(
+        help_text='Optional information reqarding current status'
+    )
+
+    #: Request description (optional)
+    description = models.CharField(
+        max_length=1024, help_text='Request description'
+    )
+
+    #: DateTime of request creation
+    date_created = models.DateTimeField(
+        auto_now=True, help_text='DateTime of request creation'
+    )
+
+    #: Internal UUID for the object
+    sodar_uuid = models.UUIDField(
+        default=uuid.uuid4, unique=True, help_text='SODAR UUID for the object'
+    )
+
+    def __str__(self):
+        return '{}: {} {}'.format(
+            self.project.title, self.action, self.get_short_path()
+        )
+
+    def __repr__(self):
+        values = (
+            self.project.title,
+            self.get_assay_title(),
+            self.action,
+            self.path,
+            self.user.username,
+        )
+        return 'IrodsDataRequest({})'.format(', '.join(repr(v) for v in values))
+
+    # Custom row-level functions
+
+    def get_display_name(self):
+        """Return display name for object"""
+        return '{} {}'.format(self.action.capitalize(), self.get_short_path())
+
+    def get_date_created(self):
+        return localtime(self.date_created).strftime('%Y-%m-%d %H:%M')
+
+    def is_data_object(self):
+        irods_backend = get_backend_api('omics_irods')
+        irods_session = irods_backend.get_session()
+        return irods_session.data_objects.exists(self.path)
+
+    def is_collection(self):
+        irods_backend = get_backend_api('omics_irods')
+        irods_session = irods_backend.get_session()
+        return irods_session.collections.exists(self.path)
+
+    def get_short_path(self):
+        """Return shortened layout-friendly path"""
+        return '/'.join(self.path.split('/')[-2:])
+
+    def get_assay(self):
+        """Return Assay object for request path or None if not found"""
+        irods_backend = get_backend_api('omics_irods')
+        if not irods_backend:
+            return None
+        a_uuid = irods_backend.get_uuid_from_path(self.path, 'assay')
+        return Assay.objects.filter(sodar_uuid=a_uuid).first()
+
+    def get_assay_title(self):
+        """Return title of related assay or "N/A" if not found"""
+        assay = self.get_assay()
+        if not assay:
+            return 'N/A'
+        return assay.get_display_title()

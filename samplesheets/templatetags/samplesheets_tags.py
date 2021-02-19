@@ -20,6 +20,11 @@ TAG_COLORS = {
     'RESTORE': 'danger',
 }
 DEFAULT_TAG_COLOR = 'secondary'
+REQUEST_STATUS_CLASSES = {
+    'ACTIVE': 'bg-info text-white',
+    'ACCEPTED': 'bg-success text-white',
+    'REJECTED': 'bg-danger text-white',
+}
 
 
 irods_backend = get_backend_api('omics_irods', conn=False)
@@ -137,3 +142,11 @@ def get_isatab_tag_html(isatab):
         )
 
     return ret
+
+
+@register.simple_tag
+def get_request_status_class(irods_request):
+    """Return class(es) for iRODS request table status cell"""
+    if irods_request.status not in REQUEST_STATUS_CLASSES:
+        return ''
+    return REQUEST_STATUS_CLASSES[irods_request.status]

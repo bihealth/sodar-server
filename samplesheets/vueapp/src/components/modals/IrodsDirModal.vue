@@ -29,6 +29,7 @@
             <th>File</th>
             <th>Size</th>
             <th>Modified</th>
+            <th>Action</th>
           </tr>
         </thead>
         <tbody>
@@ -36,13 +37,39 @@
               :key="index"
               v-show="objInfo.visibleInList"
               class="sodar-ss-irods-obj">
-            <td>
+            <td :class="strikeActiveRequest(objInfo)">
               <a :href="irodsWebdavUrl + objInfo.path">
                 <span class="text-muted">{{ getRelativePath(objInfo.path) }}/</span>{{ objInfo.name }}
               </a>
             </td>
-            <td>{{ objInfo.size | prettyBytes }}</td>
-            <td>{{ objInfo.modify_time }}</td>
+            <td :class="strikeActiveRequest(objInfo)">
+              {{ objInfo.size | prettyBytes }}
+            </td>
+            <td :class="strikeActiveRequest(objInfo)">
+              {{ objInfo.modify_time }}
+            </td>
+            <td>
+              <b-button
+                  v-if="objInfo.irods_request_status === 'ACTIVE'"
+                  variant="primary"
+                  class="sodar-list-btn sodar-ss-popup-list-btn sodar-ss-request-cancel-btn"
+                  :title="getRequestCancelTitle(objInfo)"
+                  :disabled="!allowRequestCancel(objInfo)"
+                  @click="cancelRequest(index)"
+                  v-b-tooltip.hover.d300>
+                <i class="fa fa-fw fa-ban"></i>
+              </b-button>
+              <b-button
+                  v-else
+                  variant="danger"
+                  class="sodar-list-btn sodar-ss-popup-list-btn sodar-ss-request-delete-btn"
+                  :title="getRequestIssueTitle(objInfo)"
+                  :disabled="!allowRequestIssue(objInfo)"
+                  @click="issueRequest(index)"
+                  v-b-tooltip.hover.d300>
+                <i class="fa fa-fw fa-eraser"></i>
+              </b-button>
+            </td>
           </tr>
         </tbody>
       </table>
@@ -73,7 +100,8 @@ export default {
   name: 'IrodsDirModal',
   props: [
     'irodsWebdavUrl',
-    'projectUuid'
+    'projectUuid',
+    'app'
   ],
   data () {
     return {
@@ -101,6 +129,25 @@ export default {
       const pathSplit = path.split('/')
       return pathSplit.slice(this.dirPathLength, pathSplit.length - 1).join('/')
     },
+    strikeActiveRequest (objInfo) {
+      return { 'text-strikethrough': objInfo.irods_request_status === 'ACTIVE' }
+    },
+    allowRequestCancel (objInfo) {
+      return this.app.sodarContext.perms.is_superuser ||
+        objInfo.irods_request_user === this.app.sodarContext.user_uuid
+    },
+    allowRequestIssue (objInfo) {
+      return this.app.sodarContext.perms.edit_sheet &&
+        objInfo.irods_request_status === null
+    },
+    getRequestCancelTitle (objInfo) {
+      return this.allowRequestCancel(objInfo)
+        ? 'Cancel Delete Request' : 'Already requested by another user'
+    },
+    getRequestIssueTitle (objInfo) {
+      return this.allowRequestIssue(objInfo)
+        ? 'Issue Delete Request' : 'User not allowed to issue request'
+    },
     handleObjListResponse (response) {
       if ('data_objects' in response) {
         if (response.data_objects.length > 0) {
@@ -121,8 +168,8 @@ export default {
       }
     },
     getObjList (path) {
-      const listUrl = '/irodsbackend/api/list/' +
-      this.projectUuid + '?path=' + encodeURIComponent(path) + '&md5=0'
+      const listUrl = '/samplesheets/ajax/irods-objects/' +
+      this.projectUuid + '?path=' + encodeURIComponent(path)
 
       fetch(listUrl, { credentials: 'same-origin' })
         .then(response => response.json())
@@ -130,6 +177,40 @@ export default {
           this.handleObjListResponse(response)
         }).catch(function (error) {
           this.message = 'Error fetching data: ' + error.detail
+        })
+    },
+    handleDeleteRequestResponse (response, index) {
+      if (response.detail === 'ok') {
+        this.objectList[index].irods_request_status = response.status
+        this.objectList[index].irods_request_user = response.user
+      }
+    },
+    issueRequest (index) {
+      const issueDeleteRequestUrl = '/samplesheets/ajax/irods-request/create/' +
+      this.projectUuid + '?path=' + encodeURIComponent(this.objectList[index].path)
+
+      if (confirm(
+        'Do you really want to request deletion for "' +
+          this.objectList[index].name + '"?')) {
+        fetch(issueDeleteRequestUrl, { credentials: 'same-origin' })
+          .then(response => response.json())
+          .then(response => {
+            this.handleDeleteRequestResponse(response, index)
+          }).catch(function (error) {
+            this.mesage = 'Error issuing iRODS delete request: ' + error.detail
+          })
+      }
+    },
+    cancelRequest (index) {
+      const cancelDeleteRequestUrl = '/samplesheets/ajax/irods-request/delete/' +
+      this.projectUuid + '?path=' + encodeURIComponent(this.objectList[index].path)
+
+      fetch(cancelDeleteRequestUrl, { credentials: 'same-origin' })
+        .then(response => response.json())
+        .then(response => {
+          this.handleDeleteRequestResponse(response, index)
+        }).catch(function (error) {
+          this.mesage = 'Error canceling iRODS delete request: ' + error.detail
         })
     },
     showModal (path) {

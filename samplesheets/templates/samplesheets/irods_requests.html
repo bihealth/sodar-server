@@ -1,0 +1,187 @@
+{# Projectroles dependency #}
+{% extends 'projectroles/project_base.html' %}
+{% load projectroles_common_tags %}
+{% load static %}
+{% load rules %}
+{% load samplesheets_tags %}
+
+{% block title %}
+  iRODS Delete Requests for {{ project.title }}
+{% endblock title %}
+
+{% block css %}
+  {{ block.super }}
+  <style type="text/css">
+
+    table#sodar-ss-request-table thead tr th:nth-child(3),
+    table#sodar-ss-request-table tbody tr td:nth-child(3),
+    table#sodar-ss-request-table thead tr th:nth-child(4),
+    table#sodar-ss-request-table tbody tr td:nth-child(4) {
+      white-space: nowrap;
+    }
+
+    table#sodar-ss-request-table thead tr th:nth-child(3),
+    table#sodar-ss-request-table tbody tr td:nth-child(3) {
+      width: 150px;
+    }
+
+    table#sodar-ss-request-table thead tr th:nth-child(4),
+    table#sodar-ss-request-table tbody tr td:nth-child(4) {
+      width: 120px;
+    }
+
+    table#sodar-ss-request-table thead tr th:nth-child(5),
+    table#sodar-ss-request-table tbody tr td:nth-child(5) {
+  width: 75px;
+    }
+
+    /* Date column */
+    @media screen and (max-width: 900px) {
+      table#sodar-ss-request-table thead tr th:nth-child(3),
+      table#sodar-ss-request-table tbody tr td:nth-child(3) {
+        display: none;
+      }
+    }
+
+    /* User column */
+    @media screen and (max-width: 700px) {
+      table#sodar-ss-request-table thead tr th:nth-child(2),
+      table#sodar-ss-request-table tbody tr td:nth-child(2) {
+        display: none;
+      }
+    }
+
+    /* Status column */
+    @media screen and (max-width: 550px) {
+      table#sodar-ss-request-table thead tr th:nth-child(4),
+      table#sodar-ss-request-table tbody tr td:nth-child(4) {
+        display: none;
+      }
+    }
+  </style>
+{% endblock css %}
+
+{% block projectroles_extend %}
+{% has_perm 'samplesheets.manage_sheet' request.user project as can_manage_request %}
+
+<div class="row sodar-subtitle-container">
+  <h3>iRODS Delete Requests</h3>
+    <div class="ml-auto mt-1">
+      <a href="{% url 'samplesheets:irods_request_create' project=project.sodar_uuid %}"
+         class="btn btn-primary sodar-header-button" role="button">
+       <i class="fa fa-plus"></i> Create Request
+      </a>
+      <a href="{% url 'samplesheets:project_sheets' project=project.sodar_uuid %}"
+         class="btn btn-secondary sodar-header-button" role="button">
+       <i class="fa fa-arrow-circle-left"></i> Project Sheets
+      </a>
+    </div>
+</div>
+
+<div class="container-fluid sodar-page-container">
+
+{% if object_list.count > 0 %}
+  <div class="card" id="sodar-ss-irods-request-list">
+    <div class="card-body p-0">
+      <table class="table table-striped sodar-card-table"
+             id="sodar-ss-request-table">
+        <thead>
+          <tr>
+            <th>Path</th>
+            <th>User</th>
+            <th>Created</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for irods_request in object_list %}
+            <tr>
+              <td>
+                <span title="Assay: {{ irods_request.get_assay.get_display_name }}"
+                      data-toggle="tooltip">
+                  {{ irods_request.get_short_path }}
+                </span>
+                {% if irods_request.description %}
+                  {% get_info_link irods_request.description as info_link %}
+                  {{ info_link | safe }}
+                {% endif %}
+                <button
+                    role="submit"
+                    class="btn btn-secondary sodar-list-btn sodar-copy-btn pull-right"
+                    data-clipboard-text="{{ irods_request.path }}"
+                    data-tooltip="tooltip" data-placement="top"
+                    title="Copy full iRODS path into clipboard">
+                  <i class="fa fa-clipboard"></i>
+                </button>
+              </td>
+              <td>
+                {% get_user_html irods_request.user as user_html %}
+                {{ user_html | safe }}
+              </td>
+              <td>{{ irods_request.get_date_created }}</td>
+              <td class="{% get_request_status_class irods_request %}">
+                {{ irods_request.status }}
+              </td>
+              <td class="text-right">
+                <button class="btn btn-secondary dropdown-toggle sodar-list-dropdown"
+                        type="button" data-toggle="dropdown" aria-expanded="false">
+                  <i class="fa fa-cog"></i>
+                </button>
+                <div class="dropdown-menu dropdown-menu-right">
+                  {% if can_manage_request %}
+                    <a class="dropdown-item"
+                       href="{% url 'samplesheets:irods_request_accept' irodsdatarequest=irods_request.sodar_uuid %}">
+                      <i class="fa fa-fw fa-check"></i> Accept Request
+                    </a>
+                    <a class="dropdown-item"
+                       href="{% url 'samplesheets:irods_request_reject' irodsdatarequest=irods_request.sodar_uuid %}">
+                      <i class="fa fa-fw fa-ban"></i> Reject Request
+                    </a>
+                  {% endif %}
+                  {% if irods_request.user == request.user %}
+                    {% if irods_request.status == 'ACTIVE' or irods_request.status == 'FAILED' %}
+                      <a class="dropdown-item"
+                         href="{% url 'samplesheets:irods_request_update' irodsdatarequest=irods_request.sodar_uuid %}">
+                        <i class="fa fa-fw fa-edit"></i> Update Request
+                      </a>
+                    {% endif %}
+                    <a class="dropdown-item text-danger"
+                       href="{% url 'samplesheets:irods_request_delete' irodsdatarequest=irods_request.sodar_uuid %}">
+                      <i class="fa fa-fw fa-close"></i> Delete Request
+                    </a>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% if is_paginated %}
+    {% include 'projectroles/_pagination.html' with pg_small=False %}
+  {% endif %}
+{% else %}
+  <div class="alert alert-info" id="sodar-ss-version-alert">
+    {% if is_contributor %}
+      You don't have active iRODS delete requests for this project.
+    {% else %}
+      No iRODS delete requests have been found for the sample sheets in this project.
+    {% endif %}
+  </div>
+{% endif %}
+</div>
+
+{% endblock projectroles_extend %}
+
+{% block javascript %}
+  {{ block.super }}
+
+  {# Tour content #}
+  <script type="text/javascript">
+    tourEnabled = false;
+    // TODO: Tour
+  </script>
+
+{% endblock javascript %}

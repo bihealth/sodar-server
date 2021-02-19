@@ -1,0 +1,46 @@
+{# Projectroles dependency #}
+{% extends 'projectroles/project_base.html' %}
+{% load rules %}
+{% load samplesheets_tags %}
+{% load projectroles_common_tags %}
+{% load crispy_forms_filters %}
+
+{% block title %}
+  Accept iRODS Delete Request
+{% endblock title %}
+
+{% block projectroles_extend %}
+
+
+<div class="container-fluid sodar-subtitle-container">
+  <h3>Accept iRODS Delete Request</h3>
+</div>
+
+<div class="container-fluid sodar-page-container">
+  <div class="alert alert-danger">
+    <strong>Warning:</strong> Accepting the request will delete the associated
+    data object or collection from iRODS. This can <strong>not</strong> be
+    undone without administrator assistance!
+  </div>
+  <div class="alert alert-danger">
+    The following data object or collection will be deleted: <br />
+    <code class="text-danger">{{ irods_request.path }}</code>
+  </div>
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form | crispy }}
+    <div class="row">
+      <div class="btn-group ml-auto">
+        <a role="button" class="btn btn-secondary"
+           href="{{ request.session.real_referer }}">
+          <i class="fa fa-arrow-circle-left"></i> Cancel
+        </a>
+        <button type="submit" class="btn btn-primary" id="sodar-ss-btn-import-submit">
+          <i class="fa fa-check"></i> Accept
+        </button>
+      </div>
+    </div>
+  </form>
+</div>
+
+{% endblock projectroles_extend %}

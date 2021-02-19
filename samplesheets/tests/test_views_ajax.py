@@ -9,13 +9,14 @@ from unittest.case import skipIf
 from django.conf import settings
 from django.urls import reverse
 
+# Projectroles dependency
+from projectroles.constants import SODAR_CONSTANTS
+from projectroles.plugins import get_backend_api
+
 # Ontologyaccess dependency
 from ontologyaccess.io import OBOFormatOntologyIO
 from ontologyaccess.models import DEFAULT_TERM_URL
 from ontologyaccess.tests.test_io import OBO_PATH, OBO_NAME
-
-# Projectroles dependency
-from projectroles.plugins import get_backend_api
 
 # Timeline dependency
 from timeline.models import ProjectEvent
@@ -50,10 +51,11 @@ from samplesheets.utils import get_node_obj
 
 conf_api = SheetConfigAPI()
 
-
-APP_NAME = 'samplesheets'
+# SODAR constants
+PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 
 # Local constants
+APP_NAME = 'samplesheets'
 EDIT_DIR = os.path.dirname(__file__) + '/edit/'
 STUDY_INSERT_PATH = EDIT_DIR + 'i_small_study_insert.json'
 ASSAY_INSERT_PATH = EDIT_DIR + 'i_small_assay_insert.json'
@@ -71,6 +73,7 @@ EMPTY_ONTOLOGY_VAL = {
     'value': {'name': None, 'accession': None, 'ontology_name': None},
 }
 SHEET_PATH_INSERTED = SHEET_DIR_SPECIAL + 'i_small_insert.zip'
+TEST_FILE_NAME = 'test1'
 
 
 class RowEditMixin:
@@ -157,7 +160,7 @@ class RowEditMixin:
 
 
 class IrodsAccessTicketMixin:
-    """Helpers for creating IrodsAccessTicket object."""
+    """Helpers for creating IrodsAccessTicket object"""
 
     @classmethod
     def _make_irodsaccessticket(
@@ -232,6 +235,7 @@ class TestContextAjaxView(TestViewsBase):
                 'description': None,
                 'comments': None,
             },
+            'user_uuid': str(self.user.sodar_uuid),
             'studies': {
                 str(self.study.sodar_uuid): {
                     'display_name': self.study.get_display_name(),

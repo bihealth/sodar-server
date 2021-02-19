@@ -14,8 +14,19 @@ from projectroles.models import Project
 from projectroles.plugins import get_backend_api
 
 from samplesheets.io import SampleSheetIO, ARCHIVE_TYPES
-from samplesheets.models import Investigation, IrodsAccessTicket, Assay
 from samplesheets.utils import clean_sheet_dir_name
+from samplesheets.models import (
+    Investigation,
+    IrodsAccessTicket,
+    Assay,
+    IrodsDataRequest,
+    Study,
+)
+
+
+# Local constants
+ERROR_MSG_INVALID_PATH = 'Not a valid iRODS path for this project'
+ERROR_MSG_EXISTING = 'An active request already exists for this path'
 
 
 class SampleSheetImportForm(forms.Form):
@@ -318,3 +329,88 @@ class IrodsAccessTicketForm(forms.ModelForm):
                 self.add_error('path', 'Assay not found')
 
         return cleaned_data
+
+
+class IrodsRequestForm(forms.ModelForm):
+    """Form for the iRODS delete request creation and editing"""
+
+    class Meta:
+        model = IrodsDataRequest
+        fields = ['path', 'description']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['description'].required = False
+
+    def clean(self):
+        cleaned_data = super().clean()
+        irods_backend = get_backend_api('omics_irods')
+
+        old_request = IrodsDataRequest.objects.filter(
+            path=cleaned_data['path'], status__in=['ACTIVE', 'FAILED']
+        ).first()
+        if old_request and old_request != self.instance:
+            self.add_error('path', ERROR_MSG_EXISTING)
+            return cleaned_data
+
+        path_re = (
+            r'^/omicsZone/projects/[0-9a-f]{2}/'
+            r'(?P<project_uuid>[0-9a-f-]{36})/sample_data/'
+            r'study_(?P<study_uuid>[0-9a-f-]{36})/'
+            r'assay_(?P<assay_uuid>[0-9a-f-]{36})/.+$'
+        )
+        match = re.search(
+            path_re,
+            cleaned_data['path'],
+        )
+        if not match:
+            self.add_error('path', ERROR_MSG_INVALID_PATH)
+        else:
+            try:
+                cleaned_data['project'] = Project.objects.get(
+                    sodar_uuid=match.group('project_uuid')
+                )
+            except Project.DoesNotExist:
+                self.add_error('path', 'Project not found')
+
+            try:
+                Study.objects.get(
+                    sodar_uuid=match.group('study_uuid'),
+                    investigation__project__sodar_uuid=match.group(
+                        'project_uuid'
+                    ),
+                )
+            except Study.DoesNotExist:
+                self.add_error('path', 'Study not found in project with UUID')
+
+            try:
+                Assay.objects.get(
+                    sodar_uuid=match.group('assay_uuid'),
+                    study__sodar_uuid=match.group('study_uuid'),
+                )
+            except Assay.DoesNotExist:
+                self.add_error(
+                    'path', 'Assay not found in this project with UUID'
+                )
+
+        irods_session = irods_backend.get_session()
+
+        if 'path' in cleaned_data and not (
+            irods_session.data_objects.exists(cleaned_data['path'])
+            or irods_session.collections.exists(cleaned_data['path'])
+        ):
+            self.add_error(
+                'path',
+                'Path to collection or data object doesn\'t exist in iRODS',
+            )
+
+        return cleaned_data
+
+
+class IrodsRequestAcceptForm(forms.Form):
+    """Form accepting an iRODS delete request."""
+
+    confirm = forms.BooleanField(
+        label='I accept the iRODS delete request',
+        required=True,
+    )

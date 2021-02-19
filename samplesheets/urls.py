@@ -100,6 +100,36 @@ urls_ui = [
         view=views.IrodsAccessTicketDeleteView.as_view(),
         name='ticket_delete',
     ),
+    url(
+        regex=r'^irods-request/(?P<project>[0-9a-f-]+)/create$',
+        view=views.IrodsRequestCreateView.as_view(),
+        name='irods_request_create',
+    ),
+    url(
+        regex=r'^irods-request/delete/(?P<irodsdatarequest>[0-9a-f-]+)$',
+        view=views.IrodsRequestDeleteView.as_view(),
+        name='irods_request_delete',
+    ),
+    url(
+        regex=r'^irods-request/update/(?P<irodsdatarequest>[0-9a-f-]+)$',
+        view=views.IrodsRequestUpdateView.as_view(),
+        name='irods_request_update',
+    ),
+    url(
+        regex=r'^irods-request/accept/(?P<irodsdatarequest>[0-9a-f-]+)$',
+        view=views.IrodsRequestAcceptView.as_view(),
+        name='irods_request_accept',
+    ),
+    url(
+        regex=r'^irods-request/reject/(?P<irodsdatarequest>[0-9a-f-]+)$',
+        view=views.IrodsRequestRejectView.as_view(),
+        name='irods_request_reject',
+    ),
+    url(
+        regex=r'^irods-requests/(?P<project>[0-9a-f-]+)$',
+        view=views.IrodsDataRequestListView.as_view(),
+        name='irods_requests',
+    ),
 ]
 
 # REST API views
@@ -192,6 +222,21 @@ urls_ajax = [
         regex=r'^ajax/display/update/(?P<study>[0-9a-f-]+)$',
         view=samplesheets.views_ajax.StudyDisplayConfigAjaxView.as_view(),
         name='ajax_display_update',
+    ),
+    url(
+        regex=r'^ajax/irods-request/create/(?P<project>[0-9a-f-]+)$',
+        view=samplesheets.views_ajax.IrodsRequestCreateAjaxView.as_view(),
+        name='ajax_irods_request_create',
+    ),
+    url(
+        regex=r'^ajax/irods-request/delete/(?P<project>[0-9a-f-]+)$',
+        view=samplesheets.views_ajax.IrodsRequestDeleteAjaxView.as_view(),
+        name='ajax_irods_request_delete',
+    ),
+    url(
+        regex=r'^ajax/irods-objects/(?P<project>[0-9a-f-]+)$',
+        view=samplesheets.views_ajax.IrodsObjectListAjaxView.as_view(),
+        name='ajax_irods_objects',
     ),
 ]
 

@@ -3,12 +3,14 @@
 from altamisa.constants import table_headers as th
 from datetime import datetime as dt
 import json
+
 from packaging import version
 
 from django.conf import settings
 from django.db import transaction
 from django.middleware.csrf import get_token
 from django.urls import reverse
+from projectroles.constants import SODAR_CONSTANTS
 
 from rest_framework.response import Response
 
@@ -16,6 +18,7 @@ from rest_framework.response import Response
 from projectroles.plugins import get_backend_api
 from projectroles.views_ajax import SODARBaseProjectAjaxView
 
+from irodsbackend.views import BaseIrodsAjaxView
 from samplesheets.io import SampleSheetIO
 from samplesheets.models import (
     Investigation,
@@ -24,6 +27,7 @@ from samplesheets.models import (
     Protocol,
     Process,
     GenericMaterial,
+    IrodsDataRequest,
 )
 from samplesheets.sheet_config import SheetConfigAPI
 from samplesheets.rendering import (
@@ -46,12 +50,21 @@ from samplesheets.views import (
 conf_api = SheetConfigAPI()
 
 
+# SODAR constants
+PROJECT_ROLE_OWNER = SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
+PROJECT_ROLE_DELEGATE = SODAR_CONSTANTS['PROJECT_ROLE_DELEGATE']
+
 # Local constants
 EDIT_FIELD_MAP = {
     'array design ref': 'array_design_ref',
     'label': 'extract_label',
     'performer': 'performer',
 }
+
+ERROR_NOT_IN_PROJECT = 'Collection does not belong to project'
+ERROR_NOT_FOUND = 'Collection not found'
+ERROR_NO_AUTH = 'User not authorized for iRODS collection'
+
 
 # Base Ajax View Classes -------------------------------------------------------
 
@@ -245,6 +258,7 @@ class SheetContextAjaxView(SODARBaseProjectAjaxView):
             'alerts': [],
             'csrf_token': get_token(request),
             'investigation': {},
+            'user_uuid': str(request.user.sodar_uuid),
         }
 
         if inv:
@@ -1726,3 +1740,139 @@ class StudyDisplayConfigAjaxView(SODARBaseProjectAjaxView):
             {'detail': 'ok' if ret or ret_default else 'Nothing to update'},
             status=200,
         )
+
+
+class IrodsRequestCreateAjaxView(SODARBaseProjectAjaxView):
+    """Ajax view for creating an iRODS data request"""
+
+    permission_required = 'samplesheets.edit_sheet'
+
+    def get(self, request, *args, **kwargs):
+        timeline = get_backend_api('timeline_backend')
+        project = self.get_project()
+
+        # Create database object
+        old_request = IrodsDataRequest.objects.filter(
+            path=request.GET.get('path'), status__in=['ACTIVE', 'FAILED']
+        ).first()
+        if old_request:
+            return Response(
+                {'detail': 'active request for path already exists'}, status=400
+            )
+
+        irods_request = IrodsDataRequest.objects.create(
+            path=request.GET.get('path'),
+            user=request.user,
+            project=project,
+            description='Request created via Ajax API',
+        )
+
+        if timeline:
+            tl_event = timeline.add_event(
+                project=project,
+                app_name=APP_NAME,
+                user=request.user,
+                event_name='irods_request_create',
+                description='created iRODS delete request {delete_request}',
+                status_type='OK',
+            )
+            tl_event.add_object(
+                obj=irods_request,
+                label='delete_request',
+                name=str(irods_request),
+            )
+
+        return Response(
+            {
+                'detail': 'ok',
+                'status': irods_request.status,
+                'user': str(request.user.sodar_uuid),
+            },
+            status=200,
+        )
+
+
+class IrodsRequestDeleteAjaxView(SODARBaseProjectAjaxView):
+    """Ajax view for deleting an iRODS data request"""
+
+    permission_required = 'samplesheets.edit_sheet'
+
+    def get(self, request, *args, **kwargs):
+        timeline = get_backend_api('timeline_backend')
+        project = self.get_project()
+
+        # Delete database object
+        irods_request = IrodsDataRequest.objects.filter(
+            path=request.GET.get('path'),
+            status__in=['ACTIVE', 'FAILED'],
+        ).first()
+
+        if not irods_request:
+            return Response({'detail': 'Request not found'}, status=404)
+        if not (
+            request.user.is_superuser or request.user == irods_request.user
+        ):
+            return Response(
+                {'detail': 'User not allowed to delete request'}, status=403
+            )
+
+        if timeline:
+            tl_event = timeline.add_event(
+                project=project,
+                app_name=APP_NAME,
+                user=request.user,
+                event_name='irods_request_delete',
+                description='delete iRODS data request {irods_request}',
+                status_type='OK',
+            )
+            tl_event.add_object(
+                obj=irods_request,
+                label='irods_request',
+                name=str(irods_request),
+            )
+
+        irods_request.delete()
+
+        return Response(
+            {
+                'detail': 'ok',
+                'status': None,
+                'user': None,
+            },
+            status=200,
+        )
+
+
+class IrodsObjectListAjaxView(BaseIrodsAjaxView):
+    """View for listing data objects in iRODS recursively"""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.project = None
+        self.path = None
+
+    permission_required = 'samplesheets.view_sheet'
+
+    def get(self, request, *args, **kwargs):
+        try:
+            irods_backend = get_backend_api('omics_irods')
+
+        except Exception as ex:
+            return Response({'detail': str(ex)}, status=400)
+
+        # Get files
+        try:
+            ret_data = irods_backend.get_objects(self.path)
+        except Exception as ex:
+            return Response({'detail': str(ex)}, status=400)
+
+        for data_obj in ret_data.get('data_objects', []):
+            obj = IrodsDataRequest.objects.filter(
+                path=data_obj['path'], status__in=['ACTIVE', 'FAILED']
+            ).first()
+            data_obj['irods_request_status'] = obj.status if obj else None
+            data_obj['irods_request_user'] = (
+                str(obj.user.sodar_uuid) if obj else None
+            )
+
+        return Response(ret_data, status=200)
