@@ -18,7 +18,7 @@ Added
     - Warning for unrecognized assay plugin in sample sheet import (#1070)
     - Sheet creation from templates using cubi-tk (#1068)
     - ``clean_sheet_dir_name()`` helper
-    - iRODS delete requests for data objects and collections (#277)
+    - iRODS delete requests for data objects and collections (#277, #1089)
 
 Changed
 -------
@@ -30,6 +30,7 @@ Changed
     - Implement study/assay app retrieval in model ``get_plugin()`` helpers (#1076)
     - Change timeline event names for sheet import/create/replace (#1079)
     - Refactor and simplify view pagination settings
+    - Provide sodar context alert data as HTML instead of string (#1089)
 
 Fixed
 -----

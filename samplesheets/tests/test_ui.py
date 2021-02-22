@@ -1,5 +1,6 @@
 """UI tests for the samplesheets app"""
 import json
+from unittest import skipIf
 
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
@@ -11,15 +12,17 @@ from django.urls import reverse
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
+from projectroles.plugins import get_backend_api
 from projectroles.tests.test_ui import TestUIBase
 
-from samplesheets.models import ISATab
+from samplesheets.models import ISATab, IrodsDataRequest
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 from samplesheets.tests.test_sheet_config import (
     SheetConfigMixin,
     CONFIG_PATH_DEFAULT,
     CONFIG_PATH_UPDATED,
 )
+from samplesheets.views_ajax import ALERT_ACTIVE_REQS
 
 
 # Local constants
@@ -32,10 +35,10 @@ with open(CONFIG_PATH_DEFAULT) as fp:
 with open(CONFIG_PATH_UPDATED) as fp:
     CONFIG_DATA_UPDATED = json.load(fp)
 
-IRODS_ENABLED = (
+IRODS_BACKEND_ENABLED = (
     True if 'omics_irods' in settings.ENABLED_BACKEND_PLUGINS else False
 )
-IRODS_SKIP_MSG = 'Irodsbackend not enabled in settings'
+IRODS_BACKEND_SKIP_MSG = 'Irodsbackend not enabled in settings'
 
 
 # App settings API
@@ -191,6 +194,54 @@ class TestProjectSheetsView(TestProjectSheetsVueAppBase):
                 self.selenium.find_element_by_id(
                     'sodar-ss-grid-assay-{}'.format(self.assay.sodar_uuid)
                 )
+
+    @skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
+    def test_render_alert(self):
+        """Test rendering an alert retrieved from SODAR context"""
+        # NOTE: Testing here as we don't (yet) have vue tests for entire app
+        irods_backend = get_backend_api('omics_irods', conn=False)
+        self.investigation.irods_status = True
+        self.investigation.save()
+        # TODO: Use model helper instead (see #1088)
+        IrodsDataRequest.objects.create(
+            project=self.project,
+            path=irods_backend.get_path(self.assay) + '/test/xxx.bam',
+            user=self.contributor_as.user,
+        )
+
+        users = [
+            self.superuser,
+            self.owner_as.user,
+            self.delegate_as.user,
+            self.contributor_as.user,
+            self.guest_as.user,
+        ]
+
+        for user in users:
+            self._login_and_render(user=user, wait_elem='sodar-ss-grid-study')
+            if user in [
+                self.superuser,
+                self.owner_as.user,
+                self.delegate_as.user,
+            ]:
+                self.assertIsNotNone(
+                    self.selenium.find_element_by_class_name('sodar-ss-alert')
+                )
+                self.assertEqual(
+                    self.selenium.find_element_by_class_name(
+                        'sodar-ss-alert'
+                    ).get_attribute('innerHTML'),
+                    ALERT_ACTIVE_REQS.format(
+                        url=reverse(
+                            'samplesheets:irods_requests',
+                            kwargs={'project': self.project.sodar_uuid},
+                        )
+                    ),
+                    msg=user.username,
+                )
+            else:
+                with self.assertRaises(NoSuchElementException):
+                    self.selenium.find_element_by_class_name('sodar-ss-alert')
 
     # NOTE: For further vue app tests, see samplesheets/vueapp/tests
 

@@ -24,8 +24,8 @@
            id="sodar-ss-alert-container">
         <div v-for="(alertData, alertIdx) in sodarContext.alerts"
              :key="alertIdx"
-             :class="'alert sodar-ss-alert alert-' + alertData.level">
-          {{ alertData.text }}
+             :class="'alert sodar-ss-alert alert-' + alertData.level"
+             v-html="alertData.html">
         </div>
       </div>
 

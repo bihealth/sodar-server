@@ -61,6 +61,10 @@ EDIT_FIELD_MAP = {
     'performer': 'performer',
 }
 
+ALERT_ACTIVE_REQS = (
+    'Active iRODS delete requests in this project require your attention. '
+    '<a href="{url}">See request list for details</a>.'
+)
 ERROR_NOT_IN_PROJECT = 'Collection does not belong to project'
 ERROR_NOT_FOUND = 'Collection not found'
 ERROR_NO_AUTH = 'User not authorized for iRODS collection'
@@ -282,6 +286,7 @@ class SheetContextAjaxView(SODARBaseProjectAjaxView):
             }
             ret_data.update(inv_data)
 
+        # Parser alert
         if inv and (
             not inv.parser_version
             or version.parse(inv.parser_version)
@@ -290,12 +295,37 @@ class SheetContextAjaxView(SODARBaseProjectAjaxView):
             ret_data['alerts'].append(
                 {
                     'level': 'danger',
-                    'text': 'This sample sheet has been imported with an '
+                    'html': 'This sample sheet has been imported with an '
                     'old altamISA version (< {}). Please replace the ISA-Tab '
                     'to enable all features and ensure full '
                     'functionality.'.format(TARGET_ALTAMISA_VERSION),
                 }
             )
+
+        # iRODS data request alert
+        if (
+            inv
+            and inv.irods_status
+            and (
+                self.request.user.is_superuser
+                or project.is_owner_or_delegate(self.request.user)
+            )
+        ):
+            irods_req_count = IrodsDataRequest.objects.filter(
+                project=project, status__in=['ACTIVE', 'FAILED']
+            ).count()
+            if irods_req_count > 0:
+                ret_data['alerts'].append(
+                    {
+                        'level': 'info',
+                        'html': ALERT_ACTIVE_REQS.format(
+                            url=reverse(
+                                'samplesheets:irods_requests',
+                                kwargs={'project': project.sodar_uuid},
+                            )
+                        ),
+                    }
+                )
 
         # Study info
         ret_data['studies'] = {}

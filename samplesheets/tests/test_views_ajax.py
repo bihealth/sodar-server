@@ -29,6 +29,7 @@ from samplesheets.models import (
     GenericMaterial,
     ISATab,
     IrodsAccessTicket,
+    IrodsDataRequest,
 )
 from samplesheets.sheet_config import SheetConfigAPI
 from samplesheets.tests.test_sheet_config import (
@@ -47,6 +48,7 @@ from samplesheets.tests.test_views import (
     CONFIG_DATA_DEFAULT,
 )
 from samplesheets.utils import get_node_obj
+from samplesheets.views_ajax import ALERT_ACTIVE_REQS
 
 
 conf_api = SheetConfigAPI()
@@ -163,7 +165,7 @@ class IrodsAccessTicketMixin:
     """Helpers for creating IrodsAccessTicket object"""
 
     @classmethod
-    def _make_irodsaccessticket(
+    def _make_ticket(
         cls, path, user, project, assay, study, label=None, date_expires=None
     ):
         obj = IrodsAccessTicket(
@@ -294,6 +296,63 @@ class TestContextAjaxView(TestViewsBase):
         }
         self.assertEqual(response_data, expected)
 
+    def test_get_irods_request_alert_owner(self):
+        """Test context retrieval with active iRODS request alert as owner"""
+        self.investigation.irods_status = True
+        self.investigation.save()
+        # TODO: Use model helper instead (see #1088)
+        IrodsDataRequest.objects.create(
+            project=self.project,
+            path=self.irods_backend.get_path(self.assay) + '/test/xxx.bam',
+            user=self.user,
+        )
+
+        with self.login(self.user):
+            response = self.client.get(
+                reverse(
+                    'samplesheets:ajax_context',
+                    kwargs={'project': self.project.sodar_uuid},
+                )
+            )
+
+        self.assertEqual(response.status_code, 200)
+        response_data = json.loads(response.data)
+        self.assertEqual(len(response_data['alerts']), 1)
+        self.assertEqual(
+            response_data['alerts'][0]['html'],
+            ALERT_ACTIVE_REQS.format(
+                url=reverse(
+                    'samplesheets:irods_requests',
+                    kwargs={'project': self.project.sodar_uuid},
+                )
+            ),
+        )
+
+    def test_get_irods_request_alert_contributor(self):
+        """Test context retrieval with active iRODS request alert as contributor"""
+        self.investigation.irods_status = True
+        self.investigation.save()
+        # TODO: Use model helper instead (see #1088)
+        IrodsDataRequest.objects.create(
+            project=self.project,
+            path=self.irods_backend.get_path(self.assay) + '/test/xxx.bam',
+            user=self.user,
+        )
+        contrib_user = self.make_user('user_contributor')
+        self._make_assignment(self.project, contrib_user, self.role_contributor)
+
+        with self.login(contrib_user):
+            response = self.client.get(
+                reverse(
+                    'samplesheets:ajax_context',
+                    kwargs={'project': self.project.sodar_uuid},
+                )
+            )
+
+        self.assertEqual(response.status_code, 200)
+        response_data = json.loads(response.data)
+        self.assertEqual(len(response_data['alerts']), 0)
+
 
 class TestStudyTablesAjaxView(IrodsAccessTicketMixin, TestViewsBase):
     """Tests for StudyTablesAjaxView"""
@@ -371,7 +430,7 @@ class TestStudyTablesAjaxView(IrodsAccessTicketMixin, TestViewsBase):
     def test_get_with_track_hubs(self):
         """Test study tables retrieval"""
 
-        self._make_irodsaccessticket(
+        self._make_ticket(
             path='/some/path',
             project=self.project,
             assay=self.assay,
