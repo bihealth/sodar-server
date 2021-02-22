@@ -81,54 +81,54 @@ urls_ui = [
         name='version_delete',
     ),
     url(
-        regex=r'^tickets/(?P<project>[0-9a-f-]+)$',
+        regex=r'^irods/tickets/(?P<project>[0-9a-f-]+)$',
         view=views.IrodsAccessTicketListView.as_view(),
-        name='tickets',
+        name='irods_tickets',
     ),
     url(
-        regex=r'^tickets/(?P<project>[0-9a-f-]+)/create$',
+        regex=r'^irods/ticket/create/(?P<project>[0-9a-f-]+)$',
         view=views.IrodsAccessTicketCreateView.as_view(),
-        name='ticket_create',
+        name='irods_ticket_create',
     ),
     url(
-        regex=r'^ticket/update/(?P<irodsaccessticket>[0-9a-f-]+)$',
+        regex=r'^irods/ticket/update/(?P<irodsaccessticket>[0-9a-f-]+)$',
         view=views.IrodsAccessTicketUpdateView.as_view(),
-        name='ticket_update',
+        name='irods_ticket_update',
     ),
     url(
-        regex=r'^ticket/delete/(?P<irodsaccessticket>[0-9a-f-]+)$',
+        regex=r'^irods/ticket/delete/(?P<irodsaccessticket>[0-9a-f-]+)$',
         view=views.IrodsAccessTicketDeleteView.as_view(),
-        name='ticket_delete',
+        name='irods_ticket_delete',
     ),
     url(
-        regex=r'^irods-request/(?P<project>[0-9a-f-]+)/create$',
+        regex=r'^irods/requests/(?P<project>[0-9a-f-]+)$',
+        view=views.IrodsDataRequestListView.as_view(),
+        name='irods_requests',
+    ),
+    url(
+        regex=r'^irods/request/create/(?P<project>[0-9a-f-]+)$',
         view=views.IrodsRequestCreateView.as_view(),
         name='irods_request_create',
     ),
     url(
-        regex=r'^irods-request/delete/(?P<irodsdatarequest>[0-9a-f-]+)$',
-        view=views.IrodsRequestDeleteView.as_view(),
-        name='irods_request_delete',
-    ),
-    url(
-        regex=r'^irods-request/update/(?P<irodsdatarequest>[0-9a-f-]+)$',
+        regex=r'^irods/request/update/(?P<irodsdatarequest>[0-9a-f-]+)$',
         view=views.IrodsRequestUpdateView.as_view(),
         name='irods_request_update',
     ),
     url(
-        regex=r'^irods-request/accept/(?P<irodsdatarequest>[0-9a-f-]+)$',
+        regex=r'^irods/request/delete/(?P<irodsdatarequest>[0-9a-f-]+)$',
+        view=views.IrodsRequestDeleteView.as_view(),
+        name='irods_request_delete',
+    ),
+    url(
+        regex=r'^irods/request/accept/(?P<irodsdatarequest>[0-9a-f-]+)$',
         view=views.IrodsRequestAcceptView.as_view(),
         name='irods_request_accept',
     ),
     url(
-        regex=r'^irods-request/reject/(?P<irodsdatarequest>[0-9a-f-]+)$',
+        regex=r'^irods/request/reject/(?P<irodsdatarequest>[0-9a-f-]+)$',
         view=views.IrodsRequestRejectView.as_view(),
         name='irods_request_reject',
-    ),
-    url(
-        regex=r'^irods-requests/(?P<project>[0-9a-f-]+)$',
-        view=views.IrodsDataRequestListView.as_view(),
-        name='irods_requests',
     ),
 ]
 
@@ -224,17 +224,17 @@ urls_ajax = [
         name='ajax_display_update',
     ),
     url(
-        regex=r'^ajax/irods-request/create/(?P<project>[0-9a-f-]+)$',
+        regex=r'^ajax/irods/request/create/(?P<project>[0-9a-f-]+)$',
         view=samplesheets.views_ajax.IrodsRequestCreateAjaxView.as_view(),
         name='ajax_irods_request_create',
     ),
     url(
-        regex=r'^ajax/irods-request/delete/(?P<project>[0-9a-f-]+)$',
+        regex=r'^ajax/irods/request/delete/(?P<project>[0-9a-f-]+)$',
         view=samplesheets.views_ajax.IrodsRequestDeleteAjaxView.as_view(),
         name='ajax_irods_request_delete',
     ),
     url(
-        regex=r'^ajax/irods-objects/(?P<project>[0-9a-f-]+)$',
+        regex=r'^ajax/irods/objects/(?P<project>[0-9a-f-]+)$',
         view=samplesheets.views_ajax.IrodsObjectListAjaxView.as_view(),
         name='ajax_irods_objects',
     ),

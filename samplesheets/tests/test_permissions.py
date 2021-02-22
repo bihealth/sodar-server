@@ -259,7 +259,8 @@ class TestSampleSheetsPermissions(
         """Test ticket list view"""
 
         url = reverse(
-            'samplesheets:tickets', kwargs={'project': self.project.sodar_uuid}
+            'samplesheets:irods_tickets',
+            kwargs={'project': self.project.sodar_uuid},
         )
         good_users = [
             self.superuser,
@@ -276,7 +277,7 @@ class TestSampleSheetsPermissions(
         """Test ticket create view"""
 
         url = reverse(
-            'samplesheets:ticket_create',
+            'samplesheets:irods_ticket_create',
             kwargs={'project': self.project.sodar_uuid},
         )
         good_users = [
@@ -293,7 +294,7 @@ class TestSampleSheetsPermissions(
         """Test ticket update view"""
 
         url = reverse(
-            'samplesheets:ticket_update',
+            'samplesheets:irods_ticket_update',
             kwargs={'irodsaccessticket': self.ticket.sodar_uuid},
         )
         good_users = [
@@ -310,7 +311,7 @@ class TestSampleSheetsPermissions(
         """Test ticket delete view"""
 
         url = reverse(
-            'samplesheets:ticket_delete',
+            'samplesheets:irods_ticket_delete',
             kwargs={'irodsaccessticket': self.ticket.sodar_uuid},
         )
         good_users = [

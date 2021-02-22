@@ -71,7 +71,7 @@
     iRODS Access Tickets
   </h3>
   <div class="input-group sodar-header-input-group ml-auto mt-1">
-    <a href="{% url 'samplesheets:ticket_create' project=project.sodar_uuid %}"
+    <a href="{% url 'samplesheets:irods_ticket_create' project=project.sodar_uuid %}"
        class="btn btn-primary ml-auto {% if not track_hubs_available %}disabled{% endif %}" role="button">
      <i class="fa fa-plus-circle"></i> Create Ticket
     </a>
@@ -139,11 +139,11 @@
                 </button>
                 <div class="dropdown-menu dropdown-menu-right">
                   <a class="dropdown-item"
-                     href="{% url 'samplesheets:ticket_update' irodsaccessticket=ticket.sodar_uuid %}">
+                     href="{% url 'samplesheets:irods_ticket_update' irodsaccessticket=ticket.sodar_uuid %}">
                     <i class="fa fa-fw fa-edit"></i> Update Ticket
                   </a>
                   <a class="dropdown-item text-danger"
-                     href="{% url 'samplesheets:ticket_delete' irodsaccessticket=ticket.sodar_uuid %}">
+                     href="{% url 'samplesheets:irods_ticket_delete' irodsaccessticket=ticket.sodar_uuid %}">
                     <i class="fa fa-fw fa-close"></i> Delete Ticket
                   </a>
                 </div>

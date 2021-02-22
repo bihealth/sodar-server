@@ -31,6 +31,7 @@ Changed
     - Change timeline event names for sheet import/create/replace (#1079)
     - Refactor and simplify view pagination settings
     - Provide sodar context alert data as HTML instead of string (#1089)
+    - Unify iRODS URL patterns (#1086)
 
 Fixed
 -----

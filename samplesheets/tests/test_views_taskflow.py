@@ -376,7 +376,7 @@ class TestIrodsAccessTicketListView(
         with self.login(self.user):
             response = self.client.get(
                 reverse(
-                    'samplesheets:tickets',
+                    'samplesheets:irods_tickets',
                     kwargs={'project': self.project.sodar_uuid},
                 )
             )
@@ -398,7 +398,7 @@ class TestIrodsAccessTicketListView(
         with self.login(self.user):
             self.client.post(
                 reverse(
-                    'samplesheets:ticket_create',
+                    'samplesheets:irods_ticket_create',
                     kwargs={'project': self.project.sodar_uuid},
                 ),
                 post_data,
@@ -406,7 +406,7 @@ class TestIrodsAccessTicketListView(
 
             response = self.client.get(
                 reverse(
-                    'samplesheets:tickets',
+                    'samplesheets:irods_tickets',
                     kwargs={'project': self.project.sodar_uuid},
                 )
             )
@@ -466,7 +466,7 @@ class TestIrodsAccessTicketCreateView(
         with self.login(self.user):
             response = self.client.get(
                 reverse(
-                    'samplesheets:ticket_create',
+                    'samplesheets:irods_ticket_create',
                     kwargs={'project': self.project.sodar_uuid},
                 )
             )
@@ -518,7 +518,7 @@ class TestIrodsAccessTicketCreateView(
 
             response = self.client.post(
                 reverse(
-                    'samplesheets:ticket_create',
+                    'samplesheets:irods_ticket_create',
                     kwargs={'project': self.project.sodar_uuid},
                 ),
                 post_data,
@@ -527,7 +527,7 @@ class TestIrodsAccessTicketCreateView(
             self.assertRedirects(
                 response,
                 reverse(
-                    'samplesheets:tickets',
+                    'samplesheets:irods_tickets',
                     kwargs={'project': self.project.sodar_uuid},
                 ),
             )
@@ -604,7 +604,7 @@ class TestIrodsAccessTicketUpdateView(
 
             self.client.post(
                 reverse(
-                    'samplesheets:ticket_create',
+                    'samplesheets:irods_ticket_create',
                     kwargs={'project': self.project.sodar_uuid},
                 ),
                 post_data,
@@ -615,7 +615,7 @@ class TestIrodsAccessTicketUpdateView(
 
             response = self.client.get(
                 reverse(
-                    'samplesheets:ticket_update',
+                    'samplesheets:irods_ticket_update',
                     kwargs={'irodsaccessticket': str(ticket.sodar_uuid)},
                 )
             )
@@ -647,7 +647,7 @@ class TestIrodsAccessTicketUpdateView(
 
             self.client.post(
                 reverse(
-                    'samplesheets:ticket_create',
+                    'samplesheets:irods_ticket_create',
                     kwargs={'project': self.project.sodar_uuid},
                 ),
                 post_data,
@@ -665,7 +665,7 @@ class TestIrodsAccessTicketUpdateView(
 
             response = self.client.post(
                 reverse(
-                    'samplesheets:ticket_update',
+                    'samplesheets:irods_ticket_update',
                     kwargs={'irodsaccessticket': str(ticket.sodar_uuid)},
                 ),
                 update_data,
@@ -674,7 +674,7 @@ class TestIrodsAccessTicketUpdateView(
             self.assertRedirects(
                 response,
                 reverse(
-                    'samplesheets:tickets',
+                    'samplesheets:irods_tickets',
                     kwargs={'project': self.project.sodar_uuid},
                 ),
             )
@@ -749,7 +749,7 @@ class TestIrodsAccessTicketDeleteView(
 
             self.client.post(
                 reverse(
-                    'samplesheets:ticket_create',
+                    'samplesheets:irods_ticket_create',
                     kwargs={'project': self.project.sodar_uuid},
                 ),
                 post_data,
@@ -757,7 +757,7 @@ class TestIrodsAccessTicketDeleteView(
 
             self.client.post(
                 reverse(
-                    'samplesheets:ticket_create',
+                    'samplesheets:irods_ticket_create',
                     kwargs={'project': self.project.sodar_uuid},
                 ),
                 {**post_data, 'path': self.track_hub2},
@@ -769,7 +769,7 @@ class TestIrodsAccessTicketDeleteView(
 
             response = self.client.delete(
                 reverse(
-                    'samplesheets:ticket_delete',
+                    'samplesheets:irods_ticket_delete',
                     kwargs={'irodsaccessticket': str(ticket.sodar_uuid)},
                 ),
             )
@@ -777,7 +777,7 @@ class TestIrodsAccessTicketDeleteView(
             self.assertRedirects(
                 response,
                 reverse(
-                    'samplesheets:tickets',
+                    'samplesheets:irods_tickets',
                     kwargs={'project': self.project.sodar_uuid},
                 ),
             )

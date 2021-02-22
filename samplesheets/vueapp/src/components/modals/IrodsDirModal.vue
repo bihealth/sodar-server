@@ -168,7 +168,7 @@ export default {
       }
     },
     getObjList (path) {
-      const listUrl = '/samplesheets/ajax/irods-objects/' +
+      const listUrl = '/samplesheets/ajax/irods/objects/' +
       this.projectUuid + '?path=' + encodeURIComponent(path)
 
       fetch(listUrl, { credentials: 'same-origin' })
@@ -186,7 +186,7 @@ export default {
       }
     },
     issueRequest (index) {
-      const issueDeleteRequestUrl = '/samplesheets/ajax/irods-request/create/' +
+      const issueDeleteRequestUrl = '/samplesheets/ajax/irods/request/create/' +
       this.projectUuid + '?path=' + encodeURIComponent(this.objectList[index].path)
 
       if (confirm(
@@ -202,7 +202,7 @@ export default {
       }
     },
     cancelRequest (index) {
-      const cancelDeleteRequestUrl = '/samplesheets/ajax/irods-request/delete/' +
+      const cancelDeleteRequestUrl = '/samplesheets/ajax/irods/request/delete/' +
       this.projectUuid + '?path=' + encodeURIComponent(this.objectList[index].path)
 
       fetch(cancelDeleteRequestUrl, { credentials: 'same-origin' })

@@ -1647,7 +1647,7 @@ class IrodsAccessTicketCreateView(
         )
         return redirect(
             reverse(
-                'samplesheets:tickets',
+                'samplesheets:irods_tickets',
                 kwargs={'project': self.kwargs['project']},
             )
         )
@@ -1680,7 +1680,7 @@ class IrodsAccessTicketUpdateView(
         )
         return redirect(
             reverse(
-                'samplesheets:tickets',
+                'samplesheets:irods_tickets',
                 kwargs={'project': self.get_project().sodar_uuid},
             )
         )
@@ -1703,7 +1703,7 @@ class IrodsAccessTicketDeleteView(
 
     def get_success_url(self):
         return reverse(
-            'samplesheets:tickets',
+            'samplesheets:irods_tickets',
             kwargs={'project': self.object.project.sodar_uuid},
         )
 
