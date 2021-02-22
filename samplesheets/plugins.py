@@ -74,14 +74,14 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
             'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT_USER'],
             'type': 'JSON',
             'label': 'Sheet Display Configuration',
-            'description': 'User specific JSON configuration for sample sheet '
+            'description': 'User specific JSON configuration for sample sheet'
             'column display',
         },
         'display_config_default': {
             'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT'],
             'type': 'JSON',
             'label': 'Default Sheet Display Configuration',
-            'description': 'Default JSON configuration for project sample sheet '
+            'description': 'Default JSON configuration for project sample sheet'
             'column display',
             'user_modifiable': False,
         },
@@ -91,6 +91,21 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
             'label': 'Sheet Editing Configuration',
             'description': 'JSON configuration for sample sheet editing',
             'user_modifiable': False,
+        },
+        'edit_config_min_role': {
+            'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT'],
+            'type': 'STRING',
+            'options': [
+                'superuser',
+                SODAR_CONSTANTS['PROJECT_ROLE_OWNER'],
+                SODAR_CONSTANTS['PROJECT_ROLE_DELEGATE'],
+                SODAR_CONSTANTS['PROJECT_ROLE_CONTRIBUTOR'],
+            ],
+            'default': SODAR_CONSTANTS['PROJECT_ROLE_CONTRIBUTOR'],
+            'label': 'Minimum role for column configuration editing',
+            'description': 'Allow per-project restriction of column '
+            'configuration updates',
+            'user_modifiable': True,
         },
     }
 

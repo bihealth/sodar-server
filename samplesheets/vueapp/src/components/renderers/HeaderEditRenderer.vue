@@ -5,6 +5,7 @@
     </span>
     <span class="ml-auto">
       <b-button
+          v-if="canEditConfig"
           variant="secondary"
           class="sodar-list-btn sodar-ss-col-config-btn"
           title="Configure Column"
@@ -26,7 +27,8 @@ export default Vue.extend({
       app: null,
       modalComponent: null,
       displayName: null,
-      fieldConfig: null
+      fieldConfig: null,
+      canEditConfig: null
     }
   },
   methods: {
@@ -93,6 +95,7 @@ export default Vue.extend({
     this.modalComponent = this.params.modalComponent
     this.displayName = this.params.displayName
     this.fieldConfig = this.params.fieldConfig
+    this.canEditConfig = this.params.canEditConfig
   }
 })
 

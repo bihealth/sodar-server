@@ -14,6 +14,7 @@ import SheetTable from '@/components/SheetTable.vue'
 import studyTablesEdit from './data/studyTablesEdit.json'
 import studyTablesOneCol from './data/studyTablesOneCol.json'
 import sheetEditConfigModified from './data/sheetEditConfigModified.json'
+import sodarContext from './data/sodarContext.json'
 
 // Set up extended Vue constructor
 const localVue = createLocalVue()
@@ -166,6 +167,28 @@ describe('HeaderEditRenderer.vue', () => {
     // NOTE: Should be disabled only until issue #897 is fixed
     expect(header.find('.sodar-ss-col-config-btn')
       .attributes().disabled).toBe('true')
+  })
+
+  it('renders header when user is allowed to edit column', async () => {
+    const sc = copy(sodarContext)
+    sc.perms.edit_column = true
+    const wrapper = mountSheetTable({ sodarContext: sc })
+    await waitAG(wrapper)
+    await waitRAF()
+
+    const header = wrapper.find('.sodar-ss-header-edit')
+    expect(header.find('.sodar-ss-col-config-btn').exists()).toBe(true)
+  })
+
+  it('renders header when user is not allowed to edit column', async () => {
+    const sc = copy(sodarContext)
+    sc.perms.edit_config = false
+    const wrapper = mountSheetTable({ sodarContext: sc })
+    await waitAG(wrapper)
+    await waitRAF()
+
+    const header = wrapper.find('.sodar-ss-header-edit')
+    expect(header.find('.sodar-ss-col-config-btn').exists()).toBe(false)
   })
 
   // TODO: Test data provided to modalComponent per column type

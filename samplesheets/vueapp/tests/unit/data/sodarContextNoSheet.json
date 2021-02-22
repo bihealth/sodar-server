@@ -25,6 +25,7 @@
     "create_colls": true,
     "export_sheet": true,
     "delete_sheet": true,
+    "edit_config": true,
     "is_superuser": true
   },
   "sheet_stats": {}
