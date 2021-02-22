@@ -92,6 +92,20 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
             'description': 'JSON configuration for sample sheet editing',
             'user_modifiable': False,
         },
+        'edit_config_min_role': {
+            'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT'],
+            'type': 'STRING',
+            'options': [
+                'superuser',
+                SODAR_CONSTANTS['PROJECT_ROLE_OWNER'],
+                SODAR_CONSTANTS['PROJECT_ROLE_DELEGATE'],
+                SODAR_CONSTANTS['PROJECT_ROLE_CONTRIBUTOR'],
+            ],
+            'default': SODAR_CONSTANTS['PROJECT_ROLE_CONTRIBUTOR'],
+            'label': 'Column configuration minimal role',
+            'description': 'Allow per-project restriction of column configuration updates',
+            'user_modifiable': False,
+        },
     }
 
     #: FontAwesome icon ID string

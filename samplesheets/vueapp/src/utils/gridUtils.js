@@ -281,7 +281,9 @@ export function buildColDef (params) {
             else configNodeIdx = i - params.studyNodeLen
           }
 
-          header.headerComponentFramework = HeaderEditRenderer
+          if (params.editContext.can_edit_config) {
+            header.headerComponentFramework = HeaderEditRenderer
+          }
           header.headerComponentParams = {
             app: params.app,
             modalComponent: params.app.$refs.columnConfigModal,

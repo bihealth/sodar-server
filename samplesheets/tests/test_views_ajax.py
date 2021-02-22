@@ -14,6 +14,8 @@ from projectroles.constants import SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
 
 # Ontologyaccess dependency
+from projectroles.constants import SODAR_CONSTANTS
+
 from ontologyaccess.io import OBOFormatOntologyIO
 from ontologyaccess.models import DEFAULT_TERM_URL
 from ontologyaccess.tests.test_io import OBO_PATH, OBO_NAME
@@ -426,6 +428,54 @@ class TestStudyTablesAjaxView(IrodsAccessTicketMixin, TestViewsBase):
         self.assertIn('sodar_ontologies', ret_data['edit_context'])
         self.assertIsNotNone(ret_data['edit_context']['samples'])
         self.assertIsNotNone(ret_data['edit_context']['protocols'])
+        self.assertIsNotNone(ret_data['edit_context']['can_edit_config'])
+
+    def test_get_edit_can_edit_config(self):
+        """Test study tables retrieval with edit mode enabled"""
+        app_settings.set_app_setting(
+            APP_NAME,
+            'edit_config_min_role',
+            SODAR_CONSTANTS['PROJECT_ROLE_DELEGATE'],
+            project=self.project,
+        )
+        with self.login(self.user_delegate):
+            response = self.client.get(
+                reverse(
+                    'samplesheets:ajax_study_tables',
+                    kwargs={'study': self.study.sodar_uuid},
+                ),
+                {'edit': 1},
+            )
+
+        self.assertEqual(response.status_code, 200)
+
+        # Assert return data correctness
+        ret_data = response.data
+        self.assertTrue(ret_data['edit_context']['can_edit_config'])
+
+    def test_get_edit_cant_edit_config(self):
+        """Test study tables retrieval with edit mode enabled"""
+        # Allow sample sheet editing in project
+        app_settings.set_app_setting(
+            APP_NAME,
+            'edit_config_min_role',
+            SODAR_CONSTANTS['PROJECT_ROLE_DELEGATE'],
+            project=self.project,
+        )
+        with self.login(self.user_contributor):
+            response = self.client.get(
+                reverse(
+                    'samplesheets:ajax_study_tables',
+                    kwargs={'study': self.study.sodar_uuid},
+                ),
+                {'edit': 1},
+            )
+
+        self.assertEqual(response.status_code, 200)
+
+        # Assert return data correctness
+        ret_data = response.data
+        self.assertFalse(ret_data['edit_context']['can_edit_config'])
 
     def test_get_with_track_hubs(self):
         """Test study tables retrieval"""
@@ -1602,27 +1652,15 @@ class TestSheetEditConfigAjaxView(SheetConfigMixin, TestViewsBase):
             conf_api.build_sheet_config(self.investigation),
             project=self.project,
         )
+        app_settings.set_app_setting(
+            APP_NAME,
+            'edit_config_min_role',
+            SODAR_CONSTANTS['PROJECT_ROLE_OWNER'],
+            project=self.project,
+        )
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
-
-    def test_post_update_study_column(self):
-        """Test posting a study column update"""
-
-        # Assert preconditions
-        sheet_config = app_settings.get_app_setting(
-            APP_NAME, 'sheet_config', project=self.project
-        )
-        self.assertEqual(sheet_config, CONFIG_DATA_DEFAULT)
-        self.assertEqual(
-            ProjectEvent.objects.filter(
-                project=self.project,
-                app=APP_NAME,
-                event_name='field_update',
-            ).count(),
-            0,
-        )
-
-        values = {
+        self.post_values = {
             'fields': [
                 {
                     'action': 'update',
@@ -1645,13 +1683,30 @@ class TestSheetEditConfigAjaxView(SheetConfigMixin, TestViewsBase):
             ]
         }
 
+    def test_post_update_study_column(self):
+        """Test posting a study column update"""
+
+        # Assert preconditions
+        sheet_config = app_settings.get_app_setting(
+            APP_NAME, 'sheet_config', project=self.project
+        )
+        self.assertEqual(sheet_config, CONFIG_DATA_DEFAULT)
+        self.assertEqual(
+            ProjectEvent.objects.filter(
+                project=self.project,
+                app=APP_NAME,
+                event_name='field_update',
+            ).count(),
+            0,
+        )
+
         with self.login(self.user):
             response = self.client.post(
                 reverse(
                     'samplesheets:ajax_config_update',
                     kwargs={'project': self.project.sodar_uuid},
                 ),
-                json.dumps(values),
+                json.dumps(self.post_values),
                 content_type='application/json',
             )
 
@@ -1683,6 +1738,102 @@ class TestSheetEditConfigAjaxView(SheetConfigMixin, TestViewsBase):
             ).count(),
             1,
         )
+
+    def test_post_update_study_column_as_superuser_min_level_owner(self):
+        """Test posting a study column update"""
+
+        # Assert preconditions
+        edit_config_min_role = app_settings.get_app_setting(
+            APP_NAME, 'edit_config_min_role', project=self.project
+        )
+        self.assertEqual(
+            edit_config_min_role, SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
+        )
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:ajax_config_update',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                json.dumps(self.post_values),
+                content_type='application/json',
+            )
+
+        # Assert postconditions
+        self.assertEqual(response.status_code, 200)
+
+    def test_post_update_study_column_as_owner_min_level_owner(self):
+        """Test posting a study column update"""
+
+        # Assert preconditions
+        edit_config_min_role = app_settings.get_app_setting(
+            APP_NAME, 'edit_config_min_role', project=self.project
+        )
+        self.assertEqual(
+            edit_config_min_role, SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
+        )
+
+        with self.login(self.user_owner):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:ajax_config_update',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                json.dumps(self.post_values),
+                content_type='application/json',
+            )
+
+        # Assert postconditions
+        self.assertEqual(response.status_code, 200)
+
+    def test_post_update_study_column_as_delegate_min_level_owner(self):
+        """Test posting a study column update"""
+
+        # Assert preconditions
+        edit_config_min_role = app_settings.get_app_setting(
+            APP_NAME, 'edit_config_min_role', project=self.project
+        )
+        self.assertEqual(
+            edit_config_min_role, SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
+        )
+
+        with self.login(self.user_delegate):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:ajax_config_update',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                json.dumps(self.post_values),
+                content_type='application/json',
+            )
+
+        # Assert postconditions
+        self.assertEqual(response.status_code, 403)
+
+    def test_post_update_study_column_as_contributor_min_level_owner(self):
+        """Test posting a study column update"""
+
+        # Assert preconditions
+        edit_config_min_role = app_settings.get_app_setting(
+            APP_NAME, 'edit_config_min_role', project=self.project
+        )
+        self.assertEqual(
+            edit_config_min_role, SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
+        )
+
+        with self.login(self.user_contributor):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:ajax_config_update',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                json.dumps(self.post_values),
+                content_type='application/json',
+            )
+
+        # Assert postconditions
+        self.assertEqual(response.status_code, 403)
 
 
 class TestStudyDisplayConfigAjaxView(TestViewsBase):

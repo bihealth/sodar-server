@@ -104,19 +104,26 @@ class TestViewsBase(
         self.user.is_staff = True
         self.user.is_superuser = True
         self.user.save()
-
+        self.user_owner = self.make_user('owner', password=USER_PASSWORD)
+        self.user_delegate = self.make_user('delegate', password=USER_PASSWORD)
+        self.user_contributor = self.make_user(
+            'contributor', password=USER_PASSWORD
+        )
         # Init projects
         self.category = self._make_project(
             'TestCategory', PROJECT_TYPE_CATEGORY, None
-        )
-        self.owner_as = self._make_assignment(
-            self.category, self.user, self.role_owner
         )
         self.project = self._make_project(
             'TestProject', PROJECT_TYPE_PROJECT, self.category
         )
         self.owner_as = self._make_assignment(
-            self.project, self.user, self.role_owner
+            self.project, self.user_owner, self.role_owner
+        )
+        self.delegate_as = self._make_assignment(
+            self.project, self.user_delegate, self.role_delegate
+        )
+        self.contributor_as = self._make_assignment(
+            self.project, self.user_contributor, self.role_contributor
         )
 
 

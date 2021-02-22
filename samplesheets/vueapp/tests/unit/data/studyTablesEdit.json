@@ -1396,6 +1396,7 @@
         "uuid": "48ae08c2-4fcf-4d92-934c-1c596d42a1a1",
         "name": "sample collection"
       }
-    ]
+    ],
+    "can_edit_config": true
   }
 }
