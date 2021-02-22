@@ -50,7 +50,8 @@ rules==2.2
 djangorestframework==3.11.2
 
 # Keyed list addon for DRF
-drf-keyed-list==0.0.2
+# drf-keyed-list==0.0.2
+-e git+https://github.com/mikkonie/drf-keyed-list.git@b03607b866c5706b0e1ea46a7eeaab6527030734#egg=drf-keyed-list
 
 # Token authentication
 django-rest-knox==4.1.0
@@ -65,7 +66,7 @@ mistune==0.8.4
 -e git+https://github.com/mikkonie/django-plugins.git@1bc07181e6ab68b0f9ed3a00382eb1f6519e1009#egg=django-plugins
 
 # SODAR Core
--e git+ssh://git@cubi-gitlab.bihealth.org/CUBI_Engineering/CUBI_Data_Mgmt/sodar_core.git@v0.9.0#egg=django-sodar-core
+-e git+ssh://git@cubi-gitlab.bihealth.org/CUBI_Engineering/CUBI_Data_Mgmt/sodar_core.git@0f7dbc1ddf362985e2f3614acd98d2fbfd19b548#egg=django-sodar-core
 
 # Celery
 celery<4.2  # celery==5.0.5

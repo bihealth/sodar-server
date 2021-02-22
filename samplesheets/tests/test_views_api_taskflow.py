@@ -100,6 +100,7 @@ class TestInvestigationRetrieveAPIView(TestSampleSheetAPITaskflowBase):
                     'description': self.study.description,
                     'comments': self.study.comments,
                     'irods_path': self.irods_backend.get_path(self.study),
+                    'sodar_uuid': str(self.study.sodar_uuid),
                     'assays': {
                         str(self.assay.sodar_uuid): {
                             'file_name': self.assay.file_name,
@@ -110,6 +111,7 @@ class TestInvestigationRetrieveAPIView(TestSampleSheetAPITaskflowBase):
                             'irods_path': self.irods_backend.get_path(
                                 self.assay
                             ),
+                            'sodar_uuid': str(self.assay.sodar_uuid),
                         }
                     },
                 }
