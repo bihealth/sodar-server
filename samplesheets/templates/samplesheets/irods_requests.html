@@ -180,8 +180,39 @@
 
   {# Tour content #}
   <script type="text/javascript">
-    tourEnabled = false;
-    // TODO: Tour
+    tourEnabled = true;
+
+    tour.addStep('irods_req_info', {
+        title: 'iRODS Delete Requests',
+        text: 'In this view you can manage requests for deleting specific ' +
+              'iRODS data objects or collections from the project sample ' +
+              'data repository.',
+        advanceOn: '.docs-link click',
+        showCancelLink: true
+    });
+
+    tour.addStep('irods_req_contributor', {
+        title: 'As Project Contributor',
+        text: 'As a project contributor, you can see your own requests along ' +
+              'with the current status of the request. You have the ability ' +
+              'to update or delete your requests. Accepted and rejected ' +
+              'requests will remain in the list for your information until ' +
+              'explicitly deleted.',
+        advanceOn: '.docs-link click',
+        showCancelLink: true
+    });
+
+    tour.addStep('irods_req_owner', {
+        title: 'As Project Owner or Delegate',
+        text: 'As a project owner or delegate, you see a list of all active ' +
+              'requests in the project. These requests can either be ' +
+              'accepted, which will cause deleting associated data, or ' +
+              'rejected, which will leave data as is. Note that owners and ' +
+              'delegates also need to delete data by first creating a delete ' +
+              'request similar to project contributors.',
+        advanceOn: '.docs-link click',
+        showCancelLink: true
+    });
   </script>
 
 {% endblock javascript %}
