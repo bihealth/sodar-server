@@ -150,3 +150,12 @@ def get_request_status_class(irods_request):
     if irods_request.status not in REQUEST_STATUS_CLASSES:
         return ''
     return REQUEST_STATUS_CLASSES[irods_request.status]
+
+
+@register.filter
+def trim_base_path(path, prefix):
+    """Return modified path that was stripped from a given prefix"""
+    prefix = prefix.rstrip('/')
+    if path.startswith(prefix):
+        return path[len(prefix) : len(path)]
+    return path

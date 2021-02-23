@@ -1876,9 +1876,26 @@ class IrodsRequestAcceptView(
 
     def get_context_data(self, *args, **kwargs):
         context_data = super().get_context_data(*args, **kwargs)
-        context_data['irods_request'] = IrodsDataRequest.objects.filter(
+        obj = IrodsDataRequest.objects.filter(
             sodar_uuid=self.kwargs['irodsdatarequest']
         ).first()
+        irods_backend = get_backend_api('omics_irods')
+        context_data['irods_request'] = obj
+        context_data['affected_objects'] = []
+        context_data['affected_collections'] = []
+        context_data['is_collection'] = obj.is_collection()
+
+        if context_data['is_collection']:
+            coll = irods_backend.get_coll_by_path(
+                context_data['irods_request'].path
+            )
+            context_data[
+                'affected_objects'
+            ] += irods_backend.get_objs_recursively(coll)
+            context_data[
+                'affected_collections'
+            ] += irods_backend.get_colls_recursively(coll)
+
         return context_data
 
     def form_valid(self, request, *args, **kwargs):
