@@ -66,7 +66,7 @@ mistune==0.8.4
 -e git+https://github.com/mikkonie/django-plugins.git@1bc07181e6ab68b0f9ed3a00382eb1f6519e1009#egg=django-plugins
 
 # SODAR Core
--e git+ssh://git@cubi-gitlab.bihealth.org/CUBI_Engineering/CUBI_Data_Mgmt/sodar_core.git@0f7dbc1ddf362985e2f3614acd98d2fbfd19b548#egg=django-sodar-core
+-e git+ssh://git@cubi-gitlab.bihealth.org/CUBI_Engineering/CUBI_Data_Mgmt/sodar_core.git@13acb81d96b27bb666cab5cb9148e8a30b1f3142#egg=django-sodar-core
 
 # Celery
 celery<4.2  # celery==5.0.5

@@ -118,10 +118,9 @@ class TestSampleSheetsPermissions(
             self.delegate_as.user,
             self.contributor_as.user,
         ]
-        # bad_users = [self.guest_as.user, self.anonymous, self.user_no_roles]
+        bad_users = [self.guest_as.user, self.anonymous, self.user_no_roles]
         self.assert_response(url, good_users, 200)
-        # TODO: Test bad_users redirect once sodar_core#635 has been fixed
-        # self.assert_response(url, bad_users, 302)
+        self.assert_response(url, bad_users, 302)
 
     def test_sheet_export_excel_study(self):
         """Test the project sheets Excel export view for study table"""
