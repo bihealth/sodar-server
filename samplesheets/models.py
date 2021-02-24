@@ -1309,7 +1309,7 @@ class IrodsDataRequest(models.Model):
     def __repr__(self):
         values = (
             self.project.title,
-            self.get_assay_title(),
+            self.get_assay_name(),
             self.action,
             self.path,
             self.user.username,
@@ -1347,9 +1347,9 @@ class IrodsDataRequest(models.Model):
         a_uuid = irods_backend.get_uuid_from_path(self.path, 'assay')
         return Assay.objects.filter(sodar_uuid=a_uuid).first()
 
-    def get_assay_title(self):
+    def get_assay_name(self):
         """Return title of related assay or "N/A" if not found"""
         assay = self.get_assay()
         if not assay:
             return 'N/A'
-        return assay.get_display_title()
+        return assay.get_display_name()

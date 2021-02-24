@@ -15,7 +15,11 @@ from projectroles.app_settings import AppSettingAPI
 from projectroles.plugins import get_backend_api
 from projectroles.tests.test_ui import TestUIBase
 
-from samplesheets.models import ISATab, IrodsDataRequest
+from samplesheets.models import (
+    ISATab,
+    IrodsDataRequest,
+    IRODS_DATA_REQUEST_STATUS_CHOICES,
+)
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 from samplesheets.tests.test_sheet_config import (
     SheetConfigMixin,
@@ -132,6 +136,33 @@ class TestProjectSheetsVueAppBase(
             WebDriverWait(self.selenium, self.wait_time).until(
                 ec.presence_of_element_located((By.ID, 'sodar-ss-grid-study'))
             )
+
+    @classmethod
+    def _make_irods_data_request(
+        cls,
+        project,
+        action,
+        path,
+        status,
+        target_path='',
+        status_info='',
+        description='',
+        user=None,
+    ):
+        """Create an iRODS access ticket object in the database"""
+        values = {
+            'project': project,
+            'action': action,
+            'path': path,
+            'status': status,
+            'target_path': target_path,
+            'status_info': status_info,
+            'user': user,
+            'description': description,
+        }
+        obj = IrodsDataRequest(**values)
+        obj.save()
+        return obj
 
     # Setup --------------------------------------------------------------------
 
@@ -288,4 +319,140 @@ class TestSampleSheetVersionListView(TestProjectSheetsVueAppBase):
         ]
         self.assert_element_count(
             expected, self.url, 'sodar-ss-version-btn-group', 'class'
+        )
+
+
+class TestIrodsRequestCreateView(TestProjectSheetsVueAppBase):
+    """Tests for irods request create view UI"""
+
+    def setUp(self):
+        super().setUp()
+        self.url = reverse(
+            'samplesheets:irods_request_create',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+
+    def test_render_form(self):
+        """Test UI rendering for form"""
+        self.assert_element_exists(
+            [self.default_user], self.url, 'sodar-ss-btn-import-submit', True
+        )
+
+
+class TestIrodsRequestUpdateView(TestProjectSheetsVueAppBase):
+    """Tests for irods request update view UI"""
+
+    def setUp(self):
+        super().setUp()
+        self.action = 'delete'
+        self.description = 'description'
+        self.status = IRODS_DATA_REQUEST_STATUS_CHOICES[0][0]
+        self.path = '/some/path/to/a/file'
+        self.irods_data_request = self._make_irods_data_request(
+            project=self.project,
+            action=self.action,
+            status=self.status,
+            path=self.path,
+            description=self.description,
+            user=self.default_user,
+        )
+        self.url = reverse(
+            'samplesheets:irods_request_update',
+            kwargs={'irodsdatarequest': self.irods_data_request.sodar_uuid},
+        )
+
+    def test_render_form(self):
+        """Test UI rendering for form"""
+        self.assert_element_exists(
+            [self.default_user], self.url, 'sodar-ss-btn-import-submit', True
+        )
+
+
+class TestIrodsRequestDeleteView(TestProjectSheetsVueAppBase):
+    """Tests for irods request delete view UI"""
+
+    def setUp(self):
+        super().setUp()
+        self.action = 'delete'
+        self.description = 'description'
+        self.status = IRODS_DATA_REQUEST_STATUS_CHOICES[0][0]
+        self.path = '/some/path/to/a/file'
+        self.irods_data_request = self._make_irods_data_request(
+            project=self.project,
+            action=self.action,
+            status=self.status,
+            path=self.path,
+            description=self.description,
+            user=self.default_user,
+        )
+        self.url = reverse(
+            'samplesheets:irods_request_delete',
+            kwargs={'irodsdatarequest': self.irods_data_request.sodar_uuid},
+        )
+
+    def test_render(self):
+        """Test UI rendering for form"""
+
+        self.assert_element_exists(
+            [self.default_user], self.url, 'sodar-ss-btn-confirm-delete', True
+        )
+
+
+@skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
+class TestIrodsRequestAcceptView(TestProjectSheetsVueAppBase):
+    """Tests for irods request accept view UI"""
+
+    def setUp(self):
+        super().setUp()
+        self.action = 'delete'
+        self.description = 'description'
+        self.status = IRODS_DATA_REQUEST_STATUS_CHOICES[0][0]
+        self.path = '/some/path/to/a/file'
+        self.irods_data_request = self._make_irods_data_request(
+            project=self.project,
+            action=self.action,
+            status=self.status,
+            path=self.path,
+            description=self.description,
+            user=self.default_user,
+        )
+        self.url = reverse(
+            'samplesheets:irods_request_accept',
+            kwargs={'irodsdatarequest': self.irods_data_request.sodar_uuid},
+        )
+
+    def test_render(self):
+        """Test UI rendering for confirm accept page"""
+
+        self.assert_element_exists(
+            [self.superuser], self.url, 'sodar-ss-btn-delete-submit', True
+        )
+
+
+class TestIrodsDataRequestListView(TestProjectSheetsVueAppBase):
+    """Tests for irods request reject view UI"""
+
+    def setUp(self):
+        super().setUp()
+        self.action = 'delete'
+        self.description = 'description'
+        self.status = IRODS_DATA_REQUEST_STATUS_CHOICES[0][0]
+        self.path = '/some/path/to/a/file'
+        self.irods_data_request = self._make_irods_data_request(
+            project=self.project,
+            action=self.action,
+            status=self.status,
+            path=self.path,
+            description=self.description,
+            user=self.default_user,
+        )
+        self.url = reverse(
+            'samplesheets:irods_requests',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+
+    def test_render(self):
+        """Test UI rendering for listing irods requests"""
+        self.assert_element_exists(
+            [self.default_user], self.url, 'sodar-ss-request-table', True
         )

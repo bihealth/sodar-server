@@ -55,7 +55,7 @@
            href="{{ request.session.real_referer }}">
           <i class="fa fa-arrow-circle-left"></i> Cancel
         </a>
-        <button type="submit" class="btn btn-primary" id="sodar-ss-btn-import-submit">
+        <button type="submit" class="btn btn-primary" id="sodar-ss-btn-delete-submit">
           <i class="fa fa-check"></i> Accept
         </button>
       </div>
@@ -64,11 +64,3 @@
 </div>
 
 {% endblock projectroles_extend %}
-
-{% block javascript %}
-  {{ block.super }}
-
-  <script type="text/javascript">
-    alert('This is a friendly reminder that you are about to delete data!');
-  </script>
-{% endblock %}
