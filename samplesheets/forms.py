@@ -353,11 +353,12 @@ class IrodsRequestForm(forms.ModelForm):
             self.add_error('path', ERROR_MSG_EXISTING)
             return cleaned_data
 
-        path_re = (
-            r'^/omicsZone/projects/[0-9a-f]{2}/'
-            r'(?P<project_uuid>[0-9a-f-]{36})/sample_data/'
-            r'study_(?P<study_uuid>[0-9a-f-]{36})/'
-            r'assay_(?P<assay_uuid>[0-9a-f-]{36})/.+$'
+        path_re = re.compile(
+            '^' + irods_backend.get_projects_path() + '/[0-9a-f]{2}/'
+            '(?P<project_uuid>[0-9a-f-]{36})/'
+            + settings.IRODS_SAMPLE_COLL
+            + '/study_(?P<study_uuid>[0-9a-f-]{36})/'
+            'assay_(?P<assay_uuid>[0-9a-f-]{36})/.+$'
         )
         match = re.search(
             path_re,
