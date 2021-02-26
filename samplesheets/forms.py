@@ -346,9 +346,13 @@ class IrodsRequestForm(forms.ModelForm):
         cleaned_data = super().clean()
         irods_backend = get_backend_api('omics_irods')
 
+        # Remove trailing slashes as irodspython client does not recognize this as a collection
+        cleaned_data['path'] = cleaned_data['path'].rstrip('/')
+
         old_request = IrodsDataRequest.objects.filter(
             path=cleaned_data['path'], status__in=['ACTIVE', 'FAILED']
         ).first()
+
         if old_request and old_request != self.instance:
             self.add_error('path', ERROR_MSG_EXISTING)
             return cleaned_data

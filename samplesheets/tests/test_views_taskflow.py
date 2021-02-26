@@ -892,6 +892,39 @@ class TestIrodsRequestCreateView(TestIrodsRequestViewsBase):
             self.assertEqual(obj.path, self.path)
             self.assertEqual(obj.description, 'bla')
 
+    def test_post_create_with_trailing_slash(self):
+        """Test POST request for creating a delete request where the path has a trailing slash"""
+
+        with self.login(self.user):
+            self.assertEqual(IrodsDataRequest.objects.count(), 0)
+
+            post_data = {'path': self.path + '/', 'description': 'bla'}
+
+            response = self.client.post(
+                reverse(
+                    'samplesheets:irods_request_create',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                post_data,
+            )
+
+            self.assertRedirects(
+                response,
+                reverse(
+                    'samplesheets:irods_requests',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+            )
+
+            obj = IrodsDataRequest.objects.first()
+            self.assertEqual(
+                list(get_messages(response.wsgi_request))[0].message,
+                f'iRODS data request "{obj.get_display_name()}" created.',
+            )
+            self.assertEqual(IrodsDataRequest.objects.count(), 1)
+            self.assertEqual(obj.path, self.path)
+            self.assertEqual(obj.description, 'bla')
+
     def test_create_invalid_form_data(self):
         """Test POST request for creating a delete request with invalid form data"""
         with self.login(self.user):
