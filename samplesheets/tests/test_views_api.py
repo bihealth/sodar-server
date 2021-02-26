@@ -482,6 +482,7 @@ class TestSampleSheetISAExportAPIView(TestSampleSheetAPIBase):
         response = self.request_knox(url)
         sheet_io = SampleSheetIO()
         expected = sheet_io.export_isa(self.investigation)
+        expected['date_modified'] = str(self.investigation.date_modified)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data, expected)
 

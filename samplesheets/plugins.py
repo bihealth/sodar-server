@@ -107,6 +107,30 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
             'configuration updates',
             'user_modifiable': True,
         },
+        'sheet_sync_enable': {
+            'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT'],
+            'type': 'BOOLEAN',
+            'default': False,
+            'label': 'Enable sheet synchronization',
+            'description': 'Enable sheet synchronization from a source project',
+            'user_modifiable': True,
+        },
+        'sheet_sync_url': {
+            'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT'],
+            'type': 'STRING',
+            'label': 'URL for sheet synchronization',
+            'default': '',
+            'description': 'REST API URL for sheet synchronization',
+            'user_modifiable': True,
+        },
+        'sheet_sync_token': {
+            'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT'],
+            'type': 'STRING',
+            'label': 'Token for sheet synchronization',
+            'default': '',
+            'description': 'Access token for sheet synchronization in the source project',
+            'user_modifiable': True,
+        },
     }
 
     #: FontAwesome icon ID string

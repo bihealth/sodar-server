@@ -21,6 +21,11 @@ urls_ui = [
         name='import',
     ),
     url(
+        regex=r'^sync/(?P<project>[0-9a-f-]+)$',
+        view=views.SampleSheetSyncView.as_view(),
+        name='sync',
+    ),
+    url(
         regex=r'^template/select/(?P<project>[0-9a-f-]+)$',
         view=views.SheetTemplateSelectView.as_view(),
         name='template_select',

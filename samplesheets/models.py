@@ -137,6 +137,11 @@ class BaseSampleSheet(models.Model):
 class Investigation(BaseSampleSheet):
     """ISA model compatible investigation"""
 
+    #: DateTime of last folder modification
+    date_modified = models.DateTimeField(
+        auto_now=True, help_text='DateTime of last modification'
+    )
+
     #: Locally unique identifier
     identifier = models.CharField(
         max_length=DEFAULT_LENGTH,

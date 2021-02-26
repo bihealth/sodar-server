@@ -23,6 +23,7 @@ describe('PageHeader.vue', () => {
         projectUuid: '00000000-0000-0000-0000-000000000000',
         renderError: false,
         sheetsAvailable: true,
+        sheetSyncEnabled: false,
         sodarContext: JSON.parse(JSON.stringify(sodarContext)),
         unsavedRow: null,
         windowsOs: false
@@ -83,6 +84,40 @@ describe('PageHeader.vue', () => {
     expect(wrapper.find('#sodar-ss-btn-edit-finish').exists()).toBe(false)
   })
 
+  it('renders page header with sheet sync enabled', () => {
+    propsData.app.sheetSyncEnabled = true
+    const wrapper = mount(PageHeader, { localVue, propsData: propsData })
+
+    // Basic elements and nav
+    expect(wrapper.find('#sodar-ss-subtitle').exists()).toBe(true)
+    expect(wrapper.findAll('.sodar-ss-tab-study').length).toBe(1)
+    expect(wrapper.find('#sodar-ss-tab-overview').exists()).toBe(true)
+
+    // Nav dropdown
+    expect(wrapper.find('#sodar-ss-nav-dropdown').exists()).toBe(true)
+    expect(wrapper.find('#sodar-ss-nav-dropdown').find('button').classes()).not.toContain('disabled')
+    expect(wrapper.findAll('.sodar-ss-nav-item').length).toBe(3)
+
+    // Edit badge
+    expect(wrapper.find('#sodar-ss-badge-edit').exists()).toBe(false)
+    expect(wrapper.find('#sodar-ss-link-edit-help').exists()).toBe(false)
+
+    // Operations dropdown
+    expect(wrapper.find('#sodar-ss-op-dropdown').exists()).toBe(true)
+    expect(wrapper.find('#sodar-ss-op-item-import').exists()).toBe(false)
+    expect(wrapper.find('#sodar-ss-op-item-edit').exists()).toBe(false)
+    expect(wrapper.find('#sodar-ss-op-item-warnings').exists()).toBe(true)
+    expect(wrapper.find('#sodar-ss-op-item-cache').exists()).toBe(true)
+    expect(wrapper.find('#sodar-ss-op-item-replace').exists()).toBe(false)
+    expect(wrapper.find('#sodar-ss-op-item-export').exists()).toBe(true)
+    expect(wrapper.find('#sodar-ss-op-item-irods').exists()).toBe(true)
+    expect(wrapper.find('#sodar-ss-op-item-versions').exists()).toBe(false)
+    expect(wrapper.find('#sodar-ss-op-item-delete').exists()).toBe(false)
+
+    // Finish editing button
+    expect(wrapper.find('#sodar-ss-btn-edit-finish').exists()).toBe(false)
+  })
+
   it('renders page header with no sample sheet', () => {
     propsData.app.sodarContext = JSON.parse(JSON.stringify(sodarContextNoSheet))
     propsData.app.sheetsAvailable = false
@@ -102,6 +137,27 @@ describe('PageHeader.vue', () => {
     expect(wrapper.findAll('.sodar-ss-op-item').length).toBe(2)
     expect(wrapper.find('#sodar-ss-op-item-import').exists()).toBe(true)
     expect(wrapper.find('#sodar-ss-op-item-create').exists()).toBe(true)
+  })
+
+  it('renders page header with no sample sheet and sheet sync enabled', () => {
+    propsData.app.sodarContext = JSON.parse(JSON.stringify(sodarContextNoSheet))
+    propsData.app.sheetsAvailable = false
+    propsData.app.irodsStatus = null
+    propsData.app.sheetSyncEnabled = true
+    const wrapper = mount(PageHeader, { localVue, propsData: propsData })
+
+    // Nav
+    expect(wrapper.findAll('.sodar-ss-tab-study').length).toBe(0)
+    expect(wrapper.find('#sodar-ss-tab-overview').exists()).toBe(false)
+
+    // Nav dropdown
+    expect(wrapper.find('#sodar-ss-nav-dropdown').exists()).toBe(true)
+    expect(wrapper.find('#sodar-ss-nav-dropdown').find('button').classes()).toContain('disabled')
+
+    // Operations dropdown
+    expect(wrapper.find('#sodar-ss-op-dropdown').exists()).toBe(true)
+    expect(wrapper.findAll('.sodar-ss-op-item').length).toBe(1)
+    expect(wrapper.find('#sodar-ss-op-item-sync').exists()).toBe(true)
   })
 
   it('renders page header in edit mode', () => {

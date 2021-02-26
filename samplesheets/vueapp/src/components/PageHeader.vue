@@ -88,21 +88,28 @@
           variant="primary"
           text="Sheet Operations">
         <b-dropdown-item
-            v-if="!app.sheetsAvailable"
+            v-if="app.sheetSyncEnabled"
+            class="sodar-ss-op-item"
+            id="sodar-ss-op-item-sync"
+            :href="'sync/' + app.projectUuid">
+          <i class="fa fa-fw fa-refresh"></i> Sync Sheets
+        </b-dropdown-item>
+        <b-dropdown-item
+            v-if="!app.sheetsAvailable && !app.sheetSyncEnabled"
             class="sodar-ss-op-item"
             id="sodar-ss-op-item-create"
             :href="'template/select/' + app.projectUuid">
           <i class="fa fa-fw fa-magic"></i> Create from Template
         </b-dropdown-item>
         <b-dropdown-item
-            v-if="!app.sheetsAvailable"
+            v-if="!app.sheetsAvailable && !app.sheetSyncEnabled"
             class="sodar-ss-op-item"
             id="sodar-ss-op-item-import"
             :href="'import/' + app.projectUuid">
           <i class="fa fa-fw fa-upload"></i> Import ISA-Tab
         </b-dropdown-item>
         <b-dropdown-item
-            v-if="app.sheetsAvailable"
+            v-if="app.sheetsAvailable && !app.sheetSyncEnabled"
             class="sodar-ss-op-item"
             id="sodar-ss-op-item-edit"
             @click="toggleEditModeCallback"
@@ -126,7 +133,7 @@
           <i class="fa fa-fw fa-refresh"></i> Update Sheet Cache
         </b-dropdown-item>
         <b-dropdown-item
-            v-if="app.sheetsAvailable"
+            v-if="app.sheetsAvailable && !app.sheetSyncEnabled"
             class="sodar-ss-op-item"
             id="sodar-ss-op-item-replace"
             :href="'import/' + app.projectUuid">
@@ -156,7 +163,7 @@
           <span v-if="app.sodarContext.irods_status">Update</span><span v-else>Create</span> iRODS Collections
         </b-dropdown-item>
         <b-dropdown-item
-            v-if="app.sheetsAvailable"
+            v-if="app.sheetsAvailable && !app.sheetSyncEnabled"
             class="sodar-ss-op-item"
             id="sodar-ss-op-item-versions"
             :href="'versions/' + app.projectUuid">
@@ -178,7 +185,8 @@
         </b-dropdown-item>
         <b-dropdown-item
             v-if="app.sheetsAvailable &&
-                  app.sodarContext.perms.delete_sheet"
+                  app.sodarContext.perms.delete_sheet &&
+                  !app.sheetSyncEnabled"
             class="sodar-ss-op-item"
             id="sodar-ss-op-item-delete"
             variant="danger"

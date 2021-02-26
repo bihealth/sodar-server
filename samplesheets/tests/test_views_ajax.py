@@ -192,6 +192,7 @@ class TestContextAjaxView(TestViewsBase):
 
     def setUp(self):
         super().setUp()
+        self.maxDiff = None
         self.irods_backend = get_backend_api('omics_irods')
 
         # Import investigation
@@ -232,6 +233,9 @@ class TestContextAjaxView(TestViewsBase):
             'max_col_width': settings.SHEETS_MAX_COLUMN_WIDTH,
             'allow_editing': app_settings.get_default_setting(
                 APP_NAME, 'allow_editing'
+            ),
+            'sheet_sync_enabled': app_settings.get_default_setting(
+                APP_NAME, 'sheet_sync_enable'
             ),
             'alerts': [],
             'investigation': {

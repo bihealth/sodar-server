@@ -23,6 +23,7 @@ Added
     - iRODS delete requests for data objects and collections (#277, #1087, #1089, #1090, #1093)
     - Allow per-project restriction of column config updates (#995)
     - Diff comparison for sheet versions (#1007)
+    - Enable remote sync for sample sheets (#959, #1102, #1103)
 
 Changed
 -------

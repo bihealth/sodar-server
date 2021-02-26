@@ -1,3 +1,8 @@
+import datetime
+from json import JSONDecodeError
+
+import pytz
+import requests
 from cubi_tk.isa_tpl import _TEMPLATES as TK_TEMPLATES
 import io
 import json
@@ -67,7 +72,6 @@ from samplesheets.models import (
 )
 from samplesheets.rendering import SampleSheetTableBuilder, EMPTY_VALUE
 from samplesheets.sheet_config import SheetConfigAPI
-from samplesheets.tasks import update_project_cache_task
 from samplesheets.utils import (
     get_sample_colls,
     compare_inv_replace,
@@ -429,6 +433,8 @@ class SampleSheetImportMixin:
             and investigation.irods_status
             and settings.SHEETS_ENABLE_CACHE
         ):
+            from samplesheets.tasks import update_project_cache_task
+
             update_project_cache_task.delay(
                 project_uuid=str(project.sodar_uuid),
                 user_uuid=str(self.request.user.sodar_uuid),
@@ -616,6 +622,7 @@ class SampleSheetISAExportMixin:
                 return response
 
             elif format == 'json':
+                export_data['date_modified'] = str(investigation.date_modified)
                 return Response(export_data, status=200)
 
         except Exception as ex:
@@ -680,6 +687,8 @@ class IrodsCollsCreateViewMixin:
             tl_event.set_status('OK')
 
         if settings.SHEETS_ENABLE_CACHE:
+            from samplesheets.tasks import update_project_cache_task
+
             update_project_cache_task.delay(
                 project_uuid=str(project.sodar_uuid),
                 user_uuid=str(self.request.user.sodar_uuid),
@@ -842,6 +851,187 @@ class SampleSheetImportView(
                 messages.warning(self.request, self.get_assay_plugin_warning(a))
 
         return redirect(redirect_url)
+
+
+class SheetSync(SampleSheetImportMixin):
+    def run(self, project, url, token, user):
+        """Logic to perfom syncing of sheets
+
+        :project: Project object of target project
+        :url: URL string to AJAX API of source site including project UUID to
+              retrieve sample sheet JSON data
+        :token: Token string to access AJAX API of source project
+        :user: User performing the action
+        """
+        logger.debug(
+            f'Sync sample sheets for project "{project.title}" '
+            f'({project.sodar_uuid})'
+        )
+
+        # Get remote sheet data (source)
+        try:
+            response = requests.get(
+                url, headers={'Authorization': f'token {token}'}
+            )
+        except Exception:
+            raise requests.exceptions.ConnectionError(
+                'Unable to connect to URL: {}'.format(url)
+            )
+
+        if not response.status_code == 200:
+            raise requests.exceptions.ConnectionError(
+                'Source API responded with status code {}'.format(
+                    response.status_code
+                )
+            )
+
+        try:
+            source_data = response.json()
+        except JSONDecodeError as ex:
+            raise ValueError(
+                f'Error decoding JSON data: {ex}. Please check '
+                f'`sheet_sync_url` setting.'
+            )
+
+        source_date = datetime.datetime.strptime(
+            source_data.pop('date_modified'),
+            '%Y-%m-%d %H:%M:%S.%f+00:00',
+        ).replace(tzinfo=pytz.UTC)
+        old_inv = project.investigations.first()
+        replace = bool(old_inv)
+
+        if old_inv and source_date < old_inv.date_modified:
+            logger.debug('No updates detected, skipping sync')
+            return False
+
+        # Import sheet data
+        sheet_io = SampleSheetIO()
+
+        # Do the import
+        investigation = sheet_io.import_isa(
+            isa_data=source_data,
+            project=project,
+            replace=replace,
+            replace_uuid=old_inv.sodar_uuid if replace else None,
+        )
+
+        # Handle replace
+        if replace:
+            investigation = self.handle_replace(
+                investigation=investigation,
+                old_inv=old_inv,
+                tl_event=None,
+            )
+
+        # Active investigation
+        investigation.active = True
+        investigation.save()
+
+        # Update project cache if replacing sheets and iRODS collections exists
+        if (
+            replace
+            and investigation.irods_status
+            and settings.SHEETS_ENABLE_CACHE
+        ):
+            from samplesheets.tasks import update_project_cache_task
+
+            update_project_cache_task(
+                project_uuid=str(project.sodar_uuid),
+                user_uuid=str(user.sodar_uuid),
+            )
+
+        logger.info(
+            f'Sample sheet sync OK for project "{project.title}" '
+            f'({project.sodar_uuid})'
+        )
+
+        return True
+
+
+class SampleSheetSyncView(
+    LoginRequiredMixin,
+    LoggedInPermissionMixin,
+    ProjectPermissionMixin,
+    ProjectContextMixin,
+    TemplateView,
+):
+    """Sample sheet sync view for manual sync"""
+
+    permission_required = 'samplesheets.edit_sheet'
+    # We only redirect, so the template is somewhat egal
+    template_name = 'samplesheets/project_sheets.html'
+
+    def _redirect(self):
+        return redirect(
+            reverse(
+                'samplesheets:project_sheets',
+                kwargs={'project': self.get_project().sodar_uuid},
+            )
+        )
+
+    def get(self, request, *args, **kwargs):
+        super().get(request, *args, **kwargs)
+
+        project = self.get_project()
+        timeline = get_backend_api('timeline_backend')
+        tl_add = False
+        tl_status_type = 'OK'
+        tl_status_desc = 'Sync OK'
+
+        sheet_sync_enable = app_settings.get_app_setting(
+            APP_NAME, 'sheet_sync_enable', project=project
+        )
+        sheet_sync_url = app_settings.get_app_setting(
+            APP_NAME, 'sheet_sync_url', project=project
+        )
+        sheet_sync_token = app_settings.get_app_setting(
+            APP_NAME, 'sheet_sync_token', project=project
+        )
+
+        # Sanity check. View is not shown in UI when variable is disabled.
+        if not sheet_sync_enable:
+            messages.error(request, 'Sample sheet sync disabled')
+            return self._redirect()
+        if not sheet_sync_url:
+            messages.error(request, 'Sample sheet sync: URL not set')
+            return self._redirect()
+        if not sheet_sync_token:
+            messages.error(request, 'Sample sheet sync: Token not set')
+            return self._redirect()
+
+        sync = SheetSync()
+        try:
+            ret = sync.run(
+                project,
+                sheet_sync_url,
+                sheet_sync_token,
+                request.user,
+            )
+            if ret:
+                messages.success(request, 'Sample sheet sync successful')
+                tl_add = True
+            else:
+                messages.info(
+                    request, 'Sample sheet sync skipped, no changes detected'
+                )
+        except Exception as ex:
+            tl_status_type = 'FAILED'
+            tl_status_desc = 'Sync failed: {}'.format(ex)
+            messages.error(request, 'Sample sheet sync failed: {}'.format(ex))
+            tl_add = True  # Add timeline event
+
+        if timeline and tl_add:
+            timeline.add_event(
+                project=project,
+                app_name=APP_NAME,
+                user=request.user,
+                event_name='sheet_sync_manual',
+                description='sync sheets from source project (manual)',
+                status_type=tl_status_type,
+                status_desc=tl_status_desc,
+                extra_data={'url': sheet_sync_url},
+            )
+        return self._redirect()
 
 
 class SheetTemplateSelectView(
@@ -1293,6 +1483,8 @@ class SampleSheetCacheUpdateView(
         project = self.get_project()
 
         if settings.SHEETS_ENABLE_CACHE:
+            from samplesheets.tasks import update_project_cache_task
+
             update_project_cache_task.delay(
                 project_uuid=str(project.sodar_uuid),
                 user_uuid=str(request.user.sodar_uuid),
@@ -2018,6 +2210,8 @@ class IrodsRequestAcceptView(
 
         # Update cache
         if settings.SHEETS_ENABLE_CACHE:
+            from samplesheets.tasks import update_project_cache_task
+
             update_project_cache_task.delay(
                 project_uuid=str(project.sodar_uuid),
                 user_uuid=str(self.request.user.sodar_uuid),

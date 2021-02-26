@@ -111,9 +111,13 @@
            :id="contentId">
         <div class="alert alert-info" id="sodar-ss-alert-empty">
           No sample sheets are currently available for this project.
-          <span v-if="sodarContext.perms.edit_sheet">
+          <span v-if="sodarContext.perms.edit_sheet && !sheetSyncEnabled">
             To add sample sheets, please import it from an existing ISA-Tab
-            investigation.
+            investigation or activate samplesheet synchonization.
+          </span>
+          <span v-if="sodarContext.perms.edit_sheet && sheetSyncEnabled">
+            To add sample sheets, please wait for the synchonization to take
+            place or trigger the synchonization manually.
           </span>
         </div>
       </div>
@@ -235,6 +239,7 @@ export default {
       gridsBusy: false,
       renderError: null,
       sheetsAvailable: null,
+      sheetSyncEnabled: null,
       activeSubPage: null,
       appSetupDone: false,
       selectEnabled: true,
@@ -1236,6 +1241,8 @@ export default {
       } else {
         this.sheetsAvailable = false
       }
+
+      this.sheetSyncEnabled = this.sodarContext.sheet_sync_enabled
     }
     setUpInitialData()
   }

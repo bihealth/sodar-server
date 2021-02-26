@@ -292,6 +292,9 @@ class SheetContextAjaxView(EditConfigMixin, SODARBaseProjectAjaxView):
             'csrf_token': get_token(request),
             'investigation': {},
             'user_uuid': str(request.user.sodar_uuid),
+            'sheet_sync_enabled': app_settings.get_app_setting(
+                APP_NAME, 'sheet_sync_enable', project=project
+            ),
         }
 
         if inv:
@@ -1504,6 +1507,8 @@ class SheetRowDeleteAjaxView(BaseSheetEditAjaxView):
         if arc_del_count == 0:
             self._raise_ex('Did not find arcs to remove')
 
+        study.investigation.save()
+
         # Attempt to export investigation with altamISA
         try:
             sheet_io.export_isa(study.investigation)
@@ -1564,6 +1569,7 @@ class SheetEditFinishAjaxView(SODARBaseProjectAjaxView):
                 user=request.user,
                 archive_name=inv.archive_name,
             )
+            inv.save()
 
         except Exception as ex:
             logger.error(

@@ -650,6 +650,10 @@ SHEETS_ENABLED_TEMPLATES = [
 ]
 
 
+# Settings for sync sheets in minutes
+SHEETS_SYNC_INTERVAL = env.int('SHEETS_SYNC_INTERVAL', 5)
+
+
 # Landingzones app settings
 # Status query interval in seconds
 LANDINGZONES_STATUS_INTERVAL = env.int('LANDINGZONES_STATUS_INTERVAL', 3)
