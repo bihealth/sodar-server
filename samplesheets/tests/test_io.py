@@ -18,6 +18,7 @@ from test_plus.test import TestCase
 from projectroles.models import Role, SODAR_CONSTANTS
 from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
 
+
 from samplesheets.models import Investigation, ISATab
 from samplesheets.io import SampleSheetIO
 
@@ -428,8 +429,6 @@ class TestSampleSheetIOImport(TestSampleSheetIOBase):
 
     def test_import_ontology_vals(self):
         """Test _import_ontology_vals()"""
-        self.maxDiff = None
-
         in_data = (
             self.isa_studies['s_BII-S-1.txt']
             .materials['{}-s0-source-culture1'.format(self.p_id)]

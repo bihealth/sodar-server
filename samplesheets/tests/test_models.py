@@ -1221,7 +1221,6 @@ class TestISATab(TestSampleSheetBase):
 
     def test_initialization(self):
         """Test ISATab initialization"""
-        self.maxDiff = None
         expected = {
             'id': self.isatab.pk,
             'project': self.project.pk,
@@ -1326,7 +1325,6 @@ class TestIrodsAccessTicket(TestSampleSheetBase):
 
     def test_initialization(self):
         """Test IrodsAccessTicket initialization"""
-        self.maxDiff = None
         expected = {
             'id': self.irods_access_ticket.pk,
             'project': self.project.pk,

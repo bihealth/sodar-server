@@ -56,6 +56,8 @@ SHEET_PATH = SHEET_DIR + SHEET_NAME
 SHEET_PATH_INSERTED = SHEET_DIR_SPECIAL + 'i_small_insert.zip'
 SHEET_NAME_SMALL2 = 'i_small2.zip'
 SHEET_PATH_SMALL2 = SHEET_DIR + SHEET_NAME_SMALL2
+SHEET_NAME_SMALL2_ALT = 'i_small2_alt.zip'
+SHEET_PATH_SMALL2_ALT = SHEET_DIR + SHEET_NAME_SMALL2_ALT
 SHEET_NAME_MINIMAL = 'i_minimal.zip'
 SHEET_PATH_MINIMAL = SHEET_DIR + SHEET_NAME_MINIMAL
 SHEET_NAME_CRITICAL = 'BII-I-1_critical.zip'
@@ -1113,3 +1115,153 @@ class TestProjectSearchView(TestViewsBase):
         self.assertEqual(response.status_code, 200)
         items = self._get_items(response)
         self.assertEqual(len(items), 2)
+
+
+class TestSheetVersionCompareView(TestViewsBase):
+    """Tests for the SheetVersionCompareView"""
+
+    def setUp(self):
+        super().setUp()
+        self._import_isa_from_file(SHEET_PATH_SMALL2, self.project)
+
+        # Assert preconditions
+        self.assertEqual(Investigation.objects.count(), 1)
+        self.assertEqual(ISATab.objects.count(), 1)
+
+        with open(SHEET_PATH_SMALL2_ALT, 'rb') as file, self.login(self.user):
+            values = {'file_upload': file}
+            self.client.post(
+                reverse(
+                    'samplesheets:import',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                values,
+            )
+
+        self.assertEqual(ISATab.objects.count(), 2)
+
+        self.isa1 = ISATab.objects.first()
+        self.isa2 = ISATab.objects.last()
+
+        self.isa2.data['studies']['s_small2.txt'] = self.isa2.data[
+            'studies'
+        ].pop('s_small2_alt.txt')
+        self.isa2.data['assays']['a_small2.txt'] = self.isa2.data['assays'].pop(
+            'a_small2_alt.txt'
+        )
+        self.isa2.save()
+
+    def test_render(self):
+        """Test rendering the sheet version compare view"""
+
+        with self.login(self.user):
+            response = self.client.get(
+                '{}?source={}&target={}'.format(
+                    reverse(
+                        'samplesheets:version_compare',
+                        kwargs={'project': self.project.sodar_uuid},
+                    ),
+                    str(self.isa1.sodar_uuid),
+                    str(self.isa2.sodar_uuid),
+                )
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['source'], str(self.isa1.sodar_uuid))
+        self.assertEqual(response.context['target'], str(self.isa2.sodar_uuid))
+
+    def test_render_no_permission(self):
+        """Test rendering the sheet version compare view without permission"""
+
+        with self.login(self.user_contributor):
+            response = self.client.get(
+                '{}?source={}&target={}'.format(
+                    reverse(
+                        'samplesheets:version_compare',
+                        kwargs={'project': self.project.sodar_uuid},
+                    ),
+                    str(self.isa1.sodar_uuid),
+                    str(self.isa2.sodar_uuid),
+                ),
+                follow=True,
+            )
+
+        self.assertRedirects(response, reverse('home'))
+
+
+class TestSheetVersionCompareFileView(TestViewsBase):
+    """Tests for the SheetVersionCompareFileView"""
+
+    def setUp(self):
+        super().setUp()
+        self._import_isa_from_file(SHEET_PATH_SMALL2, self.project)
+
+        # Assert preconditions
+        self.assertEqual(Investigation.objects.count(), 1)
+        self.assertEqual(ISATab.objects.count(), 1)
+
+        with open(SHEET_PATH_SMALL2_ALT, 'rb') as file, self.login(self.user):
+            values = {'file_upload': file}
+            self.client.post(
+                reverse(
+                    'samplesheets:import',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                values,
+            )
+
+        self.assertEqual(ISATab.objects.count(), 2)
+
+        self.isa1 = ISATab.objects.first()
+        self.isa2 = ISATab.objects.last()
+
+        self.isa2.data['studies']['s_small2.txt'] = self.isa2.data[
+            'studies'
+        ].pop('s_small2_alt.txt')
+        self.isa2.data['assays']['a_small2.txt'] = self.isa2.data['assays'].pop(
+            'a_small2_alt.txt'
+        )
+        self.isa2.save()
+
+    def test_render(self):
+        """Test rendering the sheet version compare view"""
+
+        with self.login(self.user):
+            response = self.client.get(
+                '{}?source={}&target={}&filename={}&category={}'.format(
+                    reverse(
+                        'samplesheets:version_compare_file',
+                        kwargs={'project': self.project.sodar_uuid},
+                    ),
+                    str(self.isa1.sodar_uuid),
+                    str(self.isa2.sodar_uuid),
+                    'a_small2.txt',
+                    'assays',
+                )
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['source'], str(self.isa1.sodar_uuid))
+        self.assertEqual(response.context['target'], str(self.isa2.sodar_uuid))
+        self.assertEqual(response.context['filename'], 'a_small2.txt')
+        self.assertEqual(response.context['category'], 'assays')
+
+    def test_render_no_permission(self):
+        """Test rendering the sheet version compare view without permission"""
+
+        with self.login(self.user_contributor):
+            response = self.client.get(
+                '{}?source={}&target={}&filename={}&category={}'.format(
+                    reverse(
+                        'samplesheets:version_compare_file',
+                        kwargs={'project': self.project.sodar_uuid},
+                    ),
+                    str(self.isa1.sodar_uuid),
+                    str(self.isa2.sodar_uuid),
+                    'a_small2.txt',
+                    'assays',
+                ),
+                follow=True,
+            )
+
+        self.assertRedirects(response, reverse('home'))

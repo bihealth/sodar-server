@@ -20,6 +20,7 @@ Added
     - ``clean_sheet_dir_name()`` helper
     - iRODS delete requests for data objects and collections (#277, #1087, #1089, #1090, #1093)
     - Allow per-project restriction of column config updates (#995)
+    - Add diff comparison for sheet versions (#1007)
 
 Changed
 -------

@@ -1,0 +1,36 @@
+div.sodar-ss-diff-card-body {
+  max-height: 400px;
+}
+
+.sodar-ss-diff-full-body {
+  overflow: scroll;
+}
+
+.add {
+  background-color: #d4edda;
+}
+
+.remove {
+  background-color: #f8d7da;
+}
+
+.gap {
+  background-color: #f7f7f7;
+  color: #6c757d;
+}
+
+tr.modify {
+  background-color: #d1ecf1;
+}
+
+td {
+  padding: 3px;
+  font-family: monospace !important;
+  font-size: 13px !important;
+  border: 1px solid #f7f7f7;
+}
+
+td.modify {
+  background-color: #ddd1f1;
+  font-weight: bold;
+}

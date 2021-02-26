@@ -30,6 +30,7 @@ from samplesheets.models import (
     ISATab,
     IrodsAccessTicket,
     IrodsDataRequest,
+    Investigation,
 )
 from samplesheets.sheet_config import SheetConfigAPI
 from samplesheets.tests.test_sheet_config import (
@@ -46,8 +47,10 @@ from samplesheets.tests.test_views import (
     app_settings,
     EDIT_NEW_VALUE_STR,
     CONFIG_DATA_DEFAULT,
+    SHEET_PATH_SMALL2_ALT,
 )
 from samplesheets.utils import get_node_obj
+from samplesheets.views import SampleSheetImportMixin
 from samplesheets.views_ajax import ALERT_ACTIVE_REQS
 
 
@@ -1975,3 +1978,199 @@ class TestStudyDisplayConfigAjaxView(TestViewsBase):
             updated_config,
             self.display_config,
         )
+
+
+class TestSheetVersionCompareAjaxView(SampleSheetImportMixin, TestViewsBase):
+    """Tests for SheetVersionCompareAjaxView"""
+
+    def setUp(self):
+        super().setUp()
+        self._import_isa_from_file(SHEET_PATH_SMALL2, self.project)
+
+        # Assert preconditions
+        self.assertEqual(Investigation.objects.count(), 1)
+        self.assertEqual(ISATab.objects.count(), 1)
+
+        with open(SHEET_PATH_SMALL2_ALT, 'rb') as file, self.login(self.user):
+            values = {'file_upload': file}
+            self.client.post(
+                reverse(
+                    'samplesheets:import',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                values,
+            )
+
+        self.assertEqual(ISATab.objects.count(), 2)
+
+        self.isa1 = ISATab.objects.first()
+        self.isa2 = ISATab.objects.last()
+
+        self.isa2.data['studies']['s_small2.txt'] = self.isa2.data[
+            'studies'
+        ].pop('s_small2_alt.txt')
+        self.isa2.data['assays']['a_small2.txt'] = self.isa2.data['assays'].pop(
+            'a_small2_alt.txt'
+        )
+        self.isa2.save()
+
+    def test_get(self):
+        """Test GET returning diff data"""
+        expected = {
+            'studies': {
+                's_small2.txt': [
+                    [
+                        line.split('\t')
+                        for line in self.isa1.data['studies']['s_small2.txt'][
+                            'tsv'
+                        ].split('\n')
+                    ],
+                    [
+                        line.split('\t')
+                        for line in self.isa2.data['studies']['s_small2.txt'][
+                            'tsv'
+                        ].split('\n')
+                    ],
+                ]
+            },
+            'assays': {
+                'a_small2.txt': [
+                    [
+                        line.split('\t')
+                        for line in self.isa1.data['assays']['a_small2.txt'][
+                            'tsv'
+                        ].split('\n')
+                    ],
+                    [
+                        line.split('\t')
+                        for line in self.isa2.data['assays']['a_small2.txt'][
+                            'tsv'
+                        ].split('\n')
+                    ],
+                ]
+            },
+        }
+
+        with self.login(self.user):
+            response = self.client.get(
+                '{}?source={}&target={}'.format(
+                    reverse(
+                        'samplesheets:ajax_version_compare',
+                        kwargs={'project': self.project.sodar_uuid},
+                    ),
+                    str(self.isa1.sodar_uuid),
+                    str(self.isa2.sodar_uuid),
+                )
+            )
+
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.json(), expected)
+
+    def test_get_no_permission(self):
+        """Test GET without permission"""
+        expected = {
+            'detail': 'You do not have permission to perform this action.'
+        }
+
+        with self.login(self.user_contributor):
+            response = self.client.get(
+                '{}?source={}&target={}'.format(
+                    reverse(
+                        'samplesheets:ajax_version_compare',
+                        kwargs={'project': self.project.sodar_uuid},
+                    ),
+                    str(self.isa1.sodar_uuid),
+                    str(self.isa2.sodar_uuid),
+                )
+            )
+
+            self.assertEqual(response.status_code, 403)
+            self.assertEqual(response.json(), expected)
+
+    def test_get_no_samplesheets(self):
+        """Test GET without permission"""
+        expected = {'detail': 'Samplesheet version(s) not found.'}
+
+        with self.login(self.user):
+            response = self.client.get(
+                '{}?source={}&target={}'.format(
+                    reverse(
+                        'samplesheets:ajax_version_compare',
+                        kwargs={'project': self.project.sodar_uuid},
+                    ),
+                    str(self.isa1.sodar_uuid),
+                    'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+                )
+            )
+
+            self.assertEqual(response.status_code, 500)
+            self.assertEqual(response.json(), expected)
+
+    def test_get_studies_file(self):
+        """Test GET returning diff data for studies file"""
+        expected = [
+            [
+                line.split('\t')
+                for line in self.isa1.data['studies']['s_small2.txt'][
+                    'tsv'
+                ].split('\n')
+            ],
+            [
+                line.split('\t')
+                for line in self.isa2.data['studies']['s_small2.txt'][
+                    'tsv'
+                ].split('\n')
+            ],
+        ]
+
+        with self.login(self.user):
+            response = self.client.get(
+                '{}?source={}&target={}&filename={}&category={}'.format(
+                    reverse(
+                        'samplesheets:ajax_version_compare',
+                        kwargs={'project': self.project.sodar_uuid},
+                    ),
+                    str(self.isa1.sodar_uuid),
+                    str(self.isa2.sodar_uuid),
+                    's_small2.txt',
+                    'studies',
+                )
+            )
+
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.json(), expected)
+
+    def test_get_assays_file(self):
+        """Test GET returning diff data for assays file"""
+
+        expected = [
+            [
+                line.split('\t')
+                for line in self.isa1.data['assays']['a_small2.txt'][
+                    'tsv'
+                ].split('\n')
+            ],
+            [
+                line.split('\t')
+                for line in self.isa2.data['assays']['a_small2.txt'][
+                    'tsv'
+                ].split('\n')
+            ],
+        ]
+
+        with self.login(self.user):
+            response = self.client.get(
+                '{}?source={}&target={}&filename={}&category={}'.format(
+                    reverse(
+                        'samplesheets:ajax_version_compare',
+                        kwargs={'project': self.project.sodar_uuid},
+                    ),
+                    str(self.isa1.sodar_uuid),
+                    str(self.isa2.sodar_uuid),
+                    'a_small2.txt',
+                    'assays',
+                )
+            )
+
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.json(), expected)

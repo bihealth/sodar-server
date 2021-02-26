@@ -322,3 +322,55 @@ class TestSampleSheetsPermissions(
         bad_users = [self.guest_as.user, self.anonymous, self.user_no_roles]
         self.assert_response(url, good_users, status_code=200)
         self.assert_response(url, bad_users, status_code=302)
+
+    def test_version_compare(self):
+        """Test sample sheet version compare view"""
+        isa = ISATab.objects.first()
+        url = '{}?source={}&target={}'.format(
+            reverse(
+                'samplesheets:version_compare',
+                kwargs={'project': self.project.sodar_uuid},
+            ),
+            str(isa.sodar_uuid),
+            str(isa.sodar_uuid),
+        )
+        good_users = [
+            self.superuser,
+            self.owner_as.user,
+            self.delegate_as.user,
+        ]
+        bad_users = [
+            self.contributor_as.user,
+            self.guest_as.user,
+            self.anonymous,
+            self.user_no_roles,
+        ]
+        self.assert_response(url, good_users, status_code=200)
+        self.assert_response(url, bad_users, status_code=302)
+
+    def test_version_compare_file(self):
+        """Test sample sheet version compare file view"""
+        isa = ISATab.objects.first()
+        url = '{}?source={}&target={}&filename={}&category={}'.format(
+            reverse(
+                'samplesheets:version_compare_file',
+                kwargs={'project': self.project.sodar_uuid},
+            ),
+            str(isa.sodar_uuid),
+            str(isa.sodar_uuid),
+            's_small.txt',
+            'studies',
+        )
+        good_users = [
+            self.superuser,
+            self.owner_as.user,
+            self.delegate_as.user,
+        ]
+        bad_users = [
+            self.contributor_as.user,
+            self.guest_as.user,
+            self.anonymous,
+            self.user_no_roles,
+        ]
+        self.assert_response(url, good_users, status_code=200)
+        self.assert_response(url, bad_users, status_code=302)

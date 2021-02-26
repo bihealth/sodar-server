@@ -9,6 +9,7 @@ from selenium.webdriver.support import expected_conditions as ec
 
 from django.conf import settings
 from django.urls import reverse
+from django.utils.http import urlencode
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
@@ -19,12 +20,16 @@ from samplesheets.models import (
     ISATab,
     IrodsDataRequest,
     IRODS_DATA_REQUEST_STATUS_CHOICES,
+    Investigation,
 )
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 from samplesheets.tests.test_sheet_config import (
     SheetConfigMixin,
     CONFIG_PATH_DEFAULT,
     CONFIG_PATH_UPDATED,
+)
+from samplesheets.tests.test_views import (
+    SHEET_PATH_SMALL2,
 )
 from samplesheets.views_ajax import ALERT_ACTIVE_REQS
 
@@ -456,3 +461,121 @@ class TestIrodsDataRequestListView(TestProjectSheetsVueAppBase):
         self.assert_element_exists(
             [self.default_user], self.url, 'sodar-ss-request-table', True
         )
+
+
+class TestSheetVersionCompareView(
+    SampleSheetIOMixin, SheetConfigMixin, TestUIBase
+):
+    """Tests for sheet version compare view UI"""
+
+    def setUp(self):
+        super().setUp()
+        self._import_isa_from_file(SHEET_PATH_SMALL2, self.project)
+
+        # Assert preconditions
+        self.assertEqual(Investigation.objects.count(), 1)
+        self.assertEqual(ISATab.objects.count(), 1)
+
+        self.isa1 = ISATab.objects.first()
+
+        self.url = '{}?source={}&target={}'.format(
+            reverse(
+                'samplesheets:version_compare',
+                kwargs={'project': self.project.sodar_uuid},
+            ),
+            str(self.isa1.sodar_uuid),
+            str(self.isa1.sodar_uuid),
+        )
+
+    def test_render(self):
+        """Test UI rendering for comparing samplesheet versions"""
+        self.assert_element_exists(
+            [self.superuser],
+            self.url,
+            'sodar-ss-studies-diff0',
+            True,
+            'sodar-ss-studies-diff0',
+        )
+        self.assert_element_exists(
+            [self.superuser],
+            self.url,
+            'sodar-ss-assays-diff0',
+            True,
+            'sodar-ss-assays-diff0',
+        )
+
+
+class TestSheetVersionCompareFileView(
+    SampleSheetIOMixin, SheetConfigMixin, TestUIBase
+):
+    """Tests for sheet version compare file view UI"""
+
+    def setUp(self):
+        super().setUp()
+        self._import_isa_from_file(SHEET_PATH_SMALL2, self.project)
+
+        # Assert preconditions
+        self.assertEqual(Investigation.objects.count(), 1)
+        self.assertEqual(ISATab.objects.count(), 1)
+
+        self.isa1 = ISATab.objects.first()
+        self.url_study_file = (
+            reverse(
+                'samplesheets:version_compare_file',
+                kwargs={'project': self.project.sodar_uuid},
+            )
+            + '?'
+            + urlencode(
+                {
+                    'source': str(self.isa1.sodar_uuid),
+                    'target': str(self.isa1.sodar_uuid),
+                    'filename': 's_small2.txt',
+                    'category': 'studies',
+                }
+            )
+        )
+        self.url_assay_file = (
+            reverse(
+                'samplesheets:version_compare_file',
+                kwargs={'project': self.project.sodar_uuid},
+            )
+            + '?'
+            + urlencode(
+                {
+                    'source': str(self.isa1.sodar_uuid),
+                    'target': str(self.isa1.sodar_uuid),
+                    'filename': 'a_small2.txt',
+                    'category': 'assays',
+                }
+            )
+        )
+
+    def test_render_study_file(self):
+        """Test UI rendering for study table comparison"""
+        self.login_and_redirect(
+            self.superuser,
+            reverse(
+                'samplesheets:versions',
+                kwargs={'project': self.project.sodar_uuid},
+            ),
+        )
+        self.selenium.get(self.build_selenium_url(self.url_study_file))
+        WebDriverWait(self.selenium, self.wait_time).until(
+            ec.presence_of_element_located((By.TAG_NAME, 'table'))
+        )
+        self.assertIsNotNone(self.selenium.find_element_by_tag_name('table'))
+
+    def test_render_assay_file(self):
+        """Test UI rendering for assay table comparison"""
+        self.login_and_redirect(
+            self.superuser,
+            reverse(
+                'samplesheets:versions',
+                kwargs={'project': self.project.sodar_uuid},
+            ),
+        )
+        self.selenium.get(self.build_selenium_url(self.url_assay_file))
+        WebDriverWait(self.selenium, self.wait_time).until(
+            ec.presence_of_element_located((By.TAG_NAME, 'table'))
+        )
+        self.assertIsNotNone(self.selenium.find_element_by_tag_name('table'))

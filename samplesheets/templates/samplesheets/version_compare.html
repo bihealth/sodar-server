@@ -1,0 +1,67 @@
+{# Projectroles dependency #}
+{% extends 'projectroles/project_base.html' %}
+{% load projectroles_common_tags %}
+
+{% load static %}
+{% load rules %}
+{% load samplesheets_tags %}
+
+{% block title %}
+  Sample Sheet Version Comparison for {{ project.title }}
+{% endblock title %}
+
+{% block css %}
+  {{ block.super }}
+  <link rel="stylesheet" type="text/css" href="{% static 'samplesheets/css/sheet_versions.css' %}" />
+{% endblock css %}
+
+{% block projectroles_extend %}
+{% has_perm 'samplesheets.manage_sheet' request.user project as can_manage_sheet %}
+
+<div class="row sodar-subtitle-container">
+  <h3>Sample Sheet Version Comparison</h3>
+  <a href="{% url 'samplesheets:versions' project=project.sodar_uuid %}"
+     class="btn btn-secondary ml-auto" role="button">
+   <i class="fa fa-arrow-circle-left"></i> Sheet Versions
+  </a>
+</div>
+
+<div class="container-fluid sodar-page-container">
+  <div class="alert alert-info mb-4">
+    Comparing version
+    <a href="{% url 'samplesheets:export_isa' isatab=source %}">
+      {{ source_title | date:'Y-m-d H:i:s' }}
+    </a> to version
+    <a href="{% url 'samplesheets:export_isa' isatab=target %}">
+      {{ target_title | date:'Y-m-d H:i:s' }}
+    </a>
+  </div>
+  <div id="sodar-ss-diff-container">
+  </div>
+</div>
+
+{% endblock projectroles_extend %}
+
+{% block javascript %}
+  {{ block.super }}
+
+  {# Tour content #}
+  <script type="text/javascript">
+    tourEnabled = false;
+    // TODO: Tour
+  </script>
+
+  <script type="text/javascript" src="{% static 'samplesheets/js/vendor/daff.js' %}"></script>
+  <script type="text/javascript" src="{% static 'samplesheets/js/samplesheets.js' %}"></script>
+  <script type="text/javascript">
+    const ajax_url = '{% url "samplesheets:ajax_version_compare" project=project.sodar_uuid %}';
+    const file_url = '{% url "samplesheets:version_compare_file" project=project.sodar_uuid %}';
+    const source = '{{ source }}';
+    const target = '{{ target }}';
+
+    $(document).ready(function() {
+      constructPage(ajax_url, file_url, source, target);
+    })
+  </script>
+
+{% endblock javascript %}

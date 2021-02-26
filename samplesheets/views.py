@@ -50,6 +50,7 @@ from samplesheets.forms import (
     IrodsAccessTicketForm,
     IrodsRequestForm,
     IrodsRequestAcceptForm,
+    SampleSheetVersionCompareForm,
 )
 from samplesheets.io import (
     SampleSheetIO,
@@ -1392,6 +1393,13 @@ class SampleSheetVersionListView(
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
         context['current_version'] = None
+        choices = [
+            (str(i.sodar_uuid), i.date_created.strftime('%Y-%m-%d %H:%M:%S'))
+            for i in self.get_queryset()
+        ]
+        context['sheet_select_form'] = SampleSheetVersionCompareForm(
+            choices=choices
+        )
 
         if context['investigation']:
             context['current_version'] = (
@@ -1403,6 +1411,54 @@ class SampleSheetVersionListView(
                 .first()
             )
 
+        return context
+
+
+class SampleSheetVersionCompareView(
+    LoginRequiredMixin,
+    LoggedInPermissionMixin,
+    InvestigationContextMixin,
+    ProjectPermissionMixin,
+    SampleSheetImportMixin,
+    TemplateView,
+):
+    """Sample Sheet version compare view"""
+
+    permission_required = 'samplesheets.manage_sheet'
+    template_name = 'samplesheets/version_compare.html'
+
+    def get_context_data(self, *args, **kwargs):
+        context = super().get_context_data(*args, **kwargs)
+        source_uuid = self.request.GET.get('source')
+        target_uuid = self.request.GET.get('target')
+        source = ISATab.objects.filter(sodar_uuid=source_uuid).first()
+        target = ISATab.objects.filter(sodar_uuid=target_uuid).first()
+        context['source'] = source_uuid
+        context['target'] = target_uuid
+        context['source_title'] = source.date_created if source else 'N/A'
+        context['target_title'] = target.date_created if target else 'N/A'
+        return context
+
+
+class SampleSheetVersionCompareFileView(
+    LoginRequiredMixin,
+    LoggedInPermissionMixin,
+    InvestigationContextMixin,
+    ProjectPermissionMixin,
+    SampleSheetImportMixin,
+    TemplateView,
+):
+    """Sample Sheet version compare file view"""
+
+    permission_required = 'samplesheets.manage_sheet'
+    template_name = 'samplesheets/version_compare_file.html'
+
+    def get_context_data(self, *args, **kwargs):
+        context = super().get_context_data(*args, **kwargs)
+        context['source'] = self.request.GET.get('source')
+        context['target'] = self.request.GET.get('target')
+        context['filename'] = self.request.GET.get('filename')
+        context['category'] = self.request.GET.get('category')
         return context
 
 

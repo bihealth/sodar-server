@@ -29,6 +29,7 @@ from samplesheets.models import (
     Process,
     GenericMaterial,
     IrodsDataRequest,
+    ISATab,
 )
 from samplesheets.sheet_config import SheetConfigAPI
 from samplesheets.rendering import (
@@ -1939,5 +1940,96 @@ class IrodsObjectListAjaxView(BaseIrodsAjaxView):
             data_obj['irods_request_user'] = (
                 str(obj.user.sodar_uuid) if obj else None
             )
+
+        return Response(ret_data, status=200)
+
+
+class SheetVersionCompareAjaxView(SODARBaseProjectAjaxView):
+    """View for listing data objects in iRODS recursively"""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.project = None
+        self.path = None
+
+    permission_required = 'samplesheets.manage_sheet'
+
+    def get(self, request, *args, **kwargs):
+        category = request.GET.get('category')
+        filename = request.GET.get('filename')
+
+        try:
+            source = ISATab.objects.get(sodar_uuid=request.GET.get('source'))
+            target = ISATab.objects.get(sodar_uuid=request.GET.get('target'))
+        except ISATab.DoesNotExist:
+            return Response(
+                {'detail': 'Samplesheet version(s) not found.'}, status=500
+            )
+
+        ret_data = {}
+
+        # If category and filename are given, only return diff data for one file
+        if category and filename:
+            ret_data = [
+                [
+                    line.split('\t')
+                    for line in source.data.get(category, {})
+                    .get(filename, {})
+                    .get('tsv', '')
+                    .replace('"', '')
+                    .split('\n')
+                ],
+                [
+                    line.split('\t')
+                    for line in target.data.get(category, {})
+                    .get(filename, {})
+                    .get('tsv', '')
+                    .replace('"', '')
+                    .split('\n')
+                ],
+            ]
+            return Response(ret_data, status=200)
+
+        # If filename and/or category are missing, generate diff for whole samplesheet
+
+        categories = ('studies', 'assays')
+
+        for category in categories:
+            ret_data[category] = {}
+
+        for category in categories:
+            for filename, data in source.data.get(category, {}).items():
+                ret_data[category][filename] = [
+                    [
+                        line.split('\t')
+                        for line in data['tsv'].replace('"', '').split('\n')
+                    ],
+                    [
+                        line.split('\t')
+                        for line in target.data.get(category, {})
+                        .get(filename, {})
+                        .get('tsv', '')
+                        .replace('"', '')
+                        .split('\n')
+                    ],
+                ]
+
+        for category in categories:
+            for filename, data in target.data.get(category, {}).items():
+                if filename not in ret_data[category]:
+                    ret_data[category][filename] = [
+                        [
+                            line.split('\t')
+                            for line in data['tsv'].replace('"', '').split('\n')
+                        ],
+                        [
+                            line.split('\t')
+                            for line in target.data.get(category, {})
+                            .get(filename, {})
+                            .get('tsv', '')
+                            .replace('"', '')
+                            .split('\n')
+                        ],
+                    ]
 
         return Response(ret_data, status=200)

@@ -7,6 +7,7 @@ from projectroles.app_settings import AppSettingAPI
 from projectroles.tests.test_permissions import TestProjectPermissionBase
 from projectroles.utils import build_secret
 
+from samplesheets.models import ISATab
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 
 
@@ -176,5 +177,57 @@ class TestSampleSheetsAjaxPermissions(
             self.guest_as.user,
         ]
         bad_users = [self.anonymous, self.user_no_roles]
+        self.assert_response(url, good_users, status_code=200)
+        self.assert_response(url, bad_users, status_code=403)
+
+    def test_version_compare(self):
+        """Test SheetVersionCompareAjaxView"""
+        isa = ISATab.objects.first()
+        url = '{}?source={}&target={}'.format(
+            reverse(
+                'samplesheets:ajax_version_compare',
+                kwargs={'project': self.project.sodar_uuid},
+            ),
+            str(isa.sodar_uuid),
+            str(isa.sodar_uuid),
+        )
+        good_users = [
+            self.superuser,
+            self.owner_as.user,
+            self.delegate_as.user,
+        ]
+        bad_users = [
+            self.contributor_as.user,
+            self.guest_as.user,
+            self.anonymous,
+            self.user_no_roles,
+        ]
+        self.assert_response(url, good_users, status_code=200)
+        self.assert_response(url, bad_users, status_code=403)
+
+    def test_version_compare_file(self):
+        """Test SheetVersionCompareAjaxView"""
+        isa = ISATab.objects.first()
+        url = '{}?source={}&target={}&filename={}&category={}'.format(
+            reverse(
+                'samplesheets:ajax_version_compare',
+                kwargs={'project': self.project.sodar_uuid},
+            ),
+            str(isa.sodar_uuid),
+            str(isa.sodar_uuid),
+            's_small.txt',
+            'studies',
+        )
+        good_users = [
+            self.superuser,
+            self.owner_as.user,
+            self.delegate_as.user,
+        ]
+        bad_users = [
+            self.contributor_as.user,
+            self.guest_as.user,
+            self.anonymous,
+            self.user_no_roles,
+        ]
         self.assert_response(url, good_users, status_code=200)
         self.assert_response(url, bad_users, status_code=403)

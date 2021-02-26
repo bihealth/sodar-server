@@ -81,6 +81,16 @@ urls_ui = [
         name='version_delete',
     ),
     url(
+        regex=r'^version/compare/(?P<project>[0-9a-f-]+)$',
+        view=views.SampleSheetVersionCompareView.as_view(),
+        name='version_compare',
+    ),
+    url(
+        regex=r'^version/compare/file/(?P<project>[0-9a-f-]+)$',
+        view=views.SampleSheetVersionCompareFileView.as_view(),
+        name='version_compare_file',
+    ),
+    url(
         regex=r'^irods/tickets/(?P<project>[0-9a-f-]+)$',
         view=views.IrodsAccessTicketListView.as_view(),
         name='irods_tickets',
@@ -237,6 +247,11 @@ urls_ajax = [
         regex=r'^ajax/irods/objects/(?P<project>[0-9a-f-]+)$',
         view=samplesheets.views_ajax.IrodsObjectListAjaxView.as_view(),
         name='ajax_irods_objects',
+    ),
+    url(
+        regex=r'^ajax/version/compare/(?P<project>[0-9a-f-]+)$',
+        view=samplesheets.views_ajax.SheetVersionCompareAjaxView.as_view(),
+        name='ajax_version_compare',
     ),
 ]
 
