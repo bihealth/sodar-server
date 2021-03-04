@@ -26,6 +26,7 @@ Changed
 
 - **General**
     - Unify ISA-Tab naming (#1082)
+    - Upgrade to Chromedriver v89
 - **Samplesheets**
     - Fail gracefully for ISAtab import with empty tables (#903, #1075)
     - Implement study/assay app retrieval in model ``get_plugin()`` helpers (#1076)
