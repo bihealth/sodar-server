@@ -40,12 +40,10 @@
         </button>
       </div>
     </div>
-    <div class="input-group ml-auto">
-      <a href="{% url 'samplesheets:project_sheets' project=project.sodar_uuid %}"
-         class="btn btn-secondary ml-2" role="button">
-        <i class="fa fa-arrow-circle-left"></i> Project Sheets
-      </a>
-    </div>
+    <a href="{% url 'samplesheets:project_sheets' project=project.sodar_uuid %}"
+       class="btn btn-secondary ml-2" role="button">
+      <i class="fa fa-arrow-circle-left"></i> Project Sheets
+    </a>
   </div>
 </form>
 

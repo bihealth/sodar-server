@@ -67,16 +67,15 @@
 {% has_perm 'samplesheets.view_sheet' request.user project as can_view_ticket %}
 
 <div class="row sodar-subtitle-container">
-  <h3>
-    iRODS Access Tickets
-  </h3>
-  <div class="input-group sodar-header-input-group ml-auto mt-1">
+  <h3>iRODS Access Tickets</h3>
+  <div class="ml-auto">
     <a href="{% url 'samplesheets:irods_ticket_create' project=project.sodar_uuid %}"
-       class="btn btn-primary ml-auto {% if not track_hubs_available %}disabled{% endif %}" role="button">
-     <i class="fa fa-plus-circle"></i> Create Ticket
+       class="btn btn-primary {% if not track_hubs_available %}disabled{% endif %}"
+       role="button">
+     <i class="fa fa-plus"></i> Create Ticket
     </a>
     <a href="{% url 'samplesheets:project_sheets' project=project.sodar_uuid %}"
-       class="btn btn-secondary ml-auto" role="button">
+       class="btn btn-secondary ml-1" role="button">
      <i class="fa fa-arrow-circle-left"></i> Project Sheets
     </a>
   </div>

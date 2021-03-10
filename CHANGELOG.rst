@@ -36,6 +36,7 @@ Changed
     - Provide sodar context alert data as HTML instead of string (#1089)
     - Unify iRODS URL patterns (#1086)
     - Duplicate ``sodar_uuid`` views in REST API nested lists (#1074)
+    - Unify subpage navigation (#1085)
 
 Fixed
 -----

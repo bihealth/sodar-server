@@ -66,13 +66,13 @@
 
 <div class="row sodar-subtitle-container">
   <h3>iRODS Delete Requests</h3>
-    <div class="ml-auto mt-1">
+    <div class="ml-auto">
       <a href="{% url 'samplesheets:irods_request_create' project=project.sodar_uuid %}"
-         class="btn btn-primary sodar-header-button" role="button">
+         class="btn btn-primary" role="button">
        <i class="fa fa-plus"></i> Create Request
       </a>
       <a href="{% url 'samplesheets:project_sheets' project=project.sodar_uuid %}"
-         class="btn btn-secondary sodar-header-button" role="button">
+         class="btn btn-secondary ml-1" role="button">
        <i class="fa fa-arrow-circle-left"></i> Project Sheets
       </a>
     </div>
