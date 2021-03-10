@@ -67,6 +67,7 @@ export default {
 
 <style scoped>
 div.sodar-ss-assay-shortcut-body {
+  white-space: nowrap;
   overflow-x: scroll;
 }
 
