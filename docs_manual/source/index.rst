@@ -5,7 +5,9 @@ SODAR User Manual
 =================
 
 SODAR is the System for Omics Data Access and Retrieval.
-It is developed by the Core Unit Bioinformatics at the Berlin Institute of Health and used for providing access to Omics experiment raw data, results, and meta data.
+It is developed by the Core Unit Bioinformatics at the Berlin Institute of
+Health and used for providing access to Omics experiment raw data, results, and
+meta data.
 
 .. toctree::
     :maxdepth: 1
@@ -64,6 +66,16 @@ It is developed by the Core Unit Bioinformatics at the Berlin Institute of Healt
     Project Management API <api_projectroles>
     Sample Sheets API <api_samplesheets>
     Landing Zones API <api_landingzones>
+
+.. toctree::
+    :maxdepth: 1
+    :caption: SODAR
+    :name: sodar
+    :hidden:
+
+    Release Notes <sodar_release_notes>
+    Full Changelog <sodar_changelog>
+
 
 Indices and tables
 ==================

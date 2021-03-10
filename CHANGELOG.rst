@@ -1,7 +1,7 @@
 SODAR Changelog
 ^^^^^^^^^^^^^^^
 
-Changelog for the SODAR Django site. Loosely follows the
+Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
@@ -11,6 +11,8 @@ Unreleased
 Added
 -----
 
+- **General**
+    - Release notes and changelog sections in manual (#1098)
 - **Irodsbackend**
     - Support for ``IRODS_ROOT_PATH`` setting (#1067)
     - ``get_root_path()`` and ``get_projects_path()`` helpers (#1067)
