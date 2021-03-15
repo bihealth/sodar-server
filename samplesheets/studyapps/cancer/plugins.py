@@ -165,12 +165,9 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
         source = GenericMaterial.objects.filter(
             study=study, name=case_id
         ).first()
-
         if not case_id or not source:  # This should not happen..
             return None
-
         webdav_url = settings.IRODS_WEBDAV_URL
-
         ret = {
             'title': 'Case-Wise Links for {}'.format(case_id),
             'data': {
@@ -190,8 +187,7 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
         def _add_lib_path(library, file_type):
             # Get iRODS URLs from cache if it's available
             if cache_item and library.name in cache_item.data[file_type]:
-                path = cache_item.data[file_type][library.name]
-
+                path = cache_item.data[file_type][library.name.strip()]
             # Else query iRODS
             else:
                 path = get_library_file_path(
@@ -201,7 +197,7 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
             if path:
                 ret['data'][file_type]['files'].append(
                     {
-                        'label': library.name,
+                        'label': library.name.strip(),
                         'url': webdav_url + path,
                         'title': 'Download {} file'.format(file_type.upper()),
                         'extra_links': [
@@ -217,7 +213,6 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                 )
 
         samples = source.get_samples()
-
         if not samples:
             return ret
 
@@ -329,12 +324,12 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                     bam_path = get_library_file_path(
                         file_type='bam', library=library
                     )
-                    bam_paths[library.name] = bam_path
+                    bam_paths[library.name.strip()] = bam_path
 
                     bam_path = get_library_file_path(
                         file_type='vcf', library=library
                     )
-                    vcf_paths[library.name] = bam_path
+                    vcf_paths[library.name.strip()] = bam_path
 
                 updated_data = {'bam': bam_paths, 'vcf': vcf_paths}
                 cache_backend.set_cache_item(

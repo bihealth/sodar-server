@@ -436,7 +436,7 @@ class SampleSheetIO:
                 'item_type': item_type,
                 'material_type': m.type,
                 'extra_material_type': cls._import_multi_val(m.material_type),
-                'name': m.name,
+                'name': m.name.strip(),
                 'unique_name': m.unique_name,
                 'alt_names': get_alt_names(m.name),
                 'study': study,
@@ -500,7 +500,7 @@ class SampleSheetIO:
                     pass  # Warning for no found protocol reported by altamISA
 
             values = {
-                'name': p.name,
+                'name': p.name.strip() if p.name else None,
                 'unique_name': p.unique_name,
                 'name_type': p.name_type,
                 'protocol': protocol,
@@ -716,7 +716,7 @@ class SampleSheetIO:
             for isa_prot in isa_study.protocols.values():
                 protocol_vals.append(
                     {
-                        'name': isa_prot.name,
+                        'name': isa_prot.name.strip(),
                         'study': db_study,
                         'protocol_type': self._import_multi_val(isa_prot.type),
                         'description': isa_prot.description,

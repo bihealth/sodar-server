@@ -304,14 +304,11 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
         )
 
         for project in projects:
-            try:
-                investigation = Investigation.objects.get(
-                    project=project, active=True
-                )
-
-            except Investigation.DoesNotExist:
+            investigation = Investigation.objects.filter(
+                project=project, active=True
+            ).first()
+            if not investigation:
                 continue
-
             # Only apply for investigations with the correct configuration
             if investigation.get_configuration() != self.config_name:
                 continue
@@ -320,7 +317,6 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
             if name:
                 study_uuid = name.split('/')[-1]
                 studies = Study.objects.filter(sodar_uuid=study_uuid)
-
             else:
                 studies = Study.objects.filter(investigation=investigation)
 
@@ -330,10 +326,8 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                 bam_paths = {}
                 vcf_paths = {}
                 prev_query_id = None
-
                 # Build render table
                 study_tables = tb.build_study_tables(study)
-
                 sources = GenericMaterial.objects.filter(
                     study=study, item_type='SOURCE'
                 )
@@ -345,7 +339,7 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                         source=source,
                         study_tables=study_tables,
                     )
-                    bam_paths[source.name] = bam_path
+                    bam_paths[source.name.strip()] = bam_path
 
                     # Get family ID
                     if (
@@ -353,12 +347,14 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                         and source.characteristics['Family']['value']
                     ):
                         query_id = source.characteristics['Family']['value']
-
                     else:
-                        query_id = source.name
+                        query_id = source.name.strip()
 
                     # One VCF path for each family (or source if no family)
-                    if query_id != prev_query_id or query_id == source.name:
+                    if (
+                        query_id != prev_query_id
+                        or query_id == source.name.strip()
+                    ):
                         vcf_path = get_pedigree_file_path(
                             file_type='vcf',
                             source=source,
