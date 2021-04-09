@@ -848,23 +848,21 @@ class SampleSheetIO:
 
             study_count += 1
 
-        # Ensure we can build the table reference, if not then fail
-        logger.debug('Ensuring studies can be rendered..')
-
-        for study in db_studies:
-            # Throws an exception if we are unable to build this
-            SampleSheetTableBuilder.build_study_reference(study)
-
-        logger.debug('Rendering OK')
-        cc = self._warnings['critical_count']
-
         # Raise exception if we got criticals and don't accept them
+        cc = self._warnings['critical_count']
         if not self._allow_critical and cc > 0:
             ex_msg = (
                 '{} critical warning{} raised by altamISA, '
                 'import failed'.format(cc, 's' if cc != 1 else '')
             )
             raise SampleSheetImportException(ex_msg, self._warnings)
+
+        # Ensure we can build the table reference, if not then fail
+        logger.debug('Ensuring studies can be rendered..')
+        for study in db_studies:
+            # Throws an exception if we are unable to build this
+            SampleSheetTableBuilder.build_study_reference(study)
+        logger.debug('Rendering OK')
 
         # Store parser warnings (only if warnings were raised)
         if not self._warnings['all_ok']:
@@ -884,10 +882,8 @@ class SampleSheetIO:
         # TODO: TBD: Prevent saving if previous data matches current one?
         if save_isa:
             tags = ['IMPORT']
-
             if replace:
                 tags.append('REPLACE')
-
             self.save_isa(
                 project=project,
                 inv_uuid=replace_uuid
