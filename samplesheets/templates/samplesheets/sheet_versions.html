@@ -42,7 +42,7 @@
     </div>
     <a href="{% url 'samplesheets:project_sheets' project=project.sodar_uuid %}"
        class="btn btn-secondary ml-2" role="button">
-      <i class="fa fa-arrow-circle-left"></i> Project Sheets
+      <i class="iconify" data-icon="mdi:arrow-left-circle"></i> Project Sheets
     </a>
   </div>
 </form>
@@ -94,18 +94,18 @@
                        id="sodar-ss-version-btn-group-{{ sv.sodar_uuid }}">
                     <button class="btn btn-secondary dropdown-toggle sodar-list-dropdown"
                             type="button" data-toggle="dropdown" aria-expanded="false">
-                      <i class="fa fa-cog"></i>
+                      <i class="iconify" data-icon="mdi:cog"></i>
                     </button>
                     <div class="dropdown-menu dropdown-menu-right">
                       <a class="dropdown-item"
                          href="{% url 'samplesheets:export_isa' isatab=sv.sodar_uuid %}">
-                        <i class="fa fa-fw fa-download"></i> Export Version
+                        <i class="iconify" data-icon="mdi:download"></i> Export Version
                       </a>
                       <a class="dropdown-item" href="{% url 'samplesheets:version_restore' isatab=sv.sodar_uuid %}">
-                        <i class="fa fa-fw fa-refresh"></i> Restore Version
+                        <i class="iconify" data-icon="mdi:refresh"></i> Restore Version
                       </a>
                       <a class="dropdown-item text-danger" href="{% url 'samplesheets:version_delete' isatab=sv.sodar_uuid %}">
-                        <i class="fa fa-fw fa-close"></i> Delete Version
+                        <i class="iconify" data-icon="mdi:close-thick"></i> Delete Version
                       </a>
                     </div>
                   </div>

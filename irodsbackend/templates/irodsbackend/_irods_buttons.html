@@ -25,7 +25,7 @@
             {% endif %}
             title="List files"
             {% if not irods_colls or disable_all %} disabled{% endif %}>
-      <i class="fa fa-folder-open-o"></i>
+      <i class="iconify" data-icon="mdi:folder-open-outline"></i>
     </button>
   {% endif %}
   <button class="btn btn-secondary sodar-list-btn sodar-irods-btn sodar-irods-copy-btn sodar-irods-path-btn
@@ -37,7 +37,7 @@
           {% endif %}
           title="Copy iRODS path into clipboard"
           {% if not irods_colls or disable_all %} disabled{% endif %}>
-    <i class="fa fa-terminal"></i>
+    <i class="iconify" data-icon="mdi:console-line"></i>
   </button>
   <button class="btn btn-secondary sodar-list-btn sodar-irods-btn sodar-irods-copy-btn
           {% if not irods_webdav_enabled or not irods_colls or disable_all %} no-colls {% endif %}"
@@ -48,7 +48,7 @@
           {% endif %}
           title="Copy WebDAV URL into clipboard"
           {% if not irods_colls or disable_all %} disabled{% endif %}>
-    <i class="fa fa-clipboard"></i>
+    <i class="iconify" data-icon="mdi:clipboard-text-multiple"></i>
   </button>
   <a class="btn btn-secondary sodar-list-btn sodar-irods-btn sodar-irods-dav-btn {% if data_table %}mr-1{% endif %}
      {% if not irods_webdav_enabled or not irods_colls or disable_all %} no-colls disabled {% endif %}"
@@ -58,6 +58,6 @@
        data-tooltip="tooltip" data-placement="top"
      {% endif %}
      title="Browse files in WebDAV">
-    <i class="fa fa-external-link"></i>
+    <i class="iconify" data-icon="mdi:open-in-new"></i>
   </a>
 </span>

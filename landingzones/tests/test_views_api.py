@@ -5,7 +5,7 @@ import pytz
 from unittest import skipIf
 
 from django.conf import settings
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS

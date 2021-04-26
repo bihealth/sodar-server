@@ -24,10 +24,11 @@
       <div class="btn-group ml-auto">
         <a role="button" class="btn btn-secondary"
            href="{{ request.session.real_referer }}">
-          <i class="fa fa-arrow-circle-left"></i> Cancel
+          <i class="iconify" data-icon="mdi:arrow-left-circle"></i> Cancel
         </a>
         <button type="submit" class="btn btn-primary" id="sodar-ss-btn-import-submit">
-          <i class="fa fa-check"></i> {% if object.pk %}Update{% else %}Create{% endif %}
+          <i class="iconify" data-icon="mdi:check-bold"></i>
+          {% if object.pk %}Update{% else %}Create{% endif %}
         </button>
       </div>
     </div>

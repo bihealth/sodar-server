@@ -162,7 +162,7 @@ class TestSampleDataFileExistsAPIView(TestProjectAPIPermissionBase):
     def test_get(self):
         """Test get() in SampleDataFileExistsAPIView"""
         url = reverse('samplesheets:api_file_exists')
-        request_data = {'checksum': None}
+        request_data = {'checksum': ''}
         good_users = [
             self.superuser,
             self.owner_as.user,

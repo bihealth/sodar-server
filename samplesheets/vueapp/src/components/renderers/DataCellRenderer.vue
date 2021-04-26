@@ -16,7 +16,7 @@
             title="Copy HPO term IDs to clipboard"
             @click="onCopyHpoTerms"
             v-b-tooltip.hover.d300>
-          <i class="fa fa-clipboard"></i>
+          <i class="iconify" data-icon="mdi:clipboard-text-multiple"></i>
         </b-button>
       </span>
       <span v-for="(term, termIndex) in value.value" :key="termIndex">

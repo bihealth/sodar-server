@@ -15,6 +15,7 @@ Unreleased
 - iRODS delete requests for data objects and collections
 - Diff comparison for sample sheet versions
 - Sample sheet creation from templates using cubi-tk
+- Sample sheet read-only mirroring from another project or site
 - Per-project restriction of column configuration updates
 
 

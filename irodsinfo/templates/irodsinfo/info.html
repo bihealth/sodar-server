@@ -11,12 +11,12 @@
 {% has_perm 'irodsinfo.get_config' request.user as can_get_config %}
 
 <div class="row sodar-subtitle-container bg-white sticky-top">
-  <h2><i class="fa fa-support"></i> iRODS Info</h2>
+  <h2><i class="iconify" data-icon="mdi:lifebuoy"></i> iRODS Info</h2>
 
   {% if can_get_config %}
   <a role="button" class="btn btn-primary ml-auto"
      href="{% url 'irodsinfo:config' %}">
-    <i class="fa fa-download"></i> Download Configuration
+    <i class="iconify" data-icon="mdi:download"></i> Download Configuration
   </a>
   {% endif %}
 </div>
@@ -26,7 +26,10 @@
   {# Guide #}
   <div class="card">
     <div class="card-header">
-      <h4><i class="fa fa-book"></i> Connecting Guide</h4>
+      <h4>
+        <i class="iconify" data-icon="mdi:book-open-page-variant"></i>
+        Connecting Guide
+      </h4>
       </div>
       <div class="card-body">
         <h4 class="card-title">Accessing iRODS</h4>
@@ -93,7 +96,7 @@ iinit</code></pre>
         <p>
           The SODAR system provides WebDAV links for
           sample sheets and landing zones denoted with the following icon:
-          <i class="fa fa-folder-open"></i>
+          <i class="iconify" data-icon="mdi:open-in-new"></i>
         </p>
       </div>
     </div>
@@ -101,7 +104,7 @@ iinit</code></pre>
   {# Server info #}
   <div class="card">
     <div class="card-header">
-      <h4><i class="fa fa-database"></i> iRODS Server</h4>
+      <h4><i class="iconify" data-icon="mdi:database"></i> iRODS Server</h4>
     </div>
     <div class="card-body">
       {% if server_info %}

@@ -256,11 +256,11 @@ $(document).ready(function() {
 
                     if (showChecksumCol === true) {
                         if (obj['md5_file'] === true) {
-                            htmlData += '<span class="text-muted"><i class="fa fa-check"></i></span>';
+                            htmlData += '<span class="text-muted"><i class="iconify" data-icon="mdi:check-bold"></i></span>';
                         }
 
                         else {
-                            htmlData += '<span class="text-danger"><i class="fa fa-close"></i></span>';
+                            htmlData += '<span class="text-danger"><i class="iconify" data-icon="mdi:close-thick"></i></span>';
                         }
                     }
 

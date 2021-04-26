@@ -1,17 +1,17 @@
 # Wheel
-wheel==0.34.2
+wheel==0.36.2
 
-# Conservative Django
-django==1.11.29, <2.0
+# Django
+django==3.2
 
 # Configuration
 django-environ==0.4.5
 
 # Forms
-django-crispy-forms==1.7.2
+django-crispy-forms==1.11.1
 
 # Models
-django-model-utils==3.2.0
+django-model-utils==4.1.1
 
 # Password storage
 argon2-cffi==20.1.0
@@ -23,19 +23,19 @@ psycopg2-binary==2.8.6
 awesome-slugify==1.6.5
 
 # Time zones support
-pytz==2020.5
+pytz==2021.1
 
 # Redis support
 redis==3.3.8
 
 # Profiling
-django-cprofile-middleware==1.0.4
+django-cprofile-middleware==1.0.5
 
 # Versioning
 versioneer==0.19
 
 # Online documentation via django-docs.
-Sphinx==3.4.3
+Sphinx==3.5.1
 django-docs==0.3.1
 sphinx-rtd-theme==0.5.1
 
@@ -47,7 +47,7 @@ sphinx-rtd-theme==0.5.1
 rules==2.2
 
 # REST framework
-djangorestframework==3.11.2
+djangorestframework==3.12.2
 
 # Keyed list addon for DRF
 # drf-keyed-list==0.0.2
@@ -57,24 +57,19 @@ djangorestframework==3.11.2
 django-rest-knox==4.1.0
 
 # Markdown field support
-markdown==3.3.3
-django-markupfield==1.5.1
-django-pagedown==1.0.6
+markdown==3.3.4
+django-markupfield==2.0.0
+django-pagedown==2.2.0
 mistune==0.8.4
 
-# Django-plugins (with Django 1.11 support)
--e git+https://github.com/mikkonie/django-plugins.git@1bc07181e6ab68b0f9ed3a00382eb1f6519e1009#egg=django-plugins
+# Django-plugins (with Django v3.0+ support)
+-e git+https://github.com/mikkonie/django-plugins.git@42e86e7904e5c09f1da32173862b26843eda5dd8#egg=django-plugins
 
 # SODAR Core
--e git+ssh://git@cubi-gitlab.bihealth.org/CUBI_Engineering/CUBI_Data_Mgmt/sodar_core.git@v0.9.1#egg=django-sodar-core
+-e git+https://github.com/bihealth/sodar-core.git@a74afd2f4196f05dc700cc7ee446590add306e83#egg=django-sodar-core
 
 # Celery
-celery<4.2  # celery==5.0.5
-
-# LDAP requirements (to be installed from ldap.txt
-# See https://github.com/bihealth/ansible-role-sodar-core-app/issues/6
-django-auth-ldap==1.2.8
-pyldap==2.4.25.1
+celery==5.0.5
 
 ####################
 # SODAR app imports
@@ -101,5 +96,4 @@ fastobo==0.9.3
 pronto==2.3.1  # For OWL conversion
 
 # CUBI-TK for sheet templates
-# TODO: This installs a LOT of dependencies we don't actually need, separate?
 -e git+https://github.com/bihealth/cubi-tk.git@77e996dc6ad4326ef2de9c144c5d72d61380d762#egg=cubi-tk

@@ -7,7 +7,8 @@
         :disabled="!enableDelete()"
         @click="onDelete()"
         v-b-tooltip.hover.d300>
-      <i :class="getBtnClass(false)"></i>
+      <img :src="'/icons/mdi/' + getBtnIcon(false) + '.svg?color=%23fff'"
+           :class="getBtnClass(false)" />
     </b-button>
     <b-button
         v-if="isNewRow()"
@@ -17,7 +18,8 @@
         :disabled="!enableSave()"
         @click="onSave()"
         v-b-tooltip.hover.d300>
-      <i :class="getBtnClass(true)"></i>
+      <img :src="'/icons/mdi/' + getBtnIcon(true) + '.svg?color=%23fff'"
+           :class="getBtnClass(true)" />
     </b-button>
  </span>
 </template>
@@ -167,10 +169,16 @@ export default Vue.extend({
     },
     getBtnClass (insert) {
       if ((insert && this.inserting) || ((!insert && this.deleting))) {
-        return 'fa fa-spin fa-circle-o-notch'
+        return 'spin'
       }
-      if (insert) return 'fa fa-check'
-      return 'fa fa-times'
+      return ''
+    },
+    getBtnIcon (insert) {
+      if ((insert && this.inserting) || ((!insert && this.deleting))) {
+        return 'loading'
+      }
+      if (insert) return 'check-bold'
+      return 'close-thick'
     },
     enableDelete () {
       if (this.app.updatingRow ||
@@ -341,4 +349,10 @@ export default Vue.extend({
 </script>
 
 <style scoped>
+
+.sodar-ss-row-btn {
+  padding-top: 0 !important;
+  padding-left: 4px !important;
+}
+
 </style>

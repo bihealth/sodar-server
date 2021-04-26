@@ -342,7 +342,7 @@ class IrodsAPI:
         cls,
         view,
         project=None,
-        path=None,
+        path='',
         md5=False,
         method='GET',
         absolute=False,
@@ -352,7 +352,7 @@ class IrodsAPI:
         Get the list or stats URL for an iRODS path.
 
         :param view: View of the URL ("stats" or "list")
-        :param path: Full iRODS path (string or None)
+        :param path: Full iRODS path (string)
         :param project: Project object or None
         :param md5: Include MD5 or not for a list view (boolean)
         :param method: Method for the function (string)

@@ -12,7 +12,7 @@
           @click="onModalShow"
           :disabled="!isEnabled()"
           v-b-tooltip.hover>
-        <i class="fa fa-pencil"></i>
+        <i class="iconify" data-icon="mdi:lead-pencil"></i>
       </b-button>
     </span>
   </div>

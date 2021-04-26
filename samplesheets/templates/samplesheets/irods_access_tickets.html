@@ -72,11 +72,11 @@
     <a href="{% url 'samplesheets:irods_ticket_create' project=project.sodar_uuid %}"
        class="btn btn-primary {% if not track_hubs_available %}disabled{% endif %}"
        role="button">
-     <i class="fa fa-plus"></i> Create Ticket
+     <i class="iconify" data-icon="mdi:plus-thick"></i> Create Ticket
     </a>
     <a href="{% url 'samplesheets:project_sheets' project=project.sodar_uuid %}"
        class="btn btn-secondary ml-1" role="button">
-     <i class="fa fa-arrow-circle-left"></i> Project Sheets
+     <i class="iconify" data-icon="mdi:arrow-left-circle"></i> Project Sheets
     </a>
   </div>
 </div>
@@ -112,7 +112,7 @@
                     data-clipboard-text="{{ ticket.get_webdav_link }}"
                     data-tooltip="tooltip" data-placement="top"
                     title="Copy WebDAV URL into clipboard">
-                  <i class="fa fa-clipboard"></i>
+                  <i class="iconify" data-icon="mdi:clipboard-text-multiple"></i>
                 </button>
               </td>
               <td>{{ ticket.ticket }}</td>
@@ -134,16 +134,16 @@
               <td class="text-right">
                 <button class="btn btn-secondary dropdown-toggle sodar-list-dropdown"
                         type="button" data-toggle="dropdown" aria-expanded="false">
-                  <i class="fa fa-cog"></i>
+                  <i class="iconify" data-icon="mdi:cog"></i>
                 </button>
                 <div class="dropdown-menu dropdown-menu-right">
                   <a class="dropdown-item"
                      href="{% url 'samplesheets:irods_ticket_update' irodsaccessticket=ticket.sodar_uuid %}">
-                    <i class="fa fa-fw fa-edit"></i> Update Ticket
+                    <i class="iconify" data-icon="mdi:lead-pencil"></i> Update Ticket
                   </a>
                   <a class="dropdown-item text-danger"
                      href="{% url 'samplesheets:irods_ticket_delete' irodsaccessticket=ticket.sodar_uuid %}">
-                    <i class="fa fa-fw fa-close"></i> Delete Ticket
+                    <i class="iconify" data-icon="mdi:close-thick"></i> Delete Ticket
                   </a>
                 </div>
               </td>

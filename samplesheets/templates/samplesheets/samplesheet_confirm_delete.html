@@ -41,11 +41,11 @@
       <div class="btn-group ml-auto">
         <a role="button" class="btn btn-secondary"
             href="{{ request.session.real_referer }}">
-          <i class="fa fa-arrow-circle-left"></i> Cancel
+          <i class="iconify" data-icon="mdi:arrow-left-circle"></i> Cancel
         </a>
         {% if not irods_sample_stats.file_count or irods_sample_stats.file_count == 0 or request.user.is_superuser or request.user == project.get_owner.user %}
           <button type="submit" class="btn btn-danger">
-            <i class="fa fa-close"></i> Delete
+            <i class="iconify" data-icon="mdi:close-thick"></i> Delete
           </button>
         {% endif %}
       </div>

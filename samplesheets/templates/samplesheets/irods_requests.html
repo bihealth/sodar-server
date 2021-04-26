@@ -69,11 +69,11 @@
     <div class="ml-auto">
       <a href="{% url 'samplesheets:irods_request_create' project=project.sodar_uuid %}"
          class="btn btn-primary" role="button">
-       <i class="fa fa-plus"></i> Create Request
+       <i class="iconify" data-icon="mdi:plus-thick"></i> Create Request
       </a>
       <a href="{% url 'samplesheets:project_sheets' project=project.sodar_uuid %}"
          class="btn btn-secondary ml-1" role="button">
-       <i class="fa fa-arrow-circle-left"></i> Project Sheets
+        <i class="iconify" data-icon="mdi:arrow-left-circle"></i> Project Sheets
       </a>
     </div>
 </div>
@@ -112,7 +112,7 @@
                     data-clipboard-text="{{ irods_request.path }}"
                     data-tooltip="tooltip" data-placement="top"
                     title="Copy full iRODS path into clipboard">
-                  <i class="fa fa-clipboard"></i>
+                  <i class="iconify" data-icon="mdi:clipboard-text-multiple"></i>
                 </button>
               </td>
               <td>
@@ -126,29 +126,29 @@
               <td class="text-right">
                 <button class="btn btn-secondary dropdown-toggle sodar-list-dropdown"
                         type="button" data-toggle="dropdown" aria-expanded="false">
-                  <i class="fa fa-cog"></i>
+                  <i class="iconify" data-icon="mdi:cog"></i>
                 </button>
                 <div class="dropdown-menu dropdown-menu-right">
                   {% if can_manage_request %}
                     <a class="dropdown-item"
                        href="{% url 'samplesheets:irods_request_accept' irodsdatarequest=irods_request.sodar_uuid %}">
-                      <i class="fa fa-fw fa-check"></i> Accept Request
+                      <i class="iconify" data-icon="mdi:check-bold"></i> Accept Request
                     </a>
                     <a class="dropdown-item"
                        href="{% url 'samplesheets:irods_request_reject' irodsdatarequest=irods_request.sodar_uuid %}">
-                      <i class="fa fa-fw fa-ban"></i> Reject Request
+                      <i class="iconify" data-icon="mdi:cancel"></i> Reject Request
                     </a>
                   {% endif %}
                   {% if irods_request.user == request.user %}
                     {% if irods_request.status == 'ACTIVE' or irods_request.status == 'FAILED' %}
                       <a class="dropdown-item"
                          href="{% url 'samplesheets:irods_request_update' irodsdatarequest=irods_request.sodar_uuid %}">
-                        <i class="fa fa-fw fa-edit"></i> Update Request
+                        <i class="iconify" data-icon="mdi:lead-pencil"></i> Update Request
                       </a>
                     {% endif %}
                     <a class="dropdown-item text-danger"
                        href="{% url 'samplesheets:irods_request_delete' irodsdatarequest=irods_request.sodar_uuid %}">
-                      <i class="fa fa-fw fa-close"></i> Delete Request
+                      <i class="iconify" data-icon="mdi:close-thick"></i> Delete Request
                     </a>
                   {% endif %}
                 </div>

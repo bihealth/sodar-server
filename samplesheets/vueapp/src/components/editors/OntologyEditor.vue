@@ -1,6 +1,6 @@
 <template>
   <div class="sodar-ss-data-cell-busy text-muted text-center">
-    <i class="fa fa-spin fa-circle-o-notch"></i>
+    <i class="iconify spin" data-icon="mdi:loading"></i>
   </div>
 </template>
 

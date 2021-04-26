@@ -87,12 +87,12 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
             'schema': {
                 'igv': {
                     'type': 'link',
-                    'icon': 'fa-share-square-o',
+                    'icon': 'mdi:open-in-new',
                     'title': 'Open IGV session file for case in IGV',
                 },
                 'files': {
                     'type': 'modal',
-                    'icon': 'fa-folder-open-o',
+                    'icon': 'mdi:folder-open-outline',
                     'title': 'View links to BAM, VCF and IGV session files '
                     'for the case',
                 },
@@ -205,7 +205,7 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                                 'label': 'Add {} file to IGV'.format(
                                     file_type.upper()
                                 ),
-                                'icon': 'plus',
+                                'icon': 'mdi:plus-thick',
                                 'url': get_igv_irods_url(path, merge=True),
                             }
                         ],
@@ -242,14 +242,14 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                         {
                             'label': 'Open session file in IGV '
                             '(replace current)',
-                            'icon': 'share-square-o',
+                            'icon': 'mdi:open-in-new',
                             'url': get_igv_session_url(
                                 source, APP_NAME, merge=False
                             ),
                         },
                         {
                             'label': 'Merge into current IGV session',
-                            'icon': 'plus',
+                            'icon': 'mdi:plus-thick',
                             'url': get_igv_session_url(
                                 source, APP_NAME, merge=True
                             ),

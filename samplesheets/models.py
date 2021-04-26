@@ -4,7 +4,7 @@ from altamisa.constants import table_headers as th
 import uuid
 
 from django.conf import settings
-from django.contrib.postgres.fields import ArrayField, JSONField
+from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
@@ -80,15 +80,17 @@ class BaseSampleSheet(models.Model):
     )
 
     #: Data sharing rules
-    sharing_data = JSONField(default=dict, help_text='Data sharing rules')
+    sharing_data = models.JSONField(
+        default=dict, help_text='Data sharing rules'
+    )
 
     #: Consent retraction data
-    retraction_data = JSONField(
+    retraction_data = models.JSONField(
         default=dict, help_text='Consent retraction data'
     )
 
     #: Comments
-    comments = JSONField(default=dict, help_text='Comments')
+    comments = models.JSONField(default=dict, help_text='Comments')
 
     #: Headers for ISAtab parsing/writing
     headers = ArrayField(
@@ -164,6 +166,7 @@ class Investigation(BaseSampleSheet):
         null=False,
         related_name='investigations',
         help_text='Project to which the investigation belongs',
+        on_delete=models.CASCADE,
     )
 
     #: Investigation title (optional, can be derived from project)
@@ -191,17 +194,19 @@ class Investigation(BaseSampleSheet):
     )
 
     #: Ontology source references
-    ontology_source_refs = JSONField(
+    ontology_source_refs = models.JSONField(
         default=dict, help_text='Ontology source references'
     )
 
     #: Investigation publications
-    publications = JSONField(
+    publications = models.JSONField(
         default=dict, help_text='Investigation publications'
     )
 
     #: Investigation publications
-    contacts = JSONField(default=dict, help_text='Investigation contacts')
+    contacts = models.JSONField(
+        default=dict, help_text='Investigation contacts'
+    )
 
     #: Active status of investigation (only one active per project)
     active = models.BooleanField(
@@ -224,7 +229,7 @@ class Investigation(BaseSampleSheet):
     )
 
     #: Parser warnings
-    parser_warnings = JSONField(
+    parser_warnings = models.JSONField(
         default=dict,
         help_text='Warnings from the previous parsing of the corresponding '
         'ISAtab',
@@ -292,6 +297,7 @@ class Study(BaseSampleSheet):
         null=False,
         related_name='studies',
         help_text='Investigation to which the study belongs',
+        on_delete=models.CASCADE,
     )
 
     #: Title of the study (optional)
@@ -316,16 +322,20 @@ class Study(BaseSampleSheet):
     )
 
     #: Study design descriptors
-    study_design = JSONField(default=dict, help_text='Study design descriptors')
+    study_design = models.JSONField(
+        default=dict, help_text='Study design descriptors'
+    )
 
     #: Study publications
-    publications = JSONField(default=dict, help_text='Study publications')
+    publications = models.JSONField(
+        default=dict, help_text='Study publications'
+    )
 
     #: Study factors
-    factors = JSONField(default=dict, help_text='Study factors')
+    factors = models.JSONField(default=dict, help_text='Study factors')
 
     #: Study contacts
-    contacts = JSONField(default=dict, help_text='Study contacts')
+    contacts = models.JSONField(default=dict, help_text='Study contacts')
 
     #: Study arcs
     arcs = ArrayField(
@@ -401,10 +411,11 @@ class Protocol(BaseSampleSheet):
         Study,
         related_name='protocols',
         help_text='Study to which the protocol belongs',
+        on_delete=models.CASCADE,
     )
 
     #: Protocol type
-    protocol_type = JSONField(
+    protocol_type = models.JSONField(
         null=True, default=dict, help_text='Protocol type'
     )
 
@@ -424,10 +435,10 @@ class Protocol(BaseSampleSheet):
     )
 
     #: Protocol parameters
-    parameters = JSONField(default=dict, help_text='Protocol parameters')
+    parameters = models.JSONField(default=dict, help_text='Protocol parameters')
 
     #: Protocol components
-    components = JSONField(default=dict, help_text='Protocol components')
+    components = models.JSONField(default=dict, help_text='Protocol components')
 
     class Meta:
         unique_together = ('study', 'name')
@@ -461,6 +472,7 @@ class Assay(BaseSampleSheet):
         Study,
         related_name='assays',
         help_text='Study to which the assay belongs',
+        on_delete=models.CASCADE,
     )
 
     #: Technology platform (optional)
@@ -473,10 +485,14 @@ class Assay(BaseSampleSheet):
     )
 
     #: Technology type
-    technology_type = JSONField(default=dict, help_text='Technology type')
+    technology_type = models.JSONField(
+        default=dict, help_text='Technology type'
+    )
 
     #: Measurement type
-    measurement_type = JSONField(default=dict, help_text='Measurement type')
+    measurement_type = models.JSONField(
+        default=dict, help_text='Measurement type'
+    )
 
     #: Assay arcs
     arcs = ArrayField(
@@ -691,7 +707,7 @@ class GenericMaterial(NodeMixin, BaseSampleSheet):
     )
 
     #: Material characteristics (NOT needed for DataFile)
-    characteristics = JSONField(
+    characteristics = models.JSONField(
         default=dict, help_text='Material characteristics'
     )
 
@@ -701,6 +717,7 @@ class GenericMaterial(NodeMixin, BaseSampleSheet):
         related_name='materials',
         null=True,
         help_text='Study to which the material belongs (for study sequence)',
+        on_delete=models.CASCADE,
     )
 
     #: Assay to which the material belongs (for assay sequence)
@@ -709,6 +726,7 @@ class GenericMaterial(NodeMixin, BaseSampleSheet):
         related_name='materials',
         null=True,
         help_text='Assay to which the material belongs (for assay sequence)',
+        on_delete=models.CASCADE,
     )
 
     #: Material type (from "type")
@@ -721,7 +739,7 @@ class GenericMaterial(NodeMixin, BaseSampleSheet):
     )
 
     #: Extra material type (from "material_type")
-    extra_material_type = JSONField(
+    extra_material_type = models.JSONField(
         default=dict,
         blank=True,
         null=True,
@@ -729,7 +747,7 @@ class GenericMaterial(NodeMixin, BaseSampleSheet):
     )
 
     #: Factor values for a sample (only for samples)
-    factor_values = JSONField(
+    factor_values = models.JSONField(
         default=list,
         blank=True,
         null=True,
@@ -737,7 +755,7 @@ class GenericMaterial(NodeMixin, BaseSampleSheet):
     )
 
     #: Extract label (JSON)
-    extract_label = JSONField(
+    extract_label = models.JSONField(
         default=dict, blank=True, null=True, help_text='Extract label'
     )
 
@@ -877,6 +895,7 @@ class Process(NodeMixin, BaseSampleSheet):
         null=True,  # When under a study, protocol is not needed
         blank=True,
         help_text='Protocol which the process executes',
+        on_delete=models.CASCADE,
     )
 
     #: Study to which the process belongs
@@ -885,6 +904,7 @@ class Process(NodeMixin, BaseSampleSheet):
         related_name='processes',
         null=True,
         help_text='Study to which the process belongs (for study sequence)',
+        on_delete=models.CASCADE,
     )
 
     #: Assay to which the process belongs (for assay sequence)
@@ -893,10 +913,11 @@ class Process(NodeMixin, BaseSampleSheet):
         related_name='processes',
         null=True,
         help_text='Assay to which the process belongs (for assay sequence)',
+        on_delete=models.CASCADE,
     )
 
     #: Process parameter values
-    parameter_values = JSONField(
+    parameter_values = models.JSONField(
         default=dict, help_text='Process parameter values'
     )
 
@@ -924,12 +945,12 @@ class Process(NodeMixin, BaseSampleSheet):
     )
 
     #: First dimension
-    first_dimension = JSONField(
+    first_dimension = models.JSONField(
         default=dict, help_text='First dimension (optional, for special case)'
     )
 
     #: Second dimension
-    second_dimension = JSONField(
+    second_dimension = models.JSONField(
         default=dict, help_text='Second dimension (optional, for special case)'
     )
 
@@ -990,6 +1011,7 @@ class ISATab(models.Model):
         null=False,
         related_name='isatabs',
         help_text='Project to which the ISAtab belongs',
+        on_delete=models.CASCADE,
     )
 
     #: UUID of related Investigation object
@@ -1011,7 +1033,9 @@ class ISATab(models.Model):
     )
 
     #: Data from ISA-Tab files as a dict
-    data = JSONField(default=dict, help_text='Data from ISAtab files as a dict')
+    data = models.JSONField(
+        default=dict, help_text='Data from ISAtab files as a dict'
+    )
 
     #: Tags for categorizing the ISA-Tab
     tags = ArrayField(
@@ -1026,6 +1050,7 @@ class ISATab(models.Model):
         related_name='isatabs',
         null=True,
         help_text='User saving this ISAtab (optional)',
+        on_delete=models.CASCADE,
     )
 
     #: DateTime of ISA-Tab creation
@@ -1042,7 +1067,7 @@ class ISATab(models.Model):
     )
 
     #: Optional extra data
-    extra_data = JSONField(default=dict, help_text='Optional extra data')
+    extra_data = models.JSONField(default=dict, help_text='Optional extra data')
 
     #: Internal UUID for the object
     sodar_uuid = models.UUIDField(
@@ -1113,6 +1138,7 @@ class IrodsAccessTicket(models.Model):
         Project,
         related_name='irods_access_ticket',
         help_text='Project the ticket belongs to',
+        on_delete=models.CASCADE,
     )
 
     #: Study the ticket belongs to
@@ -1120,6 +1146,7 @@ class IrodsAccessTicket(models.Model):
         Study,
         related_name='irods_access_ticket',
         help_text='Study the ticket belongs to',
+        on_delete=models.CASCADE,
     )
 
     #: Assay the ticket belongs to (optional)
@@ -1129,6 +1156,7 @@ class IrodsAccessTicket(models.Model):
         null=True,
         blank=True,
         help_text='Assay the ticket belongs to (optional)',
+        on_delete=models.CASCADE,
     )
 
     #: Ticket token
@@ -1155,6 +1183,7 @@ class IrodsAccessTicket(models.Model):
         related_name='irods_access_ticket',
         null=True,
         help_text='User that created the ticket',
+        on_delete=models.CASCADE,
     )
 
     #: Date created
@@ -1241,6 +1270,7 @@ class IrodsDataRequest(models.Model):
         null=False,
         related_name='irods_data_request',
         help_text='Project to which the iRODS delete request belongs',
+        on_delete=models.CASCADE,
     )
 
     #: Action to be performed (default currently supported)
@@ -1275,6 +1305,7 @@ class IrodsDataRequest(models.Model):
         null=False,
         related_name='irods_data_request',
         help_text='User initiating the request',
+        on_delete=models.CASCADE,
     )
 
     #: Status of the request

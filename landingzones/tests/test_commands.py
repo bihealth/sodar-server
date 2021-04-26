@@ -1,9 +1,9 @@
 from datetime import timedelta
+import io
 from unittest import mock, skipIf
 
 from django.conf import settings
 from django.core.management import call_command
-from django.utils.six import StringIO
 from django.utils.timezone import localtime
 from projectroles.constants import SODAR_CONSTANTS
 from projectroles.models import Role
@@ -173,7 +173,7 @@ class TestInactiveZones(
         )
 
     def test_command_inactivezones(self):
-        out = StringIO()
+        out = io.StringIO()
         call_command('inactivezones', stdout=out)
         expected = '{};{};{};{};0;0 bytes\n'.format(
             str(self.project.sodar_uuid),

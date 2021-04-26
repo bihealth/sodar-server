@@ -1,10 +1,10 @@
+import io
 import os
 import uuid
 from unittest import skipIf
 
 from django.conf import settings
 from django.core.management import call_command
-from django.utils.six import StringIO
 from projectroles.constants import SODAR_CONSTANTS
 from projectroles.models import Role
 from projectroles.plugins import get_backend_api
@@ -337,7 +337,7 @@ class TestIrodsOrphans(
         )
 
     def test_command_irodsorphans_no_orphans(self):
-        out = StringIO()
+        out = io.StringIO()
         call_command('irodsorphans', stdout=out)
         self.assertEqual('', out.getvalue())
 
@@ -346,7 +346,7 @@ class TestIrodsOrphans(
             self.irods_backend.get_path(self.study), str(uuid.uuid4())
         )
         self.irods_session.collections.create(orphan_path)
-        out = StringIO()
+        out = io.StringIO()
         call_command('irodsorphans', stdout=out)
         expected = '{};{};{};0;0 bytes\n'.format(
             str(self.project.sodar_uuid),
@@ -360,7 +360,7 @@ class TestIrodsOrphans(
             self.irods_backend.get_path(self.project), str(uuid.uuid4())
         )
         self.irods_session.collections.create(orphan_path)
-        out = StringIO()
+        out = io.StringIO()
         call_command('irodsorphans', stdout=out)
         expected = '{};{};{};0;0 bytes\n'.format(
             str(self.project.sodar_uuid),
@@ -378,7 +378,7 @@ class TestIrodsOrphans(
             collection,
         )
         self.irods_session.collections.create(orphan_path)
-        out = StringIO()
+        out = io.StringIO()
         call_command('irodsorphans', stdout=out)
         expected = '{};{};{};0;0 bytes\n'.format(
             str(self.project.sodar_uuid),
@@ -397,7 +397,7 @@ class TestIrodsOrphans(
             collection,
         )
         self.irods_session.collections.create(orphan_path)
-        out = StringIO()
+        out = io.StringIO()
         call_command('irodsorphans', stdout=out)
         expected = '{};<DELETED>;{};0;0 bytes\n'.format(
             project_uuid, orphan_path
@@ -410,7 +410,7 @@ class TestIrodsOrphans(
             self.irods_backend.get_path(self.assay), collection
         )
         self.irods_session.collections.create(orphan_path)
-        out = StringIO()
+        out = io.StringIO()
         call_command('irodsorphans', stdout=out)
         expected = '{};{};{};0;0 bytes\n'.format(
             str(self.project.sodar_uuid),
@@ -432,7 +432,7 @@ class TestIrodsOrphans(
             collection,
         )
         self.irods_session.collections.create(orphan_path2)
-        out = StringIO()
+        out = io.StringIO()
         call_command('irodsorphans', stdout=out)
         expected = '{};{};{};0;0 bytes\n'.format(
             str(self.project.sodar_uuid),

@@ -6,20 +6,17 @@
     Zone Operations
   </button>
   <div class="dropdown-menu dropdown-menu-right">
-
     {# Create zone #}
     <a class="dropdown-item"
        href="{% url 'landingzones:create' project=project.sodar_uuid %}">
-      <i class="fa fa-fw fa-plus"></i> Create Zone
+      <i class="iconify" data-icon="mdi:plus-thick"></i> Create Zone
     </a>
-
     {# Clear inactive zones #}
     {% if zones_own.count > 0 %}
     <a class="dropdown-item"
        href="{% url 'landingzones:clear' project=project.sodar_uuid %}">
-      <i class="fa fa-fw fa-trash"></i> Clear Inactive Zones
+      <i class="iconify" data-icon="mdi:delete"></i> Clear Inactive Zones
     </a>
     {% endif %}
-
   </div>
 </div>

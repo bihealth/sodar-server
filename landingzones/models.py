@@ -1,7 +1,6 @@
 import uuid
 
 from django.conf import settings
-from django.contrib.postgres.fields import JSONField
 from django.db import models
 
 # Projectroles dependency
@@ -76,6 +75,7 @@ class LandingZone(models.Model):
         Project,
         related_name='landing_zones',
         help_text='Project in which the landing zone belongs',
+        on_delete=models.CASCADE,
     )
 
     #: User who owns the landing zone
@@ -83,6 +83,7 @@ class LandingZone(models.Model):
         AUTH_USER_MODEL,
         related_name='landing_zones',
         help_text='User who owns the landing zone',
+        on_delete=models.CASCADE,
     )
 
     #: Assay for which the landing zone belongs
@@ -90,6 +91,7 @@ class LandingZone(models.Model):
         Assay,
         related_name='landing_zones',
         help_text='Assay for which the landing zone belongs',
+        on_delete=models.CASCADE,
     )
 
     #: Status of landing zone
@@ -133,7 +135,7 @@ class LandingZone(models.Model):
     )
 
     #: Configuration data (for storing plugin-specific settings)
-    config_data = JSONField(
+    config_data = models.JSONField(
         default=dict,
         help_text='Configuration data (for storing plugin-specific settings)',
     )

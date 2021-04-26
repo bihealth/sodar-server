@@ -2,21 +2,28 @@
   <div class="row mb-4"
        :id="'sodar-ss-section-' + gridIdSuffix">
     <h4 :class="'font-weight-bold mb-0 ' + getTitleTextClass()">
-      <i class="fa fa-fw fa-list-alt"></i>
+      <i v-if="!params.assayMode" class="iconify" data-icon="mdi:folder-table"></i>
+      <i v-else class="iconify" data-icon="mdi:table-large"></i>
       {{ gridName }}: {{ tableContext.display_name }}
-      <i v-if="params.sodarContext.perms.is_superuser &&
-               tableContext.plugin"
-         :class="'fa fa-puzzle-piece ml-1 ' + getTitleTextClass()"
-         :title="tableContext.plugin"
-         v-b-tooltip.hover>
-      </i>
-      <i v-else-if="params.sodarContext.perms.edit_sheet &&
-                    !tableContext.plugin &&
-                    params.assayMode"
-         class="fa fa-puzzle-piece text-muted ml-1"
-         title="No assay plugin found: displaying default iRODS links"
-         v-b-tooltip.hover>
-      </i>
+      <span v-if="params.sodarContext.perms.is_superuser &&
+                  tableContext.plugin"
+            class="sodar-ss-table-plugin">
+        <i :class="'iconify ml-1 ' + getTitleTextClass()"
+           data-icon="mdi:puzzle"
+           :title="tableContext.plugin"
+           v-b-tooltip.hover>
+        </i>
+      </span>
+      <span v-else-if="params.sodarContext.perms.edit_sheet &&
+                       !tableContext.plugin &&
+                       params.assayMode"
+            class="sodar-ss-table-plugin">
+        <i class="iconify text-muted ml-1"
+           data-icon="mdi:puzzle-remove"
+           title="No assay plugin found: displaying default iRODS links"
+           v-b-tooltip.hover>
+        </i>
+      </span>
     </h4>
     <div :class="getRightDivClass()">
       <span v-if="!params.assayMode" class="mr-2">

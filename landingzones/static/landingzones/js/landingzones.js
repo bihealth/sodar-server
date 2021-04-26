@@ -43,8 +43,11 @@ var updateZoneStatus = function() {
                         zoneTr.find('p#sodar-lz-zone-stats-container-' + zoneUuid).hide();
 
                         if (data['status'] === 'MOVED') {
-                            var statusMovedSpan = zoneTr.find('span#sodar-lz-zone-status-moved-' + zoneUuid);
-                            statusMovedSpan.html('<p class="mb-0"><a href="' + sampleUrl + '"><i class="fa fa-arrow-circle-right"></i> ' +
+                            var statusMovedSpan = zoneTr.find(
+                                'span#sodar-lz-zone-status-moved-' + zoneUuid);
+                            statusMovedSpan.html(
+                                '<p class="mb-0"><a href="' + sampleUrl + '">' +
+                                '<i class="iconify" data-icon="mdi:arrow-right-circle"></i> ' +
                                 'Browse files in sample sheet</a></p>');
                         }
                     }

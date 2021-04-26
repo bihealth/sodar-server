@@ -9,7 +9,7 @@ from unittest import skipIf
 from django.conf import settings
 from django.contrib import auth
 from django.contrib.messages import get_messages
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.utils import timezone
 
 # Projectroles dependency

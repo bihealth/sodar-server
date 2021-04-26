@@ -15,7 +15,6 @@ Git Branches
     - The ``dev`` branch is merged into it for freezing releases
 - ``dev``
     - The bleeding edge development branch with (mostly) stable new features
-    - This branch is deployed for test use in ``http://omics-beta.bihealth.org``
     - Only push small urgent updates such as bug fixes here, otherwise fork and
       submit a merge request!
 - Temporary development branches
@@ -65,7 +64,8 @@ Vue App Unit Testing Hints
 App Relationships and Plugins
 =============================
 
-For detailed information, see `SODAR Core <https://cubi-gitlab.bihealth.org/CUBI_Engineering/CUBI_Data_Mgmt/sodar_core>`_
+For detailed information, see
+`SODAR Core documentation <https://sodar-core.readthedocs.io/en/latest/>`_.
 docs.
 
 - Apps can freely import and use stuff from the ``projectroles`` app
@@ -79,7 +79,8 @@ docs.
 Plugin Types
 ============
 
-For detailed information, see `SODAR Core <https://cubi-gitlab.bihealth.org/CUBI_Engineering/CUBI_Data_Mgmt/sodar_core>`_
+For detailed information, see
+`SODAR Core documentation <https://sodar-core.readthedocs.io/en/latest/>`_.
 docs.
 
 - Project app plugin (``projectroles.plugins.ProjectAppPluginPoint``)

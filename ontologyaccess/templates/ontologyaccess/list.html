@@ -48,11 +48,11 @@
 {% block projectroles %}
 
 <div class="row sodar-subtitle-container bg-white sticky-top">
-  <h2><i class="fa fa-tags"></i> Ontology Access</h2>
+  <h2><i class="iconify" data-icon="mdi:tags"></i> Ontology Access</h2>
 
   <a role="button" class="btn btn-primary ml-auto"
      href="{% url 'ontologyaccess:obo_import' %}">
-    <i class="fa fa-upload"></i> Import  Ontology
+    <i class="iconify" data-icon="mdi:upload"></i> Import  Ontology
   </a>
 </div>
 
@@ -61,7 +61,7 @@
   {% if object_list.count > 0 %}
     <div class="card" id="sodar-oa-alert-list">
       <div class="card-header">
-        <h4><i class="fa fa-tag"></i> OBO Format Ontologies</h4>
+        <h4><i class="iconify" data-icon="mdi:tag"></i> OBO Format Ontologies</h4>
       </div>
       <div class="card-body p-0">
         <table class="table table-striped sodar-card-table" id="sodar-oa-list-table">
@@ -87,16 +87,18 @@
                   <div class="btn-group sodar-list-btn-group" id="sodar-oa-alert-buttons-{{ a.pk }}">
                     <button class="btn btn-secondary dropdown-toggle sodar-list-dropdown"
                             type="button" data-toggle="dropdown" aria-expanded="false">
-                      <i class="fa fa-cog"></i>
+                      <i class="iconify" data-icon="mdi:cog"></i>
                     </button>
                     <div class="dropdown-menu dropdown-menu-right">
                       <a class="dropdown-item"
                          href="{% url 'ontologyaccess:obo_update' oboformatontology=o.sodar_uuid %}">
-                        <i class="fa fa-fw fa-pencil"></i> Update Ontology
+                        <i class="iconify" data-icon="mdi:lead-pencil"></i>
+                        Update Ontology
                       </a>
                       <a class="dropdown-item text-danger"
                          href="{% url 'ontologyaccess:obo_delete' oboformatontology=o.sodar_uuid %}">
-                        <i class="fa fa-fw fa-close"></i> Delete Ontology
+                        <i class="iconify" data-icon="mdi:close-thick"></i>
+                        Delete Ontology
                       </a>
                     </div>
                   </div>

@@ -1,5 +1,5 @@
 import { createLocalVue, mount } from '@vue/test-utils'
-import { copy } from '../testUtils.js'
+import { copy, waitNT, waitRAF } from '../testUtils.js'
 import BootstrapVue from 'bootstrap-vue'
 import VueClipboard from 'vue-clipboard2'
 import SheetTableHeader from '@/components/SheetTableHeader.vue'
@@ -57,7 +57,7 @@ describe('SheetTableHeader.vue', () => {
     expect(wrapper.find('#sodar-ss-section-study').exists()).toBe(true)
     expect(wrapper.find('h4').classes()).toContain('text-info')
     expect(wrapper.find('h4').text()).toContain('Study:')
-    expect(wrapper.find('i.fa-puzzle-piece').exists()).toBe(false)
+    expect(wrapper.find('.sodar-ss-table-plugin').exists()).toBe(false)
 
     // Badges
     expect(wrapper.find('.sodar-ss-irods-stats').exists()).toBe(true)
@@ -82,7 +82,7 @@ describe('SheetTableHeader.vue', () => {
       .exists()).toBe(true)
     expect(wrapper.find('h4').classes()).toContain('text-danger')
     expect(wrapper.find('h4').text()).toContain('Assay:')
-    expect(wrapper.find('i.fa-puzzle-piece').exists()).toBe(true)
+    expect(wrapper.find('.sodar-ss-table-plugin').exists()).toBe(true)
 
     // Badges
     expect(wrapper.find('.sodar-ss-irods-stats').exists()).toBe(false)

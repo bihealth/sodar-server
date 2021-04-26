@@ -12,15 +12,6 @@ pip --version >/dev/null 2>&1 || {
     exit 1;
 }
 
-virtualenv --version >/dev/null 2>&1 || {
-    echo >&2 -e "\nvirtualenv is required but it's not installed."
-    echo >&2 -e "You can install it by running the following command:\n"
-    echo >&2 "sudo -H pip3 install virtualenv"
-    echo >&2 -e "\n"
-    echo >&2 -e "\nFor more information, see virtualenv documentation: https://virtualenv.pypa.io/en/latest/"
-    exit 1;
-}
-
 if [ -z "$VIRTUAL_ENV" ]; then
     echo >&2 -e "\nYou need activate a virtualenv first"
     echo >&2 -e 'If you do not have a virtualenv created, run the following command to create and automatically activate a new virtualenv named "venv" on current folder:\n'

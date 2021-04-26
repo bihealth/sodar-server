@@ -25,7 +25,7 @@
                   v-clipboard:error="onCopyError"
                   :disabled="!enableCopy()"
                   v-b-tooltip.hover>
-                <i class="fa fa-clipboard"></i>
+                <i class="iconify" data-icon="mdi:clipboard-text-multiple"></i>
               </b-button>
             </b-input-group-prepend>
             <b-form-input
@@ -71,7 +71,8 @@
           <tr v-if="colType === 'NAME' && headerInfo.item_type !== 'SOURCE'"
               id="sodar-ss-col-tr-name-suffix">
             <td>Default Suffix
-              <i class="fa fa-info-circle text-info"
+              <i class="iconify text-info"
+                 data-icon="mdi:information"
                  title="Pre-fill with the name of previous node plus a suffix if set"
                  v-b-tooltip.hover>
               </i>
@@ -209,7 +210,8 @@
               id="sodar-ss-col-tr-select">
             <td class="align-top pt-3">
               Options
-              <i class="fa fa-info-circle text-info"
+              <i class="iconify text-info"
+                 data-icon="mdi:information"
                  title="Separate options by newline"
                  v-b-tooltip.hover>
               </i>
@@ -341,7 +343,8 @@
               id="sodar-ss-col-tr-unit">
             <td class="align-top pt-3">
               Unit
-              <i class="fa fa-info-circle text-info"
+              <i class="iconify text-info"
+                 data-icon="mdi:information"
                  title="Separate options by newline"
                  v-b-tooltip.hover>
               </i>
@@ -382,7 +385,8 @@
           <tr>
             <th colspan="2">
               Allowed Ontologies
-              <i class="fa fa-info-circle text-info"
+              <i class="iconify text-info"
+                 data-icon="mdi:information"
                  title="Allowed ontologies for this column. If not set,
                         allow terms from any ontology."
                  v-b-tooltip.hover>
@@ -404,7 +408,7 @@
                   @click="onOntologyMove(oIdx, true)"
                   :disabled="!enableOntologyMove(oIdx, true)"
                   v-b-tooltip.hover.d300>
-                <i class="fa fa-arrow-up"></i>
+                <i class="iconify" data-icon="mdi:arrow-up-bold"></i>
               </b-button>
               <b-button
                   variant="primary"
@@ -414,7 +418,7 @@
                   @click="onOntologyMove(oIdx, false)"
                   :disabled="!enableOntologyMove(oIdx, false)"
                   v-b-tooltip.hover.d300>
-                <i class="fa fa-arrow-down"></i>
+                <i class="iconify" data-icon="mdi:arrow-down-bold"></i>
               </b-button>
               <b-button
                   variant="danger"
@@ -424,7 +428,7 @@
                   @click="onOntologyDelete(ontology, oIdx)"
                   :disabled="specialOntologyCol"
                   v-b-tooltip.hover.left.d300>
-                <i class="fa fa-times"></i>
+                <i class="iconify" data-icon="mdi:close-thick"></i>
               </b-button>
             </td>
           </tr>
@@ -457,7 +461,7 @@
                   @click="onOntologyInsert"
                   :disabled="!insertOntology"
                   v-b-tooltip.hover.left.d300>
-                <i class="fa fa-plus"></i>
+                <i class="iconify" data-icon="mdi:plus-thick"></i>
               </b-button>
             </td>
           </tr>
@@ -482,14 +486,16 @@
             variant="secondary"
             id="sodar-ss-col-btn-cancel"
             @click="hideModal(false)">
-          <i class="fa fa-times"></i> Cancel
+          <i class="iconify" data-icon="mdi:close-thick"></i> Cancel
         </b-button>
         <b-button
             variant="primary"
             id="sodar-ss-col-btn-update"
             ref="updateBtn"
             @click="hideModal(true)">
-          <i :class="updateBtnClasses"></i> Update
+          <img :src="'/icons/mdi/' + updateBtnIcon + '.svg?color=%23fff'"
+               :class="updateBtnClasses"/>
+          Update
         </b-button>
       </b-button-group>
     </div>
@@ -569,6 +575,7 @@ export default {
       defaultFillEnable: false,
       pasteData: '',
       updateBtnClasses: null,
+      updateBtnIcon: null,
       specialOntologyCol: false, // Special cases of ontology columns
       selectOntologies: [],
       insertOntology: null
@@ -1039,7 +1046,8 @@ export default {
       this.ogColType = params.colType // Save original colType
       const gridUuid = !this.assayUuid ? this.studyUuid : this.assayUuid
       this.gridOptions = this.app.getGridOptionsByUuid(gridUuid)
-      this.updateBtnClasses = 'fa fa-fw fa-check'
+      this.updateBtnClasses = ''
+      this.updateBtnIcon = 'check-bold'
       this.specialOntologyCol = this.colType === 'ONTOLOGY' &&
         specialOntologyCols.includes(this.headerInfo.header_name.toLowerCase())
       this.selectOntologies = []
@@ -1151,7 +1159,8 @@ export default {
     },
     hideModal (update) {
       if (update) {
-        this.updateBtnClasses = 'fa fa-fw fa-spin fa-refresh'
+        this.updateBtnClasses = 'spin'
+        this.updateBtnIcon = 'refresh'
 
         // Cleanup config
         this.fieldConfig = this.cleanupFieldConfig(this.fieldConfig)

@@ -81,7 +81,7 @@
 {% has_perm 'landingzones.add_zones' request.user project as can_add_zones %}
 
 <div class="row sodar-subtitle-container bg-white sticky-top">
-  <h3><i class="fa fa-database"></i> Landing Zones</h3>
+  <h3><i class="iconify" data-icon="mdi:briefcase-upload"></i> Landing Zones</h3>
   {% if investigation and can_add_zones %}
     {% include 'landingzones/_list_buttons.html' %}
   {% endif %}
@@ -123,10 +123,10 @@
 
     {# User zones #}
     {% if zones_own.count > 0 %}
-      {% include 'landingzones/_zone_list.html' with zones=zones_own list_title='Your Zones' list_icon='fa-user' list_type='own' %}
+      {% include 'landingzones/_zone_list.html' with zones=zones_own list_title='Your Zones' list_icon='mdi:account' list_type='own' %}
     {% endif %}
     {% if zones_other %}
-      {% include 'landingzones/_zone_list.html' with zones=zones_other list_title='Other Zones' list_icon='fa-users' list_type='other' %}
+      {% include 'landingzones/_zone_list.html' with zones=zones_other list_title='Other Zones' list_icon='mdi:account-multiple' list_type='other' %}
     {% endif %}
   {% endif %}
 

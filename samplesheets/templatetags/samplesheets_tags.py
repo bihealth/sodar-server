@@ -27,7 +27,6 @@ REQUEST_STATUS_CLASSES = {
 }
 
 
-irods_backend = get_backend_api('omics_irods', conn=False)
 register = template.Library()
 
 
@@ -56,27 +55,23 @@ def get_search_item_type(item):
 @register.simple_tag
 def get_irods_tree(investigation):
     """Return HTML for iRODS collections"""
+    irods_backend = get_backend_api('omics_irods', conn=False)
+    if not irods_backend:
+        return ''
     ret = '<ul><li>{}<ul>'.format(settings.IRODS_SAMPLE_COLL)
-
     for study in investigation.studies.all():
         ret += '<li>{}'.format(
             irods_backend.get_sub_path(study, include_parent=False)
         )
-
         if study.assays.all().count() > 0:
             ret += '<ul>'
-
             for assay in study.assays.all():
                 ret += '<li>{}</li>'.format(
                     irods_backend.get_sub_path(assay, include_parent=False)
                 )
-
             ret += '</ul>'
-
         ret += '</li>'
-
     ret += '</ul></li></ul>'
-
     return ret
 
 
@@ -92,14 +87,12 @@ def get_irods_path(obj, sub_path=None):
     :param sub_path: If defined, add a sub path below object
     :return: String or none
     """
+    irods_backend = get_backend_api('omics_irods', conn=False)
     if irods_backend:
         path = irods_backend.get_path(obj)
-
         if sub_path:
             path += '/' + sub_path
-
         return path
-
     return None
 
 
@@ -111,11 +104,10 @@ def get_icon(obj):
     :param obj: Study or Assay object
     :return: String (contains HTML)
     """
-    if type(obj) == Study:
-        return '<i class="fa fa-fw fa-list-alt text-info"></i>'
-
-    elif type(obj) == Assay:
-        return '<i class="fa fa-fw fa-table text-danger"></i>'
+    if isinstance(obj, Study):
+        return '<i class="iconify text-info" data-icon="mdi:folder-table"></i>'
+    elif isinstance(obj, Assay):
+        return '<i class="iconify text-danger" data-icon="mdi:table-large"></i>'
 
 
 @register.simple_tag

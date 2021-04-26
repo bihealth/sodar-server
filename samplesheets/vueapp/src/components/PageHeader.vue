@@ -1,7 +1,9 @@
 <template>
   <div class="row sodar-subtitle-container bg-white sticky-top"
        id="sodar-ss-subtitle">
-    <h3><i class="fa fa-flask"></i> Sample Sheets</h3>
+    <h3 class="text-nowrap">
+      <i class="iconify" data-icon="mdi:flask" /> Sample Sheets
+    </h3>
     <b-nav
         v-if="app.sheetsAvailable"
         id="sodar-ss-nav-tabs"
@@ -17,31 +19,29 @@
           :title="getStudyNavTitle(studyInfo.display_name)"
           :active="studyUuid === app.currentStudyUuid && !app.activeSubPage"
           :disabled="!app.sheetsAvailable || app.gridsBusy">
-        <i class="fa fa-list-alt"></i> {{ studyInfo.display_name | truncate(20) }}
+        <i class="iconify" data-icon="mdi:folder-table"></i>
+        {{ studyInfo.display_name | truncate(20) }}
       </b-nav-item>
       <b-nav-item
           id="sodar-ss-tab-overview"
           @click="showSubPageCallback('overview')"
           :active="app.activeSubPage === 'overview'"
           :disabled="!app.sheetsAvailable || app.gridsBusy || app.editMode">
-        <i class="fa fa-sitemap"></i> Overview
+        <i class="iconify" data-icon="mdi:sitemap"></i> Overview
       </b-nav-item>
     </b-nav>
-    <div class="ml-auto">
+    <div class="ml-auto align-middle">
       <notify-badge ref="notifyBadge"></notify-badge>
       <span v-if="app.editMode"
-            :class='"badge badge-pill badge-info"'
+            class="badge badge-pill badge-info mr-2"
             id="sodar-ss-badge-edit">
-        <i class="fa fa-pencil"></i> Edit Mode
+        <a id="sodar-ss-link-edit-help"
+           @click="editorHelpModal.showModal()"
+           title="Editor status and help"
+           v-b-tooltip.hover>
+          <i class="iconify" data-icon="mdi:lead-pencil"></i> Edit Mode
+        </a>
       </span>
-      <a v-if="app.editMode"
-         title="Editor status and help"
-         class="pl-1 pr-2"
-         id="sodar-ss-link-edit-help"
-         @click="editorHelpModal.showModal()"
-         v-b-tooltip.hover>
-        <i class="fa fa-info-circle text-info"></i>
-      </a>
       <!-- Nav dropdown -->
       <b-dropdown
           id="sodar-ss-nav-dropdown"
@@ -49,7 +49,7 @@
           right
           variant="success">
         <template slot="button-content">
-          <i class="fa fa-bars"></i>
+          <i class="iconify" data-icon="mdi:menu"></i><!-- TODO: Height -->
         </template>
         <span v-for="(studyInfo, studyUuid, index) in app.sodarContext.studies"
               :key="index">
@@ -58,7 +58,8 @@
               :id="'sodar-ss-nav-study-' + studyUuid"
               class="sodar-ss-nav-item"
               @click="handleNavCallback(studyUuid)">
-            <i class="fa fa-fw fa-list-alt text-info"></i> {{ studyInfo.display_name }}
+            <i class="iconify text-info" data-icon="mdi:folder-table"></i>
+            {{ studyInfo.display_name }}
           </b-dropdown-item>
           <b-dropdown-item
               v-for="(assayInfo, assayUuid, assayIndex) in studyInfo.assays"
@@ -67,7 +68,8 @@
               :id="'sodar-ss-nav-assay-' + assayUuid"
               class="sodar-ss-nav-item"
               @click="handleNavCallback(studyUuid, assayUuid)">
-            <i class="fa fa-fw fa-table text-danger ml-4"></i> {{ assayInfo.display_name }}
+            <i class="iconify text-danger ml-4" data-icon="mdi:table-large"></i>
+            {{ assayInfo.display_name }}
           </b-dropdown-item>
         </span>
         <b-dropdown-item
@@ -76,7 +78,7 @@
           class="sodar-ss-nav-item"
           :disabled="app.editMode"
           @click="showSubPageCallback('overview')">
-          <i class="fa fa-fw fa-sitemap"></i> Overview
+          <i class="iconify" data-icon="mdi:sitemap"></i> Overview
         </b-dropdown-item>
       </b-dropdown>
       <!-- Operations dropdown (only show if not in edit mode -->
@@ -92,21 +94,21 @@
             class="sodar-ss-op-item"
             id="sodar-ss-op-item-sync"
             :href="'sync/' + app.projectUuid">
-          <i class="fa fa-fw fa-refresh"></i> Sync Sheets
+          <i class="iconify" data-icon="mdi:table-refresh"></i> Sync Sheets
         </b-dropdown-item>
         <b-dropdown-item
             v-if="!app.sheetsAvailable && !app.sheetSyncEnabled"
             class="sodar-ss-op-item"
             id="sodar-ss-op-item-create"
             :href="'template/select/' + app.projectUuid">
-          <i class="fa fa-fw fa-magic"></i> Create from Template
+          <i class="iconify" data-icon="mdi:auto-fix"></i> Create from Template
         </b-dropdown-item>
         <b-dropdown-item
             v-if="!app.sheetsAvailable && !app.sheetSyncEnabled"
             class="sodar-ss-op-item"
             id="sodar-ss-op-item-import"
             :href="'import/' + app.projectUuid">
-          <i class="fa fa-fw fa-upload"></i> Import ISA-Tab
+          <i class="iconify" data-icon="mdi:upload"></i> Import ISA-Tab
         </b-dropdown-item>
         <b-dropdown-item
             v-if="app.sheetsAvailable && !app.sheetSyncEnabled"
@@ -114,7 +116,7 @@
             id="sodar-ss-op-item-edit"
             @click="toggleEditModeCallback"
             :disabled="!app.sodarContext.allow_editing">
-          <i class="fa fa-fw fa-pencil"></i> Edit Sheets
+          <i class="iconify" data-icon="mdi:lead-pencil"></i> Edit Sheets
         </b-dropdown-item>
         <b-dropdown-item
             v-if="app.sheetsAvailable"
@@ -122,7 +124,7 @@
             id="sodar-ss-op-item-warnings"
             :disabled="!app.sodarContext.parser_warnings"
             @click="showSubPageCallback('warnings')">
-          <i class="fa fa-fw fa-exclamation-circle"></i> View Parser Warnings
+          <i class="iconify" data-icon="mdi:alert"></i> View Parser Warnings
         </b-dropdown-item>
         <b-dropdown-item
             v-if="app.sheetsAvailable &&
@@ -130,28 +132,28 @@
             class="sodar-ss-op-item"
             id="sodar-ss-op-item-cache"
             :href="'cache/update/' + app.projectUuid">
-          <i class="fa fa-fw fa-refresh"></i> Update Sheet Cache
+          <i class="iconify" data-icon="mdi:database-refresh"></i> Update Sheet Cache
         </b-dropdown-item>
         <b-dropdown-item
             v-if="app.sheetsAvailable && !app.sheetSyncEnabled"
             class="sodar-ss-op-item"
             id="sodar-ss-op-item-replace"
             :href="'import/' + app.projectUuid">
-          <i class="fa fa-fw fa-upload"></i> Replace ISA-Tab
+          <i class="iconify" data-icon="mdi:upload"></i> Replace ISA-Tab
         </b-dropdown-item>
         <b-dropdown-item
             v-if="app.sheetsAvailable && !app.windowsOs"
             class="sodar-ss-op-item"
             id="sodar-ss-op-item-export"
             :href="'export/isa/' + app.projectUuid">
-          <i class="fa fa-fw fa-download"></i> Export ISA-Tab
+          <i class="iconify" data-icon="mdi:download"></i> Export ISA-Tab
         </b-dropdown-item>
         <b-dropdown-item
             v-else-if="app.sheetsAvailable && app.windowsOs"
             class="sodar-ss-op-item"
             id="sodar-ss-op-item-export"
             @click="winExportModal.showModal()">
-          <i class="fa fa-fw fa-download"></i> Export ISA-Tab
+          <i class="iconify" data-icon="mdi:download"></i> Export ISA-Tab
         </b-dropdown-item>
         <b-dropdown-item
             v-if="app.sheetsAvailable &&
@@ -159,15 +161,21 @@
             class="sodar-ss-op-item"
             id="sodar-ss-op-item-irods"
             :href="'collections/' + app.projectUuid">
-          <i class="fa fa-fw fa-database"></i>
-          <span v-if="app.sodarContext.irods_status">Update</span><span v-else>Create</span> iRODS Collections
+          <span v-if="app.sodarContext.irods_status">
+            <i class="iconify" data-icon="mdi:database-refresh"></i>
+            Update iRODS Collections
+          </span>
+          <span v-else>
+            <i class="iconify" data-icon="mdi:database-plus"></i>
+            Create iRODS Collections
+          </span>
         </b-dropdown-item>
         <b-dropdown-item
             v-if="app.sheetsAvailable && !app.sheetSyncEnabled"
             class="sodar-ss-op-item"
             id="sodar-ss-op-item-versions"
             :href="'versions/' + app.projectUuid">
-          <i class="fa fa-fw fa-files-o"></i> Sheet Versions
+          <i class="iconify" data-icon="mdi:table-search"></i> Sheet Versions
         </b-dropdown-item>
         <b-dropdown-item
             v-if="app.sheetsAvailable &&
@@ -175,13 +183,13 @@
                   app.sodarContext.perms.edit_sheet"
             class="sodar-ss-op-item"
             :href="'irods/tickets/' + app.projectUuid">
-          <i class="fa fa-fw fa-ticket"></i> iRODS Access Tickets
+          <i class="iconify" data-icon="mdi:ticket"></i> iRODS Access Tickets
         </b-dropdown-item>
         <b-dropdown-item
             v-if="app.sheetsAvailable && app.sodarContext.irods_status"
             class="sodar-ss-op-item"
             :href="'irods/requests/' + app.projectUuid">
-          <i class="fa fa-fw fa-eraser"></i> iRODS Delete Requests
+          <i class="iconify" data-icon="mdi:trash-can"></i> iRODS Delete Requests
         </b-dropdown-item>
         <b-dropdown-item
             v-if="app.sheetsAvailable &&
@@ -191,7 +199,8 @@
             id="sodar-ss-op-item-delete"
             variant="danger"
             :href="'delete/' + app.projectUuid">
-          <i class="fa fa-fw fa-close"></i> Delete Sheets and Data
+          <i class="iconify" data-icon="mdi:close-thick"></i> Delete Sheets
+          <span v-if="app.sodarContext.irods_status">and Data</span>
         </b-dropdown-item>
       </b-dropdown>
       <!-- Finish editing button (replace op dropdown in edit mode) -->
@@ -202,7 +211,8 @@
           id="sodar-ss-btn-edit-finish"
           :disabled="app.unsavedRow !== null"
           @click="toggleEditModeCallback">
-        Finish Editing <span class="pull-right"><i class="fa fa-check"></i></span>
+        Finish Editing
+        <span class="pull-right"><i class="iconify" data-icon="mdi:check-bold"></i></span>
       </b-button>
     </div>
   </div>
@@ -265,12 +275,6 @@ ul.sodar-ss-nav li a.active {
 button#sodar-ss-btn-edit-finish {
   margin-left: 4px;
   width: 163px;
-}
-
-/* HACK because lol bootstrap */
-a#sodar-ss-link-edit-help i {
-  vertical-align: middle;
-  padding-bottom: 1px;
 }
 
 /* Hide navbar if browser is too narrow */

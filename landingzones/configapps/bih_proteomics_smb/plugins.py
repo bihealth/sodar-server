@@ -41,7 +41,7 @@ class LandingZoneConfigPlugin(LandingZoneConfigPluginPoint):
     menu_items = [
         {
             'label': 'Generate/Refresh Ticket',
-            'icon': 'key',
+            'icon': 'mdi:key-variant',
             'url_name': 'landingzones.configapps.bih_proteomics_smb:ticket_get',
         }
     ]

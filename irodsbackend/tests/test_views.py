@@ -5,8 +5,6 @@ from test_plus.test import TestCase
 from unittest import skipIf
 
 from django.conf import settings
-
-# from django.core.urlresolvers import reverse
 from django.test import RequestFactory
 
 # Projectroles dependency

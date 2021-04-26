@@ -9,7 +9,7 @@
       {% if not zone_enabled %} disabled{% endif %}"
       type="button" data-toggle="dropdown"
       aria-haspopup="true" aria-expanded="false">
-    <i class="fa fa-cog"></i>
+    <i class="iconify" data-icon="mdi:cog"></i>
   </button>
   <div class="dropdown-menu dropdown-menu-right">
     {% if can_update_all or zone.user == request.user and can_update_own %}
@@ -19,7 +19,8 @@
       {% if zone_plugin %}
         {% for zone_link in zone_plugin.menu_items %}
           <a class="dropdown-item" href="{% get_config_link_url zone zone_link.url_name %}">
-            <i class="fa fa-fw fa-{{ zone_link.icon }}"></i> {{ zone_link.label }}
+            <i class="iconify" data-icon="{{ zone_link.icon }}"></i>
+            {{ zone_link.label }}
           </a>
         {% endfor %}
       {% endif %}
@@ -30,7 +31,8 @@
       {% else %}
         <a class="dropdown-item disabled" href="#">
       {% endif %}
-        <i class="fa fa-fw fa-check"></i> Validate Files
+        <i class="iconify" data-icon="mdi:check-thick"></i>
+        Validate Files
       </a>
 
       {% if zone.status != 'MOVED' %}
@@ -38,17 +40,20 @@
       {% else %}
         <a class="dropdown-item disabled" href="#">
       {% endif %}
-        <i class="fa fa-fw fa-arrow-right"></i> Validate and Move
+        <i class="iconify" data-icon="mdi:arrow-right-bold-hexagon-outline"></i>
+        Validate and Move
       </a>
 
       <a class="dropdown-item sodar-lz-zone-btn-copy"
          href="#"
          data-clipboard-text="{{ zone.sodar_uuid }}">
-        <i class="fa fa-fw fa-clipboard"></i> Copy Zone UUID
+        <i class="iconify" data-icon="mdi:clipboard-text-multiple"></i>
+        Copy Zone UUID
       </a>
 
       <a class="dropdown-item text-danger" href="{% url 'landingzones:delete' landingzone=zone.sodar_uuid %}">
-        <i class="fa fa-fw fa-close"></i> Delete Zone
+        <i class="iconify" data-icon="mdi:close-thick"></i>
+        Delete Zone
       </a>
 
     {% endif %}

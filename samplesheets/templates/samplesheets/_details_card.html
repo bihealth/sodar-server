@@ -1,5 +1,5 @@
 {% load rules %}
-{% load staticfiles %}
+{% load static %}
 {% load samplesheets_tags %}
 
 {# Projectroles dependency #}
@@ -59,14 +59,15 @@
     <tbody>
       <tr>
         <td>
-          <i class="fa fa-fw fa-cube"></i>
-          <a href="{% url 'samplesheets:project_sheets' project=project.sodar_uuid %}#/overview">{{ investigation.title }}</a>
+          <i class="iconify" data-icon="mdi:cube"></i>
+          <a href="{% url 'samplesheets:project_sheets' project=project.sodar_uuid %}#/overview">
+            {{ investigation.title }}
+          </a>
         </td>
         <td>
           {% get_irods_path investigation as irods_inv_path %}
-          {% autoescape off %}
-            {% get_stats_html irods_inv_path project %}
-          {% endautoescape %}
+          {% get_stats_html irods_inv_path project as stats_html %}
+          {{ stats_html | safe }}
         </td>
         <td>
           {% if irods_backend_enabled %}
@@ -83,9 +84,8 @@
           </td>
           <td>
             {% get_irods_path study as irods_study_path %}
-            {% autoescape off %}
-              {% get_stats_html irods_study_path project %}
-            {% endautoescape %}
+            {% get_stats_html irods_study_path project as stats_html %}
+            {{ stats_html | safe }}
           </td>
           <td>
             {% if irods_backend_enabled %}
@@ -103,9 +103,8 @@
             </td>
             <td>
               {% get_irods_path assay as irods_assay_path %}
-              {% autoescape off %}
-                {% get_stats_html irods_assay_path project %}
-              {% endautoescape %}
+              {% get_stats_html irods_assay_path project as stats_html %}
+              {{ stats_html | safe }}
             </td>
             <td>
               {% if irods_backend_enabled %}

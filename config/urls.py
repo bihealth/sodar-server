@@ -43,6 +43,8 @@ urlpatterns = [
     url(r'^user/', include('userprofile.urls')),
     # Auth
     url(r'api/auth/', include('knox.urls')),
+    # Iconify SVG icons
+    url(r'icons/', include('dj_iconify.urls')),
     # General site apps
     url(r'^alerts/', include('adminalerts.urls')),
     url(r'^siteinfo/', include('siteinfo.urls')),

@@ -9,17 +9,15 @@ Installation
 
 This document describes how to install the system for local development.
 
-**NOTE:** When viewing this document in GitLab critical content will by default
-be missing. Please click "display source" if you want to read this in GitLab.
-
 If you want to install or develop SODAR without iRODS and SODAR Taskflow, you
-can skip the steps related to their installation and set the environment
-variable ``ENABLED_BACKEND_PLUGINS='timeline_backend'``.
+can skip the steps related to their installation and remove the
+``omics_taskflow`` value from the ``ENABLED_BACKEND_PLUGINS`` environment
+variable..
 
-These instructions assume you have Python 3.6 and PostgreSQL 9.6+ installed.
+These instructions assume you have Python 3.7+ and PostgreSQL 9.6+ installed.
 
-**NOTE:** Python 3.5.x and lower are no longer supported! Also, Python 3.7
-support is pending some 3rd party package updates.
+**NOTE:** Python 3.6 and lower are no longer supported! Python 3.8 is currently
+the recommended version.
 
 
 Install SODAR
@@ -28,30 +26,30 @@ Install SODAR
 Requirements
 ------------
 
-- Ubuntu 16.04 Xenial
-- Python 3.6
+- Ubuntu 20.04 Xenial (Recommended)
+- Python 3.7+
 - Postgres 9.6+
 
 Project Setup
 -------------
 
-Clone the repository and install the OS dependencies, PostgreSQL 9.6 and Python3.6.
+Clone the repository and install the OS dependencies, PostgreSQL 9.6 and
+Python3.8.
 
 .. code-block:: console
 
-    $ git clone git@cubi-gitlab.bihealth.org:CUBI_Engineering/CUBI_Data_Mgmt/sodar.git
+    $ git clone https://github.com/bihealth/sodar-server.git
     $ cd sodar
     $ sudo utility/install_os_dependencies.sh
     $ sudo utility/install_python.sh
     $ sudo utility/install_postgres.sh
 
-Next, setup and activate the virtual environment. Once in
-the environment, install Python requirements for the project:
+Next, setup and activate the virtual environment. Once in the environment,
+install Python requirements for the project:
 
 .. code-block:: console
 
-    $ pip install virtualenv
-    $ virtualenv -p python3.6 .venv
+    $ python3 -m venv .venv
     $ source .venv/bin/activate
     $ utility/install_python_dependencies.sh
 
@@ -62,6 +60,9 @@ Create a PostgreSQL user and a database for your application. In the example,
 we use ``sodar`` for the database, user name and password. Make sure to
 give the user the permission to create further PostgreSQL databases (used for
 testing).
+
+Alternatively, you can use the ``utility/setup_database.sh`` script and follow
+the command line prompt.
 
 .. code-block:: console
 
@@ -131,7 +132,7 @@ Set Up the Development Environment
 ==================================
 
 To use iRODS and SODAR Taskflow in development, you need to have
-`sodar_taskflow <https://cubi-gitlab.bihealth.org/CUBI_Engineering/CUBI_Data_Mgmt/sodar_taskflow>`_
+`sodar_taskflow <https://github.com/bihealth/sodar-taskflow>`_
 installed and running. As prerequisites, the project requires a Redis server
 plus two iRODS iCAT servers (one for a throwavay test server) running and
 configured for SODAR projects.
@@ -154,7 +155,7 @@ SODAR Taskflow
 
 For development it is recommend to run sodar_taskflow locally.
 
-First, clone the `sodar_taskflow repository <https://cubi-gitlab.bihealth.org/CUBI_Engineering/CUBI_Data_Mgmt/sodar_taskflow>`_.
+First, clone the `sodar_taskflow repository <https://github.com/bihealth/sodar-taskflow>`_.
 
 Follow the installation instructions in the ``README.rst`` file. Make sure to
 configure environment variables to point to the Redis and iRODS servers you are
@@ -251,5 +252,5 @@ There is also a shortcut for syncing iRODS data and starting the server:
 
     $ make serve arg=sync
 
-Now you should be able to browse to http://localhost:8000 and see your site.
+Now you should be able to browse to http://127.0.0.1:8000 and see your site.
 iRODS and Taskflow functionalities should also be available.

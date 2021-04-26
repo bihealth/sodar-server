@@ -2,7 +2,7 @@
 <div class="card sodar-lz-zone-list"
      id="sodar-lz-zone-list-{{ list_type }}">
   <div class="card-header">
-    <h4><i class="fa {{ list_icon }}"></i> {{ list_title }}</h4>
+    <h4><i class="iconify" data-icon="{{ list_icon }}"></i> {{ list_title }}</h4>
   </div>
   <div class="card-body p-0">
     <table class="table table-striped sodar-card-table sodar-lz-table">
@@ -21,7 +21,9 @@
           {% include 'landingzones/_zone_item.html' %}
         {% endfor %}
         {% if zones.count == 0 %}
-           <td class="bg-faded font-italic text-center" colspan="6">No landing zones found</td>
+           <td class="bg-faded font-italic text-center" colspan="6">
+             No landing zones found
+           </td>
         {% endif %}
       </tbody>
     </table>

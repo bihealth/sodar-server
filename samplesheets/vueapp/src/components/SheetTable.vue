@@ -10,7 +10,7 @@
                 :title="'Toggle ' + gridName + ' Column Visibility'"
                 class="sodar-ss-column-toggle-btn"
                 @click="onColumnToggle()">
-              <i class="fa fa-eye"></i>
+              <i class="iconify" data-icon="mdi:eye"></i>
             </b-button>
             <b-button
                 variant="secondary"
@@ -18,7 +18,7 @@
                 title="Download table as Excel file (Note: not ISA-Tab compatible)"
                 class="sodar-ss-excel-export-btn"
                 :href="excelExportUrl">
-              <i class="fa fa-file-excel-o"></i>
+              <i class="iconify" data-icon="mdi:file-excel-outline"></i>
             </b-button>
           </b-input-group-prepend>
           <b-form-input
@@ -34,7 +34,7 @@
             class="sodar-header-button sodar-ss-row-insert-btn mr-2 pull-right"
             :disabled="app.unsavedRow !== null"
             @click="app.handleRowInsert(gridUuid, assayMode)">
-          <i class="fa fa-plus"></i> Insert Row
+          <i class="iconify" data-icon="mdi:plus-thick"></i> Insert Row
         </b-button>
       </h4>
     </div>

@@ -10,7 +10,7 @@
          :disabled="getEnabledState(schemaId)"
          :href="value[schemaId].url"
          v-b-tooltip.hover.d300>
-       <i :class="'fa ' + schemaItem.icon"></i>
+       <i class="iconify" :data-icon="schemaItem.icon"></i>
      </b-button>
      <b-button
          v-else-if="schemaItem.type === 'modal'"
@@ -20,7 +20,7 @@
          :disabled="getEnabledState(schemaId)"
          @click="onModalClick(schemaId)"
          v-b-tooltip.hover.d300>
-       <i :class="'fa ' + schemaItem.icon"></i>
+       <i class="iconify" :data-icon="schemaItem.icon"></i>
      </b-button>
    </span>
  </span>

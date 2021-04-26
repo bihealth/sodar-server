@@ -6,7 +6,7 @@
       ({{ totalSize | prettyBytes }})
     </span>
     <span v-else>
-      <i class="fa fa-spin fa-circle-o-notch"></i> Updating..
+      <img src="/icons/mdi/loading.svg?color=%23fff" class="spin" /> Updating..
     </span>
   </span>
 </template>

@@ -209,7 +209,7 @@ class TestSampleDataFileExistsAPIView(TestSampleSheetAPITaskflowBase):
         """Test getting file existence info with no checksum (should fail)"""
 
         url = reverse('samplesheets:api_file_exists')
-        response = self.request_knox(url, data={'checksum': None})
+        response = self.request_knox(url, data={'checksum': ''})
 
         self.assertEqual(response.status_code, 400)
 

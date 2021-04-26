@@ -21,7 +21,7 @@
                     v-clipboard:error="onCopyError"
                     :disabled="!enableCopy()"
                     v-b-tooltip.hover>
-                  <i class="fa fa-clipboard"></i>
+                  <i class="iconify" data-icon="mdi:clipboard-text-multiple"></i>
                 </b-button>
               </b-input-group-prepend>
               <b-form-input
@@ -86,10 +86,8 @@
               </div>
             </b-col>
             <b-col class="col-md-4 px-0 align-right align-middle">
-              <i v-if="querying"
-                 class="fa fa-spin fa-circle-o-notch pull-right text-muted"
-                 id="sodar-ss-ontology-spin">
-              </i>
+              <img v-if="querying" src="/icons/mdi/loading.svg?color=%236c757d"
+                   class="mt-3 pull-right spin" />
             </b-col>
           </b-row>
           <!-- TODO: Refactor as above -->
@@ -144,12 +142,14 @@
                   :class="getTermNameClass(term)">
                 {{ term.name }}
                 <i v-if="term.obsolete"
-                   class="fa fa-warning"
+                   class="iconify"
+                   data-icon="mdi:alert"
                    title="This term is obsolete!"
                    v-b-tooltip.hover.d300>
                 </i>
                 <i v-else-if="term.unknown"
-                   class="fa fa-warning"
+                   class="iconify"
+                   data-icon="mdi:alert"
                    title="Term name not found in given ontologies!"
                    v-b-tooltip.hover.d300>
                 </i>
@@ -158,13 +158,15 @@
                   :class="getOntologyNameClass(term.ontology_name)">
                 {{ term.ontology_name }}
                 <i v-if="!term.ontology_name"
-                   class="fa fa-warning"
+                   class="iconify"
+                   data-icon="mdi:alert"
                    title="No ontology name given!"
                    v-b-tooltip.hover.d300>
                 </i>
                 <i v-else-if="!sodarOntologies ||
                          !(term.ontology_name in sodarOntologies)"
-                   class="fa fa-warning"
+                   class="iconify"
+                   data-icon="mdi:alert"
                    title="Ontology not found in SODAR! Please ask for an
                           administrator to import the ontology for term and
                           URL lookup."
@@ -207,7 +209,7 @@
                     @click="onTermMoveClick(termIdx, true)"
                     :disabled="!enableMove(termIdx, true)"
                     v-b-tooltip.hover.d300>
-                  <i class="fa fa-arrow-up"></i>
+                  <i class="iconify" data-icon="mdi:arrow-up-thick"></i>
                 </b-button>
                 <b-button
                     v-if="editConfig && editConfig.allow_list"
@@ -218,7 +220,7 @@
                     @click="onTermMoveClick(termIdx, false)"
                     :disabled="!enableMove(termIdx, false)"
                     v-b-tooltip.hover.d300>
-                  <i class="fa fa-arrow-down"></i>
+                  <i class="iconify" data-icon="mdi:arrow-down-thick"></i>
                 </b-button>
                 <b-button
                     v-if="term.editing"
@@ -229,7 +231,7 @@
                     @click="onTermEditClick(termIdx)"
                     :disabled="!enableEditSave(termIdx) || !editDataValid"
                     v-b-tooltip.hover.d300>
-                  <i :class="getEditBtnClass(term)"></i>
+                  <i class="iconify" :data-icon="getEditBtnIcon(term)"></i>
                 </b-button>
                 <b-button
                     v-else
@@ -240,7 +242,7 @@
                     @click="onTermEditClick(termIdx)"
                     :disabled="!enableEdit()"
                     v-b-tooltip.hover.d300>
-                  <i class="fa fa-pencil"></i>
+                  <i class="iconify" data-icon="mdi:lead-pencil"></i>
                 </b-button>
                 <b-button
                     variant="danger"
@@ -250,7 +252,7 @@
                     @click="onTermDeleteClick(termIdx)"
                     :disabled="!enableDelete(termIdx)"
                     v-b-tooltip.hover.d300>
-                  <i class="fa fa-times"></i>
+                  <i class="iconify" data-icon="mdi:close-thick"></i>
                 </b-button>
               </td>
             </tr>
@@ -287,7 +289,7 @@
                     @click="onTermInsertClick()"
                     :disabled="!enableInsertSave() || !insertDataValid"
                     v-b-tooltip.hover.d300>
-                  <i class="fa fa-plus"></i>
+                  <i class="iconify" data-icon="mdi:plus-thick"></i>
                 </b-button>
               </td>
             </tr>
@@ -303,7 +305,7 @@
             variant="secondary"
             id="sodar-ss-btn-cancel"
             @click="hideModal(false)">
-          <i class="fa fa-times"></i> Cancel
+          <i class="iconify" data-icon="mdi:close-thick"></i> Cancel
         </b-button>
         <b-button
             variant="primary"
@@ -311,7 +313,7 @@
             @click="hideModal(true)"
             :disabled="!enableUpdate()"
             ref="updateBtn">
-          <i class="fa fa-fw fa-check"></i> Update
+          <i class="iconify" data-icon="mdi:check-bold"></i> Update
         </b-button>
       </b-button-group>
     </div>
@@ -564,11 +566,9 @@ export default {
       }
       return true
     },
-    getEditBtnClass (term) {
-      let cls = 'fa '
-      if (term.editing) cls += 'fa-check'
-      else cls += 'fa-pencil'
-      return cls
+    getEditBtnIcon (term) {
+      if (term.editing) return 'mdi:check-bold'
+      else return 'mdi:lead-pencil'
     },
     enableDelete (termIdx) {
       return (!this.refreshingTerms &&
@@ -871,10 +871,6 @@ select#sodar-ss-ontology-select-term {
 
 select#sodar-ss-ontology-select-term {
   height: 155px;
-}
-
-i#sodar-ss-ontology-spin {
-  line-height: 36px;
 }
 
 div.sodar-ss-ontology-alert {

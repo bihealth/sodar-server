@@ -124,7 +124,8 @@
 
       <!-- Loading/busy -->
       <div v-else class="w-100 text-center" id="sodar-ss-wait">
-        <i class="fa fa-4x fa-spin fa-circle-o-notch text-muted mt-5"></i>
+        <img src="/icons/mdi/loading.svg?color=%236c757d&height=64"
+             class="spin" />
       </div>
 
     </div> <!-- Main container -->

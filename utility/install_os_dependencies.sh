@@ -8,6 +8,7 @@ apt-get -y update
 echo "***********************************************"
 echo "Installing general OS dependencies"
 echo "***********************************************"
+apt-get -y install python3-dev
 apt-get -y install build-essential
 apt-get -y install curl
 
@@ -32,7 +33,7 @@ echo "***********************************************"
 apt-get -y install graphviz-dev
 
 echo "***********************************************"
-echo "Installing Node.js"
+echo "Installing lxml dependencies"
 echo "***********************************************"
-curl -sL https://deb.nodesource.com/setup_10.x | sudo -E bash -
-apt-get install -y nodejs
+apt-get -y install libxml2-dev
+apt-get -y install libxslt-dev

@@ -5,8 +5,9 @@ For more information on this file, see
 https://docs.djangoproject.com/en/dev/topics/settings/
 
 For the full list of settings and their values, see
-https://docs.djangoproject.com/en/1.11/ref/settings/
+https://docs.djangoproject.com/en/3.2/ref/settings/
 """
+import os
 import re
 
 import environ
@@ -60,6 +61,7 @@ THIRD_PARTY_APPS = [
     'docs',  # For the online user documentation/manual
     'dal',  # For user search combo box
     'dal_select2',
+    'dj_iconify.apps.DjIconifyConfig',  # Iconify for SVG icons
     'webpack_loader',  # For accessing webpack bundles
     # SODAR Core apps
     # Project apps
@@ -152,6 +154,9 @@ MANAGERS = ADMINS
 DATABASES = {'default': env.db('DATABASE_URL', default='postgres:///sodar')}
 DATABASES['default']['ATOMIC_REQUESTS'] = False
 
+# Set default auto field (for Django 3.2+)
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
+
 # Set django-db-file-storage as the default storage
 DEFAULT_FILE_STORAGE = 'db_file_storage.storage.DatabaseFileStorage'
 
@@ -202,6 +207,8 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
                 # Site context processors
                 'projectroles.context_processors.urls_processor',
+                'projectroles.context_processors.site_app_processor',
+                'projectroles.context_processors.app_alerts_processor',
             ],
         },
     }
@@ -220,6 +227,9 @@ STATICFILES_FINDERS = [
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
 ]
+
+# Iconify SVG icons
+ICONIFY_JSON_ROOT = os.path.join(STATIC_ROOT, 'iconify')
 
 WEBPACK_LOADER = {
     'SAMPLESHEETS': {
@@ -496,7 +506,7 @@ SODAR_API_DEFAULT_VERSION = '0.9.0'
 SODAR_API_ALLOWED_VERSIONS = ['0.7.0', '0.7.1', '0.8.0', '0.9.0']
 SODAR_API_MEDIA_TYPE = 'application/vnd.bihealth.sodar+json'
 SODAR_API_DEFAULT_HOST = env.url(
-    'SODAR_API_DEFAULT_HOST', 'http://0.0.0.0:8000'
+    'SODAR_API_DEFAULT_HOST', 'http://127.0.0.1:8000'
 )
 
 
@@ -553,7 +563,7 @@ SODAR_SUPPORT_NAME = env.str('SODAR_SUPPORT_NAME', 'CUBI Helpdesk')
 
 # iRODS settings shared by iRODS using apps
 ENABLE_IRODS = env.bool('ENABLE_IRODS', True)
-IRODS_HOST = env.str('IRODS_HOST', '0.0.0.0')
+IRODS_HOST = env.str('IRODS_HOST', '127.0.0.1')
 IRODS_PORT = env.int('IRODS_PORT', 4477)
 IRODS_ZONE = env.str('IRODS_ZONE', 'omicsZone')
 IRODS_ROOT_PATH = env.str('IRODS_ROOT_PATH', None)
@@ -574,7 +584,7 @@ IRODS_CERT_PATH = env.str(
 
 # Taskflow backend settings
 TASKFLOW_TARGETS = ['irods', 'sodar']
-TASKFLOW_BACKEND_HOST = env.str('TASKFLOW_BACKEND_HOST', 'http://0.0.0.0')
+TASKFLOW_BACKEND_HOST = env.str('TASKFLOW_BACKEND_HOST', 'http://127.0.0.1')
 TASKFLOW_BACKEND_PORT = env.int('TASKFLOW_BACKEND_PORT', 5005)
 TASKFLOW_SODAR_SECRET = env.str('TASKFLOW_SODAR_SECRET', 'CHANGE ME!')
 TASKFLOW_TEST_MODE = False  # Important to protect iRODS data
@@ -582,7 +592,7 @@ TASKFLOW_TEST_MODE = False  # Important to protect iRODS data
 
 # Samplesheets and Landingzones link settings
 IRODS_WEBDAV_ENABLED = env.bool('IRODS_WEBDAV_ENABLED', True)
-IRODS_WEBDAV_URL = env.str('IRODS_WEBDAV_URL', 'https://0.0.0.0')
+IRODS_WEBDAV_URL = env.str('IRODS_WEBDAV_URL', 'https://127.0.0.1')
 IRODS_WEBDAV_URL_ANON = env.str('IRODS_WEBDAV_URL_ANON', IRODS_WEBDAV_URL)
 IRODS_WEBDAV_URL_ANON_TMPL = re.sub(
     r'^(https?://)(.*)$', r'\1{user}:{ticket}@\2{path}', IRODS_WEBDAV_URL_ANON

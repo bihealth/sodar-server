@@ -1,7 +1,4 @@
-.. SODAR documentation master file, created by
-   sphinx-quickstart on Fri Oct 26 15:08:54 2018.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+.. _manual_dev_main:
 
 SODAR Development Documentation
 ===============================
@@ -21,9 +18,7 @@ be missing. Please click "display source" if you want to read this in GitLab.
 
 This documentation is under construction and rather minimal. For the basics of
 SODAR project management and/or information on developing SODAR Core and its
-apps, see the more up-to-date docs in the
-`SODAR Core <https://cubi-gitlab.bihealth.org/CUBI_Engineering/CUBI_Data_Mgmt/sodar_core>`_
-project.
+apps, see `SODAR Core documentation <https://sodar-core.readthedocs.io/en/latest/>`_.
 
 Make sure to checkout the ``dev`` branch of all repositories for development.
 

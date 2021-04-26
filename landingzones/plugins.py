@@ -34,8 +34,8 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
     #: App settings definition
     app_settings = {}
 
-    #: FontAwesome icon ID string
-    icon = 'database'
+    #: Iconify icon
+    icon = 'mdi:briefcase-upload'
 
     #: Entry point URL ID (must take project sodar_uuid as "project" argument)
     entry_point_url_id = 'landingzones:list'
@@ -183,7 +183,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                 return (
                     '<a href="{}" title="{}">'
                     # 'data-toggle="tooltip" data-placement="top">'
-                    '<i class="fa fa-database {}">'
+                    '<i class="iconify {}" data-icon="mdi:briefcase">'
                     '</i></a>'.format(
                         reverse(
                             'landingzones:list',
@@ -207,7 +207,8 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                 return (
                     '<a href="{}" title="Create landing zone in project">'
                     # 'data-toggle="tooltip" data-placement="top">'
-                    '<i class="fa fa-plus"></i></a>'.format(
+                    '<i class="iconify" data-icon="mdi:plus-thick"></i>'
+                    '</a>'.format(
                         reverse(
                             'landingzones:create',
                             kwargs={'project': project.sodar_uuid},
@@ -217,7 +218,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
 
             else:
                 return (
-                    '<i class="fa fa-database text-muted" '
+                    '<i class="iconify text-muted" data-icon="mdi:briefcase" '
                     'title="No available landing zones"></i>'
                     # 'data-toggle="tooltip" data-placement="top"></i>'
                 )
@@ -259,7 +260,7 @@ class LandingZoneConfigPluginPoint(PluginPoint):
     menu_items = [
         {
             'label': '',  # Label to be displayed in menu
-            'icon': '',  # Icon name without the fa-* prefix
+            'icon': '',  # Iconify icon id
             'url_name': '',
         }  # URL name, will receive zone as "landingzone" kwarg
     ]

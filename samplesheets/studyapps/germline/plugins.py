@@ -70,12 +70,12 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
             'schema': {
                 'igv': {
                     'type': 'link',
-                    'icon': 'fa-share-square-o',
+                    'icon': 'mdi:open-in-new',
                     'title': 'Open IGV session file for pedigree in IGV',
                 },
                 'files': {
                     'type': 'modal',
-                    'icon': 'fa-folder-open-o',
+                    'icon': 'mdi:folder-open-outline',
                     'title': 'View links to pedigree BAM, VCF and IGV session '
                     'files',
                 },
@@ -210,7 +210,7 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                         'extra_links': [
                             {
                                 'label': 'Add BAM file to IGV',
-                                'icon': 'plus',
+                                'icon': 'mdi:plus-thick',
                                 'url': get_igv_irods_url(bam_path, merge=True),
                             }
                         ],
@@ -241,7 +241,7 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                     'extra_links': [
                         {
                             'label': 'Add VCF file to IGV',
-                            'icon': 'plus',
+                            'icon': 'mdi:plus-thick',
                             'url': get_igv_irods_url(vcf_path, merge=True),
                         }
                     ],
@@ -265,14 +265,14 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                         {
                             'label': 'Open session file in IGV '
                             '(replace current)',
-                            'icon': 'share-square-o',
+                            'icon': 'mdi:open-in-new',
                             'url': get_igv_session_url(
                                 sources.first(), APP_NAME, merge=False
                             ),
                         },
                         {
                             'label': 'Merge into current IGV session',
-                            'icon': 'plus',
+                            'icon': 'mdi:plus-thick',
                             'url': get_igv_session_url(
                                 sources.first(), APP_NAME, merge=True
                             ),

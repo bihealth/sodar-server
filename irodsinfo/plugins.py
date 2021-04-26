@@ -17,8 +17,8 @@ class SiteAppPlugin(SiteAppPluginPoint):
     #: App URLs (will be included in settings by djangoplugins)
     urls = urlpatterns
 
-    #: FontAwesome icon ID string
-    icon = 'support'
+    #: Iconify icon
+    icon = 'mdi:lifebuoy'
 
     #: Description string
     description = 'iRODS Information and Configuration'

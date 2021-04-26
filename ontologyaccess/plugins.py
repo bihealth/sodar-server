@@ -20,8 +20,8 @@ class SiteAppPlugin(SiteAppPluginPoint):
     #: App URLs (will be included in settings by djangoplugins)
     urls = urlpatterns
 
-    #: FontAwesome icon ID string
-    icon = 'tags'
+    #: Iconify icon
+    icon = 'mdi:tag-multiple'
 
     #: Description string
     description = 'Bio-ontology access and management'

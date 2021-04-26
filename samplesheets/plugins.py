@@ -133,8 +133,8 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         },
     }
 
-    #: FontAwesome icon ID string
-    icon = 'flask'
+    #: Iconify icon
+    icon = 'mdi:flask'
 
     #: Entry point URL ID (must take project sodar_uuid as "project" argument)
     entry_point_url_id = 'samplesheets:project_sheets'
@@ -390,7 +390,8 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                 return (
                     '<a href="{}" title="View project sample sheets">'
                     # 'data-toggle="tooltip" data-placement="top">'
-                    '<i class="fa fa-list-alt text-primary"></i></a>'.format(
+                    '<i class="iconify text-primary" '
+                    'data-icon="mdi:folder-table"></i></a>'.format(
                         get_sheets_url(project)
                     )
                 )
@@ -399,7 +400,8 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                 return (
                     '<a href="{}" title="Import sample sheet into project">'
                     # 'data-toggle="tooltip" data-placement="top">'
-                    '<i class="fa fa-plus text-primary"></i></a>'.format(
+                    '<i class="iconify text-primary" '
+                    'data-icon="mdi:plus-thick"></i></a>'.format(
                         reverse(
                             'samplesheets:import',
                             kwargs={'project': project.sodar_uuid},
@@ -409,7 +411,8 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
 
             else:
                 return (
-                    '<i class="fa fa-list-alt text-muted" '
+                    '<i class="iconify text-muted" '
+                    'data-icon="mdi:folder-table"></i>'
                     'title="No sample sheets in project"></i>'
                     # 'data-toggle="tooltip" data-placement="top"></i>'
                 )
@@ -424,18 +427,19 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                 and settings.IRODS_WEBDAV_ENABLED
             ):
                 return (
-                    '<a href="{}" target="_blank"'
+                    '<a href="{}" target="_blank" '
                     'title="View project files in iRODS">'
                     # 'data-toggle="tooltip" data-placement="top">'
-                    '<i class="fa fa-folder-open '
-                    'text-primary"></i></a>'.format(
+                    '<i class="iconify text-primary" '
+                    'data-icon="mdi:folder-open-outline"></i></a>'.format(
                         settings.IRODS_WEBDAV_URL
                         + irods_backend.get_sample_path(project)
                     )
                 )
 
             return (
-                '<i class="fa fa-folder-open text-muted" title="{}" '
+                '<i class="iconify text-muted" '
+                'data-icon="mdi:folder-open-outline" title="{}" '
                 # 'data-toggle="tooltip" data-placement="top" '
                 '></i>'.format(
                     'No project files in iRODS'
@@ -878,7 +882,7 @@ def get_irods_content(inv, study, irods_backend, ret_data):
 
             # Add visual notification to all shortcuts coming from an assay plugin
             for a in assay_shortcuts:
-                a['icon'] = 'fa-puzzle-piece'
+                a['icon'] = 'mdi:puzzle'
                 a['title'] = 'Defined in assay plugin'
                 a['assay_plugin'] = True
 
@@ -906,14 +910,14 @@ def get_irods_content(inv, study, irods_backend, ret_data):
                 {
                     'id': 'track_hub_%d' % i,
                     'label': os.path.basename(track_hub),
-                    'icon': 'fa-road',
+                    'icon': 'mdi:road',
                     'title': 'Track Hub',
                     'assay_plugin': False,
                     'path': track_hub,
                     'extra_links': [
                         {
                             'url': ticket.get_webdav_link(),
-                            'icon': 'fa-ticket',
+                            'icon': 'mdi:ticket',
                             'id': 'ticket_access_%d' % i,
                             'class': 'sodar-irods-ticket-access-%d-btn' % i,
                             'title': ' iRODS Access Ticket',

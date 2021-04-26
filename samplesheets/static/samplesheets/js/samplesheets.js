@@ -11,7 +11,7 @@ function constructCard(category, filename, counter, table, url, source, target) 
              class="btn btn-secondary sodar-header-button sodar-ss-diff-btn pull-right"
              title="Open table in a new window"
           >
-            <i class="fa fa-external-link"></i>
+            <i class="iconify" data-icon="mdi:open-in-new"></i>
           </a>
         </h4>
       </div>

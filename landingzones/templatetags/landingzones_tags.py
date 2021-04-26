@@ -8,7 +8,6 @@ from ..models import LandingZone, STATUS_STYLES
 from ..plugins import get_zone_config_plugin
 
 
-irods_backend = get_backend_api('omics_irods', conn=False)
 register = template.Library()
 
 
@@ -81,9 +80,9 @@ def is_zone_disabled(zone):
 @register.simple_tag
 def get_zone_list_url(zone):
     """Return iRODS file list querying URL for landing zone"""
+    irods_backend = get_backend_api('omics_irods', conn=False)
     if not irods_backend:
         return None
-
     return irods_backend.get_url(
         view='list',
         project=zone.project,

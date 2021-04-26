@@ -24,7 +24,7 @@ class FallbackToAuthBasicMiddleware(MiddlewareMixin):
         ), 'AuthenticationMiddleware must be active'
 
         # We are already done if the user is already authenticated.
-        if request.user.is_authenticated():
+        if request.user.is_authenticated:
             return
 
         # Allow disabling of basic auth alltogether in configuration.
@@ -43,7 +43,7 @@ class FallbackToAuthBasicMiddleware(MiddlewareMixin):
                     login(request, user)
 
     def process_response(self, request, response):
-        if not request.user.is_authenticated():
+        if not request.user.is_authenticated:
             realm = getattr(settings, 'BASICAUTH_REALM', 'Protected Realm')
             response = HttpResponse()
             response.status_code = 401

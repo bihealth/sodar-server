@@ -52,22 +52,24 @@
               <b-button
                   v-if="objInfo.irods_request_status === 'ACTIVE'"
                   variant="primary"
-                  class="sodar-list-btn sodar-ss-popup-list-btn sodar-ss-request-cancel-btn"
+                  class="sodar-list-btn sodar-ss-popup-list-btn sodar-ss-req-btn
+                         sodar-ss-request-cancel-btn"
                   :title="getRequestCancelTitle(objInfo)"
                   :disabled="!allowRequestCancel(objInfo)"
                   @click="cancelRequest(index)"
                   v-b-tooltip.hover.d300>
-                <i class="fa fa-fw fa-ban"></i>
+                <img src="/icons/mdi/cancel.svg?color=%23fff" class="mt-0" />
               </b-button>
               <b-button
                   v-else
                   variant="danger"
-                  class="sodar-list-btn sodar-ss-popup-list-btn sodar-ss-request-delete-btn"
+                  class="sodar-list-btn sodar-ss-popup-list-btn sodar-ss-req-btn
+                         sodar-ss-request-delete-btn"
                   :title="getRequestIssueTitle(objInfo)"
                   :disabled="!allowRequestIssue(objInfo)"
                   @click="issueRequest(index)"
                   v-b-tooltip.hover.d300>
-                <i class="fa fa-fw fa-eraser"></i>
+                <img src="/icons/mdi/delete.svg?color=%23fff" />
               </b-button>
             </td>
           </tr>
@@ -90,7 +92,8 @@
     <div v-else
          class="text-center"
          id="sodar-ss-irods-wait">
-      <i class="fa fa-spin fa-circle-o-notch fa-3x text-muted"></i>
+      <img src="/icons/mdi/loading.svg?color=%236c757d&height=64"
+           class="spin" />
     </div>
   </b-modal>
 </template>
@@ -268,6 +271,10 @@ h5 {
 
 input#sodar-ss-irods-filter {
   max-width: 200px;
+}
+
+.sodar-ss-req-btn {
+  padding-top: 0 !important;
 }
 
 </style>

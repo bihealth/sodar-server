@@ -13,6 +13,7 @@ Added
 
 - **General**
     - Release notes and changelog sections in manual (#1098)
+    - ``setup_database.sh`` from SODAR Core
 - **Irodsbackend**
     - Support for ``IRODS_ROOT_PATH`` setting (#1067)
     - ``get_root_path()`` and ``get_projects_path()`` helpers (#1067)
@@ -24,15 +25,18 @@ Added
     - Allow per-project restriction of column config updates (#995)
     - Diff comparison for sheet versions (#1007)
     - Enable remote sync for sample sheets (#959, #1102, #1103)
+    - ``Icon`` component in vue app for django-iconify icon access (#1113)
 
 Changed
 -------
 
 - **General**
+    - Upgrade to django-sodar-core v0.10.0 (#1096, #1113, #1118)
+    - Upgrade to Python v3.8 and Django v3.2 (#1113)
     - Unify ISA-Tab naming (#1082)
     - Upgrade to Chromedriver v89
-    - Upgrade to django-sodar-core v0.9.1 (#1096)
     - Upgrade to altamISA v0.2.8 (#1099)
+    - Upgrade versioneer
 - **Samplesheets**
     - Fail gracefully for ISAtab import with empty tables (#903, #1075)
     - Implement study/assay app retrieval in model ``get_plugin()`` helpers (#1076)
@@ -47,11 +51,14 @@ Changed
 Fixed
 -----
 
+- **Landingzones**
+    - Root level backend plugin retrieval in template tags
 - **Samplesheets**
     - MaxQuant results not correctly linked in ``pep_ms`` assay app (#1072)
     - Incorrect timeline event for ``sheet_create`` (#1080)
     - Assay shortcut card layout breaking on Chrome (#1094)
     - Node names not properly sanitized on sheet import (#798)
+    - Root level backend plugin retrieval in template tags
 - **Irodsadmin**
     - Irodsorphans project UUID not returned if path ends in project UUID (#1071)
 

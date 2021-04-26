@@ -46,7 +46,10 @@
       <span id="sodar-lz-zone-status-moved-{{ zone.sodar_uuid }}">
       {% if zone.status == 'MOVED' %}
         <p class="mb-0">
-          <a href="{% get_zone_samples_url zone %}"><i class="fa fa-arrow-circle-right"></i> Browse files in sample sheets</a>
+          <a href="{% get_zone_samples_url zone %}">
+            <i class="iconify" data-icon="mdi:arrow-right-circle"></i>
+            Browse files in sample sheets
+          </a>
         </p>
       </span>
       {% endif %}

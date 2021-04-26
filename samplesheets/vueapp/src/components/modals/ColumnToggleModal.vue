@@ -17,7 +17,7 @@
               title="Save as default display configuration for all users"
               @click="hideModal(true)"
               v-b-tooltip.hover.bottom>
-            <i class="fa fa-save"></i>
+            <i class="iconify" data-icon="mdi:content-save"></i>
           </b-button>
         </b-input-group-prepend>
         <b-input

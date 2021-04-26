@@ -112,3 +112,7 @@ irods_environment.json
 
 # Static dir for local includes in production mode
 static-local
+
+# Icons
+*/static/iconify/*.json
+*/static/iconify/json/*.json

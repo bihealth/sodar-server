@@ -20,7 +20,7 @@
           class="pull-right"
           id="sodar-ss-win-export-btn"
           @click="onExport">
-        <i class="fa fa-fw fa-download"></i> Export ISA-Tab
+        <i class="iconify" data-icon="mdi:download"></i> Export ISA-Tab
       </b-button>
     </div>
   </b-modal>

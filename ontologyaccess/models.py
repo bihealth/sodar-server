@@ -161,6 +161,7 @@ class OBOFormatOntologyTerm(models.Model):
         null=False,
         related_name='terms',
         help_text='Ontology to which the term belongs',
+        on_delete=models.CASCADE,
     )
 
     #: Term ID

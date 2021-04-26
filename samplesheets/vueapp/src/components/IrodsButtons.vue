@@ -21,7 +21,7 @@
         :disabled="!getEnabledState()"
         @click="onDirListClick"
         v-b-tooltip.hover.d300.window>
-      <i class="fa fa-folder-open-o"></i>
+      <i class="iconify" data-icon="mdi:folder-open-outline"></i>
     </b-button>
     <b-button
         variant="secondary"
@@ -32,7 +32,7 @@
         @click="onCopyBtnClick"
         :disabled="!getEnabledState()"
         v-b-tooltip.hover.d300.window>
-      <i class="fa fa-terminal"></i>
+      <i class="iconify" data-icon="mdi:console-line"></i>
     </b-button>
     <b-button
         variant="secondary"
@@ -43,7 +43,7 @@
         v-clipboard:success="onCopyBtnClick"
         :disabled="!getEnabledState()"
         v-b-tooltip.hover.d300.window>
-      <i class="fa fa-clipboard"></i>
+      <i class="iconify" data-icon="mdi:clipboard-text-multiple"></i>
     </b-button>
     <b-button
         variant="secondary"
@@ -53,7 +53,7 @@
         :href="irodsWebdavUrl + irodsPath"
         :disabled="!getEnabledState()"
         v-b-tooltip.hover.d300.window>
-      <i class="fa fa-external-link"></i>
+      <i class="iconify" data-icon="mdi:open-in-new"></i>
     </b-button>
   </span>
 </template>

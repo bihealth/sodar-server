@@ -39,7 +39,7 @@
                   :title="extraLink.label"
                   :href="extraLink.url"
                   v-b-tooltip.hover>
-                <i :class="'fa fa-' + extraLink.icon"></i>
+                <i class="iconify" :data-icon="extraLink.icon"></i>
               </b-button>
             </td>
           </tr>
@@ -59,7 +59,8 @@
     <div v-else
          class="text-center"
          id="sodar-ss-shortcuts-wait">
-      <i class="fa fa-spin fa-circle-o-notch fa-3x text-muted"></i>
+      <img src="/icons/mdi/loading.svg?color=%236c757d&height=64"
+           class="spin" />
     </div>
   </b-modal>
 </template>

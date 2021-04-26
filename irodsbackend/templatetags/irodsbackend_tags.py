@@ -36,7 +36,7 @@ def get_stats_html(irods_path, project=None):
     return (
         '<span class="badge badge-pill badge-info sodar-irods-stats"'
         'stats-url="{}">'
-        '<i class="fa fa-spin fa-circle-o-notch"></i> Updating..'
+        '<i class="iconify spin" data-icon="mdi:loading"></i> Updating..'
         '</span>'.format(url)
     )
 
