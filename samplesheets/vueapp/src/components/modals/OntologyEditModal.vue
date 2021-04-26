@@ -231,7 +231,7 @@
                     @click="onTermEditClick(termIdx)"
                     :disabled="!enableEditSave(termIdx) || !editDataValid"
                     v-b-tooltip.hover.d300>
-                  <i class="iconify" :data-icon="getEditBtnIcon(term)"></i>
+                  <img :src="'/icons/mdi/check-bold.svg?color=%23fff'" />
                 </b-button>
                 <b-button
                     v-else
@@ -242,7 +242,7 @@
                     @click="onTermEditClick(termIdx)"
                     :disabled="!enableEdit()"
                     v-b-tooltip.hover.d300>
-                  <i class="iconify" data-icon="mdi:lead-pencil"></i>
+                  <img :src="'/icons/mdi/lead-pencil.svg?color=%23fff'" />
                 </b-button>
                 <b-button
                     variant="danger"
@@ -566,10 +566,6 @@ export default {
       }
       return true
     },
-    getEditBtnIcon (term) {
-      if (term.editing) return 'mdi:check-bold'
-      else return 'mdi:lead-pencil'
-    },
     enableDelete (termIdx) {
       return (!this.refreshingTerms &&
         (this.editIdx === null || termIdx === this.editIdx))
@@ -887,6 +883,11 @@ tr#sodar-ss-ontology-free-row td:last-child {
 
 div#sodar-ss-ontology-btn-group {
   margin-top: 16px;
+}
+
+.sodar-ss-row-btn {
+  padding-top: 1px !important;
+  padding-left: 4px !important;
 }
 
 </style>
