@@ -30,6 +30,7 @@ before_script:
 
 all_tests:
   script:
+    - python3 manage.py geticons
     - python3 manage.py collectstatic --noinput
     - coverage run --source="." manage.py test -v 2 --settings=config.settings.test
     - coverage report
