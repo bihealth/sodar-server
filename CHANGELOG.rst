@@ -47,6 +47,7 @@ Changed
     - Duplicate ``sodar_uuid`` views in REST API nested lists (#1074)
     - Unify subpage navigation (#1085)
     - Reorder critical warning check and render test in sheet import (#1107)
+    - Upgrade Vue app dependencies (#1114)
 
 Fixed
 -----
