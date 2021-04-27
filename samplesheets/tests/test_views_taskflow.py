@@ -866,13 +866,11 @@ class TestIrodsRequestCreateView(TestIrodsRequestViewsBase):
     """Test IrodsRequestCreateView"""
 
     def test_post_create(self):
-        """Test POST request for creating a delete request"""
+        """Test creating a delete request"""
+        self.assertEqual(IrodsDataRequest.objects.count(), 0)
+        post_data = {'path': self.path, 'description': 'bla'}
 
         with self.login(self.user):
-            self.assertEqual(IrodsDataRequest.objects.count(), 0)
-
-            post_data = {'path': self.path, 'description': 'bla'}
-
             response = self.client.post(
                 reverse(
                     'samplesheets:irods_request_create',
@@ -881,31 +879,29 @@ class TestIrodsRequestCreateView(TestIrodsRequestViewsBase):
                 post_data,
             )
 
-            self.assertRedirects(
-                response,
-                reverse(
-                    'samplesheets:irods_requests',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-            )
-
-            obj = IrodsDataRequest.objects.first()
-            self.assertEqual(
-                list(get_messages(response.wsgi_request))[0].message,
-                f'iRODS data request "{obj.get_display_name()}" created.',
-            )
-            self.assertEqual(IrodsDataRequest.objects.count(), 1)
-            self.assertEqual(obj.path, self.path)
-            self.assertEqual(obj.description, 'bla')
+        self.assertRedirects(
+            response,
+            reverse(
+                'samplesheets:irods_requests',
+                kwargs={'project': self.project.sodar_uuid},
+            ),
+        )
+        obj = IrodsDataRequest.objects.first()
+        self.assertEqual(
+            list(get_messages(response.wsgi_request))[0].message,
+            f'iRODS data request "{obj.get_display_name()}" created.',
+        )
+        self.assertEqual(IrodsDataRequest.objects.count(), 1)
+        self.assertEqual(obj.path, self.path)
+        self.assertEqual(obj.description, 'bla')
+        # TODO: Test app alert status
 
     def test_post_create_with_trailing_slash(self):
-        """Test POST request for creating a delete request where the path has a trailing slash"""
+        """Test creating a delete request with trailing slash in path"""
+        self.assertEqual(IrodsDataRequest.objects.count(), 0)
+        post_data = {'path': self.path + '/', 'description': 'bla'}
 
         with self.login(self.user):
-            self.assertEqual(IrodsDataRequest.objects.count(), 0)
-
-            post_data = {'path': self.path + '/', 'description': 'bla'}
-
             response = self.client.post(
                 reverse(
                     'samplesheets:irods_request_create',
@@ -914,30 +910,29 @@ class TestIrodsRequestCreateView(TestIrodsRequestViewsBase):
                 post_data,
             )
 
-            self.assertRedirects(
-                response,
-                reverse(
-                    'samplesheets:irods_requests',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-            )
-
-            obj = IrodsDataRequest.objects.first()
-            self.assertEqual(
-                list(get_messages(response.wsgi_request))[0].message,
-                f'iRODS data request "{obj.get_display_name()}" created.',
-            )
-            self.assertEqual(IrodsDataRequest.objects.count(), 1)
-            self.assertEqual(obj.path, self.path)
-            self.assertEqual(obj.description, 'bla')
+        self.assertRedirects(
+            response,
+            reverse(
+                'samplesheets:irods_requests',
+                kwargs={'project': self.project.sodar_uuid},
+            ),
+        )
+        obj = IrodsDataRequest.objects.first()
+        self.assertEqual(
+            list(get_messages(response.wsgi_request))[0].message,
+            f'iRODS data request "{obj.get_display_name()}" created.',
+        )
+        self.assertEqual(IrodsDataRequest.objects.count(), 1)
+        self.assertEqual(obj.path, self.path)
+        self.assertEqual(obj.description, 'bla')
+        # TODO: Test app alert status
 
     def test_create_invalid_form_data(self):
-        """Test POST request for creating a delete request with invalid form data"""
+        """Test creating a delete request with invalid form data"""
+        self.assertEqual(IrodsDataRequest.objects.count(), 0)
+        post_data = {'path': '/doesnt/exist', 'description': 'bla'}
+
         with self.login(self.user):
-            self.assertEqual(IrodsDataRequest.objects.count(), 0)
-
-            post_data = {'path': '/doesnt/exist', 'description': 'bla'}
-
             response = self.client.post(
                 reverse(
                     'samplesheets:irods_request_create',
@@ -946,19 +941,18 @@ class TestIrodsRequestCreateView(TestIrodsRequestViewsBase):
                 post_data,
             )
 
-            self.assertEqual(
-                response.context['form'].errors['path'][0],
-                ERROR_MSG_INVALID_PATH,
-            )
-            self.assertEqual(IrodsDataRequest.objects.count(), 0)
+        self.assertEqual(
+            response.context['form'].errors['path'][0],
+            ERROR_MSG_INVALID_PATH,
+        )
+        self.assertEqual(IrodsDataRequest.objects.count(), 0)
 
     def test_create_invalid_path_is_assay_collection(self):
-        """Test POST request for creating a delete request with invalid form data"""
+        """Test creating a delete request with invalid form data"""
+        self.assertEqual(IrodsDataRequest.objects.count(), 0)
+        post_data = {'path': self.assay_path, 'description': 'bla'}
+
         with self.login(self.user):
-            self.assertEqual(IrodsDataRequest.objects.count(), 0)
-
-            post_data = {'path': self.assay_path, 'description': 'bla'}
-
             response = self.client.post(
                 reverse(
                     'samplesheets:irods_request_create',
@@ -967,11 +961,12 @@ class TestIrodsRequestCreateView(TestIrodsRequestViewsBase):
                 post_data,
             )
 
-            self.assertEqual(
-                response.context['form'].errors['path'][0],
-                ERROR_MSG_INVALID_PATH,
-            )
-            self.assertEqual(IrodsDataRequest.objects.count(), 0)
+        self.assertEqual(
+            response.context['form'].errors['path'][0],
+            ERROR_MSG_INVALID_PATH,
+        )
+        self.assertEqual(IrodsDataRequest.objects.count(), 0)
+        # TODO: Test app alert status
 
 
 @skipIf(not BACKENDS_ENABLED, BACKEND_SKIP_MSG)
@@ -980,7 +975,6 @@ class TestIrodsRequestUpdateView(TestIrodsRequestViewsBase):
 
     def test_post_update(self):
         """Test POST request for updating a delete request"""
-
         post_data = {'path': self.path, 'description': 'Description'}
         update_data = {'path': self.path, 'description': 'Updated'}
 
@@ -993,35 +987,33 @@ class TestIrodsRequestUpdateView(TestIrodsRequestViewsBase):
                 post_data,
             )
 
-            self.assertEqual(IrodsDataRequest.objects.count(), 1)
-            obj = IrodsDataRequest.objects.first()
-            response = self.client.post(
-                reverse(
-                    'samplesheets:irods_request_update',
-                    kwargs={'irodsdatarequest': obj.sodar_uuid},
-                ),
-                update_data,
-            )
-
-            self.assertRedirects(
-                response,
-                reverse(
-                    'samplesheets:irods_requests',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-            )
-
-            obj = IrodsDataRequest.objects.first()
-            self.assertEqual(
-                list(get_messages(response.wsgi_request))[-1].message,
-                f'iRODS data request "{obj.get_display_name()}" updated.',
-            )
-            self.assertEqual(IrodsDataRequest.objects.count(), 1)
-            self.assertEqual(obj.path, self.path)
-            self.assertEqual(obj.description, 'Updated')
+        self.assertEqual(IrodsDataRequest.objects.count(), 1)
+        obj = IrodsDataRequest.objects.first()
+        response = self.client.post(
+            reverse(
+                'samplesheets:irods_request_update',
+                kwargs={'irodsdatarequest': obj.sodar_uuid},
+            ),
+            update_data,
+        )
+        self.assertRedirects(
+            response,
+            reverse(
+                'samplesheets:irods_requests',
+                kwargs={'project': self.project.sodar_uuid},
+            ),
+        )
+        obj = IrodsDataRequest.objects.first()
+        self.assertEqual(
+            list(get_messages(response.wsgi_request))[-1].message,
+            f'iRODS data request "{obj.get_display_name()}" updated.',
+        )
+        self.assertEqual(IrodsDataRequest.objects.count(), 1)
+        self.assertEqual(obj.path, self.path)
+        self.assertEqual(obj.description, 'Updated')
 
     def test_post_update_invalid_form_data(self):
-        """Test POST request for updating a delete request with invalid form data"""
+        """Test updating a delete request with invalid form data"""
         with self.login(self.user):
             post_data = {'path': self.path, 'description': 'Description'}
             update_data = {'path': '/doesnt/exist', 'description': 'Updated'}
@@ -1043,7 +1035,6 @@ class TestIrodsRequestUpdateView(TestIrodsRequestViewsBase):
                 ),
                 update_data,
             )
-
             self.assertEqual(
                 response.context['form'].errors['path'][0],
                 ERROR_MSG_INVALID_PATH,

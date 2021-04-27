@@ -72,6 +72,7 @@ LOGGING['handlers']['console']['level'] = 'CRITICAL'
 # Plugin settings
 ENABLED_BACKEND_PLUGINS = [
     'timeline_backend',
+    'appalerts_backend',
     'sodar_cache',
     'ontologyaccess_backend',
     # 'taskflow',

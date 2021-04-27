@@ -14,6 +14,7 @@ Added
 - **General**
     - Release notes and changelog sections in manual (#1098)
     - ``setup_database.sh`` from SODAR Core
+    - Enable ``appalerts`` app (#1124)
 - **Irodsbackend**
     - Support for ``IRODS_ROOT_PATH`` setting (#1067)
     - ``get_root_path()`` and ``get_projects_path()`` helpers (#1067)
@@ -26,6 +27,7 @@ Added
     - Diff comparison for sheet versions (#1007)
     - Enable remote sync for sample sheets (#959, #1102, #1103)
     - ``Icon`` component in vue app for django-iconify icon access (#1113)
+    - App alerts for iRODS data request actions (#1084)
 
 Changed
 -------

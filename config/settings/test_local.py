@@ -23,8 +23,9 @@ IRODS_ZONE = 'omicsZone'
 
 # Plugin settings
 ENABLED_BACKEND_PLUGINS = [
-    'sodar_cache',
     'timeline_backend',
+    'appalerts_backend',
+    'sodar_cache',
     'ontologyaccess_backend',
     'taskflow',
     'omics_irods',

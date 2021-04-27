@@ -42,6 +42,7 @@ from samplesheets.utils import (
     get_node_obj,
 )
 from samplesheets.views import (
+    IrodsRequestCreateMixin,
     app_settings,
     APP_NAME,
     TARGET_ALTAMISA_VERSION,
@@ -1814,13 +1815,14 @@ class StudyDisplayConfigAjaxView(SODARBaseProjectAjaxView):
         )
 
 
-class IrodsRequestCreateAjaxView(SODARBaseProjectAjaxView):
+class IrodsRequestCreateAjaxView(
+    IrodsRequestCreateMixin, SODARBaseProjectAjaxView
+):
     """Ajax view for creating an iRODS data request"""
 
     permission_required = 'samplesheets.edit_sheet'
 
     def get(self, request, *args, **kwargs):
-        timeline = get_backend_api('timeline_backend')
         project = self.get_project()
 
         # Create database object
@@ -1839,21 +1841,10 @@ class IrodsRequestCreateAjaxView(SODARBaseProjectAjaxView):
             description='Request created via Ajax API',
         )
 
-        if timeline:
-            tl_event = timeline.add_event(
-                project=project,
-                app_name=APP_NAME,
-                user=request.user,
-                event_name='irods_request_create',
-                description='created iRODS delete request {delete_request}',
-                status_type='OK',
-            )
-            tl_event.add_object(
-                obj=irods_request,
-                label='delete_request',
-                name=str(irods_request),
-            )
-
+        # Create timeline event
+        self.add_tl_event(irods_request)
+        # Add app alerts to owners/delegates
+        self.add_create_alerts(project)
         return Response(
             {
                 'detail': 'ok',
