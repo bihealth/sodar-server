@@ -31,7 +31,7 @@ Changed
 -------
 
 - **General**
-    - Upgrade to django-sodar-core v0.10.0 (#1096, #1113, #1118)
+    - Upgrade to django-sodar-core v0.10.0 (#1096, #1113, #1118, #1121)
     - Upgrade to Python v3.8 and Django v3.2 (#1113)
     - Unify ISA-Tab naming (#1082)
     - Upgrade to Chromedriver v89

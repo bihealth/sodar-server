@@ -66,7 +66,7 @@ mistune==0.8.4
 -e git+https://github.com/mikkonie/django-plugins.git@42e86e7904e5c09f1da32173862b26843eda5dd8#egg=django-plugins
 
 # SODAR Core
--e git+https://github.com/bihealth/sodar-core.git@a74afd2f4196f05dc700cc7ee446590add306e83#egg=django-sodar-core
+-e git+https://github.com/bihealth/sodar-core.git@7ff7c0cdd6d643d97b4b428aa84dd20022fd507c#egg=django-sodar-core
 
 # Celery
 celery==5.0.5
