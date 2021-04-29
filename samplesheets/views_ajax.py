@@ -1810,6 +1810,7 @@ class StudyDisplayConfigAjaxView(SODARBaseProjectAjaxView):
         )
 
 
+# TODO: Change to use POST instead of GET (see #1134)
 class IrodsRequestCreateAjaxView(
     IrodsRequestModifyMixin, SODARBaseProjectAjaxView
 ):
@@ -1850,6 +1851,7 @@ class IrodsRequestCreateAjaxView(
         )
 
 
+# TODO: Modify to use POST instead of GET (see #1134)
 class IrodsRequestDeleteAjaxView(
     IrodsRequestModifyMixin, SODARBaseProjectAjaxView
 ):

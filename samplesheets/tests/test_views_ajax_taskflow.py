@@ -1,3 +1,4 @@
+import os
 from unittest.case import skipIf
 
 from django.conf import settings
@@ -8,7 +9,10 @@ from samplesheets.tests.test_views import (
     IRODS_BACKEND_ENABLED,
     IRODS_BACKEND_SKIP_MSG,
 )
-from samplesheets.tests.test_views_taskflow import TestIrodsRequestViewsBase
+from samplesheets.tests.test_views_taskflow import (
+    TestIrodsRequestViewsBase,
+    TEST_FILE_NAME2,
+)
 
 
 # Local constants
@@ -23,9 +27,10 @@ class TestIrodsRequestCreateAjaxView(TestIrodsRequestViewsBase):
     """Tests for IrodsRequestCreateAjaxView"""
 
     def test_create_request(self):
-        """Test creating a delete request on an existing data object"""
-
+        """Test creating a delete request on a data object"""
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
+        self.assertEqual(self._get_create_alert_count(self.user), 0)
+        self.assertEqual(self._get_create_alert_count(self.user_delegate), 0)
 
         with self.login(self.user):
             response = self.client.get(
@@ -38,14 +43,16 @@ class TestIrodsRequestCreateAjaxView(TestIrodsRequestViewsBase):
             )
 
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
-
         # Assert response
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['detail'], 'ok')
         self.assertEqual(response.data['status'], 'ACTIVE')
+        self.assertEqual(self._get_create_alert_count(self.user), 1)
+        self.assertEqual(self._get_create_alert_count(self.user_delegate), 1)
 
     def test_create_request_exists_same_user(self):
-        """Test creating delete request on data object where a request already exists"""
+        """Test creating delete request if request for same user exists"""
+
         with self.login(self.user_contrib):
             self.client.get(
                 reverse(
@@ -57,6 +64,8 @@ class TestIrodsRequestCreateAjaxView(TestIrodsRequestViewsBase):
             )
 
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
+        self.assertEqual(self._get_create_alert_count(self.user), 1)
+        self.assertEqual(self._get_create_alert_count(self.user_delegate), 1)
 
         with self.login(self.user_contrib):
             response = self.client.get(
@@ -73,11 +82,11 @@ class TestIrodsRequestCreateAjaxView(TestIrodsRequestViewsBase):
         self.assertEqual(
             response.data['detail'], 'active request for path already exists'
         )
+        self.assertEqual(self._get_create_alert_count(self.user), 1)
+        self.assertEqual(self._get_create_alert_count(self.user_delegate), 1)
 
-    def test_create_request_exists_as_admin_by_contributor(
-        self,
-    ):
-        """Test creating delete request on data object where a request already exists"""
+    def test_create_request_exists_as_admin_by_contributor(self):
+        """Test creating request as admin if request from contributor exists"""
         with self.login(self.user_contrib):
             self.client.get(
                 reverse(
@@ -106,10 +115,8 @@ class TestIrodsRequestCreateAjaxView(TestIrodsRequestViewsBase):
             response.data['detail'], 'active request for path already exists'
         )
 
-    def test_create_request_exists_as_contributor_by_contributor2(
-        self,
-    ):
-        """Test creating delete request on data object where a request already exists"""
+    def test_create_request_exists_as_contributor_by_contributor2(self):
+        """Test creating request as contributor if request by contributor2 exists"""
         with self.login(self.user_contrib):
             self.client.get(
                 reverse(
@@ -138,6 +145,41 @@ class TestIrodsRequestCreateAjaxView(TestIrodsRequestViewsBase):
             response.data['detail'], 'active request for path already exists'
         )
 
+    def test_create_multiple(self):
+        """Test creating multiple delete requests"""
+        path2 = os.path.join(self.assay_path, TEST_FILE_NAME2)
+        path2_md5 = os.path.join(self.assay_path, TEST_FILE_NAME2 + '.md5')
+        self.irods_session.data_objects.create(path2)
+        self.irods_session.data_objects.create(path2_md5)
+
+        self.assertEqual(IrodsDataRequest.objects.count(), 0)
+        self.assertEqual(self._get_create_alert_count(self.user), 0)
+        self.assertEqual(self._get_create_alert_count(self.user_delegate), 0)
+
+        with self.login(self.user):
+            self.client.get(
+                reverse(
+                    'samplesheets:ajax_irods_request_create',
+                    kwargs={'project': self.project.sodar_uuid},
+                )
+                + '?path='
+                + self.path
+            )
+
+        with self.login(self.user):
+            self.client.get(
+                reverse(
+                    'samplesheets:ajax_irods_request_create',
+                    kwargs={'project': self.project.sodar_uuid},
+                )
+                + '?path='
+                + path2
+            )
+
+        self.assertEqual(IrodsDataRequest.objects.count(), 2)
+        self.assertEqual(self._get_create_alert_count(self.user), 1)
+        self.assertEqual(self._get_create_alert_count(self.user_delegate), 1)
+
 
 @skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
 class TestIrodsRequestDeleteAjaxView(TestIrodsRequestViewsBase):
@@ -157,6 +199,8 @@ class TestIrodsRequestDeleteAjaxView(TestIrodsRequestViewsBase):
             )
 
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
+        self.assertEqual(self._get_create_alert_count(self.user), 1)
+        self.assertEqual(self._get_create_alert_count(self.user_delegate), 1)
 
         # Delete request
         with self.login(self.user_contrib):
@@ -170,14 +214,15 @@ class TestIrodsRequestDeleteAjaxView(TestIrodsRequestViewsBase):
             )
 
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
-
         # Assert response
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['detail'], 'ok')
         self.assertEqual(response.data['status'], None)
+        self.assertEqual(self._get_create_alert_count(self.user), 0)
+        self.assertEqual(self._get_create_alert_count(self.user_delegate), 0)
 
     def test_delete_request_as_admin_by_contributor(self):
-        """Test GET request for deleting an existing delete request"""
+        """Test deleting an existing delete request"""
         # Create request
         with self.login(self.user_contrib):
             self.client.get(
@@ -209,9 +254,7 @@ class TestIrodsRequestDeleteAjaxView(TestIrodsRequestViewsBase):
         self.assertEqual(response.data['detail'], 'ok')
         self.assertEqual(response.data['status'], None)
 
-    def test_delete_request_as_contributor_by_contributor2(
-        self,
-    ):
+    def test_delete_request_as_contributor_by_contributor2(self):
         """Test GET request for deleting an existing delete request"""
         # Create request
         with self.login(self.user_contrib):
@@ -245,8 +288,8 @@ class TestIrodsRequestDeleteAjaxView(TestIrodsRequestViewsBase):
             response.data['detail'], 'User not allowed to delete request'
         )
 
-    def test_delete_request_doesnt_exists(self):
-        """Test GET request for deleting a delete request that doesn't exist"""
+    def test_delete_request_doesnt_exist(self):
+        """Test deleting a delete request that doesn't exist"""
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
 
         # Delete request
@@ -264,13 +307,63 @@ class TestIrodsRequestDeleteAjaxView(TestIrodsRequestViewsBase):
         self.assertEqual(response.status_code, 404)
         self.assertEqual(response.data['detail'], 'Request not found')
 
+    def test_delete_one_of_multiple(self):
+        """Test deleting one of multiple requests"""
+        path2 = os.path.join(self.assay_path, TEST_FILE_NAME2)
+        path2_md5 = os.path.join(self.assay_path, TEST_FILE_NAME2 + '.md5')
+        self.irods_session.data_objects.create(path2)
+        self.irods_session.data_objects.create(path2_md5)
+
+        self.assertEqual(IrodsDataRequest.objects.count(), 0)
+        self.assertEqual(self._get_create_alert_count(self.user), 0)
+        self.assertEqual(self._get_create_alert_count(self.user_delegate), 0)
+
+        with self.login(self.user_contrib):
+            self.client.get(
+                reverse(
+                    'samplesheets:ajax_irods_request_create',
+                    kwargs={'project': self.project.sodar_uuid},
+                )
+                + '?path='
+                + self.path
+            )
+            self.client.get(
+                reverse(
+                    'samplesheets:ajax_irods_request_create',
+                    kwargs={'project': self.project.sodar_uuid},
+                )
+                + '?path='
+                + path2
+            )
+
+            self.assertEqual(IrodsDataRequest.objects.count(), 2)
+            self.assertEqual(self._get_create_alert_count(self.user), 1)
+            self.assertEqual(
+                self._get_create_alert_count(self.user_delegate), 1
+            )
+
+            self.client.get(
+                reverse(
+                    'samplesheets:ajax_irods_request_delete',
+                    kwargs={'project': self.project.sodar_uuid},
+                )
+                + '?path='
+                + self.path
+            )
+
+            self.assertEqual(IrodsDataRequest.objects.count(), 1)
+            self.assertEqual(self._get_create_alert_count(self.user), 1)
+            self.assertEqual(
+                self._get_create_alert_count(self.user_delegate), 1
+            )
+
 
 @skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
 class TestIrodsObjectListAjaxView(TestIrodsRequestViewsBase):
     """Tests for IrodsObjectListAjaxView"""
 
     def test_get_coll_obj_with_delete_request(self):
-        """Test GET request for listing a collection in iRODS with a data object with a delete request"""
+        """Test listing collection with data object with delete request"""
         # Create request
         with self.login(self.user_contrib):
             self.client.get(
