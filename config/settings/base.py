@@ -71,6 +71,7 @@ THIRD_PARTY_APPS = [
     'userprofile.apps.UserprofileConfig',
     'adminalerts.apps.AdminalertsConfig',
     'tokens.apps.TokensConfig',
+    'appalerts.apps.AppalertsConfig',
     # Backend apps
     'taskflowbackend.apps.TaskflowbackendConfig',
     'sodarcache.apps.SodarcacheConfig',
@@ -487,6 +488,7 @@ ENABLED_BACKEND_PLUGINS = env.list(
     None,
     [
         'timeline_backend',
+        'appalerts_backend',
         'sodar_cache',
         'ontologyaccess_backend',
         # 'taskflow',

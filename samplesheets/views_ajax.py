@@ -42,6 +42,7 @@ from samplesheets.utils import (
     get_node_obj,
 )
 from samplesheets.views import (
+    IrodsRequestModifyMixin,
     app_settings,
     APP_NAME,
     TARGET_ALTAMISA_VERSION,
@@ -101,7 +102,6 @@ class BaseSheetEditAjaxView(SODARBaseProjectAjaxView):
         """
         if isinstance(cell['value'], list) and len(cell['value']) == 1:
             val = cell['value'][0]
-
         # Handle empty list
         elif isinstance(cell['value'], list) and len(cell['value']) == 0:
             val = None
@@ -111,10 +111,8 @@ class BaseSheetEditAjaxView(SODARBaseProjectAjaxView):
                     'accession': None,
                     'ontology_name': None,
                 }
-
         else:
             val = cell['value']
-
         return val
 
     @classmethod
@@ -128,12 +126,10 @@ class BaseSheetEditAjaxView(SODARBaseProjectAjaxView):
         """
         if not cells and not nodes:
             raise ValueError('Must define either cells or nodes')
-
         if not cells:
             cells = []
             for n in nodes:
                 cells += n['cells']
-
         ret = []
 
         for c in cells:
@@ -1814,13 +1810,15 @@ class StudyDisplayConfigAjaxView(SODARBaseProjectAjaxView):
         )
 
 
-class IrodsRequestCreateAjaxView(SODARBaseProjectAjaxView):
+# TODO: Change to use POST instead of GET (see #1134)
+class IrodsRequestCreateAjaxView(
+    IrodsRequestModifyMixin, SODARBaseProjectAjaxView
+):
     """Ajax view for creating an iRODS data request"""
 
     permission_required = 'samplesheets.edit_sheet'
 
     def get(self, request, *args, **kwargs):
-        timeline = get_backend_api('timeline_backend')
         project = self.get_project()
 
         # Create database object
@@ -1839,21 +1837,10 @@ class IrodsRequestCreateAjaxView(SODARBaseProjectAjaxView):
             description='Request created via Ajax API',
         )
 
-        if timeline:
-            tl_event = timeline.add_event(
-                project=project,
-                app_name=APP_NAME,
-                user=request.user,
-                event_name='irods_request_create',
-                description='created iRODS delete request {delete_request}',
-                status_type='OK',
-            )
-            tl_event.add_object(
-                obj=irods_request,
-                label='delete_request',
-                name=str(irods_request),
-            )
-
+        # Create timeline event
+        self.add_tl_create(irods_request)
+        # Add app alerts to owners/delegates
+        self.add_alerts_create(project)
         return Response(
             {
                 'detail': 'ok',
@@ -1864,15 +1851,15 @@ class IrodsRequestCreateAjaxView(SODARBaseProjectAjaxView):
         )
 
 
-class IrodsRequestDeleteAjaxView(SODARBaseProjectAjaxView):
+# TODO: Modify to use POST instead of GET (see #1134)
+class IrodsRequestDeleteAjaxView(
+    IrodsRequestModifyMixin, SODARBaseProjectAjaxView
+):
     """Ajax view for deleting an iRODS data request"""
 
     permission_required = 'samplesheets.edit_sheet'
 
     def get(self, request, *args, **kwargs):
-        timeline = get_backend_api('timeline_backend')
-        project = self.get_project()
-
         # Delete database object
         irods_request = IrodsDataRequest.objects.filter(
             path=request.GET.get('path'),
@@ -1888,23 +1875,12 @@ class IrodsRequestDeleteAjaxView(SODARBaseProjectAjaxView):
                 {'detail': 'User not allowed to delete request'}, status=403
             )
 
-        if timeline:
-            tl_event = timeline.add_event(
-                project=project,
-                app_name=APP_NAME,
-                user=request.user,
-                event_name='irods_request_delete',
-                description='delete iRODS data request {irods_request}',
-                status_type='OK',
-            )
-            tl_event.add_object(
-                obj=irods_request,
-                label='irods_request',
-                name=str(irods_request),
-            )
+        # Add timeline event
+        self.add_tl_delete(irods_request)
+        # Handle project alerts
+        self.handle_alerts_deactivate(irods_request)
 
         irods_request.delete()
-
         return Response(
             {
                 'detail': 'ok',

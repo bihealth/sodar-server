@@ -100,6 +100,9 @@ MISC_FILES_COLL = 'MiscFiles'
 TRACK_HUBS_COLL = 'TrackHubs'
 RESULTS_COLL_ID = 'results_reports'
 RESULTS_COLL = 'ResultsReports'
+IRODS_REQ_CREATE_ALERT_NAME = 'irods_request_create'
+IRODS_REQ_ACCEPT_ALERT_NAME = 'irods_request_accept'
+IRODS_REQ_REJECT_ALERT_NAME = 'irods_request_reject'
 
 EMAIL_DELETE_REQUEST_ACCEPT = r'''
 Your delete request has been accepted.
@@ -1971,11 +1974,155 @@ class IrodsAccessTicketDeleteView(
         return super().delete(request, *args, **kwargs)
 
 
+class IrodsRequestModifyMixin:
+    """Generic helpers for iRODS data request actuibs"""
+
+    # Timeline helpers ---------------------------------------------------------
+
+    @classmethod
+    def add_tl_create(cls, irods_request):
+        """
+        Create timeline event for iRODS data request creation.
+
+        :param irods_request: IrodsDataRequest object
+        """
+        timeline = get_backend_api('timeline_backend')
+        if not timeline:
+            return
+
+        tl_event = timeline.add_event(
+            project=irods_request.project,
+            app_name=APP_NAME,
+            user=irods_request.user,
+            event_name='irods_request_create',
+            description='create iRODS data request {irods_request}',
+            status_type='OK',
+        )
+        tl_event.add_object(
+            obj=irods_request,
+            label='irods_request',
+            name=irods_request.get_display_name(),
+        )
+
+    @classmethod
+    def add_tl_delete(cls, irods_request):
+        """
+        Create timeline event for iRODS data request deletion.
+
+        :param irods_request: IrodsDataRequest object
+        """
+        timeline = get_backend_api('timeline_backend')
+        if not timeline:
+            return
+
+        tl_event = timeline.add_event(
+            project=irods_request.project,
+            app_name=APP_NAME,
+            user=irods_request.user,
+            event_name='irods_request_delete',
+            description='delete iRODS data request {irods_request}',
+            status_type='OK',
+        )
+        tl_event.add_object(
+            obj=irods_request,
+            label='irods_request',
+            name=str(irods_request),
+        )
+
+    # App Alert Helpers --------------------------------------------------------
+
+    @classmethod
+    def add_alerts_create(cls, project, app_alerts=None):
+        """
+        Add app alerts for project owners/delegates on request creation. Will
+        not create new alerts if the user already has a similar active alert
+        in the project.
+
+        :param project: Project object
+        :param app_alerts: Appalerts API or None
+        """
+        if not app_alerts:
+            app_alerts = get_backend_api('appalerts_backend')
+        if not app_alerts:
+            return
+
+        AppAlert = app_alerts.get_model()
+        # TODO: Use get_all_roles() instead
+        od_users = set(
+            [a.user for a in project.get_owners()]
+            + [a.user for a in project.get_delegates()]
+        )
+        # logger.debug('od_users={}'.format(od_users))  # DEBUG
+        for u in od_users:
+            alert_count = AppAlert.objects.filter(
+                project=project,
+                user=u,
+                alert_name=IRODS_REQ_CREATE_ALERT_NAME,
+                active=True,
+            ).count()
+            if alert_count > 0:
+                logger.debug('Alert exists for user: {}'.format(u.username))
+                continue  # Only have one active alert per user/project
+            app_alerts.add_alert(
+                app_name=APP_NAME,
+                alert_name=IRODS_REQ_CREATE_ALERT_NAME,
+                user=u,
+                message='iRODS delete requests require attention in '
+                'project "{}"'.format(project.title),
+                url=reverse(
+                    'samplesheets:irods_requests',
+                    kwargs={'project': project.sodar_uuid},
+                ),
+                project=project,
+            )
+            logger.debug(
+                'Added iRODS request alert for user: {}'.format(u.username)
+            )
+
+    @classmethod
+    def handle_alerts_deactivate(cls, irods_request, app_alerts=None):
+        """
+        Handle existing iRODS delete request project alerts on alert
+        acceptance, rejection or deletion.
+
+        :param irods_request: IrodsDataRequest object being deleted
+        :param app_alerts: Appalerts API or None
+        """
+        if not app_alerts:
+            app_alerts = get_backend_api('appalerts_backend')
+        if not app_alerts:
+            return
+
+        AppAlert = app_alerts.get_model()
+        req_count = (
+            IrodsDataRequest.objects.filter(
+                project=irods_request.project, status='ACTIVE'
+            )
+            .exclude(sodar_uuid=irods_request.sodar_uuid)
+            .count()
+        )
+        if req_count == 0:
+            alerts = AppAlert.objects.filter(
+                alert_name=IRODS_REQ_CREATE_ALERT_NAME,
+                project=irods_request.project,
+                active=True,
+            )
+            alert_count = alerts.count()
+            alerts.delete()  # Deleting as the user doesn't dismiss these
+            logger.debug(
+                'No active requests left for project, deleting {} '
+                'owner/delegate alert{}'.format(
+                    alert_count, 's' if alert_count != 1 else ''
+                )
+            )
+
+
 class IrodsRequestCreateView(
     LoginRequiredMixin,
     LoggedInPermissionMixin,
     ProjectPermissionMixin,
     InvestigationContextMixin,
+    IrodsRequestModifyMixin,
     FormView,
 ):
     """View for creating an iRODS data request"""
@@ -1985,27 +2132,18 @@ class IrodsRequestCreateView(
     form_class = IrodsRequestForm
 
     def form_valid(self, form):
-        timeline = get_backend_api('timeline_backend')
+        project = self.get_project()
 
         # Create database object
         obj = form.save(commit=False)
         obj.user = self.request.user
-        obj.project = self.get_project()
+        obj.project = project
         obj.save()
 
-        if timeline:
-            tl_event = timeline.add_event(
-                project=self.get_project(),
-                app_name=APP_NAME,
-                user=self.request.user,
-                event_name='irods_request_create',
-                description='create iRODS data request {irods_request}',
-                status_type='OK',
-            )
-            tl_event.add_object(
-                obj=obj, label='irods_request', name=obj.get_display_name()
-            )
-
+        # Create timeline event
+        self.add_tl_create(obj)
+        # Add app alerts to owners/delegates
+        self.add_alerts_create(project)
         messages.success(
             self.request,
             'iRODS data request "{}" created.'.format(obj.get_display_name()),
@@ -2073,6 +2211,7 @@ class IrodsRequestDeleteView(
     LoggedInPermissionMixin,
     ProjectPermissionMixin,
     InvestigationContextMixin,
+    IrodsRequestModifyMixin,
     DeleteView,
 ):
     """View for deleting an iRODS data request"""
@@ -2084,25 +2223,11 @@ class IrodsRequestDeleteView(
     slug_field = 'sodar_uuid'
 
     def get_success_url(self):
-        timeline = get_backend_api('timeline_backend')
-        if timeline:
-            tl_event = timeline.add_event(
-                project=self.get_project(),
-                app_name=APP_NAME,
-                user=self.request.user,
-                event_name='irods_request_delete',
-                description='delete iRODS data request {irods_request}',
-                status_type='OK',
-            )
-            tl_event.add_object(
-                obj=self.object,
-                label='irods_request',
-                name=self.object.get_display_name(),
-            )
-        messages.success(
-            self.request,
-            'iRODS data request deleted.',
-        )
+        # Add timeline event
+        self.add_tl_delete(self.object)
+        # Handle project alerts
+        self.handle_alerts_deactivate(self.object)
+        messages.success(self.request, 'iRODS data request deleted.')
         return reverse(
             'samplesheets:irods_requests',
             kwargs={'project': self.object.project.sodar_uuid},
@@ -2114,6 +2239,7 @@ class IrodsRequestAcceptView(
     LoggedInPermissionMixin,
     ProjectPermissionMixin,
     InvestigationContextMixin,
+    IrodsRequestModifyMixin,
     FormView,
 ):
     """View for accepting an iRODS data request"""
@@ -2149,6 +2275,7 @@ class IrodsRequestAcceptView(
     def form_valid(self, request, *args, **kwargs):
         timeline = get_backend_api('timeline_backend')
         taskflow = get_backend_api('taskflow')
+        app_alerts = get_backend_api('appalerts_backend')
         project = self.get_project()
         tl_event = None
 
@@ -2230,11 +2357,29 @@ class IrodsRequestAcceptView(
                 subject_body, message_body, [obj.user.email], request
             )
 
+        # Create app alert
+        if app_alerts:
+            app_alerts.add_alert(
+                app_name=APP_NAME,
+                alert_name=IRODS_REQ_ACCEPT_ALERT_NAME,
+                user=obj.user,
+                message='iRODS delete request accepted by {}: "{}"'.format(
+                    self.request.user.username, obj.get_short_path()
+                ),
+                level='SUCCESS',
+                url=reverse(
+                    'samplesheets:project_sheets',
+                    kwargs={'project': project.sodar_uuid},
+                ),
+                project=project,
+            )
+            # Handle project alerts
+            self.handle_alerts_deactivate(obj, app_alerts)
+
         messages.success(
             self.request,
             'iRODS data request "{}" accepted.'.format(obj.get_display_name()),
         )
-
         return redirect(
             reverse(
                 'samplesheets:irods_requests',
@@ -2248,6 +2393,7 @@ class IrodsRequestRejectView(
     LoggedInPermissionMixin,
     ProjectPermissionMixin,
     InvestigationContextMixin,
+    IrodsRequestModifyMixin,
     View,
 ):
     """View for accepting an iRODS data request"""
@@ -2256,6 +2402,7 @@ class IrodsRequestRejectView(
 
     def get(self, request, *args, **kwargs):
         timeline = get_backend_api('timeline_backend')
+        app_alerts = get_backend_api('appalerts_backend')
         project = self.get_project()
 
         try:
@@ -2309,6 +2456,25 @@ class IrodsRequestRejectView(
             send_generic_mail(
                 subject_body, message_body, [obj.user.email], request
             )
+
+        # Create app alert
+        if app_alerts:
+            app_alerts.add_alert(
+                app_name=APP_NAME,
+                alert_name=IRODS_REQ_REJECT_ALERT_NAME,
+                user=obj.user,
+                message='iRODS delete request rejected by {}: "{}"'.format(
+                    self.request.user.username, obj.get_short_path()
+                ),
+                level='WARNING',
+                url=reverse(
+                    'samplesheets:project_sheets',
+                    kwargs={'project': project.sodar_uuid},
+                ),
+                project=project,
+            )
+            # Handle project alerts
+            self.handle_alerts_deactivate(obj, app_alerts)
 
         return redirect(
             reverse(
