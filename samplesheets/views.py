@@ -100,9 +100,9 @@ MISC_FILES_COLL = 'MiscFiles'
 TRACK_HUBS_COLL = 'TrackHubs'
 RESULTS_COLL_ID = 'results_reports'
 RESULTS_COLL = 'ResultsReports'
-IRODS_REQ_CREATE_ALERT = 'irods_request_available'
-IRODS_REQ_ACCEPT_ALERT = 'irods_request_accept'
-IRODS_REQ_REJECT_ALERT = 'irods_request_reject'
+IRODS_REQ_CREATE_ALERT_NAME = 'irods_request_create'
+IRODS_REQ_ACCEPT_ALERT_NAME = 'irods_request_accept'
+IRODS_REQ_REJECT_ALERT_NAME = 'irods_request_reject'
 
 EMAIL_DELETE_REQUEST_ACCEPT = r'''
 Your delete request has been accepted.
@@ -2057,7 +2057,7 @@ class IrodsRequestModifyMixin:
             alert_count = AppAlert.objects.filter(
                 project=project,
                 user=u,
-                alert_name=IRODS_REQ_CREATE_ALERT,
+                alert_name=IRODS_REQ_CREATE_ALERT_NAME,
                 active=True,
             ).count()
             if alert_count > 0:
@@ -2065,7 +2065,7 @@ class IrodsRequestModifyMixin:
                 continue  # Only have one active alert per user/project
             app_alerts.add_alert(
                 app_name=APP_NAME,
-                alert_name=IRODS_REQ_CREATE_ALERT,
+                alert_name=IRODS_REQ_CREATE_ALERT_NAME,
                 user=u,
                 message='iRODS deletion requests require attention in '
                 'project "{}"'.format(project.title),
@@ -2103,17 +2103,16 @@ class IrodsRequestModifyMixin:
         )
         if req_count == 0:
             alerts = AppAlert.objects.filter(
-                alert_name=IRODS_REQ_CREATE_ALERT,
+                alert_name=IRODS_REQ_CREATE_ALERT_NAME,
                 project=irods_request.project,
                 active=True,
             )
-            for a in alerts:
-                a.active = False
-                a.save()
+            alert_count = alerts.count()
+            alerts.delete()  # Deleting as the user doesn't dismiss these
             logger.debug(
-                'No active requests left for project, deactivating {} '
+                'No active requests left for project, deleting {} '
                 'owner/delegate alert{}'.format(
-                    alerts.count(), 's' if alerts.count() != 1 else ''
+                    alert_count, 's' if alert_count != 1 else ''
                 )
             )
 
@@ -2362,7 +2361,7 @@ class IrodsRequestAcceptView(
         if app_alerts:
             app_alerts.add_alert(
                 app_name=APP_NAME,
-                alert_name=IRODS_REQ_ACCEPT_ALERT,
+                alert_name=IRODS_REQ_ACCEPT_ALERT_NAME,
                 user=obj.user,
                 message='iRODS delete request accepted by {}: "{}"'.format(
                     self.request.user.username, obj.get_short_path()
@@ -2462,7 +2461,7 @@ class IrodsRequestRejectView(
         if app_alerts:
             app_alerts.add_alert(
                 app_name=APP_NAME,
-                alert_name=IRODS_REQ_REJECT_ALERT,
+                alert_name=IRODS_REQ_REJECT_ALERT_NAME,
                 user=obj.user,
                 message='iRODS delete request rejected by {}: "{}"'.format(
                     self.request.user.username, obj.get_short_path()
