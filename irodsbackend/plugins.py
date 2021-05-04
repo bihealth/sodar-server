@@ -9,6 +9,28 @@ from projectroles.plugins import BackendPluginPoint
 from irodsbackend.api import IrodsAPI
 
 
+# Local constants
+IRODS_INFO_SETTINGS = [
+    'ENABLE_IRODS',
+    'IRODS_CERT_PATH',
+    'IRODS_ENV_PATH',
+    'IRODS_HOST',
+    'IRODS_LANDING_ZONE_COLL',
+    'IRODS_PORT',
+    'IRODS_QUERY_BATCH_SIZE',
+    'IRODS_ROOT_PATH',
+    'IRODS_SAMPLE_COLL',
+    'IRODS_USER',
+    'IRODS_WEBDAV_ENABLED',
+    'IRODS_WEBDAV_URL',
+    'IRODS_WEBDAV_URL_ANON',
+    'IRODS_WEBDAV_URL_ANON_TMPL',
+    'IRODS_WEBDAV_USER_ANON',
+    'IRODS_ZONE',
+    'IRODSBACKEND_STATUS_INTERVAL',
+]
+
+
 class BackendPlugin(BackendPluginPoint):
     """Plugin for registering backend app with Projectroles"""
 
@@ -19,7 +41,7 @@ class BackendPlugin(BackendPluginPoint):
     title = 'iRODS Backend'
 
     #: FontAwesome icon ID string
-    icon = 'cloud-download'
+    icon = 'mdi:database-search'
 
     #: Description string
     description = 'iRODS backend for interfacing with the SODAR iRODS server'
@@ -29,6 +51,9 @@ class BackendPlugin(BackendPluginPoint):
 
     #: URL of optional css file to be included
     css_url = 'irodsbackend/css/irodsbackend.css'
+
+    #: Names of plugin specific Django settings to display in siteinfo
+    info_settings = IRODS_INFO_SETTINGS
 
     def get_api(self, **kwargs):
         """Return API entry point object."""

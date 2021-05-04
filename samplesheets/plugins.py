@@ -39,6 +39,22 @@ from samplesheets.views import (
 # SODAR constants
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 
+# Local constants
+SHEETS_INFO_SETTINGS = [
+    'SHEETS_ALLOW_CRITICAL',
+    'SHEETS_CONFIG_VERSION',
+    'SHEETS_ENABLE_CACHE',
+    'SHEETS_ENABLED_TEMPLATES',
+    'SHEETS_IRODS_LIMIT',
+    'SHEETS_IRODS_REQUEST_PAGINATION',
+    'SHEETS_IRODS_TICKET_PAGINATION',
+    'SHEETS_MAX_COLUMN_WIDTH',
+    'SHEETS_MIN_COLUMN_WIDTH',
+    'SHEETS_SYNC_INTERVAL',
+    'SHEETS_TABLE_HEIGHT',
+    'SHEETS_VERSION_PAGINATION',
+]
+
 
 # Samplesheets project app plugin ----------------------------------------------
 
@@ -187,6 +203,9 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
             'align': 'center',
         },
     }
+
+    #: Names of plugin specific Django settings to display in siteinfo
+    info_settings = SHEETS_INFO_SETTINGS
 
     def get_taskflow_sync_data(self):
         """

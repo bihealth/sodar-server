@@ -8,8 +8,16 @@ from projectroles.plugins import ProjectAppPluginPoint, get_backend_api
 # Samplesheets dependency
 from samplesheets.models import Investigation, Assay
 
-from .models import LandingZone
+from landingzones.models import LandingZone
 from landingzones.urls import urlpatterns
+
+
+# Local constants
+LANDINGZONES_INFO_SETTINGS = [
+    'LANDINGZONES_STATUS_INTERVAL',
+    'LANDINGZONES_TRIGGER_FILE',
+    'LANDINGZONES_TRIGGER_MOVE_INVERVAL',
+]
 
 
 # Landingzones project app plugin ----------------------------------------------
@@ -75,6 +83,9 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
             'align': 'center',
         }
     }
+
+    #: Names of plugin specific Django settings to display in siteinfo
+    info_settings = LANDINGZONES_INFO_SETTINGS
 
     def get_taskflow_sync_data(self):
         """

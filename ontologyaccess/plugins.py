@@ -43,10 +43,13 @@ class BackendPlugin(BackendPluginPoint):
     title = 'Ontology Access Backend'
 
     #: FontAwesome icon ID string
-    icon = 'tags'
+    icon = 'mdi:tags'
 
     #: Description string
     description = 'Backend for imported ontology access'
+
+    #: Names of plugin specific Django settings to display in siteinfo
+    info_settings = ['ONTOLOGYACCESS_BULK_CREATE', 'ONTOLOGYACCESS_QUERY_LIMIT']
 
     def get_api(self, **kwargs):
         """Return API entry point object."""

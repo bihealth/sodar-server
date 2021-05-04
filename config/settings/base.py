@@ -620,12 +620,18 @@ IRODSINFO_ENV_PATH = env.str('IRODSINFO_ENV_PATH', IRODS_ENV_PATH)
 
 # Allow critical altamISA warnings on import
 SHEETS_ALLOW_CRITICAL = env.bool('SHEETS_ALLOW_CRITICAL', False)
-SHEETS_ENABLE_CACHE = True  # Temporary, see issue #556
-SHEETS_IRODS_LIMIT = env.int('SHEETS_IRODS_LIMIT', 50)  # iRODS file query limit
-SHEETS_TABLE_HEIGHT = 400  # Study/assay table height
-SHEETS_CONFIG_VERSION = '0.8.0'  # Minimum edit config version
-SHEETS_MIN_COLUMN_WIDTH = 100  # Min default column width
-SHEETS_MAX_COLUMN_WIDTH = 300  # Max default column width
+# Temporary, see issue #556
+SHEETS_ENABLE_CACHE = True
+# iRODS file query limit
+SHEETS_IRODS_LIMIT = env.int('SHEETS_IRODS_LIMIT', 50)
+# Study/assay table height
+SHEETS_TABLE_HEIGHT = env.int('SHEETS_TABLE_HEIGHT', 400)
+# Minimum edit config version
+SHEETS_CONFIG_VERSION = '0.8.0'
+# Min default column width
+SHEETS_MIN_COLUMN_WIDTH = 100
+# Max default column width
+SHEETS_MAX_COLUMN_WIDTH = 300
 SHEETS_VERSION_PAGINATION = env.int('SHEETS_VERSION_PAGINATION', 15)
 SHEETS_IRODS_TICKET_PAGINATION = env.int('SHEETS_IRODS_TICKET_PAGINATION', 15)
 SHEETS_IRODS_REQUEST_PAGINATION = env.int('SHEETS_IRODS_REQUEST_PAGINATION', 15)
@@ -684,9 +690,7 @@ LZ_BIH_PROTEOMICS_SMB_EXPIRY_DAYS = env.int(
 LZ_BIH_PROTEOMICS_SMB_USER = env.str(
     'LZ_BIH_PROTEOMICS_SMB_USER', 'bih_proteomics_smb'
 )
-LZ_BIH_PROTEOMICS_SMB_PASS = env.str(
-    'LZ_BIH_PROTEOMICS_SMB_PASS', 'eech1Iekvaivai6A'
-)
+LZ_BIH_PROTEOMICS_SMB_PASS = env.str('LZ_BIH_PROTEOMICS_SMB_PASS', 'CHANGE ME!')
 
 
 # Ontologyaccess settings
