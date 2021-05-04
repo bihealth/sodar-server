@@ -2,6 +2,7 @@
 
 import json
 import logging
+import math
 import random
 import re
 import string
@@ -32,6 +33,8 @@ ACCEPTED_PATH_TYPES = [
     'Investigation',
     'Study',
 ]
+NAME_LIKE_OVERHEAD = 23  # Magic number for query overhead for name filtering
+NAME_LIKE_MAX_LEN = 2200  # Magic number for maximum length of name filters
 
 
 logger = logging.getLogger(__name__)
@@ -524,8 +527,9 @@ class IrodsAPI:
 
     def get_objs_recursively(self, coll, md5=False, name_like=None, limit=None):
         """
-        Return objects below a coll recursively (replacement for the
-        non-scalable walk() function in the API).
+        Return objects below a coll recursively. Replacement for the
+        non-scalable walk() function in the API. Also gets around the query
+        length limitation in iRODS.
 
         :param coll: Collection object
         :param md5: if True, return .md5 files, otherwise anything but them
@@ -535,65 +539,81 @@ class IrodsAPI:
         """
         ret = []
         md5_filter = 'LIKE' if md5 else 'NOT LIKE'
-        sql = (
-            'SELECT DISTINCT ON (data_id) data_name, data_size, '
-            'r_data_main.modify_ts as modify_ts, coll_name '
-            'FROM r_data_main JOIN r_coll_main USING (coll_id) '
-            'WHERE (coll_name = \'{coll_path}\' '
-            'OR coll_name LIKE \'{coll_path}/%\') '
-            'AND data_name {md5_filter} \'%.md5\''.format(
-                coll_path=coll.path, md5_filter=md5_filter
-            )
-        )
+        path_lookup = []
+        q_count = 1
 
-        if name_like:
-            if not isinstance(name_like, list):
-                name_like = [name_like]
-            sql += ' AND ('
-            for i, n in enumerate(name_like):
-                if i > 0:
-                    sql += ' OR '
-                sql += 'data_name LIKE \'%{}%\''.format(n)
-            sql += ')'
-
-        if not md5 and limit:
-            sql += ' LIMIT {}'.format(limit)
-
-        # logger.debug('Object list query = "{}"'.format(sql))
-        columns = [
-            DataObject.name,
-            DataObject.size,
-            DataObject.modify_time,
-            Collection.name,
-        ]
-        query = self.get_query(sql, columns)
-
-        try:
-            results = query.get_results()
-            for row in results:
-                ret.append(
-                    {
-                        'name': row[DataObject.name],
-                        'path': row[Collection.name]
-                        + '/'
-                        + row[DataObject.name],
-                        'size': row[DataObject.size],
-                        'modify_time': self._get_datetime(
-                            row[DataObject.modify_time]
-                        ),
-                    }
-                )
-        except CAT_NO_ROWS_FOUND:
-            pass
-        except Exception as ex:
-            logger.error(
-                'iRODS exception in _get_objs_recursively(): {}'.format(
-                    ex.__class__.__name__
+        def _do_query(nl=None):
+            sql = (
+                'SELECT DISTINCT ON (data_id) data_name, data_size, '
+                'r_data_main.modify_ts as modify_ts, coll_name '
+                'FROM r_data_main JOIN r_coll_main USING (coll_id) '
+                'WHERE (coll_name = \'{coll_path}\' '
+                'OR coll_name LIKE \'{coll_path}/%\') '
+                'AND data_name {md5_filter} \'%.md5\''.format(
+                    coll_path=coll.path, md5_filter=md5_filter
                 )
             )
-        finally:
-            query.remove()
+            if nl:
+                if not isinstance(nl, list):
+                    nl = [nl]
+                sql += ' AND ('
+                for i, n in enumerate(nl):
+                    if i > 0:
+                        sql += ' OR '
+                    sql += 'data_name LIKE \'%{}%\''.format(n)
+                sql += ')'
+            if not md5 and limit:
+                sql += ' LIMIT {}'.format(limit)
 
+            # logger.debug('Object list query = "{}"'.format(sql))
+            columns = [
+                DataObject.name,
+                DataObject.size,
+                DataObject.modify_time,
+                Collection.name,
+            ]
+            query = self.get_query(sql, columns)
+
+            try:
+                results = query.get_results()
+                for row in results:
+                    obj_path = row[Collection.name] + '/' + row[DataObject.name]
+                    if q_count > 1 and obj_path in path_lookup:
+                        continue  # Skip possible dupes in case of split query
+                    ret.append(
+                        {
+                            'name': row[DataObject.name],
+                            'path': obj_path,
+                            'size': row[DataObject.size],
+                            'modify_time': self._get_datetime(
+                                row[DataObject.modify_time]
+                            ),
+                        }
+                    )
+                    if q_count > 1:
+                        path_lookup.append(obj_path)
+            except CAT_NO_ROWS_FOUND:
+                pass
+            except Exception as ex:
+                logger.error(
+                    'iRODS exception in _get_objs_recursively(): {}'.format(
+                        ex.__class__.__name__
+                    )
+                )
+            finally:
+                query.remove()
+
+        # HACK: Long queries cause a crash with iRODS so we have to split them
+        if name_like and isinstance(name_like, list) and len(name_like) > 1:
+            f_len = sum([len(x) + NAME_LIKE_OVERHEAD for x in name_like])
+            q_count = math.ceil(f_len / NAME_LIKE_MAX_LEN)
+            q_len = math.ceil(len(name_like) / q_count)
+            q_idx = 0
+            for i in range(q_count):
+                _do_query(name_like[q_idx : q_idx + q_len])
+                q_idx = q_idx + q_len
+        else:  # Single query
+            _do_query(name_like)
         return sorted(ret, key=lambda x: x['path'])
 
     def get_coll_by_path(self, path):

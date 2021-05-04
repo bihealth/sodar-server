@@ -33,12 +33,14 @@ Changed
 -------
 
 - **General**
-    - Upgrade to django-sodar-core v0.10.0 (#1096, #1113, #1118, #1121)
+    - Upgrade to django-sodar-core v0.10.1-WIP (#1096, #1113, #1118, #1121, #1135)
     - Upgrade to Python v3.8 and Django v3.2 (#1113)
     - Unify ISA-Tab naming (#1082)
     - Upgrade to Chromedriver v89
     - Upgrade to altamISA v0.2.8 (#1099)
     - Upgrade versioneer
+- **Irodsbackend**
+    - Split long queries in ``get_objs_recursively()`` (#1132)
 - **Samplesheets**
     - Fail gracefully for ISAtab import with empty tables (#903, #1075)
     - Implement study/assay app retrieval in model ``get_plugin()`` helpers (#1076)
@@ -64,6 +66,8 @@ Fixed
     - Root level backend plugin retrieval in template tags
 - **Irodsadmin**
     - Irodsorphans project UUID not returned if path ends in project UUID (#1071)
+- **Irodsbackend**
+    - Long queries raising ``CAT_SQL_ERR`` in iRODS (#1132)
 
 Removed
 -------

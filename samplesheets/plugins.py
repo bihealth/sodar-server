@@ -128,7 +128,8 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
             'type': 'STRING',
             'label': 'Token for sheet synchronization',
             'default': '',
-            'description': 'Access token for sheet synchronization in the source project',
+            'description': 'Access token for sheet synchronization in the '
+            'source project',
             'user_modifiable': True,
         },
     }
@@ -880,7 +881,7 @@ def get_irods_content(inv, study, irods_backend, ret_data):
 
             assay_shortcuts = assay_plugin.get_shortcuts(assay) or []
 
-            # Add visual notification to all shortcuts coming from an assay plugin
+            # Add visual notification to all shortcuts coming from assay plugin
             for a in assay_shortcuts:
                 a['icon'] = 'mdi:puzzle'
                 a['title'] = 'Defined in assay plugin'
