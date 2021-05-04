@@ -392,7 +392,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                     '<a href="{}" title="View project sample sheets">'
                     # 'data-toggle="tooltip" data-placement="top">'
                     '<i class="iconify text-primary" '
-                    'data-icon="mdi:folder-table"></i></a>'.format(
+                    'data-icon="mdi:flask"></i></a>'.format(
                         get_sheets_url(project)
                     )
                 )
@@ -413,7 +413,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
             else:
                 return (
                     '<i class="iconify text-muted" '
-                    'data-icon="mdi:folder-table"></i>'
+                    'data-icon="mdi:flask"></i>'
                     'title="No sample sheets in project"></i>'
                     # 'data-toggle="tooltip" data-placement="top"></i>'
                 )
@@ -432,7 +432,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                     'title="View project files in iRODS">'
                     # 'data-toggle="tooltip" data-placement="top">'
                     '<i class="iconify text-primary" '
-                    'data-icon="mdi:folder-open-outline"></i></a>'.format(
+                    'data-icon="mdi:folder-open"></i></a>'.format(
                         settings.IRODS_WEBDAV_URL
                         + irods_backend.get_sample_path(project)
                     )
@@ -440,7 +440,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
 
             return (
                 '<i class="iconify text-muted" '
-                'data-icon="mdi:folder-open-outline" title="{}" '
+                'data-icon="mdi:folder-open" title="{}" '
                 # 'data-toggle="tooltip" data-placement="top" '
                 '></i>'.format(
                     'No project files in iRODS'
