@@ -7,11 +7,11 @@
 whitenoise==5.0.1
 
 # Redis cache support
-django-redis==4.11.0
+django-redis==4.12.1
 
 # WSGI Handler
-gevent==1.4.0
-gunicorn==20.0.4
+gevent==21.1.2
+gunicorn==20.1.0
 
 # Email backends for Mailgun, Postmark, SendGrid and more
 # django-anymail==7.0.0

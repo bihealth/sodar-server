@@ -41,6 +41,7 @@ Changed
     - Upgrade to Chromedriver v89
     - Upgrade to altamISA v0.2.8 (#1099)
     - Upgrade versioneer
+    - Upgrade general python dependencies
 - **Irodsbackend**
     - Split long queries in ``get_objs_recursively()`` (#1132)
 - **Samplesheets**

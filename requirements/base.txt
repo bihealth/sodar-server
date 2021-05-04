@@ -2,7 +2,7 @@
 wheel==0.36.2
 
 # Django
-django==3.2
+django==3.2.1
 
 # Configuration
 django-environ==0.4.5
@@ -66,7 +66,7 @@ mistune==0.8.4
 -e git+https://github.com/mikkonie/django-plugins.git@42e86e7904e5c09f1da32173862b26843eda5dd8#egg=django-plugins
 
 # SODAR Core
--e git+https://github.com/bihealth/sodar-core.git@2880f936133a138ef4ca51b2c89084a5450b8b60#egg=django-sodar-core
+-e git+https://github.com/bihealth/sodar-core.git@80cdbbbb0213842dfa6359bf2916ac78aa192f00#egg=django-sodar-core
 
 # Celery
 celery==5.0.5
@@ -83,17 +83,17 @@ altamisa==0.2.8
 python-irodsclient==0.8.6
 
 # XML generating
-lxml==4.2.5
+lxml==4.6.3
 
 # Excel file generating
-openpyxl==3.0.0
+openpyxl==3.0.7
 
 # Webpack loader for Vue.js
 django-webpack-loader==0.7.0
 
 # OBO ontology file parsing
-fastobo==0.9.3
-pronto==2.3.1  # For OWL conversion
+fastobo==0.10.1
+pronto==2.4.1  # For OWL conversion
 
 # CUBI-TK for sheet templates
 -e git+https://github.com/bihealth/cubi-tk.git@77e996dc6ad4326ef2de9c144c5d72d61380d762#egg=cubi-tk
