@@ -140,6 +140,9 @@
       <!-- General project Javascript -->
       <script type="text/javascript" src="{% static 'js/project.js' %}"></script>
 
+      <!-- App alerts Javascript -->
+      {% include 'projectroles/_appalerts_include.html' %}
+
       <!-- Settings (SODAR specific) -->
       <script type="text/javascript">
         window.irodsbackendStatusInterval = {% get_django_setting 'IRODSBACKEND_STATUS_INTERVAL' %};
