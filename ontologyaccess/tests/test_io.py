@@ -24,10 +24,9 @@ EX_OBO_TERM_IDS = {
 }
 OBO_BATCH_URLS = [
     'http://purl.obolibrary.org/obo/hp.obo',
+    'http://purl.obolibrary.org/obo/ms.obo',
+    'http://purl.obolibrary.org/obo/pato.obo',
     # 'http://purl.obolibrary.org/obo/cl.obo',  # TODO: Fix (see #1064)
-    'https://github.com/obophenotype/ncbitaxon/releases/download/current/taxslim.obo',
-    # 'http://purl.obolibrary.org/obo/go.obo',  # Large and slow to parse
-    # TODO: Add more imports to test in batch here
     # TODO: Also see issue #944
 ]
 
@@ -82,8 +81,7 @@ class TestOBOFormatOntologyIO(TestCase):
         term = ontology.get_term_by_id(EX_OBO_TERM_IDS['no_def'])
         self.assertIsNone(term.definition)
 
-    # TODO reactive me once URLs are available again
-    def INACTIVE_test_import_batch(self):
+    def test_import_batch(self):
         """Test importing ontologies in a batch (this may take a while)"""
 
         for url in OBO_BATCH_URLS:
@@ -105,11 +103,9 @@ class TestOBOFormatOntologyIO(TestCase):
             self.assertNotEqual(
                 OBOFormatOntologyTerm.objects.count(), 0, msg=file_name
             )
-
             ontology.delete()
 
-    # TODO reactive me once URLs are available again
-    def INACTIVE_test_import_batch_owl(self):
+    def test_import_batch_owl(self):
         """Test converting and importing OWL ontologies in a batch (this may take a while)"""
 
         for url in OWL_BATCH_URLS:
@@ -132,7 +128,6 @@ class TestOBOFormatOntologyIO(TestCase):
             self.assertNotEqual(
                 OBOFormatOntologyTerm.objects.count(), 0, msg=file_name
             )
-
             ontology.delete()
 
     # TODO: Test import_omim()
