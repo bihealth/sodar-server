@@ -2076,7 +2076,7 @@ class TestSheetVersionCompareAjaxView(SampleSheetImportMixin, TestViewsBase):
             'detail': 'You do not have permission to perform this action.'
         }
 
-        with self.login(self.user_contributor):
+        with self.login(self.user_guest):
             response = self.client.get(
                 '{}?source={}&target={}'.format(
                     reverse(

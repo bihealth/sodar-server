@@ -28,7 +28,9 @@
 {% block projectroles_extend %}
 {% has_perm 'samplesheets.manage_sheet' request.user project as can_manage_sheet %}
 
-<form class="form-inline" action="{% url 'samplesheets:version_compare' project=project.sodar_uuid %}" method="GET">
+<form class="form-inline"
+      action="{% url 'samplesheets:version_compare' project=project.sodar_uuid %}"
+      method="GET">
   <div class="row sodar-subtitle-container w-100">
     <h3>Sample Sheet Versions</h3>
     <div class="input-group ml-auto">

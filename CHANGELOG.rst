@@ -25,7 +25,7 @@ Added
     - ``clean_sheet_dir_name()`` helper
     - iRODS delete requests for data objects and collections (#277, #1087, #1089, #1090, #1093)
     - Allow per-project restriction of column config updates (#995)
-    - Diff comparison for sheet versions (#1007)
+    - Diff comparison for sheet versions (#1007, #1110)
     - Enable remote sync for sample sheets (#959, #1102, #1103)
     - ``Icon`` component in vue app for django-iconify icon access (#1113)
     - App alerts for iRODS data request actions (#1084)

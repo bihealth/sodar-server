@@ -102,15 +102,14 @@ class TestViewsBase(
         self.role_guest = Role.objects.get_or_create(name=PROJECT_ROLE_GUEST)[0]
 
         # Init superuser
-        self.user = self.make_user('superuser', password=USER_PASSWORD)
+        self.user = self.make_user('superuser')
         self.user.is_staff = True
         self.user.is_superuser = True
         self.user.save()
-        self.user_owner = self.make_user('owner', password=USER_PASSWORD)
-        self.user_delegate = self.make_user('delegate', password=USER_PASSWORD)
-        self.user_contributor = self.make_user(
-            'contributor', password=USER_PASSWORD
-        )
+        self.user_owner = self.make_user('owner')
+        self.user_delegate = self.make_user('delegate')
+        self.user_contributor = self.make_user('contributor')
+        self.user_guest = self.make_user('guest')
         # Init projects
         self.category = self._make_project(
             'TestCategory', PROJECT_TYPE_CATEGORY, None
@@ -126,6 +125,9 @@ class TestViewsBase(
         )
         self.contributor_as = self._make_assignment(
             self.project, self.user_contributor, self.role_contributor
+        )
+        self.guest_as = self._make_assignment(
+            self.project, self.user_guest, self.role_guest
         )
 
 
@@ -1139,10 +1141,8 @@ class TestSheetVersionCompareView(TestViewsBase):
             )
 
         self.assertEqual(ISATab.objects.count(), 2)
-
         self.isa1 = ISATab.objects.first()
         self.isa2 = ISATab.objects.last()
-
         self.isa2.data['studies']['s_small2.txt'] = self.isa2.data[
             'studies'
         ].pop('s_small2_alt.txt')
@@ -1153,7 +1153,6 @@ class TestSheetVersionCompareView(TestViewsBase):
 
     def test_render(self):
         """Test rendering the sheet version compare view"""
-
         with self.login(self.user):
             response = self.client.get(
                 '{}?source={}&target={}'.format(
@@ -1165,15 +1164,13 @@ class TestSheetVersionCompareView(TestViewsBase):
                     str(self.isa2.sodar_uuid),
                 )
             )
-
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context['source'], str(self.isa1.sodar_uuid))
         self.assertEqual(response.context['target'], str(self.isa2.sodar_uuid))
 
     def test_render_no_permission(self):
         """Test rendering the sheet version compare view without permission"""
-
-        with self.login(self.user_contributor):
+        with self.login(self.user_guest):
             response = self.client.get(
                 '{}?source={}&target={}'.format(
                     reverse(
@@ -1185,7 +1182,6 @@ class TestSheetVersionCompareView(TestViewsBase):
                 ),
                 follow=True,
             )
-
         self.assertRedirects(response, reverse('home'))
 
 
@@ -1211,10 +1207,8 @@ class TestSheetVersionCompareFileView(TestViewsBase):
             )
 
         self.assertEqual(ISATab.objects.count(), 2)
-
         self.isa1 = ISATab.objects.first()
         self.isa2 = ISATab.objects.last()
-
         self.isa2.data['studies']['s_small2.txt'] = self.isa2.data[
             'studies'
         ].pop('s_small2_alt.txt')
@@ -1225,7 +1219,6 @@ class TestSheetVersionCompareFileView(TestViewsBase):
 
     def test_render(self):
         """Test rendering the sheet version compare view"""
-
         with self.login(self.user):
             response = self.client.get(
                 '{}?source={}&target={}&filename={}&category={}'.format(
@@ -1239,7 +1232,6 @@ class TestSheetVersionCompareFileView(TestViewsBase):
                     'assays',
                 )
             )
-
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context['source'], str(self.isa1.sodar_uuid))
         self.assertEqual(response.context['target'], str(self.isa2.sodar_uuid))
@@ -1248,8 +1240,7 @@ class TestSheetVersionCompareFileView(TestViewsBase):
 
     def test_render_no_permission(self):
         """Test rendering the sheet version compare view without permission"""
-
-        with self.login(self.user_contributor):
+        with self.login(self.user_guest):
             response = self.client.get(
                 '{}?source={}&target={}&filename={}&category={}'.format(
                     reverse(
@@ -1263,5 +1254,4 @@ class TestSheetVersionCompareFileView(TestViewsBase):
                 ),
                 follow=True,
             )
-
         self.assertRedirects(response, reverse('home'))

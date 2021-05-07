@@ -502,9 +502,8 @@ class StudyTablesAjaxView(SODARBaseProjectAjaxView):
 
         if not user_config_found:
             logger.debug(
-                'Setting display config for user "{}" in project "{}" ({})'.format(
-                    user.username, project.title, project.sodar_uuid
-                )
+                'Setting display config for user "{}" in project "{}" '
+                '({})'.format(user.username, project.title, project.sodar_uuid)
             )
             app_settings.set_app_setting(
                 APP_NAME,
@@ -1934,7 +1933,7 @@ class SheetVersionCompareAjaxView(SODARBaseProjectAjaxView):
         self.project = None
         self.path = None
 
-    permission_required = 'samplesheets.manage_sheet'
+    permission_required = 'samplesheets.edit_sheet'
 
     def get(self, request, *args, **kwargs):
         category = request.GET.get('category')

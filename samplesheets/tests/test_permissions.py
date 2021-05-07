@@ -338,9 +338,9 @@ class TestSampleSheetsPermissions(
             self.superuser,
             self.owner_as.user,
             self.delegate_as.user,
+            self.contributor_as.user,
         ]
         bad_users = [
-            self.contributor_as.user,
             self.guest_as.user,
             self.anonymous,
             self.user_no_roles,
@@ -365,9 +365,9 @@ class TestSampleSheetsPermissions(
             self.superuser,
             self.owner_as.user,
             self.delegate_as.user,
+            self.contributor_as.user,
         ]
         bad_users = [
-            self.contributor_as.user,
             self.guest_as.user,
             self.anonymous,
             self.user_no_roles,

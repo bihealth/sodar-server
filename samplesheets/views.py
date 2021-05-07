@@ -1595,7 +1595,6 @@ class SampleSheetVersionListView(
         context['sheet_select_form'] = SampleSheetVersionCompareForm(
             choices=choices
         )
-
         if context['investigation']:
             context['current_version'] = (
                 ISATab.objects.filter(
@@ -1605,7 +1604,6 @@ class SampleSheetVersionListView(
                 .order_by('-date_created')
                 .first()
             )
-
         return context
 
 
@@ -1619,7 +1617,7 @@ class SampleSheetVersionCompareView(
 ):
     """Sample Sheet version compare view"""
 
-    permission_required = 'samplesheets.manage_sheet'
+    permission_required = 'samplesheets.edit_sheet'
     template_name = 'samplesheets/version_compare.html'
 
     def get_context_data(self, *args, **kwargs):
@@ -1645,7 +1643,7 @@ class SampleSheetVersionCompareFileView(
 ):
     """Sample Sheet version compare file view"""
 
-    permission_required = 'samplesheets.manage_sheet'
+    permission_required = 'samplesheets.edit_sheet'
     template_name = 'samplesheets/version_compare_file.html'
 
     def get_context_data(self, *args, **kwargs):
