@@ -6,15 +6,15 @@
     <title>{{ filename }}</title>
     <script type="text/javascript" src="{% static 'admin/js/vendor/jquery/jquery.js' %}"></script>
     <script type="text/javascript" src="{% static 'samplesheets/js/vendor/daff.js' %}"></script>
-    <script type="text/javascript" src="{% static 'samplesheets/js/samplesheets.js' %}"></script>
+    <script type="text/javascript" src="{% static 'samplesheets/js/sheet_compare.js' %}"></script>
     <script type="text/javascript">
-      const ajax_url = '{% url "samplesheets:ajax_version_compare" project=project.sodar_uuid %}';
+      const ajaxUrl = '{% url "samplesheets:ajax_version_compare" project=project.sodar_uuid %}';
       const source = '{{ source }}';
       const target = '{{ target }}';
       const filename = '{{ filename }}';
       const category = '{{ category }}';
       $(document).ready(function() {
-        constructFilePage(ajax_url, source, target, filename, category);
+        buildFilePage(ajaxUrl, source, target, filename, category);
       })
     </script>
     <!-- Bootstrap 4 CSS -->

@@ -1,6 +1,6 @@
 
 
-function constructCard(category, filename, counter, table, url, source, target) {
+function buildDiffCard(category, filename, counter, table, url, source, target) {
   return `
     <div class="card" id="sodar-ss-${category}-diff${counter}">
       <div class="card-header">
@@ -9,8 +9,7 @@ function constructCard(category, filename, counter, table, url, source, target) 
           <a href="${url}?source=${source}&target=${target}&category=${category}&filename=${filename}"
              target="_blank"
              class="btn btn-secondary sodar-header-button sodar-ss-diff-btn pull-right"
-             title="Open table in a new window"
-          >
+             title="Open table in a new window">
             <i class="iconify" data-icon="mdi:open-in-new"></i>
           </a>
         </h4>
@@ -23,15 +22,15 @@ function constructCard(category, filename, counter, table, url, source, target) 
 }
 
 
-function constructPage(ajax_url, url, source, target) {
+function buildDiffPage(ajaxUrl, url, source, target) {
   $.ajax({
-    url: ajax_url + '?source=' + source + '&target=' + target
+    url: ajaxUrl + '?source=' + source + '&target=' + target
   }).done(function(data) {
     for (let category in data) {
       let counter = 0;
       for (let filename in data[category]) {
-        let table = constructComparisonTable(data[category][filename]);
-        let card = constructCard(
+        let table = buildDiffTable(data[category][filename]);
+        let card = buildDiffCard(
             category, filename, counter, table, url, source, target);
         $('#sodar-ss-diff-container').append(card);
         counter++;
@@ -41,18 +40,18 @@ function constructPage(ajax_url, url, source, target) {
 }
 
 
-function constructFilePage(ajax_url, source, target, filename, category) {
+function buildFilePage(ajaxUrl, source, target, filename, category) {
   $.ajax({
-    url: ajax_url + '?source=' + source + '&target=' + target + '&filename=' +
+    url: ajaxUrl + '?source=' + source + '&target=' + target + '&filename=' +
         filename + '&category=' + category
   }).done(function(data) {
-    let table = constructComparisonTable(data);
+    let table = buildDiffTable(data);
     $('#sodar-ss-diff-container').append(table);
   })
 }
 
 
-function constructComparisonTable(data) {
+function buildDiffTable(data) {
   let table1 = new daff.TableView(data[0]);
   let table2 = new daff.TableView(data[1]);
   table1.trim();

@@ -52,15 +52,15 @@
   </script>
 
   <script type="text/javascript" src="{% static 'samplesheets/js/vendor/daff.js' %}"></script>
-  <script type="text/javascript" src="{% static 'samplesheets/js/samplesheets.js' %}"></script>
+  <script type="text/javascript" src="{% static 'samplesheets/js/sheet_compare.js' %}"></script>
   <script type="text/javascript">
-    const ajax_url = '{% url "samplesheets:ajax_version_compare" project=project.sodar_uuid %}';
-    const file_url = '{% url "samplesheets:version_compare_file" project=project.sodar_uuid %}';
+    const ajaxUrl = '{% url "samplesheets:ajax_version_compare" project=project.sodar_uuid %}';
+    const fileUrl = '{% url "samplesheets:version_compare_file" project=project.sodar_uuid %}';
     const source = '{{ source }}';
     const target = '{{ target }}';
 
     $(document).ready(function() {
-      constructPage(ajax_url, file_url, source, target);
+      buildDiffPage(ajaxUrl, fileUrl, source, target);
     })
   </script>
 
