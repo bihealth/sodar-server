@@ -99,6 +99,10 @@
 </template>
 
 <script>
+
+const issueDeleteRequestUrl = '/samplesheets/ajax/irods/request/create/'
+const cancelDeleteRequestUrl = '/samplesheets/ajax/irods/request/delete/'
+
 export default {
   name: 'IrodsDirModal',
   props: [
@@ -189,14 +193,19 @@ export default {
       }
     },
     issueRequest (index) {
-      const issueDeleteRequestUrl = '/samplesheets/ajax/irods/request/create/' +
-      this.projectUuid + '?path=' + encodeURIComponent(this.objectList[index].path)
-
       if (confirm(
         'Do you really want to request deletion for "' +
           this.objectList[index].name + '"?')) {
-        fetch(issueDeleteRequestUrl, { credentials: 'same-origin' })
-          .then(response => response.json())
+        fetch(issueDeleteRequestUrl + this.projectUuid, {
+          method: 'POST',
+          body: JSON.stringify({ path: this.objectList[index].path }),
+          credentials: 'same-origin',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+            'X-CSRFToken': this.app.sodarContext.csrf_token
+          }
+        }).then(response => response.json())
           .then(response => {
             this.handleDeleteRequestResponse(response, index)
           }).catch(function (error) {
@@ -205,11 +214,16 @@ export default {
       }
     },
     cancelRequest (index) {
-      const cancelDeleteRequestUrl = '/samplesheets/ajax/irods/request/delete/' +
-      this.projectUuid + '?path=' + encodeURIComponent(this.objectList[index].path)
-
-      fetch(cancelDeleteRequestUrl, { credentials: 'same-origin' })
-        .then(response => response.json())
+      fetch(cancelDeleteRequestUrl + this.projectUuid, {
+        method: 'POST',
+        body: JSON.stringify({ path: this.objectList[index].path }),
+        credentials: 'same-origin',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          'X-CSRFToken': this.app.sodarContext.csrf_token
+        }
+      }).then(response => response.json())
         .then(response => {
           this.handleDeleteRequestResponse(response, index)
         }).catch(function (error) {

@@ -23,7 +23,7 @@ Added
     - Warning for unrecognized assay plugin in sample sheet import (#1070)
     - Sheet creation from templates using cubi-tk (#1068)
     - ``clean_sheet_dir_name()`` helper
-    - iRODS delete requests for data objects and collections (#277, #1087, #1089, #1090, #1093)
+    - iRODS delete requests for data objects and collections (#277, #1087, #1089, #1090, #1093, #1134)
     - Allow per-project restriction of column config updates (#995)
     - Diff comparison for sheet versions (#1007, #1110)
     - Enable remote sync for sample sheets (#959, #1102, #1103)

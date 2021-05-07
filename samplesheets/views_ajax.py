@@ -1809,7 +1809,6 @@ class StudyDisplayConfigAjaxView(SODARBaseProjectAjaxView):
         )
 
 
-# TODO: Change to use POST instead of GET (see #1134)
 class IrodsRequestCreateAjaxView(
     IrodsRequestModifyMixin, SODARBaseProjectAjaxView
 ):
@@ -1817,12 +1816,13 @@ class IrodsRequestCreateAjaxView(
 
     permission_required = 'samplesheets.edit_sheet'
 
-    def get(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         project = self.get_project()
+        path = request.data.get('path')
 
         # Create database object
         old_request = IrodsDataRequest.objects.filter(
-            path=request.GET.get('path'), status__in=['ACTIVE', 'FAILED']
+            path=path, status__in=['ACTIVE', 'FAILED']
         ).first()
         if old_request:
             return Response(
@@ -1830,7 +1830,7 @@ class IrodsRequestCreateAjaxView(
             )
 
         irods_request = IrodsDataRequest.objects.create(
-            path=request.GET.get('path'),
+            path=path,
             user=request.user,
             project=project,
             description='Request created via Ajax API',
@@ -1850,7 +1850,6 @@ class IrodsRequestCreateAjaxView(
         )
 
 
-# TODO: Modify to use POST instead of GET (see #1134)
 class IrodsRequestDeleteAjaxView(
     IrodsRequestModifyMixin, SODARBaseProjectAjaxView
 ):
@@ -1858,10 +1857,10 @@ class IrodsRequestDeleteAjaxView(
 
     permission_required = 'samplesheets.edit_sheet'
 
-    def get(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         # Delete database object
         irods_request = IrodsDataRequest.objects.filter(
-            path=request.GET.get('path'),
+            path=request.data.get('path'),
             status__in=['ACTIVE', 'FAILED'],
         ).first()
 
@@ -1893,12 +1892,12 @@ class IrodsRequestDeleteAjaxView(
 class IrodsObjectListAjaxView(BaseIrodsAjaxView):
     """View for listing data objects in iRODS recursively"""
 
+    permission_required = 'samplesheets.view_sheet'
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.project = None
         self.path = None
-
-    permission_required = 'samplesheets.view_sheet'
 
     def get(self, request, *args, **kwargs):
         try:
@@ -1971,8 +1970,8 @@ class SheetVersionCompareAjaxView(SODARBaseProjectAjaxView):
             ]
             return Response(ret_data, status=200)
 
-        # If filename and/or category are missing, generate diff for whole samplesheet
-
+        # If filename and/or category are missing, generate diff for
+        # the whole samplesheet
         categories = ('studies', 'assays')
 
         for category in categories:

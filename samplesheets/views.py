@@ -2394,7 +2394,7 @@ class IrodsRequestRejectView(
     IrodsRequestModifyMixin,
     View,
 ):
-    """View for accepting an iRODS data request"""
+    """View for rejecting an iRODS data request"""
 
     permission_required = 'samplesheets.manage_sheet'
 
