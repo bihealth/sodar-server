@@ -61,6 +61,7 @@ Fixed
 
 - **Landingzones**
     - Root level backend plugin retrieval in template tags
+    - CSS in project zone list (#1027)
 - **Samplesheets**
     - MaxQuant results not correctly linked in ``pep_ms`` assay app (#1072)
     - Incorrect timeline event for ``sheet_create`` (#1080)
