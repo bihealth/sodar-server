@@ -16,6 +16,7 @@ Added
     - ``setup_database.sh`` from SODAR Core
     - Enable ``appalerts`` app (#1124)
     - Display relevant Django settings values in ``siteinfo`` app (#1123)
+    - ``taskflowbackend`` in site logging (#1137)
 - **Irodsbackend**
     - Support for ``IRODS_ROOT_PATH`` setting (#1067)
     - ``get_root_path()`` and ``get_projects_path()`` helpers (#1067)
