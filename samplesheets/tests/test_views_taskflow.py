@@ -2066,3 +2066,6 @@ class TestSampleSheetSyncView(TestSheetSyncBase):
         )
 
         self.assertEqual(self.project_target.investigations.count(), 0)
+
+
+# TODO: Test project create/update with public access changes

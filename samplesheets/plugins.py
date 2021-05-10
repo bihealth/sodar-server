@@ -1,5 +1,6 @@
-import os
 from copy import deepcopy
+import logging
+import os
 
 from django.conf import settings
 from django.urls import reverse
@@ -35,6 +36,10 @@ from samplesheets.views import (
     MISC_FILES_COLL_ID,
     APP_NAME,
 )
+
+
+logger = logging.getLogger(__name__)
+
 
 # SODAR constants
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
@@ -467,6 +472,63 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                     else 'iRODS WebDAV unavailable'
                 )
             )
+
+    def handle_project_update(self, project, old_data):
+        """
+        Perform actions to handle project update.
+
+        :param project: Current project (Project)
+        :param old_data: Old project data prior to update (dict)
+        """
+        taskflow = get_backend_api('taskflow')
+        irods_backend = get_backend_api('omics_irods', conn=False)
+
+        # Check for conditions and skip if not met
+        def _skip(msg):
+            logger.debug(
+                'Skipping project update for "{}" ({}): {}'.format(
+                    project.title, project.sodar_uuid, msg
+                )
+            )
+
+        if not taskflow or not irods_backend:
+            return _skip(
+                'Backends not enabled: taskflow={}; omics_irods={}'.format(
+                    taskflow is not None,
+                    irods_backend is not None,
+                )
+            )
+        if not project.public_guest_access and not old_data:
+            return _skip('Public guest access not set for new project')
+        elif project.public_guest_access == old_data.get('public_guest_access'):
+            return _skip('Public guest access unchanged')
+        investigation = Investigation.objects.filter(
+            project=project, active=True
+        ).first()
+        if not investigation or not investigation.irods_status:
+            return _skip('Investigation not found or not in iRODS')
+
+        # Submit flow
+        logger.info(
+            'Setting project public access status for "{}" ({}) to: {} '.format(
+                project.title, project.sodar_uuid, project.public_guest_access
+            )
+        )
+        flow_data = {
+            'access': project.public_guest_access,
+            'path': irods_backend.get_sample_path(project),
+        }
+        try:
+            taskflow.submit(
+                project_uuid=project.sodar_uuid,
+                flow_name='public_access_update',
+                flow_data=flow_data,
+            )
+        except Exception as ex:
+            logger.error('Public status taskflow failed: {}'.format(ex))
+            if settings.DEBUG:
+                raise ex
+        logger.info('Public access status updated.')
 
     def update_cache(self, name=None, project=None, user=None):
         """
