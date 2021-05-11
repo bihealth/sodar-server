@@ -670,12 +670,15 @@ class IrodsCollsCreateViewMixin:
                 name=investigation.title,
             )
 
-        flow_data = {'dirs': get_sample_colls(investigation)}
+        flow_data = {
+            'colls': get_sample_colls(investigation),
+            'public_guest_access': project.public_guest_access,
+        }
 
         try:
             taskflow.submit(
                 project_uuid=project.sodar_uuid,
-                flow_name='sheet_dirs_create',  # TODO: Rename in taskflow
+                flow_name='sheet_colls_create',
                 flow_data=flow_data,
                 request=self.request,
             )
@@ -696,6 +699,8 @@ class IrodsCollsCreateViewMixin:
                 project_uuid=str(project.sodar_uuid),
                 user_uuid=str(self.request.user.sodar_uuid),
             )
+
+        # TODO: If public guest access and anonymous allowed, add ticket access
 
 
 # Views ------------------------------------------------------------------------

@@ -79,19 +79,19 @@ class SampleSheetTaskflowMixin:
         :raise taskflow.FlowSubmitException if submit fails
         """
         self.assertEqual(investigation.irods_status, False)
-
+        project = investigation.project
         values = {
-            'project_uuid': investigation.project.sodar_uuid,
-            'flow_name': 'sheet_dirs_create',
-            'flow_data': {'dirs': get_sample_colls(investigation)},
+            'project_uuid': project.sodar_uuid,
+            'flow_name': 'sheet_colls_create',
+            'flow_data': {
+                'colls': get_sample_colls(investigation),
+                'public_guest_access': project.public_guest_access,
+            },
             'request': request,
         }
-
         if not request:
             values['sodar_url'] = self.live_server_url
-
         self.taskflow.submit(**values)
-
         investigation.refresh_from_db()
         self.assertEqual(investigation.irods_status, True)
 
@@ -100,12 +100,10 @@ class SampleSheetTaskflowMixin:
         Create iRODS collection for a track hub under assay collection.
         """
         track_hubs_path = assay_path + '/TrackHubs'
-
         try:
             session.collections.get(track_hubs_path)
         except irods.exception.CollectionDoesNotExist:
             session.collections.create(track_hubs_path)
-
         track_hub = session.collections.create(track_hubs_path + '/' + name)
         return track_hub.path
 

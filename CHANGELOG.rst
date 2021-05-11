@@ -43,6 +43,7 @@ Changed
     - Upgrade to altamISA v0.2.8 (#1099)
     - Upgrade versioneer
     - Upgrade general python dependencies
+    - Update taskflow actions for SODAR Taskflow v0.5 compatibility
 - **Irodsbackend**
     - Split long queries in ``get_objs_recursively()`` (#1132)
 - **Samplesheets**

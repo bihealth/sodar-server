@@ -223,9 +223,12 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         # NOTE: This only syncs previously created collections
         for investigation in Investigation.objects.filter(irods_status=True):
             flow = {
-                'flow_name': 'sheet_dirs_create',
+                'flow_name': 'sheet_colls_create',
                 'project_uuid': investigation.project.sodar_uuid,
-                'flow_data': {'dirs': get_sample_colls(investigation)},
+                'flow_data': {
+                    'colls': get_sample_colls(investigation),
+                    'public_guest_access': investigation.project.public_guest_access,
+                },
             }
             sync_flows.append(flow)
 
@@ -498,15 +501,17 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                     irods_backend is not None,
                 )
             )
-        if not project.public_guest_access and not old_data:
-            return _skip('Public guest access not set for new project')
-        elif project.public_guest_access == old_data.get('public_guest_access'):
+        if not old_data:
+            return _skip('Project newly created, no Investigation available')
+        if project.public_guest_access == old_data.get('public_guest_access'):
             return _skip('Public guest access unchanged')
         investigation = Investigation.objects.filter(
             project=project, active=True
         ).first()
-        if not investigation or not investigation.irods_status:
-            return _skip('Investigation not found or not in iRODS')
+        if not investigation:
+            return _skip('Investigation not found')
+        if not investigation.irods_status:
+            return _skip('Investigation collections not created in iRODS')
 
         # Submit flow
         logger.info(
@@ -525,9 +530,12 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                 flow_data=flow_data,
             )
         except Exception as ex:
-            logger.error('Public status taskflow failed: {}'.format(ex))
+            logger.error('Public status update taskflow failed: {}'.format(ex))
             if settings.DEBUG:
                 raise ex
+            return
+
+        # TODO: If public guest access and anonymous allowed, add ticket access
         logger.info('Public access status updated.')
 
     def update_cache(self, name=None, project=None, user=None):
