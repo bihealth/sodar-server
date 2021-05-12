@@ -9,6 +9,7 @@ from djangoplugins.point import PluginPoint
 from irods.exception import NetworkException
 
 # Projectroles dependency
+from projectroles.app_settings import AppSettingAPI
 from projectroles.models import Project, SODAR_CONSTANTS
 from projectroles.plugins import ProjectAppPluginPoint, get_backend_api
 
@@ -37,7 +38,7 @@ from samplesheets.views import (
     APP_NAME,
 )
 
-
+app_settings = AppSettingAPI()
 logger = logging.getLogger(__name__)
 
 
@@ -152,6 +153,14 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
             'description': 'Access token for sheet synchronization in the '
             'source project',
             'user_modifiable': True,
+        },
+        'public_access_ticket': {
+            'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT'],
+            'type': 'STRING',
+            'default': '',
+            'description': 'iRODS ticket for read-only anonymous sample data '
+            'access',
+            'user_modifiable': False,
         },
     }
 
@@ -519,9 +528,10 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                 project.title, project.sodar_uuid, project.public_guest_access
             )
         )
+        sample_path = irods_backend.get_sample_path(project)
         flow_data = {
             'access': project.public_guest_access,
-            'path': irods_backend.get_sample_path(project),
+            'path': sample_path,
         }
         try:
             taskflow.submit(
@@ -535,7 +545,37 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                 raise ex
             return
 
-        # TODO: If public guest access and anonymous allowed, add ticket access
+        # Create/delete iRODS access ticket for anonymous access if allowed
+        if settings.PROJECTROLES_ALLOW_ANONYMOUS:
+            if project.public_guest_access:
+                try:
+                    ticket = irods_backend.issue_ticket('read', sample_path)
+                    app_settings.set_app_setting(
+                        APP_NAME,
+                        'public_access_ticket',
+                        ticket.ticket,
+                        project=project,
+                    )
+                except Exception as ex:
+                    logger.error('Ticket issuing failed: {}'.format(ex))
+                    if settings.DEBUG:
+                        raise ex
+                    return
+            else:
+                ticket_val = app_settings.get_app_setting(
+                    APP_NAME, 'public_access_ticket', project=project
+                )
+                try:
+                    irods_backend.delete_ticket(ticket_val)
+                    app_settings.delete_setting(
+                        APP_NAME, 'public_access_ticket', project=project
+                    )
+                except Exception as ex:
+                    logger.error('Ticket deletion failed: {}'.format(ex))
+                    if settings.DEBUG:
+                        raise ex
+                    return
+
         logger.info('Public access status updated.')
 
     def update_cache(self, name=None, project=None, user=None):

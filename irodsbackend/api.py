@@ -658,19 +658,16 @@ class IrodsAPI:
         """
         ticket = Ticket(self.irods, ticket=ticket_str)
         ticket.issue(mode, self._sanitize_coll_path(path))
-
         # Remove default file writing limitation
         self._send_request(
             'TICKET_ADMIN_AN', 'mod', ticket._ticket, 'write-file', '0'
         )
-
         # Set expiration
         if expiry_date:
             exp_str = expiry_date.strftime('%Y-%m-%d.%H:%M:%S')
             self._send_request(
                 'TICKET_ADMIN_AN', 'mod', ticket._ticket, 'expire', exp_str
             )
-
         return ticket
 
     def delete_ticket(self, ticket_str):
