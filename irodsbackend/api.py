@@ -188,16 +188,14 @@ class IrodsAPI:
         """
         ret = ''
         obj_class = obj.__class__.__name__
-
         if obj_class not in ['Assay', 'Study']:
             raise TypeError('Object of type "{}" not supported')
-
         if landing_zone and not hasattr(obj, 'get_display_name'):
             raise NotImplementedError(
                 'Function get_display_name() not implemented'
             )
 
-        def get_path(obj):
+        def _get_path(obj):
             if not landing_zone:
                 return '{}_{}'.format(
                     obj.__class__.__name__.lower(), obj.sodar_uuid
@@ -207,9 +205,8 @@ class IrodsAPI:
 
         # If assay, add study first
         if obj_class == 'Assay' and include_parent:
-            ret += get_path(obj.study) + '/'
-
-        ret += get_path(obj)
+            ret += _get_path(obj.study) + '/'
+        ret += _get_path(obj)
         return ret
 
     @classmethod

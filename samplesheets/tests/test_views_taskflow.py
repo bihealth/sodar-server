@@ -2139,6 +2139,7 @@ class TestSampleDataPublicAccess(
             SHEET_PATH, self.project
         )
         self._make_irods_colls(self.investigation)
+        self.project_path = self.irods_backend.get_path(self.project)
         self.sample_path = self.irods_backend.get_sample_path(self.project)
 
         # Create test file
@@ -2154,6 +2155,9 @@ class TestSampleDataPublicAccess(
         """Test public access for project"""
         obj = self.user_session.data_objects.get(self.file_path)
         self.assertIsNotNone(obj)
+        # Ensure no access to project root
+        with self.assertRaises(irods.exception.CollectionDoesNotExist):
+            self.user_session.data_objects.get(self.project_path)
 
     def test_public_access_disable(self):
         """Test public access with disabled access"""
@@ -2171,6 +2175,9 @@ class TestSampleDataPublicAccess(
         self.assertIsNotNone(obj)
         obj = self.user_session.data_objects.get(self.file_path)
         self.assertIsNotNone(obj)
+        # Ensure no access to project root
+        with self.assertRaises(irods.exception.CollectionDoesNotExist):
+            self.user_session.data_objects.get(self.project_path)
 
     def test_public_access_nested(self):
         """Test public access for nested collection"""
