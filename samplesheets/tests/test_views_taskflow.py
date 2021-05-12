@@ -65,6 +65,8 @@ BACKEND_SKIP_MSG = (
 TEST_FILE_NAME = 'test1'
 TEST_FILE_NAME2 = 'test2'
 DUMMY_UUID = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
+PUBLIC_USER_NAME = 'user_no_roles'
+PUBLIC_USER_PASS = 'password'
 
 
 class SampleSheetTaskflowMixin:
@@ -2066,4 +2068,123 @@ class TestSampleSheetSyncView(TestSheetSyncBase):
         self.assertEqual(self.project_target.investigations.count(), 0)
 
 
-# TODO: Test project create/update with public access changes
+@skipIf(not BACKENDS_ENABLED, BACKEND_SKIP_MSG)
+class TestSampleDataPublicAccess(
+    SampleSheetIOMixin,
+    SampleSheetTaskflowMixin,
+    TestTaskflowBase,
+):
+    """Tests for granting/revoking public guest access for projects"""
+
+    def _set_public_access(self, access):
+        """
+        Set project public access by issuing a project update POST request.
+
+        :param access: Bool
+        """
+        with self.login(self.user):
+            response = self.client.patch(
+                reverse(
+                    'projectroles:api_project_update',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                format='json',
+                data={'public_guest_access': access},
+                content_type='application/json',
+            )
+        self.assertEqual(response.status_code, 200)
+        self.project.refresh_from_db()
+        self.assertEqual(self.project.public_guest_access, access)
+
+    def setUp(self):
+        super().setUp()
+
+        # Get iRODS session for rods user
+        self.irods_backend = get_backend_api('omics_irods')
+        self.irods = self.irods_backend.get_session()
+
+        # Create user in iRODS
+        self.user_no_roles = self.make_user(PUBLIC_USER_NAME)
+        try:
+            self.irods.users.create(
+                user_name=PUBLIC_USER_NAME,
+                user_type='rodsuser',
+                user_zone=self.irods.zone,
+            )
+        except irods.exception.CATALOG_ALREADY_HAS_ITEM_BY_THAT_NAME:
+            pass  # In case a previous test failed before cleanup
+        self.irods.users.modify(PUBLIC_USER_NAME, 'password', PUBLIC_USER_PASS)
+        self.user_home_path = '/{}/home/{}'.format(
+            settings.IRODS_ZONE, PUBLIC_USER_NAME
+        )
+        self.assertTrue(self.irods.collections.exists(self.user_home_path))
+        self.user_session = get_backend_api(
+            'omics_irods',
+            user_name=PUBLIC_USER_NAME,
+            user_pass=PUBLIC_USER_PASS,
+        ).get_session()
+
+        # Make publicly accessible project
+        self.project, self.owner_as = self._make_project_taskflow(
+            title='TestProject',
+            type=PROJECT_TYPE_PROJECT,
+            parent=self.category,
+            owner=self.user,
+            description='description',
+            public_guest_access=True,
+        )
+
+        # Import investigation and create collections
+        self.investigation = self._import_isa_from_file(
+            SHEET_PATH, self.project
+        )
+        self._make_irods_colls(self.investigation)
+        self.sample_path = self.irods_backend.get_sample_path(self.project)
+
+        # Create test file
+        self.file_path = self.sample_path + '/' + TEST_FILE_NAME
+        self.irods.data_objects.create(self.file_path)
+
+    def tearDown(self):
+        # self.irods.collections.remove(self.user_home_path)
+        self.irods.users.remove(user_name=PUBLIC_USER_NAME)
+        super().tearDown()
+
+    def test_public_access(self):
+        """Test public access for project"""
+        obj = self.user_session.data_objects.get(self.file_path)
+        self.assertIsNotNone(obj)
+
+    def test_public_access_disable(self):
+        """Test public access with disabled access"""
+        self._set_public_access(False)
+        obj = self.irods.data_objects.get(self.file_path)  # Test with owner
+        self.assertIsNotNone(obj)
+        with self.assertRaises(irods.exception.CollectionDoesNotExist):
+            self.user_session.data_objects.get(self.file_path)
+
+    def test_public_access_reenable(self):
+        """Test public access with disabled and re-enabled access"""
+        self._set_public_access(False)
+        self._set_public_access(True)
+        obj = self.irods.data_objects.get(self.file_path)  # Test with owner
+        self.assertIsNotNone(obj)
+        obj = self.user_session.data_objects.get(self.file_path)
+        self.assertIsNotNone(obj)
+
+    def test_public_access_nested(self):
+        """Test public access for nested collection"""
+        new_coll_path = self.sample_path + '/new_coll'
+        coll = self.irods.collections.create(new_coll_path)  # Test with owner
+        self.assertIsNotNone(coll)
+        coll = self.user_session.collections.get(new_coll_path)
+        self.assertIsNotNone(coll)
+
+    def test_public_access_nested_disable(self):
+        """Test public access for nested collection with disabled access"""
+        self._set_public_access(False)
+        new_coll_path = self.sample_path + '/new_coll'
+        coll = self.irods.collections.create(new_coll_path)  # Test with owner
+        self.assertIsNotNone(coll)
+        with self.assertRaises(irods.exception.CollectionDoesNotExist):
+            self.user_session.collections.get(new_coll_path)

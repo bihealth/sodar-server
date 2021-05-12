@@ -48,12 +48,16 @@ class IrodsAPI:
 
         pass
 
-    def __init__(self, conn=True):
+    def __init__(self, conn=True, user_name=None, user_pass=None):
         # conn = kwargs.get('conn') or True
         self.irods = None
         self.irods_env = {}
         if not conn:
             return
+        if not user_name:
+            user_name = settings.IRODS_USER
+        if not user_pass:
+            user_pass = settings.IRODS_PASS
 
         # Get optional environment file
         if settings.IRODS_ENV_PATH:
@@ -82,14 +86,14 @@ class IrodsAPI:
             self.irods = iRODSSession(
                 host=settings.IRODS_HOST,
                 port=settings.IRODS_PORT,
-                user=settings.IRODS_USER,
-                password=settings.IRODS_PASS,
+                user=user_name,
+                password=user_pass,
                 zone=settings.IRODS_ZONE,
                 **self.irods_env,
             )
             # Ensure we have a connection
             self.irods.collections.exists(
-                '/{}/home/{}'.format(settings.IRODS_ZONE, settings.IRODS_USER)
+                '/{}/home/{}'.format(settings.IRODS_ZONE, user_name)
             )
         except Exception as ex:
             logger.error(
