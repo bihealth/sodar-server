@@ -271,4 +271,21 @@ describe('ColumnToggleModal.vue', () => {
     await wrapper.vm.onModalHide()
     expect(spyOnPostUpdate).not.toBeCalled()
   })
+
+  it('does not call postUpdate() on modal hide if anonymous user', async () => {
+    propsData.app.sodarContext.user_uuid = null
+    mountSheetTable()
+    const wrapper = mount(ColumnToggleModal, {
+      localVue, propsData: getPropsData(propsData)
+    })
+    const spyOnPostUpdate = jest.spyOn(
+      wrapper.vm, 'postUpdate').mockImplementation(jest.fn())
+    wrapper.vm.showModal(studyUuid, false)
+    await waitNT(wrapper.vm)
+    await waitRAF()
+
+    await wrapper.findAll('.sodar-ss-toggle-field-check').at(0).vm.$emit('change')
+    await wrapper.vm.onModalHide()
+    expect(spyOnPostUpdate).not.toBeCalled()
+  })
 })

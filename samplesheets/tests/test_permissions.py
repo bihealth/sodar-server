@@ -1,9 +1,11 @@
 """Tests for UI view permissions in the samplesheets app"""
 
-from django.conf import settings
-from django.urls import reverse
 from unittest import skipIf
 from urllib.parse import urlencode
+
+from django.conf import settings
+from django.urls import reverse
+from django.test import override_settings
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
@@ -68,6 +70,20 @@ class TestSampleSheetsPermissions(
         bad_users = [self.anonymous, self.user_no_roles]
         self.assert_response(url, good_users, 200)
         self.assert_response(url, bad_users, 302)
+        # Test public project
+        self.project.set_public()
+        self.assert_response(url, self.user_no_roles, 200)
+        self.assert_response(url, self.anonymous, 302)
+
+    @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
+    def test_project_sheets_anon(self):
+        """Test the project sheets view with anonymous guest access"""
+        self.project.set_public()
+        url = reverse(
+            'samplesheets:project_sheets',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+        self.assert_response(url, self.anonymous, 200)
 
     def test_sheet_import(self):
         """Test the project sheets import view"""

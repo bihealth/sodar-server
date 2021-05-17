@@ -288,7 +288,9 @@ class SheetContextAjaxView(EditConfigMixin, SODARBaseProjectAjaxView):
             'alerts': [],
             'csrf_token': get_token(request),
             'investigation': {},
-            'user_uuid': str(request.user.sodar_uuid),
+            'user_uuid': str(request.user.sodar_uuid)
+            if hasattr(request.user, 'sodar_uuid')
+            else None,
             'sheet_sync_enabled': app_settings.get_app_setting(
                 APP_NAME, 'sheet_sync_enable', project=project
             ),
@@ -573,13 +575,13 @@ class StudyTablesAjaxView(SODARBaseProjectAjaxView):
         sheet_config = conf_api.get_sheet_config(inv)
 
         # Get/build display config
-        display_config = self._get_display_config(
-            inv, request.user, sheet_config
-        )
-
-        ret_data['display_config'] = display_config['studies'][
-            str(study.sodar_uuid)
-        ]
+        if request.user and request.user.is_authenticated:
+            display_config = self._get_display_config(
+                inv, request.user, sheet_config
+            )
+            ret_data['display_config'] = display_config['studies'][
+                str(study.sodar_uuid)
+            ]
 
         # Set up editing
         if edit:

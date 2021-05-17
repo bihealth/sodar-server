@@ -14,7 +14,6 @@ import zipfile
 
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.urls import reverse
@@ -43,6 +42,7 @@ from projectroles.models import (
 from projectroles.plugins import get_backend_api
 from projectroles.utils import build_secret
 from projectroles.views import (
+    LoginRequiredMixin,
     LoggedInPermissionMixin,
     ProjectContextMixin,
     ProjectPermissionMixin,
