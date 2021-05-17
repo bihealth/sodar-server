@@ -378,10 +378,8 @@ class IrodsAPI:
             if view == 'list':
                 query_string['md5'] = int(md5)
             rev_url += '?' + urlencode(query_string)
-
         if absolute and request:
             return request.build_absolute_uri(rev_url)
-
         return rev_url
 
     # iRODS Operations ---------------------------------------------------------

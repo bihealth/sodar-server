@@ -9,6 +9,7 @@ from unittest import skipIf
 from django.conf import settings
 from django.contrib import auth
 from django.contrib.messages import get_messages
+from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
 
@@ -110,7 +111,34 @@ class SampleSheetTaskflowMixin:
         return track_hub.path
 
 
-class TestIrodsCollectionView(SampleSheetIOMixin, TestTaskflowBase):
+class SampleSheetPublicAccessMixin:
+    """Helpers for sample sheet public access modification with taskflow"""
+
+    def set_public_access(self, access):
+        """
+        Set project public access by issuing a project update POST request.
+
+        :param access: Bool
+        """
+        with self.login(self.user):
+            response = self.client.patch(
+                reverse(
+                    'projectroles:api_project_update',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                format='json',
+                data={'public_guest_access': access},
+                content_type='application/json',
+            )
+        self.assertEqual(response.status_code, 200)
+        self.project.refresh_from_db()
+        self.assertEqual(self.project.public_guest_access, access)
+
+
+@skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
+class TestIrodsCollsCreateView(
+    SampleSheetIOMixin, SampleSheetPublicAccessMixin, TestTaskflowBase
+):
     """Tests for iRODS collection structure creation view with taskflow"""
 
     def setUp(self):
@@ -131,10 +159,8 @@ class TestIrodsCollectionView(SampleSheetIOMixin, TestTaskflowBase):
         )
         self.study = self.investigation.studies.first()
 
-    @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_create_colls(self):
         """Test collection structure creation with taskflow"""
-
         # Assert precondition
         self.assertEqual(self.investigation.irods_status, False)
 
@@ -142,7 +168,6 @@ class TestIrodsCollectionView(SampleSheetIOMixin, TestTaskflowBase):
         values = {
             'sodar_url': self.live_server_url
         }  # HACK: Override callback URL
-
         with self.login(self.user):
             response = self.client.post(
                 reverse(
@@ -151,10 +176,6 @@ class TestIrodsCollectionView(SampleSheetIOMixin, TestTaskflowBase):
                 ),
                 values,
             )
-
-        # Assert sample sheet collection structure state after creation
-        self.investigation.refresh_from_db()
-        self.assertEqual(self.investigation.irods_status, True)
 
         # Assert redirect
         with self.login(self.user):
@@ -165,6 +186,65 @@ class TestIrodsCollectionView(SampleSheetIOMixin, TestTaskflowBase):
                     kwargs={'project': self.project.sodar_uuid},
                 ),
             )
+
+        # Assert sample sheet collection structure state after creation
+        self.investigation.refresh_from_db()
+        self.assertEqual(self.investigation.irods_status, True)
+        # Assert app setting status (should be unset)
+        self.assertEqual(
+            app_settings.get_app_setting(
+                APP_NAME, 'public_access_ticket', project=self.project
+            ),
+            '',
+        )
+
+    @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
+    def test_create_colls_anon(self):
+        """Test collection structure creation with anonymous project access"""
+        self.set_public_access(True)
+
+        # Assert preconditions
+        self.assertEqual(self.investigation.irods_status, False)
+        self.assertEqual(
+            app_settings.get_app_setting(
+                APP_NAME, 'public_access_ticket', project=self.project
+            ),
+            '',
+        )
+
+        # Issue POST request
+        values = {
+            'sodar_url': self.live_server_url
+        }  # HACK: Override callback URL
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:collections',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                values,
+            )
+
+        # Assert redirect
+        with self.login(self.user):
+            self.assertRedirects(
+                response,
+                reverse(
+                    'samplesheets:project_sheets',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+            )
+
+        # Assert sample sheet collection structure state after creation
+        self.investigation.refresh_from_db()
+        self.assertEqual(self.investigation.irods_status, True)
+        # Assert app setting status (should be set)
+        self.assertNotEqual(
+            app_settings.get_app_setting(
+                APP_NAME, 'public_access_ticket', project=self.project
+            ),
+            '',
+        )
 
 
 @skipIf(not BACKENDS_ENABLED, BACKEND_SKIP_MSG)
@@ -2072,29 +2152,10 @@ class TestSampleSheetSyncView(TestSheetSyncBase):
 class TestSampleDataPublicAccess(
     SampleSheetIOMixin,
     SampleSheetTaskflowMixin,
+    SampleSheetPublicAccessMixin,
     TestTaskflowBase,
 ):
     """Tests for granting/revoking public guest access for projects"""
-
-    def _set_public_access(self, access):
-        """
-        Set project public access by issuing a project update POST request.
-
-        :param access: Bool
-        """
-        with self.login(self.user):
-            response = self.client.patch(
-                reverse(
-                    'projectroles:api_project_update',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-                format='json',
-                data={'public_guest_access': access},
-                content_type='application/json',
-            )
-        self.assertEqual(response.status_code, 200)
-        self.project.refresh_from_db()
-        self.assertEqual(self.project.public_guest_access, access)
 
     def setUp(self):
         super().setUp()
@@ -2161,7 +2222,7 @@ class TestSampleDataPublicAccess(
 
     def test_public_access_disable(self):
         """Test public access with disabled access"""
-        self._set_public_access(False)
+        self.set_public_access(False)
         obj = self.irods.data_objects.get(self.file_path)  # Test with owner
         self.assertIsNotNone(obj)
         with self.assertRaises(irods.exception.CollectionDoesNotExist):
@@ -2169,8 +2230,8 @@ class TestSampleDataPublicAccess(
 
     def test_public_access_reenable(self):
         """Test public access with disabled and re-enabled access"""
-        self._set_public_access(False)
-        self._set_public_access(True)
+        self.set_public_access(False)
+        self.set_public_access(True)
         obj = self.irods.data_objects.get(self.file_path)  # Test with owner
         self.assertIsNotNone(obj)
         obj = self.user_session.data_objects.get(self.file_path)
@@ -2189,7 +2250,7 @@ class TestSampleDataPublicAccess(
 
     def test_public_access_nested_disable(self):
         """Test public access for nested collection with disabled access"""
-        self._set_public_access(False)
+        self.set_public_access(False)
         new_coll_path = self.sample_path + '/new_coll'
         coll = self.irods.collections.create(new_coll_path)  # Test with owner
         self.assertIsNotNone(coll)

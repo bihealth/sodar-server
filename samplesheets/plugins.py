@@ -493,7 +493,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         :param old_data: Old project data prior to update (dict)
         """
         taskflow = get_backend_api('taskflow')
-        irods_backend = get_backend_api('omics_irods', conn=False)
+        irods_backend = get_backend_api('omics_irods')  # Need conn for ticket
 
         # Check for conditions and skip if not met
         def _skip(msg):

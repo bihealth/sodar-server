@@ -57,7 +57,7 @@ urls_ui = [
     ),
     url(
         regex=r'^collections/(?P<project>[0-9a-f-]+)$',
-        view=views.IrodsCollectionsView.as_view(),
+        view=views.IrodsCollsCreateView.as_view(),
         name='collections',
     ),
     url(

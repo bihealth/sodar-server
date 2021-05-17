@@ -6,10 +6,12 @@ import random
 import re
 import string
 
+from django.conf import settings
 from django.db.models import QuerySet
 from django.urls import reverse
 
 # Projectroles dependency
+from projectroles.app_settings import AppSettingAPI
 from projectroles.models import Project
 from projectroles.plugins import get_backend_api
 
@@ -389,3 +391,34 @@ def clean_sheet_dir_name(name):
     :return: String
     """
     return re.sub(r'[\s]+', '_', re.sub(r'[^\w\s-]', '', name).strip())
+
+
+def get_webdav_url(project, user):
+    """
+    Return the WebDAV URL for accessing sample data under a specific project.
+    If the project has public guest access with anonymous users enabled, return
+    read-only ticket access URL. If WebDAV is not enabled, return None.
+
+    :param project: Project object
+    :param user: User object for user requesting the URL
+    :return: String or None
+    :raise: ValueError if path is invalid
+    """
+    if not settings.IRODS_WEBDAV_ENABLED:
+        return None
+    if user and user.is_authenticated:
+        return settings.IRODS_WEBDAV_URL.rstrip('/')
+    elif (
+        (not user or user.is_anonymous)
+        and settings.PROJECTROLES_ALLOW_ANONYMOUS
+        and project.public_guest_access
+    ):
+        app_settings = AppSettingAPI()
+        ticket = app_settings.get_app_setting(
+            'samplesheets', 'public_access_ticket', project=project
+        )
+        if not ticket:
+            return None
+        return settings.IRODS_WEBDAV_URL_ANON_TMPL.format(
+            user=settings.IRODS_WEBDAV_USER_ANON, ticket=ticket, path=''
+        )

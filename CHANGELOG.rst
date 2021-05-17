@@ -32,6 +32,7 @@ Added
     - ``Icon`` component in vue app for django-iconify icon access (#1113)
     - App alerts for iRODS data request actions (#1084)
     - Public access support for sample data (#1100)
+    - ``utils.get_webdav_url()`` helper (#1100)
 
 Changed
 -------
@@ -59,6 +60,7 @@ Changed
     - Unify subpage navigation (#1085)
     - Reorder critical warning check and render test in sheet import (#1107)
     - Upgrade Vue app dependencies (#1114)
+    - Rename ``IrodsCollsCreateView``
 
 Fixed
 -----

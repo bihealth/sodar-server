@@ -700,7 +700,24 @@ class IrodsCollsCreateViewMixin:
                 user_uuid=str(self.request.user.sodar_uuid),
             )
 
-        # TODO: If public guest access and anonymous allowed, add ticket access
+        # If public guest access and anonymous allowed, add ticket access
+        if project.public_guest_access:
+            irods_backend = get_backend_api('omics_irods')
+            try:
+                ticket = irods_backend.issue_ticket(
+                    'read', irods_backend.get_sample_path(project)
+                )
+                app_settings.set_app_setting(
+                    APP_NAME,
+                    'public_access_ticket',
+                    ticket.ticket,
+                    project=project,
+                )
+            except Exception as ex:
+                logger.error('Ticket issuing failed: {}'.format(ex))
+                if settings.DEBUG:
+                    raise ex
+                return
 
 
 # Views ------------------------------------------------------------------------
@@ -1506,7 +1523,7 @@ class SampleSheetCacheUpdateView(
         return redirect(get_sheets_url(project))
 
 
-class IrodsCollectionsView(
+class IrodsCollsCreateView(
     LoginRequiredMixin,
     LoggedInPermissionMixin,
     InvestigationContextMixin,
@@ -1522,10 +1539,8 @@ class IrodsCollectionsView(
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
         investigation = context['investigation']
-
         if not investigation:
             return context
-
         context['colls'] = get_sample_colls(investigation)
         context['update_colls'] = True if investigation.irods_status else False
         return context
@@ -1555,12 +1570,9 @@ class IrodsCollectionsView(
                 'Collection structure for sample data '
                 '{}d in iRODS'.format(action)
             )
-
             if settings.SHEETS_ENABLE_CACHE:
                 success_msg += ', initiated iRODS cache update'
-
             messages.success(self.request, success_msg)
-
         except taskflow.FlowSubmitException as ex:
             messages.error(self.request, str(ex))
 

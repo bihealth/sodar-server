@@ -40,6 +40,7 @@ from samplesheets.utils import (
     get_comments,
     get_unique_name,
     get_node_obj,
+    get_webdav_url,
 )
 from samplesheets.views import (
     IrodsRequestModifyMixin,
@@ -276,7 +277,7 @@ class SheetContextAjaxView(EditConfigMixin, SODARBaseProjectAjaxView):
             'parser_version': None,
             'parser_warnings': False,
             'irods_webdav_enabled': settings.IRODS_WEBDAV_ENABLED,
-            'irods_webdav_url': settings.IRODS_WEBDAV_URL.rstrip('/'),
+            'irods_webdav_url': get_webdav_url(project, request.user),
             'external_link_labels': settings.SHEETS_EXTERNAL_LINK_LABELS,
             'table_height': settings.SHEETS_TABLE_HEIGHT,
             'min_col_width': settings.SHEETS_MIN_COLUMN_WIDTH,
