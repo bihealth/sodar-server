@@ -20,7 +20,7 @@ var updateCollectionStats = function() {
 
     if (projectUUID) {
         $.ajax({
-            url: '/irodsbackend/api/stats/' + projectUUID,
+            url: '/irodsbackend/ajax/stats/' + projectUUID,
             method: 'POST',
             dataType: 'json',
             data: d,
@@ -133,7 +133,7 @@ var updateButtons = function() {
 
         if (projectUUID !== '') {
             $.ajax({
-                url: '/irodsbackend/api/stats/' + projectUUID,
+                url: '/irodsbackend/ajax/stats/' + projectUUID,
                 method: 'POST',
                 dataType: 'json',
                 data: d,

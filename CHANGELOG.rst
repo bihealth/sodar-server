@@ -50,6 +50,7 @@ Changed
     - Update taskflow actions for SODAR Taskflow v0.5 compatibility
 - **Irodsbackend**
     - Split long queries in ``get_objs_recursively()`` (#1132)
+    - Refactor Ajax views (#841)
 - **Samplesheets**
     - Fail gracefully for ISAtab import with empty tables (#903, #1075)
     - Implement study/assay app retrieval in model ``get_plugin()`` helpers (#1076)

@@ -7,12 +7,12 @@ app_name = 'irodsbackend'
 
 urlpatterns = [
     url(
-        regex=r'^api/stats/(?P<project>[0-9a-f-]+)$',
+        regex=r'^ajax/stats/(?P<project>[0-9a-f-]+)$',
         view=views.IrodsStatisticsAjaxView.as_view(),
         name='stats',
     ),
     url(
-        regex=r'^api/list/(?P<project>[0-9a-f-]+)$',
+        regex=r'^ajax/list/(?P<project>[0-9a-f-]+)$',
         view=views.IrodsObjectListAjaxView.as_view(),
         name='list',
     ),
