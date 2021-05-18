@@ -17,7 +17,8 @@
                 v-b-tooltip.hover
                 title="Download table as Excel file (Note: not ISA-Tab compatible)"
                 class="sodar-ss-excel-export-btn"
-                :href="excelExportUrl">
+                :href="excelExportUrl"
+                :disabled="!app.sodarContext.user_uuid">
               <i class="iconify" data-icon="mdi:file-excel-outline"></i>
             </b-button>
           </b-input-group-prepend>

@@ -12,6 +12,7 @@ from irods.exception import NetworkException
 from projectroles.app_settings import AppSettingAPI
 from projectroles.models import Project, SODAR_CONSTANTS
 from projectroles.plugins import ProjectAppPluginPoint, get_backend_api
+from projectroles.utils import build_secret
 
 from samplesheets.models import (
     Investigation,
@@ -549,7 +550,9 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         if settings.PROJECTROLES_ALLOW_ANONYMOUS:
             if project.public_guest_access:
                 try:
-                    ticket = irods_backend.issue_ticket('read', sample_path)
+                    ticket = irods_backend.issue_ticket(
+                        'read', sample_path, ticket_str=build_secret(16)
+                    )
                     app_settings.set_app_setting(
                         APP_NAME,
                         'public_access_ticket',
