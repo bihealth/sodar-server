@@ -96,7 +96,7 @@ class LandingZoneTaskflowMixin:
             ),
             'description': zone.description,
             'zone_config': zone.configuration,
-            'dirs': [],
+            'colls': [],
         }
 
         values = {

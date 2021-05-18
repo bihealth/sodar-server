@@ -32,7 +32,7 @@ export default {
     },
     updateStats () {
       // TODO: Fetch from SODAR project cache first, once implemented
-      const statsUrl = '/irodsbackend/api/stats/' +
+      const statsUrl = '/irodsbackend/ajax/stats/' +
         this.projectUuid + '?path=' + encodeURIComponent(this.irodsPath)
 
       fetch(statsUrl, {

@@ -3,8 +3,11 @@ from test_plus.test import TestCase
 from unittest import skipIf
 
 from django.conf import settings
+from django.contrib.auth.models import AnonymousUser
+from django.test import override_settings
 
 # Projectroles dependency
+from projectroles.app_settings import AppSettingAPI
 from projectroles.models import Role, SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
 from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
@@ -17,12 +20,16 @@ from samplesheets.utils import (
     get_index_by_header,
     get_last_material_name,
     compare_inv_replace,
+    get_webdav_url,
 )
 from samplesheets.tests.test_io import (
     SampleSheetIOMixin,
     SHEET_DIR,
     SHEET_DIR_SPECIAL,
 )
+
+
+app_settings = AppSettingAPI()
 
 
 # Local constants
@@ -32,12 +39,12 @@ SHEET_PATH_SMALL2 = SHEET_DIR + 'i_small2.zip'
 SHEET_PATH_SMALL2_ALT = SHEET_DIR + 'i_small2_alt.zip'
 OBJ_NAME = 'AA_BB_01'
 OBJ_ALT_NAMES = ['aa-bb-01', 'aabb01', 'aa_bb_01']
-
 CONFIG_PROTOCOL_UUIDS = [
     '11111111-1111-1111-bbbb-000000000000',
     '22222222-2222-2222-bbbb-111111111111',
     '22222222-2222-2222-bbbb-000000000000',
 ]
+IRODS_TICKET_STR = 'ooChaa1t'
 
 IRODS_BACKEND_ENABLED = (
     True if 'omics_irods' in settings.ENABLED_BACKEND_PLUGINS else False
@@ -209,3 +216,61 @@ class TestGetLastMaterialName(TestUtilsBase):
             get_last_material_name(study_table['table_data'][0], study_table),
             ['0815-N1', '0815-T1'],
         )
+
+
+@skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
+class TestGetWebdavUrl(TestUtilsBase):
+    """Tests for get_webdav_url()"""
+
+    def setUp(self):
+        super().setUp()
+        self.user_anon = AnonymousUser()
+
+    def test_project_user(self):
+        """Test get_webdav_url() with a project user"""
+        expected = settings.IRODS_WEBDAV_URL
+        self.assertEqual(
+            get_webdav_url(self.project, self.user_owner), expected
+        )
+
+    @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
+    def test_anon_user(self):
+        """Test get_webdav_url() with anonymous user for a public project"""
+        # Mock public project update
+        self.project.public_guest_access = True
+        self.project.save()
+        app_settings.set_app_setting(
+            'samplesheets',
+            'public_access_ticket',
+            IRODS_TICKET_STR,
+            project=self.project,
+        )
+
+        expected = settings.IRODS_WEBDAV_URL_ANON_TMPL.format(
+            user=settings.IRODS_WEBDAV_USER_ANON,
+            ticket=IRODS_TICKET_STR,
+            path='',
+        )
+        self.assertEqual(get_webdav_url(self.project, self.user_anon), expected)
+
+    def test_anon_user_not_allowed(self):
+        """Test get_webdav_url() with anonymous user without anon access"""
+        # Mock public project update
+        self.project.set_public()
+        app_settings.set_app_setting(
+            'samplesheets',
+            'public_access_ticket',
+            IRODS_TICKET_STR,
+            project=self.project,
+        )
+        self.assertIsNone(get_webdav_url(self.project, self.user_anon))
+
+    @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
+    def test_anon_user_private_project(self):
+        """Test get_webdav_url() with anonymous user and non-public project"""
+        self.assertIsNone(get_webdav_url(self.project, self.user_anon))
+
+    @override_settings(IRODS_WEBDAV_ENABLED=False)
+    def test_webdav_disabled(self):
+        """Test get_webdav_url() with disabled WebDAV"""
+        self.assertIsNone(get_webdav_url(self.project, self.user_owner))

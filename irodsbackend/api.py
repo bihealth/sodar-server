@@ -48,12 +48,16 @@ class IrodsAPI:
 
         pass
 
-    def __init__(self, conn=True):
+    def __init__(self, conn=True, user_name=None, user_pass=None):
         # conn = kwargs.get('conn') or True
         self.irods = None
         self.irods_env = {}
         if not conn:
             return
+        if not user_name:
+            user_name = settings.IRODS_USER
+        if not user_pass:
+            user_pass = settings.IRODS_PASS
 
         # Get optional environment file
         if settings.IRODS_ENV_PATH:
@@ -82,14 +86,14 @@ class IrodsAPI:
             self.irods = iRODSSession(
                 host=settings.IRODS_HOST,
                 port=settings.IRODS_PORT,
-                user=settings.IRODS_USER,
-                password=settings.IRODS_PASS,
+                user=user_name,
+                password=user_pass,
                 zone=settings.IRODS_ZONE,
                 **self.irods_env,
             )
             # Ensure we have a connection
             self.irods.collections.exists(
-                '/{}/home/{}'.format(settings.IRODS_ZONE, settings.IRODS_USER)
+                '/{}/home/{}'.format(settings.IRODS_ZONE, user_name)
             )
         except Exception as ex:
             logger.error(
@@ -184,16 +188,14 @@ class IrodsAPI:
         """
         ret = ''
         obj_class = obj.__class__.__name__
-
         if obj_class not in ['Assay', 'Study']:
             raise TypeError('Object of type "{}" not supported')
-
         if landing_zone and not hasattr(obj, 'get_display_name'):
             raise NotImplementedError(
                 'Function get_display_name() not implemented'
             )
 
-        def get_path(obj):
+        def _get_path(obj):
             if not landing_zone:
                 return '{}_{}'.format(
                     obj.__class__.__name__.lower(), obj.sodar_uuid
@@ -203,9 +205,8 @@ class IrodsAPI:
 
         # If assay, add study first
         if obj_class == 'Assay' and include_parent:
-            ret += get_path(obj.study) + '/'
-
-        ret += get_path(obj)
+            ret += _get_path(obj.study) + '/'
+        ret += _get_path(obj)
         return ret
 
     @classmethod
@@ -377,10 +378,8 @@ class IrodsAPI:
             if view == 'list':
                 query_string['md5'] = int(md5)
             rev_url += '?' + urlencode(query_string)
-
         if absolute and request:
             return request.build_absolute_uri(rev_url)
-
         return rev_url
 
     # iRODS Operations ---------------------------------------------------------
@@ -657,19 +656,16 @@ class IrodsAPI:
         """
         ticket = Ticket(self.irods, ticket=ticket_str)
         ticket.issue(mode, self._sanitize_coll_path(path))
-
         # Remove default file writing limitation
         self._send_request(
             'TICKET_ADMIN_AN', 'mod', ticket._ticket, 'write-file', '0'
         )
-
         # Set expiration
         if expiry_date:
             exp_str = expiry_date.strftime('%Y-%m-%d.%H:%M:%S')
             self._send_request(
                 'TICKET_ADMIN_AN', 'mod', ticket._ticket, 'expire', exp_str
             )
-
         return ticket
 
     def delete_ticket(self, ticket_str):

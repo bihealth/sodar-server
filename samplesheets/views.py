@@ -14,7 +14,6 @@ import zipfile
 
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.urls import reverse
@@ -43,6 +42,7 @@ from projectroles.models import (
 from projectroles.plugins import get_backend_api
 from projectroles.utils import build_secret
 from projectroles.views import (
+    LoginRequiredMixin,
     LoggedInPermissionMixin,
     ProjectContextMixin,
     ProjectPermissionMixin,
@@ -670,12 +670,15 @@ class IrodsCollsCreateViewMixin:
                 name=investigation.title,
             )
 
-        flow_data = {'dirs': get_sample_colls(investigation)}
+        flow_data = {
+            'colls': get_sample_colls(investigation),
+            'public_guest_access': project.public_guest_access,
+        }
 
         try:
             taskflow.submit(
                 project_uuid=project.sodar_uuid,
-                flow_name='sheet_dirs_create',  # TODO: Rename in taskflow
+                flow_name='sheet_colls_create',
                 flow_data=flow_data,
                 request=self.request,
             )
@@ -696,6 +699,25 @@ class IrodsCollsCreateViewMixin:
                 project_uuid=str(project.sodar_uuid),
                 user_uuid=str(self.request.user.sodar_uuid),
             )
+
+        # If public guest access and anonymous allowed, add ticket access
+        if project.public_guest_access:
+            irods_backend = get_backend_api('omics_irods')
+            try:
+                ticket = irods_backend.issue_ticket(
+                    'read', irods_backend.get_sample_path(project)
+                )
+                app_settings.set_app_setting(
+                    APP_NAME,
+                    'public_access_ticket',
+                    ticket.ticket,
+                    project=project,
+                )
+            except Exception as ex:
+                logger.error('Ticket issuing failed: {}'.format(ex))
+                if settings.DEBUG:
+                    raise ex
+                return
 
 
 # Views ------------------------------------------------------------------------
@@ -1501,7 +1523,7 @@ class SampleSheetCacheUpdateView(
         return redirect(get_sheets_url(project))
 
 
-class IrodsCollectionsView(
+class IrodsCollsCreateView(
     LoginRequiredMixin,
     LoggedInPermissionMixin,
     InvestigationContextMixin,
@@ -1517,10 +1539,8 @@ class IrodsCollectionsView(
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
         investigation = context['investigation']
-
         if not investigation:
             return context
-
         context['colls'] = get_sample_colls(investigation)
         context['update_colls'] = True if investigation.irods_status else False
         return context
@@ -1550,12 +1570,9 @@ class IrodsCollectionsView(
                 'Collection structure for sample data '
                 '{}d in iRODS'.format(action)
             )
-
             if settings.SHEETS_ENABLE_CACHE:
                 success_msg += ', initiated iRODS cache update'
-
             messages.success(self.request, success_msg)
-
         except taskflow.FlowSubmitException as ex:
             messages.error(self.request, str(ex))
 
@@ -1827,7 +1844,7 @@ class IrodsAccessTicketListView(
     """Sample Sheet version list view"""
 
     model = IrodsAccessTicket
-    permission_required = 'samplesheets.view_sheet'
+    permission_required = 'samplesheets.edit_sheet'
     template_name = 'samplesheets/irods_access_tickets.html'
     paginate_by = settings.SHEETS_IRODS_TICKET_PAGINATION
 

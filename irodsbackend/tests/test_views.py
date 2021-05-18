@@ -160,7 +160,6 @@ class TestIrodsStatisticsAjaxView(TestViewsBase):
                     view='stats', project=self.project, path=fail_path
                 )
             )
-
             self.assertEqual(response.status_code, 404)
 
     def test_get_coll_not_in_project(self):
@@ -177,31 +176,10 @@ class TestIrodsStatisticsAjaxView(TestViewsBase):
                     path=IRODS_NON_PROJECT_PATH,
                 )
             )
-
-            self.assertEqual(response.status_code, 400)
-
-    def test_get_no_project_superuser(self):
-        """Test GET request for stats without a project and a superuser"""
-        with self.login(self.user):
-            response = self.client.get(
-                self.irods_backend.get_url(view='stats', path=self.irods_path)
-            )
-
-            self.assertEqual(response.status_code, 200)
-
-    def test_get_no_project_user(self):
-        """Test GET request for stats without a project and a regular user"""
-        new_user = self.make_user('new_user')
-
-        with self.login(new_user):
-            response = self.client.get(
-                self.irods_backend.get_url(view='stats', path=self.irods_path)
-            )
-
             self.assertEqual(response.status_code, 400)
 
     def test_get_no_access(self):
-        """Test GET request for stats with no acces for the iRODS folder"""
+        """Test GET request for stats with no access for the iRODS folder"""
         new_user = self.make_user('new_user')
         self._make_assignment(
             self.project, new_user, self.role_contributor
@@ -213,7 +191,6 @@ class TestIrodsStatisticsAjaxView(TestViewsBase):
                     view='stats', project=self.project, path=self.irods_path
                 )
             )
-
             self.assertEqual(response.status_code, 403)
 
 
@@ -336,7 +313,6 @@ class TestIrodsObjectListAjaxView(TestViewsBase):
                     view='list', path=fail_path, project=self.project, md5=0
                 )
             )
-
             self.assertEqual(response.status_code, 404)
 
     def test_get_coll_not_in_project(self):
@@ -354,31 +330,6 @@ class TestIrodsObjectListAjaxView(TestViewsBase):
                     md5=0,
                 )
             )
-
-            self.assertEqual(response.status_code, 400)
-
-    def test_get_no_project_superuser(self):
-        """Test GET request for listing without a project and a superuser"""
-        with self.login(self.user):
-            response = self.client.get(
-                self.irods_backend.get_url(
-                    view='list', path=self.irods_path, md5=0
-                )
-            )
-
-            self.assertEqual(response.status_code, 200)
-
-    def test_get_no_project_user(self):
-        """Test GET request for listing without a project and a regular user"""
-        new_user = self.make_user('new_user')
-
-        with self.login(new_user):
-            response = self.client.get(
-                self.irods_backend.get_url(
-                    view='list', path=self.irods_path, md5=0
-                )
-            )
-
             self.assertEqual(response.status_code, 400)
 
     def test_get_no_access(self):
@@ -397,7 +348,6 @@ class TestIrodsObjectListAjaxView(TestViewsBase):
                     md5=0,
                 )
             )
-
             self.assertEqual(response.status_code, 403)
 
 
@@ -431,7 +381,6 @@ class TestIrodsBatchStatisticsAjaxView(TestViewsBase):
                     response.data['coll_objects'][idx]['stats']['total_size'], 0
                 )
 
-    # obj_path?
     def test_post_coll_stats(self):
         """Test POST request for batch stats on collections with
         a data object"""
@@ -464,7 +413,6 @@ class TestIrodsBatchStatisticsAjaxView(TestViewsBase):
                     IRODS_OBJ_SIZE,
                 )
 
-    # obj_path?
     def test_post_coll_md5_stats(self):
         """Test POST request for batch stats on collections with
         a data object and md5"""
@@ -524,7 +472,7 @@ class TestIrodsBatchStatisticsAjaxView(TestViewsBase):
                     response.data['coll_objects'][idx]['status'], '404'
                 )
                 self.assertEqual(
-                    response.data['coll_objects'][idx]['stats'], []
+                    response.data['coll_objects'][idx]['stats'], {}
                 )
 
     def test_post_coll_not_in_project(self):
@@ -551,7 +499,7 @@ class TestIrodsBatchStatisticsAjaxView(TestViewsBase):
                     response.data['coll_objects'][idx]['status'], '400'
                 )
                 self.assertEqual(
-                    response.data['coll_objects'][idx]['stats'], []
+                    response.data['coll_objects'][idx]['stats'], {}
                 )
 
     def test_post_no_access(self):
@@ -575,12 +523,7 @@ class TestIrodsBatchStatisticsAjaxView(TestViewsBase):
 
         self.assertEqual(response.status_code, 200)
         for idx in range(len(response.data['coll_objects'])):
-            self.assertEqual(
-                response.data['coll_objects'][idx]['stats']['file_count'], 0
-            )
-            self.assertEqual(
-                response.data['coll_objects'][idx]['stats']['total_size'], 0
-            )
+            self.assertEqual(response.data['coll_objects'][idx]['stats'], {})
 
     def test_post_one_empty_coll(self):
         """Test POST request for batch stats on only one

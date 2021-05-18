@@ -160,7 +160,11 @@ export default {
         this.app.studyDisplayConfig.assays[this.uuid] = this.displayConfig
       }
       // Save changes to user display config on the server
-      if (this.columnsChanged || this.setDefault) this.postUpdate()
+      // (Skip for anonymous user)
+      if (this.app.sodarContext.user_uuid &&
+          (this.columnsChanged || this.setDefault)) {
+        this.postUpdate()
+      }
     },
     getListGroup (colDef, firstColIdx, headerName, headerClass) {
       const headerGroup = {

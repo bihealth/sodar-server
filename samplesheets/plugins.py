@@ -1,5 +1,6 @@
-import os
 from copy import deepcopy
+import logging
+import os
 
 from django.conf import settings
 from django.urls import reverse
@@ -8,8 +9,10 @@ from djangoplugins.point import PluginPoint
 from irods.exception import NetworkException
 
 # Projectroles dependency
+from projectroles.app_settings import AppSettingAPI
 from projectroles.models import Project, SODAR_CONSTANTS
 from projectroles.plugins import ProjectAppPluginPoint, get_backend_api
+from projectroles.utils import build_secret
 
 from samplesheets.models import (
     Investigation,
@@ -35,6 +38,10 @@ from samplesheets.views import (
     MISC_FILES_COLL_ID,
     APP_NAME,
 )
+
+app_settings = AppSettingAPI()
+logger = logging.getLogger(__name__)
+
 
 # SODAR constants
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
@@ -148,6 +155,14 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
             'source project',
             'user_modifiable': True,
         },
+        'public_access_ticket': {
+            'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT'],
+            'type': 'STRING',
+            'default': '',
+            'description': 'iRODS ticket for read-only anonymous sample data '
+            'access',
+            'user_modifiable': False,
+        },
     }
 
     #: Iconify icon
@@ -218,9 +233,12 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         # NOTE: This only syncs previously created collections
         for investigation in Investigation.objects.filter(irods_status=True):
             flow = {
-                'flow_name': 'sheet_dirs_create',
+                'flow_name': 'sheet_colls_create',
                 'project_uuid': investigation.project.sodar_uuid,
-                'flow_data': {'dirs': get_sample_colls(investigation)},
+                'flow_data': {
+                    'colls': get_sample_colls(investigation),
+                    'public_guest_access': investigation.project.public_guest_access,
+                },
             }
             sync_flows.append(flow)
 
@@ -467,6 +485,101 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                     else 'iRODS WebDAV unavailable'
                 )
             )
+
+    def handle_project_update(self, project, old_data):
+        """
+        Perform actions to handle project update.
+
+        :param project: Current project (Project)
+        :param old_data: Old project data prior to update (dict)
+        """
+        taskflow = get_backend_api('taskflow')
+        irods_backend = get_backend_api('omics_irods')  # Need conn for ticket
+
+        # Check for conditions and skip if not met
+        def _skip(msg):
+            logger.debug(
+                'Skipping project update for "{}" ({}): {}'.format(
+                    project.title, project.sodar_uuid, msg
+                )
+            )
+
+        if not taskflow or not irods_backend:
+            return _skip(
+                'Backends not enabled: taskflow={}; omics_irods={}'.format(
+                    taskflow is not None,
+                    irods_backend is not None,
+                )
+            )
+        if not old_data:
+            return _skip('Project newly created, no Investigation available')
+        if project.public_guest_access == old_data.get('public_guest_access'):
+            return _skip('Public guest access unchanged')
+        investigation = Investigation.objects.filter(
+            project=project, active=True
+        ).first()
+        if not investigation:
+            return _skip('Investigation not found')
+        if not investigation.irods_status:
+            return _skip('Investigation collections not created in iRODS')
+
+        # Submit flow
+        logger.info(
+            'Setting project public access status for "{}" ({}) to: {} '.format(
+                project.title, project.sodar_uuid, project.public_guest_access
+            )
+        )
+        sample_path = irods_backend.get_sample_path(project)
+        flow_data = {
+            'access': project.public_guest_access,
+            'path': sample_path,
+        }
+        try:
+            taskflow.submit(
+                project_uuid=project.sodar_uuid,
+                flow_name='public_access_update',
+                flow_data=flow_data,
+            )
+        except Exception as ex:
+            logger.error('Public status update taskflow failed: {}'.format(ex))
+            if settings.DEBUG:
+                raise ex
+            return
+
+        # Create/delete iRODS access ticket for anonymous access if allowed
+        if settings.PROJECTROLES_ALLOW_ANONYMOUS:
+            if project.public_guest_access:
+                try:
+                    ticket = irods_backend.issue_ticket(
+                        'read', sample_path, ticket_str=build_secret(16)
+                    )
+                    app_settings.set_app_setting(
+                        APP_NAME,
+                        'public_access_ticket',
+                        ticket.ticket,
+                        project=project,
+                    )
+                except Exception as ex:
+                    logger.error('Ticket issuing failed: {}'.format(ex))
+                    if settings.DEBUG:
+                        raise ex
+                    return
+            else:
+                ticket_val = app_settings.get_app_setting(
+                    APP_NAME, 'public_access_ticket', project=project
+                )
+                try:
+                    irods_backend.delete_ticket(ticket_val)
+                    app_settings.delete_setting(
+                        APP_NAME, 'public_access_ticket', project=project
+                    )
+                except Exception as ex:
+                    logger.error('Ticket deletion failed: {}'.format(ex))
+                    if settings.DEBUG:
+                        raise ex
+                    return
+
+        logger.info('Public access status updated.')
 
     def update_cache(self, name=None, project=None, user=None):
         """

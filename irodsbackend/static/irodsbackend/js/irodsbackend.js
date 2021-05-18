@@ -6,7 +6,8 @@ var updateCollectionStats = function() {
     var projectUUID = null;
 
     $('span.sodar-irods-stats').each(function () {
-        var currentPath = decodeURIComponent($(this).attr('stats-url').split('=')[1]);
+        var currentPath = decodeURIComponent($(this).attr(
+            'data-stats-url').split('=')[1]);
         if (!projectUUID) {
             projectUUID = currentPath.split('/')[4];
         }
@@ -19,7 +20,7 @@ var updateCollectionStats = function() {
 
     if (projectUUID) {
         $.ajax({
-            url: '/irodsbackend/api/stats/' + projectUUID,
+            url: '/irodsbackend/ajax/stats/' + projectUUID,
             method: 'POST',
             dataType: 'json',
             data: d,
@@ -28,7 +29,8 @@ var updateCollectionStats = function() {
         }).done(function (data) {
             $('span.sodar-irods-stats').each(function () {
                 var statsSpan = $(this);
-                var irodsPath = decodeURIComponent(statsSpan.attr('stats-url')).split('=')[1];
+                var irodsPath = decodeURIComponent(statsSpan.attr(
+                    'data-stats-url')).split('=')[1];
                 var fileSuffix = 's';
                 for (idx in data['coll_objects']) {
                     if (data['coll_objects'].hasOwnProperty(idx)) {
@@ -131,7 +133,7 @@ var updateButtons = function() {
 
         if (projectUUID !== '') {
             $.ajax({
-                url: '/irodsbackend/api/stats/' + projectUUID,
+                url: '/irodsbackend/ajax/stats/' + projectUUID,
                 method: 'POST',
                 dataType: 'json',
                 data: d,

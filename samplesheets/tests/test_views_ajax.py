@@ -79,6 +79,7 @@ EMPTY_ONTOLOGY_VAL = {
 }
 SHEET_PATH_INSERTED = SHEET_DIR_SPECIAL + 'i_small_insert.zip'
 TEST_FILE_NAME = 'test1'
+IRODS_TICKET_STR = 'ooChaa1t'
 
 
 class RowEditMixin:
@@ -303,6 +304,8 @@ class TestContextAjaxView(TestViewsBase):
             },
         }
         self.assertEqual(response_data, expected)
+
+    # TODO: Test anonymous request and irods_webdav_enabled
 
     def test_get_edit_not_allowed_as_delegate_min_role_owner(self):
         """Test context retrieval with example sheet"""

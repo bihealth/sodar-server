@@ -81,7 +81,7 @@ class TestLandingZoneAPITaskflowBase(
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
 
-        # Create dirs in iRODS
+        # Create collections in iRODS
         self._make_irods_colls(self.investigation)
 
 

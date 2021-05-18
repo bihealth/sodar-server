@@ -49,8 +49,22 @@ class TestInvestigationRetrieveAPIView(
             self.guest_as.user,
         ]
         self.assert_response_api(url, good_users, 200)
-        self.assert_response_api(url, [self.user_no_roles], 403)
-        self.assert_response_api(url, [self.anonymous], 401)
+        self.assert_response_api(url, self.user_no_roles, 403)
+        self.assert_response_api(url, self.anonymous, 401)
+        # Test public project
+        self.project.set_public()
+        self.assert_response_api(url, self.user_no_roles, 200)
+        self.assert_response_api(url, self.anonymous, 401)
+
+    @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
+    def test_get_anon(self):
+        """Test get() with anonymous guest access"""
+        url = reverse(
+            'samplesheets:api_investigation_retrieve',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+        self.project.set_public()
+        self.assert_response_api(url, self.anonymous, 200)
 
 
 class TestSampleSheetImportAPIView(
@@ -112,12 +126,48 @@ class TestSampleSheetImportAPIView(
         )
         self.assert_response_api(
             url,
-            [self.anonymous],
+            self.anonymous,
             status_code=401,
             method='POST',
             format='multipart',
             data=self.post_data,
             cleanup_method=_cleanup,
+        )
+        self.project.set_public()
+        self.assert_response_api(
+            url,
+            bad_users,
+            status_code=403,
+            method='POST',
+            format='multipart',
+            data=self.post_data,
+            cleanup_method=_cleanup,
+        )
+        self.assert_response_api(
+            url,
+            self.anonymous,
+            status_code=401,
+            method='POST',
+            format='multipart',
+            data=self.post_data,
+            cleanup_method=_cleanup,
+        )
+
+    @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
+    def test_post_anon(self):
+        """Test post() with anonymous guest access"""
+        url = reverse(
+            'samplesheets:api_import',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+        self.project.set_public()
+        self.assert_response_api(
+            url,
+            self.anonymous,
+            status_code=401,
+            method='POST',
+            format='multipart',
+            data=self.post_data,
         )
 
 
@@ -152,7 +202,20 @@ class TestSampleSheetISAExportAPIView(
         bad_users = [self.guest_as.user, self.user_no_roles]
         self.assert_response_api(url, good_users, 200)
         self.assert_response_api(url, bad_users, 403)
-        self.assert_response_api(url, [self.anonymous], 401)
+        self.assert_response_api(url, self.anonymous, 401)
+        self.project.set_public()
+        self.assert_response_api(url, bad_users, 403)
+        self.assert_response_api(url, self.anonymous, 401)
+
+    @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
+    def test_get_anon(self):
+        """Test get() with anonymous guest access"""
+        url = reverse(
+            'samplesheets:api_export_zip',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+        self.project.set_public()
+        self.assert_response_api(url, self.anonymous, 401)
 
 
 class TestSampleDataFileExistsAPIView(TestProjectAPIPermissionBase):
@@ -173,7 +236,7 @@ class TestSampleDataFileExistsAPIView(TestProjectAPIPermissionBase):
         ]
         # No iRODS so good users get 500 -> still ok for auth :)
         self.assert_response_api(url, good_users, 500, data=request_data)
-        self.assert_response_api(url, [self.anonymous], 401, data=request_data)
+        self.assert_response_api(url, self.anonymous, 401, data=request_data)
 
 
 class TestRemoteSheetGetAPIView(
@@ -221,7 +284,7 @@ class TestRemoteSheetGetAPIView(
                 'secret': REMOTE_SITE_SECRET,
             },
         )
-        self.assert_response(url, [self.anonymous], 200)
+        self.assert_response(url, self.anonymous, 200)
 
     def test_view_invalid_access(self):
         """Test RemoteSheetGetAPIView with invalid access level"""
@@ -240,7 +303,7 @@ class TestRemoteSheetGetAPIView(
                 'secret': REMOTE_SITE_SECRET,
             },
         )
-        self.assert_response(url, [self.anonymous], 401)
+        self.assert_response(url, self.anonymous, 401)
 
     def test_view_no_access(self):
         """Test RemoteSheetGetAPIView with no remote access rights"""
@@ -252,7 +315,7 @@ class TestRemoteSheetGetAPIView(
                 'secret': REMOTE_SITE_SECRET,
             },
         )
-        self.assert_response(url, [self.anonymous], 401)
+        self.assert_response(url, self.anonymous, 401)
 
     def test_view_invalid_secret(self):
         """Test RemoteSheetGetAPIView with invalid remote site secret"""
@@ -271,4 +334,4 @@ class TestRemoteSheetGetAPIView(
                 'secret': INVALID_SECRET,
             },
         )
-        self.assert_response(url, [self.anonymous], 401)
+        self.assert_response(url, self.anonymous, 401)

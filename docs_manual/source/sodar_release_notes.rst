@@ -17,6 +17,8 @@ Unreleased
 - Sample sheet creation from templates using cubi-tk
 - Sample sheet read-only mirroring from another project or site
 - Per-project restriction of column configuration updates
+- Support for project public guest access
+- Upgrade to SODAR Core v0.10
 
 
 v0.9.0 (2021-02-05)

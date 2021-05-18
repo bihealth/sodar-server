@@ -109,7 +109,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                     ),
                     'description': zone.description,
                     'zone_config': zone.configuration,
-                    'dirs': [],
+                    'colls': [],
                 }
 
                 config_plugin = get_zone_config_plugin(zone)
