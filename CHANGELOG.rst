@@ -21,6 +21,7 @@ Added
     - Support for ``IRODS_ROOT_PATH`` setting (#1067)
     - ``get_root_path()`` and ``get_projects_path()`` helpers (#1067)
     - Optional ``user_name`` and ``user_pass`` in ``IrodsAPI`` init kwargs (#1139)
+    - Public guest access support for Ajax queries (#1140)
 - **Samplesheets**
     - Warning for unrecognized assay plugin in sample sheet import (#1070)
     - Sheet creation from templates using cubi-tk (#1068)
@@ -31,7 +32,7 @@ Added
     - Enable remote sync for sample sheets (#959, #1102, #1103)
     - ``Icon`` component in vue app for django-iconify icon access (#1113)
     - App alerts for iRODS data request actions (#1084)
-    - Public access support for sample data (#1100)
+    - Public guest access support for sample data (#1100)
     - ``get_webdav_url()`` helper (#1100)
 
 Changed
@@ -66,6 +67,12 @@ Changed
 Fixed
 -----
 
+- **Irodsadmin**
+    - Irodsorphans project UUID not returned if path ends in project UUID (#1071)
+- **Irodsbackend**
+    - Long queries raising ``CAT_SQL_ERR`` in iRODS (#1132)
+    - Redundant iRODS connection opened by ``_check_collection_perm()`` (#1142)
+    - Missing permission check in ``IrodsStatisticsAjaxView`` ``POST`` request (#1143)
 - **Landingzones**
     - Root level backend plugin retrieval in template tags
     - CSS in project zone list (#1027)
@@ -75,14 +82,12 @@ Fixed
     - Assay shortcut card layout breaking on Chrome (#1094)
     - Node names not properly sanitized on sheet import (#798)
     - Root level backend plugin retrieval in template tags
-- **Irodsadmin**
-    - Irodsorphans project UUID not returned if path ends in project UUID (#1071)
-- **Irodsbackend**
-    - Long queries raising ``CAT_SQL_ERR`` in iRODS (#1132)
 
 Removed
 -------
 
+- **Irodsbackend**
+    - Support for Ajax queries without project
 - **Samplesheets**
     - ``find_study_plugin()`` helper, use ``Study.get_plugin()`` instead (#1076)
     - ``find_assay_plugin()`` helper, use ``Assay.get_plugin()`` instead (#1076)

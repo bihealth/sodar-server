@@ -3,6 +3,14 @@
 from unittest import skipIf
 
 from django.conf import settings
+from django.test import override_settings
+
+# Samplesheets dependency
+from samplesheets.tests.test_io import (
+    SampleSheetIOMixin,
+    SHEET_DIR,
+)
+from samplesheets.tests.test_views_taskflow import SampleSheetTaskflowMixin
 
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
@@ -15,6 +23,8 @@ from projectroles.tests.test_views_taskflow import TestTaskflowBase
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 
 # Local constants
+SHEET_NAME = 'i_small.zip'
+SHEET_PATH = SHEET_DIR + SHEET_NAME
 TEST_COLL_NAME = 'test_coll'
 TEST_FILE_NAME = 'test1'
 NON_PROJECT_PATH = '/omicsZone/projects'
@@ -27,7 +37,12 @@ BACKEND_SKIP_MSG = (
 
 
 @skipIf(not BACKENDS_ENABLED, BACKEND_SKIP_MSG)
-class TestIrodsbackendPermissions(TestPermissionMixin, TestTaskflowBase):
+class TestIrodsbackendPermissions(
+    TestPermissionMixin,
+    SampleSheetIOMixin,
+    SampleSheetTaskflowMixin,
+    TestTaskflowBase,
+):
     """Tests for irodsbackend API view permissions"""
 
     def setUp(self):
@@ -62,12 +77,20 @@ class TestIrodsbackendPermissions(TestPermissionMixin, TestTaskflowBase):
             self.project, self.user_guest, self.role_guest
         )
 
+        # Set up investigation
+        self.investigation = self._import_isa_from_file(
+            SHEET_PATH, self.project
+        )
+        # Create iRODS collections
+        self._make_irods_colls(self.investigation)
+
         # Set up irodsbackend
         self.irods_backend = get_backend_api('omics_irods')
         self.irods_session = self.irods_backend.get_session()
 
-        # Set up test collections
+        # Set up test paths
         self.project_path = self.irods_backend.get_path(self.project)
+        self.sample_path = self.irods_backend.get_sample_path(self.project)
 
     def tearDown(self):
         if self.irods_session:
@@ -76,9 +99,9 @@ class TestIrodsbackendPermissions(TestPermissionMixin, TestTaskflowBase):
         super().tearDown()
 
     def test_stats_get(self):
-        """Test stats API view using a GET() request"""
+        """Test stats API view GET"""
         url = self.irods_backend.get_url(
-            view='stats', project=self.project, path=self.project_path
+            view='stats', project=self.project, path=self.sample_path
         )
         good_users = [
             self.superuser,
@@ -87,28 +110,33 @@ class TestIrodsbackendPermissions(TestPermissionMixin, TestTaskflowBase):
             self.as_contributor.user,
             self.as_guest.user,
         ]
-        bad_users = [self.user_no_roles]
+        bad_users = [self.user_no_roles, self.anonymous]
         self.assert_response(url, good_users, 200)
         self.assert_response(url, bad_users, 403)
-        self.assert_response(url, self.anonymous, 401)
+        self.project.set_public()
+        self.assert_response(url, self.user_no_roles, 200)
+        self.assert_response(url, self.anonymous, 403)
 
-    def test_stats_get_no_uuid(self):
-        """Test stats API view using a GET() request without a project UUID"""
-        url = self.irods_backend.get_url(view='stats', path=self.project_path)
-        good_users = [self.superuser]
-        bad_users = [
-            self.as_owner.user,
-            self.as_delegate.user,
-            self.as_contributor.user,
-            self.as_guest.user,
-            self.user_no_roles,
-        ]
-        self.assert_response(url, good_users, 200)
-        self.assert_response(url, bad_users, 400)
-        self.assert_response(url, self.anonymous, 401)
+    @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
+    def test_stats_get_anon(self):
+        """Test stats API view with anonymous access"""
+        self.project.set_public()
+        url = self.irods_backend.get_url(
+            view='stats', project=self.project, path=self.sample_path
+        )
+        self.assert_response(url, self.anonymous, 200)
+
+    @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
+    def test_stats_get_anon_no_perms(self):
+        """Test stats API view with anonymous access and no perms to collection"""
+        self.project.set_public()
+        url = self.irods_backend.get_url(
+            view='stats', project=self.project, path=self.project_path
+        )
+        self.assert_response(url, self.anonymous, 403)
 
     def test_stats_get_not_in_project(self):
-        """Test stats API view using a GET() request with path not in project"""
+        """Test stats API view GET with path not in project"""
         url = self.irods_backend.get_url(
             view='stats', project=self.project, path=NON_PROJECT_PATH
         )
@@ -118,13 +146,13 @@ class TestIrodsbackendPermissions(TestPermissionMixin, TestTaskflowBase):
             self.as_delegate.user,
             self.as_contributor.user,
             self.as_guest.user,
+            self.user_no_roles,
+            self.anonymous,
         ]
         self.assert_response(url, bad_users, 400)
-        self.assert_response(url, self.user_no_roles, 403)
-        self.assert_response(url, self.anonymous, 401)
 
     def test_stats_get_no_perms(self):
-        """Test stats API view using a GET() request without collection perms"""
+        """Test stats API view GET without collection perms"""
         test_path = self.project_path + '/' + TEST_COLL_NAME
         self.irods_session.collections.create(test_path)  # NOTE: No perms given
 
@@ -136,20 +164,20 @@ class TestIrodsbackendPermissions(TestPermissionMixin, TestTaskflowBase):
             self.as_contributor.user,
             self.as_guest.user,
             self.user_no_roles,
+            self.anonymous,
         ]
         self.assert_response(url, good_users, 200)
         self.assert_response(url, bad_users, 403)
-        self.assert_response(url, self.anonymous, 401)
 
     def test_stats_post(self):
-        """Test stats API view using a POST() request"""
+        """Test stats API view POST"""
         url = self.irods_backend.get_url(
             view='stats',
             project=self.project,
-            path=self.project_path,
+            path=self.sample_path,
             method='POST',
         )
-        post_data = {'paths': [self.project_path]}
+        post_data = {'paths': [self.sample_path]}
 
         good_users = [
             self.superuser,
@@ -158,42 +186,16 @@ class TestIrodsbackendPermissions(TestPermissionMixin, TestTaskflowBase):
             self.as_contributor.user,
             self.as_guest.user,
         ]
-        bad_users = [self.user_no_roles]
+        bad_users = [self.user_no_roles, self.anonymous]
         self.assert_response(
             url, good_users, 200, method='POST', data=post_data
         )
         self.assert_response(url, bad_users, 403, method='POST', data=post_data)
-        self.assert_response(
-            url, self.anonymous, 401, method='POST', data=post_data
-        )
-
-    def test_stats_post_no_uuid(self):
-        """Test stats API view using a POST() request without a project UUID"""
-        url = self.irods_backend.get_url(
-            view='stats', path=self.project_path, method='POST'
-        )
-        post_data = {'paths': [self.project_path]}
-
-        good_users = [self.superuser]
-        bad_users = [
-            self.as_owner.user,
-            self.as_delegate.user,
-            self.as_contributor.user,
-            self.as_guest.user,
-            self.user_no_roles,
-        ]
-        self.assert_response(
-            url, good_users, 200, method='POST', data=post_data
-        )
-        self.assert_response(url, bad_users, 400, method='POST', data=post_data)
-        self.assert_response(
-            url, self.anonymous, 401, method='POST', data=post_data
-        )
 
     def test_list_get(self):
-        """Test object list API view using a GET() request"""
+        """Test object list API view GET"""
         url = self.irods_backend.get_url(
-            view='list', project=self.project, path=self.project_path, md5=0
+            view='list', project=self.project, path=self.sample_path, md5=0
         )
         good_users = [
             self.superuser,
@@ -202,30 +204,33 @@ class TestIrodsbackendPermissions(TestPermissionMixin, TestTaskflowBase):
             self.as_contributor.user,
             self.as_guest.user,
         ]
-        bad_users = [self.user_no_roles]
+        bad_users = [self.user_no_roles, self.anonymous]
         self.assert_response(url, good_users, 200)
         self.assert_response(url, bad_users, 403)
-        self.assert_response(url, self.anonymous, 401)
+        self.project.set_public()
+        self.assert_response(url, self.user_no_roles, 200)
+        self.assert_response(url, self.anonymous, 403)
 
-    def test_list_get_no_uuid(self):
-        """Test object list API view using a GET() request without a project UUID"""
+    @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
+    def test_list_get_anon(self):
+        """Test object list API view GET with anonymous access"""
         url = self.irods_backend.get_url(
-            view='list', path=self.project_path, md5=0
+            view='list', project=self.project, path=self.sample_path, md5=0
         )
-        good_users = [self.superuser]
-        bad_users = [
-            self.as_owner.user,
-            self.as_delegate.user,
-            self.as_contributor.user,
-            self.as_guest.user,
-            self.user_no_roles,
-        ]
-        self.assert_response(url, good_users, 200)
-        self.assert_response(url, bad_users, 400)
-        self.assert_response(url, self.anonymous, 401)
+        self.project.set_public()
+        self.assert_response(url, self.anonymous, 200)
+
+    @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
+    def test_list_get_anon_no_perms(self):
+        """Test object list API view GET with anonymous access and no permission"""
+        url = self.irods_backend.get_url(
+            view='list', project=self.project, path=self.project_path, md5=0
+        )
+        self.project.set_public()
+        self.assert_response(url, self.anonymous, 403)
 
     def test_list_get_not_in_project(self):
-        """Test object list API view using a GET() request with path not in project"""
+        """Test object list GET with path not in project"""
         url = self.irods_backend.get_url(
             view='list', project=self.project, path=NON_PROJECT_PATH, md5=0
         )
@@ -235,13 +240,13 @@ class TestIrodsbackendPermissions(TestPermissionMixin, TestTaskflowBase):
             self.as_delegate.user,
             self.as_contributor.user,
             self.as_guest.user,
+            self.user_no_roles,
+            self.anonymous,
         ]
         self.assert_response(url, bad_users, 400)
-        self.assert_response(url, self.user_no_roles, 403)
-        self.assert_response(url, self.anonymous, 401)
 
     def test_list_get_no_perms(self):
-        """Test object list API view using a GET() request without collection perms"""
+        """Test object list GET without collection perms"""
         test_path = self.project_path + '/' + TEST_COLL_NAME
         self.irods_session.collections.create(test_path)  # NOTE: No perms given
 
@@ -253,7 +258,7 @@ class TestIrodsbackendPermissions(TestPermissionMixin, TestTaskflowBase):
             self.as_contributor.user,
             self.as_guest.user,
             self.user_no_roles,
+            self.anonymous,
         ]
         self.assert_response(url, good_users, 200)
         self.assert_response(url, bad_users, 403)
-        self.assert_response(url, self.anonymous, 401)
