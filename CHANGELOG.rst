@@ -21,7 +21,7 @@ Added
     - Support for ``IRODS_ROOT_PATH`` setting (#1067)
     - ``get_root_path()`` and ``get_projects_path()`` helpers (#1067)
     - Optional ``user_name`` and ``user_pass`` in ``IrodsAPI`` init kwargs (#1139)
-    - Public guest access support for Ajax queries (#1140)
+    - Public guest access support for Ajax queries (#1140, #1144)
 - **Samplesheets**
     - Warning for unrecognized assay plugin in sample sheet import (#1070)
     - Sheet creation from templates using cubi-tk (#1068)
@@ -51,6 +51,7 @@ Changed
 - **Irodsbackend**
     - Split long queries in ``get_objs_recursively()`` (#1132)
     - Refactor Ajax views (#841)
+    - Require ``project`` and ``user`` args for ``get_webdav_url()`` template tag (#1144)
 - **Samplesheets**
     - Fail gracefully for ISAtab import with empty tables (#903, #1075)
     - Implement study/assay app retrieval in model ``get_plugin()`` helpers (#1076)
@@ -89,6 +90,8 @@ Removed
 
 - **Irodsbackend**
     - Support for Ajax queries without project
+    - Unused template tags ``get_webdav_url_anon()`` and ``get_webdav_user_anon()``
+    - ``is_webdav_enabled()`` template tag, use ``get_django_setting()`` instead
 - **Samplesheets**
     - ``find_study_plugin()`` helper, use ``Study.get_plugin()`` instead (#1076)
     - ``find_assay_plugin()`` helper, use ``Assay.get_plugin()`` instead (#1076)

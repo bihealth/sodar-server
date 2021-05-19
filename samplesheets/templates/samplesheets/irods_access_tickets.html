@@ -5,9 +5,8 @@
 {% load static %}
 {% load rules %}
 {% load samplesheets_tags %}
-{% load irodsbackend_tags %}
 
-{% is_webdav_enabled as irods_webdav_enabled %}
+{% get_django_setting 'IRODS_WEBDAV_ENABLED' as irods_webdav_enabled %}
 
 {% block title %}
   iRODS Access Tickets for {{ project.title }}
@@ -16,7 +15,6 @@
 {% block css %}
   {{ block.super }}
   <style type="text/css">
-
     table#sodar-ss-ticket-table thead tr th:nth-child(3),
     table#sodar-ss-ticket-table tbody tr td:nth-child(3),
     table#sodar-ss-ticket-table thead tr th:nth-child(4),

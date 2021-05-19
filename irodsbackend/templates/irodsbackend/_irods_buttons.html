@@ -1,6 +1,9 @@
+{# Projectroles dependency #}
+{% load projectroles_common_tags %}
 {% load irodsbackend_tags %}
 
 {# Parameters #}
+{# project: Project object #}
 {# irods_colls: Whether iRODS collections exist (boolean) #}
 {# irods_path: full iRODS path to link to #}
 {# list_url: SODAR URL for querying file list #}
@@ -8,8 +11,8 @@
 {# show_file_list: Whether to show the file list popup (boolean) #}
 {# disable_all: Show but disable buttons if True (boolean) #}
 
-{% is_webdav_enabled as irods_webdav_enabled %}
-{% get_webdav_url as irods_webdav_url %}
+{% get_django_setting 'IRODS_WEBDAV_ENABLED' as irods_webdav_enabled %}
+{% get_webdav_url project request.user as irods_webdav_url %}
 
 <span class="text-nowrap">
   {% if show_file_list and irods_backend_enabled and irods_webdav_enabled %}

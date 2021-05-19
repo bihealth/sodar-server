@@ -6,10 +6,11 @@
 
 {% if irods_backend_enabled %}
   {% load irodsbackend_tags %}
-  {% get_webdav_url as webdav_url %}
+  {% get_webdav_url item.study.get_project request.user as webdav_url %}
 {% endif %}
 
-<tr class="sodar-ss-search-list-item" id="sodar-ss-project-search-item-{{ item.sodar_uuid }}">
+<tr class="sodar-ss-search-list-item"
+    id="sodar-ss-project-search-item-{{ item.sodar_uuid }}">
   <td>
     <div class="sodar-overflow-container">
       {% highlight_search_term item.name search_terms as item_display_name %}

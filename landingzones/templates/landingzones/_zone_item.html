@@ -73,7 +73,7 @@
           {% get_irods_path zone as zone_irods_path %}
           {% get_zone_list_url zone as zone_list_url %}
           {% is_zone_disabled zone as disable_all %}
-          {% include 'irodsbackend/_irods_buttons.html' with irods_colls=True irods_path=zone_irods_path list_url=zone_list_url data_table=False show_file_list=True disable_all=disable_all %}
+          {% include 'irodsbackend/_irods_buttons.html' with project=project irods_colls=True irods_path=zone_irods_path list_url=zone_list_url data_table=False show_file_list=True disable_all=disable_all %}
         </span>
       {% endif %}
     </td>
