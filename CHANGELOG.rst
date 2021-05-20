@@ -88,6 +88,8 @@ Fixed
 Removed
 -------
 
+- **General**
+    - Legacy ``raven`` dependency (#1147)
 - **Irodsbackend**
     - Support for Ajax queries without project
     - Unused template tags ``get_webdav_url_anon()`` and ``get_webdav_user_anon()``
