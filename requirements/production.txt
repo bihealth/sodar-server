@@ -2,6 +2,8 @@
 #	production that aren't in development.
 -r base.txt
 
+# LDAP requirements
+-r ldap.txt
 
 # Whitenoise for static files
 whitenoise==5.0.1
