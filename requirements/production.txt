@@ -21,3 +21,6 @@ sentry-sdk==0.14.3
 
 # Raven for sentry
 raven==6.10.0
+
+# Workaround for deployment on CentOS
+backports.lzma==0.0.14
