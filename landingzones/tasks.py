@@ -37,7 +37,14 @@ def trigger_zone_move():
 
 class TriggerZoneMoveTask(ZoneMoveMixin):
     def run(self, request=None):
-        irods_backend = get_backend_api('omics_irods')
+        try:
+            irods_backend = get_backend_api('omics_irods')
+        except Exception as ex:
+            logger.error('Exception raised by irodsbackend: {}'.format(ex))
+            return
+        if not irods_backend:
+            return
+
         irods = irods_backend.get_session()
 
         # Get projects, omit those which should currently be locked by Taskflow
@@ -85,13 +92,11 @@ class TriggerZoneMoveTask(ZoneMoveMixin):
                             'zone {}'.format(z_log)
                         )
                         break  # Skip the rest of the zones in this project
-
                     except Exception as ex:
                         logger.error(
                             'Triggering automated moving failed in zone '
                             '{}: {}'.format(z_log, ex)
                         )
-
                 else:
                     logger.debug(
                         'Trigger file not found for zone {}'.format(z_log)
