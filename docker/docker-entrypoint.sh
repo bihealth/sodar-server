@@ -63,6 +63,7 @@ if [[ "$1" == wsgi ]]; then
 
   exec gunicorn \
     --access-logfile - \
+    --error-logfile - \
     --log-level "$LOG_LEVEL" \
     --bind "$HTTP_HOST:$HTTP_PORT" \
     --timeout "$GUNICORN_TIMEOUT" \
