@@ -43,7 +43,7 @@ Changed
     - Upgrade to Python v3.8 and Django v3.2 (#1113)
     - Update project icons (#1113, #1125)
     - Unify ISA-Tab naming (#1082)
-    - Upgrade to Chromedriver v89
+    - Upgrade to Chromedriver v90 (sodar_core#731)
     - Upgrade to altamISA v0.2.8 (#1099)
     - Upgrade versioneer
     - Upgrade general python dependencies
