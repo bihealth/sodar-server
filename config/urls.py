@@ -46,7 +46,7 @@ urlpatterns = [
     # Iconify SVG icons
     url(r'icons/', include('dj_iconify.urls')),
     # General site apps
-    url(r'^alerts/admin/', include('adminalerts.urls')),
+    url(r'^alerts/adm/', include('adminalerts.urls')),
     url(r'^alerts/app/', include('appalerts.urls')),
     url(r'^siteinfo/', include('siteinfo.urls')),
     url(r'^irods/', include('irodsinfo.urls')),
