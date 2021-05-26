@@ -55,7 +55,6 @@ THIRD_PARTY_APPS = [
     'djangoplugins',  # Django plugins
     'pagedown',  # For markdown
     'markupfield',  # For markdown
-    'db_file_storage',  # For storing files in database
     'rest_framework',  # For API views
     'knox',  # For token auth
     'docs',  # For the online user documentation/manual
@@ -157,9 +156,6 @@ DATABASES['default']['ATOMIC_REQUESTS'] = False
 
 # Set default auto field (for Django 3.2+)
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
-
-# Set django-db-file-storage as the default storage
-DEFAULT_FILE_STORAGE = 'db_file_storage.storage.DatabaseFileStorage'
 
 # GENERAL CONFIGURATION
 # ------------------------------------------------------------------------------

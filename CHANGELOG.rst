@@ -91,6 +91,7 @@ Removed
 
 - **General**
     - Legacy ``raven`` dependency (#1147)
+    - References to unused ``django-db-file-storage`` component (#1153)
 - **Irodsbackend**
     - Support for Ajax queries without project
     - Unused template tags ``get_webdav_url_anon()`` and ``get_webdav_user_anon()``

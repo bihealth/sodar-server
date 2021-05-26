@@ -76,8 +76,6 @@ urlpatterns = [
         r'^landingzones/config/bih-proteomics-smb/',
         include('landingzones.configapps.bih_proteomics_smb.urls'),
     ),
-    # django-db-file-storage URLs (needed for admin, obfuscated for users)
-    url(r'^xu7in5zs9lylar0n/', include('db_file_storage.urls')),
     # Sodarcache URLs
     url(r'^cache/', include('sodarcache.urls')),
     # The rendered Sphinx-based manual.
