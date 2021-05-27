@@ -18,6 +18,7 @@ Unreleased
 - Sample sheet read-only mirroring from another project or site
 - Per-project restriction of column configuration updates
 - Support for project public guest access
+- Optional automated creation of expected landing zone collections
 - Upgrade to SODAR Core v0.10
 
 

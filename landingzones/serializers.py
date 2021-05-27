@@ -22,7 +22,37 @@ class LandingZoneSerializer(SODARProjectModelSerializer):
     title = serializers.CharField(required=False)
     user = SODARUserSerializer(read_only=True)
     assay = serializers.CharField(source='assay.sodar_uuid')
+    create_colls = serializers.BooleanField(write_only=True, default=False)
     irods_path = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = LandingZone
+        fields = [
+            'title',
+            'project',
+            'user',
+            'assay',
+            'status',
+            'status_info',
+            'date_modified',
+            'description',
+            'create_colls',
+            'configuration',
+            'config_data',
+            'irods_path',
+            'sodar_uuid',
+        ]
+        read_only_fields = ['status', 'status_info']
+        write_only_fields = ['create_colls']
+
+    def get_irods_path(self, obj):
+        irods_backend = get_backend_api('omics_irods', conn=False)
+        if irods_backend and obj.status not in [
+            'MOVED',
+            'DELETED',
+            'NOT CREATED',
+        ]:
+            return irods_backend.get_path(obj)
 
     def validate(self, attrs):
         assay = Assay.objects.filter(
@@ -47,31 +77,3 @@ class LandingZoneSerializer(SODARProjectModelSerializer):
             sodar_uuid=validated_data['assay']['sodar_uuid']
         )
         return super().create(validated_data)
-
-    class Meta:
-        model = LandingZone
-        fields = [
-            'title',
-            'project',
-            'user',
-            'assay',
-            'status',
-            'status_info',
-            'date_modified',
-            'description',
-            'configuration',
-            'config_data',
-            'irods_path',
-            'sodar_uuid',
-        ]
-        read_only_fields = ['status', 'status_info']
-
-    def get_irods_path(self, obj):
-        irods_backend = get_backend_api('omics_irods', conn=False)
-
-        if irods_backend and obj.status not in [
-            'MOVED',
-            'DELETED',
-            'NOT CREATED',
-        ]:
-            return irods_backend.get_path(obj)

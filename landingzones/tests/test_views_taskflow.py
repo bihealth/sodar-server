@@ -20,6 +20,7 @@ from projectroles.tests.test_views_taskflow import TestTaskflowBase
 # Samplesheets dependency
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 from samplesheets.tests.test_views_taskflow import SampleSheetTaskflowMixin
+from samplesheets.views import RESULTS_COLL, MISC_FILES_COLL, TRACK_HUBS_COLL
 
 from landingzones.models import LandingZone, DEFAULT_STATUS_INFO
 from landingzones.tests.test_models import LandingZoneMixin
@@ -73,7 +74,6 @@ class LandingZoneTaskflowMixin:
         timeline = get_backend_api('timeline_backend')
         irods_backend = get_backend_api('omics_irods')
         user = request.user if request else zone.user
-
         self.assertEqual(zone.status, 'CREATING')
 
         # Create timeline event to prevent taskflow failure
@@ -98,7 +98,6 @@ class LandingZoneTaskflowMixin:
             'zone_config': zone.configuration,
             'colls': [],
         }
-
         values = {
             'project_uuid': zone.project.sodar_uuid,
             'flow_name': 'landing_zone_create',
@@ -107,7 +106,6 @@ class LandingZoneTaskflowMixin:
             'request_mode': 'async',
             'request': request,
         }
-
         if not request:
             values['sodar_url'] = self.live_server_url
 
@@ -130,7 +128,6 @@ class LandingZoneTaskflowMixin:
         """
         if not content:
             content = ''.join('x' for _ in range(content_length))
-
         obj_path = coll.path + '/' + obj_name
         return make_object(self.irods_session, obj_path, content)
 
@@ -143,7 +140,6 @@ class LandingZoneTaskflowMixin:
         """
         md5_path = obj.path + '.md5'
         md5_content = ''
-
         with obj.open() as obj_fp:
             md5_content = hashlib.md5(obj_fp.read()).hexdigest()
         return make_object(self.irods_session, md5_path, md5_content)
@@ -158,21 +154,32 @@ class LandingZoneTaskflowMixin:
         """
         for i in range(0, ASYNC_RETRY_COUNT):
             time.sleep(ASYNC_WAIT_SECONDS)
-
             if count and LandingZone.objects.count() == count:
                 break
-
             if zone_uuid and status:
                 zone = LandingZone.objects.get(sodar_uuid=zone_uuid)
-
                 if zone.status == status:
                     break
+
+    def _assert_zone_coll(self, zone, sub_path=None, expected=True):
+        """
+        Assert existence of a collection below a landing zone.
+
+        :param zone: LandingZone object
+        :param sub_path: Subpath below zone (optional)
+        :param expected: Boolean (optional, default=True)
+        """
+        path = self.irods_backend.get_path(zone)
+        if sub_path:
+            path += '/' + sub_path
+        self.assertEqual(self.irods_session.collections.exists(path), expected)
 
 
 class TestLandingZoneCreateView(
     SampleSheetIOMixin,
     LandingZoneMixin,
     SampleSheetTaskflowMixin,
+    LandingZoneTaskflowMixin,
     TestTaskflowBase,
 ):
     """Tests for the landingzones create view with Taskflow and iRODS"""
@@ -208,7 +215,6 @@ class TestLandingZoneCreateView(
     @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_create_zone(self):
         """Test landingzones creation with taskflow"""
-
         # Assert precondition
         self.assertEqual(LandingZone.objects.all().count(), 0)
 
@@ -229,9 +235,7 @@ class TestLandingZoneCreateView(
                 ),
                 values,
             )
-
-        # Assert redirect
-        with self.login(self.user):
+            # Assert redirect
             self.assertRedirects(
                 response,
                 reverse(
@@ -243,16 +247,136 @@ class TestLandingZoneCreateView(
         # HACK: Wait for async stuff to finish
         for i in range(0, ASYNC_RETRY_COUNT):
             time.sleep(ASYNC_WAIT_SECONDS)
-
             if LandingZone.objects.all().count() == 1:
                 break
 
         # Assert zone creation
         self.assertEqual(LandingZone.objects.all().count(), 1)
-
         # Assert zone status
         zone = LandingZone.objects.first()
         self.assertEqual(zone.status, 'ACTIVE')
+        # Assert collection status
+        self._assert_zone_coll(zone)
+        self._assert_zone_coll(zone, MISC_FILES_COLL, False)
+        self._assert_zone_coll(zone, RESULTS_COLL, False)
+        self._assert_zone_coll(zone, TRACK_HUBS_COLL, False)
+
+    @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
+    def test_create_zone_colls(self):
+        """Test landingzones creation with default collections"""
+        # Assert precondition
+        self.assertEqual(LandingZone.objects.all().count(), 0)
+
+        # Issue POST request
+        values = {
+            'assay': str(self.assay.sodar_uuid),
+            'title_suffix': ZONE_SUFFIX,
+            'description': ZONE_DESC,
+            'create_colls': True,
+            'configuration': '',
+            'sodar_url': self.live_server_url,
+        }
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'landingzones:create',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                values,
+            )
+            self.assertRedirects(
+                response,
+                reverse(
+                    'landingzones:list',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+            )
+
+        # HACK: Wait for async stuff to finish
+        for i in range(0, ASYNC_RETRY_COUNT):
+            time.sleep(ASYNC_WAIT_SECONDS)
+            if LandingZone.objects.all().count() == 1:
+                break
+
+        # Assert zone creation
+        self.assertEqual(LandingZone.objects.all().count(), 1)
+        # Assert zone status
+        zone = LandingZone.objects.first()
+        self.assertEqual(zone.status, 'ACTIVE')
+        # Assert collection status
+        self._assert_zone_coll(zone)
+        self._assert_zone_coll(zone, MISC_FILES_COLL, True)
+        self._assert_zone_coll(zone, RESULTS_COLL, True)
+        self._assert_zone_coll(zone, TRACK_HUBS_COLL, True)
+        self._assert_zone_coll(zone, '0815-N1-DNA1', False)  # Plugin collection
+        self._assert_zone_coll(zone, '0815-T1-DNA1', False)  # Plugin collection
+
+    @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
+    def test_create_zone_colls_plugin(self):
+        """Test landingzones creation with plugin collections"""
+        # Assert precondition
+        self.assertEqual(LandingZone.objects.all().count(), 0)
+
+        # Mock assay configuration
+        self.assay.measurement_type = {'name': 'genome sequencing'}
+        self.assay.technology_type = {'name': 'nucleotide sequencing'}
+        self.assay.save()
+        # Update row cache
+        plugin = self.assay.get_plugin()
+        self.assertIsNotNone(plugin)
+        plugin.update_cache(
+            'irods/rows/{}'.format(self.assay.sodar_uuid),
+            self.project,
+            self.user,
+        )
+
+        # Issue POST request
+        values = {
+            'assay': str(self.assay.sodar_uuid),
+            'title_suffix': ZONE_SUFFIX,
+            'description': ZONE_DESC,
+            'create_colls': True,
+            'configuration': '',
+            'sodar_url': self.live_server_url,
+        }
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'landingzones:create',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                values,
+            )
+            self.assertRedirects(
+                response,
+                reverse(
+                    'landingzones:list',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+            )
+
+        # HACK: Wait for async stuff to finish
+        for i in range(0, ASYNC_RETRY_COUNT):
+            time.sleep(ASYNC_WAIT_SECONDS)
+            if LandingZone.objects.all().count() == 1:
+                break
+
+        # Assert zone creation
+        self.assertEqual(LandingZone.objects.all().count(), 1)
+        # Assert zone status
+        zone = LandingZone.objects.first()
+        self.assertEqual(zone.status, 'ACTIVE')
+        # Assert collection status
+        self._assert_zone_coll(zone)
+        self._assert_zone_coll(zone, MISC_FILES_COLL, True)
+        self._assert_zone_coll(zone, RESULTS_COLL, True)
+        self._assert_zone_coll(zone, TRACK_HUBS_COLL, True)
+        self._assert_zone_coll(zone, '0815-N1-DNA1', True)
+        self._assert_zone_coll(zone, '0815-T1-DNA1', True)
+
+    # TODO: Test without sodarcache (see issue #1157)
 
 
 class TestLandingZoneMoveView(
@@ -317,7 +441,6 @@ class TestLandingZoneMoveView(
     @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_move(self):
         """Test validating and moving a landing zone with objects"""
-
         # Put files in iRODS
         self.irods_obj = self._make_object(self.zone_coll, TEST_OBJ_NAME)
         self.md5_obj = self._make_md5_object(self.irods_obj)
@@ -338,9 +461,7 @@ class TestLandingZoneMoveView(
                 ),
                 values,
             )
-
-        # Assert redirect
-        with self.login(self.user):
+            # Assert redirect
             self.assertRedirects(
                 response,
                 reverse(
@@ -352,7 +473,6 @@ class TestLandingZoneMoveView(
         # HACK: Wait for async stuff to finish
         for i in range(0, ASYNC_RETRY_COUNT):
             time.sleep(ASYNC_WAIT_SECONDS)
-
             if LandingZone.objects.first().status == 'MOVED':
                 break
 
@@ -364,7 +484,6 @@ class TestLandingZoneMoveView(
     @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_move_no_md5(self):
         """Test validating and moving a landing zone without checksum (should fail)"""
-
         # Put files in iRODS
         self.irods_obj = self._make_object(self.zone_coll, TEST_OBJ_NAME)
         # No md5
@@ -385,9 +504,7 @@ class TestLandingZoneMoveView(
                 ),
                 values,
             )
-
-        # Assert redirect
-        with self.login(self.user):
+            # Assert redirect
             self.assertRedirects(
                 response,
                 reverse(
@@ -399,7 +516,6 @@ class TestLandingZoneMoveView(
         # HACK: Wait for async stuff to finish
         for i in range(0, ASYNC_RETRY_COUNT):
             time.sleep(ASYNC_WAIT_SECONDS)
-
             if LandingZone.objects.first().status == 'FAILED':
                 break
 
@@ -411,7 +527,6 @@ class TestLandingZoneMoveView(
     @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_validate(self):
         """Test validating a landing zone with objects without moving"""
-
         # Put files in iRODS
         self.irods_obj = self._make_object(self.zone_coll, TEST_OBJ_NAME)
         self.md5_obj = self._make_md5_object(self.irods_obj)
@@ -432,9 +547,7 @@ class TestLandingZoneMoveView(
                 ),
                 values,
             )
-
-        # Assert redirect
-        with self.login(self.user):
+            # Assert redirect
             self.assertRedirects(
                 response,
                 reverse(
@@ -446,7 +559,6 @@ class TestLandingZoneMoveView(
         # HACK: Wait for async stuff to finish
         for i in range(0, ASYNC_RETRY_COUNT):
             time.sleep(ASYNC_WAIT_SECONDS)
-
             if LandingZone.objects.first().status == 'ACTIVE':
                 break
 
@@ -458,7 +570,6 @@ class TestLandingZoneMoveView(
     @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_validate_no_md5(self):
         """Test validating a landing zone without checksum (should fail)"""
-
         # Put files in iRODS
         self.irods_obj = self._make_object(self.zone_coll, TEST_OBJ_NAME)
         # No md5
@@ -479,9 +590,7 @@ class TestLandingZoneMoveView(
                 ),
                 values,
             )
-
-        # Assert redirect
-        with self.login(self.user):
+            # Assert redirect
             self.assertRedirects(
                 response,
                 reverse(
@@ -493,7 +602,6 @@ class TestLandingZoneMoveView(
         # HACK: Wait for async stuff to finish
         for i in range(0, ASYNC_RETRY_COUNT):
             time.sleep(ASYNC_WAIT_SECONDS)
-
             if LandingZone.objects.first().status == 'FAILED':
                 break
 
@@ -552,7 +660,6 @@ class TestLandingZoneDeleteView(
     @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_delete_zone(self):
         """Test landingzones deletion with taskflow"""
-
         # Assert precondition
         self.assertEqual(LandingZone.objects.all().count(), 1)
 
@@ -567,9 +674,7 @@ class TestLandingZoneDeleteView(
                 ),
                 values,
             )
-
-        # Assert redirect
-        with self.login(self.user):
+            # Assert redirect
             self.assertRedirects(
                 response,
                 reverse(
@@ -581,7 +686,6 @@ class TestLandingZoneDeleteView(
         # HACK: Wait for async stuff to finish
         for i in range(0, ASYNC_RETRY_COUNT):
             time.sleep(ASYNC_WAIT_SECONDS)
-
             if LandingZone.objects.first().status == 'DELETED':
                 break
 

@@ -102,7 +102,7 @@ class ZoneConfigPluginMixin:
 class ZoneCreateMixin(ZoneConfigPluginMixin):
     """Mixin to be used in zone creation in UI and REST API views"""
 
-    def _submit_create(self, zone, create_colls=None):
+    def _submit_create(self, zone, create_colls=False):
         """
         Handle timeline updating and taskflow initialization after a LandingZone
         object has been created.
@@ -184,9 +184,8 @@ class ZoneCreateMixin(ZoneConfigPluginMixin):
                     zone.assay, landing_zone=True
                 ),
                 'description': zone.description,
-                'create_colls': list(set(colls)),  # TODO: Add to taskflow!
                 'zone_config': zone.configuration,
-                'colls': [],
+                'colls': list(set(colls)),
             },
         )
 
@@ -485,13 +484,18 @@ class ZoneCreateView(
                 if zone.configuration
                 else ''
             )
-            messages.warning(
-                self.request,
+            msg = (
                 'Landing zone "{}" creation initiated{}: '
-                'see the zone list for the creation status'.format(
+                'see the zone list for the creation status.'.format(
                     zone.title, config_str
-                ),
+                )
             )
+            if (
+                form.cleaned_data.get('create_colls')
+                and 'sodar_cache' in settings.ENABLED_BACKEND_PLUGINS
+            ):
+                msg += ' Collections created.'
+            messages.warning(self.request, msg)
         except taskflow.FlowSubmitException as ex:
             messages.error(self.request, str(ex))
 
