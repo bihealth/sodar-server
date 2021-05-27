@@ -42,7 +42,7 @@ Changed
 -------
 
 - **General**
-    - Upgrade to django-sodar-core v0.10.1 (#1096, #1113, #1118, #1121, #1135)
+    - Upgrade to django-sodar-core v0.10.1 (#1096, #1113, #1118, #1121, #1135, #1158)
     - Upgrade to Python v3.8 and Django v3.2 (#1113)
     - Update project icons (#1113, #1125)
     - Unify ISA-Tab naming (#1082)
