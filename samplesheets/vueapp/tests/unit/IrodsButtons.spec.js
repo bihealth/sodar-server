@@ -146,7 +146,6 @@ describe('IrodsButtons.vue', () => {
            'study_11111111-1111-1111-1111-111111111111/' +
            'assay_22222222-2222-2222-2222-222222222222/TrackHubs/track1',
       icon: 'mdi:ticket',
-      icon: 'mdi:ticket',
       id: 'icket_access_1',
       class: 'sodar-irods-ticket-access-1-btn',
       title: 'Latest Access Ticket for track1',
