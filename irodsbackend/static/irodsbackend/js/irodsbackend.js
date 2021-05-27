@@ -271,7 +271,7 @@ $(document).ready(function() {
             }
 
             else {
-                htmlData += '<span class="text-muted font-italic">Empty collection</span>';
+                htmlData += '<span class="text-muted font-italic">No files</span>';
             }
 
             // Set success content and toggle modal

@@ -18,7 +18,12 @@ from projectroles.views import (
 from projectroles.plugins import get_backend_api
 
 # Samplesheets dependency
-from samplesheets.views import InvestigationContextMixin
+from samplesheets.views import (
+    InvestigationContextMixin,
+    RESULTS_COLL,
+    MISC_FILES_COLL,
+    TRACK_HUBS_COLL,
+)
 
 from landingzones.forms import LandingZoneForm
 from landingzones.models import (
@@ -83,28 +88,27 @@ class ZoneConfigPluginMixin:
         :return: dict
         """
         if zone.configuration:
-            from .plugins import get_zone_config_plugin
+            from landingzones.plugins import get_zone_config_plugin
 
             config_plugin = get_zone_config_plugin(zone)
-
             if config_plugin:
                 data = {
                     **data,
                     **config_plugin.get_extra_flow_data(zone, flow_name),
                 }
-
         return data
 
 
 class ZoneCreateMixin(ZoneConfigPluginMixin):
     """Mixin to be used in zone creation in UI and REST API views"""
 
-    def _submit_create(self, zone):
+    def _submit_create(self, zone, create_colls=False):
         """
         Handle timeline updating and taskflow initialization after a LandingZone
         object has been created.
 
         :param zone: LandingZone object
+        :param create_colls: Auto-create expected collections (boolean)
         :raise: taskflow.FlowSubmitException if taskflow submit fails
         """
         taskflow = get_backend_api('taskflow')
@@ -129,21 +133,45 @@ class ZoneCreateMixin(ZoneConfigPluginMixin):
                 '{{{}}}'.format('zone', config_str, 'user', 'assay'),
                 status_type='SUBMIT',
             )
-
             tl_event.add_object(obj=zone, label='zone', name=zone.title)
-
             tl_event.add_object(
                 obj=self.request.user,
                 label='user',
                 name=self.request.user.username,
             )
-
             tl_event.add_object(
                 obj=zone.assay, label='assay', name=zone.assay.get_name()
             )
 
-        flow_name = 'landing_zone_create'
+        # Gather collections to generate automatically
+        # NOTE: Currently requires sodar_cache to be enabled!
+        colls = []
+        if create_colls:
+            logger.debug('Creating default landing zone collections..')
+            colls = [RESULTS_COLL, MISC_FILES_COLL, TRACK_HUBS_COLL]
+            plugin = zone.assay.get_plugin()
+            # First try the cache
+            cache_backend = get_backend_api('sodar_cache')
+            if plugin and cache_backend:
+                cache_obj = cache_backend.get_cache_item(
+                    'samplesheets.assayapps.'
+                    + '_'.join(plugin.name.split('_')[2:]),
+                    'irods/rows/{}'.format(zone.assay.sodar_uuid),
+                    project=zone.project,
+                )
+                if cache_obj and cache_obj.data:
+                    assay_path = irods_backend.get_path(zone.assay)
+                    colls += [
+                        p.replace(assay_path + '/', '')
+                        for p in cache_obj.data['paths'].keys()
+                    ]
+                    logger.debug('Retrieved collections from cache')
+            elif plugin:
+                pass  # TODO: Build tables, get rows directly from plugin?
+                # plugin = zone.assay.get_plugin()
+        logger.debug('Collections to be created: {}'.format(', '.join(colls)))
 
+        flow_name = 'landing_zone_create'
         flow_data = self._get_flow_data(
             zone,
             flow_name,
@@ -157,7 +185,7 @@ class ZoneCreateMixin(ZoneConfigPluginMixin):
                 ),
                 'description': zone.description,
                 'zone_config': zone.configuration,
-                'colls': [],
+                'colls': list(set(colls)),
             },
         )
 
@@ -170,11 +198,9 @@ class ZoneCreateMixin(ZoneConfigPluginMixin):
                 request_mode='async',
                 request=self.request,
             )
-
         except taskflow.FlowSubmitException as ex:
             if tl_event:
                 tl_event.set_status('FAILED', str(ex))
-
             zone.delete()
             raise ex
 
@@ -428,43 +454,50 @@ class ZoneCreateView(
         project = context['project']
         investigation = context['investigation']
         error_msg = 'Unable to create zone: '
+        redirect_url = reverse(
+            'landingzones:list', kwargs={'project': project.sodar_uuid}
+        )
 
         if not taskflow:
             messages.error(self.request, error_msg + 'Taskflow not enabled')
-
+            return redirect(redirect_url)
         elif not investigation:
             messages.error(
                 self.request, error_msg + 'Sample sheets not available'
             )
-
+            return redirect(redirect_url)
         elif not investigation.irods_status:
             messages.error(
                 self.request, error_msg + 'Sample sheet collections not created'
             )
+            return redirect(redirect_url)
 
-        else:
-            # Create landing zone object in Django db
-            # NOTE: We have to do this beforehand to work properly as async
-            zone = form.save()
+        # Create landing zone object in Django db
+        # NOTE: We have to do this beforehand to work properly as async
+        zone = form.save()
 
-            try:
-                # Create timeline event and initialize taskflow
-                self._submit_create(zone)
-                config_str = (
-                    ' with configuration "{}"'.format(zone.configuration)
-                    if zone.configuration
-                    else ''
+        try:
+            # Create timeline event and initialize taskflow
+            self._submit_create(zone, form.cleaned_data.get('create_colls'))
+            config_str = (
+                ' with configuration "{}"'.format(zone.configuration)
+                if zone.configuration
+                else ''
+            )
+            msg = (
+                'Landing zone "{}" creation initiated{}: '
+                'see the zone list for the creation status.'.format(
+                    zone.title, config_str
                 )
-                messages.warning(
-                    self.request,
-                    'Landing zone "{}" creation initiated{}: '
-                    'see the zone list for the creation status'.format(
-                        zone.title, config_str
-                    ),
-                )
-
-            except taskflow.FlowSubmitException as ex:
-                messages.error(self.request, str(ex))
+            )
+            if (
+                form.cleaned_data.get('create_colls')
+                and 'sodar_cache' in settings.ENABLED_BACKEND_PLUGINS
+            ):
+                msg += ' Collections created.'
+            messages.warning(self.request, msg)
+        except taskflow.FlowSubmitException as ex:
+            messages.error(self.request, str(ex))
 
         return redirect(
             reverse('landingzones:list', kwargs={'project': project.sodar_uuid})

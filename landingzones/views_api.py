@@ -64,7 +64,6 @@ class LandingZoneSubmitBaseAPIView(
         """
         if not zone:
             raise NotFound
-
         # Validate zone
         if zone.status not in allowed_status_types:
             raise ValidationError(
@@ -99,12 +98,10 @@ class LandingZoneListAPIView(SODARAPIGenericProjectMixin, ListAPIView):
         """Override get_queryset() to return zones based on user perms"""
         project = self.get_project()
         ret = LandingZone.objects.filter(project=project)
-
         if not self.request.user.has_perm(
             'landingzones.view_zones_all', project
         ):
             return ret.filter(user=self.request.user)
-
         return ret
 
 
@@ -140,13 +137,10 @@ class LandingZoneRetrieveAPIView(SODARAPIGenericProjectMixin, RetrieveAPIView):
         """Override get_permission_required() to check perms depending on
         owner"""
         obj = self.get_object()
-
         if not obj:
             return False
-
         if obj.user == self.request.user:
             return 'landingzones.update_zones_own'
-
         return 'landingzones.update_zones_all'
 
 
@@ -167,6 +161,7 @@ class LandingZoneCreateAPIView(
     - ``configuration``: Special configuration (string, optional)
     - ``description``: Landing zone description (string, optional)
     - ``title``: Suffix for the zone title (string, optional)
+    - ``create_colls``: Create expected collections (boolean, optional)
 
     **Returns:** Landing zone details (see ``LandingZoneRetrieveAPIView``)
     """
@@ -195,18 +190,16 @@ class LandingZoneCreateAPIView(
             raise ValidationError(
                 '{}No investigation found for project'.format(ex_msg)
             )
-
         if not investigation.irods_status:
             raise ValidationError(
                 '{}iRODS collections not created for project'.format(ex_msg)
             )
 
         # If all is OK, go forward with object creation and taskflow submission
+        create_colls = serializer.validated_data.pop('create_colls')
         super().perform_create(serializer)
-
         try:
-            self._submit_create(serializer.instance)
-
+            self._submit_create(serializer.instance, create_colls)
         except Exception as ex:
             raise APIException('{}{}'.format(ex_msg, ex))
 
@@ -231,15 +224,12 @@ class LandingZoneSubmitDeleteAPIView(
             sodar_uuid=self.kwargs['landingzone']
         ).first()
         self._validate_zone_obj(zone, STATUS_ALLOW_UPDATE, 'delete')
-
         try:
             self._submit_delete(zone)
-
         except Exception as ex:
             raise APIException(
                 'Initiating landing zone deletion failed: {}'.format(ex)
             )
-
         return Response(
             {
                 'detail': 'Landing zone deletion initiated',
@@ -290,12 +280,10 @@ class LandingZoneSubmitMoveAPIView(ZoneMoveMixin, LandingZoneSubmitBaseAPIView):
 
         try:
             self._submit_validate_move(zone, validate_only)
-
         except Exception as ex:
             raise APIException(
                 'Initiating landing zone {} failed: {}'.format(action_msg, ex)
             )
-
         return Response(
             {
                 'detail': 'Landing zone {} initiated'.format(action_msg),
@@ -316,13 +304,11 @@ class LandingZoneOldListAPIView(APIView):
         from landingzones.plugins import get_zone_config_plugin
 
         irods_backend = get_backend_api('omics_irods', conn=False)
-
         if not irods_backend:
             return Response('iRODS backend not enabled', status=500)
 
         zone_config = self.kwargs['configuration']
         zones = LandingZone.objects.filter(configuration=zone_config)
-
         if zones.count() == 0:
             return Response('LandingZone not found', status=404)
 
@@ -338,7 +324,6 @@ class LandingZoneOldListAPIView(APIView):
                 'configuration': zone.configuration,
                 'irods_path': irods_backend.get_path(zone),
             }
-
             if config_plugin:
                 for field in config_plugin.api_config_data:
                     if field in zone.config_data:

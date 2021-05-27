@@ -22,6 +22,9 @@ Added
     - ``get_root_path()`` and ``get_projects_path()`` helpers (#1067)
     - Optional ``user_name`` and ``user_pass`` in ``IrodsAPI`` init kwargs (#1139)
     - Public guest access support for Ajax queries (#1140, #1144)
+- **Landingzones**
+    - Optional automated creation of expected zone collections (#391)
+    - ``_assert_zone_coll()`` helper in ``LandingZoneTaskflowMixin``
 - **Samplesheets**
     - Warning for unrecognized assay plugin in sample sheet import (#1070)
     - Sheet creation from templates using cubi-tk (#1068)

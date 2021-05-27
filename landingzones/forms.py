@@ -16,11 +16,26 @@ from landingzones.utils import get_zone_title
 class LandingZoneForm(forms.ModelForm):
     """Form for landing zone creation"""
 
+    #: Title suffix field
     title_suffix = forms.CharField(max_length=64, required=False)
+
+    #: Automated creation of collections
+    create_colls = forms.BooleanField(
+        initial=False,
+        required=False,
+        label='Create collections',
+        help_text='Create empty collections as defined by assay plugin',
+    )
 
     class Meta:
         model = LandingZone
-        fields = ['assay', 'title_suffix', 'description', 'configuration']
+        fields = [
+            'assay',
+            'title_suffix',
+            'description',
+            'create_colls',
+            'configuration',
+        ]
 
     def __init__(
         self, current_user=None, project=None, assay=None, *args, **kwargs
@@ -28,33 +43,15 @@ class LandingZoneForm(forms.ModelForm):
         """Override for form initialization"""
         super().__init__(*args, **kwargs)
         irods_backend = get_backend_api('omics_irods')
-
-        # NOTE: Can't import in root of module because of urlpatterns conflict?
-        from .plugins import LandingZoneConfigPluginPoint
+        from landingzones.plugins import LandingZoneConfigPluginPoint
 
         config_plugins = LandingZoneConfigPluginPoint.get_plugins()
 
-        self.current_user = None
-        self.project = None
-        self.assay = None
-
-        # Get current user for checking permissions for form items
-        if current_user:
-            self.current_user = current_user
-
+        self.current_user = current_user
         if project:
-            try:
-                self.project = Project.objects.get(sodar_uuid=project)
-
-            except Project.DoesNotExist:
-                pass  # TODO: Fail
-
+            self.project = Project.objects.filter(sodar_uuid=project).first()
         if assay:
-            try:
-                self.assay = Assay.objects.get(sodar_uuid=assay)
-
-            except Assay.DoesNotExist:
-                pass  # TODO: Fail
+            self.assay = Assay.objects.filter(sodar_uuid=assay).first()
 
         # Form modifications
 
@@ -85,7 +82,6 @@ class LandingZoneForm(forms.ModelForm):
                 study__investigation__project=self.project,
                 study__investigation__active=True,
             ):
-
                 if not irods_backend or irods_backend.collection_exists(
                     irods_backend.get_path(assay)
                 ):
@@ -101,9 +97,9 @@ class LandingZoneForm(forms.ModelForm):
 
         # Updating
         else:
-            # Don't allow modifying the title
+            # Don't allow modifying certain fields
             self.fields['title_suffix'].disabled = True
-
+            self.fields['create_colls'].disabled = True
             # TODO: Don't allow modifying the assay
 
     def clean(self):
@@ -113,7 +109,6 @@ class LandingZoneForm(forms.ModelForm):
             self.cleaned_data['title'] = get_zone_title(
                 self.cleaned_data.get('title_suffix')
             )
-
         return self.cleaned_data
 
     def save(self, *args, **kwargs):
