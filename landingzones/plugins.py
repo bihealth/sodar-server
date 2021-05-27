@@ -174,65 +174,60 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         :param user: User object (current user)
         :return: String (may contain HTML), integer or None
         """
+        if not user or user.is_anonymous or column_id != 'zones':
+            return ''
+
         investigation = Investigation.objects.filter(
             project=project, active=True
         ).first()
+        if user.is_superuser:
+            zones = LandingZone.objects.filter(project=project)
+        else:
+            zones = LandingZone.objects.filter(project=project, user=user)
+        zone_count = zones.count()
+        active_count = zones.exclude(status__in=['MOVED', 'DELETED']).count()
 
-        if column_id == 'zones':
-            if user.is_superuser:
-                zones = LandingZone.objects.filter(project=project)
-
-            else:
-                zones = LandingZone.objects.filter(project=project, user=user)
-
-            zone_count = zones.count()
-            active_count = zones.exclude(
-                status__in=['MOVED', 'DELETED']
-            ).count()
-
-            if investigation and investigation.irods_status and zone_count > 0:
-                return (
-                    '<a href="{}" title="{}">'
-                    # 'data-toggle="tooltip" data-placement="top">'
-                    '<i class="iconify {}" data-icon="mdi:briefcase">'
-                    '</i></a>'.format(
-                        reverse(
-                            'landingzones:list',
-                            kwargs={'project': project.sodar_uuid},
-                        ),
-                        '{} landing zone{} {} ({} active)'.format(
-                            zone_count,
-                            's' if zone_count != 1 else '',
-                            'in total' if user.is_superuser else 'owned by you',
-                            active_count,
-                        ),
-                        'text-danger' if active_count == 0 else 'text-success',
+        if investigation and investigation.irods_status and zone_count > 0:
+            return (
+                '<a href="{}" title="{}">'
+                # 'data-toggle="tooltip" data-placement="top">'
+                '<i class="iconify {}" data-icon="mdi:briefcase">'
+                '</i></a>'.format(
+                    reverse(
+                        'landingzones:list',
+                        kwargs={'project': project.sodar_uuid},
+                    ),
+                    '{} landing zone{} {} ({} active)'.format(
+                        zone_count,
+                        's' if zone_count != 1 else '',
+                        'in total' if user.is_superuser else 'owned by you',
+                        active_count,
+                    ),
+                    'text-danger' if active_count == 0 else 'text-success',
+                )
+            )
+        elif (
+            investigation
+            and investigation.irods_status
+            and user.has_perm('landingzones.add_zones', project)
+        ):
+            return (
+                '<a href="{}" title="Create landing zone in project">'
+                # 'data-toggle="tooltip" data-placement="top">'
+                '<i class="iconify" data-icon="mdi:plus-thick"></i>'
+                '</a>'.format(
+                    reverse(
+                        'landingzones:create',
+                        kwargs={'project': project.sodar_uuid},
                     )
                 )
-
-            elif (
-                investigation
-                and investigation.irods_status
-                and user.has_perm('landingzones.add_zones', project)
-            ):
-                return (
-                    '<a href="{}" title="Create landing zone in project">'
-                    # 'data-toggle="tooltip" data-placement="top">'
-                    '<i class="iconify" data-icon="mdi:plus-thick"></i>'
-                    '</a>'.format(
-                        reverse(
-                            'landingzones:create',
-                            kwargs={'project': project.sodar_uuid},
-                        )
-                    )
-                )
-
-            else:
-                return (
-                    '<i class="iconify text-muted" data-icon="mdi:briefcase" '
-                    'title="No available landing zones"></i>'
-                    # 'data-toggle="tooltip" data-placement="top"></i>'
-                )
+            )
+        else:
+            return (
+                '<i class="iconify text-muted" data-icon="mdi:briefcase" '
+                'title="No available landing zones"></i>'
+                # 'data-toggle="tooltip" data-placement="top"></i>'
+            )
 
 
 # Landingzones configuration sub-app plugin ------------------------------------

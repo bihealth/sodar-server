@@ -82,6 +82,7 @@ Fixed
     - Root level backend plugin retrieval in template tags
     - CSS in project zone list (#1027)
     - Uncaught irodsbackend exceptions in ``TriggerZoneMoveTask`` (#1148)
+    - Project list column retrieval failing with anonymous user (#1155)
 - **Samplesheets**
     - MaxQuant results not correctly linked in ``pep_ms`` assay app (#1072)
     - Incorrect timeline event for ``sheet_create`` (#1080)
