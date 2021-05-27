@@ -2,12 +2,12 @@
   "schema": {
     "igv": {
       "type": "link",
-      "icon": "fa-share-square-o",
+      "icon": "mdi:open-in-new",
       "title": "Open IGV session file for pedigree in IGV"
     },
     "files": {
       "type": "modal",
-      "icon": "fa-folder-open-o",
+      "icon": "mdi:folder-open-outline",
       "title": "View links to pedigree BAM, VCF and IGV session files"
     }
   },

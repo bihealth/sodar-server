@@ -38,7 +38,7 @@ describe('AssayShortcutCard.vue', () => {
     const wrapper = mount(AssayShortcutCard, { localVue, propsData: propsData })
 
     expect(wrapper.findAll('.sodar-ss-assay-shortcut').length).toBe(3)
-    expect(wrapper.findAll('.fa-puzzle-piece').length).toBe(0)
+    expect(wrapper.findAll('[data-icon="mdi:puzzle"]').length).toBe(0)
     for (let i = 0; i < 3; i++) {
       expect(wrapper.findAll('.sodar-ss-popup-list-btn').at(i).exists()).toBe(true)
       expect(wrapper.findAll('.sodar-irods-copy-path-btn').at(i).attributes().disabled).toBe(undefined)
@@ -56,14 +56,14 @@ describe('AssayShortcutCard.vue', () => {
       path: '/omicsZone/projects/00/00000000-0000-0000-0000-000000000000/' +
             'sample_data/study_11111111-1111-1111-1111-111111111111/' +
             'assay_22222222-2222-2222-2222-222222222222/PluginShortcut',
-      icon: 'fa-puzzle-piece',
+      icon: 'mdi:puzzle',
       title: 'Defined in assay plugin',
       assay_plugin: true
     })
     const wrapper = mount(AssayShortcutCard, { localVue, propsData: propsData })
 
     expect(wrapper.findAll('.sodar-ss-assay-shortcut').length).toBe(4)
-    expect(wrapper.findAll('.fa-puzzle-piece').length).toBe(1)
+    expect(wrapper.findAll('[data-icon="mdi:puzzle"]').length).toBe(1)
   })
 
   it('renders disabled shortcuts', () => {

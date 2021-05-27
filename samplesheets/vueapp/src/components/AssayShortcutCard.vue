@@ -12,12 +12,14 @@
           <span :class="getTextClasses(shortcut)">
             {{ shortcut.label }}
             <i v-if="shortcut.id.startsWith('track_hub')"
-               :class="'fa ' + shortcut.icon + ' text-info ml-1'"
+               class="iconify text-info ml-1"
+               :data-icon="shortcut.icon"
                :title="shortcut.title"
                v-b-tooltip.hover.window>
             </i>
             <i v-else-if="sodarContext.perms.is_superuser && shortcut.assay_plugin"
-               :class="'fa ' + shortcut.icon + ' text-danger ml-1'"
+               class="iconify text-danger ml-1"
+               :data-icon="shortcut.icon"
                :title="shortcut.title"
                v-b-tooltip.hover.window>
             </i>
