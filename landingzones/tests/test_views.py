@@ -14,8 +14,12 @@ from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
 # Samplesheets dependency
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 
-from ..models import LandingZone
-from .test_models import LandingZoneMixin, ZONE_TITLE, ZONE_DESC
+from landingzones.models import LandingZone
+from landingzones.tests.test_models import (
+    LandingZoneMixin,
+    ZONE_TITLE,
+    ZONE_DESC,
+)
 
 # Global constants
 PROJECT_ROLE_OWNER = SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
@@ -241,7 +245,6 @@ class TestLandingZoneClearView(TestViewsBase):
 
     def test_post(self):
         """Test POST on the landing zone clearing view"""
-
         # Assert precondition
         self.assertEqual(LandingZone.objects.count(), 1)
 
@@ -252,7 +255,6 @@ class TestLandingZoneClearView(TestViewsBase):
                     kwargs={'project': self.project.sodar_uuid},
                 )
             )
-
             # Assert redirect
             self.assertRedirects(
                 response,
@@ -264,3 +266,54 @@ class TestLandingZoneClearView(TestViewsBase):
 
         # Assert postcondition
         self.assertEqual(LandingZone.objects.count(), 0)
+
+    def test_post_multiple_projects(self):
+        """Test POST with multiple projects"""
+        # Init new project, sample sheets and zone
+        project2 = self._make_project(
+            'TestProject2', PROJECT_TYPE_PROJECT, None
+        )
+        self._make_assignment(project2, self.user, self.role_owner)
+        investigation2 = self._import_isa_from_file(SHEET_PATH, project2)
+        study2 = investigation2.studies.first()
+        assay2 = study2.assays.first()
+        landing_zone2 = self._make_landing_zone(
+            title=ZONE_TITLE + '2',
+            project=project2,
+            user=self.user,
+            assay=assay2,
+            description=ZONE_DESC,
+            status='DELETED',
+        )
+
+        # Assert precondition
+        self.assertEqual(LandingZone.objects.count(), 2)
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'landingzones:clear',
+                    kwargs={'project': self.project.sodar_uuid},
+                )
+            )
+            # Assert redirect
+            self.assertRedirects(
+                response,
+                reverse(
+                    'landingzones:list',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+            )
+
+        # Assert postcondition
+        self.assertEqual(LandingZone.objects.count(), 1)
+        self.assertIsNone(
+            LandingZone.objects.filter(
+                sodar_uuid=self.landing_zone.sodar_uuid
+            ).first()
+        )
+        self.assertIsNotNone(
+            LandingZone.objects.filter(
+                sodar_uuid=landing_zone2.sodar_uuid
+            ).first()
+        )

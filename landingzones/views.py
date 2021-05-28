@@ -459,16 +459,17 @@ class ZoneCreateView(
         )
 
         if not taskflow:
-            messages.error(self.request, error_msg + 'Taskflow not enabled')
+            messages.error(self.request, error_msg + 'Taskflow not enabled.')
             return redirect(redirect_url)
         elif not investigation:
             messages.error(
-                self.request, error_msg + 'Sample sheets not available'
+                self.request, error_msg + 'Sample sheets not available.'
             )
             return redirect(redirect_url)
         elif not investigation.irods_status:
             messages.error(
-                self.request, error_msg + 'Sample sheet collections not created'
+                self.request,
+                error_msg + 'Sample sheet collections not created.',
             )
             return redirect(redirect_url)
 
@@ -537,7 +538,7 @@ class ZoneDeleteView(
             messages.error(
                 request,
                 'Unable to delete a landing zone with the '
-                'status of "{}"'.format(zone.status),
+                'status of "{}".'.format(zone.status),
             )
             return redirect(
                 reverse(
@@ -626,7 +627,7 @@ class ZoneMoveView(
             messages.error(
                 request,
                 'Unable to validate or move a landing zone with the '
-                'status of "{}"'.format(zone.status),
+                'status of "{}".'.format(zone.status),
             )
             return redirect(
                 reverse(
@@ -667,7 +668,7 @@ class ZoneMoveView(
             messages.warning(
                 self.request,
                 'Validating {}landing zone, see job progress in the '
-                'zone list'.format('and moving ' if not validate_only else ''),
+                'zone list.'.format('and moving ' if not validate_only else ''),
             )
 
         except Exception as ex:
@@ -703,7 +704,6 @@ class ZoneClearView(
                 event_name='zones_clear',
                 description='clear inactive landing zones from {user}',
             )
-
             tl_event.add_object(
                 obj=self.request.user,
                 label='user',
@@ -712,20 +712,20 @@ class ZoneClearView(
 
         try:
             inactive_zones = LandingZone.objects.filter(
-                user=self.request.user, status__in=STATUS_ALLOW_CLEAR
+                project=project,
+                user=self.request.user,
+                status__in=STATUS_ALLOW_CLEAR,
             )
             zone_count = inactive_zones.count()
             inactive_zones.delete()
-
             messages.success(
                 self.request,
-                'Cleared {} inactive landing zone{} for user {}'.format(
+                'Cleared {} inactive landing zone{} for user {}.'.format(
                     zone_count,
                     's' if zone_count != 1 else '',
                     self.request.user.username,
                 ),
             )
-
             if tl_event:
                 tl_event.set_status('OK')
 
@@ -734,7 +734,6 @@ class ZoneClearView(
                 self.request,
                 'Unable to clear inactive landing zones: {}'.format(ex),
             )
-
             if tl_event:
                 tl_event.set_status('FAILED', str(ex))
 
