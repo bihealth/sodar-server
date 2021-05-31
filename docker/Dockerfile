@@ -1,4 +1,4 @@
-FROM python:3.6-buster
+FROM python:3.8-buster
 
 ARG app_git_url=https://github.com/bihealth/sodar-server.git
 ARG app_git_tag
@@ -33,7 +33,6 @@ RUN apt-get update && \
 RUN cd /usr/src/app && \
     pip install --no-cache-dir -r requirements/production.txt && \
     pip install --no-cache-dir -r requirements/local.txt && \
-    pip install celery  # appears to be missing
 
 # Install modern nodejs
 RUN curl -sL https://deb.nodesource.com/setup_12.x | bash - && \
@@ -46,20 +45,9 @@ RUN cd /usr/src/app/samplesheets/vueapp && \
 
 # Download files from CDN.
 RUN mkdir -p /usr/src/app/local-static/local/css && \
-    mkdir -p /usr/src/app/local-static/local/fonts && \
     mkdir -p /usr/src/app/local-static/local/js && \
-    cd /usr/src/app/local-static/local/fonts && \
-    wget \
-        https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/fonts/FontAwesome.otf \
-        https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/fonts/fontawesome-webfont.eot \
-        https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/fonts/fontawesome-webfont.svg \
-        https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/fonts/fontawesome-webfont.ttf \
-        https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/fonts/fontawesome-webfont.woff \
-        https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/fonts/fontawesome-webfont.woff2 && \
-    \
     cd /usr/src/app/local-static/local/css && \
     wget \
-        https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css \
         https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css && \
     \
     cd /usr/src/app/local-static/local/js && \

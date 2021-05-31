@@ -17,6 +17,7 @@ Added
     - Enable ``appalerts`` app (#1124)
     - Display relevant Django settings values in ``siteinfo`` app (#1123)
     - ``taskflowbackend`` in site logging (#1137)
+    - New Docker setup (#1129)
 - **Irodsbackend**
     - Support for ``IRODS_ROOT_PATH`` setting (#1067)
     - ``get_root_path()`` and ``get_projects_path()`` helpers (#1067)
@@ -97,6 +98,7 @@ Removed
 - **General**
     - Legacy ``raven`` dependency (#1147)
     - References to unused ``django-db-file-storage`` component (#1153)
+    - Legacy Docker setup (#1129)
 - **Irodsbackend**
     - Support for Ajax queries without project
     - Unused template tags ``get_webdav_url_anon()`` and ``get_webdav_user_anon()``
