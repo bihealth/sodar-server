@@ -12,6 +12,8 @@ list of changes in current and previous releases, see the
 Unreleased
 ==========
 
+Update for multiple new features and major SODAR Core upgrade.
+
 - iRODS delete requests for data objects and collections
 - Diff comparison for sample sheet versions
 - Sample sheet creation from templates using cubi-tk
@@ -19,6 +21,7 @@ Unreleased
 - Per-project restriction of column configuration updates
 - Support for project public guest access
 - Optional automated creation of expected landing zone collections
+- Allow sheet export and version viewing for guest users
 - Upgrade to SODAR Core v0.10
 
 

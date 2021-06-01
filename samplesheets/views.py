@@ -489,7 +489,6 @@ class SampleSheetISAExportMixin:
         :raise: ISATab.DoesNotExist if version is requested but not found
         :raise Investigation.DosNotExist if investigation is not found
         """
-
         timeline = get_backend_api('timeline_backend')
         tl_event = None
         sheet_io = SampleSheetIO()
@@ -510,7 +509,6 @@ class SampleSheetISAExportMixin:
             investigation = Investigation.objects.get(
                 sodar_uuid=isa_version.investigation_uuid
             )
-
         else:
             investigation = Investigation.objects.get(project=project)
 
@@ -537,18 +535,16 @@ class SampleSheetISAExportMixin:
             file_name = archive_name.split('.zip')[0]
         else:
             file_name = clean_sheet_dir_name(project.title)
-
         if isa_version:
             file_name += '_' + isa_version.date_created.strftime(
                 '%Y-%m-%d_%H%M%S'
             )
-
             if isa_version.user:
                 file_name += '_' + slugify(isa_version.user.username)
-
         file_name += '.zip'
 
-        if timeline:
+        # TODO: Log anonymous export? (see #1164)
+        if timeline and request.user and request.user.is_authenticated:
             if isa_version:
                 tl_desc = 'export {investigation} version {isatab}'
             else:
@@ -592,13 +588,11 @@ class SampleSheetISAExportMixin:
                 inv_dir = '/'.join(
                     export_data['investigation']['path'].split('/')[:-1]
                 )
-
                 for k, v in export_data['studies'].items():
                     zf.writestr('{}/{}'.format(inv_dir, k), v['tsv'])
 
                 for k, v in export_data['assays'].items():
                     zf.writestr('{}/{}'.format(inv_dir, k), v['tsv'])
-
                 zf.close()
 
             # Update timeline event
@@ -623,7 +617,6 @@ class SampleSheetISAExportMixin:
                     'Content-Disposition'
                 ] = 'attachment; filename="{}"'.format(file_name)
                 return response
-
             elif format == 'json':
                 export_data['date_modified'] = str(investigation.date_modified)
                 return Response(export_data, status=200)
@@ -1218,6 +1211,7 @@ class SampleSheetExcelExportView(
     def get(self, request, *args, **kwargs):
         """Override get() to return an Excel file"""
         timeline = get_backend_api('timeline_backend')
+        redirect_url = get_sheets_url(self.get_project())
         assay = None
         study = None
 
@@ -1226,13 +1220,10 @@ class SampleSheetExcelExportView(
                 sodar_uuid=self.kwargs['assay']
             ).first()
             study = assay.study if assay else None
-
         elif 'study' in self.kwargs:
             study = Study.objects.filter(
                 sodar_uuid=self.kwargs['study']
             ).first()
-
-        redirect_url = get_sheets_url(self.get_project())
         if not study:
             messages.error(
                 self.request, 'Study not found, unable to render an Excel file'
@@ -1241,10 +1232,8 @@ class SampleSheetExcelExportView(
 
         # Build study tables
         tb = SampleSheetTableBuilder()
-
         try:
             tables = tb.build_study_tables(study)
-
         except Exception as ex:
             messages.error(
                 self.request, 'Unable to render table for export: {}'.format(ex)
@@ -1255,7 +1244,6 @@ class SampleSheetExcelExportView(
             table = tables['assays'][str(assay.sodar_uuid)]
             input_name = assay.file_name
             display_name = assay.get_display_name()
-
         else:  # Study
             table = tables['study']
             input_name = study.file_name
@@ -1272,7 +1260,12 @@ class SampleSheetExcelExportView(
         # Build Excel file
         write_excel_table(table, response, display_name)
 
-        if timeline:
+        # TODO: Log anonymous export? (see #1164)
+        if (
+            timeline
+            and self.request.user
+            and self.request.user.is_authenticated
+        ):
             tl_event = timeline.add_event(
                 project=self.get_project(),
                 app_name=APP_NAME,
@@ -1284,12 +1277,10 @@ class SampleSheetExcelExportView(
                 status_type='OK',
                 classified=True,
             )
-
             if assay:
                 tl_event.add_object(
                     obj=assay, label='assay', name=assay.get_display_name()
                 )
-
             else:  # Study
                 tl_event.add_object(
                     obj=study, label='study', name=study.get_display_name()
@@ -1318,17 +1309,14 @@ class SampleSheetISAExportView(
 
         try:
             return self.get_isa_export(project, request, 'zip', version_uuid)
-
         except Exception as ex:
             if version_uuid:
                 redirect_url = reverse(
                     'samplesheets:versions',
                     kwargs={'project': project.sodar_uuid},
                 )
-
             else:
                 redirect_url = get_sheets_url(project)
-
             messages.error(
                 request,
                 'Unable to export ISA-Tab{}: {}'.format(
@@ -1593,7 +1581,7 @@ class SampleSheetVersionListView(
     """Sample Sheet version list view"""
 
     model = ISATab
-    permission_required = 'samplesheets.edit_sheet'
+    permission_required = 'samplesheets.view_versions'
     template_name = 'samplesheets/sheet_versions.html'
     paginate_by = settings.SHEETS_VERSION_PAGINATION
 
@@ -1634,7 +1622,7 @@ class SampleSheetVersionCompareView(
 ):
     """Sample Sheet version compare view"""
 
-    permission_required = 'samplesheets.edit_sheet'
+    permission_required = 'samplesheets.view_versions'
     template_name = 'samplesheets/version_compare.html'
 
     def get_context_data(self, *args, **kwargs):
@@ -1660,7 +1648,7 @@ class SampleSheetVersionCompareFileView(
 ):
     """Sample Sheet version compare file view"""
 
-    permission_required = 'samplesheets.edit_sheet'
+    permission_required = 'samplesheets.view_versions'
     template_name = 'samplesheets/version_compare_file.html'
 
     def get_context_data(self, *args, **kwargs):

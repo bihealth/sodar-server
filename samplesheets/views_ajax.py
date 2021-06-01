@@ -415,6 +415,9 @@ class SheetContextAjaxView(EditConfigMixin, SODARBaseProjectAjaxView):
             'delete_sheet': request.user.has_perm(
                 'samplesheets.delete_sheet', project
             ),
+            'view_versions': request.user.has_perm(
+                'samplesheets.view_versions', project
+            ),
             'edit_config': self._can_edit_config(request.user, project),
             'is_superuser': request.user.is_superuser,
         }

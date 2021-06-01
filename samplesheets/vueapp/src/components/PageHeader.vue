@@ -81,37 +81,39 @@
           <i class="iconify" data-icon="mdi:sitemap"></i> Overview
         </b-dropdown-item>
       </b-dropdown>
-      <!-- Operations dropdown (only show if not in edit mode -->
+      <!-- Operations dropdown (only show if not in edit mode) -->
       <b-dropdown
           v-if="!app.editMode"
           id="sodar-ss-op-dropdown"
-          :disabled="app.gridsBusy || !app.sodarContext.perms.edit_sheet"
+          :disabled="app.gridsBusy ||
+                     (!app.sodarContext.perms.edit_sheet &&
+                     !app.sheetsAvailable)"
           right
           variant="primary"
           text="Sheet Operations">
         <b-dropdown-item
-            v-if="app.sheetSyncEnabled"
+            v-if="app.sheetSyncEnabled && app.sodarContext.perms.edit_sheet"
             class="sodar-ss-op-item"
             id="sodar-ss-op-item-sync"
             :href="'sync/' + app.projectUuid">
           <i class="iconify" data-icon="mdi:table-refresh"></i> Sync Sheets
         </b-dropdown-item>
         <b-dropdown-item
-            v-if="!app.sheetsAvailable && !app.sheetSyncEnabled"
+            v-if="!app.sheetsAvailable && !app.sheetSyncEnabled && app.sodarContext.perms.edit_sheet"
             class="sodar-ss-op-item"
             id="sodar-ss-op-item-create"
             :href="'template/select/' + app.projectUuid">
           <i class="iconify" data-icon="mdi:auto-fix"></i> Create from Template
         </b-dropdown-item>
         <b-dropdown-item
-            v-if="!app.sheetsAvailable && !app.sheetSyncEnabled"
+            v-if="!app.sheetsAvailable && !app.sheetSyncEnabled && app.sodarContext.perms.edit_sheet"
             class="sodar-ss-op-item"
             id="sodar-ss-op-item-import"
             :href="'import/' + app.projectUuid">
           <i class="iconify" data-icon="mdi:upload"></i> Import ISA-Tab
         </b-dropdown-item>
         <b-dropdown-item
-            v-if="app.sheetsAvailable && !app.sheetSyncEnabled"
+            v-if="app.sheetsAvailable && !app.sheetSyncEnabled && app.sodarContext.perms.edit_sheet"
             class="sodar-ss-op-item"
             id="sodar-ss-op-item-edit"
             @click="toggleEditModeCallback"
@@ -119,7 +121,7 @@
           <i class="iconify" data-icon="mdi:lead-pencil"></i> Edit Sheets
         </b-dropdown-item>
         <b-dropdown-item
-            v-if="app.sheetsAvailable"
+            v-if="app.sheetsAvailable && app.sodarContext.perms.edit_sheet"
             class="sodar-ss-op-item"
             id="sodar-ss-op-item-warnings"
             :disabled="!app.sodarContext.parser_warnings"
@@ -128,14 +130,17 @@
         </b-dropdown-item>
         <b-dropdown-item
             v-if="app.sheetsAvailable &&
-                  app.sodarContext.irods_status"
+                  app.sodarContext.irods_status &&
+                  app.sodarContext.perms.edit_sheet"
             class="sodar-ss-op-item"
             id="sodar-ss-op-item-cache"
             :href="'cache/update/' + app.projectUuid">
           <i class="iconify" data-icon="mdi:database-refresh"></i> Update Sheet Cache
         </b-dropdown-item>
         <b-dropdown-item
-            v-if="app.sheetsAvailable && !app.sheetSyncEnabled"
+            v-if="app.sheetsAvailable &&
+                  !app.sheetSyncEnabled &&
+                  app.sodarContext.perms.edit_sheet"
             class="sodar-ss-op-item"
             id="sodar-ss-op-item-replace"
             :href="'import/' + app.projectUuid">
@@ -157,7 +162,8 @@
         </b-dropdown-item>
         <b-dropdown-item
             v-if="app.sheetsAvailable &&
-                  !app.renderError"
+                  !app.renderError &&
+                  app.sodarContext.perms.create_colls"
             class="sodar-ss-op-item"
             id="sodar-ss-op-item-irods"
             :href="'collections/' + app.projectUuid">
@@ -186,7 +192,9 @@
           <i class="iconify" data-icon="mdi:ticket"></i> iRODS Access Tickets
         </b-dropdown-item>
         <b-dropdown-item
-            v-if="app.sheetsAvailable && app.sodarContext.irods_status"
+            v-if="app.sheetsAvailable &&
+                  app.sodarContext.irods_status &&
+                  app.sodarContext.perms.edit_sheet"
             class="sodar-ss-op-item"
             :href="'irods/requests/' + app.projectUuid">
           <i class="iconify" data-icon="mdi:trash-can"></i> iRODS Delete Requests

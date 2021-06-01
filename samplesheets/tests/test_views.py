@@ -110,6 +110,7 @@ class TestViewsBase(
         self.user_delegate = self.make_user('delegate')
         self.user_contributor = self.make_user('contributor')
         self.user_guest = self.make_user('guest')
+        self.user_no_roles = self.make_user('user_no_roles')
         # Init projects
         self.category = self._make_project(
             'TestCategory', PROJECT_TYPE_CATEGORY, None
@@ -1170,7 +1171,7 @@ class TestSheetVersionCompareView(TestViewsBase):
 
     def test_render_no_permission(self):
         """Test rendering the sheet version compare view without permission"""
-        with self.login(self.user_guest):
+        with self.login(self.user_no_roles):
             response = self.client.get(
                 '{}?source={}&target={}'.format(
                     reverse(
@@ -1240,7 +1241,7 @@ class TestSheetVersionCompareFileView(TestViewsBase):
 
     def test_render_no_permission(self):
         """Test rendering the sheet version compare view without permission"""
-        with self.login(self.user_guest):
+        with self.login(self.user_no_roles):
             response = self.client.get(
                 '{}?source={}&target={}&filename={}&category={}'.format(
                     reverse(

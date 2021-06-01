@@ -189,12 +189,23 @@ class TestSampleSheetsPermissions(
             self.owner_as.user,
             self.delegate_as.user,
             self.contributor_as.user,
+            self.guest_as.user,
         ]
-        bad_users = [self.guest_as.user, self.user_no_roles, self.anonymous]
+        bad_users = [self.user_no_roles, self.anonymous]
         self.assert_response(url, good_users, 200)
         self.assert_response(url, bad_users, 302)
         self.project.set_public()
-        self.assert_response(url, bad_users, 302)
+        self.assert_response(url, self.user_no_roles, 200)
+        self.assert_response(url, self.anonymous, 302)
+
+    @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
+    def test_sheet_export_excel_study_anon(self):
+        """Test Excel export for study table with anonymous guest access"""
+        url = reverse(
+            'samplesheets:export_excel', kwargs={'study': self.study.sodar_uuid}
+        )
+        self.project.set_public()
+        self.assert_response(url, self.anonymous, 200)
 
     def test_sheet_export_excel_assay(self):
         """Test sheet Excel export view for assay table"""
@@ -206,21 +217,23 @@ class TestSampleSheetsPermissions(
             self.owner_as.user,
             self.delegate_as.user,
             self.contributor_as.user,
+            self.guest_as.user,
         ]
-        bad_users = [self.guest_as.user, self.user_no_roles, self.anonymous]
+        bad_users = [self.user_no_roles, self.anonymous]
         self.assert_response(url, good_users, 200)
         self.assert_response(url, bad_users, 302)
         self.project.set_public()
-        self.assert_response(url, bad_users, 302)
+        self.assert_response(url, self.user_no_roles, 200)
+        self.assert_response(url, self.anonymous, 302)
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_sheet_export_excel_assay_anon(self):
-        """Test sheet Excel export view for assay table with anonymous guest access"""
+        """Test Excel export for assay table with anonymous guest access"""
         url = reverse(
             'samplesheets:export_excel', kwargs={'assay': self.assay.sodar_uuid}
         )
         self.project.set_public()
-        self.assert_response(url, self.anonymous, 302)
+        self.assert_response(url, self.anonymous, 200)
 
     def test_sheet_export_isa(self):
         """Test sheet ISA export view"""
@@ -233,12 +246,14 @@ class TestSampleSheetsPermissions(
             self.owner_as.user,
             self.delegate_as.user,
             self.contributor_as.user,
+            self.guest_as.user,
         ]
-        bad_users = [self.guest_as.user, self.user_no_roles, self.anonymous]
+        bad_users = [self.user_no_roles, self.anonymous]
         self.assert_response(url, good_users, 200)
         self.assert_response(url, bad_users, 302)
         self.project.set_public()
-        self.assert_response(url, bad_users, 302)
+        self.assert_response(url, self.user_no_roles, 200)
+        self.assert_response(url, self.anonymous, 302)
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_sheet_export_isa_anon(self):
@@ -248,7 +263,7 @@ class TestSampleSheetsPermissions(
             kwargs={'project': self.project.sodar_uuid},
         )
         self.project.set_public()
-        self.assert_response(url, self.anonymous, 302)
+        self.assert_response(url, self.anonymous, 200)
 
     def test_sheet_delete(self):
         """Test sheet delete view"""
@@ -286,12 +301,14 @@ class TestSampleSheetsPermissions(
             self.owner_as.user,
             self.delegate_as.user,
             self.contributor_as.user,
+            self.guest_as.user,
         ]
-        bad_users = [self.guest_as.user, self.user_no_roles, self.anonymous]
+        bad_users = [self.user_no_roles, self.anonymous]
         self.assert_response(url, good_users, 200)
         self.assert_response(url, bad_users, 302)
         self.project.set_public()
-        self.assert_response(url, bad_users, 302)
+        self.assert_response(url, self.user_no_roles, 200)
+        self.assert_response(url, self.anonymous, 302)
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_version_list_anon(self):
@@ -300,7 +317,97 @@ class TestSampleSheetsPermissions(
             'samplesheets:versions', kwargs={'project': self.project.sodar_uuid}
         )
         self.project.set_public()
+        self.assert_response(url, self.anonymous, 200)
+
+    def test_version_compare(self):
+        """Test sheet version compare view"""
+        isa = ISATab.objects.first()
+        url = '{}?source={}&target={}'.format(
+            reverse(
+                'samplesheets:version_compare',
+                kwargs={'project': self.project.sodar_uuid},
+            ),
+            str(isa.sodar_uuid),
+            str(isa.sodar_uuid),
+        )
+        good_users = [
+            self.superuser,
+            self.owner_as.user,
+            self.delegate_as.user,
+            self.contributor_as.user,
+            self.guest_as.user,
+        ]
+        bad_users = [
+            self.user_no_roles,
+            self.anonymous,
+        ]
+        self.assert_response(url, good_users, 200)
+        self.assert_response(url, bad_users, 302)
+        self.project.set_public()
+        self.assert_response(url, self.user_no_roles, 200)
         self.assert_response(url, self.anonymous, 302)
+
+    @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
+    def test_version_compare_anon(self):
+        """Test sheet version compare view  with anonymous guest access"""
+        isa = ISATab.objects.first()
+        url = '{}?source={}&target={}'.format(
+            reverse(
+                'samplesheets:version_compare',
+                kwargs={'project': self.project.sodar_uuid},
+            ),
+            str(isa.sodar_uuid),
+            str(isa.sodar_uuid),
+        )
+        self.project.set_public()
+        self.assert_response(url, self.anonymous, 200)
+
+    def test_version_compare_file(self):
+        """Test sheet version compare file view"""
+        isa = ISATab.objects.first()
+        url = '{}?source={}&target={}&filename={}&category={}'.format(
+            reverse(
+                'samplesheets:version_compare_file',
+                kwargs={'project': self.project.sodar_uuid},
+            ),
+            str(isa.sodar_uuid),
+            str(isa.sodar_uuid),
+            's_small.txt',
+            'studies',
+        )
+        good_users = [
+            self.superuser,
+            self.owner_as.user,
+            self.delegate_as.user,
+            self.contributor_as.user,
+            self.guest_as.user,
+        ]
+        bad_users = [
+            self.user_no_roles,
+            self.anonymous,
+        ]
+        self.assert_response(url, good_users, 200)
+        self.assert_response(url, bad_users, 302)
+        self.project.set_public()
+        self.assert_response(url, self.user_no_roles, 200)
+        self.assert_response(url, self.anonymous, 302)
+
+    @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
+    def test_version_compare_file_anon(self):
+        """Test sheet version compare file view"""
+        isa = ISATab.objects.first()
+        url = '{}?source={}&target={}&filename={}&category={}'.format(
+            reverse(
+                'samplesheets:version_compare_file',
+                kwargs={'project': self.project.sodar_uuid},
+            ),
+            str(isa.sodar_uuid),
+            str(isa.sodar_uuid),
+            's_small.txt',
+            'studies',
+        )
+        self.project.set_public()
+        self.assert_response(url, self.anonymous, 200)
 
     def test_version_restore(self):
         """Test sheet restoring view"""
@@ -480,94 +587,6 @@ class TestSampleSheetsPermissions(
         url = reverse(
             'samplesheets:irods_ticket_delete',
             kwargs={'irodsaccessticket': self.ticket.sodar_uuid},
-        )
-        self.project.set_public()
-        self.assert_response(url, self.anonymous, 302)
-
-    def test_version_compare(self):
-        """Test sheet version compare view"""
-        isa = ISATab.objects.first()
-        url = '{}?source={}&target={}'.format(
-            reverse(
-                'samplesheets:version_compare',
-                kwargs={'project': self.project.sodar_uuid},
-            ),
-            str(isa.sodar_uuid),
-            str(isa.sodar_uuid),
-        )
-        good_users = [
-            self.superuser,
-            self.owner_as.user,
-            self.delegate_as.user,
-            self.contributor_as.user,
-        ]
-        bad_users = [
-            self.guest_as.user,
-            self.user_no_roles,
-            self.anonymous,
-        ]
-        self.assert_response(url, good_users, 200)
-        self.assert_response(url, bad_users, 302)
-        self.project.set_public()
-        self.assert_response(url, bad_users, 302)
-
-    @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
-    def test_version_compare_anon(self):
-        """Test sheet version compare view  with anonymous guest access"""
-        isa = ISATab.objects.first()
-        url = '{}?source={}&target={}'.format(
-            reverse(
-                'samplesheets:version_compare',
-                kwargs={'project': self.project.sodar_uuid},
-            ),
-            str(isa.sodar_uuid),
-            str(isa.sodar_uuid),
-        )
-        self.project.set_public()
-        self.assert_response(url, self.anonymous, 302)
-
-    def test_version_compare_file(self):
-        """Test sheet version compare file view"""
-        isa = ISATab.objects.first()
-        url = '{}?source={}&target={}&filename={}&category={}'.format(
-            reverse(
-                'samplesheets:version_compare_file',
-                kwargs={'project': self.project.sodar_uuid},
-            ),
-            str(isa.sodar_uuid),
-            str(isa.sodar_uuid),
-            's_small.txt',
-            'studies',
-        )
-        good_users = [
-            self.superuser,
-            self.owner_as.user,
-            self.delegate_as.user,
-            self.contributor_as.user,
-        ]
-        bad_users = [
-            self.guest_as.user,
-            self.user_no_roles,
-            self.anonymous,
-        ]
-        self.assert_response(url, good_users, 200)
-        self.assert_response(url, bad_users, 302)
-        self.project.set_public()
-        self.assert_response(url, bad_users, 302)
-
-    @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
-    def test_version_compare_file_anon(self):
-        """Test sheet version compare file view"""
-        isa = ISATab.objects.first()
-        url = '{}?source={}&target={}&filename={}&category={}'.format(
-            reverse(
-                'samplesheets:version_compare_file',
-                kwargs={'project': self.project.sodar_uuid},
-            ),
-            str(isa.sodar_uuid),
-            str(isa.sodar_uuid),
-            's_small.txt',
-            'studies',
         )
         self.project.set_public()
         self.assert_response(url, self.anonymous, 302)

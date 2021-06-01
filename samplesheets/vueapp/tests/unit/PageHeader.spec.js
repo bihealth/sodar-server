@@ -84,6 +84,32 @@ describe('PageHeader.vue', () => {
     expect(wrapper.find('#sodar-ss-btn-edit-finish').exists()).toBe(false)
   })
 
+  it('renders page header for guest user', () => {
+    propsData.app.sodarContext.perms = {
+      edit_sheet: false,
+      manage_sheet: false,
+      create_colls: false,
+      export_sheet: true,
+      delete_sheet: false,
+      view_versions: true,
+      edit_config: false,
+      is_superuser: false
+    }
+    const wrapper = mount(PageHeader, { localVue, propsData: propsData })
+
+    // Operations dropdown
+    expect(wrapper.find('#sodar-ss-op-dropdown').exists()).toBe(true)
+    expect(wrapper.find('#sodar-ss-op-item-import').exists()).toBe(false)
+    expect(wrapper.find('#sodar-ss-op-item-edit').exists()).toBe(false)
+    expect(wrapper.find('#sodar-ss-op-item-warnings').exists()).toBe(false)
+    expect(wrapper.find('#sodar-ss-op-item-cache').exists()).toBe(false)
+    expect(wrapper.find('#sodar-ss-op-item-replace').exists()).toBe(false)
+    expect(wrapper.find('#sodar-ss-op-item-export').exists()).toBe(true)
+    expect(wrapper.find('#sodar-ss-op-item-irods').exists()).toBe(false)
+    expect(wrapper.find('#sodar-ss-op-item-versions').exists()).toBe(true)
+    expect(wrapper.find('#sodar-ss-op-item-delete').exists()).toBe(false)
+  })
+
   it('renders page header with sheet sync enabled', () => {
     propsData.app.sheetSyncEnabled = true
     const wrapper = mount(PageHeader, { localVue, propsData: propsData })

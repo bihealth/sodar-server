@@ -38,6 +38,7 @@ Added
     - App alerts for iRODS data request actions (#1084)
     - Public guest access support for sample data (#1100)
     - ``get_webdav_url()`` helper (#1100)
+    - ``view_versions`` permission (#1138)
 
 Changed
 -------
@@ -69,6 +70,8 @@ Changed
     - Upgrade Vue app dependencies (#1114)
     - Rename ``IrodsCollsCreateView``
     - Enable public guest access to project sheets view (#1141)
+    - Enable sheet export for project guests (#1138)
+    - Enable sheet version viewing and export for project guests (#1138)
 
 Fixed
 -----

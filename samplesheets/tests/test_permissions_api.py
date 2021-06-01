@@ -198,13 +198,14 @@ class TestSampleSheetISAExportAPIView(
             self.owner_as.user,
             self.delegate_as.user,
             self.contributor_as.user,
+            self.guest_as.user,
         ]
-        bad_users = [self.guest_as.user, self.user_no_roles]
+        bad_users = [self.user_no_roles]
         self.assert_response_api(url, good_users, 200)
         self.assert_response_api(url, bad_users, 403)
         self.assert_response_api(url, self.anonymous, 401)
         self.project.set_public()
-        self.assert_response_api(url, bad_users, 403)
+        self.assert_response_api(url, bad_users, 200)
         self.assert_response_api(url, self.anonymous, 401)
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
@@ -215,7 +216,7 @@ class TestSampleSheetISAExportAPIView(
             kwargs={'project': self.project.sodar_uuid},
         )
         self.project.set_public()
-        self.assert_response_api(url, self.anonymous, 401)
+        self.assert_response_api(url, self.anonymous, 200)
 
 
 class TestSampleDataFileExistsAPIView(TestProjectAPIPermissionBase):

@@ -47,7 +47,17 @@ rules.add_perm(
     'samplesheets.export_sheet',
     pr_rules.is_project_owner
     | pr_rules.is_project_delegate
-    | pr_rules.is_project_contributor,
+    | pr_rules.is_project_contributor
+    | pr_rules.is_project_guest,
+)
+
+# Allow viewing sample sheet versions
+rules.add_perm(
+    'samplesheets.view_versions',
+    pr_rules.is_project_owner
+    | pr_rules.is_project_delegate
+    | pr_rules.is_project_contributor
+    | pr_rules.is_project_guest,
 )
 
 # Allow creating collection structure in iRODS

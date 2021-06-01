@@ -279,6 +279,7 @@ class TestContextAjaxView(TestViewsBase):
                 'create_colls': True,
                 'export_sheet': True,
                 'delete_sheet': True,
+                'view_versions': True,
                 'edit_config': True,
                 'is_superuser': True,
             },
