@@ -32,7 +32,7 @@ RUN apt-get update && \
 # Install Python dependencies.
 RUN cd /usr/src/app && \
     pip install --no-cache-dir -r requirements/production.txt && \
-    pip install --no-cache-dir -r requirements/local.txt && \
+    pip install --no-cache-dir -r requirements/local.txt
 
 # Install modern nodejs
 RUN curl -sL https://deb.nodesource.com/setup_12.x | bash - && \
