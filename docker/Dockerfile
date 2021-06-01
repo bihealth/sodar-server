@@ -61,9 +61,10 @@ RUN mkdir -p /usr/src/app/local-static/local/css && \
 # Prepare static files
 RUN cd /usr/src/app && \
     mkdir -p /usr/src/app/samplesheets/vueapp/dist && \
-    DJANGO_SECRET_KEY=for-build-only \
-    DJANGO_SETTINGS_MODULE=config.settings.production \
-    DATABASE_URL=postgres://sodar:sodar@fake/sodar \
+    DJANGO_SECRET_KEY=for-build-only && \
+    DJANGO_SETTINGS_MODULE=config.settings.production && \
+    DATABASE_URL=postgres://sodar:sodar@fake/sodar && \
+    python manage.py geticons && \
     python manage.py collectstatic --no-input
 
 # Define the entry point.
