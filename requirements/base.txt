@@ -2,13 +2,13 @@
 wheel==0.36.2
 
 # Django
-django==3.2.1
+django==3.2.4
 
 # Configuration
 django-environ==0.4.5
 
 # Forms
-django-crispy-forms==1.11.1
+django-crispy-forms==1.11.2
 
 # Models
 django-model-utils==4.1.1
@@ -35,7 +35,7 @@ django-cprofile-middleware==1.0.5
 versioneer==0.19
 
 # Online documentation via django-docs.
-Sphinx==3.5.1
+Sphinx==4.0.2
 django-docs==0.3.1
 sphinx-rtd-theme==0.5.1
 
@@ -44,10 +44,10 @@ sphinx-rtd-theme==0.5.1
 #####################
 
 # Rules for permissions
-rules==2.2
+rules==3.0
 
 # REST framework
-djangorestframework==3.12.2
+djangorestframework==3.12.4
 
 # Keyed list addon for DRF
 # drf-keyed-list==0.0.2
@@ -66,11 +66,11 @@ mistune==0.8.4
 -e git+https://github.com/mikkonie/django-plugins.git@42e86e7904e5c09f1da32173862b26843eda5dd8#egg=django-plugins
 
 # SODAR Core
-django-sodar-core==0.10.1
-# -e git+https://github.com/bihealth/sodar-core.git@23c5c008b9e967d15d306f91caaf8f82399c2e4d#egg=django-sodar-core
+# django-sodar-core==0.10.1
+-e git+https://github.com/bihealth/sodar-core.git@234a9688fa060b2088613fb063fe4f564c5cc356#egg=django-sodar-core
 
 # Celery
-celery==5.0.5
+celery==5.1.0
 
 ####################
 # SODAR app imports

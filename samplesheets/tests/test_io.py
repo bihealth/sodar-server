@@ -570,7 +570,7 @@ class TestSampleSheetIOExport(TestSampleSheetIOBase):
         self.assertEqual(out_data, expected)
 
     def test_export_study_design(self):
-        """ Test _export_study_design()"""
+        """Test _export_study_design()"""
         study = self.investigation.studies.get(identifier='BII-S-1')
         in_data = study.study_design
         out_data = self.sheet_io._export_study_design(in_data)
