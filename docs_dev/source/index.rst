@@ -9,12 +9,10 @@ managing data in omics research projects.
 This documentation contains instructions and guidelines for installing,
 deploying and developing the system.
 
-**NOTE:** When viewing this document in GitLab critical content will by default
-be missing. Please click "display source" if you want to read this in GitLab.
+.. note::
 
-.. warning::
-
-   Under construction!
+    This project is under heavy development and all features are not yet fully
+    documented. Improved documentation is forthcoming.
 
 This documentation is under construction and rather minimal. For the basics of
 SODAR project management and/or information on developing SODAR Core and its

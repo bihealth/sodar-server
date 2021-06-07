@@ -14,14 +14,19 @@ In the **Sample Sheets** app, research data modeled in the
 Using the **Landing Zones** app a user can manage their large scale data input
 in the `iRODS <https://irods.org/>`_ distributed file storage system.
 
-The project is built on the `SODAR Core <https://cubi-gitlab.bihealth.org/CUBI_Engineering/CUBI_Data_Mgmt/sodar_core>`_
+The project is built on the `SODAR Core <https://github.com/bihealth/sodar-core>`_
 framework, which provides the base functionalities for project management and
 dynamic app content inclusion.
 
 SODAR uses the external
-`SODAR Taskflow <https://cubi-gitlab.bihealth.org/CUBI_Engineering/CUBI_Data_Mgmt/sodar_taskflow>`_
+`SODAR Taskflow <https://github.com/bihealth/sodar-taskflow>`_
 service for managing large scale data transactions in the iRODS system.
 
 See `docs_dev <docs_dev>`_ for development documentation.
+
+.. note::
+
+    This project is under heavy development and all features may not be
+    fully tested or documented. Improved documentation is forthcoming.
 
 :License: MIT

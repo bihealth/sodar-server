@@ -3,4 +3,6 @@
 Deployment
 ==========
 
-See `CUBI Ansible Playbooks <https://cubi-gitlab.bihealth.org/CUBI_Operations/Ansible/ansible-playbooks-ng/>`_.
+For deployment using Docker Compose, see
+`sodar-docker-compose <https://github.com/bihealth/sodar-docker-compose>`_
+(currently under construction).
