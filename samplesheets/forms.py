@@ -1,3 +1,5 @@
+"""Forms for the samplesheets app"""
+
 from cookiecutter.main import cookiecutter
 import json
 import os
@@ -83,14 +85,12 @@ class SampleSheetImportForm(forms.Form):
                         'You can only upload one Zip archive at a time',
                     )
                     return self.cleaned_data
-
                 if not file.name.endswith('.txt'):
                     self.add_error(
                         'file_upload',
                         'Only a Zip archive or ISA-Tab .txt files allowed',
                     )
                     return self.cleaned_data
-
                 if file.name.startswith('i_'):
                     inv_found = True
                 elif file.name.startswith('s_'):
@@ -265,16 +265,13 @@ class IrodsAccessTicketForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
         from samplesheets.views import TRACK_HUBS_COLL
 
         # Add selection to path field
         irods_backend = get_backend_api('omics_irods')
-
         assays = Assay.objects.filter(
             study__investigation__project=kwargs['initial']['project']
         )
-
         if irods_backend:
             choices = [
                 (
@@ -345,14 +342,13 @@ class IrodsRequestForm(forms.ModelForm):
     def clean(self):
         cleaned_data = super().clean()
         irods_backend = get_backend_api('omics_irods')
-
-        # Remove trailing slashes as irodspython client does not recognize this as a collection
+        # Remove trailing slashes as irodspython client does not recognize
+        # this as a collection
         cleaned_data['path'] = cleaned_data['path'].rstrip('/')
 
         old_request = IrodsDataRequest.objects.filter(
             path=cleaned_data['path'], status__in=['ACTIVE', 'FAILED']
         ).first()
-
         if old_request and old_request != self.instance:
             self.add_error('path', ERROR_MSG_EXISTING)
             return cleaned_data
@@ -399,7 +395,6 @@ class IrodsRequestForm(forms.ModelForm):
                 )
 
         irods_session = irods_backend.get_session()
-
         if 'path' in cleaned_data and not (
             irods_session.data_objects.exists(cleaned_data['path'])
             or irods_session.collections.exists(cleaned_data['path'])

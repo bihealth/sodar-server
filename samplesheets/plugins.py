@@ -1,4 +1,7 @@
+"""App plugin and sub-app plugin points for the samplesheets app"""
+
 from copy import deepcopy
+from irods.exception import NetworkException
 import logging
 import os
 
@@ -6,7 +9,6 @@ from django.conf import settings
 from django.urls import reverse
 
 from djangoplugins.point import PluginPoint
-from irods.exception import NetworkException
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
@@ -38,6 +40,7 @@ from samplesheets.views import (
     MISC_FILES_COLL_ID,
     APP_NAME,
 )
+
 
 app_settings = AppSettingAPI()
 logger = logging.getLogger(__name__)
@@ -229,7 +232,6 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         :return: List of dicts or None
         """
         sync_flows = []
-
         # NOTE: This only syncs previously created collections
         for investigation in Investigation.objects.filter(irods_status=True):
             flow = {
@@ -241,7 +243,6 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                 },
             }
             sync_flows.append(flow)
-
         return sync_flows
 
     def get_object_link(self, model_str, uuid):
@@ -254,7 +255,6 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         :return: Dict or None if not found
         """
         obj = self.get_object(eval(model_str), uuid)
-
         if obj and obj.__class__ in [Investigation, Study, Assay]:
             return {
                 'url': get_sheets_url(obj),
@@ -262,7 +262,6 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                 if obj.__class__ == Investigation
                 else obj.get_display_name(),
             }
-
         elif obj and obj.__class__ == ISATab:
             return {
                 'url': reverse(
@@ -271,7 +270,6 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                 ),
                 'label': obj.get_name(),
             }
-
         elif obj and obj.__class__ == IrodsDataRequest:
             return {
                 'url': reverse(
@@ -325,7 +323,6 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                 search_terms, keywords, item_types=item_types
             )
         )
-
         results['materials'] = {
             'title': 'Sources and Samples',
             'search_types': ['source', 'sample'],
@@ -334,7 +331,6 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
 
         # iRODS files
         file_items = []
-
         if irods_backend and (not search_type or search_type == 'file'):
             try:
                 obj_data = irods_backend.get_objects(
@@ -402,7 +398,6 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
 
         if file_items:
             file_items.sort(key=lambda x: x['name'].lower())
-
         results['files'] = {
             'title': 'Sample Files in iRODS',
             'search_types': ['file'],
@@ -433,7 +428,6 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                         get_sheets_url(project)
                     )
                 )
-
             elif user.has_perm('samplesheets.edit_sheet', project):
                 return (
                     '<a href="{}" title="Import sample sheet into project">'
@@ -446,7 +440,6 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                         )
                     )
                 )
-
             else:
                 return (
                     '<i class="iconify text-muted" '
@@ -457,7 +450,6 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
 
         elif column_id == 'files':
             irods_backend = get_backend_api('omics_irods', conn=False)
-
             if (
                 irods_backend
                 and investigation
@@ -474,7 +466,6 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                         + irods_backend.get_sample_path(project)
                     )
                 )
-
             return (
                 '<i class="iconify text-muted" '
                 'data-icon="mdi:folder-open" title="{}" '
@@ -632,7 +623,6 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
             # Plugin assay shortcuts
             if assay_plugin:
                 plugin_shortcuts = assay_plugin.get_shortcuts(assay) or []
-
                 for sc in plugin_shortcuts:
                     cache_data['shortcuts'][
                         sc['id']
@@ -644,7 +634,6 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                     assay_path + '/' + TRACK_HUBS_COLL
                 )
             ]
-
             cache_backend.set_cache_item(
                 name=item_name,
                 app_name='samplesheets',
@@ -732,7 +721,6 @@ def get_study_plugin(plugin_name):
     """
     try:
         return SampleSheetStudyPluginPoint.get_plugin(plugin_name)
-
     except SampleSheetStudyPluginPoint.DoesNotExist:
         return None
 
@@ -790,10 +778,8 @@ class SampleSheetAssayPluginPoint(PluginPoint):
         :return: Full iRODS path for the assay
         """
         irods_backend = get_backend_api('omics_irods', conn=False)
-
         if not irods_backend:
             return None
-
         return irods_backend.get_path(assay)
 
     def get_row_path(self, row, table, assay, assay_path):
@@ -859,14 +845,11 @@ class SampleSheetAssayPluginPoint(PluginPoint):
             name.split('/')[0] != 'irods' or name.split('/')[1] != 'rows'
         ):
             return
-
         try:
             cache_backend = get_backend_api('sodar_cache')
             irods_backend = get_backend_api('omics_irods')
-
         except Exception:
             return
-
         if not cache_backend or not irods_backend:
             return
 
@@ -888,7 +871,6 @@ class SampleSheetAssayPluginPoint(PluginPoint):
                 'measurement_type': get_isa_field_name(assay.measurement_type),
                 'technology_type': get_isa_field_name(assay.technology_type),
             }
-
             if search_fields in self.assay_fields:
                 config_assays.append(assay)
 
@@ -909,7 +891,6 @@ class SampleSheetAssayPluginPoint(PluginPoint):
                     path = self.get_row_path(
                         row, assay_table, assay, assay_path
                     )
-
                     if path and path not in row_paths:
                         row_paths.append(path)
 
@@ -921,7 +902,6 @@ class SampleSheetAssayPluginPoint(PluginPoint):
                         cache_data['paths'][
                             path
                         ] = irods_backend.get_object_stats(path)
-
                     except FileNotFoundError:
                         cache_data['paths'][path] = None
 
@@ -943,7 +923,6 @@ def get_assay_plugin(plugin_name):
     """
     try:
         return SampleSheetAssayPluginPoint.get_plugin(plugin_name)
-
     except SampleSheetAssayPluginPoint.DoesNotExist:
         return None
 
@@ -951,7 +930,6 @@ def get_assay_plugin(plugin_name):
 def get_irods_content(inv, study, irods_backend, ret_data):
     cache_backend = get_backend_api('sodar_cache')
     ret_data = deepcopy(ret_data)
-
     if not (inv.irods_status and irods_backend):
         return ret_data
 
@@ -967,7 +945,6 @@ def get_irods_content(inv, study, irods_backend, ret_data):
         assay_path = irods_backend.get_path(assay)
         assay_plugin = assay.get_plugin()
         a_data['irods_paths'] = []
-
         # Default shortcuts
         a_data['shortcuts'] = [
             {
@@ -995,7 +972,6 @@ def get_irods_content(inv, study, irods_backend, ret_data):
                 # Update assay links column
                 path = assay_plugin.get_row_path(row, a_data, assay, assay_path)
                 enabled = True
-
                 # Set initial state to disabled by cached value
                 if (
                     cache_item
@@ -1006,7 +982,6 @@ def get_irods_content(inv, study, irods_backend, ret_data):
                     )
                 ):
                     enabled = False
-
                 a_data['irods_paths'].append({'path': path, 'enabled': enabled})
                 # Update row links
                 assay_plugin.update_row(row, a_data, assay)
@@ -1067,7 +1042,6 @@ def get_irods_content(inv, study, irods_backend, ret_data):
                 a_data['shortcuts'][i]['enabled'] = cache_item.data[
                     'shortcuts'
                 ].get(a_data['shortcuts'][i]['id'])
-
             else:
                 a_data['shortcuts'][i]['enabled'] = True
 

@@ -17,7 +17,6 @@ class TestLandingZoneStatusGetAjaxView(TestViewsBase):
                     kwargs={'landingzone': self.landing_zone.sodar_uuid},
                 )
             )
-
         self.assertEqual(response.status_code, 200)
 
         expected = {

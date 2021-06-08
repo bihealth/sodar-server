@@ -31,7 +31,6 @@ def get_alt_names(name):
     :return: List
     """
     name = name.lower()  # Convert all versions lowercase for indexed search
-
     return [name.replace('_', '-'), re.sub(r'[^a-zA-Z0-9]', '', name), name]
 
 
@@ -45,14 +44,11 @@ def get_sample_colls(investigation):
     """
     ret = []
     irods_backend = get_backend_api('omics_irods', conn=False)
-
     if irods_backend:
         for study in investigation.studies.all():
             ret.append(irods_backend.get_sub_path(study))
-
             for assay in study.assays.all():
                 ret.append(irods_backend.get_sub_path(assay))
-
     return ret
 
 
@@ -69,13 +65,10 @@ def compare_inv_replace(inv1, inv2):
             study2 = inv2.studies.get(
                 identifier=study1.identifier, file_name=study1.file_name
             )
-
             for assay1 in study1.assays.all():
                 study2.assays.get(file_name=assay1.file_name)
-
     except Exception:
         return False
-
     return True
 
 
@@ -93,7 +86,6 @@ def get_index_by_header(
     """
     header_value = header_value.lower()
     obj_cls = obj_cls.__name__ if obj_cls else None
-
     for i, h in enumerate(render_table['field_header']):
         if (
             h['value'].lower() == header_value
@@ -101,14 +93,12 @@ def get_index_by_header(
             and (not item_type or h['item_type'] == item_type)
         ):
             return i
-
     return None
 
 
 def get_last_material_name(row, table):
     """Return name of the last non-DATA material in a table row"""
     name = None
-
     for i in range(len(row)):
         cell = row[i]
         header = table['field_header'][i]
@@ -119,7 +109,6 @@ def get_last_material_name(row, table):
             and cell['value']
         ):
             name = cell['value']
-
     return name
 
 
@@ -135,7 +124,6 @@ def get_sample_libraries(samples, study_tables):
 
     if type(samples) not in [list, QuerySet]:
         samples = [samples]
-
     sample_names = [s.name for s in samples]
     study = samples[0].study
     library_names = []
@@ -144,11 +132,9 @@ def get_sample_libraries(samples, study_tables):
         sample_idx = get_index_by_header(
             assay_table, 'name', obj_cls=GenericMaterial, item_type='SAMPLE'
         )
-
         for row in assay_table['table_data']:
             if row[sample_idx]['value'] in sample_names:
                 last_name = get_last_material_name(row, assay_table)
-
                 if last_name not in library_names:
                     library_names.append(last_name)
 
@@ -166,11 +152,9 @@ def get_study_libraries(study, study_tables):
     :return: List of GenericMaterial objects
     """
     ret = []
-
     for source in study.get_sources():
         for sample in source.get_samples():
             ret += get_sample_libraries(sample, study_tables)
-
     return ret
 
 
@@ -184,7 +168,6 @@ def get_isa_field_name(field):
     """
     if type(field) == dict:
         return field['name']
-
     return field
 
 
@@ -200,14 +183,11 @@ def get_sheets_url(obj):
     url = reverse(
         'samplesheets:project_sheets', kwargs={'project': project.sodar_uuid}
     )
-
     # NOTE: Importing the model fails because of circular dependency
     if obj.__class__.__name__ == 'Study':
         url += '#/study/' + str(obj.sodar_uuid)
-
     elif obj.__class__.__name__ == 'Assay':
         url += '#/assay' + str(obj.sodar_uuid)
-
     return url
 
 
@@ -218,7 +198,7 @@ def get_comment(obj, key):
 
     :param obj: Object parsed from ISA-Tab
     :param key: Key for comment
-    :return:
+    :return: String
     """
     if (
         not hasattr(obj, 'comments')
@@ -226,10 +206,8 @@ def get_comment(obj, key):
         or key not in obj.comments
     ):
         return None
-
     if isinstance(obj.comments[key], dict):
         return obj.comments[key]['value']
-
     return obj.comments[key]
 
 
@@ -242,7 +220,6 @@ def get_comments(obj):
     """
     if not hasattr(obj, 'comments') or not obj.comments:
         return None
-
     ret = {k: get_comment(obj, k) for k in obj.comments.keys()}
 
     def _clean_config(k):
@@ -264,17 +241,14 @@ def get_unique_name(study, assay, name, item_type=None):
     :param item_type: Item type for materials (string)
     :return: String
     """
-
     # HACK: This will of course not work on empty tables..
     # TODO: Refactor once we allow creating sheets from scratch
     study_id = study.arcs[0][0].split('-')[1][1:]
     assay_id = 0
-
     if assay and study.assays.all().count() > 1:
         assay_id = sorted([a.file_name for a in study.assays.all()]).index(
             assay.file_name
         )
-
     return 'p{}-s{}-{}{}{}-{}'.format(
         study.investigation.project.pk,
         study_id,
@@ -300,10 +274,8 @@ def get_node_obj(**query_kwargs):
     from samplesheets.models import GenericMaterial, Process
 
     obj = GenericMaterial.objects.filter(**query_kwargs).first()
-
     if not obj:
         obj = Process.objects.filter(**query_kwargs).first()
-
     return obj
 
 
@@ -317,17 +289,12 @@ def get_config_name(config):
     """
     if config.find('/') == -1 and config.find('\\') == -1:
         return config
-
     return re.split('[/\\\\]', config)[-1]
 
 
 def write_excel_table(table, output, display_name):
     """
     Write an Excel 2010 file (.xlsx) from a rendered study/assay table.
-
-    :param table:
-    :param output:
-    :return:
     """
 
     def _get_val(c_val):
@@ -347,7 +314,6 @@ def write_excel_table(table, output, display_name):
 
     for c in table['top_header']:
         top_header_row.append(c['value'])
-
         if c['colspan'] > 1:
             top_header_row += [''] * (c['colspan'] - 1)
 
@@ -375,10 +341,8 @@ def get_top_header(table, field_idx):
     :return: dict or None
     """
     tc = 0
-
     for th in table['top_header']:
         tc += th['colspan']
-
         if tc > field_idx:
             return th
 

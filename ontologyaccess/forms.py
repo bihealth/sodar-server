@@ -39,7 +39,6 @@ class OBOFormatOntologyForm(forms.ModelForm):
         if not self.instance.pk:
             self.initial['name'] = ''
             self.initial['term_url'] = DEFAULT_TERM_URL
-
         # Update modifications
         else:
             self.fields['file_upload'].widget = forms.HiddenInput()
@@ -51,10 +50,8 @@ class OBOFormatOntologyForm(forms.ModelForm):
             return self.cleaned_data
 
         o_format = 'obo'
-
         if self.cleaned_data['file_upload'].name.split('.')[-1] == 'owl':
             o_format = 'owl'
-
             try:
                 file_data = self.obo_io.owl_to_obo(
                     self.cleaned_data['file_upload']
@@ -64,7 +61,6 @@ class OBOFormatOntologyForm(forms.ModelForm):
                 print('DEBUG: OWL convert exception: {}'.format(ex))  # DEBUG
                 self.add_error(None, 'OWL convert exception: {}'.format(ex))
                 return self.cleaned_data
-
         else:
             file_data = self.files.get('file_upload').read().decode()
 
@@ -73,7 +69,6 @@ class OBOFormatOntologyForm(forms.ModelForm):
                 self.obo_doc = fastobo.load(file_data)
             else:
                 self.obo_doc = fastobo.loads(file_data)
-
         except Exception as ex:
             print('DEBUG: Fastobo exception: {}'.format(ex))  # DEBUG
             self.add_error(None, 'Fastobo exception: {}'.format(ex))
@@ -89,12 +84,10 @@ class OBOFormatOntologyForm(forms.ModelForm):
                 title=self.cleaned_data.get('title'),
                 term_url=self.cleaned_data.get('term_url'),
             )
-
         if self.instance.pk:
             self.instance.name = self.cleaned_data.get('name')
             if self.cleaned_data.get('title'):
                 self.instance.title = self.cleaned_data['title']
             self.instance.term_url = self.cleaned_data.get('term_url')
             self.instance.save()
-
         return self.instance

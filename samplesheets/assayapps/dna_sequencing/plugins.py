@@ -76,10 +76,8 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
         """
         # Get the name of the last material
         last_material_name = get_last_material_name(row, table)
-
         if last_material_name:
             return assay_path + '/' + last_material_name
-
         return None
 
     def update_row(self, row, table, assay):

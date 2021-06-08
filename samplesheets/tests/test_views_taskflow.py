@@ -1,10 +1,9 @@
 """Integration tests for views in the samplesheets Django app with taskflow"""
 
 # NOTE: You must supply 'sodar_url': self.live_server_url in taskflow requests!
-import os
 from datetime import timedelta
 import irods
-from unittest import skipIf
+import os
 
 from django.conf import settings
 from django.contrib import auth
@@ -12,6 +11,8 @@ from django.contrib.messages import get_messages
 from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
+
+from unittest import skipIf
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
@@ -26,16 +27,13 @@ from samplesheets.models import (
     IrodsDataRequest,
 )
 from samplesheets.tests.test_tasks import TestSheetSyncBase
-from samplesheets.utils import get_sample_colls
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
+from samplesheets.utils import get_sample_colls
 from samplesheets.views import TRACK_HUBS_COLL, IRODS_REQ_CREATE_ALERT_NAME
 
 
 app_settings = AppSettingAPI()
 User = auth.get_user_model()
-
-
-APP_NAME = 'samplesheets'
 
 
 # SODAR constants
@@ -52,6 +50,7 @@ SUBMIT_STATUS_PENDING_TASKFLOW = SODAR_CONSTANTS[
 ]
 
 # Local constants
+APP_NAME = 'samplesheets'
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
 TASKFLOW_ENABLED = (
     True if 'taskflow' in settings.ENABLED_BACKEND_PLUGINS else False
@@ -276,7 +275,6 @@ class TestSampleSheetDeleteView(
 
     def test_delete(self):
         """Test sample sheet deleting with taskflow"""
-
         # Assert precondition
         self.assertIsNotNone(self.investigation)
 
@@ -285,7 +283,6 @@ class TestSampleSheetDeleteView(
             'delete_host_confirm': 'testserver',
             'sodar_url': self.live_server_url,
         }
-
         with self.login(self.user):
             response = self.client.post(
                 reverse(
@@ -313,7 +310,6 @@ class TestSampleSheetDeleteView(
 
     def test_delete_files_owner(self):
         """Test sample sheet deleting with files in irods as owner"""
-
         # Create collections and file in iRODS
         self._make_irods_colls(self.investigation)
         irods = self.irods_backend.get_session()
@@ -329,7 +325,6 @@ class TestSampleSheetDeleteView(
             'delete_host_confirm': 'testserver',
             'sodar_url': self.live_server_url,
         }
-
         with self.login(self.user):
             response = self.client.post(
                 reverse(
@@ -360,7 +355,6 @@ class TestSampleSheetDeleteView(
 
     def test_delete_files_contributor(self):
         """Test sample sheet deleting with files in irods as contributor"""
-
         # Create contributor user
         user_contributor = self.make_user('user_contributor')
         self._make_assignment_taskflow(
@@ -382,7 +376,6 @@ class TestSampleSheetDeleteView(
             'delete_host_confirm': 'testserver',
             'sodar_url': self.live_server_url,
         }
-
         with self.login(user_contributor):
             response = self.client.post(
                 reverse(
@@ -460,7 +453,6 @@ class TestIrodsAccessTicketListView(
 
     def test_render_empty(self):
         """Test rendering the irods access ticket list view"""
-
         with self.login(self.user):
             response = self.client.get(
                 reverse(
@@ -468,9 +460,7 @@ class TestIrodsAccessTicketListView(
                     kwargs={'project': self.project.sodar_uuid},
                 )
             )
-
         self.assertEqual(response.status_code, 200)
-
         # Assert context data
         self.assertEqual(response.context['object_list'].count(), 0)
 
@@ -482,7 +472,6 @@ class TestIrodsAccessTicketListView(
             ),
             'label': 'TestTicket',
         }
-
         with self.login(self.user):
             self.client.post(
                 reverse(
@@ -491,18 +480,14 @@ class TestIrodsAccessTicketListView(
                 ),
                 post_data,
             )
-
             response = self.client.get(
                 reverse(
                     'samplesheets:irods_tickets',
                     kwargs={'project': self.project.sodar_uuid},
                 )
             )
-
         self.assertEqual(response.context['object_list'].count(), 1)
-
         obj = response.context['object_list'].first()
-
         self.assertEqual(obj.get_date_expires(), post_data['date_expires'])
         self.assertEqual(obj.label, post_data['label'])
         self.assertEqual(obj.path, post_data['path'])
@@ -550,7 +535,6 @@ class TestIrodsAccessTicketCreateView(
 
     def test_render(self):
         """Test rendering the irods access ticket create view"""
-
         with self.login(self.user):
             response = self.client.get(
                 reverse(
@@ -558,16 +542,13 @@ class TestIrodsAccessTicketCreateView(
                     kwargs={'project': self.project.sodar_uuid},
                 )
             )
-
             self.assertEqual(response.status_code, 200)
-
             self.assertEqual(len(response.context['form'].fields), 3)
             self.assertIsNotNone(
                 response.context['form'].fields.get('date_expires')
             )
             self.assertIsNotNone(response.context['form'].fields.get('label'))
             self.assertIsNotNone(response.context['form'].fields.get('path'))
-
             self.assertEqual(
                 len(response.context['form'].fields['path'].widget.choices), 2
             )
@@ -592,7 +573,6 @@ class TestIrodsAccessTicketCreateView(
 
     def test_post(self):
         """Test posting the irods access ticket form"""
-
         with self.login(self.user):
             self.assertEqual(IrodsAccessTicket.objects.count(), 0)
 
@@ -603,7 +583,6 @@ class TestIrodsAccessTicketCreateView(
                 ).strftime('%Y-%m-%d'),
                 'label': 'TestTicket',
             }
-
             response = self.client.post(
                 reverse(
                     'samplesheets:irods_ticket_create',
@@ -621,14 +600,11 @@ class TestIrodsAccessTicketCreateView(
             )
 
             self.assertEqual(IrodsAccessTicket.objects.count(), 1)
-
             ticket = IrodsAccessTicket.objects.first()
-
             self.assertEqual(
                 str(list(get_messages(response.wsgi_request))[0]),
                 'iRODS access ticket "%s" created.' % ticket.get_display_name(),
             )
-
             self.assertEqual(
                 ticket.get_date_expires(), post_data['date_expires']
             )
@@ -678,7 +654,6 @@ class TestIrodsAccessTicketUpdateView(
 
     def test_render(self):
         """Test render the irods access ticket update form"""
-
         with self.login(self.user):
             self.assertEqual(IrodsAccessTicket.objects.count(), 0)
 
@@ -689,7 +664,6 @@ class TestIrodsAccessTicketUpdateView(
                 ).strftime('%Y-%m-%d'),
                 'label': 'TestTicket',
             }
-
             self.client.post(
                 reverse(
                     'samplesheets:irods_ticket_create',
@@ -721,7 +695,6 @@ class TestIrodsAccessTicketUpdateView(
 
     def test_post(self):
         """Test posting the irods access ticket update form"""
-
         with self.login(self.user):
             self.assertEqual(IrodsAccessTicket.objects.count(), 0)
 
@@ -732,7 +705,6 @@ class TestIrodsAccessTicketUpdateView(
                 ).strftime('%Y-%m-%d'),
                 'label': 'TestTicket',
             }
-
             self.client.post(
                 reverse(
                     'samplesheets:irods_ticket_create',
@@ -742,7 +714,6 @@ class TestIrodsAccessTicketUpdateView(
             )
 
             self.assertEqual(IrodsAccessTicket.objects.count(), 1)
-
             ticket = IrodsAccessTicket.objects.first()
 
             update_data = {
@@ -750,7 +721,6 @@ class TestIrodsAccessTicketUpdateView(
                 'label': 'TestTicketAltered',
                 'date_expires': '',
             }
-
             response = self.client.post(
                 reverse(
                     'samplesheets:irods_ticket_update',
@@ -768,7 +738,6 @@ class TestIrodsAccessTicketUpdateView(
             )
 
             self.assertEqual(IrodsAccessTicket.objects.count(), 1)
-
             ticket = IrodsAccessTicket.objects.first()
 
             self.assertEqual(
@@ -823,7 +792,6 @@ class TestIrodsAccessTicketDeleteView(
 
     def test_delete(self):
         """Test render the irods access ticket update form"""
-
         with self.login(self.user):
             self.assertEqual(IrodsAccessTicket.objects.count(), 0)
 
@@ -834,7 +802,6 @@ class TestIrodsAccessTicketDeleteView(
                 ).strftime('%Y-%m-%d'),
                 'label': 'TestTicket',
             }
-
             self.client.post(
                 reverse(
                     'samplesheets:irods_ticket_create',
@@ -852,7 +819,6 @@ class TestIrodsAccessTicketDeleteView(
             )
 
             self.assertEqual(IrodsAccessTicket.objects.count(), 2)
-
             ticket = IrodsAccessTicket.objects.first()
 
             response = self.client.post(
@@ -869,9 +835,7 @@ class TestIrodsAccessTicketDeleteView(
                     kwargs={'project': self.project.sodar_uuid},
                 ),
             )
-
             self.assertEqual(IrodsAccessTicket.objects.count(), 1)
-
             self.assertEqual(
                 str(list(get_messages(response.wsgi_request))[2]),
                 'iRODS access ticket "%s" deleted.' % ticket.get_display_name(),
@@ -1243,7 +1207,6 @@ class TestIrodsRequestDeleteView(TestIrodsRequestViewsBase):
                     kwargs={'irodsdatarequest': obj.sodar_uuid},
                 ),
             )
-
             self.assertRedirects(
                 response,
                 reverse(
@@ -1354,7 +1317,6 @@ class TestIrodsRequestAcceptView(TestIrodsRequestViewsBase):
                 ),
                 {'confirm': True},
             )
-
             self.assertRedirects(
                 response,
                 reverse(
@@ -1432,7 +1394,6 @@ class TestIrodsRequestAcceptView(TestIrodsRequestViewsBase):
                 ),
                 {'confirm': True},
             )
-
             self.assertRedirects(
                 response,
                 reverse(
@@ -1472,7 +1433,6 @@ class TestIrodsRequestAcceptView(TestIrodsRequestViewsBase):
                 ),
                 {'confirm': True},
             )
-
             self.assertRedirects(
                 response,
                 reverse(
@@ -1531,7 +1491,6 @@ class TestIrodsRequestAcceptView(TestIrodsRequestViewsBase):
                 ),
                 self.post_data,
             )
-
             self.post_data['path'] = path2
             self.client.post(
                 reverse(
@@ -1605,7 +1564,6 @@ class TestIrodsRequestRejectView(TestIrodsRequestViewsBase):
                     kwargs={'irodsdatarequest': obj.sodar_uuid},
                 ),
             )
-
             self.assertRedirects(
                 response,
                 reverse(
@@ -1645,7 +1603,6 @@ class TestIrodsRequestRejectView(TestIrodsRequestViewsBase):
                     kwargs={'irodsdatarequest': obj.sodar_uuid},
                 ),
             )
-
             self.assertRedirects(
                 response,
                 reverse(
@@ -1685,7 +1642,6 @@ class TestIrodsRequestRejectView(TestIrodsRequestViewsBase):
                     kwargs={'irodsdatarequest': obj.sodar_uuid},
                 ),
             )
-
             self.assertRedirects(
                 response,
                 reverse(
@@ -1726,7 +1682,6 @@ class TestIrodsRequestRejectView(TestIrodsRequestViewsBase):
                     kwargs={'irodsdatarequest': obj.sodar_uuid},
                 ),
             )
-
             self.assertRedirects(response, reverse('home'))
             self.assertEqual(
                 list(get_messages(response.wsgi_request))[-1].message,
@@ -1751,7 +1706,6 @@ class TestIrodsRequestRejectView(TestIrodsRequestViewsBase):
                 ),
                 self.post_data,
             )
-
             self.post_data['path'] = path2
             self.client.post(
                 reverse(
@@ -1799,7 +1753,6 @@ class TestIrodsRequestListView(TestIrodsRequestViewsBase):
                 ),
                 self.post_data,
             )
-
             self.assertEqual(IrodsDataRequest.objects.count(), 1)
 
             response = self.client.get(
@@ -1808,7 +1761,6 @@ class TestIrodsRequestListView(TestIrodsRequestViewsBase):
                     kwargs={'project': self.project.sodar_uuid},
                 ),
             )
-
             self.assertEqual(response.status_code, 200)
             self.assertEqual(len(response.context['object_list']), 1)
             self.assertEqual(response.context['object_list'][0].path, self.path)
@@ -1914,7 +1866,6 @@ class TestSampleSheetSyncView(TestSheetSyncBase):
 
     def test_get_sync_successful(self):
         """Test sync sheets successfully"""
-
         with self.login(self.user):
             response = self.client.get(
                 reverse(
@@ -1923,7 +1874,6 @@ class TestSampleSheetSyncView(TestSheetSyncBase):
                 ),
                 follow=True,
             )
-
         self.assertRedirects(
             response,
             reverse(
@@ -1935,14 +1885,12 @@ class TestSampleSheetSyncView(TestSheetSyncBase):
             str(list(get_messages(response.wsgi_request))[0]),
             'Sample sheet sync successful',
         )
-
         # Check if investigation was created. Extensive test of task in
         # test_tasks.py
         self.assertEqual(self.project_target.investigations.count(), 1)
 
     def test_get_sync_disabled(self):
         """Test sync sheets disabled"""
-
         app_settings.set_app_setting(
             APP_NAME,
             'sheet_sync_enable',
@@ -1958,7 +1906,6 @@ class TestSampleSheetSyncView(TestSheetSyncBase):
                 ),
                 follow=True,
             )
-
         self.assertRedirects(
             response,
             reverse(
@@ -1970,12 +1917,10 @@ class TestSampleSheetSyncView(TestSheetSyncBase):
             str(list(get_messages(response.wsgi_request))[0]),
             'Sample sheet sync disabled',
         )
-
         self.assertEqual(self.project_target.investigations.count(), 0)
 
     def test_get_sync_wrong_token(self):
         """Test sync sheets wrong token"""
-
         app_settings.set_app_setting(
             APP_NAME,
             'sheet_sync_token',
@@ -1991,7 +1936,6 @@ class TestSampleSheetSyncView(TestSheetSyncBase):
                 ),
                 follow=True,
             )
-
         self.assertRedirects(
             response,
             reverse(
@@ -2004,12 +1948,10 @@ class TestSampleSheetSyncView(TestSheetSyncBase):
             'Sample sheet sync failed: Source API responded with status code '
             '401',
         )
-
         self.assertEqual(self.project_target.investigations.count(), 0)
 
     def test_get_sync_token_missing(self):
         """Test sync sheets token missing"""
-
         app_settings.set_app_setting(
             APP_NAME,
             'sheet_sync_token',
@@ -2025,7 +1967,6 @@ class TestSampleSheetSyncView(TestSheetSyncBase):
                 ),
                 follow=True,
             )
-
         self.assertRedirects(
             response,
             reverse(
@@ -2042,7 +1983,6 @@ class TestSampleSheetSyncView(TestSheetSyncBase):
 
     def test_get_sync_url_missing(self):
         """Test sync sheets URL missing"""
-
         app_settings.set_app_setting(
             APP_NAME,
             'sheet_sync_url',
@@ -2058,7 +1998,6 @@ class TestSampleSheetSyncView(TestSheetSyncBase):
                 ),
                 follow=True,
             )
-
         self.assertRedirects(
             response,
             reverse(
@@ -2076,7 +2015,6 @@ class TestSampleSheetSyncView(TestSheetSyncBase):
     def test_get_sync_wrong_url(self):
         """Test sync sheets wrong URL"""
         url = 'https://alsdjfasdkjfasdgfli.com'
-
         app_settings.set_app_setting(
             APP_NAME,
             'sheet_sync_url',
@@ -2092,7 +2030,6 @@ class TestSampleSheetSyncView(TestSheetSyncBase):
                 ),
                 follow=True,
             )
-
         self.assertRedirects(
             response,
             reverse(
@@ -2106,12 +2043,10 @@ class TestSampleSheetSyncView(TestSheetSyncBase):
                 url
             ),
         )
-
         self.assertEqual(self.project_target.investigations.count(), 0)
 
     def test_get_sync_url_to_nonexisting_sheet(self):
         """Test sync sheets nonexisting URL"""
-
         app_settings.set_app_setting(
             APP_NAME,
             'sheet_sync_url',
@@ -2131,7 +2066,6 @@ class TestSampleSheetSyncView(TestSheetSyncBase):
                 ),
                 follow=True,
             )
-
         self.assertRedirects(
             response,
             reverse(
@@ -2144,7 +2078,6 @@ class TestSampleSheetSyncView(TestSheetSyncBase):
             'Sample sheet sync failed: Source API responded with status code '
             '403',
         )
-
         self.assertEqual(self.project_target.investigations.count(), 0)
 
 

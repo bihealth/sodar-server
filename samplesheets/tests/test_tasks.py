@@ -1,23 +1,23 @@
-"""Celery tasks for the samplesheets app"""
-
-from unittest import skipIf
+"""Tests for Celery tasks for the samplesheets app"""
 
 from django.conf import settings
 from django.contrib import auth
+from django.urls import reverse
+
+from unittest import skipIf
 
 # Projectroles dependency
-from django.urls import reverse
 from projectroles.app_settings import AppSettingAPI
 from projectroles.models import SODAR_CONSTANTS
 from projectroles.tests.test_views_api import SODARAPIViewTestMixin
 from projectroles.tests.test_views_taskflow import TestTaskflowBase
 
-# Samplesheets dependency
 from samplesheets.models import ISATab
 from samplesheets.tasks import sheet_sync_task
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 
 
+app_settings = AppSettingAPI()
 User = auth.get_user_model()
 
 
@@ -34,7 +34,6 @@ SUBMIT_STATUS_PENDING_TASKFLOW = SODAR_CONSTANTS[
     'SUBMIT_STATUS_PENDING_TASKFLOW'
 ]
 
-
 # Local constants
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
 TASKFLOW_ENABLED = (
@@ -42,17 +41,12 @@ TASKFLOW_ENABLED = (
 )
 TASKFLOW_SKIP_MSG = 'Taskflow not enabled in settings'
 APP_NAME = 'samplesheets'
-
 ZONE_TITLE = '20190703_172456'
 ZONE_SUFFIX = 'Test Zone'
 ZONE_DESC = 'description'
 TEST_OBJ_NAME = 'test1.txt'
-
 ASYNC_WAIT_SECONDS = 5
 ASYNC_RETRY_COUNT = 3
-
-
-app_settings = AppSettingAPI()
 
 
 class TestSheetSyncBase(
@@ -133,7 +127,6 @@ class TestSheetSyncTask(TestSheetSyncBase):
 
     def test_sync_task(self):
         """Test sync sheet"""
-
         # Perform sync
         sheet_sync_task(self.user.username)
 
@@ -171,7 +164,6 @@ class TestSheetSyncTask(TestSheetSyncBase):
 
     def test_sync_existing_source_newer(self):
         """Test sync sheet with existing sheet and changes in source sheet"""
-
         # Create investigation for target project
         self._import_isa_from_file(SHEET_PATH, self.project_target)
 
@@ -226,7 +218,6 @@ class TestSheetSyncTask(TestSheetSyncBase):
 
     def test_sync_existing_target_newer(self):
         """Test sync sheet with existing sheet and changes in target sheet"""
-
         # Create investigation for target project
         inv_target = self._import_isa_from_file(SHEET_PATH, self.project_target)
         material = inv_target.studies.first().materials.get(
@@ -235,13 +226,12 @@ class TestSheetSyncTask(TestSheetSyncBase):
         material.characteristics['age']['value'] = '300'
         material.save()
         inv_target.save()
+        target_date_modified = inv_target.date_modified
 
         # Check if both projects have an investigation
         self.assertEqual(self.project_source.investigations.count(), 1)
         self.assertEqual(self.project_target.investigations.count(), 1)
         self.assertEqual(ISATab.objects.count(), 2)
-
-        target_date_modified = inv_target.date_modified
 
         # Do the sync
         sheet_sync_task(self.user.username)
@@ -271,55 +261,45 @@ class TestSheetSyncTask(TestSheetSyncBase):
 
     def test_sync_wrong_token(self):
         """Test sync sheet with wrong token"""
-
         app_settings.set_app_setting(
             APP_NAME,
             'sheet_sync_token',
             'WRONGTOKEN',
             project=self.project_target,
         )
-
         # Perform sync
         sheet_sync_task(self.user.username)
-
         # Check if target synced correctly
         self.assertEqual(self.project_target.investigations.count(), 0)
 
     def test_sync_enabled_missing_token(self):
         """Test sync sheet with missing token"""
-
         app_settings.set_app_setting(
             APP_NAME,
             'sheet_sync_token',
             '',
             project=self.project_target,
         )
-
         # Perform sync
         sheet_sync_task(self.user.username)
-
         # Check if target synced correctly
         self.assertEqual(self.project_target.investigations.count(), 0)
 
     def test_sync_enabled_wrong_url(self):
         """Test sync sheet with wrong url"""
-
         app_settings.set_app_setting(
             APP_NAME,
             'sheet_sync_url',
             'https://qazxdfjajsrd.com',
             project=self.project_target,
         )
-
         # Perform sync
         sheet_sync_task(self.user.username)
-
         # Check if target synced correctly
         self.assertEqual(self.project_target.investigations.count(), 0)
 
     def test_sync_enabled_url_to_nonexisting_sheet(self):
         """Test sync sheet with url to nonexisting sheet"""
-
         app_settings.set_app_setting(
             APP_NAME,
             'sheet_sync_url',
@@ -330,41 +310,33 @@ class TestSheetSyncTask(TestSheetSyncBase):
             ),
             project=self.project_target,
         )
-
         # Perform sync
         sheet_sync_task(self.user.username)
-
         # Check if target synced correctly
         self.assertEqual(self.project_target.investigations.count(), 0)
 
     def test_sync_enabled_missing_url(self):
         """Test sync sheet with missing url"""
-
         app_settings.set_app_setting(
             APP_NAME,
             'sheet_sync_url',
             '',
             project=self.project_target,
         )
-
         # Perform sync
         sheet_sync_task(self.user.username)
-
         # Check if target synced correctly
         self.assertEqual(self.project_target.investigations.count(), 0)
 
     def test_sync_disabled(self):
         """Test sync sheet disabled"""
-
         app_settings.set_app_setting(
             APP_NAME,
             'sheet_sync_enable',
             False,
             project=self.project_target,
         )
-
         # Perform sync
         sheet_sync_task(self.user.username)
-
         # Check if target synced correctly
         self.assertEqual(self.project_target.investigations.count(), 0)

@@ -2,18 +2,18 @@
 
 # NOTE: Retraction and sharing data not yet tested, to be implemented
 # TODO: Test validation rules and uniqueness constraints
-import re
-from datetime import timedelta
-
 import altamisa
+from datetime import timedelta
 import pytz
-from django.conf import settings
-from django.utils.datetime_safe import datetime
-from django.utils.timezone import localtime
-from test_plus.test import TestCase
+import re
 
+from django.conf import settings
 from django.forms.models import model_to_dict
 from django.utils import timezone
+from django.utils.datetime_safe import datetime
+from django.utils.timezone import localtime
+
+from test_plus.test import TestCase
 
 # Projectroles dependency
 from projectroles.models import Role, SODAR_CONSTANTS
@@ -1272,7 +1272,6 @@ class TestISATab(TestSampleSheetBase):
         """Test get_name() with no title"""
         self.investigation.title = ''
         self.investigation.save()
-
         expected = '{} ({})'.format(
             self.investigation.archive_name.split('.')[0],
             timezone.localtime(self.isatab.date_created).strftime(
@@ -1286,7 +1285,6 @@ class TestISATab(TestSampleSheetBase):
         self.investigation.title = ''
         self.investigation.save()
         self.isatab.archive_name = ''
-
         expected = '{} ({})'.format(
             self.project.title,
             timezone.localtime(self.isatab.date_created).strftime(

@@ -4,9 +4,9 @@ from django.conf import settings
 
 from test_plus.test import TestCase
 
+# Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
 from projectroles.models import Role, SODAR_CONSTANTS
-
 from projectroles.tests.test_models import (
     ProjectMixin,
     RoleAssignmentMixin,
@@ -16,6 +16,10 @@ from projectroles.tests.test_models import (
 from irodsbackend.templatetags import irodsbackend_tags as tags
 
 
+# App settings API
+app_settings = AppSettingAPI()
+
+
 # SODAR constants
 PROJECT_ROLE_OWNER = SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
 PROJECT_TYPE_CATEGORY = SODAR_CONSTANTS['PROJECT_TYPE_CATEGORY']
@@ -23,10 +27,6 @@ PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 
 # Local constants
 IRODS_TICKET_STR = 'ooChaa1t'
-
-
-# App settings API
-app_settings = AppSettingAPI()
 
 
 class TestTemplatetags(

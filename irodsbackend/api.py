@@ -1,12 +1,5 @@
 """iRODS backend API for SODAR Django apps"""
 
-import json
-import logging
-import math
-import random
-import re
-import string
-
 from irods.api_number import api_number
 from irods.collection import iRODSCollection
 from irods.column import Criterion
@@ -17,7 +10,13 @@ from irods.query import SpecificQuery
 from irods.session import iRODSSession
 from irods.ticket import Ticket
 
+import json
+import logging
+import math
 from pytz import timezone
+import random
+import re
+import string
 
 from django.conf import settings
 from django.urls import reverse
@@ -45,8 +44,6 @@ class IrodsAPI:
 
     class IrodsQueryException(Exception):
         """Irods query exception"""
-
-        pass
 
     def __init__(self, conn=True, user_name=None, user_pass=None):
         # conn = kwargs.get('conn') or True
@@ -114,8 +111,10 @@ class IrodsAPI:
 
     @classmethod
     def _get_datetime(cls, naive_dt):
-        """Return a printable datetime in Berlin timezone from a naive
-        datetime object"""
+        """
+        Return a printable datetime in Berlin timezone from a naive
+        datetime object.
+        """
         dt = naive_dt.replace(tzinfo=timezone('GMT'))
         dt = dt.astimezone(timezone(settings.TIME_ZONE))
         return dt.strftime('%Y-%m-%d %H:%M')
@@ -135,7 +134,8 @@ class IrodsAPI:
     @classmethod
     def _sanitize_coll_path(cls, path):
         """
-        Return sanitized version of iRODS collection path
+        Return sanitized version of iRODS collection path.
+
         :param path: iRODS collection path (string)
         :return: String
         """
@@ -146,7 +146,6 @@ class IrodsAPI:
                 path = path[:-1]
         return path
 
-    # TODO: Fork python-irodsclient and implement ticket functionality there
     def _send_request(self, api_id, *args):
         """
         Temporary function for sending a raw API request using
@@ -158,12 +157,10 @@ class IrodsAPI:
         """
         if not self.irods:
             raise Exception('iRODS session not initialized')
-
         msg_body = TicketAdminRequest(*args)
         msg = iRODSMessage(
             'RODS_API_REQ', msg=msg_body, int_info=api_number[api_id]
         )
-
         with self.irods.pool.get_connection() as conn:
             conn.send(msg)
             response = conn.recv()
@@ -212,7 +209,7 @@ class IrodsAPI:
     @classmethod
     def get_path(cls, obj):
         """
-        Get the path for object.
+        Return the iRODS path for for a SODAR database object.
 
         :param obj: Django model object
         :return: String
@@ -287,7 +284,7 @@ class IrodsAPI:
     @classmethod
     def get_sample_path(cls, project):
         """
-        Return project sample data path.
+        Return the iRODS path for project sample data.
 
         :param project: Project object
         :return: String
@@ -386,7 +383,7 @@ class IrodsAPI:
 
     def get_session(self):
         """
-        Get iRODS session object for direct API access.
+        Return the iRODS session object for direct API access.
 
         :return: iRODSSession object (already initialized)
         """
@@ -414,7 +411,7 @@ class IrodsAPI:
 
     def get_objects(self, path, check_md5=False, name_like=None, limit=None):
         """
-        Return iRODS object list.
+        Return an iRODS object list.
 
         :param path: Full path to iRODS collection
         :param check_md5: Whether to add md5 checksum file info (bool)
@@ -646,7 +643,7 @@ class IrodsAPI:
 
     def issue_ticket(self, mode, path, ticket_str=None, expiry_date=None):
         """
-        Issue ticket for a specific iRODS collection
+        Issue ticket for a specific iRODS collection.
 
         :param mode: "read" or "write"
         :param path: iRODS path for creating the ticket
@@ -670,7 +667,8 @@ class IrodsAPI:
 
     def delete_ticket(self, ticket_str):
         """
-        Delete ticket
+        Delete ticket.
+
         :param ticket_str: String
         """
         try:

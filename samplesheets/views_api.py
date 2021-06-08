@@ -1,12 +1,11 @@
 """REST API views for the samplesheets app"""
+from irods.exception import CAT_NO_ROWS_FOUND
+from irods.models import DataObject
 import logging
 import re
 
 from django.conf import settings
 from django.urls import reverse
-
-from irods.exception import CAT_NO_ROWS_FOUND
-from irods.models import DataObject
 
 from rest_framework import status
 from rest_framework.exceptions import (

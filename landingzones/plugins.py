@@ -94,38 +94,36 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         """
         sync_flows = []
         irods_backend = get_backend_api('omics_irods', conn=False)
+        if not irods_backend:
+            return sync_flows
 
-        if irods_backend:
-            # Only sync flows which are not yet moved
-            for zone in LandingZone.objects.all().exclude(status='MOVED'):
-                flow_name = 'landing_zone_create'
+        # Only sync flows which are not yet moved
+        for zone in LandingZone.objects.all().exclude(status='MOVED'):
+            flow_name = 'landing_zone_create'
+            flow_data = {
+                'zone_title': zone.title,
+                'zone_uuid': zone.sodar_uuid,
+                'user_name': zone.user.username,
+                'user_uuid': str(zone.user.sodar_uuid),
+                'assay_path': irods_backend.get_sub_path(
+                    zone.assay, landing_zone=True
+                ),
+                'description': zone.description,
+                'zone_config': zone.configuration,
+                'colls': [],
+            }
+            config_plugin = get_zone_config_plugin(zone)
+            if config_plugin:
                 flow_data = {
-                    'zone_title': zone.title,
-                    'zone_uuid': zone.sodar_uuid,
-                    'user_name': zone.user.username,
-                    'user_uuid': str(zone.user.sodar_uuid),
-                    'assay_path': irods_backend.get_sub_path(
-                        zone.assay, landing_zone=True
-                    ),
-                    'description': zone.description,
-                    'zone_config': zone.configuration,
-                    'colls': [],
+                    **flow_data,
+                    **config_plugin.get_extra_flow_data(zone, flow_name),
                 }
-
-                config_plugin = get_zone_config_plugin(zone)
-
-                if config_plugin:
-                    flow_data = {
-                        **flow_data,
-                        **config_plugin.get_extra_flow_data(zone, flow_name),
-                    }
-
-                flow = {
-                    'flow_name': flow_name,
-                    'project_uuid': str(zone.project.sodar_uuid),
-                    'flow_data': flow_data,
-                }
-                sync_flows.append(flow)
+            flow = {
+                'flow_name': flow_name,
+                'project_uuid': str(zone.project.sodar_uuid),
+                'flow_data': flow_data,
+            }
+            sync_flows.append(flow)
 
         return sync_flows
 
@@ -138,10 +136,8 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         :return: Dict or None if not found
         """
         obj = self.get_object(eval(model_str), uuid)
-
         if not obj:
             return None
-
         if obj.__class__ == LandingZone and obj.status != 'MOVED':
             return {
                 'url': reverse(
@@ -152,7 +148,6 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                 + str(obj.sodar_uuid),
                 'label': obj.title,
             }
-
         elif obj.__class__ == Assay:
             return {
                 'url': reverse(
@@ -307,11 +302,9 @@ def get_zone_config_plugin(zone):
     """
     if not zone.configuration:
         return None
-
     try:
         return LandingZoneConfigPluginPoint.get_plugin(
             'landingzones_config_' + zone.configuration
         )
-
     except LandingZoneConfigPluginPoint.DoesNotExist:
         return None

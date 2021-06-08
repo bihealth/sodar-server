@@ -23,7 +23,6 @@ class TestOBOOntologyListAjaxView(TestOntologyAccessViewBase):
 
     def test_list(self):
         """Test listing ontologies"""
-
         with self.login(self.superuser):
             response = self.client.get(reverse('ontologyaccess:ajax_obo_list'))
 
@@ -67,12 +66,10 @@ class TestOBOTermQueryAjaxView(TestOntologyAccessViewBase):
     def test_query(self):
         """Test querying for a single term"""
         query_data = {'s': self.term.name}
-
         with self.login(self.superuser):
             response = self.client.get(
                 reverse('ontologyaccess:ajax_obo_term_query'), data=query_data
             )
-
         self.assertEqual(response.status_code, 200)
         response_data = json.loads(response.content)
         self.assertEqual(len(response_data['terms']), 1)
@@ -90,12 +87,10 @@ class TestOBOTermQueryAjaxView(TestOntologyAccessViewBase):
     def test_query_multiple(self):
         """Test querying for multiple terms"""
         query_data = {'s': 'term'}
-
         with self.login(self.superuser):
             response = self.client.get(
                 reverse('ontologyaccess:ajax_obo_term_query'), data=query_data
             )
-
         self.assertEqual(response.status_code, 200)
         response_data = json.loads(response.content)
         self.assertEqual(len(response_data['terms']), 2)
@@ -103,7 +98,6 @@ class TestOBOTermQueryAjaxView(TestOntologyAccessViewBase):
     def test_query_limit(self):
         """Test querying limited to a specific ontology"""
         query_data = {'s': 'term', 'o': self.ontology2.name}
-
         with self.login(self.superuser):
             response = self.client.get(
                 reverse('ontologyaccess:ajax_obo_term_query'),
@@ -130,13 +124,11 @@ class TestOBOTermQueryAjaxView(TestOntologyAccessViewBase):
             's': 'term',
             'o': [self.ontology.name, self.ontology2.name],
         }
-
         with self.login(self.superuser):
             response = self.client.get(
                 reverse('ontologyaccess:ajax_obo_term_query'),
                 data=query_data,
             )
-
         self.assertEqual(response.status_code, 200)
         response_data = json.loads(response.content)
         self.assertEqual(len(response_data['terms']), 2)
@@ -144,13 +136,11 @@ class TestOBOTermQueryAjaxView(TestOntologyAccessViewBase):
     def test_query_no_data(self):
         """Test querying without a query string (should fail)"""
         query_data = {}
-
         with self.login(self.superuser):
             response = self.client.get(
                 reverse('ontologyaccess:ajax_obo_term_query'),
                 data=query_data,
             )
-
         self.assertEqual(response.status_code, 400)
 
     def test_query_order(self):
@@ -160,13 +150,11 @@ class TestOBOTermQueryAjaxView(TestOntologyAccessViewBase):
             'o': [self.ontology2.name, self.ontology.name],
             'order': '1',
         }
-
         with self.login(self.superuser):
             response = self.client.get(
                 reverse('ontologyaccess:ajax_obo_term_query'),
                 data=query_data,
             )
-
         self.assertEqual(response.status_code, 200)
         response_data = json.loads(response.content)
         self.assertEqual(len(response_data['terms']), 2)
@@ -184,12 +172,10 @@ class TestOBOTermQueryAjaxView(TestOntologyAccessViewBase):
     def test_query_id(self):
         """Test querying for a single term with term id"""
         query_data = {'s': self.term.term_id}
-
         with self.login(self.superuser):
             response = self.client.get(
                 reverse('ontologyaccess:ajax_obo_term_query'), data=query_data
             )
-
         self.assertEqual(response.status_code, 200)
         response_data = json.loads(response.content)
         self.assertEqual(len(response_data['terms']), 1)
@@ -226,16 +212,12 @@ class TestOBOTermListAjaxView(TestOntologyAccessViewBase):
 
     def test_list(self):
         """Test listing OBO ontology terms"""
-        query_data = {
-            't': [OBO_TERM_NAME, OBO_TERM_NAME_ALT],
-        }
-
+        query_data = {'t': [OBO_TERM_NAME, OBO_TERM_NAME_ALT]}
         with self.login(self.superuser):
             response = self.client.get(
                 reverse('ontologyaccess:ajax_obo_term_list'),
                 data=query_data,
             )
-
         self.assertEqual(response.status_code, 200)
         response_data = json.loads(response.content)
         self.assertEqual(len(response_data['terms']), 2)
@@ -263,16 +245,12 @@ class TestOBOTermListAjaxView(TestOntologyAccessViewBase):
 
     def test_list_inexact(self):
         """Test listing OBO ontology terms with an inexact key (should fail)"""
-        query_data = {
-            't': 'term',
-        }
-
+        query_data = {'t': 'term'}
         with self.login(self.superuser):
             response = self.client.get(
                 reverse('ontologyaccess:ajax_obo_term_list'),
                 data=query_data,
             )
-
         self.assertEqual(response.status_code, 200)
         response_data = json.loads(response.content)
         self.assertEqual(len(response_data['terms']), 0)

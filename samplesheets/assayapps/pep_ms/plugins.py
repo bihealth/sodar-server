@@ -78,12 +78,9 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
         """
         if not settings.IRODS_WEBDAV_ENABLED or not assay:
             return row
-
         assay_path = self.get_assay_path(assay)
-
         if not assay_path:
             return row
-
         base_url = settings.IRODS_WEBDAV_URL + assay_path
 
         # Check if MaxQuant is found

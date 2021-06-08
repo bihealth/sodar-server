@@ -32,7 +32,6 @@ class AssaySerializer(SODARNestedListSerializer):
 
     def get_irods_path(self, obj):
         irods_backend = get_backend_api('omics_irods', conn=False)
-
         if irods_backend and obj.study.investigation.irods_status:
             return irods_backend.get_path(obj)
 
@@ -61,7 +60,6 @@ class StudySerializer(SODARNestedListSerializer):
 
     def get_irods_path(self, obj):
         irods_backend = get_backend_api('omics_irods', conn=False)
-
         if irods_backend and obj.investigation.irods_status:
             return irods_backend.get_path(obj)
 

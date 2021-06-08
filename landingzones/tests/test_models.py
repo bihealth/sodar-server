@@ -11,7 +11,7 @@ from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
 # Samplesheets dependency
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 
-from ..models import LandingZone, DEFAULT_STATUS_INFO
+from landingzones.models import LandingZone, DEFAULT_STATUS_INFO
 
 
 # Global constants
@@ -181,6 +181,5 @@ class TestLandingZone(TestLandingZoneBase):
     def test_set_status_invalid(self):
         """Test set_status() with invalid status type"""
         status = 'Ib0ciemiahqu6Ooj'
-
         with self.assertRaises(TypeError):
             self.landing_zone.set_status(status)

@@ -1,5 +1,6 @@
 """ Utilities for the germline study app"""
 
+# Projectroles dependency
 from projectroles.plugins import get_backend_api
 
 from samplesheets.models import GenericMaterial
@@ -18,32 +19,28 @@ def get_pedigree_file_path(file_type, source, study_tables):
     :return: String
     """
     irods_backend = get_backend_api('omics_irods')
-
     if not irods_backend:
         raise Exception('iRODS Backend not available')
 
     query_paths = []
     sample_names = []
 
+    def _get_val_by_index(row, idx):
+        return row[idx]['value'] if idx else None
+
     for assay in source.study.assays.all():
         assay_table = study_tables['assays'][str(assay.sodar_uuid)]
         assay_plugin = assay.get_plugin()
         assay_path = irods_backend.get_path(assay)
         source_fam = None
-
         if 'Family' in source.characteristics:
             source_fam = source.characteristics['Family']['value']
-
         # Get family index
         fam_idx = get_index_by_header(assay_table, 'family')
-
         # Get sample index
         sample_idx = get_index_by_header(
             assay_table, 'name', obj_cls=GenericMaterial, item_type='SAMPLE'
         )
-
-        def _get_val_by_index(row, idx):
-            return row[idx]['value'] if idx else None
 
         for row in assay_table['table_data']:
             row_name = row[0]['value']
@@ -51,14 +48,12 @@ def get_pedigree_file_path(file_type, source, study_tables):
 
             # For VCF files, also search through other samples in family
             vcf_search = False
-
             if file_type == 'vcf' and source_fam and row_fam == source_fam:
                 vcf_search = True
 
             # Add sample names for source
             if row_name == source.name or vcf_search:
                 sn = row[sample_idx]['value']
-
                 if sn not in sample_names:
                     sample_names.append(sn)
 
@@ -68,14 +63,12 @@ def get_pedigree_file_path(file_type, source, study_tables):
                     path = assay_plugin.get_row_path(
                         row, assay_table, assay, assay_path
                     )
-
                     if path not in query_paths:
                         query_paths.append(path)
 
         # If not assay_plugin, just search from assay path
         if not assay_plugin:
             path = assay_path
-
             if path not in query_paths:
                 query_paths.append(path)
 
@@ -85,18 +78,15 @@ def get_pedigree_file_path(file_type, source, study_tables):
     for query_path in query_paths:
         try:
             obj_list = irods_backend.get_objects(query_path)
-
             for obj in obj_list['data_objects']:
                 # NOTE: We non longer expect the SAMPLE name in filenames
                 if obj['name'].lower().endswith(FILE_TYPE_SUFFIXES[file_type]):
                     file_paths.append(obj['path'])
-
         except FileNotFoundError:
             pass
 
     if not file_paths:
         return None
-
     # Return the last file of type by file name
     return sorted(file_paths, key=lambda x: x.split('/')[-1])[-1]
 
@@ -148,10 +138,8 @@ def get_family_sources(study, family_id):
         item_type='SOURCE',
         characteristics__Family__value=family_id,
     )
-
     if ret.count() == 0:
         ret = GenericMaterial.objects.filter(
             study=study, item_type='SOURCE', name=family_id
         )
-
     return ret

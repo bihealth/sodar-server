@@ -121,7 +121,6 @@ class TestTableBuilder(TestRenderingBase):
         )
         h1 = self.tb.get_headers(self.investigation)
         h2 = self.tb.get_headers(investigation2)
-
         self.assertIsNotNone(h2)
         self.assertEqual(h1, h2)
 
@@ -132,6 +131,5 @@ class TestTableBuilder(TestRenderingBase):
         )
         h1 = self.tb.get_headers(self.investigation)
         h2 = self.tb.get_headers(investigation2)
-
         self.assertIsNotNone(h2)
         self.assertNotEqual(h1, h2)

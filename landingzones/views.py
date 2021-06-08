@@ -1,3 +1,5 @@
+"""UI views for the landingzones app"""
+
 import logging
 
 from django.conf import settings
@@ -10,12 +12,12 @@ from django.views.generic import TemplateView, CreateView
 
 # Projectroles dependency
 from projectroles.models import Project
+from projectroles.plugins import get_backend_api
 from projectroles.views import (
     LoggedInPermissionMixin,
     ProjectPermissionMixin,
     ProjectContextMixin,
 )
-from projectroles.plugins import get_backend_api
 
 # Samplesheets dependency
 from samplesheets.views import (
@@ -31,6 +33,7 @@ from landingzones.models import (
     STATUS_ALLOW_UPDATE,
     STATUS_ALLOW_CLEAR,
 )
+
 
 # Access Django user model
 User = auth.get_user_model()
@@ -66,11 +69,9 @@ class ZoneUpdateRequiredPermissionMixin:
         zone = LandingZone.objects.filter(
             sodar_uuid=self.kwargs['landingzone']
         ).first()
-
         # NOTE: UI views with PermissionRequiredMixin expect an iterable
         if zone and zone.user == self.request.user:
             return ['landingzones.update_zones_own']
-
         return ['landingzones.update_zones_all']
 
 
@@ -273,7 +274,6 @@ class ZoneDeleteMixin(ZoneConfigPluginMixin):
         except taskflow.FlowSubmitException as ex:
             if tl_event:
                 tl_event.set_status('FAILED', str(ex))
-
             raise ex
 
 
@@ -304,10 +304,8 @@ class ZoneMoveMixin(ZoneConfigPluginMixin):
         # Add event in Timeline
         if timeline:
             desc = 'validate '
-
             if not validate_only:
                 desc += 'and move '
-
             desc += 'files from landing zone {zone} from ' '{user} in {assay}'
 
             tl_event = timeline.add_event(
@@ -357,13 +355,10 @@ class ZoneMoveMixin(ZoneConfigPluginMixin):
                 request_mode='async',
                 timeline_uuid=tl_event.sodar_uuid,
             )
-
         except taskflow.FlowSubmitException as ex:
             zone.set_status('FAILED', str(ex))
-
             if tl_event:
                 tl_event.set_status('FAILED', str(ex))
-
             raise ex
 
 
@@ -389,18 +384,14 @@ class ProjectZoneView(
         context['taskflow_enabled'] = (
             True if get_backend_api('taskflow') else False
         )
-
         # iRODS backend
         context['irods_backend_enabled'] = (
             True if get_backend_api('omics_irods', conn=False) else False
         )
-
         # iRODS WebDAV
         context['irods_webdav_enabled'] = int(settings.IRODS_WEBDAV_ENABLED)
-
         if settings.IRODS_WEBDAV_ENABLED:
             context['irods_webdav_url'] = settings.IRODS_WEBDAV_URL.rstrip('/')
-
         # User zones
         context['zones_own'] = LandingZone.objects.filter(
             project=context['project'], user=self.request.user
@@ -523,17 +514,14 @@ class ZoneDeleteView(
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
-
         context['zone'] = LandingZone.objects.get(
             sodar_uuid=self.kwargs['landingzone']
         )
-
         return context
 
     def get(self, request, *args, **kwargs):
         """Override get() to ensure the zone status"""
         zone = LandingZone.objects.get(sodar_uuid=self.kwargs['landingzone'])
-
         if zone.status not in STATUS_ALLOW_UPDATE:
             messages.error(
                 request,
@@ -546,7 +534,6 @@ class ZoneDeleteView(
                     kwargs={'project': zone.project.sodar_uuid},
                 )
             )
-
         return super().get(request, *args, **kwargs)
 
     def post(self, *args, **kwargs):
@@ -573,7 +560,6 @@ class ZoneDeleteView(
                     zone.assay.get_display_name(),
                 ),
             )
-
         except Exception as ex:
             messages.error(self.request, str(ex))
 
@@ -603,26 +589,21 @@ class ZoneMoveView(
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
-
         context['zone'] = LandingZone.objects.get(
             sodar_uuid=self.kwargs['landingzone']
         )
-
         # Validate only mode
         if self.request.get_full_path() == reverse(
             'landingzones:validate',
             kwargs={'landingzone': context['zone'].sodar_uuid},
         ):
             context['validate_only'] = True
-
         context['sample_dir'] = settings.IRODS_SAMPLE_COLL
-
         return context
 
     def get(self, request, *args, **kwargs):
         """Override get() to ensure the zone status"""
         zone = LandingZone.objects.get(sodar_uuid=self.kwargs['landingzone'])
-
         if zone.status not in STATUS_ALLOW_UPDATE:
             messages.error(
                 request,
@@ -635,7 +616,6 @@ class ZoneMoveView(
                     kwargs={'project': zone.project.sodar_uuid},
                 )
             )
-
         return super().get(request, *args, **kwargs)
 
     def post(self, request, **kwargs):
@@ -657,7 +637,6 @@ class ZoneMoveView(
 
         # Validate/move or validate only
         validate_only = False
-
         if self.request.get_full_path() == reverse(
             'landingzones:validate', kwargs={'landingzone': zone.sodar_uuid}
         ):
@@ -670,7 +649,6 @@ class ZoneMoveView(
                 'Validating {}landing zone, see job progress in the '
                 'zone list.'.format('and moving ' if not validate_only else ''),
             )
-
         except Exception as ex:
             messages.error(self.request, str(ex))
 
@@ -728,7 +706,6 @@ class ZoneClearView(
             )
             if tl_event:
                 tl_event.set_status('OK')
-
         except Exception as ex:
             messages.error(
                 self.request,

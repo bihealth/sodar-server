@@ -60,9 +60,7 @@ docs/pycharm/*
 # !.idea/vcs.xml
 # !.idea/webResources.xml
 
-
 # Vim
-
 *~
 *.swp
 *.swo
@@ -84,7 +82,6 @@ webpack-stats.json
 
 # User-uploaded media
 sodar/media/
-
 
 # Static files
 staticfiles/

@@ -1,9 +1,9 @@
 """Tests for utility functions in the samplesheets app"""
 
+from django.conf import settings
+
 from test_plus.test import TestCase
 from unittest import skipIf
-
-from django.conf import settings
 
 # Projectroles dependency
 from projectroles.models import Role, SODAR_CONSTANTS
@@ -20,7 +20,6 @@ from samplesheets.tests.test_io import (
 
 # Local constants
 SHEET_PATH_SMALL2 = SHEET_DIR + 'i_small2.zip'
-
 IRODS_BACKEND_ENABLED = (
     True if 'omics_irods' in settings.ENABLED_BACKEND_PLUGINS else False
 )

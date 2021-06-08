@@ -123,14 +123,12 @@ class Command(BaseCommand):
 
         if obo_obj:
             data_version = obo_io.get_obo_header(obo_doc, 'data-version')
-
             if obo_obj.data_version == data_version:
                 logger.info(
                     'Identical version of ontology "{}" already exists'.format(
                         name
                     )
                 )
-
             else:
                 logger.info(
                     'Version "{}" of ontology "{}" already exists, please '
@@ -139,7 +137,6 @@ class Command(BaseCommand):
                     )
                 )
                 # TODO: Implement replacing if needed
-
             logger.info('Import cancelled')
             return
 

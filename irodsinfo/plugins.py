@@ -2,7 +2,7 @@
 from projectroles.plugins import SiteAppPluginPoint
 
 
-from .urls import urlpatterns
+from irodsinfo.urls import urlpatterns
 
 
 class SiteAppPlugin(SiteAppPluginPoint):

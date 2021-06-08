@@ -1,10 +1,8 @@
 """Plugin tests for the the germline study app"""
 
-from unittest import skipIf
-
 from django.conf import settings
 
-# from django.forms.models import model_to_dict
+from unittest import skipIf
 
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
@@ -26,14 +24,8 @@ PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 APP_NAME = 'samplesheets.studyapps.germline'
 PLUGIN_NAME_CANCER = 'samplesheets_study_cancer'
 PLUGIN_TITLE_CANCER = 'Sample Sheets Cancer Study Plugin'
-
 PLUGIN_NAME_GERMLINE = 'samplesheets_study_germline'
 PLUGIN_TITLE_GERMLINE = 'Sample Sheets Germline Study Plugin'
-
-# SHEET_DIR = os.path.dirname(__file__) + '/../../tests/isatab/'
-# SHEET_PATH = SHEET_DIR + 'i_small2.zip'
-
-
 IRODS_BACKEND_ENABLED = (
     True if 'omics_irods' in settings.ENABLED_BACKEND_PLUGINS else False
 )

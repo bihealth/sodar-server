@@ -1,11 +1,12 @@
 """Tests for models in the ontologyaccess app"""
 
 from importlib import import_module
-from test_plus.test import TestCase
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.forms.models import model_to_dict
+
+from test_plus.test import TestCase
 
 from ontologyaccess.models import (
     OBOFormatOntology,

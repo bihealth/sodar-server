@@ -33,6 +33,7 @@ from landingzones.views import (
     ZoneMoveMixin,
 )
 
+
 # Get logger
 logger = logging.getLogger(__name__)
 
@@ -134,8 +135,9 @@ class LandingZoneRetrieveAPIView(SODARAPIGenericProjectMixin, RetrieveAPIView):
     serializer_class = LandingZoneSerializer
 
     def get_permission_required(self):
-        """Override get_permission_required() to check perms depending on
-        owner"""
+        """
+        Override get_permission_required() to check perms depending on owner.
+        """
         obj = self.get_object()
         if not obj:
             return False
@@ -172,8 +174,9 @@ class LandingZoneCreateAPIView(
     serializer_class = LandingZoneSerializer
 
     def perform_create(self, serializer):
-        """Override perform_create() to add timeline event and initiate
-        taskflow"""
+        """
+        Override perform_create() to add timeline event and initiate taskflow.
+        """
         ex_msg = 'Creating landing zone failed: '
 
         # Check taskflow status
@@ -270,7 +273,6 @@ class LandingZoneSubmitMoveAPIView(ZoneMoveMixin, LandingZoneSubmitBaseAPIView):
             validate_only = True
             action_obj = 'validate'
             action_msg = 'validation'
-
         else:
             validate_only = False
             action_obj = 'move'
@@ -311,7 +313,6 @@ class LandingZoneOldListAPIView(APIView):
         zones = LandingZone.objects.filter(configuration=zone_config)
         if zones.count() == 0:
             return Response('LandingZone not found', status=404)
-
         config_plugin = get_zone_config_plugin(zones.first())
         ret_data = {}
 

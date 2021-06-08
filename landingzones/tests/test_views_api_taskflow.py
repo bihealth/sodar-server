@@ -4,9 +4,10 @@ Tests for REST API views in the landingzones app with SODAR Taskflow enabled
 
 import json
 import pytz
-from unittest import skipIf
 
 from django.conf import settings
+
+from unittest import skipIf
 
 # Projectroles dependency
 from django.urls import reverse
@@ -108,7 +109,6 @@ class TestLandingZoneCreateAPIView(TestLandingZoneAPITaskflowBase):
                 'config_data': {},
             }
         )
-
         response = self.request_knox(url, method='POST', data=self.request_data)
 
         # Assert status after creation
@@ -165,7 +165,6 @@ class TestLandingZoneCreateAPIView(TestLandingZoneAPITaskflowBase):
                 'config_data': {},
             }
         )
-
         response = self.request_knox(url, method='POST', data=self.request_data)
 
         # Assert status after creation
@@ -218,7 +217,6 @@ class TestLandingZoneCreateAPIView(TestLandingZoneAPITaskflowBase):
                 'config_data': {},
             }
         )
-
         response = self.request_knox(url, method='POST', data=self.request_data)
 
         # Assert status after creation
@@ -261,7 +259,6 @@ class TestLandingZoneCreateAPIView(TestLandingZoneAPITaskflowBase):
                 'config_data': {},
             }
         )
-
         response = self.request_knox(url, method='POST', data=self.request_data)
 
         # Assert status after creation
@@ -289,7 +286,6 @@ class TestLandingZoneCreateAPIView(TestLandingZoneAPITaskflowBase):
                 'config_data': {},
             }
         )
-
         response = self.request_knox(url, method='POST', data=self.request_data)
 
         # Assert status after creation
@@ -324,7 +320,6 @@ class TestLandingZoneSubmitDeleteAPIView(TestLandingZoneAPITaskflowBase):
             'landingzones:api_submit_delete',
             kwargs={'landingzone': self.landing_zone.sodar_uuid},
         )
-
         response = self.request_knox(url, method='POST', data=self.request_data)
 
         # Assert status after deletion
@@ -349,7 +344,6 @@ class TestLandingZoneSubmitDeleteAPIView(TestLandingZoneAPITaskflowBase):
             'landingzones:api_submit_delete',
             kwargs={'landingzone': self.landing_zone.sodar_uuid},
         )
-
         response = self.request_knox(url, method='POST', data=self.request_data)
 
         # Assert status after deletion
@@ -363,7 +357,6 @@ class TestLandingZoneSubmitDeleteAPIView(TestLandingZoneAPITaskflowBase):
             'landingzones:api_submit_delete',
             kwargs={'landingzone': INVALID_UUID},
         )
-
         response = self.request_knox(url, method='POST', data=self.request_data)
 
         # Assert status after deletion
@@ -401,7 +394,6 @@ class TestLandingZoneSubmitMoveAPIView(TestLandingZoneAPITaskflowBase):
             'landingzones:api_submit_validate',
             kwargs={'landingzone': self.landing_zone.sodar_uuid},
         )
-
         response = self.request_knox(url, method='POST', data=self.request_data)
 
         # Assert status after deletion
@@ -430,7 +422,6 @@ class TestLandingZoneSubmitMoveAPIView(TestLandingZoneAPITaskflowBase):
             'landingzones:api_submit_validate',
             kwargs={'landingzone': self.landing_zone.sodar_uuid},
         )
-
         response = self.request_knox(url, method='POST', data=self.request_data)
 
         # Assert status after deletion
@@ -444,7 +435,6 @@ class TestLandingZoneSubmitMoveAPIView(TestLandingZoneAPITaskflowBase):
             'landingzones:api_submit_move',
             kwargs={'landingzone': self.landing_zone.sodar_uuid},
         )
-
         response = self.request_knox(url, method='POST', data=self.request_data)
 
         # Assert status after deletion
@@ -469,7 +459,6 @@ class TestLandingZoneSubmitMoveAPIView(TestLandingZoneAPITaskflowBase):
             'landingzones:api_submit_move',
             kwargs={'landingzone': self.landing_zone.sodar_uuid},
         )
-
         response = self.request_knox(url, method='POST', data=self.request_data)
 
         # Assert status after deletion

@@ -2,10 +2,11 @@
 
 import json
 import pytz
-from unittest import skipIf
 
 from django.conf import settings
 from django.urls import reverse
+
+from unittest import skipIf
 
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
@@ -84,12 +85,11 @@ class LandingZoneListAPIView(TestLandingZoneAPIViewsBase):
     def test_get_owner(self):
         """Test LandingZoneListAPIView get() as project owner"""
         irods_backend = get_backend_api('omics_irods', conn=False)
-
         url = reverse(
             'landingzones:api_list', kwargs={'project': self.project.sodar_uuid}
         )
-        response = self.request_knox(url)
 
+        response = self.request_knox(url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
 
@@ -113,14 +113,12 @@ class LandingZoneListAPIView(TestLandingZoneAPIViewsBase):
 
     def test_get_no_own_zones(self):
         """Test LandingZoneListAPIView get() as user with no own zones"""
-
         url = reverse(
             'landingzones:api_list', kwargs={'project': self.project.sodar_uuid}
         )
         response = self.request_knox(
             url, token=self.get_token(self.user_contrib)
         )
-
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 0)
 

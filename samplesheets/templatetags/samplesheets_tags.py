@@ -1,3 +1,5 @@
+"""Template tags for the samplesheets app"""
+
 from django import template
 from django.conf import settings
 
@@ -38,7 +40,6 @@ def get_investigation(project):
     """Return active Investigation for a project"""
     try:
         return Investigation.objects.get(project=project, active=True)
-
     except Investigation.DoesNotExist:
         return None
 
@@ -48,7 +49,6 @@ def get_search_item_type(item):
     """Return printable version of search item type"""
     if item['type'] == 'file':
         return 'Data File'
-
     return GENERIC_MATERIAL_TYPES[item['type']]
 
 
@@ -121,9 +121,7 @@ def get_isatab_tag_html(isatab):
     """
     if not isatab.tags:
         return '<span class="text-muted">N/A</span>'
-
     ret = ''
-
     for tag in sorted(isatab.tags):
         ret += (
             '<span class="badge badge-pill badge-{} mr-1">'
@@ -132,7 +130,6 @@ def get_isatab_tag_html(isatab):
                 tag.capitalize(),
             )
         )
-
     return ret
 
 

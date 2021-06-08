@@ -18,7 +18,6 @@ from test_plus.test import TestCase
 from projectroles.models import Role, SODAR_CONSTANTS
 from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
 
-
 from samplesheets.models import Investigation, ISATab
 from samplesheets.io import SampleSheetIO
 
@@ -173,13 +172,10 @@ class TestSampleSheetIOBase(
                 'investigation'
             ]['tsv']
         }
-
         for k, v in export_data['studies'].items():
             ret[k] = v['tsv']
-
         for k, v in export_data['assays'].items():
             ret[k] = v['tsv']
-
         return ret
 
 
@@ -198,7 +194,6 @@ class TestSampleSheetIOBatch(TestSampleSheetIOBase):
                 investigation = self._import_isa_from_file(
                     zip_file.path, self.project
                 )
-
             except Exception as ex:
                 return self._fail_isa(zip_name, ex)
 
@@ -223,7 +218,6 @@ class TestSampleSheetIOBatch(TestSampleSheetIOBase):
                 export_data = self._get_flat_export_data(
                     sheet_io.export_isa(investigation)
                 )
-
             except Exception as ex:
                 return self._fail_isa(zip_name, ex)
 
@@ -301,7 +295,6 @@ class TestSampleSheetIOBatch(TestSampleSheetIOBase):
                 investigation = self._import_isa_from_file(
                     zip_file.path, self.project
                 )
-
             except Exception as ex:
                 return self._fail_isa(zip_name, ex)
 
@@ -317,14 +310,12 @@ class TestSampleSheetIOBatch(TestSampleSheetIOBase):
                     self.assertEqual(
                         saved_isatab.data['investigation']['tsv'], zip_data, msg
                     )
-
                 elif file_name.startswith('s_'):
                     self.assertEqual(
                         saved_isatab.data['studies'][file_name]['tsv'],
                         zip_data,
                         msg,
                     )
-
                 elif file_name.startswith('a_'):
                     self.assertEqual(
                         saved_isatab.data['assays'][file_name]['tsv'],

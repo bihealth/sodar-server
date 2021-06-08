@@ -1,11 +1,13 @@
+"""Template tags for the landingzones app"""
+
 from django import template
 from django.urls import reverse
 
 # Projectroles dependency
 from projectroles.plugins import get_backend_api
 
-from ..models import LandingZone, STATUS_STYLES
-from ..plugins import get_zone_config_plugin
+from landingzones.models import LandingZone, STATUS_STYLES
+from landingzones.plugins import get_zone_config_plugin
 
 
 register = template.Library()
@@ -96,9 +98,7 @@ def get_config_legend(zone):
     """Return printable legend for zone configuration"""
     if not zone.configuration:
         return None
-
     zone_plugin = get_zone_config_plugin(zone)
-
     if zone_plugin:
         return zone_plugin.config_display_name
 

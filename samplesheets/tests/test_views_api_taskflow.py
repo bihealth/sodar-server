@@ -4,9 +4,10 @@ Tests for REST API views in the samplesheets app with SODAR Taskflow enabled
 
 import json
 import os
-from unittest.case import skipIf
 
 from django.urls import reverse
+
+from unittest.case import skipIf
 
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
@@ -23,7 +24,6 @@ from samplesheets.tests.test_views import (
 
 # SODAR constants
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
-
 
 # Local constants
 SHEET_TSV_DIR = SHEET_DIR + 'i_small2/'
@@ -126,35 +126,28 @@ class TestIrodsCollsCreateAPIView(TestSampleSheetAPITaskflowBase):
 
     def test_post(self):
         """Test post() in IrodsCollsCreateAPIView"""
-
         # Assert preconditions
         self.assertEqual(self.investigation.irods_status, False)
-
         url = reverse(
             'samplesheets:api_irods_colls_create',
             kwargs={'project': self.project.sodar_uuid},
         )
         response = self.request_knox(url, method='POST', data=self.request_data)
-
         self.assertEqual(response.status_code, 200)
         self.investigation.refresh_from_db()
         self.assertEqual(self.investigation.irods_status, True)
 
     def test_post_created(self):
         """Test post() with already created collections (should fail)"""
-
         # Set up iRODS collections
         self._make_irods_colls(self.investigation)
-
         # Assert preconditions
         self.assertEqual(self.investigation.irods_status, True)
-
         url = reverse(
             'samplesheets:api_irods_colls_create',
             kwargs={'project': self.project.sodar_uuid},
         )
         response = self.request_knox(url, method='POST', data=self.request_data)
-
         self.assertEqual(response.status_code, 400)
 
 
@@ -171,52 +164,41 @@ class TestSampleDataFileExistsAPIView(TestSampleSheetAPITaskflowBase):
         """Test getting file existence info with no file uploaded"""
         url = reverse('samplesheets:api_file_exists')
         response = self.request_knox(url, data={'checksum': IRODS_FILE_MD5})
-
         self.assertEqual(response.status_code, 200)
         self.assertEqual(json.loads(response.content)['status'], False)
 
     def test_get_file(self):
         """Test getting file existence info with an uploaded file"""
-
         self.irods_session.data_objects.put(
             IRODS_FILE_PATH,
             self.irods_backend.get_sample_path(self.project) + '/',
         )
-
         url = reverse('samplesheets:api_file_exists')
         response = self.request_knox(url, data={'checksum': IRODS_FILE_MD5})
-
         self.assertEqual(response.status_code, 200)
         self.assertEqual(json.loads(response.content)['status'], True)
 
     def test_get_file_sub_coll(self):
         """Test getting file existence info in a sub collection"""
-
         s_path = self.irods_backend.get_sample_path(self.project)
         self.irods_session.collections.create(s_path + '/sub')
         self.irods_session.data_objects.put(
             IRODS_FILE_PATH,
             s_path + '/sub/',
         )
-
         url = reverse('samplesheets:api_file_exists')
         response = self.request_knox(url, data={'checksum': IRODS_FILE_MD5})
-
         self.assertEqual(response.status_code, 200)
         self.assertEqual(json.loads(response.content)['status'], True)
 
     def test_get_no_checksum(self):
         """Test getting file existence info with no checksum (should fail)"""
-
         url = reverse('samplesheets:api_file_exists')
         response = self.request_knox(url, data={'checksum': ''})
-
         self.assertEqual(response.status_code, 400)
 
     def test_get_invalid_checksum(self):
         """Test getting file existence info with an invalid checksum (should fail)"""
-
         url = reverse('samplesheets:api_file_exists')
         response = self.request_knox(url, data={'checksum': 'Notvalid MD5!'})
-
         self.assertEqual(response.status_code, 400)

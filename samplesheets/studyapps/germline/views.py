@@ -24,7 +24,7 @@ from samplesheets.studyapps.utils import get_igv_xml
 # Local helper for authenticating with auth basic
 from sodar.users.auth import fallback_to_auth_basic
 
-from .utils import get_pedigree_file_path
+from samplesheets.studyapps.germline.utils import get_pedigree_file_path
 
 
 class BaseGermlineConfigView(
@@ -53,7 +53,6 @@ class BaseGermlineConfigView(
                 sodar_uuid=self.kwargs['genericmaterial']
             )
             self.redirect_url = get_sheets_url(self.source.study)
-
         except GenericMaterial.DoesNotExist:
             messages.error(request, 'Source material not found')
             return redirect(self.redirect_url)
@@ -61,7 +60,6 @@ class BaseGermlineConfigView(
         if not irods_backend:
             messages.error(self.request, 'iRODS Backend not available')
             return redirect(self.redirect_url)
-
         if not settings.IRODS_WEBDAV_ENABLED or not settings.IRODS_WEBDAV_URL:
             messages.error(self.request, 'iRODS WebDAV not available')
             return redirect(self.redirect_url)
@@ -80,7 +78,6 @@ class IGVSessionFileRenderView(BaseGermlineConfigView):
     def get(self, request, *args, **kwargs):
         """Override get() to return IGV session file"""
         super(IGVSessionFileRenderView, self).get(request, *args, **kwargs)
-
         vcf_urls = {}
         bam_urls = {}
         webdav_url = settings.IRODS_WEBDAV_URL
@@ -95,11 +92,9 @@ class IGVSessionFileRenderView(BaseGermlineConfigView):
         )
 
         # Get URLs to all latest bam files for all sources in family
-
         # Family defined
         if 'Family' in self.source.characteristics:
             fam_id = self.source.characteristics['Family']['value']
-
         else:
             fam_id = None
 
@@ -109,14 +104,12 @@ class IGVSessionFileRenderView(BaseGermlineConfigView):
                 item_type='SOURCE',
                 characteristics__Family__value=fam_id,
             ).order_by('name')
-
             for fam_source in fam_sources:
                 bam_path = get_pedigree_file_path(
                     file_type='bam',
                     source=fam_source,
                     study_tables=self.study_tables,
                 )
-
                 if bam_path:
                     bam_urls[fam_source.name] = webdav_url + bam_path
 
@@ -127,7 +120,6 @@ class IGVSessionFileRenderView(BaseGermlineConfigView):
                 source=self.source,
                 study_tables=self.study_tables,
             )
-
             if bam_path:
                 bam_urls[self.source.name] = webdav_url + bam_path
 
@@ -139,7 +131,6 @@ class IGVSessionFileRenderView(BaseGermlineConfigView):
             # Use source name if family ID not known
             if not fam_id:
                 fam_id = self.source.name
-
             vcf_urls[fam_id] = webdav_url + vcf_path
 
         # Build IGV session XML file
@@ -155,7 +146,6 @@ class IGVSessionFileRenderView(BaseGermlineConfigView):
         ###########
 
         file_name = fam_id + '.pedigree.igv.xml'
-
         # Set up response
         response = HttpResponse(xml_str, content_type='text/xml')
         response['Content-Disposition'] = 'attachment; filename="{}"'.format(
