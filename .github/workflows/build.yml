@@ -7,9 +7,9 @@ jobs:
     strategy:
       matrix:
         python-version:
-          - 3.7
+          # - 3.7
           - 3.8
-          - 3.9
+          # - 3.9
     services:
       postgres:
         image: postgres:9.6
@@ -42,7 +42,8 @@ jobs:
       - name: Install project Python dependencies
         run: |
           pip install wheel==0.36.2
-          ./utility/install_python_dependencies.sh
+          pip install -r requirements/local.txt
+          pip install -r requirements/test.txt
       - name: Build and run Vue app
         run: |
           - npm ci --prefix samplesheets/vueapp
