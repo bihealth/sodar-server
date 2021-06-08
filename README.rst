@@ -33,9 +33,7 @@ service for managing large scale data transactions in the iRODS system.
 
 See `docs_dev <docs_dev>`_ for development documentation.
 
-.. note::
-
-    This project is under heavy development and all features may not be
-    fully tested or documented. Improved documentation is forthcoming.
+**Note:** This project is under heavy development and all features may not be
+fully tested or documented. Improved documentation is forthcoming.
 
 :License: MIT
