@@ -56,14 +56,16 @@ jobs:
         run: python manage.py geticons
       - name: Run collectstatic
         run: python manage.py collectstatic --noinput
-      - name: Run tests
+      - name: Run Django tests
         run: |
           coverage run --rcfile=.coveragerc manage.py test -v 2 --settings=config.settings.test
           coverage xml
           coverage report
-      - name: Check linting
+      - name: Run Vue app tests
+        run: make test_samplesheets_vue
+      - name: Check Python linting
         run: flake8 .
-      - name: Check formatting
+      - name: Check Python formatting
         run: make black arg=--check
       # - name: Run Codacy coverage reporter
       #   uses: codacy/codacy-coverage-reporter-action@master
