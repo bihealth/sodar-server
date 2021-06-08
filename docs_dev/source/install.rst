@@ -3,21 +3,19 @@
 Installation
 ^^^^^^^^^^^^
 
-.. warning::
-
-   Under construction!
-
 This document describes how to install the system for local development.
 
 If you want to install or develop SODAR without iRODS and SODAR Taskflow, you
 can skip the steps related to their installation and remove the
 ``omics_taskflow`` value from the ``ENABLED_BACKEND_PLUGINS`` environment
-variable..
+variable.
 
 These instructions assume you have Python 3.7+ and PostgreSQL 9.6+ installed.
 
-**NOTE:** Python 3.6 and lower are no longer supported! Python 3.8 is currently
-the recommended version.
+.. note::
+
+    Python 3.6 and lower are no longer supported! Python 3.8 is currently
+    the recommended version.
 
 
 Install SODAR
@@ -26,8 +24,8 @@ Install SODAR
 Requirements
 ------------
 
-- Ubuntu 20.04 Xenial (Recommended)
-- Python 3.7+
+- Ubuntu 20.04 Focal (Recommended)
+- Python 3.7+ (3.8 recommended)
 - Postgres 9.6+
 
 Project Setup
@@ -142,9 +140,7 @@ Prerequisites / Docker Environment
 
 The easiest way to get the dependencies up is to clone and run the SODAR docker
 environment in
-`sodar_docker_env <https://cubi-gitlab.bihealth.org/CUBI_Engineering/CUBI_Data_Mgmt/sodar_docker_env>`_.
-As a downside, the environment does not currently provide permanent storage for
-the default iRODS server.
+`sodar-docker-env <https://github.com/bihealth/sodar-docker-env>`_.
 
 If you want to set up an iRODS server locally, you must have ``MD5`` set as the
 default hash scheme in ``server_config.json``. In the Docker environment setup
@@ -155,7 +151,8 @@ SODAR Taskflow
 
 For development it is recommend to run sodar_taskflow locally.
 
-First, clone the `sodar_taskflow repository <https://github.com/bihealth/sodar-taskflow>`_.
+First, clone the `Sodar Taskflow <https://github.com/bihealth/sodar-taskflow>`_
+repository.
 
 Follow the installation instructions in the ``README.rst`` file. Make sure to
 configure environment variables to point to the Redis and iRODS servers you are
@@ -164,11 +161,11 @@ using.
 Configure SODAR Components
 --------------------------
 
-In the SODAR environment variables (preferably in the ``.env``
-file), set up iRODS and Taskflow variables to point to your server. The default
-values in ``config/settings/base.py`` point to the sodar_docker_env and
-sodar_taskflow defaults. If using the Docker environment and local Taskflow
-service, no changes should thus be required.
+In the SODAR environment variables (preferably in the ``.env`` file), set up
+iRODS and Taskflow variables to point to your server. The default values in
+``config/settings/base.py`` point to the sodar-docker-env and sodar-taskflow
+defaults. If using the Docker environment and local Taskflow service, no changes
+should thus be required.
 
 Similar configuration also needs to be done to SODAR Taskflow, see instructions
 in its respective project repository.
@@ -186,7 +183,7 @@ Make sure Redis and iRODS iCAT server(s) are running. If you have set up and
 launched the sodar_docker_env environment, they all should be available as
 Docker containers.
 
-Run the ``sodar_docker_env`` Docker environment as follows:
+Run the ``sodar-docker-env`` Docker environment as follows:
 
 .. code-block:: console
 
@@ -197,7 +194,7 @@ Run the ``sodar_docker_env`` Docker environment as follows:
 2. SODAR Taskflow
 -----------------
 
-In the ``sodar_taskflow`` repository, start the SODAR Taskflow service:
+In the ``sodar-taskflow`` repository, start the SODAR Taskflow service:
 
 .. code-block:: console
 
@@ -208,7 +205,7 @@ In the ``sodar_taskflow`` repository, start the SODAR Taskflow service:
 
 The Sample Sheets Vue app must be run in a separate process using NPM. The
 easiest way is to use the shortcut script in the SODAR project, which will
-serve the development version with hot reload in ``http://localhost:8080``.
+serve the development version with hot reload in ``http://127.0.0.1:8080``.
 
 .. code-block::
 
@@ -218,7 +215,7 @@ serve the development version with hot reload in ``http://localhost:8080``.
 -------------------------
 
 For asynchronous tasks, run the SODAR celery process in debug mode using the
-following script:
+following command:
 
 .. code-block:: console
 
@@ -244,7 +241,7 @@ due to e.g. rebooting the Docker environment project metadata and collections
 
 .. code-block:: console
 
-    $ make sync_taskflow
+    $ ./manage.py synctaskflow
 
 There is also a shortcut for syncing iRODS data and starting the server:
 

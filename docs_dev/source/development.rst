@@ -3,16 +3,13 @@
 SODAR Development Guidelines
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. warning::
-   Under construction!
-
 
 Git Branches
 ============
 
-- ``master``
+- ``main``
     - Intended for stable and production quality release code only
-    - The ``dev`` branch is merged into it for freezing releases
+    - The ``dev`` branch is merged into ``main`` for freezing releases
 - ``dev``
     - The bleeding edge development branch with (mostly) stable new features
     - Only push small urgent updates such as bug fixes here, otherwise fork and
@@ -27,13 +24,13 @@ Commits
 =======
 
 - Please refer to issues by their ids in comments as it makes things easier to
-  track
+  track.
 
 
 Python Testing
 ==============
 
-- For tests utilizing Taskflow or iRODS, please decorate with ``@skipIf``
+- For tests utilizing Taskflow or iRODS, please decorate with ``@skipIf``.
 
 
 Vue App Unit Testing Hints
@@ -69,7 +66,8 @@ For detailed information, see
 docs.
 
 - Apps can freely import and use stuff from the ``projectroles`` app
-- Apps should not import code directly from other apps, **except** for the following:
+- Apps should not import code directly from other apps, **except** for the
+  following:
     - ``landingzones`` can use ``samplesheets`` models
     - ``samplesheets.configapps.*`` can import things from ``samplesheets``
 - For everything else, please use plugins to avoid hardcoded imports
@@ -88,7 +86,8 @@ docs.
     - Content always related to a project
     - Will be shown on project sidebar
 - Backend plugin (``projectroles.plugins.BackendPluginPoint``)
-    - Intended for backend apps used by other apps, mostly without their own views
+    - Intended for backend apps used by other apps, mostly without their own
+      views
 - Site plugin (``projectroles.plugins.SiteAppPluginPoint``)
     - Generic site app *not* tied to a project
 - Sample Sheet study/assay app plugins

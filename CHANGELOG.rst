@@ -18,6 +18,7 @@ Added
     - Display relevant Django settings values in ``siteinfo`` app (#1123)
     - ``taskflowbackend`` in site logging (#1137)
     - New Docker setup (#1129, #1163, #1165)
+    - GitHub Actions CI (#1033)
 - **Irodsbackend**
     - Support for ``IRODS_ROOT_PATH`` setting (#1067)
     - ``get_root_path()`` and ``get_projects_path()`` helpers (#1067)
@@ -53,6 +54,7 @@ Changed
     - Upgrade versioneer
     - Upgrade general python dependencies
     - Update taskflow actions for SODAR Taskflow v0.5 compatibility
+    - Cleanup for public GitHub release (#1119)
 - **Irodsbackend**
     - Split long queries in ``get_objs_recursively()`` (#1132)
     - Refactor Ajax views (#841)
