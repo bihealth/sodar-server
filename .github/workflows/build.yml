@@ -50,8 +50,8 @@ jobs:
           node-version: 10.x
       - name: Build and run Vue app
         run: |
-          - npm ci --prefix samplesheets/vueapp
-          - nohup npm run -prefix samplesheets/vueapp serve &
+          npm ci --prefix samplesheets/vueapp
+          nohup npm run -prefix samplesheets/vueapp serve &
       - name: Download icons
         run: python manage.py geticons
       - name: Run collectstatic
