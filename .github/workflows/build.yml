@@ -1,0 +1,68 @@
+name: build
+on: push
+jobs:
+  build:
+    name: build
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        python-version:
+          - 3.7
+          - 3.8
+          - 3.9
+    services:
+      postgres:
+        image: postgres:9.6
+        env:
+          POSTGRES_DB: sodar
+          POSTGRES_USER: sodar
+          POSTGRES_PASSWORD: sodar
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+        ports:
+          - 5432:5432
+    env:
+      POSTGRES_HOST: 127.0.0.1
+      POSTGRES_PORT: 5432
+      DATABASE_URL: 'postgres://sodar:sodar@127.0.0.1/sodar'
+    steps:
+      - name: Install server dependencies
+        run: |
+          sudo apt-get install -qq build-essential zlib1g-dev libtiff5-dev libjpeg8-dev libfreetype6-dev
+          sudo apt-get install -qq liblcms2-dev libwebp-dev libpq-dev graphviz-dev
+      - name: Install Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Install project Python dependencies
+        run: |
+          pip install wheel==0.36.2
+          ./utility/install_python_dependencies.sh
+      - name: Build and run Vue app
+        run: |
+          - npm ci --prefix samplesheets/vueapp
+          - nohup npm run -prefix samplesheets/vueapp serve &
+      - name: Download icons
+        run: python manage.py geticons
+      - name: Run collectstatic
+        run: python manage.py collectstatic --noinput
+      - name: Run tests
+        run: |
+          coverage run --rcfile=.coveragerc manage.py test -v 2 --settings=config.settings.test
+          coverage xml
+          coverage report
+      - name: Check linting
+        run: flake8 .
+      - name: Check formatting
+        run: make black arg=--check
+      # - name: Run Codacy coverage reporter
+      #   uses: codacy/codacy-coverage-reporter-action@master
+      #   with:
+      #     project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
+      #     coverage-reports: coverage.xml
+      #   if: ${{ matrix.python-version == '3.8' }}
