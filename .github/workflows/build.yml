@@ -63,6 +63,7 @@ jobs:
           coverage report
       - name: Run Vue app tests
         run: make test_samplesheets_vue
+        if: ${{ matrix.python-version == '3.8' }}
       - name: Check Python linting
         run: flake8 .
       - name: Check Python formatting
