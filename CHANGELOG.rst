@@ -19,6 +19,7 @@ Added
     - ``taskflowbackend`` in site logging (#1137)
     - New Docker setup (#1129, #1163, #1165)
     - GitHub Actions CI (#1033)
+    - iRODS study and assay data linking documentation in manual (#1127)
 - **Irodsbackend**
     - Support for ``IRODS_ROOT_PATH`` setting (#1067)
     - ``get_root_path()`` and ``get_projects_path()`` helpers (#1067)
@@ -60,6 +61,8 @@ Changed
     - Split long queries in ``get_objs_recursively()`` (#1132)
     - Refactor Ajax views (#841)
     - Require ``project`` and ``user`` args for ``get_webdav_url()`` template tag (#1144)
+- **Irodsinfo**
+    - Move iRODS connecting guide into the user manual (#262)
 - **Samplesheets**
     - Fail gracefully for ISAtab import with empty tables (#903, #1075)
     - Implement study/assay app retrieval in model ``get_plugin()`` helpers (#1076)
@@ -81,6 +84,8 @@ Changed
 Fixed
 -----
 
+- **General**
+    - Production config requirement in ``docs_manual``
 - **Irodsadmin**
     - Irodsorphans project UUID not returned if path ends in project UUID (#1071)
 - **Irodsbackend**

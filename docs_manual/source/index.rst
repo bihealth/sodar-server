@@ -1,8 +1,7 @@
 .. _manual-main:
 
-=================
 SODAR User Manual
-=================
+^^^^^^^^^^^^^^^^^
 
 SODAR is the System for Omics Data Access and Retrieval.
 It is developed by the Core Unit Bioinformatics at the Berlin Institute of
@@ -35,6 +34,7 @@ meta data.
     :name: data_transfer
     :hidden:
 
+    data_transfer_irods
     data_transfer_bih_prot
 
 .. toctree::
@@ -55,6 +55,7 @@ meta data.
     :hidden:
 
     metadata_recording
+    metadata_advanced
 
 .. toctree::
     :maxdepth: 1

@@ -1,11 +1,11 @@
 .. _metadata_recording:
 
 Metadata Recording
-==================
+^^^^^^^^^^^^^^^^^^
 
-Until SODAR_ provides an editor for metadata recording, we will prepare the
-necessary tabular files (ISA-Tab) corresponding to your project and provide
-them to you to fill out in Excel and co.
+Until SODAR_ provides a fully featured editor for metadata recording, we will
+prepare the necessary tabular files (ISA-Tab) corresponding to your project and
+provide them to you to fill out in Excel and co.
 
 .. _SODAR: https://sodar.bihealth.org
 
@@ -27,7 +27,7 @@ and defines rules to consider when editing them in Excel and co.
 
 
 Background
-----------
+==========
 
 About ISA-Tab
 ~~~~~~~~~~~~~
@@ -191,7 +191,7 @@ the `ISA documentation`_.
 
 
 1. Preparation
---------------
+==============
 
 Some basic information about the project is needed to initiate the SODAR
 project and the ISA-Tab files.
@@ -257,7 +257,7 @@ and provide the corresponding ISA-Tab files to fill out.
 
 
 2. Recording
-------------
+============
 
 Use a familiar spreadsheet program such as MS Office Excel or LibreOffice Calc
 to add and edit metadata in the study and assay tab files. If the file format
@@ -362,7 +362,7 @@ show up.
 
 
 3. Validation (post-processing)
--------------------------------
+===============================
 
 Under good circumstances, a direct upload to the corresponding SODAR project
 may be successful already. Feel free to give it try (see
@@ -379,7 +379,7 @@ with appropriate ontology identifier and sources.
 
 
 4. Uploading
-------------
+============
 
 The upload/integration of metadata into a SODAR project can be facilitated by
 CUBI (e.g. after validation) or any project member with appropriate rights

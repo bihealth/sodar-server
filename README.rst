@@ -43,4 +43,7 @@ See `docs_dev <docs_dev>`_ for development documentation.
 **Note:** This project is under heavy development and all features may not be
 fully tested or documented. Improved documentation is forthcoming.
 
-:License: MIT
+**Note:** The project and documentation may refer to practices, services or data
+specific to research work at Berlin Institute of Health, Core Unit
+Bioinformatics. You may need to adapt them if you wish to deploy your own SODAR
+instance.

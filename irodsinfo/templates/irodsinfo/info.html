@@ -24,82 +24,10 @@
 <div class="container-fluid sodar-page-container">
 
   {# Guide #}
-  <div class="card">
-    <div class="card-header">
-      <h4>
-        <i class="iconify" data-icon="mdi:book-open-page-variant"></i>
-        Connecting Guide
-      </h4>
-      </div>
-      <div class="card-body">
-        <h4 class="card-title">Accessing iRODS</h4>
-        <p>
-          Experiment data for omics project data is stored under a distributed
-          iRODS server, which you can log on to with your Charité or MDC
-          credentials. For accessing project data, membership in respective
-          projects must be granted to you by a project owner or delegate.
-        </p>
-        <p>
-          For each project, sample data repository is located in the
-          read-only <code>{{ irods_sample_coll }}</code> collection. For
-          uploading new files, you must create a landing zone as a temporary
-          workspace. These are placed under the <code>{{ irods_landing_zone_coll }}</code>
-          collection. For more instructions, see the Landing Zones application
-          under the project you are working on.
-        </p>
-
-        {% if can_get_config %}
-          <h4 class="card-title">Command Line Access (Ubuntu/CentOS)</h4>
-          <p>
-            For command line access to iRODS, you first need to install the <code>irods-icommands</code>
-            package. Below is an installation example for Ubuntu.
-          </p>
-          <pre class="m-3 p-2 bg-light"><code>wget -qO - https://packages.irods.org/irods-signing-key.asc | sudo apt-key add -
-echo "deb [arch=amd64] https://packages.irods.org/apt/ $(lsb_release -sc) main" | sudo tee /etc/apt/sources.list.d/renci-irods.list
-sudo apt-get update
-sudo apt -y install irods-runtime irods-icommands</code></pre>
-          <p>
-            To configure your iCommands connection,
-            <a href="{% url 'irodsinfo:config' %}">download this configuration file archive</a>.
-            This archive contains the <code>irods_environment.json</code>
-            file pre-configured for your user account. A server certificate
-            file for secure connections is also included.
-          </p>
-          <p>
-            Enter the directory where you saved the downloaded archive and enter
-            the following commands:
-          </p>
-          <pre class="m-3 p-2 bg-light"><code>mkdir -p ~/.irods
-unzip irods_config.zip -d ~/.irods
-iinit</code></pre>
-          <p>
-            You will be prompted for your password, which is the same one you use
-            to access this web site. After this, you should be successfully
-            logged on to iRODS and can access data on the storage in your
-            terminal.
-          </p>
-          <p>
-            Please note that when using <code>iput</code> or <code>irsync</code>
-            to upload data into the SODAR iRODS server, you must use the
-            <code>-k</code> argument to enable checksum generation.
-          </p>
-          <p>
-            See <a class="card-link" href="https://docs.irods.org/master/icommands/user/" target="_blank">iRODS documentation</a> for iCommands reference.
-          </p>
-        {% endif %}
-
-        <h4 class="card-title">WebDAV</h4>
-        <p>
-          Collections can be accessed for through WebDAV by mounting it as a
-          network drive or browsing it in read-only mode on a web browser.
-        </p>
-        <p>
-          The SODAR system provides WebDAV links for
-          sample sheets and landing zones denoted with the following icon:
-          <i class="iconify" data-icon="mdi:open-in-new"></i>
-        </p>
-      </div>
-    </div>
+  <div class="alert alert-info">
+    The iRODS connecting guide has been moved into the
+    <a href="/manual">SODAR user manual</a>.
+  </div>
 
   {# Server info #}
   <div class="card">
