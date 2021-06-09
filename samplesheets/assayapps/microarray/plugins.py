@@ -82,18 +82,15 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
         for i in range(len(row)):
             cell = row[i]
             header = table['field_header'][i]
-
             if (
                 header['value'].lower in [HYBRID_NAME, SCAN_NAME]
                 and not cell['value']
             ):
                 return None  # If we can't find both, cancel
-
             if header['value'].lower() == HYBRID_NAME:
                 hybrid_name = cell['value']
             elif header['value'].lower() == SCAN_NAME:
                 scan_name = cell['value']
-
             if hybrid_name and scan_name:
                 row_path = '/'.join(
                     [assay_path, RAW_DATA_COLL, hybrid_name, scan_name]
@@ -112,16 +109,13 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
         :return: List of dicts
         """
         assay_path = self.get_assay_path(assay)
-
         if (
             not settings.IRODS_WEBDAV_ENABLED
             or not assay.study.investigation.irods_status
             or not assay_path
         ):
             return row
-
         row_path = self.get_row_path(row, table, assay, assay_path)
-
         if not row_path:
             return row
 
@@ -133,7 +127,6 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
                 and row[i]['value']
             ):
                 top_header = get_top_header(table, i)
-
                 if (
                     top_header['value'].lower() in LINKED_FILES
                     and row[i]['value']

@@ -13,12 +13,10 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         print('Refreshing alternative names for materials...')
-
         with transaction.atomic():
             for m in GenericMaterial.objects.all():
                 m.alt_names = get_alt_names(m.name)
                 m.save()
-
         print(
             '{} materials updated.'.format(
                 GenericMaterial.objects.all().count()

@@ -18,10 +18,8 @@ class TaskflowCollStatusGetAPIView(BaseTaskflowAPIView):
             investigation = Investigation.objects.get(
                 project__sodar_uuid=request.data['project_uuid'], active=True
             )
-
         except Investigation.DoesNotExist as ex:
             return Response(str(ex), status=404)
-
         return Response({'dir_status': investigation.irods_status}, 200)
 
 
@@ -33,13 +31,10 @@ class TaskflowCollStatusSetAPIView(BaseTaskflowAPIView):
             investigation = Investigation.objects.get(
                 project__sodar_uuid=request.data['project_uuid'], active=True
             )
-
         except Investigation.DoesNotExist as ex:
             return Response(str(ex), status=404)
-
         investigation.irods_status = request.data['dir_status']
         investigation.save()
-
         return Response('ok', status=200)
 
 
@@ -51,17 +46,12 @@ class TaskflowSheetDeleteAPIView(BaseTaskflowAPIView):
             investigation = Investigation.objects.get(
                 project__sodar_uuid=request.data['project_uuid'], active=True
             )
-
         except Investigation.DoesNotExist as ex:
             return Response(str(ex), status=404)
-
         project = investigation.project
         investigation.delete()
-
         # Delete cache
         cache_backend = get_backend_api('sodar_cache')
-
         if cache_backend:
             cache_backend.delete_cache(APP_NAME, project)
-
         return Response('ok', status=200)

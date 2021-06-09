@@ -3,9 +3,9 @@ import json
 import os
 import uuid
 
-from test_plus.test import TestCase
-
 from django.conf import settings
+
+from test_plus.test import TestCase
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
@@ -18,9 +18,12 @@ from samplesheets.sheet_config import SheetConfigAPI
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 
 
+app_settings = AppSettingAPI()
+conf_api = SheetConfigAPI()
+
+
 # Local constants
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
-
 CONFIG_STUDY_UUID = '11111111-1111-1111-1111-111111111111'
 CONFIG_ASSAY_UUID = '22222222-2222-2222-2222-222222222222'
 CONFIG_PROTOCOL_UUIDS = [
@@ -31,18 +34,12 @@ CONFIG_PROTOCOL_UUIDS = [
 CONFIG_DIR = os.path.dirname(__file__) + '/config/'
 CONFIG_PATH_DEFAULT = CONFIG_DIR + 'i_small_default.json'
 CONFIG_PATH_UPDATED = CONFIG_DIR + 'i_small_updated.json'
-
 with open(CONFIG_PATH_DEFAULT) as fp:
     CONFIG_DATA_DEFAULT = json.load(fp)
-
 IRODS_BACKEND_ENABLED = (
     True if 'omics_irods' in settings.ENABLED_BACKEND_PLUGINS else False
 )
 IRODS_BACKEND_SKIP_MSG = 'iRODS backend not enabled in settings'
-
-
-app_settings = AppSettingAPI()
-conf_api = SheetConfigAPI()
 
 
 class SheetConfigMixin:
@@ -105,7 +102,6 @@ class SheetConfigMixin:
 
         for s in sheet_config['studies'].values():
             _randomize_table(s)
-
             for a in s['assays'].values():
                 _randomize_table(a)
 
@@ -132,7 +128,6 @@ class SheetConfigMixin:
 
         for s in sheet_config['studies'].values():
             _assert_table(s)
-
             for a in s['assays'].values():
                 _assert_table(a)
 
@@ -187,7 +182,6 @@ class TestSheetConfig(
                 investigation = self._import_isa_from_file(
                     zip_file.path, self.project
                 )
-
             except Exception as ex:
                 return self._fail_isa(zip_name, ex)
 
@@ -211,12 +205,10 @@ class TestSheetConfig(
                 for ak, av in sv['assays'].items():
                     # Get sample node index
                     s_idx = 0
-
                     for h in study_tables['study']['top_header']:
                         if h['value'] == 'Sample':
                             break
                         s_idx += 1
-
                     self.assertEqual(
                         len(av['nodes']),
                         len(study_tables['assays'][ak]['top_header'])
@@ -328,7 +320,6 @@ class TestDisplayConfig(
                 investigation = self._import_isa_from_file(
                     zip_file.path, self.project
                 )
-
             except Exception as ex:
                 return self._fail_isa(zip_name, ex)
 

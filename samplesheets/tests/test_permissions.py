@@ -1,11 +1,12 @@
 """Tests for UI view permissions in the samplesheets app"""
 
-from unittest import skipIf
 from urllib.parse import urlencode
 
 from django.conf import settings
-from django.urls import reverse
 from django.test import override_settings
+from django.urls import reverse
+
+from unittest import skipIf
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
@@ -14,10 +15,8 @@ from projectroles.utils import build_secret
 
 from samplesheets.models import ISATab
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
-
-
-# App settings API
 from samplesheets.tests.test_views_ajax import IrodsAccessTicketMixin
+
 
 app_settings = AppSettingAPI()
 

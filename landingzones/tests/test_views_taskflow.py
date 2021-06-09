@@ -5,12 +5,13 @@
 import hashlib
 from irods.test.helpers import make_object
 import time
-from unittest import skipIf
 
 from django.conf import settings
 from django.contrib import auth
 from django.core import mail
 from django.urls import reverse
+
+from unittest import skipIf
 
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
@@ -43,19 +44,16 @@ SUBMIT_STATUS_PENDING_TASKFLOW = SODAR_CONSTANTS[
     'SUBMIT_STATUS_PENDING_TASKFLOW'
 ]
 
-
 # Local constants
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
 TASKFLOW_ENABLED = (
     True if 'taskflow' in settings.ENABLED_BACKEND_PLUGINS else False
 )
 TASKFLOW_SKIP_MSG = 'Taskflow not enabled in settings'
-
 ZONE_TITLE = '20190703_172456'
 ZONE_SUFFIX = 'Test Zone'
 ZONE_DESC = 'description'
 TEST_OBJ_NAME = 'test1.txt'
-
 ASYNC_WAIT_SECONDS = 5
 ASYNC_RETRY_COUNT = 3
 

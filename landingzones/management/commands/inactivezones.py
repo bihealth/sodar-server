@@ -1,3 +1,5 @@
+"""Inactivezones management command"""
+
 from datetime import timedelta
 
 from django.core.management.base import BaseCommand

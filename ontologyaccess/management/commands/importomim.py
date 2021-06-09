@@ -33,17 +33,14 @@ class Command(BaseCommand):
             'Importing OMIM disease data from "{}"..'.format(options['path'])
         )
         obo_io = OBOFormatOntologyIO()
-
         # Ensure path or url (but not both) is set
         if not options['path'] and options['url']:
             logger.error('Path to OMIM CSV file required')
             sys.exit(1)
-
         if OBOFormatOntology.objects.filter(name=OMIM_NAME).first():
             logger.info('OMIM data already on server')
             logger.info('Import cancelled')
             return
-
         with open(options['path']) as f:
             obo_io.import_omim(csv_data=f, file=options['path'])
             logger.info('Import OK')

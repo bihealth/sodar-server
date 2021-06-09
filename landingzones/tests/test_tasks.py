@@ -1,11 +1,12 @@
-"""Celery tasks for the landingzones app"""
+"""Celery task tests for the landingzones app"""
 
 import time
-from unittest import skipIf
 
 from django.conf import settings
 from django.contrib import auth
 from django.test import RequestFactory
+
+from unittest import skipIf
 
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
@@ -44,12 +45,10 @@ TASKFLOW_ENABLED = (
     True if 'taskflow' in settings.ENABLED_BACKEND_PLUGINS else False
 )
 TASKFLOW_SKIP_MSG = 'Taskflow not enabled in settings'
-
 ZONE_TITLE = '20190703_172456'
 ZONE_SUFFIX = 'Test Zone'
 ZONE_DESC = 'description'
 TEST_OBJ_NAME = 'test1.txt'
-
 ASYNC_WAIT_SECONDS = 5
 ASYNC_RETRY_COUNT = 3
 
@@ -123,7 +122,6 @@ class TestTriggerZoneMoveTask(
 
     def test_trigger(self):
         """Test triggering automated zone validation and moving"""
-
         # Assert precondition
         self.assertEqual(self.landing_zone.status, 'ACTIVE')
 
@@ -142,7 +140,6 @@ class TestTriggerZoneMoveTask(
 
     def test_trigger_no_file(self):
         """Test triggering without an uploaded file"""
-
         # Assert precondition
         self.assertEqual(self.landing_zone.status, 'ACTIVE')
 

@@ -127,13 +127,10 @@ class SampleSheetTableBuilder:
         """
         if isinstance(field, str):
             return field
-
         if isinstance(field, dict) and 'value' in field:
             if isinstance(field['value'], dict) and 'name' in field['value']:
                 return field['value']['name']
-
             return field['value']
-
         return ''
 
     @classmethod
@@ -151,11 +148,9 @@ class SampleSheetTableBuilder:
             or any(s in accession for s in settings.SHEETS_ONTOLOGY_URL_SKIP)
         ):
             return accession
-
         # HACK: "HP" is commonly incorrectly provided as "HPO"
         if ontology_name == 'HPO':
             ontology_name = 'HP'
-
         return settings.SHEETS_ONTOLOGY_URL_TEMPLATE.format(
             ontology_name=ontology_name, accession=accession
         )
@@ -186,16 +181,12 @@ class SampleSheetTableBuilder:
                 and obj.item_type not in ['SOURCE', 'SAMPLE']
                 else TOP_HEADER_MATERIAL_VALUES[obj.item_type]
             )
-
         else:  # Process
             colour = 'danger'
             value = 'Process'
-
         th = {'value': value.strip(), 'colour': colour, 'colspan': colspan}
-
         if self._edit:
             th['headers'] = obj.headers  # Store the full header for editing
-
         self._top_header.append(th)
         self._node_idx += 1
         self._field_idx = 0
@@ -225,12 +216,10 @@ class SampleSheetTableBuilder:
             study_config = self._sheet_config['studies'][
                 str(self._study.sodar_uuid)
             ]
-
             if not self._assay or self._node_idx < len(study_config['nodes']):
                 field_config = study_config['nodes'][self._node_idx]['fields'][
                     self._field_idx
                 ]
-
             else:  # Assay
                 a_node_idx = self._node_idx - len(study_config['nodes'])
                 field_config = study_config['assays'][
@@ -240,7 +229,6 @@ class SampleSheetTableBuilder:
         # Save info on whether a pre-existing config is set for this field
         if field_config and field_config.get('format'):
             self._field_configs.append(True)
-
         else:
             self._field_configs.append(False)
 
@@ -289,7 +277,6 @@ class SampleSheetTableBuilder:
         # Add extra data for editing
         if self._edit:
             header['type'] = header_type
-
         self._field_header.append(header)
         self._field_idx += 1
 
@@ -318,7 +305,6 @@ class SampleSheetTableBuilder:
         :param tooltip: Tooltip to be shown on mouse hover (string)
         :param basic_val: Whether the value is a basic string (HACK for #730)
         """
-
         # Add header if first row
         if header_name and obj and self._first_row:
             self._add_header(header_name, header_type=header_type, obj=obj)
@@ -326,22 +312,18 @@ class SampleSheetTableBuilder:
         # Get printable value in case the function is called with a reference
         if isinstance(value, dict):
             value = self._get_value(value)
-
         cell = {'value': value.strip() if isinstance(value, str) else value}
 
         if unit:
             cell['unit'] = unit.strip() if isinstance(unit, str) else unit
-
         if link:
             cell['link'] = link
-
         if tooltip:
             cell['tooltip'] = tooltip
 
         # Add extra data for editing
         if self._edit:
             cell['uuid'] = str(obj.sodar_uuid)  # Node UUID
-
             # Object reference UUID for special cases
             if header_type == 'protocol':
                 cell['uuid_ref'] = str(obj.protocol.sodar_uuid)
@@ -350,13 +332,10 @@ class SampleSheetTableBuilder:
 
         # Store value for detecting unfilled columns
         col_value = 0 if not value else 1
-
         if self._first_row:
             self._col_values.append(col_value)
-
         elif col_value == 1 and self._col_values[self._col_idx] == 0:
             self._col_values[self._col_idx] = 1
-
         self._col_idx += 1
 
     def _add_ordered_element(self, obj):
@@ -377,12 +356,10 @@ class SampleSheetTableBuilder:
             if list_ref:
                 h_type = list_ref[0][0]
                 h_name = list_ref[0][1]
-
                 if h_type in LIST_ATTR_MAP and hasattr(
                     obj, LIST_ATTR_MAP[h_type]
                 ):
                     obj_attr = getattr(obj, LIST_ATTR_MAP[h_type])
-
                     if h_name in obj_attr:
                         self._add_annotation(
                             obj_attr[h_name],
@@ -490,25 +467,20 @@ class SampleSheetTableBuilder:
             # Make single reference into a list for simpler rendering
             if isinstance(ann['value'], dict):
                 tmp_val = [ann['value']]
-
             if not tmp_val[0].get('name'):
                 val = ''
-
             else:
                 for v in tmp_val:
                     v = dict(v)
-
                     if isinstance(v['name'], str):
                         v['name'] = v['name'].strip()  # Cleanup name
                     elif v['name'] is None:
                         v['name'] = ''
-
                     if not self._edit:
                         # If not editing, provide user friendly ontology URL
                         v['accession'] = self._get_ontology_url(
                             v['ontology_name'], v['accession']
                         )
-
                     val.append(v)
 
         # Basic value string OR a list of strings
@@ -570,7 +542,6 @@ class SampleSheetTableBuilder:
         self._first_row = True
         self._col_values = []
         self._col_idx = 0
-
         row_id = 0
 
         if not node_map:
@@ -578,12 +549,10 @@ class SampleSheetTableBuilder:
 
         for input_row in table_refs:
             col_pos = 0
-
             # Add elements in row
             for col in input_row:
                 self._add_ordered_element(node_map[col])
                 col_pos += 1
-
             self._append_row()
             row_id += 1
 
@@ -593,11 +562,9 @@ class SampleSheetTableBuilder:
             """Return estimated length for proportional text"""
             if not value:
                 return 0
-
             # Convert perform date
             if isinstance(value, date):
                 value = str(value)
-
             # Lists (altamISA v0.1+)
             elif isinstance(value, list) and col_type != 'EXTERNAL_LINKS':
                 if isinstance(value[0], dict):
@@ -606,7 +573,6 @@ class SampleSheetTableBuilder:
                     value = '; '.join([x[0] for x in value])
                 elif isinstance(value[0], str):
                     value = '; '.join(value)
-
             # Very unscientific and font-specific, don't try this at home
             nc = sum([value.count(c) for c in NARROW_CHARS])
             wc = sum([value.count(c) for c in WIDE_CHARS])
@@ -655,7 +621,6 @@ class SampleSheetTableBuilder:
                     _get_length(self._top_header[top_idx]['value'])
                 )
                 header_len = max(field_header_len, top_header_len)
-
             else:
                 header_len = field_header_len
 
@@ -704,7 +669,6 @@ class SampleSheetTableBuilder:
             if grp_idx == self._top_header[top_idx]['colspan'] - 1:
                 top_idx += 1
                 grp_idx = 0
-
             else:
                 grp_idx += 1
 
@@ -732,9 +696,7 @@ class SampleSheetTableBuilder:
         """
         if not nodes:
             nodes = study.get_nodes()
-
         arcs = study.arcs
-
         for a in study.assays.all().order_by('file_name'):
             arcs += a.arcs
 
@@ -747,7 +709,6 @@ class SampleSheetTableBuilder:
             nodes, arcs, functools.partial(_is_of_starting_type, 'SOURCE')
         )
         all_refs = tb.run()
-
         if not all_refs:
             error_msg = (
                 'RefTableBuilder failed to build a table from graph, unable to '
@@ -755,7 +716,6 @@ class SampleSheetTableBuilder:
             )
             logger.error(error_msg)
             raise SampleSheetRenderingException(error_msg)
-
         return all_refs
 
     @classmethod
@@ -789,7 +749,6 @@ class SampleSheetTableBuilder:
         """
         if not sample_idx:
             sample_idx = cls.get_sample_idx(all_refs)
-
         sr = [row[: sample_idx + 1] for row in all_refs]
         return list(sr for sr, _ in itertools.groupby(sr))
 
@@ -807,14 +766,12 @@ class SampleSheetTableBuilder:
         assay_search_str = '-a{}-'.format(assay_id)
         assay_refs = []
         start_idx = 0 if study_cols else sample_idx
-
         for row in all_refs:
             if (
                 len(row) > sample_idx + 1
                 and assay_search_str in row[sample_idx + 1]
             ):
                 assay_refs.append(row[start_idx:])
-
         return assay_refs
 
     def build_study_tables(self, study, edit=False, use_config=True):
@@ -882,7 +839,6 @@ class SampleSheetTableBuilder:
 
         # Study ref table without duplicates
         study_refs = self.get_study_refs(all_refs, sample_idx)
-
         ret['study'] = self._build_table(study_refs, node_map, study=study)
         logger.debug(
             'Building study OK ({:.1f}s)'.format(time.time() - s_start)
@@ -902,7 +858,6 @@ class SampleSheetTableBuilder:
             ret['assays'][str(assay.sodar_uuid)] = self._build_table(
                 assay_refs, node_map, assay=assay
             )
-
             assay_id += 1
             logger.debug(
                 'Building assay OK ({:.1f}s)'.format(time.time() - a_start)
@@ -934,12 +889,10 @@ class SampleSheetTableBuilder:
             for assay in study.assays.all().order_by('pk'):
                 assay_refs = self.get_assay_refs(all_refs, assay_id, sample_idx)
                 assay_headers = []
-
                 for i in range(sample_idx + 1, len(assay_refs[0])):
                     assay_headers += get_node_obj(
                         assay=assay, unique_name=assay_refs[0][i]
                     ).headers
-
                 study_data['assays'].append(assay_headers)
                 assay_id += 1
 

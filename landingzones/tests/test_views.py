@@ -1,11 +1,9 @@
 """Tests for UI views in the landingzones app"""
 
-from test_plus.test import TestCase
-
 from django.conf import settings
 from django.urls import reverse
 
-# from django.test import RequestFactory
+from test_plus.test import TestCase
 
 # Projectroles dependency
 from projectroles.models import Role, SODAR_CONSTANTS
@@ -51,8 +49,6 @@ class TestViewsBase(
     """Base class for view testing"""
 
     def setUp(self):
-        # self.req_factory = RequestFactory()
-
         # Init roles
         self.role_owner = Role.objects.get_or_create(name=PROJECT_ROLE_OWNER)[0]
         self.role_delegate = Role.objects.get_or_create(
@@ -113,7 +109,6 @@ class TestProjectZonesView(TestViewsBase):
                     kwargs={'project': self.project.sodar_uuid},
                 )
             )
-
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context['investigation'], self.investigation)
         self.assertEqual(response.context['zones_own'].count(), 1)
@@ -129,7 +124,6 @@ class TestProjectZonesView(TestViewsBase):
                     kwargs={'project': self.project.sodar_uuid},
                 )
             )
-
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context['investigation'], self.investigation)
         # This user should have no zones
@@ -149,9 +143,7 @@ class TestLandingZoneCreateView(TestViewsBase):
                     kwargs={'project': self.project.sodar_uuid},
                 )
             )
-
         self.assertEqual(response.status_code, 200)
-
         # Assert form
         form = response.context['form']
         self.assertIsNotNone(form)
@@ -173,7 +165,6 @@ class TestLandingZoneMoveView(TestViewsBase):
                     kwargs={'landingzone': self.landing_zone.sodar_uuid},
                 )
             )
-
         self.assertEqual(response.status_code, 200)
 
     def test_render_invalid_status(self):
@@ -188,7 +179,6 @@ class TestLandingZoneMoveView(TestViewsBase):
                     kwargs={'landingzone': self.landing_zone.sodar_uuid},
                 )
             )
-
         self.assertEqual(response.status_code, 302)
 
 
@@ -204,7 +194,6 @@ class TestLandingZoneDeleteView(TestViewsBase):
                     kwargs={'landingzone': self.landing_zone.sodar_uuid},
                 )
             )
-
         self.assertEqual(response.status_code, 200)
 
     def test_render_invalid_status(self):
@@ -219,7 +208,6 @@ class TestLandingZoneDeleteView(TestViewsBase):
                     kwargs={'landingzone': self.landing_zone.sodar_uuid},
                 )
             )
-
         self.assertEqual(response.status_code, 302)
 
 
@@ -240,7 +228,6 @@ class TestLandingZoneClearView(TestViewsBase):
                     kwargs={'project': self.project.sodar_uuid},
                 )
             )
-
         self.assertEqual(response.status_code, 200)
 
     def test_post(self):

@@ -87,7 +87,6 @@ def get_igv_xml(bam_urls, vcf_urls, vcf_title, request):
             'Panel',
             attrib={'height': '70', 'name': 'DataPanel', 'width': '1129'},
         )
-
         # xml_vcf_panel_track
         ET.SubElement(
             xml_vcf_panel,
@@ -277,5 +276,4 @@ def get_igv_xml(bam_urls, vcf_urls, vcf_title, request):
         xml_declaration=True,
         pretty_print=True,
     )
-
     return xml_str

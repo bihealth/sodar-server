@@ -1,8 +1,6 @@
 """Ajax API views for the ontologyaccess app"""
 
 from functools import reduce
-
-# import json
 import logging
 
 from django.conf import settings
@@ -129,7 +127,6 @@ class OBOTermListAjaxView(OBOOntologyTermMixin, SODARBasePermissionAjaxView):
 
     def get(self, request, *args, **kwargs):
         term_names = request.GET.getlist('t')
-
         if not term_names:
             return Response({'detail': 'Incorrect query string'}, status=400)
 
@@ -137,7 +134,6 @@ class OBOTermListAjaxView(OBOOntologyTermMixin, SODARBasePermissionAjaxView):
         q_list = map(lambda n: Q(name__iexact=n), term_names)
         q_list = reduce(lambda a, b: a | b, q_list)
         terms = OBOFormatOntologyTerm.objects.filter(q_list)
-
         for t in terms:
             ret_data['terms'].append(self.get_term_dict(t))
 

@@ -24,7 +24,7 @@ from samplesheets.studyapps.utils import get_igv_xml
 # Local helper for authenticating with auth basic
 from sodar.users.auth import fallback_to_auth_basic
 
-from .utils import get_library_file_path
+from samplesheets.studyapps.cancer.utils import get_library_file_path
 
 
 class BaseCancerConfigView(
@@ -46,7 +46,6 @@ class BaseCancerConfigView(
         """Override get() to set up stuff and return with failure if something
         is missing"""
         irods_backend = get_backend_api('omics_irods', conn=False)
-
         self.redirect_url = get_sheets_url(self.get_project())
 
         try:
@@ -54,7 +53,6 @@ class BaseCancerConfigView(
                 sodar_uuid=self.kwargs['genericmaterial']
             )
             self.redirect_url = get_sheets_url(self.material.study)
-
         except GenericMaterial.DoesNotExist:
             messages.error(request, 'Material not found')
             return redirect(self.redirect_url)
@@ -62,7 +60,6 @@ class BaseCancerConfigView(
         if not irods_backend:
             messages.error(self.request, 'iRODS Backend not available')
             return redirect(self.redirect_url)
-
         if not settings.IRODS_WEBDAV_ENABLED or not settings.IRODS_WEBDAV_URL:
             messages.error(self.request, 'iRODS WebDAV not available')
             return redirect(self.redirect_url)
@@ -83,7 +80,6 @@ class IGVSessionFileRenderView(BaseCancerConfigView):
         ###################
 
         samples = self.material.get_samples()
-
         if not samples:
             messages.error(
                 request,
@@ -95,10 +91,8 @@ class IGVSessionFileRenderView(BaseCancerConfigView):
         # Build render table
         tb = SampleSheetTableBuilder()
         study_tables = tb.build_study_tables(self.material.study)
-
         # Get libraries
         libraries = get_sample_libraries(samples, study_tables)
-
         bam_urls = {}
         vcf_urls = {}
         webdav_url = settings.IRODS_WEBDAV_URL
@@ -112,14 +106,10 @@ class IGVSessionFileRenderView(BaseCancerConfigView):
                     'are correctly formed',
                 )
                 return redirect(self.redirect_url)
-
             bam_path = get_library_file_path(file_type='bam', library=library)
-
             if bam_path:
                 bam_urls[library.name] = webdav_url + bam_path
-
             vcf_path = get_library_file_path(file_type='vcf', library=library)
-
             if vcf_path:
                 vcf_urls[library.name] = webdav_url + vcf_path
 
@@ -140,7 +130,6 @@ class IGVSessionFileRenderView(BaseCancerConfigView):
         ###########
 
         file_name = self.material.name + '.case.igv.xml'
-
         # Set up response
         response = HttpResponse(xml_str, content_type='text/xml')
         response['Content-Disposition'] = 'attachment; filename="{}"'.format(

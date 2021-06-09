@@ -1,15 +1,18 @@
 from datetime import timedelta
 import io
-from unittest import mock, skipIf
 
 from django.conf import settings
 from django.core.management import call_command
 from django.utils.timezone import localtime
+
+from test_plus.test import TestCase
+from unittest import mock, skipIf
+
+# Projectroles dependency
 from projectroles.constants import SODAR_CONSTANTS
 from projectroles.models import Role
 from projectroles.plugins import get_backend_api
 from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
-from test_plus.test import TestCase
 
 from landingzones.management.commands.inactivezones import (
     get_inactive_zones,
@@ -21,21 +24,15 @@ from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 
 PROJECT_ROLE_OWNER = SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
-
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
-
 ZONE1_TITLE = '20180503_172456_test_zone'
 ZONE1_DESC = 'description'
-
 ZONE2_TITLE = '20201123_143323_test_zone'
 ZONE2_DESC = 'description'
-
 ZONE3_TITLE = '20201218_172740_test_zone_moved'
 ZONE3_DESC = 'description'
-
 ZONE4_TITLE = '20201218_172743_test_zone_deleted'
 ZONE4_DESC = 'description'
-
 IRODS_BACKEND_ENABLED = (
     True if 'omics_irods' in settings.ENABLED_BACKEND_PLUGINS else False
 )
@@ -50,7 +47,7 @@ class TestInactiveZones(
     LandingZoneMixin,
     TestCase,
 ):
-    """Test functions from inactivezones command."""
+    """Test functions for the inactivezones command"""
 
     def setUp(self):
         super().setUp()
@@ -155,10 +152,12 @@ class TestInactiveZones(
         )
 
     def test_get_inactive_zones(self):
+        """Test get_inactive_zones()"""
         zones = get_inactive_zones()
         self.assertEqual(zones.count(), 1)
 
     def test_get_output(self):
+        """Test get_output()"""
         zones = get_inactive_zones()
         self.assertListEqual(
             get_output(zones, self.irods_backend),
@@ -173,6 +172,7 @@ class TestInactiveZones(
         )
 
     def test_command_inactivezones(self):
+        """Test command"""
         out = io.StringIO()
         call_command('inactivezones', stdout=out)
         expected = '{};{};{};{};0;0 bytes\n'.format(

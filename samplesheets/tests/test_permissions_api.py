@@ -3,6 +3,7 @@
 from django.test import override_settings
 from django.urls import reverse
 
+# Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
 from projectroles.tests.test_models import RemoteSiteMixin, RemoteProjectMixin
 from projectroles.tests.test_permissions import TestProjectPermissionBase

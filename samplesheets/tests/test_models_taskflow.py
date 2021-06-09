@@ -1,14 +1,12 @@
 """Tests for models in the samplesheets app"""
 
-# NOTE: Retraction and sharing data not yet tested, to be implemented
-# TODO: Test validation rules and uniqueness constraints
 import os
-from unittest import skipIf
 
 from django.conf import settings
+from django.forms.models import model_to_dict
 from django.utils.timezone import localtime
 
-from django.forms.models import model_to_dict
+from unittest import skipIf
 
 # Projectroles dependency
 from projectroles.constants import SODAR_CONSTANTS
@@ -20,22 +18,9 @@ from samplesheets.models import (
     IrodsDataRequest,
 )
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
-
 from samplesheets.tests.test_views_taskflow import (
     SampleSheetTaskflowMixin,
 )
-
-# Local constants --------------------------------------------------------------
-
-
-BACKENDS_ENABLED = all(
-    _ in settings.ENABLED_BACKEND_PLUGINS for _ in ['omics_irods', 'taskflow']
-)
-BACKEND_SKIP_MSG = (
-    'Required backends (taskflow, omics_irods) ' 'not enabled in settings'
-)
-
-SHEET_PATH = SHEET_DIR + 'i_small.zip'
 
 
 # SODAR constants
@@ -51,6 +36,14 @@ SUBMIT_STATUS_PENDING_TASKFLOW = SODAR_CONSTANTS[
     'SUBMIT_STATUS_PENDING_TASKFLOW'
 ]
 
+# Local constants
+BACKENDS_ENABLED = all(
+    _ in settings.ENABLED_BACKEND_PLUGINS for _ in ['omics_irods', 'taskflow']
+)
+BACKEND_SKIP_MSG = (
+    'Required backends (taskflow, omics_irods) ' 'not enabled in settings'
+)
+SHEET_PATH = SHEET_DIR + 'i_small.zip'
 TEST_FILE_NAME = 'test1'
 TEST_COLL_NAME = 'coll1'
 
@@ -87,7 +80,6 @@ class TestIrodsDataRequestBase(
         self._make_irods_colls(self.investigation)
 
         self.assay_path = self.irods_backend.get_path(self.assay)
-
         self.path = os.path.join(self.assay_path, TEST_FILE_NAME)
         self.path_coll = os.path.join(self.assay_path, TEST_COLL_NAME)
         self.path_md5 = os.path.join(self.assay_path, f'{TEST_FILE_NAME}.md5')

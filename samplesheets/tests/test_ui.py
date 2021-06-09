@@ -1,15 +1,16 @@
 """UI tests for the samplesheets app"""
-import json
-from unittest import skipIf
 
-from selenium.common.exceptions import NoSuchElementException
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as ec
+import json
 
 from django.conf import settings
 from django.urls import reverse
 from django.utils.http import urlencode
+
+from unittest import skipIf
+from selenium.common.exceptions import NoSuchElementException
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as ec
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
@@ -34,24 +35,21 @@ from samplesheets.tests.test_views import (
 from samplesheets.views_ajax import ALERT_ACTIVE_REQS
 
 
+# App settings API
+app_settings = AppSettingAPI()
+
+
 # Local constants
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
 DEFAULT_WAIT_ID = 'sodar-ss-vue-content'
-
 with open(CONFIG_PATH_DEFAULT) as fp:
     CONFIG_DATA_DEFAULT = json.load(fp)
-
 with open(CONFIG_PATH_UPDATED) as fp:
     CONFIG_DATA_UPDATED = json.load(fp)
-
 IRODS_BACKEND_ENABLED = (
     True if 'omics_irods' in settings.ENABLED_BACKEND_PLUGINS else False
 )
 IRODS_BACKEND_SKIP_MSG = 'Irodsbackend not enabled in settings'
-
-
-# App settings API
-app_settings = AppSettingAPI()
 
 
 class TestProjectSheetsVueAppBase(
@@ -66,7 +64,6 @@ class TestProjectSheetsVueAppBase(
         self.investigation = self._import_isa_from_file(
             SHEET_PATH, self.project
         )
-
         if config_data:
             # Set up UUIDs and default config
             self._update_uuids(self.investigation, config_data)
@@ -76,7 +73,6 @@ class TestProjectSheetsVueAppBase(
                 config_data,
                 project=self.project,
             )
-
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
 
@@ -103,13 +99,11 @@ class TestProjectSheetsVueAppBase(
         #     return
         if elem.tag_name == 'button':
             return elem.is_enabled()
-
         elif elem.tag_name == 'a':
             return False if 'disabled' in elem.get_attribute('class') else True
 
     def _start_editing(self, wait_for_study=True):
         """Enable edit mode in the UI"""
-
         op_div = self.selenium.find_element_by_id('sodar-ss-op-dropdown')
         op_div.click()
         WebDriverWait(self.selenium, self.wait_time).until(
@@ -118,13 +112,11 @@ class TestProjectSheetsVueAppBase(
         elem = op_div.find_element_by_id('sodar-ss-op-item-edit')
         # NOTE: Must use execute_script() due to bootstrap-vue wrapping
         self.selenium.execute_script("arguments[0].click();", elem)
-
         WebDriverWait(self.selenium, self.wait_time).until(
             ec.presence_of_element_located(
                 (By.ID, 'sodar-ss-vue-btn-edit-finish')
             )
         )
-
         if wait_for_study:
             WebDriverWait(self.selenium, self.wait_time).until(
                 ec.presence_of_element_located((By.ID, 'sodar-ss-grid-study'))
@@ -136,7 +128,6 @@ class TestProjectSheetsVueAppBase(
         WebDriverWait(self.selenium, self.wait_time).until(
             ec.presence_of_element_located((By.ID, 'sodar-ss-op-dropdown'))
         )
-
         if wait_for_study:
             WebDriverWait(self.selenium, self.wait_time).until(
                 ec.presence_of_element_located((By.ID, 'sodar-ss-grid-study'))
@@ -209,7 +200,6 @@ class TestProjectSheetsView(TestProjectSheetsVueAppBase):
     def test_render_no_sheet(self):
         """Test rendering the view with no sheet"""
         self.investigation.delete()
-
         users = [
             self.superuser,
             self.owner_as.user,
@@ -244,7 +234,6 @@ class TestProjectSheetsView(TestProjectSheetsVueAppBase):
             path=irods_backend.get_path(self.assay) + '/test/xxx.bam',
             user=self.contributor_as.user,
         )
-
         users = [
             self.superuser,
             self.owner_as.user,

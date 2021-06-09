@@ -73,19 +73,15 @@ class TaskflowZoneCreateAPIView(BaseTaskflowAPIView):
                 sodar_uuid=request.data['project_uuid']
             )
             assay = Assay.objects.get(sodar_uuid=request.data['assay_uuid'])
-
         except (User.DoesNotExist, Project.DoesNotExist, Assay.DoesNotExist):
             return Response('Not found', status=404)
-
-        zone = LandingZone(
+        zone = LandingZone.objects.create(
             assay=assay,
             title=request.data['title'],
             project=project,
             user=user,
             description=request.data['description'],
         )
-        zone.save()
-
         return Response({'zone_uuid': zone.sodar_uuid}, status=200)
 
 
@@ -93,7 +89,6 @@ class TaskflowZoneStatusSetAPIView(BaseTaskflowAPIView):
     def post(self, request):
         try:
             zone = LandingZone.objects.get(sodar_uuid=request.data['zone_uuid'])
-
         except LandingZone.DoesNotExist:
             return Response('LandingZone not found', status=404)
 
@@ -104,7 +99,6 @@ class TaskflowZoneStatusSetAPIView(BaseTaskflowAPIView):
                 if request.data['status_info']
                 else None,
             )
-
         except TypeError:
             return Response('Invalid status type', status=400)
 
@@ -116,13 +110,11 @@ class TaskflowZoneStatusSetAPIView(BaseTaskflowAPIView):
             subject_body = 'Landing zone {}: {} / {}'.format(
                 zone.status.lower(), zone.project.title, zone.title
             )
-
             message_body = (
                 EMAIL_MESSAGE_MOVED
                 if zone.status == 'MOVED'
                 else EMAIL_MESSAGE_FAILED
             )
-
             if zone.status == 'MOVED':
                 email_url = (
                     server_host
@@ -133,7 +125,6 @@ class TaskflowZoneStatusSetAPIView(BaseTaskflowAPIView):
                     + '#/assay/'
                     + str(zone.assay.sodar_uuid)
                 )
-
             else:  # FAILED
                 email_url = (
                     server_host
@@ -144,7 +135,6 @@ class TaskflowZoneStatusSetAPIView(BaseTaskflowAPIView):
                     + '#'
                     + str(zone.sodar_uuid)
                 )
-
             message_body = message_body.format(
                 zone=zone.title,
                 project=zone.project.title,
@@ -155,7 +145,6 @@ class TaskflowZoneStatusSetAPIView(BaseTaskflowAPIView):
                 status_info=zone.status_info,
                 url=email_url,
             )
-
             send_generic_mail(subject_body, message_body, [zone.user], request)
 
         # If zone is deleted, call plugin function
@@ -163,11 +152,9 @@ class TaskflowZoneStatusSetAPIView(BaseTaskflowAPIView):
             from .plugins import get_zone_config_plugin  # See issue #269
 
             config_plugin = get_zone_config_plugin(zone)
-
             if config_plugin:
                 try:
                     config_plugin.cleanup_zone(zone)
-
                 except Exception as ex:
                     logger.error(
                         'Unable to cleanup zone "{}" with plugin '

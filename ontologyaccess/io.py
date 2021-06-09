@@ -69,17 +69,13 @@ class OBOFormatOntologyIO:
         :return: File pointer
         """
         logger.info('Converting OWL format ontology to OBO..')
-
         if not verbose:
             sys.stdout = io.StringIO()
             sys.stderr = io.StringIO()
-
         o = pronto.Ontology(owl)
-
         if not verbose:
             sys.stdout = sys.__stdout__
             sys.stderr = sys.__stderr__
-
         logger.info('Parsed OWL ontology with {} terms'.format(len(o.terms())))
         f = io.BytesIO()
         o.dump(f, format='obo')
@@ -115,7 +111,6 @@ class OBOFormatOntologyIO:
         for h in obo_doc.header:
             if type(h) in OBO_BASIC_HEADER_MAP:
                 o_kwargs[OBO_BASIC_HEADER_MAP[type(h)]] = h.raw_value()
-
             elif (
                 isinstance(h, fh.PropertyValueClause)
                 and str(h.property_value.relation) in OBO_PROPERTY_MAP
@@ -156,13 +151,11 @@ class OBOFormatOntologyIO:
         for term in obo_doc:
             if not isinstance(term, TermFrame):
                 continue  # Skip typedefs
-
             if str(term.id) in db_term_ids:
                 logger.warning(
                     'Skipping term already in database: {}'.format(term.id)
                 )
                 continue
-
             if ':' not in str(term.id):
                 logger.warning(
                     'Skipping term without id space: {}'.format(term.id)
@@ -296,9 +289,7 @@ class OBOFormatOntologyIO:
             # Skip disease terms
             if ts[-1].startswith(MTHU_PREFIX):
                 continue
-
             term_id = ts[-2] + ':' + ts[-1]
-
             if term_id in db_term_ids:
                 logger.warning(
                     'Skipping term already in database: {}'.format(term_id)
@@ -309,7 +300,6 @@ class OBOFormatOntologyIO:
                     'Skipping subject already inserted: {}'.format(term_id)
                 )
                 continue
-
             t_kwargs = {'ontology': obo_obj, 'term_id': term_id, 'name': row[1]}
             term_vals.append(t_kwargs)
             current_ids.append(term_id)

@@ -30,9 +30,12 @@ from samplesheets.tests.test_views import (
 from samplesheets.views import SampleSheetImportMixin
 
 
+app_settings = AppSettingAPI()
+conf_api = SheetConfigAPI()
+
+
 # SODAR constants
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
-
 
 # Local constants
 APP_NAME = 'samplesheets'
@@ -42,10 +45,6 @@ SHEET_PATH_EDITED = SHEET_DIR + 'i_small2_edited.zip'
 SHEET_PATH_ALT = SHEET_DIR + 'i_small2_alt.zip'
 SHEET_PATH_NO_PLUGIN_ASSAY = SHEET_DIR_SPECIAL + 'i_small_assay_no_plugin.zip'
 IRODS_FILE_MD5 = '0b26e313ed4a7ca6904b0e9369e5b957'
-
-
-app_settings = AppSettingAPI()
-conf_api = SheetConfigAPI()
 
 
 class TestSampleSheetAPIBase(SampleSheetIOMixin, TestAPIViewsBase):
@@ -71,10 +70,9 @@ class TestInvestigationRetrieveAPIView(TestSampleSheetAPIBase):
             'samplesheets:api_investigation_retrieve',
             kwargs={'project': self.project.sodar_uuid},
         )
-
         response = self.request_knox(url)
-
         self.assertEqual(response.status_code, 200)
+
         expected = {
             'sodar_uuid': str(self.investigation.sodar_uuid),
             'identifier': self.investigation.identifier,
@@ -122,7 +120,6 @@ class TestSampleSheetImportAPIView(
 
     def test_post_zip(self):
         """Test SampleSheetImportAPIView post() with a zip archive"""
-
         # Assert preconditions
         self.assertEqual(
             Investigation.objects.filter(project=self.project).count(), 0
@@ -148,7 +145,6 @@ class TestSampleSheetImportAPIView(
 
     def test_post_tsv(self):
         """Test SampleSheetImportAPIView post() with ISA-Tab tsv files"""
-
         # Assert preconditions
         self.assertEqual(
             Investigation.objects.filter(project=self.project).count(), 0
@@ -167,11 +163,9 @@ class TestSampleSheetImportAPIView(
             'file_study': tsv_file_s,
             'file_assay': tsv_file_a,
         }
-
         response = self.request_knox(
             url, method='POST', format='multipart', data=post_data
         )
-
         tsv_file_i.close()
         tsv_file_s.close()
         tsv_file_a.close()
@@ -184,7 +178,6 @@ class TestSampleSheetImportAPIView(
 
     def test_post_replace(self):
         """Test replacing sheets"""
-
         self.investigation = self._import_isa_from_file(
             SHEET_PATH, self.project
         )
@@ -206,7 +199,6 @@ class TestSampleSheetImportAPIView(
             'samplesheets:api_import',
             kwargs={'project': self.project.sodar_uuid},
         )
-
         with open(SHEET_PATH_EDITED, 'rb') as file:
             post_data = {'file': file}
             response = self.request_knox(
@@ -225,7 +217,6 @@ class TestSampleSheetImportAPIView(
 
     def test_post_replace_display_config_keep(self):
         """Test replacing sheets and ensure user display configs are kept"""
-
         self.investigation = self._import_isa_from_file(
             SHEET_PATH, self.project
         )
@@ -265,7 +256,6 @@ class TestSampleSheetImportAPIView(
             'samplesheets:api_import',
             kwargs={'project': self.project.sodar_uuid},
         )
-
         with open(SHEET_PATH_EDITED, 'rb') as file:
             post_data = {'file': file}
             response = self.request_knox(
@@ -285,7 +275,6 @@ class TestSampleSheetImportAPIView(
 
     def test_post_replace_display_config_delete(self):
         """Test replacing sheets and ensure user display configs are deleted"""
-
         self.investigation = self._import_isa_from_file(
             SHEET_PATH, self.project
         )
@@ -325,7 +314,6 @@ class TestSampleSheetImportAPIView(
             'samplesheets:api_import',
             kwargs={'project': self.project.sodar_uuid},
         )
-
         with open(SHEET_PATH_ALT, 'rb') as file:
             post_data = {'file': file}
             response = self.request_knox(
@@ -345,7 +333,6 @@ class TestSampleSheetImportAPIView(
 
     def test_post_replace_alt_sheet(self):
         """Test replacing with an alternative sheet and irods_status=False"""
-
         self.investigation = self._import_isa_from_file(
             SHEET_PATH, self.project
         )
@@ -380,7 +367,6 @@ class TestSampleSheetImportAPIView(
 
     def test_post_replace_alt_sheet_irods(self):
         """Test replacing with an alternative sheet and irods_status=True (should fail)"""
-
         self.investigation = self._import_isa_from_file(
             SHEET_PATH, self.project
         )
@@ -411,7 +397,6 @@ class TestSampleSheetImportAPIView(
 
     def test_post_no_plugin_assay(self):
         """Test post() with an assay without plugin"""
-
         # Assert preconditions
         self.assertEqual(
             Investigation.objects.filter(project=self.project).count(), 0
@@ -421,7 +406,6 @@ class TestSampleSheetImportAPIView(
             'samplesheets:api_import',
             kwargs={'project': self.project.sodar_uuid},
         )
-
         with open(SHEET_PATH_NO_PLUGIN_ASSAY, 'rb') as file:
             post_data = {'file': file}
             response = self.request_knox(
@@ -443,12 +427,10 @@ class TestSampleSheetISAExportAPIView(TestSampleSheetAPIBase):
 
     def test_get_zip(self):
         """Test zip export  in SampleSheetISAExportAPIView"""
-
         # Import investigation
         self.investigation = self._import_isa_from_file(
             SHEET_PATH, self.project
         )
-
         url = reverse(
             'samplesheets:api_export_zip',
             kwargs={'project': self.project.sodar_uuid},
@@ -459,7 +441,6 @@ class TestSampleSheetISAExportAPIView(TestSampleSheetAPIBase):
 
     def test_get_no_investigation(self):
         """Test get() with no imported investigation"""
-
         url = reverse(
             'samplesheets:api_export_zip',
             kwargs={'project': self.project.sodar_uuid},
@@ -469,12 +450,10 @@ class TestSampleSheetISAExportAPIView(TestSampleSheetAPIBase):
 
     def test_get_json(self):
         """Test json export  in SampleSheetISAExportAPIView"""
-
         # Import investigation
         self.investigation = self._import_isa_from_file(
             SHEET_PATH, self.project
         )
-
         url = reverse(
             'samplesheets:api_export_json',
             kwargs={'project': self.project.sodar_uuid},
@@ -540,14 +519,12 @@ class TestRemoteSheetGetAPIView(
                 },
             )
         )
-
         tb = SampleSheetTableBuilder()
         expected = {
             'studies': {
                 str(self.study.sodar_uuid): tb.build_study_tables(self.study)
             }
         }
-
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data, expected)
 
@@ -563,9 +540,7 @@ class TestRemoteSheetGetAPIView(
             ),
             {'isa': '1'},
         )
-
         sheet_io = SampleSheetIO()
         expected = sheet_io.export_isa(self.investigation)
-
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data, expected)

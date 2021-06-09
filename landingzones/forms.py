@@ -120,7 +120,6 @@ class LandingZoneForm(forms.ModelForm):
         if self.instance.pk:
             obj.user = self.instance.user
             obj.project = self.instance.project
-
         # Creation
         else:
             obj.user = self.current_user

@@ -1,27 +1,26 @@
+"""Celery tasks for the samplesheets app"""
+
 import logging
 
 from django.conf import settings
 from django.contrib import auth
-from projectroles.constants import SODAR_CONSTANTS
 
 from config.celery import app
 
 # Projectroles dependency
+from projectroles.app_settings import AppSettingAPI
+from projectroles.constants import SODAR_CONSTANTS
 from projectroles.models import Project
 from projectroles.plugins import get_backend_api, get_app_plugin
-from projectroles.app_settings import AppSettingAPI
 
 
-APP_NAME = 'samplesheets'
-
+app_settings = AppSettingAPI()
 logger = logging.getLogger(__name__)
 User = auth.get_user_model()
 
 
-app_settings = AppSettingAPI()
-
-
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
+APP_NAME = 'samplesheets'
 
 
 @app.task(bind=True)
@@ -29,20 +28,16 @@ def update_project_cache_task(_self, project_uuid, user_uuid):
     """Update project cache asynchronously"""
     try:
         project = Project.objects.get(sodar_uuid=project_uuid)
-
     except Project.DoesNotExist:
         logger.error('Project not found (uuid={})'.format(project_uuid))
         return
-
     try:
         user = User.objects.get(sodar_uuid=user_uuid)
-
     except User.DoesNotExist:
         logger.error('User not found (uuid={})'.format(user_uuid))
 
     timeline = get_backend_api('timeline_backend')
     tl_event = None
-
     if timeline:
         tl_event = timeline.add_event(
             project=project,
@@ -61,10 +56,8 @@ def update_project_cache_task(_self, project_uuid, user_uuid):
     )
     app_plugin = get_app_plugin(APP_NAME)
     app_plugin.update_cache(project=project, user=user)
-
     if tl_event:
         tl_event.set_status(status_type='OK', status_desc='Update OK')
-
     logger.info(
         'Cache update OK for project "{}" ({})'.format(
             project.title, project.sodar_uuid
@@ -75,10 +68,8 @@ def update_project_cache_task(_self, project_uuid, user_uuid):
 @app.task(bind=True)
 def sheet_sync_task(_self, username):
     """Task for synchronizing sample sheets from a source project"""
-
     try:
         user = User.objects.get(username=username)
-
     except User.DoesNotExist:
         logger.error(f'User not found (username={username})')
         return False
@@ -92,6 +83,8 @@ def sheet_sync_task(_self, username):
         sheet_sync_enable = app_settings.get_app_setting(
             APP_NAME, 'sheet_sync_enable', project=project
         )
+        if not sheet_sync_enable:
+            continue
         sheet_sync_url = app_settings.get_app_setting(
             APP_NAME, 'sheet_sync_url', project=project
         )
@@ -99,13 +92,9 @@ def sheet_sync_task(_self, username):
             APP_NAME, 'sheet_sync_token', project=project
         )
 
-        if not sheet_sync_enable:
-            continue
-
         from samplesheets.views import SheetSync
 
         sync = SheetSync()
-
         try:
             ret = sync.run(project, sheet_sync_url, sheet_sync_token, user)
             if ret:

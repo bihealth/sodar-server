@@ -1,3 +1,5 @@
+"""BIH cancer config study app plugin for samplesheets"""
+
 from django.conf import settings
 from django.contrib import auth
 from django.urls import reverse
@@ -17,7 +19,10 @@ from samplesheets.utils import (
 
 from samplesheets.studyapps.utils import get_igv_session_url, get_igv_irods_url
 
-from .utils import get_library_file_path
+from samplesheets.studyapps.cancer.utils import get_library_file_path
+
+
+User = auth.get_user_model()
 
 
 # SODAR constants
@@ -25,8 +30,6 @@ PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 
 # Local constants
 APP_NAME = 'samplesheets.studyapps.cancer'
-
-User = auth.get_user_model()
 
 
 class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
@@ -57,7 +60,6 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
         for assay in study.assays.all():
             if get_isa_field_name(assay.technology_type) != 'mass spectrometry':
                 return False
-
         return True
 
     def get_shortcut_column(self, study, study_tables):
@@ -72,10 +74,9 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
         if self._ms_assays(study):
             return None
 
+        # Get iRODS URLs from cache if it's available
         cache_backend = get_backend_api('sodar_cache')
         cache_item = None
-
-        # Get iRODS URLs from cache if it's available
         if cache_backend:
             cache_item = cache_backend.get_cache_item(
                 app_name=APP_NAME,
@@ -101,10 +102,8 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
         }
 
         igv_urls = {}
-
         for source in study.get_sources():
             igv_urls[source.name] = get_igv_session_url(source, APP_NAME)
-
         if not igv_urls:
             return ret
 
@@ -120,17 +119,14 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                     ]
                 )
             )
-
             if len(vals) == 0 or (len(vals) == 1 and not vals[0]):
                 return False
-
             return True
 
         for row in study_tables['study']['table_data']:
             source_id = row[0]['value']
             source_prefix = source_id + '-'
             enabled = True
-
             # Set initial state based on cache
             if (
                 cache_item
@@ -138,7 +134,6 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                 and not _source_files_exist(cache_item, source_prefix, 'vcf')
             ):
                 enabled = False
-
             ret['data'].append(
                 {
                     'igv': {'url': igv_urls[source_id], 'enabled': enabled},
@@ -217,10 +212,8 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
             return ret
 
         libraries = []
-
         for sample in source.get_samples():
             libraries += get_sample_libraries(sample, study_tables)
-
         for library in libraries:
             _add_lib_path(library, 'bam')
             _add_lib_path(library, 'vcf')
@@ -271,14 +264,11 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
         # Omit for mass spectrometry studies (workaround for issue #482)
         if name and name.split('/')[0] != 'irods':
             return
-
         cache_backend = get_backend_api('sodar_cache')
-
         if not cache_backend:
             return
 
         tb = SampleSheetTableBuilder()
-
         projects = (
             [project]
             if project
@@ -290,7 +280,6 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                 investigation = Investigation.objects.get(
                     project=project, active=True
                 )
-
             except Investigation.DoesNotExist:
                 continue
 
@@ -302,7 +291,6 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
             if name:
                 study_uuid = name.split('/')[-1]
                 studies = Study.objects.filter(sodar_uuid=study_uuid)
-
             else:
                 studies = Study.objects.filter(investigation=investigation)
 
@@ -320,7 +308,6 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                 for library in get_study_libraries(study, study_tables):
                     if not library.assay:
                         continue
-
                     bam_path = get_library_file_path(
                         file_type='bam', library=library
                     )

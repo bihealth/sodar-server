@@ -15,7 +15,6 @@ class LandingZoneStatusRetrieveAjaxView(SODARBaseProjectAjaxView):
         zone = LandingZone.objects.filter(
             sodar_uuid=self.kwargs['landingzone']
         ).first()
-
         return (
             'landingzones.view_zones_own'
             if zone.user == self.request.user

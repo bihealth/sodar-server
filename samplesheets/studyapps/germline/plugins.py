@@ -1,3 +1,5 @@
+"""BIH germline config study app plugin for samplesheets"""
+
 from django.conf import settings
 from django.contrib import auth
 from django.urls import reverse

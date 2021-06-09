@@ -1,4 +1,5 @@
 """Sample sheet edit and display configuration management"""
+
 import logging
 from packaging import version
 
@@ -48,7 +49,6 @@ class SheetConfigAPI:
             if not p_name and row[idx]['value']:
                 p_name = row[idx]['value']
                 p_found = True
-
             elif p_name and row[idx]['value'] != p_name:
                 p_found = False
                 break
@@ -58,7 +58,6 @@ class SheetConfigAPI:
                 study__investigation=investigation,
                 name=p_name,
             ).first()
-
         if protocol:
             return str(protocol.sodar_uuid)
 
@@ -102,11 +101,9 @@ class SheetConfigAPI:
             try:
                 self.validate_sheet_config(sheet_config)
                 sheet_ok = True
-
             except ValueError as ex:
                 # TODO: Implement updating invalid configs if possible?
                 msg = 'Invalid config, rebuilding.. Exception: "{}"'.format(ex)
-
         else:
             msg = 'No sheet configuration found, building..'
 
@@ -150,51 +147,41 @@ class SheetConfigAPI:
 
             if not assay_uuid:
                 table = study_tables['study']
-
             else:
                 table = study_tables['assays'][assay_uuid]
 
             for th in table['top_header']:
                 if not assay_uuid or sample_found:
                     node = {'header': th['value'], 'fields': []}
-
                     for i in range(ti, ti + th['colspan']):
                         h = table['field_header'][i]
                         f = {'name': h['name']}
-
                         if h['type']:
                             f['type'] = h['type']
-
                         # Set up default protocol if only one option in data
                         if h['type'] == 'protocol':
                             f['format'] = 'protocol'
                             f['default'] = cls._get_default_protocol(
                                 investigation, table, i
                             )
-
                         # Set up ontology config
                         elif h['col_type'] == 'ONTOLOGY':
                             f['format'] = 'ontology'
-
                             # Special cases
                             if h['name'].lower() in ONTOLOGY_COLS:
                                 f.update(ONTOLOGY_COLS[h['name'].lower()])
                             else:
                                 f['allow_list'] = False
                                 f['ontologies'] = []
-
                         # Set up external links
                         elif h['col_type'] == 'EXTERNAL_LINKS':
                             f['format'] = 'external_links'
-
                         node['fields'].append(f)
-
                     nodes.append(node)
 
                 # Leave out study columns for assays
                 if assay_uuid and th['value'] == 'Sample':
                     sample_found = True
-
                 ti += th['colspan']
 
             return nodes
@@ -211,7 +198,6 @@ class SheetConfigAPI:
                 'nodes': _build_nodes(study_tables, None),
                 'assays': {},
             }
-
             # Add study assays
             for assay in study.assays.all().order_by('pk'):
                 assay_uuid = str(assay.sodar_uuid)
@@ -219,7 +205,6 @@ class SheetConfigAPI:
                     'display_name': assay.get_display_name(),
                     'nodes': _build_nodes(study_tables, assay_uuid),
                 }
-
             ret['studies'][str(study.sodar_uuid)] = study_data
 
         return ret
@@ -234,13 +219,10 @@ class SheetConfigAPI:
         """
         if not config:
             raise ValueError('No configuration provided')
-
         if not config.get('version'):
             raise ValueError('Unknown configuration version')
-
         cfg_version = version.parse(config['version'])
         min_version = version.parse(settings.SHEETS_CONFIG_VERSION)
-
         if cfg_version < min_version:
             raise ValueError(
                 'Version "{}" is below minimum version "{}"'.format(
@@ -258,7 +240,6 @@ class SheetConfigAPI:
         """
         logger.info('Updating restored sheet config..')
         tb = SampleSheetTableBuilder()
-
         for study in investigation.studies.all():
             study_tables = tb.build_study_tables(
                 study, edit=True, use_config=False
@@ -269,7 +250,6 @@ class SheetConfigAPI:
                 study_tables['study'],
                 sheet_config['studies'][s_uuid],
             )
-
             for assay in study.assays.all():
                 a_uuid = str(assay.sodar_uuid)
                 sheet_config['studies'][s_uuid]['assays'][
@@ -280,7 +260,6 @@ class SheetConfigAPI:
                     sheet_config['studies'][s_uuid]['assays'][a_uuid],
                     start_idx=len(study_tables['study']['field_header']),
                 )
-
         app_settings.set_app_setting(
             APP_NAME,
             'sheet_config',
@@ -304,10 +283,8 @@ class SheetConfigAPI:
         def _build_node(config_node, table, idx, assay_mode=False):
             display_node = {'header': config_node['header'], 'fields': []}
             n_idx = 0
-
             for config_field in config_node['fields']:
                 display_field = {'name': config_field['name'], 'visible': False}
-
                 if n_idx == 0 or (
                     not assay_mode
                     and (
@@ -316,11 +293,9 @@ class SheetConfigAPI:
                     )
                 ):
                     display_field['visible'] = True
-
                 display_node['fields'].append(display_field)
                 idx += 1
                 n_idx += 1
-
             return display_node, idx
 
         # Add studies

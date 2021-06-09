@@ -40,6 +40,10 @@ from samplesheets.rendering import SampleSheetTableBuilder
 from samplesheets.utils import get_alt_names
 
 
+app_settings = AppSettingAPI()
+logger = logging.getLogger(__name__)
+
+
 # Local constants
 APP_NAME = 'samplesheets'
 ARCHIVE_TYPES = ['application/zip', 'application/x-zip-compressed']
@@ -75,10 +79,6 @@ MATERIAL_TYPE_EXPORT_MAP = {'SOURCE': 'Source Name', 'SAMPLE': 'Sample Name'}
 
 SAMPLE_SEARCH_SUBSTR = '-sample-'
 PROTOCOL_UNKNOWN_NAME = 'Unknown'
-
-
-app_settings = AppSettingAPI()
-logger = logging.getLogger(__name__)
 
 
 class SampleSheetIO:
@@ -120,13 +120,11 @@ class SampleSheetIO:
 
         if self._warnings['all_ok']:
             self._init_warnings()
-
         self._warnings['all_ok'] = False
 
         for warning in warnings:
             if warning.category == CriticalIsaValidationWarning:
                 self._warnings['critical_count'] += 1
-
             warn_data = {
                 'message': str(warning.message),
                 'category': warning.category.__name__,
@@ -135,17 +133,13 @@ class SampleSheetIO:
 
             if isinstance(db_obj, Investigation):
                 self._warnings['investigation'].append(warn_data)
-
             elif isinstance(db_obj, Study):
                 if file_name not in self._warnings['studies']:
                     self._warnings['studies'][file_name] = []
-
                 self._warnings['studies'][file_name].append(warn_data)
-
             elif isinstance(db_obj, Assay):
                 if file_name not in self._warnings['assays']:
                     self._warnings['assays'][file_name] = []
-
                 self._warnings['assays'][file_name].append(warn_data)
 
             logger.warning(
@@ -160,7 +154,7 @@ class SampleSheetIO:
     @classmethod
     def get_inv_paths(cls, zip_file):
         """
-        Return investigation file paths from a zip file
+        Return investigation file paths from a zip file.
 
         :param zip_file: ZipFile
         :return: List
@@ -168,11 +162,9 @@ class SampleSheetIO:
         """
         # NOTE: There should not be multiple inv.:s in one file, but must check
         ret = []
-
         for f in zip_file.infolist():
             if fnmatch(f.filename.split('/')[-1], 'i_*.txt'):
                 ret.append(f.filename)
-
         return ret
 
     @classmethod
@@ -185,26 +177,19 @@ class SampleSheetIO:
         :return: ZipFile
         :raise: OSError if the file is not a valid zip file
         """
-
         # Ensure file type
         if file.content_type not in ARCHIVE_TYPES:
             raise OSError('The file is not a zip archive')
-
         try:
             zip_file = ZipFile(file)
-
         except Exception as ex:
             raise OSError('Unable to open zip archive: {}'.format(ex))
-
         # Get investigation file path(s)
         inv_paths = cls.get_inv_paths(zip_file)
-
         if len(inv_paths) == 0:
             raise OSError('Investigation file not found in archive')
-
         elif len(inv_paths) > 1:
             raise OSError('Multiple investigation files found in archive')
-
         return zip_file
 
     @classmethod
@@ -224,7 +209,6 @@ class SampleSheetIO:
 
         for isa_path in [n for n in zip_file.namelist() if not n.endswith('/')]:
             isa_name = isa_path.split('/')[-1]
-
             if isa_name.startswith('i_'):
                 ret['investigation'] = {
                     'path': isa_path,
@@ -232,14 +216,12 @@ class SampleSheetIO:
                     .read()
                     .decode('utf-8'),
                 }
-
             elif isa_name.startswith('s_'):
                 ret['studies'][isa_name] = {
                     'tsv': zip_file.open(str(isa_path), 'r')
                     .read()
                     .decode('utf-8')
                 }
-
             elif isa_name.startswith('a_'):
                 ret['assays'][isa_name] = {
                     'tsv': zip_file.open(str(isa_path), 'r')
@@ -267,16 +249,13 @@ class SampleSheetIO:
                         file.name, file.content_type
                     )
                 )
-
             if file.name.startswith('i_'):
                 isa_data['investigation']['path'] = file.name
                 isa_data['investigation']['tsv'] = file.read().decode('utf-8')
-
             elif file.name.startswith('s_'):
                 isa_data['studies'][file.name] = {
                     'tsv': file.read().decode('utf-8')
                 }
-
             elif file.name.startswith('a_'):
                 isa_data['assays'][file.name] = {
                     'tsv': file.read().decode('utf-8')
@@ -301,7 +280,6 @@ class SampleSheetIO:
         """Return study for a potentially unknown type of object"""
         if type(o) == Study:
             return o
-
         elif hasattr(o, 'study'):
             return o.study
 
@@ -310,12 +288,9 @@ class SampleSheetIO:
         """Get altamISA string/ref value"""
         if isinstance(o, (isa_models.OntologyRef, isa_models.OntologyTermRef)):
             o = attr.asdict(o)
-
             if o and 'value' in o and isinstance(o['value'], str):
                 o['value'] = o['value'].strip()
-
             return o
-
         elif isinstance(o, str):
             return o.strip()
 
@@ -324,17 +299,14 @@ class SampleSheetIO:
         """Get value where the member type can vary"""
         if isinstance(o, list) and len(o) > 1:
             return [cls._import_ref_val(x) for x in o]
-
         elif isinstance(o, list) and len(o) == 1:
             o = o[0]  # Store lists of 1 item as single objects
-
         return cls._import_ref_val(o)
 
     @classmethod
     def _import_ontology_vals(cls, vals):
         """Get value data from potential ontology references"""
         ret = {}
-
         for v in vals:
             ret[v.name] = {
                 'unit': cls._import_multi_val(v.unit)
@@ -342,7 +314,6 @@ class SampleSheetIO:
                 else None,
                 'value': cls._import_multi_val(v.value),
             }
-
         return ret
 
     @classmethod
@@ -355,7 +326,6 @@ class SampleSheetIO:
         """Get list of dicts from tuples for JSONField"""
         if type(tuples) == dict:
             return [cls._import_multi_val(v) for v in tuples.values()]
-
         elif type(tuples) in [tuple, list]:
             return [cls._import_multi_val(v) for v in tuples]
 
@@ -430,7 +400,6 @@ class SampleSheetIO:
 
         for m in materials.values():
             item_type = MATERIAL_TYPE_MAP[m.type]
-
             # Common values
             values = {
                 'item_type': item_type,
@@ -442,14 +411,11 @@ class SampleSheetIO:
                 'study': study,
                 'headers': m.headers,
             }
-
             if type(db_parent) == Assay:
                 values['assay'] = db_parent
-
             # NOTE: Extract label stored as JSON since altamISA 0.1 update
             if m.extract_label:
                 values['extract_label'] = cls._import_multi_val(m.extract_label)
-
             if m.characteristics:
                 values['characteristics'] = cls._import_ontology_vals(
                     m.characteristics
@@ -459,14 +425,12 @@ class SampleSheetIO:
                     m.factor_values
                 )
             values['comments'] = cls._import_comments(m.comments)
-
             material_vals.append(values)
 
         materials = GenericMaterial.objects.bulk_create(
             [GenericMaterial(**v) for v in material_vals]
         )
         obj_lookup.update({m.unique_name: m for m in materials})
-
         logger.debug(
             'Added {} materials to "{}"'.format(
                 len(materials), db_parent.get_name()
@@ -491,11 +455,9 @@ class SampleSheetIO:
         for p in processes.values():
             # Link protocol
             protocol = None
-
             if p.protocol_ref != 'UNKNOWN':
                 try:
                     protocol = protocol_lookup[p.protocol_ref]
-
                 except KeyError:
                     pass  # Warning for no found protocol reported by altamISA
 
@@ -518,20 +480,17 @@ class SampleSheetIO:
                 'headers': p.headers,
                 'comments': cls._import_comments(p.comments),
             }
-
             # Parameter values
             if p.parameter_values:
                 values['parameter_values'] = cls._import_ontology_vals(
                     p.parameter_values
                 )
-
             process_vals.append(values)
 
         processes = Process.objects.bulk_create(
             [Process(**v) for v in process_vals]
         )
         obj_lookup.update({p.unique_name: p for p in processes})
-
         logger.debug(
             'Added {} processes to "{}"'.format(
                 len(processes), db_parent.get_name()
@@ -547,13 +506,10 @@ class SampleSheetIO:
         :param db_parent: Study or Assay object
         """
         arc_vals = []
-
         for a in arcs:
             arc_vals.append([a.tail, a.head])
-
         db_parent.arcs = arc_vals
         db_parent.save()
-
         logger.debug(
             'Added {} arcs to "{}"'.format(len(arc_vals), db_parent.get_name())
         )
@@ -622,13 +578,9 @@ class SampleSheetIO:
             'parser_version': altamisa.__version__,
             'archive_name': archive_name,
         }
-
-        db_investigation = Investigation(**values)
-        db_investigation.save()
-
+        db_investigation = Investigation.objects.create(**values)
         # Handle parser warnings for investigation
         self._handle_warnings(ws, db_investigation)
-
         logger.info(
             'Imported investigation "{}"'.format(db_investigation.title)
         )
@@ -643,7 +595,6 @@ class SampleSheetIO:
             error_msg = 'Study identifiers are not unique'
             logger.error(error_msg)
             raise ValueError(error_msg)
-
         if '' in study_ids or None in study_ids:
             error_msg = 'Empty study identifier not allowed'
             logger.error(error_msg)
@@ -654,14 +605,11 @@ class SampleSheetIO:
             logger.info('Importing study "{}"..'.format(isa_study.info.title))
             obj_lookup = {}  # Lookup dict for study materials and processes
             study_id = 'p{}-s{}'.format(project.pk, study_count)
-
             input_name = str(isa_study.info.path)
-
             if input_name not in isa_data['studies']:
                 raise SampleSheetImportException(
                     'Study not found in import data: "{}"'.format(input_name)
                 )
-
             input_file = io.StringIO(isa_data['studies'][input_name]['tsv'])
 
             # Parse and validate study file
@@ -673,7 +621,6 @@ class SampleSheetIO:
                         filename=input_name,
                     ).read()
                     StudyValidator(isa_inv, isa_study, s).validate()
-
                 except Exception as ex:
                     ex_msg = 'altamISA exception in study "{}": {}'.format(
                         isa_study.info.title, ex
@@ -700,14 +647,10 @@ class SampleSheetIO:
                 'public_release_date': isa_study.info.public_release_date,
                 'headers': isa_study.info.headers,
             }
-
-            db_study = Study(**values)
-            db_study.save()
+            db_study = Study.objects.create(**values)
             db_studies.append(db_study)
-
             # Handle parser warnings for study
             self._handle_warnings(ws, db_study)
-
             logger.info('Imported study "{}"'.format(db_study.title))
 
             # Create protocols
@@ -739,7 +682,6 @@ class SampleSheetIO:
             protocol_lookup = {
                 p.name: p for p in protocols
             }  # Per study, no update
-
             logger.debug(
                 'Added {} protocols in study "{}"'.format(
                     len(protocols), db_study.title
@@ -767,17 +709,14 @@ class SampleSheetIO:
                 )
                 logger.info('Importing assay "{}"..'.format(isa_assay.path))
                 assay_id = 'a{}'.format(assay_count)
-
                 # HACK to fake a file for altamISA
                 input_name = str(isa_assay.path)
-
                 if input_name not in isa_data['assays']:
                     raise SampleSheetImportException(
                         'Assay not found in import data: "{}"'.format(
                             input_name
                         )
                     )
-
                 input_file = io.StringIO(isa_data['assays'][input_name]['tsv'])
 
                 # Parse and validate assay file
@@ -792,7 +731,6 @@ class SampleSheetIO:
                         AssayValidator(
                             isa_inv, isa_study, isa_assay, a
                         ).validate()
-
                     except Exception as ex:
                         ex_msg = 'altamISA exception in assay "{}": {}'.format(
                             isa_assay.path, ex
@@ -815,13 +753,9 @@ class SampleSheetIO:
                     'comments': self._import_comments(isa_assay.comments),
                     'headers': isa_assay.headers,
                 }
-
-                db_assay = Assay(**values)
-                db_assay.save()
-
+                db_assay = Assay.objects.create(**values)
                 # Handle parser warnings for assay
                 self._handle_warnings(ws, db_assay)
-
                 logger.info(
                     'Imported assay "{}" in study "{}"'.format(
                         db_assay.file_name, db_study.title
@@ -917,7 +851,6 @@ class SampleSheetIO:
         for a in arcs:
             _get_node(a[0])
             _get_node(a[1])
-
         return ret.values()
 
     @classmethod
@@ -931,14 +864,11 @@ class SampleSheetIO:
         """
         if isinstance(value, str):
             return value
-
         elif isinstance(value, list):
             return [cls._export_value(x) for x in value]
-
         elif isinstance(value, dict):
             if not value:  # Empty dict
                 return None  # {} is not cool to altamISA
-
             return isa_models.OntologyTermRef(
                 name=value['name'],
                 accession=value['accession'],
@@ -953,7 +883,6 @@ class SampleSheetIO:
         :param comments: Dict from a comments JSONField
         :return: Tuple of Comment NamedTuples
         """
-
         # TODO: Remove once reimporting sample sheets (#629, #631)
         def _get_comment_value(v):
             if isinstance(v, dict):
@@ -1120,7 +1049,6 @@ class SampleSheetIO:
         """
         if not factor_values:
             return tuple()  # None is not accepted here
-
         return tuple(
             isa_models.FactorValue(
                 name=k,
@@ -1184,11 +1112,9 @@ class SampleSheetIO:
         :return: Dict
         """
         ret = {}
-
         for m in materials:
             sample_in_assay = m.item_type == 'SAMPLE' and not study_data
             headers = m.headers if not sample_in_assay else [m.headers[0]]
-
             # HACK for extract label parsing crash (#635)
             if (
                 m.material_type == 'Labeled Extract Name'
@@ -1196,10 +1122,8 @@ class SampleSheetIO:
                 and not m.extract_label
             ):
                 extract_label = ''
-
             else:
                 extract_label = cls._export_value(m.extract_label)
-
             ret[m.unique_name] = isa_models.Material(
                 type=m.material_type
                 if m.material_type
@@ -1219,7 +1143,6 @@ class SampleSheetIO:
                 material_type=cls._export_value(m.extra_material_type),
                 headers=headers,
             )
-
         return ret
 
     @classmethod
@@ -1231,15 +1154,12 @@ class SampleSheetIO:
         :return: Dict
         """
         ret = {}
-
         for p in processes:
             # Set up perform date
             if not p.perform_date and 'Date' in p.headers:
                 perform_date = ''  # Empty string denotes an empty column
-
             else:
                 perform_date = p.perform_date
-
             ret[p.unique_name] = isa_models.Process(
                 protocol_ref=p.protocol.name
                 if p.protocol
@@ -1256,7 +1176,6 @@ class SampleSheetIO:
                 second_dimension=cls._export_value(p.second_dimension),
                 headers=p.headers,
             )
-
         return ret
 
     def export_isa(self, investigation):
@@ -1267,13 +1186,11 @@ class SampleSheetIO:
         :param investigation: Investigation object
         :return: Dict
         """
-
         # Create StudyInfo objects for studies
         isa_study_infos = []
         isa_studies = []
         isa_assays = {}
         study_idx = 0
-
         logger.info('Converting database objects into altamISA models..')
 
         for study in investigation.studies.all().order_by('file_name'):
@@ -1284,7 +1201,6 @@ class SampleSheetIO:
             all_processes = {
                 p.unique_name: p for p in study.processes.all().order_by('pk')
             }
-
             # Get study materials
             study_materials = self._export_materials(
                 self._get_arc_nodes(all_materials, study.arcs)
@@ -1302,7 +1218,6 @@ class SampleSheetIO:
                 arcs=self._export_arcs(study.arcs),
             )
             isa_studies.append(isa_study)
-
             isa_assay_infos = []
             isa_assays[study_idx] = {}
             assay_idx = 0
@@ -1430,7 +1345,6 @@ class SampleSheetIO:
         ret['investigation']['path'] = inv_info.info.path
         ret['investigation']['tsv'] = inv_out.getvalue()
         inv_out.close()
-
         logger.info('Exported investigation')
 
         # Write studies
@@ -1439,13 +1353,11 @@ class SampleSheetIO:
                 investigation=investigation,
                 identifier=study_info.info.identifier,
             )
-
             logger.info(
                 'Validating and exporting study "{}"..'.format(
                     db_study.file_name
                 )
             )
-
             with warnings.catch_warnings(record=True) as ws:
                 StudyValidator(
                     inv_info, study_info, isa_studies[study_idx]
@@ -1455,7 +1367,6 @@ class SampleSheetIO:
             self._handle_warnings(ws, db_study)
 
             study_out = io.StringIO()
-
             with warnings.catch_warnings(record=True) as ws:
                 StudyWriter.from_stream(
                     isa_studies[study_idx], study_out
@@ -1466,7 +1377,6 @@ class SampleSheetIO:
 
             ret['studies'][study_info.info.path] = {'tsv': study_out.getvalue()}
             study_out.close()
-
             logger.info('Exported study "{}"'.format(db_study.file_name))
 
             # Write assays
@@ -1493,7 +1403,6 @@ class SampleSheetIO:
                 self._handle_warnings(ws, db_assay)
 
                 assay_out = io.StringIO()
-
                 with warnings.catch_warnings(record=True) as ws:
                     AssayWriter.from_stream(
                         isa_assays[study_idx][assay_idx], assay_out
@@ -1504,7 +1413,6 @@ class SampleSheetIO:
 
                 ret['assays'][assay_info.path] = {'tsv': assay_out.getvalue()}
                 assay_out.close()
-
                 logger.info('Exported assay "{}"'.format(db_assay.file_name))
 
         return ret

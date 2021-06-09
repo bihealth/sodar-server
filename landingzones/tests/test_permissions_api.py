@@ -9,7 +9,11 @@ from projectroles.tests.test_permissions import TestProjectPermissionBase
 # Samplesheets dependency
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 
-from .test_models import LandingZoneMixin, ZONE_TITLE, ZONE_DESC
+from landingzones.tests.test_models import (
+    LandingZoneMixin,
+    ZONE_TITLE,
+    ZONE_DESC,
+)
 
 
 # Global constants
@@ -62,7 +66,6 @@ class TestLandingZonePermissions(
             self.contributor_as.user,
         ]
         bad_users = [self.guest_as.user, self.user_no_roles]
-
         self.assert_response(url, good_users, 200)
         self.assert_response(url, bad_users, 403)
         self.assert_response(url, [self.anonymous], 401)
@@ -79,7 +82,6 @@ class TestLandingZonePermissions(
             self.guest_as.user,
             self.user_no_roles,
         ]
-
         self.assert_response(url, good_users, 200)
         self.assert_response(url, bad_users, 403)
         self.assert_response(url, [self.anonymous], 401)

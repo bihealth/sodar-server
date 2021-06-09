@@ -1,8 +1,8 @@
 """Tests for UI views in the ontologyaccess app"""
 
-from test_plus.test import TestCase
-
 from django.urls import reverse
+
+from test_plus.test import TestCase
 
 from ontologyaccess.models import (
     OBOFormatOntology,
@@ -81,7 +81,6 @@ class TestOBOFormatOntologyListView(TestOntologyAccessViewBase):
         """Test rendering the ontology list view"""
         with self.login(self.superuser):
             response = self.client.get(reverse('ontologyaccess:list'))
-
         self.assertEqual(response.status_code, 200)
         self.assertIsNotNone(response.context['object_list'])
         self.assertEqual(
@@ -101,7 +100,6 @@ class TestOBOFormatOntologyDetailView(TestOntologyAccessViewBase):
                     kwargs={'oboformatontology': self.ontology.sodar_uuid},
                 )
             )
-
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context['object'], self.ontology)
         self.assertIsNotNone(response.context['ex_term'])
@@ -130,7 +128,6 @@ class TestOBOFormatOntologyImportView(TestOntologyAccessViewBase):
 
     def test_import(self):
         """Test importing an ontology"""
-
         # Assert precondition
         self.assertEqual(OBOFormatOntology.objects.all().count(), 1)
 
@@ -141,7 +138,6 @@ class TestOBOFormatOntologyImportView(TestOntologyAccessViewBase):
                 'title': 'Example Ontology',
                 'term_url': DEFAULT_TERM_URL,
             }
-
             with self.login(self.superuser):
                 response = self.client.post(
                     reverse('ontologyaccess:obo_import'), post_data
@@ -172,7 +168,6 @@ class TestOBOFormatOntologyUpdateView(TestOntologyAccessViewBase):
 
     def test_update(self):
         """Test updating an ontology"""
-
         # Assert precondition
         self.assertEqual(OBOFormatOntology.objects.all().count(), 1)
 
@@ -217,7 +212,6 @@ class TestOBOFormatOntologyDeleteView(TestOntologyAccessViewBase):
 
     def test_delete(self):
         """Test deleting an ontology"""
-
         # Assert precondition
         self.assertEqual(OBOFormatOntology.objects.all().count(), 1)
 
@@ -231,7 +225,6 @@ class TestOBOFormatOntologyDeleteView(TestOntologyAccessViewBase):
 
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, reverse('ontologyaccess:list'))
-
         # Assert postconditions
         self.assertEqual(OBOFormatOntology.objects.all().count(), 0)
         self.assertEqual(OBOFormatOntologyTerm.objects.all().count(), 0)

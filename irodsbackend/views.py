@@ -1,3 +1,5 @@
+"""Views for the irodsbackend app"""
+
 from django.conf import settings
 from django.http import JsonResponse  # To return exceptions from dispatch()
 

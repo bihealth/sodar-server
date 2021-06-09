@@ -1,3 +1,5 @@
+"""Views for the irodsinfo app"""
+
 import io
 from irods.exception import NetworkException, CAT_INVALID_AUTHENTICATION
 import json
@@ -39,13 +41,10 @@ class IrodsInfoView(LoggedInPermissionMixin, HTTPRefererMixin, TemplateView):
         if irods_backend:
             try:
                 context['server_info'] = irods_backend.get_info()
-
             except NetworkException:
                 unavail_status = 'Server Unreachable'
-
             except CAT_INVALID_AUTHENTICATION:
                 unavail_status = 'Invalid Authentication'
-
             except irods_backend.IrodsQueryException:
                 unavail_status = 'Invalid iRODS Query'
 
@@ -74,33 +73,27 @@ class IrodsConfigView(LoggedInPermissionMixin, HTTPRefererMixin, View):
 
     def get(self, request, *args, **kwargs):
         user_name = request.user.username
-
         # Just in case Django mangles the user name case, as it might
         if user_name.find('@') != -1:
             user_name = (
                 user_name.split('@')[0] + '@' + user_name.split('@')[1].upper()
             )
-
         home_path = '/{}/home/{}'.format(settings.IRODS_ZONE, user_name)
         cert_file_name = settings.IRODS_HOST + '.crt'
 
         # Get optional environment file
         env_opt = {}
-
         if settings.IRODSINFO_ENV_PATH:
             try:
                 with open(settings.IRODSINFO_ENV_PATH) as env_file:
                     env_opt = json.load(env_file)
-
                 logger.debug('Loaded iRODS env from file: {}'.format(env_opt))
-
             except FileNotFoundError:
                 logger.warning(
                     'iRODS env file not found: generating with default '
                     'parameters (path={})'.format(settings.IRODSINFO_ENV_PATH)
                 )
                 env_opt = {}
-
             except Exception as ex:
                 logger.error(
                     'Unable to read iRODS env file (path={}): {}'.format(
@@ -132,7 +125,6 @@ class IrodsConfigView(LoggedInPermissionMixin, HTTPRefererMixin, View):
         # Create zip archive
         io_buf = io.BytesIO()
         zip_file = zipfile.ZipFile(io_buf, 'w')
-
         # Write environment file
         zip_file.writestr('irods_environment.json', env_json)
 
@@ -140,7 +132,6 @@ class IrodsConfigView(LoggedInPermissionMixin, HTTPRefererMixin, View):
         try:
             with open(settings.IRODS_CERT_PATH) as cert_file:
                 zip_file.writestr(cert_file_name, cert_file.read())
-
         except FileNotFoundError:
             logger.warning(
                 'iRODS server cert file not found, '
@@ -148,7 +139,6 @@ class IrodsConfigView(LoggedInPermissionMixin, HTTPRefererMixin, View):
                     settings.IRODS_CERT_PATH
                 )
             )
-
         zip_file.close()
 
         response = HttpResponse(

@@ -1,9 +1,15 @@
 """Tests for permissions in the irodsbackend app"""
 
-from unittest import skipIf
-
 from django.conf import settings
 from django.test import override_settings
+
+from unittest import skipIf
+
+# Projectroles dependency
+from projectroles.models import SODAR_CONSTANTS
+from projectroles.plugins import get_backend_api
+from projectroles.tests.test_permissions import TestPermissionMixin
+from projectroles.tests.test_views_taskflow import TestTaskflowBase
 
 # Samplesheets dependency
 from samplesheets.tests.test_io import (
@@ -11,12 +17,6 @@ from samplesheets.tests.test_io import (
     SHEET_DIR,
 )
 from samplesheets.tests.test_views_taskflow import SampleSheetTaskflowMixin
-
-# Projectroles dependency
-from projectroles.models import SODAR_CONSTANTS
-from projectroles.plugins import get_backend_api
-from projectroles.tests.test_permissions import TestPermissionMixin
-from projectroles.tests.test_views_taskflow import TestTaskflowBase
 
 
 # SODAR constants
@@ -95,7 +95,6 @@ class TestIrodsbackendPermissions(
     def tearDown(self):
         if self.irods_session:
             self.irods_session.cleanup()
-
         super().tearDown()
 
     def test_stats_get(self):

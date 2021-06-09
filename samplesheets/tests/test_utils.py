@@ -1,10 +1,11 @@
 """Tests for utility functions in the samplesheets app"""
-from test_plus.test import TestCase
-from unittest import skipIf
 
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from django.test import override_settings
+
+from test_plus.test import TestCase
+from unittest import skipIf
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
@@ -45,7 +46,6 @@ CONFIG_PROTOCOL_UUIDS = [
     '22222222-2222-2222-bbbb-000000000000',
 ]
 IRODS_TICKET_STR = 'ooChaa1t'
-
 IRODS_BACKEND_ENABLED = (
     True if 'omics_irods' in settings.ENABLED_BACKEND_PLUGINS else False
 )
@@ -111,7 +111,6 @@ class TestGetSampleColls(TestUtilsBase):
             self.irods_backend.get_sub_path(self.study),
             self.irods_backend.get_sub_path(self.assay),
         ]
-
         self.assertEqual(get_sample_colls(self.investigation), expected)
 
 
@@ -245,7 +244,6 @@ class TestGetWebdavUrl(TestUtilsBase):
             IRODS_TICKET_STR,
             project=self.project,
         )
-
         expected = settings.IRODS_WEBDAV_URL_ANON_TMPL.format(
             user=settings.IRODS_WEBDAV_USER_ANON,
             ticket=IRODS_TICKET_STR,

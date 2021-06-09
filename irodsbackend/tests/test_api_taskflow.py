@@ -21,7 +21,7 @@ from samplesheets.tests.test_views_taskflow import SampleSheetTaskflowMixin
 # Landingzones dependency
 from landingzones.tests.test_models import LandingZoneMixin
 
-from ..api import IrodsAPI
+from irodsbackend.api import IrodsAPI
 
 
 # Global constants
@@ -92,10 +92,8 @@ class TestIrodsBackendAPITaskflow(
     @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_get_objects(self):
         """Test get_objects() with files in a sample collection"""
-
         # Create iRODS collections
         self._make_irods_colls(self.investigation)
-
         path = self.irods_backend.get_path(self.assay)
 
         # Create objects
@@ -103,7 +101,6 @@ class TestIrodsBackendAPITaskflow(
         irods = self.irods_backend.get_session()
         irods.data_objects.create(path + '/' + TEST_FILE_NAME)
         irods.data_objects.create(path + '/{}.md5'.format(TEST_FILE_NAME))
-
         obj_list = self.irods_backend.get_objects(path, check_md5=True)
         self.assertIsNotNone(obj_list)
         self.assertEqual(len(obj_list['data_objects']), 1)  # md5 not listed
@@ -121,10 +118,8 @@ class TestIrodsBackendAPITaskflow(
     @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_get_objects_multi(self):
         """Test get_objects() with multiple search terms"""
-
         # Create iRODS collections
         self._make_irods_colls(self.investigation)
-
         path = self.irods_backend.get_path(self.assay)
 
         # Create objects
@@ -134,7 +129,6 @@ class TestIrodsBackendAPITaskflow(
         irods.data_objects.create(path + '/{}.md5'.format(TEST_FILE_NAME))
         irods.data_objects.create(path + '/' + TEST_FILE_NAME2)
         irods.data_objects.create(path + '/{}.md5'.format(TEST_FILE_NAME2))
-
         obj_list = self.irods_backend.get_objects(
             path, name_like=[TEST_FILE_NAME, TEST_FILE_NAME2], check_md5=True
         )
@@ -162,7 +156,6 @@ class TestIrodsBackendAPITaskflow(
     @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_get_objects_long_query(self):
         """Test get_objects() with a long query"""
-
         # Create iRODS collections
         self._make_irods_colls(self.investigation)
         path = self.irods_backend.get_path(self.assay)
@@ -214,7 +207,6 @@ class TestIrodsBackendAPITaskflow(
     @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_get_objects_empty_coll(self):
         """Test get_objects() with an empty sample collection"""
-
         # Create iRODS collections
         self._make_irods_colls(self.investigation)
 
@@ -226,26 +218,21 @@ class TestIrodsBackendAPITaskflow(
     @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_get_objects_no_coll(self):
         """Test get_objects() with no created collections"""
-
         path = self.irods_backend.get_path(self.project) + '/' + SAMPLE_COLL
-
         with self.assertRaises(FileNotFoundError):
             self.irods_backend.get_objects(path)
 
     @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_get_objects_limit(self):
         """Test get_objects() with a limit applied"""
-
         # Create iRODS collections
         self._make_irods_colls(self.investigation)
-
         path = self.irods_backend.get_path(self.assay)
 
         # Create objects
         irods = self.irods_backend.get_session()
         irods.data_objects.create(path + '/' + TEST_FILE_NAME)
         irods.data_objects.create(path + '/' + TEST_FILE_NAME2)
-
         obj_list = self.irods_backend.get_objects(
             path, check_md5=False, limit=1
         )

@@ -52,7 +52,7 @@ Changed
     - Upgrade to Chromedriver v90 (sodar_core#731)
     - Upgrade to altamISA v0.2.9 (#1099, #1106)
     - Upgrade versioneer
-    - Upgrade general python dependencies
+    - Upgrade general python dependencies (#1112)
     - Update taskflow actions for SODAR Taskflow v0.5 compatibility
     - Cleanup for public GitHub release (#1119)
 - **Irodsbackend**

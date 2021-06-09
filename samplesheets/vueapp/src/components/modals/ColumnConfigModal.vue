@@ -623,7 +623,7 @@ export default {
         (this.colType === 'UNIT' && !(['integer', 'double'].contains(p.format)))) {
         pasteValid = false
         this.$refs.notifyBadge.show('Wrong Format', 'danger', 2000)
-        console.log('Invalid format: ' + p.format + ' / ' + this.colType)
+        console.error('Invalid format: ' + p.format + ' / ' + this.colType)
       }
 
       // Copy data from pasted content if valid

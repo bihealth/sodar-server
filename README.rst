@@ -17,11 +17,18 @@ The system provides a web-based GUI running on the python based Django web
 server with apps for managing project permissions, modeling research data and
 managing both small and large scale files.
 
-In the **Sample Sheets** app, research data modeled in the
+In the **Samplesheets** app, research data modeled in the
 `ISA-Tools <https://isa-tools.org/>`_ standard can be viewed and searched.
 
-Using the **Landing Zones** app a user can manage their large scale data input
+Using the **Landingzones** app a user can manage their large scale data input
 in the `iRODS <https://irods.org/>`_ distributed file storage system.
+
+Additional apps provided by SODAR:
+
+- **Irodsadmin**: iRODS data administration helpers
+- **Irodsbackend**: Backend app for iRODS queries and operations
+- **Irodsinfo**: Display iRODS server information and create user configurations
+- **Ontologyaccess**: Parse, store and serve ontologies for local lookup
 
 The project is built on the `SODAR Core <https://github.com/bihealth/sodar-core>`_
 framework, which provides the base functionalities for project management and

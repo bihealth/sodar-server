@@ -74,9 +74,7 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
         """
         if not settings.IRODS_WEBDAV_ENABLED or not assay:
             return row
-
         assay_path = self.get_assay_path(assay)
-
         if not assay_path:
             return row
 
@@ -86,7 +84,6 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
 
         for i in range(len(row)):
             header = table['field_header'][i]
-
             if not top_header or i >= th_colspan:
                 top_header = get_top_header(table, i)
                 th_colspan += top_header['colspan']
@@ -101,10 +98,8 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
             ):
                 if top_header['value'].lower() == 'metabolite assignment file':
                     coll_name = MISC_FILES_COLL
-
                 else:
                     coll_name = RAW_DATA_COLL
-
                 row[i]['link'] = (
                     base_url + '/' + coll_name + '/' + row[i]['value']
                 )

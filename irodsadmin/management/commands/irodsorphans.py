@@ -4,8 +4,9 @@ import re
 from django.core.management.base import BaseCommand
 from django.db.models import Q
 from django.template.defaultfilters import filesizeformat
-from projectroles.models import Project
 
+# Projectroles dependency
+from projectroles.models import Project
 from projectroles.plugins import get_backend_api
 
 # Landingzones dependency
@@ -28,7 +29,6 @@ def get_assay_collections(assays, irods_backend):
 def get_assay_subcollections(studies, irods_backend):
     """Return a list of all assay row colletion names."""
     tb = SampleSheetTableBuilder()
-
     collections = []
 
     for study in studies:
@@ -60,7 +60,6 @@ def get_assay_subcollections(studies, irods_backend):
                         collections.append(row_path)
 
                 shortcuts = assay_plugin.get_shortcuts(assay)
-
                 if shortcuts:
                     for shortcut in shortcuts:
                         collections.append(shortcut['path'])
@@ -148,7 +147,6 @@ def get_orphans(session, irods_backend, expected, assays):
     for assay in assays:
         if not assay.get_plugin():
             continue
-
         for collection in irods_backend.get_child_colls_by_path(
             irods_backend.get_path(assay)
         ):

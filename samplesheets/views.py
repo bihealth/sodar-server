@@ -1,15 +1,14 @@
-import datetime
-from json import JSONDecodeError
+"""UI views for the samplesheets app"""
 
-import pytz
-import requests
 from cubi_tk.isa_tpl import _TEMPLATES as TK_TEMPLATES
+import datetime
 import io
 import json
 import logging
 import os
-
 from packaging import version
+import pytz
+import requests
 import zipfile
 
 from django.conf import settings
@@ -132,16 +131,13 @@ class InvestigationContextMixin(ProjectContextMixin):
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
-
         try:
             investigation = Investigation.objects.get(
                 project=context['project'], active=True
             )
             context['investigation'] = investigation
-
         except Investigation.DoesNotExist:
             context['investigation'] = None
-
         return context
 
 
@@ -209,10 +205,8 @@ class SampleSheetImportMixin:
 
             # Save UUIDs
             old_inv_uuid = old_inv.sodar_uuid
-
             for study in old_inv.studies.all():
                 old_study_uuids[study.identifier] = study.sodar_uuid
-
                 for assay in study.assays.all():
                     old_assay_uuids[assay.get_name()] = assay.sodar_uuid
 
@@ -236,17 +230,14 @@ class SampleSheetImportMixin:
             # Get existing investigations under project
             invs = Investigation.objects.filter(project=project).order_by('-pk')
             old_inv = None
-
             if invs:
                 # Activate previous investigation
                 if invs.count() > 1:
                     invs[1].active = True
                     invs[1].save()
                     old_inv = invs[1]
-
                     # Delete failed import
                     invs[0].delete()
-
             # Just in case, delete remaining ones from the db
             if old_inv:
                 Investigation.objects.filter(project=project).exclude(
@@ -255,22 +246,17 @@ class SampleSheetImportMixin:
                 ISATab.objects.filter(project=project).order_by(
                     '-pk'
                 ).first().delete()
-
             self.handle_import_exception(ex, tl_event)
             return None
 
-        # If all went well..
-
-        # Update UUIDs
+        # If all went well, update UUIDs
         if old_inv:
             investigation.sodar_uuid = old_inv_uuid
             investigation.save()
-
             for study in investigation.studies.all():
                 if study.identifier in old_study_uuids:
                     study.sodar_uuid = old_study_uuids[study.identifier]
                     study.save()
-
                 for assay in study.assays.all():
                     if assay.get_name() in old_assay_uuids:
                         assay.sodar_uuid = old_assay_uuids[assay.get_name()]
@@ -397,7 +383,6 @@ class SampleSheetImportMixin:
         if not sheet_config or not sheet_config_valid:
             logger.debug('Building new sheet configuration')
             sheet_config = conf_api.build_sheet_config(investigation)
-
         if not display_config:
             logger.debug('Building new display configuration')
             display_config = conf_api.build_display_config(
@@ -656,7 +641,6 @@ class IrodsCollsCreateViewMixin:
                 '{investigation}',
                 status_type='SUBMIT',
             )
-
             tl_event.add_object(
                 obj=investigation,
                 label='investigation',
@@ -667,7 +651,6 @@ class IrodsCollsCreateViewMixin:
             'colls': get_sample_colls(investigation),
             'public_guest_access': project.public_guest_access,
         }
-
         try:
             taskflow.submit(
                 project_uuid=project.sodar_uuid,
@@ -675,13 +658,10 @@ class IrodsCollsCreateViewMixin:
                 flow_data=flow_data,
                 request=self.request,
             )
-
         except taskflow.FlowSubmitException as ex:
             if tl_event:
                 tl_event.set_status('FAILED', str(ex))
-
             raise ex
-
         if tl_event:
             tl_event.set_status('OK')
 
@@ -748,10 +728,8 @@ class ProjectSheetsView(
 
         if 'study' in self.kwargs:
             app_context['initial_study'] = self.kwargs['study']
-
         elif studies.count() > 0:
             app_context['initial_study'] = str(studies.first().sodar_uuid)
-
         else:
             app_context['initial_study'] = None
 
@@ -779,12 +757,10 @@ class SampleSheetImportView(
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
         project = self.get_project()
-
         try:
             old_inv = Investigation.objects.get(project=project, active=True)
             context['replace_sheets'] = True
             context['irods_status'] = old_inv.irods_status
-
             # Check for active/ongoing zones in case of sheet replacing
             # TODO: Lock project and allow ACTIVE after taskflow integr. (#713)
             if (
@@ -794,28 +770,22 @@ class SampleSheetImportView(
                 > 0
             ):
                 context['zones_exist'] = True
-
         except Investigation.DoesNotExist:
             pass
-
         return context
 
     def get_form_kwargs(self):
         """Pass kwargs to form"""
         kwargs = super().get_form_kwargs()
         project = self.get_project()
-
         if 'project' in self.kwargs:
             kwargs.update({'project': project.sodar_uuid})
-
         # If investigation for project already exists, set replace=True
         try:
             Investigation.objects.get(project=project, active=True)
             kwargs.update({'replace': True})
-
         except Investigation.DoesNotExist:
             kwargs.update({'replace': False})
-
         # TODO: Use CurrentUserFormMixin instead (see issue #660)
         kwargs.update({'current_user': self.request.user})
         return kwargs
@@ -843,7 +813,6 @@ class SampleSheetImportView(
         old_inv = Investigation.objects.filter(
             project=project, active=True
         ).first()
-
         if form_action == 'replace' and old_inv:
             # NOTE: This function handles error/timeline reporting internally
             self.object = self.handle_replace(
@@ -863,7 +832,6 @@ class SampleSheetImportView(
                 tl_event=tl_event,
                 isa_version=isa_version,
             )
-
             # Display warnings if assay plugins are not found
             for a in self.get_assays_without_plugins(self.object):
                 messages.warning(self.request, self.get_assay_plugin_warning(a))
@@ -872,8 +840,11 @@ class SampleSheetImportView(
 
 
 class SheetSync(SampleSheetImportMixin):
+    """Remote sample sheet synchronization helpers"""
+
     def run(self, project, url, token, user):
-        """Logic to perfom syncing of sheets
+        """
+        Perform remote synchronization of sample sheets.
 
         :project: Project object of target project
         :url: URL string to AJAX API of source site including project UUID to
@@ -895,7 +866,6 @@ class SheetSync(SampleSheetImportMixin):
             raise requests.exceptions.ConnectionError(
                 'Unable to connect to URL: {}'.format(url)
             )
-
         if not response.status_code == 200:
             raise requests.exceptions.ConnectionError(
                 'Source API responded with status code {}'.format(
@@ -905,7 +875,7 @@ class SheetSync(SampleSheetImportMixin):
 
         try:
             source_data = response.json()
-        except JSONDecodeError as ex:
+        except json.JSONDecodeError as ex:
             raise ValueError(
                 f'Error decoding JSON data: {ex}. Please check '
                 f'`sheet_sync_url` setting.'
@@ -924,15 +894,12 @@ class SheetSync(SampleSheetImportMixin):
 
         # Import sheet data
         sheet_io = SampleSheetIO()
-
-        # Do the import
         investigation = sheet_io.import_isa(
             isa_data=source_data,
             project=project,
             replace=replace,
             replace_uuid=old_inv.sodar_uuid if replace else None,
         )
-
         # Handle replace
         if replace:
             investigation = self.handle_replace(
@@ -941,7 +908,7 @@ class SheetSync(SampleSheetImportMixin):
                 tl_event=None,
             )
 
-        # Active investigation
+        # Activate investigation
         investigation.active = True
         investigation.save()
 
@@ -962,7 +929,6 @@ class SheetSync(SampleSheetImportMixin):
             f'Sample sheet sync OK for project "{project.title}" '
             f'({project.sodar_uuid})'
         )
-
         return True
 
 
@@ -995,7 +961,6 @@ class SampleSheetSyncView(
         tl_add = False
         tl_status_type = 'OK'
         tl_status_desc = 'Sync OK'
-
         sheet_sync_enable = app_settings.get_app_setting(
             APP_NAME, 'sheet_sync_enable', project=project
         )
@@ -1184,7 +1149,6 @@ class SheetTemplateCreateFormView(
             kwargs={'project': self.get_project().sodar_uuid},
         )
         t_name = self.request.GET.get('sheet_tpl')
-
         if not t_name:
             messages.error(request, 'Template name not provided.')
             return redirect(redirect_url)
@@ -1193,7 +1157,6 @@ class SheetTemplateCreateFormView(
                 request, 'Template "{}" is not supported.'.format(t_name)
             )
             return redirect(redirect_url)
-
         return super().render_to_response(self.get_context_data())
 
 
@@ -1306,7 +1269,6 @@ class SampleSheetISAExportView(
         """Override get() to return ISA-Tab files as a ZIP archive"""
         project = self.get_project()
         version_uuid = kwargs.get('isatab')
-
         try:
             return self.get_isa_export(project, request, 'zip', version_uuid)
         except Exception as ex:
@@ -1342,18 +1304,14 @@ class SampleSheetDeleteView(
         """Override get_context_data() to check for data objects in iRODS"""
         context = super().get_context_data(*args, **kwargs)
         irods_backend = get_backend_api('omics_irods')
-
         if irods_backend:
             project = self.get_project()
-
             try:
                 context['irods_sample_stats'] = irods_backend.get_object_stats(
                     irods_backend.get_sample_path(project)
                 )
-
             except FileNotFoundError:
                 pass
-
         return context
 
     def post(self, request, *args, **kwargs):
@@ -1397,7 +1355,6 @@ class SampleSheetDeleteView(
                 event_name='sheet_delete',
                 description='delete investigation {investigation}',
             )
-
             tl_event.add_object(
                 obj=investigation,
                 label='investigation',
@@ -1425,7 +1382,6 @@ class SampleSheetDeleteView(
         if taskflow and investigation.irods_status:
             if tl_event:
                 tl_event.set_status('SUBMIT')
-
             try:
                 taskflow.submit(
                     project_uuid=project.sodar_uuid,
@@ -1433,11 +1389,9 @@ class SampleSheetDeleteView(
                     flow_data={},
                     request=self.request,
                 )
-
             except taskflow.FlowSubmitException as ex:
                 if tl_event:
                     tl_event.set_status('FAILED', str(ex))
-
                 delete_success = False
                 messages.error(
                     self.request,
@@ -1458,24 +1412,20 @@ class SampleSheetDeleteView(
                     v_count, 's' if v_count != 1 else ''
                 )
             )
-
             # Delete sheet configuration
             app_settings.set_app_setting(
                 APP_NAME, 'sheet_config', {}, project=project
             )
-
             # Delete display configurations
             app_settings.set_app_setting(
                 APP_NAME, 'display_config_default', {}, project=project
             )
-
             # TODO: Use deletion method once implemented (sodar_core#538)
             AppSetting.objects.filter(
                 app_plugin__name=APP_NAME,
                 name='display_config',
                 project=project,
             ).delete()
-
             messages.success(self.request, 'Sample sheets deleted.')
 
         return redirect(redirect_url)
@@ -1494,7 +1444,6 @@ class SampleSheetCacheUpdateView(
 
     def get(self, request, *args, **kwargs):
         project = self.get_project()
-
         if settings.SHEETS_ENABLE_CACHE:
             from samplesheets.tasks import update_project_cache_task
 
@@ -1502,7 +1451,6 @@ class SampleSheetCacheUpdateView(
                 project_uuid=str(project.sodar_uuid),
                 user_uuid=str(request.user.sodar_uuid),
             )
-
             messages.warning(
                 self.request,
                 'Cache updating initiated. This may take some time, refresh '
@@ -1676,10 +1624,8 @@ class SampleSheetVersionRestoreView(
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
         investigation = context['investigation']
-
         if not investigation:
             return context
-
         context['sheet_version'] = ISATab.objects.filter(
             sodar_uuid=self.kwargs['isatab']
         ).first()
@@ -1698,7 +1644,6 @@ class SampleSheetVersionRestoreView(
         old_inv = Investigation.objects.filter(
             project=project, active=True
         ).first()
-
         if not old_inv:
             # This shouldn't happen, but just in case
             messages.error(
@@ -1709,7 +1654,6 @@ class SampleSheetVersionRestoreView(
         isa_version = ISATab.objects.filter(
             sodar_uuid=self.kwargs.get('isatab')
         ).first()
-
         if not isa_version:
             messages.error(
                 request, 'ISA-Tab version not found, unable to restore'
@@ -1738,7 +1682,6 @@ class SampleSheetVersionRestoreView(
                 replace_uuid=old_inv.sodar_uuid if old_inv else None,
                 save_isa=False,  # Already exists as isa_version
             )
-
         except Exception as ex:
             self.handle_import_exception(ex, tl_event)
 
@@ -1746,7 +1689,6 @@ class SampleSheetVersionRestoreView(
             new_inv = self.handle_replace(
                 investigation=new_inv, old_inv=old_inv, tl_event=tl_event
             )
-
         if new_inv:
             new_inv = self.finalize_import(
                 investigation=new_inv,
@@ -1754,11 +1696,9 @@ class SampleSheetVersionRestoreView(
                 tl_event=tl_event,
                 isa_version=isa_version,
             )
-
             # Edit isa_version to bump it in the list
             if 'RESTORE' not in isa_version.tags:
                 isa_version.tags.append('RESTORE')
-
             isa_version.save()
 
         return redirect(
@@ -1787,10 +1727,8 @@ class SampleSheetVersionDeleteView(
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
         investigation = context['investigation']
-
         if not investigation:
             return context
-
         context['sheet_version'] = ISATab.objects.filter(
             sodar_uuid=self.kwargs['isatab']
         ).first()
@@ -1799,7 +1737,6 @@ class SampleSheetVersionDeleteView(
     def get_success_url(self):
         timeline = get_backend_api('timeline_backend')
         project = self.get_project()
-
         if timeline:
             tl_event = timeline.add_event(
                 project=project,
@@ -1812,7 +1749,6 @@ class SampleSheetVersionDeleteView(
             tl_event.add_object(
                 obj=self.object, label='isatab', name=self.object.get_name()
             )
-
         messages.success(
             self.request,
             'Deleted sample sheet version: {}'.format(self.object.get_name()),
@@ -1885,7 +1821,6 @@ class IrodsAccessTicketCreateView(
             ticket_str=build_secret(16),
             expiry_date=form.cleaned_data.get('date_expires'),
         )
-
         # Create database object
         obj = form.save(commit=False)
         obj.project = self.get_project()
@@ -1894,7 +1829,6 @@ class IrodsAccessTicketCreateView(
         obj.user = self.request.user
         obj.ticket = ticket.ticket
         obj.save()
-
         messages.success(
             self.request,
             'iRODS access ticket "{}" created.'.format(obj.get_display_name()),
@@ -1992,7 +1926,6 @@ class IrodsRequestModifyMixin:
         timeline = get_backend_api('timeline_backend')
         if not timeline:
             return
-
         tl_event = timeline.add_event(
             project=irods_request.project,
             app_name=APP_NAME,
@@ -2017,7 +1950,6 @@ class IrodsRequestModifyMixin:
         timeline = get_backend_api('timeline_backend')
         if not timeline:
             return
-
         tl_event = timeline.add_event(
             project=irods_request.project,
             app_name=APP_NAME,
@@ -2095,7 +2027,6 @@ class IrodsRequestModifyMixin:
             app_alerts = get_backend_api('appalerts_backend')
         if not app_alerts:
             return
-
         AppAlert = app_alerts.get_model()
         req_count = (
             IrodsDataRequest.objects.filter(
@@ -2136,13 +2067,11 @@ class IrodsRequestCreateView(
 
     def form_valid(self, form):
         project = self.get_project()
-
         # Create database object
         obj = form.save(commit=False)
         obj.user = self.request.user
         obj.project = project
         obj.save()
-
         # Create timeline event
         self.add_tl_create(obj)
         # Add app alerts to owners/delegates
@@ -2177,7 +2106,6 @@ class IrodsRequestUpdateView(
 
     def form_valid(self, form):
         timeline = get_backend_api('timeline_backend')
-
         # Create database object
         obj = form.save(commit=False)
         obj.user = self.request.user
@@ -2261,7 +2189,6 @@ class IrodsRequestAcceptView(
         context_data['affected_objects'] = []
         context_data['affected_collections'] = []
         context_data['is_collection'] = obj.is_collection()
-
         if context_data['is_collection']:
             coll = irods_backend.get_coll_by_path(
                 context_data['irods_request'].path
@@ -2272,7 +2199,6 @@ class IrodsRequestAcceptView(
             context_data[
                 'affected_collections'
             ] += irods_backend.get_colls_recursively(coll)
-
         return context_data
 
     def form_valid(self, request, *args, **kwargs):
@@ -2319,6 +2245,7 @@ class IrodsRequestAcceptView(
         }
         if obj.is_data_object():
             flow_data['paths'].append(obj.path + '.md5')
+
         try:
             taskflow.submit(
                 project_uuid=project.sodar_uuid,
@@ -2330,7 +2257,6 @@ class IrodsRequestAcceptView(
             )
             obj.status = 'ACCEPTED'
             obj.save()
-
         except taskflow.FlowSubmitException as ex:
             if tl_event:
                 tl_event.set_status('FAILED', str(ex))
@@ -2407,7 +2333,6 @@ class IrodsRequestRejectView(
         timeline = get_backend_api('timeline_backend')
         app_alerts = get_backend_api('appalerts_backend')
         project = self.get_project()
-
         try:
             obj = IrodsDataRequest.objects.get(
                 sodar_uuid=self.kwargs['irodsdatarequest']
@@ -2425,7 +2350,6 @@ class IrodsRequestRejectView(
                     kwargs={'project': project.sodar_uuid},
                 )
             )
-
         obj.status = 'REJECTED'
         obj.save()
 
