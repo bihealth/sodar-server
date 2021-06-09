@@ -31,10 +31,7 @@ def update_project_cache_task(_self, project_uuid, user_uuid):
     except Project.DoesNotExist:
         logger.error('Project not found (uuid={})'.format(project_uuid))
         return
-    try:
-        user = User.objects.get(sodar_uuid=user_uuid)
-    except User.DoesNotExist:
-        logger.error('User not found (uuid={})'.format(user_uuid))
+    user = User.objects.filter(sodar_uuid=user_uuid).first()
 
     timeline = get_backend_api('timeline_backend')
     tl_event = None

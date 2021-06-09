@@ -74,6 +74,7 @@ Changed
     - Enable public guest access to project sheets view (#1141)
     - Enable sheet export for project guests (#1138)
     - Enable sheet version viewing and export for project guests (#1138)
+    - Allow no user in ``update_project_cache_task()`` (#1171)
 
 Fixed
 -----
