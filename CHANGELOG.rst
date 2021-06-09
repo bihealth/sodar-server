@@ -40,6 +40,7 @@ Added
     - Public guest access support for sample data (#1100)
     - ``get_webdav_url()`` helper (#1100)
     - ``view_versions`` permission (#1138)
+    - Management command tests (#1170)
 
 Changed
 -------
@@ -75,6 +76,7 @@ Changed
     - Enable sheet export for project guests (#1138)
     - Enable sheet version viewing and export for project guests (#1138)
     - Allow no user in ``update_project_cache_task()`` (#1171)
+    - Use logging in ``syncnames`` (#1170)
 
 Fixed
 -----

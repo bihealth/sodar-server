@@ -1,8 +1,15 @@
+"""Syncnames management command"""
+
+import logging
+
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
 from samplesheets.models import GenericMaterial
 from samplesheets.utils import get_alt_names
+
+
+logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
@@ -12,12 +19,12 @@ class Command(BaseCommand):
         pass
 
     def handle(self, *args, **options):
-        print('Refreshing alternative names for materials...')
+        logger.info('Refreshing alternative names for materials..')
         with transaction.atomic():
             for m in GenericMaterial.objects.all():
                 m.alt_names = get_alt_names(m.name)
                 m.save()
-        print(
+        logger.info(
             '{} materials updated.'.format(
                 GenericMaterial.objects.all().count()
             )
