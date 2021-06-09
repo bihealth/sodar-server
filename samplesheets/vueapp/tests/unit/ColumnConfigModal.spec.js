@@ -517,7 +517,7 @@ describe('ColumnConfigModal.vue', () => {
     const fieldConfig = copy(wrapper.vm.fieldConfig)
     fieldConfig.format = 'string'
     await wrapper.setData({ fieldConfig: fieldConfig })
-    wrapper.vm.onFormatChange() // TODO: How to get around manual triggering?
+    wrapper.vm.onFormatChange()
 
     expect(wrapper.vm.fieldConfig.editable).toBe(true)
     expect(wrapper.find('#sodar-ss-col-tr-select').exists()).toBe(false)
