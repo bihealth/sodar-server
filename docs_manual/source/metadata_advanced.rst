@@ -43,10 +43,10 @@ Similar to study data linking, SODAR also displays iRODS links specific to
 assays according to an **assay plugin**. The selected plugin affects the
 following types of iRODS links:
 
-    - **Assay shortcuts** card above each assay table
-    - **Row-specific links** in the right hand column of each row
-    - **Inline links** which are file names stored in the table itself, under
-      e.g. "data file" materials.
+- **Assay shortcuts** card above each assay table
+- **Row-specific links** in the right hand column of each row
+- **Inline links** which are file names stored in the table itself, under e.g.
+  "data file" materials.
 
 The assay plugin to be used is determined based on a combination of the
 *measurement type* and *technology type* attributes of each assay.
@@ -57,10 +57,10 @@ root collection of the assay.
 
 SODAR currently supports the following assay plugins:
 
-    - **DNA Sequencing**
-    - **Metabolite Profiling / Mass Spectrometry**
-    - **Microarray**
-    - **Protein Expression Profiling / Mass Spectrometry**
+- **DNA Sequencing**
+- **Metabolite Profiling / Mass Spectrometry**
+- **Microarray**
+- **Protein Expression Profiling / Mass Spectrometry**
 
 Common links as well as plugin specific links are detailed below.
 
@@ -70,10 +70,10 @@ Common Links
 Links to the following iRODS collections are provided for *all* assay
 configurations in the assay shortcuts card:
 
-    - ``ResultsReports``: Collection for assay specific result and report files
-    - ``MiscFiles``: Miscellaneous files
-    - ``TrackHubs``: Track hubs for UCSC Genome Browser integration (displayed
-      if track hubs have been created)
+- ``ResultsReports``: Collection for assay specific result and report files
+- ``MiscFiles``: Miscellaneous files
+- ``TrackHubs``: Track hubs for UCSC Genome Browser integration (displayed if
+  track hubs have been created)
 
 DNA Sequencing Plugin
 ---------------------

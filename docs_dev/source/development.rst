@@ -8,16 +8,16 @@ Git Branches
 ============
 
 - ``main``
-    - Intended for stable and production quality release code only
-    - The ``dev`` branch is merged into ``main`` for freezing releases
+    * Intended for stable and production quality release code only
+    * The ``dev`` branch is merged into ``main`` for freezing releases
 - ``dev``
-    - The bleeding edge development branch with (mostly) stable new features
-    - Only push small urgent updates such as bug fixes here, otherwise fork and
+    * The bleeding edge development branch with (mostly) stable new features
+    * Only push small urgent updates such as bug fixes here, otherwise fork and
       submit a merge request!
 - Temporary development branches
-    - Base on ``dev``
-    - Please use a consistent naming such as ``feature/x`` and ``fix/y``
-    - These will be merged into ``dev`` when finished/stable
+    * Base on ``dev``
+    * Please use a consistent naming such as ``feature/x`` and ``fix/y``
+    * These will be merged into ``dev`` when finished/stable
 
 
 Commits
@@ -63,15 +63,15 @@ App Relationships and Plugins
 
 For detailed information, see
 `SODAR Core documentation <https://sodar-core.readthedocs.io/en/latest/>`_.
-docs.
 
 - Apps can freely import and use stuff from the ``projectroles`` app
-- Apps should not import code directly from other apps, **except** for the
-  following:
-    - ``landingzones`` can use ``samplesheets`` models
-    - ``samplesheets.configapps.*`` can import things from ``samplesheets``
-- For everything else, please use plugins to avoid hardcoded imports
-    - See existing plugins for examples on what you need to implement and how
+- Apps should not import code directly from other SODAR Core apps
+    * Please use plugins to avoid hardcoded imports
+    * See existing plugins for examples on what you need to implement and how
+- Importing code between SODAR apps is OK when it is deemed to be a sensible
+  approach
+    * E.g. the ``landingzones`` app wouldn't exist without ``samplesheets``,
+      thus hardcoded imports are acceptable.
 
 
 Plugin Types
@@ -79,19 +79,18 @@ Plugin Types
 
 For detailed information, see
 `SODAR Core documentation <https://sodar-core.readthedocs.io/en/latest/>`_.
-docs.
 
 - Project app plugin (``projectroles.plugins.ProjectAppPluginPoint``)
-    - For apps related to project operations
-    - Content always related to a project
-    - Will be shown on project sidebar
+    * For apps related to project operations
+    * Content always related to a project
+    * Will be shown on project sidebar
 - Backend plugin (``projectroles.plugins.BackendPluginPoint``)
-    - Intended for backend apps used by other apps, mostly without their own
+    * Intended for backend apps used by other apps, mostly without their own
       views
 - Site plugin (``projectroles.plugins.SiteAppPluginPoint``)
-    - Generic site app *not* tied to a project
+    * Generic site app *not* tied to a project
 - Sample Sheet study/assay app plugins
-    - Plugins for configuration-specific sample sheet display includes, either
+    * Plugins for configuration-specific sample sheet display includes, either
       on the *study* or *assay* level
 - Landing Zone config app plugins
-    - Plugins for zone configuration specific functionality
+    * Plugins for zone configuration specific functionality

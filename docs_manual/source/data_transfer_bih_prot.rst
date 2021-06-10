@@ -1,7 +1,7 @@
 .. _data_transfer_bih_prot:
 
 BIH Proteomics Data Transfer
-============================
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 `QUICK REFERENCE CHART`_
 
@@ -19,16 +19,18 @@ corresponding `code repository`_ (restricted access).
 .. _SODAR: https://sodar.bihealth.org
 .. _code repository: https://cubi-gitlab.bihealth.org/CUBI_Engineering/CUBI_Data_Mgmt/omics_data_transfer_bih_prot_main
 
-Workflow overview
------------------
+
+Workflow Overview
+=================
 
 The following figure gives a general overview over the data transfer workflow
 and is referenced in the description below by the indicated numbers.
 
 .. figure:: _static/data_transfer_bih_prot/bih_proteomics_data_transfer.png
 
-Raw data transfer (Instrument PCs)
-----------------------------------
+
+Raw Data Transfer (Instrument PCs)
+==================================
 
 Automated raw data transfer will be available for all Thermo MS instruments
 used by the BIH Proteomics core unit. This includes BIH instruments
@@ -71,8 +73,9 @@ drop-down menu ``Sheet Operations`` select ``Create iRODS Directories``.
 
 .. figure:: _static/data_transfer_bih_prot/SODAR_create_iRODS.png
 
-Project data transfer (Workstations)
-------------------------------------
+
+Project Data Transfer (Workstations)
+====================================
 
 Project data transfer (including raw data as well as quantification results,
 currently by MaxQuant) should be available from all Windows workstations used

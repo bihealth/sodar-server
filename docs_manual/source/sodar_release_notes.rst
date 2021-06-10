@@ -1,6 +1,5 @@
 .. _sodar_release_notes:
 
-
 Release Notes
 ^^^^^^^^^^^^^
 

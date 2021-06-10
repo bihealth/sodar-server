@@ -1,10 +1,7 @@
 .. _data_transfer_irods:
 
-Accessing iRODS
-===============
-
-Introduction
-------------
+iRODS Access
+^^^^^^^^^^^^
 
 Experiment data for omics project data is stored under a distributed iRODS
 server, which you can log on to with your Charité or MDC credentials. For
@@ -17,8 +14,9 @@ zone as a temporary workspace. These are placed under the ``landing_zones``
 collection. For more instructions, see the Landing Zones application under the
 project you are working on.
 
+
 Command Line Access (Linux)
----------------------------
+===========================
 
 For command line access to iRODS, you should use iRODS iCommands in your Linux
 shell.
@@ -62,8 +60,9 @@ access data on the storage in your terminal.
 See `iRODS documentation <https://docs.irods.org/master/icommands/user/>`_
 for iCommands reference.
 
+
 WebDAV
-------
+======
 
 Project iRODS data can be accessed for through WebDAV by mounting it as a
 network drive or browsing it in read-only mode on a web browser. Links in SODAR

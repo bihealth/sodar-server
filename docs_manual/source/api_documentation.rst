@@ -1,11 +1,11 @@
 .. _api_documentation:
 
-
 API Documentation
 ^^^^^^^^^^^^^^^^^
 
 This document describes the REST API functionality in SODAR. This is intended
 for users who want to access and modify data programmatically from e.g. scripts.
+
 
 Using the API
 =============

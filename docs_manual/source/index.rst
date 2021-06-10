@@ -21,11 +21,11 @@ meta data.
 
     ui_index
     ui_login
-    ui_user_menu
-    ui_irod_status
+    ui_user_dropdown
+    ui_irods_info
     ui_api_tokens
     ui_user_profile
-    ui_project_main
+    ui_project_overview
     ui_project_update
 
 .. toctree::

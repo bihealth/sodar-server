@@ -30,7 +30,7 @@ Background
 ==========
 
 About ISA-Tab
-~~~~~~~~~~~~~
+-------------
 
 ISA (short for **I**\nvestigation, **S**\tudy and **A**\ssay) is an open
 source framework for standardizing metadata for scientific experiments.
@@ -55,8 +55,8 @@ an ISA-Tab project will consist of three files:
 In the case of several studies or assays, each study and assay is
 represented by one distinct tabular file.
 
-Tabular file structure
-~~~~~~~~~~~~~~~~~~~~~~
+Tabular File Structure
+----------------------
 
 In a study or assay file, each row represents an ordered chain of
 materials/data and transforming processes to illustrate the procedure of the
@@ -131,8 +131,8 @@ A very simple assay tabular file may look like this:
 
 In practice, study and assay files will feature much more columns.
 
-Splitting and pooling
-~~~~~~~~~~~~~~~~~~~~~
+Splitting and Pooling
+---------------------
 
 The concept of splitting and pooling can be used in the study and assay tabular
 files to represent, e.g. the collection of different samples from the same
@@ -292,9 +292,8 @@ Remember, materials and processes may repeat over several rows, if they are
 part of a splitting or pooling procedure. Furthermore, consider the following
 restrictions.
 
-
-Editing restrictions
-~~~~~~~~~~~~~~~~~~~~
+Editing Restrictions
+--------------------
 
 ISA-Tab is a strictly defined/specified format and is prone to errors when
 things change uncontrollably, for instance with respect to indentation,
@@ -361,7 +360,7 @@ We will extend this list with more rules/restrictions as soon as more pitfalls
 show up.
 
 
-3. Validation (post-processing)
+3. Validation (Post-Processing)
 ===============================
 
 Under good circumstances, a direct upload to the corresponding SODAR project
