@@ -54,7 +54,7 @@ CACHES = {
 
 # django-debug-toolbar
 # ------------------------------------------------------------------------------
-ENABLE_DEBUG_TOOLBAR = env.bool('ENABLE_DEBUG_TOOLBAR', default=False)
+ENABLE_DEBUG_TOOLBAR = env.bool('ENABLE_DEBUG_TOOLBAR', default=True)
 
 if ENABLE_DEBUG_TOOLBAR:
     MIDDLEWARE += ['debug_toolbar.middleware.DebugToolbarMiddleware']
