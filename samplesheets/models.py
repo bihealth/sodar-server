@@ -1,6 +1,7 @@
-import os
+"""Models for the samplesheets app"""
 
 from altamisa.constants import table_headers as th
+import os
 import uuid
 
 from django.conf import settings
@@ -107,10 +108,8 @@ class BaseSampleSheet(models.Model):
         """Return associated study if it exists"""
         if hasattr(self, 'assay') and self.assay:
             return self.assay.study
-
         elif hasattr(self, 'study') and self.study:
             return self.study
-
         elif type(self) == Study:
             return self
 
@@ -118,17 +117,13 @@ class BaseSampleSheet(models.Model):
         """Return associated project"""
         if type(self) == Investigation:
             return self.project
-
         elif type(self) == Study:
             return self.investigation.project
-
         elif type(self) == Protocol:
             return self.study.investigation.project
-
         elif type(self) in [Assay, GenericMaterial, Process]:
             if self.study:
                 return self.study.investigation.project
-
             elif self.assay:
                 return self.assay.study.investigation.project
 
@@ -258,7 +253,6 @@ class Investigation(BaseSampleSheet):
         # TODO: Do this with a nice regex instead, too tired now
         if CONFIG_LABEL_CREATE not in self.comments:
             return None
-
         return get_config_name(get_comment(self, CONFIG_LABEL_CREATE))
 
     def get_material_count(self, item_type):
@@ -577,7 +571,6 @@ class NodeMixin:
         :return: Boolean or None
         """
         idx = self.get_header_idx(header_name, header_type)
-
         if (
             idx
             and idx <= len(self.headers) - 3
@@ -595,7 +588,6 @@ class NodeMixin:
         :return: Boolean or None
         """
         idx = self.get_header_idx(header_name, header_type)
-
         if (
             idx
             and idx <= len(self.headers) - 2
@@ -614,10 +606,8 @@ class NodeMixin:
         :return: Boolean or None
         """
         idx = self.get_header_idx(header_name, header_type)
-
         if idx and self.is_ontology_field(header_name, header_type):
             idx += 2
-
         if (
             idx
             and idx <= len(self.headers) - 4
@@ -641,17 +631,14 @@ class GenericMaterialManager(models.Manager):
         :param item_types: Restrict to zero or more specific item types (list)
         :return: QuerySet
         """
-
         # NOTE: Exclude intermediate materials and data files, at least for now
         objects = (
             super().get_queryset().exclude(item_type__in=['DATA', 'MATERIAL'])
         )
-
         if item_types:
             if not isinstance(item_types, list):
                 item_types = [item_types]
             objects = objects.filter(item_type__in=item_types)
-
         # HACK for ArrayField
         # NOTE: Only look for alt_names as they also contain lowercase name
         # TODO: Why not just use iexact?
@@ -661,9 +648,7 @@ class GenericMaterialManager(models.Manager):
                 term_query.add(
                     Q(**{'alt_names__{}'.format(i): t.lower()}), Q.OR
                 )
-        objects = objects.filter(term_query).order_by('name')
-
-        return objects
+        return objects.filter(term_query).order_by('name')
 
 
 class GenericMaterial(NodeMixin, BaseSampleSheet):
@@ -766,7 +751,6 @@ class GenericMaterial(NodeMixin, BaseSampleSheet):
         ordering = ['name']
         verbose_name = 'material'
         verbose_name_plural = 'materials'
-
         indexes = [models.Index(fields=['unique_name'])]
 
     def __str__(self):
@@ -786,7 +770,6 @@ class GenericMaterial(NodeMixin, BaseSampleSheet):
             self.item_type,
             self.unique_name,
         )
-
         return 'GenericMaterial({})'.format(', '.join(repr(v) for v in values))
 
     # Saving and validation
@@ -795,10 +778,8 @@ class GenericMaterial(NodeMixin, BaseSampleSheet):
         """Override save() to include custom validation functions"""
         self._validate_parent()
         self._validate_item_fields()
-
         if not self.alt_names:
             self.alt_names = get_alt_names(self.name)
-
         super().save(*args, **kwargs)
 
     def _validate_parent(self):
@@ -808,13 +789,11 @@ class GenericMaterial(NodeMixin, BaseSampleSheet):
 
     def _validate_item_fields(self):
         """Validate fields related to specific material types"""
-
         if self.item_type == 'DATA' and self.characteristics:
             raise ValidationError(
                 'Field "characteristics" should not be included for a data '
                 'file'
             )
-
         if self.item_type != 'SAMPLE' and self.factor_values:
             raise ValidationError('Factor values included for a non-sample')
 
@@ -824,18 +803,16 @@ class GenericMaterial(NodeMixin, BaseSampleSheet):
         """Return parent assay or study"""
         if self.assay:
             return self.assay
-
         elif self.study:
             return self.study
-
         return None  # This should not happen and is caught during validation
 
     def get_sample_assays(self):
-        """If the material is a SAMPLE, return assays where it is used, else
-        None"""
+        """
+        If the material is a SAMPLE, return assays where it is used, else None.
+        """
         if self.item_type != 'SAMPLE':
             return None
-
         return Assay.objects.filter(
             study=self.study, arcs__contains=[self.unique_name]
         ).order_by('file_name')
@@ -846,7 +823,6 @@ class GenericMaterial(NodeMixin, BaseSampleSheet):
         # NOTE: Only works for SOURCE type materials for now
         if self.item_type != 'SOURCE':
             return None
-
         # HACK: Only works if our naming scheme is followed
         return GenericMaterial.objects.filter(
             item_type='SAMPLE',
@@ -993,7 +969,6 @@ class Process(NodeMixin, BaseSampleSheet):
         """Return parent assay or study"""
         if self.assay:
             return self.assay
-
         elif self.study:
             return self.study
 
@@ -1089,16 +1064,12 @@ class ISATab(models.Model):
         investigation = Investigation.objects.filter(
             sodar_uuid=self.investigation_uuid
         ).first()
-
         if investigation and investigation.title:
             name = investigation.title
-
         elif self.archive_name:
             name = self.archive_name.split('.')[0]
-
         else:
             name = self.project.title
-
         return name + ' ({})'.format(
             localtime(self.date_created).strftime('%Y-%m-%d %H:%M:%S')
         )
@@ -1359,14 +1330,17 @@ class IrodsDataRequest(models.Model):
         return '{} {}'.format(self.action.capitalize(), self.get_short_path())
 
     def get_date_created(self):
+        """Return formatted version of date_created"""
         return localtime(self.date_created).strftime('%Y-%m-%d %H:%M')
 
     def is_data_object(self):
+        """Return True if data object exists for the object path"""
         irods_backend = get_backend_api('omics_irods')
         irods_session = irods_backend.get_session()
         return irods_session.data_objects.exists(self.path)
 
     def is_collection(self):
+        """Return True if iRODS collection exists for the object path"""
         irods_backend = get_backend_api('omics_irods')
         irods_session = irods_backend.get_session()
         return irods_session.collections.exists(self.path)
