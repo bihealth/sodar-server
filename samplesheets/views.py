@@ -175,7 +175,7 @@ class SampleSheetImportMixin:
             project=project,
             app_name=APP_NAME,
             user=self.request.user,
-            event_name='sheet_{}'.format('action'),
+            event_name='sheet_{}'.format(action),
             description=tl_desc,
         )
 
@@ -1107,8 +1107,9 @@ class SheetTemplateCreateFormView(
     def form_valid(self, form):
         project = self.get_project()
         redirect_url = get_sheets_url(project)
+        sheet_tpl = self._get_sheet_template()
         tl_event = self.create_timeline_event(
-            project, 'create', tpl_name=self._get_sheet_template()
+            project, 'create', tpl_name=sheet_tpl.name if sheet_tpl else None
         )
 
         # Create via form
