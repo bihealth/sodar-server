@@ -442,8 +442,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                 )
             else:
                 return (
-                    '<i class="iconify text-muted" '
-                    'data-icon="mdi:flask"></i>'
+                    '<i class="iconify text-muted" data-icon="mdi:flask" '
                     'title="No sample sheets in project"></i>'
                     # 'data-toggle="tooltip" data-placement="top"></i>'
                 )
