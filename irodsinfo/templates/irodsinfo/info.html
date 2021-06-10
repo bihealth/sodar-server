@@ -37,21 +37,21 @@
     <div class="card-body">
       {% if server_info %}
         <dl class="row">
-          <dt class="col-sm-1">Status</dt>
-          <dd class="col-lg-11 {% if server_info.server_ok %}text-success{% else %}text-danger{% endif %}">
+          <dt class="col-md-2">Status</dt>
+          <dd class="col-md-10 {% if server_info.server_ok %}text-success{% else %}text-danger{% endif %}">
             {{ server_info.server_status }}
           </dd>
-          <dt class="col-sm-1">Host</dt>
-          <dd class="col-lg-11">{{ server_info.server_host }}</dd>
-          <dt class="col-sm-1">Port</dt>
-          <dd class="col-lg-11">{{ server_info.server_port }}</dd>
-          <dt class="col-sm-1">Zone</dt>
-          <dd class="col-lg-11">{{ server_info.server_zone }}</dd>
-          <dt class="col-sm-1">Version</dt>
+          <dt class="col-md-2">Host</dt>
+          <dd class="col-md-10">{{ server_info.server_host }}</dd>
+          <dt class="col-md-2">Port</dt>
+          <dd class="col-md-10">{{ server_info.server_port }}</dd>
+          <dt class="col-md-2">Zone</dt>
+          <dd class="col-md-10">{{ server_info.server_zone }}</dd>
+          <dt class="col-md-2">Version</dt>
           {% if server_info.server_version %}
-            <dd class="col-lg-11">{{ server_info.server_version }}</dd>
+            <dd class="col-md-10">{{ server_info.server_version }}</dd>
           {% else %}
-            <dd class="col-lg-11 text-muted">Unknown</dd>
+            <dd class="col-md-10 text-muted">Unknown</dd>
           {% endif %}
         </dl>
       {% elif not irods_backend_enabled %}

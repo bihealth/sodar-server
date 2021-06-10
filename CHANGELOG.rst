@@ -92,6 +92,8 @@ Fixed
     - Long queries raising ``CAT_SQL_ERR`` in iRODS (#1132)
     - Redundant iRODS connection opened by ``_check_collection_perm()`` (#1142)
     - Missing permission check in ``IrodsStatisticsAjaxView`` ``POST`` request (#1143)
+- **Irodsinfo**
+    - Server status card layout on low resolutions (#1176)
 - **Landingzones**
     - Root level backend plugin retrieval in template tags
     - CSS in project zone list (#1027)
