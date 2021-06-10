@@ -112,6 +112,8 @@ Removed
     - Legacy ``raven`` dependency (#1147)
     - References to unused ``django-db-file-storage`` component (#1153)
     - Legacy Docker setup (#1129)
+    - ``syncgroups`` user command, updated version found in ``projectroles`` (#1172)
+    - Unused ``sodar.users.utils`` (#1172)
 - **Irodsbackend**
     - Support for Ajax queries without project
     - Unused template tags ``get_webdav_url_anon()`` and ``get_webdav_user_anon()``
