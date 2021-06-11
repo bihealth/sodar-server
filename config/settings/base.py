@@ -549,6 +549,11 @@ PROJECTROLES_CUSTOM_CSS_INCLUDES = env.list(
     'PROJECTROLES_CUSTOM_CSS_INCLUDES', None, []
 )
 
+# Inline HTML include to the head element of the base site template
+PROJECTROLES_INLINE_HEAD_INCLUDE = env.str(
+    'PROJECTROLES_INLINE_HEAD_INCLUDE', None
+)
+
 
 # Timeline app settings
 TIMELINE_PAGINATION = 15
