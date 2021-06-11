@@ -8,8 +8,8 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
-Unreleased
-==========
+v0.10.0 (2021-06-11)
+====================
 
 Update for multiple new features and major SODAR Core upgrade.
 

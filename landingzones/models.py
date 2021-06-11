@@ -168,13 +168,9 @@ class LandingZone(models.Model):
     def set_status(self, status, status_info=None):
         if status not in ZONE_STATUS_TYPES:
             raise TypeError('Unknown status "{}"'.format(status))
-
         self.status = status
-
         if status_info:
             self.status_info = status_info
-
         else:
             self.status_info = DEFAULT_STATUS_INFO[status][:1024]
-
         self.save()
