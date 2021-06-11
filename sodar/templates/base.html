@@ -7,6 +7,7 @@
 {# Local variables #}
 {% get_django_setting 'SITE_TITLE' as site_title %}
 {% get_django_setting 'SITE_SUBTITLE' as site_subtitle %}
+{% get_django_setting 'PROJECTROLES_INLINE_HEAD_INCLUDE' as inline_head_include %}
 {% get_django_setting 'PROJECTROLES_DISABLE_CDN_INCLUDES' as disable_cdn_includes %}
 {% get_django_setting 'PROJECTROLES_CUSTOM_JS_INCLUDES' as custom_js_includes %}
 {% get_django_setting 'PROJECTROLES_CUSTOM_CSS_INCLUDES' as custom_css_includes %}
@@ -29,6 +30,11 @@
     <link rel="icon" type="image/png" href="{% static 'images/favicon/favicon-32x32.png' %}" sizes="32x32" />
     <link rel="icon" type="image/png" href="{% static 'images/favicon/favicon-16x16.png' %}" sizes="16x16" />
     <link rel="icon" type="image/png" href="{% static 'images/favicon/favicon-128x128.png' %}" sizes="128x128" />
+
+    {% if inline_head_include %}
+      <!-- Inline head include -->
+      {{ inline_head_include | safe }}
+    {% endif %}
 
     {% block head_javascript %}
       <!-- Critical Javascript includes -->
