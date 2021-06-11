@@ -118,6 +118,7 @@ Removed
     - Legacy Docker setup (#1129)
     - ``syncgroups`` user command, updated version found in ``projectroles`` (#1172)
     - Unused ``sodar.users.utils`` (#1172)
+    - Unused `.travis.yml``
 - **Irodsbackend**
     - Support for Ajax queries without project
     - Unused template tags ``get_webdav_url_anon()`` and ``get_webdav_user_anon()``
