@@ -7,6 +7,16 @@ Changelog for the SODAR project. Loosely follows the
 Note that the issue IDs here refer to ones in the private CUBI GitLab.
 
 
+Unreleased
+==========
+
+Added
+-----
+
+- **General**
+    - ``LABEL`` and ``MAINTAINER`` in ``Dockerfile`` (#1186)
+
+
 v0.10.0 (2021-06-11)
 ====================
 

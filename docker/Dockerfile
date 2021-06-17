@@ -1,5 +1,8 @@
 FROM python:3.8-buster
 
+MAINTAINER Mikko Nieminen <mikko.nieminen@bih-charite.de>
+LABEL org.opencontainers.image.source https://github.com/bihealth/sodar-server
+
 ARG app_git_url=https://github.com/bihealth/sodar-server.git
 ARG app_git_tag
 ARG app_git_depth=1
