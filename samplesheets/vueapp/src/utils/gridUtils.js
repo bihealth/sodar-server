@@ -239,7 +239,9 @@ export function buildColDef (params) {
       } else {
         header.cellClass = function (p) {
           const colAlign = ['UNIT', 'NUMERIC'].includes(
-            p.colDef.cellRendererParams.colType) ? 'right' : 'left'
+            p.colDef.cellRendererParams.colType)
+            ? 'right'
+            : 'left'
           const cellClass = ['sodar-ss-data-cell', 'text-' + colAlign]
 
           // Set extra classes if non-editable

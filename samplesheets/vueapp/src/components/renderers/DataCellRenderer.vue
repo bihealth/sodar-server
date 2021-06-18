@@ -171,7 +171,8 @@ export default Vue.extend({
 
       // Enable/disable hover overflow
       this.enableHover = (this.params.enableHover === undefined)
-        ? true : this.params.enableHover
+        ? true
+        : this.params.enableHover
 
       if (this.colType === 'ONTOLOGY') {
         this.headerName = this.getHeaderName()

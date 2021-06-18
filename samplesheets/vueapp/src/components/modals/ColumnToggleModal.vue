@@ -101,7 +101,8 @@ export default {
       columnValues: null,
       filterActive: false,
       columnsChanged: false,
-      setDefault: false
+      setDefault: false,
+      studyDisplayConfig: null
     }
   },
   methods: {
@@ -155,9 +156,9 @@ export default {
     onModalHide () {
       // Update user display config in app
       if (!this.assayMode) {
-        this.app.studyDisplayConfig = this.displayConfig
+        this.studyDisplayConfig = this.displayConfig
       } else {
-        this.app.studyDisplayConfig.assays[this.uuid] = this.displayConfig
+        this.studyDisplayConfig.assays[this.uuid] = this.displayConfig
       }
       // Save changes to user display config on the server
       // (Skip for anonymous user)
@@ -209,6 +210,7 @@ export default {
       this.filterActive = false
       this.columnsChanged = false
       this.setDefault = false
+      this.studyDisplayConfig = this.app.studyDisplayConfig
 
       // Get data
       this.uuid = uuid
