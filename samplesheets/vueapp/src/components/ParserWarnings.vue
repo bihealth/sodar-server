@@ -103,7 +103,7 @@ export default {
           response => {
             this.handleWarningsResponse(response)
           }).catch(function (error) {
-          this.message = 'Error fetching data: ' + error.detail
+          this.message = 'Error fetching data: ' + error
         })
     }
   },

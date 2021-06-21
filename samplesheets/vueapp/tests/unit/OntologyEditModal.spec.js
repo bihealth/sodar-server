@@ -7,16 +7,23 @@ import ontologyEditParamsHp from './data/ontologyEditParamsHp.json'
 import ontologyTermResponseHp from './data/ontologyTermResponseHp.json'
 import ontologyEditParamsMulti from './data/ontologyEditParamsMulti.json'
 import ontologyEditParamsAny from './data/ontologyEditParamsAny.json'
+import ontologyTermInitialHp from './data/ontologyTermInitialHp.json'
+import ontologyTermInitialMulti from './data/ontologyTermInitialMulti.json'
 
 // Set up extended Vue constructor
 const localVue = createLocalVue()
 localVue.use(BootstrapVue)
 localVue.use(VueClipboard)
 
+// Set up fetch-mock-jest
+const fetchMock = require('fetch-mock-jest')
+
 // Init data
 let propsData
 const queryUrlPrefix = '/ontology/ajax/obo/term/query?s='
 const queryString = 'term'
+const initAjaxUrlHp = '/ontology/ajax/obo/term/list?t=Microcephaly&t=Retrognathia&t=Hypotonia'
+const initAjaxUrlMulti = '/ontology/ajax/obo/term/list?t=Homo%20sapiens'
 
 describe('OntologyEditModal.vue', () => {
   function getPropsData () {
@@ -32,16 +39,15 @@ describe('OntologyEditModal.vue', () => {
     propsData = getPropsData()
     jest.resetModules()
     jest.clearAllMocks()
+    fetchMock.reset()
   })
 
   it('renders modal with ontology term data', async () => {
+    fetchMock.mock(initAjaxUrlHp, ontologyTermInitialHp)
     const wrapper = mount(OntologyEditModal, {
-      localVue,
-      propsData: propsData,
-      methods: { getInitialTermInfo: jest.fn() }
+      localVue, propsData: propsData
     })
     wrapper.vm.showModal(copy(ontologyEditParamsHp), jest.fn())
-    wrapper.setData({ refreshingTerms: false })
     await waitNT(wrapper.vm)
     await waitRAF()
 
@@ -89,13 +95,11 @@ describe('OntologyEditModal.vue', () => {
   })
 
   it('renders modal when editing existing term', async () => {
+    fetchMock.mock(initAjaxUrlHp, ontologyTermInitialHp)
     const wrapper = mount(OntologyEditModal, {
-      localVue,
-      propsData: propsData,
-      methods: { getInitialTermInfo: jest.fn() }
+      localVue, propsData: propsData
     })
     wrapper.vm.showModal(copy(ontologyEditParamsHp), jest.fn())
-    wrapper.setData({ refreshingTerms: false })
     await waitNT(wrapper.vm)
     await waitRAF()
     await wrapper.findAll(
@@ -143,13 +147,11 @@ describe('OntologyEditModal.vue', () => {
   })
 
   it('renders modal after exiting term edit with unchanged values', async () => {
+    fetchMock.mock(initAjaxUrlHp, ontologyTermInitialHp)
     const wrapper = mount(OntologyEditModal, {
-      localVue,
-      propsData: propsData,
-      methods: { getInitialTermInfo: jest.fn() }
+      localVue, propsData: propsData
     })
     wrapper.vm.showModal(copy(ontologyEditParamsHp), jest.fn())
-    wrapper.setData({ refreshingTerms: false })
     await waitNT(wrapper.vm)
     await waitRAF()
 
@@ -198,13 +200,11 @@ describe('OntologyEditModal.vue', () => {
 
   it('renders modal after exiting term edit with modified values', async () => {
     const updateVal = 'Updated'
+    fetchMock.mock(initAjaxUrlHp, ontologyTermInitialHp)
     const wrapper = mount(OntologyEditModal, {
-      localVue,
-      propsData: propsData,
-      methods: { getInitialTermInfo: jest.fn() }
+      localVue, propsData: propsData
     })
     wrapper.vm.showModal(copy(ontologyEditParamsHp), jest.fn())
-    wrapper.setData({ refreshingTerms: false })
     await waitNT(wrapper.vm)
     await waitRAF()
 
@@ -258,15 +258,13 @@ describe('OntologyEditModal.vue', () => {
   })
 
   it('trims input on term edit', async () => {
+    fetchMock.mock(initAjaxUrlHp, ontologyTermInitialHp)
     const updateName = 'Updated'
     const updateAcc = 'https://some.accession/001234'
     const wrapper = mount(OntologyEditModal, {
-      localVue,
-      propsData: propsData,
-      methods: { getInitialTermInfo: jest.fn() }
+      localVue, propsData: propsData
     })
     wrapper.vm.showModal(copy(ontologyEditParamsHp), jest.fn())
-    wrapper.setData({ refreshingTerms: false })
     await waitNT(wrapper.vm)
     await waitRAF()
 
@@ -290,15 +288,14 @@ describe('OntologyEditModal.vue', () => {
   })
 
   it('reorders terms on down arrow click', async () => {
+    fetchMock.mock(initAjaxUrlHp, ontologyTermInitialHp)
     const firstTermName = ontologyEditParamsHp.value[0].name
     const secondTermName = ontologyEditParamsHp.value[1].name
     const wrapper = mount(OntologyEditModal, {
       localVue,
-      propsData: propsData,
-      methods: { getInitialTermInfo: jest.fn() }
+      propsData: propsData
     })
     wrapper.vm.showModal(copy(ontologyEditParamsHp), jest.fn())
-    wrapper.setData({ refreshingTerms: false })
     await waitNT(wrapper.vm)
     await waitRAF()
 
@@ -318,15 +315,13 @@ describe('OntologyEditModal.vue', () => {
   })
 
   it('reorders terms on up arrow click', async () => {
+    fetchMock.mock(initAjaxUrlHp, ontologyTermInitialHp)
     const firstTermName = ontologyEditParamsHp.value[0].name
     const secondTermName = ontologyEditParamsHp.value[1].name
     const wrapper = mount(OntologyEditModal, {
-      localVue,
-      propsData: propsData,
-      methods: { getInitialTermInfo: jest.fn() }
+      localVue, propsData: propsData
     })
     wrapper.vm.showModal(copy(ontologyEditParamsHp), jest.fn())
-    wrapper.setData({ refreshingTerms: false })
     await waitNT(wrapper.vm)
     await waitRAF()
 
@@ -346,14 +341,12 @@ describe('OntologyEditModal.vue', () => {
   })
 
   it('removes term on delete click', async () => {
+    fetchMock.mock(initAjaxUrlHp, ontologyTermInitialHp)
     const secondTermName = ontologyEditParamsHp.value[1].name
     const wrapper = mount(OntologyEditModal, {
-      localVue,
-      propsData: propsData,
-      methods: { getInitialTermInfo: jest.fn() }
+      localVue, propsData: propsData
     })
     wrapper.vm.showModal(copy(ontologyEditParamsHp), jest.fn())
-    wrapper.setData({ refreshingTerms: false })
     await waitNT(wrapper.vm)
     await waitRAF()
 
@@ -370,15 +363,13 @@ describe('OntologyEditModal.vue', () => {
   })
 
   it('inserts new term from free entry', async () => {
+    fetchMock.mock(initAjaxUrlHp, ontologyTermInitialHp)
     const newName = 'New name'
     const ontologyName = 'HP'
     const wrapper = mount(OntologyEditModal, {
-      localVue,
-      propsData: propsData,
-      methods: { getInitialTermInfo: jest.fn() }
+      localVue, propsData: propsData
     })
     wrapper.vm.showModal(copy(ontologyEditParamsHp), jest.fn())
-    wrapper.setData({ refreshingTerms: false })
     await waitNT(wrapper.vm)
     await waitRAF()
 
@@ -402,16 +393,14 @@ describe('OntologyEditModal.vue', () => {
   })
 
   it('trims new term input in free entry', async () => {
+    fetchMock.mock(initAjaxUrlHp, ontologyTermInitialHp)
     const newName = 'New name'
     const ontologyName = 'HP'
     const accession = 'http://purl.obolibrary.org/obo/HP_9999999'
     const wrapper = mount(OntologyEditModal, {
-      localVue,
-      propsData: propsData,
-      methods: { getInitialTermInfo: jest.fn() }
+      localVue, propsData: propsData
     })
     wrapper.vm.showModal(copy(ontologyEditParamsHp), jest.fn())
-    wrapper.setData({ refreshingTerms: false })
     await waitNT(wrapper.vm)
     await waitRAF()
 
@@ -433,15 +422,13 @@ describe('OntologyEditModal.vue', () => {
   })
 
   it('prevents new term insert with incorrect ontology name', async () => {
+    fetchMock.mock(initAjaxUrlHp, ontologyTermInitialHp)
     const newName = 'New name'
     const ontologyName = 'NCBITAXON'
     const wrapper = mount(OntologyEditModal, {
-      localVue,
-      propsData: propsData,
-      methods: { getInitialTermInfo: jest.fn() }
+      localVue, propsData: propsData
     })
     wrapper.vm.showModal(copy(ontologyEditParamsHp), jest.fn())
-    wrapper.setData({ refreshingTerms: false })
     await waitNT(wrapper.vm)
     await waitRAF()
 
@@ -455,17 +442,12 @@ describe('OntologyEditModal.vue', () => {
   })
 
   it('renders term search options', async () => {
+    fetchMock.mock(initAjaxUrlHp, ontologyTermInitialHp)
     const wrapper = mount(OntologyEditModal, {
-      localVue,
-      propsData: propsData,
-      methods: {
-        getInitialTermInfo: jest.fn(),
-        submitTermQuery: jest.fn()
-      }
+      localVue, propsData: propsData
     })
     wrapper.vm.showModal(copy(ontologyEditParamsHp), jest.fn())
     wrapper.setData({
-      refreshingTerms: false,
       termOptions: ontologyTermResponseHp.terms
     })
     await waitNT(wrapper.vm)
@@ -482,6 +464,7 @@ describe('OntologyEditModal.vue', () => {
   })
 
   it('renders search option for an obsolete term', async () => {
+    fetchMock.mock(initAjaxUrlHp, ontologyTermInitialHp)
     const terms = [{
       ontology_name: 'HP',
       term_id: 'HP:0002880',
@@ -491,15 +474,10 @@ describe('OntologyEditModal.vue', () => {
       accession: 'http://purl.obolibrary.org/obo/HP_0002880'
     }]
     const wrapper = mount(OntologyEditModal, {
-      localVue,
-      propsData: propsData,
-      methods: {
-        getInitialTermInfo: jest.fn(),
-        submitTermQuery: jest.fn()
-      }
+      localVue, propsData: propsData
     })
     wrapper.vm.showModal(copy(ontologyEditParamsHp), jest.fn())
-    wrapper.setData({ refreshingTerms: false, termOptions: terms })
+    wrapper.setData({ termOptions: terms })
     await waitNT(wrapper.vm)
     await waitRAF()
 
@@ -509,17 +487,12 @@ describe('OntologyEditModal.vue', () => {
   })
 
   it('inserts new term from option selection', async () => {
+    fetchMock.mock(initAjaxUrlHp, ontologyTermInitialHp)
     const wrapper = mount(OntologyEditModal, {
-      localVue,
-      propsData: propsData,
-      methods: {
-        getInitialTermInfo: jest.fn(),
-        submitTermQuery: jest.fn()
-      }
+      localVue, propsData: propsData
     })
     wrapper.vm.showModal(copy(ontologyEditParamsHp), jest.fn())
     wrapper.setData({
-      refreshingTerms: false,
       termOptions: ontologyTermResponseHp.terms
     })
     await waitNT(wrapper.vm)
@@ -539,22 +512,17 @@ describe('OntologyEditModal.vue', () => {
   })
 
   it('handles option selection of existing term', async () => {
+    fetchMock.mock(initAjaxUrlHp, ontologyTermInitialHp)
     const existingOption = {
       name: 'Microcephaly',
       accession: 'http://purl.obolibrary.org/obo/HP_0000252',
       ontology_name: 'HP'
     }
     const wrapper = mount(OntologyEditModal, {
-      localVue,
-      propsData: propsData,
-      methods: {
-        getInitialTermInfo: jest.fn(),
-        submitTermQuery: jest.fn()
-      }
+      localVue, propsData: propsData
     })
     wrapper.vm.showModal(copy(ontologyEditParamsHp), jest.fn())
     wrapper.setData({
-      refreshingTerms: false,
       termOptions: [existingOption]
     })
     await waitNT(wrapper.vm)
@@ -573,16 +541,17 @@ describe('OntologyEditModal.vue', () => {
   })
 
   it('renders modal with term with disallowed list value', async () => {
+    const initTerms = copy(ontologyTermInitialHp)
+    initTerms.terms = [initTerms.terms[0]]
+    const initUrl = '/ontology/ajax/obo/term/list?t=Microcephaly'
+    fetchMock.mock(initUrl, initTerms)
     const modalParams = copy(ontologyEditParamsHp)
     modalParams.editConfig.allow_list = false
     modalParams.value = [modalParams.value[0]]
     const wrapper = mount(OntologyEditModal, {
-      localVue,
-      propsData: propsData,
-      methods: { getInitialTermInfo: jest.fn() }
+      localVue, propsData: propsData
     })
     wrapper.vm.showModal(modalParams, jest.fn())
-    wrapper.setData({ refreshingTerms: false })
     await waitNT(wrapper.vm)
     await waitRAF()
 
@@ -612,12 +581,9 @@ describe('OntologyEditModal.vue', () => {
     modalParams.editConfig.allow_list = false
     modalParams.value = []
     const wrapper = mount(OntologyEditModal, {
-      localVue,
-      propsData: propsData,
-      methods: { getInitialTermInfo: jest.fn() }
+      localVue, propsData: propsData
     })
     wrapper.vm.showModal(modalParams, jest.fn())
-    wrapper.setData({ refreshingTerms: false })
     await waitNT(wrapper.vm)
     await waitRAF()
 
@@ -627,20 +593,18 @@ describe('OntologyEditModal.vue', () => {
   })
 
   it('replaces existing term with disallowed list value', async () => {
+    const initTerms = copy(ontologyTermInitialHp)
+    initTerms.terms = [initTerms.terms[0]]
+    const initUrl = '/ontology/ajax/obo/term/list?t=Microcephaly'
+    fetchMock.mock(initUrl, initTerms)
     const modalParams = copy(ontologyEditParamsHp)
     modalParams.editConfig.allow_list = false
     modalParams.value = [modalParams.value[0]]
     const wrapper = mount(OntologyEditModal, {
-      localVue,
-      propsData: propsData,
-      methods: {
-        getInitialTermInfo: jest.fn(),
-        submitTermQuery: jest.fn()
-      }
+      localVue, propsData: propsData
     })
     wrapper.vm.showModal(modalParams, jest.fn())
     wrapper.setData({
-      refreshingTerms: false,
       termOptions: ontologyTermResponseHp.terms
     })
     await waitNT(wrapper.vm)
@@ -660,20 +624,15 @@ describe('OntologyEditModal.vue', () => {
   })
 
   it('inserts term with disallowed list value', async () => {
+    fetchMock.mock(initAjaxUrlHp, ontologyTermInitialHp)
     const modalParams = copy(ontologyEditParamsHp)
     modalParams.editConfig.allow_list = false
     modalParams.value = []
     const wrapper = mount(OntologyEditModal, {
-      localVue,
-      propsData: propsData,
-      methods: {
-        getInitialTermInfo: jest.fn(),
-        submitTermQuery: jest.fn()
-      }
+      localVue, propsData: propsData
     })
     wrapper.vm.showModal(modalParams, jest.fn())
     wrapper.setData({
-      refreshingTerms: false,
       termOptions: ontologyTermResponseHp.terms
     })
     await waitNT(wrapper.vm)
@@ -700,19 +659,17 @@ describe('OntologyEditModal.vue', () => {
   })
 
   it('renders modal after deleting term with disallowed list value', async () => {
+    const initTerms = copy(ontologyTermInitialHp)
+    initTerms.terms = [initTerms.terms[0]]
+    const initUrl = '/ontology/ajax/obo/term/list?t=Microcephaly'
+    fetchMock.mock(initUrl, initTerms)
     const modalParams = copy(ontologyEditParamsHp)
     modalParams.editConfig.allow_list = false
     modalParams.value = [modalParams.value[0]]
     const wrapper = mount(OntologyEditModal, {
-      localVue,
-      propsData: propsData,
-      methods: {
-        getInitialTermInfo: jest.fn(),
-        submitTermQuery: jest.fn()
-      }
+      localVue, propsData: propsData
     })
     wrapper.vm.showModal(modalParams, jest.fn())
-    wrapper.setData({ refreshingTerms: false })
     await waitNT(wrapper.vm)
     await waitRAF()
 
@@ -735,15 +692,13 @@ describe('OntologyEditModal.vue', () => {
   })
 
   it('renders modal with no imported ontologies', async () => {
+    fetchMock.mock(initAjaxUrlHp, ontologyTermInitialHp)
     const modalParams = copy(ontologyEditParamsHp)
     modalParams.sodarOntologies = {}
     const wrapper = mount(OntologyEditModal, {
-      localVue,
-      propsData: propsData,
-      methods: { getInitialTermInfo: jest.fn() }
+      localVue, propsData: propsData
     })
     wrapper.vm.showModal(modalParams, jest.fn())
-    wrapper.setData({ refreshingTerms: false })
     await waitNT(wrapper.vm)
     await waitRAF()
 
@@ -763,13 +718,11 @@ describe('OntologyEditModal.vue', () => {
   })
 
   it('renders modal with ontology term data', async () => {
+    fetchMock.mock(initAjaxUrlHp, ontologyTermInitialHp)
     const wrapper = mount(OntologyEditModal, {
-      localVue,
-      propsData: propsData,
-      methods: { getInitialTermInfo: jest.fn() }
+      localVue, propsData: propsData
     })
     wrapper.vm.showModal(ontologyEditParamsHp, jest.fn())
-    wrapper.setData({ refreshingTerms: false })
     await waitNT(wrapper.vm)
     await waitRAF()
 
@@ -817,13 +770,11 @@ describe('OntologyEditModal.vue', () => {
   })
 
   it('renders modal with multiple allowed ontologies', async () => {
+    fetchMock.mock(initAjaxUrlMulti, ontologyTermInitialMulti)
     const wrapper = mount(OntologyEditModal, {
-      localVue,
-      propsData: propsData,
-      methods: { getInitialTermInfo: jest.fn() }
+      localVue, propsData: propsData
     })
     wrapper.vm.showModal(ontologyEditParamsMulti, jest.fn())
-    wrapper.setData({ refreshingTerms: false })
     await waitNT(wrapper.vm)
     await waitRAF()
 
@@ -835,77 +786,64 @@ describe('OntologyEditModal.vue', () => {
   })
 
   it('builds query url with a single allowed ontology', async () => {
+    fetchMock.mock(initAjaxUrlHp, ontologyTermInitialHp)
     const url = queryUrlPrefix + queryString + '&o=HP'
     const wrapper = mount(OntologyEditModal, {
-      localVue,
-      propsData: propsData,
-      methods: { getInitialTermInfo: jest.fn() }
+      localVue, propsData: propsData
     })
     wrapper.vm.showModal(ontologyEditParamsHp, jest.fn())
-    wrapper.setData({ refreshingTerms: false })
-
     expect(wrapper.vm.getQueryUrl(queryString)).toBe(url)
   })
 
   it('builds query url with a multiple allowed ontologies', async () => {
+    fetchMock.mock(initAjaxUrlMulti, ontologyTermInitialMulti)
     const url = queryUrlPrefix + queryString + '&o=NCBITAXON&o=CL'
     const wrapper = mount(OntologyEditModal, {
-      localVue,
-      propsData: propsData,
-      methods: { getInitialTermInfo: jest.fn() }
+      localVue, propsData: propsData
     })
     wrapper.vm.showModal(ontologyEditParamsMulti, jest.fn())
-    wrapper.setData({ refreshingTerms: false })
-
     expect(wrapper.vm.getQueryUrl(queryString)).toBe(url)
   })
 
   it('builds query url with no ontology limit', async () => {
+    fetchMock.mock(initAjaxUrlMulti, ontologyTermInitialMulti)
     const url = queryUrlPrefix + queryString
     const wrapper = mount(OntologyEditModal, {
-      localVue,
-      propsData: propsData,
-      methods: { getInitialTermInfo: jest.fn() }
+      localVue, propsData: propsData
     })
     wrapper.vm.showModal(ontologyEditParamsAny, jest.fn())
-    wrapper.setData({ refreshingTerms: false })
-
     expect(wrapper.vm.getQueryUrl(queryString)).toBe(url)
   })
 
   it('builds query url limited to selected ontology', async () => {
+    fetchMock.mock(initAjaxUrlMulti, ontologyTermInitialMulti)
     const url = queryUrlPrefix + queryString + '&o=NCBITAXON'
     const wrapper = mount(OntologyEditModal, {
-      localVue,
-      propsData: propsData,
-      methods: { getInitialTermInfo: jest.fn() }
+      localVue, propsData: propsData
     })
     wrapper.vm.showModal(ontologyEditParamsMulti, jest.fn())
     // TODO: How to trigger click on v-select with size=1?
-    wrapper.setData({ refreshingTerms: false, queryOntologyLimit: 'NCBITAXON' })
+    wrapper.setData({ queryOntologyLimit: 'NCBITAXON' })
     await waitNT(wrapper.vm)
     await waitRAF()
-
     expect(wrapper.vm.getQueryUrl(queryString)).toBe(url)
   })
 
   it('builds query url with ontology-based ordering', async () => {
+    fetchMock.mock(initAjaxUrlMulti, ontologyTermInitialMulti)
     const url = queryUrlPrefix + queryString + '&o=NCBITAXON&o=CL&order=1'
     const wrapper = mount(OntologyEditModal, {
-      localVue,
-      propsData: propsData,
-      methods: { getInitialTermInfo: jest.fn() }
+      localVue, propsData: propsData
     })
     wrapper.vm.showModal(ontologyEditParamsMulti, jest.fn())
-    wrapper.setData({ refreshingTerms: false })
     await waitNT(wrapper.vm)
     await waitRAF()
     await wrapper.find('#sodar-ss-ontology-order-check').trigger('click')
-
     expect(wrapper.vm.getQueryUrl(queryString)).toBe(url)
   })
 
   it('handles term paste', async () => {
+    fetchMock.mock(initAjaxUrlHp, ontologyTermInitialHp)
     const newValue = [
       {
         name: 'Aggressive behavior',
@@ -920,12 +858,9 @@ describe('OntologyEditModal.vue', () => {
     ]
     const modalParams = copy(ontologyEditParamsHp)
     const wrapper = mount(OntologyEditModal, {
-      localVue,
-      propsData: propsData,
-      methods: { getInitialTermInfo: jest.fn() }
+      localVue, propsData: propsData
     })
     wrapper.vm.showModal(modalParams, jest.fn())
-    wrapper.setData({ refreshingTerms: false })
     await waitNT(wrapper.vm)
     await waitRAF()
 
@@ -938,6 +873,7 @@ describe('OntologyEditModal.vue', () => {
   })
 
   it('handles term paste with disallowed list (should fail)', async () => {
+    fetchMock.mock(initAjaxUrlHp, ontologyTermInitialHp)
     const newValue = [
       {
         name: 'Aggressive behavior',
@@ -953,12 +889,9 @@ describe('OntologyEditModal.vue', () => {
     const modalParams = copy(ontologyEditParamsHp)
     modalParams.editConfig.allow_list = false
     const wrapper = mount(OntologyEditModal, {
-      localVue,
-      propsData: propsData,
-      methods: { getInitialTermInfo: jest.fn() }
+      localVue, propsData: propsData
     })
     wrapper.vm.showModal(modalParams, jest.fn())
-    wrapper.setData({ refreshingTerms: false })
     await waitNT(wrapper.vm)
     await waitRAF()
 
@@ -971,6 +904,7 @@ describe('OntologyEditModal.vue', () => {
   })
 
   it('handles term paste with disallowed ontologies (should fail)', async () => {
+    fetchMock.mock(initAjaxUrlHp, ontologyTermInitialHp)
     jest.spyOn(console, 'error').mockImplementation(jest.fn())
     const newValue = [
       {
@@ -986,12 +920,9 @@ describe('OntologyEditModal.vue', () => {
     ]
     const modalParams = copy(ontologyEditParamsHp)
     const wrapper = mount(OntologyEditModal, {
-      localVue,
-      propsData: propsData,
-      methods: { getInitialTermInfo: jest.fn() }
+      localVue, propsData: propsData
     })
     wrapper.vm.showModal(modalParams, jest.fn())
-    wrapper.setData({ refreshingTerms: false })
     await waitNT(wrapper.vm)
     await waitRAF()
 
@@ -1004,6 +935,7 @@ describe('OntologyEditModal.vue', () => {
   })
 
   it('handles term paste with no ontology limit', async () => {
+    fetchMock.mock(initAjaxUrlHp, ontologyTermInitialHp)
     const newValue = [
       {
         name: 'Aggressive behavior',
@@ -1019,12 +951,9 @@ describe('OntologyEditModal.vue', () => {
     const modalParams = copy(ontologyEditParamsHp)
     modalParams.editConfig.ontologies = []
     const wrapper = mount(OntologyEditModal, {
-      localVue,
-      propsData: propsData,
-      methods: { getInitialTermInfo: jest.fn() }
+      localVue, propsData: propsData
     })
     wrapper.vm.showModal(modalParams, jest.fn())
-    wrapper.setData({ refreshingTerms: false })
     await waitNT(wrapper.vm)
     await waitRAF()
 
@@ -1037,16 +966,14 @@ describe('OntologyEditModal.vue', () => {
   })
 
   it('handles term paste with invalid JSON (should fail)', async () => {
+    fetchMock.mock(initAjaxUrlHp, ontologyTermInitialHp)
     jest.spyOn(console, 'error').mockImplementation(jest.fn())
     const newValue = 'qwertyuiop;"asdfghjk'
     const modalParams = copy(ontologyEditParamsHp)
     const wrapper = mount(OntologyEditModal, {
-      localVue,
-      propsData: propsData,
-      methods: { getInitialTermInfo: jest.fn() }
+      localVue, propsData: propsData
     })
     wrapper.vm.showModal(modalParams, jest.fn())
-    wrapper.setData({ refreshingTerms: false })
     await waitNT(wrapper.vm)
     await waitRAF()
 
