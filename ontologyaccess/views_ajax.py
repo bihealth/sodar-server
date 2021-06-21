@@ -137,5 +137,4 @@ class OBOTermListAjaxView(OBOOntologyTermMixin, SODARBasePermissionAjaxView):
         for t in terms:
             ret_data['terms'].append(self.get_term_dict(t))
 
-
         return Response(ret_data, status=200)
