@@ -149,11 +149,13 @@ export default {
     },
     getRequestCancelTitle (objInfo) {
       return this.allowRequestCancel(objInfo)
-        ? 'Cancel Delete Request' : 'Already requested by another user'
+        ? 'Cancel Delete Request'
+        : 'Already requested by another user'
     },
     getRequestIssueTitle (objInfo) {
       return this.allowRequestIssue(objInfo)
-        ? 'Issue Delete Request' : 'User not allowed to issue request'
+        ? 'Issue Delete Request'
+        : 'User not allowed to issue request'
     },
     handleObjListResponse (response) {
       if ('data_objects' in response) {

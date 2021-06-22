@@ -91,7 +91,6 @@ describe('AssayShortcutCard.vue', () => {
     propsData.notifyCallback = jest.fn()
     const wrapper = mount(AssayShortcutCard, { localVue, propsData: propsData })
     const spyNotifyCallback = jest.spyOn(wrapper.vm, 'notifyCallback')
-    wrapper.setMethods({ notifyCallback: spyNotifyCallback })
 
     expect(spyNotifyCallback).not.toHaveBeenCalled()
     wrapper.find('.sodar-irods-copy-path-btn').trigger('click')

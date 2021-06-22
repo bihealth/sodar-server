@@ -90,7 +90,7 @@ lxml==4.6.3
 openpyxl==3.0.7
 
 # Webpack loader for Vue.js
-django-webpack-loader==0.7.0
+django-webpack-loader==1.0.0
 
 # OBO ontology file parsing
 fastobo==0.10.1

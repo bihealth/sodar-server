@@ -1,0 +1,12 @@
+{
+  "terms": [
+    {
+      "ontology_name": "NCBITAXON",
+      "term_id": "NCBITaxon:9606",
+      "name": "Homo sapiens",
+      "is_obsolete": false,
+      "replaced_by": null,
+      "accession": "http://purl.obolibrary.org/obo/NCBITaxon_9606"
+    }
+  ]
+}

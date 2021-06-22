@@ -103,17 +103,10 @@ describe('IrodsButtons.vue', () => {
   it('calls copy event and notifyCallback on iRODS path copy button click', () => {
     propsData.notifyCallback = jest.fn()
     const wrapper = mount(IrodsButtons, { localVue, propsData: propsData })
-    const spyOnCopyBtnClick = jest.spyOn(wrapper.vm, 'onCopyBtnClick')
     const spyNotifyCallback = jest.spyOn(wrapper.vm, 'notifyCallback')
-    wrapper.setMethods({
-      onCopyBtnClick: spyOnCopyBtnClick,
-      notifyCallback: spyNotifyCallback
-    })
 
-    expect(spyOnCopyBtnClick).not.toHaveBeenCalled()
     expect(spyNotifyCallback).not.toHaveBeenCalled()
     wrapper.find('.sodar-irods-copy-path-btn').trigger('click')
-    expect(spyOnCopyBtnClick).toHaveBeenCalled()
     expect(spyNotifyCallback).toHaveBeenCalled()
   })
 
@@ -124,16 +117,12 @@ describe('IrodsButtons.vue', () => {
       showModal: jest.fn()
     }
     const wrapper = mount(IrodsButtons, { localVue, propsData: propsData })
-    const spyOnDirListClick = jest.spyOn(wrapper.vm, 'onDirListClick')
-    wrapper.setMethods({ onDirListClick: spyOnDirListClick })
     const spySetTitle = jest.spyOn(wrapper.props().modalComponent, 'setTitle')
     const spyShowModal = jest.spyOn(wrapper.props().modalComponent, 'showModal')
 
-    expect(spyOnDirListClick).not.toHaveBeenCalled()
     expect(spySetTitle).not.toHaveBeenCalled()
     expect(spyShowModal).not.toHaveBeenCalled()
     wrapper.find('.sodar-ss-popup-list-btn').trigger('click')
-    expect(spyOnDirListClick).toHaveBeenCalled()
     expect(spySetTitle).toHaveBeenCalled()
     expect(spyShowModal).toHaveBeenCalled()
   })

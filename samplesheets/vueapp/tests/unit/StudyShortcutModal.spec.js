@@ -14,8 +14,12 @@ import studyShortcuts from './data/studyShortcutsCancer.json'
 const localVue = createLocalVue()
 localVue.use(BootstrapVue)
 
+// Set up fetch-mock-jest
+const fetchMock = require('fetch-mock-jest')
+
 // Init data
 let propsData
+const ajaxUrl = '/samplesheets/ajax/study/links/' + studyUuid + '?case=A001'
 
 describe('StudyShortcutModal.vue', () => {
   function getPropsData () {
@@ -35,32 +39,30 @@ describe('StudyShortcutModal.vue', () => {
     propsData = getPropsData()
     jest.resetModules()
     jest.clearAllMocks()
+    fetchMock.reset()
   })
 
   it('renders modal with study shortcut data', async () => {
+    fetchMock.mock(ajaxUrl, studyShortcuts)
     const wrapper = mount(StudyShortcutModal, {
-      localVue,
-      propsData: propsData,
-      methods: { getShortcuts: jest.fn() }
+      localVue, propsData: propsData
     })
     wrapper.vm.showModal({ key: 'case', value: 'A001' })
-    wrapper.vm.handleShortcutResponse(studyShortcuts)
     await waitNT(wrapper.vm)
     await waitRAF()
 
+    expect(fetchMock.called(ajaxUrl)).toBe(true)
     expect(wrapper.find('#sodar-ss-shortcut-modal').exists()).toBe(true)
     expect(wrapper.findAll('.sodar-ss-shortcut-item').length).toBe(3)
     expect(wrapper.findAll('.sodar-ss-shortcut-extra').length).toBe(4)
   })
 
   it('renders modal with message', async () => {
+    fetchMock.mock(ajaxUrl, { detail: 'Message' })
     const wrapper = mount(StudyShortcutModal, {
-      localVue,
-      propsData: propsData,
-      methods: { getShortcuts: jest.fn() }
+      localVue, propsData: propsData
     })
     wrapper.vm.showModal({ key: 'case', value: 'A001' })
-    wrapper.vm.handleShortcutResponse({ detail: 'Message' })
     await waitNT(wrapper.vm)
     await waitRAF()
 
@@ -70,10 +72,9 @@ describe('StudyShortcutModal.vue', () => {
   })
 
   it('renders modal while waiting for data', async () => {
+    fetchMock.mock(ajaxUrl, studyShortcuts, { delay: 5000 })
     const wrapper = mount(StudyShortcutModal, {
-      localVue,
-      propsData: propsData,
-      methods: { getShortcuts: jest.fn() }
+      localVue, propsData: propsData
     })
     wrapper.vm.showModal({ key: 'case', value: 'A001' })
     await waitNT(wrapper.vm)

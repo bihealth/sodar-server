@@ -1,0 +1,28 @@
+{
+  "terms": [
+    {
+      "ontology_name": "HP",
+      "term_id": "HP:0000252",
+      "name": "Microcephaly",
+      "is_obsolete": false,
+      "replaced_by": null,
+      "accession": "http://purl.obolibrary.org/obo/HP_0000252"
+    },
+    {
+      "ontology_name": "HP",
+      "term_id": "HP:0000278",
+      "name": "Retrognathia",
+      "is_obsolete": false,
+      "replaced_by": null,
+      "accession": "http://purl.obolibrary.org/obo/HP_0000278"
+    },
+    {
+      "ontology_name": "HP",
+      "term_id": "HP:0001252",
+      "name": "Hypotonia",
+      "is_obsolete": false,
+      "replaced_by": null,
+      "accession": "http://purl.obolibrary.org/obo/HP_0001252"
+    }
+  ]
+}
