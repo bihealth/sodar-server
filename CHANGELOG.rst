@@ -16,6 +16,13 @@ Added
 - **General**
     - ``LABEL`` and ``MAINTAINER`` in ``Dockerfile`` (#1186)
 
+Changed
+-------
+
+- **Samplesheets**
+    - Upgrade vue app dependencies (#1185)
+    - Refactor vue app code and tests for new dependencies (#1185)
+
 
 v0.10.0 (2021-06-11)
 ====================
