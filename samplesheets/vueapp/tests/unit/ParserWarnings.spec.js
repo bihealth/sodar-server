@@ -1,6 +1,6 @@
 import { createLocalVue, mount } from '@vue/test-utils'
 import BootstrapVue from 'bootstrap-vue'
-import { waitNT, waitRAF } from '../testUtils.js'
+import { projectUuid, waitNT, waitRAF } from '../testUtils.js'
 import ParserWarnings from '@/components/ParserWarnings.vue'
 import sodarContext from './data/sodarContext.json'
 import parserWarnings from './data/parserWarnings.json'
@@ -14,7 +14,6 @@ const fetchMock = require('fetch-mock-jest')
 
 // Init data
 let propsData
-const projectUuid = '00000000-0000-0000-0000-000000000000'
 const ajaxUrl = '/samplesheets/ajax/warnings/' + projectUuid
 
 describe('ParserWarnings.vue', () => {

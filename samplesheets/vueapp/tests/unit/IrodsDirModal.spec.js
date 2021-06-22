@@ -1,5 +1,5 @@
 import { createLocalVue, mount } from '@vue/test-utils'
-import { copy, getAppStub, waitNT, waitRAF } from '../testUtils.js'
+import { projectUuid, copy, getAppStub, waitNT, waitRAF } from '../testUtils.js'
 import BootstrapVue from 'bootstrap-vue'
 import IrodsDirModal from '@/components/modals/IrodsDirModal.vue'
 import irodsObjectList from './data/irodsObjectList.json'
@@ -15,7 +15,6 @@ const fetchMock = require('fetch-mock-jest')
 // Init data
 let propsData
 let objList
-const projectUuid = '00000000-0000-0000-0000-000000000000'
 const rootIrodsPath = (
   '/omicsZone/projects/00/00000000-0000-0000-0000-000000000000/sample_data/' +
   'study_11111111-1111-1111-1111-111111111111/' +
