@@ -23,6 +23,12 @@ Changed
     - Upgrade vue app dependencies (#1185)
     - Refactor vue app code and tests for new dependencies (#1185)
 
+Fixed
+-----
+
+- **Samplesheets**
+    - Loading icon in vue app iRODS status badge (#1192)
+
 
 v0.10.0 (2021-06-11)
 ====================
