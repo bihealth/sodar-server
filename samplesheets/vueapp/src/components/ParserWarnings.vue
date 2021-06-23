@@ -19,7 +19,9 @@
                 :key="index"
                 class="sodar-ss-warnings-item">
               <td class="text-monospace">{{ warning.source }}</td>
-              <td class="text-monospace">{{ warning.message }}</td>
+              <td class="text-monospace">
+                <span v-html="warning.message"></span>
+              </td>
               <td class="text-monospace">{{ warning.category }}</td>
             </tr>
           </tbody>
@@ -54,7 +56,7 @@ export default {
         const warning = warnings[i]
         ret.push({
           source: source,
-          message: warning.message,
+          message: warning.message.split('\n').join('<br />'),
           category: warning.category
         })
       }

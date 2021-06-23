@@ -22,6 +22,7 @@ Changed
 - **Samplesheets**
     - Upgrade vue app dependencies (#1185)
     - Refactor vue app code and tests for new dependencies (#1185)
+    - Preserve line breaks in parser warnings (#1188)
 
 Fixed
 -----
