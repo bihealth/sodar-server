@@ -15,6 +15,7 @@ Added
 
 - **General**
     - ``LABEL`` and ``MAINTAINER`` in ``Dockerfile`` (#1186)
+    - Manual building in Docker setup (#1195)
 
 Changed
 -------
