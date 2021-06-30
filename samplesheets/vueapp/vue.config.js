@@ -11,10 +11,13 @@ module.exports = {
       'Access-Control-Allow-Origin': '*'
     }
   },
-  productionSourceMap: false,
+  // productionSourceMap: false,
+  css: {
+    sourceMap: false
+  },
 
   configureWebpack: {
-    devtool: false,
+    // devtool: false,
     plugins: [
       new BundleTracker({ path: __dirname, filename: './webpack-stats.json' })
     ]
