@@ -11,10 +11,7 @@ module.exports = {
       'Access-Control-Allow-Origin': '*'
     }
   },
-  // productionSourceMap: false,
-  css: {
-    sourceMap: false
-  },
+  productionSourceMap: false,
 
   configureWebpack: {
     // devtool: false,
