@@ -8,9 +8,10 @@ module.exports = {
   devServer: {
     public: 'localhost:8080',
     headers: {
-      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Origin': '*'
     }
   },
+  productionSourceMap: false,
 
   configureWebpack: {
     plugins: [

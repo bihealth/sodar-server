@@ -34,6 +34,7 @@ Fixed
     - Missing migrations for ``JSONField`` and site (#1196)
 - **Samplesheets**
     - Loading icon in vue app iRODS status badge (#1192)
+    - Workaround for Webpack source map file crash (#1198)
 
 
 v0.10.0 (2021-06-11)
