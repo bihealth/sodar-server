@@ -31,6 +31,7 @@ Fixed
 - **General**
     - Docker entry points for Celery and Celerybeat (#1193)
     - Docker image build issues (#1194)
+    - Missing migrations for ``JSONField`` and site (#1196)
 - **Samplesheets**
     - Loading icon in vue app iRODS status badge (#1192)
 
