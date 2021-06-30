@@ -15,4 +15,4 @@ docker build . \
     --build-arg app_git_tag=$GIT_TAG \
     --build-arg app_git_depth=$GIT_DEPTH \
     --build-arg app_git_url=$GIT_URL \
-    -t bihealth/sodar-server:$DOCKER_VERSION
+    -t ghcr.io/bihealth/sodar-server:$DOCKER_VERSION

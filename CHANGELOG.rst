@@ -15,6 +15,7 @@ Added
 
 - **General**
     - ``LABEL`` and ``MAINTAINER`` in ``Dockerfile`` (#1186)
+    - Manual building in Docker setup (#1195)
 
 Changed
 -------
@@ -29,6 +30,7 @@ Fixed
 
 - **General**
     - Docker entry points for Celery and Celerybeat (#1193)
+    - Docker image build issues (#1194)
 - **Samplesheets**
     - Loading icon in vue app iRODS status badge (#1192)
 
