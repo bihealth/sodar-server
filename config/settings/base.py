@@ -476,8 +476,45 @@ SAML2_AUTH = {
 # Logging
 # ------------------------------------------------------------------------------
 
+# TODO: Integrate with SODAR Core (see sodar_core#762)
 
-def set_logging(debug):
+SODAR_LOG_APPS = env.list(
+    'SODAR_LOG_APPS',
+    default=[
+        'irodsadmin',
+        'irodsbackend',
+        'landingzones',
+        'ontologyaccess',
+        'projectroles',
+        'samplesheets',
+        'sodarcache',
+        'taskflowbackend',
+    ],
+)
+
+SODAR_LOG_FILE_PATH = env.path('SODAR_LOG_FILE_PATH', '/var/log/sodar.log')
+
+
+def set_logging(debug, production=False):
+    app_logger_config = {
+        'level': 'DEBUG' if debug else 'ERROR',
+        'handlers': ['file'] if production else ['console'],
+        'propagate': True,
+    }
+    log_handlers = {
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+        }
+    }
+    if production:
+        log_handlers['file'] = {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': SODAR_LOG_FILE_PATH,
+            'formatter': 'simple',
+        }
     return {
         'version': 1,
         'disable_existing_loggers': False,
@@ -486,55 +523,8 @@ def set_logging(debug):
                 'format': '%(asctime)s [%(levelname)s] %(name)s: %(message)s'
             }
         },
-        'handlers': {
-            'console': {
-                'level': 'DEBUG',
-                'class': 'logging.StreamHandler',
-                'formatter': 'simple',
-            }
-        },
-        'loggers': {
-            'irodsadmin': {
-                'level': 'ERROR',
-                'handlers': ['console'],
-                'propagate': True,
-            },
-            'irodsbackend': {
-                'level': 'DEBUG' if debug else 'ERROR',
-                'handlers': ['console'],
-                'propagate': True,
-            },
-            'landingzones': {
-                'level': 'DEBUG' if debug else 'ERROR',
-                'handlers': ['console'],
-                'propagate': True,
-            },
-            'ontologyaccess': {
-                'level': 'DEBUG' if debug else 'ERROR',
-                'handlers': ['console'],
-                'propagate': True,
-            },
-            'projectroles': {
-                'level': 'DEBUG' if debug else 'ERROR',
-                'handlers': ['console'],
-                'propagate': True,
-            },
-            'samplesheets': {
-                'level': 'DEBUG' if debug else 'ERROR',
-                'handlers': ['console'],
-                'propagate': True,
-            },
-            'sodarcache': {
-                'level': 'DEBUG' if debug else 'ERROR',
-                'handlers': ['console'],
-                'propagate': True,
-            },
-            'taskflowbackend': {
-                'level': 'DEBUG' if debug else 'INFO',
-                'handlers': ['console'],
-                'propagate': False,
-            },
-        },
+        'handlers': log_handlers,
+        'loggers': {a: app_logger_config for a in SODAR_LOG_APPS},
     }
 
 

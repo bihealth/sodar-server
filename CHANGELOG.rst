@@ -17,6 +17,7 @@ Added
     - ``LABEL`` and ``MAINTAINER`` in ``Dockerfile`` (#1186)
     - Manual building in Docker setup (#1195)
     - SAML configuration (#990)
+    - ``SODAR_LOG_APPS`` and ``SODAR_LOG_FILE_PATH`` Django settings (#1209)
 
 Changed
 -------
@@ -35,6 +36,7 @@ Fixed
     - Docker entry points for Celery and Celerybeat (#1193)
     - Docker image build issues (#1194)
     - Missing migrations for ``JSONField`` and site (#1196)
+    - ``irodsadmin`` debug logging disabled (#1209)
 - **Samplesheets**
     - Loading icon in vue app iRODS status badge (#1192)
     - Workaround for Webpack source map file crash (#1198)
