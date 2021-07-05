@@ -34,7 +34,8 @@ django-cprofile-middleware==1.0.5
 # Versioning
 versioneer==0.19
 
-# Online documentation via django-docs.
+# Online documentation via django-docs
+docutils>=0.16, <0.17  # 0.17 currently breaks sphinx-rtd-theme
 Sphinx==4.0.2
 django-docs==0.3.1
 sphinx-rtd-theme==0.5.2

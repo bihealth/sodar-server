@@ -476,8 +476,6 @@ SAML2_AUTH = {
 # Logging
 # ------------------------------------------------------------------------------
 
-# TODO: Integrate with SODAR Core (see sodar_core#762)
-
 SODAR_LOG_APPS = env.list(
     'SODAR_LOG_APPS',
     default=[
@@ -492,13 +490,13 @@ SODAR_LOG_APPS = env.list(
     ],
 )
 
-SODAR_LOG_FILE_PATH = env.path('SODAR_LOG_FILE_PATH', '/var/log/sodar.log')
+SODAR_LOG_FILE_PATH = env.str('SODAR_LOG_FILE_PATH', None)
 
 
-def set_logging(debug, production=False):
+def set_logging(debug):
     app_logger_config = {
         'level': 'DEBUG' if debug else 'ERROR',
-        'handlers': ['file'] if production else ['console'],
+        'handlers': ['console', 'file'] if SODAR_LOG_FILE_PATH else ['console'],
         'propagate': True,
     }
     log_handlers = {
@@ -508,7 +506,7 @@ def set_logging(debug, production=False):
             'formatter': 'simple',
         }
     }
-    if production:
+    if SODAR_LOG_FILE_PATH:
         log_handlers['file'] = {
             'level': 'DEBUG',
             'class': 'logging.FileHandler',

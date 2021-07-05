@@ -37,6 +37,7 @@ Fixed
     - Docker image build issues (#1194)
     - Missing migrations for ``JSONField`` and site (#1196)
     - ``irodsadmin`` debug logging disabled (#1209)
+    - Manual layout broken by ``docutils>=0.17`` (#1210)
 - **Samplesheets**
     - Loading icon in vue app iRODS status badge (#1192)
     - Workaround for Webpack source map file crash (#1198)

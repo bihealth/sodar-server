@@ -96,7 +96,7 @@ CACHES = {
 # Logging
 # ------------------------------------------------------------------------------
 
-LOGGING = set_logging(DEBUG, production=True)
+LOGGING = set_logging(DEBUG)
 
 LOGGING['loggers']['django.db.backends'] = {
     'level': 'ERROR',
