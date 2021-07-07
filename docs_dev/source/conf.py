@@ -24,9 +24,9 @@ copyright = '2021, BIH Core Unit Bioinformatics'
 author = 'Mikko Nieminen'
 
 # The short X.Y version.
-version = '0.11'
+version = '0.10'
 # The full version, including alpha/beta/rc tags.
-release = '0.11.0-WIP'
+release = '0.10.1'
 
 
 # -- General configuration ---------------------------------------------------

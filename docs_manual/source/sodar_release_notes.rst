@@ -8,10 +8,16 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
-v0.11.0 (WIP)
-=============
+v0.10.1 (2021-07-07)
+====================
 
-TODO
+Maintenance and bug fix release.
+
+- Docker setup fixes and improvements
+- Site settings improvements
+- Upgrade Vue app dependencies
+- Minor updates and bug fixes
+- Upgrade to SODAR Core v0.10.3
 
 
 v0.10.0 (2021-06-11)

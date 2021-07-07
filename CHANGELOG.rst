@@ -7,8 +7,8 @@ Changelog for the SODAR project. Loosely follows the
 Note that the issue IDs here refer to ones in the private CUBI GitLab.
 
 
-Unreleased
-==========
+v0.10.1 (2021-07-07)
+====================
 
 Added
 -----
@@ -23,7 +23,7 @@ Changed
 -------
 
 - **General**
-    - Upgrade to django-sodar-core v0.10.2 (#1201)
+    - Upgrade to django-sodar-core v0.10.3 (#1201)
     - Allow modifying all relevant SODAR Django settings from env
 - **Samplesheets**
     - Upgrade vue app dependencies (#1185)
