@@ -8,6 +8,14 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
+v0.11.0 (WIP)
+=============
+
+Major feature update.
+
+- Add simple link support to string cells in sample sheets
+
+
 v0.10.1 (2021-07-07)
 ====================
 

@@ -61,6 +61,10 @@
     <span v-else-if="useDisplayValue">
       {{ displayValue }}
     </span>
+    <!-- Simple links for string columns -->
+    <span v-else-if="testSimpleLink()">
+      <a :href="simpleLink[2]" target="_blank">{{ simpleLink[1] }}</a>
+    </span>
     <!-- Plain/numeric/empty/undetected value -->
     <span v-else>
       {{ value.value }}
@@ -72,6 +76,7 @@
 import Vue from 'vue'
 
 const contactRegex = /(.+?)(?:[<[])(.+?)(?=[>\]])/
+const simpleLinkRegex = /([^<>]+)\s<(https?:\/\/[^<>]+)>/
 
 export default Vue.extend({
   data () {
@@ -84,7 +89,8 @@ export default Vue.extend({
       renderData: null,
       enableHover: null,
       newInit: false,
-      newRow: false
+      newRow: false,
+      simpleLink: null
     }
   },
   methods: {
@@ -154,6 +160,11 @@ export default Vue.extend({
     getTooltip () {
       if ('tooltip' in this.value) return this.value.tooltip
       return ''
+    },
+    testSimpleLink () {
+      const ret = simpleLinkRegex.test(this.value.value)
+      if (ret === true) this.simpleLink = this.value.value.match(simpleLinkRegex)
+      return ret
     }
   },
   beforeMount () {

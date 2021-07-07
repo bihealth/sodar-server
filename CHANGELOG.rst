@@ -7,6 +7,16 @@ Changelog for the SODAR project. Loosely follows the
 Note that the issue IDs here refer to ones in the private CUBI GitLab.
 
 
+Unreleased
+==========
+
+Added
+-----
+
+- **Samplesheets**
+    - Simple link support for string cell rendering (#1001)
+
+
 v0.10.1 (2021-07-07)
 ====================
 
