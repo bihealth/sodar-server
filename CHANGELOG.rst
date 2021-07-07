@@ -17,17 +17,19 @@ Added
     - ``LABEL`` and ``MAINTAINER`` in ``Dockerfile`` (#1186)
     - Manual building in Docker setup (#1195)
     - SAML configuration (#990)
-    - ``SODAR_LOG_APPS`` and ``SODAR_LOG_FILE_PATH`` Django settings (#1209)
+    - ``LOGGING_APPS`` and ``LOGGING_FILE_PATH`` Django settings (#1209)
 
 Changed
 -------
 
 - **General**
     - Upgrade to django-sodar-core v0.10.2 (#1201)
+    - Allow modifying all relevant SODAR Django settings from env
 - **Samplesheets**
     - Upgrade vue app dependencies (#1185)
     - Refactor vue app code and tests for new dependencies (#1185)
     - Preserve line breaks in parser warnings (#1188)
+    - Move ``DEFAULT_EXTERNAL_LINK_LABELS`` to ``constants``
 
 Fixed
 -----

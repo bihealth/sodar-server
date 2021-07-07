@@ -2,15 +2,18 @@
 Django settings for the SODAR project.
 
 For more information on this file, see
-https://docs.djangoproject.com/en/dev/topics/settings/
+https://docs.djangoproject.com/en/3.2/topics/settings/
 
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
+
+import environ
 import os
 import re
 
-import environ
+from samplesheets.constants import DEFAULT_EXTERNAL_LINK_LABELS
+
 
 SITE_PACKAGE = 'sodar'
 ROOT_DIR = environ.Path(__file__) - 3
@@ -476,8 +479,8 @@ SAML2_AUTH = {
 # Logging
 # ------------------------------------------------------------------------------
 
-SODAR_LOG_APPS = env.list(
-    'SODAR_LOG_APPS',
+LOGGING_APPS = env.list(
+    'LOGGING_APPS',
     default=[
         'irodsadmin',
         'irodsbackend',
@@ -490,13 +493,13 @@ SODAR_LOG_APPS = env.list(
     ],
 )
 
-SODAR_LOG_FILE_PATH = env.str('SODAR_LOG_FILE_PATH', None)
+LOGGING_FILE_PATH = env.str('LOGGING_FILE_PATH', None)
 
 
 def set_logging(debug):
     app_logger_config = {
         'level': 'DEBUG' if debug else 'ERROR',
-        'handlers': ['console', 'file'] if SODAR_LOG_FILE_PATH else ['console'],
+        'handlers': ['console', 'file'] if LOGGING_FILE_PATH else ['console'],
         'propagate': True,
     }
     log_handlers = {
@@ -506,11 +509,11 @@ def set_logging(debug):
             'formatter': 'simple',
         }
     }
-    if SODAR_LOG_FILE_PATH:
+    if LOGGING_FILE_PATH:
         log_handlers['file'] = {
             'level': 'DEBUG',
             'class': 'logging.FileHandler',
-            'filename': SODAR_LOG_FILE_PATH,
+            'filename': LOGGING_FILE_PATH,
             'formatter': 'simple',
         }
     return {
@@ -522,7 +525,7 @@ def set_logging(debug):
             }
         },
         'handlers': log_handlers,
-        'loggers': {a: app_logger_config for a in SODAR_LOG_APPS},
+        'loggers': {a: app_logger_config for a in LOGGING_APPS},
     }
 
 
@@ -549,8 +552,7 @@ DOCS_ROOT = ROOT_DIR.path('docs_manual/build/html/')
 # Plugin settings
 ENABLED_BACKEND_PLUGINS = env.list(
     'ENABLED_BACKEND_PLUGINS',
-    None,
-    [
+    default=[
         'timeline_backend',
         'appalerts_backend',
         'sodar_cache',
@@ -578,15 +580,17 @@ SODAR_API_DEFAULT_HOST = env.url(
 
 # Projectroles app settings
 PROJECTROLES_SITE_MODE = env.str('PROJECTROLES_SITE_MODE', 'SOURCE')
-PROJECTROLES_SECRET_LENGTH = 32
+PROJECTROLES_SECRET_LENGTH = env.int('PROJECTROLES_SECRET_LENGTH', 32)
 PROJECTROLES_INVITE_EXPIRY_DAYS = env.int('PROJECTROLES_INVITE_EXPIRY_DAYS', 14)
 PROJECTROLES_SEND_EMAIL = env.bool('PROJECTROLES_SEND_EMAIL', False)
 PROJECTROLES_EMAIL_SENDER_REPLY = env.bool(
     'PROJECTROLES_EMAIL_SENDER_REPLY', False
 )
-PROJECTROLES_HELP_HIGHLIGHT_DAYS = 7
-PROJECTROLES_ENABLE_SEARCH = True
-PROJECTROLES_SEARCH_PAGINATION = 5
+PROJECTROLES_HELP_HIGHLIGHT_DAYS = env.int(
+    'PROJECTROLES_HELP_HIGHLIGHT_DAYS', 7
+)
+PROJECTROLES_ENABLE_SEARCH = env.bool('PROJECTROLES_ENABLE_SEARCH', True)
+PROJECTROLES_SEARCH_PAGINATION = env.int('PROJECTROLES_SEARCH_PAGINATION', 5)
 PROJECTROLES_DELEGATE_LIMIT = env.int('PROJECTROLES_DELEGATE_LIMIT', 1)
 PROJECTROLES_DEFAULT_ADMIN = env.str('PROJECTROLES_DEFAULT_ADMIN', 'admin')
 PROJECTROLES_ALLOW_LOCAL_USERS = env.bool(
@@ -619,11 +623,11 @@ PROJECTROLES_INLINE_HEAD_INCLUDE = env.str(
 
 
 # Timeline app settings
-TIMELINE_PAGINATION = 15
+TIMELINE_PAGINATION = env.int('TIMELINE_PAGINATION', 15)
 
 
 # Adminalerts app settings
-ADMINALERTS_PAGINATION = 15
+ADMINALERTS_PAGINATION = env.int('ADMINALERTS_PAGINATION', 15)
 
 
 # SODAR site specific settings (not derived from SODAR Core)
@@ -641,8 +645,8 @@ IRODS_ZONE = env.str('IRODS_ZONE', 'omicsZone')
 IRODS_ROOT_PATH = env.str('IRODS_ROOT_PATH', None)
 IRODS_USER = env.str('IRODS_USER', 'rods')
 IRODS_PASS = env.str('IRODS_PASS', 'rods')
-IRODS_SAMPLE_COLL = 'sample_data'
-IRODS_LANDING_ZONE_COLL = 'landing_zones'
+IRODS_SAMPLE_COLL = env.str('IRODS_SAMPLE_COLL', 'sample_data')
+IRODS_LANDING_ZONE_COLL = env.str('IRODS_LANDING_ZONE_COLL', 'landing_zones')
 
 # Optional iRODS env file
 # (recommended: place in STATIC_ROOT + '/irods/irods_environment.json')
@@ -655,7 +659,7 @@ IRODS_CERT_PATH = env.str(
 
 
 # Taskflow backend settings
-TASKFLOW_TARGETS = ['irods', 'sodar']
+TASKFLOW_TARGETS = env.list('TASKFLOW_TARGETS', default=['irods', 'sodar'])
 TASKFLOW_BACKEND_HOST = env.str('TASKFLOW_BACKEND_HOST', 'http://127.0.0.1')
 TASKFLOW_BACKEND_PORT = env.int('TASKFLOW_BACKEND_PORT', 5005)
 TASKFLOW_SODAR_SECRET = env.str('TASKFLOW_SODAR_SECRET', 'CHANGE ME!')
@@ -699,36 +703,26 @@ SHEETS_TABLE_HEIGHT = env.int('SHEETS_TABLE_HEIGHT', 400)
 # Minimum edit config version
 SHEETS_CONFIG_VERSION = '0.8.0'
 # Min default column width
-SHEETS_MIN_COLUMN_WIDTH = 100
+SHEETS_MIN_COLUMN_WIDTH = env.int('SHEETS_MIN_COLUMN_WIDTH', 100)
 # Max default column width
-SHEETS_MAX_COLUMN_WIDTH = 300
+SHEETS_MAX_COLUMN_WIDTH = env.int('SHEETS_MAX_COLUMN_WIDTH', 300)
 SHEETS_VERSION_PAGINATION = env.int('SHEETS_VERSION_PAGINATION', 15)
 SHEETS_IRODS_TICKET_PAGINATION = env.int('SHEETS_IRODS_TICKET_PAGINATION', 15)
 SHEETS_IRODS_REQUEST_PAGINATION = env.int('SHEETS_IRODS_REQUEST_PAGINATION', 15)
-SHEETS_ONTOLOGY_URL_TEMPLATE = (
-    'https://bioportal.bioontology.org/ontologies/'
-    '{ontology_name}/?p=classes&conceptid={accession}'
+SHEETS_ONTOLOGY_URL_TEMPLATE = env.str(
+    'SHEETS_ONTOLOGY_URL_TEMPLATE',
+    (
+        'https://bioportal.bioontology.org/ontologies/'
+        '{ontology_name}/?p=classes&conceptid={accession}'
+    ),
 )
 # Skip URL template modification if substring found in accession
-SHEETS_ONTOLOGY_URL_SKIP = ['bioontology.org']
+SHEETS_ONTOLOGY_URL_SKIP = env.list(
+    'SHEETS_ONTOLOGY_URL_SKIP', default=['bioontology.org']
+)
 
-SHEETS_EXTERNAL_LINK_LABELS = {
-    'x-bih-buch-genomics-wetlab-id': 'Wetlab-ID assigned by BIH genomics unit '
-    'in Buch',
-    'x-bih-cvk-genomics-wetlab-id': 'Wetlab-ID assigned by BIH genomics unit '
-    'in CVK',
-    'x-bih-tcell2015-id': 'ID assigned in "T-CELL 2015" project ran at BIH',
-    'x-cegat-sequencing-id': 'CeGaT Sequencing ID',
-    'x-charite-bcrt-genomics-wetlab-id': 'BCRT Genomics Wet-Lab ID',
-    'x-charite-medgen-array-id': 'Charite Medical Genetics Array ID',
-    'x-charite-medgen-blood-book-id': 'Charite Medical Genetics Blood Book ID',
-    'x-dkfz-1touch-id': 'ID assigned through Heidelberg one-touch pipeline',
-    'x-dkfz-ilse-id': 'ID assigned through DFKZ sequencing',
-    'x-dkfz-mtk-id': 'ID assigned through DFKZ sequencing for the Molecular '
-    'Tumor Conference project',
-    'x-labor-berlin-blood-book-id': 'Labor Berlin Blood Book ID',
-    'x-generic-remote': 'External ID',
-}
+# Labels for external link columns
+SHEETS_EXTERNAL_LINK_LABELS = env.dict('', default=DEFAULT_EXTERNAL_LINK_LABELS)
 
 # HACK: Supported cubi-tk templates, excluding ones which altamISA cannot parse
 SHEETS_ENABLED_TEMPLATES = [
@@ -736,7 +730,6 @@ SHEETS_ENABLED_TEMPLATES = [
     'germline',
     'ms_meta_biocrates',
 ]
-
 
 # Settings for sync sheets in minutes
 SHEETS_SYNC_INTERVAL = env.int('SHEETS_SYNC_INTERVAL', 5)
@@ -769,7 +762,8 @@ ONTOLOGYACCESS_QUERY_LIMIT = env.int('ONTOLOGYACCESS_QUERY_LIMIT', 250)
 
 
 # Settings for HTTP AuthBasic
-BASICAUTH_REALM = (
-    'Login with user@CHARITE or user@MDC-BERLIN and your password.'
+BASICAUTH_REALM = env.str(
+    'BASICAUTH_REALM',
+    'Login with user@CHARITE or user@MDC-BERLIN and your password.',
 )
-BASICAUTH_DISABLE = False
+BASICAUTH_DISABLE = env.bool('BASICAUTH_DISABLE', False)
