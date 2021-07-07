@@ -13,6 +13,8 @@ Unreleased
 Added
 -----
 
+- **Landingzones**
+    - ``busyzones`` management command (#1212)
 - **Samplesheets**
     - Simple link support for string cell rendering (#1001)
 

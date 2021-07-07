@@ -1,3 +1,5 @@
+"""Management command tests for the landingzones app"""
+
 from datetime import timedelta
 import io
 
@@ -26,33 +28,29 @@ PROJECT_ROLE_OWNER = SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
 ZONE1_TITLE = '20180503_172456_test_zone'
-ZONE1_DESC = 'description'
+ZONE_DESC = 'description'
 ZONE2_TITLE = '20201123_143323_test_zone'
-ZONE2_DESC = 'description'
 ZONE3_TITLE = '20201218_172740_test_zone_moved'
-ZONE3_DESC = 'description'
 ZONE4_TITLE = '20201218_172743_test_zone_deleted'
-ZONE4_DESC = 'description'
 IRODS_BACKEND_ENABLED = (
     True if 'omics_irods' in settings.ENABLED_BACKEND_PLUGINS else False
 )
 IRODS_BACKEND_SKIP_MSG = 'iRODS backend not enabled in settings'
 
 
-@skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
-class TestInactiveZones(
+class TestCommandBase(
     ProjectMixin,
     SampleSheetIOMixin,
     RoleAssignmentMixin,
     LandingZoneMixin,
     TestCase,
 ):
-    """Test functions for the inactivezones command"""
+    """Base class for command tests"""
 
     def setUp(self):
         super().setUp()
 
-        # Init super user
+        # Init superuser
         self.user = self.make_user('user')
         self.user.is_superuser = True
         self.user.is_staff = True
@@ -75,56 +73,60 @@ class TestInactiveZones(
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
 
+
+@skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
+class TestInactiveZones(TestCommandBase):
+    """Tests for the inactivezones command"""
+
+    def setUp(self):
+        super().setUp()
+
         testtime1 = localtime() - timedelta(weeks=3)
         testtime2 = localtime() - timedelta(weeks=1)
 
         with mock.patch('django.utils.timezone.now') as mock_now:
             mock_now.return_value = testtime1
 
-            # Create LandingZone 1 from 3 weeks ago
-            self.landing_zone1 = self._make_landing_zone(
+            # Create landing zone 1 from 3 weeks ago
+            self.zone = self._make_landing_zone(
                 title=ZONE1_TITLE,
                 project=self.project,
                 user=self.as_owner.user,
                 assay=self.assay,
-                description=ZONE1_DESC,
+                description=ZONE_DESC,
                 configuration=None,
                 config_data={},
             )
-
-            # Create LandingZone 3 from 3 weeks ago but status MOVED
-            self.landing_zone3 = self._make_landing_zone(
+            # Create landing zone 3 from 3 weeks ago but status MOVED
+            self.zone3 = self._make_landing_zone(
                 title=ZONE3_TITLE,
                 project=self.project,
                 user=self.as_owner.user,
                 assay=self.assay,
-                description=ZONE3_DESC,
+                description=ZONE_DESC,
                 configuration=None,
                 config_data={},
                 status='MOVED',
             )
-
-            # Create LandingZone 3 from 3 weeks ago but status DELETED
-            self.landing_zone4 = self._make_landing_zone(
+            # Create landing zone 3 from 3 weeks ago but status DELETED
+            self.zone4 = self._make_landing_zone(
                 title=ZONE4_TITLE,
                 project=self.project,
                 user=self.as_owner.user,
                 assay=self.assay,
-                description=ZONE4_DESC,
+                description=ZONE_DESC,
                 configuration=None,
                 config_data={},
                 status='DELETED',
             )
-
             mock_now.return_value = testtime2
-
-            # Create LandingZone 2 from 1 week ago
-            self.landing_zone2 = self._make_landing_zone(
+            # Create landing zone 2 from 1 week ago
+            self.zone2 = self._make_landing_zone(
                 title=ZONE2_TITLE,
                 project=self.project,
                 user=self.as_owner.user,
                 assay=self.assay,
-                description=ZONE2_DESC,
+                description=ZONE_DESC,
                 configuration=None,
                 config_data={},
             )
@@ -134,16 +136,16 @@ class TestInactiveZones(
 
         # Create the irods collections
         self.irods_session.collections.create(
-            self.irods_backend.get_path(self.landing_zone1)
+            self.irods_backend.get_path(self.zone)
         )
         self.irods_session.collections.create(
-            self.irods_backend.get_path(self.landing_zone2)
+            self.irods_backend.get_path(self.zone2)
         )
         self.irods_session.collections.create(
-            self.irods_backend.get_path(self.landing_zone3)
+            self.irods_backend.get_path(self.zone3)
         )
         self.irods_session.collections.create(
-            self.irods_backend.get_path(self.landing_zone4)
+            self.irods_backend.get_path(self.zone4)
         )
 
     def tearDown(self):
@@ -165,8 +167,8 @@ class TestInactiveZones(
                 '{};{};{};{};0;0 bytes'.format(
                     str(self.project.sodar_uuid),
                     self.project.full_title,
-                    self.landing_zone1.user.username,
-                    self.irods_backend.get_path(self.landing_zone1),
+                    self.zone.user.username,
+                    self.irods_backend.get_path(self.zone),
                 )
             ],
         )
@@ -178,7 +180,64 @@ class TestInactiveZones(
         expected = '{};{};{};{};0;0 bytes\n'.format(
             str(self.project.sodar_uuid),
             self.project.full_title,
-            self.landing_zone1.user.username,
-            self.irods_backend.get_path(self.landing_zone1),
+            self.zone.user.username,
+            self.irods_backend.get_path(self.zone),
         )
-        self.assertEqual(expected, out.getvalue())
+        self.assertEqual(out.getvalue(), expected)
+
+
+class TestBusyZones(TestCommandBase):
+    """Tests for the busyzones command"""
+
+    def setUp(self):
+        super().setUp()
+
+        # Create LandingZone 1 from 3 weeks ago
+        self.zone = self._make_landing_zone(
+            title=ZONE1_TITLE,
+            project=self.project,
+            user=self.as_owner.user,
+            assay=self.assay,
+            description=ZONE_DESC,
+            configuration=None,
+            config_data={},
+            status='ACTIVE',
+        )
+
+        self.zone2 = self._make_landing_zone(
+            title=ZONE2_TITLE,
+            project=self.project,
+            user=self.as_owner.user,
+            assay=self.assay,
+            description=ZONE_DESC,
+            configuration=None,
+            config_data={},
+            status='ACTIVE',
+        )
+
+    def test_active_zones(self):
+        """Test command with active zones"""
+        out = io.StringIO()
+        call_command('busyzones', stdout=out)
+        self.assertEqual(out.getvalue(), '')
+
+    def test_busy_zones(self):
+        """Test command with a busy zones"""
+        self.zone2.status = 'MOVING'
+        self.zone2.save()
+        out = io.StringIO()
+        call_command('busyzones', stdout=out)
+        self.assertEqual(
+            out.getvalue(),
+            ';'.join(
+                [
+                    str(self.zone2.project.sodar_uuid),
+                    self.zone2.project.full_title,
+                    self.zone2.user.username,
+                    self.zone2.title,
+                    self.zone2.status,
+                    str(self.zone2.sodar_uuid),
+                ]
+            )
+            + '\n',
+        )
