@@ -27,9 +27,10 @@ from samplesheets.models import (
     Process,
     GenericMaterial,
     ISATab,
+    IrodsAccessTicket,
     NOT_AVAILABLE_STR,
     CONFIG_LABEL_CREATE,
-    IrodsAccessTicket,
+    ISA_META_ASSAY_PLUGIN,
 )
 from samplesheets.utils import get_alt_names
 
@@ -38,7 +39,6 @@ from samplesheets.utils import get_alt_names
 
 
 DEFAULT_PARSER_VERSION = altamisa.__version__
-
 
 INV_IDENTIFIER = 'Investigation identifier'
 INV_FILE_NAME = 'i_Investigation.txt'
@@ -110,6 +110,8 @@ DEFAULT_COMMENTS = {'comment': 'value'}
 
 ISATAB_DATA = {'i_investigation.txt': '', 's_study.txt': '', 'a_assay.txt': ''}
 
+PLUGIN_NAME_DNA_SEQ = 'samplesheets_assay_dna_sequencing'
+PLUGIN_NAME_GENERIC_RAW = 'samplesheets_assay_generic_raw'
 
 # Helper mixins ----------------------------------------------------------------
 
@@ -670,6 +672,50 @@ class TestAssay(TestSampleSheetBase):
     def test_get_name(self):
         """Test Assay get_name() function"""
         self.assertEqual(self.assay.get_name(), 'assay')
+
+    def test_get_plugin_unknown(self):
+        """Test get_plugin() without measurement/technology type"""
+        self.assertEqual(self.assay.get_plugin(), None)
+
+    def test_get_plugin(self):
+        """Test get_plugin() with measurement/technology type"""
+        self.assay.measurement_type = {
+            'name': 'genome sequencing',
+            'accession': None,
+            'ontology_name': None,
+        }
+        self.assay.technology_type = {
+            'name': 'nucleotide sequencing',
+            'accession': None,
+            'ontology_name': None,
+        }
+        plugin = self.assay.get_plugin()
+        self.assertIsNotNone(plugin)
+        self.assertEqual(plugin.name, PLUGIN_NAME_DNA_SEQ)
+
+    def test_get_plugin_force(self):
+        """Test get_plugin() with forced plugin in assay comments"""
+        self.assay.comments = {ISA_META_ASSAY_PLUGIN: PLUGIN_NAME_GENERIC_RAW}
+        plugin = self.assay.get_plugin()
+        self.assertIsNotNone(plugin)
+        self.assertEqual(plugin.name, PLUGIN_NAME_GENERIC_RAW)
+
+    def test_get_plugin_override(self):
+        """Test get_plugin() override with measurement and technology type"""
+        self.assay.measurement_type = {
+            'name': 'genome sequencing',
+            'accession': None,
+            'ontology_name': None,
+        }
+        self.assay.technology_type = {
+            'name': 'nucleotide sequencing',
+            'accession': None,
+            'ontology_name': None,
+        }
+        self.assay.comments = {ISA_META_ASSAY_PLUGIN: PLUGIN_NAME_GENERIC_RAW}
+        plugin = self.assay.get_plugin()
+        self.assertIsNotNone(plugin)
+        self.assertEqual(plugin.name, PLUGIN_NAME_GENERIC_RAW)
 
 
 class TestSource(TestSampleSheetBase):

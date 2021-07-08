@@ -14,6 +14,8 @@ v0.11.0 (WIP)
 Major feature update.
 
 - Add simple link support to string cells in sample sheets
+- Add generic raw data assay plugin
+- Add assay plugin override via ISA-Tab comments
 
 
 v0.10.1 (2021-07-07)

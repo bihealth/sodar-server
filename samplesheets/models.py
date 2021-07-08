@@ -1,6 +1,7 @@
 """Models for the samplesheets app"""
 
 from altamisa.constants import table_headers as th
+import logging
 import os
 import uuid
 
@@ -27,6 +28,8 @@ from samplesheets.utils import (
 
 # Access Django user model
 AUTH_USER_MODEL = getattr(settings, 'AUTH_USER_MODEL', 'auth.User')
+
+logger = logging.getLogger(__name__)
 
 
 # Local constants
@@ -68,6 +71,10 @@ IRODS_DATA_REQUEST_STATUS_CHOICES = [
     ('ACCEPTED', 'accepted'),
     ('FAILED', 'failed'),
 ]
+
+# ISA-Tab SODAR metadata comment key for assay plugin override
+ISA_META_ASSAY_PLUGIN = 'SODAR Assay Plugin'
+
 
 # Abstract base class ----------------------------------------------------------
 
@@ -529,6 +536,19 @@ class Assay(BaseSampleSheet):
         # TODO: Log warning if there are multiple plugins found?
         from samplesheets.plugins import SampleSheetAssayPluginPoint
 
+        # Check override in assay comments
+        if self.comments.get(ISA_META_ASSAY_PLUGIN):
+            try:
+                return SampleSheetAssayPluginPoint.get_plugin(
+                    self.comments[ISA_META_ASSAY_PLUGIN]
+                )
+            except Exception as ex:
+                logger.error(
+                    'Exception raised retrieving assay plugin with name '
+                    '"{}": {}'.format(self.comments[ISA_META_ASSAY_PLUGIN], ex)
+                )
+
+        # If not found, select by measurement/technology type
         search_fields = {
             'measurement_type': get_isa_field_name(self.measurement_type),
             'technology_type': get_isa_field_name(self.technology_type),

@@ -17,6 +17,8 @@ Added
     - ``busyzones`` management command (#1212)
 - **Samplesheets**
     - Simple link support for string cell rendering (#1001)
+    - ``generic_raw`` assay plugin (#1128)
+    - Overriding assay plugin via assay comment (#1128)
 
 
 v0.10.1 (2021-07-07)

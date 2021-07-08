@@ -55,9 +55,24 @@ If SODAR doesn't recognize the measurement type and technology combination, no
 plugin will be applied. In this case the row-specific links will point to the
 root collection of the assay.
 
+Alternatively, it is possible to explicitly declare what plugin should be used
+by adding a ``SODAR Assay Plugin`` comment within the ``STUDY ASSAYS`` section
+of the ISA-Tab investigation file. As the value for each assay in which you want
+to override the plugin, the full internal plugin name (e.g.
+``samplesheets_assay_generic_raw``) should be used. If both the explicit
+declaration and measurement/technology type are present, the former will
+override the latter. Example:
+
+.. code-block::
+
+    STUDY ASSAYS
+    Study Assay File Name   a_assay.txt
+    Comment[SODAR Assay Plugin] samplesheets_assay_generic_raw
+
 SODAR currently supports the following assay plugins:
 
 - **DNA Sequencing**
+- **Generic Raw Data Plugin**
 - **Metabolite Profiling / Mass Spectrometry**
 - **Microarray**
 - **Protein Expression Profiling / Mass Spectrometry**
@@ -78,6 +93,7 @@ configurations in the assay shortcuts card:
 DNA Sequencing Plugin
 ---------------------
 
+- Internal name: ``samplesheets_assay_dna_sequencing``
 - Additional assay shortcuts
     * N/A
 - Row-specific links
@@ -91,9 +107,23 @@ DNA Sequencing Plugin
     * transcription profiling / nucleotide sequencing
     * panel sequencing / nucleotide sequencing
 
+Generic Raw Data Assay Plugin
+-----------------------------
+
+- Internal name: ``samplesheets_assay_generic_raw``
+- Additional assay shortcuts
+    * ``RawData``: Assay-wide raw data files
+- Row-specific links
+    * N/A
+- Inline links
+    * *Raw data files* are linked to ``RawData``
+- Used with measurement type / technology type
+    * N/A (can be used with the ``SODAR Assay Plugin`` comment override)
+
 Metabolite Profiling / Mass Spectrometry Plugin
 -----------------------------------------------
 
+- Internal name: ``samplesheets_assay_meta_ms``
 - Additional assay shortcuts
     * ``RawData``: Assay-wide raw data files
 - Row-specific links
@@ -108,6 +138,7 @@ Metabolite Profiling / Mass Spectrometry Plugin
 Microarray Plugin
 -----------------
 
+- Internal name: ``samplesheets_assay_microarray``
 - Additional assay shortcuts
     * N/A
 - Row-specific links
@@ -123,6 +154,7 @@ Microarray Plugin
 Protein Expression Profiling / Mass Spectrometry Plugin
 -------------------------------------------------------
 
+- Internal name: ``samplesheets_assay_pep_ms``
 - Additional assay shortcuts
     * ``RawData``: Assay-wide raw data files
     * ``MaxQuantResults``: Assay-wide MaxQuant result files

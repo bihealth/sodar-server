@@ -97,6 +97,7 @@ LOCAL_APPS = [
     'samplesheets.studyapps.cancer.apps.CancerConfig',
     # Samplesheets assay sub-apps
     'samplesheets.assayapps.dna_sequencing.apps.DnaSequencingConfig',
+    'samplesheets.assayapps.generic_raw.apps.GenericRawConfig',
     'samplesheets.assayapps.meta_ms.apps.MetaMsConfig',
     'samplesheets.assayapps.microarray.apps.MicroarrayConfig',
     'samplesheets.assayapps.pep_ms.apps.PepMsConfig',
