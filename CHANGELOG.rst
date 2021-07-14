@@ -13,6 +13,8 @@ Unreleased
 Added
 -----
 
+- **General**
+    - Siteinfo app in default ``LOGGING_APPS`` value (#1219)
 - **Landingzones**
     - ``busyzones`` management command (#1212)
 - **Samplesheets**

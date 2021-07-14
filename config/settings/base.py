@@ -489,6 +489,7 @@ LOGGING_APPS = env.list(
         'ontologyaccess',
         'projectroles',
         'samplesheets',
+        'siteinfo',
         'sodarcache',
         'taskflowbackend',
     ],
