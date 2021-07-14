@@ -20,6 +20,12 @@ Added
     - ``generic_raw`` assay plugin (#1128)
     - Overriding assay plugin via assay comment (#1128)
 
+Fixed
+-----
+
+- **General**
+    - API version settings not updated (#1218)
+
 
 v0.10.1 (2021-07-07)
 ====================
