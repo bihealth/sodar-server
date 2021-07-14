@@ -22,6 +22,12 @@ Added
     - ``generic_raw`` assay plugin (#1128)
     - Overriding assay plugin via assay comment (#1128)
 
+Changed
+-------
+
+- **General**
+    - Upgrade to django-sodar-core v0.10.4-WIP (#1217)
+
 Fixed
 -----
 

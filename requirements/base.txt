@@ -67,8 +67,8 @@ mistune==0.8.4
 -e git+https://github.com/mikkonie/django-plugins.git@42e86e7904e5c09f1da32173862b26843eda5dd8#egg=django-plugins
 
 # SODAR Core
-django-sodar-core==0.10.3
-# -e git+https://github.com/bihealth/sodar-core.git@ebfe980ab12b9a111fc931f1156b4ec980fc9141#egg=django-sodar-core
+# django-sodar-core==0.10.3
+-e git+https://github.com/bihealth/sodar-core.git@f6de23aa6073d446f7c49ede0af7fa8729992209#egg=django-sodar-core
 
 # Celery
 celery==5.1.0
@@ -79,7 +79,7 @@ celery==5.1.0
 
 # CUBI AltamISA parser
 altamisa==0.2.9
-# -e git+https://github.com/bihealth/altamisa.git@9aa7e76b0d079f89edc076b5d1fbd4b734cbb9b4#egg=altamisa
+# -e git+https://github.com/bihealth/altamisa.git@f6de23aa6073d446f7c49ede0af7fa8729992209#egg=altamisa
 
 # Python iRODS client for irodsbackend
 python-irodsclient==0.8.6
