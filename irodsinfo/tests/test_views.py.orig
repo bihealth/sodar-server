@@ -1,6 +1,5 @@
 """Tests for UI views in the irodsinfo app"""
 
-<<<<<<< HEAD
 import io
 import json
 import os
@@ -8,9 +7,6 @@ import zipfile
 
 from django.conf import settings
 from django.test import override_settings
-=======
-from django.conf import settings
->>>>>>> update irods config retrieval (#1221), add irodsinfo tests (wip) (#1222)
 from django.urls import reverse
 
 from test_plus.test import TestCase
@@ -23,9 +19,10 @@ from projectroles.plugins import get_backend_api, change_plugin_status
 # Local constants
 <<<<<<< HEAD
 CERT_PATH = os.path.dirname(__file__) + '/data/irods_server_crt.txt'
-IRODS_ENV = {'test': 1}
 =======
->>>>>>> update irods config retrieval (#1221), add irodsinfo tests (wip) (#1222)
+CERT_PATH = os.path.dirname(__file__) + '/data/irods_server.crt'
+>>>>>>> finish irodsinfo tests (#1222), improve set_logging()
+IRODS_ENV = {'test': 1}
 IRODS_BACKEND_ENABLED = (
     True if 'omics_irods' in settings.ENABLED_BACKEND_PLUGINS else False
 )
@@ -80,7 +77,6 @@ class TestIrodsConfigView(TestIrodsinfoViewBase):
         with self.login(self.regular_user):
             response = self.client.get(reverse('irodsinfo:config'))
         self.assertEqual(response.status_code, 200)
-<<<<<<< HEAD
         self.assertEqual(response['content-type'], 'application/zip')
         self.assertEqual(
             response.get('Content-Disposition'),
@@ -126,9 +122,3 @@ class TestIrodsConfigView(TestIrodsinfoViewBase):
         )
         zip_file = zipfile.ZipFile(io.BytesIO(response.content))
         self.assertEqual(len(zip_file.infolist()), 2)
-=======
-        # TODO: Check content
-
-    # TODO: Test with client config in settings
-    # TODO: Test with cert file
->>>>>>> update irods config retrieval (#1221), add irodsinfo tests (wip) (#1222)
