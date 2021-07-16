@@ -10,7 +10,6 @@ from irods.query import SpecificQuery
 from irods.session import iRODSSession
 from irods.ticket import Ticket
 
-import json
 import logging
 import math
 from pytz import timezone
@@ -56,27 +55,14 @@ class IrodsAPI:
         if not user_pass:
             user_pass = settings.IRODS_PASS
 
-        # Get optional environment file
-        if settings.IRODS_ENV_PATH:
-            try:
-                with open(settings.IRODS_ENV_PATH) as env_file:
-                    self.irods_env = json.load(env_file)
-
-                logger.debug(
-                    'Loaded iRODS env from file: {}'.format(self.irods_env)
+        # Get optional server side environment dict
+        if settings.IRODS_ENV_BACKEND:
+            self.irods_env = settings.IRODS_ENV_BACKEND
+            logger.debug(
+                'Read iRODS env from IRODS_ENV_BACKEND: {}'.format(
+                    self.irods_env
                 )
-            except FileNotFoundError:
-                logger.warning(
-                    'iRODS env file not found: connecting with default '
-                    'parameters (path={})'.format(settings.IRODS_ENV_PATH)
-                )
-            except Exception as ex:
-                logger.error(
-                    'Unable to read iRODS env file (path={}): {}'.format(
-                        settings.IRODS_ENV_PATH, ex
-                    )
-                )
-                raise ex
+            )
 
         # Connect
         try:

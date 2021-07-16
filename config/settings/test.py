@@ -62,8 +62,8 @@ TEMPLATES[0]['OPTIONS']['loaders'] = [
 # Logging
 # ------------------------------------------------------------------------------
 
-LOGGING = set_logging(DEBUG)
-LOGGING['handlers']['console']['level'] = 'CRITICAL'
+LOGGING = set_logging(DEBUG, level='CRITICAL')
+
 
 # Local App Settings
 # ------------------------------------------------------------------------------

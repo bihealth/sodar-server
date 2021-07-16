@@ -485,6 +485,7 @@ LOGGING_APPS = env.list(
     default=[
         'irodsadmin',
         'irodsbackend',
+        'irodsinfo',
         'landingzones',
         'ontologyaccess',
         'projectroles',
@@ -498,22 +499,24 @@ LOGGING_APPS = env.list(
 LOGGING_FILE_PATH = env.str('LOGGING_FILE_PATH', None)
 
 
-def set_logging(debug):
+def set_logging(debug, level=None):
+    if not level:
+        level = 'DEBUG' if debug else 'ERROR'
     app_logger_config = {
-        'level': 'DEBUG' if debug else 'ERROR',
+        'level': level,
         'handlers': ['console', 'file'] if LOGGING_FILE_PATH else ['console'],
         'propagate': True,
     }
     log_handlers = {
         'console': {
-            'level': 'DEBUG',
+            'level': level,
             'class': 'logging.StreamHandler',
             'formatter': 'simple',
         }
     }
     if LOGGING_FILE_PATH:
         log_handlers['file'] = {
-            'level': 'DEBUG',
+            'level': level,
             'class': 'logging.FileHandler',
             'filename': LOGGING_FILE_PATH,
             'formatter': 'simple',
@@ -656,14 +659,13 @@ IRODS_USER = env.str('IRODS_USER', 'rods')
 IRODS_PASS = env.str('IRODS_PASS', 'rods')
 IRODS_SAMPLE_COLL = env.str('IRODS_SAMPLE_COLL', 'sample_data')
 IRODS_LANDING_ZONE_COLL = env.str('IRODS_LANDING_ZONE_COLL', 'landing_zones')
-
-# Optional iRODS env file
-# (recommended: place in STATIC_ROOT + '/irods/irods_environment.json')
-IRODS_ENV_PATH = env.str('IRODS_ENV_PATH', None)
-
-# Optional iRODS certificate path
+# Optional iRODS env for backend connections
+IRODS_ENV_BACKEND = env.dict('IRODS_CLIENT_ENV', default={})
+# Optional iRODS env for client connections
+IRODS_ENV_CLIENT = env.dict('IRODS_ENV_CLIENT', default=IRODS_ENV_BACKEND)
+# Optional iRODS certificate path on server
 IRODS_CERT_PATH = env.str(
-    'IRODS_CERT_PATH', STATIC_ROOT + '/irods/irods_server.crt'
+    'IRODS_CERT_PATH', STATIC_ROOT + '/irods/irods_server_crt.txt'
 )
 
 
@@ -695,8 +697,7 @@ IRODS_QUERY_BATCH_SIZE = env.int('IRODS_QUERY_BATCH_SIZE', 24)
 # Irodsinfo settings
 # In the generated iRODS config, require SSL cert verification unless False
 IRODSINFO_SSL_VERIFY = env.bool('IRODSINFO_SSL_VERIFY', True)
-# Path to iRODS env file appended to client env file (default=IRODS_ENV_PATH)
-IRODSINFO_ENV_PATH = env.str('IRODSINFO_ENV_PATH', IRODS_ENV_PATH)
+# Optional iRODS env for client connections (default=IRODS_ENV_BACKEND)
 
 
 # Samplesheets settings

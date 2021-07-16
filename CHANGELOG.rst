@@ -27,12 +27,24 @@ Changed
 
 - **General**
     - Upgrade to django-sodar-core v0.10.4-WIP (#1217)
+- **Irodsbackend**
+    - Retrieve iRODS config from ``IRODS_ENV_BACKEND`` setting (#1221)
+- **Irodsinfo**
+    - Retrieve iRODS config from ``IRODS_ENV_CLIENT`` setting (#1221)
 
 Fixed
 -----
 
 - **General**
     - API version settings not updated (#1218)
+
+Removed
+-------
+
+- **Irodsbackend**
+    - ``IRODS_ENV_PATH`` setting (#1221)
+- **Irodsinfo**
+    - ``IRODSINFO_ENV_PATH`` setting (#1221)
 
 
 v0.10.1 (2021-07-07)

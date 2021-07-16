@@ -27,7 +27,10 @@ class IrodsInfoView(LoggedInPermissionMixin, HTTPRefererMixin, TemplateView):
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
 
-        ib_enabled = get_backend_api('omics_irods', conn=False)  # HACK for #909
+        # HACK for #909
+        ib_enabled = (
+            True if get_backend_api('omics_irods', conn=False) else False
+        )
         irods_backend = get_backend_api('omics_irods')
         unavail_info = {
             'server_ok': False,
@@ -77,25 +80,11 @@ class IrodsConfigView(LoggedInPermissionMixin, HTTPRefererMixin, View):
 
         # Get optional environment file
         env_opt = {}
-        if settings.IRODSINFO_ENV_PATH:
-            try:
-                with open(settings.IRODSINFO_ENV_PATH) as env_file:
-                    env_opt = json.load(env_file)
-                logger.debug('Loaded iRODS env from file: {}'.format(env_opt))
-            except FileNotFoundError:
-                logger.warning(
-                    'iRODS env file not found: generating with default '
-                    'parameters (path={})'.format(settings.IRODSINFO_ENV_PATH)
-                )
-                env_opt = {}
-            except Exception as ex:
-                logger.error(
-                    'Unable to read iRODS env file (path={}): {}'.format(
-                        settings.IRODSINFO_ENV_PATH, ex
-                    )
-                )
-                raise ex
-
+        if settings.IRODS_ENV_CLIENT:
+            env_opt = settings.IRODS_ENV_CLIENT
+            logger.debug(
+                'Read iRODS env from IRODS_ENV_CLIENT: {}'.format(env_opt)
+            )
         # Set up irods_environment.json
         irods_env = {
             'irods_host': settings.IRODS_HOST,
