@@ -4,6 +4,8 @@
 
 import hashlib
 from irods.test.helpers import make_object
+from irods.keywords import REG_CHKSUM_KW
+import os
 import time
 
 from django.conf import settings
@@ -126,8 +128,10 @@ class LandingZoneTaskflowMixin:
         """
         if not content:
             content = ''.join('x' for _ in range(content_length))
-        obj_path = coll.path + '/' + obj_name
-        return make_object(self.irods_session, obj_path, content)
+        obj_path = os.path.join(coll.path, obj_name)
+        return make_object(
+            self.irods_session, obj_path, content, **{REG_CHKSUM_KW: ''}
+        )
 
     def _make_md5_object(self, obj):
         """

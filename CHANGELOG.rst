@@ -27,6 +27,7 @@ Changed
 
 - **General**
     - Upgrade to django-sodar-core v0.10.4-WIP (#1217)
+    - Upgrade to python-irodsclient v1.0.0 (#1223)
     - Upgrade to Chromedriver v92 (sodar_core#772)
 - **Irodsbackend**
     - Retrieve iRODS config from ``IRODS_ENV_BACKEND`` setting (#1221)
