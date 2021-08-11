@@ -660,7 +660,7 @@ IRODS_PASS = env.str('IRODS_PASS', 'rods')
 IRODS_SAMPLE_COLL = env.str('IRODS_SAMPLE_COLL', 'sample_data')
 IRODS_LANDING_ZONE_COLL = env.str('IRODS_LANDING_ZONE_COLL', 'landing_zones')
 # Optional iRODS env for backend connections
-IRODS_ENV_BACKEND = env.dict('IRODS_CLIENT_ENV', default={})
+IRODS_ENV_BACKEND = env.dict('IRODS_ENV_BACKEND', default={})
 # Optional iRODS env for client connections
 IRODS_ENV_CLIENT = env.dict('IRODS_ENV_CLIENT', default=IRODS_ENV_BACKEND)
 # Optional iRODS certificate path on server
