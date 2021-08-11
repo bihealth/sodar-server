@@ -662,7 +662,7 @@ IRODS_LANDING_ZONE_COLL = env.str('IRODS_LANDING_ZONE_COLL', 'landing_zones')
 # Optional iRODS env for backend connections
 IRODS_ENV_BACKEND = env.dict('IRODS_ENV_BACKEND', default={})
 # Optional iRODS env for client connections
-IRODS_ENV_CLIENT = env.dict('IRODS_ENV_CLIENT', default=IRODS_ENV_BACKEND)
+IRODS_ENV_CLIENT = env.dict('IRODS_ENV_CLIENT', default={})
 # Optional iRODS certificate path on server
 IRODS_CERT_PATH = env.str(
     'IRODS_CERT_PATH', STATIC_ROOT + '/irods/irods_server_crt.txt'
