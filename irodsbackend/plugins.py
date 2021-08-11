@@ -13,7 +13,7 @@ from irodsbackend.api import IrodsAPI
 IRODS_INFO_SETTINGS = [
     'ENABLE_IRODS',
     'IRODS_CERT_PATH',
-    'IRODS_ENV_PATH',
+    'IRODS_ENV_BACKEND',
     'IRODS_HOST',
     'IRODS_LANDING_ZONE_COLL',
     'IRODS_PORT',

@@ -33,6 +33,7 @@ Changed
     - Retrieve iRODS config from ``IRODS_ENV_BACKEND`` setting (#1221)
 - **Irodsinfo**
     - Retrieve iRODS config from ``IRODS_ENV_CLIENT`` setting (#1221)
+    - Display ``IRODS_ENV_CLIENT`` in siteinfo via ``info_settings``
 
 Fixed
 -----
