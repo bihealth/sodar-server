@@ -40,6 +40,7 @@ Fixed
 
 - **General**
     - API version settings not updated (#1218)
+    - Disable cache as workaround for Docker build issues (#1225)
 
 Removed
 -------
