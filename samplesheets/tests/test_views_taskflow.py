@@ -1289,7 +1289,7 @@ class TestIrodsRequestAcceptView(TestIrodsRequestViewsBase):
                 ),
                 {'confirm': True},
             )
-            self.assertRedirects(response, reverse('home'))
+        self.assertEqual(response.status_code, 404)
 
     def test_accept(self):
         """Test accepting a delete request"""
@@ -1538,8 +1538,7 @@ class TestIrodsRequestRejectView(TestIrodsRequestViewsBase):
                     kwargs={'irodsdatarequest': DUMMY_UUID},
                 ),
             )
-
-            self.assertRedirects(response, reverse('home'))
+        self.assertEqual(response.status_code, 404)
 
     def test_reject_admin(self):
         """Test GET request for rejecting a delete request"""
@@ -1864,7 +1863,7 @@ class TestIrodsRequestListView(TestIrodsRequestViewsBase):
 class TestSampleSheetSyncView(TestSheetSyncBase):
     """Tests for SampleSheetSyncView"""
 
-    def test_get_sync_successful(self):
+    def test_sync(self):
         """Test sync sheets successfully"""
         with self.login(self.user):
             response = self.client.get(
@@ -1889,8 +1888,8 @@ class TestSampleSheetSyncView(TestSheetSyncBase):
         # test_tasks.py
         self.assertEqual(self.project_target.investigations.count(), 1)
 
-    def test_get_sync_disabled(self):
-        """Test sync sheets disabled"""
+    def test_sync_disabled(self):
+        """Test sync sheets with sync disabled"""
         app_settings.set_app_setting(
             APP_NAME,
             'sheet_sync_enable',
@@ -1919,8 +1918,8 @@ class TestSampleSheetSyncView(TestSheetSyncBase):
         )
         self.assertEqual(self.project_target.investigations.count(), 0)
 
-    def test_get_sync_wrong_token(self):
-        """Test sync sheets wrong token"""
+    def test_sync_invalid_token(self):
+        """Test sync sheets with invalid token"""
         app_settings.set_app_setting(
             APP_NAME,
             'sheet_sync_token',
@@ -1950,8 +1949,8 @@ class TestSampleSheetSyncView(TestSheetSyncBase):
         )
         self.assertEqual(self.project_target.investigations.count(), 0)
 
-    def test_get_sync_token_missing(self):
-        """Test sync sheets token missing"""
+    def test_sync_no_token(self):
+        """Test sync sheets with no token"""
         app_settings.set_app_setting(
             APP_NAME,
             'sheet_sync_token',
@@ -1981,8 +1980,8 @@ class TestSampleSheetSyncView(TestSheetSyncBase):
 
         self.assertEqual(self.project_target.investigations.count(), 0)
 
-    def test_get_sync_url_missing(self):
-        """Test sync sheets URL missing"""
+    def test_sync_no_url(self):
+        """Test sync sheets with no URL"""
         app_settings.set_app_setting(
             APP_NAME,
             'sheet_sync_url',
@@ -2012,8 +2011,8 @@ class TestSampleSheetSyncView(TestSheetSyncBase):
 
         self.assertEqual(self.project_target.investigations.count(), 0)
 
-    def test_get_sync_wrong_url(self):
-        """Test sync sheets wrong URL"""
+    def test_sync_invalid_url(self):
+        """Test sync sheets with invalid URL"""
         url = 'https://alsdjfasdkjfasdgfli.com'
         app_settings.set_app_setting(
             APP_NAME,
@@ -2045,8 +2044,8 @@ class TestSampleSheetSyncView(TestSheetSyncBase):
         )
         self.assertEqual(self.project_target.investigations.count(), 0)
 
-    def test_get_sync_url_to_nonexisting_sheet(self):
-        """Test sync sheets nonexisting URL"""
+    def test_sync_no_sheet(self):
+        """Test sync with non-existing sheets"""
         app_settings.set_app_setting(
             APP_NAME,
             'sheet_sync_url',
@@ -2076,7 +2075,7 @@ class TestSampleSheetSyncView(TestSheetSyncBase):
         self.assertEqual(
             str(list(get_messages(response.wsgi_request))[0]),
             'Sample sheet sync failed: Source API responded with status code '
-            '403',
+            '404',
         )
         self.assertEqual(self.project_target.investigations.count(), 0)
 
