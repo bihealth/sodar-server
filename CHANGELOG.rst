@@ -49,6 +49,7 @@ Removed
     - ``IRODS_ENV_PATH`` setting (#1221)
 - **Irodsinfo**
     - ``IRODSINFO_ENV_PATH`` setting (#1221)
+    - ``IRODSINFO_SSL_VERIFY`` setting (#1226)
 
 
 v0.10.1 (2021-07-07)

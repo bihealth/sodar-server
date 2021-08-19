@@ -694,14 +694,7 @@ IRODSBACKEND_STATUS_INTERVAL = env.int('IRODSBACKEND_STATUS_INTERVAL', 15)
 IRODS_QUERY_BATCH_SIZE = env.int('IRODS_QUERY_BATCH_SIZE', 24)
 
 
-# Irodsinfo settings
-# In the generated iRODS config, require SSL cert verification unless False
-IRODSINFO_SSL_VERIFY = env.bool('IRODSINFO_SSL_VERIFY', True)
-# Optional iRODS env for client connections (default=IRODS_ENV_BACKEND)
-
-
 # Samplesheets settings
-
 # Allow critical altamISA warnings on import
 SHEETS_ALLOW_CRITICAL = env.bool('SHEETS_ALLOW_CRITICAL', False)
 # Temporary, see issue #556
