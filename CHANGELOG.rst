@@ -26,7 +26,7 @@ Changed
 -------
 
 - **General**
-    - Upgrade to django-sodar-core v0.10.4-WIP (#1217)
+    - Upgrade to django-sodar-core v0.10.4 (#1217, #1220)
     - Upgrade to python-irodsclient v1.0.0 (#1223)
     - Upgrade to Chromedriver v92 (sodar_core#772)
 - **Irodsbackend**
