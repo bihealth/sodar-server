@@ -427,6 +427,7 @@ class SampleSheetImportMixin:
                 project_uuid=str(project.sodar_uuid),
                 user_uuid=str(self.request.user.sodar_uuid),
                 add_alert=ui_mode,
+                alert_msg='Sample sheet {}d'.format(action),
             )
             if ui_mode:
                 success_msg += ', initiated iRODS cache update'
@@ -672,6 +673,8 @@ class IrodsCollsCreateViewMixin:
             update_project_cache_task.delay(
                 project_uuid=str(project.sodar_uuid),
                 user_uuid=str(self.request.user.sodar_uuid),
+                add_alert=True,
+                alert_msg='iRODS collection {}'.format(action),
             )
 
         # If public guest access and anonymous allowed, add ticket access
@@ -924,11 +927,13 @@ class SheetSync(SampleSheetImportMixin):
             update_project_cache_task(
                 project_uuid=str(project.sodar_uuid),
                 user_uuid=str(user.sodar_uuid),
+                add_alert=True,
+                alert_msg='Remote sample sheets synchronized',
             )
 
         logger.info(
-            f'Sample sheet sync OK for project "{project.title}" '
-            f'({project.sodar_uuid})'
+            'Sample sheet sync OK for project "{}" '
+            '({})'.format(project.title, project.sodar_uuid)
         )
         return True
 
@@ -1453,6 +1458,7 @@ class SampleSheetCacheUpdateView(
                 project_uuid=str(project.sodar_uuid),
                 user_uuid=str(request.user.sodar_uuid),
                 add_alert=True,
+                alert_msg='Manual cache update',
             )
             messages.warning(
                 self.request,

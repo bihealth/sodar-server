@@ -166,6 +166,8 @@ class TaskflowZoneStatusSetAPIView(BaseTaskflowAPIView):
             update_project_cache_task.delay(
                 project_uuid=str(zone.project.sodar_uuid),
                 user_uuid=str(zone.user.sodar_uuid),
+                add_alert=True,
+                alert_msg='Moved landing zone "{}"'.format(zone.title),
             )
 
         return Response('ok', status=200)

@@ -306,8 +306,7 @@ class ZoneMoveMixin(ZoneConfigPluginMixin):
             desc = 'validate '
             if not validate_only:
                 desc += 'and move '
-            desc += 'files from landing zone {zone} from ' '{user} in {assay}'
-
+            desc += 'files from landing zone {zone} from {user} in {assay}'
             tl_event = timeline.add_event(
                 project=project,
                 app_name=APP_NAME,

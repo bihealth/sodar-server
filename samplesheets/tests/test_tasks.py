@@ -49,13 +49,8 @@ SUBMIT_STATUS_PENDING_TASKFLOW = SODAR_CONSTANTS[
 
 # Local constants
 APP_NAME = 'samplesheets'
-ZONE_TITLE = '20190703_172456'
-ZONE_SUFFIX = 'Test Zone'
-ZONE_DESC = 'description'
-TEST_OBJ_NAME = 'test1.txt'
-ASYNC_WAIT_SECONDS = 5
-ASYNC_RETRY_COUNT = 3
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
+CACHE_ALERT_MESSAGE = 'Testing'
 TASKFLOW_ENABLED = (
     True if 'taskflow' in settings.ENABLED_BACKEND_PLUGINS else False
 )
@@ -98,7 +93,10 @@ class TestUpdateProjectCacheTask(
         self.assertEqual(ProjectEvent.objects.all().count(), 1)
 
         update_project_cache_task(
-            self.project.sodar_uuid, self.user.sodar_uuid, add_alert=True
+            self.project.sodar_uuid,
+            self.user.sodar_uuid,
+            add_alert=True,
+            alert_msg=CACHE_ALERT_MESSAGE,
         )
 
         self.assertEqual(
@@ -118,6 +116,8 @@ class TestUpdateProjectCacheTask(
         }
         self.assertEqual(cache_item.data, expected_data)
         self.assertEqual(AppAlert.objects.all().count(), 2)
+        alert = AppAlert.objects.order_by('-pk').first()
+        self.assertTrue(alert.message.endswith(CACHE_ALERT_MESSAGE))
         self.assertEqual(ProjectEvent.objects.all().count(), 2)
 
     def test_update_cache_no_alert(self):

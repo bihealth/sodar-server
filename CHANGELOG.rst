@@ -17,11 +17,12 @@ Added
     - Siteinfo app in default ``LOGGING_APPS`` value (#1219)
 - **Landingzones**
     - ``busyzones`` management command (#1212)
+    - App alerts for UI sheet cache updates (#1000)
 - **Samplesheets**
     - Simple link support for string cell rendering (#1001)
     - ``generic_raw`` assay plugin (#1128)
     - Overriding assay plugin via assay comment (#1128)
-    - App alert for UI sheet cache update (#1000)
+    - App alerts for UI sheet cache updates (#1000)
 
 Changed
 -------
