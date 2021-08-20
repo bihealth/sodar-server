@@ -4,6 +4,7 @@ import logging
 
 from django.conf import settings
 from django.contrib import auth
+from django.urls import reverse
 
 from config.celery import app
 
@@ -24,8 +25,17 @@ APP_NAME = 'samplesheets'
 
 
 @app.task(bind=True)
-def update_project_cache_task(_self, project_uuid, user_uuid):
-    """Update project cache asynchronously"""
+def update_project_cache_task(
+    _self, project_uuid, user_uuid, add_alert=False, alert_msg=None
+):
+    """
+    Update project cache asynchronously.
+
+    :param project_uuid: Project UUID for cache item
+    :param user_uuid: User UUID or None
+    :param add_alert: Add app alert for action if True (bool, default=False)
+    :param alert_msg: Additional for alert (string, optional)
+    """
     try:
         project = Project.objects.get(sodar_uuid=project_uuid)
     except Project.DoesNotExist:
@@ -53,8 +63,30 @@ def update_project_cache_task(_self, project_uuid, user_uuid):
     )
     app_plugin = get_app_plugin(APP_NAME)
     app_plugin.update_cache(project=project, user=user)
+
     if tl_event:
         tl_event.set_status(status_type='OK', status_desc='Update OK')
+
+    if add_alert and user:
+        app_alerts = get_backend_api('appalerts_backend')
+        if app_alerts:
+            msg = 'Sample sheet iRODS cache updated for project "{}"'.format(
+                project.title
+            )
+            if alert_msg:
+                msg += ': {}'.format(alert_msg)
+            app_alerts.add_alert(
+                app_name=APP_NAME,
+                alert_name='sheet_cache_update',
+                user=user,
+                message=msg,
+                url=reverse(
+                    'samplesheets:project_sheets',
+                    kwargs={'project': project.sodar_uuid},
+                ),
+                project=project,
+            )
+
     logger.info(
         'Cache update OK for project "{}" ({})'.format(
             project.title, project.sodar_uuid
@@ -68,7 +100,7 @@ def sheet_sync_task(_self, username):
     try:
         user = User.objects.get(username=username)
     except User.DoesNotExist:
-        logger.error(f'User not found (username={username})')
+        logger.error('User not found (username={})'.format(username))
         return False
 
     timeline = get_backend_api('timeline_backend')
