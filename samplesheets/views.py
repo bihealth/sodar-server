@@ -426,6 +426,7 @@ class SampleSheetImportMixin:
             update_project_cache_task.delay(
                 project_uuid=str(project.sodar_uuid),
                 user_uuid=str(self.request.user.sodar_uuid),
+                add_alert=ui_mode,
             )
             if ui_mode:
                 success_msg += ', initiated iRODS cache update'
@@ -1451,11 +1452,13 @@ class SampleSheetCacheUpdateView(
             update_project_cache_task.delay(
                 project_uuid=str(project.sodar_uuid),
                 user_uuid=str(request.user.sodar_uuid),
+                add_alert=True,
             )
             messages.warning(
                 self.request,
-                'Cache updating initiated. This may take some time, refresh '
-                'sheet view after a while to see the results.',
+                'Cache updating initiated. This may take some time, you will '
+                'receive an alert once done. Refresh the sheet view to see '
+                'the results.',
             )
         return redirect(get_sheets_url(project))
 

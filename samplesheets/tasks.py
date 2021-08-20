@@ -4,6 +4,7 @@ import logging
 
 from django.conf import settings
 from django.contrib import auth
+from django.urls import reverse
 
 from config.celery import app
 
@@ -24,7 +25,7 @@ APP_NAME = 'samplesheets'
 
 
 @app.task(bind=True)
-def update_project_cache_task(_self, project_uuid, user_uuid):
+def update_project_cache_task(_self, project_uuid, user_uuid, add_alert=False):
     """Update project cache asynchronously"""
     try:
         project = Project.objects.get(sodar_uuid=project_uuid)
@@ -53,8 +54,26 @@ def update_project_cache_task(_self, project_uuid, user_uuid):
     )
     app_plugin = get_app_plugin(APP_NAME)
     app_plugin.update_cache(project=project, user=user)
+
     if tl_event:
         tl_event.set_status(status_type='OK', status_desc='Update OK')
+
+    if add_alert and user:
+        app_alerts = get_backend_api('appalerts_backend')
+        if app_alerts:
+            app_alerts.add_alert(
+                app_name=APP_NAME,
+                alert_name='sheet_cache_update',
+                user=user,
+                message='Sample sheet iRODS cache updated for '
+                'project "{}"'.format(project.title),
+                url=reverse(
+                    'samplesheets:project_sheets',
+                    kwargs={'project': project.sodar_uuid},
+                ),
+                project=project,
+            )
+
     logger.info(
         'Cache update OK for project "{}" ({})'.format(
             project.title, project.sodar_uuid

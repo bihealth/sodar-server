@@ -25,9 +25,10 @@ from samplesheets.models import (
     Investigation,
     IrodsAccessTicket,
     IrodsDataRequest,
+    ISATab,
 )
-from samplesheets.tests.test_tasks import TestSheetSyncBase
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
+from projectroles.tests.test_views_api import SODARAPIViewTestMixin
 from samplesheets.utils import get_sample_colls
 from samplesheets.views import TRACK_HUBS_COLL, IRODS_REQ_CREATE_ALERT_NAME
 
@@ -132,6 +133,80 @@ class SampleSheetPublicAccessMixin:
         self.assertEqual(response.status_code, 200)
         self.project.refresh_from_db()
         self.assertEqual(self.project.public_guest_access, access)
+
+
+class TestSheetSyncBase(
+    SODARAPIViewTestMixin,
+    SampleSheetIOMixin,
+    TestTaskflowBase,
+):
+    """Base class for sample sheet sync tests"""
+
+    def setUp(self):
+        super().setUp()
+
+        # Make owner user
+        self.user_owner_source = self.make_user('owner_source')
+        self.user_owner_target = self.make_user('owner_target')
+
+        # Create Projects
+        self.project_source, self.owner_as_source = self._make_project_taskflow(
+            title='TestProjectSource',
+            type=PROJECT_TYPE_PROJECT,
+            parent=self.category,
+            owner=self.user_owner_source,
+            description='description',
+        )
+        self.project_target, self.owner_as_target = self._make_project_taskflow(
+            title='TestProjectTarget',
+            type=PROJECT_TYPE_PROJECT,
+            parent=self.category,
+            owner=self.user_owner_target,
+            description='description',
+        )
+
+        # Import investigation
+        self.inv_source = self._import_isa_from_file(
+            SHEET_PATH, self.project_source
+        )
+
+        self.p_id_source = 'p{}'.format(self.project_source.pk)
+        self.p_id_target = 'p{}'.format(self.project_target.pk)
+
+        # Allow sample sheet editing in project
+        app_settings.set_app_setting(
+            APP_NAME, 'sheet_sync_enable', True, project=self.project_target
+        )
+        app_settings.set_app_setting(
+            APP_NAME,
+            'sheet_sync_url',
+            self.live_server_url
+            + reverse(
+                'samplesheets:api_export_json',
+                kwargs={'project': str(self.project_source.sodar_uuid)},
+            ),
+            project=self.project_target,
+        )
+        app_settings.set_app_setting(
+            APP_NAME,
+            'sheet_sync_token',
+            self.get_token(self.user_owner_source),
+            project=self.project_target,
+        )
+
+        # Check if source is set up correctly
+        self.assertEqual(self.project_source.investigations.count(), 1)
+        self.assertEqual(
+            self.project_source.investigations.first().studies.count(), 1
+        )
+        self.assertEqual(
+            self.project_source.investigations.first()
+            .studies.first()
+            .assays.count(),
+            1,
+        )
+        self.assertEqual(self.project_target.investigations.count(), 0)
+        self.assertEqual(ISATab.objects.count(), 1)
 
 
 @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
