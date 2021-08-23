@@ -18,7 +18,7 @@ Added
 - **Landingzones**
     - ``busyzones`` management command (#1212)
     - App alerts for sheet cache updates (#1000)
-    - App alerts for zone owner for zone moving actions (#1204)
+    - App alerts for zone owner for zone actions (#1204)
 - **Samplesheets**
     - Simple link support for string cell rendering (#1001)
     - ``generic_raw`` assay plugin (#1128)
