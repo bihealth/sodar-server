@@ -11,6 +11,7 @@ from rest_framework.response import Response
 # Projectroles dependency
 from projectroles.email import send_generic_mail
 from projectroles.models import Project
+from projectroles.plugins import get_backend_api
 from projectroles.views_taskflow import BaseTaskflowAPIView
 
 # Samplesheets dependency
@@ -28,6 +29,7 @@ logger = logging.getLogger(__name__)
 
 
 # Local constants
+APP_NAME = 'samplesheets'
 EMAIL_MESSAGE_MOVED = r'''
 Data was successfully validated and moved into the project
 sample data repository from your landing zone.
@@ -87,11 +89,12 @@ class TaskflowZoneCreateAPIView(BaseTaskflowAPIView):
 
 class TaskflowZoneStatusSetAPIView(BaseTaskflowAPIView):
     def post(self, request):
+        app_alerts = get_backend_api('appalerts_backend')
+
         try:
             zone = LandingZone.objects.get(sodar_uuid=request.data['zone_uuid'])
         except LandingZone.DoesNotExist:
             return Response('LandingZone not found', status=404)
-
         try:
             zone.set_status(
                 status=request.data['status'],
@@ -104,50 +107,90 @@ class TaskflowZoneStatusSetAPIView(BaseTaskflowAPIView):
 
         zone.refresh_from_db()
         server_host = settings.SODAR_API_DEFAULT_HOST.geturl()
+        file_count = int(request.data.get('file_count', 0))
 
-        # Send email
-        if zone.status in ['MOVED', 'FAILED']:
-            subject_body = 'Landing zone {}: {} / {}'.format(
-                zone.status.lower(), zone.project.title, zone.title
-            )
-            message_body = (
-                EMAIL_MESSAGE_MOVED
-                if zone.status == 'MOVED'
-                else EMAIL_MESSAGE_FAILED
-            )
-            if zone.status == 'MOVED':
-                email_url = (
-                    server_host
-                    + reverse(
+        # Create alerts and emails
+        if (
+            zone.status == 'MOVED' and file_count > 0
+        ) or zone.status == 'FAILED':
+            if app_alerts:
+                if zone.status == 'MOVED':
+                    alert_msg = 'Successfully moved files from landing zone'
+                    alert_level = 'SUCCESS'
+                    alert_url = reverse(
                         'samplesheets:project_sheets',
                         kwargs={'project': zone.project.sodar_uuid},
                     )
-                    + '#/assay/'
-                    + str(zone.assay.sodar_uuid)
-                )
-            else:  # FAILED
-                email_url = (
-                    server_host
-                    + reverse(
+                else:
+                    alert_msg = 'Failed to move files from landing zone'
+                    alert_level = 'DANGER'
+                    alert_url = reverse(
                         'landingzones:list',
                         kwargs={'project': zone.project.sodar_uuid},
                     )
-                    + '#'
-                    + str(zone.sodar_uuid)
+                alert_msg += ' in project "{}": {}'.format(
+                    zone.project.title,
+                    zone.title,
                 )
-            message_body = message_body.format(
-                zone=zone.title,
-                project=zone.project.title,
-                assay=zone.assay.get_display_name(),
-                user=zone.user.username,
-                user_email=zone.user.email,
-                zone_uuid=str(zone.sodar_uuid),
-                status_info=zone.status_info,
-                url=email_url,
-            )
-            send_generic_mail(subject_body, message_body, [zone.user], request)
+                if zone.status == 'MOVED':
+                    alert_msg += ' ({} file{})'.format(
+                        file_count, 's' if file_count != 1 else ''
+                    )
+                app_alerts.add_alert(
+                    app_name=APP_NAME,
+                    alert_name='zone_move',
+                    user=zone.user,
+                    level=alert_level,
+                    url=alert_url,
+                    message=alert_msg,
+                    project=zone.project,
+                )
+                # TODO: If moved, add app alerts to other users
+            if settings.PROJECTROLES_SEND_EMAIL:
+                subject_body = 'Landing zone {}: {} / {}'.format(
+                    zone.status.lower(), zone.project.title, zone.title
+                )
+                message_body = (
+                    EMAIL_MESSAGE_MOVED
+                    if zone.status == 'MOVED'
+                    else EMAIL_MESSAGE_FAILED
+                )
+                if zone.status == 'MOVED':
+                    email_url = (
+                        server_host
+                        + reverse(
+                            'samplesheets:project_sheets',
+                            kwargs={'project': zone.project.sodar_uuid},
+                        )
+                        + '#/assay/'
+                        + str(zone.assay.sodar_uuid)
+                    )
+                else:  # FAILED
+                    email_url = (
+                        server_host
+                        + reverse(
+                            'landingzones:list',
+                            kwargs={'project': zone.project.sodar_uuid},
+                        )
+                        + '#'
+                        + str(zone.sodar_uuid)
+                    )
+                message_body = message_body.format(
+                    zone=zone.title,
+                    project=zone.project.title,
+                    assay=zone.assay.get_display_name(),
+                    user=zone.user.username,
+                    user_email=zone.user.email,
+                    zone_uuid=str(zone.sodar_uuid),
+                    status_info=zone.status_info,
+                    url=email_url,
+                )
+                send_generic_mail(
+                    subject_body, message_body, [zone.user], request
+                )
+                # TODO: If moved, send update email to other project users
 
-        # If zone is deleted, call plugin function
+        # If zone is removed by moving or deletion, call plugin function
         if request.data['status'] in ['MOVED', 'DELETED']:
             from .plugins import get_zone_config_plugin  # See issue #269
 
