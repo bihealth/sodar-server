@@ -740,8 +740,13 @@ class TestLandingZoneStatusSetAPIView(TestViewsBase):
                 reverse('landingzones:taskflow_zone_status_set'), values
             )
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(mail.outbox), 1)  # Mail should be sent
-        self.assertEqual(AppAlert.objects.count(), 1)
+        self.assertEqual(len(mail.outbox), 2)  # Mails for zone owner AND user
+        self.assertEqual(
+            AppAlert.objects.filter(alert_name='zone_move').count(), 1
+        )
+        self.assertEqual(
+            AppAlert.objects.filter(alert_name='zone_move_member').count(), 1
+        )
 
     def test_post_status_failed(self):
         """Test POST request for setting a landing zone status into FAILED"""
@@ -757,5 +762,5 @@ class TestLandingZoneStatusSetAPIView(TestViewsBase):
                 reverse('landingzones:taskflow_zone_status_set'), values
             )
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(mail.outbox), 1)  # Mail should be sent
+        self.assertEqual(len(mail.outbox), 1)  # Mail for zone owner
         self.assertEqual(AppAlert.objects.count(), 1)
