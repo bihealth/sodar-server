@@ -20,6 +20,9 @@ from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
 from projectroles.tests.test_views_taskflow import TestTaskflowBase
 
+# Appalerts dependency
+from appalerts.models import AppAlert
+
 # Samplesheets dependency
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 from samplesheets.tests.test_views_taskflow import SampleSheetTaskflowMixin
@@ -707,6 +710,7 @@ class TestLandingZoneStatusSetAPIView(TestViewsBase):
 
     def test_post_status_active(self):
         """Test POST request for setting a landing zone status into ACTIVE"""
+        self.assertEqual(AppAlert.objects.count(), 0)
         values = {
             'zone_uuid': str(self.landing_zone.sodar_uuid),
             'status': 'ACTIVE',
@@ -719,9 +723,11 @@ class TestLandingZoneStatusSetAPIView(TestViewsBase):
             )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(mail.outbox), 0)  # No mail sent for ACTIVE
+        self.assertEqual(AppAlert.objects.count(), 0)
 
     def test_post_status_moved(self):
         """Test POST request for setting a landing zone status into MOVED"""
+        self.assertEqual(AppAlert.objects.count(), 0)
         values = {
             'zone_uuid': str(self.landing_zone.sodar_uuid),
             'status': 'MOVED',
@@ -735,9 +741,11 @@ class TestLandingZoneStatusSetAPIView(TestViewsBase):
             )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(mail.outbox), 1)  # Mail should be sent
+        self.assertEqual(AppAlert.objects.count(), 1)
 
     def test_post_status_failed(self):
         """Test POST request for setting a landing zone status into FAILED"""
+        self.assertEqual(AppAlert.objects.count(), 0)
         values = {
             'zone_uuid': str(self.landing_zone.sodar_uuid),
             'status': 'FAILED',
@@ -750,3 +758,4 @@ class TestLandingZoneStatusSetAPIView(TestViewsBase):
             )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(mail.outbox), 1)  # Mail should be sent
+        self.assertEqual(AppAlert.objects.count(), 1)
