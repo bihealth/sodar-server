@@ -101,10 +101,13 @@ class TaskflowZoneCreateAPIView(BaseTaskflowAPIView):
 class TaskflowZoneStatusSetAPIView(BaseTaskflowAPIView):
     """API view for setting landing zone status after taskflow operation"""
 
-    def _add_owner_alert(self, app_alerts, zone, file_count, validate_only):
+    @classmethod
+    def _add_owner_alert(cls, app_alerts, zone, file_count, validate_only):
         """Add app alert for zone owner"""
         if zone.status == 'MOVED':
-            alert_msg = 'Successfully moved files from landing zone'
+            alert_msg = 'Successfully moved {} file{} from landing zone'.format(
+                file_count, 's' if file_count != 1 else ''
+            )
             alert_level = 'SUCCESS'
             alert_url = reverse(
                 'samplesheets:project_sheets',
@@ -135,10 +138,6 @@ class TaskflowZoneStatusSetAPIView(BaseTaskflowAPIView):
             zone.project.title,
             zone.title,
         )
-        if zone.status == 'MOVED':
-            alert_msg += ' ({} file{})'.format(
-                file_count, 's' if file_count != 1 else ''
-            )
         app_alerts.add_alert(
             app_name=APP_NAME,
             alert_name='zone_move',
@@ -149,7 +148,8 @@ class TaskflowZoneStatusSetAPIView(BaseTaskflowAPIView):
             project=zone.project,
         )
 
-    def _add_member_alert(self, app_alerts, zone, user, file_count):
+    @classmethod
+    def _add_member_alert(cls, app_alerts, zone, user, file_count):
         """Add app alert for project member"""
         alert_msg = '{} file{} uploaded by {} in project "{}"'.format(
             file_count,
@@ -172,7 +172,8 @@ class TaskflowZoneStatusSetAPIView(BaseTaskflowAPIView):
             project=zone.project,
         )
 
-    def _send_owner_email(self, zone, request):
+    @classmethod
+    def _send_owner_email(cls, zone, request):
         """Send email to zone owner"""
         server_host = settings.SODAR_API_DEFAULT_HOST.geturl()
         subject_body = 'Landing zone {}: {} / {}'.format(
@@ -214,7 +215,8 @@ class TaskflowZoneStatusSetAPIView(BaseTaskflowAPIView):
         )
         send_generic_mail(subject_body, message_body, [zone.user], request)
 
-    def _send_member_email(self, zone, request, file_count):
+    @classmethod
+    def _send_member_email(cls, member, zone, request, file_count):
         """Send member email on landing zone move"""
         server_host = settings.SODAR_API_DEFAULT_HOST.geturl()
         subject_body = 'Files uploaded in project "{}" by {}'.format(
@@ -241,7 +243,7 @@ class TaskflowZoneStatusSetAPIView(BaseTaskflowAPIView):
             user_message=zone.user_message or 'N/A',
             url=email_url,
         )
-        send_generic_mail(subject_body, message_body, [zone.user], request)
+        send_generic_mail(subject_body, message_body, [member], request)
 
     def post(self, request):
         app_alerts = get_backend_api('appalerts_backend')
@@ -281,19 +283,25 @@ class TaskflowZoneStatusSetAPIView(BaseTaskflowAPIView):
             APP_NAME, 'member_notify_move', project=zone.project
         )
         if member_notify and zone.status == 'MOVED' and file_count > 0:
-            members = [
-                r for r in zone.project.get_all_roles() if r.user != zone.user
-            ]
-            for member_role in members:
+            members = list(
+                set(
+                    [
+                        r.user
+                        for r in zone.project.get_all_roles()
+                        if r.user != zone.user
+                    ]
+                )
+            )
+            for member in members:
                 if app_alerts:
                     self._add_member_alert(
                         app_alerts=app_alerts,
                         zone=zone,
-                        user=member_role.user,
+                        user=member,
                         file_count=file_count,
                     )
                 if settings.PROJECTROLES_SEND_EMAIL:
-                    self._send_member_email(zone, request, file_count)
+                    self._send_member_email(member, zone, request, file_count)
 
         # If zone is removed by moving or deletion, call plugin function
         if request.data['status'] in ['MOVED', 'DELETED']:
