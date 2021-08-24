@@ -55,8 +55,8 @@ STATUS_STYLES = {
 # Status types for which zone validation, moving and deletion are allowed
 STATUS_ALLOW_UPDATE = ['ACTIVE', 'FAILED']
 
-# Status types for which zone clearing is allowed
-STATUS_ALLOW_CLEAR = ['MOVED', 'NOT CREATED', 'DELETED']
+# Status types for zones for which activities have finished
+STATUS_FINISHED = ['MOVED', 'NOT CREATED', 'DELETED']
 
 # Status types which lock the project in Taskflow
 STATUS_LOCKING = ['PREPARING', 'VALIDATING', 'MOVING']

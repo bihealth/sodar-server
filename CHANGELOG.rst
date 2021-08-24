@@ -41,6 +41,9 @@ Changed
 - **Irodsinfo**
     - Retrieve iRODS config from ``IRODS_ENV_CLIENT`` setting (#1221)
     - Display ``IRODS_ENV_CLIENT`` in siteinfo via ``info_settings``
+- **Landingzones**
+    - Do not load finished landing zones in zone list view (#1205)
+    - Rename ``STATUS_ALLOW_CLEAR`` to ``STATUS_FINISHED`` (#1205)
 - **Samplesheets**
     - Move ``TestSheetSyncBase`` into ``test_views_taskflow``
 
@@ -61,6 +64,9 @@ Removed
 - **Irodsinfo**
     - ``IRODSINFO_ENV_PATH`` setting (#1221)
     - ``IRODSINFO_SSL_VERIFY`` setting (#1226)
+- **Landingzones**
+    - ``ZoneClearView`` UI view (#1205)
+    - ``_list_buttons.html`` template (#1205)
 
 
 v0.10.1 (2021-07-07)

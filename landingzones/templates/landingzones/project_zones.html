@@ -83,7 +83,13 @@
 <div class="row sodar-subtitle-container bg-white sticky-top">
   <h3><i class="iconify" data-icon="mdi:briefcase-upload"></i> Landing Zones</h3>
   {% if investigation and can_add_zones %}
-    {% include 'landingzones/_list_buttons.html' %}
+    <div class="ml-auto">
+      <a href="{% url 'landingzones:create' project=project.sodar_uuid %}"
+         class="btn btn-primary"
+         role="button">
+       <i class="iconify" data-icon="mdi:plus-thick"></i> Create Zone
+      </a>
+    </div>
   {% endif %}
 </div>
 

@@ -16,6 +16,10 @@ Major feature update.
 - Add simple link support to string cells in sample sheets
 - Add generic raw data assay plugin
 - Add assay plugin override via ISA-Tab comments
+- Add user alerts and member emails for landing zone actions
+- Add user alerts for sample sheet iRODS cache updates
+- Add user message to landing zones upon successful moving
+- Manual clearing of finished landing zones in UI no longer needed
 
 
 v0.10.1 (2021-07-07)
