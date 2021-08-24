@@ -33,6 +33,7 @@ class LandingZoneForm(forms.ModelForm):
             'assay',
             'title_suffix',
             'description',
+            'user_message',
             'create_colls',
             'configuration',
         ]

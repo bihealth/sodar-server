@@ -127,6 +127,15 @@ class LandingZone(models.Model):
         help_text='Landing zone description (optional)',
     )
 
+    #: Message displayed to project members on zone move (optional)
+    user_message = models.CharField(
+        max_length=1024,
+        unique=False,
+        blank=True,
+        help_text='Message displayed to project members on successful zone '
+        'moving if member notifications are enabled (optional)',
+    )
+
     #: Special configuration
     configuration = models.CharField(
         max_length=64,

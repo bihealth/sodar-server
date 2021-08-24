@@ -66,6 +66,9 @@ EMAIL_MSG_MEMBER = r'''
 into assay "{assay}"
 under the project "{project}".
 
+Message from zone owner:
+{user_message}
+
 You can browse the assay metadata and related files at
 the following URL:
 {url}
@@ -148,16 +151,14 @@ class TaskflowZoneStatusSetAPIView(BaseTaskflowAPIView):
 
     def _add_member_alert(self, app_alerts, zone, user, file_count):
         """Add app alert for project member"""
-        alert_msg = (
-            '{} file{} uploaded by {} under assay "{}" in '
-            'project "{}"'.format(
-                file_count,
-                's' if file_count != 1 else '',
-                zone.user.username,
-                zone.assay.get_display_name(),
-                zone.project.title,
-            )
+        alert_msg = '{} file{} uploaded by {} in project "{}"'.format(
+            file_count,
+            's' if file_count != 1 else '',
+            zone.user.username,
+            zone.project.title,
         )
+        if zone.user_message:
+            alert_msg += ': {}'.format(zone.user_message)
         app_alerts.add_alert(
             app_name=APP_NAME,
             alert_name='zone_move_member',
@@ -237,6 +238,7 @@ class TaskflowZoneStatusSetAPIView(BaseTaskflowAPIView):
             user_email=zone.user.email,
             file_count=file_count,
             file_count_suffix='s' if file_count != 1 else '',
+            user_message=zone.user_message or 'N/A',
             url=email_url,
         )
         send_generic_mail(subject_body, message_body, [zone.user], request)

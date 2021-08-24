@@ -121,6 +121,7 @@ class LandingZoneRetrieveAPIView(SODARAPIGenericProjectMixin, RetrieveAPIView):
     - ``configuration``: Special configuration name (string)
     - ``date_modified``: Last modification date of the zone (string)
     - ``description``: Landing zone description (string)
+    - ``user_message``: Message displayed to users on successful moving of zone (string)
     - ``irods_path``: Full iRODS path to the landing zone (string)
     - ``project``: Project UUID (string)
     - ``sodar_uuid``: Landing zone UUID (string)
@@ -162,6 +163,7 @@ class LandingZoneCreateAPIView(
     - ``config_data``: Data for special configuration (JSON, optional)
     - ``configuration``: Special configuration (string, optional)
     - ``description``: Landing zone description (string, optional)
+    - ``user_message``: Message displayed to users on successful moving of zone (string, optional)
     - ``title``: Suffix for the zone title (string, optional)
     - ``create_colls``: Create expected collections (boolean, optional)
 

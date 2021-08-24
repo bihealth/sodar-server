@@ -105,6 +105,7 @@ class TestLandingZoneCreateAPIView(TestLandingZoneAPITaskflowBase):
                 'title': 'new zone',
                 'assay': str(self.assay.sodar_uuid),
                 'description': 'description',
+                'user_message': 'user message',
                 'configuration': None,
                 'config_data': {},
             }
@@ -133,6 +134,7 @@ class TestLandingZoneCreateAPIView(TestLandingZoneAPITaskflowBase):
             'status_info': DEFAULT_STATUS_INFO['CREATING'],
             'date_modified': response_data['date_modified'],
             'description': zone.description,
+            'user_message': zone.user_message,
             'configuration': zone.configuration,
             'config_data': zone.config_data,
             'irods_path': self.irods_backend.get_path(zone),
