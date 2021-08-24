@@ -104,6 +104,7 @@ class LandingZoneListAPIView(TestLandingZoneAPIViewsBase):
                 self.landing_zone.date_modified
             ),
             'description': self.landing_zone.description,
+            'user_message': self.landing_zone.user_message,
             'configuration': self.landing_zone.configuration,
             'config_data': self.landing_zone.config_data,
             'irods_path': irods_backend.get_path(self.landing_zone),
@@ -148,6 +149,7 @@ class LandingZoneRetrieveAPIView(TestLandingZoneAPIViewsBase):
                 self.landing_zone.date_modified
             ),
             'description': self.landing_zone.description,
+            'user_message': self.landing_zone.user_message,
             'configuration': self.landing_zone.configuration,
             'config_data': self.landing_zone.config_data,
             'irods_path': irods_backend.get_path(self.landing_zone),

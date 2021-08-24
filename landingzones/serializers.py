@@ -36,6 +36,7 @@ class LandingZoneSerializer(SODARProjectModelSerializer):
             'status_info',
             'date_modified',
             'description',
+            'user_message',
             'create_colls',
             'configuration',
             'config_data',

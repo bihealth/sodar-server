@@ -17,12 +17,16 @@ Added
     - Siteinfo app in default ``LOGGING_APPS`` value (#1219)
 - **Landingzones**
     - ``busyzones`` management command (#1212)
-    - App alerts for UI sheet cache updates (#1000)
+    - App alerts for sheet cache updates (#1000)
+    - App alerts for zone owner for zone actions (#1204)
+    - ``member_notify_move`` app setting (#1203)
+    - Project member notifications from zone moving (#1203)
+    - ``LandingZone.user_message`` field (#1203)
 - **Samplesheets**
     - Simple link support for string cell rendering (#1001)
     - ``generic_raw`` assay plugin (#1128)
     - Overriding assay plugin via assay comment (#1128)
-    - App alerts for UI sheet cache updates (#1000)
+    - App alerts for sheet cache updates (#1000)
 
 Changed
 -------
@@ -46,6 +50,8 @@ Fixed
 - **General**
     - API version settings not updated (#1218)
     - Disable cache as workaround for Docker build issues (#1225)
+- **Landingzones**
+    - ``PROJECTROLES_SEND_EMAIL`` not checked in Taskflow views (#1229)
 
 Removed
 -------

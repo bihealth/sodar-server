@@ -3,6 +3,7 @@ from django.urls import reverse
 from djangoplugins.point import PluginPoint
 
 # Projectroles dependency
+from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import ProjectAppPluginPoint, get_backend_api
 
 # Samplesheets dependency
@@ -40,7 +41,17 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
     # Properties defined in ProjectAppPluginPoint -----------------------
 
     #: App settings definition
-    app_settings = {}
+    app_settings = {
+        'member_notify_move': {
+            'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT'],
+            'type': 'BOOLEAN',
+            'label': 'Notify members of landing zone uploads',
+            'description': 'Notify project members via alerts and email if '
+            'new files are uploaded from landing zones',
+            'user_modifiable': True,
+            'default': True,
+        }
+    }
 
     #: Iconify icon
     icon = 'mdi:briefcase-upload'
