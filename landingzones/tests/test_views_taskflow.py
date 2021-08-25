@@ -246,11 +246,7 @@ class TestLandingZoneCreateView(
                 ),
             )
 
-        # HACK: Wait for async stuff to finish
-        for i in range(0, ASYNC_RETRY_COUNT):
-            time.sleep(ASYNC_WAIT_SECONDS)
-            if LandingZone.objects.all().count() == 1:
-                break
+        self._wait_for_taskflow(count=1)
         self.assertEqual(LandingZone.objects.all().count(), 1)
         zone = LandingZone.objects.first()
         self.assertEqual(zone.status, 'ACTIVE')
@@ -288,10 +284,7 @@ class TestLandingZoneCreateView(
                 ),
             )
 
-        for i in range(0, ASYNC_RETRY_COUNT):
-            time.sleep(ASYNC_WAIT_SECONDS)
-            if LandingZone.objects.all().count() == 1:
-                break
+        self._wait_for_taskflow(count=1)
         self.assertEqual(LandingZone.objects.all().count(), 1)
         zone = LandingZone.objects.first()
         self.assertEqual(zone.status, 'ACTIVE')
@@ -343,10 +336,7 @@ class TestLandingZoneCreateView(
                 ),
             )
 
-        for i in range(0, ASYNC_RETRY_COUNT):
-            time.sleep(ASYNC_WAIT_SECONDS)
-            if LandingZone.objects.all().count() == 1:
-                break
+        self._wait_for_taskflow(count=1)
         self.assertEqual(LandingZone.objects.all().count(), 1)
         zone = LandingZone.objects.first()
         self.assertEqual(zone.status, 'ACTIVE')
@@ -445,10 +435,9 @@ class TestLandingZoneMoveView(
                 ),
             )
 
-        for i in range(0, ASYNC_RETRY_COUNT):
-            time.sleep(ASYNC_WAIT_SECONDS)
-            if LandingZone.objects.first().status == 'MOVED':
-                break
+        self._wait_for_taskflow(
+            zone_uuid=LandingZone.objects.first().sodar_uuid, status='MOVED'
+        )
         self.assertEqual(LandingZone.objects.first().status, 'MOVED')
         self.assertEqual(len(self.zone_coll.data_objects), 0)
         self.assertEqual(len(self.assay_coll.data_objects), 2)
@@ -481,10 +470,9 @@ class TestLandingZoneMoveView(
                 ),
             )
 
-        for i in range(0, ASYNC_RETRY_COUNT):
-            time.sleep(ASYNC_WAIT_SECONDS)
-            if LandingZone.objects.first().status == 'FAILED':
-                break
+        self._wait_for_taskflow(
+            zone_uuid=LandingZone.objects.first().sodar_uuid, status='FAILED'
+        )
         self.assertEqual(LandingZone.objects.first().status, 'FAILED')
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
@@ -515,10 +503,9 @@ class TestLandingZoneMoveView(
                 ),
             )
 
-        for i in range(0, ASYNC_RETRY_COUNT):
-            time.sleep(ASYNC_WAIT_SECONDS)
-            if LandingZone.objects.first().status == 'FAILED':
-                break
+        self._wait_for_taskflow(
+            zone_uuid=LandingZone.objects.first().sodar_uuid, status='FAILED'
+        )
         self.assertEqual(LandingZone.objects.first().status, 'FAILED')
         self.assertEqual(len(self.zone_coll.data_objects), 1)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
@@ -549,10 +536,9 @@ class TestLandingZoneMoveView(
                 ),
             )
 
-        for i in range(0, ASYNC_RETRY_COUNT):
-            time.sleep(ASYNC_WAIT_SECONDS)
-            if LandingZone.objects.first().status == 'ACTIVE':
-                break
+        self._wait_for_taskflow(
+            zone_uuid=LandingZone.objects.first().sodar_uuid, status='ACTIVE'
+        )
         self.assertEqual(LandingZone.objects.first().status, 'ACTIVE')
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
@@ -585,10 +571,9 @@ class TestLandingZoneMoveView(
                 ),
             )
 
-        for i in range(0, ASYNC_RETRY_COUNT):
-            time.sleep(ASYNC_WAIT_SECONDS)
-            if LandingZone.objects.first().status == 'FAILED':
-                break
+        self._wait_for_taskflow(
+            zone_uuid=LandingZone.objects.first().sodar_uuid, status='FAILED'
+        )
         self.assertEqual(LandingZone.objects.first().status, 'FAILED')
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
@@ -619,10 +604,9 @@ class TestLandingZoneMoveView(
                 ),
             )
 
-        for i in range(0, ASYNC_RETRY_COUNT):
-            time.sleep(ASYNC_WAIT_SECONDS)
-            if LandingZone.objects.first().status == 'FAILED':
-                break
+        self._wait_for_taskflow(
+            zone_uuid=LandingZone.objects.first().sodar_uuid, status='FAILED'
+        )
         self.assertEqual(LandingZone.objects.first().status, 'FAILED')
         self.assertEqual(len(self.zone_coll.data_objects), 1)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
@@ -695,10 +679,9 @@ class TestLandingZoneDeleteView(
                 ),
             )
 
-        for i in range(0, ASYNC_RETRY_COUNT):
-            time.sleep(ASYNC_WAIT_SECONDS)
-            if LandingZone.objects.first().status == 'DELETED':
-                break
+        self._wait_for_taskflow(
+            zone_uuid=LandingZone.objects.first().sodar_uuid, status='DELETED'
+        )
         self.assertEqual(LandingZone.objects.all().count(), 1)
         self.assertEqual(LandingZone.objects.first().status, 'DELETED')
 
