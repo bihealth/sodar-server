@@ -22,6 +22,7 @@ Added
     - ``member_notify_move`` app setting (#1203)
     - Project member notifications from zone moving (#1203, #1232)
     - ``LandingZone.user_message`` field (#1203)
+    - ``finished`` parameter for ``LandingZoneListAPIView`` to access finished zones (#1234)
 - **Samplesheets**
     - Simple link support for string cell rendering (#1001)
     - ``generic_raw`` assay plugin (#1128)

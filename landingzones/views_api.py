@@ -24,7 +24,11 @@ from projectroles.views_api import (
 # Local helper for authenticating with auth basic
 from sodar.users.auth import fallback_to_auth_basic
 
-from landingzones.models import LandingZone, STATUS_ALLOW_UPDATE
+from landingzones.models import (
+    LandingZone,
+    STATUS_ALLOW_UPDATE,
+    STATUS_FINISHED,
+)
 from landingzones.serializers import LandingZoneSerializer
 from landingzones.views import (
     ZoneUpdateRequiredPermissionMixin,
@@ -82,23 +86,34 @@ class LandingZoneListAPIView(SODARAPIGenericProjectMixin, ListAPIView):
     List the landing zones in a project.
 
     If the user has rights to view all zones, every zone in the project will be
-    listed. Otherwise only their own zones appear in the list.
+    listed. Otherwise only their own zones appear in the list. Also returns
+    finished (meaning moved or deleted) zones if the "finished" parameter is
+    set.
 
-    **URL:** ``/landingzones/api/list/{Project.sodar_uuid}``
+    **URL:** ``/landingzones/api/list/{Project.sodar_uuid}?finished={integer}``
 
     **Methods:** ``GET``
 
-    **Returns:** List of landing zone details
-    (see ``LandingZoneRetrieveAPIView``)
+    **Parameters:**
+
+    - ``finished``: Include finished zones if 1 (integer)
+
+    **Returns:** List of landing zone details (see ``LandingZoneRetrieveAPIView``)
     """
 
     permission_required = 'landingzones.view_zones_own'
     serializer_class = LandingZoneSerializer
 
     def get_queryset(self):
-        """Override get_queryset() to return zones based on user perms"""
+        """
+        Override get_queryset() to return zones based on user perms and
+        parameters.
+        """
         project = self.get_project()
+        include_finished = int(self.request.query_params.get('finished', 0))
         ret = LandingZone.objects.filter(project=project)
+        if include_finished != 1:
+            ret = ret.exclude(status__in=STATUS_FINISHED)
         if not self.request.user.has_perm(
             'landingzones.view_zones_all', project
         ):
