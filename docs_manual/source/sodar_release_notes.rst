@@ -20,6 +20,7 @@ Major feature update.
 - Add user alerts for sample sheet iRODS cache updates
 - Add user message to landing zones upon successful moving
 - Add "finished" parameter to LandingZoneListAPIView to access finished zones
+- Add locked status info to landingzones UI and LandingZoneRetrieveAPIView
 - Manual clearing of finished landing zones in UI no longer needed
 
 

@@ -132,6 +132,7 @@ class TestLandingZoneCreateAPIView(TestLandingZoneAPITaskflowBase):
             'assay': str(self.assay.sodar_uuid),
             'status': 'CREATING',
             'status_info': DEFAULT_STATUS_INFO['CREATING'],
+            'status_locked': False,
             'date_modified': response_data['date_modified'],
             'description': zone.description,
             'user_message': zone.user_message,

@@ -187,3 +187,13 @@ class TestLandingZone(TestLandingZoneBase):
         status = 'Ib0ciemiahqu6Ooj'
         with self.assertRaises(TypeError):
             self.landing_zone.set_status(status)
+
+    def test_is_locked_false(self):
+        """Test is_locked() with ACTIVE status"""
+        self.assertEqual(self.landing_zone.is_locked(), False)
+
+    def test_is_locked_true(self):
+        """Test is_locked() with MOVING status"""
+        self.landing_zone.status = 'MOVING'
+        self.landing_zone.save()
+        self.assertEqual(self.landing_zone.is_locked(), True)

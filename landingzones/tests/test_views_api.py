@@ -100,6 +100,7 @@ class TestLandingZoneListAPIView(TestLandingZoneAPIViewsBase):
             'assay': str(self.assay.sodar_uuid),
             'status': self.landing_zone.status,
             'status_info': self.landing_zone.status_info,
+            'status_locked': False,
             'date_modified': self.get_drf_datetime(
                 self.landing_zone.date_modified
             ),
@@ -192,7 +193,7 @@ class TestLandingZoneListAPIView(TestLandingZoneAPIViewsBase):
 
 
 @skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
-class LandingZoneRetrieveAPIView(TestLandingZoneAPIViewsBase):
+class TestLandingZoneRetrieveAPIView(TestLandingZoneAPIViewsBase):
     """Tests for LandingZoneRetrieveAPIView"""
 
     def test_get(self):
@@ -212,6 +213,7 @@ class LandingZoneRetrieveAPIView(TestLandingZoneAPIViewsBase):
             'assay': str(self.assay.sodar_uuid),
             'status': self.landing_zone.status,
             'status_info': self.landing_zone.status_info,
+            'status_locked': False,
             'date_modified': self.get_drf_datetime(
                 self.landing_zone.date_modified
             ),
@@ -223,3 +225,15 @@ class LandingZoneRetrieveAPIView(TestLandingZoneAPIViewsBase):
             'sodar_uuid': str(self.landing_zone.sodar_uuid),
         }
         self.assertEqual(json.loads(response.content), expected)
+
+    def test_get_locked(self):
+        """Test get() with locked landing zone status"""
+        self.landing_zone.status = 'MOVING'
+        self.landing_zone.save()
+        url = reverse(
+            'landingzones:api_retrieve',
+            kwargs={'landingzone': self.landing_zone.sodar_uuid},
+        )
+        response = self.request_knox(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(json.loads(response.content)['status_locked'], True)

@@ -142,6 +142,7 @@ class LandingZoneRetrieveAPIView(SODARAPIGenericProjectMixin, RetrieveAPIView):
     - ``sodar_uuid``: Landing zone UUID (string)
     - ``status``: Current status of the landing zone (string)
     - ``status_info``: Detailed description of the landing zone status (string)
+    - ``status_locked``: Whether write access to the zone is currently locked (boolean)
     - ``title``: Full title of the created landing zone (string)
     - ``user``: User who owns the zone (JSON)
     """

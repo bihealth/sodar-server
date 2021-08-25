@@ -178,6 +178,7 @@ class LandingZone(models.Model):
         return self.project
 
     def set_status(self, status, status_info=None):
+        """Set zone status"""
         if status not in ZONE_STATUS_TYPES:
             raise TypeError('Unknown status "{}"'.format(status))
         self.status = status
@@ -186,3 +187,10 @@ class LandingZone(models.Model):
         else:
             self.status_info = DEFAULT_STATUS_INFO[status][:1024]
         self.save()
+
+    def is_locked(self):
+        """
+        Return True/False depending whether write access to zone is currently
+        locked.
+        """
+        return True if self.status in STATUS_LOCKING else False
