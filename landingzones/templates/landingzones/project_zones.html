@@ -141,9 +141,7 @@
     </div>
 
     {# User zones #}
-    {% if zones_own.count > 0 %}
-      {% include 'landingzones/_zone_list.html' with zones=zones_own list_title='Your Zones' list_icon='mdi:account' list_type='own' %}
-    {% endif %}
+    {% include 'landingzones/_zone_list.html' with zones=zones_own list_title='Your Zones' list_icon='mdi:account' list_type='own' %}
     {% if zones_other %}
       {% include 'landingzones/_zone_list.html' with zones=zones_other list_title='Other Zones' list_icon='mdi:account-multiple' list_type='other' %}
     {% endif %}
