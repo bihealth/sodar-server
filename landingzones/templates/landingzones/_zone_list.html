@@ -9,7 +9,6 @@
       <thead>
         <tr>
           <th class="sodar-lz-list-header-title">Zone</th>
-          <th class="sodar-lz-list-header-assay">Assay</th>
           <th class="sodar-lz-list-header-info">Status&nbsp;Info</th>
           <th class="sodar-lz-list-header-status">Status</th>
           <th class="sodar-lz-list-header-links">Links</th>
@@ -21,8 +20,8 @@
           {% include 'landingzones/_zone_item.html' %}
         {% endfor %}
         {% if zones.count == 0 %}
-           <td class="bg-faded font-italic text-center" colspan="6">
-             No landing zones found
+           <td class="bg-faded font-italic text-center" colspan="5">
+             No active landing zones found.
            </td>
         {% endif %}
       </tbody>

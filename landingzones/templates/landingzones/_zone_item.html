@@ -16,18 +16,23 @@
     sample-url="{% get_zone_samples_url zone %}"
     status-url="{% url 'landingzones:ajax_status' landingzone=zone.sodar_uuid %}">
   <td class="sodar-lz-zone-title">
-    {% if zone.user != request.user %}
-      {% autoescape off %}
-        {% get_user_html zone.user %} /
-      {% endautoescape %}
-    {% endif %}
-    {% if details_card_mode %}
-      <a href="{% url 'landingzones:list' project=project.sodar_uuid %}#{{ zone.sodar_uuid }}">
-    {% endif %}
-    {{ zone.title|force_wrap:16|safe }}
-    {% if details_card_mode %}
-      </a>
-    {% endif %}
+    <div class="sodar-overflow-container">
+      <span title="{{ zone.assay.get_display_name }}"
+            data-tooltip="tooltip" data-placement="top">
+        <i class="iconify text-danger" data-icon="mdi:table-large"></i>
+      </span>
+      {% if zone.user != request.user %}
+        {% get_user_html zone.user as zone_user %}
+        {{ zone_user | safe }} /
+      {% endif %}
+      {% if details_card_mode %}
+        <a href="{% url 'landingzones:list' project=project.sodar_uuid %}#{{ zone.sodar_uuid }}">
+      {% endif %}
+      {{ zone.title }}
+      {% if details_card_mode %}
+        </a>
+      {% endif %}
+    </div>
     {% if zone.description %}
       {% get_zone_desc_html zone as zone_desc_html %}
       {% get_info_link zone_desc_html html=True as info_link %}
@@ -37,8 +42,6 @@
       <span class="badge badge-pill badge-success">{% get_config_legend zone %}</span>
     {% endif %}
   </td>
-
-  <td class="sodar-lz-zone-assay">{{ zone.assay.get_display_name }}</td>
   <td class="sodar-lz-zone-status-info">
       <span id="sodar-lz-zone-status-info-{{ zone.sodar_uuid }}">
         {{ zone.status_info }}
