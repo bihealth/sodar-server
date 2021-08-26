@@ -17,22 +17,44 @@
   {{ irodsbackend_css|safe }}
 
   <style type="text/css">
-    .sodar-lz-table thead tr th:nth-child(3) {
-      width: 350px !important;
+    .sodar-lz-table {
+        table-layout: fixed;
+        width: 100%;
     }
 
-    .sodar-lz-table thead tr th:nth-child(4) {
-      white-space: nowrap !important;
-      width: 150px !important;
+    .sodar-lz-table thead tr th:nth-child(1),
+    .sodar-lz-table tbody tr td:nth-child(1) {
+      width: 300px;
     }
 
-    .sodar-lz-table thead tr th:nth-child(5) {
-      width: 120px !important;
-      white-space: nowrap !important;
+    /* Temporary HACK for sodar_core#791 */
+    .sodar-lz-table tbody tr td:nth-child(1) {
+      padding-top: 11px;
+      padding-left: 11px;
     }
 
-    .sodar-lz-table thead tr th:nth-child(6) {
-      width: 70px !important;
+    .sodar-lz-table tbody tr td:nth-child(2) {
+        word-wrap: break-word;
+    }
+
+    .sodar-lz-table thead tr th:nth-child(3),
+    .sodar-lz-table tbody tr td:nth-child(3) {
+      white-space: nowrap;
+      width: 150px;
+    }
+
+    .sodar-lz-table thead tr th:nth-child(4),
+    .sodar-lz-table tbody tr td:nth-child(4) {
+      width: 140px;
+      max-width: 140px;
+      white-space: nowrap;
+    }
+
+    .sodar-lz-table thead tr th:nth-child(5),
+    .sodar-lz-table tbody tr td:nth-child(5) {
+      text-align: right;
+      width: 70px;
+      max-width: 140px;
     }
 
     /* Responsive modifications */
@@ -45,7 +67,7 @@
       }
     }
 
-    @media screen and (max-width: 800px) {
+    @media screen and (max-width: 900px) {
       .table.sodar-lz-table thead tr th:nth-child(2) {
         display: none;
       }
@@ -54,20 +76,11 @@
       }
     }
 
-    @media screen and (max-width: 600px) {
+    @media screen and (max-width: 450px) {
       .table.sodar-lz-table thead tr th:nth-child(4) {
         display: none;
       }
       .table.sodar-lz-table tbody tr td:nth-child(4) {
-        display: none;
-      }
-    }
-
-    @media screen and (max-width: 450px) {
-      .table.sodar-lz-table thead tr th:nth-child(5) {
-        display: none;
-      }
-      .table.sodar-lz-table tbody tr td:nth-child(5) {
         display: none;
       }
     }

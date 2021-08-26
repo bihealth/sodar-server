@@ -18,13 +18,13 @@
     border-left: 0;
   }
 
-  .sodar-lz-detail-table thead tr th:nth-child(3) {
-    width: 350px !important;
+  .sodar-lz-detail-table thead tr th:nth-child(1) {
+    width: 250px;
   }
 
-  .sodar-lz-detail-table thead tr th:nth-child(4) {
-    white-space: nowrap !important;
-    width: 150px !important;
+  .sodar-lz-detail-table thead tr th:nth-child(3) {
+    white-space: nowrap;
+    width: 150px;
   }
 
   /* Responsive modifications */
@@ -40,7 +40,7 @@
 
 <!-- Settings for Javascript -->
 <script type="text/javascript">
-    window.statusInterval = {{ zone_status_interval }} * 5000;
+  window.statusInterval = {{ zone_status_interval }} * 5000;
 </script>
 
 <!-- Landingzones Javascript -->
@@ -50,7 +50,6 @@
   <thead>
     <tr>
       <th>Zone</th>
-      <th>Assay</th>
       <th id="sodar-lz-list-header-info">Status&nbsp;Info</th>
       <th id="sodar-lz-list-header-status">Status</th>
     </tr>
@@ -62,10 +61,11 @@
         {% include 'landingzones/_zone_item.html' with item=zone details_card_mode=True %}
       {% endfor %}
     {% else %}
-        <tr>
-          <td class="bg-faded font-italic text-center" colspan="4">No available zones</td>
-        </tr>
+      <tr>
+        <td class="bg-faded font-italic text-center" colspan="4">
+          No available zones
+        </td>
+      </tr>
     {% endif %}
   </tbody>
 </table>
-

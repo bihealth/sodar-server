@@ -47,6 +47,8 @@ Changed
 - **Landingzones**
     - Do not load finished landing zones in zone list view (#1205)
     - Rename ``STATUS_ALLOW_CLEAR`` to ``STATUS_FINISHED`` (#1205)
+    - UI improvements in project zone list (#1235)
+    - Hide zones with ``NOT CREATED`` status from detail card (#1236)
 - **Samplesheets**
     - Move ``TestSheetSyncBase`` into ``test_views_taskflow``
 
