@@ -19,7 +19,7 @@ from projectroles.views_taskflow import BaseTaskflowAPIView
 from samplesheets.models import Assay
 from samplesheets.tasks import update_project_cache_task
 
-from landingzones.models import LandingZone
+from landingzones.models import LandingZone, STATUS_BUSY
 
 
 User = auth.get_user_model()
@@ -102,45 +102,56 @@ class TaskflowZoneStatusSetAPIView(BaseTaskflowAPIView):
     """API view for setting landing zone status after taskflow operation"""
 
     @classmethod
-    def _add_owner_alert(cls, app_alerts, zone, file_count, validate_only):
-        """Add app alert for zone owner"""
+    def _add_owner_alert(
+        cls, app_alerts, zone, flow_name, file_count, validate_only
+    ):
+        """Add app alert for zone owner for finished actions"""
+        alert_level = (
+            'DANGER' if zone.status in ['FAILED', 'NOT CREATED'] else 'SUCCESS'
+        )
+        alert_url = reverse(
+            'landingzones:list',
+            kwargs={'project': zone.project.sodar_uuid},
+        )
+
         if zone.status == 'MOVED':
             alert_msg = 'Successfully moved {} file{} from landing zone'.format(
                 file_count, 's' if file_count != 1 else ''
             )
-            alert_level = 'SUCCESS'
             alert_url = reverse(
                 'samplesheets:project_sheets',
                 kwargs={'project': zone.project.sodar_uuid},
             )
         elif validate_only and zone.status == 'ACTIVE':
             alert_msg = 'Successfully validated files in landing zone'
-            alert_level = 'SUCCESS'
-            alert_url = reverse(
-                'landingzones:list',
-                kwargs={'project': zone.project.sodar_uuid},
-            )
         elif validate_only and zone.status == 'FAILED':
             alert_msg = 'Validation failed for landing zone'
-            alert_level = 'DANGER'
-            alert_url = reverse(
-                'landingzones:list',
-                kwargs={'project': zone.project.sodar_uuid},
-            )
-        else:  # Failed
+        elif flow_name == 'landing_zone_move' and zone.status == 'FAILED':
             alert_msg = 'Failed to move files from landing zone'
-            alert_level = 'DANGER'
-            alert_url = reverse(
-                'landingzones:list',
-                kwargs={'project': zone.project.sodar_uuid},
+        elif zone.status == 'DELETED':
+            alert_msg = 'Deleted landing zone'
+        elif flow_name == 'landing_zone_delete' and zone.status == 'FAILED':
+            alert_msg = 'Failed to delete landing zone'
+        else:
+            logger.error(
+                'Unknown input for _add_owner_alert(): flow_name={}; '
+                'status={}'.format(flow_name, zone.status)
             )
+            return
+
         alert_msg += ' in project "{}": {}'.format(
             zone.project.title,
             zone.title,
         )
+        if validate_only:
+            alert_name = 'validate'
+        elif flow_name == 'landing_zone_delete':
+            alert_name = 'delete'
+        else:
+            alert_name = 'move'
         app_alerts.add_alert(
             app_name=APP_NAME,
-            alert_name='zone_move',
+            alert_name='zone_' + alert_name,
             user=zone.user,
             level=alert_level,
             url=alert_url,
@@ -149,7 +160,7 @@ class TaskflowZoneStatusSetAPIView(BaseTaskflowAPIView):
         )
 
     @classmethod
-    def _add_member_alert(cls, app_alerts, zone, user, file_count):
+    def _add_member_move_alert(cls, app_alerts, zone, user, file_count):
         """Add app alert for project member"""
         alert_msg = '{} file{} uploaded by {} in project "{}"'.format(
             file_count,
@@ -173,8 +184,8 @@ class TaskflowZoneStatusSetAPIView(BaseTaskflowAPIView):
         )
 
     @classmethod
-    def _send_owner_email(cls, zone, request):
-        """Send email to zone owner"""
+    def _send_owner_move_email(cls, zone, request):
+        """Send email to zone owner on zone move/validate"""
         server_host = settings.SODAR_API_DEFAULT_HOST.geturl()
         subject_body = 'Landing zone {}: {} / {}'.format(
             zone.status.lower(),
@@ -216,7 +227,7 @@ class TaskflowZoneStatusSetAPIView(BaseTaskflowAPIView):
         send_generic_mail(subject_body, message_body, [zone.user], request)
 
     @classmethod
-    def _send_member_email(cls, member, zone, request, file_count):
+    def _send_member_move_email(cls, member, zone, request, file_count):
         """Send member email on landing zone move"""
         server_host = settings.SODAR_API_DEFAULT_HOST.geturl()
         subject_body = 'Files uploaded in project "{}" by {}'.format(
@@ -262,23 +273,30 @@ class TaskflowZoneStatusSetAPIView(BaseTaskflowAPIView):
             return Response('Invalid status type', status=400)
 
         zone.refresh_from_db()
+        flow_name = request.data.get('flow_name')
         file_count = int(request.data.get('file_count', 0))
         validate_only = bool(int(request.data.get('validate_only', '0')))
 
-        # Create alert and send email for zone owner
+        # Create alert and send email for zone owner for finished actions
+        # NOTE: Create is excluded as this should be virtually instantaneous
         if (
-            (zone.status == 'MOVED' and file_count > 0)
-            or validate_only
-            or zone.status == 'FAILED'
+            zone.status not in STATUS_BUSY
+            and flow_name != 'landing_zone_create'
+            and (file_count > 0 or zone.status != 'MOVED')
         ):
             if app_alerts:
                 self._add_owner_alert(
-                    app_alerts, zone, file_count, validate_only
+                    app_alerts, zone, flow_name, file_count, validate_only
                 )
-            if settings.PROJECTROLES_SEND_EMAIL and not validate_only:
-                self._send_owner_email(zone, request)
+            # NOTE: We only send email on move
+            if (
+                settings.PROJECTROLES_SEND_EMAIL
+                and flow_name == 'landing_zone_move'
+                and not validate_only
+            ):
+                self._send_owner_move_email(zone, request)
 
-        # Create alerts and send emails to other project members if enabled
+        # Create alerts and send emails to other project members on move
         member_notify = app_settings.get_app_setting(
             APP_NAME, 'member_notify_move', project=zone.project
         )
@@ -294,14 +312,16 @@ class TaskflowZoneStatusSetAPIView(BaseTaskflowAPIView):
             )
             for member in members:
                 if app_alerts:
-                    self._add_member_alert(
+                    self._add_member_move_alert(
                         app_alerts=app_alerts,
                         zone=zone,
                         user=member,
                         file_count=file_count,
                     )
                 if settings.PROJECTROLES_SEND_EMAIL:
-                    self._send_member_email(member, zone, request, file_count)
+                    self._send_member_move_email(
+                        member, zone, request, file_count
+                    )
 
         # If zone is removed by moving or deletion, call plugin function
         if request.data['status'] in ['MOVED', 'DELETED']:

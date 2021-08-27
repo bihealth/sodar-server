@@ -214,14 +214,15 @@ class TestLandingZoneCreateView(
         )
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
-
         # Create iRODS collections
         self._make_irods_colls(self.investigation)
 
     @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_create_zone(self):
         """Test landingzones creation with taskflow"""
-        self.assertEqual(LandingZone.objects.all().count(), 0)
+        self.assertEqual(LandingZone.objects.count(), 0)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(AppAlert.objects.count(), 1)
 
         values = {
             'assay': str(self.assay.sodar_uuid),
@@ -254,6 +255,8 @@ class TestLandingZoneCreateView(
         self._assert_zone_coll(zone, MISC_FILES_COLL, False)
         self._assert_zone_coll(zone, RESULTS_COLL, False)
         self._assert_zone_coll(zone, TRACK_HUBS_COLL, False)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(AppAlert.objects.count(), 1)
 
     @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_create_zone_colls(self):
@@ -417,6 +420,10 @@ class TestLandingZoneMoveView(
         self.assertEqual(LandingZone.objects.first().status, 'ACTIVE')
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(
+            AppAlert.objects.filter(alert_name='zone_move').count(), 0
+        )
 
         values = {'sodar_url': self.live_server_url}
         with self.login(self.user):
@@ -441,6 +448,10 @@ class TestLandingZoneMoveView(
         self.assertEqual(LandingZone.objects.first().status, 'MOVED')
         self.assertEqual(len(self.zone_coll.data_objects), 0)
         self.assertEqual(len(self.assay_coll.data_objects), 2)
+        self.assertEqual(len(mail.outbox), 3)  # Mails to owner & category owner
+        self.assertEqual(
+            AppAlert.objects.filter(alert_name='zone_move').count(), 1
+        )
 
     @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_move_invalid_md5(self):
@@ -452,6 +463,10 @@ class TestLandingZoneMoveView(
         self.assertEqual(LandingZone.objects.first().status, 'ACTIVE')
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(
+            AppAlert.objects.filter(alert_name='zone_move').count(), 0
+        )
 
         values = {'sodar_url': self.live_server_url}
         with self.login(self.user):
@@ -476,6 +491,10 @@ class TestLandingZoneMoveView(
         self.assertEqual(LandingZone.objects.first().status, 'FAILED')
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
+        self.assertEqual(len(mail.outbox), 2)
+        self.assertEqual(
+            AppAlert.objects.filter(alert_name='zone_move').count(), 1
+        )
 
     @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_move_no_md5(self):
@@ -485,6 +504,9 @@ class TestLandingZoneMoveView(
         self.assertEqual(LandingZone.objects.first().status, 'ACTIVE')
         self.assertEqual(len(self.zone_coll.data_objects), 1)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
+        self.assertEqual(
+            AppAlert.objects.filter(alert_name='zone_move').count(), 0
+        )
 
         values = {'sodar_url': self.live_server_url}
         with self.login(self.user):
@@ -509,6 +531,9 @@ class TestLandingZoneMoveView(
         self.assertEqual(LandingZone.objects.first().status, 'FAILED')
         self.assertEqual(len(self.zone_coll.data_objects), 1)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
+        self.assertEqual(
+            AppAlert.objects.filter(alert_name='zone_move').count(), 1
+        )
 
     @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_validate(self):
@@ -518,6 +543,10 @@ class TestLandingZoneMoveView(
         self.assertEqual(LandingZone.objects.first().status, 'ACTIVE')
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(
+            AppAlert.objects.filter(alert_name='zone_validate').count(), 0
+        )
 
         values = {'sodar_url': self.live_server_url}
         with self.login(self.user):
@@ -542,6 +571,10 @@ class TestLandingZoneMoveView(
         self.assertEqual(LandingZone.objects.first().status, 'ACTIVE')
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(
+            AppAlert.objects.filter(alert_name='zone_validate').count(), 1
+        )
 
     @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_validate_invalid_md5(self):
@@ -553,6 +586,10 @@ class TestLandingZoneMoveView(
         self.assertEqual(LandingZone.objects.first().status, 'ACTIVE')
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(
+            AppAlert.objects.filter(alert_name='zone_validate').count(), 0
+        )
 
         values = {'sodar_url': self.live_server_url}
         with self.login(self.user):
@@ -577,6 +614,10 @@ class TestLandingZoneMoveView(
         self.assertEqual(LandingZone.objects.first().status, 'FAILED')
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(
+            AppAlert.objects.filter(alert_name='zone_validate').count(), 1
+        )
 
     @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_validate_no_md5(self):
@@ -661,6 +702,9 @@ class TestLandingZoneDeleteView(
     def test_delete_zone(self):
         """Test landingzones deletion with taskflow"""
         self.assertEqual(LandingZone.objects.all().count(), 1)
+        self.assertEqual(
+            AppAlert.objects.filter(alert_name='zone_delete').count(), 0
+        )
 
         values = {'sodar_url': self.live_server_url}
         with self.login(self.user):
@@ -684,6 +728,10 @@ class TestLandingZoneDeleteView(
         )
         self.assertEqual(LandingZone.objects.all().count(), 1)
         self.assertEqual(LandingZone.objects.first().status, 'DELETED')
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(
+            AppAlert.objects.filter(alert_name='zone_delete').count(), 1
+        )
 
 
 # NOTE: Taskflow initialization not required for this view, hence TestViewsBase
@@ -696,6 +744,7 @@ class TestLandingZoneStatusSetAPIView(TestViewsBase):
         self.assertEqual(AppAlert.objects.count(), 0)
         values = {
             'zone_uuid': str(self.landing_zone.sodar_uuid),
+            'flow_name': 'landing_zone_create',
             'status': 'ACTIVE',
             'status_info': DEFAULT_STATUS_INFO['ACTIVE'],
             'sodar_secret': settings.TASKFLOW_SODAR_SECRET,
@@ -713,6 +762,7 @@ class TestLandingZoneStatusSetAPIView(TestViewsBase):
         self.assertEqual(AppAlert.objects.count(), 0)
         values = {
             'zone_uuid': str(self.landing_zone.sodar_uuid),
+            'flow_name': 'landing_zone_move',
             'status': 'MOVED',
             'status_info': DEFAULT_STATUS_INFO['MOVED'],
             'file_count': '1',
@@ -736,6 +786,7 @@ class TestLandingZoneStatusSetAPIView(TestViewsBase):
         self.assertEqual(AppAlert.objects.count(), 0)
         values = {
             'zone_uuid': str(self.landing_zone.sodar_uuid),
+            'flow_name': 'landing_zone_move',
             'status': 'FAILED',
             'status_info': DEFAULT_STATUS_INFO['FAILED'],
             'sodar_secret': settings.TASKFLOW_SODAR_SECRET,

@@ -18,7 +18,7 @@ Added
 - **Landingzones**
     - ``busyzones`` management command (#1212)
     - App alerts for sheet cache updates (#1000)
-    - App alerts for zone owner for zone actions (#1204)
+    - App alerts for zone owner for zone actions (#1204, #1240)
     - ``member_notify_move`` app setting (#1203)
     - Project member notifications from zone moving (#1203, #1232)
     - ``LandingZone.user_message`` field (#1203)
@@ -49,6 +49,7 @@ Changed
     - Rename ``STATUS_ALLOW_CLEAR`` to ``STATUS_FINISHED`` (#1205)
     - UI improvements in project zone list (#1235)
     - Hide zones with ``NOT CREATED`` status from detail card (#1236)
+    - Handle ``NOT CREATED`` landing zone status (#1237)
 - **Samplesheets**
     - Move ``TestSheetSyncBase`` into ``test_views_taskflow``
 
