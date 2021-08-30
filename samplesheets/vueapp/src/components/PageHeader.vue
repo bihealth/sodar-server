@@ -217,7 +217,7 @@
           variant="primary"
           class="text-left"
           id="sodar-ss-btn-edit-finish"
-          title="Exit edit mode and backup current changes in sheet versions"
+          :title="getFinishEditTitle()"
           :disabled="app.unsavedRow !== null"
           @click="toggleEditModeCallback"
           v-b-tooltip.hover>
@@ -268,6 +268,13 @@ export default {
         this.notifyVisible = false
         this.notifyMessage = null
       }, delay || 2000)
+    },
+    getFinishEditTitle () {
+      if (!this.app.unsavedRow) {
+        return 'Exit edit mode and backup current changes in sheet versions'
+      } else {
+        return 'Please save or discard your unsaved table row before exiting edit mode'
+      }
     }
   }
 }

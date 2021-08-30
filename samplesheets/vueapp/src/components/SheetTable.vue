@@ -32,8 +32,10 @@
             v-if="app.editMode"
             variant="primary"
             class="sodar-header-button sodar-ss-row-insert-btn mr-2 pull-right"
+            :title="getInsertRowTitle()"
             :disabled="app.unsavedRow !== null"
-            @click="app.handleRowInsert(gridUuid, assayMode)">
+            @click="app.handleRowInsert(gridUuid, assayMode)"
+            v-b-tooltip.hover>
           <i class="iconify" data-icon="mdi:plus-thick"></i> Insert Row
         </b-button>
       </h4>
@@ -94,6 +96,13 @@ export default {
     onColumnToggle () {
       this.app.$refs.columnToggleModalRef.showModal(
         this.gridUuid, this.assayMode)
+    },
+    getInsertRowTitle () {
+      if (!this.app.unsavedRow) {
+        return ''
+      } else {
+        return 'Please save or discard your unsaved row before inserting a new one'
+      }
     }
   },
   beforeMount () {
