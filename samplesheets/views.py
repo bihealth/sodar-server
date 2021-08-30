@@ -748,6 +748,7 @@ class SampleSheetImportView(
     LoggedInPermissionMixin,
     ProjectPermissionMixin,
     ProjectContextMixin,
+    CurrentUserFormMixin,
     SampleSheetImportMixin,
     FormView,
 ):
@@ -790,8 +791,6 @@ class SampleSheetImportView(
             kwargs.update({'replace': True})
         except Investigation.DoesNotExist:
             kwargs.update({'replace': False})
-        # TODO: Use CurrentUserFormMixin instead (see issue #660)
-        kwargs.update({'current_user': self.request.user})
         return kwargs
 
     def form_valid(self, form):

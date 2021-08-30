@@ -52,9 +52,11 @@ Changed
     - UI improvements in project zone list (#1235)
     - Hide zones with ``NOT CREATED`` status from detail card (#1236)
     - Handle ``NOT CREATED`` landing zone status (#1237)
+    - Use ``CurrentUserFormMixin`` in forms (#660)
 - **Samplesheets**
     - Move ``TestSheetSyncBase`` into ``test_views_taskflow``
     - Update app setting labels (#1230)
+    - Use ``CurrentUserFormMixin`` in forms (#660)
 
 Fixed
 -----

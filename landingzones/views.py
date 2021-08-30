@@ -16,6 +16,7 @@ from projectroles.views import (
     LoggedInPermissionMixin,
     ProjectPermissionMixin,
     ProjectContextMixin,
+    CurrentUserFormMixin,
 )
 
 # Samplesheets dependency
@@ -422,6 +423,7 @@ class ZoneCreateView(
     LoggedInPermissionMixin,
     ProjectPermissionMixin,
     InvestigationContextMixin,
+    CurrentUserFormMixin,
     ZoneCreateMixin,
     CreateView,
 ):
@@ -432,14 +434,9 @@ class ZoneCreateView(
     permission_required = 'landingzones.add_zones'
 
     def get_form_kwargs(self):
-        """Pass current user to form"""
+        """Pass project to form"""
         kwargs = super().get_form_kwargs()
-        kwargs.update(
-            {
-                'current_user': self.request.user,
-                'project': self.kwargs['project'],
-            }
-        )
+        kwargs.update({'project': self.kwargs['project']})
         return kwargs
 
     def form_valid(self, form):
@@ -505,6 +502,7 @@ class ZoneDeleteView(
     ProjectContextMixin,
     ZoneUpdateRequiredPermissionMixin,
     ProjectPermissionMixin,
+    CurrentUserFormMixin,
     ZoneDeleteMixin,
     TemplateView,
 ):
@@ -567,12 +565,6 @@ class ZoneDeleteView(
             messages.error(self.request, str(ex))
 
         return redirect(redirect_url)
-
-    def get_form_kwargs(self):
-        """Pass current user to form"""
-        kwargs = super().get_form_kwargs()
-        kwargs.update({'current_user': self.request.user})
-        return kwargs
 
 
 class ZoneMoveView(
