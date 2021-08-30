@@ -217,10 +217,14 @@
           variant="primary"
           class="text-left"
           id="sodar-ss-btn-edit-finish"
+          title="Exit edit mode and backup current changes in sheet versions"
           :disabled="app.unsavedRow !== null"
-          @click="toggleEditModeCallback">
+          @click="toggleEditModeCallback"
+          v-b-tooltip.hover>
         Finish Editing
-        <span class="pull-right"><i class="iconify" data-icon="mdi:check-bold"></i></span>
+        <span class="pull-right">
+          <i class="iconify" data-icon="mdi:check-bold"></i>
+        </span>
       </b-button>
     </div>
   </div>

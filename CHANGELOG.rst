@@ -30,6 +30,7 @@ Added
     - ``generic_raw`` assay plugin (#1128)
     - Overriding assay plugin via assay comment (#1128)
     - App alerts for sheet cache updates (#1000)
+    - Tooltip to clarify the Finish Editing button (#1109)
 
 Changed
 -------
