@@ -52,6 +52,7 @@ Changed
     - Handle ``NOT CREATED`` landing zone status (#1237)
 - **Samplesheets**
     - Move ``TestSheetSyncBase`` into ``test_views_taskflow``
+    - Update app setting labels (#1230)
 
 Fixed
 -----
@@ -61,6 +62,8 @@ Fixed
     - Disable cache as workaround for Docker build issues (#1225)
 - **Landingzones**
     - ``PROJECTROLES_SEND_EMAIL`` not checked in Taskflow views (#1229)
+- **Samplesheets**
+    - Missing label for ``public_access_ticket`` app setting (#1230)
 
 Removed
 -------

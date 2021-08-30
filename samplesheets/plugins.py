@@ -90,8 +90,8 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         'allow_editing': {
             'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT'],
             'type': 'BOOLEAN',
-            'label': 'Allow Sample Sheet Editing',
-            'description': 'Allow editing of projet sample sheets by '
+            'label': 'Allow sample sheet editing',
+            'description': 'Allow editing of project sample sheets by '
             'authorized users',
             'user_modifiable': True,
             'default': True,
@@ -99,22 +99,22 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         'display_config': {
             'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT_USER'],
             'type': 'JSON',
-            'label': 'Sheet Display Configuration',
-            'description': 'User specific JSON configuration for sample sheet'
-            'column display',
+            'label': 'Sample sheet display configuration',
+            'description': 'User specific JSON configuration for column '
+            'display in project sample sheets',
         },
         'display_config_default': {
             'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT'],
             'type': 'JSON',
-            'label': 'Default Sheet Display Configuration',
-            'description': 'Default JSON configuration for project sample sheet'
-            'column display',
+            'label': 'Default sample sheet display configuration',
+            'description': 'Default JSON configuration for column display in '
+            'project sample sheets',
             'user_modifiable': False,
         },
         'sheet_config': {
             'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT'],
             'type': 'JSON',
-            'label': 'Sheet Editing Configuration',
+            'label': 'Sample sheet editing configuration',
             'description': 'JSON configuration for sample sheet editing',
             'user_modifiable': False,
         },
@@ -161,9 +161,10 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         'public_access_ticket': {
             'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT'],
             'type': 'STRING',
+            'label': 'iRODS public access ticket',
             'default': '',
             'description': 'iRODS ticket for read-only anonymous sample data '
-            'access',
+            'access, used with projects allowing public guest access',
             'user_modifiable': False,
         },
     }
