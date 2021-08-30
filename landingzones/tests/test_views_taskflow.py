@@ -593,25 +593,20 @@ class TestLandingZoneMoveView(
 
         values = {'sodar_url': self.live_server_url}
         with self.login(self.user):
-            response = self.client.post(
+            self.client.post(
                 reverse(
                     'landingzones:validate',
                     kwargs={'landingzone': self.landing_zone.sodar_uuid},
                 ),
                 values,
             )
-            self.assertRedirects(
-                response,
-                reverse(
-                    'landingzones:list',
-                    kwargs={'project': self.project.sodar_uuid},
-                ),
-            )
 
         self._wait_for_taskflow(
             zone_uuid=LandingZone.objects.first().sodar_uuid, status='FAILED'
         )
-        self.assertEqual(LandingZone.objects.first().status, 'FAILED')
+        zone = LandingZone.objects.first()
+        self.assertEqual(zone.status, 'FAILED')
+        self.assertTrue('BatchValidateChecksumsTask' in zone.status_info)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         self.assertEqual(len(mail.outbox), 1)
@@ -630,25 +625,49 @@ class TestLandingZoneMoveView(
 
         values = {'sodar_url': self.live_server_url}
         with self.login(self.user):
-            response = self.client.post(
+            self.client.post(
                 reverse(
                     'landingzones:validate',
                     kwargs={'landingzone': self.landing_zone.sodar_uuid},
                 ),
                 values,
             )
-            self.assertRedirects(
-                response,
+
+        self._wait_for_taskflow(
+            zone_uuid=LandingZone.objects.first().sodar_uuid, status='FAILED'
+        )
+        zone = LandingZone.objects.first()
+        self.assertEqual(zone.status, 'FAILED')
+        self.assertTrue('BatchCheckFilesTask' in zone.status_info)
+        self.assertEqual(len(self.zone_coll.data_objects), 1)
+        self.assertEqual(len(self.assay_coll.data_objects), 0)
+
+    @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
+    def test_validate_md5_only(self):
+        """Test validating zone with no file for MD5 file (should fail)"""
+        self.irods_obj = self._make_object(self.zone_coll, TEST_OBJ_NAME)
+        self.md5_obj = self._make_md5_object(self.irods_obj)
+        self.irods_obj.unlink(force=True)
+        self.assertEqual(LandingZone.objects.first().status, 'ACTIVE')
+        self.assertEqual(len(self.zone_coll.data_objects), 1)
+        self.assertEqual(len(self.assay_coll.data_objects), 0)
+
+        values = {'sodar_url': self.live_server_url}
+        with self.login(self.user):
+            self.client.post(
                 reverse(
-                    'landingzones:list',
-                    kwargs={'project': self.project.sodar_uuid},
+                    'landingzones:validate',
+                    kwargs={'landingzone': self.landing_zone.sodar_uuid},
                 ),
+                values,
             )
 
         self._wait_for_taskflow(
             zone_uuid=LandingZone.objects.first().sodar_uuid, status='FAILED'
         )
-        self.assertEqual(LandingZone.objects.first().status, 'FAILED')
+        zone = LandingZone.objects.first()
+        self.assertEqual(zone.status, 'FAILED')
+        self.assertTrue('BatchCheckFilesTask' in zone.status_info)
         self.assertEqual(len(self.zone_coll.data_objects), 1)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
 
