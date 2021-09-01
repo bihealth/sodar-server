@@ -32,6 +32,7 @@ Added
     - App alerts for sheet cache updates (#1000)
     - Tooltip to clarify the Finish Editing button (#1109)
     - Tooltips for buttons disabled due to an unsaved row (#1056)
+    - Default ontology column value (#1061)
 
 Changed
 -------
