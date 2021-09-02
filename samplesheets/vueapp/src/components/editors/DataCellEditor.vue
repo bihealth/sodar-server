@@ -223,6 +223,11 @@ export default Vue.extend({
       }
       this.nameUuids = nameUuids
       this.nameValues = nameValues
+    },
+    finalizeDestroy () {
+      if (this.editAllowed) this.app.editingCell = false
+      this.params.colDef.suppressKeyboardEvent = false
+      this.app.selectEnabled = true
     }
   },
   created () {
@@ -370,11 +375,34 @@ export default Vue.extend({
         }
       }
 
+      // Reject invalid value
       if (!this.valid) {
         this.value.value = this.ogEditValue
         this.value.unit = this.ogEditUnit
         this.app.showNotification(this.invalidMsg || 'Invalid value', 'danger', 1000)
-      } else if ((this.headerInfo.header_type === 'name' || namedProcess) &&
+        this.finalizeDestroy()
+        return
+      }
+
+      // Confirm renaming node into an existing node and overwriting values
+      if ((this.headerInfo.header_type === 'name' || namedProcess) &&
+          this.value.newRow &&
+          this.ogEditValue &&
+          this.nameValues.includes(this.editValue)) {
+        const proceedVal = confirm(
+          'A node named "' + this.editValue + '" already exists in this ' +
+          'column. Renaming will replace all values in the material/process ' +
+          'fields. Proceed?')
+        if (!proceedVal) {
+          this.value.value = this.ogEditValue
+          this.finalizeDestroy()
+          this.app.showNotification(this.invalidMsg || 'Cancel rename', 'info', 1000)
+          return
+        }
+      }
+
+      // Proceed with setting values and saving
+      if ((this.headerInfo.header_type === 'name' || namedProcess) &&
             (!this.value.uuid || this.value.newRow)) {
         // Set UUID if we are referring to an existing node (only if material)
         if (!namedProcess && this.nameValues.includes(this.value.value)) {
@@ -414,9 +442,7 @@ export default Vue.extend({
           }
         }
       }
-      if (this.editAllowed) this.app.editingCell = false
-      this.params.colDef.suppressKeyboardEvent = false
-      this.app.selectEnabled = true
+      this.finalizeDestroy()
     }
   }
 })

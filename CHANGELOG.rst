@@ -33,6 +33,7 @@ Added
     - Tooltip to clarify the Finish Editing button (#1109)
     - Tooltips for buttons disabled due to an unsaved row (#1056)
     - Default ontology column value (#1061)
+    - Confirmation for field value overwrite on node rename (#1060)
 
 Changed
 -------
