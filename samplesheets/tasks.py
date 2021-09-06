@@ -70,9 +70,7 @@ def update_project_cache_task(
     if add_alert and user:
         app_alerts = get_backend_api('appalerts_backend')
         if app_alerts:
-            msg = 'Sample sheet iRODS cache updated for project "{}"'.format(
-                project.title
-            )
+            msg = 'Sample sheet iRODS cache updated'
             if alert_msg:
                 msg += ': {}'.format(alert_msg)
             app_alerts.add_alert(

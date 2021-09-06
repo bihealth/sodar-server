@@ -139,10 +139,7 @@ class TaskflowZoneStatusSetAPIView(BaseTaskflowAPIView):
             )
             return
 
-        alert_msg += ' in project "{}": {}'.format(
-            zone.project.title,
-            zone.title,
-        )
+        alert_msg += ': {}'.format(zone.title)
         if validate_only:
             alert_name = 'validate'
         elif flow_name == 'landing_zone_delete':
@@ -162,11 +159,10 @@ class TaskflowZoneStatusSetAPIView(BaseTaskflowAPIView):
     @classmethod
     def _add_member_move_alert(cls, app_alerts, zone, user, file_count):
         """Add app alert for project member"""
-        alert_msg = '{} file{} uploaded by {} in project "{}"'.format(
+        alert_msg = '{} file{} uploaded by {}'.format(
             file_count,
             's' if file_count != 1 else '',
             zone.user.username,
-            zone.project.title,
         )
         if zone.user_message:
             alert_msg += ': {}'.format(zone.user_message)
