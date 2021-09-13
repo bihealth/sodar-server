@@ -49,6 +49,7 @@ Changed
 - **Irodsbackend**
     - Retrieve iRODS config from ``IRODS_ENV_BACKEND`` setting (#1221)
     - Use data attributes in templates (sodar_core#530)
+    - Rename ``data_objects`` to ``irods_data`` in return data (#1156)
 - **Irodsinfo**
     - Retrieve iRODS config from ``IRODS_ENV_CLIENT`` setting (#1221)
     - Display ``IRODS_ENV_CLIENT`` in siteinfo via ``info_settings``

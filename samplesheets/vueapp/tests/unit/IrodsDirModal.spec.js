@@ -66,7 +66,7 @@ describe('IrodsDirModal.vue', () => {
   })
 
   it('renders modal with empty object list', async () => {
-    fetchMock.mock(listAjaxUrl, { data_objects: [] })
+    fetchMock.mock(listAjaxUrl, { irods_data: [] })
     const wrapper = mount(IrodsDirModal, {
       localVue, propsData: propsData
     })
@@ -160,7 +160,7 @@ describe('IrodsDirModal.vue', () => {
       propsData: propsData
     })
     wrapper.vm.showModal(rootIrodsPath)
-    expect(wrapper.vm.getRelativePath(objList.data_objects[0].path)).toBe('')
+    expect(wrapper.vm.getRelativePath(objList.irods_data[0].path)).toBe('')
     expect(wrapper.vm.getRelativePath(subCollPath)).toBe('subcoll')
   })
 
@@ -176,7 +176,7 @@ describe('IrodsDirModal.vue', () => {
   })
 
   it('renders cancel request button as inactive for different user', async () => {
-    objList.data_objects[0].irods_request_user = '66666666-6666-6666-6666-777777777777'
+    objList.irods_data[0].irods_request_user = '66666666-6666-6666-6666-777777777777'
     fetchMock.mock(listAjaxUrl, objList)
     const wrapper = mount(IrodsDirModal, {
       localVue, propsData: propsData

@@ -586,7 +586,7 @@ class IrodsAPI:
             if not isinstance(name_like, list):
                 name_like = [name_like]
             name_like = [n.replace('_', '\_') for n in name_like]  # noqa
-        ret = {'data_objects': []}
+        ret = {'irods_data': []}
         md5_paths = None
 
         data_objs = self.get_objs_recursively(
@@ -606,22 +606,22 @@ class IrodsAPI:
                     o['md5_file'] = True
                 else:
                     o['md5_file'] = False
-            ret['data_objects'].append(o)
+            ret['irods_data'].append(o)
 
         # Add collections if enabled
         # TODO: Combine into a single query?
         if include_colls:
             colls = self.get_colls_recursively(coll)
             for c in colls:
-                ret['data_objects'].append(
+                ret['irods_data'].append(
                     {
                         'name': c.name,
                         'type': 'coll',
                         'path': c.path,
                     }
                 )
-            ret['data_objects'] = sorted(
-                ret['data_objects'], key=lambda x: x['path']
+            ret['irods_data'] = sorted(
+                ret['irods_data'], key=lambda x: x['path']
             )
 
         return ret

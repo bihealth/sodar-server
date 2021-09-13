@@ -229,7 +229,7 @@ $(document).ready(function() {
             }).done(function (data) {
             // console.log(data);  // DEBUG
 
-            if (data['data_objects'].length > 0) {
+            if (data['irods_data'].length > 0) {
                 body += '<table class="table sodar-card-table sodar-irods-obj-table">';
                 body += '<thead><th>File/Collection</th><th>Size</th><th>Modified</th>';
                 if (showChecksumCol === true) {
@@ -237,7 +237,7 @@ $(document).ready(function() {
                 }
                 body += '</thead><tbody>';
 
-                $.each(data['data_objects'], function (i, obj) {
+                $.each(data['irods_data'], function (i, obj) {
                     var objNameSplit = obj['path'].split('/');
                     var objPrefix = objNameSplit.slice(
                         irodsPathLength, objNameSplit.length - 1).join('/');

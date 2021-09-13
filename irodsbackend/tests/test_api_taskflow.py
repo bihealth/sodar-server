@@ -103,9 +103,9 @@ class TestIrodsBackendAPITaskflow(
         irods.data_objects.create(path + '/{}.md5'.format(TEST_FILE_NAME))
         obj_list = self.irods_backend.get_objects(path, check_md5=True)
         self.assertIsNotNone(obj_list)
-        self.assertEqual(len(obj_list['data_objects']), 1)  # md5 not listed
+        self.assertEqual(len(obj_list['irods_data']), 1)  # md5 not listed
 
-        obj = obj_list['data_objects'][0]
+        obj = obj_list['irods_data'][0]
         expected = {
             'name': TEST_FILE_NAME,
             'type': 'obj',
@@ -129,7 +129,7 @@ class TestIrodsBackendAPITaskflow(
             path, include_colls=True, check_md5=True
         )
         self.assertIsNotNone(obj_list)
-        self.assertEqual(len(obj_list['data_objects']), 2)  # md5 not listed
+        self.assertEqual(len(obj_list['irods_data']), 2)  # md5 not listed
 
         expected = [
             {
@@ -143,10 +143,10 @@ class TestIrodsBackendAPITaskflow(
                 'path': path + '/' + TEST_FILE_NAME,
                 'size': 0,
                 'md5_file': True,
-                'modify_time': obj_list['data_objects'][1]['modify_time'],
+                'modify_time': obj_list['irods_data'][1]['modify_time'],
             },
         ]
-        self.assertEqual(obj_list['data_objects'], expected)
+        self.assertEqual(obj_list['irods_data'], expected)
 
     @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_get_objects_multi(self):
@@ -162,7 +162,7 @@ class TestIrodsBackendAPITaskflow(
             path, name_like=[TEST_FILE_NAME, TEST_FILE_NAME2], check_md5=True
         )
         self.assertIsNotNone(obj_list)
-        self.assertEqual(len(obj_list['data_objects']), 2)  # md5 not listed
+        self.assertEqual(len(obj_list['irods_data']), 2)  # md5 not listed
 
         expected = [
             {
@@ -171,7 +171,7 @@ class TestIrodsBackendAPITaskflow(
                 'path': path + '/' + TEST_FILE_NAME,
                 'size': 0,
                 'md5_file': True,
-                'modify_time': obj_list['data_objects'][0]['modify_time'],
+                'modify_time': obj_list['irods_data'][0]['modify_time'],
             },
             {
                 'name': TEST_FILE_NAME2,
@@ -179,10 +179,10 @@ class TestIrodsBackendAPITaskflow(
                 'path': path + '/' + TEST_FILE_NAME2,
                 'size': 0,
                 'md5_file': True,
-                'modify_time': obj_list['data_objects'][1]['modify_time'],
+                'modify_time': obj_list['irods_data'][1]['modify_time'],
             },
         ]
-        self.assertEqual(obj_list['data_objects'], expected)
+        self.assertEqual(obj_list['irods_data'], expected)
 
     @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_get_objects_long_query(self):
@@ -212,7 +212,7 @@ class TestIrodsBackendAPITaskflow(
             path, name_like=[TEST_FILE_NAME, TEST_FILE_NAME2], check_md5=True
         )
         self.assertIsNotNone(obj_list)
-        self.assertEqual(len(obj_list['data_objects']), 2)  # md5 not listed
+        self.assertEqual(len(obj_list['irods_data']), 2)  # md5 not listed
 
         expected = [
             {
@@ -221,7 +221,7 @@ class TestIrodsBackendAPITaskflow(
                 'path': path + '/' + TEST_FILE_NAME,
                 'size': 0,
                 'md5_file': True,
-                'modify_time': obj_list['data_objects'][0]['modify_time'],
+                'modify_time': obj_list['irods_data'][0]['modify_time'],
             },
             {
                 'name': TEST_FILE_NAME2,
@@ -229,10 +229,10 @@ class TestIrodsBackendAPITaskflow(
                 'path': path + '/' + TEST_FILE_NAME2,
                 'size': 0,
                 'md5_file': True,
-                'modify_time': obj_list['data_objects'][1]['modify_time'],
+                'modify_time': obj_list['irods_data'][1]['modify_time'],
             },
         ]
-        self.assertEqual(obj_list['data_objects'], expected)
+        self.assertEqual(obj_list['irods_data'], expected)
 
     @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_get_objects_empty_coll(self):
@@ -241,7 +241,7 @@ class TestIrodsBackendAPITaskflow(
         path = self.irods_backend.get_path(self.project) + '/' + SAMPLE_COLL
         obj_list = self.irods_backend.get_objects(path)
         self.assertIsNotNone(obj_list)
-        self.assertEqual(len(obj_list['data_objects']), 0)
+        self.assertEqual(len(obj_list['irods_data']), 0)
 
     @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_get_objects_no_coll(self):
@@ -262,4 +262,4 @@ class TestIrodsBackendAPITaskflow(
             path, check_md5=False, limit=1
         )
         self.assertIsNotNone(obj_list)
-        self.assertEqual(len(obj_list['data_objects']), 1)  # Limited to 1
+        self.assertEqual(len(obj_list['irods_data']), 1)  # Limited to 1
