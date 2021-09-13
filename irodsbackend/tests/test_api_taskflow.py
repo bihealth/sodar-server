@@ -108,6 +108,7 @@ class TestIrodsBackendAPITaskflow(
         obj = obj_list['data_objects'][0]
         expected = {
             'name': TEST_FILE_NAME,
+            'type': 'obj',
             'path': path + '/' + TEST_FILE_NAME,
             'size': 0,
             'md5_file': True,
@@ -116,14 +117,42 @@ class TestIrodsBackendAPITaskflow(
         self.assertEqual(obj, expected)
 
     @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
-    def test_get_objects_multi(self):
-        """Test get_objects() with multiple search terms"""
-        # Create iRODS collections
+    def test_get_objects_with_colls(self):
+        """Test get_objects() with collections included"""
         self._make_irods_colls(self.investigation)
         path = self.irods_backend.get_path(self.assay)
+        irods = self.irods_backend.get_session()
+        irods.data_objects.create(path + '/' + TEST_FILE_NAME)
+        irods.data_objects.create(path + '/{}.md5'.format(TEST_FILE_NAME))
+        irods.collections.create(path + '/subcoll')
+        obj_list = self.irods_backend.get_objects(
+            path, include_colls=True, check_md5=True
+        )
+        self.assertIsNotNone(obj_list)
+        self.assertEqual(len(obj_list['data_objects']), 2)  # md5 not listed
 
-        # Create objects
-        # TODO: Test with actual files and put() instead
+        expected = [
+            {
+                'name': 'subcoll',
+                'type': 'coll',
+                'path': path + '/subcoll',
+            },
+            {
+                'name': TEST_FILE_NAME,
+                'type': 'obj',
+                'path': path + '/' + TEST_FILE_NAME,
+                'size': 0,
+                'md5_file': True,
+                'modify_time': obj_list['data_objects'][1]['modify_time'],
+            },
+        ]
+        self.assertEqual(obj_list['data_objects'], expected)
+
+    @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
+    def test_get_objects_multi(self):
+        """Test get_objects() with multiple search terms"""
+        self._make_irods_colls(self.investigation)
+        path = self.irods_backend.get_path(self.assay)
         irods = self.irods_backend.get_session()
         irods.data_objects.create(path + '/' + TEST_FILE_NAME)
         irods.data_objects.create(path + '/{}.md5'.format(TEST_FILE_NAME))
@@ -138,6 +167,7 @@ class TestIrodsBackendAPITaskflow(
         expected = [
             {
                 'name': TEST_FILE_NAME,
+                'type': 'obj',
                 'path': path + '/' + TEST_FILE_NAME,
                 'size': 0,
                 'md5_file': True,
@@ -145,6 +175,7 @@ class TestIrodsBackendAPITaskflow(
             },
             {
                 'name': TEST_FILE_NAME2,
+                'type': 'obj',
                 'path': path + '/' + TEST_FILE_NAME2,
                 'size': 0,
                 'md5_file': True,
@@ -156,11 +187,8 @@ class TestIrodsBackendAPITaskflow(
     @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_get_objects_long_query(self):
         """Test get_objects() with a long query"""
-        # Create iRODS collections
         self._make_irods_colls(self.investigation)
         path = self.irods_backend.get_path(self.assay)
-
-        # Create objects
         irods = self.irods_backend.get_session()
         irods.data_objects.create(path + '/' + TEST_FILE_NAME)
         irods.data_objects.create(path + '/{}.md5'.format(TEST_FILE_NAME))
@@ -189,6 +217,7 @@ class TestIrodsBackendAPITaskflow(
         expected = [
             {
                 'name': TEST_FILE_NAME,
+                'type': 'obj',
                 'path': path + '/' + TEST_FILE_NAME,
                 'size': 0,
                 'md5_file': True,
@@ -196,6 +225,7 @@ class TestIrodsBackendAPITaskflow(
             },
             {
                 'name': TEST_FILE_NAME2,
+                'type': 'obj',
                 'path': path + '/' + TEST_FILE_NAME2,
                 'size': 0,
                 'md5_file': True,
@@ -207,9 +237,7 @@ class TestIrodsBackendAPITaskflow(
     @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_get_objects_empty_coll(self):
         """Test get_objects() with an empty sample collection"""
-        # Create iRODS collections
         self._make_irods_colls(self.investigation)
-
         path = self.irods_backend.get_path(self.project) + '/' + SAMPLE_COLL
         obj_list = self.irods_backend.get_objects(path)
         self.assertIsNotNone(obj_list)
@@ -225,11 +253,8 @@ class TestIrodsBackendAPITaskflow(
     @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_get_objects_limit(self):
         """Test get_objects() with a limit applied"""
-        # Create iRODS collections
         self._make_irods_colls(self.investigation)
         path = self.irods_backend.get_path(self.assay)
-
-        # Create objects
         irods = self.irods_backend.get_session()
         irods.data_objects.create(path + '/' + TEST_FILE_NAME)
         irods.data_objects.create(path + '/' + TEST_FILE_NAME2)

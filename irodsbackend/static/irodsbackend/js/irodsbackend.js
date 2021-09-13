@@ -110,7 +110,7 @@ var updateButtons = function() {
         else {
             $(this).closest('span').find('.sodar-list-btn').each(
                 function () {
-                $(this).tooltip('disable');
+                    $(this).tooltip('disable');
                 });
         }
 
@@ -124,8 +124,7 @@ var updateButtons = function() {
     while(batchStart < pathCount) {
         if (pathCount < (batchStart + batchSize)){
             pathBatch = ipaths.slice(batchStart, pathCount);
-        }
-        else {
+        } else {
             pathBatch = ipaths.slice(batchStart, batchStart + batchSize);
         }
         batchStart = batchStart+batchSize;
@@ -172,7 +171,6 @@ $(document).ready(function() {
      ******************/
     $('.sodar-irods-copy-btn').click(function () {
         $(this).addClass('text-warning');
-
         if ($(this).attr('data-table') !== '1') {
             var realTitle = $(this).tooltip().attr('data-original-title');
             $(this).attr('title', 'Copied!')
@@ -181,7 +179,6 @@ $(document).ready(function() {
                 .attr('title', realTitle)
                 .tooltip('_fixTitle');
         }
-
         $(this).delay(250).queue(function() {
             $(this).removeClass('text-warning').dequeue();
         });
@@ -191,17 +188,14 @@ $(document).ready(function() {
      Update collection stats
      ***********************/
     updateCollectionStats();
-
     if ($('table.sodar-lz-table').length === 0) {
         updateButtons();
     }
 
     var statsSec = 8;
-
     if (typeof(window.irodsbackendStatusInterval) !== 'undefined') {
         statsSec = window.irodsbackendStatusInterval;
     }
-
     var statsInterval = statsSec * 1000;
 
     // Poll and update active collections
@@ -216,13 +210,12 @@ $(document).ready(function() {
      Link list Popup
      ***************/
     $('.sodar-irods-popup-list-btn').click(function() {
-        var listUrl = $(this).attr('list-url');
-        var irodsPath = $(this).attr('irods-path');
+        var listUrl = $(this).attr('data-list-url');
+        var irodsPath = $(this).attr('data-irods-path');
         var irodsPathLength = irodsPath.split('/').length;
-        var webDavUrl = $(this).attr('webdav-url');
-        var htmlData = '';
+        var webDavUrl = $(this).attr('data-webdav-url');
+        var body = '';
         var showChecksumCol = false;
-
         if (typeof(window.irodsShowChecksumCol) !== 'undefined') {
             showChecksumCol = window.irodsShowChecksumCol;
         }
@@ -237,45 +230,57 @@ $(document).ready(function() {
             // console.log(data);  // DEBUG
 
             if (data['data_objects'].length > 0) {
-                htmlData += '<table class="table sodar-card-table sodar-irods-obj-table">';
-                htmlData += '<thead><th>File</th><th>Size</th><th>Modified</th>';
-
+                body += '<table class="table sodar-card-table sodar-irods-obj-table">';
+                body += '<thead><th>File/Collection</th><th>Size</th><th>Modified</th>';
                 if (showChecksumCol === true) {
-                    htmlData += '<th>MD5</th>';
+                    body += '<th>MD5</th>';
                 }
-
-                htmlData += '</thead><tbody>';
+                body += '</thead><tbody>';
 
                 $.each(data['data_objects'], function (i, obj) {
                     var objNameSplit = obj['path'].split('/');
-                    var objLink = '<a href="' + webDavUrl + obj['path'] + '"><span class="text-muted">';
-                    objLink += objNameSplit.slice(irodsPathLength, objNameSplit.length - 1).join('/');
-                    objLink += '/</span>' + obj['name'] + '</a>';
-                    htmlData += '<tr><td>' + objLink + '</td>';
-                    htmlData += '<td>' + humanFileSize(obj['size'], true) + '</td>';
-                    htmlData += '<td>' + obj['modify_time'] + '</td>';
-                    htmlData += '<td>';
-
-                    if (showChecksumCol === true) {
-                        if (obj['md5_file'] === true) {
-                            htmlData += '<span class="text-muted"><i class="iconify" data-icon="mdi:check-bold"></i></span>';
-                        }
-
-                        else {
-                            htmlData += '<span class="text-danger"><i class="iconify" data-icon="mdi:close-thick"></i></span>';
-                        }
+                    var objPrefix = objNameSplit.slice(
+                        irodsPathLength, objNameSplit.length - 1).join('/');
+                    var objLink = '<a href="' + webDavUrl + obj['path'] + '">';
+                    if (objPrefix) {
+                        objLink += '<span class="text-muted">' + objPrefix + '/</span>';
                     }
+                    objLink += obj['name'] + '</a>';
 
-                    htmlData += '</td></tr>';
+                    var colSpan = '1';
+                    var icon = 'mdi:file-document-outline';
+                    var toolTip = 'File';
+                    if (obj['type'] === 'coll') {
+                        colSpan = '4';
+                        icon = 'mdi:folder-open';
+                        toolTip = 'Collection';
+                    }
+                    var iconHtml = '<i class="iconify mr-1" data-icon="'+ icon +'"' +
+                        'title="'+ toolTip +'"></i>';
+
+                    body += '<tr><td colspan="' + colSpan + '">' + iconHtml + objLink + '</td>';
+                    if (obj['type'] === 'obj') {
+                        body += '<td>' + humanFileSize(obj['size'], true) + '</td>';
+                        body += '<td>' + obj['modify_time'] + '</td><td>';
+                        if (showChecksumCol === true) {
+                            if (obj['md5_file'] === true) {
+                                body += '<span class="text-muted">' +
+                                    '<i class="iconify" data-icon="mdi:check-bold"></i></span>';
+                            } else {
+                                body += '<span class="text-danger">' +
+                                    '<i class="iconify" data-icon="mdi:close-thick"></i></span>';
+                            }
+                        }
+                        body += '</td>';
+                    }
+                    body += '</tr>';
                 });
-            }
-
-            else {
-                htmlData += '<span class="text-muted font-italic">No files</span>';
+            } else {
+                body += '<span class="text-muted font-italic">No files</span>';
             }
 
             // Set success content and toggle modal
-            $('.modal-body').html(htmlData);
+            $('.modal-body').html(body);
             $('#sodar-modal-wait').modal('hide');
             $('#sodar-modal').modal('show');
         }).fail(function (response) {
@@ -283,14 +288,11 @@ $(document).ready(function() {
             if (response.status === 404) {
                 $('.modal-body').html(
                     '<span class="text-muted font-italic">Collection not found</span>');
-            }
-
-            else {
+            } else {
                 $('.modal-body').html(
                     '<span class="text-danger font-italic">Failed to query data (' +
                     response.status + ': ' + response.responseText + ')</span>');
             }
-
             $('#sodar-modal-wait').modal('hide');
             $('#sodar-modal').modal('show');
         });

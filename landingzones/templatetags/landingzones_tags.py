@@ -86,7 +86,8 @@ def get_zone_list_url(zone):
         view='list',
         project=zone.project,
         path=irods_backend.get_path(zone),
-        md5=1,
+        md5=True,
+        colls=True,
     )
 
 

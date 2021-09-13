@@ -18,9 +18,9 @@
   {% if show_file_list and irods_backend_enabled and irods_webdav_enabled %}
     <button class="btn btn-secondary sodar-list-btn sodar-irods-btn sodar-irods-popup-list-btn
             {% if not irods_webdav_enabled or not irods_colls or disable_all %} no-colls {% endif %}"
-            irods-path="{{ irods_path }}"
-            list-url="{{ list_url }}"
-            webdav-url="{{ irods_webdav_url }}"
+            data-irods-path="{{ irods_path }}"
+            data-list-url="{{ list_url }}"
+            data-webdav-url="{{ irods_webdav_url }}"
             role="submit"
             {# NOTE: Modal not triggered here as data is async, see JQuery #}
             {% if not data_table %}
