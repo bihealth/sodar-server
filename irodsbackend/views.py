@@ -180,11 +180,14 @@ class IrodsObjectListAjaxView(BaseIrodsAjaxView):
             return Response(self._get_detail(ex), status=500)
 
         md5 = request.GET.get('md5')
+        colls = request.GET.get('colls')
 
         # Get files
         try:
             ret_data = irods_backend.get_objects(
-                self.path, check_md5=bool(int(md5))
+                self.path,
+                check_md5=bool(int(md5)),
+                include_colls=bool(int(colls)),
             )
             return Response(ret_data, status=200)
         except Exception as ex:

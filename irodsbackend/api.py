@@ -331,6 +331,7 @@ class IrodsAPI:
         project=None,
         path='',
         md5=False,
+        colls=False,
         method='GET',
         absolute=False,
         request=None,
@@ -341,7 +342,8 @@ class IrodsAPI:
         :param view: View of the URL ("stats" or "list")
         :param path: Full iRODS path (string)
         :param project: Project object or None
-        :param md5: Include MD5 or not for a list view (boolean)
+        :param md5: Include MD5 or not for a list view (boolean, default=False)
+        :param colls: Include collections in list (boolean, default=False)
         :param method: Method for the function (string)
         :param absolute: Whether or not an absolute URI is required (boolean)
         :param request: Request object (required for building an absolute URI)
@@ -360,6 +362,7 @@ class IrodsAPI:
             query_string = {'path': cls._sanitize_coll_path(path)}
             if view == 'list':
                 query_string['md5'] = int(md5)
+                query_string['colls'] = int(colls)
             rev_url += '?' + urlencode(query_string)
         if absolute and request:
             return request.build_absolute_uri(rev_url)
@@ -394,50 +397,6 @@ class IrodsAPI:
                 str(x) for x in self.irods.pool.get_connection().server_version
             ),
         }
-
-    def get_objects(self, path, check_md5=False, name_like=None, limit=None):
-        """
-        Return an iRODS object list.
-
-        :param path: Full path to iRODS collection
-        :param check_md5: Whether to add md5 checksum file info (bool)
-        :param name_like: Filtering of file names (string or list of strings)
-        :param limit: Limit search to n rows (int)
-        :return: Dict
-        :raise: FileNotFoundError if collection is not found
-        """
-        try:
-            coll = self.irods.collections.get(self._sanitize_coll_path(path))
-        except CollectionDoesNotExist:
-            raise FileNotFoundError('iRODS collection not found')
-
-        if name_like:
-            if not isinstance(name_like, list):
-                name_like = [name_like]
-            name_like = [n.replace('_', '\_') for n in name_like]  # noqa
-        ret = {'data_objects': []}
-        md5_paths = None
-
-        data_objs = self.get_objs_recursively(
-            coll, name_like=name_like, limit=limit
-        )
-        if data_objs and check_md5:
-            md5_paths = [
-                o['path']
-                for o in self.get_objs_recursively(
-                    coll, md5=True, name_like=name_like
-                )
-            ]
-
-        for o in data_objs:
-            if check_md5:
-                if o['path'] + '.md5' in md5_paths:
-                    o['md5_file'] = True
-                else:
-                    o['md5_file'] = False
-            ret['data_objects'].append(o)
-
-        return ret
 
     def get_object_stats(self, path):
         """
@@ -565,6 +524,7 @@ class IrodsAPI:
                     ret.append(
                         {
                             'name': row[DataObject.name],
+                            'type': 'obj',
                             'path': obj_path,
                             'size': row[DataObject.size],
                             'modify_time': self._get_datetime(
@@ -597,6 +557,74 @@ class IrodsAPI:
         else:  # Single query
             _do_query(name_like)
         return sorted(ret, key=lambda x: x['path'])
+
+    def get_objects(
+        self,
+        path,
+        check_md5=False,
+        include_colls=False,
+        name_like=None,
+        limit=None,
+    ):
+        """
+        Return an iRODS object list.
+
+        :param path: Full path to iRODS collection
+        :param check_md5: Whether to add md5 checksum file info (bool)
+        :param include_colls: Include collections (bool)
+        :param name_like: Filtering of file names (string or list of strings)
+        :param limit: Limit search to n rows (int)
+        :return: Dict
+        :raise: FileNotFoundError if collection is not found
+        """
+        try:
+            coll = self.irods.collections.get(self._sanitize_coll_path(path))
+        except CollectionDoesNotExist:
+            raise FileNotFoundError('iRODS collection not found')
+
+        if name_like:
+            if not isinstance(name_like, list):
+                name_like = [name_like]
+            name_like = [n.replace('_', '\_') for n in name_like]  # noqa
+        ret = {'irods_data': []}
+        md5_paths = None
+
+        data_objs = self.get_objs_recursively(
+            coll, name_like=name_like, limit=limit
+        )
+        if data_objs and check_md5:
+            md5_paths = [
+                o['path']
+                for o in self.get_objs_recursively(
+                    coll, md5=True, name_like=name_like
+                )
+            ]
+
+        for o in data_objs:
+            if check_md5:
+                if o['path'] + '.md5' in md5_paths:
+                    o['md5_file'] = True
+                else:
+                    o['md5_file'] = False
+            ret['irods_data'].append(o)
+
+        # Add collections if enabled
+        # TODO: Combine into a single query?
+        if include_colls:
+            colls = self.get_colls_recursively(coll)
+            for c in colls:
+                ret['irods_data'].append(
+                    {
+                        'name': c.name,
+                        'type': 'coll',
+                        'path': c.path,
+                    }
+                )
+            ret['irods_data'] = sorted(
+                ret['irods_data'], key=lambda x: x['path']
+            )
+
+        return ret
 
     def get_coll_by_path(self, path):
         try:

@@ -78,7 +78,7 @@ def get_pedigree_file_path(file_type, source, study_tables):
     for query_path in query_paths:
         try:
             obj_list = irods_backend.get_objects(query_path)
-            for obj in obj_list['data_objects']:
+            for obj in obj_list['irods_data']:
                 # NOTE: We non longer expect the SAMPLE name in filenames
                 if obj['name'].lower().endswith(FILE_TYPE_SUFFIXES[file_type]):
                     file_paths.append(obj['path'])
@@ -121,7 +121,6 @@ def get_families(study):
             .values_list('name', flat=True)
             .order_by('name')
         )
-
     return ret
 
 

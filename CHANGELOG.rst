@@ -15,6 +15,8 @@ Added
 
 - **General**
     - Siteinfo app in default ``LOGGING_APPS`` value (#1219)
+- **Irodsbackend**
+    - Add ``colls`` parameter to list retrieval (#1156)
 - **Landingzones**
     - ``busyzones`` management command (#1212)
     - App alerts for sheet cache updates (#1000)
@@ -25,6 +27,7 @@ Added
     - ``finished`` parameter for ``LandingZoneListAPIView`` to access finished zones (#1234)
     - ``LandingZone.is_locked()`` helper (#321)
     - Zone locked status in UI and ``LandingZoneRetrieveAPIView`` (#321)
+    - Display collections in iRODS file list (#1156)
 - **Samplesheets**
     - Simple link support for string cell rendering (#1001)
     - ``generic_raw`` assay plugin (#1128)
@@ -45,6 +48,8 @@ Changed
     - Upgrade to Node v12
 - **Irodsbackend**
     - Retrieve iRODS config from ``IRODS_ENV_BACKEND`` setting (#1221)
+    - Use data attributes in templates (sodar_core#530)
+    - Rename ``data_objects`` to ``irods_data`` in return data (#1156)
 - **Irodsinfo**
     - Retrieve iRODS config from ``IRODS_ENV_CLIENT`` setting (#1221)
     - Display ``IRODS_ENV_CLIENT`` in siteinfo via ``info_settings``
@@ -68,6 +73,8 @@ Fixed
     - Disable cache as workaround for Docker build issues (#1225)
 - **Irodsadmin**
     - Missing cleanup in command test ``tearDown()`` (#1244)
+- **Irodsbackend**
+    - Redundant slash prefix for root level items in collection list (#1245)
 - **Landingzones**
     - ``PROJECTROLES_SEND_EMAIL`` not checked in Taskflow views (#1229)
 - **Samplesheets**

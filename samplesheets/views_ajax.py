@@ -1789,7 +1789,7 @@ class IrodsObjectListAjaxView(BaseIrodsAjaxView):
             ret_data = irods_backend.get_objects(self.path)
         except Exception as ex:
             return Response({'detail': str(ex)}, status=400)
-        for data_obj in ret_data.get('data_objects', []):
+        for data_obj in ret_data.get('irods_data', []):
             obj = IrodsDataRequest.objects.filter(
                 path=data_obj['path'], status__in=['ACTIVE', 'FAILED']
             ).first()

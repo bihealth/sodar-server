@@ -216,7 +216,7 @@ class TestIrodsObjectListAjaxView(TestViewsBase):
                 )
             )
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data['data_objects']), 0)
+        self.assertEqual(len(response.data['irods_data']), 0)
 
     def test_get_coll_obj(self):
         """Test GET for listing a collection with a data object"""
@@ -235,9 +235,9 @@ class TestIrodsObjectListAjaxView(TestViewsBase):
                 )
             )
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data['data_objects']), 1)
+        self.assertEqual(len(response.data['irods_data']), 1)
 
-        list_obj = response.data['data_objects'][0]
+        list_obj = response.data['irods_data'][0]
         self.assertNotIn('md5_file', list_obj)
         self.assertEqual(data_obj.name, list_obj['name'])
         self.assertEqual(data_obj.path, list_obj['path'])
@@ -264,8 +264,8 @@ class TestIrodsObjectListAjaxView(TestViewsBase):
                 )
             )
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data['data_objects']), 1)  # Still 1
-        self.assertEqual(response.data['data_objects'][0]['md5_file'], True)
+        self.assertEqual(len(response.data['irods_data']), 1)  # Still 1
+        self.assertEqual(response.data['irods_data'][0]['md5_file'], True)
 
     def test_get_coll_md5_no_file(self):
         """Test GET with md5 set True but no md5 file"""
@@ -283,8 +283,8 @@ class TestIrodsObjectListAjaxView(TestViewsBase):
                 )
             )
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data['data_objects']), 1)
-        self.assertEqual(response.data['data_objects'][0]['md5_file'], False)
+        self.assertEqual(len(response.data['irods_data']), 1)
+        self.assertEqual(response.data['irods_data'][0]['md5_file'], False)
 
     def test_get_coll_not_found(self):
         """Test GET for listing a collection which doesn't exist"""

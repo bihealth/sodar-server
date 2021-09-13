@@ -359,7 +359,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                 for a in Assay.objects.filter(study__in=studies.values())
             }
 
-            for o in obj_data['data_objects']:
+            for o in obj_data['irods_data']:
                 project_uuid = irods_backend.get_uuid_from_path(
                     o['path'], obj_type='project'
                 )

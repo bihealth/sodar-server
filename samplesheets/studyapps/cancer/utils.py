@@ -14,7 +14,6 @@ def get_library_file_path(file_type, library):
     :return: String
     """
     irods_backend = get_backend_api('omics_irods')
-
     if not irods_backend:
         raise Exception('iRODS Backend not available')
 
@@ -23,19 +22,15 @@ def get_library_file_path(file_type, library):
 
     # Get paths to relevant files
     file_paths = []
-
     try:
         obj_list = irods_backend.get_objects(query_path)
-
-        for obj in obj_list['data_objects']:
+        for obj in obj_list['irods_data']:
             if obj['name'].lower().endswith(FILE_TYPE_SUFFIXES[file_type]):
                 file_paths.append(obj['path'])
-
     except FileNotFoundError:
         pass
 
     if not file_paths:
         return None
-
     # Return the last file of type by file name
     return sorted(file_paths, key=lambda x: x.split('/')[-1])[-1]

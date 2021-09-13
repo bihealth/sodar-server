@@ -158,9 +158,9 @@ export default {
         : 'User not allowed to issue request'
     },
     handleObjListResponse (response) {
-      if ('data_objects' in response) {
-        if (response.data_objects.length > 0) {
-          this.objectList = response.data_objects
+      if ('irods_data' in response) {
+        if (response.irods_data.length > 0) {
+          this.objectList = response.irods_data
 
           for (let i = 0; i < this.objectList.length; i++) {
             this.objectList[i].visibleInList = true
