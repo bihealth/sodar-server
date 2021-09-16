@@ -41,7 +41,7 @@
       }
     }
 
-    @media screen and (max-width: 900px) {
+    @media screen and (max-width: 950px) {
       table#sodar-ss-version-table thead tr th:nth-child(3),
       table#sodar-ss-version-table tbody tr td:nth-child(3) {
         display: none;
@@ -112,7 +112,7 @@
                 </span>
                 <span class="pull-right">
                   {% if sv == current_version %}
-                    <span class="badge badge-pill badge-success">Current</span>
+                    <span class="badge badge-pill badge-success">Most Recent</span>
                   {% endif %}
                   {% get_isatab_tag_html sv as tag_html %}{{ tag_html | safe }}
                 </span>
