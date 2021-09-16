@@ -33,6 +33,20 @@
     table#sodar-ss-version-table tbody tr td:nth-child(5) {
       width: 75px;
     }
+
+    @media screen and (max-width: 1200px) {
+      table#sodar-ss-version-table thead tr th:nth-child(4),
+      table#sodar-ss-version-table tbody tr td:nth-child(4) {
+        display: none;
+      }
+    }
+
+    @media screen and (max-width: 900px) {
+      table#sodar-ss-version-table thead tr th:nth-child(3),
+      table#sodar-ss-version-table tbody tr td:nth-child(3) {
+        display: none;
+      }
+    }
   </style>
 {% endblock css %}
 

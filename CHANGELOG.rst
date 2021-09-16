@@ -66,7 +66,7 @@ Changed
     - Update app setting labels (#1230)
     - Use ``CurrentUserFormMixin`` in forms (#660)
     - Rename ``get_name()`` and ``get_full_name()`` in ``ISATab`` model (#1247)
-    - Update sheet version list layout
+    - Update sheet version list layout (#1246)
 
 Fixed
 -----
