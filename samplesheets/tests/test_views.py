@@ -68,6 +68,7 @@ SHEET_NAME_EMPTY_ASSAY = 'i_small_assay_empty.zip'
 SHEET_PATH_EMPTY_ASSAY = SHEET_DIR_SPECIAL + SHEET_NAME_EMPTY_ASSAY
 SHEET_NAME_NO_PLUGIN_ASSAY = 'i_small_assay_no_plugin.zip'
 SHEET_PATH_NO_PLUGIN_ASSAY = SHEET_DIR_SPECIAL + SHEET_NAME_NO_PLUGIN_ASSAY
+SHEET_VERSION_DESC = 'description'
 SOURCE_NAME = '0815'
 SOURCE_NAME_FAIL = 'oop5Choo'
 USER_PASSWORD = 'password'
@@ -931,6 +932,54 @@ class TestSampleSheetVersionRestoreView(TestViewsBase):
         self.assertEqual(ISATab.objects.all().count(), 2)
 
 
+class TestSampleSheetVersionUpdateView(TestViewsBase):
+    """Tests for the sample sheet version update view"""
+
+    def setUp(self):
+        super().setUp()
+
+        # Import investigation
+        self.investigation = self._import_isa_from_file(
+            SHEET_PATH, self.project
+        )
+        self.study = self.investigation.studies.first()
+        self.isatab = ISATab.objects.get(
+            investigation_uuid=self.investigation.sodar_uuid
+        )
+
+    def test_render(self):
+        """Test rendering the update view"""
+        with self.login(self.user):
+            response = self.client.get(
+                reverse(
+                    'samplesheets:version_update',
+                    kwargs={'isatab': self.isatab.sodar_uuid},
+                )
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertEquals(response.context['object'], self.isatab)
+
+    def test_update(self):
+        """Test updating the sheet version"""
+        self.assertEqual(ISATab.objects.all().count(), 1)
+        self.assertIsNone(self.isatab.description)
+        date_created = self.isatab.date_created
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:version_update',
+                    kwargs={'isatab': self.isatab.sodar_uuid},
+                ),
+                data={'description': SHEET_VERSION_DESC},
+            )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(ISATab.objects.all().count(), 1)
+        self.isatab.refresh_from_db()
+        self.assertEqual(self.isatab.description, SHEET_VERSION_DESC)
+        # The date should not change
+        self.assertEqual(self.isatab.date_created, date_created)
+
+
 class TestSampleSheetVersionDeleteView(TestViewsBase):
     """Tests for the sample sheet version delete view"""
 
@@ -956,7 +1005,6 @@ class TestSampleSheetVersionDeleteView(TestViewsBase):
                 )
             )
         self.assertEqual(response.status_code, 200)
-        # Assert context data
         self.assertIsNotNone(response.context['sheet_version'])
 
     def test_post(self):
@@ -969,7 +1017,6 @@ class TestSampleSheetVersionDeleteView(TestViewsBase):
                     kwargs={'isatab': self.isatab.sodar_uuid},
                 )
             )
-        # Assert postconditions
         self.assertEqual(response.status_code, 302)
         self.assertEqual(ISATab.objects.all().count(), 0)
 

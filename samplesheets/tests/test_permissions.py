@@ -442,6 +442,40 @@ class TestSampleSheetsPermissions(
         self.project.set_public()
         self.assert_response(url, self.anonymous, 302)
 
+    def test_version_update(self):
+        """Test sheet update view"""
+        isa_version = ISATab.objects.get(
+            investigation_uuid=self.investigation.sodar_uuid
+        )
+        url = reverse(
+            'samplesheets:version_update',
+            kwargs={'isatab': isa_version.sodar_uuid},
+        )
+        good_users = [self.superuser, self.owner_as.user, self.delegate_as.user]
+        bad_users = [
+            self.contributor_as.user,
+            self.guest_as.user,
+            self.user_no_roles,
+            self.anonymous,
+        ]
+        self.assert_response(url, good_users, 200)
+        self.assert_response(url, bad_users, 302)
+        self.project.set_public()
+        self.assert_response(url, bad_users, 302)
+
+    @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
+    def test_version_update_anon(self):
+        """Test sheet update view with anonymous guest access"""
+        isa_version = ISATab.objects.get(
+            investigation_uuid=self.investigation.sodar_uuid
+        )
+        url = reverse(
+            'samplesheets:version_update',
+            kwargs={'isatab': isa_version.sodar_uuid},
+        )
+        self.project.set_public()
+        self.assert_response(url, self.anonymous, 302)
+
     def test_version_delete(self):
         """Test sheet delete view"""
         isa_version = ISATab.objects.get(
@@ -465,7 +499,7 @@ class TestSampleSheetsPermissions(
 
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_version_delete_anon(self):
-        """Test sheet delete view"""
+        """Test sheet delete view with anonymous guest access"""
         isa_version = ISATab.objects.get(
             investigation_uuid=self.investigation.sodar_uuid
         )
