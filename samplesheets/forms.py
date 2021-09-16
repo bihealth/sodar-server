@@ -19,10 +19,11 @@ from samplesheets.io import SampleSheetIO, ARCHIVE_TYPES
 from samplesheets.utils import clean_sheet_dir_name
 from samplesheets.models import (
     Investigation,
-    IrodsAccessTicket,
     Assay,
-    IrodsDataRequest,
     Study,
+    ISATab,
+    IrodsAccessTicket,
+    IrodsDataRequest,
 )
 
 
@@ -433,3 +434,11 @@ class SampleSheetVersionCompareForm(forms.Form):
                 choices=choices, attrs={'class': 'form-control'}
             ),
         )
+
+
+class SampleSheetVersionEditForm(forms.ModelForm):
+    """Form for editing a saved ISA-Tab version of the sample sheets."""
+
+    class Meta:
+        model = ISATab
+        fields = ['description']

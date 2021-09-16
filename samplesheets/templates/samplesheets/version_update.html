@@ -1,0 +1,34 @@
+{# Projectroles dependency #}
+{% extends 'projectroles/project_base.html' %}
+{% load rules %}
+{% load crispy_forms_filters %}
+
+{% block title %}
+  Update Sample Sheet Version Description
+{% endblock title %}
+
+{% block projectroles_extend %}
+
+<div class="container-fluid sodar-subtitle-container">
+  <h3>Update Description for Version "{{ object.get_name }}"</h3>
+</div>
+
+<div class="container-fluid sodar-page-container">
+  <form method="post">
+    {% csrf_token %}
+    {{ form | crispy }}
+    <div class="row">
+      <div class="btn-group ml-auto">
+        <a role="button" class="btn btn-secondary"
+            href="{{ request.session.real_referer }}">
+          <i class="iconify" data-icon="mdi:arrow-left-circle"></i> Cancel
+        </a>
+        <button type="submit" class="btn btn-primary">
+          <i class="iconify" data-icon="mdi:check-bold"></i> Update
+        </button>
+      </div>
+    </div>
+  </form>
+</div>
+
+{% endblock projectroles_extend %}

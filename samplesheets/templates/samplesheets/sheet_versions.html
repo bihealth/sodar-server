@@ -16,6 +16,17 @@
     table#sodar-ss-version-table thead tr th:nth-child(1),
     table#sodar-ss-version-table tbody tr td:nth-child(1) {
       white-space: nowrap;
+      width: 180px;
+    }
+
+    table#sodar-ss-version-table thead tr th:nth-child(3),
+    table#sodar-ss-version-table tbody tr td:nth-child(3) {
+      white-space: nowrap;
+    }
+
+    table#sodar-ss-version-table thead tr th:nth-child(4),
+    table#sodar-ss-version-table tbody tr td:nth-child(4) {
+      width: 75px;
     }
 
     table#sodar-ss-version-table thead tr th:nth-child(5),
@@ -54,12 +65,13 @@
 {% if object_list.count > 0 %}
   <div class="card" id="sodar-ss-version-list">
     <div class="card-body p-0">
-      <table class="table table-striped sodar-card-table" id="sodar-ss-version-table">
+      <table class="table table-striped sodar-card-table"
+             id="sodar-ss-version-table">
         <thead>
           <tr>
             <th>Version</th>
+            <th>Description/Tags</th>
             <th>User</th>
-            <th>Tags</th>
             <th>Parser</th>
             {% if can_manage_sheet %}
               <th></th>
@@ -73,11 +85,23 @@
                 {% if sv == current_version %}
                   <strong>
                 {% endif %}
-                <a href="{% url 'samplesheets:export_isa' isatab=sv.sodar_uuid %}">{{ sv.date_created | date:'Y-m-d H:i:s' }}</a>
+                <a href="{% url 'samplesheets:export_isa' isatab=sv.sodar_uuid %}">
+                  {{ sv.date_created | date:'Y-m-d H:i:s' }}
+                </a>
                 {% if sv == current_version %}
                   </strong>
-                  <span class="badge badge-pill badge-success ml-1">Most Recent</span>
                 {% endif %}
+              </td>
+              <td>
+                <span {% if not sv.description %}class="text-muted"{% endif %}>
+                  {{ sv.description | default:'N/A' }}
+                </span>
+                <span class="pull-right">
+                  {% if sv == current_version %}
+                    <span class="badge badge-pill badge-success">Current</span>
+                  {% endif %}
+                  {% get_isatab_tag_html sv as tag_html %}{{ tag_html | safe }}
+                </span>
               </td>
               {% if sv.user %}
                 <td>
@@ -86,9 +110,6 @@
               {% else %}
                 <td class="text-muted">N/A</td>
               {% endif %}
-              <td>
-                {% get_isatab_tag_html sv as tag_html %}{{ tag_html | safe }}
-              </td>
               <td>{{ sv.parser_version }}</td>
               {% if can_manage_sheet %}
                 <td>
@@ -102,6 +123,10 @@
                       <a class="dropdown-item"
                          href="{% url 'samplesheets:export_isa' isatab=sv.sodar_uuid %}">
                         <i class="iconify" data-icon="mdi:download"></i> Export Version
+                      </a>
+                      <a class="dropdown-item"
+                         href="{% url 'samplesheets:version_update' isatab=sv.sodar_uuid %}">
+                        <i class="iconify" data-icon="mdi:lead-pencil"></i> Update Description
                       </a>
                       <a class="dropdown-item" href="{% url 'samplesheets:version_restore' isatab=sv.sodar_uuid %}">
                         <i class="iconify" data-icon="mdi:refresh"></i> Restore Version

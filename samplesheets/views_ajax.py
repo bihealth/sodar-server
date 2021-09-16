@@ -1492,12 +1492,15 @@ class SheetEditFinishAjaxView(SODARBaseProjectAjaxView):
             )
             if not export_ex and isa_version:
                 tl_event.add_object(
-                    obj=isa_version, label='isatab', name=isa_version.get_name()
+                    obj=isa_version,
+                    label='isatab',
+                    name=isa_version.get_full_name(),
                 )
 
         if not export_ex:
             logger.info(
-                log_msg + 'Saved ISA-Tab "{}"'.format(isa_version.get_name())
+                log_msg
+                + 'Saved ISA-Tab "{}"'.format(isa_version.get_full_name())
             )
             return Response({'detail': 'ok'}, status=200)
 

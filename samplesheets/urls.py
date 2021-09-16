@@ -81,11 +81,6 @@ urls_ui = [
         name='version_restore',
     ),
     url(
-        regex=r'^version/delete/(?P<isatab>[0-9a-f-]+)$',
-        view=views.SampleSheetVersionDeleteView.as_view(),
-        name='version_delete',
-    ),
-    url(
         regex=r'^version/compare/(?P<project>[0-9a-f-]+)$',
         view=views.SampleSheetVersionCompareView.as_view(),
         name='version_compare',
@@ -94,6 +89,16 @@ urls_ui = [
         regex=r'^version/compare/file/(?P<project>[0-9a-f-]+)$',
         view=views.SampleSheetVersionCompareFileView.as_view(),
         name='version_compare_file',
+    ),
+    url(
+        regex=r'^version/update/(?P<isatab>[0-9a-f-]+)$',
+        view=views.SampleSheetVersionUpdateView.as_view(),
+        name='version_update',
+    ),
+    url(
+        regex=r'^version/delete/(?P<isatab>[0-9a-f-]+)$',
+        view=views.SampleSheetVersionDeleteView.as_view(),
+        name='version_delete',
     ),
     url(
         regex=r'^irods/tickets/(?P<project>[0-9a-f-]+)$',

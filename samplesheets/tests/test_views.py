@@ -10,6 +10,7 @@ from django.conf import settings
 from django.contrib.messages import get_messages
 from django.test import override_settings
 from django.urls import reverse
+from django.utils.timezone import localtime
 
 from test_plus.test import TestCase
 
@@ -693,7 +694,6 @@ class TestSampleSheetISAExportView(TestViewsBase):
     def test_get(self):
         """Test requesting a file from the ISA-Tab export view"""
         timeline = get_backend_api('timeline_backend')
-
         with self.login(self.user):
             response = self.client.get(
                 reverse(
@@ -701,13 +701,11 @@ class TestSampleSheetISAExportView(TestViewsBase):
                     kwargs={'project': self.project.sodar_uuid},
                 )
             )
-
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
             response.get('Content-Disposition'),
             'attachment; filename="{}"'.format(self.investigation.archive_name),
         )
-
         # Assert data in timeline event
         tl_event = timeline.get_project_events(
             self.project, classified=True
@@ -718,7 +716,6 @@ class TestSampleSheetISAExportView(TestViewsBase):
     def test_get_no_investigation(self):
         """Test requesting an ISA-Tab export with no investigation provided"""
         self.investigation.delete()
-
         with self.login(self.user):
             response = self.client.get(
                 reverse(
@@ -726,7 +723,6 @@ class TestSampleSheetISAExportView(TestViewsBase):
                     kwargs={'project': self.project.sodar_uuid},
                 )
             )
-
         self.assertEqual(response.status_code, 302)
 
     def test_get_version(self):
@@ -737,10 +733,9 @@ class TestSampleSheetISAExportView(TestViewsBase):
         filename = (
             self.investigation.archive_name.split('.zip')[0]
             + '_'
-            + isa_version.date_created.strftime('%Y-%m-%d_%H%M%S')
+            + localtime(isa_version.date_created).strftime('%Y-%m-%d_%H%M%S')
             + '.zip'
         )
-
         with self.login(self.user):
             response = self.client.get(
                 reverse(
@@ -748,7 +743,6 @@ class TestSampleSheetISAExportView(TestViewsBase):
                     kwargs={'isatab': isa_version.sodar_uuid},
                 )
             )
-
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
             response.get('Content-Disposition'),

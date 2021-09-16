@@ -37,6 +37,7 @@ Added
     - Tooltips for buttons disabled due to an unsaved row (#1056)
     - Default ontology column value (#1061)
     - Confirmation for field value overwrite on node rename (#1060)
+    - Sheet version description (#754)
 
 Changed
 -------
@@ -64,6 +65,8 @@ Changed
     - Move ``TestSheetSyncBase`` into ``test_views_taskflow``
     - Update app setting labels (#1230)
     - Use ``CurrentUserFormMixin`` in forms (#660)
+    - Rename ``get_name()`` and ``get_full_name()`` in ``ISATab`` model (#1247)
+    - Update sheet version list layout
 
 Fixed
 -----
@@ -79,6 +82,7 @@ Fixed
     - ``PROJECTROLES_SEND_EMAIL`` not checked in Taskflow views (#1229)
 - **Samplesheets**
     - Missing label for ``public_access_ticket`` app setting (#1230)
+    - Incorrect ``ISATab`` timestamp in export and compare dropdown (#1247)
 
 Removed
 -------
