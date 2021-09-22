@@ -29,6 +29,7 @@ from samplesheets.tests.test_io import (
     SHEET_DIR,
     SHEET_DIR_SPECIAL,
 )
+from samplesheets.tests.test_models import SampleSheetModelMixin
 from samplesheets.tests.test_sheet_config import CONFIG_PATH_DEFAULT
 from samplesheets.utils import clean_sheet_dir_name
 from samplesheets.views import SampleSheetImportMixin
@@ -1019,6 +1020,78 @@ class TestSampleSheetVersionDeleteView(TestViewsBase):
             )
         self.assertEqual(response.status_code, 302)
         self.assertEqual(ISATab.objects.all().count(), 0)
+
+
+class TestSampleSheetVersionDeleteBatchView(
+    SampleSheetModelMixin, TestViewsBase
+):
+    """Tests for the sample sheet version batch delete view"""
+
+    def setUp(self):
+        super().setUp()
+
+        # Import investigation
+        self.investigation = self._import_isa_from_file(
+            SHEET_PATH, self.project
+        )
+        self.study = self.investigation.studies.first()
+        self.isatab = ISATab.objects.get(
+            investigation_uuid=self.investigation.sodar_uuid
+        )
+        # Mock a second version
+        self.isatab2 = self._make_isatab(
+            project=self.project,
+            data=self.isatab.data,
+            investigation_uuid=self.investigation.sodar_uuid,
+            user=self.user,
+        )
+
+    def test_render_confirm(self):
+        """Test rendering the confirm view"""
+        self.assertEqual(ISATab.objects.count(), 2)
+        values = {
+            'confirm': '1',
+            'version_check': [
+                str(self.isatab.sodar_uuid),
+                str(self.isatab2.sodar_uuid),
+            ],
+        }
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:version_delete_batch',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                values,
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(ISATab.objects.count(), 2)
+
+    def test_delete(self):
+        """Test version deletion"""
+        self.assertEqual(ISATab.objects.count(), 2)
+        values = {
+            'version_check': [
+                str(self.isatab.sodar_uuid),
+                str(self.isatab2.sodar_uuid),
+            ]
+        }
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:version_delete_batch',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                values,
+            )
+            self.assertRedirects(
+                response,
+                reverse(
+                    'samplesheets:versions',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+            )
+        self.assertEqual(ISATab.objects.count(), 0)
 
 
 class TestProjectSearchView(TestViewsBase):

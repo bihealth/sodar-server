@@ -22,7 +22,7 @@ Major feature update.
 - Add user message to landing zones upon successful moving
 - Add "finished" parameter to LandingZoneListAPIView to access finished zones
 - Add locked status info to landingzones UI and LandingZoneRetrieveAPIView
-- Add description saving for sample sheet versions
+- Add descriptions and batch deletion for sample sheet versions
 - Manual clearing of finished landing zones in UI no longer needed
 
 

@@ -26,7 +26,7 @@
       Versions selected for deletion:
     </p>
     <p>
-      <ul>
+      <ul class="mb-0">
         {% for sv in sheet_versions %}
         <li>
           <a href="{% url 'samplesheets:export_isa' isatab=sv.sodar_uuid %}">{{ sv.get_name }}</a>

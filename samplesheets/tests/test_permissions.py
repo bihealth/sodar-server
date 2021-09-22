@@ -510,6 +510,42 @@ class TestSampleSheetsPermissions(
         self.project.set_public()
         self.assert_response(url, self.anonymous, 302)
 
+    def test_version_delete_batch(self):
+        """Test batch sheet delete view"""
+        isa_version = ISATab.objects.get(
+            investigation_uuid=self.investigation.sodar_uuid
+        )
+        url = reverse(
+            'samplesheets:version_delete_batch',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+        data = {'confirm': '1', 'version_check': str(isa_version.sodar_uuid)}
+        good_users = [self.superuser, self.owner_as.user, self.delegate_as.user]
+        bad_users = [
+            self.contributor_as.user,
+            self.guest_as.user,
+            self.user_no_roles,
+            self.anonymous,
+        ]
+        self.assert_response(url, good_users, 200, method='POST', data=data)
+        self.assert_response(url, bad_users, 302, method='POST', data=data)
+        self.project.set_public()
+        self.assert_response(url, bad_users, 302, method='POST', data=data)
+
+    @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
+    def test_version_delete_batch_anon(self):
+        """Test batch sheet delete view with anonymous guest access"""
+        isa_version = ISATab.objects.get(
+            investigation_uuid=self.investigation.sodar_uuid
+        )
+        url = reverse(
+            'samplesheets:version_delete_batch',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+        data = {'confirm': '1', 'version_check': str(isa_version.sodar_uuid)}
+        self.project.set_public()
+        self.assert_response(url, self.anonymous, 302, method='POST', data=data)
+
     @skipIf(not IRODS_ENABLED, IRODS_SKIP_MSG)
     def test_ticket_list(self):
         """Test ticket list view"""
