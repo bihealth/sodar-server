@@ -1,15 +1,16 @@
 """UI views for the samplesheets app"""
 
-from cubi_tk.isa_tpl import _TEMPLATES as TK_TEMPLATES
 import datetime
 import io
 import json
 import logging
 import os
-from packaging import version
 import pytz
 import requests
 import zipfile
+
+from cubi_tk.isa_tpl import _TEMPLATES as TK_TEMPLATES
+from packaging import version
 
 from django.conf import settings
 from django.contrib import messages
@@ -51,12 +52,12 @@ from projectroles.views import (
 )
 
 from samplesheets.forms import (
-    SampleSheetImportForm,
+    SheetImportForm,
     SheetTemplateCreateForm,
     IrodsAccessTicketForm,
     IrodsRequestForm,
     IrodsRequestAcceptForm,
-    SampleSheetVersionEditForm,
+    SheetVersionEditForm,
 )
 from samplesheets.io import (
     SampleSheetIO,
@@ -143,7 +144,7 @@ class InvestigationContextMixin(ProjectContextMixin):
         return context
 
 
-class SampleSheetImportMixin:
+class SheetImportMixin:
     """Mixin for sample sheet importing/replacing helpers"""
 
     #: Whether configs should be regenerated on sheet replace
@@ -462,7 +463,7 @@ class SampleSheetImportMixin:
         )
 
 
-class SampleSheetISAExportMixin:
+class SheetISAExportMixin:
     """Mixin for exporting sample sheets in ISA-Tab format"""
 
     def get_isa_export(self, project, request, format='zip', version_uuid=None):
@@ -701,6 +702,246 @@ class IrodsCollsCreateViewMixin:
                 return
 
 
+class IrodsRequestModifyMixin:
+    """iRODS data request helpers"""
+
+    # Timeline helpers ---------------------------------------------------------
+
+    @classmethod
+    def add_tl_create(cls, irods_request):
+        """
+        Create timeline event for iRODS data request creation.
+
+        :param irods_request: IrodsDataRequest object
+        """
+        timeline = get_backend_api('timeline_backend')
+        if not timeline:
+            return
+        tl_event = timeline.add_event(
+            project=irods_request.project,
+            app_name=APP_NAME,
+            user=irods_request.user,
+            event_name='irods_request_create',
+            description='create iRODS data request {irods_request}',
+            status_type='OK',
+        )
+        tl_event.add_object(
+            obj=irods_request,
+            label='irods_request',
+            name=irods_request.get_display_name(),
+        )
+
+    @classmethod
+    def add_tl_delete(cls, irods_request):
+        """
+        Create timeline event for iRODS data request deletion.
+
+        :param irods_request: IrodsDataRequest object
+        """
+        timeline = get_backend_api('timeline_backend')
+        if not timeline:
+            return
+        tl_event = timeline.add_event(
+            project=irods_request.project,
+            app_name=APP_NAME,
+            user=irods_request.user,
+            event_name='irods_request_delete',
+            description='delete iRODS data request {irods_request}',
+            status_type='OK',
+        )
+        tl_event.add_object(
+            obj=irods_request,
+            label='irods_request',
+            name=str(irods_request),
+        )
+
+    # App Alert Helpers --------------------------------------------------------
+
+    @classmethod
+    def add_alerts_create(cls, project, app_alerts=None):
+        """
+        Add app alerts for project owners/delegates on request creation. Will
+        not create new alerts if the user already has a similar active alert
+        in the project.
+
+        :param project: Project object
+        :param app_alerts: Appalerts API or None
+        """
+        if not app_alerts:
+            app_alerts = get_backend_api('appalerts_backend')
+        if not app_alerts:
+            return
+
+        AppAlert = app_alerts.get_model()
+        # TODO: Use get_all_roles() instead
+        od_users = set(
+            [a.user for a in project.get_owners()]
+            + [a.user for a in project.get_delegates()]
+        )
+        # logger.debug('od_users={}'.format(od_users))  # DEBUG
+        for u in od_users:
+            alert_count = AppAlert.objects.filter(
+                project=project,
+                user=u,
+                alert_name=IRODS_REQ_CREATE_ALERT_NAME,
+                active=True,
+            ).count()
+            if alert_count > 0:
+                logger.debug('Alert exists for user: {}'.format(u.username))
+                continue  # Only have one active alert per user/project
+            app_alerts.add_alert(
+                app_name=APP_NAME,
+                alert_name=IRODS_REQ_CREATE_ALERT_NAME,
+                user=u,
+                message='iRODS delete requests require attention in '
+                'project "{}"'.format(project.title),
+                url=reverse(
+                    'samplesheets:irods_requests',
+                    kwargs={'project': project.sodar_uuid},
+                ),
+                project=project,
+            )
+            logger.debug(
+                'Added iRODS request alert for user: {}'.format(u.username)
+            )
+
+    @classmethod
+    def handle_alerts_deactivate(cls, irods_request, app_alerts=None):
+        """
+        Handle existing iRODS delete request project alerts on alert
+        acceptance, rejection or deletion.
+
+        :param irods_request: IrodsDataRequest object being deleted
+        :param app_alerts: Appalerts API or None
+        """
+        if not app_alerts:
+            app_alerts = get_backend_api('appalerts_backend')
+        if not app_alerts:
+            return
+        AppAlert = app_alerts.get_model()
+        req_count = (
+            IrodsDataRequest.objects.filter(
+                project=irods_request.project, status='ACTIVE'
+            )
+            .exclude(sodar_uuid=irods_request.sodar_uuid)
+            .count()
+        )
+        if req_count == 0:
+            alerts = AppAlert.objects.filter(
+                alert_name=IRODS_REQ_CREATE_ALERT_NAME,
+                project=irods_request.project,
+                active=True,
+            )
+            alert_count = alerts.count()
+            alerts.delete()  # Deleting as the user doesn't dismiss these
+            logger.debug(
+                'No active requests left for project, deleting {} '
+                'owner/delegate alert{}'.format(
+                    alert_count, 's' if alert_count != 1 else ''
+                )
+            )
+
+
+class SheetRemoteSyncAPI(SheetImportMixin):
+    """
+    Remote sample sheet synchronization helpers.
+    NOTE: Not used as a mixin because it is also called from the periodic task
+    """
+
+    def run(self, project, url, token, user):
+        """
+        Perform remote synchronization of sample sheets.
+
+        :project: Project object of target project
+        :url: URL string to AJAX API of source site including project UUID to
+              retrieve sample sheet JSON data
+        :token: Token string to access AJAX API of source project
+        :user: User performing the action
+        """
+        logger.debug(
+            'Sync sample sheets for project "{}" ({})'.format(
+                project.title, project.sodar_uuid
+            )
+        )
+
+        # Get remote sheet data (source)
+        try:
+            response = requests.get(
+                url, headers={'Authorization': 'token {}'.format(token)}
+            )
+        except Exception:
+            raise requests.exceptions.ConnectionError(
+                'Unable to connect to URL: {}'.format(url)
+            )
+        if not response.status_code == 200:
+            raise requests.exceptions.ConnectionError(
+                'Source API responded with status code {}'.format(
+                    response.status_code
+                )
+            )
+
+        try:
+            source_data = response.json()
+        except json.JSONDecodeError as ex:
+            raise ValueError(
+                'Error decoding JSON data: {}. Please check "sheet_sync_url" setting.'.format(
+                    ex
+                )
+            )
+
+        source_date = datetime.datetime.strptime(
+            source_data.pop('date_modified'),
+            '%Y-%m-%d %H:%M:%S.%f+00:00',
+        ).replace(tzinfo=pytz.UTC)
+        old_inv = project.investigations.first()
+        replace = bool(old_inv)
+
+        if old_inv and source_date < old_inv.date_modified:
+            logger.debug('No updates detected, skipping sync')
+            return False
+
+        # Import sheet data
+        sheet_io = SampleSheetIO()
+        investigation = sheet_io.import_isa(
+            isa_data=source_data,
+            project=project,
+            replace=replace,
+            replace_uuid=old_inv.sodar_uuid if replace else None,
+        )
+        # Handle replace
+        if replace:
+            investigation = self.handle_replace(
+                investigation=investigation,
+                old_inv=old_inv,
+                tl_event=None,
+            )
+
+        # Activate investigation
+        investigation.active = True
+        investigation.save()
+
+        # Update project cache if replacing sheets and iRODS collections exists
+        if (
+            replace
+            and investigation.irods_status
+            and settings.SHEETS_ENABLE_CACHE
+        ):
+            from samplesheets.tasks import update_project_cache_task
+
+            update_project_cache_task(
+                project_uuid=str(project.sodar_uuid),
+                user_uuid=str(user.sodar_uuid),
+                add_alert=True,
+                alert_msg='Remote sample sheets synchronized',
+            )
+
+        logger.info(
+            'Sample sheet sync OK for project "{}" '
+            '({})'.format(project.title, project.sodar_uuid)
+        )
+        return True
+
+
 # Views ------------------------------------------------------------------------
 
 
@@ -747,20 +988,20 @@ class ProjectSheetsView(
         return context
 
 
-class SampleSheetImportView(
+class SheetImportView(
     LoginRequiredMixin,
     LoggedInPermissionMixin,
     ProjectPermissionMixin,
     ProjectContextMixin,
     CurrentUserFormMixin,
-    SampleSheetImportMixin,
+    SheetImportMixin,
     FormView,
 ):
     """Sample sheet ISA-Tab import view"""
 
     permission_required = 'samplesheets.edit_sheet'
     model = Investigation
-    form_class = SampleSheetImportForm
+    form_class = SheetImportForm
     template_name = 'samplesheets/samplesheet_import_form.html'
 
     def get_context_data(self, *args, **kwargs):
@@ -846,186 +1087,6 @@ class SampleSheetImportView(
         return redirect(redirect_url)
 
 
-class SheetSync(SampleSheetImportMixin):
-    """Remote sample sheet synchronization helpers"""
-
-    def run(self, project, url, token, user):
-        """
-        Perform remote synchronization of sample sheets.
-
-        :project: Project object of target project
-        :url: URL string to AJAX API of source site including project UUID to
-              retrieve sample sheet JSON data
-        :token: Token string to access AJAX API of source project
-        :user: User performing the action
-        """
-        logger.debug(
-            f'Sync sample sheets for project "{project.title}" '
-            f'({project.sodar_uuid})'
-        )
-
-        # Get remote sheet data (source)
-        try:
-            response = requests.get(
-                url, headers={'Authorization': f'token {token}'}
-            )
-        except Exception:
-            raise requests.exceptions.ConnectionError(
-                'Unable to connect to URL: {}'.format(url)
-            )
-        if not response.status_code == 200:
-            raise requests.exceptions.ConnectionError(
-                'Source API responded with status code {}'.format(
-                    response.status_code
-                )
-            )
-
-        try:
-            source_data = response.json()
-        except json.JSONDecodeError as ex:
-            raise ValueError(
-                f'Error decoding JSON data: {ex}. Please check '
-                f'`sheet_sync_url` setting.'
-            )
-
-        source_date = datetime.datetime.strptime(
-            source_data.pop('date_modified'),
-            '%Y-%m-%d %H:%M:%S.%f+00:00',
-        ).replace(tzinfo=pytz.UTC)
-        old_inv = project.investigations.first()
-        replace = bool(old_inv)
-
-        if old_inv and source_date < old_inv.date_modified:
-            logger.debug('No updates detected, skipping sync')
-            return False
-
-        # Import sheet data
-        sheet_io = SampleSheetIO()
-        investigation = sheet_io.import_isa(
-            isa_data=source_data,
-            project=project,
-            replace=replace,
-            replace_uuid=old_inv.sodar_uuid if replace else None,
-        )
-        # Handle replace
-        if replace:
-            investigation = self.handle_replace(
-                investigation=investigation,
-                old_inv=old_inv,
-                tl_event=None,
-            )
-
-        # Activate investigation
-        investigation.active = True
-        investigation.save()
-
-        # Update project cache if replacing sheets and iRODS collections exists
-        if (
-            replace
-            and investigation.irods_status
-            and settings.SHEETS_ENABLE_CACHE
-        ):
-            from samplesheets.tasks import update_project_cache_task
-
-            update_project_cache_task(
-                project_uuid=str(project.sodar_uuid),
-                user_uuid=str(user.sodar_uuid),
-                add_alert=True,
-                alert_msg='Remote sample sheets synchronized',
-            )
-
-        logger.info(
-            'Sample sheet sync OK for project "{}" '
-            '({})'.format(project.title, project.sodar_uuid)
-        )
-        return True
-
-
-class SampleSheetSyncView(
-    LoginRequiredMixin,
-    LoggedInPermissionMixin,
-    ProjectPermissionMixin,
-    ProjectContextMixin,
-    TemplateView,
-):
-    """Sample sheet sync view for manual sync"""
-
-    permission_required = 'samplesheets.edit_sheet'
-    # We only redirect, so the template is somewhat egal
-    template_name = 'samplesheets/project_sheets.html'
-
-    def _redirect(self):
-        return redirect(
-            reverse(
-                'samplesheets:project_sheets',
-                kwargs={'project': self.get_project().sodar_uuid},
-            )
-        )
-
-    def get(self, request, *args, **kwargs):
-        super().get(request, *args, **kwargs)
-
-        project = self.get_project()
-        timeline = get_backend_api('timeline_backend')
-        tl_add = False
-        tl_status_type = 'OK'
-        tl_status_desc = 'Sync OK'
-        sheet_sync_enable = app_settings.get_app_setting(
-            APP_NAME, 'sheet_sync_enable', project=project
-        )
-        sheet_sync_url = app_settings.get_app_setting(
-            APP_NAME, 'sheet_sync_url', project=project
-        )
-        sheet_sync_token = app_settings.get_app_setting(
-            APP_NAME, 'sheet_sync_token', project=project
-        )
-
-        # Sanity check. View is not shown in UI when variable is disabled.
-        if not sheet_sync_enable:
-            messages.error(request, 'Sample sheet sync disabled')
-            return self._redirect()
-        if not sheet_sync_url:
-            messages.error(request, 'Sample sheet sync: URL not set')
-            return self._redirect()
-        if not sheet_sync_token:
-            messages.error(request, 'Sample sheet sync: Token not set')
-            return self._redirect()
-
-        sync = SheetSync()
-        try:
-            ret = sync.run(
-                project,
-                sheet_sync_url,
-                sheet_sync_token,
-                request.user,
-            )
-            if ret:
-                messages.success(request, 'Sample sheet sync successful')
-                tl_add = True
-            else:
-                messages.info(
-                    request, 'Sample sheet sync skipped, no changes detected'
-                )
-        except Exception as ex:
-            tl_status_type = 'FAILED'
-            tl_status_desc = 'Sync failed: {}'.format(ex)
-            messages.error(request, 'Sample sheet sync failed: {}'.format(ex))
-            tl_add = True  # Add timeline event
-
-        if timeline and tl_add:
-            timeline.add_event(
-                project=project,
-                app_name=APP_NAME,
-                user=request.user,
-                event_name='sheet_sync_manual',
-                description='sync sheets from source project (manual)',
-                status_type=tl_status_type,
-                status_desc=tl_status_desc,
-                extra_data={'url': sheet_sync_url},
-            )
-        return self._redirect()
-
-
 class SheetTemplateSelectView(
     LoginRequiredMixin,
     LoggedInPermissionMixin,
@@ -1081,7 +1142,7 @@ class SheetTemplateCreateFormView(
     ProjectPermissionMixin,
     ProjectContextMixin,
     CurrentUserFormMixin,
-    SampleSheetImportMixin,
+    SheetImportMixin,
     FormView,
 ):
     """Sample sheet ISA-Tab import view"""
@@ -1170,7 +1231,7 @@ class SheetTemplateCreateFormView(
         return super().render_to_response(self.get_context_data())
 
 
-class SampleSheetExcelExportView(
+class SheetExcelExportView(
     LoginRequiredMixin,
     LoggedInPermissionMixin,
     ProjectPermissionMixin,
@@ -1263,8 +1324,8 @@ class SampleSheetExcelExportView(
         return response
 
 
-class SampleSheetISAExportView(
-    SampleSheetISAExportMixin,
+class SheetISAExportView(
+    SheetISAExportMixin,
     LoginRequiredMixin,
     LoggedInPermissionMixin,
     ProjectPermissionMixin,
@@ -1298,7 +1359,7 @@ class SampleSheetISAExportView(
             return redirect(redirect_url)
 
 
-class SampleSheetDeleteView(
+class SheetDeleteView(
     LoginRequiredMixin,
     LoggedInPermissionMixin,
     InvestigationContextMixin,
@@ -1441,7 +1502,7 @@ class SampleSheetDeleteView(
         return redirect(redirect_url)
 
 
-class SampleSheetCacheUpdateView(
+class SheetCacheUpdateView(
     LoginRequiredMixin,
     LoggedInPermissionMixin,
     ProjectContextMixin,
@@ -1532,7 +1593,7 @@ class IrodsCollsCreateView(
         return super().render_to_response(self.get_context_data())
 
 
-class SampleSheetVersionListView(
+class SheetVersionListView(
     LoginRequiredMixin,
     LoggedInPermissionMixin,
     ProjectPermissionMixin,
@@ -1566,12 +1627,12 @@ class SampleSheetVersionListView(
         return context
 
 
-class SampleSheetVersionCompareView(
+class SheetVersionCompareView(
     LoginRequiredMixin,
     LoggedInPermissionMixin,
     InvestigationContextMixin,
     ProjectPermissionMixin,
-    SampleSheetImportMixin,
+    SheetImportMixin,
     TemplateView,
 ):
     """Sample Sheet version compare view"""
@@ -1592,12 +1653,12 @@ class SampleSheetVersionCompareView(
         return context
 
 
-class SampleSheetVersionCompareFileView(
+class SheetVersionCompareFileView(
     LoginRequiredMixin,
     LoggedInPermissionMixin,
     InvestigationContextMixin,
     ProjectPermissionMixin,
-    SampleSheetImportMixin,
+    SheetImportMixin,
     TemplateView,
 ):
     """Sample Sheet version compare file view"""
@@ -1614,12 +1675,12 @@ class SampleSheetVersionCompareFileView(
         return context
 
 
-class SampleSheetVersionRestoreView(
+class SheetVersionRestoreView(
     LoginRequiredMixin,
     LoggedInPermissionMixin,
     InvestigationContextMixin,
     ProjectPermissionMixin,
-    SampleSheetImportMixin,
+    SheetImportMixin,
     TemplateView,
 ):
     """Sample Sheet version restoring view"""
@@ -1718,7 +1779,7 @@ class SampleSheetVersionRestoreView(
         )
 
 
-class SampleSheetVersionUpdateView(
+class SheetVersionUpdateView(
     LoginRequiredMixin,
     LoggedInPermissionMixin,
     ProjectPermissionMixin,
@@ -1729,7 +1790,7 @@ class SampleSheetVersionUpdateView(
 
     permission_required = 'samplesheets.manage_sheet'
     model = ISATab
-    form_class = SampleSheetVersionEditForm
+    form_class = SheetVersionEditForm
     template_name = 'samplesheets/version_update.html'
     slug_url_kwarg = 'isatab'
     slug_field = 'sodar_uuid'
@@ -1750,7 +1811,7 @@ class SampleSheetVersionUpdateView(
         )
 
 
-class SampleSheetVersionDeleteView(
+class SheetVersionDeleteView(
     LoginRequiredMixin,
     LoggedInPermissionMixin,
     ProjectPermissionMixin,
@@ -1803,7 +1864,7 @@ class SampleSheetVersionDeleteView(
         )
 
 
-class SampleSheetVersionDeleteBatchView(
+class SheetVersionDeleteBatchView(
     LoginRequiredMixin,
     LoggedInPermissionMixin,
     ProjectPermissionMixin,
@@ -1908,7 +1969,7 @@ class IrodsAccessTicketCreateView(
     LoggedInPermissionMixin,
     InvestigationContextMixin,
     ProjectPermissionMixin,
-    SampleSheetImportMixin,
+    SheetImportMixin,
     FormView,
 ):
     """Sample Sheet version restoring view"""
@@ -2017,146 +2078,6 @@ class IrodsAccessTicketDeleteView(
         except Exception as e:
             messages.error(request, '%s. Maybe it didn\'t exist.' % e)
         return super().delete(request, *args, **kwargs)
-
-
-class IrodsRequestModifyMixin:
-    """Generic helpers for iRODS data request actuibs"""
-
-    # Timeline helpers ---------------------------------------------------------
-
-    @classmethod
-    def add_tl_create(cls, irods_request):
-        """
-        Create timeline event for iRODS data request creation.
-
-        :param irods_request: IrodsDataRequest object
-        """
-        timeline = get_backend_api('timeline_backend')
-        if not timeline:
-            return
-        tl_event = timeline.add_event(
-            project=irods_request.project,
-            app_name=APP_NAME,
-            user=irods_request.user,
-            event_name='irods_request_create',
-            description='create iRODS data request {irods_request}',
-            status_type='OK',
-        )
-        tl_event.add_object(
-            obj=irods_request,
-            label='irods_request',
-            name=irods_request.get_display_name(),
-        )
-
-    @classmethod
-    def add_tl_delete(cls, irods_request):
-        """
-        Create timeline event for iRODS data request deletion.
-
-        :param irods_request: IrodsDataRequest object
-        """
-        timeline = get_backend_api('timeline_backend')
-        if not timeline:
-            return
-        tl_event = timeline.add_event(
-            project=irods_request.project,
-            app_name=APP_NAME,
-            user=irods_request.user,
-            event_name='irods_request_delete',
-            description='delete iRODS data request {irods_request}',
-            status_type='OK',
-        )
-        tl_event.add_object(
-            obj=irods_request,
-            label='irods_request',
-            name=str(irods_request),
-        )
-
-    # App Alert Helpers --------------------------------------------------------
-
-    @classmethod
-    def add_alerts_create(cls, project, app_alerts=None):
-        """
-        Add app alerts for project owners/delegates on request creation. Will
-        not create new alerts if the user already has a similar active alert
-        in the project.
-
-        :param project: Project object
-        :param app_alerts: Appalerts API or None
-        """
-        if not app_alerts:
-            app_alerts = get_backend_api('appalerts_backend')
-        if not app_alerts:
-            return
-
-        AppAlert = app_alerts.get_model()
-        # TODO: Use get_all_roles() instead
-        od_users = set(
-            [a.user for a in project.get_owners()]
-            + [a.user for a in project.get_delegates()]
-        )
-        # logger.debug('od_users={}'.format(od_users))  # DEBUG
-        for u in od_users:
-            alert_count = AppAlert.objects.filter(
-                project=project,
-                user=u,
-                alert_name=IRODS_REQ_CREATE_ALERT_NAME,
-                active=True,
-            ).count()
-            if alert_count > 0:
-                logger.debug('Alert exists for user: {}'.format(u.username))
-                continue  # Only have one active alert per user/project
-            app_alerts.add_alert(
-                app_name=APP_NAME,
-                alert_name=IRODS_REQ_CREATE_ALERT_NAME,
-                user=u,
-                message='iRODS delete requests require attention in '
-                'project "{}"'.format(project.title),
-                url=reverse(
-                    'samplesheets:irods_requests',
-                    kwargs={'project': project.sodar_uuid},
-                ),
-                project=project,
-            )
-            logger.debug(
-                'Added iRODS request alert for user: {}'.format(u.username)
-            )
-
-    @classmethod
-    def handle_alerts_deactivate(cls, irods_request, app_alerts=None):
-        """
-        Handle existing iRODS delete request project alerts on alert
-        acceptance, rejection or deletion.
-
-        :param irods_request: IrodsDataRequest object being deleted
-        :param app_alerts: Appalerts API or None
-        """
-        if not app_alerts:
-            app_alerts = get_backend_api('appalerts_backend')
-        if not app_alerts:
-            return
-        AppAlert = app_alerts.get_model()
-        req_count = (
-            IrodsDataRequest.objects.filter(
-                project=irods_request.project, status='ACTIVE'
-            )
-            .exclude(sodar_uuid=irods_request.sodar_uuid)
-            .count()
-        )
-        if req_count == 0:
-            alerts = AppAlert.objects.filter(
-                alert_name=IRODS_REQ_CREATE_ALERT_NAME,
-                project=irods_request.project,
-                active=True,
-            )
-            alert_count = alerts.count()
-            alerts.delete()  # Deleting as the user doesn't dismiss these
-            logger.debug(
-                'No active requests left for project, deleting {} '
-                'owner/delegate alert{}'.format(
-                    alert_count, 's' if alert_count != 1 else ''
-                )
-            )
 
 
 class IrodsRequestCreateView(
@@ -2556,3 +2477,88 @@ class IrodsDataRequestListView(
             return queryset.filter(status__in=['ACTIVE', 'FAILED'])
         # For regular users, dispaly their own requests regardless of status
         return queryset.filter(user=self.request.user)
+
+
+class SheetRemoteSyncView(
+    LoginRequiredMixin,
+    LoggedInPermissionMixin,
+    ProjectPermissionMixin,
+    ProjectContextMixin,
+    TemplateView,
+):
+    """Sample sheet remote sync view for manual sync"""
+
+    permission_required = 'samplesheets.edit_sheet'
+    # We only redirect, so the template is somewhat egal
+    template_name = 'samplesheets/project_sheets.html'
+
+    def _redirect(self):
+        return redirect(
+            reverse(
+                'samplesheets:project_sheets',
+                kwargs={'project': self.get_project().sodar_uuid},
+            )
+        )
+
+    def get(self, request, *args, **kwargs):
+        super().get(request, *args, **kwargs)
+
+        project = self.get_project()
+        timeline = get_backend_api('timeline_backend')
+        tl_add = False
+        tl_status_type = 'OK'
+        tl_status_desc = 'Sync OK'
+        sheet_sync_enable = app_settings.get_app_setting(
+            APP_NAME, 'sheet_sync_enable', project=project
+        )
+        sheet_sync_url = app_settings.get_app_setting(
+            APP_NAME, 'sheet_sync_url', project=project
+        )
+        sheet_sync_token = app_settings.get_app_setting(
+            APP_NAME, 'sheet_sync_token', project=project
+        )
+
+        # Sanity check. View is not shown in UI when variable is disabled.
+        if not sheet_sync_enable:
+            messages.error(request, 'Sample sheet sync disabled')
+            return self._redirect()
+        if not sheet_sync_url:
+            messages.error(request, 'Sample sheet sync: URL not set')
+            return self._redirect()
+        if not sheet_sync_token:
+            messages.error(request, 'Sample sheet sync: Token not set')
+            return self._redirect()
+
+        sync = SheetRemoteSyncAPI()
+        try:
+            ret = sync.run(
+                project,
+                sheet_sync_url,
+                sheet_sync_token,
+                request.user,
+            )
+            if ret:
+                messages.success(request, 'Sample sheet sync successful')
+                tl_add = True
+            else:
+                messages.info(
+                    request, 'Sample sheet sync skipped, no changes detected'
+                )
+        except Exception as ex:
+            tl_status_type = 'FAILED'
+            tl_status_desc = 'Sync failed: {}'.format(ex)
+            messages.error(request, 'Sample sheet sync failed: {}'.format(ex))
+            tl_add = True  # Add timeline event
+
+        if timeline and tl_add:
+            timeline.add_event(
+                project=project,
+                app_name=APP_NAME,
+                user=request.user,
+                event_name='sheet_sync_manual',
+                description='sync sheets from source project (manual)',
+                status_type=tl_status_type,
+                status_desc=tl_status_desc,
+                extra_data={'url': sheet_sync_url},
+            )
+        return self._redirect()

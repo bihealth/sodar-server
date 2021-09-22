@@ -32,7 +32,7 @@ from samplesheets.tests.test_io import (
 from samplesheets.tests.test_models import SampleSheetModelMixin
 from samplesheets.tests.test_sheet_config import CONFIG_PATH_DEFAULT
 from samplesheets.utils import clean_sheet_dir_name
-from samplesheets.views import SampleSheetImportMixin
+from samplesheets.views import SheetImportMixin
 
 
 app_settings = AppSettingAPI()
@@ -164,7 +164,7 @@ class TestProjectSheetsView(TestViewsBase):
         self.assertNotIn('tables', response.context)
 
 
-class TestSampleSheetImportView(SampleSheetImportMixin, TestViewsBase):
+class TestSheetImportView(SheetImportMixin, TestViewsBase):
     """Tests for the investigation import view"""
 
     def test_render(self):
@@ -630,7 +630,7 @@ class TestSheetTemplateCreateFormView(TestViewsBase):
             self.project.investigations.first().delete()
 
 
-class TestSampleSheetExcelExportView(TestViewsBase):
+class TestSheetExcelExportView(TestViewsBase):
     """Tests for the sample sheet Excel export view"""
 
     def setUp(self):
@@ -682,7 +682,7 @@ class TestSampleSheetExcelExportView(TestViewsBase):
             self.assertEqual(tl_event.event_name, 'sheet_export_excel')
 
 
-class TestSampleSheetISAExportView(TestViewsBase):
+class TestSheetISAExportView(TestViewsBase):
     """Tests for the investigation ISA-Tab export view"""
 
     def setUp(self):
@@ -752,7 +752,7 @@ class TestSampleSheetISAExportView(TestViewsBase):
         )
 
 
-class TestSampleSheetDeleteView(TestViewsBase):
+class TestSheetDeleteView(TestViewsBase):
     """Tests for the investigation delete view"""
 
     def setUp(self):
@@ -826,7 +826,7 @@ class TestSampleSheetDeleteView(TestViewsBase):
         self.assertEqual(ISATab.objects.all().count(), 1)
 
 
-class TestSampleSheetVersionListView(TestViewsBase):
+class TestSheetVersionListView(TestViewsBase):
     """Tests for the sample sheet version list view"""
 
     def test_render(self):
@@ -859,7 +859,7 @@ class TestSampleSheetVersionListView(TestViewsBase):
         )
 
     def test_render_no_sheets(self):
-        """Test rendering the sheet version list view with no versions available"""
+        """Test rendering version list view with no versions available"""
         with self.login(self.user):
             response = self.client.get(
                 reverse(
@@ -873,7 +873,7 @@ class TestSampleSheetVersionListView(TestViewsBase):
         self.assertIsNone(response.context['current_version'])
 
 
-class TestSampleSheetVersionRestoreView(TestViewsBase):
+class TestSheetVersionRestoreView(TestViewsBase):
     """Tests for the sample sheet version restore view"""
 
     def setUp(self):
@@ -933,7 +933,7 @@ class TestSampleSheetVersionRestoreView(TestViewsBase):
         self.assertEqual(ISATab.objects.all().count(), 2)
 
 
-class TestSampleSheetVersionUpdateView(TestViewsBase):
+class TestSheetVersionUpdateView(TestViewsBase):
     """Tests for the sample sheet version update view"""
 
     def setUp(self):
@@ -981,7 +981,7 @@ class TestSampleSheetVersionUpdateView(TestViewsBase):
         self.assertEqual(self.isatab.date_created, date_created)
 
 
-class TestSampleSheetVersionDeleteView(TestViewsBase):
+class TestSheetVersionDeleteView(TestViewsBase):
     """Tests for the sample sheet version delete view"""
 
     def setUp(self):
@@ -1022,9 +1022,7 @@ class TestSampleSheetVersionDeleteView(TestViewsBase):
         self.assertEqual(ISATab.objects.all().count(), 0)
 
 
-class TestSampleSheetVersionDeleteBatchView(
-    SampleSheetModelMixin, TestViewsBase
-):
+class TestSheetVersionDeleteBatchView(SampleSheetModelMixin, TestViewsBase):
     """Tests for the sample sheet version batch delete view"""
 
     def setUp(self):

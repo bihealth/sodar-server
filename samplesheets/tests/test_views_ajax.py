@@ -51,7 +51,7 @@ from samplesheets.tests.test_views import (
     SHEET_PATH_SMALL2_ALT,
 )
 from samplesheets.utils import get_node_obj
-from samplesheets.views import SampleSheetImportMixin
+from samplesheets.views import SheetImportMixin
 from samplesheets.views_ajax import ALERT_ACTIVE_REQS
 
 
@@ -1955,7 +1955,7 @@ class TestStudyDisplayConfigAjaxView(TestViewsBase):
         )
 
 
-class TestSheetVersionCompareAjaxView(SampleSheetImportMixin, TestViewsBase):
+class TestSheetVersionCompareAjaxView(SheetImportMixin, TestViewsBase):
     """Tests for SheetVersionCompareAjaxView"""
 
     def setUp(self):

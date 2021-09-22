@@ -1,20 +1,21 @@
 """Ajax API views for the samplesheets app"""
 
+import json
+
 from altamisa.constants import table_headers as th
 from datetime import datetime as dt
-import json
 from packaging import version
 
 from django.conf import settings
 from django.db import transaction
 from django.middleware.csrf import get_token
 from django.urls import reverse
-from projectroles.constants import SODAR_CONSTANTS
-from projectroles.models import RoleAssignment
 
 from rest_framework.response import Response
 
 # Projectroles dependency
+from projectroles.constants import SODAR_CONSTANTS
+from projectroles.models import RoleAssignment
 from projectroles.plugins import get_backend_api
 from projectroles.views_ajax import SODARBaseProjectAjaxView
 

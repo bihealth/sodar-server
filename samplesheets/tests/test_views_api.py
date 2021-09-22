@@ -27,7 +27,7 @@ from samplesheets.tests.test_views import (
     REMOTE_SITE_DESC,
     REMOTE_SITE_SECRET,
 )
-from samplesheets.views import SampleSheetImportMixin
+from samplesheets.views import SheetImportMixin
 
 
 app_settings = AppSettingAPI()
@@ -110,9 +110,7 @@ class TestInvestigationRetrieveAPIView(TestSampleSheetAPIBase):
         self.assertEqual(json.loads(response.content), expected)
 
 
-class TestSampleSheetImportAPIView(
-    SampleSheetImportMixin, TestSampleSheetAPIBase
-):
+class TestSheetImportAPIView(SheetImportMixin, TestSampleSheetAPIBase):
     """Tests for SampleSheetImportAPIView"""
 
     def setUp(self):
@@ -422,8 +420,8 @@ class TestSampleSheetImportAPIView(
         )
 
 
-class TestSampleSheetISAExportAPIView(TestSampleSheetAPIBase):
-    """Tests for SampleSheetISAExportAPIView"""
+class TestSheetISAExportAPIView(TestSampleSheetAPIBase):
+    """Tests for SheetISAExportAPIView"""
 
     def test_get_zip(self):
         """Test zip export  in SampleSheetISAExportAPIView"""

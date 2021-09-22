@@ -1,10 +1,11 @@
 """Forms for the samplesheets app"""
 
-from cookiecutter.main import cookiecutter
 import json
 import os
 import re
 import tempfile
+
+from cookiecutter.main import cookiecutter
 
 from django import forms
 from django.conf import settings
@@ -32,7 +33,7 @@ ERROR_MSG_INVALID_PATH = 'Not a valid iRODS path for this project'
 ERROR_MSG_EXISTING = 'An active request already exists for this path'
 
 
-class SampleSheetImportForm(forms.Form):
+class SheetImportForm(forms.Form):
     """
     Form for importing an ISA investigation from an ISA-Tab archive or
     directory.
@@ -417,7 +418,7 @@ class IrodsRequestAcceptForm(forms.Form):
     )
 
 
-class SampleSheetVersionEditForm(forms.ModelForm):
+class SheetVersionEditForm(forms.ModelForm):
     """Form for editing a saved ISA-Tab version of the sample sheets."""
 
     class Meta:

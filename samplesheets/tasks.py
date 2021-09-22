@@ -119,9 +119,9 @@ def sheet_sync_task(_self, username):
             APP_NAME, 'sheet_sync_token', project=project
         )
 
-        from samplesheets.views import SheetSync
+        from samplesheets.views import SheetRemoteSyncAPI
 
-        sync = SheetSync()
+        sync = SheetRemoteSyncAPI()
         try:
             ret = sync.run(project, sheet_sync_url, sheet_sync_token, user)
             if ret:

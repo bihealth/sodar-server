@@ -34,8 +34,8 @@ from samplesheets.rendering import SampleSheetTableBuilder
 from samplesheets.serializers import InvestigationSerializer
 from samplesheets.views import (
     IrodsCollsCreateViewMixin,
-    SampleSheetImportMixin,
-    SampleSheetISAExportMixin,
+    SheetImportMixin,
+    SheetISAExportMixin,
     SITE_MODE_TARGET,
     REMOTE_LEVEL_READ_ROLES,
 )
@@ -132,8 +132,8 @@ class IrodsCollsCreateAPIView(
         )
 
 
-class SampleSheetISAExportAPIView(
-    SampleSheetISAExportMixin, SODARAPIBaseProjectMixin, APIView
+class SheetISAExportAPIView(
+    SheetISAExportMixin, SODARAPIBaseProjectMixin, APIView
 ):
     """
     Export sample sheets as ISA-Tab TSV files, either packed in a zip archive or
@@ -170,9 +170,7 @@ class SampleSheetISAExportAPIView(
             raise APIException('Unable to export ISA-Tab: {}'.format(ex))
 
 
-class SampleSheetImportAPIView(
-    SampleSheetImportMixin, SODARAPIBaseProjectMixin, APIView
-):
+class SheetImportAPIView(SheetImportMixin, SODARAPIBaseProjectMixin, APIView):
     """
     Upload sample sheet as separate ISA-Tab TSV files or a zip archive. Will
     replace existing sheets if valid.
