@@ -1,0 +1,61 @@
+{# Projectroles dependency #}
+{% extends 'projectroles/project_base.html' %}
+{% load rules %}
+{% load samplesheets_tags %}
+{% load projectroles_common_tags %}
+
+{% block title %}
+  Confirm Batch Sample Sheet Version Deletion
+{% endblock title %}
+
+{% block projectroles_extend %}
+
+<div class="container-fluid sodar-subtitle-container">
+  <h3>Confirm Batch Sample Sheet Version Deletion</h3>
+</div>
+
+<div class="container-fluid sodar-page-container">
+  <div class="alert alert-warning" role="alert">
+    <p class="pt-0">
+      <strong>Warning:</strong> You are about to delete
+      {{ sheet_versions.count }} sample sheet
+      version{% if sheet_versions.count != 1 %}s{% endif %}
+      from the project. This can <strong>not</strong> be undone!
+    </p>
+    <p class="mb-0">
+      Versions selected for deletion:
+    </p>
+    <p>
+      <ul>
+        {% for sv in sheet_versions %}
+        <li>
+          <a href="{% url 'samplesheets:export_isa' isatab=sv.sodar_uuid %}">{{ sv.get_name }}</a>
+          {% if sv.description %}
+            ({{ sv.description }})
+          {% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+    </p>
+  </div>
+
+  <form method="post">
+    {% csrf_token %}
+    {% for sv in sheet_versions %}
+      <input type="hidden" name="version_check" value="{{ sv.sodar_uuid }}" />
+    {% endfor %}
+    <div class="row">
+      <div class="btn-group ml-auto">
+        <a role="button" class="btn btn-secondary"
+            href="{% url 'samplesheets:versions' project=project.sodar_uuid %}">
+          <i class="iconify" data-icon="mdi:arrow-left-circle"></i> Cancel
+        </a>
+        <button type="submit" class="btn btn-danger">
+          <i class="iconify" data-icon="mdi:close-thick"></i> Delete
+        </button>
+      </div>
+    </div>
+  </form>
+</div>
+
+{% endblock projectroles_extend %}

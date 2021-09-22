@@ -38,6 +38,7 @@ Added
     - Default ontology column value (#1061)
     - Confirmation for field value overwrite on node rename (#1060)
     - Sheet version description (#754)
+    - Batch sheet version deletion (#773)
 
 Changed
 -------
@@ -67,6 +68,7 @@ Changed
     - Use ``CurrentUserFormMixin`` in forms (#660)
     - Rename ``get_name()`` and ``get_full_name()`` in ``ISATab`` model (#1247)
     - Update sheet version list layout (#1246)
+    - Replace version compare menu with operation dropdown entry (#1251)
 
 Fixed
 -----
@@ -95,6 +97,8 @@ Removed
 - **Landingzones**
     - ``ZoneClearView`` UI view (#1205)
     - ``_list_buttons.html`` template (#1205)
+- **Samplesheets**
+    - ``SampleSheetVersionCompareForm`` (#1251)
 
 
 v0.10.1 (2021-07-07)

@@ -31,7 +31,13 @@
 
     table#sodar-ss-version-table thead tr th:nth-child(5),
     table#sodar-ss-version-table tbody tr td:nth-child(5) {
+      text-align: right;
       width: 75px;
+    }
+
+    table#sodar-ss-version-table thead tr th:nth-child(6),
+    table#sodar-ss-version-table tbody tr td:nth-child(6) {
+      width: 40px;
     }
 
     @media screen and (max-width: 1200px) {
@@ -47,6 +53,13 @@
         display: none;
       }
     }
+
+    @media screen and (max-width: 800px) {
+      table#sodar-ss-version-table thead tr th:nth-child(1),
+      table#sodar-ss-version-table tbody tr td:nth-child(1) {
+        white-space: normal;
+      }
+    }
   </style>
 {% endblock css %}
 
@@ -54,125 +67,159 @@
 {% has_perm 'samplesheets.manage_sheet' request.user project as can_manage_sheet %}
 
 <form class="form-inline"
-      action="{% url 'samplesheets:version_compare' project=project.sodar_uuid %}"
-      method="GET">
+      id="sodar-ss-version-delete-form"
+      action="{% url 'samplesheets:version_delete_batch' project=project.sodar_uuid %}"
+      method="post">
+  {% csrf_token %}
+  <input type="hidden" name="confirm" value="1" />
+
   <div class="row sodar-subtitle-container w-100">
     <h3>Sample Sheet Versions</h3>
     <div class="input-group ml-auto">
-      {{ sheet_select_form.source }}
-      {{ sheet_select_form.target }}
-      <div class="input-group-append">
-        <button type="submit" class="btn btn-primary" id="sodar-ss-btn-import-submit">
-          Compare
+      <a href="{% url 'samplesheets:project_sheets' project=project.sodar_uuid %}"
+         class="btn btn-secondary mr-2" role="button">
+        <i class="iconify" data-icon="mdi:arrow-left-circle"></i> Project Sheets
+      </a>
+      <div class="btn-group ml-auto" id="sodar-pr-btn-role-list">
+        <button class="btn btn-primary dropdown-toggle" id="sodar-ss-version-btn-op"
+                type="button" data-toggle="dropdown">
+          Version Operations
         </button>
+        <div class="dropdown-menu dropdown-menu-right">
+          <a href="#"
+             class="dropdown-item disabled"
+             id="sodar-ss-version-link-compare"
+             data-base-url="{% url 'samplesheets:version_compare' project=project.sodar_uuid %}"
+             disabled="disabled">
+            <i class="iconify" data-icon="mdi:file-compare"></i> Compare Selected
+          </a>
+          {% if can_manage_sheet %}
+            <a class="dropdown-item disabled"
+               id="sodar-ss-version-link-delete"
+               disabled="disabled">
+              <i class="iconify" data-icon="mdi:close-thick"></i> Delete Selected
+            </a>
+          {% endif %}
+        </div>
       </div>
     </div>
-    <a href="{% url 'samplesheets:project_sheets' project=project.sodar_uuid %}"
-       class="btn btn-secondary ml-2" role="button">
-      <i class="iconify" data-icon="mdi:arrow-left-circle"></i> Project Sheets
-    </a>
   </div>
-</form>
 
-<div class="container-fluid sodar-page-container">
-
-{% if object_list.count > 0 %}
-  <div class="card" id="sodar-ss-version-list">
-    <div class="card-body p-0">
-      <table class="table table-striped sodar-card-table"
-             id="sodar-ss-version-table">
-        <thead>
-          <tr>
-            <th>Version</th>
-            <th>Description/Tags</th>
-            <th>User</th>
-            <th>Parser</th>
-            {% if can_manage_sheet %}
-              <th></th>
-            {% endif %}
-          </tr>
-        </thead>
-        <tbody>
-          {% for sv in object_list %}
+  <div class="container-fluid sodar-page-container">
+    <div class="card" id="sodar-ss-version-list">
+      <div class="card-body p-0">
+        <table class="table table-striped sodar-card-table"
+               id="sodar-ss-version-table">
+          <thead>
             <tr>
-              <td>
-                {% if sv == current_version %}
-                  <strong>
-                {% endif %}
-                <a href="{% url 'samplesheets:export_isa' isatab=sv.sodar_uuid %}">
-                  {{ sv.date_created | date:'Y-m-d H:i:s' }}
-                </a>
-                {% if sv == current_version %}
-                  </strong>
-                {% endif %}
-              </td>
-              <td>
-                <span {% if not sv.description %}class="text-muted"{% endif %}>
-                  {{ sv.description | default:'N/A' }}
-                </span>
-                <span class="pull-right">
-                  {% if sv == current_version %}
-                    <span class="badge badge-pill badge-success">Most Recent</span>
-                  {% endif %}
-                  {% get_isatab_tag_html sv as tag_html %}{{ tag_html | safe }}
-                </span>
-              </td>
-              {% if sv.user %}
-                <td>
-                  {% get_user_html sv.user as user_html %}{{ user_html | safe }}
-                </td>
-              {% else %}
-                <td class="text-muted">N/A</td>
-              {% endif %}
-              <td>{{ sv.parser_version }}</td>
-              {% if can_manage_sheet %}
-                <td>
-                  <div class="btn-group sodar-list-btn-group sodar-ss-version-btn-group"
-                       id="sodar-ss-version-btn-group-{{ sv.sodar_uuid }}">
-                    <button class="btn btn-secondary dropdown-toggle sodar-list-dropdown"
-                            type="button" data-toggle="dropdown" aria-expanded="false">
-                      <i class="iconify" data-icon="mdi:cog"></i>
-                    </button>
-                    <div class="dropdown-menu dropdown-menu-right">
-                      <a class="dropdown-item"
-                         href="{% url 'samplesheets:export_isa' isatab=sv.sodar_uuid %}">
-                        <i class="iconify" data-icon="mdi:download"></i> Export Version
-                      </a>
-                      <a class="dropdown-item"
-                         href="{% url 'samplesheets:version_update' isatab=sv.sodar_uuid %}">
-                        <i class="iconify" data-icon="mdi:lead-pencil"></i> Update Description
-                      </a>
-                      <a class="dropdown-item" href="{% url 'samplesheets:version_restore' isatab=sv.sodar_uuid %}">
-                        <i class="iconify" data-icon="mdi:refresh"></i> Restore Version
-                      </a>
-                      <a class="dropdown-item text-danger" href="{% url 'samplesheets:version_delete' isatab=sv.sodar_uuid %}">
-                        <i class="iconify" data-icon="mdi:close-thick"></i> Delete Version
-                      </a>
-                    </div>
-                  </div>
-                </td>
+              <th>Version</th>
+              <th>Description<span class="pull-right">Tags</span></th>
+              <th>User</th>
+              <th>Parser</th>
+              {% if object_list.count > 0 and can_manage_sheet %}
+                <th></th>
+                <th>
+                  <input class="sodar-checkbox sodar-ss-version-check" type="checkbox"
+                         id="sodar-ss-version-check-all"
+                         title="Select/deselect all"
+                         data-toggle="tooltip" data-placement="left"
+                         onchange="checkAll(this)"/>
+                </th>
               {% endif %}
             </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {% if object_list.count == 0 %}
+              <tr>
+                <td colspan="4" class="text-muted text-center">
+                  <em>No saved versions have been found for the sample sheets in this project.</em>
+                </td>
+              </tr>
+            {% endif %}
+            {% for sv in object_list %}
+              <tr>
+                <td>
+                  {% if sv == current_version %}
+                    <strong>
+                  {% endif %}
+                  <a href="{% url 'samplesheets:export_isa' isatab=sv.sodar_uuid %}">
+                    {{ sv.date_created | date:'Y-m-d H:i:s' }}
+                  </a>
+                  {% if sv == current_version %}
+                    </strong>
+                  {% endif %}
+                </td>
+                <td>
+                  <span {% if not sv.description %}class="text-muted"{% endif %}>
+                    {{ sv.description | default:'N/A' }}
+                  </span>
+                  <span class="pull-right">
+                    {% if sv == current_version %}
+                      <span class="badge badge-pill badge-success">Most Recent</span>
+                    {% endif %}
+                    {% get_isatab_tag_html sv as tag_html %}{{ tag_html | safe }}
+                  </span>
+                </td>
+                {% if sv.user %}
+                  <td>
+                    {% get_user_html sv.user as user_html %}{{ user_html | safe }}
+                  </td>
+                {% else %}
+                  <td class="text-muted">N/A</td>
+                {% endif %}
+                <td>{{ sv.parser_version }}</td>
+                {% if can_manage_sheet %}
+                  <td>
+                    <div class="btn-group sodar-list-btn-group sodar-ss-version-btn-group"
+                         id="sodar-ss-version-btn-group-{{ sv.sodar_uuid }}">
+                      <button class="btn btn-secondary dropdown-toggle sodar-list-dropdown"
+                              type="button" data-toggle="dropdown" aria-expanded="false">
+                        <i class="iconify" data-icon="mdi:cog"></i>
+                      </button>
+                      <div class="dropdown-menu dropdown-menu-right">
+                        <a class="dropdown-item"
+                           href="{% url 'samplesheets:export_isa' isatab=sv.sodar_uuid %}">
+                          <i class="iconify" data-icon="mdi:download"></i> Export Version
+                        </a>
+                        <a class="dropdown-item"
+                           href="{% url 'samplesheets:version_update' isatab=sv.sodar_uuid %}">
+                          <i class="iconify" data-icon="mdi:lead-pencil"></i> Update Description
+                        </a>
+                        <a class="dropdown-item" href="{% url 'samplesheets:version_restore' isatab=sv.sodar_uuid %}">
+                          <i class="iconify" data-icon="mdi:refresh"></i> Restore Version
+                        </a>
+                        <a class="dropdown-item text-danger" href="{% url 'samplesheets:version_delete' isatab=sv.sodar_uuid %}">
+                          <i class="iconify" data-icon="mdi:close-thick"></i> Delete Version
+                        </a>
+                      </div>
+                    </div>
+                   </td>
+                  <td>
+                    <input type="checkbox"
+                           class="sodar-checkbox sodar-ss-version-check sodar-ss-version-check-item"
+                           name="version_check" value="{{ sv.sodar_uuid }}" />
+                    </td>
+                {% endif %}
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
     </div>
+    {% if is_paginated %}
+      {% include 'projectroles/_pagination.html' with pg_small=False %}
+    {% endif %}
   </div>
-  {% if is_paginated %}
-    {% include 'projectroles/_pagination.html' with pg_small=False %}
-  {% endif %}
-{% else %}
-  <div class="alert alert-info" id="sodar-ss-version-alert">
-    No saved versions have been found for the sample sheets in this project.
-  </div>
-{% endif %}
 
-</div>
+</form>
 
 {% endblock projectroles_extend %}
 
 {% block javascript %}
   {{ block.super }}
+
+  <!-- Sheet Version List Javascript -->
+  <script type="text/javascript" src="{% static 'samplesheets/js/sheet_versions.js' %}"></script>
 
   {# Tour content #}
   <script type="text/javascript">

@@ -56,7 +56,6 @@ from samplesheets.forms import (
     IrodsAccessTicketForm,
     IrodsRequestForm,
     IrodsRequestAcceptForm,
-    SampleSheetVersionCompareForm,
     SampleSheetVersionEditForm,
 )
 from samplesheets.io import (
@@ -1555,12 +1554,6 @@ class SampleSheetVersionListView(
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
         context['current_version'] = None
-        choices = [
-            (str(obj.sodar_uuid), obj.get_name()) for obj in self.get_queryset()
-        ]
-        context['sheet_select_form'] = SampleSheetVersionCompareForm(
-            choices=choices
-        )
         if context['investigation']:
             context['current_version'] = (
                 ISATab.objects.filter(
@@ -1807,6 +1800,69 @@ class SampleSheetVersionDeleteView(
         )
         return reverse(
             'samplesheets:versions', kwargs={'project': project.sodar_uuid}
+        )
+
+
+class SampleSheetVersionDeleteBatchView(
+    LoginRequiredMixin,
+    LoggedInPermissionMixin,
+    ProjectPermissionMixin,
+    InvestigationContextMixin,
+    TemplateView,
+):
+    """Sample sheet version batch deletion view"""
+
+    permission_required = 'samplesheets.manage_sheet'
+    template_name = 'samplesheets/version_confirm_delete_batch.html'
+    slug_url_kwarg = 'project'
+    slug_field = 'sodar_uuid'
+
+    def get_context_data(self, request, *args, **kwargs):
+        context = super().get_context_data(*args, **kwargs)
+        context['sheet_versions'] = ISATab.objects.filter(
+            sodar_uuid__in=request.POST.getlist('version_check')
+        )
+        return context
+
+    def post(self, request, **kwargs):
+        context = self.get_context_data(request, **kwargs)
+        # Render confirm template
+        if request.POST.get('confirm'):
+            return super().render_to_response(context)
+
+        # Else go on with deletion
+        project = context['project']
+        version_count = context['sheet_versions'].count()
+
+        timeline = get_backend_api('timeline_backend')
+        if timeline:
+            for sv in context['sheet_versions']:
+                tl_event = timeline.add_event(
+                    project=project,
+                    app_name=APP_NAME,
+                    user=self.request.user,
+                    event_name='version_delete',
+                    description='delete sample sheet version {isatab}',
+                    status_type='OK',
+                )
+                tl_event.add_object(
+                    obj=sv,
+                    label='isatab',
+                    name=sv.get_full_name(),
+                )
+
+        context['sheet_versions'].delete()
+        messages.success(
+            request,
+            'Deleted {} sample sheet version{}.'.format(
+                version_count,
+                's' if version_count != 1 else '',
+            ),
+        )
+        return redirect(
+            reverse(
+                'samplesheets:versions', kwargs={'project': project.sodar_uuid}
+            )
         )
 
 

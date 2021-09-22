@@ -417,25 +417,6 @@ class IrodsRequestAcceptForm(forms.Form):
     )
 
 
-class SampleSheetVersionCompareForm(forms.Form):
-    """Form for selecting two sheet versions for comparison."""
-
-    def __init__(self, choices, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['source'] = forms.CharField(
-            label='Source',
-            widget=forms.Select(
-                choices=choices, attrs={'class': 'form-control'}
-            ),
-        )
-        self.fields['target'] = forms.CharField(
-            label='Target',
-            widget=forms.Select(
-                choices=choices, attrs={'class': 'form-control'}
-            ),
-        )
-
-
 class SampleSheetVersionEditForm(forms.ModelForm):
     """Form for editing a saved ISA-Tab version of the sample sheets."""
 

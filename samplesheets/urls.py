@@ -101,6 +101,11 @@ urls_ui = [
         name='version_delete',
     ),
     url(
+        regex=r'^version/delete/batch/(?P<project>[0-9a-f-]+)$',
+        view=views.SampleSheetVersionDeleteBatchView.as_view(),
+        name='version_delete_batch',
+    ),
+    url(
         regex=r'^irods/tickets/(?P<project>[0-9a-f-]+)$',
         view=views.IrodsAccessTicketListView.as_view(),
         name='irods_tickets',
