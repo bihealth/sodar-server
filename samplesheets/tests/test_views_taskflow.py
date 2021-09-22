@@ -135,7 +135,7 @@ class SampleSheetPublicAccessMixin:
         self.assertEqual(self.project.public_guest_access, access)
 
 
-class TestSheetSyncBase(
+class TestSheetRemoteSyncBase(
     SODARAPIViewTestMixin,
     SampleSheetIOMixin,
     TestTaskflowBase,
@@ -1935,8 +1935,8 @@ class TestIrodsRequestListView(TestIrodsRequestViewsBase):
 
 
 @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
-class TestSampleSheetSyncView(TestSheetSyncBase):
-    """Tests for SampleSheetSyncView"""
+class TestSheetRemoteSyncView(TestSheetRemoteSyncBase):
+    """Tests for SheetRemoteSyncView"""
 
     def test_sync(self):
         """Test sync sheets successfully"""

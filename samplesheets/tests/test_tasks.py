@@ -26,7 +26,7 @@ from samplesheets.tasks import update_project_cache_task, sheet_sync_task
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 from samplesheets.tests.test_views_taskflow import (
     SampleSheetTaskflowMixin,
-    TestSheetSyncBase,
+    TestSheetRemoteSyncBase,
 )
 
 
@@ -159,7 +159,7 @@ class TestUpdateProjectCacheTask(
 
 
 @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
-class TestSheetSyncTask(TestSheetSyncBase):
+class TestSheetRemoteSyncTask(TestSheetRemoteSyncBase):
     """Tests for periodic sample sheet sync task"""
 
     def test_sync_task(self):

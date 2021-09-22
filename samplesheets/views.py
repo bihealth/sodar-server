@@ -1120,7 +1120,6 @@ class SheetTemplateSelectView(
         return context
 
     def get(self, request, *args, **kwargs):
-        super().get(request, *args, **kwargs)
         project = self.get_project()
         investigation = Investigation.objects.filter(project=project).first()
         if investigation:
@@ -1589,7 +1588,6 @@ class IrodsCollsCreateView(
         return redirect(redirect_url)
 
     def get(self, request, *args, **kwargs):
-        super().get(request, *args, **kwargs)
         return super().render_to_response(self.get_context_data())
 
 
@@ -2484,13 +2482,11 @@ class SheetRemoteSyncView(
     LoggedInPermissionMixin,
     ProjectPermissionMixin,
     ProjectContextMixin,
-    TemplateView,
+    View,
 ):
     """Sample sheet remote sync view for manual sync"""
 
     permission_required = 'samplesheets.edit_sheet'
-    # We only redirect, so the template is somewhat egal
-    template_name = 'samplesheets/project_sheets.html'
 
     def _redirect(self):
         return redirect(
@@ -2501,8 +2497,6 @@ class SheetRemoteSyncView(
         )
 
     def get(self, request, *args, **kwargs):
-        super().get(request, *args, **kwargs)
-
         project = self.get_project()
         timeline = get_backend_api('timeline_backend')
         tl_add = False
