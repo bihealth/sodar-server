@@ -269,7 +269,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                     'samplesheets:versions',
                     kwargs={'project': obj.project.sodar_uuid},
                 ),
-                'label': obj.get_name(),
+                'label': obj.get_full_name(),
             }
         elif obj and obj.__class__ == IrodsDataRequest:
             return {

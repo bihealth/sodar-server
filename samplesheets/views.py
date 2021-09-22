@@ -13,11 +13,13 @@ import zipfile
 
 from django.conf import settings
 from django.contrib import messages
+from django.db.models.functions import Now
 from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.utils.text import slugify
+from django.utils.timezone import localtime
 from django.views.generic import (
     DeleteView,
     FormView,
@@ -54,7 +56,7 @@ from samplesheets.forms import (
     IrodsAccessTicketForm,
     IrodsRequestForm,
     IrodsRequestAcceptForm,
-    SampleSheetVersionCompareForm,
+    SampleSheetVersionEditForm,
 )
 from samplesheets.io import (
     SampleSheetIO,
@@ -334,7 +336,7 @@ class SampleSheetImportMixin:
         if ui_mode:
             success_msg = '{}d sample sheets from {}'.format(
                 action.capitalize(),
-                'version {}'.format(isa_version.get_name())
+                'version {}'.format(isa_version.get_full_name())
                 if action == 'restore'
                 else 'ISA-Tab import',
             )
@@ -523,7 +525,7 @@ class SampleSheetISAExportMixin:
         else:
             file_name = clean_sheet_dir_name(project.title)
         if isa_version:
-            file_name += '_' + isa_version.date_created.strftime(
+            file_name += '_' + localtime(isa_version.date_created).strftime(
                 '%Y-%m-%d_%H%M%S'
             )
             if isa_version.user:
@@ -551,7 +553,9 @@ class SampleSheetISAExportMixin:
             )
             if isa_version:
                 tl_event.add_object(
-                    obj=isa_version, label='isatab', name=isa_version.get_name()
+                    obj=isa_version,
+                    label='isatab',
+                    name=isa_version.get_full_name(),
                 )
 
         # Initiate export
@@ -1545,18 +1549,11 @@ class SampleSheetVersionListView(
     def get_queryset(self):
         return ISATab.objects.filter(
             project__sodar_uuid=self.kwargs['project']
-        ).order_by('-pk')
+        ).order_by('-date_created')
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
         context['current_version'] = None
-        choices = [
-            (str(i.sodar_uuid), i.date_created.strftime('%Y-%m-%d %H:%M:%S'))
-            for i in self.get_queryset()
-        ]
-        context['sheet_select_form'] = SampleSheetVersionCompareForm(
-            choices=choices
-        )
         if context['investigation']:
             context['current_version'] = (
                 ISATab.objects.filter(
@@ -1678,7 +1675,9 @@ class SampleSheetVersionRestoreView(
                 description='restore sheets from version {isatab}',
             )
             tl_event.add_object(
-                obj=isa_version, label='isatab', name=isa_version.get_name()
+                obj=isa_version,
+                label='isatab',
+                name=isa_version.get_full_name(),
             )
 
         try:
@@ -1708,12 +1707,45 @@ class SampleSheetVersionRestoreView(
             # Edit isa_version to bump it in the list
             if 'RESTORE' not in isa_version.tags:
                 isa_version.tags.append('RESTORE')
+            isa_version.date_created = Now()
             isa_version.save()
 
         return redirect(
             reverse(
                 'samplesheets:project_sheets',
                 kwargs={'project': project.sodar_uuid},
+            )
+        )
+
+
+class SampleSheetVersionUpdateView(
+    LoginRequiredMixin,
+    LoggedInPermissionMixin,
+    ProjectPermissionMixin,
+    InvestigationContextMixin,
+    UpdateView,
+):
+    """Sample sheet version update view"""
+
+    permission_required = 'samplesheets.manage_sheet'
+    model = ISATab
+    form_class = SampleSheetVersionEditForm
+    template_name = 'samplesheets/version_update.html'
+    slug_url_kwarg = 'isatab'
+    slug_field = 'sodar_uuid'
+
+    def form_valid(self, form):
+        obj = form.save()
+        messages.success(
+            self.request,
+            'Description updated for sheet version "{}".'.format(
+                obj.get_full_name()
+            ),
+        )
+        return redirect(
+            reverse(
+                'samplesheets:versions',
+                kwargs={'project': self.get_project().sodar_uuid},
             )
         )
 
@@ -1756,14 +1788,81 @@ class SampleSheetVersionDeleteView(
                 status_type='OK',
             )
             tl_event.add_object(
-                obj=self.object, label='isatab', name=self.object.get_name()
+                obj=self.object,
+                label='isatab',
+                name=self.object.get_full_name(),
             )
         messages.success(
             self.request,
-            'Deleted sample sheet version: {}'.format(self.object.get_name()),
+            'Deleted sample sheet version: {}'.format(
+                self.object.get_full_name()
+            ),
         )
         return reverse(
             'samplesheets:versions', kwargs={'project': project.sodar_uuid}
+        )
+
+
+class SampleSheetVersionDeleteBatchView(
+    LoginRequiredMixin,
+    LoggedInPermissionMixin,
+    ProjectPermissionMixin,
+    InvestigationContextMixin,
+    TemplateView,
+):
+    """Sample sheet version batch deletion view"""
+
+    permission_required = 'samplesheets.manage_sheet'
+    template_name = 'samplesheets/version_confirm_delete_batch.html'
+    slug_url_kwarg = 'project'
+    slug_field = 'sodar_uuid'
+
+    def get_context_data(self, request, *args, **kwargs):
+        context = super().get_context_data(*args, **kwargs)
+        context['sheet_versions'] = ISATab.objects.filter(
+            sodar_uuid__in=request.POST.getlist('version_check')
+        )
+        return context
+
+    def post(self, request, **kwargs):
+        context = self.get_context_data(request, **kwargs)
+        # Render confirm template
+        if request.POST.get('confirm'):
+            return super().render_to_response(context)
+
+        # Else go on with deletion
+        project = context['project']
+        version_count = context['sheet_versions'].count()
+
+        timeline = get_backend_api('timeline_backend')
+        if timeline:
+            for sv in context['sheet_versions']:
+                tl_event = timeline.add_event(
+                    project=project,
+                    app_name=APP_NAME,
+                    user=self.request.user,
+                    event_name='version_delete',
+                    description='delete sample sheet version {isatab}',
+                    status_type='OK',
+                )
+                tl_event.add_object(
+                    obj=sv,
+                    label='isatab',
+                    name=sv.get_full_name(),
+                )
+
+        context['sheet_versions'].delete()
+        messages.success(
+            request,
+            'Deleted {} sample sheet version{}.'.format(
+                version_count,
+                's' if version_count != 1 else '',
+            ),
+        )
+        return redirect(
+            reverse(
+                'samplesheets:versions', kwargs={'project': project.sodar_uuid}
+            )
         )
 
 
@@ -1890,7 +1989,7 @@ class IrodsAccessTicketDeleteView(
     InvestigationContextMixin,
     DeleteView,
 ):
-    """Sample sheet version deletion view"""
+    """iRODS access ticket deletion view"""
 
     permission_required = 'samplesheets.delete_sheet'
     template_name = 'samplesheets/irodsaccessticket_confirm_delete.html'

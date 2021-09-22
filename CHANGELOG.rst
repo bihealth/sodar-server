@@ -37,12 +37,14 @@ Added
     - Tooltips for buttons disabled due to an unsaved row (#1056)
     - Default ontology column value (#1061)
     - Confirmation for field value overwrite on node rename (#1060)
+    - Sheet version description (#754)
+    - Batch sheet version deletion (#773)
 
 Changed
 -------
 
 - **General**
-    - Upgrade to django-sodar-core v0.10.5-WIP (#1217, #1220, #1243)
+    - Upgrade to django-sodar-core v0.10.5 (#1217, #1220, #1243)
     - Upgrade to python-irodsclient v1.0.0 (#1223)
     - Upgrade to Chromedriver v92 (sodar_core#772)
     - Upgrade to Node v12
@@ -64,6 +66,9 @@ Changed
     - Move ``TestSheetSyncBase`` into ``test_views_taskflow``
     - Update app setting labels (#1230)
     - Use ``CurrentUserFormMixin`` in forms (#660)
+    - Rename ``get_name()`` and ``get_full_name()`` in ``ISATab`` model (#1247)
+    - Update sheet version list layout (#1246)
+    - Replace version compare menu with operation dropdown entry (#1251)
 
 Fixed
 -----
@@ -79,6 +84,7 @@ Fixed
     - ``PROJECTROLES_SEND_EMAIL`` not checked in Taskflow views (#1229)
 - **Samplesheets**
     - Missing label for ``public_access_ticket`` app setting (#1230)
+    - Incorrect ``ISATab`` timestamp in export and compare dropdown (#1247)
 
 Removed
 -------
@@ -91,6 +97,8 @@ Removed
 - **Landingzones**
     - ``ZoneClearView`` UI view (#1205)
     - ``_list_buttons.html`` template (#1205)
+- **Samplesheets**
+    - ``SampleSheetVersionCompareForm`` (#1251)
 
 
 v0.10.1 (2021-07-07)
