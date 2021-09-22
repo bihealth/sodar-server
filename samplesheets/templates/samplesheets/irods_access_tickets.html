@@ -67,14 +67,14 @@
 <div class="row sodar-subtitle-container">
   <h3>iRODS Access Tickets</h3>
   <div class="ml-auto">
+    <a href="{% url 'samplesheets:project_sheets' project=project.sodar_uuid %}"
+       class="btn btn-secondary mr-1" role="button">
+     <i class="iconify" data-icon="mdi:arrow-left-circle"></i> Project Sheets
+    </a>
     <a href="{% url 'samplesheets:irods_ticket_create' project=project.sodar_uuid %}"
        class="btn btn-primary {% if not track_hubs_available %}disabled{% endif %}"
        role="button">
      <i class="iconify" data-icon="mdi:plus-thick"></i> Create Ticket
-    </a>
-    <a href="{% url 'samplesheets:project_sheets' project=project.sodar_uuid %}"
-       class="btn btn-secondary ml-1" role="button">
-     <i class="iconify" data-icon="mdi:arrow-left-circle"></i> Project Sheets
     </a>
   </div>
 </div>

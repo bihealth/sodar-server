@@ -69,6 +69,7 @@ Changed
     - Rename ``get_name()`` and ``get_full_name()`` in ``ISATab`` model (#1247)
     - Update sheet version list layout (#1246)
     - Replace version compare menu with operation dropdown entry (#1251)
+    - Update subpage navigation (#1252)
 
 Fixed
 -----
