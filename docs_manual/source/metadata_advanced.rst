@@ -105,6 +105,7 @@ DNA Sequencing Plugin
     * genome sequencing / nucleotide sequencing
     * exome sequencing / nucleotide sequencing
     * transcription profiling / nucleotide sequencing
+    * transcriptome profiling / nucleotide sequencing
     * panel sequencing / nucleotide sequencing
 
 Generic Raw Data Assay Plugin
@@ -150,6 +151,8 @@ Microarray Plugin
 - Used with measurement type / technology type
     * transcription profiling / microarray
     * transcription profiling / DNA microarray
+    * transcriptome profiling / microarray
+    * transcriptome profiling / DNA microarray
 
 Protein Expression Profiling / Mass Spectrometry Plugin
 -------------------------------------------------------
@@ -161,6 +164,6 @@ Protein Expression Profiling / Mass Spectrometry Plugin
 - Row-specific links
     * N/A
 - Inline links
-    * Files are linked to `RawData` under the assay.
+    * Files are linked to ``RawData`` under the assay.
 - Used with measurement type / technology type
     * protein expression profiling / mass spectrometry

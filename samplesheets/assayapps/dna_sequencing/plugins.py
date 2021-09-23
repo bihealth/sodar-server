@@ -44,6 +44,10 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
             'technology_type': 'nucleotide sequencing',
         },
         {
+            'measurement_type': 'transcriptome profiling',
+            'technology_type': 'nucleotide sequencing',
+        },
+        {
             'measurement_type': 'panel sequencing',
             'technology_type': 'nucleotide sequencing',
         },

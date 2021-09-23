@@ -49,6 +49,14 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
             'measurement_type': 'transcription profiling',
             'technology_type': 'DNA microarray',
         },
+        {
+            'measurement_type': 'transcriptome profiling',
+            'technology_type': 'microarray',
+        },
+        {
+            'measurement_type': 'transcriptome profiling',
+            'technology_type': 'DNA microarray',
+        },
     ]
 
     #: Description string

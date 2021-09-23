@@ -39,6 +39,7 @@ Added
     - Confirmation for field value overwrite on node rename (#1060)
     - Sheet version description (#754)
     - Batch sheet version deletion (#773)
+    - Assay app support for "transcriptome profiling" measurement type (#1255)
 
 Changed
 -------
