@@ -15,9 +15,9 @@ API Views
 
 .. autoclass:: IrodsCollsCreateAPIView
 
-.. autoclass:: SampleSheetImportAPIView
+.. autoclass:: SheetImportAPIView
 
-.. autoclass:: SampleSheetISAExportAPIView
+.. autoclass:: SheetISAExportAPIView
 
 .. autoclass:: SampleDataFileExistsAPIView
 
