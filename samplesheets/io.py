@@ -1426,7 +1426,7 @@ class SampleSheetIO:
         tags=None,
         user=None,
         archive_name=None,
-        config=None,
+        description=None,
     ):
         """
         Save a copy of an ISA-Tab investigation into the SODAR database.
@@ -1437,6 +1437,7 @@ class SampleSheetIO:
         :param tags: Tags for the ISA-Tab (optional)
         :param user: User saving the ISA-Tab (optional)
         :param archive_name: File name of ISA-Tab archive (optional)
+        :param description: ISATab description (string, optional)
         :return: ISATab object
         """
         db_isatab = ISATab.objects.create(
@@ -1446,6 +1447,7 @@ class SampleSheetIO:
             tags=tags or [],
             user=user,
             archive_name=archive_name,
+            description=description,
             parser_version=altamisa.__version__,
         )
         logger.info('ISA-Tab saved (UUID={})'.format(db_isatab.sodar_uuid))

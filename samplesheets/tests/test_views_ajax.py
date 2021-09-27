@@ -82,6 +82,7 @@ EMPTY_ONTOLOGY_VAL = {
 SHEET_PATH_INSERTED = SHEET_DIR_SPECIAL + 'i_small_insert.zip'
 TEST_FILE_NAME = 'test1'
 IRODS_TICKET_STR = 'ooChaa1t'
+VERSION_DESC = 'description'
 
 
 class RowEditMixin:
@@ -1558,13 +1559,39 @@ class TestSheetRowDeleteAjaxView(RowEditMixin, SheetConfigMixin, TestViewsBase):
     # TODO: Test deletion with splitting/pooling
 
 
+class TestSheetVersionSaveAjaxView(TestViewsBase):
+    """Tests for SheetVersionSaveAjaxView"""
+
+    def setUp(self):
+        super().setUp()
+        self.investigation = self._import_isa_from_file(
+            SHEET_PATH, self.project
+        )
+        self.study = self.investigation.studies.first()
+
+    def test_post(self):
+        """Test POST"""
+        self.assertEqual(ISATab.objects.count(), 1)
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:ajax_version_save',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                json.dumps({'save': True, 'description': VERSION_DESC}),
+                content_type='application/json',
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(ISATab.objects.count(), 2)
+        new_version = ISATab.objects.order_by('-pk').first()
+        self.assertEqual(new_version.description, VERSION_DESC)
+
+
 class TestSheetEditFinishAjaxView(TestViewsBase):
     """Tests for SheetEditFinishAjaxView"""
 
     def setUp(self):
         super().setUp()
-
-        # Import investigation
         self.investigation = self._import_isa_from_file(
             SHEET_PATH, self.project
         )
@@ -1572,41 +1599,48 @@ class TestSheetEditFinishAjaxView(TestViewsBase):
 
     def test_post(self):
         """Test POST with updates=True"""
-        # Assert preconditions
-        self.assertEqual(ISATab.objects.all().count(), 1)
-
+        self.assertEqual(ISATab.objects.count(), 1)
         with self.login(self.user):
             response = self.client.post(
                 reverse(
                     'samplesheets:ajax_edit_finish',
                     kwargs={'project': self.project.sodar_uuid},
                 ),
-                json.dumps({'updated': True}),
+                json.dumps({'updated': True, 'version_saved': False}),
                 content_type='application/json',
             )
-
-        # Assert postconditions
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(ISATab.objects.all().count(), 2)
+        self.assertEqual(ISATab.objects.count(), 2)
+
+    def test_post_version_saved(self):
+        """Test POST with version_saved=True"""
+        self.assertEqual(ISATab.objects.count(), 1)
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:ajax_edit_finish',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                json.dumps({'updated': True, 'version_saved': True}),
+                content_type='application/json',
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(ISATab.objects.count(), 1)  # No new version
 
     def test_post_no_updates(self):
         """Test POST with updates=False"""
-        # Assert preconditions
-        self.assertEqual(ISATab.objects.all().count(), 1)
-
+        self.assertEqual(ISATab.objects.count(), 1)
         with self.login(self.user):
             response = self.client.post(
                 reverse(
                     'samplesheets:ajax_edit_finish',
                     kwargs={'project': self.project.sodar_uuid},
                 ),
-                json.dumps({'updated': False}),
+                json.dumps({'updated': False, 'version_saved': True}),
                 content_type='application/json',
             )
-
-        # Assert postconditions
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(ISATab.objects.all().count(), 1)
+        self.assertEqual(ISATab.objects.count(), 1)
 
 
 class TestSheetEditConfigAjaxView(SheetConfigMixin, TestViewsBase):

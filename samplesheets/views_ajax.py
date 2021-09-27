@@ -76,7 +76,7 @@ ERROR_NOT_FOUND = 'Collection not found'
 ERROR_NO_AUTH = 'User not authorized for iRODS collection'
 
 
-# Base Ajax View Classes -------------------------------------------------------
+# Base Ajax View Classes and Mixins --------------------------------------------
 
 
 class BaseSheetEditAjaxView(SODARBaseProjectAjaxView):
@@ -246,6 +246,39 @@ class EditConfigMixin:
         return role_order.index(assignment.role.name) <= role_order.index(
             edit_config_min_role
         )
+
+
+class SheetVersionMixin:
+    """Mixin for sheet version saving"""
+
+    @classmethod
+    def save_version(cls, investigation, request, description=None):
+        """
+        Save current version of an investigation as ISA-Tab into the database.
+
+        :param investigation: Investigation object
+        :param request: HTTP request
+        :param description: Version description (string, optional)
+        :return: ISATab object
+        :raise: Exception if ISA-Tab saving fails
+        """
+        sheet_io = SampleSheetIO()
+        project = investigation.project
+        isa_data = sheet_io.export_isa(investigation)
+        # Save sheet config with ISA-Tab version
+        isa_data['sheet_config'] = app_settings.get_app_setting(
+            APP_NAME, 'sheet_config', project=project
+        )
+        isa_version = sheet_io.save_isa(
+            project=project,
+            inv_uuid=investigation.sodar_uuid,
+            isa_data=isa_data,
+            tags=['EDIT'],
+            user=request.user,
+            archive_name=investigation.archive_name,
+            description=description,
+        )
+        return isa_version
 
 
 # Ajax Views -------------------------------------------------------------------
@@ -1432,9 +1465,61 @@ class SheetRowDeleteAjaxView(BaseSheetEditAjaxView):
         return Response(self.ok_data, status=200)
 
 
-class SheetEditFinishAjaxView(SODARBaseProjectAjaxView):
-    """View for finishing editing and saving an ISA-Tab copy of the current
-    sample sheet"""
+class SheetVersionSaveAjaxView(SheetVersionMixin, SODARBaseProjectAjaxView):
+    """Ajax view for saving current sample sheet version as ISATab backup"""
+
+    permission_required = 'samplesheets.edit_sheet'
+
+    def post(self, request, *args, **kwargs):
+        timeline = get_backend_api('timeline_backend')
+        log_msg = 'Save sheet version: '
+        isa_version = None
+        project = self.get_project()
+        inv = Investigation.objects.filter(project=project, active=True).first()
+        export_ex = None
+
+        try:
+            isa_version = self.save_version(
+                inv, request, request.data.get('description') or None
+            )
+        except Exception as ex:
+            logger.error(
+                log_msg + 'Unable to export sheet to ISA-Tab: {}'.format(ex)
+            )
+            export_ex = str(ex)
+
+        if timeline:
+            tl_status = 'FAILED' if export_ex else 'OK'
+            tl_desc = 'save sheet version'
+            if not export_ex and isa_version:
+                tl_desc += ' as {isatab}'
+            tl_event = timeline.add_event(
+                project=project,
+                app_name=APP_NAME,
+                user=request.user,
+                event_name='sheet_version_save',
+                description=tl_desc,
+                status_type=tl_status,
+                status_desc=export_ex if tl_status == 'FAILED' else None,
+            )
+            if not export_ex and isa_version:
+                tl_event.add_object(
+                    obj=isa_version,
+                    label='isatab',
+                    name=isa_version.get_full_name(),
+                )
+
+        if not export_ex and isa_version:
+            return Response({'detail': 'ok'}, status=200)
+
+        return Response({'detail': export_ex}, status=500)
+
+
+class SheetEditFinishAjaxView(SheetVersionMixin, SODARBaseProjectAjaxView):
+    """
+    View for finishing editing and saving an ISA-Tab copy of the current
+    sample sheet.
+    """
 
     permission_required = 'samplesheets.edit_sheet'
 
@@ -1447,31 +1532,18 @@ class SheetEditFinishAjaxView(SODARBaseProjectAjaxView):
 
         timeline = get_backend_api('timeline_backend')
         isa_version = None
-        sheet_io = SampleSheetIO()
         project = self.get_project()
         inv = Investigation.objects.filter(project=project, active=True).first()
         export_ex = None
 
-        try:
-            isa_data = sheet_io.export_isa(inv)
-            # Save sheet config with ISA-Tab version
-            isa_data['sheet_config'] = app_settings.get_app_setting(
-                APP_NAME, 'sheet_config', project=project
-            )
-            isa_version = sheet_io.save_isa(
-                project=project,
-                inv_uuid=inv.sodar_uuid,
-                isa_data=isa_data,
-                tags=['EDIT'],
-                user=request.user,
-                archive_name=inv.archive_name,
-            )
-            inv.save()
-        except Exception as ex:
-            logger.error(
-                log_msg + 'Unable to export sheet to ISA-Tab: {}'.format(ex)
-            )
-            export_ex = str(ex)
+        if not request.data.get('version_saved'):
+            try:
+                isa_version = self.save_version(inv, request)
+            except Exception as ex:
+                logger.error(
+                    log_msg + 'Unable to export sheet to ISA-Tab: {}'.format(ex)
+                )
+                export_ex = str(ex)
 
         if timeline:
             tl_status = 'FAILED' if export_ex else 'OK'
@@ -1499,10 +1571,12 @@ class SheetEditFinishAjaxView(SODARBaseProjectAjaxView):
                 )
 
         if not export_ex:
-            logger.info(
-                log_msg
-                + 'Saved ISA-Tab "{}"'.format(isa_version.get_full_name())
-            )
+            if isa_version:
+                logger.info(
+                    log_msg
+                    + 'Saved ISA-Tab "{}"'.format(isa_version.get_full_name())
+                )
+            inv.save()  # Update date_modified
             return Response({'detail': 'ok'}, status=200)
 
         return Response({'detail': export_ex}, status=500)

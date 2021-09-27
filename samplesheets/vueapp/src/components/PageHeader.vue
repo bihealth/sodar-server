@@ -37,9 +37,12 @@
             id="sodar-ss-badge-edit">
         <a id="sodar-ss-link-edit-help"
            @click="editorHelpModal.showModal()"
-           title="Editor status and help"
+           title="Editor status"
            v-b-tooltip.hover>
-          <i class="iconify" data-icon="mdi:lead-pencil"></i> Edit Mode
+          <i class="iconify mr-1" data-icon="mdi:lead-pencil"></i>
+          <span v-if="app.unsavedData || app.unsavedRow">Unsaved Changes</span>
+          <span v-else-if="app.editDataUpdated">Changes Saved</span>
+          <span v-else>Edit Mode</span>
         </a>
       </span>
       <!-- Nav dropdown -->
@@ -81,6 +84,18 @@
           <i class="iconify" data-icon="mdi:sitemap"></i> Overview
         </b-dropdown-item>
       </b-dropdown>
+      <!-- Save version button (only show in edit mode) -->
+      <b-button
+          v-if="app.editMode"
+          id="sodar-ss-btn-version-save"
+          variant="primary"
+          class="ml-1"
+          title="Save current sheet version as backup"
+          :disabled="app.versionSaved"
+          @click="versionSaveModal.showModal()"
+          v-b-tooltip.hover>
+        <i class="iconify" data-icon="mdi:content-save-all"></i>
+      </b-button>
       <!-- Operations dropdown (only show if not in edit mode) -->
       <b-dropdown
           v-if="!app.editMode"
@@ -242,7 +257,8 @@ export default {
     'showSubPageCallback',
     'toggleEditModeCallback',
     'editorHelpModal',
-    'winExportModal'
+    'winExportModal',
+    'versionSaveModal'
   ],
   data () {
     return {
@@ -271,10 +287,18 @@ export default {
     },
     getFinishEditTitle () {
       if (!this.app.unsavedRow) {
-        return 'Exit edit mode and backup current changes in sheet versions'
+        let title = 'Exit edit mode'
+        if (!this.app.versionSaved) {
+          title += ' and save current sheet version as backup'
+        }
+        return title
       } else {
         return 'Please save or discard your unsaved table row before exiting edit mode'
       }
+    },
+    getEditModeBadgeText () {
+      if (this.app.unsavedData) return 'Unsaved Changes'
+      return 'Edit Mode'
     }
   }
 }
