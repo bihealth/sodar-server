@@ -15,6 +15,7 @@ Added
 
 - **General**
     - Siteinfo app in default ``LOGGING_APPS`` value (#1219)
+    - ``LOGGING_LEVEL`` setting (sodar_core#822)
 - **Irodsbackend**
     - Add ``colls`` parameter to list retrieval (#1156)
 - **Landingzones**
@@ -50,6 +51,7 @@ Changed
     - Upgrade to python-irodsclient v1.0.0 (#1223)
     - Upgrade to Chromedriver v93 (sodar_core#772, #1254)
     - Upgrade to Node v12
+    - Improve production logging (#1257)
 - **Irodsbackend**
     - Retrieve iRODS config from ``IRODS_ENV_BACKEND`` setting (#1221)
     - Use data attributes in templates (sodar_core#530)

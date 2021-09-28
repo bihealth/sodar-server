@@ -62,7 +62,8 @@ TEMPLATES[0]['OPTIONS']['loaders'] = [
 # Logging
 # ------------------------------------------------------------------------------
 
-LOGGING = set_logging(DEBUG, level='CRITICAL')
+LOGGING_LEVEL = env.str('LOGGING_LEVEL', 'CRITICAL')
+LOGGING = set_logging(LOGGING_LEVEL)
 
 
 # Local App Settings

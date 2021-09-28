@@ -96,19 +96,25 @@ CACHES = {
 # Logging
 # ------------------------------------------------------------------------------
 
-LOGGING = set_logging(DEBUG)
-
-LOGGING['loggers']['django.db.backends'] = {
-    'level': 'ERROR',
-    'handlers': ['console'],
-    'propagate': True,
-}
-
-LOGGING['loggers']['django.security.DisallowedHost'] = {
-    'level': 'ERROR',
-    'handlers': ['console'],
-    'propagate': True,
-}
+LOGGING_LEVEL = env.str('LOGGING_LEVEL', 'ERROR')
+LOGGING_APPS = env.list(
+    'LOGGING_APPS',
+    default=[
+        'django',
+        'django.requests',
+        'irodsadmin',
+        'irodsbackend',
+        'irodsinfo',
+        'landingzones',
+        'ontologyaccess',
+        'projectroles',
+        'samplesheets',
+        'siteinfo',
+        'sodarcache',
+        'taskflowbackend',
+    ],
+)
+LOGGING = set_logging(LOGGING_LEVEL)
 
 
 # Custom Admin URL, use {% url 'admin:index' %}

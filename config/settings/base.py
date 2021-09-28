@@ -480,6 +480,7 @@ SAML2_AUTH = {
 # Logging
 # ------------------------------------------------------------------------------
 
+LOGGING_LEVEL = env.str('LOGGING_LEVEL', 'DEBUG' if DEBUG else 'ERROR')
 LOGGING_APPS = env.list(
     'LOGGING_APPS',
     default=[
@@ -495,13 +496,12 @@ LOGGING_APPS = env.list(
         'taskflowbackend',
     ],
 )
-
 LOGGING_FILE_PATH = env.str('LOGGING_FILE_PATH', None)
 
 
-def set_logging(debug, level=None):
+def set_logging(level=None):
     if not level:
-        level = 'DEBUG' if debug else 'ERROR'
+        level = 'DEBUG' if DEBUG else 'ERROR'
     app_logger_config = {
         'level': level,
         'handlers': ['console', 'file'] if LOGGING_FILE_PATH else ['console'],
@@ -534,7 +534,7 @@ def set_logging(debug, level=None):
     }
 
 
-LOGGING = set_logging(DEBUG)
+LOGGING = set_logging(LOGGING_LEVEL)
 
 
 # Sentry Client (Will be set up in production)
