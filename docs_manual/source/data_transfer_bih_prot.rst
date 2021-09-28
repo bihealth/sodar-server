@@ -181,4 +181,4 @@ steps again.
 	Landing zones can be created as often as needed, e.g. to upload raw data in
 	batches or iterativly, or to add new MaxQuants results.
 
-.. _Mathias Kuhring: mailto:mathias.kuhring@bihealth.de
+.. _Mathias Kuhring: mailto:mathias.kuhring@bih-charite.de

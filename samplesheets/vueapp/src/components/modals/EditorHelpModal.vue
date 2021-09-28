@@ -160,7 +160,7 @@
         <li>
           In case you get an error message when clicking "Finish Editing",
           please restore a previously saved sheet version and report the issue
-          to <a href="mailto:mikko.nieminen@bihealth.de">mikko.nieminen@bihealth.de</a>
+          to <a href="mailto:mikko.nieminen@bih-charite.de">mikko.nieminen@bih-charite.de</a>
           along with the project URL.
         </li>
         <li>A complete manual for editing is forthcoming as development proceeds.</li>

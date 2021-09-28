@@ -145,7 +145,7 @@ EMAIL_SUBJECT_PREFIX = env('EMAIL_SUBJECT_PREFIX', default='')
 
 # MANAGER CONFIGURATION
 # ------------------------------------------------------------------------------
-ADMINS = [("""Mikko Nieminen""", 'mikko.nieminen@bihealth.de')]
+ADMINS = [("""Mikko Nieminen""", 'mikko.nieminen@bih-charite.de')]
 
 # See: https://docs.djangoproject.com/en/3.2/ref/settings/#managers
 MANAGERS = ADMINS
@@ -646,7 +646,7 @@ ADMINALERTS_PAGINATION = env.int('ADMINALERTS_PAGINATION', 15)
 
 # SODAR site specific settings (not derived from SODAR Core)
 SODAR_SUPPORT_EMAIL = env.str(
-    'SODAR_SUPPORT_EMAIL', 'cubi-helpdesk@bihealth.de'
+    'SODAR_SUPPORT_EMAIL', 'cubi-helpdesk@bih-charite.de'
 )
 SODAR_SUPPORT_NAME = env.str('SODAR_SUPPORT_NAME', 'CUBI Helpdesk')
 
