@@ -45,7 +45,7 @@ class TestSampleSheetsPermissions(
         )
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
-        self.ticket = self._make_ticket(
+        self.ticket = self.make_ticket(
             project=self.project,
             path='/some/path',
             study=self.study,

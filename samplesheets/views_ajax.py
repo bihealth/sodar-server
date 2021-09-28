@@ -1590,9 +1590,12 @@ class SheetEditConfigAjaxView(EditConfigMixin, SODARBaseProjectAjaxView):
 
     # TODO: Add node name for logging/timeline
     def post(self, request, *args, **kwargs):
+        fields = request.data.get('fields')
+        if not fields:
+            return Response({'detail': 'No fields provided'}, status=400)
+
         timeline = get_backend_api('timeline_backend')
         project = self.get_project()
-        fields = request.data.get('fields')
         sheet_config = app_settings.get_app_setting(
             APP_NAME, 'sheet_config', project=project
         )
@@ -1709,18 +1712,19 @@ class StudyDisplayConfigAjaxView(SODARBaseProjectAjaxView):
     permission_required = 'samplesheets.view_sheet'
 
     def post(self, request, *args, **kwargs):
-        timeline = get_backend_api('timeline_backend')
-        study_uuid = self.kwargs.get('study')
-        study = Study.objects.filter(sodar_uuid=study_uuid).first()
-        if not study:
-            return Response({'detail': 'Study not found'}, status=404)
-        project = study.investigation.project
         study_config = request.data.get('study_config')
         if not study_config:
             return Response(
                 {'detail': 'No study configuration provided'}, status=400
             )
 
+        study_uuid = self.kwargs.get('study')
+        study = Study.objects.filter(sodar_uuid=study_uuid).first()
+        if not study:
+            return Response({'detail': 'Study not found'}, status=404)
+
+        timeline = get_backend_api('timeline_backend')
+        project = study.investigation.project
         # Set current configuration as default if selected
         set_default = request.data.get('set_default')
         ret_default = False
