@@ -234,6 +234,11 @@ urls_ajax = [
         name='ajax_edit_row_delete',
     ),
     url(
+        regex=r'^ajax/version/save/(?P<project>[0-9a-f-]+)$',
+        view=samplesheets.views_ajax.SheetVersionSaveAjaxView.as_view(),
+        name='ajax_version_save',
+    ),
+    url(
         regex=r'^ajax/edit/finish/(?P<project>[0-9a-f-]+)$',
         view=samplesheets.views_ajax.SheetEditFinishAjaxView.as_view(),
         name='ajax_edit_finish',

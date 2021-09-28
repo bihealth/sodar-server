@@ -40,6 +40,7 @@ Added
     - Sheet version description (#754)
     - Batch sheet version deletion (#773)
     - Assay app support for "transcriptome profiling" measurement type (#1255)
+    - Saving version with description in editor UI (#1109)
 
 Changed
 -------
@@ -72,6 +73,7 @@ Changed
     - Replace version compare menu with operation dropdown entry (#1251)
     - Update subpage navigation (#1252)
     - General refactoring (#1248, #1250, #1253)
+    - Move Ajax view version saving to ``SheetVersionMixin`` (#1109)
 
 Fixed
 -----
@@ -103,6 +105,7 @@ Removed
     - ``_list_buttons.html`` template (#1205)
 - **Samplesheets**
     - ``SampleSheetVersionCompareForm`` (#1251)
+    - Unused ``config`` argument from ``SampleSheetIO.save_isa()``
 
 
 v0.10.1 (2021-07-07)

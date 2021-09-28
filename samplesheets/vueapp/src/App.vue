@@ -9,7 +9,8 @@
         :show-sub-page-callback="showSubPage"
         :toggle-edit-mode-callback="toggleEditMode"
         :editor-help-modal="$refs.editorHelpModal"
-        :win-export-modal="$refs.winExportModal">
+        :win-export-modal="$refs.winExportModal"
+        :version-save-modal="$refs.versionSaveModal">
     </page-header>
 
     <!-- Main container -->
@@ -184,6 +185,13 @@
         ref="ontologyEditModal">
     </ontology-edit-modal>
 
+    <!-- Editing: Version save modal -->
+    <version-save-modal
+        v-if="editMode"
+        :app="getApp()"
+        ref="versionSaveModal">
+    </version-save-modal>
+
     <!--<router-view/>-->
   </div>
 </template>
@@ -200,7 +208,8 @@ import ColumnToggleModal from './components/modals/ColumnToggleModal.vue'
 import ColumnConfigModal from './components/modals/ColumnConfigModal.vue'
 import EditorHelpModal from './components/modals/EditorHelpModal.vue'
 import WinExportModal from './components/modals/WinExportModal.vue'
-import OntologyEditModal from './components/modals/OntologyEditModal'
+import OntologyEditModal from './components/modals/OntologyEditModal.vue'
+import VersionSaveModal from './components/modals/VersionSaveModal.vue'
 import AssayShortcutCard from './components/AssayShortcutCard.vue'
 import DataCellEditor from './components/editors/DataCellEditor.vue'
 import ObjectSelectEditor from './components/editors/ObjectSelectEditor.vue'
@@ -256,6 +265,7 @@ export default {
       unsavedRow: null, // Info of currently unsaved row, or null if none
       updatingRow: false, // Row update in progress (bool)
       unsavedData: false, // Other updated data (bool)
+      versionSaved: true, // Status of current version saved as backup
       editingCell: false, // Cell editing in progress (bool)
       contentId: 'sodar-ss-vue-content',
       windowsOs: false,
@@ -280,6 +290,7 @@ export default {
     EditorHelpModal,
     WinExportModal,
     OntologyEditModal,
+    VersionSaveModal,
     AssayShortcutCard
   },
   created () {
@@ -585,8 +596,9 @@ export default {
         .then(
           data => {
             if (data.detail === 'ok') {
-              this.showNotification('Changes Saved', 'success', 1000)
+              this.showNotification('Saved', 'success', 1000)
               this.editDataUpdated = true
+              this.versionSaved = false
 
               // Update other occurrences of cell in UI
               const gridUuids = this.getStudyGridUuids()
@@ -1038,6 +1050,7 @@ export default {
               gridOptions.api.refreshCells({ force: true }) // for cellClass
               this.unsavedRow = null
               this.editDataUpdated = true
+              this.versionSaved = false
               this.showNotification('Row Inserted', 'success', 1000)
             } else {
               console.log('Row insert status: ' + data.detail) // DEBUG
@@ -1135,7 +1148,10 @@ export default {
     handleFinishEditing () {
       fetch('/samplesheets/ajax/edit/finish/' + this.projectUuid, {
         method: 'POST',
-        body: JSON.stringify({ updated: this.editDataUpdated }),
+        body: JSON.stringify({
+          updated: this.editDataUpdated,
+          version_saved: this.versionSaved
+        }),
         credentials: 'same-origin',
         headers: {
           Accept: 'application/json',
@@ -1163,6 +1179,10 @@ export default {
 
     setUnsavedData (unsaved) {
       this.unsavedData = unsaved
+    },
+
+    setVersionSaved (saved) {
+      this.versionSaved = saved
     },
 
     /* Data and App Access -------------------------------------------------- */
