@@ -26,6 +26,7 @@ describe('PageHeader.vue', () => {
         sheetSyncEnabled: false,
         sodarContext: JSON.parse(JSON.stringify(sodarContext)),
         unsavedRow: null,
+        versionSaved: true,
         windowsOs: false
       },
       handleNavCallback: jest.fn(),
@@ -35,6 +36,9 @@ describe('PageHeader.vue', () => {
         showModal: jest.fn()
       },
       winExportModal: {
+        showModal: jest.fn()
+      },
+      versionSaveModal: {
         showModal: jest.fn()
       }
     }
@@ -67,6 +71,9 @@ describe('PageHeader.vue', () => {
     // Edit badge
     expect(wrapper.find('#sodar-ss-badge-edit').exists()).toBe(false)
     expect(wrapper.find('#sodar-ss-link-edit-help').exists()).toBe(false)
+
+    // Save Version Button
+    expect(wrapper.find('#sodar-ss-btn-version-save').exists()).toBe(false)
 
     // Operations dropdown
     expect(wrapper.find('#sodar-ss-op-dropdown').exists()).toBe(true)
@@ -127,6 +134,9 @@ describe('PageHeader.vue', () => {
     // Edit badge
     expect(wrapper.find('#sodar-ss-badge-edit').exists()).toBe(false)
     expect(wrapper.find('#sodar-ss-link-edit-help').exists()).toBe(false)
+
+    // Save Version Button
+    expect(wrapper.find('#sodar-ss-btn-version-save').exists()).toBe(false)
 
     // Operations dropdown
     expect(wrapper.find('#sodar-ss-op-dropdown').exists()).toBe(true)
@@ -202,11 +212,25 @@ describe('PageHeader.vue', () => {
     expect(wrapper.find('#sodar-ss-badge-edit').exists()).toBe(true)
     expect(wrapper.find('#sodar-ss-link-edit-help').exists()).toBe(true)
 
+    // Save Version Button
+    expect(wrapper.find('#sodar-ss-btn-version-save').exists()).toBe(true)
+    expect(wrapper.find('#sodar-ss-btn-version-save').classes()).toContain('disabled')
+
     // Operations dropdown
     expect(wrapper.find('#sodar-ss-op-dropdown').exists()).toBe(false)
 
     // Finish editing button
     expect(wrapper.find('#sodar-ss-btn-edit-finish').exists()).toBe(true)
+  })
+
+  it('enables version save button with unsaved version', () => {
+    propsData.app.editMode = true
+    propsData.app.versionSaved = false
+    const wrapper = mount(PageHeader, { localVue, propsData: propsData })
+
+    // Finish editing button
+    expect(wrapper.find('#sodar-ss-btn-version-save').exists()).toBe(true)
+    expect(wrapper.find('#sodar-ss-btn-version-save').classes()).not.toContain('disabled')
   })
 
   it('renders disabled finish editing button with unsaved row', () => {
@@ -357,7 +381,6 @@ describe('PageHeader.vue', () => {
     expect(spyShowModal).not.toHaveBeenCalled()
     await wrapper.find('#sodar-ss-op-item-export').trigger('click')
     expect(spyShowModal).toHaveBeenCalled()
-
   })
 
   it('does not open winExportModal if os is not windows', async () => {
@@ -366,5 +389,16 @@ describe('PageHeader.vue', () => {
 
     await wrapper.find('#sodar-ss-op-item-export').trigger('click')
     expect(spyShowModal).not.toHaveBeenCalled()
+  })
+
+  it('opens versionSaveModal when save link is clicked', async () => {
+    propsData.app.editMode = true
+    propsData.app.versionSaved = false
+    const wrapper = mount(PageHeader, { localVue, propsData: propsData })
+    const spyShowModal = jest.spyOn(wrapper.props().versionSaveModal, 'showModal')
+
+    expect(spyShowModal).not.toHaveBeenCalled()
+    await wrapper.find('#sodar-ss-btn-version-save').trigger('click')
+    expect(spyShowModal).toHaveBeenCalled()
   })
 })
