@@ -1,8 +1,9 @@
 """Tests for UI views in the samplesheets app"""
 
-from cubi_tk.isa_tpl import _TEMPLATES as TK_TEMPLATES
 import json
 import os
+
+from cubi_tk.isa_tpl import _TEMPLATES as TK_TEMPLATES
 from urllib.parse import urlencode
 from zipfile import ZipFile
 
@@ -16,7 +17,7 @@ from test_plus.test import TestCase
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
-from projectroles.models import Role, SODAR_CONSTANTS
+from projectroles.models import Role, AppSetting, SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
 from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
 from projectroles.utils import build_secret
@@ -167,6 +168,10 @@ class TestProjectSheetsView(TestViewsBase):
 class TestSheetImportView(SheetImportMixin, TestViewsBase):
     """Tests for the investigation import view"""
 
+    def setUp(self):
+        super().setUp()
+        self.timeline = get_backend_api('timeline_backend')
+
     def test_render(self):
         """Test rendering the investigation import view"""
         with self.login(self.user):
@@ -180,9 +185,8 @@ class TestSheetImportView(SheetImportMixin, TestViewsBase):
 
     def test_post(self):
         """Test posting an ISA-Tab zip file in the import form"""
-        # Assert preconditions
-        self.assertEqual(Investigation.objects.all().count(), 0)
-        self.assertEqual(ISATab.objects.all().count(), 0)
+        self.assertEqual(Investigation.objects.count(), 0)
+        self.assertEqual(ISATab.objects.count(), 0)
 
         with open(SHEET_PATH, 'rb') as file:
             with self.login(self.user):
@@ -195,10 +199,9 @@ class TestSheetImportView(SheetImportMixin, TestViewsBase):
                     values,
                 )
 
-        # Assert postconditions
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(Investigation.objects.all().count(), 1)
-        self.assertEqual(ISATab.objects.all().count(), 1)
+        self.assertEqual(Investigation.objects.count(), 1)
+        self.assertEqual(ISATab.objects.count(), 1)
         isa_version = ISATab.objects.first()
         self.assertListEqual(isa_version.tags, ['IMPORT'])
         self.assertIsNotNone(isa_version.data['sheet_config'])
@@ -208,10 +211,18 @@ class TestSheetImportView(SheetImportMixin, TestViewsBase):
         """Test replacing an existing investigation by posting"""
         inv = self._import_isa_from_file(SHEET_PATH, self.project)
         uuid = inv.sodar_uuid
-
-        # Assert preconditions
-        self.assertEqual(Investigation.objects.all().count(), 1)
-        self.assertEqual(ISATab.objects.all().count(), 1)
+        app_settings.set_app_setting(
+            'samplesheets',
+            'display_config',
+            {},
+            project=self.project,
+            user=self.user,
+        )
+        self.assertEqual(Investigation.objects.count(), 1)
+        self.assertEqual(ISATab.objects.count(), 1)
+        self.assertEqual(
+            AppSetting.objects.filter(name='display_config').count(), 1
+        )
 
         with open(SHEET_PATH_SMALL2, 'rb') as file:
             with self.login(self.user):
@@ -224,11 +235,10 @@ class TestSheetImportView(SheetImportMixin, TestViewsBase):
                     values,
                 )
 
-        # Assert postconditions
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(Investigation.objects.all().count(), 1)
+        self.assertEqual(Investigation.objects.count(), 1)
         self.assertEqual(uuid, Investigation.objects.first().sodar_uuid)
-        self.assertEqual(ISATab.objects.all().count(), 2)
+        self.assertEqual(ISATab.objects.count(), 2)
         self.assertListEqual(
             ISATab.objects.all().order_by('-pk').first().tags,
             ['IMPORT', 'REPLACE'],
@@ -239,12 +249,14 @@ class TestSheetImportView(SheetImportMixin, TestViewsBase):
         self.assertIsNotNone(
             ISATab.objects.all().order_by('-pk').first().data['display_config']
         )
+        self.assertEqual(
+            AppSetting.objects.filter(name='display_config').count(), 0
+        )
 
     def test_post_replace_config_keep(self):
         """Test keeping configs when replacing"""
         inv = self._import_isa_from_file(SHEET_PATH, self.project)
         s_uuid = str(inv.studies.first().sodar_uuid)
-
         # Get and update config
         edited_field = {
             'name': 'age',
@@ -272,7 +284,6 @@ class TestSheetImportView(SheetImportMixin, TestViewsBase):
                     values,
                 )
 
-        # Assert postconditions
         self.assertEqual(response.status_code, 302)
         sheet_config = app_settings.get_app_setting(
             'samplesheets', 'sheet_config', project=self.project
@@ -295,9 +306,7 @@ class TestSheetImportView(SheetImportMixin, TestViewsBase):
         inv.irods_status = True
         inv.save()
         uuid = inv.sodar_uuid
-
-        # Assert precondition
-        self.assertEqual(Investigation.objects.all().count(), 1)
+        self.assertEqual(Investigation.objects.count(), 1)
 
         with open(SHEET_PATH_MINIMAL, 'rb') as file:
             with self.login(self.user):
@@ -310,19 +319,14 @@ class TestSheetImportView(SheetImportMixin, TestViewsBase):
                     values,
                 )
 
-        # Assert postconditions
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(Investigation.objects.all().count(), 1)
+        self.assertEqual(Investigation.objects.count(), 1)
         new_inv = Investigation.objects.first()
         self.assertEqual(uuid, new_inv.sodar_uuid)  # Should not have changed
 
     def test_post_critical_warnings(self):
         """Test posting an ISA-Tab which raises critical warnings in altamISA"""
-        timeline = get_backend_api('timeline_backend')
-
-        # Assert precondition
-        self.assertEqual(Investigation.objects.all().count(), 0)
-
+        self.assertEqual(Investigation.objects.count(), 0)
         with open(SHEET_PATH_CRITICAL, 'rb') as file:
             with self.login(self.user):
                 values = {'file_upload': file}
@@ -333,23 +337,19 @@ class TestSheetImportView(SheetImportMixin, TestViewsBase):
                     ),
                     values,
                 )
-
-        # Assert postconditions
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(Investigation.objects.all().count(), 0)
-
+        self.assertEqual(Investigation.objects.count(), 0)
         # Assert timeline event
-        tl_event = timeline.get_project_events(self.project).order_by('-pk')[0]
+        tl_event = self.timeline.get_project_events(self.project).order_by(
+            '-pk'
+        )[0]
         tl_status = tl_event.get_current_status()
         self.assertIsNotNone(tl_status.extra_data['warnings'])
 
     @override_settings(SHEETS_ALLOW_CRITICAL=True)
     def test_post_critical_warnings_allowed(self):
         """Test posting an ISA-Tab with critical warnings allowed"""
-        timeline = get_backend_api('timeline_backend')
-
-        # Assert precondition
-        self.assertEqual(Investigation.objects.all().count(), 0)
+        self.assertEqual(Investigation.objects.count(), 0)
 
         with open(SHEET_PATH_CRITICAL, 'rb') as file:
             with self.login(self.user):
@@ -362,20 +362,19 @@ class TestSheetImportView(SheetImportMixin, TestViewsBase):
                     values,
                 )
 
-        # Assert postconditions
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(Investigation.objects.all().count(), 1)
-
+        self.assertEqual(Investigation.objects.count(), 1)
         # Assert timeline event
-        tl_event = timeline.get_project_events(self.project).order_by('-pk')[0]
+        tl_event = self.timeline.get_project_events(self.project).order_by(
+            '-pk'
+        )[0]
         tl_status = tl_event.get_current_status()
         self.assertIsNotNone(tl_status.extra_data['warnings'])
 
     def test_post_multiple(self):
         """Test posting an ISA-Tab as multiple files"""
-        # Assert preconditions
-        self.assertEqual(Investigation.objects.all().count(), 0)
-        self.assertEqual(ISATab.objects.all().count(), 0)
+        self.assertEqual(Investigation.objects.count(), 0)
+        self.assertEqual(ISATab.objects.count(), 0)
 
         zf = ZipFile(os.fsdecode(SHEET_PATH))
         with self.login(self.user):
@@ -392,17 +391,15 @@ class TestSheetImportView(SheetImportMixin, TestViewsBase):
                 values,
             )
 
-        # Assert postconditions
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(Investigation.objects.all().count(), 1)
-        self.assertEqual(ISATab.objects.all().count(), 1)
+        self.assertEqual(Investigation.objects.count(), 1)
+        self.assertEqual(ISATab.objects.count(), 1)
         self.assertListEqual(ISATab.objects.first().tags, ['IMPORT'])
 
     def test_post_multiple_no_study(self):
         """Test posting an ISA-Tab as multiple files without required study"""
-        # Assert preconditions
-        self.assertEqual(Investigation.objects.all().count(), 0)
-        self.assertEqual(ISATab.objects.all().count(), 0)
+        self.assertEqual(Investigation.objects.count(), 0)
+        self.assertEqual(ISATab.objects.count(), 0)
 
         zf = ZipFile(os.fsdecode(SHEET_PATH))
         with self.login(self.user):
@@ -422,15 +419,13 @@ class TestSheetImportView(SheetImportMixin, TestViewsBase):
                 values,
             )
 
-        # Assert postconditions
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(Investigation.objects.all().count(), 0)
+        self.assertEqual(Investigation.objects.count(), 0)
 
     def test_post_multiple_no_assay(self):
         """Test posting an ISA-Tab as multiple files without required assay"""
-        # Assert preconditions
-        self.assertEqual(Investigation.objects.all().count(), 0)
-        self.assertEqual(ISATab.objects.all().count(), 0)
+        self.assertEqual(Investigation.objects.count(), 0)
+        self.assertEqual(ISATab.objects.count(), 0)
 
         zf = ZipFile(os.fsdecode(SHEET_PATH))
         with self.login(self.user):
@@ -450,15 +445,12 @@ class TestSheetImportView(SheetImportMixin, TestViewsBase):
                 values,
             )
 
-        # Assert postconditions
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(Investigation.objects.all().count(), 0)
+        self.assertEqual(Investigation.objects.count(), 0)
 
     def test_post_empty_assay(self):
         """Test posting an ISA-Tab with an empty assay table (should fail)"""
-        # Assert precondition
-        self.assertEqual(Investigation.objects.all().count(), 0)
-
+        self.assertEqual(Investigation.objects.count(), 0)
         with open(SHEET_PATH_EMPTY_ASSAY, 'rb') as file:
             with self.login(self.user):
                 values = {'file_upload': file}
@@ -469,16 +461,12 @@ class TestSheetImportView(SheetImportMixin, TestViewsBase):
                     ),
                     values,
                 )
-
-        # Assert postconditions
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(Investigation.objects.all().count(), 0)
+        self.assertEqual(Investigation.objects.count(), 0)
 
     def test_post_no_plugin_assay(self):
         """Test posting an ISA-Tab with an assay without plugin"""
-        # Assert precondition
-        self.assertEqual(Investigation.objects.all().count(), 0)
-
+        self.assertEqual(Investigation.objects.count(), 0)
         with open(SHEET_PATH_NO_PLUGIN_ASSAY, 'rb') as file:
             with self.login(self.user):
                 values = {'file_upload': file}
@@ -489,10 +477,8 @@ class TestSheetImportView(SheetImportMixin, TestViewsBase):
                     ),
                     values,
                 )
-
-        # Assert postconditions
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(Investigation.objects.all().count(), 1)
+        self.assertEqual(Investigation.objects.count(), 1)
         self.assertEqual(
             list(get_messages(response.wsgi_request))[1].message,
             self.get_assay_plugin_warning(Assay.objects.all().first()),
@@ -520,7 +506,6 @@ class TestSheetTemplateSelectView(TestViewsBase):
     def test_render_with_sheets(self):
         """Test rendering with sheets in project (should fail)"""
         self._import_isa_from_file(SHEET_PATH, self.project)
-
         with self.login(self.user):
             response = self.client.get(
                 reverse(
@@ -600,7 +585,6 @@ class TestSheetTemplateCreateFormView(TestViewsBase):
         }
 
         for t in settings.SHEETS_ENABLED_TEMPLATES:
-            # Assert preconditions
             self.assertIsNone(self.project.investigations.first())
 
             sheet_tpl = templates[t]
@@ -635,18 +619,16 @@ class TestSheetExcelExportView(TestViewsBase):
 
     def setUp(self):
         super().setUp()
-
         # Import investigation
         self.investigation = self._import_isa_from_file(
             SHEET_PATH, self.project
         )
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
+        self.timeline = get_backend_api('timeline_backend')
 
     def test_render_study(self):
         """Test rendering the Excel file for a study table"""
-        timeline = get_backend_api('timeline_backend')
-
         with self.login(self.user):
             response = self.client.get(
                 reverse(
@@ -654,18 +636,15 @@ class TestSheetExcelExportView(TestViewsBase):
                     kwargs={'study': self.study.sodar_uuid},
                 )
             )
-            self.assertEqual(response.status_code, 200)
-
-            # Assert data in timeline event
-            tl_event = timeline.get_project_events(
-                self.project, classified=True
-            ).order_by('-pk')[0]
-            self.assertEqual(tl_event.event_name, 'sheet_export_excel')
+        self.assertEqual(response.status_code, 200)
+        # Assert data in timeline event
+        tl_event = self.timeline.get_project_events(
+            self.project, classified=True
+        ).order_by('-pk')[0]
+        self.assertEqual(tl_event.event_name, 'sheet_export_excel')
 
     def test_render_assay(self):
         """Test rendering the Excel file for a assay table"""
-        timeline = get_backend_api('timeline_backend')
-
         with self.login(self.user):
             response = self.client.get(
                 reverse(
@@ -673,13 +652,12 @@ class TestSheetExcelExportView(TestViewsBase):
                     kwargs={'assay': self.assay.sodar_uuid},
                 )
             )
-            self.assertEqual(response.status_code, 200)
-
-            # Assert data in timeline event
-            tl_event = timeline.get_project_events(
-                self.project, classified=True
-            ).order_by('-pk')[0]
-            self.assertEqual(tl_event.event_name, 'sheet_export_excel')
+        self.assertEqual(response.status_code, 200)
+        # Assert data in timeline event
+        tl_event = self.timeline.get_project_events(
+            self.project, classified=True
+        ).order_by('-pk')[0]
+        self.assertEqual(tl_event.event_name, 'sheet_export_excel')
 
 
 class TestSheetISAExportView(TestViewsBase):
@@ -687,15 +665,14 @@ class TestSheetISAExportView(TestViewsBase):
 
     def setUp(self):
         super().setUp()
-
         # Import investigation
         self.investigation = self._import_isa_from_file(
             SHEET_PATH, self.project
         )
+        self.timeline = get_backend_api('timeline_backend')
 
     def test_get(self):
         """Test requesting a file from the ISA-Tab export view"""
-        timeline = get_backend_api('timeline_backend')
         with self.login(self.user):
             response = self.client.get(
                 reverse(
@@ -709,7 +686,7 @@ class TestSheetISAExportView(TestViewsBase):
             'attachment; filename="{}"'.format(self.investigation.archive_name),
         )
         # Assert data in timeline event
-        tl_event = timeline.get_project_events(
+        tl_event = self.timeline.get_project_events(
             self.project, classified=True
         ).order_by('-pk')[0]
         tl_status = tl_event.get_current_status()
@@ -757,7 +734,6 @@ class TestSheetDeleteView(TestViewsBase):
 
     def setUp(self):
         super().setUp()
-
         # Import investigation
         self.investigation = self._import_isa_from_file(
             SHEET_PATH, self.project
@@ -773,12 +749,22 @@ class TestSheetDeleteView(TestViewsBase):
                     kwargs={'project': self.project.sodar_uuid},
                 )
             )
-            self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
 
     def test_delete(self):
         """Test deleting the project sample sheets"""
-        self.assertEqual(Investigation.objects.all().count(), 1)
-        self.assertEqual(ISATab.objects.all().count(), 1)
+        app_settings.set_app_setting(
+            'samplesheets',
+            'display_config',
+            {},
+            project=self.project,
+            user=self.user,
+        )
+        self.assertEqual(Investigation.objects.count(), 1)
+        self.assertEqual(ISATab.objects.count(), 1)
+        self.assertEqual(
+            AppSetting.objects.filter(name='display_config').count(), 1
+        )
 
         with self.login(self.user):
             response = self.client.post(
@@ -797,13 +783,16 @@ class TestSheetDeleteView(TestViewsBase):
                 ),
             )
 
-        self.assertEqual(Investigation.objects.all().count(), 0)
-        self.assertEqual(ISATab.objects.all().count(), 0)
+        self.assertEqual(Investigation.objects.count(), 0)
+        self.assertEqual(ISATab.objects.count(), 0)
+        self.assertEqual(
+            AppSetting.objects.filter(name='display_config').count(), 0
+        )
 
     def test_delete_invalid_host(self):
         """Test deleting with an invalid host name supplied in form"""
-        self.assertEqual(Investigation.objects.all().count(), 1)
-        self.assertEqual(ISATab.objects.all().count(), 1)
+        self.assertEqual(Investigation.objects.count(), 1)
+        self.assertEqual(ISATab.objects.count(), 1)
 
         with self.login(self.user):
             response = self.client.post(
@@ -822,8 +811,8 @@ class TestSheetDeleteView(TestViewsBase):
                 ),
             )
 
-        self.assertEqual(Investigation.objects.all().count(), 1)
-        self.assertEqual(ISATab.objects.all().count(), 1)
+        self.assertEqual(Investigation.objects.count(), 1)
+        self.assertEqual(ISATab.objects.count(), 1)
 
 
 class TestSheetVersionListView(TestViewsBase):
@@ -845,8 +834,6 @@ class TestSheetVersionListView(TestViewsBase):
             )
 
         self.assertEqual(response.status_code, 200)
-
-        # Assert context data
         self.assertEqual(response.context['object_list'].count(), 1)
         self.assertEqual(
             response.context['current_version'],
@@ -878,7 +865,6 @@ class TestSheetVersionRestoreView(TestViewsBase):
 
     def setUp(self):
         super().setUp()
-
         # Import investigation
         self.investigation = self._import_isa_from_file(
             SHEET_PATH, self.project
@@ -898,7 +884,6 @@ class TestSheetVersionRestoreView(TestViewsBase):
                 )
             )
         self.assertEqual(response.status_code, 200)
-        # Assert context data
         self.assertIsNotNone(response.context['sheet_version'])
 
     def test_post(self):
@@ -909,10 +894,8 @@ class TestSheetVersionRestoreView(TestViewsBase):
             inv_uuid=self.investigation.sodar_uuid,
             isa_data=sheet_io.export_isa(self.investigation),
         )
-
-        # Assert preconditions
-        self.assertEqual(Investigation.objects.all().count(), 1)
-        self.assertEqual(ISATab.objects.all().count(), 2)
+        self.assertEqual(Investigation.objects.count(), 1)
+        self.assertEqual(ISATab.objects.count(), 2)
 
         with self.login(self.user):
             response = self.client.post(
@@ -922,15 +905,13 @@ class TestSheetVersionRestoreView(TestViewsBase):
                 )
             )
 
-        # Assert postconditions
         self.assertEqual(response.status_code, 302)
-
         isatab_latest = ISATab.objects.all().order_by('-date_created').first()
         self.assertNotEqual(
             isatab_latest.date_created, self.isatab.date_created
         )
-        self.assertEqual(Investigation.objects.all().count(), 1)
-        self.assertEqual(ISATab.objects.all().count(), 2)
+        self.assertEqual(Investigation.objects.count(), 1)
+        self.assertEqual(ISATab.objects.count(), 2)
 
 
 class TestSheetVersionUpdateView(TestViewsBase):
@@ -938,7 +919,6 @@ class TestSheetVersionUpdateView(TestViewsBase):
 
     def setUp(self):
         super().setUp()
-
         # Import investigation
         self.investigation = self._import_isa_from_file(
             SHEET_PATH, self.project
@@ -962,7 +942,7 @@ class TestSheetVersionUpdateView(TestViewsBase):
 
     def test_update(self):
         """Test updating the sheet version"""
-        self.assertEqual(ISATab.objects.all().count(), 1)
+        self.assertEqual(ISATab.objects.count(), 1)
         self.assertIsNone(self.isatab.description)
         date_created = self.isatab.date_created
         with self.login(self.user):
@@ -974,7 +954,7 @@ class TestSheetVersionUpdateView(TestViewsBase):
                 data={'description': SHEET_VERSION_DESC},
             )
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(ISATab.objects.all().count(), 1)
+        self.assertEqual(ISATab.objects.count(), 1)
         self.isatab.refresh_from_db()
         self.assertEqual(self.isatab.description, SHEET_VERSION_DESC)
         # The date should not change
@@ -986,7 +966,6 @@ class TestSheetVersionDeleteView(TestViewsBase):
 
     def setUp(self):
         super().setUp()
-
         # Import investigation
         self.investigation = self._import_isa_from_file(
             SHEET_PATH, self.project
@@ -1010,7 +989,7 @@ class TestSheetVersionDeleteView(TestViewsBase):
 
     def test_post(self):
         """Test issuing a POST request for the sheet version delete view"""
-        self.assertEqual(ISATab.objects.all().count(), 1)
+        self.assertEqual(ISATab.objects.count(), 1)
         with self.login(self.user):
             response = self.client.post(
                 reverse(
@@ -1019,7 +998,7 @@ class TestSheetVersionDeleteView(TestViewsBase):
                 )
             )
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(ISATab.objects.all().count(), 0)
+        self.assertEqual(ISATab.objects.count(), 0)
 
 
 class TestSheetVersionDeleteBatchView(SampleSheetModelMixin, TestViewsBase):
@@ -1027,7 +1006,6 @@ class TestSheetVersionDeleteBatchView(SampleSheetModelMixin, TestViewsBase):
 
     def setUp(self):
         super().setUp()
-
         # Import investigation
         self.investigation = self._import_isa_from_file(
             SHEET_PATH, self.project
@@ -1102,7 +1080,6 @@ class TestProjectSearchView(TestViewsBase):
 
     def setUp(self):
         super().setUp()
-
         # Import investigation
         self.investigation = self._import_isa_from_file(
             SHEET_PATH, self.project
@@ -1211,10 +1188,6 @@ class TestSheetVersionCompareView(TestViewsBase):
         super().setUp()
         self._import_isa_from_file(SHEET_PATH_SMALL2, self.project)
 
-        # Assert preconditions
-        self.assertEqual(Investigation.objects.count(), 1)
-        self.assertEqual(ISATab.objects.count(), 1)
-
         with open(SHEET_PATH_SMALL2_ALT, 'rb') as file, self.login(self.user):
             values = {'file_upload': file}
             self.client.post(
@@ -1225,7 +1198,6 @@ class TestSheetVersionCompareView(TestViewsBase):
                 values,
             )
 
-        self.assertEqual(ISATab.objects.count(), 2)
         self.isa1 = ISATab.objects.first()
         self.isa2 = ISATab.objects.last()
         self.isa2.data['studies']['s_small2.txt'] = self.isa2.data[
@@ -1277,10 +1249,6 @@ class TestSheetVersionCompareFileView(TestViewsBase):
         super().setUp()
         self._import_isa_from_file(SHEET_PATH_SMALL2, self.project)
 
-        # Assert preconditions
-        self.assertEqual(Investigation.objects.count(), 1)
-        self.assertEqual(ISATab.objects.count(), 1)
-
         with open(SHEET_PATH_SMALL2_ALT, 'rb') as file, self.login(self.user):
             values = {'file_upload': file}
             self.client.post(
@@ -1291,7 +1259,6 @@ class TestSheetVersionCompareFileView(TestViewsBase):
                 values,
             )
 
-        self.assertEqual(ISATab.objects.count(), 2)
         self.isa1 = ISATab.objects.first()
         self.isa2 = ISATab.objects.last()
         self.isa2.data['studies']['s_small2.txt'] = self.isa2.data[

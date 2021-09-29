@@ -77,6 +77,7 @@ Changed
     - Update subpage navigation (#1252)
     - General refactoring (#1248, #1250, #1253)
     - Move Ajax view version saving to ``SheetVersionMixin`` (#1109)
+    - Use ``AppSettingAPI.delete_setting()`` for display config deletion (#854)
 
 Fixed
 -----

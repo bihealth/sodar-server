@@ -38,7 +38,6 @@ from projectroles.email import send_generic_mail
 from projectroles.models import (
     Project,
     SODAR_CONSTANTS,
-    AppSetting,
     RoleAssignment,
 )
 from projectroles.plugins import get_backend_api
@@ -356,12 +355,9 @@ class SheetImportMixin:
         if action == 'replace':
             if self.replace_configs:
                 logger.debug('Deleting existing user display configurations..')
-                # TODO: Use deletion method once implemented (sodar_core#538)
-                AppSetting.objects.filter(
-                    app_plugin__name=APP_NAME,
-                    name='display_config',
-                    project=project,
-                ).delete()
+                app_settings.delete_setting(
+                    APP_NAME, 'display_config', project=project
+                )
             else:
                 logger.debug('Keeping existing configurations')
                 sheet_config = app_settings.get_app_setting(
@@ -1490,12 +1486,9 @@ class SheetDeleteView(
             app_settings.set_app_setting(
                 APP_NAME, 'display_config_default', {}, project=project
             )
-            # TODO: Use deletion method once implemented (sodar_core#538)
-            AppSetting.objects.filter(
-                app_plugin__name=APP_NAME,
-                name='display_config',
-                project=project,
-            ).delete()
+            app_settings.delete_setting(
+                APP_NAME, 'display_config', project=project
+            )
             messages.success(self.request, 'Sample sheets deleted.')
 
         return redirect(redirect_url)
