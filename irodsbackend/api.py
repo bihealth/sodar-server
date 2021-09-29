@@ -33,6 +33,11 @@ ACCEPTED_PATH_TYPES = [
 ]
 NAME_LIKE_OVERHEAD = 23  # Magic number for query overhead for name filtering
 NAME_LIKE_MAX_LEN = 2200  # Magic number for maximum length of name filters
+ENV_INT_PARAMS = [
+    'irods_encryption_key_size',
+    'irods_encryption_num_hash_rounds',
+    'irods_encryption_salt_size',
+]
 
 
 logger = logging.getLogger(__name__)
@@ -58,6 +63,10 @@ class IrodsAPI:
         # Get optional server side environment dict
         if settings.IRODS_ENV_BACKEND:
             self.irods_env = settings.IRODS_ENV_BACKEND
+            # HACK: Ensure there are no type errors
+            for k in self.irods_env.keys():
+                if k in ENV_INT_PARAMS:
+                    self.irods_env[k] = int(self.irods_env[k])
             logger.debug(
                 'Read iRODS env from IRODS_ENV_BACKEND: {}'.format(
                     self.irods_env

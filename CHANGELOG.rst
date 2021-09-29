@@ -90,6 +90,7 @@ Fixed
     - Missing cleanup in command test ``tearDown()`` (#1244)
 - **Irodsbackend**
     - Redundant slash prefix for root level items in collection list (#1245)
+    - ``IRODS_ENV_BACKEND`` value conversion issues (#1259)
 - **Landingzones**
     - ``PROJECTROLES_SEND_EMAIL`` not checked in Taskflow views (#1229)
 - **Samplesheets**
