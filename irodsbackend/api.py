@@ -46,13 +46,13 @@ logger = logging.getLogger(__name__)
 class IrodsAPI:
     """iRODS API to be used by Django apps"""
 
+    #: iRODS session or None if not initialized
+    irods = None
+
     class IrodsQueryException(Exception):
-        """Irods query exception"""
+        """iRODS query exception"""
 
     def __init__(self, conn=True, user_name=None, user_pass=None):
-        # conn = kwargs.get('conn') or True
-        self.irods = None
-        self.irods_env = {}
         if not conn:
             return
         if not user_name:
@@ -60,20 +60,19 @@ class IrodsAPI:
         if not user_pass:
             user_pass = settings.IRODS_PASS
 
-        # Get optional server side environment dict
-        if settings.IRODS_ENV_BACKEND:
-            self.irods_env = settings.IRODS_ENV_BACKEND
-            # HACK: Ensure there are no type errors
-            for k in self.irods_env.keys():
-                if k in ENV_INT_PARAMS:
-                    self.irods_env[k] = int(self.irods_env[k])
-            logger.debug(
-                'Read iRODS env from IRODS_ENV_BACKEND: {}'.format(
-                    self.irods_env
-                )
-            )
+        # Set up additional iRODS environment variables
+        irods_env = dict(settings.IRODS_ENV_DEFAULT)
+        if settings.IRODS_CERT_PATH:
+            irods_env[
+                'irods_ssl_ca_certificate_file'
+            ] = settings.IRODS_CERT_PATH
+        irods_env.update(dict(settings.IRODS_ENV_BACKEND))
+        # HACK: Clean up environment to avoid python-irodsclient crash
+        for k in irods_env.keys():
+            if k in ENV_INT_PARAMS:
+                irods_env[k] = int(irods_env[k])
+        logger.debug('iRODS environment: {}'.format(irods_env))
 
-        # Connect
         try:
             self.irods = iRODSSession(
                 host=settings.IRODS_HOST,
@@ -81,7 +80,7 @@ class IrodsAPI:
                 user=user_name,
                 password=user_pass,
                 zone=settings.IRODS_ZONE,
-                **self.irods_env,
+                **irods_env,
             )
             # Ensure we have a connection
             self.irods.collections.exists(
@@ -161,9 +160,7 @@ class IrodsAPI:
             response = conn.recv()
         return response
 
-    ##########
-    # Helpers
-    ##########
+    # Helpers ------------------------------------------------------------------
 
     @classmethod
     def get_sub_path(cls, obj, landing_zone=False, include_parent=True):

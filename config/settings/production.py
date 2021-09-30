@@ -160,3 +160,20 @@ ENABLED_BACKEND_PLUGINS = env.list(
         'omics_irods',
     ],
 )
+
+
+# iRODS settings shared by iRODS using apps
+# NOTE: irods_ssl_ca_certificate_file should be defined in IRODS_CERT_PATH
+IRODS_ENV_DEFAULT = env.dict(
+    'IRODS_ENV_DEFAULT',
+    default={
+        'irods_client_server_negotiation': 'request_server_negotiation',
+        'irods_client_server_policy': 'CS_NEG_REQUIRE',
+        'irods_default_hash_scheme': 'MD5',
+        'irods_encryption_algorithm': 'AES-256-CBC',
+        'irods_encryption_key_size': 32,
+        'irods_encryption_num_hash_rounds': 16,
+        'irods_encryption_salt_size': 8,
+        'irods_ssl_verify_server': 'cert',
+    },
+)

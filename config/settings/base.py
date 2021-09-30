@@ -661,14 +661,18 @@ IRODS_USER = env.str('IRODS_USER', 'rods')
 IRODS_PASS = env.str('IRODS_PASS', 'rods')
 IRODS_SAMPLE_COLL = env.str('IRODS_SAMPLE_COLL', 'sample_data')
 IRODS_LANDING_ZONE_COLL = env.str('IRODS_LANDING_ZONE_COLL', 'landing_zones')
-# Optional iRODS env for backend connections
+
+# Default iRODS environment for backend and client connections
+# NOTE: irods_ssl_ca_certificate_file should be defined in IRODS_CERT_PATH
+IRODS_ENV_DEFAULT = env.dict(
+    'IRODS_ENV_DEFAULT', default={'irods_default_hash_scheme': 'MD5'}
+)
+# iRODS environment overrides for backend connections
 IRODS_ENV_BACKEND = env.dict('IRODS_ENV_BACKEND', default={})
-# Optional iRODS env for client connections
+# iRODS environment overrides for client connections
 IRODS_ENV_CLIENT = env.dict('IRODS_ENV_CLIENT', default={})
 # Optional iRODS certificate path on server
-IRODS_CERT_PATH = env.str(
-    'IRODS_CERT_PATH', STATIC_ROOT + '/irods/irods_server_crt.txt'
-)
+IRODS_CERT_PATH = env.str('IRODS_CERT_PATH', None)
 
 
 # Taskflow backend settings

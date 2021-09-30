@@ -18,7 +18,8 @@ Added
     - ``LOGGING_LEVEL`` setting (sodar_core#822)
     - ``PROJECTROLES_EMAIL_HEADER`` and ``PROJECTROLES_EMAIL_FOOTER`` settings (#1231)
 - **Irodsbackend**
-    - Add ``colls`` parameter to list retrieval (#1156)
+    - ``colls`` parameter in list retrieval (#1156)
+    - ``IRODS_ENV_DEFAULT`` setting (#1260)
 - **Landingzones**
     - ``busyzones`` management command (#1212)
     - App alerts for sheet cache updates (#1000)
@@ -57,9 +58,11 @@ Changed
     - Retrieve iRODS config from ``IRODS_ENV_BACKEND`` setting (#1221)
     - Use data attributes in templates (sodar_core#530)
     - Rename ``data_objects`` to ``irods_data`` in return data (#1156)
+    - Get default iRODS environment values from default env (#1260)
 - **Irodsinfo**
     - Retrieve iRODS config from ``IRODS_ENV_CLIENT`` setting (#1221)
     - Display ``IRODS_ENV_CLIENT`` in siteinfo via ``info_settings``
+    - Get default iRODS environment values from default env (#1260)
 - **Landingzones**
     - Do not load finished landing zones in zone list view (#1205)
     - Rename ``STATUS_ALLOW_CLEAR`` to ``STATUS_FINISHED`` (#1205)
