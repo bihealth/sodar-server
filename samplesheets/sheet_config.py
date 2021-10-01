@@ -190,7 +190,7 @@ class SheetConfigAPI:
         for study in investigation.studies.all().order_by('pk'):
             # Build tables (disable use_config in case we are replacing sheets)
             study_tables = tb.build_study_tables(
-                study, edit=True, use_config=False
+                study, edit=True, use_config=False, ui=False
             )
             study_data = {
                 'display_name': study.get_display_name(),
@@ -242,7 +242,7 @@ class SheetConfigAPI:
         tb = SampleSheetTableBuilder()
         for study in investigation.studies.all():
             study_tables = tb.build_study_tables(
-                study, edit=True, use_config=False
+                study, edit=True, use_config=False, ui=False
             )
             s_uuid = str(study.sodar_uuid)
             sheet_config['studies'][s_uuid] = cls._restore_config_table(
@@ -302,7 +302,7 @@ class SheetConfigAPI:
         for study in investigation.studies.all().order_by('pk'):
             study_uuid = str(study.sodar_uuid)
             study_tables = tb.build_study_tables(
-                study, edit=False, use_config=False
+                study, edit=False, use_config=False, ui=False
             )
             h_idx = 0
             study_data = {'nodes': [], 'assays': {}}

@@ -81,6 +81,7 @@ Changed
     - General refactoring (#1248, #1250, #1253)
     - Move Ajax view version saving to ``SheetVersionMixin`` (#1109)
     - Use ``AppSettingAPI.delete_setting()`` for display config deletion (#854)
+    - Make UI specific data optional in ``build_study_tables()`` (#694)
 
 Fixed
 -----
@@ -114,6 +115,7 @@ Removed
 - **Samplesheets**
     - ``SampleSheetVersionCompareForm`` (#1251)
     - Unused ``config`` argument from ``SampleSheetIO.save_isa()``
+    - Unused ``basic_val`` arg from ``_add_cell()`` (#1262)
 
 
 v0.10.1 (2021-07-07)

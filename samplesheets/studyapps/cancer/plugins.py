@@ -303,7 +303,7 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                 vcf_paths = {}
 
                 # Build render table
-                study_tables = tb.build_study_tables(study)
+                study_tables = tb.build_study_tables(study, ui=False)
 
                 for library in get_study_libraries(study, study_tables):
                     if not library.assay:

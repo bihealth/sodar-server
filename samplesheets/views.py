@@ -1262,7 +1262,7 @@ class SheetExcelExportView(
         # Build study tables
         tb = SampleSheetTableBuilder()
         try:
-            tables = tb.build_study_tables(study)
+            tables = tb.build_study_tables(study, ui=False)
         except Exception as ex:
             messages.error(
                 self.request, 'Unable to render table for export: {}'.format(ex)

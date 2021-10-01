@@ -33,7 +33,7 @@ def get_assay_subcollections(studies, irods_backend):
 
     for study in studies:
         try:
-            study_tables = tb.build_study_tables(study)
+            study_tables = tb.build_study_tables(study, ui=False)
         except Exception as ex:
             logger.error(
                 'Study table building exception for "{}" '

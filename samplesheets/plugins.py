@@ -879,7 +879,7 @@ class SampleSheetAssayPluginPoint(PluginPoint):
 
         # Get assay paths
         for study in studies:
-            study_tables = tb.build_study_tables(study)
+            study_tables = tb.build_study_tables(study, ui=False)
 
             for assay in [a for a in study.assays.all() if a in config_assays]:
                 assay_table = study_tables['assays'][str(assay.sodar_uuid)]

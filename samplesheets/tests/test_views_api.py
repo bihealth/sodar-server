@@ -520,7 +520,9 @@ class TestRemoteSheetGetAPIView(
         tb = SampleSheetTableBuilder()
         expected = {
             'studies': {
-                str(self.study.sodar_uuid): tb.build_study_tables(self.study)
+                str(self.study.sodar_uuid): tb.build_study_tables(
+                    self.study, ui=False
+                )
             }
         }
         self.assertEqual(response.status_code, 200)

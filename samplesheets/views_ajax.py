@@ -579,7 +579,9 @@ class StudyTablesAjaxView(SODARBaseProjectAjaxView):
         tb = SampleSheetTableBuilder()
 
         try:
-            ret_data['tables'] = tb.build_study_tables(study, edit=edit)
+            ret_data['tables'] = tb.build_study_tables(
+                study, edit=edit, ui=True
+            )
         except Exception as ex:
             # Raise if we are in debug mode
             if settings.DEBUG:
@@ -678,7 +680,7 @@ class StudyLinksAjaxView(SODARBaseProjectAjaxView):
         ret_data = {'study': {'display_name': study.get_display_name()}}
         tb = SampleSheetTableBuilder()
         try:
-            study_tables = tb.build_study_tables(study)
+            study_tables = tb.build_study_tables(study, ui=False)
         except Exception as ex:
             # TODO: Log error
             ret_data['render_error'] = str(ex)
@@ -1092,6 +1094,7 @@ class SheetRowInsertAjaxView(BaseSheetEditAjaxView):
                 comp_study = tb.build_study_tables(
                     Study.objects.filter(sodar_uuid=row['study']).first(),
                     edit=True,
+                    ui=False,
                 )
             except Exception as ex:
                 self._raise_ex(

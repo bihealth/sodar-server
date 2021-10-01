@@ -329,7 +329,7 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                 vcf_paths = {}
                 prev_query_id = None
                 # Build render table
-                study_tables = tb.build_study_tables(study)
+                study_tables = tb.build_study_tables(study, ui=False)
                 sources = GenericMaterial.objects.filter(
                     study=study, item_type='SOURCE'
                 )

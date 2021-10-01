@@ -407,7 +407,7 @@ class RemoteSheetGetAPIView(APIView):
             # Build study tables
             for study in investigation.studies.all():
                 try:
-                    tables = tb.build_study_tables(study)
+                    tables = tb.build_study_tables(study, ui=False)
                 except Exception as ex:
                     return Response(str(ex), status=500)
                 ret['studies'][str(study.sodar_uuid)] = tables
