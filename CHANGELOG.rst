@@ -70,6 +70,7 @@ Changed
     - Hide zones with ``NOT CREATED`` status from detail card (#1236)
     - Handle ``NOT CREATED`` landing zone status (#1237)
     - Use ``CurrentUserFormMixin`` in forms (#660)
+    - Enable automated collection generation by default in UI (#1266)
 - **Samplesheets**
     - Move ``TestSheetSyncBase`` into ``test_views_taskflow``
     - Update app setting labels (#1230)
@@ -97,6 +98,7 @@ Fixed
     - ``IRODS_ENV_BACKEND`` value conversion issues (#1259)
 - **Landingzones**
     - ``PROJECTROLES_SEND_EMAIL`` not checked in Taskflow views (#1229)
+    - Collection hint alert from zone list UI (#1266)
 - **Samplesheets**
     - Missing label for ``public_access_ticket`` app setting (#1230)
     - Incorrect ``ISATab`` timestamp in export and compare dropdown (#1247)
