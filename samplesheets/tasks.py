@@ -117,6 +117,8 @@ def sheet_sync_task(_self, username):
         logger.error('User not found (username={})'.format(username))
         return False
 
+    from samplesheets.views import SheetRemoteSyncAPI
+
     timeline = get_backend_api('timeline_backend')
     tl_add = False
     tl_status_type = 'OK'
@@ -134,8 +136,6 @@ def sheet_sync_task(_self, username):
         sheet_sync_token = app_settings.get_app_setting(
             APP_NAME, 'sheet_sync_token', project=project
         )
-
-        from samplesheets.views import SheetRemoteSyncAPI
 
         sync = SheetRemoteSyncAPI()
         try:
