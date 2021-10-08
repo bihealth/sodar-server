@@ -68,8 +68,7 @@ For detailed information, see
 - Apps should not import code directly from other SODAR Core apps
     * Please use plugins to avoid hardcoded imports
     * See existing plugins for examples on what you need to implement and how
-- Importing code between SODAR apps is OK when it is deemed to be a sensible
-  approach
+- Importing code between SODAR apps within a single site is OK when appropriate
     * E.g. the ``landingzones`` app wouldn't exist without ``samplesheets``,
       thus hardcoded imports are acceptable.
 

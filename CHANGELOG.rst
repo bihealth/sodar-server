@@ -91,6 +91,7 @@ Fixed
     - API version settings not updated (#1218)
     - Disable cache as workaround for Docker build issues (#1225)
     - Github Actions CI failure by old package version (sodar_core#821)
+    - Build warning in ``docs_dev`` (#1182)
 - **Irodsadmin**
     - Missing cleanup in command test ``tearDown()`` (#1244)
 - **Irodsbackend**
