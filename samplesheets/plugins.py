@@ -579,14 +579,21 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         :param name: Item name to limit update to (string, optional)
         :param project: Project object to limit update to (optional)
         :param user: User object to denote user triggering the update (optional)
+        :raise: Exception if required backends (sodar_cache and omics_irods)
+                are not found.
         """
-        try:
-            cache_backend = get_backend_api('sodar_cache')
-            irods_backend = get_backend_api('omics_irods')
-        except Exception:
-            return
+        cache_backend = get_backend_api('sodar_cache')
+        irods_backend = get_backend_api('omics_irods')
         if not cache_backend or not irods_backend:
-            return
+            backends = {
+                'cache_backend': cache_backend,
+                'irods_backend': irods_backend,
+            }
+            raise Exception(
+                'Required backend(s) not found: {}'.format(', ').join(
+                    [b for b in backends.keys() if not backends[b]]
+                )
+            )
 
         # Study sub-app plugins
         for study_plugin in SampleSheetStudyPluginPoint.get_plugins():

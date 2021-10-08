@@ -35,7 +35,7 @@ Added
     - Simple link support for string cell rendering (#1001)
     - ``generic_raw`` assay plugin (#1128)
     - Overriding assay plugin via assay comment (#1128)
-    - App alerts for sheet cache updates (#1000)
+    - App alerts for sheet cache updates (#1000, #1265)
     - Tooltip to clarify the Finish Editing button (#1109)
     - Tooltips for buttons disabled due to an unsaved row (#1056)
     - Default ontology column value (#1061)
@@ -102,6 +102,7 @@ Fixed
 - **Samplesheets**
     - Missing label for ``public_access_ticket`` app setting (#1230)
     - Incorrect ``ISATab`` timestamp in export and compare dropdown (#1247)
+    - Unhandled backend exceptions in ``update_project_cache_task()`` (#1265)
 
 Removed
 -------

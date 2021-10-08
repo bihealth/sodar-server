@@ -34,7 +34,7 @@ def update_project_cache_task(
     :param project_uuid: Project UUID for cache item
     :param user_uuid: User UUID or None
     :param add_alert: Add app alert for action if True (bool, default=False)
-    :param alert_msg: Additional for alert (string, optional)
+    :param alert_msg: Additional message for app alert (string, optional)
     """
     try:
         project = Project.objects.get(sodar_uuid=project_uuid)
@@ -62,34 +62,50 @@ def update_project_cache_task(
         )
     )
     app_plugin = get_app_plugin(APP_NAME)
-    app_plugin.update_cache(project=project, user=user)
+
+    try:
+        app_plugin.update_cache(project=project, user=user)
+        tl_status_type = 'OK'
+        tl_status_desc = 'Update OK'
+        app_level = 'INFO'
+        app_msg = 'Sample sheet iRODS cache updated'
+        if alert_msg:
+            app_msg += ': {}'.format(alert_msg)
+        logger.info(
+            'Cache update OK for project "{}" ({})'.format(
+                project.title, project.sodar_uuid
+            )
+        )
+    except Exception as ex:
+        tl_status_type = 'FAILED'
+        tl_status_desc = 'Update failed: {}'.format(ex)
+        app_level = 'DANGER'
+        app_msg = 'Sample sheet iRODS cache update failed: {}'.format(ex)
+        logger.error(
+            'Cache update failed for project "{}" ({}): {}'.format(
+                project.title, project.sodar_uuid, ex
+            )
+        )
 
     if tl_event:
-        tl_event.set_status(status_type='OK', status_desc='Update OK')
-
+        tl_event.set_status(
+            status_type=tl_status_type, status_desc=tl_status_desc
+        )
     if add_alert and user:
         app_alerts = get_backend_api('appalerts_backend')
         if app_alerts:
-            msg = 'Sample sheet iRODS cache updated'
-            if alert_msg:
-                msg += ': {}'.format(alert_msg)
             app_alerts.add_alert(
                 app_name=APP_NAME,
                 alert_name='sheet_cache_update',
                 user=user,
-                message=msg,
+                message=app_msg,
+                level=app_level,
                 url=reverse(
                     'samplesheets:project_sheets',
                     kwargs={'project': project.sodar_uuid},
                 ),
                 project=project,
             )
-
-    logger.info(
-        'Cache update OK for project "{}" ({})'.format(
-            project.title, project.sodar_uuid
-        )
-    )
 
 
 @app.task(bind=True)
