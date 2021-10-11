@@ -9,7 +9,7 @@
         :href="extraLink.url"
         :disabled="!(getEnabledState() && extraLink.enabled)"
         v-b-tooltip.hover.d300.window>
-      <i :class="'fa ' + extraLink.icon"></i>
+      <i class="iconify" :data-icon="extraLink.icon"></i>
     </b-button>
     <b-button
         v-if="showFileList &&

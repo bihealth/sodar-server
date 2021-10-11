@@ -23,6 +23,7 @@ Major feature update.
 - Add "finished" parameter to LandingZoneListAPIView to access finished zones
 - Add locked status info to landingzones UI and LandingZoneRetrieveAPIView
 - Add descriptions and batch deletion for sample sheet versions
+- Add automatic study/assay table filtering from search results
 - Manual clearing of finished landing zones in UI no longer needed
 
 

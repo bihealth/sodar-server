@@ -44,6 +44,7 @@ Added
     - Batch sheet version deletion (#773)
     - Assay app support for "transcriptome profiling" measurement type (#1255)
     - Saving version with description in editor UI (#1109)
+    - Automatic study/assay table filtering from search results (#634)
 
 Changed
 -------
@@ -104,6 +105,8 @@ Fixed
     - Missing label for ``public_access_ticket`` app setting (#1230)
     - Incorrect ``ISATab`` timestamp in export and compare dropdown (#1247)
     - Unhandled backend exceptions in ``update_project_cache_task()`` (#1265)
+    - Vue app study navigation failure with additional URL params (#1269)
+    - Assay shortcut card extra link icons (#1271)
 
 Removed
 -------

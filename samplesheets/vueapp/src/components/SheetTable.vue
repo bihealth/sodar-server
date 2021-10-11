@@ -26,6 +26,7 @@
               type="text"
               placeholder="Filter"
               :id="'sodar-ss-data-filter-' + gridIdSuffix"
+              :value="filterValue"
               @keyup="onFilterChange" />
         </b-input-group>
         <b-button
@@ -75,7 +76,8 @@ export default {
     'columnDefs',
     'gridOptions',
     'gridUuid',
-    'rowData'
+    'rowData',
+    'initialFilter'
   ],
   data () {
     return {
@@ -85,7 +87,8 @@ export default {
       gridIdSuffix: null,
       gridReady: false,
       gridRef: null,
-      gridStyle: null
+      gridStyle: null,
+      filterValue: ''
     }
   },
   methods: {
@@ -120,6 +123,13 @@ export default {
       this.excelExportUrl = 'export/excel/assay/' + this.gridUuid
       this.gridIdSuffix = 'assay-' + this.gridUuid
       this.gridRef = 'assayGrid' + this.gridUuid
+    }
+  },
+  mounted () {
+    // Set initial filter
+    if (this.initialFilter) {
+      this.filterValue = this.initialFilter
+      this.gridOptions.api.setQuickFilter(this.initialFilter)
     }
   }
 }
