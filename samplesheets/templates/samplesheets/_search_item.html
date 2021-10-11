@@ -15,7 +15,7 @@
     <div class="sodar-overflow-container">
       {% highlight_search_term item.name search_terms as item_display_name %}
       {% if item.type != 'file' %}
-        <a href="{% url 'samplesheets:project_sheets' project=item.study.get_project.sodar_uuid %}#/study/{{ item.study.sodar_uuid }}">
+        <a href="{% get_material_search_url item %}">
           {{ item_display_name | safe }}
         </a>
       {% else %}

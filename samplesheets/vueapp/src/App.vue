@@ -50,7 +50,8 @@
             :column-defs="columnDefs.study"
             :grid-options="gridOptions.study"
             :grid-uuid="currentStudyUuid"
-            :row-data="rowData.study">
+            :row-data="rowData.study"
+            :initial-filter="initialFilter">
         </sheet-table>
 
         <!-- Assays -->
@@ -74,12 +75,13 @@
           </assay-shortcut-card>
 
           <sheet-table
-            :app="getApp()"
-            :assay-mode="true"
-            :column-defs="columnDefs.assays[assayUuid]"
-            :grid-options="gridOptions.assays[assayUuid]"
-            :grid-uuid="assayUuid"
-            :row-data="rowData.assays[assayUuid]">
+              :app="getApp()"
+              :assay-mode="true"
+              :column-defs="columnDefs.assays[assayUuid]"
+              :grid-options="gridOptions.assays[assayUuid]"
+              :grid-uuid="assayUuid"
+              :row-data="rowData.assays[assayUuid]"
+              :initial-filter="initialFilter">
           </sheet-table>
         </span>
 
@@ -221,6 +223,8 @@ import {
 } from './utils/gridUtils.js'
 
 const windowsPlatforms = ['Win32', 'Win64', 'Windows', 'WinCE']
+const filterRegex = /^\S+\/filter\/(?<filter>\S+)*$/
+const studyUrlRegex = /^\/(?<type>study|assay)\/(?<uuid>[0-9a-f-]+)\S*$/
 
 export default {
   name: 'App',
@@ -267,6 +271,7 @@ export default {
       unsavedData: false, // Other updated data (bool)
       versionSaved: true, // Status of current version saved as backup
       editingCell: false, // Cell editing in progress (bool)
+      initialFilter: null, // Initial value for table filter (from URL)
       contentId: 'sodar-ss-vue-content',
       windowsOs: false,
       /* NOTE: cell editor only works if provided through frameworkComponents? */
@@ -348,6 +353,10 @@ export default {
       // Clear additional data
       this.editContext = null
       this.unsavedRow = null
+
+      // Get initial filter state from URL
+      const filterMatch = filterRegex.exec(this.$route.fullPath)
+      if (filterMatch) this.initialFilter = filterMatch.groups.filter
 
       // Set up current study
       this.gridOptions.study = initGridOptions(this, editMode)
@@ -529,10 +538,13 @@ export default {
         this.showSubPage(pageId)
         this.setCurrentStudy(null)
         this.setCurrentAssay(null)
-      } else if (this.$route.fullPath.indexOf('/assay/') !== -1) {
-        this.activeSubPage = null
-        this.setCurrentAssay(this.$route.fullPath.substr(7))
+        return
+      }
 
+      const urlMatch = studyUrlRegex.exec(this.$route.fullPath)
+      if (this.$route.fullPath.indexOf('/assay/') !== -1) {
+        this.activeSubPage = null
+        this.setCurrentAssay(urlMatch.groups.uuid)
         for (const studyUuid in this.sodarContext.studies) {
           if (this.currentAssayUuid in
               this.sodarContext.studies[studyUuid].assays) {
@@ -542,7 +554,7 @@ export default {
         }
       } else if (this.$route.fullPath.indexOf('/study/') !== -1) {
         this.activeSubPage = null
-        this.setCurrentStudy(this.$route.fullPath.substr(7))
+        this.setCurrentStudy(urlMatch.groups.uuid)
         this.setCurrentAssay(null)
       }
     },
