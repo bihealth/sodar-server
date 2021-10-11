@@ -106,6 +106,7 @@ Fixed
     - Incorrect ``ISATab`` timestamp in export and compare dropdown (#1247)
     - Unhandled backend exceptions in ``update_project_cache_task()`` (#1265)
     - Vue app study navigation failure with additional URL params (#1269)
+    - Assay shortcut card extra link icons (#1271)
 
 Removed
 -------
