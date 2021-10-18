@@ -163,11 +163,9 @@ class TestSheetRemoteSyncTask(TestSheetRemoteSyncBase):
     """Tests for periodic sample sheet sync task"""
 
     def test_sync_task(self):
-        """Test sync sheet"""
-        # Perform sync
-        sheet_sync_task(self.user.username)
+        """Test sync"""
+        sheet_sync_task()
 
-        # Check if target synced correctly
         self.assertEqual(self.project_source.investigations.count(), 1)
         self.assertEqual(
             self.project_source.investigations.first().studies.count(), 1
@@ -196,14 +194,12 @@ class TestSheetRemoteSyncTask(TestSheetRemoteSyncBase):
         data_source = ISATab.objects.get(
             investigation_uuid=self.inv_source.sodar_uuid
         ).data
-
         self.assertEqual(data_target, data_source)
 
     def test_sync_existing_source_newer(self):
-        """Test sync sheet with existing sheet and changes in source sheet"""
+        """Test sync with existing sheet and changes in source sheet"""
         # Create investigation for target project
         self._import_isa_from_file(SHEET_PATH, self.project_target)
-
         # Update source investigation
         material = self.inv_source.studies.first().materials.get(
             unique_name=f'{self.p_id_source}-s0-source-0817'
@@ -231,10 +227,8 @@ class TestSheetRemoteSyncTask(TestSheetRemoteSyncBase):
             '150',
         )
 
-        # Do the sync
-        sheet_sync_task(self.user.username)
+        sheet_sync_task()
 
-        # Check if sync was performed correctly
         self.assertEqual(self.project_source.investigations.count(), 1)
         self.assertEqual(self.project_target.investigations.count(), 1)
         self.assertEqual(ISATab.objects.count(), 3)
@@ -254,8 +248,7 @@ class TestSheetRemoteSyncTask(TestSheetRemoteSyncBase):
         )
 
     def test_sync_existing_target_newer(self):
-        """Test sync sheet with existing sheet and changes in target sheet"""
-        # Create investigation for target project
+        """Test sync with existing sheet and changes in target sheet"""
         inv_target = self._import_isa_from_file(SHEET_PATH, self.project_target)
         material = inv_target.studies.first().materials.get(
             unique_name=f'{self.p_id_target}-s0-source-0817'
@@ -264,16 +257,12 @@ class TestSheetRemoteSyncTask(TestSheetRemoteSyncBase):
         material.save()
         inv_target.save()
         target_date_modified = inv_target.date_modified
-
-        # Check if both projects have an investigation
         self.assertEqual(self.project_source.investigations.count(), 1)
         self.assertEqual(self.project_target.investigations.count(), 1)
         self.assertEqual(ISATab.objects.count(), 2)
 
-        # Do the sync
-        sheet_sync_task(self.user.username)
+        sheet_sync_task()
 
-        # Check if sync was not performed
         self.assertEqual(self.project_source.investigations.count(), 1)
         self.assertEqual(self.project_target.investigations.count(), 1)
         self.assertEqual(ISATab.objects.count(), 2)
@@ -297,46 +286,40 @@ class TestSheetRemoteSyncTask(TestSheetRemoteSyncBase):
         )
 
     def test_sync_wrong_token(self):
-        """Test sync sheet with wrong token"""
+        """Test sync with wrong token"""
         app_settings.set_app_setting(
             APP_NAME,
             'sheet_sync_token',
             'WRONGTOKEN',
             project=self.project_target,
         )
-        # Perform sync
-        sheet_sync_task(self.user.username)
-        # Check if target synced correctly
+        sheet_sync_task()
         self.assertEqual(self.project_target.investigations.count(), 0)
 
     def test_sync_enabled_missing_token(self):
-        """Test sync sheet with missing token"""
+        """Test sync with missing token"""
         app_settings.set_app_setting(
             APP_NAME,
             'sheet_sync_token',
             '',
             project=self.project_target,
         )
-        # Perform sync
-        sheet_sync_task(self.user.username)
-        # Check if target synced correctly
+        sheet_sync_task()
         self.assertEqual(self.project_target.investigations.count(), 0)
 
     def test_sync_enabled_wrong_url(self):
-        """Test sync sheet with wrong url"""
+        """Test sync with wrong url"""
         app_settings.set_app_setting(
             APP_NAME,
             'sheet_sync_url',
             'https://qazxdfjajsrd.com',
             project=self.project_target,
         )
-        # Perform sync
-        sheet_sync_task(self.user.username)
-        # Check if target synced correctly
+        sheet_sync_task()
         self.assertEqual(self.project_target.investigations.count(), 0)
 
     def test_sync_enabled_url_to_nonexisting_sheet(self):
-        """Test sync sheet with url to nonexisting sheet"""
+        """Test sync with url to nonexisting sheet"""
         app_settings.set_app_setting(
             APP_NAME,
             'sheet_sync_url',
@@ -347,33 +330,27 @@ class TestSheetRemoteSyncTask(TestSheetRemoteSyncBase):
             ),
             project=self.project_target,
         )
-        # Perform sync
-        sheet_sync_task(self.user.username)
-        # Check if target synced correctly
+        sheet_sync_task()
         self.assertEqual(self.project_target.investigations.count(), 0)
 
     def test_sync_enabled_missing_url(self):
-        """Test sync sheet with missing url"""
+        """Test sync with missing url"""
         app_settings.set_app_setting(
             APP_NAME,
             'sheet_sync_url',
             '',
             project=self.project_target,
         )
-        # Perform sync
-        sheet_sync_task(self.user.username)
-        # Check if target synced correctly
+        sheet_sync_task()
         self.assertEqual(self.project_target.investigations.count(), 0)
 
     def test_sync_disabled(self):
-        """Test sync sheet disabled"""
+        """Test sync with sync disabled"""
         app_settings.set_app_setting(
             APP_NAME,
             'sheet_sync_enable',
             False,
             project=self.project_target,
         )
-        # Perform sync
-        sheet_sync_task(self.user.username)
-        # Check if target synced correctly
+        sheet_sync_task()
         self.assertEqual(self.project_target.investigations.count(), 0)

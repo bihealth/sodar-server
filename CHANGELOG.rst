@@ -84,6 +84,7 @@ Changed
     - Move Ajax view version saving to ``SheetVersionMixin`` (#1109)
     - Use ``AppSettingAPI.delete_setting()`` for display config deletion (#854)
     - Make UI specific data optional in ``build_study_tables()`` (#694)
+    - Do not require user for ``sheet_sync_task`` (#1273)
 
 Fixed
 -----

@@ -109,14 +109,8 @@ def update_project_cache_task(
 
 
 @app.task(bind=True)
-def sheet_sync_task(_self, username):
+def sheet_sync_task(_self):
     """Task for synchronizing sample sheets from a source project"""
-    try:
-        user = User.objects.get(username=username)
-    except User.DoesNotExist:
-        logger.error('User not found (username={})'.format(username))
-        return False
-
     from samplesheets.views import SheetRemoteSyncAPI
 
     timeline = get_backend_api('timeline_backend')
@@ -137,9 +131,11 @@ def sheet_sync_task(_self, username):
             APP_NAME, 'sheet_sync_token', project=project
         )
 
-        sync = SheetRemoteSyncAPI()
+        sync_api = SheetRemoteSyncAPI()
         try:
-            ret = sync.run(project, sheet_sync_url, sheet_sync_token, user)
+            ret = sync_api.sync_sheets(
+                project, sheet_sync_url, sheet_sync_token, None
+            )
             if ret:
                 tl_add = True
         except Exception as ex:
@@ -153,7 +149,7 @@ def sheet_sync_task(_self, username):
             timeline.add_event(
                 project=project,
                 app_name=APP_NAME,
-                user=user,
+                user=None,
                 event_name='sheet_sync_task',
                 description='sync sheets from source project',
                 status_type=tl_status_type,
@@ -165,6 +161,6 @@ def sheet_sync_task(_self, username):
 def setup_periodic_tasks(sender, **kwargs):
     sender.add_periodic_task(
         settings.SHEETS_SYNC_INTERVAL * 60,
-        sheet_sync_task.s(settings.PROJECTROLES_DEFAULT_ADMIN),
+        sheet_sync_task.s(),
         name='sheet_sync_task',
     )

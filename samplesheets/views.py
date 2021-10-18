@@ -844,7 +844,7 @@ class SheetRemoteSyncAPI(SheetImportMixin):
     NOTE: Not used as a mixin because it is also called from the periodic task
     """
 
-    def run(self, project, url, token, user):
+    def sync_sheets(self, project, url, token, user):
         """
         Perform remote synchronization of sample sheets.
 
@@ -880,9 +880,8 @@ class SheetRemoteSyncAPI(SheetImportMixin):
             source_data = response.json()
         except json.JSONDecodeError as ex:
             raise ValueError(
-                'Error decoding JSON data: {}. Please check "sheet_sync_url" setting.'.format(
-                    ex
-                )
+                'Error decoding JSON data: {}. Please check "sheet_sync_url" '
+                'setting.'.format(ex)
             )
 
         source_date = datetime.datetime.strptime(
@@ -2518,7 +2517,7 @@ class SheetRemoteSyncView(
 
         sync = SheetRemoteSyncAPI()
         try:
-            ret = sync.run(
+            ret = sync.sync_sheets(
                 project,
                 sheet_sync_url,
                 sheet_sync_token,
