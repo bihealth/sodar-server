@@ -72,6 +72,7 @@ Changed
     - Handle ``NOT CREATED`` landing zone status (#1237)
     - Use ``CurrentUserFormMixin`` in forms (#660)
     - Enable automated collection generation by default in UI (#1266)
+    - Clarify collection creation message in UI (#1275)
 - **Samplesheets**
     - Move ``TestSheetSyncBase`` into ``test_views_taskflow``
     - Update app setting labels (#1230)

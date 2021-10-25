@@ -486,7 +486,7 @@ class ZoneCreateView(
                 form.cleaned_data.get('create_colls')
                 and 'sodar_cache' in settings.ENABLED_BACKEND_PLUGINS
             ):
-                msg += ' Collections created.'
+                msg += ' Collections will be created.'
             messages.warning(self.request, msg)
         except taskflow.FlowSubmitException as ex:
             messages.error(self.request, str(ex))
