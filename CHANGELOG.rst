@@ -55,6 +55,7 @@ Changed
     - Upgrade to Chromedriver v93 (sodar_core#772, #1254)
     - Upgrade to Node v12
     - Improve production logging (#1257)
+    - Upgrade to django-webpack-loader v1.4.1 (#1198)
 - **Irodsbackend**
     - Retrieve iRODS config from ``IRODS_ENV_BACKEND`` setting (#1221)
     - Use data attributes in templates (sodar_core#530)
@@ -109,6 +110,7 @@ Fixed
     - Unhandled backend exceptions in ``update_project_cache_task()`` (#1265)
     - Vue app study navigation failure with additional URL params (#1269)
     - Assay shortcut card extra link icons (#1271)
+    - Source map errors in production (#1198)
 
 Removed
 -------
