@@ -858,7 +858,8 @@ export default {
           if ((!valueRegex || (
             this.inputValid.regex &&
             valueRegex.test(this.fieldConfig.default))) && (
-            !numFormats.includes(this.fieldConfig.format) || (
+            !numFormats.includes(this.fieldConfig.format) ||
+              !this.fieldConfig.range[0] || (
               df >= parseFloat(this.fieldConfig.range[0]) &&
               df <= parseFloat(this.fieldConfig.range[1])
             ))) {

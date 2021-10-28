@@ -111,6 +111,7 @@ Fixed
     - Vue app study navigation failure with additional URL params (#1269)
     - Assay shortcut card extra link icons (#1271)
     - Source map errors in production (#1198)
+    - Numeric column default value invalid if range is unset (#1281)
 
 Removed
 -------

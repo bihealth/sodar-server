@@ -728,6 +728,34 @@ describe('ColumnConfigModal.vue', () => {
     expect(wrapper.vm.$refs.updateBtn.disabled).toBe(false)
   })
 
+  it('validates default value against empty range', async () => {
+    mountSheetTable()
+    const wrapper = mount(ColumnConfigModal, {
+      localVue, propsData: getPropsData({ app: app })
+    })
+    const modalParams = getShowModalParams('col2', {
+      colType: 'UNIT',
+      configNodeIdx: 0,
+      configFieldIdx: 2
+    })
+    modalParams.fieldConfig.range = [null, null]
+    wrapper.vm.showModal(modalParams)
+    await waitNT(wrapper.vm)
+    await waitRAF()
+
+    expect(wrapper.vm.fieldConfig.range).toEqual([null, null])
+    expect(wrapper.vm.fieldConfig.default).toBe('')
+    expect(wrapper.vm.formClasses.default).not.toContain('text-danger')
+    expect(wrapper.vm.$refs.updateBtn.disabled).toBe(false)
+
+    const fieldConfig = copy(wrapper.vm.fieldConfig)
+    fieldConfig.default = '5'
+    await wrapper.setData({ fieldConfig: fieldConfig })
+    await wrapper.find('#sodar-ss-col-input-range-min').vm.$emit('input')
+    expect(wrapper.vm.formClasses.default).not.toContain('text-danger')
+    expect(wrapper.vm.$refs.updateBtn.disabled).toBe(false)
+  })
+
   // TODO: Test regex validation
 
   /* Event handling --------------------------------------------------------- */
