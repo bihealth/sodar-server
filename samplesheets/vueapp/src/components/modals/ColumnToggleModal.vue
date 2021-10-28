@@ -117,7 +117,9 @@ export default {
       return topHeader.headerClass.join(' ')
     },
     getColumnVisibility (header) {
-      return this.columnApi.getColumn(header.field).visible
+      if (this.gridOptions && this.gridOptions.columnApi) {
+        return this.gridOptions.columnApi.getColumn(header.field).visible
+      }
     },
     onFilterInput (event) {
       const inputVal = event.toLowerCase()

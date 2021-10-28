@@ -112,6 +112,7 @@ Fixed
     - Assay shortcut card extra link icons (#1271)
     - Source map errors in production (#1198)
     - Numeric column default value invalid if range is unset (#1281)
+    - ``ColumnToggleModal`` errors on entering/exiting edit mode (#1280)
 
 Removed
 -------
