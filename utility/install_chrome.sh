@@ -5,7 +5,7 @@ echo "Installing Chrome + Driver for UI Testing"
 echo "***********************************************"
 
 # Version
-CHROME_DRIVER_VERSION=93.0.4577.63
+CHROME_DRIVER_VERSION=94.0.4606.61
 
 # Install dependencies
 sudo apt-get update
