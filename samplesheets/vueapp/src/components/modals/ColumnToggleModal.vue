@@ -60,7 +60,7 @@
             class="sodar-ss-toggle-field">
           <td>
             {{ header.headerName }}
-            <span v-if="app.editMode && header.cellRendererParams.fieldEditable"
+            <span v-if="app.editMode && getColumnEditability(header)"
                   class="text-muted font-italic pull-right
                          sodar-ss-toggle-field-info">
               Editable
@@ -119,6 +119,12 @@ export default {
     getColumnVisibility (header) {
       if (this.gridOptions && this.gridOptions.columnApi) {
         return this.gridOptions.columnApi.getColumn(header.field).visible
+      }
+    },
+    getColumnEditability (header) {
+      if (this.gridOptions && this.gridOptions.columnApi) {
+        return this.gridOptions.columnApi.getColumn(
+          header.field).colDef.cellRendererParams.fieldEditable
       }
     },
     onFilterInput (event) {

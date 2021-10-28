@@ -113,6 +113,7 @@ Fixed
     - Source map errors in production (#1198)
     - Numeric column default value invalid if range is unset (#1281)
     - ``ColumnToggleModal`` errors on entering/exiting edit mode (#1280)
+    - Editability not updated in ``ColumnToggleModal`` without grid reload (#1279)
 
 Removed
 -------
