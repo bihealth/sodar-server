@@ -670,7 +670,7 @@ export default {
       } else if (
         (this.colType === 'ONTOLOGY' && p.format !== 'ontology') ||
         (this.colType !== 'ONTOLOGY' && p.format === 'ontology') ||
-        (this.colType === 'UNIT' && !(['integer', 'double'].contains(p.format)))) {
+        (this.colType === 'UNIT' && !(['integer', 'double'].includes(p.format)))) {
         pasteValid = false
         this.$refs.notifyBadge.show('Invalid Format', 'danger', 2000)
         console.error('Invalid format: ' + p.format + ' / ' + this.colType)
