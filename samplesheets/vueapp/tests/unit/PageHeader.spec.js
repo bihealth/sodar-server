@@ -165,8 +165,7 @@ describe('PageHeader.vue', () => {
     expect(wrapper.find('#sodar-ss-tab-overview').exists()).toBe(false)
 
     // Nav dropdown
-    expect(wrapper.find('#sodar-ss-nav-dropdown').exists()).toBe(true)
-    expect(wrapper.find('#sodar-ss-nav-dropdown').find('button').classes()).toContain('disabled')
+    expect(wrapper.find('#sodar-ss-nav-dropdown').exists()).toBe(false)
 
     // Operations dropdown
     expect(wrapper.find('#sodar-ss-op-dropdown').exists()).toBe(true)
@@ -187,8 +186,7 @@ describe('PageHeader.vue', () => {
     expect(wrapper.find('#sodar-ss-tab-overview').exists()).toBe(false)
 
     // Nav dropdown
-    expect(wrapper.find('#sodar-ss-nav-dropdown').exists()).toBe(true)
-    expect(wrapper.find('#sodar-ss-nav-dropdown').find('button').classes()).toContain('disabled')
+    expect(wrapper.find('#sodar-ss-nav-dropdown').exists()).toBe(false)
 
     // Operations dropdown
     expect(wrapper.find('#sodar-ss-op-dropdown').exists()).toBe(true)

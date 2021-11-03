@@ -47,8 +47,9 @@
       </span>
       <!-- Nav dropdown -->
       <b-dropdown
+          v-if="app.sheetsAvailable"
           id="sodar-ss-nav-dropdown"
-          :disabled="!app.sheetsAvailable || app.gridsBusy"
+          :disabled="app.gridsBusy"
           right
           variant="success">
         <template slot="button-content">
@@ -116,16 +117,16 @@
         <b-dropdown-item
             v-if="!app.sheetsAvailable && !app.sheetSyncEnabled && app.sodarContext.perms.edit_sheet"
             class="sodar-ss-op-item"
-            id="sodar-ss-op-item-create"
-            :href="'template/select/' + app.projectUuid">
-          <i class="iconify" data-icon="mdi:auto-fix"></i> Create from Template
+            id="sodar-ss-op-item-import"
+            :href="'import/' + app.projectUuid">
+          <i class="iconify" data-icon="mdi:upload"></i> Import ISA-Tab
         </b-dropdown-item>
         <b-dropdown-item
             v-if="!app.sheetsAvailable && !app.sheetSyncEnabled && app.sodarContext.perms.edit_sheet"
             class="sodar-ss-op-item"
-            id="sodar-ss-op-item-import"
-            :href="'import/' + app.projectUuid">
-          <i class="iconify" data-icon="mdi:upload"></i> Import ISA-Tab
+            id="sodar-ss-op-item-create"
+            :href="'template/select/' + app.projectUuid">
+          <i class="iconify" data-icon="mdi:auto-fix"></i> Create from Template
         </b-dropdown-item>
         <b-dropdown-item
             v-if="app.sheetsAvailable && !app.sheetSyncEnabled && app.sodarContext.perms.edit_sheet"

@@ -36,9 +36,12 @@
 <div class="container-fluid sodar-page-container">
   <div class="alert alert-info">
     Please select an ISA-Tab zip archive or individual files for sample sheet
-    import. Alternatively, you can
-    <a href="{% url 'samplesheets:template_select' project=project.sodar_uuid %}">
-    create sample sheets from a template here</a>.
+    import.
+    {% if not replace_sheets %}
+      Alternatively, you can
+      <a href="{% url 'samplesheets:template_select' project=project.sodar_uuid %}">
+      create sample sheets from a template here</a>.
+    {% endif %}
   </div>
   {% if replace_sheets and irods_status and not zones_exist %}
     <div class="alert alert-warning">

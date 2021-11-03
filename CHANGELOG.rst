@@ -87,6 +87,8 @@ Changed
     - Use ``AppSettingAPI.delete_setting()`` for display config deletion (#854)
     - Make UI specific data optional in ``build_study_tables()`` (#694)
     - Do not require user for ``sheet_sync_task`` (#1273)
+    - Hide navigation dropdown if no sheets are available (#1285)
+    - Reverse import/create order in Sheet Operations dropdown (#1286)
 
 Fixed
 -----
@@ -114,6 +116,8 @@ Fixed
     - Numeric column default value invalid if range is unset (#1281)
     - ``ColumnToggleModal`` errors on entering/exiting edit mode (#1280)
     - Editability not updated in ``ColumnToggleModal`` without grid reload (#1279)
+    - First column width breaking in Parser Warnings table (#1287)
+    - Template creation link visible in sheet replace form (#1288)
 
 Removed
 -------
