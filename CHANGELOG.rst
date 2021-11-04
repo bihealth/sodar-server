@@ -89,6 +89,7 @@ Changed
     - Do not require user for ``sheet_sync_task`` (#1273)
     - Hide navigation dropdown if no sheets are available (#1285)
     - Reverse import/create order in Sheet Operations dropdown (#1286)
+    - Improve ontology editor layout (#1293)
 
 Fixed
 -----
@@ -118,6 +119,8 @@ Fixed
     - Editability not updated in ``ColumnToggleModal`` without grid reload (#1279)
     - First column width breaking in Parser Warnings table (#1287)
     - Template creation link visible in sheet replace form (#1288)
+    - Default suffix icon in ``ColumnConfigModal`` (#1290)
+    - Ontology editor edit/check button icon misalignment (#1292)
 
 Removed
 -------

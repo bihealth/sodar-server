@@ -71,12 +71,12 @@
             id="sodar-ss-col-table-name">
           <tr v-if="colType === 'NAME' && headerInfo.item_type !== 'SOURCE'"
               id="sodar-ss-col-tr-name-suffix">
-            <td>Default Suffix
-              <i class="iconify text-info"
-                 data-icon="mdi:information"
-                 title="Pre-fill with the name of previous node plus a suffix if set"
-                 v-b-tooltip.hover>
-              </i>
+            <td>
+              Default Suffix
+              <img src="/icons/mdi/information.svg?color=%2317a2b8"
+                  class="mb-1"
+                  title="Pre-fill with the name of previous node plus a suffix if set"
+                  v-b-tooltip.hover/>
             </td>
             <td>
               <b-input
