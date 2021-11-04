@@ -90,6 +90,7 @@ Changed
     - Hide navigation dropdown if no sheets are available (#1285)
     - Reverse import/create order in Sheet Operations dropdown (#1286)
     - Improve ontology editor layout (#1293)
+    - Improve study and assay title layout (#1291)
 
 Fixed
 -----

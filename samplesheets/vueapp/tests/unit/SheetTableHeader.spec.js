@@ -61,8 +61,6 @@ describe('SheetTableHeader.vue', () => {
 
     // Badges
     expect(wrapper.find('.sodar-ss-irods-stats').exists()).toBe(true)
-    expect(wrapper.find('#sodar-ss-badge-sheet-config').find(
-      '.badge-danger').text()).toBe('Unknown')
 
     // IrodsButtons
     expect(wrapper.find('.sodar-ss-irods-links').exists()).toBe(true)
