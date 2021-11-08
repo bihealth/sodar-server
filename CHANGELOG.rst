@@ -56,6 +56,7 @@ Changed
     - Upgrade to Node v12
     - Improve production logging (#1257)
     - Upgrade to django-webpack-loader v1.4.1 (#1198)
+    - Upgrade to redis v3.5.3 (#1297)
 - **Irodsbackend**
     - Retrieve iRODS config from ``IRODS_ENV_BACKEND`` setting (#1221)
     - Use data attributes in templates (sodar_core#530)
