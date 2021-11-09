@@ -124,6 +124,7 @@ Fixed
     - Template creation link visible in sheet replace form (#1288)
     - Default suffix icon in ``ColumnConfigModal`` (#1290)
     - Ontology editor edit/check button icon misalignment (#1292)
+    - iRODS file list modal button column alignment (#1299)
 
 Removed
 -------

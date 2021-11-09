@@ -29,7 +29,7 @@
             <th>File</th>
             <th>Size</th>
             <th>Modified</th>
-            <th>Action</th>
+            <th></th>
           </tr>
         </thead>
         <tbody>
@@ -274,11 +274,11 @@ table.sodar-irods-obj-table tbody tr td:nth-child(3) {
 /* MD5 column */
 table.sodar-irods-obj-table thead tr th:nth-child(4) {
   width: 40px;
-  text-align: center;
 }
 
 table.sodar-irods-obj-table tbody tr td:nth-child(4) {
-  text-align: center;
+  width: 40px;
+  text-align: right;
 }
 
 h5 {
