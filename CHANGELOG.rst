@@ -109,6 +109,7 @@ Fixed
 - **Landingzones**
     - ``PROJECTROLES_SEND_EMAIL`` not checked in Taskflow views (#1229)
     - Collection hint alert from zone list UI (#1266)
+    - Zone move failure on Celery task crash in ``TaskflowZoneStatusSetAPIView`` (#1298)
 - **Samplesheets**
     - Missing label for ``public_access_ticket`` app setting (#1230)
     - Incorrect ``ISATab`` timestamp in export and compare dropdown (#1247)

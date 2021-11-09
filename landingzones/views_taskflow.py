@@ -335,11 +335,16 @@ class TaskflowZoneStatusSetAPIView(BaseTaskflowAPIView):
 
         # Update cache
         if request.data['status'] == 'MOVED' and settings.SHEETS_ENABLE_CACHE:
-            update_project_cache_task.delay(
-                project_uuid=str(zone.project.sodar_uuid),
-                user_uuid=str(zone.user.sodar_uuid),
-                add_alert=True,
-                alert_msg='Moved landing zone "{}"'.format(zone.title),
-            )
+            try:
+                update_project_cache_task.delay(
+                    project_uuid=str(zone.project.sodar_uuid),
+                    user_uuid=str(zone.user.sodar_uuid),
+                    add_alert=True,
+                    alert_msg='Moved landing zone "{}"'.format(zone.title),
+                )
+            except Exception as ex:
+                logger.error(
+                    'Unable to run project cache update task: {}'.format(ex)
+                )
 
         return Response('ok', status=200)
