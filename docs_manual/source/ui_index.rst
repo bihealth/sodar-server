@@ -1,7 +1,7 @@
 .. _ui_index:
 
-User Interface
-^^^^^^^^^^^^^^
+User Interface Overview
+^^^^^^^^^^^^^^^^^^^^^^^
 
 This section describes the SODAR user interface (UI).
 

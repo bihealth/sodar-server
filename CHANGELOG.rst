@@ -45,6 +45,7 @@ Added
     - Assay app support for "transcriptome profiling" measurement type (#1255)
     - Saving version with description in editor UI (#1109)
     - Automatic study/assay table filtering from search results (#634)
+    - Add UI documentation to user manual (#1180)
 
 Changed
 -------

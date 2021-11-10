@@ -30,6 +30,21 @@ meta data.
 
 .. toctree::
     :maxdepth: 1
+    :caption: Sample Sheets
+    :name: sample_sheets
+    :hidden:
+
+    app_samplesheets
+    app_samplesheets_browse
+    app_samplesheets_create
+    app_samplesheets_export
+    app_samplesheets_edit
+    app_samplesheets_version
+    app_samplesheets_irods_ticket
+    app_samplesheets_irods_delete
+
+.. toctree::
+    :maxdepth: 1
     :caption: Data Transfer
     :name: data_transfer
     :hidden:
