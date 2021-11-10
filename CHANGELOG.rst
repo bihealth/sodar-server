@@ -92,6 +92,7 @@ Changed
     - Reverse import/create order in Sheet Operations dropdown (#1286)
     - Improve ontology editor layout (#1293)
     - Improve study and assay title layout (#1291)
+    - Improve iRODS access ticket list layout (#1301)
 
 Fixed
 -----

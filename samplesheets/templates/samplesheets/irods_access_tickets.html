@@ -15,16 +15,9 @@
 {% block css %}
   {{ block.super }}
   <style type="text/css">
-    table#sodar-ss-ticket-table thead tr th:nth-child(3),
-    table#sodar-ss-ticket-table tbody tr td:nth-child(3),
-    table#sodar-ss-ticket-table thead tr th:nth-child(4),
-    table#sodar-ss-ticket-table tbody tr td:nth-child(4) {
-      white-space: nowrap;
-    }
-
     table#sodar-ss-ticket-table thead tr th:nth-child(5),
     table#sodar-ss-ticket-table tbody tr td:nth-child(5) {
-      width: 100px;
+      width: 120px;
     }
 
     /* Created column */
@@ -98,7 +91,7 @@
         <tbody>
           {% for ticket in object_list %}
             <tr>
-              <td>
+              <td class="nowrap">
                 <strong>
                   <a href="{{ ticket.get_webdav_link }}" target="_blank">
                     {{ ticket.get_display_name }}
@@ -113,7 +106,7 @@
                   <i class="iconify" data-icon="mdi:clipboard-text-multiple"></i>
                 </button>
               </td>
-              <td>{{ ticket.ticket }}</td>
+              <td><code>{{ ticket.ticket }}</code></td>
               {% if ticket.user %}
                 <td>
                   {% get_user_html ticket.user as user_html %}{{ user_html | safe }}
