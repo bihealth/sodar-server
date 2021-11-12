@@ -23,7 +23,8 @@ page.
     Sample Sheets link in the project sidebar
 
 Detailed information on using the application for various sample sheet related
-actions are detailed in following subsections.
+actions are presented in following subsections.
 
-This section details the graphical user interface of the Sample Sheets app. For
-programmatic access to most of these features, see :ref:`api_samplesheets`.
+This part of the manual details the graphical user interface of the Sample
+Sheets app. For programmatic access to most of these features, see
+:ref:`api_samplesheets`.

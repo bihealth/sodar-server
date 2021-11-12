@@ -51,8 +51,18 @@ Table of Contents
     app_samplesheets_irods_delete
 
 .. toctree::
+    :maxdepth: 2
+    :caption: Landing Zones
+    :name: landing_zones
+
+    app_landingzones
+    app_landingzones_create
+    app_landingzones_browse
+    app_landingzones_transfer
+
+.. toctree::
     :maxdepth: 1
-    :caption: Data Transfer
+    :caption: Data Transfer Guides
     :name: data_transfer
 
     data_transfer_irods

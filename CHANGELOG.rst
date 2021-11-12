@@ -31,6 +31,7 @@ Added
     - ``LandingZone.is_locked()`` helper (#321)
     - Zone locked status in UI and ``LandingZoneRetrieveAPIView`` (#321)
     - Display collections in iRODS file list (#1156)
+    - Add UI documentation to user manual (#1181)
 - **Samplesheets**
     - Simple link support for string cell rendering (#1001)
     - ``generic_raw`` assay plugin (#1128)
