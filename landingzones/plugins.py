@@ -190,26 +190,23 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
             zones = LandingZone.objects.filter(project=project)
         else:
             zones = LandingZone.objects.filter(project=project, user=user)
-        zone_count = zones.count()
         active_count = zones.exclude(status__in=['MOVED', 'DELETED']).count()
 
-        if investigation and investigation.irods_status and zone_count > 0:
+        if investigation and investigation.irods_status and active_count > 0:
             return (
                 '<a href="{}" title="{}">'
                 # 'data-toggle="tooltip" data-placement="top">'
-                '<i class="iconify {}" data-icon="mdi:briefcase">'
+                '<i class="iconify text-success" data-icon="mdi:briefcase">'
                 '</i></a>'.format(
                     reverse(
                         'landingzones:list',
                         kwargs={'project': project.sodar_uuid},
                     ),
-                    '{} landing zone{} {} ({} active)'.format(
-                        zone_count,
-                        's' if zone_count != 1 else '',
-                        'in total' if user.is_superuser else 'owned by you',
+                    '{} landing zone{} {}'.format(
                         active_count,
+                        's' if active_count != 1 else '',
+                        'in total' if user.is_superuser else 'owned by you',
                     ),
-                    'text-danger' if active_count == 0 else 'text-success',
                 )
             )
         elif (

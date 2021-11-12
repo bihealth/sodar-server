@@ -32,7 +32,7 @@ DEFAULT_STATUS_INFO = {
     'ACTIVE': 'Available with write access for user',
     'PREPARING': 'Preparing transaction for validation and moving',
     'VALIDATING': 'Validation in progress, write access disabled',
-    'MOVING': 'Validation OK, moving files into bio_samples',
+    'MOVING': 'Validation OK, moving files into sample data repository',
     'MOVED': 'Files moved successfully, landing zone removed',
     'FAILED': 'Validation/moving failed (unknown problem)',
     'DELETING': 'Deleting landing zone',

@@ -77,6 +77,8 @@ Changed
     - Use ``CurrentUserFormMixin`` in forms (#660)
     - Enable automated collection generation by default in UI (#1266)
     - Clarify collection creation message in UI (#1275)
+    - Default status info for ``MOVING`` (#1305)
+    - Do not count inactive zones in project list (#1306)
 - **Samplesheets**
     - Move ``TestSheetSyncBase`` into ``test_views_taskflow``
     - Update app setting labels (#1230)
