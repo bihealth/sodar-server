@@ -6,6 +6,8 @@ import hashlib
 from irods.test.helpers import make_object
 from irods.keywords import REG_CHKSUM_KW
 import os
+import random
+import string
 import time
 
 from django.conf import settings
@@ -776,8 +778,28 @@ class TestLandingZoneStatusSetAPIView(TestViewsBase):
         self.assertEqual(len(mail.outbox), 0)  # No mail sent for ACTIVE
         self.assertEqual(AppAlert.objects.count(), 0)
 
+    def test_post_status_active_long_status(self):
+        """Test setting a landing zone status with long status_info"""
+        values = {
+            'zone_uuid': str(self.landing_zone.sodar_uuid),
+            'flow_name': 'landing_zone_create',
+            'status': 'ACTIVE',
+            'status_info': ''.join(
+                random.choices(string.ascii_lowercase, k=2048)
+            ),
+            'sodar_secret': settings.TASKFLOW_SODAR_SECRET,
+        }
+        with self.login(self.user):
+            response = self.client.post(
+                reverse('landingzones:taskflow_zone_status_set'), values
+            )
+        self.assertEqual(response.status_code, 200)
+        self.landing_zone.refresh_from_db()
+        self.assertEqual(self.landing_zone.status, 'ACTIVE')
+        self.assertEqual(len(self.landing_zone.status_info), 1024)
+
     def test_post_status_moved(self):
-        """Test POST request for setting a landing zone status into MOVED"""
+        """Test setting a landing zone status into MOVED"""
         self.assertEqual(AppAlert.objects.count(), 0)
         values = {
             'zone_uuid': str(self.landing_zone.sodar_uuid),
@@ -801,7 +823,7 @@ class TestLandingZoneStatusSetAPIView(TestViewsBase):
         )
 
     def test_post_status_failed(self):
-        """Test POST request for setting a landing zone status into FAILED"""
+        """Test setting a landing zone status into FAILED"""
         self.assertEqual(AppAlert.objects.count(), 0)
         values = {
             'zone_uuid': str(self.landing_zone.sodar_uuid),

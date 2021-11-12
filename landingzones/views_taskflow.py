@@ -29,6 +29,8 @@ app_settings = AppSettingAPI()
 
 # Local constants
 APP_NAME = 'landingzones'
+STATUS_INFO_LEN = 1024
+STATUS_TRUNCATE_MSG = '... <TRUNCATED>'
 EMAIL_MSG_MOVED = r'''
 Data was successfully validated and moved into the project
 sample data repository from your landing zone.
@@ -259,14 +261,21 @@ class TaskflowZoneStatusSetAPIView(BaseTaskflowAPIView):
         except LandingZone.DoesNotExist:
             return Response('LandingZone not found', status=404)
         try:
+            status_info = request.data['status_info']
+            # Truncate status info (fix for #1307)
+            if len(status_info) >= STATUS_INFO_LEN - len(STATUS_TRUNCATE_MSG):
+                status_info = (
+                    status_info[: STATUS_INFO_LEN - len(STATUS_TRUNCATE_MSG)]
+                    + STATUS_TRUNCATE_MSG
+                )
             zone.set_status(
                 status=request.data['status'],
-                status_info=request.data['status_info']
-                if request.data['status_info']
-                else None,
+                status_info=status_info if status_info else None,
             )
         except TypeError:
             return Response('Invalid status type', status=400)
+        except Exception as ex:
+            return Response('Internal server error: {}'.format(ex), status=500)
 
         zone.refresh_from_db()
         flow_name = request.data.get('flow_name')
