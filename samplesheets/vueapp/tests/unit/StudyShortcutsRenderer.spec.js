@@ -57,7 +57,7 @@ describe('StudyShortcutsRenderer.vue', () => {
     const wrapper = mountSheetTable()
     await waitAG(wrapper)
     await waitRAF()
-    await waitSelector(wrapper, '.sodar-ss-data-links-cell', 5)
+    await waitSelector(wrapper, '.sodar-ss-study-shortcuts', 5)
 
     expect(wrapper.findAll('.sodar-ss-data-links-cell').length).toBe(5)
     expect(wrapper.findAll('.sodar-ss-study-shortcuts').length).toBe(5)
