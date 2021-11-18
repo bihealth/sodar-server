@@ -132,6 +132,8 @@ Fixed
     - Ontology editor edit/check button icon misalignment (#1292)
     - iRODS file list modal button column alignment (#1299)
     - Random crash in ``StudyShortcutsRenderer`` unit tests (#1294)
+    - Sheet import and create view access permitted with sheet sync enabled (#1309)
+    - Project list sheet import link visible with sheet sync enabled (#1309)
 
 Removed
 -------

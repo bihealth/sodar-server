@@ -615,6 +615,23 @@ class SheetISAExportMixin:
             raise ex
 
 
+class SheetCreateImportAccessMixin:
+    """Mixin for additional sheet import/create view access control"""
+
+    def dispatch(self, *args, **kwargs):
+        project = self.get_project()
+        if app_settings.get_app_setting(
+            APP_NAME, 'sheet_sync_enable', project=project
+        ):
+            messages.error(
+                self.request,
+                'Sheet synchronization enabled in project: import and '
+                'creation not allowed.',
+            )
+            return redirect(reverse('home'))
+        return super().dispatch(*args, **kwargs)
+
+
 class IrodsCollsCreateViewMixin:
     """Mixin to be used in iRODS collections creation UI / API views"""
 
@@ -983,6 +1000,7 @@ class ProjectSheetsView(
         return context
 
 
+# TODO: Prevent access if sheet sync is enabled, add tests
 class SheetImportView(
     LoginRequiredMixin,
     LoggedInPermissionMixin,
@@ -990,6 +1008,7 @@ class SheetImportView(
     ProjectContextMixin,
     CurrentUserFormMixin,
     SheetImportMixin,
+    SheetCreateImportAccessMixin,
     FormView,
 ):
     """Sample sheet ISA-Tab import view"""
@@ -1082,11 +1101,13 @@ class SheetImportView(
         return redirect(redirect_url)
 
 
+# TODO: Prevent access if sheet sync is enabled, add tests
 class SheetTemplateSelectView(
     LoginRequiredMixin,
     LoggedInPermissionMixin,
     ProjectPermissionMixin,
     ProjectContextMixin,
+    SheetCreateImportAccessMixin,
     TemplateView,
 ):
     """Sample sheet template selection view for template-based creation"""
@@ -1130,6 +1151,7 @@ class SheetTemplateSelectView(
         return super().render_to_response(self.get_context_data())
 
 
+# TODO: Prevent access if sheet sync is enabled, add tests
 class SheetTemplateCreateFormView(
     LoginRequiredMixin,
     LoggedInPermissionMixin,
@@ -1137,6 +1159,7 @@ class SheetTemplateCreateFormView(
     ProjectContextMixin,
     CurrentUserFormMixin,
     SheetImportMixin,
+    SheetCreateImportAccessMixin,
     FormView,
 ):
     """Sample sheet ISA-Tab import view"""

@@ -429,7 +429,11 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                         get_sheets_url(project)
                     )
                 )
-            elif user.has_perm('samplesheets.edit_sheet', project):
+            elif user.has_perm(
+                'samplesheets.edit_sheet', project
+            ) and not app_settings.get_app_setting(
+                APP_NAME, 'sheet_sync_enable', project
+            ):
                 return (
                     '<a href="{}" title="Import sample sheet into project">'
                     # 'data-toggle="tooltip" data-placement="top">'

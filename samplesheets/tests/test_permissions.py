@@ -22,6 +22,7 @@ app_settings = AppSettingAPI()
 
 
 # Local constants
+APP_NAME = 'samplesheets'
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
 REMOTE_SITE_NAME = 'Test site'
 REMOTE_SITE_URL = 'https://sodar.bihealth.org'
@@ -111,6 +112,27 @@ class TestSampleSheetsPermissions(
         )
         self.assert_response(url, self.anonymous, 302)
 
+    def test_sheet_import_sync(self):
+        """Test sheet import view with sync enabled"""
+        app_settings.set_app_setting(
+            APP_NAME, 'sheet_sync_enable', True, project=self.project
+        )
+        url = reverse(
+            'samplesheets:import', kwargs={'project': self.project.sodar_uuid}
+        )
+        bad_users = [
+            self.superuser,
+            self.owner_as.user,
+            self.delegate_as.user,
+            self.contributor_as.user,
+            self.guest_as.user,
+            self.user_no_roles,
+            self.anonymous,
+        ]
+        self.assert_response(url, bad_users, 302)
+        self.project.set_public()
+        self.assert_response(url, bad_users, 302)
+
     def test_sheet_template_select(self):
         """Test sheet template select view"""
         self.investigation.delete()
@@ -139,6 +161,28 @@ class TestSampleSheetsPermissions(
             kwargs={'project': self.project.sodar_uuid},
         )
         self.assert_response(url, self.anonymous, 302)
+
+    def test_sheet_template_select_sync(self):
+        """Test sheet template select view with sync enabled"""
+        app_settings.set_app_setting(
+            APP_NAME, 'sheet_sync_enable', True, project=self.project
+        )
+        url = reverse(
+            'samplesheets:template_select',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+        bad_users = [
+            self.superuser,
+            self.owner_as.user,
+            self.delegate_as.user,
+            self.contributor_as.user,
+            self.guest_as.user,
+            self.user_no_roles,
+            self.anonymous,
+        ]
+        self.assert_response(url, bad_users, 302)
+        self.project.set_public()
+        self.assert_response(url, bad_users, 302)
 
     def test_sheet_template_create(self):
         """Test sheet template creation view"""
@@ -177,6 +221,32 @@ class TestSampleSheetsPermissions(
         )
         self.project.set_public()
         self.assert_response(url, self.anonymous, 302)
+
+    def test_sheet_template_create_sync(self):
+        """Test sheet template create view with sync enabled"""
+        app_settings.set_app_setting(
+            APP_NAME, 'sheet_sync_enable', True, project=self.project
+        )
+        url = (
+            reverse(
+                'samplesheets:template_create',
+                kwargs={'project': self.project.sodar_uuid},
+            )
+            + '?'
+            + urlencode({'sheet_tpl': 'generic'})
+        )
+        bad_users = [
+            self.superuser,
+            self.owner_as.user,
+            self.delegate_as.user,
+            self.contributor_as.user,
+            self.guest_as.user,
+            self.user_no_roles,
+            self.anonymous,
+        ]
+        self.assert_response(url, bad_users, 302)
+        self.project.set_public()
+        self.assert_response(url, bad_users, 302)
 
     def test_sheet_export_excel_study(self):
         """Test sheet Excel export view for study table"""

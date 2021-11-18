@@ -20,6 +20,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 # Projectroles dependency
+from projectroles.app_settings import AppSettingAPI
 from projectroles.models import RemoteSite
 from projectroles.plugins import get_backend_api
 from projectroles.views_api import (
@@ -41,6 +42,7 @@ from samplesheets.views import (
 )
 
 
+app_settings = AppSettingAPI()
 logger = logging.getLogger(__name__)
 
 
@@ -193,8 +195,14 @@ class SheetImportAPIView(SheetImportMixin, SODARAPIBaseProjectMixin, APIView):
 
     def post(self, request, *args, **kwargs):
         """Handle POST request for submitting"""
-        sheet_io = SampleSheetIO()
         project = self.get_project()
+
+        if app_settings.get_app_setting(APP_NAME, 'sheet_sync_enable', project):
+            raise ValidationError(
+                'Sheet synchronization enabled in project: import not allowed'
+            )
+
+        sheet_io = SampleSheetIO()
         old_inv = Investigation.objects.filter(
             project=project, active=True
         ).first()
