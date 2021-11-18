@@ -52,13 +52,14 @@ Changed
 -------
 
 - **General**
-    - Upgrade to django-sodar-core v0.10.5 (#1217, #1220, #1243)
+    - Upgrade to django-sodar-core v0.10.6-WIP (#1217, #1220, #1243, #1272)
     - Upgrade to python-irodsclient v1.0.0 (#1223)
     - Upgrade to Chromedriver v96 (sodar_core#772, #1254, sodar_core#847, sodar_core#852)
     - Upgrade to Node v12
     - Improve production logging (#1257)
     - Upgrade to django-webpack-loader v1.4.1 (#1198)
     - Upgrade to redis v3.5.3 (#1297)
+    - Use ``ManagementCommandLogger`` for command output (#1276)
 - **Irodsbackend**
     - Retrieve iRODS config from ``IRODS_ENV_BACKEND`` setting (#1221)
     - Use data attributes in templates (sodar_core#530)

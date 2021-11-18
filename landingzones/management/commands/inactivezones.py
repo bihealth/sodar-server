@@ -5,9 +5,15 @@ from datetime import timedelta
 from django.core.management.base import BaseCommand
 from django.template.defaultfilters import filesizeformat
 from django.utils.timezone import localtime
+
+# Projectroles dependency
+from projectroles.management.logging import ManagementCommandLogger
 from projectroles.plugins import get_backend_api
 
 from landingzones.models import LandingZone
+
+
+logger = ManagementCommandLogger(__name__)
 
 
 def get_inactive_zones(weeks=2):
@@ -47,5 +53,5 @@ class Command(BaseCommand):
         irods_backend = get_backend_api('omics_irods')
         zones = get_inactive_zones()
         output = get_output(zones, irods_backend)
-        if output:
-            self.stdout.write('\n'.join(output))
+        for o in output:
+            logger.info(o)

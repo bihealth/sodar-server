@@ -10,7 +10,7 @@ from rest_framework.response import Response
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
-from projectroles.email import send_generic_mail
+from projectroles.email import send_generic_mail, get_email_user
 from projectroles.models import Project
 from projectroles.plugins import get_backend_api
 from projectroles.views_taskflow import BaseTaskflowAPIView
@@ -31,6 +31,7 @@ app_settings = AppSettingAPI()
 APP_NAME = 'landingzones'
 STATUS_INFO_LEN = 1024
 STATUS_TRUNCATE_MSG = '... <TRUNCATED>'
+
 EMAIL_MSG_MOVED = r'''
 Data was successfully validated and moved into the project
 sample data repository from your landing zone.
@@ -42,11 +43,12 @@ the following URL:
 Project: {project}
 Assay: {assay}
 Landing zone: {zone}
-Zone owner: {user} <{user_email}>
+Zone owner: {user}
 Zone UUID: {zone_uuid}
 
 Status message:
 "{status_info}"'''.lstrip()
+
 EMAIL_MSG_FAILED = r'''
 Validating and moving data from your landing zone into the
 project sample data repository has failed. Please verify your
@@ -58,13 +60,15 @@ Manage your landing zone at the following URL:
 Project: {project}
 Assay: {assay}
 Landing zone: {zone}
-Zone owner: {user} <{user_email}>
+Zone owner: {user}
 Zone UUID: {zone_uuid}
 
 Status message:
-"{status_info}"'''.lstrip()
+"{status_info}"
+'''.lstrip()
+
 EMAIL_MSG_MEMBER = r'''
-{user} ({user_email}) has uploaded {file_count} file{file_count_suffix}
+{user} has uploaded {file_count} file{file_count_suffix}
 into assay "{assay}"
 under the project "{project}".
 
@@ -216,8 +220,7 @@ class TaskflowZoneStatusSetAPIView(BaseTaskflowAPIView):
             zone=zone.title,
             project=zone.project.title,
             assay=zone.assay.get_display_name(),
-            user=zone.user.username,
-            user_email=zone.user.email,
+            user=get_email_user(zone.user),
             zone_uuid=str(zone.sodar_uuid),
             status_info=zone.status_info,
             url=email_url,
@@ -245,8 +248,7 @@ class TaskflowZoneStatusSetAPIView(BaseTaskflowAPIView):
         message_body = message_body.format(
             project=zone.project.title,
             assay=zone.assay.get_display_name(),
-            user=zone.user.get_full_name(),
-            user_email=zone.user.email,
+            user=get_email_user(zone.user),
             file_count=file_count,
             file_count_suffix='s' if file_count != 1 else '',
             user_message=zone.user_message or 'N/A',

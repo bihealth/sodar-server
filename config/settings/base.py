@@ -494,6 +494,7 @@ LOGGING_APPS = env.list(
         'siteinfo',
         'sodarcache',
         'taskflowbackend',
+        'timeline',
     ],
 )
 LOGGING_FILE_PATH = env.str('LOGGING_FILE_PATH', None)
@@ -634,6 +635,11 @@ PROJECTROLES_CUSTOM_CSS_INCLUDES = env.list(
 PROJECTROLES_INLINE_HEAD_INCLUDE = env.str(
     'PROJECTROLES_INLINE_HEAD_INCLUDE', None
 )
+
+# Enable profiling for debugging/analysis
+PROJECTROLES_ENABLE_PROFILING = env.bool('PROJECTROLES_ENABLE_PROFILING', False)
+if PROJECTROLES_ENABLE_PROFILING:
+    MIDDLEWARE += ['projectroles.middleware.ProfilerMiddleware']
 
 
 # Timeline app settings

@@ -2,7 +2,13 @@
 
 from django.core.management.base import BaseCommand
 
+# Projectroles dependency
+from projectroles.management.logging import ManagementCommandLogger
+
 from landingzones.models import LandingZone, STATUS_BUSY
+
+
+logger = ManagementCommandLogger(__name__)
 
 
 class Command(BaseCommand):
@@ -14,7 +20,7 @@ class Command(BaseCommand):
         zones = LandingZone.objects.filter(status__in=STATUS_BUSY)
         output = []
         for zone in zones:
-            output.append(
+            logger.info(
                 ';'.join(
                     [
                         str(zone.project.sodar_uuid),
@@ -27,4 +33,4 @@ class Command(BaseCommand):
                 )
             )
         if output:
-            self.stdout.write('\n'.join(output))
+            logger.info(output)

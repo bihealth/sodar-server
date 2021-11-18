@@ -1,7 +1,8 @@
 """Management command tests for the landingzones app"""
 
-from datetime import timedelta
 import io
+
+from datetime import timedelta
 
 from django.conf import settings
 from django.core.management import call_command
@@ -175,15 +176,17 @@ class TestInactiveZones(TestCommandBase):
 
     def test_command_inactivezones(self):
         """Test command"""
-        out = io.StringIO()
-        call_command('inactivezones', stdout=out)
-        expected = '{};{};{};{};0;0 bytes\n'.format(
+        with self.assertLogs(
+            'landingzones.management.commands.inactivezones', level='INFO'
+        ) as cm:
+            call_command('inactivezones')
+        expected = '{};{};{};{};0;0 bytes'.format(
             str(self.project.sodar_uuid),
             self.project.full_title,
             self.zone.user.username,
             self.irods_backend.get_path(self.zone),
         )
-        self.assertEqual(out.getvalue(), expected)
+        self.assertIn(expected, cm.output[0])
 
 
 class TestBusyZones(TestCommandBase):
@@ -225,10 +228,12 @@ class TestBusyZones(TestCommandBase):
         """Test command with a busy zones"""
         self.zone2.status = 'MOVING'
         self.zone2.save()
-        out = io.StringIO()
-        call_command('busyzones', stdout=out)
-        self.assertEqual(
-            out.getvalue(),
+        with self.assertLogs(
+            'landingzones.management.commands.busyzones', level='INFO'
+        ) as cm:
+            call_command('busyzones')
+
+        self.assertIn(
             ';'.join(
                 [
                     str(self.zone2.project.sodar_uuid),
@@ -238,6 +243,6 @@ class TestBusyZones(TestCommandBase):
                     self.zone2.status,
                     str(self.zone2.sodar_uuid),
                 ]
-            )
-            + '\n',
+            ),
+            cm.output[0],
         )
