@@ -52,7 +52,7 @@ Changed
 -------
 
 - **General**
-    - Upgrade to django-sodar-core v0.10.6-WIP (#1217, #1220, #1243, #1272)
+    - Upgrade to django-sodar-core v0.10.6 (#1217, #1220, #1243, #1272)
     - Upgrade to python-irodsclient v1.0.0 (#1223)
     - Upgrade to Chromedriver v96 (sodar_core#772, #1254, sodar_core#847, sodar_core#852)
     - Upgrade to Node v12
