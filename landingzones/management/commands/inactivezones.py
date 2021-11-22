@@ -26,21 +26,37 @@ def get_inactive_zones(weeks=2):
 def get_output(zones, irods_backend):
     """Return list of inactive landing zone details"""
     lines = []
+    irods_session = irods_backend.get_session()
     for zone in zones:
         path = irods_backend.get_path(zone)
-        stats = irods_backend.get_object_stats(path)
-        lines.append(
-            ';'.join(
-                [
-                    str(zone.project.sodar_uuid),
-                    zone.project.full_title,
-                    zone.user.username,
-                    path,
-                    str(stats['file_count']),
-                    filesizeformat(stats['total_size']).replace(u'\xa0', ' '),
-                ]
+        if not irods_session.collections.exists(path):
+            logger.error(
+                'No iRODS collection found for zone "{}/{}" ({})'.format(
+                    zone.user.username, zone.title, zone.sodar_uuid
+                )
             )
-        )
+            continue
+        try:
+            stats = irods_backend.get_object_stats(path)
+            lines.append(
+                ';'.join(
+                    [
+                        str(zone.project.sodar_uuid),
+                        zone.project.full_title,
+                        zone.user.username,
+                        path,
+                        str(stats['file_count']),
+                        filesizeformat(stats['total_size']).replace(
+                            u'\xa0', ' '
+                        ),
+                    ]
+                )
+            )
+        except Exception as ex:
+            logger.error(
+                'Exception in retrieving stats for zone "{}/{}" ({}): '
+                '{}'.format(zone.user.username, zone.title, zone.sodar_uuid, ex)
+            )
     return lines
 
 
