@@ -118,6 +118,8 @@ Fixed
     - Zone move failure on Celery task crash in ``TaskflowZoneStatusSetAPIView`` (#1298)
     - ``status_info`` overflow crash in ``TaskflowZoneStatusSetAPIView`` (#1307)
     - Uncaught exceptions in ``inactivezones`` (#1311)
+- **Ontologyaccess**
+    - Minor layout issues (#1312)
 - **Samplesheets**
     - Missing label for ``public_access_ticket`` app setting (#1230)
     - Incorrect ``ISATab`` timestamp in export and compare dropdown (#1247)

@@ -35,6 +35,10 @@ class OBOFormatOntologyForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.obo_io = OBOFormatOntologyIO()
 
+        # Default form modifications
+        self.fields['term_url'].widget = forms.TextInput(
+            attrs={'class': 'sodar-code-input'}
+        )
         # Creation modifications
         if not self.instance.pk:
             self.initial['name'] = ''
