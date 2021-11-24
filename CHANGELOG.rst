@@ -141,6 +141,7 @@ Fixed
     - Random crash in ``StudyShortcutsRenderer`` unit tests (#1294)
     - Sheet import and create view access permitted with sheet sync enabled (#1309)
     - Project list sheet import link visible with sheet sync enabled (#1309)
+    - No placeholder for missing investigation title in details card (#1313)
 
 Removed
 -------
