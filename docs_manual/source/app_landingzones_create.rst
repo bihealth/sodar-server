@@ -24,8 +24,8 @@ hand side.
 
     Landing zone list with no zones
 
-Clicking on the button opens up the landing zone creation form, which allows you
-to set up and configure your new landing zone.
+Clicking the button opens up the landing zone creation form, which allows you to
+set up and configure your new landing zone.
 
 .. figure:: _static/app_landingzones/zone_form.png
     :align: center
@@ -56,7 +56,7 @@ Configuration
     Selection for special configurations of landing zones with extra features.
     In most use cases this should be left blank.
 
-Once you have filled out the form, clicking on :guilabel:`Create` will start the
+Once you have filled out the form, clicking :guilabel:`Create` will start the
 zone creation process and redirect you to the landing zone list, where you can
 see the zone status and move further with file uploads.
 

@@ -29,8 +29,8 @@ Issuing Requests in File List Modal
 
 As briefly described in :ref:`app_samplesheets_browse`, requests for single
 files can be issued or cancelled in the iRODS file list modal linked to assay
-shortcuts and assay rows. Simply click on the button on the rightmost column
-to create a delete request. To cancel requests, click on any button with the
+shortcuts and assay rows. Simply click the button on the rightmost column
+to create a delete request. To cancel requests, click any button with the
 blue colour and a canceling icon.
 
 .. figure:: _static/app_samplesheets/irods_del_modal.png
@@ -45,7 +45,8 @@ Browsing Delete Requests
 
 To see a list of your own delete requests as a contributor, or all active
 requests in the project as a project owner or delegate, open the
-*Sheet Operations* dropdown and select *iRODS Delete Requests*.
+:guilabel:`Sheet Operations` dropdown and select
+:guilabel:`iRODS Delete Requests`.
 
 .. figure:: _static/app_samplesheets/irods_del_list.png
     :align: center
@@ -62,9 +63,9 @@ link for manual creation.
 Manual Request Creation
 =======================
 
-Clicking on the *Create Request* button takes you to a simple form where you can
-create a delete request by manually entering an iRODS path and an optional
-description.
+Clicking the :guilabel:`Create Request` button takes you to a simple form where
+you can create a delete request by manually entering an iRODS path and an
+optional description.
 
 .. figure:: _static/app_samplesheets/irods_del_form.png
     :align: center

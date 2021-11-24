@@ -3,18 +3,18 @@
 Sample Sheets Overview
 ^^^^^^^^^^^^^^^^^^^^^^
 
-In SODAR, *sample sheets* model the study design metadata for research projects.
-They contain links and shortcuts to data files and enable integration with
-external tools.
+In SODAR, *sample sheets* are used to model the study design metadata for
+research projects. They contain links and shortcuts to data files and enable
+integration with external tools.
 
 The Sample Sheets application is used to import, browse, edit and the study
 metadata. It also serves as the access point to files related to the studies,
 hosted on the `iRODS <https://irods.org>`_ distributed mass storage system.
 
-You can access the Sample Sheets app by navigating to a project and clicking on
+You can access the Sample Sheets app by navigating to a project and clicking
 the Sample Sheets link on the project sidebar. Alternatively, you can click
-on the icon in the *Sheets* column in the project list found on the SODAR home
-page.
+the icon in the :guilabel:`Sheets` column in the project list found on the
+SODAR home page.
 
 .. figure:: _static/app_samplesheets/sidebar_link.png
     :align: center

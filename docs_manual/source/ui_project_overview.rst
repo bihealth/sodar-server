@@ -3,11 +3,23 @@
 Project Overview
 ^^^^^^^^^^^^^^^^
 
-Once you navigate into a project from the project list, you can see the project
-overview on the right hand side of the screen. The side bar on the left hand
-side has been expanded to display links related to the project.
+Once you navigate into a project, you can see the project overview on the right
+hand side of the screen. The sidebar on the left hand side has been expanded to
+display links related to the project.
+
+Furthermore, you can see a navigation breadcrumb for quickly returning to a
+parent category, as well as the project title bar displaying the project title,
+description and some general links.
 
 .. figure:: _static/sodar_ui/project_detail.png
+    :align: center
+    :scale: 50%
+
+    Project overview
+
+If you are viewing a category instead of a project, you will see a more limited
+set of information and sidebar links, while still following the same general
+structure.
 
 
 Project Overview
@@ -38,20 +50,27 @@ Timeline Overview
 Sidebar
 =======
 
-Home
-    Return to the home screen.
-Project Overview
+The sidebar can contain the following links, depending on your access level in
+the project:
+
+:ref:`Home <ui_index>`
+    Return to the home view.
+:ref:`ui_project_overview`
     Return to the project overview page.
-Sample Sheets
-    Open the :ref:`app_samplesheets` application.
-Landing Zones
-    Open the :ref:`app_landingzones` application.
-Timeline
-    Open the timeline application.
-Members
+:ref:`Sample Sheets <app_samplesheets>`
+    Open the Sample Sheets application.
+:ref:`Landing Zones <app_landingzones>`
+    Open the Landing Zones application.
+:ref:`Timeline <ui_project_timeline>`
+    Open the Timeline application.
+:ref:`Members <ui_project_members>`
     Enter the project members view. This view allows you to see the members with
     access to this project. If you have a project owner or delegate role, you
     can modify project membership roles here.
 :ref:`Update Project <ui_project_update>`
     Allows updating project details and settings. Available to project owners
     and delegates.
+:ref:`Create Project or Category <ui_project_update>` (for Categories)
+    If you are viewing the overview for a category and have owner, delegate or
+    contributor access, you will also see a link for creating a new category or
+    project under the current category.

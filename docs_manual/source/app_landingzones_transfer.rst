@@ -106,7 +106,7 @@ Validating Files
 To ensure your uploaded files are OK for being transferred into the project
 sample data, you can call on SODAR to validate them. To do this in the Landing
 Zones UI, open the dropdown next to your landing zone in the zone list
-and click on :guilabel:`Validate Files`.
+and click :guilabel:`Validate Files`.
 
 .. figure:: _static/app_landingzones/zone_dropdown.png
     :align: center
@@ -114,7 +114,7 @@ and click on :guilabel:`Validate Files`.
 
     Landing zone dropdown
 
-Clicking on the link will temporarily lock the landing zone for read-only access
+Clicking the link will temporarily lock the landing zone for read-only access
 and start the validation process in the background. Duration of validation
 depends on the amount of files in your zone. You can monitor the status of this
 process in the landing zone list view. You will also receive an alert once the
@@ -207,7 +207,7 @@ operation.
 Landing Zone Deletion
 =====================
 
-You can delete any of your landing zones by clicking on :guilabel:`Delete Zone`
+You can delete any of your landing zones by clicking :guilabel:`Delete Zone`
 in the landing zone dropdown. After a confirmation dialogue, the landing zone
 along with all associated files in iRODS will be deleted.
 

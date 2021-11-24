@@ -8,6 +8,10 @@ modify global settings for your account by clicking the
 :guilabel:`Update Settings` button.
 
 .. figure:: _static/sodar_ui/user_profile.png
+    :align: center
+    :scale: 55%
+
+    User profile view
 
 The following user settings are available:
 

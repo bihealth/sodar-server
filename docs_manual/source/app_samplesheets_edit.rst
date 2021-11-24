@@ -19,9 +19,10 @@ guidance for sample sheet editing in the UI.
 Edit Mode
 =========
 
-To begin editing the sample sheets, open the *Sheet Operations* dropdown and
-click on *Edit Sheets*. This will reload the current study and open it in edit
-mode, which differs somewhat from the default browsing UI.
+To begin editing the sample sheets, open the :guilabel:`Sheet Operations`
+dropdown and select :guilabel:`Edit Sheets`. This will reload the current
+study and open it in edit mode, which differs somewhat from the default browsing
+UI.
 
 .. figure:: _static/app_samplesheets/sheet_ui_edit.png
     :align: center
@@ -52,14 +53,14 @@ Differences of edit mode:
 Cell Editing
 ============
 
-To start editing the value of a cell, you can either double click on it with the
+To start editing the value of a cell, you can either double click it with the
 mouse of press enter if you are navigating the table using a keyboard.
 
 Changes to cells are saved immediately when committing the change with the enter
 key or clicking outside of the cell. If the value is not valid for the column
 configuration, the UI will inform you and allow correcting the value. You can
-verify that changes have been saved by the "Changes Saved" text in the edit mode
-status badge in the navigation UI.
+verify that changes have been saved by the :guilabel:`Changes Saved` text in the
+edit mode status badge in the navigation UI.
 
 It is possible for the user to toggle study table columns visible in assay
 tables. In case of an edit to a cell which appears in multiple tables, the value
@@ -148,11 +149,12 @@ ontology term entries can be sorted, edited or removed using the buttons on the
 right of each ontology term.
 
 Manual term entry is also possible by simply typing to the text boxes at the
-bottom of the current entries and clicking on the *Insert Ontology Term* button.
+bottom of the current entries and clicking the :guilabel:`Insert Ontology Term`
+button.
 
-Changes to the cell's ontology terms will be saved upon clicking the *Update*
-button on the bottom right of the modal. You can also cancel any changes by
-clicking on the *Cancel* button.
+Changes to the cell's ontology terms will be saved upon clicking the
+:guilabel:`Update` button on the bottom right of the modal. You can also cancel
+any changes by clicking the :guilabel:`Cancel` button.
 
 The top right corner of the modal displays controls for copying and pasting
 ontology terms between cells.
@@ -186,8 +188,8 @@ delete existing rows.
 Row Insertion
 -------------
 
-To start inserting a new row into a table, click on the *Insert Row* button on
-the table card header.
+To start inserting a new row into a table, click the :guilabel:`Insert Row`
+button on the table card header.
 
 .. figure:: _static/app_samplesheets/edit_row_insert_button.png
     :align: center
@@ -330,12 +332,12 @@ sheets when cells are edited and rows inserted or deleted. The application also
 enables saving backup versions of the entire ISA-Tab, which can be restored or
 exported later.
 
-There are two ways to save a backup version. Upon clicking on *Finish Editing*,
-the current sheet version is automatically saved as a backup version if changes
-have been made since entering the edit mode.
+There are two ways to save a backup version. Upon clicking the *Finish Editing*,
+button, the current sheet version is automatically saved as a backup version if
+changes have been made since entering the edit mode.
 
-The user can also save a backup version manually by clicking on the save button
-next to the *Finish Editing* button. Clicking on it opens a modal where you can
+The user can also save a backup version manually by clicking the save button
+next to the :guilabel:`Finish Editing` button. This opens a modal where you can
 enter an optional description for the version for e.g. specifying which changes
 were made and why.
 
@@ -361,9 +363,9 @@ The required member role for configuring columns can be set in the
 project settings under *Minimum role for column configuration editing*, the
 default minimum role being project contributor.
 
-Clicking on the column configuration button opens a modal for setting
-configuration variables. The modal content varies based on the column type, but
-all share a few common elements:
+Clicking the column configuration button opens a modal for setting configuration
+variables. The modal content varies based on the column type, but all share a
+few common elements:
 
 - Configuration copy/paste elements in the top right corner
 - The *Editable* checkbox for enabling or disabling editing for this column
@@ -429,12 +431,15 @@ valid unit selections, you can select the default unit to be applied.
     In the current implementation, setting units as ontology terms is not
     supported. This functionality will be added in a future SODAR release.
 
+.. _app_samplesheets_edit_ontology:
+
 Ontology Terms
 --------------
 
 For columns which expect values as ontology terms, the column configuration
 modal displays options for ontology setup. The ontologies up for selections are
-those uploaded to the Ontology Access application by SODAR administrators.
+those uploaded to the :ref:`Ontology Access <admin_ontologyaccess>` application
+by SODAR administrators.
 
 .. figure:: _static/app_samplesheets/edit_config_ontology.png
     :align: center
@@ -515,8 +520,9 @@ updated in the background. However, for some changes this might not occur. If
 some links appear to be incorrectly enabled/disabled, you can manually update
 the project cache based on current sample sheet data.
 
-To do this, open the *Sheet Operations* menu and click on *Update Sheet Cache*.
-This will start the cache updating operation in the background. You will receive
-an alert in the SODAR UI once this operation has finished. Note that depending
-on the size of the sample sheets and the number of associated files, this
-operation may take anything from a few seconds to a few minutes.
+To do this, open the :guilabel:`Sheet Operations` dropdown and select
+:guilabel:`Update Sheet Cache`. This will start the cache updating operation in
+the background. You will receive an alert in the SODAR UI once this operation
+has finished. Note that depending on the size of the sample sheets and the
+number of associated files, this operation may take anything from a few seconds
+to a few minutes.

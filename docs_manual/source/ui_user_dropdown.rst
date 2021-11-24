@@ -3,26 +3,30 @@
 User Dropdown
 ^^^^^^^^^^^^^
 
-The user dropdown menu gives access to site-wide views (called site-wide apps).
+The user dropdown menu can be found in the top right corner of the SODAR UI.
+It providess access to site-wide applications, which contain functionality and
+information not related to a specific SODAR project.
 
 .. figure:: _static/sodar_ui/user_menu.png
     :align: center
     :scale: 75%
 
-Currently, the following views are accessible for a logged-in user:
+    SODAR user dropdown
 
-User Name
-    Displays the name of the currently logged in user and the account name.
+In the top of the dropdown your user name and real name are displayed. Below,
+you can find links to applications followed by a log out link. Currently, the
+following applications are accessible for a logged-in user:
+
+App Alerts
+    Alerts raised to you regarding finished background operations or actions of
+    other users.
 iRODS Info
-    Display the status of the iRODS server (the file storage that is backing
-    SODAR) and provide user configuration files for connecting.
+    Display the status of the iRODS file storage and generate user configuration
+    files for connecting.
 Site-Wide Events
-    Displays a list of site-wide (non-project specific) timeline events.
+    Display a list of site-wide (non-project specific) timeline events.
 API Tokens
-    :ref:`Manage API (application programmableinterface) tokens <ui_api_tokens>`
-    for programmers.
+    Manage your :ref:`API tokens <ui_api_tokens>` for programmatic SODAR access.
 User Profile
-    View and configure your settings in the
-    :ref:`User Profile <ui_user_profile>` view.
-Log Out
-    Log out of SODAR and redirect to the :ref:`login screen <ui_login>`.
+    View and configure your global user settings in the
+    :ref:`user profile <ui_user_profile>` view.

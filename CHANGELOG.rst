@@ -32,6 +32,8 @@ Added
     - Zone locked status in UI and ``LandingZoneRetrieveAPIView`` (#321)
     - Display collections in iRODS file list (#1156)
     - Add UI documentation to user manual (#1181)
+- **Ontologyaccess**
+    - Add app documentation to user manual (#1304)
 - **Samplesheets**
     - Simple link support for string cell rendering (#1001)
     - ``generic_raw`` assay plugin (#1128)
@@ -60,6 +62,7 @@ Changed
     - Upgrade to django-webpack-loader v1.4.1 (#1198)
     - Upgrade to redis v3.5.3 (#1297)
     - Use ``ManagementCommandLogger`` for command output (#1276)
+    - Update user manual (#1304)
 - **Irodsbackend**
     - Retrieve iRODS config from ``IRODS_ENV_BACKEND`` setting (#1221)
     - Use data attributes in templates (sodar_core#530)

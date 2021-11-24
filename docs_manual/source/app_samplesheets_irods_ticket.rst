@@ -31,11 +31,12 @@ After the upload, your track hub should be visible in the assay shortcuts.
     Track hub in assay shortcuts
 
 Once the track hub is available, you can create an access ticket for it in the
-Sample Sheets app. Open *Sheet Operations* and click on *iRODS Access Tickets*
-to open a list of access tickets for track hubs in the project. The anonymous
-URL for each ticket can be copied to the clipboard using the button next to the
-ticket label. In the right hand side dropdown for each ticket, you can either
-update its details or delete it. Access is revoked for deleted tickets.
+Sample Sheets app. Open the :guilabel:`Sheet Operations` dropdown and select
+:guilabel:`iRODS Access Tickets` to open a list of access tickets for track hubs
+in the project. The anonymous URL for each ticket can be copied to the clipboard
+using the button next to the ticket label. In the right hand side dropdown for
+each ticket, you can either update its details or delete it. Access is revoked
+for deleted tickets.
 
 .. figure:: _static/app_samplesheets/irods_ticket_list.png
     :align: center
@@ -43,11 +44,11 @@ update its details or delete it. Access is revoked for deleted tickets.
 
     iRODS access ticket list
 
-To create a new ticket, click on *Create Ticket*. This opens a simple form where
-you must choose the track hub path as well as set an optional ticket label and
-expiry date. The label is for referencing the purpose of the ticket: tickets
-with no label will be listed by their creation date. If no expiry date is set,
-the ticket will be valid until manually revoked.
+To create a new ticket, click the :guilabel:`Create Ticket` button. This opens a
+simple form where you must choose the track hub path as well as set an optional
+ticket label and expiry date. The label is for referencing the purpose of the
+ticket: tickets with no label will be listed by their creation date. If no
+expiry date is set, the ticket will be valid until manually revoked.
 
 It is possible to create multiple tickets for a single track hub if there is
 need to e.g. revoke access to ticket users at different times.

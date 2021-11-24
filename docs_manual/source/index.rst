@@ -3,10 +3,9 @@
 SODAR User Manual
 ^^^^^^^^^^^^^^^^^
 
-SODAR is the System for Omics Data Access and Retrieval.
-It is developed by the Core Unit Bioinformatics at the Berlin Institute of
-Health and used for providing access to Omics experiment raw data, results, and
-meta data.
+SODAR is the System for Omics Data Access and Retrieval. It is developed by the
+Core Unit Bioinformatics at the Berlin Institute of Health and used for
+providing access to Omics experiment raw data, results, and metadata.
 
 .. figure:: _static/sodar_ui/home.png
     :align: center
@@ -14,6 +13,12 @@ meta data.
 
     SODAR home view
 
+.. note::
+
+    Certain sections in this documentation may refer to practices and SODAR
+    configuration in use at specifically Berlin Institute of Health, Charité and
+    MDC. If using a SODAR instance deployed within another organization, please
+    refer to your organization's documentation regarding similar topics.
 
 Table of Contents
 ^^^^^^^^^^^^^^^^^
@@ -34,7 +39,10 @@ Table of Contents
     ui_api_tokens
     ui_user_profile
     ui_project_overview
+    ui_project_timeline
+    ui_project_members
     ui_project_update
+    ui_alerts
 
 .. toctree::
     :maxdepth: 2
@@ -49,6 +57,7 @@ Table of Contents
     app_samplesheets_version
     app_samplesheets_irods_ticket
     app_samplesheets_irods_delete
+    app_samplesheets_sync
 
 .. toctree::
     :maxdepth: 2
@@ -98,8 +107,20 @@ Table of Contents
 
 .. toctree::
     :maxdepth: 1
-    :caption: SODAR
-    :name: sodar
+    :caption: SODAR Administration
+    :name: admin
+
+    admin_overview
+    admin_user
+    admin_ui
+    admin_ontologyaccess
+    admin_commands
+    admin_settings
+
+.. toctree::
+    :maxdepth: 1
+    :caption: SODAR History
+    :name: sodar_history
 
     Release Notes <sodar_release_notes>
     Full Changelog <sodar_changelog>

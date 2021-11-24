@@ -11,8 +11,8 @@ export as an Excel table. This section details both methods.
 Export ISA-Tab
 ==============
 
-To export the project sample sheets as ISA-Tabs, open the *Sheet Operations*
-dropdown and click on *Export ISA-Tab*.
+To export the project sample sheets as ISA-Tabs, open the
+:guilabel:`Sheet Operations` dropdown and select :guilabel:`Export ISA-Tab`.
 
 This exports the entire investigation with all studies and assays as a zip
 archive containing all the ISA-Tab files as tab separated values (TSV). The

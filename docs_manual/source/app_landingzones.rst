@@ -17,8 +17,8 @@ landing zone and try again.
 
 The Landing Zones application provides the user an interface for managing
 their landing zone uploads. You can access the application by navigating to a
-project and clicking on the :guilabel:`Landing Zones` link on the project
-sidebar. Alternatively, you can click on the icon in the *Zones* column in the
+project and clicking the :guilabel:`Landing Zones` link on the project sidebar.
+Alternatively, you can click the icon in the :guilabel:`Zones` column in the
 project list found on the SODAR home page.
 
 .. figure:: _static/app_landingzones/sidebar_link.png

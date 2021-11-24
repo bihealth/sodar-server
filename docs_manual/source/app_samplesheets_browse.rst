@@ -32,9 +32,9 @@ From top to bottom, you will see the following elements:
 
 Navigation and Operations
     This section contains a navigation menu for switching between studies and
-    the sample sheet overview. The *Sheet Operations* dropdown lists actions to
-    be performed depending on the user's role in the project. Temporary status
-    messages for e.g. editing are also displayed here.
+    the sample sheet overview. The :guilabel:`Sheet Operations` dropdown lists
+    actions to be performed depending on the user's role in the project.
+    Temporary status messages for e.g. editing are also displayed here.
 Study Title
     The study title is displayed here. To the right hand side you will find
     a badge listing iRODS file statistics for the study. The rightmost buttons
@@ -60,10 +60,10 @@ Sheet Operations Dropdown
 =========================
 
 Operations to be performed on the project's sample sheets can be found under
-the *Sheet Operations* dropdown. These actions will be detailed in further
-sections under the manual. An example of the dropdown can be seen below. Note
-that available operations depend on the user's membership role in the project
-and the current status of the project sample sheets.
+the :guilabel:`Sheet Operations` dropdown. These actions will be detailed in
+further sections under the manual. An example of the dropdown can be seen below.
+Note that available operations depend on the user's membership role in the
+project and the current status of the project sample sheets.
 
 .. figure:: _static/app_samplesheets/sheet_ops.png
     :align: center
@@ -90,7 +90,7 @@ Tables offer the following functionality:
 Column Resizing
     All columns in the tables can be freely resized by dragging on their edges.
 Row Sorting
-    Tables can be sorted by a specific column by clicking on its header.
+    Tables can be sorted by a specific column by clicking its header.
 Row Filtering
     For filtering rows, a string can be entered into the *Filter* text input in
     the table header.
@@ -129,8 +129,8 @@ Columns in a table can be displayed or hidden by the user. Not all available
 columns may be initially visible. For example, columns with no data appear
 hidden by default.
 
-To choose which columns to display, click on the eye icon in the table
-header, displayed in the screenshot below.
+To choose which columns to display, click the eye icon in the table header,
+displayed in the screenshot below.
 
 .. figure:: _static/app_samplesheets/column_toggle_button.png
     :align: center
@@ -139,9 +139,9 @@ header, displayed in the screenshot below.
     Table header with column visibility toggle button highlighted
 
 Clicking the button opens a modal in which you can hide or unhide columns by
-clicking on the accompanying check boxes. Columns can be toggled individually
-or by an entire node. The node name columns (or protocol columns in the case of
-unnamed processes) will always be displayed.
+clicking the accompanying check boxes. Columns can be toggled individually
+or by an entire node. The node name columns, or protocol columns in the case of
+unnamed processes, will always be displayed.
 
 .. figure:: _static/app_samplesheets/column_toggle_modal.png
     :align: center
@@ -226,8 +226,9 @@ collections to be used with the
 track hubs, see :ref:`app_samplesheets_irods_ticket`.
 
 Common assay level collections for all projects consists of
-*Results and Reports* and *Misc Files*. Other collections may be included for
-specific assay types. For more details, see :ref:`metadata_advanced`.
+:guilabel:`Results and Reports` and :guilabel:`Misc Files`. Other collections
+may be included for specific assay types. For more details, see
+:ref:`metadata_advanced`.
 
 .. figure:: _static/app_samplesheets/assay_shortcuts.png
     :align: center
@@ -262,7 +263,7 @@ the file is present.
 iRODS File List Modals
 ----------------------
 
-Clicking on an iRODS file list button in an assay opens up an iRODS file list
+Clicking an iRODS file list button in an assay opens up an iRODS file list
 modal. It displays a flat list of files under the related iRODS collection,
 including files in all of its subcollections. The list can be filtered in the
 modal's title bar. The file links link out to the WebDAV.
@@ -279,7 +280,7 @@ accidental upload into the read-only sample repository. Further information on
 these requests can be found in :ref:`app_samplesheets_irods_delete`.
 
 If you prefer navigating through the subcollections instead of having a flat
-list of files, you can click on the rightmost "Browse Files in WebDAV" button
+list of files, you can click the rightmost "Browse Files in WebDAV" button
 for folder style browsing.
 
 
