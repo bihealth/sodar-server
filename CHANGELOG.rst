@@ -146,6 +146,8 @@ Fixed
 Removed
 -------
 
+- **General**
+    - ``ADMIN_URL`` setting from ``production.py`` (#1228)
 - **Irodsbackend**
     - ``IRODS_ENV_PATH`` setting (#1221)
 - **Irodsinfo**
