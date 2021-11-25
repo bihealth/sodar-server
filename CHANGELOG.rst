@@ -21,7 +21,7 @@ Added
     - ``colls`` parameter in list retrieval (#1156)
     - ``IRODS_ENV_DEFAULT`` setting (#1260)
 - **Landingzones**
-    - ``busyzones`` management command (#1212)
+    - ``busyzones`` management command (#1212, #1314)
     - App alerts for sheet cache updates (#1000)
     - App alerts for zone owner for zone actions (#1204, #1240)
     - ``member_notify_move`` app setting (#1203)

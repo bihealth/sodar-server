@@ -37,6 +37,7 @@ IRODS_BACKEND_ENABLED = (
     True if 'omics_irods' in settings.ENABLED_BACKEND_PLUGINS else False
 )
 IRODS_BACKEND_SKIP_MSG = 'iRODS backend not enabled in settings'
+LOGGER_BUSY_ZONES = 'landingzones.management.commands.busyzones'
 
 
 class TestCommandBase(
@@ -224,15 +225,12 @@ class TestBusyZones(TestCommandBase):
         call_command('busyzones', stdout=out)
         self.assertEqual(out.getvalue(), '')
 
-    def test_busy_zones(self):
-        """Test command with a busy zones"""
+    def test_command(self):
+        """Test command with a busy zone"""
         self.zone2.status = 'MOVING'
         self.zone2.save()
-        with self.assertLogs(
-            'landingzones.management.commands.busyzones', level='INFO'
-        ) as cm:
+        with self.assertLogs(LOGGER_BUSY_ZONES, level='INFO') as cm:
             call_command('busyzones')
-
         self.assertIn(
             ';'.join(
                 [
@@ -246,3 +244,9 @@ class TestBusyZones(TestCommandBase):
             ),
             cm.output[0],
         )
+
+    def test_command_no_busy_zones(self):
+        """Test command with no busy zones"""
+        with self.assertLogs(LOGGER_BUSY_ZONES, level='INFO') as cm:
+            call_command('busyzones')
+        self.assertIn('Found 0 busy zones', cm.output[0])

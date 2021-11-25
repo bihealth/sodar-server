@@ -18,7 +18,6 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         zones = LandingZone.objects.filter(status__in=STATUS_BUSY)
-        output = []
         for zone in zones:
             logger.info(
                 ';'.join(
@@ -32,5 +31,8 @@ class Command(BaseCommand):
                     ]
                 )
             )
-        if output:
-            logger.info(output)
+        logger.info(
+            'Found {} busy zone{}'.format(
+                zones.count(), 's' if zones.count() != 1 else ''
+            )
+        )
