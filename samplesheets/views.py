@@ -104,6 +104,14 @@ RESULTS_COLL = 'ResultsReports'
 IRODS_REQ_CREATE_ALERT_NAME = 'irods_request_create'
 IRODS_REQ_ACCEPT_ALERT_NAME = 'irods_request_accept'
 IRODS_REQ_REJECT_ALERT_NAME = 'irods_request_reject'
+SYNC_SUCCESS_MSG = 'Sample sheet sync successful'
+SYNC_FAIL_DISABLED = 'Sample sheet sync disabled'
+SYNC_FAIL_PREFIX = 'Sample sheet sync failed'
+SYNC_FAIL_CONNECT = 'Unable to connect to URL'
+SYNC_FAIL_UNSET_TOKEN = 'Remote sync token not set'
+SYNC_FAIL_UNSET_URL = 'Remote sync URL not set'
+SYNC_FAIL_INVALID_URL = 'Invalid API URL'
+SYNC_FAIL_STATUS_CODE = 'Source API responded with status code'
 
 EMAIL_DELETE_REQUEST_ACCEPT = r'''
 Your delete request has been accepted.
@@ -861,7 +869,7 @@ class SheetRemoteSyncAPI(SheetImportMixin):
     NOTE: Not used as a mixin because it is also called from the periodic task
     """
 
-    def sync_sheets(self, project, url, token, user):
+    def sync_sheets(self, project, user):
         """
         Perform remote synchronization of sample sheets.
 
@@ -877,6 +885,26 @@ class SheetRemoteSyncAPI(SheetImportMixin):
             )
         )
 
+        # Check input
+        url = app_settings.get_app_setting(
+            APP_NAME, 'sheet_sync_url', project=project
+        )
+        token = app_settings.get_app_setting(
+            APP_NAME, 'sheet_sync_token', project=project
+        )
+        if not url:
+            raise ValueError(SYNC_FAIL_UNSET_URL)
+        url_prefix = '/'.join(
+            reverse(
+                'samplesheets:api_export_json',
+                kwargs={'project': project.sodar_uuid},
+            ).split('/')[:-1]
+        )
+        if url_prefix not in url:
+            raise ValueError('{}: {}'.format(SYNC_FAIL_INVALID_URL, url))
+        if not token:
+            raise ValueError(SYNC_FAIL_UNSET_TOKEN)
+
         # Get remote sheet data (source)
         try:
             response = requests.get(
@@ -884,11 +912,11 @@ class SheetRemoteSyncAPI(SheetImportMixin):
             )
         except Exception:
             raise requests.exceptions.ConnectionError(
-                'Unable to connect to URL: {}'.format(url)
+                '{}: {}'.format(SYNC_FAIL_CONNECT, url)
             )
         if not response.status_code == 200:
             raise requests.exceptions.ConnectionError(
-                'Source API responded with status code {}'.format(
+                'Source API responded with status code: {}'.format(
                     response.status_code
                 )
             )
@@ -2520,34 +2548,17 @@ class SheetRemoteSyncView(
         sheet_sync_enable = app_settings.get_app_setting(
             APP_NAME, 'sheet_sync_enable', project=project
         )
-        sheet_sync_url = app_settings.get_app_setting(
-            APP_NAME, 'sheet_sync_url', project=project
-        )
-        sheet_sync_token = app_settings.get_app_setting(
-            APP_NAME, 'sheet_sync_token', project=project
-        )
 
-        # Sanity check. View is not shown in UI when variable is disabled.
+        # Sanity check, view is not shown in UI when variable is disabled
         if not sheet_sync_enable:
-            messages.error(request, 'Sample sheet sync disabled')
-            return self._redirect()
-        if not sheet_sync_url:
-            messages.error(request, 'Sample sheet sync: URL not set')
-            return self._redirect()
-        if not sheet_sync_token:
-            messages.error(request, 'Sample sheet sync: Token not set')
+            messages.error(request, SYNC_FAIL_DISABLED)
             return self._redirect()
 
         sync = SheetRemoteSyncAPI()
         try:
-            ret = sync.sync_sheets(
-                project,
-                sheet_sync_url,
-                sheet_sync_token,
-                request.user,
-            )
+            ret = sync.sync_sheets(project, request.user)
             if ret:
-                messages.success(request, 'Sample sheet sync successful')
+                messages.success(request, SYNC_SUCCESS_MSG)
                 tl_add = True
             else:
                 messages.info(
@@ -2556,10 +2567,13 @@ class SheetRemoteSyncView(
         except Exception as ex:
             tl_status_type = 'FAILED'
             tl_status_desc = 'Sync failed: {}'.format(ex)
-            messages.error(request, 'Sample sheet sync failed: {}'.format(ex))
+            messages.error(request, '{}: {}'.format(SYNC_FAIL_PREFIX, ex))
             tl_add = True  # Add timeline event
 
         if timeline and tl_add:
+            sheet_sync_url = app_settings.get_app_setting(
+                APP_NAME, 'sheet_sync_url', project=project
+            )
             timeline.add_event(
                 project=project,
                 app_name=APP_NAME,

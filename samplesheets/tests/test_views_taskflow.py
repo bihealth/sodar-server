@@ -30,7 +30,18 @@ from samplesheets.models import (
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 from projectroles.tests.test_views_api import SODARAPIViewTestMixin
 from samplesheets.utils import get_sample_colls
-from samplesheets.views import TRACK_HUBS_COLL, IRODS_REQ_CREATE_ALERT_NAME
+from samplesheets.views import (
+    TRACK_HUBS_COLL,
+    IRODS_REQ_CREATE_ALERT_NAME,
+    SYNC_SUCCESS_MSG,
+    SYNC_FAIL_DISABLED,
+    SYNC_FAIL_PREFIX,
+    SYNC_FAIL_CONNECT,
+    SYNC_FAIL_UNSET_TOKEN,
+    SYNC_FAIL_UNSET_URL,
+    SYNC_FAIL_INVALID_URL,
+    SYNC_FAIL_STATUS_CODE,
+)
 
 
 app_settings = AppSettingAPI()
@@ -149,7 +160,7 @@ class TestSheetRemoteSyncBase(
         self.user_owner_source = self.make_user('owner_source')
         self.user_owner_target = self.make_user('owner_target')
 
-        # Create Projects
+        # Create Project
         self.project_source, self.owner_as_source = self._make_project_taskflow(
             title='TestProjectSource',
             type=PROJECT_TYPE_PROJECT,
@@ -170,10 +181,7 @@ class TestSheetRemoteSyncBase(
             SHEET_PATH, self.project_source
         )
 
-        self.p_id_source = 'p{}'.format(self.project_source.pk)
-        self.p_id_target = 'p{}'.format(self.project_target.pk)
-
-        # Allow sample sheet editing in project
+        # Allow sheet sync in project
         app_settings.set_app_setting(
             APP_NAME, 'sheet_sync_enable', True, project=self.project_target
         )
@@ -205,7 +213,6 @@ class TestSheetRemoteSyncBase(
             .assays.count(),
             1,
         )
-        self.assertEqual(self.project_target.investigations.count(), 0)
         self.assertEqual(ISATab.objects.count(), 1)
 
 
@@ -1957,10 +1964,9 @@ class TestSheetRemoteSyncView(TestSheetRemoteSyncBase):
         )
         self.assertEqual(
             str(list(get_messages(response.wsgi_request))[0]),
-            'Sample sheet sync successful',
+            SYNC_SUCCESS_MSG,
         )
-        # Check if investigation was created. Extensive test of task in
-        # test_tasks.py
+        # Check if investigation was created
         self.assertEqual(self.project_target.investigations.count(), 1)
 
     def test_sync_disabled(self):
@@ -1989,7 +1995,7 @@ class TestSheetRemoteSyncView(TestSheetRemoteSyncBase):
         )
         self.assertEqual(
             str(list(get_messages(response.wsgi_request))[0]),
-            'Sample sheet sync disabled',
+            SYNC_FAIL_DISABLED,
         )
         self.assertEqual(self.project_target.investigations.count(), 0)
 
@@ -2019,8 +2025,7 @@ class TestSheetRemoteSyncView(TestSheetRemoteSyncBase):
         )
         self.assertEqual(
             str(list(get_messages(response.wsgi_request))[0]),
-            'Sample sheet sync failed: Source API responded with status code '
-            '401',
+            '{}: {}: 401'.format(SYNC_FAIL_PREFIX, SYNC_FAIL_STATUS_CODE),
         )
         self.assertEqual(self.project_target.investigations.count(), 0)
 
@@ -2050,9 +2055,8 @@ class TestSheetRemoteSyncView(TestSheetRemoteSyncBase):
         )
         self.assertEqual(
             str(list(get_messages(response.wsgi_request))[0]),
-            'Sample sheet sync: Token not set',
+            '{}: {}'.format(SYNC_FAIL_PREFIX, SYNC_FAIL_UNSET_TOKEN),
         )
-
         self.assertEqual(self.project_target.investigations.count(), 0)
 
     def test_sync_no_url(self):
@@ -2081,10 +2085,8 @@ class TestSheetRemoteSyncView(TestSheetRemoteSyncBase):
         )
         self.assertEqual(
             str(list(get_messages(response.wsgi_request))[0]),
-            'Sample sheet sync: URL not set',
+            '{}: {}'.format(SYNC_FAIL_PREFIX, SYNC_FAIL_UNSET_URL),
         )
-
-        self.assertEqual(self.project_target.investigations.count(), 0)
 
     def test_sync_invalid_url(self):
         """Test sync sheets with invalid URL"""
@@ -2113,11 +2115,42 @@ class TestSheetRemoteSyncView(TestSheetRemoteSyncBase):
         )
         self.assertEqual(
             str(list(get_messages(response.wsgi_request))[0]),
-            'Sample sheet sync failed: Unable to connect to URL: {}'.format(
-                url
-            ),
+            '{}: {}: {}'.format(SYNC_FAIL_PREFIX, SYNC_FAIL_INVALID_URL, url),
         )
         self.assertEqual(self.project_target.investigations.count(), 0)
+
+    def test_sync_no_connection(self):
+        """Test sync sheets with no connection via URL"""
+        url = 'https://alsdjfasdkjfasdgfli.com' + reverse(
+            'samplesheets:api_export_json',
+            kwargs={'project': self.project_target.sodar_uuid},
+        )
+        app_settings.set_app_setting(
+            APP_NAME,
+            'sheet_sync_url',
+            url,
+            project=self.project_target,
+        )
+
+        with self.login(self.user):
+            response = self.client.get(
+                reverse(
+                    'samplesheets:sync',
+                    kwargs={'project': self.project_target.sodar_uuid},
+                ),
+                follow=True,
+            )
+        self.assertRedirects(
+            response,
+            reverse(
+                'samplesheets:project_sheets',
+                kwargs={'project': self.project_target.sodar_uuid},
+            ),
+        )
+        self.assertEqual(
+            str(list(get_messages(response.wsgi_request))[0]),
+            '{}: {}: {}'.format(SYNC_FAIL_PREFIX, SYNC_FAIL_CONNECT, url),
+        )
 
     def test_sync_no_sheet(self):
         """Test sync with non-existing sheets"""
@@ -2149,10 +2182,8 @@ class TestSheetRemoteSyncView(TestSheetRemoteSyncBase):
         )
         self.assertEqual(
             str(list(get_messages(response.wsgi_request))[0]),
-            'Sample sheet sync failed: Source API responded with status code '
-            '404',
+            '{}: {}: 404'.format(SYNC_FAIL_PREFIX, SYNC_FAIL_STATUS_CODE),
         )
-        self.assertEqual(self.project_target.investigations.count(), 0)
 
 
 @skipIf(not BACKENDS_ENABLED, BACKEND_SKIP_MSG)

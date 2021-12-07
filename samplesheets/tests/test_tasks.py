@@ -155,12 +155,14 @@ class TestUpdateProjectCacheTask(
         self.assertEqual(ProjectEvent.objects.all().count(), 2)
 
 
-# NOTE: TestSheetSyncBase moved to test_views_taskflow due to circular import
-
-
 @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
 class TestSheetRemoteSyncTask(TestSheetRemoteSyncBase):
     """Tests for periodic sample sheet sync task"""
+
+    def setUp(self):
+        super().setUp()
+        self.p_id_source = 'p{}'.format(self.project_source.pk)
+        self.p_id_target = 'p{}'.format(self.project_target.pk)
 
     def test_sync_task(self):
         """Test sync"""
