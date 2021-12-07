@@ -63,6 +63,7 @@ Changed
     - Upgrade to redis v3.5.3 (#1297)
     - Use ``ManagementCommandLogger`` for command output (#1276)
     - Update user manual (#1304)
+    - Replace deprecated ``MAINTAINER`` label in Dockerfile (#1316)
 - **Irodsbackend**
     - Retrieve iRODS config from ``IRODS_ENV_BACKEND`` setting (#1221)
     - Use data attributes in templates (sodar_core#530)
