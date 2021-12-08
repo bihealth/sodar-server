@@ -668,6 +668,9 @@ IRODS_PASS = env.str('IRODS_PASS', 'rods')
 IRODS_SAMPLE_COLL = env.str('IRODS_SAMPLE_COLL', 'sample_data')
 IRODS_LANDING_ZONE_COLL = env.str('IRODS_LANDING_ZONE_COLL', 'landing_zones')
 
+# Enable entry point for custom local auth for iRODS users if no LDAP is in use
+IRODS_SODAR_AUTH = env.bool('IRODS_SODAR_AUTH', False)
+
 # Default iRODS environment for backend and client connections
 # NOTE: irods_ssl_ca_certificate_file should be defined in IRODS_CERT_PATH
 IRODS_ENV_DEFAULT = env.dict(

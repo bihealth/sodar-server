@@ -20,6 +20,7 @@ Added
 - **Irodsbackend**
     - ``colls`` parameter in list retrieval (#1156)
     - ``IRODS_ENV_DEFAULT`` setting (#1260)
+    - ``LocalAuthAPIView`` REST API view and ``IRODS_SODAR_AUTH`` setting (#1263)
 - **Landingzones**
     - ``busyzones`` management command (#1212, #1314)
     - App alerts for sheet cache updates (#1000)

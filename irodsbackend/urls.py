@@ -16,4 +16,9 @@ urlpatterns = [
         view=views.IrodsObjectListAjaxView.as_view(),
         name='list',
     ),
+    url(
+        regex=r'^api/auth',
+        view=views.LocalAuthAPIView.as_view(),
+        name='api_auth',
+    ),
 ]

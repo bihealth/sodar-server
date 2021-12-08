@@ -98,6 +98,9 @@ iRODS Settings
     iRODS environment overrides for client connections (dict).
 ``IRODS_CERT_PATH``
     iRODS certificate path on server (string).
+``IRODS_SODAR_AUTH``
+    Enable local basic auth endpoint for iRODS if an external LDAP/AD server is
+    not used (boolean, default: ``False``).
 
 Taskflow Backend Settings
 -------------------------
