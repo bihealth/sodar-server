@@ -117,6 +117,7 @@ Fixed
 - **Irodsbackend**
     - Redundant slash prefix for root level items in collection list (#1245)
     - ``IRODS_ENV_BACKEND`` value conversion issues (#1259)
+    - Unavailable iRODS connection not handled in ``BaseIrodsAjaxView`` (#1322)
 - **Landingzones**
     - ``PROJECTROLES_SEND_EMAIL`` not checked in Taskflow views (#1229)
     - Collection hint alert from zone list UI (#1266)

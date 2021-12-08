@@ -18,6 +18,10 @@ PROJECT_ROLE_DELEGATE = SODAR_CONSTANTS['PROJECT_ROLE_DELEGATE']
 ERROR_NOT_IN_PROJECT = 'Collection does not belong to project'
 ERROR_NOT_FOUND = 'Collection not found'
 ERROR_NO_AUTH = 'User not authorized for iRODS collection'
+ERROR_NO_BACKEND = (
+    'Unable to initialize omics_irods backend, iRODS server '
+    'possibly unavailable'
+)
 
 
 class BaseIrodsAjaxView(SODARBaseProjectAjaxView):
@@ -93,6 +97,8 @@ class BaseIrodsAjaxView(SODARBaseProjectAjaxView):
             irods_backend = get_backend_api('omics_irods')
         except Exception as ex:
             return JsonResponse(self._get_detail(ex), status=500)
+        if not irods_backend:
+            return JsonResponse(self._get_detail(ERROR_NO_BACKEND), status=500)
 
         # Collection checks
         # NOTE: If supplying multiple paths via POST, implement these in request
