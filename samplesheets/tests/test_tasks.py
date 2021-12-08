@@ -24,9 +24,9 @@ from timeline.models import ProjectEvent
 from samplesheets.models import ISATab
 from samplesheets.tasks import update_project_cache_task, sheet_sync_task
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
+from samplesheets.tests.test_views import TestSheetRemoteSyncBase
 from samplesheets.tests.test_views_taskflow import (
     SampleSheetTaskflowMixin,
-    TestSheetRemoteSyncBase,
 )
 
 
@@ -155,12 +155,14 @@ class TestUpdateProjectCacheTask(
         self.assertEqual(ProjectEvent.objects.all().count(), 2)
 
 
-# NOTE: TestSheetSyncBase moved to test_views_taskflow due to circular import
-
-
 @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
 class TestSheetRemoteSyncTask(TestSheetRemoteSyncBase):
     """Tests for periodic sample sheet sync task"""
+
+    def setUp(self):
+        super().setUp()
+        self.p_id_source = 'p{}'.format(self.project_source.pk)
+        self.p_id_target = 'p{}'.format(self.project_target.pk)
 
     def test_sync_task(self):
         """Test sync"""

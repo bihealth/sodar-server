@@ -102,6 +102,7 @@ Changed
     - Improve ontology editor layout (#1293)
     - Improve study and assay title layout (#1291)
     - Improve iRODS access ticket list layout (#1301)
+    - Remote sheet sync refactoring (#1317, #1325, #1326)
 
 Fixed
 -----

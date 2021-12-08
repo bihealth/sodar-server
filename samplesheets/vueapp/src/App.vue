@@ -115,8 +115,9 @@
         <div class="alert alert-info" id="sodar-ss-alert-empty">
           No sample sheets are currently available for this project.
           <span v-if="sodarContext.perms.edit_sheet && !sheetSyncEnabled">
-            To add sample sheets, please import it from an existing ISA-Tab
-            investigation or activate samplesheet synchonization.
+            To add sample sheets, please import them from an existing ISA-Tab
+            investigation, create new sheets from a template or enable remote
+            sheet synchonization.
           </span>
           <span v-if="sodarContext.perms.edit_sheet && sheetSyncEnabled">
             To add sample sheets, please wait for the synchonization to take

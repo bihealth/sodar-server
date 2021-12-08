@@ -124,18 +124,10 @@ def sheet_sync_task(_self):
         )
         if not sheet_sync_enable:
             continue
-        sheet_sync_url = app_settings.get_app_setting(
-            APP_NAME, 'sheet_sync_url', project=project
-        )
-        sheet_sync_token = app_settings.get_app_setting(
-            APP_NAME, 'sheet_sync_token', project=project
-        )
 
         sync_api = SheetRemoteSyncAPI()
         try:
-            ret = sync_api.sync_sheets(
-                project, sheet_sync_url, sheet_sync_token, None
-            )
+            ret = sync_api.sync_sheets(project, None)
             if ret:
                 tl_add = True
         except Exception as ex:

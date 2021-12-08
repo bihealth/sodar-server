@@ -9,7 +9,7 @@ from zipfile import ZipFile
 
 from django.conf import settings
 from django.contrib.messages import get_messages
-from django.test import override_settings
+from django.test import LiveServerTestCase, override_settings
 from django.urls import reverse
 from django.utils.timezone import localtime
 
@@ -19,7 +19,9 @@ from test_plus.test import TestCase
 from projectroles.app_settings import AppSettingAPI
 from projectroles.models import Role, AppSetting, SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
+from projectroles.tests.taskflow_testcase import TestCase as TransactionTestCase
 from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
+from projectroles.tests.test_views_api import SODARAPIViewTestMixin
 from projectroles.utils import build_secret
 
 from samplesheets.io import SampleSheetIO
@@ -33,7 +35,17 @@ from samplesheets.tests.test_io import (
 from samplesheets.tests.test_models import SampleSheetModelMixin
 from samplesheets.tests.test_sheet_config import CONFIG_PATH_DEFAULT
 from samplesheets.utils import clean_sheet_dir_name
-from samplesheets.views import SheetImportMixin
+from samplesheets.views import (
+    SheetImportMixin,
+    SYNC_SUCCESS_MSG,
+    SYNC_FAIL_DISABLED,
+    SYNC_FAIL_PREFIX,
+    SYNC_FAIL_CONNECT,
+    SYNC_FAIL_UNSET_TOKEN,
+    SYNC_FAIL_UNSET_URL,
+    SYNC_FAIL_INVALID_URL,
+    SYNC_FAIL_STATUS_CODE,
+)
 
 
 app_settings = AppSettingAPI()
@@ -53,8 +65,8 @@ SUBMIT_STATUS_PENDING_TASKFLOW = SODAR_CONSTANTS[
     'SUBMIT_STATUS_PENDING_TASKFLOW'
 ]
 
-
 # Local constants
+APP_NAME = 'samplesheets'
 SHEET_NAME = 'i_small.zip'
 SHEET_PATH = SHEET_DIR + SHEET_NAME
 SHEET_PATH_INSERTED = SHEET_DIR_SPECIAL + 'i_small_insert.zip'
@@ -80,6 +92,7 @@ REMOTE_SITE_URL = 'https://sodar.bihealth.org'
 REMOTE_SITE_DESC = 'description'
 REMOTE_SITE_SECRET = build_secret()
 EDIT_NEW_VALUE_STR = 'edited value'
+DUMMY_UUID = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
 with open(CONFIG_PATH_DEFAULT) as fp:
     CONFIG_DATA_DEFAULT = json.load(fp)
 IRODS_BACKEND_ENABLED = (
@@ -1307,3 +1320,315 @@ class TestSheetVersionCompareFileView(TestViewsBase):
                 follow=True,
             )
         self.assertRedirects(response, reverse('home'))
+
+
+class TestSheetRemoteSyncBase(
+    ProjectMixin,
+    RoleAssignmentMixin,
+    SODARAPIViewTestMixin,
+    SampleSheetIOMixin,
+    LiveServerTestCase,
+    TransactionTestCase,
+):
+    """Base class for sample sheet sync tests"""
+
+    def setUp(self):
+        super().setUp()
+        self.role_owner = Role.objects.get_or_create(name=PROJECT_ROLE_OWNER)[0]
+        self.user = self.make_user('user')
+        self.user.save()
+
+        self.category = self._make_project(
+            title='TestCategory',
+            type=PROJECT_TYPE_CATEGORY,
+            parent=None,
+        )
+        self._make_assignment(self.category, self.user, self.role_owner)
+
+        self.project_source = self._make_project(
+            title='TestProjectSource',
+            type=PROJECT_TYPE_PROJECT,
+            parent=self.category,
+        )
+        self.owner_as_source = self._make_assignment(
+            self.project_source, self.user, self.role_owner
+        )
+
+        self.project_target = self._make_project(
+            title='TestProjectTarget',
+            type=PROJECT_TYPE_PROJECT,
+            parent=self.category,
+        )
+        self.owner_as_target = self._make_assignment(
+            self.project_target, self.user, self.role_owner
+        )
+
+        # Import investigation
+        self.inv_source = self._import_isa_from_file(
+            SHEET_PATH, self.project_source
+        )
+
+        # Allow sheet sync in project
+        app_settings.set_app_setting(
+            APP_NAME, 'sheet_sync_enable', True, project=self.project_target
+        )
+        app_settings.set_app_setting(
+            APP_NAME,
+            'sheet_sync_url',
+            self.live_server_url
+            + reverse(
+                'samplesheets:api_export_json',
+                kwargs={'project': self.project_source.sodar_uuid},
+            ),
+            project=self.project_target,
+        )
+        app_settings.set_app_setting(
+            APP_NAME,
+            'sheet_sync_token',
+            self.get_token(self.user),
+            project=self.project_target,
+        )
+
+
+class TestSheetRemoteSyncView(TestSheetRemoteSyncBase):
+    """Tests for SheetRemoteSyncView"""
+
+    def test_sync(self):
+        """Test sync sheets successfully"""
+        with self.login(self.user):
+            response = self.client.get(
+                reverse(
+                    'samplesheets:sync',
+                    kwargs={'project': self.project_target.sodar_uuid},
+                ),
+                follow=True,
+            )
+        self.assertRedirects(
+            response,
+            reverse(
+                'samplesheets:project_sheets',
+                kwargs={'project': self.project_target.sodar_uuid},
+            ),
+        )
+        self.assertEqual(
+            str(list(get_messages(response.wsgi_request))[0]),
+            SYNC_SUCCESS_MSG,
+        )
+        # Check if investigation was created
+        self.assertEqual(self.project_target.investigations.count(), 1)
+
+    def test_sync_disabled(self):
+        """Test sync sheets with sync disabled"""
+        app_settings.set_app_setting(
+            APP_NAME,
+            'sheet_sync_enable',
+            False,
+            project=self.project_target,
+        )
+
+        with self.login(self.user):
+            response = self.client.get(
+                reverse(
+                    'samplesheets:sync',
+                    kwargs={'project': self.project_target.sodar_uuid},
+                ),
+                follow=True,
+            )
+        self.assertRedirects(
+            response,
+            reverse(
+                'samplesheets:project_sheets',
+                kwargs={'project': self.project_target.sodar_uuid},
+            ),
+        )
+        self.assertEqual(
+            str(list(get_messages(response.wsgi_request))[0]),
+            SYNC_FAIL_DISABLED,
+        )
+        self.assertEqual(self.project_target.investigations.count(), 0)
+
+    def test_sync_invalid_token(self):
+        """Test sync sheets with invalid token"""
+        app_settings.set_app_setting(
+            APP_NAME,
+            'sheet_sync_token',
+            'WRONGTOKEN',
+            project=self.project_target,
+        )
+
+        with self.login(self.user):
+            response = self.client.get(
+                reverse(
+                    'samplesheets:sync',
+                    kwargs={'project': self.project_target.sodar_uuid},
+                ),
+                follow=True,
+            )
+        self.assertRedirects(
+            response,
+            reverse(
+                'samplesheets:project_sheets',
+                kwargs={'project': self.project_target.sodar_uuid},
+            ),
+        )
+        self.assertEqual(
+            str(list(get_messages(response.wsgi_request))[0]),
+            '{}: {}: 401'.format(SYNC_FAIL_PREFIX, SYNC_FAIL_STATUS_CODE),
+        )
+        self.assertEqual(self.project_target.investigations.count(), 0)
+
+    def test_sync_no_token(self):
+        """Test sync sheets with no token"""
+        app_settings.set_app_setting(
+            APP_NAME,
+            'sheet_sync_token',
+            '',
+            project=self.project_target,
+        )
+
+        with self.login(self.user):
+            response = self.client.get(
+                reverse(
+                    'samplesheets:sync',
+                    kwargs={'project': self.project_target.sodar_uuid},
+                ),
+                follow=True,
+            )
+        self.assertRedirects(
+            response,
+            reverse(
+                'samplesheets:project_sheets',
+                kwargs={'project': self.project_target.sodar_uuid},
+            ),
+        )
+        self.assertEqual(
+            str(list(get_messages(response.wsgi_request))[0]),
+            '{}: {}'.format(SYNC_FAIL_PREFIX, SYNC_FAIL_UNSET_TOKEN),
+        )
+        self.assertEqual(self.project_target.investigations.count(), 0)
+
+    def test_sync_no_url(self):
+        """Test sync sheets with no URL"""
+        app_settings.set_app_setting(
+            APP_NAME,
+            'sheet_sync_url',
+            '',
+            project=self.project_target,
+        )
+
+        with self.login(self.user):
+            response = self.client.get(
+                reverse(
+                    'samplesheets:sync',
+                    kwargs={'project': self.project_target.sodar_uuid},
+                ),
+                follow=True,
+            )
+        self.assertRedirects(
+            response,
+            reverse(
+                'samplesheets:project_sheets',
+                kwargs={'project': self.project_target.sodar_uuid},
+            ),
+        )
+        self.assertEqual(
+            str(list(get_messages(response.wsgi_request))[0]),
+            '{}: {}'.format(SYNC_FAIL_PREFIX, SYNC_FAIL_UNSET_URL),
+        )
+
+    def test_sync_invalid_url(self):
+        """Test sync sheets with invalid URL"""
+        url = 'https://alsdjfasdkjfasdgfli.com'
+        app_settings.set_app_setting(
+            APP_NAME,
+            'sheet_sync_url',
+            url,
+            project=self.project_target,
+        )
+
+        with self.login(self.user):
+            response = self.client.get(
+                reverse(
+                    'samplesheets:sync',
+                    kwargs={'project': self.project_target.sodar_uuid},
+                ),
+                follow=True,
+            )
+        self.assertRedirects(
+            response,
+            reverse(
+                'samplesheets:project_sheets',
+                kwargs={'project': self.project_target.sodar_uuid},
+            ),
+        )
+        self.assertEqual(
+            str(list(get_messages(response.wsgi_request))[0]),
+            '{}: {}: {}'.format(SYNC_FAIL_PREFIX, SYNC_FAIL_INVALID_URL, url),
+        )
+        self.assertEqual(self.project_target.investigations.count(), 0)
+
+    def test_sync_no_connection(self):
+        """Test sync sheets with no connection via URL"""
+        url = 'https://alsdjfasdkjfasdgfli.com' + reverse(
+            'samplesheets:api_export_json',
+            kwargs={'project': self.project_target.sodar_uuid},
+        )
+        app_settings.set_app_setting(
+            APP_NAME,
+            'sheet_sync_url',
+            url,
+            project=self.project_target,
+        )
+
+        with self.login(self.user):
+            response = self.client.get(
+                reverse(
+                    'samplesheets:sync',
+                    kwargs={'project': self.project_target.sodar_uuid},
+                ),
+                follow=True,
+            )
+        self.assertRedirects(
+            response,
+            reverse(
+                'samplesheets:project_sheets',
+                kwargs={'project': self.project_target.sodar_uuid},
+            ),
+        )
+        self.assertEqual(
+            str(list(get_messages(response.wsgi_request))[0]),
+            '{}: {}: {}'.format(SYNC_FAIL_PREFIX, SYNC_FAIL_CONNECT, url),
+        )
+
+    def test_sync_no_sheet(self):
+        """Test sync with non-existing sheets"""
+        app_settings.set_app_setting(
+            APP_NAME,
+            'sheet_sync_url',
+            self.live_server_url
+            + reverse(
+                'samplesheets:api_export_json',
+                kwargs={'project': DUMMY_UUID},
+            ),
+            project=self.project_target,
+        )
+
+        with self.login(self.user):
+            response = self.client.get(
+                reverse(
+                    'samplesheets:sync',
+                    kwargs={'project': self.project_target.sodar_uuid},
+                ),
+                follow=True,
+            )
+        self.assertRedirects(
+            response,
+            reverse(
+                'samplesheets:project_sheets',
+                kwargs={'project': self.project_target.sodar_uuid},
+            ),
+        )
+        self.assertEqual(
+            str(list(get_messages(response.wsgi_request))[0]),
+            '{}: {}: 404'.format(SYNC_FAIL_PREFIX, SYNC_FAIL_STATUS_CODE),
+        )
