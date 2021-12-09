@@ -65,6 +65,7 @@ Changed
     - Use ``ManagementCommandLogger`` for command output (#1276)
     - Update user manual (#1304)
     - Replace deprecated ``MAINTAINER`` label in Dockerfile (#1316)
+    - Enable setting ``SECURE_REDIRECT_EXEMPT`` in env vars (#1331)
 - **Irodsbackend**
     - Retrieve iRODS config from ``IRODS_ENV_BACKEND`` setting (#1221)
     - Use data attributes in templates (sodar_core#530)
