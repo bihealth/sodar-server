@@ -25,6 +25,7 @@ Major feature update.
 - Add descriptions and batch deletion for sample sheet versions
 - Add automatic study/assay table filtering from search results
 - Manual clearing of finished landing zones in UI no longer needed
+- Upgrade to SODAR Core v0.10.7
 
 
 v0.10.1 (2021-07-07)
