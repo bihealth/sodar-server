@@ -35,7 +35,6 @@
                  gridsLoaded &&
                  !renderError &&
                  !activeSubPage"
-           :studyUuid="currentStudyUuid"
            :id="contentId">
 
         <!-- Study -->
