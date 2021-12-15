@@ -24,6 +24,7 @@ Major feature update.
 - Add locked status info to landingzones UI and LandingZoneRetrieveAPIView
 - Add descriptions and batch deletion for sample sheet versions
 - Add automatic study/assay table filtering from search results
+- Add collections to iRODS file list modals for landing zons
 - Manual clearing of finished landing zones in UI no longer needed
 - Upgrade to SODAR Core v0.10.7
 

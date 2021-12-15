@@ -82,7 +82,7 @@ class OBOFormatOntologyImportView(
         messages.success(
             self.request,
             'OBO Ontology "{}" imported with {} terms.'.format(
-                self.object.title, self.object.terms.all().count()
+                self.object.title, self.object.terms.count()
             ),
         )
         return redirect(redirect_url)

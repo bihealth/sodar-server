@@ -187,7 +187,7 @@ class TestSheetConfig(
 
             sc = conf_api.build_sheet_config(investigation)
             self.assertEqual(
-                len(sc['studies']), investigation.studies.all().count(), msg=msg
+                len(sc['studies']), investigation.studies.count(), msg=msg
             )
 
             for sk, sv in sc['studies'].items():
@@ -199,7 +199,7 @@ class TestSheetConfig(
                     msg=msg,
                 )
                 self.assertEqual(
-                    len(sv['assays']), study.assays.all().count(), msg=msg
+                    len(sv['assays']), study.assays.count(), msg=msg
                 )
 
                 for ak, av in sv['assays'].items():

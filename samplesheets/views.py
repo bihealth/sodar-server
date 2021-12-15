@@ -194,11 +194,11 @@ class SheetImportMixin:
         project = investigation.project
         old_study_uuids = {}
         old_assay_uuids = {}
-        old_study_count = old_inv.studies.all().count()
+        old_study_count = old_inv.studies.count()
         old_assay_count = Assay.objects.filter(
             study__investigation=old_inv
         ).count()
-        new_study_count = investigation.studies.all().count()
+        new_study_count = investigation.studies.count()
         new_assay_count = Assay.objects.filter(
             study__investigation=investigation
         ).count()

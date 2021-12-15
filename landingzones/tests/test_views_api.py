@@ -1,9 +1,7 @@
 """Tests for REST API views in the landingzones app"""
 
 import json
-import pytz
 
-from django.conf import settings
 from django.urls import reverse
 
 from unittest import skipIf
@@ -39,7 +37,6 @@ PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
 ZONE_STATUS = 'VALIDATING'
 ZONE_STATUS_INFO = 'Testing'
-LOCAL_TZ = pytz.timezone(settings.TIME_ZONE)
 INVALID_UUID = '11111111-1111-1111-1111-111111111111'
 
 
