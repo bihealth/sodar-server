@@ -25,12 +25,7 @@ the :ref:`login view <ui_login>`.
 
     SODAR home view
 
-The main element in this view is the list of projects available to you. In
-SODAR, data and user access are structured into *projects*, which exist under
-*categories*. A category can be thought of as a project with no data and the
-possibility to contain other categories or projects under it.
-
-You can see the following UI components:
+In this view you can see the following UI components:
 
 SODAR Site Title
     Click this to return to the home view.
@@ -49,12 +44,10 @@ User Icon
 Home
     Click this to return to this home view.
 Available Projects
-    Browse all SODAR projects that you have access to.
-    There are couple of useful shortcuts, e.g.,
-
-    - adding a new landing zone accessing existing ones,
-    - directly browse files through Davrods, or
-    - view or import sample sheets.
+    The list of categories and projects to which you have access. The list
+    columns contain shortcuts for creating or accessing landing zones, browsing
+    the project's sample data via WebDAV, and viewing or importing sample sheets
+    into a project.
 Starred Button
     Filter projects to those that you have favourited by clicking on the star
     icon in the project views.

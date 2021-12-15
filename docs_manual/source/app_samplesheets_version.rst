@@ -45,7 +45,7 @@ Delete Version
     Delete this version. This can not be undone.
 
 To the right side of the list there are checkboxes for selecting multiple
-versions for actions under the :guilabel:`Version Operations dropdown. Once
+versions for actions under the :guilabel:`Version Operations` dropdown. Once
 exactly two versions are selected. the :guilabel:`Compare Versions` option
 becomes selectable. Clicking this takes you to the version comparison page,
 which displays the differences in included tables.

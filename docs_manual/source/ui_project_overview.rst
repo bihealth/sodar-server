@@ -34,11 +34,9 @@ ReadMe
 Sample Sheets Overview
     Lists the investigation, studies and assays in the project's
     :ref:`sample sheets <app_samplesheets>`. Along with file statistics you can
-    see link buttons that allow you to:
-
-    - copy the corresponding iRODS path to the clipboard,
-    - copy the WebDAV URL to the clipboard, or
-    - directly link into the WebDAV URL for browsing the files.
+    see buttons that allow you to copy the corresponding iRODS path to the
+    clipboard, copy the WebDAV URL to the clipboard, or directly link into the
+    WebDAV URL for browsing the files.
 Landing Zones Overview
     Displays the five most recently created
     :ref:`landing zones <app_landingzones>`.
