@@ -26,7 +26,5 @@ class Command(BaseCommand):
                 m.alt_names = get_alt_names(m.name)
                 m.save()
         logger.info(
-            '{} materials updated.'.format(
-                GenericMaterial.objects.all().count()
-            )
+            '{} materials updated.'.format(GenericMaterial.objects.count())
         )

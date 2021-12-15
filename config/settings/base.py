@@ -749,7 +749,7 @@ SHEETS_ENABLED_TEMPLATES = [
     'ms_meta_biocrates',
 ]
 
-# Settings for sync sheets in minutes
+# Remote sample sheet sync interval in minutes
 SHEETS_SYNC_INTERVAL = env.int('SHEETS_SYNC_INTERVAL', 5)
 
 

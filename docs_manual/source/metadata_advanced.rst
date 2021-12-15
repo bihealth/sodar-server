@@ -144,7 +144,7 @@ Microarray Plugin
     * N/A
 - Row-specific links
     * Rows with *hybridization assay name* and *scan name* are linked under
-      ``RawData/{hybrid name}/{scan name}/``.
+      ``RawData/{hybridization assay name}/{scan name}/``.
 - Inline links
     * Inline file names are linked to row-specific hybridization assay name and
       scan name paths.

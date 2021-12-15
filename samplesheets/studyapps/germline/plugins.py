@@ -30,15 +30,11 @@ User = auth.get_user_model()
 class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
     """Plugin for germline studies in sample sheets"""
 
-    # Properties required by django-plugins ------------------------------------
-
     #: Name (used in code and as unique idenfitier)
     name = 'samplesheets_study_germline'
 
     #: Title (used in templates)
     title = 'Sample Sheets Germline Study Plugin'
-
-    # Properties defined in SampleSheetStudyPluginPoint ------------------------
 
     #: Configuration name
     config_name = 'bih_germline'
@@ -158,16 +154,13 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
 
         if 'family' in kwargs:
             query_id = kwargs['family'][0]
-
         elif 'source' in kwargs:
             query_id = kwargs['source'][0]
             find_by_source = True
-
         if not query_id:  # This should not happen..
             return None
 
         webdav_url = settings.IRODS_WEBDAV_URL
-
         ret = {
             'title': 'Pedigree-Wise Links for {}'.format(query_id),
             'data': {
@@ -179,7 +172,6 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
 
         if find_by_source:
             sources = GenericMaterial.objects.filter(study=study, name=query_id)
-
         else:
             sources = get_family_sources(study, query_id)
 
@@ -196,13 +188,10 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
             # Use cached value if present
             if cache_item and source.name in cache_item.data['bam']:
                 bam_path = cache_item.data['bam'][source.name]
-
-            # Else query iRODS
-            else:
+            else:  # Else query iRODS
                 bam_path = get_pedigree_file_path(
                     file_type='bam', source=source, study_tables=study_tables
                 )
-
             if bam_path:
                 ret['data']['bam']['files'].append(
                     {
@@ -226,14 +215,12 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
             and cache_item.data['vcf'][query_id]
         ):
             vcf_path = cache_item.data['vcf'][query_id]
-
         else:
             vcf_path = get_pedigree_file_path(
                 file_type='vcf',
                 source=sources.first(),
                 study_tables=study_tables,
             )
-
         if vcf_path:
             ret['data']['vcf']['files'].append(
                 {
@@ -297,7 +284,6 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
             return
 
         cache_backend = get_backend_api('sodar_cache')
-
         tb = SampleSheetTableBuilder()
         projects = (
             [project]

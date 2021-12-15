@@ -16,8 +16,21 @@ does not attempt to hide this from you. This manual tries to list the major
 features, thus help with discoverability, and also explain these features in a
 sufficient manner.
 
-The following figure shows the home view that appears after logging in from
-the :ref:`login view <ui_login>`.
+.. note::
+
+    Supported web browsers for the SODAR UI are the latest versions of
+    `Mozilla Firefox <https://www.mozilla.org/en-US/firefox/new/>`_ and
+    `Google Chrome <https://www.google.com/chrome/>`_. Other modern browsers may
+    work with the site, but are not supported by the authors. Javascript must be
+    enabled for full UI functionality.
+
+.. warning::
+
+    The SODAR UI will **not** function correctly on Microsoft Internet Explorer
+    or other legacy browsers!
+
+The following screenshot displays the *home view*, which appears after logging
+in from the :ref:`login view <ui_login>`.
 
 .. figure:: _static/sodar_ui/home.png
     :align: center

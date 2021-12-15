@@ -89,8 +89,8 @@ class TestUpdateProjectCacheTask(
         self.assertEqual(
             JSONCacheItem.objects.filter(project=self.project).count(), 0
         )
-        self.assertEqual(AppAlert.objects.all().count(), 1)
-        self.assertEqual(ProjectEvent.objects.all().count(), 1)
+        self.assertEqual(AppAlert.objects.count(), 1)
+        self.assertEqual(ProjectEvent.objects.count(), 1)
 
         update_project_cache_task(
             self.project.sodar_uuid,
@@ -115,18 +115,18 @@ class TestUpdateProjectCacheTask(
             }
         }
         self.assertEqual(cache_item.data, expected_data)
-        self.assertEqual(AppAlert.objects.all().count(), 2)
+        self.assertEqual(AppAlert.objects.count(), 2)
         alert = AppAlert.objects.order_by('-pk').first()
         self.assertTrue(alert.message.endswith(CACHE_ALERT_MESSAGE))
-        self.assertEqual(ProjectEvent.objects.all().count(), 2)
+        self.assertEqual(ProjectEvent.objects.count(), 2)
 
     def test_update_cache_no_alert(self):
         """Test cache update with app alert disabled"""
         self.assertEqual(
             JSONCacheItem.objects.filter(project=self.project).count(), 0
         )
-        self.assertEqual(AppAlert.objects.all().count(), 1)
-        self.assertEqual(ProjectEvent.objects.all().count(), 1)
+        self.assertEqual(AppAlert.objects.count(), 1)
+        self.assertEqual(ProjectEvent.objects.count(), 1)
 
         update_project_cache_task(
             self.project.sodar_uuid, self.user.sodar_uuid, add_alert=False
@@ -135,24 +135,24 @@ class TestUpdateProjectCacheTask(
         self.assertEqual(
             JSONCacheItem.objects.filter(project=self.project).count(), 1
         )
-        self.assertEqual(AppAlert.objects.all().count(), 1)
-        self.assertEqual(ProjectEvent.objects.all().count(), 2)
+        self.assertEqual(AppAlert.objects.count(), 1)
+        self.assertEqual(ProjectEvent.objects.count(), 2)
 
     def test_update_cache_no_user(self):
         """Test cache update with no user"""
         self.assertEqual(
             JSONCacheItem.objects.filter(project=self.project).count(), 0
         )
-        self.assertEqual(AppAlert.objects.all().count(), 1)
-        self.assertEqual(ProjectEvent.objects.all().count(), 1)
+        self.assertEqual(AppAlert.objects.count(), 1)
+        self.assertEqual(ProjectEvent.objects.count(), 1)
 
         update_project_cache_task(self.project.sodar_uuid, None, add_alert=True)
 
         self.assertEqual(
             JSONCacheItem.objects.filter(project=self.project).count(), 1
         )
-        self.assertEqual(AppAlert.objects.all().count(), 1)
-        self.assertEqual(ProjectEvent.objects.all().count(), 2)
+        self.assertEqual(AppAlert.objects.count(), 1)
+        self.assertEqual(ProjectEvent.objects.count(), 2)
 
 
 @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)

@@ -64,7 +64,7 @@ def get_irods_tree(investigation):
         ret += '<li>{}'.format(
             irods_backend.get_sub_path(study, include_parent=False)
         )
-        if study.assays.all().count() > 0:
+        if study.assays.count() > 0:
             ret += '<ul>'
             for assay in study.assays.all():
                 ret += '<li>{}</li>'.format(

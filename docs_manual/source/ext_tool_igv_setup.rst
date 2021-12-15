@@ -18,6 +18,14 @@ visualizing results of Omics experiments.
     - `IGV Download Page <http://www.oracle.com/technetwork/java/javase/downloads/jce8-download-2133166.html>`_
     - `Oracle Java Cryptography Extension <http://www.oracle.com/technetwork/java/javase/downloads/jce8-download-2133166.html>`_
 
+.. warning::
+
+    As with the general SODAR UI, Internet Explorer should not be used with IGV.
+    Please use a recent version of
+    `Mozilla Firefox <https://www.mozilla.org/en-US/firefox/new/>`_ or
+    `Google Chrome <https://www.google.com/chrome/>`_, or some other modern web
+    browser.
+
 
 Downloading and Installing IGV
 ==============================
@@ -71,9 +79,12 @@ network as an example.
   Go to the ``Proxy`` Tab.
 - Check the ``Use Proxy`` box.
 - Enter the following values:
-    - ``Proxy host``: ``proxy.charite.de``
-    - ``Proxy port``: ``8080``
-    - ``Whitelist``: ``cubi-omics-davrods-beta.bihealth.org,cubi-omics-beta.bihealth.org,sodar.bihealth.org,sodar-davrods.bihealth.org``
+
+.. code-block::
+
+    Proxy host: proxy.charite.de
+    Proxy port: 8080
+    Whitelist: cubi-omics-davrods-beta.bihealth.org,cubi-omics-beta.bihealth.org,sodar.bihealth.org,sodar-davrods.bihealth.org
 
 .. image:: _static/ext_tool_igv/IGV_Proxy_Settings.png
 

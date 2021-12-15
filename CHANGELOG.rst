@@ -34,7 +34,7 @@ Added
     - Display collections in iRODS file list (#1156)
     - Add UI documentation to user manual (#1181)
 - **Ontologyaccess**
-    - Add app documentation to user manual (#1304)
+    - Add app documentation to user manual (#1301)
 - **Samplesheets**
     - Simple link support for string cell rendering (#1001)
     - ``generic_raw`` assay plugin (#1128)
@@ -63,7 +63,7 @@ Changed
     - Upgrade to django-webpack-loader v1.4.1 (#1198)
     - Upgrade to redis v3.5.3 (#1297)
     - Use ``ManagementCommandLogger`` for command output (#1276)
-    - Update user manual (#1304)
+    - Update user manual (#1304, #1318)
     - Replace deprecated ``MAINTAINER`` label in Dockerfile (#1316)
     - Enable setting ``SECURE_REDIRECT_EXEMPT`` in env vars (#1331)
 - **Irodsbackend**
@@ -103,7 +103,7 @@ Changed
     - Reverse import/create order in Sheet Operations dropdown (#1286)
     - Improve ontology editor layout (#1293)
     - Improve study and assay title layout (#1291)
-    - Improve iRODS access ticket list layout (#1301)
+    - Improve iRODS access ticket list layout (#1302)
     - Remote sheet sync refactoring (#1317, #1325, #1326)
     - Upgrade Vue app dependencies (#1328, #1329)
 
@@ -317,7 +317,7 @@ Removed
     - Legacy Docker setup (#1129)
     - ``syncgroups`` user command, updated version found in ``projectroles`` (#1172)
     - Unused ``sodar.users.utils`` (#1172)
-    - Unused `.travis.yml``
+    - Unused ``.travis.yml``
     - ``backports.lzma`` dependency (#1197)
 - **Irodsbackend**
     - Support for Ajax queries without project

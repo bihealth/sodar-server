@@ -169,7 +169,7 @@ class ZoneCreateMixin(ZoneConfigPluginMixin):
                     logger.debug('Retrieved collections from cache')
             elif plugin:
                 pass  # TODO: Build tables, get rows directly from plugin?
-                # plugin = zone.assay.get_plugin()
+
         logger.debug('Collections to be created: {}'.format(', '.join(colls)))
 
         flow_name = 'landing_zone_create'

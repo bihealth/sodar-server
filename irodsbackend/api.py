@@ -1,5 +1,12 @@
 """iRODS backend API for SODAR Django apps"""
 
+import logging
+import math
+import pytz
+import random
+import re
+import string
+
 from irods.api_number import api_number
 from irods.collection import iRODSCollection
 from irods.column import Criterion
@@ -10,17 +17,14 @@ from irods.query import SpecificQuery
 from irods.session import iRODSSession
 from irods.ticket import Ticket
 
-import logging
-import math
-from pytz import timezone
-import random
-import re
-import string
-
 from django.conf import settings
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.http import urlencode
 from django.utils.text import slugify
+
+
+logger = logging.getLogger(__name__)
 
 
 # Local constants
@@ -38,9 +42,6 @@ ENV_INT_PARAMS = [
     'irods_encryption_num_hash_rounds',
     'irods_encryption_salt_size',
 ]
-
-
-logger = logging.getLogger(__name__)
 
 
 class IrodsAPI:
@@ -106,11 +107,11 @@ class IrodsAPI:
     @classmethod
     def _get_datetime(cls, naive_dt):
         """
-        Return a printable datetime in Berlin timezone from a naive
+        Return a printable datetime in the system timezone from a naive
         datetime object.
         """
-        dt = naive_dt.replace(tzinfo=timezone('GMT'))
-        dt = dt.astimezone(timezone(settings.TIME_ZONE))
+        dt = naive_dt.replace(tzinfo=pytz.timezone('GMT'))
+        dt = dt.astimezone(timezone.get_default_timezone())
         return dt.strftime('%Y-%m-%d %H:%M')
 
     @classmethod

@@ -322,7 +322,7 @@ button#sodar-ss-btn-edit-finish {
 }
 
 /* Hide navbar if browser is too narrow */
-@media screen and (max-width: 1200px) {
+@media screen and (max-width: 1300px) {
   .sodar-ss-nav {
     display: none;
   }

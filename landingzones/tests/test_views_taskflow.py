@@ -250,7 +250,7 @@ class TestLandingZoneCreateView(
             )
 
         self._wait_for_taskflow(count=1)
-        self.assertEqual(LandingZone.objects.all().count(), 1)
+        self.assertEqual(LandingZone.objects.count(), 1)
         zone = LandingZone.objects.first()
         self.assertEqual(zone.status, 'ACTIVE')
         self._assert_zone_coll(zone)
@@ -263,7 +263,7 @@ class TestLandingZoneCreateView(
     @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_create_zone_colls(self):
         """Test landingzones creation with default collections"""
-        self.assertEqual(LandingZone.objects.all().count(), 0)
+        self.assertEqual(LandingZone.objects.count(), 0)
 
         values = {
             'assay': str(self.assay.sodar_uuid),
@@ -290,7 +290,7 @@ class TestLandingZoneCreateView(
             )
 
         self._wait_for_taskflow(count=1)
-        self.assertEqual(LandingZone.objects.all().count(), 1)
+        self.assertEqual(LandingZone.objects.count(), 1)
         zone = LandingZone.objects.first()
         self.assertEqual(zone.status, 'ACTIVE')
         self._assert_zone_coll(zone)
@@ -303,7 +303,7 @@ class TestLandingZoneCreateView(
     @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_create_zone_colls_plugin(self):
         """Test landingzones creation with plugin collections"""
-        self.assertEqual(LandingZone.objects.all().count(), 0)
+        self.assertEqual(LandingZone.objects.count(), 0)
         # Mock assay configuration
         self.assay.measurement_type = {'name': 'genome sequencing'}
         self.assay.technology_type = {'name': 'nucleotide sequencing'}
@@ -342,7 +342,7 @@ class TestLandingZoneCreateView(
             )
 
         self._wait_for_taskflow(count=1)
-        self.assertEqual(LandingZone.objects.all().count(), 1)
+        self.assertEqual(LandingZone.objects.count(), 1)
         zone = LandingZone.objects.first()
         self.assertEqual(zone.status, 'ACTIVE')
         self._assert_zone_coll(zone)
@@ -722,7 +722,7 @@ class TestLandingZoneDeleteView(
     @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_delete_zone(self):
         """Test landingzones deletion with taskflow"""
-        self.assertEqual(LandingZone.objects.all().count(), 1)
+        self.assertEqual(LandingZone.objects.count(), 1)
         self.assertEqual(
             AppAlert.objects.filter(alert_name='zone_delete').count(), 0
         )
@@ -747,7 +747,7 @@ class TestLandingZoneDeleteView(
         self._wait_for_taskflow(
             zone_uuid=LandingZone.objects.first().sodar_uuid, status='DELETED'
         )
-        self.assertEqual(LandingZone.objects.all().count(), 1)
+        self.assertEqual(LandingZone.objects.count(), 1)
         self.assertEqual(LandingZone.objects.first().status, 'DELETED')
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(

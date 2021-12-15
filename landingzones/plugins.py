@@ -100,7 +100,8 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
 
     def get_taskflow_sync_data(self):
         """
-        Return data for syncing taskflow operations
+        Return data for syncing taskflow operations.
+
         :return: List of dicts or None.
         """
         sync_flows = []
@@ -142,6 +143,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         """
         Return URL for referring to a object used by the app, along with a
         label to be shown to the user for linking.
+
         :param model_str: Object class (string)
         :param uuid: sodar_uuid of the referred object
         :return: Dict or None if not found
@@ -287,6 +289,7 @@ class LandingZoneConfigPluginPoint(PluginPoint):
     def cleanup_zone(self, zone):
         """
         Perform actions before landing zone deletion.
+
         :param zone: LandingZone object
         """
         pass
@@ -294,7 +297,8 @@ class LandingZoneConfigPluginPoint(PluginPoint):
     # TODO: Implement this in your config plugin if needed
     def get_extra_flow_data(self, zone, flow_name):
         """
-        Return extra zone data parameters
+        Return extra zone data parameters.
+
         :param zone: LandingZone object
         :param flow_name: Name of flow (string)
         :return: dict or None
@@ -304,7 +308,8 @@ class LandingZoneConfigPluginPoint(PluginPoint):
 
 def get_zone_config_plugin(zone):
     """
-    Return active landing zone configuration plugin
+    Return active landing zone configuration plugin.
+
     :param zone: LandingZone object
     :return: LandingZoneConfigPlugin object or None if not found
     """

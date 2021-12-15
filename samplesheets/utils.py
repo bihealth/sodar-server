@@ -245,7 +245,7 @@ def get_unique_name(study, assay, name, item_type=None):
     # TODO: Refactor once we allow creating sheets from scratch
     study_id = study.arcs[0][0].split('-')[1][1:]
     assay_id = 0
-    if assay and study.assays.all().count() > 1:
+    if assay and study.assays.count() > 1:
         assay_id = sorted([a.file_name for a in study.assays.all()]).index(
             assay.file_name
         )
