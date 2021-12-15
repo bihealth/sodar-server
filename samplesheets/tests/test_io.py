@@ -486,7 +486,7 @@ class TestSampleSheetIOExport(TestSampleSheetIOBase):
 
         # Dict value (ontology term reference)
         in_data = self.investigation.studies.first().study_design[0]['type']
-        out_data = self.sheet_io._export_value(in_data)
+        out_data = self.sheet_io._export_val(in_data)
         expected = isa_models.OntologyTermRef(
             name=in_data['name'],
             accession=in_data['accession'],
@@ -513,7 +513,7 @@ class TestSampleSheetIOExport(TestSampleSheetIOBase):
                 doi=v['doi'],
                 authors=v['authors'],
                 title=v['title'],
-                status=self.sheet_io._export_value(v['status']),
+                status=self.sheet_io._export_val(v['status']),
                 comments=self.sheet_io._export_comments(v['comments']),
                 headers=v['headers'],
             )
@@ -535,7 +535,7 @@ class TestSampleSheetIOExport(TestSampleSheetIOBase):
                 fax=v['fax'],
                 address=v['address'],
                 affiliation=v['affiliation'],
-                role=self.sheet_io._export_value(v['role']),
+                role=self.sheet_io._export_val(v['role']),
                 comments=self.sheet_io._export_comments(v['comments']),
                 headers=v['headers'],
             )
@@ -567,7 +567,7 @@ class TestSampleSheetIOExport(TestSampleSheetIOBase):
         out_data = self.sheet_io._export_study_design(in_data)
         expected = tuple(
             isa_models.DesignDescriptorsInfo(
-                type=self.sheet_io._export_value(v['type']),
+                type=self.sheet_io._export_val(v['type']),
                 comments=self.sheet_io._export_comments(v['comments']),
                 headers=v['headers'],
             )
@@ -587,10 +587,10 @@ class TestSampleSheetIOExport(TestSampleSheetIOBase):
         expected = tuple(
             isa_models.Characteristics(
                 name=k,
-                value=[self.sheet_io._export_value(v['value'])]
+                value=[self.sheet_io._export_val(v['value'])]
                 if not isinstance(v['value'], list)
-                else self.sheet_io._export_value(v['value']),
-                unit=self.sheet_io._export_value(v['unit']),
+                else self.sheet_io._export_val(v['value']),
+                unit=self.sheet_io._export_val(v['unit']),
             )
             for k, v in in_data.items()
         )
@@ -603,7 +603,7 @@ class TestSampleSheetIOExport(TestSampleSheetIOBase):
         expected = {
             k: isa_models.FactorInfo(
                 name=k,
-                type=self.sheet_io._export_value(v['type']),
+                type=self.sheet_io._export_val(v['type']),
                 comments=self.sheet_io._export_comments(v['comments']),
                 headers=v['headers'],
             )
@@ -617,12 +617,12 @@ class TestSampleSheetIOExport(TestSampleSheetIOBase):
         in_data = study.materials.get(
             unique_name='{}-s0-sample-C-0.07-aliquot1'.format(self.p_id)
         ).factor_values
-        out_data = self.sheet_io._export_factor_values(in_data)
+        out_data = self.sheet_io._export_factor_vals(in_data)
         expected = tuple(
             isa_models.FactorValue(
                 name=k,
-                value=self.sheet_io._export_value(v['value']),
-                unit=self.sheet_io._export_value(v['unit']),
+                value=self.sheet_io._export_val(v['value']),
+                unit=self.sheet_io._export_val(v['unit']),
             )
             for k, v in in_data.items()
         )
@@ -633,7 +633,7 @@ class TestSampleSheetIOExport(TestSampleSheetIOBase):
         study = self.investigation.studies.get(identifier='BII-S-1')
         in_data = study.protocols.get(name='metabolite extraction').parameters
         out_data = self.sheet_io._export_parameters(in_data)
-        expected = {p['name']: self.sheet_io._export_value(p) for p in in_data}
+        expected = {p['name']: self.sheet_io._export_val(p) for p in in_data}
         self.assertEqual(out_data, expected)
 
     def test_export_param_values(self):
@@ -646,10 +646,10 @@ class TestSampleSheetIOExport(TestSampleSheetIOBase):
         expected = tuple(
             isa_models.ParameterValue(
                 name=k,
-                value=[self.sheet_io._export_value(v['value'])]
+                value=[self.sheet_io._export_val(v['value'])]
                 if not isinstance(v['value'], list)
-                else self.sheet_io._export_value(v['value']),
-                unit=self.sheet_io._export_value(v['unit']),
+                else self.sheet_io._export_val(v['value']),
+                unit=self.sheet_io._export_val(v['unit']),
             )
             for k, v in in_data.items()
         )

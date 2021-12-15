@@ -55,7 +55,8 @@ class LandingZoneConfigPlugin(LandingZoneConfigPluginPoint):
 
     def get_extra_flow_data(self, zone, flow_name):
         """
-        Return extra zone data parameters
+        Return extra zone data parameters.
+
         :param zone: LandingZone object
         :param flow_name: Name of flow (string)
         :return: dict or None
@@ -65,6 +66,7 @@ class LandingZoneConfigPlugin(LandingZoneConfigPluginPoint):
     def cleanup_zone(self, zone):
         """
         Perform actions before landing zone deletion.
+
         :param zone: LandingZone object
         """
         irods_backend = get_backend_api('omics_irods')

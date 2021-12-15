@@ -1,9 +1,10 @@
 """App plugin and sub-app plugin points for the samplesheets app"""
 
 from copy import deepcopy
-from irods.exception import NetworkException
 import logging
 import os
+
+from irods.exception import NetworkException
 
 from django.conf import settings
 from django.urls import reverse
@@ -72,8 +73,6 @@ SHEETS_INFO_SETTINGS = [
 class ProjectAppPlugin(ProjectAppPluginPoint):
     """Plugin for registering app with Projectroles"""
 
-    # Properties required by django-plugins ------------------------------
-
     #: Name (slug-safe, used in URLs)
     name = 'samplesheets'
 
@@ -82,8 +81,6 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
 
     #: App URLs (will be included in settings by djangoplugins)
     urls = urlpatterns
-
-    # Properties defined in ProjectAppPluginPoint -----------------------
 
     #: App settings definition
     app_settings = {
@@ -664,8 +661,6 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
 class SampleSheetStudyPluginPoint(PluginPoint):
     """Plugin point for registering study-level samplesheet sub-apps"""
 
-    # Properties required by django-plugins ------------------------------
-
     #: Name (used in code and as unique idenfitier)
     # TODO: Implement this in your study plugin
     # TODO: Recommended in form of samplesheets_study_configname
@@ -674,8 +669,6 @@ class SampleSheetStudyPluginPoint(PluginPoint):
     #: Title (used in templates)
     # TODO: Implement this in your study plugin
     # title = 'Sample Sheets X Study App'
-
-    # Properties defined in SampleSheetStudyPluginPoint ------------------
 
     #: Configuration name (used to identify plugin by study)
     # TODO: Implement this in your study plugin
@@ -742,8 +735,6 @@ def get_study_plugin(plugin_name):
 class SampleSheetAssayPluginPoint(PluginPoint):
     """Plugin point for registering assay-level samplesheet sub-apps"""
 
-    # Properties required by django-plugins ------------------------------
-
     #: Name (used in code and as unique idenfitier)
     # TODO: Implement this in your assay plugin
     # TODO: Recommended in form of samplesheets_assay_name
@@ -752,8 +743,6 @@ class SampleSheetAssayPluginPoint(PluginPoint):
     #: Title
     # TODO: Implement this in your assay plugin
     # title = 'Sample Sheets X Assay App'
-
-    # Properties defined in SampleSheetAssayPluginPoint ------------------
 
     #: App name for dynamic reference to app in e.g. caching
     # TODO: Rename plugin.name to APP_NAME?
@@ -939,6 +928,15 @@ def get_assay_plugin(plugin_name):
 
 
 def get_irods_content(inv, study, irods_backend, ret_data):
+    """
+    Return iRODS content for a study.
+
+    :param inv: Investigation objet
+    :param study: Study object
+    :param irods_backend: irodsbackend API object
+    :param ret_data: Return data to be modified (dict)
+    :return: Dict
+    """
     cache_backend = get_backend_api('sodar_cache')
     ret_data = deepcopy(ret_data)
     if not (inv.irods_status and irods_backend):

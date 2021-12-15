@@ -165,7 +165,7 @@ class TaskflowZoneStatusSetAPIView(BaseTaskflowAPIView):
     @classmethod
     def _add_member_move_alert(cls, app_alerts, zone, user, file_count):
         """Add app alert for project member"""
-        alert_msg = '{} file{} uploaded by {}'.format(
+        alert_msg = '{} file{} uploaded by {}.'.format(
             file_count,
             's' if file_count != 1 else '',
             zone.user.username,
@@ -351,7 +351,7 @@ class TaskflowZoneStatusSetAPIView(BaseTaskflowAPIView):
                     project_uuid=str(zone.project.sodar_uuid),
                     user_uuid=str(zone.user.sodar_uuid),
                     add_alert=True,
-                    alert_msg='Moved landing zone "{}"'.format(zone.title),
+                    alert_msg='Moved landing zone "{}".'.format(zone.title),
                 )
             except Exception as ex:
                 logger.error(
