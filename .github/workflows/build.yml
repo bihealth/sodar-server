@@ -69,9 +69,9 @@ jobs:
         run: flake8 .
       - name: Check Python formatting
         run: make black arg=--check
-      # - name: Run Codacy coverage reporter
-      #   uses: codacy/codacy-coverage-reporter-action@master
-      #   with:
-      #     project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
-      #     coverage-reports: coverage.xml
-      #   if: ${{ matrix.python-version == '3.8' }}
+      - name: Run Codacy coverage reporter
+        uses: codacy/codacy-coverage-reporter-action@master
+        with:
+          project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
+          coverage-reports: coverage.xml
+        if: ${{ matrix.python-version == '3.8' }}
