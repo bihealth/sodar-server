@@ -7,6 +7,9 @@ SODAR
 .. image:: https://app.codacy.com/project/badge/Grade/ef513382baa845b9a0fecfe182e3ad2f
     :target: https://www.codacy.com/gh/bihealth/sodar-server/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=bihealth/sodar-server&amp;utm_campaign=Badge_Grade
 
+.. image:: https://app.codacy.com/project/badge/Coverage/ef513382baa845b9a0fecfe182e3ad2f
+    :target: https://www.codacy.com/gh/bihealth/sodar-server/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=bihealth/sodar-server&amp;utm_campaign=Badge_Coverage
+
 .. image:: https://img.shields.io/badge/License-MIT-green.svg
     :target: https://opensource.org/licenses/MIT
 
