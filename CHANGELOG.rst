@@ -17,6 +17,7 @@ Added
     - Siteinfo app in default ``LOGGING_APPS`` value (#1219)
     - ``LOGGING_LEVEL`` setting (sodar_core#822)
     - ``PROJECTROLES_EMAIL_HEADER`` and ``PROJECTROLES_EMAIL_FOOTER`` settings (#1231)
+    - Codacy coverage reporting (#1169)
 - **Irodsbackend**
     - ``colls`` parameter in list retrieval (#1156)
     - ``IRODS_ENV_DEFAULT`` setting (#1260)
