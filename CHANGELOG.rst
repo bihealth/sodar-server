@@ -7,8 +7,8 @@ Changelog for the SODAR project. Loosely follows the
 Note that the issue IDs here refer to ones in the private CUBI GitLab.
 
 
-Unreleased
-==========
+v0.11.0 (2021-12-16)
+====================
 
 Added
 -----
@@ -29,13 +29,13 @@ Added
     - ``member_notify_move`` app setting (#1203)
     - Project member notifications from zone moving (#1203, #1232)
     - ``LandingZone.user_message`` field (#1203)
-    - ``finished`` parameter for ``LandingZoneListAPIView`` to access finished zones (#1234)
+    - ``finished`` parameter for ``LandingZoneListAPIView`` (#1234)
     - ``LandingZone.is_locked()`` helper (#321)
     - Zone locked status in UI and ``LandingZoneRetrieveAPIView`` (#321)
     - Display collections in iRODS file list (#1156)
-    - Add UI documentation to user manual (#1181)
+    - UI documentation in user manual (#1181)
 - **Ontologyaccess**
-    - Add app documentation to user manual (#1301)
+    - App documentation in user manual (#1301)
 - **Samplesheets**
     - Simple link support for string cell rendering (#1001)
     - ``generic_raw`` assay plugin (#1128)
@@ -50,7 +50,7 @@ Added
     - Assay app support for "transcriptome profiling" measurement type (#1255)
     - Saving version with description in editor UI (#1109)
     - Automatic study/assay table filtering from search results (#634)
-    - Add UI documentation to user manual (#1180)
+    - UI documentation in user manual (#1180)
 
 Changed
 -------
