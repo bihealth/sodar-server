@@ -62,8 +62,9 @@ TEMPLATES[0]['OPTIONS']['loaders'] = [
 # Logging
 # ------------------------------------------------------------------------------
 
-LOGGING = set_logging(DEBUG)
-LOGGING['handlers']['console']['level'] = 'CRITICAL'
+LOGGING_LEVEL = env.str('LOGGING_LEVEL', 'CRITICAL')
+LOGGING = set_logging(LOGGING_LEVEL)
+
 
 # Local App Settings
 # ------------------------------------------------------------------------------
@@ -90,7 +91,7 @@ SHEETS_ENABLE_CACHE = False  # Temporarily disabled to fix CI, see issue #556
 # iRODS settings shared by iRODS using apps
 ENABLE_IRODS = False
 IRODS_WEBDAV_ENABLED = True
-
+IRODS_SODAR_AUTH = True
 
 # UI test settings
 PROJECTROLES_TEST_UI_CHROME_OPTIONS = [

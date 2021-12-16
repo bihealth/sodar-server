@@ -1,9 +1,10 @@
 """Tests for Ajax API views in the samplesheets app"""
 
-from altamisa.constants import table_headers as th
 import fastobo
 import json
 import os
+
+from altamisa.constants import table_headers as th
 
 from django.conf import settings
 from django.urls import reverse
@@ -31,7 +32,6 @@ from samplesheets.models import (
     ISATab,
     IrodsAccessTicket,
     IrodsDataRequest,
-    Investigation,
 )
 from samplesheets.sheet_config import SheetConfigAPI
 from samplesheets.tests.test_sheet_config import (
@@ -51,7 +51,7 @@ from samplesheets.tests.test_views import (
     SHEET_PATH_SMALL2_ALT,
 )
 from samplesheets.utils import get_node_obj
-from samplesheets.views import SampleSheetImportMixin
+from samplesheets.views import SheetImportMixin
 from samplesheets.views_ajax import ALERT_ACTIVE_REQS
 
 
@@ -82,12 +82,13 @@ EMPTY_ONTOLOGY_VAL = {
 SHEET_PATH_INSERTED = SHEET_DIR_SPECIAL + 'i_small_insert.zip'
 TEST_FILE_NAME = 'test1'
 IRODS_TICKET_STR = 'ooChaa1t'
+VERSION_DESC = 'description'
 
 
 class RowEditMixin:
     """Helpers for row insert/deletion"""
 
-    def _insert_row(self, path=None, data=None):
+    def insert_row(self, path=None, data=None):
         """
         Insert row into database, based on file path or dictionary.
 
@@ -115,7 +116,7 @@ class RowEditMixin:
                 content_type='application/json',
             )
 
-    def _delete_row(self, path):
+    def delete_row(self, path):
         values = {'del_row': {}}
         with open(path) as fp:
             values['del_row'] = json.load(fp)
@@ -129,7 +130,7 @@ class RowEditMixin:
                 content_type='application/json',
             )
 
-    def _update_assay_row_uuids(self, update_sample=True):
+    def update_assay_row_uuids(self, update_sample=True):
         """
         Update UUIDs for freshly added assay row, set self.row_uuids and
         self.row_names.
@@ -163,7 +164,7 @@ class IrodsAccessTicketMixin:
     """Helpers for creating IrodsAccessTicket object"""
 
     @classmethod
-    def _make_ticket(
+    def make_ticket(
         cls, path, user, project, assay, study, label=None, date_expires=None
     ):
         obj = IrodsAccessTicket(
@@ -198,7 +199,7 @@ class TestContextAjaxView(TestViewsBase):
         self.assay = self.study.assays.first()
 
     def test_get(self):
-        """Test context retrieval with example sheet"""
+        """Test GET for context retrieval with example sheet"""
         with self.login(self.user):
             response = self.client.get(
                 reverse(
@@ -302,15 +303,14 @@ class TestContextAjaxView(TestViewsBase):
 
     # TODO: Test anonymous request and irods_webdav_enabled
 
-    def test_get_edit_not_allowed_as_delegate_min_role_owner(self):
-        """Test context retrieval with example sheet"""
+    def test_get_as_delegate_min_owner(self):
+        """Test GET as delegate with owner minimum role"""
         app_settings.set_app_setting(
             APP_NAME,
             'edit_config_min_role',
             SODAR_CONSTANTS['PROJECT_ROLE_OWNER'],
             project=self.project,
         )
-
         with self.login(self.user_delegate):
             response = self.client.get(
                 reverse(
@@ -318,19 +318,17 @@ class TestContextAjaxView(TestViewsBase):
                     kwargs={'project': self.project.sodar_uuid},
                 )
             )
-
         self.assertEqual(response.status_code, 200)
         self.assertFalse(json.loads(response.json())['perms']['edit_config'])
 
-    def test_get_edit_allowed_as_delegate_min_role_delegate(self):
-        """Test context retrieval with example sheet"""
+    def test_get_as_delegate_min_delegate(self):
+        """Test GET as delegate with delegate minimum role"""
         app_settings.set_app_setting(
             APP_NAME,
             'edit_config_min_role',
             SODAR_CONSTANTS['PROJECT_ROLE_DELEGATE'],
             project=self.project,
         )
-
         with self.login(self.user_delegate):
             response = self.client.get(
                 reverse(
@@ -338,12 +336,11 @@ class TestContextAjaxView(TestViewsBase):
                     kwargs={'project': self.project.sodar_uuid},
                 )
             )
-
         self.assertEqual(response.status_code, 200)
         self.assertTrue(json.loads(response.json())['perms']['edit_config'])
 
     def test_get_irods_request_alert_owner(self):
-        """Test context retrieval with active iRODS request alert as owner"""
+        """Test GET with active iRODS request alert as owner"""
         self.investigation.irods_status = True
         self.investigation.save()
         # TODO: Use model helper instead (see #1088)
@@ -375,7 +372,7 @@ class TestContextAjaxView(TestViewsBase):
         )
 
     def test_get_irods_request_alert_contributor(self):
-        """Test context retrieval with active iRODS request alert as contributor"""
+        """Test GET with active iRODS request alert as contributor"""
         self.investigation.irods_status = True
         self.investigation.save()
         # TODO: Use model helper instead (see #1088)
@@ -429,10 +426,8 @@ class TestStudyTablesAjaxView(IrodsAccessTicketMixin, TestViewsBase):
                     kwargs={'study': self.study.sodar_uuid},
                 )
             )
-
         self.assertEqual(response.status_code, 200)
 
-        # Assert return data correctness
         ret_data = response.data
         self.assertIn('study', ret_data)
         self.assertIn('tables', ret_data)
@@ -455,7 +450,6 @@ class TestStudyTablesAjaxView(IrodsAccessTicketMixin, TestViewsBase):
                 ),
                 {'edit': 1},
             )
-
         self.assertEqual(response.status_code, 200)
 
         # Assert return data correctness
@@ -473,10 +467,9 @@ class TestStudyTablesAjaxView(IrodsAccessTicketMixin, TestViewsBase):
         self.assertIsNotNone(ret_data['edit_context']['samples'])
         self.assertIsNotNone(ret_data['edit_context']['protocols'])
 
-    def test_get_with_track_hubs(self):
-        """Test study tables retrieval"""
-
-        self._make_ticket(
+    def test_get_track_hubs(self):
+        """Test study tables retrieval with track hubs"""
+        self.make_ticket(
             path='/some/path',
             project=self.project,
             assay=self.assay,
@@ -493,9 +486,7 @@ class TestStudyTablesAjaxView(IrodsAccessTicketMixin, TestViewsBase):
                     kwargs={'study': self.study.sodar_uuid},
                 )
             )
-
         self.assertEqual(response.status_code, 200)
-
         # TODO fill out ... assays are not yet tested, as well as shortcuts
 
 
@@ -533,7 +524,6 @@ class TestSheetWarningsAjaxView(TestViewsBase):
 
     def setUp(self):
         super().setUp()
-
         # Import investigation
         self.investigation = self._import_isa_from_file(
             SHEET_PATH, self.project
@@ -588,7 +578,6 @@ class TestSheetCellEditAjaxView(TestViewsBase):
         """Test editing the name of a material"""
         obj = GenericMaterial.objects.get(study=self.study, name='0816')
         new_name = '0816aaa'
-
         self.values['updated_cells'].append(
             {
                 'uuid': str(obj.sodar_uuid),
@@ -608,8 +597,6 @@ class TestSheetCellEditAjaxView(TestViewsBase):
                 json.dumps(self.values),
                 content_type='application/json',
             )
-
-        # Assert postconditions
         self.assertEqual(response.status_code, 200)
         obj.refresh_from_db()
         self.assertEqual(obj.name, new_name)
@@ -636,8 +623,6 @@ class TestSheetCellEditAjaxView(TestViewsBase):
                 json.dumps(self.values),
                 content_type='application/json',
             )
-
-        # Assert postconditions
         self.assertEqual(response.status_code, 500)
         obj.refresh_from_db()
         self.assertEqual(obj.name, '0816')
@@ -665,8 +650,6 @@ class TestSheetCellEditAjaxView(TestViewsBase):
                 json.dumps(self.values),
                 content_type='application/json',
             )
-
-        # Assert postconditions
         self.assertEqual(response.status_code, 200)
         obj.refresh_from_db()
         self.assertEqual(obj.performer, value)
@@ -694,8 +677,6 @@ class TestSheetCellEditAjaxView(TestViewsBase):
                 json.dumps(self.values),
                 content_type='application/json',
             )
-
-        # Assert postconditions
         self.assertEqual(response.status_code, 200)
         obj.refresh_from_db()
         self.assertEqual(obj.perform_date.strftime('%Y-%m-%d'), value)
@@ -723,8 +704,6 @@ class TestSheetCellEditAjaxView(TestViewsBase):
                 json.dumps(self.values),
                 content_type='application/json',
             )
-
-        # Assert postconditions
         self.assertEqual(response.status_code, 200)
         obj.refresh_from_db()
         self.assertIsNone(obj.perform_date)
@@ -753,8 +732,6 @@ class TestSheetCellEditAjaxView(TestViewsBase):
                 json.dumps(self.values),
                 content_type='application/json',
             )
-
-        # Assert postconditions
         self.assertEqual(response.status_code, 500)  # TODO: Should be 400?
         obj.refresh_from_db()
         self.assertEqual(obj.perform_date, og_date)
@@ -763,8 +740,6 @@ class TestSheetCellEditAjaxView(TestViewsBase):
         """Test editing a characteristics string value in a material"""
         obj = GenericMaterial.objects.get(study=self.study, name='0816')
         header_name = 'organism'
-
-        # Assert preconditions
         self.assertNotEqual(
             obj.characteristics[header_name], EDIT_NEW_VALUE_STR
         )
@@ -779,7 +754,6 @@ class TestSheetCellEditAjaxView(TestViewsBase):
                 'value': EDIT_NEW_VALUE_STR,
             }
         )
-
         with self.login(self.user):
             response = self.client.post(
                 reverse(
@@ -789,8 +763,6 @@ class TestSheetCellEditAjaxView(TestViewsBase):
                 json.dumps(self.values),
                 content_type='application/json',
             )
-
-        # Assert postconditions
         self.assertEqual(response.status_code, 200)
         obj.refresh_from_db()
         self.assertEqual(
@@ -802,8 +774,6 @@ class TestSheetCellEditAjaxView(TestViewsBase):
         """Test editing a parameter values string value in a process"""
         obj = Process.objects.filter(study=self.study, assay=None).first()
         header_name = 'instrument'
-
-        # Assert preconditions
         self.assertNotEqual(
             obj.parameter_values[header_name], EDIT_NEW_VALUE_STR
         )
@@ -818,7 +788,6 @@ class TestSheetCellEditAjaxView(TestViewsBase):
                 'value': EDIT_NEW_VALUE_STR,
             }
         )
-
         with self.login(self.user):
             response = self.client.post(
                 reverse(
@@ -828,8 +797,6 @@ class TestSheetCellEditAjaxView(TestViewsBase):
                 json.dumps(self.values),
                 content_type='application/json',
             )
-
-        # Assert postconditions
         self.assertEqual(response.status_code, 200)
         obj.refresh_from_db()
         self.assertEqual(
@@ -845,8 +812,6 @@ class TestSheetCellEditAjaxView(TestViewsBase):
         new_protocol = Protocol.objects.exclude(
             sodar_uuid=obj.protocol.sodar_uuid
         ).first()
-
-        # Assert preconditions
         self.assertIsNotNone(new_protocol)
         self.assertNotEqual(obj.protocol, new_protocol)
 
@@ -860,7 +825,6 @@ class TestSheetCellEditAjaxView(TestViewsBase):
                 'uuid_ref': str(new_protocol.sodar_uuid),
             }
         )
-
         with self.login(self.user):
             response = self.client.post(
                 reverse(
@@ -870,8 +834,6 @@ class TestSheetCellEditAjaxView(TestViewsBase):
                 json.dumps(self.values),
                 content_type='application/json',
             )
-
-        # Assert postconditions
         self.assertEqual(response.status_code, 200)
         obj.refresh_from_db()
         self.assertEqual(obj.protocol, new_protocol)
@@ -883,8 +845,6 @@ class TestSheetCellEditAjaxView(TestViewsBase):
         ).first()
         name_type = th.DATA_TRANSFORMATION_NAME
         name = 'New Process'
-
-        # Assert preconditions
         self.assertNotEqual(obj.name, name)
         self.assertNotEqual(obj.name_type, name_type)
 
@@ -898,7 +858,6 @@ class TestSheetCellEditAjaxView(TestViewsBase):
                 'uuid_ref': str(obj.sodar_uuid),
             }
         )
-
         with self.login(self.user):
             response = self.client.post(
                 reverse(
@@ -908,8 +867,6 @@ class TestSheetCellEditAjaxView(TestViewsBase):
                 json.dumps(self.values),
                 content_type='application/json',
             )
-
-        # Assert postconditions
         self.assertEqual(response.status_code, 200)
         obj.refresh_from_db()
         self.assertEqual(obj.name, name)
@@ -919,17 +876,16 @@ class TestSheetCellEditAjaxView(TestViewsBase):
         """Test editing an ontology term with a single term"""
         obj = GenericMaterial.objects.get(study=self.study, name='0817')
         name = 'organism'
+        self.assertEqual(obj.characteristics[name], EMPTY_ONTOLOGY_VAL)
+
         value = [
             {
                 'name': 'Homo sapiens',
                 'ontology_name': 'NCBITAXON',
-                'accession': 'http://purl.bioontology.org/ontology/NCBITAXON/9606',
+                'accession': 'http://purl.bioontology.org/ontology/'
+                'NCBITAXON/9606',
             }
         ]
-
-        # Assert preconditions
-        self.assertEqual(obj.characteristics[name], EMPTY_ONTOLOGY_VAL)
-
         self.values['updated_cells'].append(
             {
                 'uuid': str(obj.sodar_uuid),
@@ -941,7 +897,6 @@ class TestSheetCellEditAjaxView(TestViewsBase):
                 'og_value': None,
             }
         )
-
         with self.login(self.user):
             response = self.client.post(
                 reverse(
@@ -951,8 +906,6 @@ class TestSheetCellEditAjaxView(TestViewsBase):
                 json.dumps(self.values),
                 content_type='application/json',
             )
-
-        # Assert postconditions
         self.assertEqual(response.status_code, 200)
         obj.refresh_from_db()
         self.assertEqual(
@@ -972,11 +925,10 @@ class TestSheetCellEditAjaxView(TestViewsBase):
             {
                 'name': 'Homo sapiens',
                 'ontology_name': 'NCBITAXON',
-                'accession': 'http://purl.bioontology.org/ontology/NCBITAXON/9606',
+                'accession': 'http://purl.bioontology.org/ontology/'
+                'NCBITAXON/9606',
             }
         ]
-
-        # Assert preconditions
         self.assertEqual(
             obj.characteristics[name], {'value': og_value, 'unit': None}
         )
@@ -992,7 +944,6 @@ class TestSheetCellEditAjaxView(TestViewsBase):
                 'og_value': [og_value],
             }
         )
-
         with self.login(self.user):
             response = self.client.post(
                 reverse(
@@ -1002,8 +953,6 @@ class TestSheetCellEditAjaxView(TestViewsBase):
                 json.dumps(self.values),
                 content_type='application/json',
             )
-
-        # Assert postconditions
         self.assertEqual(response.status_code, 200)
         obj.refresh_from_db()
         self.assertEqual(
@@ -1018,16 +967,16 @@ class TestSheetCellEditAjaxView(TestViewsBase):
             {
                 'name': 'Homo sapiens',
                 'ontology_name': 'NCBITAXON',
-                'accession': 'http://purl.bioontology.org/ontology/NCBITAXON/9606',
+                'accession': 'http://purl.bioontology.org/ontology/'
+                'NCBITAXON/9606',
             },
             {
                 'name': 'Mus musculus',
                 'ontology_name': 'NCBITAXON',
-                'accession': 'http://purl.bioontology.org/ontology/NCBITAXON/10090',
+                'accession': 'http://purl.bioontology.org/ontology/'
+                'NCBITAXON/10090',
             },
         ]
-
-        # Assert preconditions
         self.assertEqual(obj.characteristics[name], EMPTY_ONTOLOGY_VAL)
 
         self.values['updated_cells'].append(
@@ -1041,7 +990,6 @@ class TestSheetCellEditAjaxView(TestViewsBase):
                 'og_value': None,
             }
         )
-
         with self.login(self.user):
             response = self.client.post(
                 reverse(
@@ -1051,8 +999,6 @@ class TestSheetCellEditAjaxView(TestViewsBase):
                 json.dumps(self.values),
                 content_type='application/json',
             )
-
-        # Assert postconditions
         self.assertEqual(response.status_code, 200)
         obj.refresh_from_db()
         self.assertEqual(
@@ -1068,8 +1014,6 @@ class TestSheetCellEditAjaxView(TestViewsBase):
             'ontology_name': 'NCBITAXON',
             'accession': 'http://purl.bioontology.org/ontology/NCBITAXON/10090',
         }
-
-        # Assert preconditions
         self.assertNotEqual(obj.characteristics[name], EMPTY_ONTOLOGY_VAL)
 
         self.values['updated_cells'].append(
@@ -1083,7 +1027,6 @@ class TestSheetCellEditAjaxView(TestViewsBase):
                 'og_value': og_value,
             }
         )
-
         with self.login(self.user):
             response = self.client.post(
                 reverse(
@@ -1093,8 +1036,6 @@ class TestSheetCellEditAjaxView(TestViewsBase):
                 json.dumps(self.values),
                 content_type='application/json',
             )
-
-        # Assert postconditions
         self.assertEqual(response.status_code, 200)
         obj.refresh_from_db()
         self.assertEqual(obj.characteristics[name], EMPTY_ONTOLOGY_VAL)
@@ -1112,7 +1053,8 @@ class TestSheetCellEditAjaxView(TestViewsBase):
             {
                 'name': 'Mus musculus',
                 'ontology_name': 'NCBITAXON',
-                'accession': 'http://purl.bioontology.org/ontology/NCBITAXON/10090',
+                'accession': 'http://purl.bioontology.org/ontology/'
+                'NCBITAXON/10090',
             },
             {
                 'name': 'Example term 0000002',
@@ -1122,8 +1064,6 @@ class TestSheetCellEditAjaxView(TestViewsBase):
                 ),
             },
         ]
-
-        # Assert preconditions
         self.assertEqual(obj.characteristics[name], EMPTY_ONTOLOGY_VAL)
         self.assertEqual(len(self.investigation.ontology_source_refs), 4)
 
@@ -1138,7 +1078,6 @@ class TestSheetCellEditAjaxView(TestViewsBase):
                 'og_value': None,
             }
         )
-
         with self.login(self.user):
             response = self.client.post(
                 reverse(
@@ -1149,7 +1088,6 @@ class TestSheetCellEditAjaxView(TestViewsBase):
                 content_type='application/json',
             )
 
-        # Assert postconditions
         self.assertEqual(response.status_code, 200)
         obj.refresh_from_db()
         self.investigation.refresh_from_db()
@@ -1197,8 +1135,6 @@ class TestSheetCellEditAjaxViewSpecial(TestViewsBase):
         """Test updating the extract label field with a string value"""
         label = 'New label'
         name_type = th.LABELED_EXTRACT_NAME
-
-        # Assert preconditions
         obj = GenericMaterial.objects.get(
             study=self.study, name='0815-N1-Pro1-A-114'
         )
@@ -1214,7 +1150,6 @@ class TestSheetCellEditAjaxViewSpecial(TestViewsBase):
                 'uuid_ref': str(obj.sodar_uuid),
             }
         )
-
         with self.login(self.user):
             response = self.client.post(
                 reverse(
@@ -1224,8 +1159,6 @@ class TestSheetCellEditAjaxViewSpecial(TestViewsBase):
                 json.dumps(self.values),
                 content_type='application/json',
             )
-
-        # Assert postconditions
         self.assertEqual(response.status_code, 200)
         obj.refresh_from_db()
         self.assertEqual(obj.extract_label, label)
@@ -1254,7 +1187,6 @@ class TestSheetRowInsertAjaxView(RowEditMixin, SheetConfigMixin, TestViewsBase):
 
     def test_insert_study_row(self):
         """Test inserting a new row into a study"""
-        # Assert preconditions
         self.assertIsNone(
             GenericMaterial.objects.filter(
                 study=self.study, name='0818'
@@ -1275,11 +1207,9 @@ class TestSheetRowInsertAjaxView(RowEditMixin, SheetConfigMixin, TestViewsBase):
         ).count()
 
         # Insert row
-        response = self._insert_row(path=STUDY_INSERT_PATH)
+        response = self.insert_row(path=STUDY_INSERT_PATH)
 
-        # Assert postconditions
         self.assertEqual(response.status_code, 200)
-
         self.assertEqual(
             GenericMaterial.objects.filter(
                 study=self.study, assay=None
@@ -1321,9 +1251,8 @@ class TestSheetRowInsertAjaxView(RowEditMixin, SheetConfigMixin, TestViewsBase):
     def test_insert_assay_row(self):
         """Test inserting a new row into an assay"""
         # Insert study row
-        response = self._insert_row(path=STUDY_INSERT_PATH)
+        response = self.insert_row(path=STUDY_INSERT_PATH)
         self.assertEqual(response.status_code, 200)
-
         # Update sample UUID
         sample = GenericMaterial.objects.get(
             study=self.study, name=EDIT_SAMPLE_NAME
@@ -1336,12 +1265,10 @@ class TestSheetRowInsertAjaxView(RowEditMixin, SheetConfigMixin, TestViewsBase):
         arc_count = len(self.assay.arcs)
 
         # Insert assay row
-        response = self._insert_row(path=ASSAY_INSERT_PATH)
+        response = self.insert_row(path=ASSAY_INSERT_PATH)
 
-        # Assert postconditions
         self.assertEqual(response.status_code, 200)
         self.assay.refresh_from_db()
-        node_names = []
 
         self.assertEqual(
             GenericMaterial.objects.filter(assay=self.assay).count(),
@@ -1351,7 +1278,6 @@ class TestSheetRowInsertAjaxView(RowEditMixin, SheetConfigMixin, TestViewsBase):
             Process.objects.filter(assay=self.assay).count(),
             proc_count + 3,
         )
-
         self.assertEqual(
             GenericMaterial.objects.filter(
                 name=EDIT_SOURCE_NAME, item_type='SOURCE'
@@ -1366,38 +1292,35 @@ class TestSheetRowInsertAjaxView(RowEditMixin, SheetConfigMixin, TestViewsBase):
         )
         self.assertEqual(len(self.assay.arcs), arc_count + 7)
 
+        node_names = []
         for uuid in response.data['node_uuids']:
             obj = GenericMaterial.objects.filter(sodar_uuid=uuid).first()
-
             if not obj:
                 obj = Process.objects.filter(sodar_uuid=uuid).first()
-
             self.assertIsNotNone(obj)
             node_names.append(obj.unique_name)
-
         for i in range(len(node_names) - 1):
             self.assertIn([node_names[i], node_names[i + 1]], self.assay.arcs)
 
     def test_insert_assay_row_split(self):
         """Test inserting a row with splitting into an assay"""
         # Insert study and assay rows
-        self._insert_row(path=STUDY_INSERT_PATH)
+        self.insert_row(path=STUDY_INSERT_PATH)
         sample = GenericMaterial.objects.get(
             study=self.study, name=EDIT_SAMPLE_NAME
         )
         sample.sodar_uuid = EDIT_SAMPLE_UUID
         sample.save()
-        self._insert_row(path=ASSAY_INSERT_PATH)
+        self.insert_row(path=ASSAY_INSERT_PATH)
 
-        self._update_assay_row_uuids(update_sample=False)
+        self.update_assay_row_uuids(update_sample=False)
         mat_count = GenericMaterial.objects.filter(assay=self.assay).count()
         proc_count = Process.objects.filter(assay=self.assay).count()
         arc_count = len(self.assay.arcs)
 
         # Insert new row
-        response = self._insert_row(path=ASSAY_INSERT_SPLIT_PATH)
+        response = self.insert_row(path=ASSAY_INSERT_SPLIT_PATH)
 
-        # Assert postconditions
         self.assertEqual(response.status_code, 200)
         self.assay.refresh_from_db()
         self.assertEqual(
@@ -1411,24 +1334,22 @@ class TestSheetRowInsertAjaxView(RowEditMixin, SheetConfigMixin, TestViewsBase):
 
     def test_insert_assay_row_pool(self):
         """Test inserting a row with pooling into an assay"""
-        # Insert study and assay rows
-        self._insert_row(path=STUDY_INSERT_PATH)
+        self.insert_row(path=STUDY_INSERT_PATH)
         sample = GenericMaterial.objects.get(
             study=self.study, name=EDIT_SAMPLE_NAME
         )
         sample.sodar_uuid = EDIT_SAMPLE_UUID
         sample.save()
-        self._insert_row(path=ASSAY_INSERT_PATH)
+        self.insert_row(path=ASSAY_INSERT_PATH)
 
-        self._update_assay_row_uuids(update_sample=False)
+        self.update_assay_row_uuids(update_sample=False)
         mat_count = GenericMaterial.objects.filter(assay=self.assay).count()
         proc_count = Process.objects.filter(assay=self.assay).count()
         arc_count = len(self.assay.arcs)
 
         # Insert new row
-        response = self._insert_row(path=ASSAY_INSERT_POOL_PATH)
+        response = self.insert_row(path=ASSAY_INSERT_POOL_PATH)
 
-        # Assert postconditions
         self.assertEqual(response.status_code, 200)
         self.assay.refresh_from_db()
         self.assertEqual(
@@ -1482,13 +1403,11 @@ class TestSheetRowDeleteAjaxView(RowEditMixin, SheetConfigMixin, TestViewsBase):
         proc.save()
 
         # Update UUIDs in assay
-        self._update_assay_row_uuids()
+        self.update_assay_row_uuids()
 
     def test_delete_assay_row(self):
         """Test row deletion from assay"""
-        response = self._delete_row(ASSAY_DELETE_PATH)
-
-        # Assert postconditions
+        response = self.delete_row(ASSAY_DELETE_PATH)
         self.assertEqual(response.status_code, 200)
         self.assay.refresh_from_db()
         self.assertIsNotNone(
@@ -1496,25 +1415,20 @@ class TestSheetRowDeleteAjaxView(RowEditMixin, SheetConfigMixin, TestViewsBase):
                 study=self.study, name=EDIT_SAMPLE_NAME
             ).first()
         )
-
         for u in self.row_uuids:
             self.assertIsNone(get_node_obj(study=self.study, sodar_uuid=u))
-
         target_nodes = [a[1] for a in self.assay.arcs]
-
         for n in self.row_names:
             self.assertNotIn(n, target_nodes)
 
     def test_delete_study_row(self):
         """Test row deletion from study"""
         # First delete the assay row
-        response = self._delete_row(ASSAY_DELETE_PATH)
+        response = self.delete_row(ASSAY_DELETE_PATH)
         self.assertEqual(response.status_code, 200)
-
         # Delete the study row
-        response = self._delete_row(STUDY_DELETE_PATH)
+        response = self.delete_row(STUDY_DELETE_PATH)
 
-        # Assert postconditions
         self.assertEqual(response.status_code, 200)
         self.assertIsNone(
             GenericMaterial.objects.filter(
@@ -1534,10 +1448,7 @@ class TestSheetRowDeleteAjaxView(RowEditMixin, SheetConfigMixin, TestViewsBase):
 
     def test_delete_study_row_in_use(self):
         """Test study row deletion with sample used in asssay (should fail)"""
-        # Delete the study row
-        response = self._delete_row(STUDY_DELETE_PATH)
-
-        # Assert postconditions
+        response = self.delete_row(STUDY_DELETE_PATH)
         self.assertEqual(response.status_code, 500)
         self.assertIsNotNone(
             GenericMaterial.objects.filter(
@@ -1558,13 +1469,39 @@ class TestSheetRowDeleteAjaxView(RowEditMixin, SheetConfigMixin, TestViewsBase):
     # TODO: Test deletion with splitting/pooling
 
 
+class TestSheetVersionSaveAjaxView(TestViewsBase):
+    """Tests for SheetVersionSaveAjaxView"""
+
+    def setUp(self):
+        super().setUp()
+        self.investigation = self._import_isa_from_file(
+            SHEET_PATH, self.project
+        )
+        self.study = self.investigation.studies.first()
+
+    def test_post(self):
+        """Test POST"""
+        self.assertEqual(ISATab.objects.count(), 1)
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:ajax_version_save',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                json.dumps({'save': True, 'description': VERSION_DESC}),
+                content_type='application/json',
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(ISATab.objects.count(), 2)
+        new_version = ISATab.objects.order_by('-pk').first()
+        self.assertEqual(new_version.description, VERSION_DESC)
+
+
 class TestSheetEditFinishAjaxView(TestViewsBase):
     """Tests for SheetEditFinishAjaxView"""
 
     def setUp(self):
         super().setUp()
-
-        # Import investigation
         self.investigation = self._import_isa_from_file(
             SHEET_PATH, self.project
         )
@@ -1572,41 +1509,48 @@ class TestSheetEditFinishAjaxView(TestViewsBase):
 
     def test_post(self):
         """Test POST with updates=True"""
-        # Assert preconditions
-        self.assertEqual(ISATab.objects.all().count(), 1)
-
+        self.assertEqual(ISATab.objects.count(), 1)
         with self.login(self.user):
             response = self.client.post(
                 reverse(
                     'samplesheets:ajax_edit_finish',
                     kwargs={'project': self.project.sodar_uuid},
                 ),
-                json.dumps({'updated': True}),
+                json.dumps({'updated': True, 'version_saved': False}),
                 content_type='application/json',
             )
-
-        # Assert postconditions
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(ISATab.objects.all().count(), 2)
+        self.assertEqual(ISATab.objects.count(), 2)
+
+    def test_post_version_saved(self):
+        """Test POST with version_saved=True"""
+        self.assertEqual(ISATab.objects.count(), 1)
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:ajax_edit_finish',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                json.dumps({'updated': True, 'version_saved': True}),
+                content_type='application/json',
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(ISATab.objects.count(), 1)  # No new version
 
     def test_post_no_updates(self):
         """Test POST with updates=False"""
-        # Assert preconditions
-        self.assertEqual(ISATab.objects.all().count(), 1)
-
+        self.assertEqual(ISATab.objects.count(), 1)
         with self.login(self.user):
             response = self.client.post(
                 reverse(
                     'samplesheets:ajax_edit_finish',
                     kwargs={'project': self.project.sodar_uuid},
                 ),
-                json.dumps({'updated': False}),
+                json.dumps({'updated': False, 'version_saved': True}),
                 content_type='application/json',
             )
-
-        # Assert postconditions
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(ISATab.objects.all().count(), 1)
+        self.assertEqual(ISATab.objects.count(), 1)
 
 
 class TestSheetEditConfigAjaxView(SheetConfigMixin, TestViewsBase):
@@ -1662,7 +1606,6 @@ class TestSheetEditConfigAjaxView(SheetConfigMixin, TestViewsBase):
 
     def test_update_study_column(self):
         """Test posting a study column update"""
-        # Assert preconditions
         sheet_config = app_settings.get_app_setting(
             APP_NAME, 'sheet_config', project=self.project
         )
@@ -1685,8 +1628,6 @@ class TestSheetEditConfigAjaxView(SheetConfigMixin, TestViewsBase):
                 json.dumps(self.post_values),
                 content_type='application/json',
             )
-
-        # Assert postconditions
         self.assertEqual(response.status_code, 200)
 
         sheet_config = app_settings.get_app_setting(
@@ -1717,14 +1658,12 @@ class TestSheetEditConfigAjaxView(SheetConfigMixin, TestViewsBase):
 
     def test_update_as_superuser_min_owner(self):
         """Test updating as superuser with minimum role of owner"""
-        # Assert preconditions
         edit_config_min_role = app_settings.get_app_setting(
             APP_NAME, 'edit_config_min_role', project=self.project
         )
         self.assertEqual(
             edit_config_min_role, SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
         )
-
         with self.login(self.user):
             response = self.client.post(
                 reverse(
@@ -1734,20 +1673,16 @@ class TestSheetEditConfigAjaxView(SheetConfigMixin, TestViewsBase):
                 json.dumps(self.post_values),
                 content_type='application/json',
             )
-
-        # Assert postconditions
         self.assertEqual(response.status_code, 200)
 
     def test_update_as_owner_min_owner(self):
         """Test updating as owner with minimum role of owner"""
-        # Assert preconditions
         edit_config_min_role = app_settings.get_app_setting(
             APP_NAME, 'edit_config_min_role', project=self.project
         )
         self.assertEqual(
             edit_config_min_role, SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
         )
-
         with self.login(self.user_owner):
             response = self.client.post(
                 reverse(
@@ -1757,20 +1692,16 @@ class TestSheetEditConfigAjaxView(SheetConfigMixin, TestViewsBase):
                 json.dumps(self.post_values),
                 content_type='application/json',
             )
-
-        # Assert postconditions
         self.assertEqual(response.status_code, 200)
 
     def test_update_as_delegate_min_owner(self):
         """Test updating as delegate with minimum role of owner (should fail)"""
-        # Assert preconditions
         edit_config_min_role = app_settings.get_app_setting(
             APP_NAME, 'edit_config_min_role', project=self.project
         )
         self.assertEqual(
             edit_config_min_role, SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
         )
-
         with self.login(self.user_delegate):
             response = self.client.post(
                 reverse(
@@ -1780,8 +1711,6 @@ class TestSheetEditConfigAjaxView(SheetConfigMixin, TestViewsBase):
                 json.dumps(self.post_values),
                 content_type='application/json',
             )
-
-        # Assert postconditions
         self.assertEqual(response.status_code, 403)
         self.assertEqual(
             response.json()['detail'],
@@ -1790,14 +1719,12 @@ class TestSheetEditConfigAjaxView(SheetConfigMixin, TestViewsBase):
 
     def test_update_as_contributor_min_owner(self):
         """Test updating as contributor with minimum role of owner (should fail)"""
-        # Assert preconditions
         edit_config_min_role = app_settings.get_app_setting(
             APP_NAME, 'edit_config_min_role', project=self.project
         )
         self.assertEqual(
             edit_config_min_role, SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
         )
-
         with self.login(self.user_contributor):
             response = self.client.post(
                 reverse(
@@ -1807,8 +1734,6 @@ class TestSheetEditConfigAjaxView(SheetConfigMixin, TestViewsBase):
                 json.dumps(self.post_values),
                 content_type='application/json',
             )
-
-        # Assert postconditions
         self.assertEqual(response.status_code, 403)
         self.assertEqual(
             response.json()['detail'],
@@ -1853,11 +1778,9 @@ class TestStudyDisplayConfigAjaxView(TestViewsBase):
 
     def test_post(self):
         """Test updating the sheet configuration"""
-        # Assert precondition
         self.assertEqual(
             self.study_config['nodes'][0]['fields'][2]['visible'], True
         )
-
         self.study_config['nodes'][0]['fields'][2]['visible'] = False
 
         with self.login(self.user):
@@ -1871,12 +1794,8 @@ class TestStudyDisplayConfigAjaxView(TestViewsBase):
                 ),
                 content_type='application/json',
             )
-
-        # Assert response
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['detail'], 'ok')
-
-        # Assert config status
         updated_config = app_settings.get_app_setting(
             APP_NAME, 'display_config', project=self.project, user=self.user
         )
@@ -1889,11 +1808,9 @@ class TestStudyDisplayConfigAjaxView(TestViewsBase):
 
     def test_post_default(self):
         """Test updating along with the default configuration"""
-        # Assert precondition
         self.assertEqual(
             self.study_config['nodes'][0]['fields'][2]['visible'], True
         )
-
         self.study_config['nodes'][0]['fields'][2]['visible'] = False
 
         with self.login(self.user):
@@ -1908,11 +1825,8 @@ class TestStudyDisplayConfigAjaxView(TestViewsBase):
                 content_type='application/json',
             )
 
-        # Assert response
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['detail'], 'ok')
-
-        # Assert config status
         updated_config = app_settings.get_app_setting(
             APP_NAME, 'display_config', project=self.project, user=self.user
         )
@@ -1940,12 +1854,8 @@ class TestStudyDisplayConfigAjaxView(TestViewsBase):
                 ),
                 content_type='application/json',
             )
-
-        # Assert response
         self.assertEqual(response.status_code, 200)
         self.assertNotEqual(response.data['detail'], 'ok')
-
-        # Assert config status
         updated_config = app_settings.get_app_setting(
             APP_NAME, 'display_config', project=self.project, user=self.user
         )
@@ -1955,16 +1865,12 @@ class TestStudyDisplayConfigAjaxView(TestViewsBase):
         )
 
 
-class TestSheetVersionCompareAjaxView(SampleSheetImportMixin, TestViewsBase):
+class TestSheetVersionCompareAjaxView(SheetImportMixin, TestViewsBase):
     """Tests for SheetVersionCompareAjaxView"""
 
     def setUp(self):
         super().setUp()
         self._import_isa_from_file(SHEET_PATH_SMALL2, self.project)
-
-        # Assert preconditions
-        self.assertEqual(Investigation.objects.count(), 1)
-        self.assertEqual(ISATab.objects.count(), 1)
 
         with open(SHEET_PATH_SMALL2_ALT, 'rb') as file, self.login(self.user):
             values = {'file_upload': file}
@@ -1976,11 +1882,8 @@ class TestSheetVersionCompareAjaxView(SampleSheetImportMixin, TestViewsBase):
                 values,
             )
 
-        self.assertEqual(ISATab.objects.count(), 2)
-
         self.isa1 = ISATab.objects.first()
         self.isa2 = ISATab.objects.last()
-
         self.isa2.data['studies']['s_small2.txt'] = self.isa2.data[
             'studies'
         ].pop('s_small2_alt.txt')
@@ -2062,7 +1965,6 @@ class TestSheetVersionCompareAjaxView(SampleSheetImportMixin, TestViewsBase):
     def test_get_no_sheets(self):
         """Test GET without permission"""
         expected = {'detail': 'Sample sheet version(s) not found.'}
-
         with self.login(self.user):
             response = self.client.get(
                 '{}?source={}&target={}'.format(
@@ -2074,9 +1976,8 @@ class TestSheetVersionCompareAjaxView(SampleSheetImportMixin, TestViewsBase):
                     'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
                 )
             )
-
-            self.assertEqual(response.status_code, 500)
-            self.assertEqual(response.json(), expected)
+        self.assertEqual(response.status_code, 500)
+        self.assertEqual(response.json(), expected)
 
     def test_get_studies_file(self):
         """Test GET returning diff data for studies file"""

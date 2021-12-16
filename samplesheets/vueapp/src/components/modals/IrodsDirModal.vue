@@ -29,7 +29,7 @@
             <th>File</th>
             <th>Size</th>
             <th>Modified</th>
-            <th>Action</th>
+            <th></th>
           </tr>
         </thead>
         <tbody>
@@ -158,9 +158,9 @@ export default {
         : 'User not allowed to issue request'
     },
     handleObjListResponse (response) {
-      if ('data_objects' in response) {
-        if (response.data_objects.length > 0) {
-          this.objectList = response.data_objects
+      if ('irods_data' in response) {
+        if (response.irods_data.length > 0) {
+          this.objectList = response.irods_data
 
           for (let i = 0; i < this.objectList.length; i++) {
             this.objectList[i].visibleInList = true
@@ -274,11 +274,11 @@ table.sodar-irods-obj-table tbody tr td:nth-child(3) {
 /* MD5 column */
 table.sodar-irods-obj-table thead tr th:nth-child(4) {
   width: 40px;
-  text-align: center;
 }
 
 table.sodar-irods-obj-table tbody tr td:nth-child(4) {
-  text-align: center;
+  width: 40px;
+  text-align: right;
 }
 
 h5 {

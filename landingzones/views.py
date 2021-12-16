@@ -11,12 +11,12 @@ from django.urls import reverse
 from django.views.generic import TemplateView, CreateView
 
 # Projectroles dependency
-from projectroles.models import Project
 from projectroles.plugins import get_backend_api
 from projectroles.views import (
     LoggedInPermissionMixin,
     ProjectPermissionMixin,
     ProjectContextMixin,
+    CurrentUserFormMixin,
 )
 
 # Samplesheets dependency
@@ -31,7 +31,7 @@ from landingzones.forms import LandingZoneForm
 from landingzones.models import (
     LandingZone,
     STATUS_ALLOW_UPDATE,
-    STATUS_ALLOW_CLEAR,
+    STATUS_FINISHED,
 )
 
 
@@ -169,7 +169,7 @@ class ZoneCreateMixin(ZoneConfigPluginMixin):
                     logger.debug('Retrieved collections from cache')
             elif plugin:
                 pass  # TODO: Build tables, get rows directly from plugin?
-                # plugin = zone.assay.get_plugin()
+
         logger.debug('Collections to be created: {}'.format(', '.join(colls)))
 
         flow_name = 'landing_zone_create'
@@ -306,8 +306,7 @@ class ZoneMoveMixin(ZoneConfigPluginMixin):
             desc = 'validate '
             if not validate_only:
                 desc += 'and move '
-            desc += 'files from landing zone {zone} from ' '{user} in {assay}'
-
+            desc += 'files from landing zone {zone} from {user} in {assay}'
             tl_event = timeline.add_event(
                 project=project,
                 app_name=APP_NAME,
@@ -392,10 +391,15 @@ class ProjectZoneView(
         context['irods_webdav_enabled'] = int(settings.IRODS_WEBDAV_ENABLED)
         if settings.IRODS_WEBDAV_ENABLED:
             context['irods_webdav_url'] = settings.IRODS_WEBDAV_URL.rstrip('/')
+
         # User zones
-        context['zones_own'] = LandingZone.objects.filter(
-            project=context['project'], user=self.request.user
-        ).order_by('title')
+        context['zones_own'] = (
+            LandingZone.objects.filter(
+                project=context['project'], user=self.request.user
+            )
+            .exclude(status__in=STATUS_FINISHED)
+            .order_by('title')
+        )
 
         # Other zones
         # TODO: Add individual zone perm check if/when we implement issue #57
@@ -405,12 +409,12 @@ class ProjectZoneView(
             context['zones_other'] = (
                 LandingZone.objects.filter(project=context['project'])
                 .exclude(user=self.request.user)
+                .exclude(status__in=STATUS_FINISHED)
                 .order_by('user__username', 'title')
             )
 
         # Status query interval
         context['zone_status_interval'] = settings.LANDINGZONES_STATUS_INTERVAL
-
         return context
 
 
@@ -419,6 +423,7 @@ class ZoneCreateView(
     LoggedInPermissionMixin,
     ProjectPermissionMixin,
     InvestigationContextMixin,
+    CurrentUserFormMixin,
     ZoneCreateMixin,
     CreateView,
 ):
@@ -429,14 +434,9 @@ class ZoneCreateView(
     permission_required = 'landingzones.add_zones'
 
     def get_form_kwargs(self):
-        """Pass current user to form"""
+        """Pass project to form"""
         kwargs = super().get_form_kwargs()
-        kwargs.update(
-            {
-                'current_user': self.request.user,
-                'project': self.kwargs['project'],
-            }
-        )
+        kwargs.update({'project': self.kwargs['project']})
         return kwargs
 
     def form_valid(self, form):
@@ -486,7 +486,7 @@ class ZoneCreateView(
                 form.cleaned_data.get('create_colls')
                 and 'sodar_cache' in settings.ENABLED_BACKEND_PLUGINS
             ):
-                msg += ' Collections created.'
+                msg += ' Collections will be created.'
             messages.warning(self.request, msg)
         except taskflow.FlowSubmitException as ex:
             messages.error(self.request, str(ex))
@@ -502,6 +502,7 @@ class ZoneDeleteView(
     ProjectContextMixin,
     ZoneUpdateRequiredPermissionMixin,
     ProjectPermissionMixin,
+    CurrentUserFormMixin,
     ZoneDeleteMixin,
     TemplateView,
 ):
@@ -564,12 +565,6 @@ class ZoneDeleteView(
             messages.error(self.request, str(ex))
 
         return redirect(redirect_url)
-
-    def get_form_kwargs(self):
-        """Pass current user to form"""
-        kwargs = super().get_form_kwargs()
-        kwargs.update({'current_user': self.request.user})
-        return kwargs
 
 
 class ZoneMoveView(
@@ -653,67 +648,3 @@ class ZoneMoveView(
             messages.error(self.request, str(ex))
 
         return redirect(redirect_url)
-
-
-class ZoneClearView(
-    LoginRequiredMixin,
-    LoggedInPermissionMixin,
-    ProjectContextMixin,
-    ProjectPermissionMixin,
-    TemplateView,
-):
-    """LandingZone validation and moving triggering view"""
-
-    http_method_names = ['get', 'post']
-    template_name = 'landingzones/landingzone_confirm_clear.html'
-    permission_required = 'landingzones.update_zones_own'
-
-    def post(self, request, **kwargs):
-        timeline = get_backend_api('timeline_backend')
-        project = Project.objects.get(sodar_uuid=self.kwargs['project'])
-        tl_event = None
-
-        # Add event in Timeline
-        if timeline:
-            tl_event = timeline.add_event(
-                project=project,
-                app_name=APP_NAME,
-                user=self.request.user,
-                event_name='zones_clear',
-                description='clear inactive landing zones from {user}',
-            )
-            tl_event.add_object(
-                obj=self.request.user,
-                label='user',
-                name=self.request.user.username,
-            )
-
-        try:
-            inactive_zones = LandingZone.objects.filter(
-                project=project,
-                user=self.request.user,
-                status__in=STATUS_ALLOW_CLEAR,
-            )
-            zone_count = inactive_zones.count()
-            inactive_zones.delete()
-            messages.success(
-                self.request,
-                'Cleared {} inactive landing zone{} for user {}.'.format(
-                    zone_count,
-                    's' if zone_count != 1 else '',
-                    self.request.user.username,
-                ),
-            )
-            if tl_event:
-                tl_event.set_status('OK')
-        except Exception as ex:
-            messages.error(
-                self.request,
-                'Unable to clear inactive landing zones: {}'.format(ex),
-            )
-            if tl_event:
-                tl_event.set_status('FAILED', str(ex))
-
-        return redirect(
-            reverse('landingzones:list', kwargs={'project': project.sodar_uuid})
-        )

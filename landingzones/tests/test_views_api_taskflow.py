@@ -3,14 +3,12 @@ Tests for REST API views in the landingzones app with SODAR Taskflow enabled
 """
 
 import json
-import pytz
 
-from django.conf import settings
+from django.urls import reverse
 
 from unittest import skipIf
 
 # Projectroles dependency
-from django.urls import reverse
 from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
 from projectroles.tests.test_views_api_taskflow import TestTaskflowAPIBase
@@ -46,7 +44,6 @@ PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
 ZONE_STATUS = 'VALIDATING'
 ZONE_STATUS_INFO = 'Testing'
-LOCAL_TZ = pytz.timezone(settings.TIME_ZONE)
 
 
 class TestLandingZoneAPITaskflowBase(
@@ -94,7 +91,7 @@ class TestLandingZoneCreateAPIView(TestLandingZoneAPITaskflowBase):
     def test_post(self):
         """Test LandingZoneCreateAPIView post()"""
         # Assert preconditions
-        self.assertEqual(LandingZone.objects.all().count(), 0)
+        self.assertEqual(LandingZone.objects.count(), 0)
 
         url = reverse(
             'landingzones:api_create',
@@ -105,6 +102,7 @@ class TestLandingZoneCreateAPIView(TestLandingZoneAPITaskflowBase):
                 'title': 'new zone',
                 'assay': str(self.assay.sodar_uuid),
                 'description': 'description',
+                'user_message': 'user message',
                 'configuration': None,
                 'config_data': {},
             }
@@ -131,8 +129,10 @@ class TestLandingZoneCreateAPIView(TestLandingZoneAPITaskflowBase):
             'assay': str(self.assay.sodar_uuid),
             'status': 'CREATING',
             'status_info': DEFAULT_STATUS_INFO['CREATING'],
+            'status_locked': False,
             'date_modified': response_data['date_modified'],
             'description': zone.description,
+            'user_message': zone.user_message,
             'configuration': zone.configuration,
             'config_data': zone.config_data,
             'irods_path': self.irods_backend.get_path(zone),
@@ -148,8 +148,7 @@ class TestLandingZoneCreateAPIView(TestLandingZoneAPITaskflowBase):
 
     def test_post_colls(self):
         """Test LandingZoneCreateAPIView post() with default collections"""
-        # Assert preconditions
-        self.assertEqual(LandingZone.objects.all().count(), 0)
+        self.assertEqual(LandingZone.objects.count(), 0)
 
         url = reverse(
             'landingzones:api_create',
@@ -167,17 +166,13 @@ class TestLandingZoneCreateAPIView(TestLandingZoneAPITaskflowBase):
         )
         response = self.request_knox(url, method='POST', data=self.request_data)
 
-        # Assert status after creation
         self.assertEqual(response.status_code, 201)
         self.assertEqual(LandingZone.objects.count(), 1)
 
-        # Assert status after taskflow has finished
         self._wait_for_taskflow(
             zone_uuid=response.data['sodar_uuid'], status='ACTIVE'
         )
         zone = LandingZone.objects.first()
-
-        # Assert collection status
         self._assert_zone_coll(zone)
         self._assert_zone_coll(zone, MISC_FILES_COLL, True)
         self._assert_zone_coll(zone, RESULTS_COLL, True)
@@ -187,9 +182,7 @@ class TestLandingZoneCreateAPIView(TestLandingZoneAPITaskflowBase):
 
     def test_post_colls_plugin(self):
         """Test LandingZoneCreateAPIView post() with plugin collections"""
-        # Assert preconditions
-        self.assertEqual(LandingZone.objects.all().count(), 0)
-
+        self.assertEqual(LandingZone.objects.count(), 0)
         # Mock assay configuration
         self.assay.measurement_type = {'name': 'genome sequencing'}
         self.assay.technology_type = {'name': 'nucleotide sequencing'}
@@ -219,17 +212,13 @@ class TestLandingZoneCreateAPIView(TestLandingZoneAPITaskflowBase):
         )
         response = self.request_knox(url, method='POST', data=self.request_data)
 
-        # Assert status after creation
         self.assertEqual(response.status_code, 201)
         self.assertEqual(LandingZone.objects.count(), 1)
 
-        # Assert status after taskflow has finished
         self._wait_for_taskflow(
             zone_uuid=response.data['sodar_uuid'], status='ACTIVE'
         )
         zone = LandingZone.objects.first()
-
-        # Assert collection status
         self._assert_zone_coll(zone)
         self._assert_zone_coll(zone, MISC_FILES_COLL, True)
         self._assert_zone_coll(zone, RESULTS_COLL, True)
@@ -242,9 +231,7 @@ class TestLandingZoneCreateAPIView(TestLandingZoneAPITaskflowBase):
     def test_post_no_investigation(self):
         """Test LandingZoneCreateAPIView post() with no investigation"""
         self.investigation.delete()
-
-        # Assert preconditions
-        self.assertEqual(LandingZone.objects.all().count(), 0)
+        self.assertEqual(LandingZone.objects.count(), 0)
 
         url = reverse(
             'landingzones:api_create',
@@ -261,7 +248,6 @@ class TestLandingZoneCreateAPIView(TestLandingZoneAPITaskflowBase):
         )
         response = self.request_knox(url, method='POST', data=self.request_data)
 
-        # Assert status after creation
         self.assertEqual(response.status_code, 400)
         self.assertEqual(LandingZone.objects.count(), 0)
 
@@ -269,9 +255,7 @@ class TestLandingZoneCreateAPIView(TestLandingZoneAPITaskflowBase):
         """Test LandingZoneCreateAPIView post() with no iRODS collections"""
         self.investigation.irods_status = False
         self.investigation.save()
-
-        # Assert preconditions
-        self.assertEqual(LandingZone.objects.all().count(), 0)
+        self.assertEqual(LandingZone.objects.count(), 0)
 
         url = reverse(
             'landingzones:api_create',
@@ -288,7 +272,6 @@ class TestLandingZoneCreateAPIView(TestLandingZoneAPITaskflowBase):
         )
         response = self.request_knox(url, method='POST', data=self.request_data)
 
-        # Assert status after creation
         self.assertEqual(response.status_code, 400)
         self.assertEqual(LandingZone.objects.count(), 0)
 
@@ -322,17 +305,15 @@ class TestLandingZoneSubmitDeleteAPIView(TestLandingZoneAPITaskflowBase):
         )
         response = self.request_knox(url, method='POST', data=self.request_data)
 
-        # Assert status after deletion
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
             response.data['sodar_uuid'], str(self.landing_zone.sodar_uuid)
         )
 
-        # Assert status after taskflow has finished
         self._wait_for_taskflow(
             zone_uuid=response.data['sodar_uuid'], status='DELETED'
         )
-        self.assertEqual(LandingZone.objects.all().count(), 1)
+        self.assertEqual(LandingZone.objects.count(), 1)
         self.assertEqual(LandingZone.objects.first().status, 'DELETED')
 
     def test_post_invalid_status(self):
@@ -346,9 +327,8 @@ class TestLandingZoneSubmitDeleteAPIView(TestLandingZoneAPITaskflowBase):
         )
         response = self.request_knox(url, method='POST', data=self.request_data)
 
-        # Assert status after deletion
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(LandingZone.objects.all().count(), 1)
+        self.assertEqual(LandingZone.objects.count(), 1)
         self.assertEqual(LandingZone.objects.first().status, 'MOVED')
 
     def test_post_invalid_uuid(self):
@@ -359,9 +339,8 @@ class TestLandingZoneSubmitDeleteAPIView(TestLandingZoneAPITaskflowBase):
         )
         response = self.request_knox(url, method='POST', data=self.request_data)
 
-        # Assert status after deletion
-        self.assertEqual(response.status_code, 403)
-        self.assertEqual(LandingZone.objects.all().count(), 1)
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(LandingZone.objects.count(), 1)
 
 
 @skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
@@ -396,17 +375,15 @@ class TestLandingZoneSubmitMoveAPIView(TestLandingZoneAPITaskflowBase):
         )
         response = self.request_knox(url, method='POST', data=self.request_data)
 
-        # Assert status after deletion
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
             response.data['sodar_uuid'], str(self.landing_zone.sodar_uuid)
         )
 
-        # Assert status after taskflow has finished
         self._wait_for_taskflow(
             zone_uuid=response.data['sodar_uuid'], status='ACTIVE'
         )
-        self.assertEqual(LandingZone.objects.all().count(), 1)
+        self.assertEqual(LandingZone.objects.count(), 1)
         self.assertEqual(LandingZone.objects.first().status, 'ACTIVE')
         self.assertEqual(
             LandingZone.objects.first().status_info,
@@ -424,9 +401,8 @@ class TestLandingZoneSubmitMoveAPIView(TestLandingZoneAPITaskflowBase):
         )
         response = self.request_knox(url, method='POST', data=self.request_data)
 
-        # Assert status after deletion
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(LandingZone.objects.all().count(), 1)
+        self.assertEqual(LandingZone.objects.count(), 1)
         self.assertEqual(LandingZone.objects.first().status, 'MOVED')
 
     def test_post_move(self):
@@ -437,17 +413,15 @@ class TestLandingZoneSubmitMoveAPIView(TestLandingZoneAPITaskflowBase):
         )
         response = self.request_knox(url, method='POST', data=self.request_data)
 
-        # Assert status after deletion
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
             response.data['sodar_uuid'], str(self.landing_zone.sodar_uuid)
         )
 
-        # Assert status after taskflow has finished
         self._wait_for_taskflow(
             zone_uuid=response.data['sodar_uuid'], status='MOVED'
         )
-        self.assertEqual(LandingZone.objects.all().count(), 1)
+        self.assertEqual(LandingZone.objects.count(), 1)
         self.assertEqual(LandingZone.objects.first().status, 'MOVED')
 
     def test_post_move_invalid_status(self):
@@ -461,7 +435,6 @@ class TestLandingZoneSubmitMoveAPIView(TestLandingZoneAPITaskflowBase):
         )
         response = self.request_knox(url, method='POST', data=self.request_data)
 
-        # Assert status after deletion
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(LandingZone.objects.all().count(), 1)
+        self.assertEqual(LandingZone.objects.count(), 1)
         self.assertEqual(LandingZone.objects.first().status, 'DELETED')

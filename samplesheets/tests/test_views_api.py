@@ -27,7 +27,7 @@ from samplesheets.tests.test_views import (
     REMOTE_SITE_DESC,
     REMOTE_SITE_SECRET,
 )
-from samplesheets.views import SampleSheetImportMixin
+from samplesheets.views import SheetImportMixin
 
 
 app_settings = AppSettingAPI()
@@ -110,9 +110,7 @@ class TestInvestigationRetrieveAPIView(TestSampleSheetAPIBase):
         self.assertEqual(json.loads(response.content), expected)
 
 
-class TestSampleSheetImportAPIView(
-    SampleSheetImportMixin, TestSampleSheetAPIBase
-):
+class TestSheetImportAPIView(SheetImportMixin, TestSampleSheetAPIBase):
     """Tests for SampleSheetImportAPIView"""
 
     def setUp(self):
@@ -397,7 +395,6 @@ class TestSampleSheetImportAPIView(
 
     def test_post_no_plugin_assay(self):
         """Test post() with an assay without plugin"""
-        # Assert preconditions
         self.assertEqual(
             Investigation.objects.filter(project=self.project).count(), 0
         )
@@ -421,12 +418,39 @@ class TestSampleSheetImportAPIView(
             [self.get_assay_plugin_warning(Assay.objects.all().first())],
         )
 
+    def test_post_sync(self):
+        """Test post() with sheet sync enabled (should fail)"""
+        app_settings.set_app_setting(
+            APP_NAME, 'sheet_sync_enable', True, project=self.project
+        )
+        self.assertEqual(
+            Investigation.objects.filter(project=self.project).count(), 0
+        )
+        self.assertEqual(ISATab.objects.filter(project=self.project).count(), 0)
 
-class TestSampleSheetISAExportAPIView(TestSampleSheetAPIBase):
-    """Tests for SampleSheetISAExportAPIView"""
+        url = reverse(
+            'samplesheets:api_import',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+
+        with open(SHEET_PATH, 'rb') as file:
+            post_data = {'file': file}
+            response = self.request_knox(
+                url, method='POST', format='multipart', data=post_data
+            )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            Investigation.objects.filter(project=self.project).count(), 0
+        )
+        self.assertEqual(ISATab.objects.filter(project=self.project).count(), 0)
+
+
+class TestSheetISAExportAPIView(TestSampleSheetAPIBase):
+    """Tests for SheetISAExportAPIView"""
 
     def test_get_zip(self):
-        """Test zip export  in SampleSheetISAExportAPIView"""
+        """Test zip export in SampleSheetISAExportAPIView"""
         # Import investigation
         self.investigation = self._import_isa_from_file(
             SHEET_PATH, self.project
@@ -522,7 +546,9 @@ class TestRemoteSheetGetAPIView(
         tb = SampleSheetTableBuilder()
         expected = {
             'studies': {
-                str(self.study.sodar_uuid): tb.build_study_tables(self.study)
+                str(self.study.sodar_uuid): tb.build_study_tables(
+                    self.study, ui=False
+                )
             }
         }
         self.assertEqual(response.status_code, 200)

@@ -31,11 +31,6 @@ urls_ui = [
         view=views.ZoneDeleteView.as_view(),
         name='delete',
     ),
-    url(
-        regex=r'^clear/(?P<project>[0-9a-f-]+)$',
-        view=views.ZoneClearView.as_view(),
-        name='clear',
-    ),
 ]
 
 # REST API views

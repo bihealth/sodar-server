@@ -1,14 +1,15 @@
 """Rendering utilities for samplesheets"""
 
-from altamisa.constants import table_headers as th
-from altamisa.isatab.write_assay_study import RefTableBuilder
-from datetime import date
 import functools
 import itertools
 import logging
 from packaging import version
 import re
 import time
+
+from altamisa.constants import table_headers as th
+from altamisa.isatab.write_assay_study import RefTableBuilder
+from datetime import date
 
 from django.conf import settings
 
@@ -17,6 +18,12 @@ from projectroles.app_settings import AppSettingAPI
 
 from samplesheets.models import Process, GenericMaterial
 from samplesheets.utils import get_node_obj
+
+
+header_re = re.compile(r'^([a-zA-Z\s]+)[\[](.+)[\]]$')
+contact_re = re.compile(r'(.+?)\s?(?:[<|[])(.+?)(?:[>\]])')
+logger = logging.getLogger(__name__)
+app_settings = AppSettingAPI()
 
 
 TOP_HEADER_MATERIAL_COLOURS = {
@@ -80,11 +87,6 @@ MODEL_JSON_ATTRS = [
 # HACK: Special cases for inline file linking (see issue #817)
 SPECIAL_FILE_LINK_HEADERS = ['report file']
 
-header_re = re.compile(r'^([a-zA-Z\s]+)[\[](.+)[\]]$')
-contact_re = re.compile(r'(.+?)\s?(?:[<|[])(.+?)(?:[>\]])')
-logger = logging.getLogger(__name__)
-app_settings = AppSettingAPI()
-
 
 # Table building ---------------------------------------------------------------
 
@@ -92,12 +94,13 @@ app_settings = AppSettingAPI()
 class SampleSheetRenderingException(Exception):
     """Sample sheet rendering exception"""
 
-    pass
-
 
 class SampleSheetTableBuilder:
-    """Class for building a dict table with table cells, their properties and
-    headers, to be rendered as HTML on the site"""
+    """
+    Class for building a sample sheet table as dict. Contains table cells, their
+    properties and headers, to be rendered as HTML on the site or used in
+    backend operations.
+    """
 
     def __init__(self):
         self._study = None
@@ -116,12 +119,13 @@ class SampleSheetTableBuilder:
         self._edit = False
         self._sheet_config = None
 
-    # General data and cell functions ------------------------------------------
+    # General Data and Cell Functions ------------------------------------------
 
     @classmethod
     def _get_value(cls, field):
         """
-        Return value of a field which can be either free text or term reference
+        Return value of a field which can be either free text or term reference.
+
         :param field: Field (string or dict)
         :return: String
         """
@@ -172,7 +176,12 @@ class SampleSheetTableBuilder:
         )
 
     def _add_top_header(self, obj, colspan):
-        """Append columns to top header"""
+        """
+        Append columns to top header.
+
+        :param obj: GenericMaterial or Process object
+        :param colspan: Column count for the node
+        """
         if isinstance(obj, GenericMaterial):  # Material
             colour = TOP_HEADER_MATERIAL_COLOURS[obj.item_type]
             value = (
@@ -289,8 +298,6 @@ class SampleSheetTableBuilder:
         header_type=None,
         obj=None,
         tooltip=None,
-        basic_val=True,
-        # attrs=None,  # :param attrs: Optional attributes (dict)
     ):
         """
         Add cell data. Also maintain column value list and insert header if on
@@ -303,7 +310,6 @@ class SampleSheetTableBuilder:
         :param header_type: Header type (string)
         :param obj: Original Django model object
         :param tooltip: Tooltip to be shown on mouse hover (string)
-        :param basic_val: Whether the value is a basic string (HACK for #730)
         """
         # Add header if first row
         if header_name and obj and self._first_row:
@@ -447,13 +453,11 @@ class SampleSheetTableBuilder:
         :param obj: GenericMaterial or Pocess object the annotation belongs to
         """
         unit = None
-        basic_val = False
 
         # Special case: Comments as parsed in SODAR v0.5.2 (see #629)
         # TODO: TBD: Should these be added in this function at all?
         if isinstance(ann, str):
             val = ann
-            basic_val = True
 
         # Ontology reference(s) (altamISA v0.1+, SODAR v0.5.2+)
         elif isinstance(ann['value'], dict) or (
@@ -486,7 +490,6 @@ class SampleSheetTableBuilder:
         # Basic value string OR a list of strings
         else:
             val = ann['value']
-            basic_val = True
 
         # Add unit if present (only for non-list values)
         # TODO: provide full ontology value for editing once supporting
@@ -504,7 +507,6 @@ class SampleSheetTableBuilder:
             header_type=header_type,
             obj=obj,
             tooltip=None,  # Tooltip will be retrieved from each ontology term
-            basic_val=basic_val,
         )
 
     # Table building functions -------------------------------------------------
@@ -518,46 +520,10 @@ class SampleSheetTableBuilder:
         self._node_idx = 0
         self._field_idx = 0
 
-    def _build_table(self, table_refs, node_map=None, study=None, assay=None):
-        """
-        Function for building a table for rendering.
+    def _add_ui_table_data(self):
+        """Add UI specific data to a table"""
+        # TODO: Un-hackify
 
-        :param table_refs: Object unique_name:s in a list of lists
-        :param node_map: Lookup dictionary containing objects (optional)
-        :param study: Study object (optional, required if rendering study)
-        :param assay: Assay object (optional, required if rendering assay)
-        :raise: ValueError if both study and assay are None
-        :return: Dict
-        """
-        if not study and not assay:
-            raise ValueError('Either study or assay must be defined')
-
-        self._study = study or assay.study
-        self._assay = assay
-        self._row = []
-        self._top_header = []
-        self._field_header = []
-        self._field_configs = []
-        self._table_data = []
-        self._first_row = True
-        self._col_values = []
-        self._col_idx = 0
-        row_id = 0
-
-        if not node_map:
-            node_map = self.get_node_map(self._study.get_nodes())
-
-        for input_row in table_refs:
-            col_pos = 0
-            # Add elements in row
-            for col in input_row:
-                self._add_ordered_element(node_map[col])
-                col_pos += 1
-            self._append_row()
-            row_id += 1
-
-        # Aggregate column data for Vue app
-        # TODO: Un-hackify and move this somewhere else
         def _get_length(value, col_type=None):
             """Return estimated length for proportional text"""
             if not value:
@@ -672,18 +638,63 @@ class SampleSheetTableBuilder:
             else:
                 grp_idx += 1
 
-        # Store index of last visible column
-        col_last_vis = (
-            len(self._col_values) - self._col_values[::-1].index(1) - 1
-        )
+    def _build_table(
+        self, table_refs, node_map=None, study=None, assay=None, ui=True
+    ):
+        """
+        Build a table from the node graph reference.
 
-        return {
+        :param table_refs: Object unique_name:s in a list of lists
+        :param node_map: Lookup dictionary containing objects (optional)
+        :param study: Study object (optional, required if rendering study)
+        :param assay: Assay object (optional, required if rendering assay)
+        :param ui: Add UI specific data if True (boolean)
+        :raise: ValueError if both study and assay are None
+        :return: Dict
+        """
+        if not study and not assay:
+            raise ValueError('Either study or assay must be defined')
+
+        self._study = study or assay.study
+        self._assay = assay
+        self._row = []
+        self._top_header = []
+        self._field_header = []
+        self._field_configs = []
+        self._table_data = []
+        self._first_row = True
+        self._col_values = []
+        self._col_idx = 0
+        row_id = 0
+
+        if not node_map:
+            node_map = self.get_node_map(self._study.get_nodes())
+
+        for input_row in table_refs:
+            col_pos = 0
+            # Add elements in row
+            for col in input_row:
+                self._add_ordered_element(node_map[col])
+                col_pos += 1
+            self._append_row()
+            row_id += 1
+
+        # Aggregate UI specific data
+        if ui:
+            self._add_ui_table_data()
+
+        ret = {
             'top_header': self._top_header,
             'field_header': self._field_header,
             'table_data': self._table_data,
             'col_values': self._col_values,
-            'col_last_vis': col_last_vis,
         }
+        # Store index of last visible column for UI
+        if ui:
+            ret['col_last_vis'] = (
+                len(self._col_values) - self._col_values[::-1].index(1) - 1
+            )
+        return ret
 
     @classmethod
     def build_study_reference(cls, study, nodes=None):
@@ -774,7 +785,7 @@ class SampleSheetTableBuilder:
                 assay_refs.append(row[start_idx:])
         return assay_refs
 
-    def build_study_tables(self, study, edit=False, use_config=True):
+    def build_study_tables(self, study, edit=False, use_config=True, ui=True):
         """
         Build study table and associated assay tables for rendering.
 
@@ -806,13 +817,10 @@ class SampleSheetTableBuilder:
                 'Unable to use sheet configuration, study UUID not found'
             )
             self._sheet_config = None
-
         elif self._sheet_config:
             logger.debug('Using sheet configuration from app settings')
-
         elif not use_config:
             logger.debug('Not using sheet configuration (use_config=False)')
-
         else:
             logger.debug('No sheet configuration found in app settings')
 
@@ -839,7 +847,9 @@ class SampleSheetTableBuilder:
 
         # Study ref table without duplicates
         study_refs = self.get_study_refs(all_refs, sample_idx)
-        ret['study'] = self._build_table(study_refs, node_map, study=study)
+        ret['study'] = self._build_table(
+            study_refs, node_map, study=study, ui=ui
+        )
         logger.debug(
             'Building study OK ({:.1f}s)'.format(time.time() - s_start)
         )
@@ -856,7 +866,7 @@ class SampleSheetTableBuilder:
             )
             assay_refs = self.get_assay_refs(all_refs, assay_id, sample_idx)
             ret['assays'][str(assay.sodar_uuid)] = self._build_table(
-                assay_refs, node_map, assay=assay
+                assay_refs, node_map, assay=assay, ui=ui
             )
             assay_id += 1
             logger.debug(

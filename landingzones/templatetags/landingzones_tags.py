@@ -6,14 +6,11 @@ from django.urls import reverse
 # Projectroles dependency
 from projectroles.plugins import get_backend_api
 
-from landingzones.models import LandingZone, STATUS_STYLES
+from landingzones.models import LandingZone, STATUS_STYLES, STATUS_FINISHED
 from landingzones.plugins import get_zone_config_plugin
 
 
 register = template.Library()
-
-
-DISABLED_STATES = ['NOT CREATED', 'MOVED', 'DELETED']
 
 
 @register.simple_tag
@@ -29,7 +26,7 @@ def get_status_style(zone):
 def get_zone_row_class(zone):
     return (
         'sodar-lz-zone-tr-moved text-muted'
-        if zone.status in DISABLED_STATES
+        if zone.status in STATUS_FINISHED
         else 'sodar-lz-zone-tr-existing'
     )
 
@@ -39,7 +36,7 @@ def get_details_zones(project, user):
     """Return active user zones for the project details page"""
     return (
         LandingZone.objects.filter(project=project, user=user)
-        .exclude(status__in=['MOVED', 'DELETED'])
+        .exclude(status__in=STATUS_FINISHED)
         .order_by('-pk')
     )
 
@@ -69,14 +66,14 @@ def get_zone_samples_url(zone):
 @register.simple_tag
 def is_zone_enabled(zone):
     """Return True/False if the zone can be enabled in the UI"""
-    return True if zone.status not in DISABLED_STATES else False
+    return True if zone.status not in STATUS_FINISHED else False
 
 
 @register.simple_tag
 def is_zone_disabled(zone):
     """Return True/False if the zone can be enabled in the UI"""
     # NOTE: Have to do this silly hack because limitations of Django templates
-    return False if zone.status not in DISABLED_STATES else True
+    return False if zone.status not in STATUS_FINISHED else True
 
 
 @register.simple_tag
@@ -89,7 +86,8 @@ def get_zone_list_url(zone):
         view='list',
         project=zone.project,
         path=irods_backend.get_path(zone),
-        md5=1,
+        md5=True,
+        colls=True,
     )
 
 

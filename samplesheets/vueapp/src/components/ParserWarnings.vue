@@ -125,14 +125,15 @@ table#sodar-ss-warnings-table tbody tr td {
   word-break: break-word;
 }
 
+table#sodar-ss-warnings-table thead tr th:first-child,
+table#sodar-ss-warnings-table tbody tr td:first-child {
+  min-width: 200px;
+  max-width: 350px;
+}
+
 table#sodar-ss-warnings-table thead tr th:last-child,
 table#sodar-ss-warnings-table tbody tr td:last-child {
   word-break: normal;
-}
-
-table#sodar-ss-warnings-table thead tr th:first-child,
-table#sodar-ss-warnings-table tbody tr td:first-child {
-  max-width: 350px;
 }
 
 @media (max-width: 1200px) {

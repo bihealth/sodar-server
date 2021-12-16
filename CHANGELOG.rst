@@ -7,6 +7,168 @@ Changelog for the SODAR project. Loosely follows the
 Note that the issue IDs here refer to ones in the private CUBI GitLab.
 
 
+v0.11.0 (2021-12-16)
+====================
+
+Added
+-----
+
+- **General**
+    - Siteinfo app in default ``LOGGING_APPS`` value (#1219)
+    - ``LOGGING_LEVEL`` setting (sodar_core#822)
+    - ``PROJECTROLES_EMAIL_HEADER`` and ``PROJECTROLES_EMAIL_FOOTER`` settings (#1231)
+    - Codacy coverage reporting (#1169)
+- **Irodsbackend**
+    - ``colls`` parameter in list retrieval (#1156)
+    - ``IRODS_ENV_DEFAULT`` setting (#1260)
+    - ``LocalAuthAPIView`` REST API view and ``IRODS_SODAR_AUTH`` setting (#1263)
+- **Landingzones**
+    - ``busyzones`` management command (#1212, #1314)
+    - App alerts for sheet cache updates (#1000)
+    - App alerts for zone owner for zone actions (#1204, #1240)
+    - ``member_notify_move`` app setting (#1203)
+    - Project member notifications from zone moving (#1203, #1232)
+    - ``LandingZone.user_message`` field (#1203)
+    - ``finished`` parameter for ``LandingZoneListAPIView`` (#1234)
+    - ``LandingZone.is_locked()`` helper (#321)
+    - Zone locked status in UI and ``LandingZoneRetrieveAPIView`` (#321)
+    - Display collections in iRODS file list (#1156)
+    - UI documentation in user manual (#1181)
+- **Ontologyaccess**
+    - App documentation in user manual (#1301)
+- **Samplesheets**
+    - Simple link support for string cell rendering (#1001)
+    - ``generic_raw`` assay plugin (#1128)
+    - Overriding assay plugin via assay comment (#1128)
+    - App alerts for sheet cache updates (#1000, #1265)
+    - Tooltip to clarify the Finish Editing button (#1109)
+    - Tooltips for buttons disabled due to an unsaved row (#1056)
+    - Default ontology column value (#1061)
+    - Confirmation for field value overwrite on node rename (#1060)
+    - Sheet version description (#754)
+    - Batch sheet version deletion (#773)
+    - Assay app support for "transcriptome profiling" measurement type (#1255)
+    - Saving version with description in editor UI (#1109)
+    - Automatic study/assay table filtering from search results (#634)
+    - UI documentation in user manual (#1180)
+
+Changed
+-------
+
+- **General**
+    - Upgrade to django-sodar-core v0.10.7 (#1217, #1220, #1243, #1272, #1332)
+    - Upgrade to python-irodsclient v1.0.0 (#1223)
+    - Upgrade to Chromedriver v96 (sodar_core#772, #1254, sodar_core#847, sodar_core#852)
+    - Upgrade to Node v12
+    - Improve production logging (#1257)
+    - Upgrade to django-webpack-loader v1.4.1 (#1198)
+    - Upgrade to redis v3.5.3 (#1297)
+    - Use ``ManagementCommandLogger`` for command output (#1276)
+    - Update user manual (#1304, #1318)
+    - Replace deprecated ``MAINTAINER`` label in Dockerfile (#1316)
+    - Enable setting ``SECURE_REDIRECT_EXEMPT`` in env vars (#1331)
+- **Irodsbackend**
+    - Retrieve iRODS config from ``IRODS_ENV_BACKEND`` setting (#1221)
+    - Use data attributes in templates (sodar_core#530)
+    - Rename ``data_objects`` to ``irods_data`` in return data (#1156)
+    - Get default iRODS environment values from default env (#1260)
+- **Irodsinfo**
+    - Retrieve iRODS config from ``IRODS_ENV_CLIENT`` setting (#1221)
+    - Display ``IRODS_ENV_CLIENT`` in siteinfo via ``info_settings``
+    - Get default iRODS environment values from default env (#1260)
+- **Landingzones**
+    - Do not load finished landing zones in zone list view (#1205)
+    - Rename ``STATUS_ALLOW_CLEAR`` to ``STATUS_FINISHED`` (#1205)
+    - UI improvements in project zone list (#1235)
+    - Hide zones with ``NOT CREATED`` status from detail card (#1236)
+    - Handle ``NOT CREATED`` landing zone status (#1237)
+    - Use ``CurrentUserFormMixin`` in forms (#660)
+    - Enable automated collection generation by default in UI (#1266)
+    - Clarify collection creation message in UI (#1275)
+    - Default status info for ``MOVING`` (#1305)
+    - Do not count inactive zones in project list (#1306)
+- **Samplesheets**
+    - Move ``TestSheetSyncBase`` into ``test_views_taskflow``
+    - Update app setting labels (#1230)
+    - Use ``CurrentUserFormMixin`` in forms (#660)
+    - Rename ``get_name()`` and ``get_full_name()`` in ``ISATab`` model (#1247)
+    - Update sheet version list layout (#1246)
+    - Replace version compare menu with operation dropdown entry (#1251)
+    - Update subpage navigation (#1252)
+    - General refactoring (#1248, #1250, #1253)
+    - Move Ajax view version saving to ``SheetVersionMixin`` (#1109)
+    - Use ``AppSettingAPI.delete_setting()`` for display config deletion (#854)
+    - Make UI specific data optional in ``build_study_tables()`` (#694)
+    - Do not require user for ``sheet_sync_task`` (#1273)
+    - Hide navigation dropdown if no sheets are available (#1285)
+    - Reverse import/create order in Sheet Operations dropdown (#1286)
+    - Improve ontology editor layout (#1293)
+    - Improve study and assay title layout (#1291)
+    - Improve iRODS access ticket list layout (#1302)
+    - Remote sheet sync refactoring (#1317, #1325, #1326)
+    - Upgrade Vue app dependencies (#1328, #1329)
+
+Fixed
+-----
+
+- **General**
+    - API version settings not updated (#1218)
+    - Disable cache as workaround for Docker build issues (#1225)
+    - Github Actions CI failure by old package version (sodar_core#821)
+    - Build warning in ``docs_dev`` (#1182)
+- **Irodsadmin**
+    - Missing cleanup in command test ``tearDown()`` (#1244)
+- **Irodsbackend**
+    - Redundant slash prefix for root level items in collection list (#1245)
+    - ``IRODS_ENV_BACKEND`` value conversion issues (#1259)
+    - Unavailable iRODS connection not handled in ``BaseIrodsAjaxView`` (#1322)
+- **Landingzones**
+    - ``PROJECTROLES_SEND_EMAIL`` not checked in Taskflow views (#1229)
+    - Collection hint alert from zone list UI (#1266)
+    - Zone move failure on Celery task crash in ``TaskflowZoneStatusSetAPIView`` (#1298)
+    - ``status_info`` overflow crash in ``TaskflowZoneStatusSetAPIView`` (#1307)
+    - Uncaught exceptions in ``inactivezones`` (#1311)
+- **Ontologyaccess**
+    - Minor layout issues (#1312)
+- **Samplesheets**
+    - Missing label for ``public_access_ticket`` app setting (#1230)
+    - Incorrect ``ISATab`` timestamp in export and compare dropdown (#1247)
+    - Unhandled backend exceptions in ``update_project_cache_task()`` (#1265)
+    - Vue app study navigation failure with additional URL params (#1269)
+    - Assay shortcut card extra link icons (#1271)
+    - Source map errors in production (#1198)
+    - Numeric column default value invalid if range is unset (#1281)
+    - ``ColumnToggleModal`` errors on entering/exiting edit mode (#1280)
+    - Editability not updated in ``ColumnToggleModal`` without grid reload (#1279)
+    - First column width breaking in Parser Warnings table (#1287)
+    - Template creation link visible in sheet replace form (#1288)
+    - Default suffix icon in ``ColumnConfigModal`` (#1290)
+    - Ontology editor edit/check button icon misalignment (#1292)
+    - iRODS file list modal button column alignment (#1299)
+    - Random crash in ``StudyShortcutsRenderer`` unit tests (#1294)
+    - Sheet import and create view access permitted with sheet sync enabled (#1309)
+    - Project list sheet import link visible with sheet sync enabled (#1309)
+    - No placeholder for missing investigation title in details card (#1313)
+
+Removed
+-------
+
+- **General**
+    - ``ADMIN_URL`` setting from ``production.py`` (#1228)
+- **Irodsbackend**
+    - ``IRODS_ENV_PATH`` setting (#1221)
+- **Irodsinfo**
+    - ``IRODSINFO_ENV_PATH`` setting (#1221)
+    - ``IRODSINFO_SSL_VERIFY`` setting (#1226)
+- **Landingzones**
+    - ``ZoneClearView`` UI view (#1205)
+    - ``_list_buttons.html`` template (#1205)
+- **Samplesheets**
+    - ``SampleSheetVersionCompareForm`` (#1251)
+    - Unused ``config`` argument from ``SampleSheetIO.save_isa()``
+    - Unused ``basic_val`` arg from ``_add_cell()`` (#1262)
+
+
 v0.10.1 (2021-07-07)
 ====================
 
@@ -156,7 +318,8 @@ Removed
     - Legacy Docker setup (#1129)
     - ``syncgroups`` user command, updated version found in ``projectroles`` (#1172)
     - Unused ``sodar.users.utils`` (#1172)
-    - Unused `.travis.yml``
+    - Unused ``.travis.yml``
+    - ``backports.lzma`` dependency (#1197)
 - **Irodsbackend**
     - Support for Ajax queries without project
     - Unused template tags ``get_webdav_url_anon()`` and ``get_webdav_user_anon()``

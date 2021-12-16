@@ -1,6 +1,5 @@
 from django.conf import settings
 
-# from django.contrib.staticfiles.templatetags.staticfiles import static
 from django.template.defaultfilters import filesizeformat
 
 # Projectroles dependency
@@ -13,13 +12,15 @@ from irodsbackend.api import IrodsAPI
 IRODS_INFO_SETTINGS = [
     'ENABLE_IRODS',
     'IRODS_CERT_PATH',
-    'IRODS_ENV_PATH',
+    'IRODS_ENV_BACKEND',
+    'IRODS_ENV_DEFAULT',
     'IRODS_HOST',
     'IRODS_LANDING_ZONE_COLL',
     'IRODS_PORT',
     'IRODS_QUERY_BATCH_SIZE',
     'IRODS_ROOT_PATH',
     'IRODS_SAMPLE_COLL',
+    'IRODS_SODAR_AUTH',
     'IRODS_USER',
     'IRODS_WEBDAV_ENABLED',
     'IRODS_WEBDAV_URL',

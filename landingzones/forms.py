@@ -21,7 +21,7 @@ class LandingZoneForm(forms.ModelForm):
 
     #: Automated creation of collections
     create_colls = forms.BooleanField(
-        initial=False,
+        initial=True,
         required=False,
         label='Create collections',
         help_text='Create empty collections as defined by assay plugin',
@@ -33,6 +33,7 @@ class LandingZoneForm(forms.ModelForm):
             'assay',
             'title_suffix',
             'description',
+            'user_message',
             'create_colls',
             'configuration',
         ]

@@ -2,6 +2,7 @@
 
 from django import template
 from django.conf import settings
+from django.urls import reverse
 
 # Projectroles dependency
 from projectroles.plugins import get_backend_api
@@ -63,7 +64,7 @@ def get_irods_tree(investigation):
         ret += '<li>{}'.format(
             irods_backend.get_sub_path(study, include_parent=False)
         )
-        if study.assays.all().count() > 0:
+        if study.assays.count() > 0:
             ret += '<ul>'
             for assay in study.assays.all():
                 ret += '<li>{}</li>'.format(
@@ -73,6 +74,18 @@ def get_irods_tree(investigation):
         ret += '</li>'
     ret += '</ul></li></ul>'
     return ret
+
+
+@register.simple_tag
+def get_material_search_url(item):
+    """Return search URL for source or sample material"""
+    url = reverse(
+        'samplesheets:project_sheets',
+        kwargs={'project': item['study'].get_project().sodar_uuid},
+    )
+    url += '#/study/{}'.format(item['study'].sodar_uuid)
+    url += '/filter/{}'.format(item['name'])
+    return url
 
 
 # Table rendering --------------------------------------------------------------
@@ -123,12 +136,9 @@ def get_isatab_tag_html(isatab):
         return '<span class="text-muted">N/A</span>'
     ret = ''
     for tag in sorted(isatab.tags):
-        ret += (
-            '<span class="badge badge-pill badge-{} mr-1">'
-            '{}</span>\n'.format(
-                TAG_COLORS[tag] if tag in TAG_COLORS else DEFAULT_TAG_COLOR,
-                tag.capitalize(),
-            )
+        ret += '<span class="badge badge-pill badge-{}">' '{}</span>\n'.format(
+            TAG_COLORS[tag] if tag in TAG_COLORS else DEFAULT_TAG_COLOR,
+            tag.capitalize(),
         )
     return ret
 

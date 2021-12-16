@@ -17,7 +17,6 @@ var updateZoneStatus = function() {
             }).done(function (data) {
                 // console.log(trId + ': ' + data['status']);  // DEBUG
                 var statusInfoSpan = zoneTr.find('span#sodar-lz-zone-status-info-' + zoneUuid);
-
                 // TODO: Should somehow get these from STATUS_STYLES instead
                 var statusStyles = {
                     'CREATING': 'bg-warning',
@@ -38,6 +37,10 @@ var updateZoneStatus = function() {
                     statusTd.removeClass();
                     statusTd.addClass(statusStyles[data['status']] + ' text-white');
                     statusInfoSpan.text(data['status_info']);
+                    if (['PREPARING', 'VALIDATING', 'MOVING'].includes(data['status'])) {
+                        statusTd.append(
+                            '<span class="pull-right"><i class="iconify" data-icon="mdi:lock"></i></span>')
+                    }
 
                     if (data['status'] === 'MOVED' || data['status'] === 'DELETED') {
                         zoneTr.find('p#sodar-lz-zone-stats-container-' + zoneUuid).hide();
@@ -57,19 +60,15 @@ var updateZoneStatus = function() {
                         zoneTr.find('td.sodar-lz-zone-title').addClass('text-muted');
                         zoneTr.find('td.sodar-lz-zone-assay').addClass('text-muted');
                         zoneTr.find('td.sodar-lz-zone-status-info').addClass('text-muted');
-
                         zoneTr.find('.btn').each(function() {
                            if ($(this).is('button')) {
                                $(this).attr('disabled', 'disabled');
                            }
-
                            else if ($(this).is('a')) {
                                $(this).addClass('disabled');
                            }
-
                            $(this).tooltip('disable');
                         });
-
                         zoneTr.find('.sodar-list-dropdown').addClass('disabled');
                     }
 
@@ -78,17 +77,13 @@ var updateZoneStatus = function() {
                         zoneTr.find('td.sodar-lz-zone-assay').removeClass('text-muted');
                         zoneTr.find('td.sodar-lz-zone-status-info').removeClass('text-muted');
                         zoneTr.find('p#sodar-lz-zone-stats-container-' + zoneUuid).show();
-
                         zoneTr.find('.btn').each(function() {
                             if ($(this).is('button')) {
                                 $(this).removeAttr('disabled');
                             }
-
                             $(this).removeClass('disabled');
-
-                           $(this).tooltip('enable');
+                            $(this).tooltip('enable');
                         });
-
                         zoneTr.find('.sodar-list-dropdown').removeClass('disabled');
                     }
                 }

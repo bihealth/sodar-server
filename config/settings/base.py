@@ -97,6 +97,7 @@ LOCAL_APPS = [
     'samplesheets.studyapps.cancer.apps.CancerConfig',
     # Samplesheets assay sub-apps
     'samplesheets.assayapps.dna_sequencing.apps.DnaSequencingConfig',
+    'samplesheets.assayapps.generic_raw.apps.GenericRawConfig',
     'samplesheets.assayapps.meta_ms.apps.MetaMsConfig',
     'samplesheets.assayapps.microarray.apps.MicroarrayConfig',
     'samplesheets.assayapps.pep_ms.apps.PepMsConfig',
@@ -144,7 +145,7 @@ EMAIL_SUBJECT_PREFIX = env('EMAIL_SUBJECT_PREFIX', default='')
 
 # MANAGER CONFIGURATION
 # ------------------------------------------------------------------------------
-ADMINS = [("""Mikko Nieminen""", 'mikko.nieminen@bihealth.de')]
+ADMINS = [("""Mikko Nieminen""", 'mikko.nieminen@bih-charite.de')]
 
 # See: https://docs.djangoproject.com/en/3.2/ref/settings/#managers
 MANAGERS = ADMINS
@@ -479,39 +480,44 @@ SAML2_AUTH = {
 # Logging
 # ------------------------------------------------------------------------------
 
+LOGGING_LEVEL = env.str('LOGGING_LEVEL', 'DEBUG' if DEBUG else 'ERROR')
 LOGGING_APPS = env.list(
     'LOGGING_APPS',
     default=[
         'irodsadmin',
         'irodsbackend',
+        'irodsinfo',
         'landingzones',
         'ontologyaccess',
         'projectroles',
         'samplesheets',
+        'siteinfo',
         'sodarcache',
         'taskflowbackend',
+        'timeline',
     ],
 )
-
 LOGGING_FILE_PATH = env.str('LOGGING_FILE_PATH', None)
 
 
-def set_logging(debug):
+def set_logging(level=None):
+    if not level:
+        level = 'DEBUG' if DEBUG else 'ERROR'
     app_logger_config = {
-        'level': 'DEBUG' if debug else 'ERROR',
+        'level': level,
         'handlers': ['console', 'file'] if LOGGING_FILE_PATH else ['console'],
         'propagate': True,
     }
     log_handlers = {
         'console': {
-            'level': 'DEBUG',
+            'level': level,
             'class': 'logging.StreamHandler',
             'formatter': 'simple',
         }
     }
     if LOGGING_FILE_PATH:
         log_handlers['file'] = {
-            'level': 'DEBUG',
+            'level': level,
             'class': 'logging.FileHandler',
             'filename': LOGGING_FILE_PATH,
             'formatter': 'simple',
@@ -529,7 +535,7 @@ def set_logging(debug):
     }
 
 
-LOGGING = set_logging(DEBUG)
+LOGGING = set_logging(LOGGING_LEVEL)
 
 
 # Sentry Client (Will be set up in production)
@@ -570,8 +576,16 @@ SITE_INSTANCE_TITLE = env.str('SITE_INSTANCE_TITLE', 'CUBI SODAR')
 
 
 # General API settings
-SODAR_API_DEFAULT_VERSION = '0.10.0'
-SODAR_API_ALLOWED_VERSIONS = ['0.7.0', '0.7.1', '0.8.0', '0.9.0', '0.10.0']
+SODAR_API_DEFAULT_VERSION = '0.11.0'
+SODAR_API_ALLOWED_VERSIONS = [
+    '0.7.0',
+    '0.7.1',
+    '0.8.0',
+    '0.9.0',
+    '0.10.0',
+    '0.10.1',
+    '0.11.0',
+]
 SODAR_API_MEDIA_TYPE = 'application/vnd.bihealth.sodar+json'
 SODAR_API_DEFAULT_HOST = env.url(
     'SODAR_API_DEFAULT_HOST', 'http://127.0.0.1:8000'
@@ -586,6 +600,8 @@ PROJECTROLES_SEND_EMAIL = env.bool('PROJECTROLES_SEND_EMAIL', False)
 PROJECTROLES_EMAIL_SENDER_REPLY = env.bool(
     'PROJECTROLES_EMAIL_SENDER_REPLY', False
 )
+PROJECTROLES_EMAIL_HEADER = env.str('PROJECTROLES_EMAIL_HEADER', None)
+PROJECTROLES_EMAIL_FOOTER = env.str('PROJECTROLES_EMAIL_FOOTER', None)
 PROJECTROLES_HELP_HIGHLIGHT_DAYS = env.int(
     'PROJECTROLES_HELP_HIGHLIGHT_DAYS', 7
 )
@@ -621,6 +637,11 @@ PROJECTROLES_INLINE_HEAD_INCLUDE = env.str(
     'PROJECTROLES_INLINE_HEAD_INCLUDE', None
 )
 
+# Enable profiling for debugging/analysis
+PROJECTROLES_ENABLE_PROFILING = env.bool('PROJECTROLES_ENABLE_PROFILING', False)
+if PROJECTROLES_ENABLE_PROFILING:
+    MIDDLEWARE += ['projectroles.middleware.ProfilerMiddleware']
+
 
 # Timeline app settings
 TIMELINE_PAGINATION = env.int('TIMELINE_PAGINATION', 15)
@@ -632,7 +653,7 @@ ADMINALERTS_PAGINATION = env.int('ADMINALERTS_PAGINATION', 15)
 
 # SODAR site specific settings (not derived from SODAR Core)
 SODAR_SUPPORT_EMAIL = env.str(
-    'SODAR_SUPPORT_EMAIL', 'cubi-helpdesk@bihealth.de'
+    'SODAR_SUPPORT_EMAIL', 'cubi-helpdesk@bih-charite.de'
 )
 SODAR_SUPPORT_NAME = env.str('SODAR_SUPPORT_NAME', 'CUBI Helpdesk')
 
@@ -648,14 +669,20 @@ IRODS_PASS = env.str('IRODS_PASS', 'rods')
 IRODS_SAMPLE_COLL = env.str('IRODS_SAMPLE_COLL', 'sample_data')
 IRODS_LANDING_ZONE_COLL = env.str('IRODS_LANDING_ZONE_COLL', 'landing_zones')
 
-# Optional iRODS env file
-# (recommended: place in STATIC_ROOT + '/irods/irods_environment.json')
-IRODS_ENV_PATH = env.str('IRODS_ENV_PATH', None)
+# Enable entry point for custom local auth for iRODS users if no LDAP is in use
+IRODS_SODAR_AUTH = env.bool('IRODS_SODAR_AUTH', False)
 
-# Optional iRODS certificate path
-IRODS_CERT_PATH = env.str(
-    'IRODS_CERT_PATH', STATIC_ROOT + '/irods/irods_server.crt'
+# Default iRODS environment for backend and client connections
+# NOTE: irods_ssl_ca_certificate_file should be defined in IRODS_CERT_PATH
+IRODS_ENV_DEFAULT = env.dict(
+    'IRODS_ENV_DEFAULT', default={'irods_default_hash_scheme': 'MD5'}
 )
+# iRODS environment overrides for backend connections
+IRODS_ENV_BACKEND = env.dict('IRODS_ENV_BACKEND', default={})
+# iRODS environment overrides for client connections
+IRODS_ENV_CLIENT = env.dict('IRODS_ENV_CLIENT', default={})
+# Optional iRODS certificate path on server
+IRODS_CERT_PATH = env.str('IRODS_CERT_PATH', None)
 
 
 # Taskflow backend settings
@@ -683,15 +710,7 @@ IRODSBACKEND_STATUS_INTERVAL = env.int('IRODSBACKEND_STATUS_INTERVAL', 15)
 IRODS_QUERY_BATCH_SIZE = env.int('IRODS_QUERY_BATCH_SIZE', 24)
 
 
-# Irodsinfo settings
-# In the generated iRODS config, require SSL cert verification unless False
-IRODSINFO_SSL_VERIFY = env.bool('IRODSINFO_SSL_VERIFY', True)
-# Path to iRODS env file appended to client env file (default=IRODS_ENV_PATH)
-IRODSINFO_ENV_PATH = env.str('IRODSINFO_ENV_PATH', IRODS_ENV_PATH)
-
-
 # Samplesheets settings
-
 # Allow critical altamISA warnings on import
 SHEETS_ALLOW_CRITICAL = env.bool('SHEETS_ALLOW_CRITICAL', False)
 # Temporary, see issue #556
@@ -731,7 +750,7 @@ SHEETS_ENABLED_TEMPLATES = [
     'ms_meta_biocrates',
 ]
 
-# Settings for sync sheets in minutes
+# Remote sample sheet sync interval in minutes
 SHEETS_SYNC_INTERVAL = env.int('SHEETS_SYNC_INTERVAL', 5)
 
 

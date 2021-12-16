@@ -43,8 +43,10 @@ class BaseCancerConfigView(
         self.study_tables = None
 
     def get(self, request, *args, **kwargs):
-        """Override get() to set up stuff and return with failure if something
-        is missing"""
+        """
+        Override get() to set up stuff and return with failure if something
+        is missing.
+        """
         irods_backend = get_backend_api('omics_irods', conn=False)
         self.redirect_url = get_sheets_url(self.get_project())
 
@@ -90,7 +92,7 @@ class IGVSessionFileRenderView(BaseCancerConfigView):
 
         # Build render table
         tb = SampleSheetTableBuilder()
-        study_tables = tb.build_study_tables(self.material.study)
+        study_tables = tb.build_study_tables(self.material.study, ui=False)
         # Get libraries
         libraries = get_sample_libraries(samples, study_tables)
         bam_urls = {}

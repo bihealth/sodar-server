@@ -1,7 +1,5 @@
 """Tests for the API in the irodsbackend app"""
 
-import os
-
 from django.conf import settings
 from django.test import override_settings
 
@@ -37,12 +35,11 @@ IRODS_ZONE = settings.IRODS_ZONE
 IRODS_ROOT_PATH = 'sodar/root'
 SAMPLE_COLL = settings.IRODS_SAMPLE_COLL
 LANDING_ZONE_COLL = settings.IRODS_LANDING_ZONE_COLL
-ENV_DIR = SHEET_DIR = os.path.dirname(__file__) + '/data/'
-ENV_PATH = ENV_DIR + 'irods_env.json'
-ENV_PATH_INVALID = ENV_DIR + 'irods_env_INVALID.json'
-ENV_PATH_NOT_FOUND = ENV_DIR + 'irods_env_NOT_HERE.json'
-
-
+IRODS_ENV = {
+    "irods_encryption_key_size": 32,
+    "irods_encryption_num_hash_rounds": 16,
+    "irods_encryption_salt_size": 8,
+}
 IRODS_BACKEND_ENABLED = (
     True if 'omics_irods' in settings.ENABLED_BACKEND_PLUGINS else False
 )
@@ -71,23 +68,9 @@ class TestIrodsbackendAPIInit(
             IrodsAPI()
 
     @skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
-    @override_settings(IRODS_ENV_PATH=ENV_PATH)
+    @override_settings(IRODS_ENV_BACKEND=IRODS_ENV)
     def test_init_env(self):
         """Test initialization with an iRODS environment file"""
-        self.assertIsInstance(IrodsAPI(), IrodsAPI)
-
-    @skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
-    @override_settings(IRODS_ENV_PATH=ENV_PATH_INVALID)
-    def test_init_env_invalid(self):
-        """Test initialization with an invalid iRODS environment file"""
-        with self.assertRaises(Exception):
-            IrodsAPI()
-
-    @skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
-    @override_settings(IRODS_ENV_PATH=ENV_PATH_NOT_FOUND)
-    def test_init_env_not_found(self):
-        """Test initialization with an iRODS environment file"""
-        # NOTE: Should return true, just returning a warning
         self.assertIsInstance(IrodsAPI(), IrodsAPI)
 
     def test_init_no_conn(self):

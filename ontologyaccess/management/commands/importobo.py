@@ -1,17 +1,20 @@
 """Management command importobo for the ontologyaccess app"""
 
 import fastobo
-import logging
 import sys
+
 from urllib.request import urlopen
 
 from django.core.management.base import BaseCommand
+
+# Projectroles dependency
+from projectroles.management.logging import ManagementCommandLogger
 
 from ontologyaccess.io import OBOFormatOntologyIO
 from ontologyaccess.models import OBOFormatOntology
 
 
-logger = logging.getLogger(__name__)
+logger = ManagementCommandLogger(__name__)
 
 
 VALID_FORMATS = ['obo', 'owl']

@@ -1,9 +1,7 @@
 """Tests for REST API views in the landingzones app"""
 
 import json
-import pytz
 
-from django.conf import settings
 from django.urls import reverse
 
 from unittest import skipIf
@@ -39,7 +37,6 @@ PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
 ZONE_STATUS = 'VALIDATING'
 ZONE_STATUS_INFO = 'Testing'
-LOCAL_TZ = pytz.timezone(settings.TIME_ZONE)
 INVALID_UUID = '11111111-1111-1111-1111-111111111111'
 
 
@@ -79,7 +76,7 @@ class TestLandingZoneAPIViewsBase(
 
 
 @skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
-class LandingZoneListAPIView(TestLandingZoneAPIViewsBase):
+class TestLandingZoneListAPIView(TestLandingZoneAPIViewsBase):
     """Tests for LandingZoneListAPIView"""
 
     def test_get_owner(self):
@@ -100,10 +97,12 @@ class LandingZoneListAPIView(TestLandingZoneAPIViewsBase):
             'assay': str(self.assay.sodar_uuid),
             'status': self.landing_zone.status,
             'status_info': self.landing_zone.status_info,
+            'status_locked': False,
             'date_modified': self.get_drf_datetime(
                 self.landing_zone.date_modified
             ),
             'description': self.landing_zone.description,
+            'user_message': self.landing_zone.user_message,
             'configuration': self.landing_zone.configuration,
             'config_data': self.landing_zone.config_data,
             'irods_path': irods_backend.get_path(self.landing_zone),
@@ -122,9 +121,76 @@ class LandingZoneListAPIView(TestLandingZoneAPIViewsBase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 0)
 
+    def test_get_finished_default(self):
+        """Test get() with a finished zone and no finished parameter"""
+        self._make_landing_zone(
+            title=ZONE_TITLE + '_moved',
+            project=self.project,
+            user=self.owner_as.user,
+            assay=self.assay,
+            description=ZONE_DESC,
+            status='MOVED',
+        )
+        url = reverse(
+            'landingzones:api_list', kwargs={'project': self.project.sodar_uuid}
+        )
+        response = self.request_knox(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(
+            json.loads(response.content)[0]['sodar_uuid'],
+            str(self.landing_zone.sodar_uuid),
+        )
+
+    def test_get_finished_false(self):
+        """Test get() with a finished zone and finished=0"""
+        self._make_landing_zone(
+            title=ZONE_TITLE + '_moved',
+            project=self.project,
+            user=self.owner_as.user,
+            assay=self.assay,
+            description=ZONE_DESC,
+            status='MOVED',
+        )
+        url = (
+            reverse(
+                'landingzones:api_list',
+                kwargs={'project': self.project.sodar_uuid},
+            )
+            + '?finished=0'
+        )
+        response = self.request_knox(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(
+            json.loads(response.content)[0]['sodar_uuid'],
+            str(self.landing_zone.sodar_uuid),
+        )
+
+    def test_get_finished_true(self):
+        """Test get() with a finished zone and finished=1"""
+        self._make_landing_zone(
+            title=ZONE_TITLE + '_moved',
+            project=self.project,
+            user=self.owner_as.user,
+            assay=self.assay,
+            description=ZONE_DESC,
+            status='MOVED',
+        )
+        url = (
+            reverse(
+                'landingzones:api_list',
+                kwargs={'project': self.project.sodar_uuid},
+            )
+            + '?finished=1'
+        )
+        response = self.request_knox(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 2)
+
 
 @skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
-class LandingZoneRetrieveAPIView(TestLandingZoneAPIViewsBase):
+class TestLandingZoneRetrieveAPIView(TestLandingZoneAPIViewsBase):
     """Tests for LandingZoneRetrieveAPIView"""
 
     def test_get(self):
@@ -144,13 +210,27 @@ class LandingZoneRetrieveAPIView(TestLandingZoneAPIViewsBase):
             'assay': str(self.assay.sodar_uuid),
             'status': self.landing_zone.status,
             'status_info': self.landing_zone.status_info,
+            'status_locked': False,
             'date_modified': self.get_drf_datetime(
                 self.landing_zone.date_modified
             ),
             'description': self.landing_zone.description,
+            'user_message': self.landing_zone.user_message,
             'configuration': self.landing_zone.configuration,
             'config_data': self.landing_zone.config_data,
             'irods_path': irods_backend.get_path(self.landing_zone),
             'sodar_uuid': str(self.landing_zone.sodar_uuid),
         }
         self.assertEqual(json.loads(response.content), expected)
+
+    def test_get_locked(self):
+        """Test get() with locked landing zone status"""
+        self.landing_zone.status = 'MOVING'
+        self.landing_zone.save()
+        url = reverse(
+            'landingzones:api_retrieve',
+            kwargs={'landingzone': self.landing_zone.sodar_uuid},
+        )
+        response = self.request_knox(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(json.loads(response.content)['status_locked'], True)

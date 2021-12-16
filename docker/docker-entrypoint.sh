@@ -66,6 +66,8 @@ if [[ "$1" == wsgi ]]; then
     --log-level "$LOG_LEVEL" \
     --bind "$HTTP_HOST:$HTTP_PORT" \
     --timeout "$GUNICORN_TIMEOUT" \
+    --workers 4 \
+    --worker-class gevent \
     config.wsgi
 elif [[ "$1" == celeryd ]]; then
   cd $APP_DIR

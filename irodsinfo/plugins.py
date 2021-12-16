@@ -28,3 +28,6 @@ class SiteAppPlugin(SiteAppPluginPoint):
 
     #: Required permission for displaying the app
     app_permission = 'irodsinfo.view_info'
+
+    #: Names of plugin specific Django settings to display in siteinfo
+    info_settings = ['IRODS_ENV_CLIENT']

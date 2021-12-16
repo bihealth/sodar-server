@@ -27,9 +27,10 @@ from samplesheets.models import (
     Process,
     GenericMaterial,
     ISATab,
+    IrodsAccessTicket,
     NOT_AVAILABLE_STR,
     CONFIG_LABEL_CREATE,
-    IrodsAccessTicket,
+    ISA_META_ASSAY_PLUGIN,
 )
 from samplesheets.utils import get_alt_names
 
@@ -38,7 +39,6 @@ from samplesheets.utils import get_alt_names
 
 
 DEFAULT_PARSER_VERSION = altamisa.__version__
-
 
 INV_IDENTIFIER = 'Investigation identifier'
 INV_FILE_NAME = 'i_Investigation.txt'
@@ -109,7 +109,10 @@ DEFAULT_DESCRIPTION = 'Description'
 DEFAULT_COMMENTS = {'comment': 'value'}
 
 ISATAB_DATA = {'i_investigation.txt': '', 's_study.txt': '', 'a_assay.txt': ''}
+ISATAB_DESC = 'description'
 
+PLUGIN_NAME_DNA_SEQ = 'samplesheets_assay_dna_sequencing'
+PLUGIN_NAME_GENERIC_RAW = 'samplesheets_assay_generic_raw'
 
 # Helper mixins ----------------------------------------------------------------
 
@@ -355,6 +358,7 @@ class SampleSheetModelMixin:
         parser_version=None,
         user=None,
         extra_data={},
+        description=None,
     ):
         """Create an ISATab object in the database"""
         values = {
@@ -366,6 +370,7 @@ class SampleSheetModelMixin:
             'parser_version': parser_version,
             'user': user,
             'extra_data': extra_data,
+            'description': description,
         }
         obj = ISATab(**values)
         obj.save()
@@ -670,6 +675,50 @@ class TestAssay(TestSampleSheetBase):
     def test_get_name(self):
         """Test Assay get_name() function"""
         self.assertEqual(self.assay.get_name(), 'assay')
+
+    def test_get_plugin_unknown(self):
+        """Test get_plugin() without measurement/technology type"""
+        self.assertEqual(self.assay.get_plugin(), None)
+
+    def test_get_plugin(self):
+        """Test get_plugin() with measurement/technology type"""
+        self.assay.measurement_type = {
+            'name': 'genome sequencing',
+            'accession': None,
+            'ontology_name': None,
+        }
+        self.assay.technology_type = {
+            'name': 'nucleotide sequencing',
+            'accession': None,
+            'ontology_name': None,
+        }
+        plugin = self.assay.get_plugin()
+        self.assertIsNotNone(plugin)
+        self.assertEqual(plugin.name, PLUGIN_NAME_DNA_SEQ)
+
+    def test_get_plugin_force(self):
+        """Test get_plugin() with forced plugin in assay comments"""
+        self.assay.comments = {ISA_META_ASSAY_PLUGIN: PLUGIN_NAME_GENERIC_RAW}
+        plugin = self.assay.get_plugin()
+        self.assertIsNotNone(plugin)
+        self.assertEqual(plugin.name, PLUGIN_NAME_GENERIC_RAW)
+
+    def test_get_plugin_override(self):
+        """Test get_plugin() override with measurement and technology type"""
+        self.assay.measurement_type = {
+            'name': 'genome sequencing',
+            'accession': None,
+            'ontology_name': None,
+        }
+        self.assay.technology_type = {
+            'name': 'nucleotide sequencing',
+            'accession': None,
+            'ontology_name': None,
+        }
+        self.assay.comments = {ISA_META_ASSAY_PLUGIN: PLUGIN_NAME_GENERIC_RAW}
+        plugin = self.assay.get_plugin()
+        self.assertIsNotNone(plugin)
+        self.assertEqual(plugin.name, PLUGIN_NAME_GENERIC_RAW)
 
 
 class TestSource(TestSampleSheetBase):
@@ -1217,6 +1266,7 @@ class TestISATab(TestSampleSheetBase):
             tags=[],
             parser_version=DEFAULT_PARSER_VERSION,
             user=self.user_owner,
+            description=ISATAB_DESC,
         )
 
     def test_initialization(self):
@@ -1231,6 +1281,7 @@ class TestISATab(TestSampleSheetBase):
             'parser_version': DEFAULT_PARSER_VERSION,
             'user': self.user_owner.pk,
             'extra_data': {},
+            'description': ISATAB_DESC,
             'sodar_uuid': self.isatab.sodar_uuid,
         }
         self.assertEqual(model_to_dict(self.isatab), expected)
@@ -1266,7 +1317,7 @@ class TestISATab(TestSampleSheetBase):
                 '%Y-%m-%d %H:%M:%S'
             ),
         )
-        self.assertEqual(self.isatab.get_name(), expected)
+        self.assertEqual(self.isatab.get_full_name(), expected)
 
     def test_get_name_no_title(self):
         """Test get_name() with no title"""
@@ -1278,7 +1329,7 @@ class TestISATab(TestSampleSheetBase):
                 '%Y-%m-%d %H:%M:%S'
             ),
         )
-        self.assertEqual(self.isatab.get_name(), expected)
+        self.assertEqual(self.isatab.get_full_name(), expected)
 
     def test_get_name_no_archive(self):
         """Test get_name() with no title or archive name"""
@@ -1291,7 +1342,7 @@ class TestISATab(TestSampleSheetBase):
                 '%Y-%m-%d %H:%M:%S'
             ),
         )
-        self.assertEqual(self.isatab.get_name(), expected)
+        self.assertEqual(self.isatab.get_full_name(), expected)
 
 
 class TestIrodsAccessTicket(TestSampleSheetBase):

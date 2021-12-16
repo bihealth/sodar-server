@@ -38,7 +38,7 @@ class TestIrodsOrphans(
     LandingZoneMixin,
     TestCase,
 ):
-    """Test functions from irodsorphans command."""
+    """Tests for the irodsorphans management command"""
 
     def setUp(self):
         super().setUp()
@@ -107,9 +107,10 @@ class TestIrodsOrphans(
         )
 
     def tearDown(self):
-        self.irods_session.collections.get('/omicsZone/projects').remove(
-            force=True
-        )
+        self.irods_session.collections.get(
+            self.irods_backend.get_projects_path()
+        ).remove(force=True)
+        self.irods_session.cleanup()
 
     def test_get_assay_collections(self):
         """Test get_assay_collections()"""

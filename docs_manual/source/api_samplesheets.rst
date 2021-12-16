@@ -15,9 +15,9 @@ API Views
 
 .. autoclass:: IrodsCollsCreateAPIView
 
-.. autoclass:: SampleSheetImportAPIView
+.. autoclass:: SheetImportAPIView
 
-.. autoclass:: SampleSheetISAExportAPIView
+.. autoclass:: SheetISAExportAPIView
 
 .. autoclass:: SampleDataFileExistsAPIView
 
@@ -30,4 +30,4 @@ SODAR version:
 
 .. code-block:: console
 
-    Accept: application/vnd.bihealth.sodar+json; version=0.10.0
+    Accept: application/vnd.bihealth.sodar+json; version=0.11.0

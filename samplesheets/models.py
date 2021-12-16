@@ -1,6 +1,7 @@
 """Models for the samplesheets app"""
 
 from altamisa.constants import table_headers as th
+import logging
 import os
 import uuid
 
@@ -27,6 +28,8 @@ from samplesheets.utils import (
 
 # Access Django user model
 AUTH_USER_MODEL = getattr(settings, 'AUTH_USER_MODEL', 'auth.User')
+
+logger = logging.getLogger(__name__)
 
 
 # Local constants
@@ -68,6 +71,10 @@ IRODS_DATA_REQUEST_STATUS_CHOICES = [
     ('ACCEPTED', 'accepted'),
     ('FAILED', 'failed'),
 ]
+
+# ISA-Tab SODAR metadata comment key for assay plugin override
+ISA_META_ASSAY_PLUGIN = 'SODAR Assay Plugin'
+
 
 # Abstract base class ----------------------------------------------------------
 
@@ -529,6 +536,19 @@ class Assay(BaseSampleSheet):
         # TODO: Log warning if there are multiple plugins found?
         from samplesheets.plugins import SampleSheetAssayPluginPoint
 
+        # Check override in assay comments
+        if self.comments.get(ISA_META_ASSAY_PLUGIN):
+            try:
+                return SampleSheetAssayPluginPoint.get_plugin(
+                    self.comments[ISA_META_ASSAY_PLUGIN]
+                )
+            except Exception as ex:
+                logger.error(
+                    'Exception raised retrieving assay plugin with name '
+                    '"{}": {}'.format(self.comments[ISA_META_ASSAY_PLUGIN], ex)
+                )
+
+        # If not found, select by measurement/technology type
         search_fields = {
             'measurement_type': get_isa_field_name(self.measurement_type),
             'technology_type': get_isa_field_name(self.technology_type),
@@ -977,8 +997,10 @@ class Process(NodeMixin, BaseSampleSheet):
 
 
 class ISATab(models.Model):
-    """Class for storing ISA-Tab files for one investigation, including its
-    studies and assays"""
+    """
+    Class for storing ISA-Tab files for one investigation, including its
+    studies and assays.
+    """
 
     #: Project to which the ISA-Tab belongs
     project = models.ForeignKey(
@@ -1028,9 +1050,9 @@ class ISATab(models.Model):
         on_delete=models.CASCADE,
     )
 
-    #: DateTime of ISA-Tab creation
+    #: DateTime of ISA-Tab creation or restoring
     date_created = models.DateTimeField(
-        auto_now=True, help_text='DateTime of ISAtab creation'
+        auto_now_add=True, help_text='DateTime of ISAtab creation or restoring'
     )
 
     #: Version of altamISA used when processing this ISA-Tab
@@ -1043,6 +1065,14 @@ class ISATab(models.Model):
 
     #: Optional extra data
     extra_data = models.JSONField(default=dict, help_text='Optional extra data')
+
+    #: Short Description (optional)
+    description = models.CharField(
+        max_length=128,
+        blank=True,
+        null=True,
+        help_text='Short description for ISA-Tab version (optional)',
+    )
 
     #: Internal UUID for the object
     sodar_uuid = models.UUIDField(
@@ -1061,6 +1091,11 @@ class ISATab(models.Model):
     # Custom row-level functions
 
     def get_name(self):
+        """Return version timestamp as its name"""
+        return localtime(self.date_created).strftime('%Y-%m-%d %H:%M:%S')
+
+    def get_full_name(self):
+        """Return full name with investigation title or archive name"""
         investigation = Investigation.objects.filter(
             sodar_uuid=self.investigation_uuid
         ).first()
@@ -1070,9 +1105,7 @@ class ISATab(models.Model):
             name = self.archive_name.split('.')[0]
         else:
             name = self.project.title
-        return name + ' ({})'.format(
-            localtime(self.date_created).strftime('%Y-%m-%d %H:%M:%S')
-        )
+        return name + ' ({})'.format(self.get_name())
 
 
 class IrodsAccessTicketActiveManager(models.Manager):

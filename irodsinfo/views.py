@@ -27,7 +27,10 @@ class IrodsInfoView(LoggedInPermissionMixin, HTTPRefererMixin, TemplateView):
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
 
-        ib_enabled = get_backend_api('omics_irods', conn=False)  # HACK for #909
+        # HACK for #909
+        ib_enabled = (
+            True if get_backend_api('omics_irods', conn=False) else False
+        )
         irods_backend = get_backend_api('omics_irods')
         unavail_info = {
             'server_ok': False,
@@ -75,45 +78,24 @@ class IrodsConfigView(LoggedInPermissionMixin, HTTPRefererMixin, View):
         home_path = '/{}/home/{}'.format(settings.IRODS_ZONE, user_name)
         cert_file_name = settings.IRODS_HOST + '.crt'
 
-        # Get optional environment file
-        env_opt = {}
-        if settings.IRODSINFO_ENV_PATH:
-            try:
-                with open(settings.IRODSINFO_ENV_PATH) as env_file:
-                    env_opt = json.load(env_file)
-                logger.debug('Loaded iRODS env from file: {}'.format(env_opt))
-            except FileNotFoundError:
-                logger.warning(
-                    'iRODS env file not found: generating with default '
-                    'parameters (path={})'.format(settings.IRODSINFO_ENV_PATH)
-                )
-                env_opt = {}
-            except Exception as ex:
-                logger.error(
-                    'Unable to read iRODS env file (path={}): {}'.format(
-                        settings.IRODSINFO_ENV_PATH, ex
-                    )
-                )
-                raise ex
-
         # Set up irods_environment.json
-        irods_env = {
-            'irods_host': settings.IRODS_HOST,
-            'irods_port': settings.IRODS_PORT,
-            'irods_authentication_scheme': 'PAM',
-            'irods_client_server_negotiation': 'request_server_negotiation',
-            'irods_client_server_policy': 'CS_NEG_REFUSE',
-            'irods_ssl_verify_server': 'cert'
-            if settings.IRODSINFO_SSL_VERIFY
-            else 'none',
-            'irods_ssl_certificate_file': cert_file_name,
-            'irods_zone_name': settings.IRODS_ZONE,
-            'irods_user_name': user_name,
-            'irods_cwd': home_path,
-            'irods_home': home_path,
-            'irods_default_hash_scheme': 'MD5',
-        }
-        irods_env.update(env_opt)
+        irods_env = dict(settings.IRODS_ENV_DEFAULT)
+        irods_env.update(
+            {
+                'irods_authentication_scheme': 'PAM',
+                'irods_cwd': home_path,
+                'irods_home': home_path,
+                'irods_host': settings.IRODS_HOST,
+                'irods_port': settings.IRODS_PORT,
+                'irods_user_name': user_name,
+                'irods_zone_name': settings.IRODS_ZONE,
+            }
+        )
+        if settings.IRODS_CERT_PATH:
+            irods_env['irods_ssl_certificate_file'] = cert_file_name
+        # Get optional client environment overrides
+        irods_env.update(dict(settings.IRODS_ENV_CLIENT))
+        logger.debug('iRODS environment: {}'.format(irods_env))
         env_json = json.dumps(irods_env, indent=2)
 
         # Create zip archive
@@ -123,16 +105,18 @@ class IrodsConfigView(LoggedInPermissionMixin, HTTPRefererMixin, View):
         zip_file.writestr('irods_environment.json', env_json)
 
         # Write cert file if it exists
-        try:
-            with open(settings.IRODS_CERT_PATH) as cert_file:
-                zip_file.writestr(cert_file_name, cert_file.read())
-        except FileNotFoundError:
-            logger.warning(
-                'iRODS server cert file not found, '
-                'not adding to archive (path={})'.format(
-                    settings.IRODS_CERT_PATH
+        if settings.IRODS_CERT_PATH:
+            try:
+                with open(settings.IRODS_CERT_PATH) as cert_file:
+                    zip_file.writestr(cert_file_name, cert_file.read())
+            except FileNotFoundError:
+                logger.warning(
+                    'iRODS server cert file not found, '
+                    'not adding to archive (path={})'.format(
+                        settings.IRODS_CERT_PATH
+                    )
                 )
-            )
+
         zip_file.close()
 
         response = HttpResponse(

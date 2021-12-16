@@ -9,12 +9,25 @@ from unittest import skipIf
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
 from projectroles.models import SODAR_CONSTANTS
-from projectroles.tests.test_views_api import SODARAPIViewTestMixin
+from projectroles.plugins import get_backend_api
 from projectroles.tests.test_views_taskflow import TestTaskflowBase
 
+# Sodarcache dependency
+from sodarcache.models import JSONCacheItem
+
+# Appalerts dependency
+from appalerts.models import AppAlert
+
+# Timeline dependency
+from timeline.models import ProjectEvent
+
 from samplesheets.models import ISATab
-from samplesheets.tasks import sheet_sync_task
+from samplesheets.tasks import update_project_cache_task, sheet_sync_task
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
+from samplesheets.tests.test_views import TestSheetRemoteSyncBase
+from samplesheets.tests.test_views_taskflow import (
+    SampleSheetTaskflowMixin,
+)
 
 
 app_settings = AppSettingAPI()
@@ -35,102 +48,126 @@ SUBMIT_STATUS_PENDING_TASKFLOW = SODAR_CONSTANTS[
 ]
 
 # Local constants
+APP_NAME = 'samplesheets'
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
+CACHE_ALERT_MESSAGE = 'Testing'
 TASKFLOW_ENABLED = (
     True if 'taskflow' in settings.ENABLED_BACKEND_PLUGINS else False
 )
 TASKFLOW_SKIP_MSG = 'Taskflow not enabled in settings'
-APP_NAME = 'samplesheets'
-ZONE_TITLE = '20190703_172456'
-ZONE_SUFFIX = 'Test Zone'
-ZONE_DESC = 'description'
-TEST_OBJ_NAME = 'test1.txt'
-ASYNC_WAIT_SECONDS = 5
-ASYNC_RETRY_COUNT = 3
+IRODS_BACKEND_ENABLED = (
+    True if 'omics_irods' in settings.ENABLED_BACKEND_PLUGINS else False
+)
+IRODS_BACKEND_SKIP_MSG = 'iRODS backend not enabled in settings'
 
 
-class TestSheetSyncBase(
-    SODARAPIViewTestMixin,
-    SampleSheetIOMixin,
-    TestTaskflowBase,
+@skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
+class TestUpdateProjectCacheTask(
+    SampleSheetIOMixin, SampleSheetTaskflowMixin, TestTaskflowBase
 ):
+    """Tests for project cache update task"""
+
     def setUp(self):
         super().setUp()
-
-        # Make owner user
-        self.user_owner_source = self.make_user('owner_source')
-        self.user_owner_target = self.make_user('owner_target')
-
-        # Create Projects
-        self.project_source, self.owner_as_source = self._make_project_taskflow(
-            title='TestProjectSource',
+        self.project, self.owner_as = self._make_project_taskflow(
+            title='TestProject',
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
-            owner=self.user_owner_source,
+            owner=self.user,
             description='description',
         )
-        self.project_target, self.owner_as_target = self._make_project_taskflow(
-            title='TestProjectTarget',
-            type=PROJECT_TYPE_PROJECT,
-            parent=self.category,
-            owner=self.user_owner_target,
-            description='description',
+        self.investigation = self._import_isa_from_file(
+            SHEET_PATH, self.project
         )
+        self.study = self.investigation.studies.first()
+        self.assay = self.study.assays.first()
+        self.app_alerts = get_backend_api('appalerts_backend')
+        self._make_irods_colls(self.investigation)
 
-        # Import investigation
-        self.inv_source = self._import_isa_from_file(
-            SHEET_PATH, self.project_source
-        )
-
-        self.p_id_source = 'p{}'.format(self.project_source.pk)
-        self.p_id_target = 'p{}'.format(self.project_target.pk)
-
-        # Allow sample sheet editing in project
-        app_settings.set_app_setting(
-            APP_NAME, 'sheet_sync_enable', True, project=self.project_target
-        )
-        app_settings.set_app_setting(
-            APP_NAME,
-            'sheet_sync_url',
-            self.live_server_url
-            + reverse(
-                'samplesheets:api_export_json',
-                kwargs={'project': str(self.project_source.sodar_uuid)},
-            ),
-            project=self.project_target,
-        )
-        app_settings.set_app_setting(
-            APP_NAME,
-            'sheet_sync_token',
-            self.get_token(self.user_owner_source),
-            project=self.project_target,
-        )
-
-        # Check if source is set up correctly
-        self.assertEqual(self.project_source.investigations.count(), 1)
+    def test_update_cache(self):
+        """Test cache update"""
         self.assertEqual(
-            self.project_source.investigations.first().studies.count(), 1
+            JSONCacheItem.objects.filter(project=self.project).count(), 0
         )
+        self.assertEqual(AppAlert.objects.count(), 1)
+        self.assertEqual(ProjectEvent.objects.count(), 1)
+
+        update_project_cache_task(
+            self.project.sodar_uuid,
+            self.user.sodar_uuid,
+            add_alert=True,
+            alert_msg=CACHE_ALERT_MESSAGE,
+        )
+
         self.assertEqual(
-            self.project_source.investigations.first()
-            .studies.first()
-            .assays.count(),
-            1,
+            JSONCacheItem.objects.filter(project=self.project).count(), 1
         )
-        self.assertEqual(self.project_target.investigations.count(), 0)
-        self.assertEqual(ISATab.objects.count(), 1)
+        cache_item = JSONCacheItem.objects.first()
+        self.assertEqual(
+            cache_item.name,
+            'irods/shortcuts/assay/{}'.format(self.assay.sodar_uuid),
+        )
+        expected_data = {
+            'shortcuts': {
+                'misc_files': False,
+                'track_hubs': [],
+                'results_reports': False,
+            }
+        }
+        self.assertEqual(cache_item.data, expected_data)
+        self.assertEqual(AppAlert.objects.count(), 2)
+        alert = AppAlert.objects.order_by('-pk').first()
+        self.assertTrue(alert.message.endswith(CACHE_ALERT_MESSAGE))
+        self.assertEqual(ProjectEvent.objects.count(), 2)
+
+    def test_update_cache_no_alert(self):
+        """Test cache update with app alert disabled"""
+        self.assertEqual(
+            JSONCacheItem.objects.filter(project=self.project).count(), 0
+        )
+        self.assertEqual(AppAlert.objects.count(), 1)
+        self.assertEqual(ProjectEvent.objects.count(), 1)
+
+        update_project_cache_task(
+            self.project.sodar_uuid, self.user.sodar_uuid, add_alert=False
+        )
+
+        self.assertEqual(
+            JSONCacheItem.objects.filter(project=self.project).count(), 1
+        )
+        self.assertEqual(AppAlert.objects.count(), 1)
+        self.assertEqual(ProjectEvent.objects.count(), 2)
+
+    def test_update_cache_no_user(self):
+        """Test cache update with no user"""
+        self.assertEqual(
+            JSONCacheItem.objects.filter(project=self.project).count(), 0
+        )
+        self.assertEqual(AppAlert.objects.count(), 1)
+        self.assertEqual(ProjectEvent.objects.count(), 1)
+
+        update_project_cache_task(self.project.sodar_uuid, None, add_alert=True)
+
+        self.assertEqual(
+            JSONCacheItem.objects.filter(project=self.project).count(), 1
+        )
+        self.assertEqual(AppAlert.objects.count(), 1)
+        self.assertEqual(ProjectEvent.objects.count(), 2)
 
 
 @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
-class TestSheetSyncTask(TestSheetSyncBase):
+class TestSheetRemoteSyncTask(TestSheetRemoteSyncBase):
     """Tests for periodic sample sheet sync task"""
 
-    def test_sync_task(self):
-        """Test sync sheet"""
-        # Perform sync
-        sheet_sync_task(self.user.username)
+    def setUp(self):
+        super().setUp()
+        self.p_id_source = 'p{}'.format(self.project_source.pk)
+        self.p_id_target = 'p{}'.format(self.project_target.pk)
 
-        # Check if target synced correctly
+    def test_sync_task(self):
+        """Test sync"""
+        sheet_sync_task()
+
         self.assertEqual(self.project_source.investigations.count(), 1)
         self.assertEqual(
             self.project_source.investigations.first().studies.count(), 1
@@ -159,14 +196,12 @@ class TestSheetSyncTask(TestSheetSyncBase):
         data_source = ISATab.objects.get(
             investigation_uuid=self.inv_source.sodar_uuid
         ).data
-
         self.assertEqual(data_target, data_source)
 
     def test_sync_existing_source_newer(self):
-        """Test sync sheet with existing sheet and changes in source sheet"""
+        """Test sync with existing sheet and changes in source sheet"""
         # Create investigation for target project
         self._import_isa_from_file(SHEET_PATH, self.project_target)
-
         # Update source investigation
         material = self.inv_source.studies.first().materials.get(
             unique_name=f'{self.p_id_source}-s0-source-0817'
@@ -194,10 +229,8 @@ class TestSheetSyncTask(TestSheetSyncBase):
             '150',
         )
 
-        # Do the sync
-        sheet_sync_task(self.user.username)
+        sheet_sync_task()
 
-        # Check if sync was performed correctly
         self.assertEqual(self.project_source.investigations.count(), 1)
         self.assertEqual(self.project_target.investigations.count(), 1)
         self.assertEqual(ISATab.objects.count(), 3)
@@ -217,8 +250,7 @@ class TestSheetSyncTask(TestSheetSyncBase):
         )
 
     def test_sync_existing_target_newer(self):
-        """Test sync sheet with existing sheet and changes in target sheet"""
-        # Create investigation for target project
+        """Test sync with existing sheet and changes in target sheet"""
         inv_target = self._import_isa_from_file(SHEET_PATH, self.project_target)
         material = inv_target.studies.first().materials.get(
             unique_name=f'{self.p_id_target}-s0-source-0817'
@@ -227,16 +259,12 @@ class TestSheetSyncTask(TestSheetSyncBase):
         material.save()
         inv_target.save()
         target_date_modified = inv_target.date_modified
-
-        # Check if both projects have an investigation
         self.assertEqual(self.project_source.investigations.count(), 1)
         self.assertEqual(self.project_target.investigations.count(), 1)
         self.assertEqual(ISATab.objects.count(), 2)
 
-        # Do the sync
-        sheet_sync_task(self.user.username)
+        sheet_sync_task()
 
-        # Check if sync was not performed
         self.assertEqual(self.project_source.investigations.count(), 1)
         self.assertEqual(self.project_target.investigations.count(), 1)
         self.assertEqual(ISATab.objects.count(), 2)
@@ -260,46 +288,40 @@ class TestSheetSyncTask(TestSheetSyncBase):
         )
 
     def test_sync_wrong_token(self):
-        """Test sync sheet with wrong token"""
+        """Test sync with wrong token"""
         app_settings.set_app_setting(
             APP_NAME,
             'sheet_sync_token',
             'WRONGTOKEN',
             project=self.project_target,
         )
-        # Perform sync
-        sheet_sync_task(self.user.username)
-        # Check if target synced correctly
+        sheet_sync_task()
         self.assertEqual(self.project_target.investigations.count(), 0)
 
     def test_sync_enabled_missing_token(self):
-        """Test sync sheet with missing token"""
+        """Test sync with missing token"""
         app_settings.set_app_setting(
             APP_NAME,
             'sheet_sync_token',
             '',
             project=self.project_target,
         )
-        # Perform sync
-        sheet_sync_task(self.user.username)
-        # Check if target synced correctly
+        sheet_sync_task()
         self.assertEqual(self.project_target.investigations.count(), 0)
 
     def test_sync_enabled_wrong_url(self):
-        """Test sync sheet with wrong url"""
+        """Test sync with wrong url"""
         app_settings.set_app_setting(
             APP_NAME,
             'sheet_sync_url',
             'https://qazxdfjajsrd.com',
             project=self.project_target,
         )
-        # Perform sync
-        sheet_sync_task(self.user.username)
-        # Check if target synced correctly
+        sheet_sync_task()
         self.assertEqual(self.project_target.investigations.count(), 0)
 
     def test_sync_enabled_url_to_nonexisting_sheet(self):
-        """Test sync sheet with url to nonexisting sheet"""
+        """Test sync with url to nonexisting sheet"""
         app_settings.set_app_setting(
             APP_NAME,
             'sheet_sync_url',
@@ -310,33 +332,27 @@ class TestSheetSyncTask(TestSheetSyncBase):
             ),
             project=self.project_target,
         )
-        # Perform sync
-        sheet_sync_task(self.user.username)
-        # Check if target synced correctly
+        sheet_sync_task()
         self.assertEqual(self.project_target.investigations.count(), 0)
 
     def test_sync_enabled_missing_url(self):
-        """Test sync sheet with missing url"""
+        """Test sync with missing url"""
         app_settings.set_app_setting(
             APP_NAME,
             'sheet_sync_url',
             '',
             project=self.project_target,
         )
-        # Perform sync
-        sheet_sync_task(self.user.username)
-        # Check if target synced correctly
+        sheet_sync_task()
         self.assertEqual(self.project_target.investigations.count(), 0)
 
     def test_sync_disabled(self):
-        """Test sync sheet disabled"""
+        """Test sync with sync disabled"""
         app_settings.set_app_setting(
             APP_NAME,
             'sheet_sync_enable',
             False,
             project=self.project_target,
         )
-        # Perform sync
-        sheet_sync_task(self.user.username)
-        # Check if target synced correctly
+        sheet_sync_task()
         self.assertEqual(self.project_target.investigations.count(), 0)

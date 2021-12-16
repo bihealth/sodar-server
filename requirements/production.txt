@@ -20,6 +20,3 @@ gunicorn==20.1.0
 
 # Sentry client.
 sentry-sdk==1.1.0
-
-# Workaround for deployment on CentOS
-backports.lzma==0.0.14

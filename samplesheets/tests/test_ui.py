@@ -296,10 +296,10 @@ class TestSampleSheetVersionListView(TestProjectSheetsVueAppBase):
             investigation_uuid=self.investigation.sodar_uuid
         ).delete()
         self.assert_element_exists(
-            [self.default_user], self.url, 'sodar-ss-version-list', False
+            [self.default_user], self.url, 'sodar-ss-version-list', True
         )
         self.assert_element_exists(
-            [self.default_user], self.url, 'sodar-ss-version-alert', True
+            [self.default_user], self.url, 'sodar-ss-version-list-item', False
         )
 
     def test_list_buttons(self):

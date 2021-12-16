@@ -1,15 +1,17 @@
 """Management command importomim for the ontologyaccess app"""
 
-import logging
 import sys
 
 from django.core.management.base import BaseCommand
+
+# Projectroles dependency
+from projectroles.management.logging import ManagementCommandLogger
 
 from ontologyaccess.io import OBOFormatOntologyIO, OMIM_NAME
 from ontologyaccess.models import OBOFormatOntology
 
 
-logger = logging.getLogger(__name__)
+logger = ManagementCommandLogger(__name__)
 
 
 class Command(BaseCommand):

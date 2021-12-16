@@ -9,7 +9,8 @@
         :show-sub-page-callback="showSubPage"
         :toggle-edit-mode-callback="toggleEditMode"
         :editor-help-modal="$refs.editorHelpModal"
-        :win-export-modal="$refs.winExportModal">
+        :win-export-modal="$refs.winExportModal"
+        :version-save-modal="$refs.versionSaveModal">
     </page-header>
 
     <!-- Main container -->
@@ -34,7 +35,6 @@
                  gridsLoaded &&
                  !renderError &&
                  !activeSubPage"
-                 :studyUuid="currentStudyUuid"
            :id="contentId">
 
         <!-- Study -->
@@ -49,7 +49,8 @@
             :column-defs="columnDefs.study"
             :grid-options="gridOptions.study"
             :grid-uuid="currentStudyUuid"
-            :row-data="rowData.study">
+            :row-data="rowData.study"
+            :initial-filter="initialFilter">
         </sheet-table>
 
         <!-- Assays -->
@@ -73,12 +74,13 @@
           </assay-shortcut-card>
 
           <sheet-table
-            :app="getApp()"
-            :assay-mode="true"
-            :column-defs="columnDefs.assays[assayUuid]"
-            :grid-options="gridOptions.assays[assayUuid]"
-            :grid-uuid="assayUuid"
-            :row-data="rowData.assays[assayUuid]">
+              :app="getApp()"
+              :assay-mode="true"
+              :column-defs="columnDefs.assays[assayUuid]"
+              :grid-options="gridOptions.assays[assayUuid]"
+              :grid-uuid="assayUuid"
+              :row-data="rowData.assays[assayUuid]"
+              :initial-filter="initialFilter">
           </sheet-table>
         </span>
 
@@ -112,8 +114,9 @@
         <div class="alert alert-info" id="sodar-ss-alert-empty">
           No sample sheets are currently available for this project.
           <span v-if="sodarContext.perms.edit_sheet && !sheetSyncEnabled">
-            To add sample sheets, please import it from an existing ISA-Tab
-            investigation or activate samplesheet synchonization.
+            To add sample sheets, please import them from an existing ISA-Tab
+            investigation, create new sheets from a template or enable remote
+            sheet synchonization.
           </span>
           <span v-if="sodarContext.perms.edit_sheet && sheetSyncEnabled">
             To add sample sheets, please wait for the synchonization to take
@@ -184,6 +187,13 @@
         ref="ontologyEditModal">
     </ontology-edit-modal>
 
+    <!-- Editing: Version save modal -->
+    <version-save-modal
+        v-if="editMode"
+        :app="getApp()"
+        ref="versionSaveModal">
+    </version-save-modal>
+
     <!--<router-view/>-->
   </div>
 </template>
@@ -200,7 +210,8 @@ import ColumnToggleModal from './components/modals/ColumnToggleModal.vue'
 import ColumnConfigModal from './components/modals/ColumnConfigModal.vue'
 import EditorHelpModal from './components/modals/EditorHelpModal.vue'
 import WinExportModal from './components/modals/WinExportModal.vue'
-import OntologyEditModal from './components/modals/OntologyEditModal'
+import OntologyEditModal from './components/modals/OntologyEditModal.vue'
+import VersionSaveModal from './components/modals/VersionSaveModal.vue'
 import AssayShortcutCard from './components/AssayShortcutCard.vue'
 import DataCellEditor from './components/editors/DataCellEditor.vue'
 import ObjectSelectEditor from './components/editors/ObjectSelectEditor.vue'
@@ -212,6 +223,8 @@ import {
 } from './utils/gridUtils.js'
 
 const windowsPlatforms = ['Win32', 'Win64', 'Windows', 'WinCE']
+const filterRegex = /^\S+\/filter\/(?<filter>\S+)*$/
+const studyUrlRegex = /^\/(?<type>study|assay)\/(?<uuid>[0-9a-f-]+)\S*$/
 
 export default {
   name: 'App',
@@ -256,7 +269,9 @@ export default {
       unsavedRow: null, // Info of currently unsaved row, or null if none
       updatingRow: false, // Row update in progress (bool)
       unsavedData: false, // Other updated data (bool)
+      versionSaved: true, // Status of current version saved as backup
       editingCell: false, // Cell editing in progress (bool)
+      initialFilter: null, // Initial value for table filter (from URL)
       contentId: 'sodar-ss-vue-content',
       windowsOs: false,
       /* NOTE: cell editor only works if provided through frameworkComponents? */
@@ -280,6 +295,7 @@ export default {
     EditorHelpModal,
     WinExportModal,
     OntologyEditModal,
+    VersionSaveModal,
     AssayShortcutCard
   },
   created () {
@@ -337,6 +353,10 @@ export default {
       // Clear additional data
       this.editContext = null
       this.unsavedRow = null
+
+      // Get initial filter state from URL
+      const filterMatch = filterRegex.exec(this.$route.fullPath)
+      if (filterMatch) this.initialFilter = filterMatch.groups.filter
 
       // Set up current study
       this.gridOptions.study = initGridOptions(this, editMode)
@@ -518,10 +538,13 @@ export default {
         this.showSubPage(pageId)
         this.setCurrentStudy(null)
         this.setCurrentAssay(null)
-      } else if (this.$route.fullPath.indexOf('/assay/') !== -1) {
-        this.activeSubPage = null
-        this.setCurrentAssay(this.$route.fullPath.substr(7))
+        return
+      }
 
+      const urlMatch = studyUrlRegex.exec(this.$route.fullPath)
+      if (this.$route.fullPath.indexOf('/assay/') !== -1) {
+        this.activeSubPage = null
+        this.setCurrentAssay(urlMatch.groups.uuid)
         for (const studyUuid in this.sodarContext.studies) {
           if (this.currentAssayUuid in
               this.sodarContext.studies[studyUuid].assays) {
@@ -531,7 +554,7 @@ export default {
         }
       } else if (this.$route.fullPath.indexOf('/study/') !== -1) {
         this.activeSubPage = null
-        this.setCurrentStudy(this.$route.fullPath.substr(7))
+        this.setCurrentStudy(urlMatch.groups.uuid)
         this.setCurrentAssay(null)
       }
     },
@@ -585,8 +608,9 @@ export default {
         .then(
           data => {
             if (data.detail === 'ok') {
-              this.showNotification('Changes Saved', 'success', 1000)
+              this.showNotification('Saved', 'success', 1000)
               this.editDataUpdated = true
+              this.versionSaved = false
 
               // Update other occurrences of cell in UI
               const gridUuids = this.getStudyGridUuids()
@@ -1038,6 +1062,7 @@ export default {
               gridOptions.api.refreshCells({ force: true }) // for cellClass
               this.unsavedRow = null
               this.editDataUpdated = true
+              this.versionSaved = false
               this.showNotification('Row Inserted', 'success', 1000)
             } else {
               console.log('Row insert status: ' + data.detail) // DEBUG
@@ -1135,7 +1160,10 @@ export default {
     handleFinishEditing () {
       fetch('/samplesheets/ajax/edit/finish/' + this.projectUuid, {
         method: 'POST',
-        body: JSON.stringify({ updated: this.editDataUpdated }),
+        body: JSON.stringify({
+          updated: this.editDataUpdated,
+          version_saved: this.versionSaved
+        }),
         credentials: 'same-origin',
         headers: {
           Accept: 'application/json',
@@ -1163,6 +1191,10 @@ export default {
 
     setUnsavedData (unsaved) {
       this.unsavedData = unsaved
+    },
+
+    setVersionSaved (saved) {
+      this.versionSaved = saved
     },
 
     /* Data and App Access -------------------------------------------------- */

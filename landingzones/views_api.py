@@ -24,7 +24,11 @@ from projectroles.views_api import (
 # Local helper for authenticating with auth basic
 from sodar.users.auth import fallback_to_auth_basic
 
-from landingzones.models import LandingZone, STATUS_ALLOW_UPDATE
+from landingzones.models import (
+    LandingZone,
+    STATUS_ALLOW_UPDATE,
+    STATUS_FINISHED,
+)
 from landingzones.serializers import LandingZoneSerializer
 from landingzones.views import (
     ZoneUpdateRequiredPermissionMixin,
@@ -82,23 +86,34 @@ class LandingZoneListAPIView(SODARAPIGenericProjectMixin, ListAPIView):
     List the landing zones in a project.
 
     If the user has rights to view all zones, every zone in the project will be
-    listed. Otherwise only their own zones appear in the list.
+    listed. Otherwise only their own zones appear in the list. Also returns
+    finished (meaning moved or deleted) zones if the "finished" parameter is
+    set.
 
-    **URL:** ``/landingzones/api/list/{Project.sodar_uuid}``
+    **URL:** ``/landingzones/api/list/{Project.sodar_uuid}?finished={integer}``
 
     **Methods:** ``GET``
 
-    **Returns:** List of landing zone details
-    (see ``LandingZoneRetrieveAPIView``)
+    **Parameters:**
+
+    - ``finished``: Include finished zones if 1 (integer)
+
+    **Returns:** List of landing zone details (see ``LandingZoneRetrieveAPIView``)
     """
 
     permission_required = 'landingzones.view_zones_own'
     serializer_class = LandingZoneSerializer
 
     def get_queryset(self):
-        """Override get_queryset() to return zones based on user perms"""
+        """
+        Override get_queryset() to return zones based on user perms and
+        parameters.
+        """
         project = self.get_project()
+        include_finished = int(self.request.query_params.get('finished', 0))
         ret = LandingZone.objects.filter(project=project)
+        if include_finished != 1:
+            ret = ret.exclude(status__in=STATUS_FINISHED)
         if not self.request.user.has_perm(
             'landingzones.view_zones_all', project
         ):
@@ -121,11 +136,13 @@ class LandingZoneRetrieveAPIView(SODARAPIGenericProjectMixin, RetrieveAPIView):
     - ``configuration``: Special configuration name (string)
     - ``date_modified``: Last modification date of the zone (string)
     - ``description``: Landing zone description (string)
+    - ``user_message``: Message displayed to users on successful moving of zone (string)
     - ``irods_path``: Full iRODS path to the landing zone (string)
     - ``project``: Project UUID (string)
     - ``sodar_uuid``: Landing zone UUID (string)
     - ``status``: Current status of the landing zone (string)
     - ``status_info``: Detailed description of the landing zone status (string)
+    - ``status_locked``: Whether write access to the zone is currently locked (boolean)
     - ``title``: Full title of the created landing zone (string)
     - ``user``: User who owns the zone (JSON)
     """
@@ -162,6 +179,7 @@ class LandingZoneCreateAPIView(
     - ``config_data``: Data for special configuration (JSON, optional)
     - ``configuration``: Special configuration (string, optional)
     - ``description``: Landing zone description (string, optional)
+    - ``user_message``: Message displayed to users on successful moving of zone (string, optional)
     - ``title``: Suffix for the zone title (string, optional)
     - ``create_colls``: Create expected collections (boolean, optional)
 

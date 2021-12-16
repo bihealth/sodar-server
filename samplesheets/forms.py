@@ -1,10 +1,11 @@
 """Forms for the samplesheets app"""
 
-from cookiecutter.main import cookiecutter
 import json
 import os
 import re
 import tempfile
+
+from cookiecutter.main import cookiecutter
 
 from django import forms
 from django.conf import settings
@@ -19,10 +20,11 @@ from samplesheets.io import SampleSheetIO, ARCHIVE_TYPES
 from samplesheets.utils import clean_sheet_dir_name
 from samplesheets.models import (
     Investigation,
-    IrodsAccessTicket,
     Assay,
-    IrodsDataRequest,
     Study,
+    ISATab,
+    IrodsAccessTicket,
+    IrodsDataRequest,
 )
 
 
@@ -31,7 +33,7 @@ ERROR_MSG_INVALID_PATH = 'Not a valid iRODS path for this project'
 ERROR_MSG_EXISTING = 'An active request already exists for this path'
 
 
-class SampleSheetImportForm(forms.Form):
+class SheetImportForm(forms.Form):
     """
     Form for importing an ISA investigation from an ISA-Tab archive or
     directory.
@@ -416,20 +418,9 @@ class IrodsRequestAcceptForm(forms.Form):
     )
 
 
-class SampleSheetVersionCompareForm(forms.Form):
-    """Form for selecting two sheet versions for comparison."""
+class SheetVersionEditForm(forms.ModelForm):
+    """Form for editing a saved ISA-Tab version of the sample sheets."""
 
-    def __init__(self, choices, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['source'] = forms.CharField(
-            label='Source',
-            widget=forms.Select(
-                choices=choices, attrs={'class': 'form-control'}
-            ),
-        )
-        self.fields['target'] = forms.CharField(
-            label='Target',
-            widget=forms.Select(
-                choices=choices, attrs={'class': 'form-control'}
-            ),
-        )
+    class Meta:
+        model = ISATab
+        fields = ['description']

@@ -3,11 +3,11 @@
 Metadata Recording
 ^^^^^^^^^^^^^^^^^^
 
-Until SODAR_ provides a fully featured editor for metadata recording, we will
-prepare the necessary tabular files (ISA-Tab) corresponding to your project and
-provide them to you to fill out in Excel and co.
-
-.. _SODAR: https://sodar.bihealth.org
+The :ref:`sample sheet editor <app_samplesheets_edit>` in SODAR is under
+construction and does not yet support the full set of features for creating and
+editing sample sheets. Until these features are finished, CUBI will prepare the
+necessary tabular files (ISA-Tab) corresponding to your project and provide them
+to you to fill out in Excel or your spreadsheet application of choice.
 
 The process currently includes the following steps:
 

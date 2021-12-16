@@ -1,9 +1,10 @@
 """App plugin and sub-app plugin points for the samplesheets app"""
 
 from copy import deepcopy
-from irods.exception import NetworkException
 import logging
 import os
+
+from irods.exception import NetworkException
 
 from django.conf import settings
 from django.urls import reverse
@@ -72,8 +73,6 @@ SHEETS_INFO_SETTINGS = [
 class ProjectAppPlugin(ProjectAppPluginPoint):
     """Plugin for registering app with Projectroles"""
 
-    # Properties required by django-plugins ------------------------------
-
     #: Name (slug-safe, used in URLs)
     name = 'samplesheets'
 
@@ -83,15 +82,13 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
     #: App URLs (will be included in settings by djangoplugins)
     urls = urlpatterns
 
-    # Properties defined in ProjectAppPluginPoint -----------------------
-
     #: App settings definition
     app_settings = {
         'allow_editing': {
             'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT'],
             'type': 'BOOLEAN',
-            'label': 'Allow Sample Sheet Editing',
-            'description': 'Allow editing of projet sample sheets by '
+            'label': 'Allow sample sheet editing',
+            'description': 'Allow editing of project sample sheets by '
             'authorized users',
             'user_modifiable': True,
             'default': True,
@@ -99,22 +96,22 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         'display_config': {
             'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT_USER'],
             'type': 'JSON',
-            'label': 'Sheet Display Configuration',
-            'description': 'User specific JSON configuration for sample sheet'
-            'column display',
+            'label': 'Sample sheet display configuration',
+            'description': 'User specific JSON configuration for column '
+            'display in project sample sheets',
         },
         'display_config_default': {
             'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT'],
             'type': 'JSON',
-            'label': 'Default Sheet Display Configuration',
-            'description': 'Default JSON configuration for project sample sheet'
-            'column display',
+            'label': 'Default sample sheet display configuration',
+            'description': 'Default JSON configuration for column display in '
+            'project sample sheets',
             'user_modifiable': False,
         },
         'sheet_config': {
             'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT'],
             'type': 'JSON',
-            'label': 'Sheet Editing Configuration',
+            'label': 'Sample sheet editing configuration',
             'description': 'JSON configuration for sample sheet editing',
             'user_modifiable': False,
         },
@@ -161,9 +158,10 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         'public_access_ticket': {
             'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT'],
             'type': 'STRING',
+            'label': 'iRODS public access ticket',
             'default': '',
             'description': 'iRODS ticket for read-only anonymous sample data '
-            'access',
+            'access, used with projects allowing public guest access',
             'user_modifiable': False,
         },
     }
@@ -268,7 +266,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                     'samplesheets:versions',
                     kwargs={'project': obj.project.sodar_uuid},
                 ),
-                'label': obj.get_name(),
+                'label': obj.get_full_name(),
             }
         elif obj and obj.__class__ == IrodsDataRequest:
             return {
@@ -358,7 +356,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                 for a in Assay.objects.filter(study__in=studies.values())
             }
 
-            for o in obj_data['data_objects']:
+            for o in obj_data['irods_data']:
                 project_uuid = irods_backend.get_uuid_from_path(
                     o['path'], obj_type='project'
                 )
@@ -428,7 +426,11 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                         get_sheets_url(project)
                     )
                 )
-            elif user.has_perm('samplesheets.edit_sheet', project):
+            elif user.has_perm(
+                'samplesheets.edit_sheet', project
+            ) and not app_settings.get_app_setting(
+                APP_NAME, 'sheet_sync_enable', project
+            ):
                 return (
                     '<a href="{}" title="Import sample sheet into project">'
                     # 'data-toggle="tooltip" data-placement="top">'
@@ -578,14 +580,21 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         :param name: Item name to limit update to (string, optional)
         :param project: Project object to limit update to (optional)
         :param user: User object to denote user triggering the update (optional)
+        :raise: Exception if required backends (sodar_cache and omics_irods)
+                are not found.
         """
-        try:
-            cache_backend = get_backend_api('sodar_cache')
-            irods_backend = get_backend_api('omics_irods')
-        except Exception:
-            return
+        cache_backend = get_backend_api('sodar_cache')
+        irods_backend = get_backend_api('omics_irods')
         if not cache_backend or not irods_backend:
-            return
+            backends = {
+                'cache_backend': cache_backend,
+                'irods_backend': irods_backend,
+            }
+            raise Exception(
+                'Required backend(s) not found: {}'.format(', ').join(
+                    [b for b in backends.keys() if not backends[b]]
+                )
+            )
 
         # Study sub-app plugins
         for study_plugin in SampleSheetStudyPluginPoint.get_plugins():
@@ -652,8 +661,6 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
 class SampleSheetStudyPluginPoint(PluginPoint):
     """Plugin point for registering study-level samplesheet sub-apps"""
 
-    # Properties required by django-plugins ------------------------------
-
     #: Name (used in code and as unique idenfitier)
     # TODO: Implement this in your study plugin
     # TODO: Recommended in form of samplesheets_study_configname
@@ -662,8 +669,6 @@ class SampleSheetStudyPluginPoint(PluginPoint):
     #: Title (used in templates)
     # TODO: Implement this in your study plugin
     # title = 'Sample Sheets X Study App'
-
-    # Properties defined in SampleSheetStudyPluginPoint ------------------
 
     #: Configuration name (used to identify plugin by study)
     # TODO: Implement this in your study plugin
@@ -730,8 +735,6 @@ def get_study_plugin(plugin_name):
 class SampleSheetAssayPluginPoint(PluginPoint):
     """Plugin point for registering assay-level samplesheet sub-apps"""
 
-    # Properties required by django-plugins ------------------------------
-
     #: Name (used in code and as unique idenfitier)
     # TODO: Implement this in your assay plugin
     # TODO: Recommended in form of samplesheets_assay_name
@@ -740,8 +743,6 @@ class SampleSheetAssayPluginPoint(PluginPoint):
     #: Title
     # TODO: Implement this in your assay plugin
     # title = 'Sample Sheets X Assay App'
-
-    # Properties defined in SampleSheetAssayPluginPoint ------------------
 
     #: App name for dynamic reference to app in e.g. caching
     # TODO: Rename plugin.name to APP_NAME?
@@ -878,7 +879,7 @@ class SampleSheetAssayPluginPoint(PluginPoint):
 
         # Get assay paths
         for study in studies:
-            study_tables = tb.build_study_tables(study)
+            study_tables = tb.build_study_tables(study, ui=False)
 
             for assay in [a for a in study.assays.all() if a in config_assays]:
                 assay_table = study_tables['assays'][str(assay.sodar_uuid)]
@@ -927,6 +928,15 @@ def get_assay_plugin(plugin_name):
 
 
 def get_irods_content(inv, study, irods_backend, ret_data):
+    """
+    Return iRODS content for a study.
+
+    :param inv: Investigation objet
+    :param study: Study object
+    :param irods_backend: irodsbackend API object
+    :param ret_data: Return data to be modified (dict)
+    :return: Dict
+    """
     cache_backend = get_backend_api('sodar_cache')
     ret_data = deepcopy(ret_data)
     if not (inv.irods_status and irods_backend):

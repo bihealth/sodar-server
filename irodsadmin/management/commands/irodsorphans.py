@@ -1,4 +1,5 @@
-import logging
+"""Irodsorphans management command"""
+
 import re
 
 from django.core.management.base import BaseCommand
@@ -6,6 +7,7 @@ from django.db.models import Q
 from django.template.defaultfilters import filesizeformat
 
 # Projectroles dependency
+from projectroles.management.logging import ManagementCommandLogger
 from projectroles.models import Project
 from projectroles.plugins import get_backend_api
 
@@ -18,7 +20,7 @@ from samplesheets.rendering import SampleSheetTableBuilder
 from samplesheets.views import TRACK_HUBS_COLL, RESULTS_COLL, MISC_FILES_COLL
 
 
-logger = logging.getLogger(__name__)
+logger = ManagementCommandLogger(__name__)
 
 
 def get_assay_collections(assays, irods_backend):
@@ -33,7 +35,7 @@ def get_assay_subcollections(studies, irods_backend):
 
     for study in studies:
         try:
-            study_tables = tb.build_study_tables(study)
+            study_tables = tb.build_study_tables(study, ui=False)
         except Exception as ex:
             logger.error(
                 'Study table building exception for "{}" '

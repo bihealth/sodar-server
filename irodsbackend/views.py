@@ -1,14 +1,24 @@
 """Views for the irodsbackend app"""
 
-from django.conf import settings
-from django.http import JsonResponse  # To return exceptions from dispatch()
+import logging
 
+from django.conf import settings
+from django.http import JsonResponse
+
+from rest_framework.exceptions import NotAuthenticated
 from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from sodar.users.auth import fallback_to_auth_basic
 
 # Projectroles dependency
 from projectroles.models import RoleAssignment, SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
 from projectroles.views_ajax import SODARBaseProjectAjaxView
+
+
+logger = logging.getLogger(__name__)
+
 
 # SODAR constants
 PROJECT_ROLE_OWNER = SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
@@ -18,6 +28,10 @@ PROJECT_ROLE_DELEGATE = SODAR_CONSTANTS['PROJECT_ROLE_DELEGATE']
 ERROR_NOT_IN_PROJECT = 'Collection does not belong to project'
 ERROR_NOT_FOUND = 'Collection not found'
 ERROR_NO_AUTH = 'User not authorized for iRODS collection'
+ERROR_NO_BACKEND = (
+    'Unable to initialize omics_irods backend, iRODS server '
+    'possibly unavailable'
+)
 
 
 class BaseIrodsAjaxView(SODARBaseProjectAjaxView):
@@ -93,6 +107,8 @@ class BaseIrodsAjaxView(SODARBaseProjectAjaxView):
             irods_backend = get_backend_api('omics_irods')
         except Exception as ex:
             return JsonResponse(self._get_detail(ex), status=500)
+        if not irods_backend:
+            return JsonResponse(self._get_detail(ERROR_NO_BACKEND), status=500)
 
         # Collection checks
         # NOTE: If supplying multiple paths via POST, implement these in request
@@ -180,12 +196,44 @@ class IrodsObjectListAjaxView(BaseIrodsAjaxView):
             return Response(self._get_detail(ex), status=500)
 
         md5 = request.GET.get('md5')
+        colls = request.GET.get('colls')
 
         # Get files
         try:
             ret_data = irods_backend.get_objects(
-                self.path, check_md5=bool(int(md5))
+                self.path,
+                check_md5=bool(int(md5)),
+                include_colls=bool(int(colls)),
             )
             return Response(ret_data, status=200)
         except Exception as ex:
             return Response(self._get_detail(ex), status=500)
+
+
+@fallback_to_auth_basic
+class LocalAuthAPIView(APIView):
+    """
+    REST API view for verifying login credentials for local users in iRODS.
+
+    Should only be used in local development and testing situations or when an
+    external LDAP/AD login is not available.
+    """
+
+    def post(self, request, *args, **kwargs):
+        # TODO: Limit access to iRODS host?
+        log_prefix = 'Local auth'
+        if not settings.IRODS_SODAR_AUTH:
+            not_enabled_msg = 'IRODS_SODAR_AUTH not enabled'
+            logger.error('{} failed: {}'.format(log_prefix, not_enabled_msg))
+            return JsonResponse({'detail': not_enabled_msg}, status=500)
+        if request.user.is_authenticated:
+            logger.info(
+                '{} successful: {}'.format(log_prefix, request.user.username)
+            )
+            return JsonResponse({'detail': 'ok'}, status=200)
+        logger.error(
+            '{} failed: User {} not authenticated'.format(
+                log_prefix, request.user.username
+            )
+        )
+        raise NotAuthenticated()

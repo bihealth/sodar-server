@@ -26,6 +26,7 @@ PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
 ZONE_TITLE = '20180503_1724_test_zone'
 ZONE_DESC = 'description'
+ZONE_MSG = 'user message'
 ZONE_STATUS_INIT = 'CREATING'
 ZONE_STATUS_INFO_INIT = DEFAULT_STATUS_INFO['CREATING']
 
@@ -44,6 +45,7 @@ class LandingZoneMixin:
         user,
         assay,
         description,
+        user_message='',
         status='CREATING',
         configuration=None,
         config_data={},
@@ -54,11 +56,11 @@ class LandingZoneMixin:
             'user': user,
             'assay': assay,
             'description': description,
+            'user_message': user_message,
             'status': status,
             'configuration': configuration,
             'config_data': config_data,
         }
-
         result = LandingZone(**values)
         result.save()
         return result
@@ -100,6 +102,7 @@ class TestLandingZoneBase(
             user=self.user_owner,
             assay=self.assay,
             description=ZONE_DESC,
+            user_message=ZONE_MSG,
             configuration=None,
             config_data={},
         )
@@ -120,6 +123,7 @@ class TestLandingZone(TestLandingZoneBase):
             'user': self.user_owner.pk,
             'assay': self.assay.pk,
             'description': ZONE_DESC,
+            'user_message': ZONE_MSG,
             'configuration': None,
             'config_data': {},
             'status': ZONE_STATUS_INIT,
@@ -183,3 +187,13 @@ class TestLandingZone(TestLandingZoneBase):
         status = 'Ib0ciemiahqu6Ooj'
         with self.assertRaises(TypeError):
             self.landing_zone.set_status(status)
+
+    def test_is_locked_false(self):
+        """Test is_locked() with ACTIVE status"""
+        self.assertEqual(self.landing_zone.is_locked(), False)
+
+    def test_is_locked_true(self):
+        """Test is_locked() with MOVING status"""
+        self.landing_zone.status = 'MOVING'
+        self.landing_zone.save()
+        self.assertEqual(self.landing_zone.is_locked(), True)

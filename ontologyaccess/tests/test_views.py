@@ -129,7 +129,7 @@ class TestOBOFormatOntologyImportView(TestOntologyAccessViewBase):
     def test_import(self):
         """Test importing an ontology"""
         # Assert precondition
-        self.assertEqual(OBOFormatOntology.objects.all().count(), 1)
+        self.assertEqual(OBOFormatOntology.objects.count(), 1)
 
         with open(OBO_PATH) as file:
             post_data = {
@@ -147,7 +147,7 @@ class TestOBOFormatOntologyImportView(TestOntologyAccessViewBase):
         self.assertEqual(response.url, reverse('ontologyaccess:list'))
 
         # Assert postconditions
-        self.assertEqual(OBOFormatOntology.objects.all().count(), 2)
+        self.assertEqual(OBOFormatOntology.objects.count(), 2)
 
     # TODO: Add test for OWL import
 
@@ -169,7 +169,7 @@ class TestOBOFormatOntologyUpdateView(TestOntologyAccessViewBase):
     def test_update(self):
         """Test updating an ontology"""
         # Assert precondition
-        self.assertEqual(OBOFormatOntology.objects.all().count(), 1)
+        self.assertEqual(OBOFormatOntology.objects.count(), 1)
 
         post_data = {
             'name': OBO_NAME,
@@ -190,7 +190,7 @@ class TestOBOFormatOntologyUpdateView(TestOntologyAccessViewBase):
         self.assertEqual(response.url, reverse('ontologyaccess:list'))
 
         # Assert postconditions
-        self.assertEqual(OBOFormatOntology.objects.all().count(), 1)
+        self.assertEqual(OBOFormatOntology.objects.count(), 1)
         self.ontology.refresh_from_db()
         self.assertEqual(self.ontology.title, OBO_TITLE_UPDATED)
         self.assertEqual(self.ontology.term_url, OBO_TERM_URL_ALT)
@@ -213,7 +213,7 @@ class TestOBOFormatOntologyDeleteView(TestOntologyAccessViewBase):
     def test_delete(self):
         """Test deleting an ontology"""
         # Assert precondition
-        self.assertEqual(OBOFormatOntology.objects.all().count(), 1)
+        self.assertEqual(OBOFormatOntology.objects.count(), 1)
 
         with self.login(self.superuser):
             response = self.client.post(
@@ -226,5 +226,5 @@ class TestOBOFormatOntologyDeleteView(TestOntologyAccessViewBase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, reverse('ontologyaccess:list'))
         # Assert postconditions
-        self.assertEqual(OBOFormatOntology.objects.all().count(), 0)
-        self.assertEqual(OBOFormatOntologyTerm.objects.all().count(), 0)
+        self.assertEqual(OBOFormatOntology.objects.count(), 0)
+        self.assertEqual(OBOFormatOntologyTerm.objects.count(), 0)

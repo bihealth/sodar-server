@@ -2,6 +2,7 @@
 Tests for REST API views in the samplesheets app with SODAR Taskflow enabled
 """
 
+from irods.keywords import REG_CHKSUM_KW
 import json
 import os
 
@@ -169,9 +170,9 @@ class TestSampleDataFileExistsAPIView(TestSampleSheetAPITaskflowBase):
 
     def test_get_file(self):
         """Test getting file existence info with an uploaded file"""
+        coll_path = self.irods_backend.get_sample_path(self.project) + '/'
         self.irods_session.data_objects.put(
-            IRODS_FILE_PATH,
-            self.irods_backend.get_sample_path(self.project) + '/',
+            IRODS_FILE_PATH, coll_path, **{REG_CHKSUM_KW: ''}
         )
         url = reverse('samplesheets:api_file_exists')
         response = self.request_knox(url, data={'checksum': IRODS_FILE_MD5})
@@ -180,11 +181,10 @@ class TestSampleDataFileExistsAPIView(TestSampleSheetAPITaskflowBase):
 
     def test_get_file_sub_coll(self):
         """Test getting file existence info in a sub collection"""
-        s_path = self.irods_backend.get_sample_path(self.project)
-        self.irods_session.collections.create(s_path + '/sub')
+        coll_path = self.irods_backend.get_sample_path(self.project) + '/sub'
+        self.irods_session.collections.create(coll_path)
         self.irods_session.data_objects.put(
-            IRODS_FILE_PATH,
-            s_path + '/sub/',
+            IRODS_FILE_PATH, coll_path + '/', **{REG_CHKSUM_KW: ''}
         )
         url = reverse('samplesheets:api_file_exists')
         response = self.request_knox(url, data={'checksum': IRODS_FILE_MD5})

@@ -35,15 +35,11 @@ APP_NAME = 'samplesheets.studyapps.cancer'
 class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
     """Plugin for cancer studies in sample sheets"""
 
-    # Properties required by django-plugins ------------------------------------
-
     #: Name (used in code and as unique idenfitier)
     name = 'samplesheets_study_cancer'
 
     #: Title (used in templates)
     title = 'Sample Sheets Cancer Study Plugin'
-
-    # Properties defined in SampleSheetStudyPluginPoint ------------------------
 
     #: Configuration name
     config_name = 'bih_cancer'
@@ -54,7 +50,8 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
     #: Required permission for accessing the plugin
     permission = None
 
-    def _ms_assays(self, study):
+    @classmethod
+    def _has_only_ms_assays(cls, study):
         """Return True if study only contains mass spectrometry assays"""
         # HACK: temporary workaround for issue #482
         for assay in study.assays.all():
@@ -71,7 +68,7 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
         :return: Dict or None if not found
         """
         # Omit for mass spectrometry studies (workaround for issue #482)
-        if self._ms_assays(study):
+        if self._has_only_ms_assays(study):
             return None
 
         # Get iRODS URLs from cache if it's available
@@ -295,7 +292,7 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                 studies = Study.objects.filter(investigation=investigation)
 
             for study in studies:
-                if self._ms_assays(study):
+                if self._has_only_ms_assays(study):
                     continue
 
                 item_name = 'irods/{}'.format(study.sodar_uuid)
@@ -303,7 +300,7 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                 vcf_paths = {}
 
                 # Build render table
-                study_tables = tb.build_study_tables(study)
+                study_tables = tb.build_study_tables(study, ui=False)
 
                 for library in get_study_libraries(study, study_tables):
                     if not library.assay:

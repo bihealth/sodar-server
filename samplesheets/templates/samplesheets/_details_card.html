@@ -61,7 +61,7 @@
         <td>
           <i class="iconify" data-icon="mdi:cube"></i>
           <a href="{% url 'samplesheets:project_sheets' project=project.sodar_uuid %}#/overview">
-            {{ investigation.title }}
+            {{ investigation.title | default:'Untitled Investigation' }}
           </a>
         </td>
         <td>

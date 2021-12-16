@@ -16,15 +16,11 @@ APP_NAME = 'samplesheets.assayapps.dna_sequencing'
 class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
     """Plugin for DNA sequencing assays in sample sheets"""
 
-    # Properties required by django-plugins ------------------------------
-
     #: Name (used in code and as unique idenfitier)
     name = 'samplesheets_assay_dna_sequencing'
 
     #: Title
     title = 'DNA Sequencing Assay Plugin'
-
-    # Properties defined in SampleSheetAssayPluginPoint ------------------
 
     #: App name for dynamic reference to app in e.g. caching
     app_name = APP_NAME
@@ -41,6 +37,10 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
         },
         {
             'measurement_type': 'transcription profiling',
+            'technology_type': 'nucleotide sequencing',
+        },
+        {
+            'measurement_type': 'transcriptome profiling',
             'technology_type': 'nucleotide sequencing',
         },
         {

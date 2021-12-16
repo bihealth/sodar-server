@@ -20,6 +20,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 # Projectroles dependency
+from projectroles.app_settings import AppSettingAPI
 from projectroles.models import RemoteSite
 from projectroles.plugins import get_backend_api
 from projectroles.views_api import (
@@ -34,13 +35,14 @@ from samplesheets.rendering import SampleSheetTableBuilder
 from samplesheets.serializers import InvestigationSerializer
 from samplesheets.views import (
     IrodsCollsCreateViewMixin,
-    SampleSheetImportMixin,
-    SampleSheetISAExportMixin,
+    SheetImportMixin,
+    SheetISAExportMixin,
     SITE_MODE_TARGET,
     REMOTE_LEVEL_READ_ROLES,
 )
 
 
+app_settings = AppSettingAPI()
 logger = logging.getLogger(__name__)
 
 
@@ -132,8 +134,8 @@ class IrodsCollsCreateAPIView(
         )
 
 
-class SampleSheetISAExportAPIView(
-    SampleSheetISAExportMixin, SODARAPIBaseProjectMixin, APIView
+class SheetISAExportAPIView(
+    SheetISAExportMixin, SODARAPIBaseProjectMixin, APIView
 ):
     """
     Export sample sheets as ISA-Tab TSV files, either packed in a zip archive or
@@ -170,9 +172,7 @@ class SampleSheetISAExportAPIView(
             raise APIException('Unable to export ISA-Tab: {}'.format(ex))
 
 
-class SampleSheetImportAPIView(
-    SampleSheetImportMixin, SODARAPIBaseProjectMixin, APIView
-):
+class SheetImportAPIView(SheetImportMixin, SODARAPIBaseProjectMixin, APIView):
     """
     Upload sample sheet as separate ISA-Tab TSV files or a zip archive. Will
     replace existing sheets if valid.
@@ -195,8 +195,14 @@ class SampleSheetImportAPIView(
 
     def post(self, request, *args, **kwargs):
         """Handle POST request for submitting"""
-        sheet_io = SampleSheetIO()
         project = self.get_project()
+
+        if app_settings.get_app_setting(APP_NAME, 'sheet_sync_enable', project):
+            raise ValidationError(
+                'Sheet synchronization enabled in project: import not allowed'
+            )
+
+        sheet_io = SampleSheetIO()
         old_inv = Investigation.objects.filter(
             project=project, active=True
         ).first()
@@ -409,7 +415,7 @@ class RemoteSheetGetAPIView(APIView):
             # Build study tables
             for study in investigation.studies.all():
                 try:
-                    tables = tb.build_study_tables(study)
+                    tables = tb.build_study_tables(study, ui=False)
                 except Exception as ex:
                     return Response(str(ex), status=500)
                 ret['studies'][str(study.sodar_uuid)] = tables

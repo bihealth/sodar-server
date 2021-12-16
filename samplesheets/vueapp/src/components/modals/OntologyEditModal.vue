@@ -231,7 +231,7 @@
                     @click="onTermEditClick(termIdx)"
                     :disabled="!enableEditSave(termIdx) || !editDataValid"
                     v-b-tooltip.hover.d300>
-                  <img :src="'/icons/mdi/check-bold.svg?color=%23fff'" />
+                  <img :src="'/icons/mdi/check-bold.svg?color=%23fff'" class="mb-1" />
                 </b-button>
                 <b-button
                     v-else
@@ -242,7 +242,7 @@
                     @click="onTermEditClick(termIdx)"
                     :disabled="!enableEdit()"
                     v-b-tooltip.hover.d300>
-                  <img :src="'/icons/mdi/lead-pencil.svg?color=%23fff'" />
+                  <img :src="'/icons/mdi/lead-pencil.svg?color=%23fff'" class="mb-1" />
                 </b-button>
                 <b-button
                     variant="danger"
@@ -807,7 +807,7 @@ export default {
 <style scoped>
 
 div#sodar-ss-ontology-modal-ui {
-  min-height: 620px !important;
+  min-height: 550px !important;
 }
 
 #sodar-ss-ontology-input-paste {

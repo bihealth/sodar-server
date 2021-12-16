@@ -17,12 +17,12 @@ urls_ui = [
     ),
     url(
         regex=r'^import/(?P<project>[0-9a-f-]+)$',
-        view=views.SampleSheetImportView.as_view(),
+        view=views.SheetImportView.as_view(),
         name='import',
     ),
     url(
         regex=r'^sync/(?P<project>[0-9a-f-]+)$',
-        view=views.SampleSheetSyncView.as_view(),
+        view=views.SheetRemoteSyncView.as_view(),
         name='sync',
     ),
     url(
@@ -37,22 +37,22 @@ urls_ui = [
     ),
     url(
         regex=r'^export/excel/study/(?P<study>[0-9a-f-]+)$',
-        view=views.SampleSheetExcelExportView.as_view(),
+        view=views.SheetExcelExportView.as_view(),
         name='export_excel',
     ),
     url(
         regex=r'^export/excel/assay/(?P<assay>[0-9a-f-]+)$',
-        view=views.SampleSheetExcelExportView.as_view(),
+        view=views.SheetExcelExportView.as_view(),
         name='export_excel',
     ),
     url(
         regex=r'^export/isa/(?P<project>[0-9a-f-]+)$',
-        view=views.SampleSheetISAExportView.as_view(),
+        view=views.SheetISAExportView.as_view(),
         name='export_isa',
     ),
     url(
         regex=r'^export/version/(?P<isatab>[0-9a-f-]+)$',
-        view=views.SampleSheetISAExportView.as_view(),
+        view=views.SheetISAExportView.as_view(),
         name='export_isa',
     ),
     url(
@@ -62,38 +62,48 @@ urls_ui = [
     ),
     url(
         regex=r'^delete/(?P<project>[0-9a-f-]+)$',
-        view=views.SampleSheetDeleteView.as_view(),
+        view=views.SheetDeleteView.as_view(),
         name='delete',
     ),
     url(
         regex=r'^cache/update/(?P<project>[0-9a-f-]+)$',
-        view=views.SampleSheetCacheUpdateView.as_view(),
+        view=views.SheetCacheUpdateView.as_view(),
         name='cache_update',
     ),
     url(
         regex=r'^versions/(?P<project>[0-9a-f-]+)$',
-        view=views.SampleSheetVersionListView.as_view(),
+        view=views.SheetVersionListView.as_view(),
         name='versions',
     ),
     url(
         regex=r'^version/restore/(?P<isatab>[0-9a-f-]+)$',
-        view=views.SampleSheetVersionRestoreView.as_view(),
+        view=views.SheetVersionRestoreView.as_view(),
         name='version_restore',
     ),
     url(
-        regex=r'^version/delete/(?P<isatab>[0-9a-f-]+)$',
-        view=views.SampleSheetVersionDeleteView.as_view(),
-        name='version_delete',
-    ),
-    url(
         regex=r'^version/compare/(?P<project>[0-9a-f-]+)$',
-        view=views.SampleSheetVersionCompareView.as_view(),
+        view=views.SheetVersionCompareView.as_view(),
         name='version_compare',
     ),
     url(
         regex=r'^version/compare/file/(?P<project>[0-9a-f-]+)$',
-        view=views.SampleSheetVersionCompareFileView.as_view(),
+        view=views.SheetVersionCompareFileView.as_view(),
         name='version_compare_file',
+    ),
+    url(
+        regex=r'^version/update/(?P<isatab>[0-9a-f-]+)$',
+        view=views.SheetVersionUpdateView.as_view(),
+        name='version_update',
+    ),
+    url(
+        regex=r'^version/delete/(?P<isatab>[0-9a-f-]+)$',
+        view=views.SheetVersionDeleteView.as_view(),
+        name='version_delete',
+    ),
+    url(
+        regex=r'^version/delete/batch/(?P<project>[0-9a-f-]+)$',
+        view=views.SheetVersionDeleteBatchView.as_view(),
+        name='version_delete_batch',
     ),
     url(
         regex=r'^irods/tickets/(?P<project>[0-9a-f-]+)$',
@@ -161,17 +171,17 @@ urls_api = [
     ),
     url(
         regex=r'^api/import/(?P<project>[0-9a-f-]+)$',
-        view=samplesheets.views_api.SampleSheetImportAPIView.as_view(),
+        view=samplesheets.views_api.SheetImportAPIView.as_view(),
         name='api_import',
     ),
     url(
         regex=r'^api/export/zip/(?P<project>[0-9a-f-]+)$',
-        view=samplesheets.views_api.SampleSheetISAExportAPIView.as_view(),
+        view=samplesheets.views_api.SheetISAExportAPIView.as_view(),
         name='api_export_zip',
     ),
     url(
         regex=r'^api/export/json/(?P<project>[0-9a-f-]+)$',
-        view=samplesheets.views_api.SampleSheetISAExportAPIView.as_view(),
+        view=samplesheets.views_api.SheetISAExportAPIView.as_view(),
         name='api_export_json',
     ),
     url(
@@ -222,6 +232,11 @@ urls_ajax = [
         regex=r'^ajax/edit/row/delete/(?P<project>[0-9a-f-]+)$',
         view=samplesheets.views_ajax.SheetRowDeleteAjaxView.as_view(),
         name='ajax_edit_row_delete',
+    ),
+    url(
+        regex=r'^ajax/version/save/(?P<project>[0-9a-f-]+)$',
+        view=samplesheets.views_ajax.SheetVersionSaveAjaxView.as_view(),
+        name='ajax_version_save',
     ),
     url(
         regex=r'^ajax/edit/finish/(?P<project>[0-9a-f-]+)$',

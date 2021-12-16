@@ -29,10 +29,11 @@
               </b-button>
             </b-input-group-prepend>
             <b-form-input
-                id="sodar-ss-col-input-paste"
+                id="sodar-ss-col-config-paste"
+                class="sodar-ss-col-input-paste"
                 ref="pasteInput"
-                v-model="pasteData"
-                @input="onPasteInput"
+                v-model="configPasteData"
+                @input="onConfigPasteInput"
                 placeholder="Paste"
                 title="Paste a copied configuration here"
                 :disabled="!enableCopy()"
@@ -70,12 +71,12 @@
             id="sodar-ss-col-table-name">
           <tr v-if="colType === 'NAME' && headerInfo.item_type !== 'SOURCE'"
               id="sodar-ss-col-tr-name-suffix">
-            <td>Default Suffix
-              <i class="iconify text-info"
-                 data-icon="mdi:information"
-                 title="Pre-fill with the name of previous node plus a suffix if set"
-                 v-b-tooltip.hover>
-              </i>
+            <td>
+              Default Suffix
+              <img src="/icons/mdi/information.svg?color=%2317a2b8"
+                  class="mb-1"
+                  title="Pre-fill with the name of previous node plus a suffix if set"
+                  v-b-tooltip.hover/>
             </td>
             <td>
               <b-input
@@ -166,6 +167,34 @@
                   id="sodar-ss-col-check-list"
                   v-b-tooltip.right.hover>
               </b-checkbox>
+            </td>
+          </tr>
+          <tr>
+            <td>Default Value</td>
+            <td class="text-nowrap">
+              <b-input-group class="sodar-header-input-group">
+                <b-form-input
+                    id="sodar-ss-col-ontology-default-paste"
+                    class="sodar-ss-col-input-paste"
+                    ref="pasteOntologyDefault"
+                    v-model="ontologyDefaultPasteData"
+                    @input="onOntologyDefaultPaste"
+                    placeholder="Paste"
+                    title="Paste ontology terms JSON here"
+                    v-b-tooltip.hover>
+                </b-form-input>
+                <b-input-group-append>
+                  <b-button
+                      variant="danger"
+                      class="sodar-list-btn sodar-ss-row-btn"
+                      title="Clear default ontology terms"
+                      @click="onOntologyDefaultDelete()"
+                      :disabled="!fieldConfig.default"
+                      v-b-tooltip.hover.left.d300>
+                    <i class="iconify" data-icon="mdi:close-thick"></i>
+                  </b-button>
+                </b-input-group-append>
+              </b-input-group>
             </td>
           </tr>
         </tbody>
@@ -477,6 +506,27 @@
           </tr>
         </tbody>
       </table>
+      <table
+          v-if="colType === 'ONTOLOGY'"
+          class="table sodar-card-table mt-3"
+          id="sodar-ss-col-post-ontology-default">
+        <thead>
+          <tr>
+            <th colspan="2">Default Value</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-if="!fieldConfig.default"
+              class="sodar-ss-col-ontology-default-empty">
+            <td class="text-muted">N/A</td>
+          </tr>
+          <tr v-for="(term, tIdx) in fieldConfig.default"
+              :key="tIdx"
+              class="sodar-ss-col-ontology-default-term">
+            <td><a :href="term.accession" target="_blank">{{ term.name }}</a></td>
+          </tr>
+        </tbody>
+      </table>
     </div>
     <div>
       <b-button-group
@@ -573,9 +623,10 @@ export default {
       },
       defaultFill: false,
       defaultFillEnable: false,
-      pasteData: '',
+      configPasteData: '',
       updateBtnClasses: null,
       updateBtnIcon: null,
+      ontologyDefaultPasteData: '', // Ontology default data from clipboard
       specialOntologyCol: false, // Special cases of ontology columns
       selectOntologies: [],
       insertOntology: null
@@ -602,12 +653,11 @@ export default {
     onDefaultChange () {
       this.toggleDefaultFill()
     },
-    onPasteInput () {
+    onConfigPasteInput () {
       let p
       let pasteValid = true
-
       try {
-        p = JSON.parse(this.pasteData)
+        p = JSON.parse(this.configPasteData)
       } catch (error) {
         this.$refs.notifyBadge.show('Invalid JSON', 'danger', 1000)
         pasteValid = false
@@ -620,9 +670,9 @@ export default {
       } else if (
         (this.colType === 'ONTOLOGY' && p.format !== 'ontology') ||
         (this.colType !== 'ONTOLOGY' && p.format === 'ontology') ||
-        (this.colType === 'UNIT' && !(['integer', 'double'].contains(p.format)))) {
+        (this.colType === 'UNIT' && !(['integer', 'double'].includes(p.format)))) {
         pasteValid = false
-        this.$refs.notifyBadge.show('Wrong Format', 'danger', 2000)
+        this.$refs.notifyBadge.show('Invalid Format', 'danger', 2000)
         console.error('Invalid format: ' + p.format + ' / ' + this.colType)
       }
 
@@ -645,8 +695,11 @@ export default {
 
       // Clear the original value regardless of success/failure
       this.$nextTick(() => {
-        this.pasteData = ''
+        this.configPasteData = ''
       })
+    },
+    onOntologyDefaultDelete () {
+      this.fieldConfig.default = null
     },
     onCopySuccess (event) {
       this.$refs.notifyBadge.show('Config Copied', 'success', 1000)
@@ -654,6 +707,40 @@ export default {
     onCopyError (event) {
       this.$refs.notifyBadge.show('Copy Error', 'danger', 2000)
       console.log('Copy Error: ' + event)
+    },
+    onOntologyDefaultPaste () {
+      let p
+      let pasteValid = true
+      try {
+        p = JSON.parse(this.ontologyDefaultPasteData)
+      } catch (error) {
+        this.$refs.notifyBadge.show('Invalid JSON', 'danger', 1000)
+        pasteValid = false
+      }
+
+      // Cleanup and validate
+      if (!Array.isArray(p)) p = [p]
+      for (let i = 0; i < p.length; i++) {
+        if (!('name' in p[i]) ||
+            p[i].name.length === 0 ||
+            !('ontology_name' in p[i]) ||
+            !('accession' in p[i])) {
+          pasteValid = false
+          this.$refs.notifyBadge.show('Invalid Format', 'danger', 2000)
+          console.error('Invalid term: ' + JSON.stringify(p[i]))
+        }
+      }
+
+      // Copy data from pasted content if valid
+      if (pasteValid) {
+        this.fieldConfig.default = p
+        this.$refs.notifyBadge.show('Default Updated', 'success', 1000)
+      }
+
+      // Clear the original value
+      this.$nextTick(() => {
+        this.ontologyDefaultPasteData = ''
+      })
     },
     onOntologyInsert () {
       this.fieldConfig.ontologies.push(this.insertOntology)
@@ -771,7 +858,8 @@ export default {
           if ((!valueRegex || (
             this.inputValid.regex &&
             valueRegex.test(this.fieldConfig.default))) && (
-            !numFormats.includes(this.fieldConfig.format) || (
+            !numFormats.includes(this.fieldConfig.format) ||
+              !this.fieldConfig.range[0] || (
               df >= parseFloat(this.fieldConfig.range[0]) &&
               df <= parseFloat(this.fieldConfig.range[1])
             ))) {
@@ -1204,8 +1292,12 @@ div#sodar-ss-col-content {
   min-height: 620px !important;
 }
 
-#sodar-ss-col-input-paste {
+.sodar-ss-col-input-paste {
   width: 70px;
+}
+
+#sodar-ss-col-ontology-default-paste {
+  max-width: 80px !important;
 }
 
 table#sodar-ss-col-table tbody td:first-child {

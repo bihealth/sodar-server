@@ -1,34 +1,39 @@
 <template>
-  <div class="row mb-4"
+  <div class="row mb-4 sodar-ss-table-header-row"
        :id="'sodar-ss-section-' + gridIdSuffix">
-    <h4 :class="'font-weight-bold mb-0 ' + getTitleTextClass()">
-      <i v-if="!params.assayMode" class="iconify" data-icon="mdi:folder-table"></i>
-      <i v-else class="iconify" data-icon="mdi:table-large"></i>
-      {{ gridName }}: {{ tableContext.display_name }}
-      <span v-if="params.sodarContext.perms.is_superuser &&
-                  tableContext.plugin"
-            class="sodar-ss-table-plugin">
-        <i :class="'iconify ml-1 ' + getTitleTextClass()"
-           data-icon="mdi:puzzle"
-           :title="tableContext.plugin"
-           v-b-tooltip.hover>
-        </i>
-      </span>
-      <span v-else-if="params.sodarContext.perms.edit_sheet &&
-                       !tableContext.plugin &&
-                       params.assayMode"
-            class="sodar-ss-table-plugin">
-        <i class="iconify text-muted ml-1"
-           data-icon="mdi:puzzle-remove"
-           title="No assay plugin found: displaying default iRODS links"
-           v-b-tooltip.hover>
-        </i>
-      </span>
-    </h4>
-    <div :class="getRightDivClass()">
-      <span v-if="!params.assayMode" class="mr-2">
+    <div :class="'col-' + leftColWidth + ' pl-0'">
+      <h4 :class="'font-weight-bold mb-0 ' + getTitleTextClass()">
+        <i v-if="!params.assayMode"
+           class="iconify"
+           data-icon="mdi:folder-table"></i>
+        <i v-else class="iconify" data-icon="mdi:table-large"></i>
+        {{ gridName }}: {{ tableContext.display_name }}
+        <span v-if="params.sodarContext.perms.is_superuser &&
+                    tableContext.plugin"
+              class="sodar-ss-table-plugin">
+          <i :class="'iconify ml-1 ' + getTitleTextClass()"
+             data-icon="mdi:puzzle"
+             :title="tableContext.plugin"
+             v-b-tooltip.hover>
+          </i>
+        </span>
+        <span v-else-if="params.sodarContext.perms.edit_sheet &&
+                         !tableContext.plugin &&
+                         params.assayMode"
+              class="sodar-ss-table-plugin">
+          <i class="iconify text-muted ml-1"
+             data-icon="mdi:puzzle-remove"
+             title="No assay plugin found: displaying default iRODS links"
+             v-b-tooltip.hover>
+          </i>
+        </span>
+      </h4>
+    </div>
+    <div :class="'col-' + rightColWidth + ' text-right pr-0'">
+      <span v-if="!params.assayMode" class="mr-2 sodar-ss-study-title-badge">
         <!-- iRODS collection status / stats badge -->
-        <span v-if="!params.editMode" class="badge-group text-nowrap">
+        <span v-if="!params.assayMode && !params.editMode"
+              class="badge-group text-nowrap">
           <span class="badge badge-pill badge-secondary">iRODS</span>
             <irods-stats-badge
                 v-if="params.sodarContext.irods_status"
@@ -40,17 +45,6 @@
           <span v-if="!params.sodarContext.irods_status"
                 class="badge badge-pill badge-danger">
             Not Created
-          </span>
-        </span>
-        <!-- Configuration -->
-        <span class="badge-group" id="sodar-ss-badge-sheet-config">
-          <span class="badge badge-pill badge-secondary">Config</span>
-          <span v-if="params.sodarContext.configuration"
-                class="badge badge-pill badge-info">
-            {{ params.sodarContext.configuration }}
-          </span>
-          <span v-else class="badge badge-pill badge-danger">
-            Unknown
           </span>
         </span>
       </span>
@@ -82,19 +76,15 @@ export default {
     return {
       gridName: null,
       gridIdSuffix: null,
-      tableContext: null
+      tableContext: null,
+      leftColWidth: 8,
+      rightColWidth: 4
     }
   },
   methods: {
     getTitleTextClass () {
       if (!this.params.assayMode) return 'text-info'
       return 'text-danger'
-    },
-    getRightDivClass () {
-      // TODO: Is align-middle actually needed??
-      let cls = 'ml-auto'
-      if (this.params.assayMode) cls += ' align-middle'
-      return cls
     }
   },
   beforeMount () {
@@ -107,6 +97,8 @@ export default {
       this.gridName = 'Assay'
       this.tableContext = this.params.sodarContext.studies[
         this.params.studyUuid].assays[this.params.gridUuid]
+      this.leftColWidth = 10
+      this.rightColWidth = 2
     }
   },
   mounted () {
@@ -121,4 +113,14 @@ export default {
 </script>
 
 <style scoped>
+  h4 {
+    margin-left: 30px;
+    text-indent: -30px;
+  }
+
+  @media screen and (max-width: 1200px) {
+    span.sodar-ss-study-title-badge {
+      display: none;
+    }
+  }
 </style>

@@ -8,6 +8,27 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
+v0.11.0 (2021-12-16)
+====================
+
+Major feature update.
+
+- Add simple link support to string cells in sample sheets
+- Add generic raw data assay plugin
+- Add assay plugin override via ISA-Tab comments
+- Add default ontology column value
+- Add user alerts and member emails for landing zone actions
+- Add user alerts for sample sheet iRODS cache updates
+- Add user message to landing zones upon successful moving
+- Add "finished" parameter to LandingZoneListAPIView to access finished zones
+- Add locked status info to landingzones UI and LandingZoneRetrieveAPIView
+- Add descriptions and batch deletion for sample sheet versions
+- Add automatic study/assay table filtering from search results
+- Add collections to iRODS file list modals for landing zons
+- Manual clearing of finished landing zones in UI no longer needed
+- Upgrade to SODAR Core v0.10.7
+
+
 v0.10.1 (2021-07-07)
 ====================
 

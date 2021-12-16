@@ -1,6 +1,12 @@
 """Import and export utilities for the samplesheets app"""
 
 import altamisa
+import attr
+import io
+import logging
+import time
+import warnings
+
 from altamisa.isatab import (
     InvestigationReader,
     StudyReader,
@@ -14,12 +20,7 @@ from altamisa.isatab import (
     models as isa_models,
 )
 from altamisa.exceptions import CriticalIsaValidationWarning
-import attr
 from fnmatch import fnmatch
-import io
-import logging
-import time
-import warnings
 from zipfile import ZipFile
 
 from django.db import transaction
@@ -854,7 +855,7 @@ class SampleSheetIO:
         return ret.values()
 
     @classmethod
-    def _export_value(cls, value):
+    def _export_val(cls, value):
         """
         Build a "FreeTextOrTermRef" value out of a string/dict value in a
         JSONField. Can also be used for units.
@@ -865,7 +866,7 @@ class SampleSheetIO:
         if isinstance(value, str):
             return value
         elif isinstance(value, list):
-            return [cls._export_value(x) for x in value]
+            return [cls._export_val(x) for x in value]
         elif isinstance(value, dict):
             if not value:  # Empty dict
                 return None  # {} is not cool to altamISA
@@ -884,14 +885,14 @@ class SampleSheetIO:
         :return: Tuple of Comment NamedTuples
         """
         # TODO: Remove once reimporting sample sheets (#629, #631)
-        def _get_comment_value(v):
+        def _get_comment_val(v):
             if isinstance(v, dict):
                 return v['value']
             return v
 
         return tuple(
             (
-                isa_models.Comment(name=k, value=_get_comment_value(v))
+                isa_models.Comment(name=k, value=_get_comment_val(v))
                 for k, v in comments.items()
             )
             if comments
@@ -913,7 +914,7 @@ class SampleSheetIO:
                 doi=v['doi'],
                 authors=v['authors'],
                 title=v['title'],
-                status=cls._export_value(v['status']),
+                status=cls._export_val(v['status']),
                 comments=cls._export_comments(v['comments']),
                 headers=v['headers'],
             )
@@ -939,7 +940,7 @@ class SampleSheetIO:
                 fax=v['fax'],
                 address=v['address'],
                 affiliation=v['affiliation'],
-                role=cls._export_value(v['role']),
+                role=cls._export_val(v['role']),
                 comments=cls._export_comments(v['comments']),
                 headers=v['headers'],
             )
@@ -977,7 +978,7 @@ class SampleSheetIO:
         """
         return tuple(
             isa_models.DesignDescriptorsInfo(
-                type=cls._export_value(v['type']),
+                type=cls._export_val(v['type']),
                 comments=cls._export_comments(v['comments']),
                 headers=v['headers'],
             )
@@ -1013,10 +1014,10 @@ class SampleSheetIO:
         return tuple(
             isa_models.Characteristics(
                 name=k,
-                value=[cls._export_value(v['value'])]
+                value=[cls._export_val(v['value'])]
                 if not isinstance(v['value'], list)
-                else cls._export_value(v['value']),
-                unit=cls._export_value(v['unit']),
+                else cls._export_val(v['value']),
+                unit=cls._export_val(v['unit']),
             )
             for k, v in characteristics.items()
         )
@@ -1032,7 +1033,7 @@ class SampleSheetIO:
         return {
             k: isa_models.FactorInfo(
                 name=k,
-                type=cls._export_value(v['type']),
+                type=cls._export_val(v['type']),
                 comments=cls._export_comments(v['comments']),
                 headers=v['headers'],
             )
@@ -1040,7 +1041,7 @@ class SampleSheetIO:
         }
 
     @classmethod
-    def _export_factor_values(cls, factor_values):
+    def _export_factor_vals(cls, factor_values):
         """
         Build factor values from JSON stored in a GenericMaterial object.
 
@@ -1052,8 +1053,8 @@ class SampleSheetIO:
         return tuple(
             isa_models.FactorValue(
                 name=k,
-                value=cls._export_value(v['value']),
-                unit=cls._export_value(v['unit']),
+                value=cls._export_val(v['value']),
+                unit=cls._export_val(v['unit']),
             )
             for k, v in factor_values.items()
         )
@@ -1067,7 +1068,7 @@ class SampleSheetIO:
         :param parameters: List from a parameters JSONField
         :return: Dict
         """
-        return {p['name']: cls._export_value(p) for p in parameters}
+        return {p['name']: cls._export_val(p) for p in parameters}
 
     @classmethod
     def _export_param_values(cls, param_values):
@@ -1080,10 +1081,10 @@ class SampleSheetIO:
         return tuple(
             isa_models.ParameterValue(
                 name=k,
-                value=[cls._export_value(v['value'])]
+                value=[cls._export_val(v['value'])]
                 if not isinstance(v['value'], list)
-                else cls._export_value(v['value']),
-                unit=cls._export_value(v['unit']),
+                else cls._export_val(v['value']),
+                unit=cls._export_val(v['unit']),
             )
             for k, v in param_values.items()
         )
@@ -1123,7 +1124,7 @@ class SampleSheetIO:
             ):
                 extract_label = ''
             else:
-                extract_label = cls._export_value(m.extract_label)
+                extract_label = cls._export_val(m.extract_label)
             ret[m.unique_name] = isa_models.Material(
                 type=m.material_type
                 if m.material_type
@@ -1137,10 +1138,10 @@ class SampleSheetIO:
                 comments=cls._export_comments(m.comments)
                 if not sample_in_assay
                 else (),
-                factor_values=cls._export_factor_values(m.factor_values)
+                factor_values=cls._export_factor_vals(m.factor_values)
                 if study_data
                 else tuple(),
-                material_type=cls._export_value(m.extra_material_type),
+                material_type=cls._export_val(m.extra_material_type),
                 headers=headers,
             )
         return ret
@@ -1172,8 +1173,8 @@ class SampleSheetIO:
                 parameter_values=cls._export_param_values(p.parameter_values),
                 comments=cls._export_comments(p.comments),
                 array_design_ref=p.array_design_ref,
-                first_dimension=cls._export_value(p.first_dimension),
-                second_dimension=cls._export_value(p.second_dimension),
+                first_dimension=cls._export_val(p.first_dimension),
+                second_dimension=cls._export_val(p.second_dimension),
                 headers=p.headers,
             )
         return ret
@@ -1225,8 +1226,8 @@ class SampleSheetIO:
             # Create AssayInfo objects for assays
             for assay in study.assays.all().order_by('file_name'):
                 assay_info = isa_models.AssayInfo(
-                    measurement_type=self._export_value(assay.measurement_type),
-                    technology_type=self._export_value(assay.technology_type),
+                    measurement_type=self._export_val(assay.measurement_type),
+                    technology_type=self._export_val(assay.technology_type),
                     platform=assay.technology_platform,
                     path=assay.file_name,
                     comments=self._export_comments(assay.comments),
@@ -1260,7 +1261,7 @@ class SampleSheetIO:
             for protocol in study.protocols.all():
                 isa_protocols[protocol.name] = isa_models.ProtocolInfo(
                     name=protocol.name,
-                    type=self._export_value(protocol.protocol_type),
+                    type=self._export_val(protocol.protocol_type),
                     description=protocol.description,
                     uri=protocol.uri,
                     version=protocol.version,
@@ -1426,7 +1427,7 @@ class SampleSheetIO:
         tags=None,
         user=None,
         archive_name=None,
-        config=None,
+        description=None,
     ):
         """
         Save a copy of an ISA-Tab investigation into the SODAR database.
@@ -1437,6 +1438,7 @@ class SampleSheetIO:
         :param tags: Tags for the ISA-Tab (optional)
         :param user: User saving the ISA-Tab (optional)
         :param archive_name: File name of ISA-Tab archive (optional)
+        :param description: ISATab description (string, optional)
         :return: ISATab object
         """
         db_isatab = ISATab.objects.create(
@@ -1446,6 +1448,7 @@ class SampleSheetIO:
             tags=tags or [],
             user=user,
             archive_name=archive_name,
+            description=description,
             parser_version=altamisa.__version__,
         )
         logger.info('ISA-Tab saved (UUID={})'.format(db_isatab.sodar_uuid))

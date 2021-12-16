@@ -11,7 +11,7 @@ module.exports = {
       'Access-Control-Allow-Origin': '*'
     }
   },
-  productionSourceMap: false,
+  // productionSourceMap: false,
 
   configureWebpack: {
     plugins: [

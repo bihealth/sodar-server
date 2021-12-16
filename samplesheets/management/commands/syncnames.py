@@ -1,15 +1,16 @@
 """Syncnames management command"""
 
-import logging
-
 from django.core.management.base import BaseCommand
 from django.db import transaction
+
+# Projectroles dependency
+from projectroles.management.logging import ManagementCommandLogger
 
 from samplesheets.models import GenericMaterial
 from samplesheets.utils import get_alt_names
 
 
-logger = logging.getLogger(__name__)
+logger = ManagementCommandLogger(__name__)
 
 
 class Command(BaseCommand):
@@ -25,7 +26,5 @@ class Command(BaseCommand):
                 m.alt_names = get_alt_names(m.name)
                 m.save()
         logger.info(
-            '{} materials updated.'.format(
-                GenericMaterial.objects.all().count()
-            )
+            '{} materials updated.'.format(GenericMaterial.objects.count())
         )

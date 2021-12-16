@@ -26,15 +26,11 @@ LINKED_FILES = [
 class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
     """Plugin for Microarray assays in sample sheets"""
 
-    # Properties required by django-plugins ------------------------------
-
     #: Name (used in code and as unique idenfitier)
     name = 'samplesheets_assay_microarray'
 
     #: Title
     title = 'Microarray Assay Plugin'
-
-    # Properties defined in SampleSheetAssayPluginPoint ------------------
 
     #: App name for dynamic reference to app in e.g. caching
     app_name = APP_NAME
@@ -47,6 +43,14 @@ class SampleSheetAssayPlugin(SampleSheetAssayPluginPoint):
         },
         {
             'measurement_type': 'transcription profiling',
+            'technology_type': 'DNA microarray',
+        },
+        {
+            'measurement_type': 'transcriptome profiling',
+            'technology_type': 'microarray',
+        },
+        {
+            'measurement_type': 'transcriptome profiling',
             'technology_type': 'DNA microarray',
         },
     ]

@@ -21,7 +21,7 @@ setup(
     long_description=README,
     url='https://www.cubi.bihealth.org/',
     author='Berlin Institute of Health, Core Unit Bioinformatics',
-    author_email='cubi@bihealth.de',
+    author_email='cubi@bih-charite.de',
     classifiers=[
         'Environment :: Web Environment',
         'Framework :: Django',

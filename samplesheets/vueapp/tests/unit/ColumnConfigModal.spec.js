@@ -132,7 +132,7 @@ describe('ColumnConfigModal.vue', () => {
     await waitRAF()
 
     expect(wrapper.find('#sodar-ss-col-btn-copy').attributes().disabled).toBe('disabled')
-    expect(wrapper.find('#sodar-ss-col-input-paste').attributes().disabled).toBe('disabled')
+    expect(wrapper.find('#sodar-ss-col-config-paste').attributes().disabled).toBe('disabled')
     expect(wrapper.vm.fieldConfig.editable).toBe(true)
     expect(wrapper.find('#sodar-ss-col-content').exists()).toBe(true)
     expect(wrapper.find('#sodar-ss-col-table-name').exists()).toBe(true)
@@ -153,7 +153,7 @@ describe('ColumnConfigModal.vue', () => {
     await waitRAF()
 
     expect(wrapper.find('#sodar-ss-col-btn-copy').attributes().disabled).toBe(undefined)
-    expect(wrapper.find('#sodar-ss-col-input-paste').attributes().disabled).toBe(undefined)
+    expect(wrapper.find('#sodar-ss-col-config-paste').attributes().disabled).toBe(undefined)
     expect(wrapper.vm.fieldConfig.editable).toBe(true)
     expect(wrapper.find('#sodar-ss-col-table-ontology').exists()).toBe(true)
     expect(wrapper.find('#sodar-ss-col-td-allow-list').exists()).toBe(true)
@@ -174,7 +174,7 @@ describe('ColumnConfigModal.vue', () => {
     await waitRAF()
 
     expect(wrapper.find('#sodar-ss-col-btn-copy').attributes().disabled).toBe(undefined)
-    expect(wrapper.find('#sodar-ss-col-input-paste').attributes().disabled).toBe(undefined)
+    expect(wrapper.find('#sodar-ss-col-config-paste').attributes().disabled).toBe(undefined)
     expect(wrapper.vm.fieldConfig.editable).toBe(true)
     expect(wrapper.find('#sodar-ss-col-td-allow-list').exists()).toBe(false)
     expect(wrapper.find('#sodar-ss-col-table-basic').exists()).toBe(true)
@@ -206,7 +206,7 @@ describe('ColumnConfigModal.vue', () => {
     await waitRAF()
 
     expect(wrapper.find('#sodar-ss-col-btn-copy').attributes().disabled).toBe('disabled')
-    expect(wrapper.find('#sodar-ss-col-input-paste').attributes().disabled).toBe('disabled')
+    expect(wrapper.find('#sodar-ss-col-config-paste').attributes().disabled).toBe('disabled')
     expect(wrapper.vm.fieldConfig.editable).toBe(true)
     expect(wrapper.find('#sodar-ss-col-td-allow-list').exists()).toBe(false)
     expect(wrapper.find('#sodar-ss-col-table-protocol').exists()).toBe(true)
@@ -234,7 +234,7 @@ describe('ColumnConfigModal.vue', () => {
     await waitRAF()
 
     expect(wrapper.find('#sodar-ss-col-btn-copy').attributes().disabled).toBe(undefined)
-    expect(wrapper.find('#sodar-ss-col-input-paste').attributes().disabled).toBe(undefined)
+    expect(wrapper.find('#sodar-ss-col-config-paste').attributes().disabled).toBe(undefined)
     expect(wrapper.vm.fieldConfig.editable).toBe(true)
     expect(wrapper.find('#sodar-ss-col-td-allow-list').exists()).toBe(false)
     expect(wrapper.find('#sodar-ss-col-table-basic').exists()).toBe(true)
@@ -262,7 +262,7 @@ describe('ColumnConfigModal.vue', () => {
     await waitRAF()
 
     expect(wrapper.find('#sodar-ss-col-btn-copy').attributes().disabled).toBe('disabled')
-    expect(wrapper.find('#sodar-ss-col-input-paste').attributes().disabled).toBe('disabled')
+    expect(wrapper.find('#sodar-ss-col-config-paste').attributes().disabled).toBe('disabled')
     expect(wrapper.vm.fieldConfig.editable).toBe(true)
     expect(wrapper.find('#sodar-ss-col-td-allow-list').exists()).toBe(false)
     expect(wrapper.find('#sodar-ss-col-table-contact').exists()).toBe(true)
@@ -282,7 +282,7 @@ describe('ColumnConfigModal.vue', () => {
     await waitRAF()
 
     expect(wrapper.find('#sodar-ss-col-btn-copy').attributes().disabled).toBe('disabled')
-    expect(wrapper.find('#sodar-ss-col-input-paste').attributes().disabled).toBe('disabled')
+    expect(wrapper.find('#sodar-ss-col-config-paste').attributes().disabled).toBe('disabled')
     expect(wrapper.vm.fieldConfig.editable).toBe(true)
     expect(wrapper.find('#sodar-ss-col-td-allow-list').exists()).toBe(false)
     expect(wrapper.find('#sodar-ss-col-table-date').exists()).toBe(true)
@@ -302,7 +302,7 @@ describe('ColumnConfigModal.vue', () => {
     await waitRAF()
 
     expect(wrapper.find('#sodar-ss-col-btn-copy').attributes().disabled).toBe('disabled')
-    expect(wrapper.find('#sodar-ss-col-input-paste').attributes().disabled).toBe('disabled')
+    expect(wrapper.find('#sodar-ss-col-config-paste').attributes().disabled).toBe('disabled')
     expect(wrapper.vm.fieldConfig.editable).toBe(true)
     expect(wrapper.find('#sodar-ss-col-table-name').exists()).toBe(true)
     expect(wrapper.find('#sodar-ss-col-tr-name-suffix').exists()).toBe(true)
@@ -323,7 +323,7 @@ describe('ColumnConfigModal.vue', () => {
     await waitRAF()
 
     expect(wrapper.find('#sodar-ss-col-btn-copy').attributes().disabled).toBe(undefined)
-    expect(wrapper.find('#sodar-ss-col-input-paste').attributes().disabled).toBe(undefined)
+    expect(wrapper.find('#sodar-ss-col-config-paste').attributes().disabled).toBe(undefined)
     expect(wrapper.vm.fieldConfig.editable).toBe(true)
     expect(wrapper.find('#sodar-ss-col-td-allow-list').exists()).toBe(false)
     expect(wrapper.find('#sodar-ss-col-table-basic').exists()).toBe(true)
@@ -353,7 +353,7 @@ describe('ColumnConfigModal.vue', () => {
     await waitRAF()
 
     expect(wrapper.find('#sodar-ss-col-btn-copy').attributes().disabled).toBe(undefined)
-    expect(wrapper.find('#sodar-ss-col-input-paste').attributes().disabled).toBe(undefined)
+    expect(wrapper.find('#sodar-ss-col-config-paste').attributes().disabled).toBe(undefined)
     expect(wrapper.vm.fieldConfig.editable).toBe(true)
     expect(wrapper.find('#sodar-ss-col-td-allow-list').exists()).toBe(false)
     expect(wrapper.find('#sodar-ss-col-table-basic').exists()).toBe(true)
@@ -728,6 +728,34 @@ describe('ColumnConfigModal.vue', () => {
     expect(wrapper.vm.$refs.updateBtn.disabled).toBe(false)
   })
 
+  it('validates default value against empty range', async () => {
+    mountSheetTable()
+    const wrapper = mount(ColumnConfigModal, {
+      localVue, propsData: getPropsData({ app: app })
+    })
+    const modalParams = getShowModalParams('col2', {
+      colType: 'UNIT',
+      configNodeIdx: 0,
+      configFieldIdx: 2
+    })
+    modalParams.fieldConfig.range = [null, null]
+    wrapper.vm.showModal(modalParams)
+    await waitNT(wrapper.vm)
+    await waitRAF()
+
+    expect(wrapper.vm.fieldConfig.range).toEqual([null, null])
+    expect(wrapper.vm.fieldConfig.default).toBe('')
+    expect(wrapper.vm.formClasses.default).not.toContain('text-danger')
+    expect(wrapper.vm.$refs.updateBtn.disabled).toBe(false)
+
+    const fieldConfig = copy(wrapper.vm.fieldConfig)
+    fieldConfig.default = '5'
+    await wrapper.setData({ fieldConfig: fieldConfig })
+    await wrapper.find('#sodar-ss-col-input-range-min').vm.$emit('input')
+    expect(wrapper.vm.formClasses.default).not.toContain('text-danger')
+    expect(wrapper.vm.$refs.updateBtn.disabled).toBe(false)
+  })
+
   // TODO: Test regex validation
 
   /* Event handling --------------------------------------------------------- */
@@ -867,6 +895,129 @@ describe('ColumnConfigModal.vue', () => {
     expect(ontologies.at(1).find('.sodar-ss-col-td-ontology-name').text()).toBe('CL')
   })
 
+  it('sets default ontology value on paste', async () => {
+    mountSheetTable()
+    const wrapper = mount(ColumnConfigModal, {
+      localVue, propsData: getPropsData({ app: app })
+    })
+    const spyonOntologyDefaultPaste = jest.spyOn(wrapper.vm, 'onOntologyDefaultPaste')
+    wrapper.vm.showModal(getShowModalParams('col1', {
+      colType: 'ONTOLOGY',
+      configNodeIdx: 0,
+      configFieldIdx: 1
+    }))
+    await waitNT(wrapper.vm)
+    await waitRAF()
+    expect(wrapper.findAll('.sodar-ss-col-ontology-default-empty').length).toBe(1)
+
+    const defaultPasteData = [{
+      name: 'Homo sapiens',
+      ontology_name: 'NCBITAXON',
+      accession: 'http://purl.bioontology.org/ontology/NCBITAXON/9606'
+    }]
+    await wrapper.setData({ ontologyDefaultPasteData: JSON.stringify(defaultPasteData) })
+    const inputField = wrapper.find('#sodar-ss-col-ontology-default-paste')
+    await inputField.vm.$emit('input')
+
+    expect(spyonOntologyDefaultPaste).toBeCalled()
+    expect(wrapper.findAll('.sodar-ss-col-ontology-default-empty').length).toBe(0)
+    expect(wrapper.findAll('.sodar-ss-col-ontology-default-term').length).toBe(1)
+  })
+
+  it('sets default ontology value with list', async () => {
+    mountSheetTable()
+    const wrapper = mount(ColumnConfigModal, {
+      localVue, propsData: getPropsData({ app: app })
+    })
+    const spyonOntologyDefaultPaste = jest.spyOn(wrapper.vm, 'onOntologyDefaultPaste')
+    wrapper.vm.showModal(getShowModalParams('col1', {
+      colType: 'ONTOLOGY',
+      configNodeIdx: 0,
+      configFieldIdx: 1
+    }))
+    await waitNT(wrapper.vm)
+    await waitRAF()
+    expect(wrapper.findAll('.sodar-ss-col-ontology-default-empty').length).toBe(1)
+
+    const defaultPasteData = [
+      {
+        name: 'Homo sapiens',
+        ontology_name: 'NCBITAXON',
+        accession: 'http://purl.bioontology.org/ontology/NCBITAXON/9606'
+      },
+      {
+        name: 'Rattus rattus',
+        ontology_name: 'NCBITAXON',
+        accession: 'http://purl.obolibrary.org/obo/NCBITaxon_10117'
+      }
+    ]
+    await wrapper.setData({ ontologyDefaultPasteData: JSON.stringify(defaultPasteData) })
+    const inputField = wrapper.find('#sodar-ss-col-ontology-default-paste')
+    await inputField.vm.$emit('input')
+
+    expect(spyonOntologyDefaultPaste).toBeCalled()
+    expect(wrapper.findAll('.sodar-ss-col-ontology-default-empty').length).toBe(0)
+    expect(wrapper.findAll('.sodar-ss-col-ontology-default-term').length).toBe(2)
+  })
+
+  it('sets default ontology value with no list', async () => {
+    mountSheetTable()
+    const wrapper = mount(ColumnConfigModal, {
+      localVue, propsData: getPropsData({ app: app })
+    })
+    const spyonOntologyDefaultPaste = jest.spyOn(wrapper.vm, 'onOntologyDefaultPaste')
+    wrapper.vm.showModal(getShowModalParams('col1', {
+      colType: 'ONTOLOGY',
+      configNodeIdx: 0,
+      configFieldIdx: 1
+    }))
+    await waitNT(wrapper.vm)
+    await waitRAF()
+    expect(wrapper.findAll('.sodar-ss-col-ontology-default-empty').length).toBe(1)
+
+    const defaultPasteData = {
+      name: 'Homo sapiens',
+      ontology_name: 'NCBITAXON',
+      accession: 'http://purl.bioontology.org/ontology/NCBITAXON/9606'
+    }
+    await wrapper.setData({ ontologyDefaultPasteData: JSON.stringify(defaultPasteData) })
+    const inputField = wrapper.find('#sodar-ss-col-ontology-default-paste')
+    await inputField.vm.$emit('input')
+
+    expect(spyonOntologyDefaultPaste).toBeCalled()
+    expect(wrapper.findAll('.sodar-ss-col-ontology-default-empty').length).toBe(0)
+    expect(wrapper.findAll('.sodar-ss-col-ontology-default-term').length).toBe(1)
+  })
+
+  it('handles invalid ontology value pasting', async () => {
+    mountSheetTable()
+    const wrapper = mount(ColumnConfigModal, {
+      localVue, propsData: getPropsData({ app: app })
+    })
+    const spyonOntologyDefaultPaste = jest.spyOn(wrapper.vm, 'onOntologyDefaultPaste')
+    wrapper.vm.showModal(getShowModalParams('col1', {
+      colType: 'ONTOLOGY',
+      configNodeIdx: 0,
+      configFieldIdx: 1
+    }))
+    await waitNT(wrapper.vm)
+    await waitRAF()
+    expect(wrapper.findAll('.sodar-ss-col-ontology-default-empty').length).toBe(1)
+
+    const defaultPasteData = [{
+      // No name
+      ontology_name: 'NCBITAXON',
+      accession: 'http://purl.bioontology.org/ontology/NCBITAXON/9606'
+    }]
+    await wrapper.setData({ ontologyDefaultPasteData: JSON.stringify(defaultPasteData) })
+    const inputField = wrapper.find('#sodar-ss-col-ontology-default-paste')
+    await inputField.vm.$emit('input')
+
+    expect(spyonOntologyDefaultPaste).toBeCalled()
+    expect(wrapper.findAll('.sodar-ss-col-ontology-default-empty').length).toBe(1)
+    expect(wrapper.findAll('.sodar-ss-col-ontology-default-term').length).toBe(0)
+  })
+
   it('returns config for clipboard copy', async () => {
     mountSheetTable()
     const wrapper = mount(ColumnConfigModal, {
@@ -909,7 +1060,7 @@ describe('ColumnConfigModal.vue', () => {
     const wrapper = mount(ColumnConfigModal, {
       localVue, propsData: getPropsData({ app: app })
     })
-    const spyOnPasteInput = jest.spyOn(wrapper.vm, 'onPasteInput')
+    const spyonConfigPasteInput = jest.spyOn(wrapper.vm, 'onConfigPasteInput')
     wrapper.vm.showModal(getShowModalParams('col9', {
       colType: null,
       configNodeIdx: 2,
@@ -918,17 +1069,17 @@ describe('ColumnConfigModal.vue', () => {
     await waitNT(wrapper.vm)
     await waitRAF()
 
-    const pasteData = {
+    const configPasteData = {
       format: 'string',
       editable: false,
       regex: '',
       default: ''
     }
-    await wrapper.setData({ pasteData: JSON.stringify(pasteData) })
-    const inputField = wrapper.find('#sodar-ss-col-input-paste')
+    await wrapper.setData({ configPasteData: JSON.stringify(configPasteData) })
+    const inputField = wrapper.find('#sodar-ss-col-config-paste')
     await inputField.vm.$emit('input')
 
-    expect(spyOnPasteInput).toBeCalled()
+    expect(spyonConfigPasteInput).toBeCalled()
     expect(wrapper.vm.fieldConfig.editable).toBe(false)
     expect(wrapper.find('#sodar-ss-col-tr-format').exists()).toBe(true)
     expect(wrapper.find('#sodar-ss-col-tr-select').exists()).toBe(false)
@@ -947,7 +1098,7 @@ describe('ColumnConfigModal.vue', () => {
     const wrapper = mount(ColumnConfigModal, {
       localVue, propsData: getPropsData({ app: app })
     })
-    const spyOnPasteInput = jest.spyOn(wrapper.vm, 'onPasteInput')
+    const spyonConfigPasteInput = jest.spyOn(wrapper.vm, 'onConfigPasteInput')
     wrapper.vm.showModal(getShowModalParams('col1', {
       colType: 'ONTOLOGY',
       configNodeIdx: 0,
@@ -956,17 +1107,17 @@ describe('ColumnConfigModal.vue', () => {
     await waitNT(wrapper.vm)
     await waitRAF()
 
-    const pasteData = {
+    const configPasteData = {
       format: 'string',
       editable: true,
       regex: '',
       default: ''
     }
-    await wrapper.setData({ pasteData: JSON.stringify(pasteData) })
-    const inputField = wrapper.find('#sodar-ss-col-input-paste')
+    await wrapper.setData({ configPasteData: JSON.stringify(configPasteData) })
+    const inputField = wrapper.find('#sodar-ss-col-config-paste')
     await inputField.vm.$emit('input')
 
-    expect(spyOnPasteInput).toBeCalled()
+    expect(spyonConfigPasteInput).toBeCalled()
     expect(wrapper.find('#sodar-ss-col-table-ontology').exists()).toBe(true)
     expect(wrapper.find('#sodar-ss-col-td-allow-list').exists()).toBe(true)
     expect(wrapper.find('#sodar-ss-col-post-ontology').exists()).toBe(true)
@@ -977,7 +1128,7 @@ describe('ColumnConfigModal.vue', () => {
     const wrapper = mount(ColumnConfigModal, {
       localVue, propsData: getPropsData({ app: app })
     })
-    const spyOnPasteInput = jest.spyOn(wrapper.vm, 'onPasteInput')
+    const spyonConfigPasteInput = jest.spyOn(wrapper.vm, 'onConfigPasteInput')
     wrapper.vm.showModal(getShowModalParams('col9', {
       colType: null,
       configNodeIdx: 2,
@@ -995,10 +1146,10 @@ describe('ColumnConfigModal.vue', () => {
       ontologies: ['NCBITAXON']
     }
     await wrapper.setData({ pasteData: JSON.stringify(pasteData) })
-    const inputField = wrapper.find('#sodar-ss-col-input-paste')
+    const inputField = wrapper.find('#sodar-ss-col-config-paste')
     await inputField.vm.$emit('input')
 
-    expect(spyOnPasteInput).toBeCalled()
+    expect(spyonConfigPasteInput).toBeCalled()
     expect(wrapper.find('#sodar-ss-col-table-basic').exists()).toBe(true)
     expect(wrapper.find('#sodar-ss-col-tr-format').exists()).toBe(true)
     expect(wrapper.find('#sodar-ss-col-tr-select').exists()).toBe(true)
@@ -1010,7 +1161,7 @@ describe('ColumnConfigModal.vue', () => {
     const wrapper = mount(ColumnConfigModal, {
       localVue, propsData: getPropsData({ app: app })
     })
-    const spyOnPasteInput = jest.spyOn(wrapper.vm, 'onPasteInput')
+    const spyonConfigPasteInput = jest.spyOn(wrapper.vm, 'onConfigPasteInput')
     wrapper.vm.showModal(getShowModalParams('col1', {
       colType: 'ONTOLOGY',
       configNodeIdx: 0,
@@ -1021,7 +1172,7 @@ describe('ColumnConfigModal.vue', () => {
 
     expect(wrapper.findAll('.sodar-ss-col-tr-ontology-enabled').length).toBe(1)
 
-    const pasteData = {
+    const configPasteData = {
       format: 'ontology',
       editable: true,
       regex: '',
@@ -1029,11 +1180,11 @@ describe('ColumnConfigModal.vue', () => {
       allow_list: false,
       ontologies: ['NCBITAXON', 'OMIM', 'ORDO']
     }
-    await wrapper.setData({ pasteData: JSON.stringify(pasteData) })
-    const inputField = wrapper.find('#sodar-ss-col-input-paste')
+    await wrapper.setData({ configPasteData: JSON.stringify(configPasteData) })
+    const inputField = wrapper.find('#sodar-ss-col-config-paste')
     await inputField.vm.$emit('input')
 
-    expect(spyOnPasteInput).toBeCalled()
+    expect(spyonConfigPasteInput).toBeCalled()
     expect(wrapper.findAll('.sodar-ss-col-tr-ontology-enabled').length).toBe(3)
   })
 

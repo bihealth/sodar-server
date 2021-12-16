@@ -205,6 +205,24 @@ describe('DataCellRenderer.vue', () => {
     expect(cell.classes()).not.toContain('text-muted')
   })
 
+  it('renders basic text cell with simple link', async () => {
+    const table = copy(studyTablesOneCol).tables.study
+    table.field_header[0] = studyTables.tables.study.field_header[4]
+    table.table_data[0][0] = studyTables.tables.study.table_data[0][4]
+    table.table_data[0][0].value = 'Link <https://bihealth.org>'
+    const wrapper = mountSheetTable({ table: table })
+    await waitAG(wrapper)
+    await waitRAF()
+
+    const cell = wrapper.find('.sodar-ss-data-cell')
+    const cellData = cell.find('.sodar-ss-data')
+    const cellLink = cellData.find('a')
+    expect(cellData.text()).toBe('Link')
+    expect(cellLink.attributes().href).toBe('https://bihealth.org')
+    expect(cell.classes()).not.toContain('text-right')
+    expect(cell.classes()).not.toContain('text-muted')
+  })
+
   it('renders contact cell with plain text value', async () => {
     const table = copy(studyTablesOneCol).tables.study
     table.field_header[0] = studyTables.tables.study.field_header[5]

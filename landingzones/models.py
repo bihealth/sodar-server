@@ -32,7 +32,7 @@ DEFAULT_STATUS_INFO = {
     'ACTIVE': 'Available with write access for user',
     'PREPARING': 'Preparing transaction for validation and moving',
     'VALIDATING': 'Validation in progress, write access disabled',
-    'MOVING': 'Validation OK, moving files into bio_samples',
+    'MOVING': 'Validation OK, moving files into sample data repository',
     'MOVED': 'Files moved successfully, landing zone removed',
     'FAILED': 'Validation/moving failed (unknown problem)',
     'DELETING': 'Deleting landing zone',
@@ -55,11 +55,14 @@ STATUS_STYLES = {
 # Status types for which zone validation, moving and deletion are allowed
 STATUS_ALLOW_UPDATE = ['ACTIVE', 'FAILED']
 
-# Status types for which zone clearing is allowed
-STATUS_ALLOW_CLEAR = ['MOVED', 'NOT CREATED', 'DELETED']
+# Status types for zones for which activities have finished
+STATUS_FINISHED = ['MOVED', 'NOT CREATED', 'DELETED']
 
 # Status types which lock the project in Taskflow
 STATUS_LOCKING = ['PREPARING', 'VALIDATING', 'MOVING']
+
+# Status types for busy landing zones
+STATUS_BUSY = ['CREATING', 'PREPARING', 'VALIDATING', 'MOVING', 'DELETING']
 
 
 class LandingZone(models.Model):
@@ -124,6 +127,15 @@ class LandingZone(models.Model):
         help_text='Landing zone description (optional)',
     )
 
+    #: Message displayed to project members on zone move (optional)
+    user_message = models.CharField(
+        max_length=1024,
+        unique=False,
+        blank=True,
+        help_text='Message displayed to project members on successful zone '
+        'moving if member notifications are enabled (optional)',
+    )
+
     #: Special configuration
     configuration = models.CharField(
         max_length=64,
@@ -166,6 +178,7 @@ class LandingZone(models.Model):
         return self.project
 
     def set_status(self, status, status_info=None):
+        """Set zone status"""
         if status not in ZONE_STATUS_TYPES:
             raise TypeError('Unknown status "{}"'.format(status))
         self.status = status
@@ -174,3 +187,10 @@ class LandingZone(models.Model):
         else:
             self.status_info = DEFAULT_STATUS_INFO[status][:1024]
         self.save()
+
+    def is_locked(self):
+        """
+        Return True/False depending whether write access to zone is currently
+        locked.
+        """
+        return True if self.status in STATUS_LOCKING else False

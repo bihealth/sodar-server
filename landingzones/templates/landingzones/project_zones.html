@@ -17,22 +17,38 @@
   {{ irodsbackend_css|safe }}
 
   <style type="text/css">
-    .sodar-lz-table thead tr th:nth-child(3) {
-      width: 350px !important;
+    .sodar-lz-table {
+        table-layout: fixed;
+        width: 100%;
     }
 
-    .sodar-lz-table thead tr th:nth-child(4) {
-      white-space: nowrap !important;
-      width: 150px !important;
+    .sodar-lz-table thead tr th:nth-child(1),
+    .sodar-lz-table tbody tr td:nth-child(1) {
+      width: 300px;
     }
 
-    .sodar-lz-table thead tr th:nth-child(5) {
-      width: 120px !important;
-      white-space: nowrap !important;
+    .sodar-lz-table tbody tr td:nth-child(2) {
+        word-wrap: break-word;
     }
 
-    .sodar-lz-table thead tr th:nth-child(6) {
-      width: 70px !important;
+    .sodar-lz-table thead tr th:nth-child(3),
+    .sodar-lz-table tbody tr td:nth-child(3) {
+      white-space: nowrap;
+      width: 150px;
+    }
+
+    .sodar-lz-table thead tr th:nth-child(4),
+    .sodar-lz-table tbody tr td:nth-child(4) {
+      width: 150px;
+      max-width: 150px;
+      white-space: nowrap;
+    }
+
+    .sodar-lz-table thead tr th:nth-child(5),
+    .sodar-lz-table tbody tr td:nth-child(5) {
+      text-align: right;
+      width: 70px;
+      max-width: 140px;
     }
 
     /* Responsive modifications */
@@ -45,7 +61,7 @@
       }
     }
 
-    @media screen and (max-width: 800px) {
+    @media screen and (max-width: 900px) {
       .table.sodar-lz-table thead tr th:nth-child(2) {
         display: none;
       }
@@ -54,20 +70,11 @@
       }
     }
 
-    @media screen and (max-width: 600px) {
+    @media screen and (max-width: 450px) {
       .table.sodar-lz-table thead tr th:nth-child(4) {
         display: none;
       }
       .table.sodar-lz-table tbody tr td:nth-child(4) {
-        display: none;
-      }
-    }
-
-    @media screen and (max-width: 450px) {
-      .table.sodar-lz-table thead tr th:nth-child(5) {
-        display: none;
-      }
-      .table.sodar-lz-table tbody tr td:nth-child(5) {
         display: none;
       }
     }
@@ -83,7 +90,13 @@
 <div class="row sodar-subtitle-container bg-white sticky-top">
   <h3><i class="iconify" data-icon="mdi:briefcase-upload"></i> Landing Zones</h3>
   {% if investigation and can_add_zones %}
-    {% include 'landingzones/_list_buttons.html' %}
+    <div class="ml-auto">
+      <a href="{% url 'landingzones:create' project=project.sodar_uuid %}"
+         class="btn btn-primary"
+         role="button">
+       <i class="iconify" data-icon="mdi:plus-thick"></i> Create Zone
+      </a>
+    </div>
   {% endif %}
 </div>
 
@@ -113,18 +126,8 @@
     </div>
 
   {% else %}
-    <div class="alert alert-info">
-      <strong>Hint:</strong> To submit assay-wide results/reports and
-      miscellaneous files, place them under collections named
-      <code>ResultsReports</code> and/or <code>MiscFiles</code> in your landing
-      zone. The files will appear in the "Assay Shortcuts" table in the Sample
-      Sheets app.
-    </div>
-
     {# User zones #}
-    {% if zones_own.count > 0 %}
-      {% include 'landingzones/_zone_list.html' with zones=zones_own list_title='Your Zones' list_icon='mdi:account' list_type='own' %}
-    {% endif %}
+    {% include 'landingzones/_zone_list.html' with zones=zones_own list_title='Your Zones' list_icon='mdi:account' list_type='own' %}
     {% if zones_other %}
       {% include 'landingzones/_zone_list.html' with zones=zones_other list_title='Other Zones' list_icon='mdi:account-multiple' list_type='other' %}
     {% endif %}
