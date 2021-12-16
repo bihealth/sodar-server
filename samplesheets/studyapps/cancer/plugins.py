@@ -50,7 +50,8 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
     #: Required permission for accessing the plugin
     permission = None
 
-    def _has_only_ms_assays(self, study):
+    @classmethod
+    def _has_only_ms_assays(cls, study):
         """Return True if study only contains mass spectrometry assays"""
         # HACK: temporary workaround for issue #482
         for assay in study.assays.all():
