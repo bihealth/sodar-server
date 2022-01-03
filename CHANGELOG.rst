@@ -7,6 +7,16 @@ Changelog for the SODAR project. Loosely follows the
 Note that the issue IDs here refer to ones in the private CUBI GitLab.
 
 
+Unreleased
+==========
+
+Changed
+-------
+
+- **General**
+    - Upgrade to django-sodar-core v0.10.8-WIP (#1337)
+
+
 v0.11.0 (2021-12-16)
 ====================
 
