@@ -18,6 +18,12 @@ Changed
 - **Samplesheets**
     - Upgrade Vue app dependencies (#1330)
 
+Fixed
+-----
+
+- **General**
+    - Manual building in readthedocs (#1343)
+
 
 v0.11.0 (2021-12-16)
 ====================
