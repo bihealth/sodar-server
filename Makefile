@@ -22,7 +22,7 @@ arg =
 
 .PHONY: black
 black:
-	black . -l 80 --skip-string-normalization --exclude ".git|.venv|.tox|env|src|docs|migrations|versioneer.py" $(arg)
+	black . -l 80 --skip-string-normalization --exclude ".git|.venv|.tox|env|src|docs|migrations|versioneer.py|_version.py" $(arg)
 
 
 .PHONY: sync_taskflow
