@@ -701,6 +701,7 @@ IRODS_WEBDAV_URL_ANON_TMPL = re.sub(
     r'^(https?://)(.*)$', r'\1{user}:{ticket}@\2{path}', IRODS_WEBDAV_URL_ANON
 )
 IRODS_WEBDAV_USER_ANON = env.str('IRODS_WEBDAV_USER_ANON', 'ticket')
+IRODS_WEBDAV_IGV_PROXY = env.bool('IRODS_WEBDAV_IGV_PROXY', True)
 
 
 # Irodsbackend settings

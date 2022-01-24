@@ -10,6 +10,12 @@ Note that the issue IDs here refer to ones in the private CUBI GitLab.
 Unreleased
 ==========
 
+Added
+-----
+
+- **Samplesheets**
+    - Toggle WebDAV IGV proxy with ``IRODS_WEBDAV_IGV_PROXY`` (#1324)
+
 Changed
 -------
 

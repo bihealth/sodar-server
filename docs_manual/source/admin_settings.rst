@@ -129,6 +129,12 @@ iRODS WebDAV Settings
     Template for anonymous ticket access via the anonymous WebDAV URL (regex).
 ``IRODS_WEBDAV_USER_ANON``
     User name for anonymous WebDAV access (string, default: ``ticket``).
+``IRODS_WEBDAV_IGV_PROXY``
+    Enable the use of IGV proxy on the WebDAV server. This should be set
+    ``True`` if the WebDAV is deployed on a different host than SODAR itself.
+    This will avoid having to log in twice when opening a session file in IGV.
+    If SODAR and the WebDAV are deployed on the same host, this should be set
+    ``False`` (boolean, default: ``True``).
 
 iRODS Backend Settings
 ----------------------
