@@ -152,7 +152,7 @@ class IrodsAPI:
         """
         if not self.irods:
             raise Exception('iRODS session not initialized')
-        msg_body = TicketAdminRequest(*args)
+        msg_body = TicketAdminRequest(self.irods)(*args)
         msg = iRODSMessage(
             'RODS_API_REQ', msg=msg_body, int_info=api_number[api_id]
         )

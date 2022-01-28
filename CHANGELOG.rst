@@ -21,7 +21,7 @@ Changed
 
 - **General**
     - Upgrade to django-sodar-core v0.10.8-WIP (#1337)
-    - Upgrade Python dependencies (#1337, sodar_core#884)
+    - Upgrade Python dependencies (#1337, #1348, sodar_core#884)
 - **Samplesheets**
     - Upgrade Vue app dependencies (#1330)
 

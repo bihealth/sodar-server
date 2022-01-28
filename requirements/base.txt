@@ -84,8 +84,8 @@ celery==5.2.3
 altamisa==0.2.9
 # -e git+https://github.com/bihealth/altamisa.git@f6de23aa6073d446f7c49ede0af7fa8729992209#egg=altamisa
 
-# Python iRODS client for irodsbackend
-python-irodsclient==1.0.0
+# Python iRODS client
+python-irodsclient==1.1.0
 
 # XML generating
 lxml==4.6.3
