@@ -13,6 +13,8 @@ Unreleased
 Added
 -----
 
+- **Irodsinfo**
+    - Use ``IRODS_HOST_FQDN`` for client environment and display (#1349)
 - **Samplesheets**
     - Toggle WebDAV IGV proxy with ``IRODS_WEBDAV_IGV_PROXY`` (#1324)
 

@@ -661,6 +661,7 @@ SODAR_SUPPORT_NAME = env.str('SODAR_SUPPORT_NAME', 'CUBI Helpdesk')
 # iRODS settings shared by iRODS using apps
 ENABLE_IRODS = env.bool('ENABLE_IRODS', True)
 IRODS_HOST = env.str('IRODS_HOST', '127.0.0.1')
+IRODS_HOST_FQDN = env.str('IRODS_HOST_FQDN', IRODS_HOST)
 IRODS_PORT = env.int('IRODS_PORT', 4477)
 IRODS_ZONE = env.str('IRODS_ZONE', 'omicsZone')
 IRODS_ROOT_PATH = env.str('IRODS_ROOT_PATH', None)

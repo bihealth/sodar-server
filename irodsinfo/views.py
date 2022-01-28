@@ -34,7 +34,7 @@ class IrodsInfoView(LoggedInPermissionMixin, HTTPRefererMixin, TemplateView):
         irods_backend = get_backend_api('omics_irods')
         unavail_info = {
             'server_ok': False,
-            'server_host': settings.IRODS_HOST,
+            'server_host': settings.IRODS_HOST_FQDN,
             'server_port': settings.IRODS_PORT,
             'server_zone': settings.IRODS_ZONE,
             'server_version': None,
@@ -85,7 +85,7 @@ class IrodsConfigView(LoggedInPermissionMixin, HTTPRefererMixin, View):
                 'irods_authentication_scheme': 'PAM',
                 'irods_cwd': home_path,
                 'irods_home': home_path,
-                'irods_host': settings.IRODS_HOST,
+                'irods_host': settings.IRODS_HOST_FQDN,
                 'irods_port': settings.IRODS_PORT,
                 'irods_user_name': user_name,
                 'irods_zone_name': settings.IRODS_ZONE,
