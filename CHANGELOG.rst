@@ -13,6 +13,8 @@ Unreleased
 Added
 -----
 
+- **Irodsbackend**
+    - ``format_env()`` helper for iRODS environments (#1351)
 - **Irodsinfo**
     - Use ``IRODS_HOST_FQDN`` for client environment and display (#1349)
 - **Samplesheets**
@@ -32,6 +34,8 @@ Fixed
 
 - **General**
     - Manual building in readthedocs (#1343)
+- **Irodsinfo**
+    - Invalid value formats in iRODS environment generation (#1351)
 
 
 v0.11.0 (2021-12-16)

@@ -131,6 +131,8 @@ class TestIrodsbackendAPI(
 
         self.irods_backend = IrodsAPI(conn=False)
 
+    # TODO: Add test(s) for format_env()
+
     def test_get_path_project(self):
         """Test get_irods_path() with a Project object"""
         expected = '/{zone}/projects/{uuid_prefix}/{uuid}'.format(

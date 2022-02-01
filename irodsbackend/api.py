@@ -41,6 +41,7 @@ ENV_INT_PARAMS = [
     'irods_encryption_key_size',
     'irods_encryption_num_hash_rounds',
     'irods_encryption_salt_size',
+    'irods_port',
 ]
 
 
@@ -69,9 +70,7 @@ class IrodsAPI:
             ] = settings.IRODS_CERT_PATH
         irods_env.update(dict(settings.IRODS_ENV_BACKEND))
         # HACK: Clean up environment to avoid python-irodsclient crash
-        for k in irods_env.keys():
-            if k in ENV_INT_PARAMS:
-                irods_env[k] = int(irods_env[k])
+        irods_env = self.format_env(irods_env)
         logger.debug('iRODS environment: {}'.format(irods_env))
 
         try:
@@ -162,6 +161,20 @@ class IrodsAPI:
         return response
 
     # Helpers ------------------------------------------------------------------
+
+    @classmethod
+    def format_env(cls, env):
+        """
+        Format an iRODS environment dict to ensure values are in a format
+        accepted by iRODS.
+
+        :param env: iRODS environment (dict)
+        :return: dict
+        """
+        for k in env.keys():
+            if k in ENV_INT_PARAMS:
+                env[k] = int(env[k])
+        return env
 
     @classmethod
     def get_sub_path(cls, obj, landing_zone=False, include_parent=True):
