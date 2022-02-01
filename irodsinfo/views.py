@@ -47,6 +47,8 @@ class IrodsInfoView(LoggedInPermissionMixin, HTTPRefererMixin, TemplateView):
         if irods_backend:
             try:
                 context['server_info'] = irods_backend.get_info()
+                # HACK: Display FQDN of iRODS server in UI
+                context['server_info']['server_host'] = settings.IRODS_HOST_FQDN
             except NetworkException:
                 unavail_status = 'Server Unreachable'
             except CAT_INVALID_AUTHENTICATION:
