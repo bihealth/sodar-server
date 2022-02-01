@@ -36,6 +36,8 @@ Fixed
     - Manual building in readthedocs (#1343)
 - **Irodsinfo**
     - Invalid value formats in iRODS environment generation (#1351)
+- **Ontologyaccess**
+    - Opening OWL data for parsing not working for specific URLs (#1352)
 
 
 v0.11.0 (2021-12-16)

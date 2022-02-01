@@ -8,6 +8,7 @@ import io
 import logging
 import pronto
 import sys
+import urllib
 
 from django.conf import settings
 from django.db import transaction
@@ -69,9 +70,14 @@ class OBOFormatOntologyIO:
         :return: File pointer
         """
         logger.info('Converting OWL format ontology to OBO..')
+        logger.debug('OWL = {}'.format(owl))
         if not verbose:
             sys.stdout = io.StringIO()
             sys.stderr = io.StringIO()
+        # HACK for issue #1352
+        if isinstance(owl, str) and owl.startswith('http'):
+            response = urllib.request.urlopen(owl)
+            owl = io.BytesIO(response.read())
         o = pronto.Ontology(owl)
         if not verbose:
             sys.stdout = sys.__stdout__
