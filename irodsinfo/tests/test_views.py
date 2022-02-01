@@ -40,10 +40,10 @@ class TestIrodsinfoViewBase(TestCase):
         self.anonymous = None
 
 
+@skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
 class TestIrodsInfoView(TestIrodsinfoViewBase):
     """Tests for IrodsInfoView"""
 
-    @skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
     def test_render(self):
         """Test rendering irods info view with irodsbackend"""
         with self.login(self.regular_user):
@@ -51,7 +51,6 @@ class TestIrodsInfoView(TestIrodsinfoViewBase):
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.context['irods_backend_enabled'])
 
-    @skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
     def test_render_no_backend(self):
         """Test rendering irods info view without irodsbackend"""
         if get_backend_api('omics_irods'):
@@ -64,10 +63,10 @@ class TestIrodsInfoView(TestIrodsinfoViewBase):
         self.assertFalse(response.context['irods_backend_enabled'])
 
 
+@skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
 class TestIrodsConfigView(TestIrodsinfoViewBase):
     """Tests for IrodsConfigView"""
 
-    @skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
     def test_serve(self):
         """Test serving irods config"""
         with self.login(self.regular_user):
@@ -85,7 +84,6 @@ class TestIrodsConfigView(TestIrodsinfoViewBase):
         )
         self.assertEqual(('test', 1) in env_data.items(), False)
 
-    @skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
     @override_settings(IRODS_ENV_CLIENT=IRODS_ENV)
     def test_serve_env(self):
         """Test serving irods config with provided env"""
@@ -104,7 +102,6 @@ class TestIrodsConfigView(TestIrodsinfoViewBase):
         )
         self.assertEqual(('test', 1) in env_data.items(), True)
 
-    @skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
     @override_settings(IRODS_CERT_PATH=CERT_PATH)
     def test_serve_cert(self):
         """Test serving irods config with server cert"""
