@@ -10,11 +10,11 @@ can skip the steps related to their installation and remove the
 ``omics_taskflow`` value from the ``ENABLED_BACKEND_PLUGINS`` environment
 variable.
 
-These instructions assume you have Python 3.7+ and PostgreSQL 9.6+ installed.
+These instructions assume you have Python 3.8+ and PostgreSQL 9.6+ installed.
 
 .. note::
 
-    Python 3.6 and lower are no longer supported! Python 3.8 is currently
+    Python 3.7 and lower are no longer supported! Python 3.8 is currently
     the recommended version.
 
 
@@ -25,7 +25,7 @@ Requirements
 ------------
 
 - Ubuntu 20.04 Focal (Recommended)
-- Python 3.7+ (3.8 recommended)
+- Python 3.8, 3.9 or 3.10 (3.8 recommended)
 - Postgres 9.6+
 
 Project Setup

@@ -24,8 +24,9 @@ Changed
 -------
 
 - **General**
+    - Upgrade minimum Python version to v3.8, add v3.10 support (sodar_core#885)
     - Upgrade to django-sodar-core v0.10.8-WIP (#1337)
-    - Upgrade Python dependencies (#1337, #1348, sodar_core#884)
+    - Upgrade Python dependencies (#1337, #1348, sodar_core#884, sodar_core#901, sodar_core#902)
 - **Samplesheets**
     - Upgrade Vue app dependencies (#1330)
 
