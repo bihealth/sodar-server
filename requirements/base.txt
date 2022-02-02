@@ -88,17 +88,17 @@ altamisa==0.2.9
 python-irodsclient==1.1.0
 
 # XML generating
-lxml==4.6.3
+lxml==4.7.1
 
 # Excel file generating
-openpyxl==3.0.7
+openpyxl==3.0.9
 
 # Webpack loader for Vue.js
 django-webpack-loader==1.4.1
 
 # OBO ontology file parsing
-fastobo==0.10.1
-pronto==2.4.1  # For OWL conversion
+fastobo==0.11.1
+pronto==2.4.4  # For OWL conversion
 
 # CUBI-TK for sheet templates
--e git+https://github.com/bihealth/cubi-tk.git@77e996dc6ad4326ef2de9c144c5d72d61380d762#egg=cubi-tk
+-e git+https://github.com/bihealth/cubi-tk.git@396431af970ba8bf51b1f7c4cf4335b061601e04#egg=cubi-tk
