@@ -7,9 +7,9 @@ jobs:
     strategy:
       matrix:
         python-version:
-          - 3.7
-          - 3.8
-          - 3.9
+          - '3.8'
+          - '3.9'
+          - '3.10'
     services:
       postgres:
         image: postgres:9.6
@@ -42,7 +42,7 @@ jobs:
         uses: actions/checkout@v2
       - name: Install project Python dependencies
         run: |
-          pip install wheel==0.36.2
+          pip install wheel==0.37.1
           pip install -r requirements/local.txt
           pip install -r requirements/test.txt
       - name: Setup Node.js
