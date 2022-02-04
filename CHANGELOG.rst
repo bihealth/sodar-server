@@ -7,6 +7,41 @@ Changelog for the SODAR project. Loosely follows the
 Note that the issue IDs here refer to ones in the private CUBI GitLab.
 
 
+v0.11.1 (2022-02-04)
+====================
+
+Added
+-----
+
+- **Irodsbackend**
+    - ``format_env()`` helper for iRODS environments (#1351)
+- **Irodsinfo**
+    - Use ``IRODS_HOST_FQDN`` for client environment and display (#1349)
+- **Samplesheets**
+    - Toggle WebDAV IGV proxy with ``IRODS_WEBDAV_IGV_PROXY`` (#1324)
+
+Changed
+-------
+
+- **General**
+    - Upgrade minimum Python version to v3.8, add v3.10 support (sodar_core#885)
+    - Upgrade to django-sodar-core v0.10.8 (#1337)
+    - Upgrade Python dependencies (#673, #1337, #1348, sodar_core#884, sodar_core#901, sodar_core#902)
+    - Upgrade to Chromedriver v97 (sodar_core#905)
+- **Samplesheets**
+    - Upgrade Vue app dependencies (#1330)
+
+Fixed
+-----
+
+- **General**
+    - Manual building in readthedocs (#1343)
+- **Irodsinfo**
+    - Invalid value formats in iRODS environment generation (#1351)
+- **Ontologyaccess**
+    - Opening OWL data for parsing not working for specific URLs (#1352)
+
+
 v0.11.0 (2021-12-16)
 ====================
 

@@ -1,9 +1,18 @@
 """Tests for UI view permissions in the irodsinfo app"""
 
+from django.conf import settings
 from django.urls import reverse
+
+from unittest import skipIf
 
 # Projectroles dependency
 from projectroles.tests.test_permissions import TestPermissionBase
+
+
+IRODS_BACKEND_ENABLED = (
+    True if 'omics_irods' in settings.ENABLED_BACKEND_PLUGINS else False
+)
+IRODS_BACKEND_SKIP_MSG = 'iRODS backend not enabled in settings'
 
 
 class TestIrodsinfoPermissions(TestPermissionBase):
@@ -27,6 +36,7 @@ class TestIrodsinfoPermissions(TestPermissionBase):
         self.assert_response(url, good_users, 200)
         self.assert_response(url, bad_users, 302)
 
+    @skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
     def test_irods_config(self):
         """Test permissions for IrodsConfigView"""
         url = reverse('irodsinfo:config')

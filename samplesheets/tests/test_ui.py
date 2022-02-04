@@ -104,12 +104,12 @@ class TestProjectSheetsVueAppBase(
 
     def _start_editing(self, wait_for_study=True):
         """Enable edit mode in the UI"""
-        op_div = self.selenium.find_element_by_id('sodar-ss-op-dropdown')
+        op_div = self.selenium.find_element(By.ID, 'sodar-ss-op-dropdown')
         op_div.click()
         WebDriverWait(self.selenium, self.wait_time).until(
             ec.presence_of_element_located((By.ID, 'sodar-ss-op-item-edit'))
         )
-        elem = op_div.find_element_by_id('sodar-ss-op-item-edit')
+        elem = op_div.find_element(By.ID, 'sodar-ss-op-item-edit')
         # NOTE: Must use execute_script() due to bootstrap-vue wrapping
         self.selenium.execute_script("arguments[0].click();", elem)
         WebDriverWait(self.selenium, self.wait_time).until(
@@ -124,7 +124,9 @@ class TestProjectSheetsVueAppBase(
 
     def _stop_editing(self, wait_for_study=True):
         """Finish editing and exit from edit mode"""
-        self.selenium.find_element_by_id('sodar-ss-vue-btn-edit-finish').click()
+        self.selenium.find_element(
+            By.ID, 'sodar-ss-vue-btn-edit-finish'
+        ).click()
         WebDriverWait(self.selenium, self.wait_time).until(
             ec.presence_of_element_located((By.ID, 'sodar-ss-op-dropdown'))
         )
@@ -189,13 +191,14 @@ class TestProjectSheetsView(TestProjectSheetsVueAppBase):
 
             # Ensure assay grid is found (we already know study is there)
             self.assertIsNotNone(
-                self.selenium.find_element_by_id(
-                    'sodar-ss-grid-assay-{}'.format(self.assay.sodar_uuid)
+                self.selenium.find_element(
+                    By.ID,
+                    'sodar-ss-grid-assay-{}'.format(self.assay.sodar_uuid),
                 )
             )
             # Ensure error alert is not generated
             with self.assertRaises(NoSuchElementException):
-                self.selenium.find_element_by_id('sodar-ss-alert-error')
+                self.selenium.find_element(By.ID, 'sodar-ss-alert-error')
 
     def test_render_no_sheet(self):
         """Test rendering the view with no sheet"""
@@ -213,12 +216,13 @@ class TestProjectSheetsView(TestProjectSheetsVueAppBase):
 
             # Ensure alert is shown
             self.assertIsNotNone(
-                self.selenium.find_element_by_id('sodar-ss-alert-empty')
+                self.selenium.find_element(By.ID, 'sodar-ss-alert-empty')
             )
             # Ensure no grids are present
             with self.assertRaises(NoSuchElementException):
-                self.selenium.find_element_by_id(
-                    'sodar-ss-grid-assay-{}'.format(self.assay.sodar_uuid)
+                self.selenium.find_element(
+                    By.ID,
+                    'sodar-ss-grid-assay-{}'.format(self.assay.sodar_uuid),
                 )
 
     @skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
@@ -250,11 +254,11 @@ class TestProjectSheetsView(TestProjectSheetsVueAppBase):
                 self.delegate_as.user,
             ]:
                 self.assertIsNotNone(
-                    self.selenium.find_element_by_class_name('sodar-ss-alert')
+                    self.selenium.find_element(By.CLASS_NAME, 'sodar-ss-alert')
                 )
                 self.assertEqual(
-                    self.selenium.find_element_by_class_name(
-                        'sodar-ss-alert'
+                    self.selenium.find_element(
+                        By.CLASS_NAME, 'sodar-ss-alert'
                     ).get_attribute('innerHTML'),
                     ALERT_ACTIVE_REQS.format(
                         url=reverse(
@@ -266,7 +270,7 @@ class TestProjectSheetsView(TestProjectSheetsVueAppBase):
                 )
             else:
                 with self.assertRaises(NoSuchElementException):
-                    self.selenium.find_element_by_class_name('sodar-ss-alert')
+                    self.selenium.find_element(By.CLASS_NAME, 'sodar-ss-alert')
 
     # NOTE: For further vue app tests, see samplesheets/vueapp/tests
 
@@ -552,7 +556,7 @@ class TestSheetVersionCompareFileView(
         WebDriverWait(self.selenium, self.wait_time).until(
             ec.presence_of_element_located((By.TAG_NAME, 'table'))
         )
-        self.assertIsNotNone(self.selenium.find_element_by_tag_name('table'))
+        self.assertIsNotNone(self.selenium.find_element(By.TAG_NAME, 'table'))
 
     def test_render_assay_file(self):
         """Test UI rendering for assay table comparison"""
@@ -567,4 +571,4 @@ class TestSheetVersionCompareFileView(
         WebDriverWait(self.selenium, self.wait_time).until(
             ec.presence_of_element_located((By.TAG_NAME, 'table'))
         )
-        self.assertIsNotNone(self.selenium.find_element_by_tag_name('table'))
+        self.assertIsNotNone(self.selenium.find_element(By.TAG_NAME, 'table'))

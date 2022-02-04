@@ -21,14 +21,18 @@ def get_igv_session_url(source, app_name, merge=False):
     :param merge: Merge into current session (bool, default=False)
     :return: String
     """
+    if settings.IRODS_WEBDAV_IGV_PROXY:
+        file_prefix = settings.IRODS_WEBDAV_URL + '/__sodar'
+    else:
+        file_prefix = settings.SODAR_API_DEFAULT_HOST.geturl()
     file_url = reverse(
         '{}:igv'.format(app_name), kwargs={'genericmaterial': source.sodar_uuid}
     )
-    return '{}/load?{}merge={}&file={}/__sodar{}.xml'.format(
+    return '{}/load?{}merge={}&file={}{}.xml'.format(
         IGV_URL_BASE,
         'genome=b37&' if not merge else '',
         str(merge).lower(),
-        settings.IRODS_WEBDAV_URL,
+        file_prefix,
         file_url,
     )
 

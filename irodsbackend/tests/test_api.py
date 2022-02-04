@@ -131,6 +131,28 @@ class TestIrodsbackendAPI(
 
         self.irods_backend = IrodsAPI(conn=False)
 
+    def test_format_env(self):
+        """Test format_env() to ensure correct formatting"""
+        env = {
+            'irods_client_server_negotiation': 'off',
+            'irods_client_server_policy': 'CS_NEG_REFUSE',
+            'irods_default_hash_scheme': 'MD5',
+            'irods_encryption_algorithm': 'AES-256-CBC',
+            'irods_encryption_key_size': '32',
+            'irods_encryption_num_hash_rounds': '16',
+            'irods_encryption_salt_size': '8',
+            'irods_authentication_scheme': 'native',
+            'irods_host': 'irods.example.com',
+            'irods_port': '1247',
+            'irods_user_name': 'user',
+            'irods_zone_name': 'sodarZone',
+        }
+        env = self.irods_backend.format_env(env)
+        self.assertEqual(env['irods_encryption_key_size'], 32)
+        self.assertEqual(env['irods_encryption_num_hash_rounds'], 16)
+        self.assertEqual(env['irods_encryption_salt_size'], 8)
+        self.assertEqual(env['irods_port'], 1247)
+
     def test_get_path_project(self):
         """Test get_irods_path() with a Project object"""
         expected = '/{zone}/projects/{uuid_prefix}/{uuid}'.format(

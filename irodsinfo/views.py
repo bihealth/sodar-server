@@ -7,7 +7,10 @@ import logging
 import zipfile
 
 from django.conf import settings
+from django.contrib import messages
 from django.http import HttpResponse
+from django.shortcuts import redirect
+from django.urls import reverse
 from django.views.generic import TemplateView, View
 
 # Projectroles dependency
@@ -19,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 class IrodsInfoView(LoggedInPermissionMixin, HTTPRefererMixin, TemplateView):
-    """iRODS Help View"""
+    """iRODS Information View"""
 
     permission_required = 'irodsinfo.view_info'
     template_name = 'irodsinfo/info.html'
@@ -34,7 +37,7 @@ class IrodsInfoView(LoggedInPermissionMixin, HTTPRefererMixin, TemplateView):
         irods_backend = get_backend_api('omics_irods')
         unavail_info = {
             'server_ok': False,
-            'server_host': settings.IRODS_HOST,
+            'server_host': settings.IRODS_HOST_FQDN,
             'server_port': settings.IRODS_PORT,
             'server_zone': settings.IRODS_ZONE,
             'server_version': None,
@@ -44,6 +47,8 @@ class IrodsInfoView(LoggedInPermissionMixin, HTTPRefererMixin, TemplateView):
         if irods_backend:
             try:
                 context['server_info'] = irods_backend.get_info()
+                # HACK: Display FQDN of iRODS server in UI
+                context['server_info']['server_host'] = settings.IRODS_HOST_FQDN
             except NetworkException:
                 unavail_status = 'Server Unreachable'
             except CAT_INVALID_AUTHENTICATION:
@@ -69,6 +74,11 @@ class IrodsConfigView(LoggedInPermissionMixin, HTTPRefererMixin, View):
     permission_required = 'irodsinfo.get_config'
 
     def get(self, request, *args, **kwargs):
+        irods_backend = get_backend_api('omics_irods', conn=False)
+        if not irods_backend:
+            messages.error(request, 'iRODS Backend not enabled.')
+            return redirect(reverse('irodsinfo:info'))
+
         user_name = request.user.username
         # Just in case Django mangles the user name case, as it might
         if user_name.find('@') != -1:
@@ -85,7 +95,7 @@ class IrodsConfigView(LoggedInPermissionMixin, HTTPRefererMixin, View):
                 'irods_authentication_scheme': 'PAM',
                 'irods_cwd': home_path,
                 'irods_home': home_path,
-                'irods_host': settings.IRODS_HOST,
+                'irods_host': settings.IRODS_HOST_FQDN,
                 'irods_port': settings.IRODS_PORT,
                 'irods_user_name': user_name,
                 'irods_zone_name': settings.IRODS_ZONE,
@@ -95,6 +105,7 @@ class IrodsConfigView(LoggedInPermissionMixin, HTTPRefererMixin, View):
             irods_env['irods_ssl_certificate_file'] = cert_file_name
         # Get optional client environment overrides
         irods_env.update(dict(settings.IRODS_ENV_CLIENT))
+        irods_env = irods_backend.format_env(irods_env)
         logger.debug('iRODS environment: {}'.format(irods_env))
         env_json = json.dumps(irods_env, indent=2)
 

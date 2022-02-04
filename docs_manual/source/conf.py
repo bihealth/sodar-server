@@ -14,7 +14,7 @@ import django
 import os
 import sys
 sys.path.insert(0, os.path.abspath('../../'))
-os.environ['DJANGO_SETTINGS_MODULE'] = 'config.settings.production'
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings.production')
 django.setup()
 
 
@@ -25,7 +25,7 @@ copyright = '2021, BIH Core Unit Bioinformatics'
 author = 'BIH Core Unit Bioinformatics'
 
 # The full version, including alpha/beta/rc tags
-release = '0.11.0'
+release = '0.11.1'
 
 
 # -- General configuration ---------------------------------------------------

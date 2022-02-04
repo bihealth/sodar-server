@@ -576,7 +576,7 @@ SITE_INSTANCE_TITLE = env.str('SITE_INSTANCE_TITLE', 'CUBI SODAR')
 
 
 # General API settings
-SODAR_API_DEFAULT_VERSION = '0.11.0'
+SODAR_API_DEFAULT_VERSION = '0.11.1'
 SODAR_API_ALLOWED_VERSIONS = [
     '0.7.0',
     '0.7.1',
@@ -585,6 +585,7 @@ SODAR_API_ALLOWED_VERSIONS = [
     '0.10.0',
     '0.10.1',
     '0.11.0',
+    '0.11.1',
 ]
 SODAR_API_MEDIA_TYPE = 'application/vnd.bihealth.sodar+json'
 SODAR_API_DEFAULT_HOST = env.url(
@@ -661,6 +662,7 @@ SODAR_SUPPORT_NAME = env.str('SODAR_SUPPORT_NAME', 'CUBI Helpdesk')
 # iRODS settings shared by iRODS using apps
 ENABLE_IRODS = env.bool('ENABLE_IRODS', True)
 IRODS_HOST = env.str('IRODS_HOST', '127.0.0.1')
+IRODS_HOST_FQDN = env.str('IRODS_HOST_FQDN', IRODS_HOST)
 IRODS_PORT = env.int('IRODS_PORT', 4477)
 IRODS_ZONE = env.str('IRODS_ZONE', 'omicsZone')
 IRODS_ROOT_PATH = env.str('IRODS_ROOT_PATH', None)
@@ -701,6 +703,7 @@ IRODS_WEBDAV_URL_ANON_TMPL = re.sub(
     r'^(https?://)(.*)$', r'\1{user}:{ticket}@\2{path}', IRODS_WEBDAV_URL_ANON
 )
 IRODS_WEBDAV_USER_ANON = env.str('IRODS_WEBDAV_USER_ANON', 'ticket')
+IRODS_WEBDAV_IGV_PROXY = env.bool('IRODS_WEBDAV_IGV_PROXY', True)
 
 
 # Irodsbackend settings

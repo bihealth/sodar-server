@@ -74,6 +74,9 @@ iRODS Settings
     Use iRODS except if set false (boolean).
 ``IRODS_HOST``
     iRODS host (string).
+``IRODS_HOST_FQDN``
+    Fully qualified domain name of iRODS host, for cases where ``IRODS_HOST`` is
+    given as e.g. an internal docker network host (string).
 ``IRODS_PORT``
     iRODS port (integer).
 ``IRODS_ZONE``
@@ -129,6 +132,12 @@ iRODS WebDAV Settings
     Template for anonymous ticket access via the anonymous WebDAV URL (regex).
 ``IRODS_WEBDAV_USER_ANON``
     User name for anonymous WebDAV access (string, default: ``ticket``).
+``IRODS_WEBDAV_IGV_PROXY``
+    Enable the use of IGV proxy on the WebDAV server. This should be set
+    ``True`` if the WebDAV is deployed on a different host than SODAR itself.
+    This will avoid having to log in twice when opening a session file in IGV.
+    If SODAR and the WebDAV are deployed on the same host, this should be set
+    ``False`` (boolean, default: ``True``).
 
 iRODS Backend Settings
 ----------------------

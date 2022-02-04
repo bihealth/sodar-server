@@ -1,29 +1,32 @@
 # Wheel
-wheel==0.36.2
+wheel==0.37.1
+
+# Setuptools
+setuptools==59.6.0
 
 # Django
-django==3.2.10
+django==3.2.12
 
 # Configuration
-django-environ==0.4.5
+django-environ==0.8.1
 
 # Forms
-django-crispy-forms==1.11.2
+django-crispy-forms==1.13.0
 
 # Models
-django-model-utils==4.1.1
+django-model-utils==4.2.0
 
 # Password storage
-argon2-cffi==20.1.0
+argon2-cffi==21.3.0
 
 # Python-PostgreSQL Database Adapter
-psycopg2-binary==2.8.6
+psycopg2-binary==2.9.3
 
 # Unicode slugification
 awesome-slugify==1.6.5
 
 # Time zones support
-pytz==2021.1
+pytz==2021.3
 
 # Redis support
 redis==3.5.3
@@ -32,13 +35,13 @@ redis==3.5.3
 django-cprofile-middleware==1.0.5
 
 # Versioning
-versioneer==0.19
+versioneer==0.21
 
 # Online documentation via django-docs
-docutils>=0.16, <0.17  # 0.17 currently breaks sphinx-rtd-theme
-Sphinx==4.0.2
+docutils==0.17.1
+Sphinx==4.3.2
 django-docs==0.3.1
-sphinx-rtd-theme==0.5.2
+sphinx-rtd-theme==1.0.0
 
 #####################
 # SODAR Core imports
@@ -48,7 +51,7 @@ sphinx-rtd-theme==0.5.2
 rules==3.0
 
 # REST framework
-djangorestframework==3.12.4
+djangorestframework==3.13.1
 
 # Keyed list addon for DRF
 # drf-keyed-list==0.0.2
@@ -59,19 +62,19 @@ django-rest-knox==4.1.0
 
 # Markdown field support
 markdown==3.3.4
-django-markupfield==2.0.0
-django-pagedown==2.2.0
-mistune==0.8.4
+django-markupfield==2.0.1
+django-pagedown==2.2.1
+mistune==2.0.1
 
 # Django-plugins (with Django v3.0+ support)
 -e git+https://github.com/mikkonie/django-plugins.git@42e86e7904e5c09f1da32173862b26843eda5dd8#egg=django-plugins
 
 # SODAR Core
-django-sodar-core==0.10.7
-# -e git+https://github.com/bihealth/sodar-core.git@40bb48abb4656319bfa2798a561037000e7811c5#egg=django-sodar-core
+django-sodar-core==0.10.8
+# -e git+https://github.com/bihealth/sodar-core.git@1791e9fa938698f1a154190f8e2a88496889ecc2#egg=django-sodar-core
 
 # Celery
-celery==5.1.0
+celery==5.2.3
 
 ####################
 # SODAR app imports
@@ -81,21 +84,21 @@ celery==5.1.0
 altamisa==0.2.9
 # -e git+https://github.com/bihealth/altamisa.git@f6de23aa6073d446f7c49ede0af7fa8729992209#egg=altamisa
 
-# Python iRODS client for irodsbackend
-python-irodsclient==1.0.0
+# Python iRODS client
+python-irodsclient==1.1.0
 
 # XML generating
-lxml==4.6.3
+lxml==4.7.1
 
 # Excel file generating
-openpyxl==3.0.7
+openpyxl==3.0.9
 
 # Webpack loader for Vue.js
 django-webpack-loader==1.4.1
 
 # OBO ontology file parsing
-fastobo==0.10.1
-pronto==2.4.1  # For OWL conversion
+fastobo==0.11.1
+pronto==2.4.4  # For OWL conversion
 
 # CUBI-TK for sheet templates
--e git+https://github.com/bihealth/cubi-tk.git@77e996dc6ad4326ef2de9c144c5d72d61380d762#egg=cubi-tk
+-e git+https://github.com/bihealth/cubi-tk.git@396431af970ba8bf51b1f7c4cf4335b061601e04#egg=cubi-tk
