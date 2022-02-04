@@ -8,10 +8,16 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
-v0.11.1 (WIP)
-=============
+v0.11.1 (2022-02-04)
+====================
 
-Maintenance and bug fix release.
+Release for minor updates, maintenance and bug fixes.
+
+- Deployment and iRODS improvements
+- Upgrade Python dependencies
+- Drop Python v3.7 support, add Python v3.10 support
+- Minor updates and bug fixes
+- Upgrade to SODAR Core v0.10.8
 
 
 v0.11.0 (2021-12-16)

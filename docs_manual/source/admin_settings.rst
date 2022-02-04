@@ -74,6 +74,9 @@ iRODS Settings
     Use iRODS except if set false (boolean).
 ``IRODS_HOST``
     iRODS host (string).
+``IRODS_HOST_FQDN``
+    Fully qualified domain name of iRODS host, for cases where ``IRODS_HOST`` is
+    given as e.g. an internal docker network host (string).
 ``IRODS_PORT``
     iRODS port (integer).
 ``IRODS_ZONE``

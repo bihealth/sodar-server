@@ -25,7 +25,7 @@ copyright = '2021, BIH Core Unit Bioinformatics'
 author = 'BIH Core Unit Bioinformatics'
 
 # The full version, including alpha/beta/rc tags
-release = '0.11.1-WIP'
+release = '0.11.1'
 
 
 # -- General configuration ---------------------------------------------------
