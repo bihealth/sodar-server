@@ -199,8 +199,8 @@ class SheetImportMixin:
 
         # Refuse replacing if unfinished landing zones exist
         if (
-            old_inv.irods_status and
-            LandingZone.objects.filter(project=project)
+            old_inv.irods_status
+            and LandingZone.objects.filter(project=project)
             .exclude(status__in=STATUS_FINISHED)
             .count()
             > 0
