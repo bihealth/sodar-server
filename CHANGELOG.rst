@@ -7,6 +7,17 @@ Changelog for the SODAR project. Loosely follows the
 Note that the issue IDs here refer to ones in the private CUBI GitLab.
 
 
+Unreleased
+==========
+
+Fixed
+-----
+
+- **Samplesheets**
+    - API sheet replacing allowed if unfinished landing zones exist (#1356)
+    - Invalid ``Investigation`` timeline object reference for sheet replacing (#1357)
+
+
 v0.11.1 (2022-02-04)
 ====================
 

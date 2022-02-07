@@ -50,6 +50,9 @@ from projectroles.views import (
     CurrentUserFormMixin,
 )
 
+# Landingzones dependency
+from landingzones.models import LandingZone, STATUS_FINISHED
+
 from samplesheets.forms import (
     SheetImportForm,
     SheetTemplateCreateForm,
@@ -101,6 +104,8 @@ MISC_FILES_COLL = 'MiscFiles'
 TRACK_HUBS_COLL = 'TrackHubs'
 RESULTS_COLL_ID = 'results_reports'
 RESULTS_COLL = 'ResultsReports'
+REPLACE_ZONE_MSG = 'Active or unfinished landing zones exist in project: '
+'unable to replace investigation'
 IRODS_REQ_CREATE_ALERT_NAME = 'irods_request_create'
 IRODS_REQ_ACCEPT_ALERT_NAME = 'irods_request_accept'
 IRODS_REQ_REJECT_ALERT_NAME = 'irods_request_reject'
@@ -190,8 +195,19 @@ class SheetImportMixin:
         )
 
     def handle_replace(self, investigation, old_inv, tl_event=None):
-        tb = SampleSheetTableBuilder()
         project = investigation.project
+
+        # Refuse replacing if unfinished landing zones exist
+        if (
+            old_inv.irods_status and
+            LandingZone.objects.filter(project=project)
+            .exclude(status__in=STATUS_FINISHED)
+            .count()
+            > 0
+        ):
+            raise Exception(REPLACE_ZONE_MSG)
+
+        tb = SampleSheetTableBuilder()
         old_study_uuids = {}
         old_assay_uuids = {}
         old_study_count = old_inv.studies.count()
@@ -232,6 +248,8 @@ class SheetImportMixin:
                 and old_assay_count == new_assay_count
             ):
                 self.replace_configs = False
+
+            # Update unfinished landing zones to point to new investigation
 
             # Delete old investigation
             old_inv.delete()

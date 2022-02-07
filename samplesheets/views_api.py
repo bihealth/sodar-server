@@ -29,6 +29,9 @@ from projectroles.views_api import (
     SODARAPIGenericProjectMixin,
 )
 
+# Landingzones dependency
+from landingzones.models import LandingZone, STATUS_FINISHED
+
 from samplesheets.io import SampleSheetIO
 from samplesheets.models import Investigation, ISATab
 from samplesheets.rendering import SampleSheetTableBuilder
@@ -39,6 +42,7 @@ from samplesheets.views import (
     SheetISAExportMixin,
     SITE_MODE_TARGET,
     REMOTE_LEVEL_READ_ROLES,
+    REPLACE_ZONE_MSG,
 )
 
 
@@ -206,9 +210,23 @@ class SheetImportAPIView(SheetImportMixin, SODARAPIBaseProjectMixin, APIView):
         old_inv = Investigation.objects.filter(
             project=project, active=True
         ).first()
-        action = 'replace' if old_inv else 'create'
-        zip_file = None
 
+        # Refuse if unfinished landing zones exist
+        if old_inv and old_inv.irods_status:
+            active_zones = LandingZone.objects.filter(project=project).exclude(
+                status__in=STATUS_FINISHED
+            )
+            if active_zones.count() > 0:
+                ex_msg = REPLACE_ZONE_MSG
+                ex_zone_list = [
+                    '{}/{}'.format(z.user.username, z.title)
+                    for z in active_zones
+                ]
+                raise ValidationError(
+                    '{} ({})'.format(ex_msg, ', '.join(ex_zone_list))
+                )
+
+        zip_file = None
         if len(request.FILES) == 0:
             raise ParseError('No files provided')
 
@@ -229,9 +247,8 @@ class SheetImportAPIView(SheetImportMixin, SODARAPIBaseProjectMixin, APIView):
                 raise ParseError('Failed to parse TSV files: {}'.format(ex))
 
         # Handle import
-        tl_event = self.create_timeline_event(
-            project=project, action='replace' if old_inv else 'import'
-        )
+        action = 'replace' if old_inv else 'create'
+        tl_event = self.create_timeline_event(project=project, action=action)
 
         try:
             investigation = sheet_io.import_isa(
@@ -245,13 +262,6 @@ class SheetImportAPIView(SheetImportMixin, SODARAPIBaseProjectMixin, APIView):
         except Exception as ex:
             self.handle_import_exception(ex, tl_event, ui_mode=False)
             raise APIException(str(ex))
-
-        if tl_event:
-            tl_event.add_object(
-                obj=investigation,
-                label='investigation',
-                name=investigation.title,
-            )
 
         # Handle replace
         if old_inv:
@@ -270,6 +280,13 @@ class SheetImportAPIView(SheetImportMixin, SODARAPIBaseProjectMixin, APIView):
                         ex_msg if ex_msg else 'See SODAR error log'
                     )
                 )
+
+        if tl_event:
+            tl_event.add_object(
+                obj=investigation,
+                label='investigation',
+                name=investigation.title,
+            )
 
         # Finalize import
         isa_version = (

@@ -8,6 +8,14 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
+v0.11.2 (WIP)
+=============
+
+Release for minor updates, maintenance and bug fixes.
+
+- Fix known sample sheet replacing issues
+
+
 v0.11.1 (2022-02-04)
 ====================
 
