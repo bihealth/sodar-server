@@ -44,7 +44,7 @@ class LandingZoneMixin:
         project,
         user,
         assay,
-        description,
+        description='',
         user_message='',
         status='CREATING',
         configuration=None,

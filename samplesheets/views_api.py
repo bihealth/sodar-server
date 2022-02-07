@@ -29,9 +29,6 @@ from projectroles.views_api import (
     SODARAPIGenericProjectMixin,
 )
 
-# Landingzones dependency
-from landingzones.models import LandingZone, STATUS_FINISHED
-
 from samplesheets.io import SampleSheetIO
 from samplesheets.models import Investigation, ISATab
 from samplesheets.rendering import SampleSheetTableBuilder
@@ -42,7 +39,6 @@ from samplesheets.views import (
     SheetISAExportMixin,
     SITE_MODE_TARGET,
     REMOTE_LEVEL_READ_ROLES,
-    REPLACE_ZONE_MSG,
 )
 
 
@@ -210,21 +206,6 @@ class SheetImportAPIView(SheetImportMixin, SODARAPIBaseProjectMixin, APIView):
         old_inv = Investigation.objects.filter(
             project=project, active=True
         ).first()
-
-        # Refuse if unfinished landing zones exist
-        if old_inv and old_inv.irods_status:
-            active_zones = LandingZone.objects.filter(project=project).exclude(
-                status__in=STATUS_FINISHED
-            )
-            if active_zones.count() > 0:
-                ex_msg = REPLACE_ZONE_MSG
-                ex_zone_list = [
-                    '{}/{}'.format(z.user.username, z.title)
-                    for z in active_zones
-                ]
-                raise ValidationError(
-                    '{} ({})'.format(ex_msg, ', '.join(ex_zone_list))
-                )
 
         zip_file = None
         if len(request.FILES) == 0:

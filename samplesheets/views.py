@@ -51,7 +51,7 @@ from projectroles.views import (
 )
 
 # Landingzones dependency
-from landingzones.models import LandingZone, STATUS_FINISHED
+from landingzones.models import LandingZone
 
 from samplesheets.forms import (
     SheetImportForm,
@@ -104,8 +104,6 @@ MISC_FILES_COLL = 'MiscFiles'
 TRACK_HUBS_COLL = 'TrackHubs'
 RESULTS_COLL_ID = 'results_reports'
 RESULTS_COLL = 'ResultsReports'
-REPLACE_ZONE_MSG = 'Active or unfinished landing zones exist in project: '
-'unable to replace investigation'
 IRODS_REQ_CREATE_ALERT_NAME = 'irods_request_create'
 IRODS_REQ_ACCEPT_ALERT_NAME = 'irods_request_accept'
 IRODS_REQ_REJECT_ALERT_NAME = 'irods_request_reject'
@@ -196,17 +194,6 @@ class SheetImportMixin:
 
     def handle_replace(self, investigation, old_inv, tl_event=None):
         project = investigation.project
-
-        # Refuse replacing if unfinished landing zones exist
-        if (
-            old_inv.irods_status
-            and LandingZone.objects.filter(project=project)
-            .exclude(status__in=STATUS_FINISHED)
-            .count()
-            > 0
-        ):
-            raise Exception(REPLACE_ZONE_MSG)
-
         tb = SampleSheetTableBuilder()
         old_study_uuids = {}
         old_assay_uuids = {}
@@ -249,7 +236,11 @@ class SheetImportMixin:
             ):
                 self.replace_configs = False
 
-            # Update unfinished landing zones to point to new investigation
+            # Update unfinished landing zones to point to new assays
+            new_assays = {a.get_name(): a for a in investigation.get_assays()}
+            for zone in LandingZone.objects.filter(project=project):
+                zone.assay = new_assays[zone.assay.get_name()]
+                zone.save()
 
             # Delete old investigation
             old_inv.delete()
@@ -1043,7 +1034,6 @@ class ProjectSheetsView(
         return context
 
 
-# TODO: Prevent access if sheet sync is enabled, add tests
 class SheetImportView(
     LoginRequiredMixin,
     LoggedInPermissionMixin,
@@ -1144,7 +1134,6 @@ class SheetImportView(
         return redirect(redirect_url)
 
 
-# TODO: Prevent access if sheet sync is enabled, add tests
 class SheetTemplateSelectView(
     LoginRequiredMixin,
     LoggedInPermissionMixin,

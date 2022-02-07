@@ -10,11 +10,25 @@ Note that the issue IDs here refer to ones in the private CUBI GitLab.
 Unreleased
 ==========
 
+Added
+-----
+
+- **Samplesheets**
+    - ``Investigation.get_assays()`` helper (#1359)
+
+Changed
+-------
+
+- **Landingzones**
+    - Make ``description`` optional in ``_make_landing_zone()`` (#1360)
+- **Samplesheets**
+    - Allow replacing sheets if unfinished landing zones exist (#1356)
+
 Fixed
 -----
 
 - **Samplesheets**
-    - API sheet replacing allowed if unfinished landing zones exist (#1356)
+    - ``LandingZone`` objects deleted by API sheet replacing (#1356)
     - Invalid ``Investigation`` timeline object reference for sheet replacing (#1357)
 
 

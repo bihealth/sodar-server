@@ -31,7 +31,7 @@ from samplesheets.tests.test_views import (
     REMOTE_SITE_DESC,
     REMOTE_SITE_SECRET,
 )
-from samplesheets.views import SheetImportMixin, REPLACE_ZONE_MSG
+from samplesheets.views import SheetImportMixin
 
 
 app_settings = AppSettingAPI()
@@ -392,8 +392,8 @@ class TestSheetImportAPIView(
         )
         self.assertEqual(ISATab.objects.filter(project=self.project).count(), 1)
 
-    def test_post_replace_zone_unfinished(self):
-        """Test replacing with unfinished landing zone (should fail)"""
+    def test_post_replace_zone(self):
+        """Test replacing sheets with exising landing zone"""
         self.investigation = self._import_isa_from_file(
             SHEET_PATH, self.project
         )
@@ -402,64 +402,12 @@ class TestSheetImportAPIView(
         assay = Assay.objects.filter(
             study__investigation=self.investigation
         ).first()
-        self._make_landing_zone(
+        zone = self._make_landing_zone(
             'new_zone',
             self.project,
             self.user,
             assay,
-            description='',
             status='FAILED',
-        )
-        app_settings.set_app_setting(
-            APP_NAME,
-            'sheet_config',
-            conf_api.get_sheet_config(self.investigation),
-            project=self.project,
-        )
-
-        self.assertEqual(
-            Investigation.objects.filter(project=self.project).count(), 1
-        )
-        self.assertEqual(ISATab.objects.filter(project=self.project).count(), 1)
-        self.assertIsNone(GenericMaterial.objects.filter(name='0816').first())
-        self.assertEqual(LandingZone.objects.filter(assay=assay).count(), 1)
-
-        url = reverse(
-            'samplesheets:api_import',
-            kwargs={'project': self.project.sodar_uuid},
-        )
-        with open(SHEET_PATH_EDITED, 'rb') as file:
-            post_data = {'file': file}
-            response = self.request_knox(
-                url, method='POST', format='multipart', data=post_data
-            )
-
-        self.assertEqual(response.status_code, 400)
-        self.assertTrue(REPLACE_ZONE_MSG in response.data[0])
-        self.assertEqual(
-            Investigation.objects.filter(project=self.project).count(), 1
-        )
-        self.assertEqual(ISATab.objects.filter(project=self.project).count(), 1)
-        self.assertIsNone(GenericMaterial.objects.filter(name='0816').first())
-        self.assertEqual(LandingZone.objects.filter(assay=assay).count(), 1)
-
-    def test_post_replace_zone_finished(self):
-        """Test replacing with finished landing zone"""
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
-        self.investigation.irods_status = True
-        self.investigation.save()
-        assay = Assay.objects.filter(
-            study__investigation=self.investigation
-        ).first()
-        self._make_landing_zone(
-            'new_zone',
-            self.project,
-            self.user,
-            assay,
-            description='',
-            status='MOVED',
         )
         app_settings.set_app_setting(
             APP_NAME,
@@ -493,7 +441,22 @@ class TestSheetImportAPIView(
         self.assertIsNotNone(
             GenericMaterial.objects.filter(name='0816').first()
         )
-        self.assertEqual(LandingZone.objects.filter(assay=assay).count(), 0)
+        self.investigation = Investigation.objects.get(
+            project=self.project, active=True
+        )
+        zone.refresh_from_db()
+        self.assertEqual(
+            LandingZone.objects.get(
+                assay__study__investigation=self.investigation
+            ),
+            zone,
+        )
+        self.assertEqual(
+            zone.assay,
+            Assay.objects.filter(
+                study__investigation=self.investigation
+            ).first(),
+        )
 
     def test_post_no_plugin_assay(self):
         """Test post() with an assay without plugin"""
