@@ -19,6 +19,8 @@ Added
 Changed
 -------
 
+- **General**
+     Upgrade to django-sodar-core v0.10.9-WIP (#1361)
 - **Landingzones**
     - Make ``description`` optional in ``_make_landing_zone()`` (#1360)
 - **Samplesheets**
