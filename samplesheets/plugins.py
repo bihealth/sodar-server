@@ -459,7 +459,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
             ):
                 return (
                     '<a href="{}" target="_blank" '
-                    'title="View project files in iRODS">'
+                    'title="View project sample files in iRODS">'
                     # 'data-toggle="tooltip" data-placement="top">'
                     '<i class="iconify text-primary" '
                     'data-icon="mdi:folder-open"></i></a>'.format(
@@ -472,7 +472,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                 'data-icon="mdi:folder-open" title="{}" '
                 # 'data-toggle="tooltip" data-placement="top" '
                 '></i>'.format(
-                    'No project files in iRODS'
+                    'No project sample files in iRODS'
                     if settings.IRODS_WEBDAV_URL
                     else 'iRODS WebDAV unavailable'
                 )
