@@ -38,6 +38,12 @@ Fixed
     - ``LandingZone`` objects deleted by API sheet replacing (#1356)
     - Invalid ``Investigation`` timeline object reference for sheet replacing (#1357)
 
+Removed
+-------
+
+- **Landingzones**
+    - Unused ``sodar-popup-overlay`` elements from ``project_zones.html`` (#1363)
+
 
 v0.11.1 (2022-02-04)
 ====================
