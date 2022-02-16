@@ -13,6 +13,8 @@ Unreleased
 Added
 -----
 
+- **General**
+    - ``.readthedocs.yaml`` file (#1362)
 - **Samplesheets**
     - ``Investigation.get_assays()`` helper (#1359)
 
@@ -30,6 +32,8 @@ Changed
 Fixed
 -----
 
+- **General**
+    - Invalid Python version in readthedocs build (#1362)
 - **Samplesheets**
     - ``LandingZone`` objects deleted by API sheet replacing (#1356)
     - Invalid ``Investigation`` timeline object reference for sheet replacing (#1357)
