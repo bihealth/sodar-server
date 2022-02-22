@@ -28,6 +28,7 @@ Changed
 - **Samplesheets**
     - Allow replacing sheets if unfinished landing zones exist (#1356)
     - Update project list file column legend (#1366)
+    - Upgrade Vue app dependencies (#1369)
 
 Fixed
 -----
