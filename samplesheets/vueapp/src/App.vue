@@ -213,6 +213,11 @@ import WinExportModal from './components/modals/WinExportModal.vue'
 import OntologyEditModal from './components/modals/OntologyEditModal.vue'
 import VersionSaveModal from './components/modals/VersionSaveModal.vue'
 import AssayShortcutCard from './components/AssayShortcutCard.vue'
+import DataCellRenderer from './components/renderers/DataCellRenderer'
+import HeaderEditRenderer from './components/renderers/HeaderEditRenderer'
+import StudyShortcutsRenderer from './components/renderers/StudyShortcutsRenderer'
+import IrodsButtonsRenderer from './components/renderers/IrodsButtonsRenderer'
+import RowEditRenderer from './components/renderers/RowEditRenderer'
 import DataCellEditor from './components/editors/DataCellEditor.vue'
 import ObjectSelectEditor from './components/editors/ObjectSelectEditor.vue'
 import OntologyEditor from './components/editors/OntologyEditor.vue'
@@ -291,9 +296,17 @@ export default {
     OntologyEditModal,
     VersionSaveModal,
     AssayShortcutCard,
-    dataCellEditor: DataCellEditor, // eslint-disable-line vue/no-unused-components
-    objectSelectEditor: ObjectSelectEditor, // eslint-disable-line vue/no-unused-components
-    ontologyEditor: OntologyEditor // eslint-disable-line vue/no-unused-components
+    /* eslint-disable vue/no-unused-components */
+    // NOTE: These ARE used in gridUtils but this confuses eslint
+    DataCellRenderer,
+    HeaderEditRenderer,
+    StudyShortcutsRenderer,
+    IrodsButtonsRenderer,
+    RowEditRenderer,
+    DataCellEditor,
+    ObjectSelectEditor,
+    OntologyEditor
+    /* eslint-enable vue/no-unused-components */
   },
   created () {
     if (windowsPlatforms.includes(window.navigator.platform)) {
