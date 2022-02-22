@@ -3,6 +3,7 @@ import {
   studyUuid,
   copy,
   getAppStub,
+  getSheetTableComponents,
   getSheetTablePropsData,
   waitRAF,
   waitAG
@@ -38,7 +39,9 @@ describe('DataCellRenderer.vue', () => {
     retParams.gridOptions = initGridOptions(retParams.app, retParams.editMode)
     // if (params.editMode) console.dir(retParams) // DEBUG
     return mount(SheetTable, {
-      localVue, propsData: getSheetTablePropsData(retParams)
+      localVue,
+      propsData: getSheetTablePropsData(retParams),
+      components: getSheetTableComponents()
     })
   }
 

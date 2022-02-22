@@ -1,6 +1,7 @@
 import { createLocalVue, mount } from '@vue/test-utils'
 import {
   getAppStub,
+  getSheetTableComponents,
   getSheetTablePropsData,
   waitRAF,
   waitAG,
@@ -30,7 +31,9 @@ describe('IrodsButtonsRenderer.vue', () => {
     }, params)
     retParams.gridOptions = initGridOptions(retParams.app, retParams.editMode)
     return mount(SheetTable, {
-      localVue, propsData: getSheetTablePropsData(retParams)
+      localVue,
+      propsData: getSheetTablePropsData(retParams),
+      components: getSheetTableComponents()
     })
   }
 

@@ -2,6 +2,7 @@ import { createLocalVue, mount } from '@vue/test-utils'
 import {
   copy,
   getAppStub,
+  getSheetTableComponents,
   getSheetTablePropsData,
   waitRAF,
   waitAG,
@@ -37,7 +38,9 @@ describe('StudyShortcutsRenderer.vue', () => {
       table: table
     }, params)
     return mount(SheetTable, {
-      localVue, propsData: getSheetTablePropsData(retParams)
+      localVue,
+      propsData: getSheetTablePropsData(retParams),
+      components: getSheetTableComponents()
     })
   }
 
