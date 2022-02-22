@@ -1,11 +1,5 @@
 // Helpers for SODAR ag-grid setup
 
-import DataCellRenderer from '@/components/renderers/DataCellRenderer'
-import HeaderEditRenderer from '@/components/renderers/HeaderEditRenderer'
-import StudyShortcutsRenderer from '@/components/renderers/StudyShortcutsRenderer'
-import IrodsButtonsRenderer from '@/components/renderers/IrodsButtonsRenderer'
-import RowEditRenderer from '@/components/renderers/RowEditRenderer'
-
 // Initialize ag-grid gridOptions
 export function initGridOptions (app, editMode) {
   return {
@@ -89,7 +83,7 @@ export function buildColDef (params) {
         suppressAutoSize: true,
         pinned: 'left',
         unselectable: true,
-        cellRendererFramework: null,
+        cellRenderer: null,
         minWidth: 65,
         maxWidth: 100,
         width: 65
@@ -223,7 +217,7 @@ export function buildColDef (params) {
         minWidth: minW,
         hide: !fieldVisible,
         headerClass: ['sodar-ss-data-header'],
-        cellRendererFramework: DataCellRenderer,
+        cellRenderer: 'DataCellRenderer',
         cellRendererParams: {
           app: params.app,
           colType: colType,
@@ -283,7 +277,7 @@ export function buildColDef (params) {
             else configNodeIdx = i - params.studyNodeLen
           }
 
-          header.headerComponentFramework = HeaderEditRenderer
+          header.headerComponent = 'HeaderEditRenderer'
           header.headerComponentParams = {
             app: params.app,
             modalComponent: params.app.$refs.columnConfigModal,
@@ -315,7 +309,7 @@ export function buildColDef (params) {
 
           // Set up cell editor selector
           header.cellEditorSelector = function (p) {
-            let editorName = 'dataCellEditor'
+            let editorName = 'DataCellEditor'
             // TODO: Refactor so that default params are read from header
             const editorParams = Object.assign(p.colDef.cellEditorParams)
             const editContext = params.editContext
@@ -327,13 +321,13 @@ export function buildColDef (params) {
                 p.colDef.headerName === 'Name' &&
                 'newRow' in p.value &&
                 p.value.newRow) {
-              editorName = 'objectSelectEditor'
+              editorName = 'ObjectSelectEditor'
               editorParams.selectOptions = editContext.samples
             } else if (editorParams.headerInfo.header_type === 'protocol') {
-              editorName = 'objectSelectEditor'
+              editorName = 'ObjectSelectEditor'
               editorParams.selectOptions = Object.assign(editContext.protocols)
             } else if (colType === 'ONTOLOGY') {
-              editorName = 'ontologyEditor'
+              editorName = 'OntologyEditor'
               editorParams.sodarOntologies = editContext.sodar_ontologies
             }
 
@@ -398,7 +392,7 @@ export function buildColDef (params) {
           unselectable: true,
           width: 45 * Object.keys(params.table.shortcuts.schema).length,
           minWidth: 90,
-          cellRendererFramework: StudyShortcutsRenderer,
+          cellRenderer: 'StudyShortcutsRenderer',
           cellRendererParams: {
             schema: params.table.shortcuts.schema,
             modalComponent: params.app.$refs.studyShortcutModal
@@ -431,7 +425,7 @@ export function buildColDef (params) {
             sortable: false,
             pinned: 'right',
             unselectable: true,
-            cellRendererFramework: IrodsButtonsRenderer,
+            cellRenderer: 'IrodsButtonsRenderer',
             cellRendererParams: {
               app: params.app,
               irodsStatus: params.sodarContext.irods_status,
@@ -468,7 +462,7 @@ export function buildColDef (params) {
           sortable: false,
           pinned: 'right',
           unselectable: true,
-          cellRendererFramework: RowEditRenderer,
+          cellRenderer: 'RowEditRenderer',
           cellRendererParams: {
             app: params.app,
             gridUuid: params.gridUuid,

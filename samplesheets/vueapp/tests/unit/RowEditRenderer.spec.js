@@ -4,6 +4,7 @@ import {
   assayUuid,
   copy,
   getAppStub,
+  getSheetTableComponents,
   getSheetTablePropsData,
   // waitNT,
   waitRAF,
@@ -53,7 +54,9 @@ describe('RowEditRenderer.vue', () => {
         copy(sheetEditConfigModified).studies[studyUuid]
     }, propsDataParams)
     return mount(SheetTable, {
-      localVue, propsData: getSheetTablePropsData(params)
+      localVue,
+      propsData: getSheetTablePropsData(params),
+      components: getSheetTableComponents()
     })
   }
 

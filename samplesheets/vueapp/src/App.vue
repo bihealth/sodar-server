@@ -213,6 +213,11 @@ import WinExportModal from './components/modals/WinExportModal.vue'
 import OntologyEditModal from './components/modals/OntologyEditModal.vue'
 import VersionSaveModal from './components/modals/VersionSaveModal.vue'
 import AssayShortcutCard from './components/AssayShortcutCard.vue'
+import DataCellRenderer from './components/renderers/DataCellRenderer'
+import HeaderEditRenderer from './components/renderers/HeaderEditRenderer'
+import StudyShortcutsRenderer from './components/renderers/StudyShortcutsRenderer'
+import IrodsButtonsRenderer from './components/renderers/IrodsButtonsRenderer'
+import RowEditRenderer from './components/renderers/RowEditRenderer'
 import DataCellEditor from './components/editors/DataCellEditor.vue'
 import ObjectSelectEditor from './components/editors/ObjectSelectEditor.vue'
 import OntologyEditor from './components/editors/OntologyEditor.vue'
@@ -273,13 +278,7 @@ export default {
       editingCell: false, // Cell editing in progress (bool)
       initialFilter: null, // Initial value for table filter (from URL)
       contentId: 'sodar-ss-vue-content',
-      windowsOs: false,
-      /* NOTE: cell editor only works if provided through frameworkComponents? */
-      frameworkComponents: {
-        dataCellEditor: DataCellEditor,
-        objectSelectEditor: ObjectSelectEditor,
-        ontologyEditor: OntologyEditor
-      }
+      windowsOs: false
     }
   },
   components: {
@@ -296,7 +295,18 @@ export default {
     WinExportModal,
     OntologyEditModal,
     VersionSaveModal,
-    AssayShortcutCard
+    AssayShortcutCard,
+    /* eslint-disable vue/no-unused-components */
+    // NOTE: These ARE used in gridUtils but this confuses eslint
+    DataCellRenderer,
+    HeaderEditRenderer,
+    StudyShortcutsRenderer,
+    IrodsButtonsRenderer,
+    RowEditRenderer,
+    DataCellEditor,
+    ObjectSelectEditor,
+    OntologyEditor
+    /* eslint-enable vue/no-unused-components */
   },
   created () {
     if (windowsPlatforms.includes(window.navigator.platform)) {

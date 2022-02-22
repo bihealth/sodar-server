@@ -4,6 +4,7 @@ import {
   // assayUuid,
   copy,
   getAppStub,
+  getSheetTableComponents,
   getSheetTablePropsData,
   // waitNT,
   waitRAF,
@@ -38,7 +39,9 @@ describe('ObjectSelectEditor.vue', () => {
     gridOptions = initGridOptions(retParams.app, retParams.editMode)
     retParams.gridOptions = gridOptions
     return mount(SheetTable, {
-      localVue, propsData: getSheetTablePropsData(retParams)
+      localVue,
+      propsData: getSheetTablePropsData(retParams),
+      components: getSheetTableComponents()
     })
   }
 
