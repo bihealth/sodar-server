@@ -273,13 +273,7 @@ export default {
       editingCell: false, // Cell editing in progress (bool)
       initialFilter: null, // Initial value for table filter (from URL)
       contentId: 'sodar-ss-vue-content',
-      windowsOs: false,
-      /* NOTE: cell editor only works if provided through frameworkComponents? */
-      frameworkComponents: {
-        dataCellEditor: DataCellEditor,
-        objectSelectEditor: ObjectSelectEditor,
-        ontologyEditor: OntologyEditor
-      }
+      windowsOs: false
     }
   },
   components: {
@@ -296,7 +290,10 @@ export default {
     WinExportModal,
     OntologyEditModal,
     VersionSaveModal,
-    AssayShortcutCard
+    AssayShortcutCard,
+    dataCellEditor: DataCellEditor, // eslint-disable-line vue/no-unused-components
+    objectSelectEditor: ObjectSelectEditor, // eslint-disable-line vue/no-unused-components
+    ontologyEditor: OntologyEditor // eslint-disable-line vue/no-unused-components
   },
   created () {
     if (windowsPlatforms.includes(window.navigator.platform)) {
