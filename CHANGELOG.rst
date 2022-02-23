@@ -39,6 +39,7 @@ Fixed
 - **Samplesheets**
     - ``LandingZone`` objects deleted by API sheet replacing (#1356)
     - Invalid ``Investigation`` timeline object reference for sheet replacing (#1357)
+    - ``IrodsStatsBadge`` query error handling (#1371)
 
 Removed
 -------

@@ -1,9 +1,12 @@
 <template>
   <span v-if="irodsStatus"
-        class="badge badge-pill badge-info sodar-ss-irods-stats">
+        :class="'badge badge-pill sodar-ss-irods-stats ' + badgeClass">
     <span v-if="fileCount !== null">
       {{ fileCount }} file<span v-if="fileCount !== 1">s</span>
       ({{ totalSize | prettyBytes }})
+    </span>
+    <span v-else-if="error">
+      Error
     </span>
     <span v-else>
       <img src="/icons/mdi/loading.svg?color=%23fff&height=10" class="spin" /> Updating..
@@ -22,7 +25,9 @@ export default {
   data () {
     return {
       fileCount: null,
-      totalSize: null
+      totalSize: null,
+      badgeClass: 'badge-info',
+      error: false
     }
   },
   methods: {
@@ -35,13 +40,25 @@ export default {
       const statsUrl = '/irodsbackend/ajax/stats/' +
         this.projectUuid + '?path=' + encodeURIComponent(this.irodsPath)
 
-      fetch(statsUrl, {
-        credentials: 'same-origin'
-      })
-        .then(response => response.json())
-        .then(response => { this.setStats(response) })
+      fetch(statsUrl, { credentials: 'same-origin' })
+        .then(response => response.json().then(
+          data => ({
+            status: response.status,
+            statusText: response.statusText,
+            body: data
+          })))
+        .then(obj => {
+          if (obj.status === 200) this.setStats(obj.body)
+          else {
+            this.error = true
+            this.badgeClass = 'badge-danger'
+            console.error(
+              'irodsStatsBadge query failed: ' + obj.statusText +
+              ' (' + obj.status + ')')
+          }
+        })
         .catch(function (error) {
-          console.log('irodsStatsBadge error: ' + error.message)
+          console.error('irodsStatsBadge error: ' + error.message)
         })
     }
   }
