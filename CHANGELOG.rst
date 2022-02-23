@@ -30,6 +30,7 @@ Changed
     - Update project list file column legend (#1366)
     - Upgrade Vue app dependencies (#1369)
     - Upgrade Vue app to ag-grid v27 (#1370)
+    - Improve search results layout (#1373)
 
 Fixed
 -----

@@ -6,51 +6,35 @@
 {% get_django_setting 'SHEETS_IRODS_LIMIT' as irods_query_limit %}
 
 <style type="text/css">
-
   /* Materials table */
 
   .table#sodar-ss-search-table-materials thead tr th:nth-child(2) {
       width: 65px !important;
   }
 
-  .table#sodar-ss-search-table-materials tbody tr td:nth-child(2) {
-      width: 65px !important;
-  }
-
-  @media screen and (max-width: 1200px) {
-    .table#sodar-ss-search-table-materials tr th:nth-child(5) {
-      display: none;
-    }
-
-    .table#sodar-ss-search-table-materials tr td:nth-child(5) {
-      display: none;
-    }
-  }
-
-  @media screen and (max-width: 900px) {
-    .table#sodar-ss-search-table-materials tr th:nth-child(4) {
-      display: none;
-    }
-
+  @media screen and (max-width: 1400px) {
+    .table#sodar-ss-search-table-materials tr th:nth-child(4),
     .table#sodar-ss-search-table-materials tr td:nth-child(4) {
       display: none;
     }
   }
 
-  @media screen and (max-width: 750px) {
-    .table#sodar-ss-search-table-materials tr th:nth-child(2) {
-      display: none;
-    }
-     .table#sodar-ss-search-table-materials tr td:nth-child(2) {
+  @media screen and (max-width: 1100px) {
+    .table#sodar-ss-search-table-materials tr th:nth-child(5),
+    .table#sodar-ss-search-table-materials tr td:nth-child(5) {
       display: none;
     }
   }
 
-  @media screen and (max-width: 600px) {
-    .table#sodar-ss-search-table-materials tr th:nth-child(3) {
+  @media screen and (max-width: 750px) {
+    .table#sodar-ss-search-table-materials tr th:nth-child(2),
+    .table#sodar-ss-search-table-materials tr td:nth-child(2) {
       display: none;
     }
+  }
 
+  @media screen and (max-width: 650px) {
+    .table#sodar-ss-search-table-materials tr th:nth-child(3),
     .table#sodar-ss-search-table-materials tr td:nth-child(3) {
       display: none;
     }
@@ -59,57 +43,33 @@
   /* Files table */
 
   .table#sodar-ss-search-table-files thead tr th:nth-child(1) {
-      min-width: 35% !important;
+      width: 40% !important;
   }
 
-  .table#sodar-ss-search-table-files tbody tr td:nth-child(1) {
-      min-width: 35% !important;
-  }
-
-  @media screen and (max-width: 1400px) {
-    .table#sodar-ss-search-table-files tr th:nth-child(3) {
-      display: none;
-    }
-
+  @media screen and (max-width: 1300px) {
+    .table#sodar-ss-search-table-files tr th:nth-child(3),
     .table#sodar-ss-search-table-files tr td:nth-child(3) {
       display: none;
     }
-  }
-
-  @media screen and (max-width: 1100px) {
-    .table#sodar-ss-search-table-files tr th:nth-child(4) {
-      display: none;
-    }
-     .table#sodar-ss-search-table-files tr td:nth-child(4) {
-      display: none;
-    }
 
     .table#sodar-ss-search-table-files tr th:nth-child(2) {
       width: 25% !important;
     }
-
-    .table#sodar-ss-search-table-files tr td:nth-child(2) {
-      width: 25% !important;
-    }
   }
 
-  @media screen and (max-width: 800px) {
-    .table#sodar-ss-search-table-files tr th:nth-child(2) {
-      display: none;
-    }
-
+  @media screen and (max-width: 900px) {
+    .table#sodar-ss-search-table-files tr th:nth-child(2),
     .table#sodar-ss-search-table-files tr td:nth-child(2) {
       display: none;
     }
   }
-
 </style>
 
 {% if search_results.materials.items|length > 0 %}
-
   {% include 'projectroles/_search_header.html' with search_title=search_results.materials.title result_count=search_results.materials.items|length %}
 
-  <table class="table table-striped sodar-card-table sodar-search-table" id="sodar-ss-search-table-materials">
+  <table class="table table-striped sodar-card-table sodar-search-table"
+         id="sodar-ss-search-table-materials">
     <thead>
       <tr>
         <th>Name</th>
@@ -127,21 +87,19 @@
   </table>
 
   {% include 'projectroles/_search_footer.html' %}
-
 {% endif %}
 
 
 {% if search_results.files.items|length > 0 %}
-
   {% include 'projectroles/_search_header.html' with search_title=search_results.files.title result_count=search_results.files.items|length result_limit=irods_query_limit %}
 
-  <table class="table table-striped sodar-card-table sodar-search-table" id="sodar-ss-search-table-files">
+  <table class="table table-striped sodar-card-table sodar-search-table"
+         id="sodar-ss-search-table-files">
     <thead>
       <tr>
         <th>Name</th>
         <th>Project</th>
-        <th>Study</th>
-        <th>Assay(s)</th>
+        <th>Assay</th>
       </tr>
     </thead>
     <tbody>
@@ -152,5 +110,4 @@
   </table>
 
   {% include 'projectroles/_search_footer.html' %}
-
 {% endif %}

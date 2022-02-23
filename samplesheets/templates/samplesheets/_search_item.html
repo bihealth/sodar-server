@@ -39,17 +39,19 @@
       {% endautoescape %}
     </div>
   </td>
-  <td>
-    <div class="sodar-overflow-container">
-      {% if item.study %}
-        <a href="{% url 'samplesheets:project_sheets' project=item.study.get_project.sodar_uuid %}#/study/{{ item.study.sodar_uuid }}">
-          {{ item.study.get_display_name }}
-        </a>
-    {% else %}
-      N/A
-    {% endif %}
-    </div>
-  </td>
+  {% if item.type != 'file' %}
+    <td>
+      <div class="sodar-overflow-container">
+        {% if item.study %}
+          <a href="{% url 'samplesheets:project_sheets' project=item.study.get_project.sodar_uuid %}#/study/{{ item.study.sodar_uuid }}">
+            {{ item.study.get_display_name }}
+          </a>
+        {% else %}
+          N/A
+        {% endif %}
+      </div>
+    </td>
+  {% endif %}
   <td>
     {% if item.assays %}
       {% for assay in item.assays %}
