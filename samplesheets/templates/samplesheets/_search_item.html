@@ -2,8 +2,6 @@
 {% load samplesheets_tags %}
 {% load projectroles_common_tags %}
 
-{% check_backend 'omics_irods' as irods_backend_enabled %}
-
 {% if irods_backend_enabled %}
   {% load irodsbackend_tags %}
   {% get_webdav_url item.study.get_project request.user as webdav_url %}
@@ -18,25 +16,22 @@
         <a href="{% get_material_search_url item %}">
           {{ item_display_name | safe }}
         </a>
+      {% elif webdav_url %}
+        <a href="{{ webdav_url }}{{ item.irods_path }}">{{ item_display_name | safe }}</a>
       {% else %}
-        {% if webdav_url %}
-          <a href="{{ webdav_url }}{{ item.irods_path }}">{{ item_display_name | safe }}</a>
-        {% else %}
-          {{ item_display_name }}
-        {% endif %}
+        {{ item_display_name }}
       {% endif %}
     </div>
   </td>
-    {% if item.type != 'file' %}
-      <td class="text-nowrap">
-        {% get_search_item_type item %}
-      </td>
-    {% endif %}
+  {% if item.type != 'file' %}
+    <td class="text-nowrap">
+      {% get_search_item_type item %}
+    </td>
+  {% endif %}
   <td>
     <div class="sodar-overflow-container">
-      {% autoescape off %}
-        {% get_project_link item.project %}
-      {% endautoescape %}
+      {% get_project_link item.project as project_link %}
+      {{ project_link | safe }}
     </div>
   </td>
   {% if item.type != 'file' %}

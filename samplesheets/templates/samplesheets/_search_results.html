@@ -4,6 +4,7 @@
 {# Projectroles dependency #}
 {% load projectroles_common_tags %}
 {% get_django_setting 'SHEETS_IRODS_LIMIT' as irods_query_limit %}
+{% check_backend 'omics_irods' as irods_backend_enabled %}
 
 <style type="text/css">
   /* Materials table */

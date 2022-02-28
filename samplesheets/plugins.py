@@ -65,6 +65,7 @@ SHEETS_INFO_SETTINGS = [
     'SHEETS_TABLE_HEIGHT',
     'SHEETS_VERSION_PAGINATION',
 ]
+MATERIAL_SEARCH_TYPES = ['source', 'sample']
 
 
 # Samplesheets project app plugin ----------------------------------------------
@@ -277,6 +278,102 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                 'label': obj.get_display_name(),
             }
 
+    @classmethod
+    def _get_search_materials(cls, search_terms, user, keywords, item_types):
+        """Return materials for search results"""
+        ret = []
+        materials = GenericMaterial.objects.find(
+            search_terms, keywords, item_types=item_types
+        )
+        for m in materials:
+            if user.has_perm('samplesheets.view_sheet', m.get_project()):
+                if m.item_type == 'SAMPLE':
+                    assays = m.get_sample_assays()
+                else:
+                    assays = [m.assay]
+                ret.append(
+                    {
+                        'name': m.name,
+                        'type': m.item_type,
+                        'project': m.get_project(),
+                        'study': m.study,
+                        'assays': assays,
+                    }
+                )
+        return ret
+
+    @classmethod
+    def _get_search_files(cls, search_terms, user, irods_backend):
+        """Return iRODS files for search results"""
+        ret = []
+        try:
+            obj_data = irods_backend.get_objects(
+                path=irods_backend.get_projects_path(),
+                name_like=search_terms,
+                limit=settings.SHEETS_IRODS_LIMIT,
+            )
+        # Skip rest if no data objects were found or iRODS is unreachable
+        except (FileNotFoundError, NetworkException):
+            return ret
+
+        projects = {
+            str(p.sodar_uuid): p
+            for p in Project.objects.filter(type=PROJECT_TYPE_PROJECT)
+            if user.has_perm('samplesheets.view_sheet', p)
+        }
+        studies = {
+            str(s.sodar_uuid): s
+            for s in Study.objects.filter(
+                investigation__project__in=projects.values()
+            )
+        }
+        assays = {
+            str(a.sodar_uuid): a
+            for a in Assay.objects.filter(study__in=studies.values())
+        }
+
+        for o in obj_data['irods_data']:
+            project_uuid = irods_backend.get_uuid_from_path(
+                o['path'], obj_type='project'
+            )
+            sample_subpath = '/{}/{}/'.format(
+                project_uuid, settings.IRODS_SAMPLE_COLL
+            )
+            if sample_subpath not in o['path']:
+                continue  # Skip files not in sample data repository
+
+            try:
+                project = projects[project_uuid]
+                study = studies[
+                    irods_backend.get_uuid_from_path(
+                        o['path'], obj_type='study'
+                    )
+                ]
+                assay = assays[
+                    irods_backend.get_uuid_from_path(
+                        o['path'], obj_type='assay'
+                    )
+                ]
+            except KeyError:
+                continue  # Skip file if the project/etc is not found
+
+            ret.append(
+                {
+                    'name': o['name'],
+                    'type': 'file',
+                    'project': project,
+                    'study': study,
+                    'assays': [assay] if assay else None,
+                    'irods_path': o['path'],
+                }
+            )
+            if len(ret) == settings.SHEETS_IRODS_LIMIT:
+                break
+
+        if ret:
+            ret.sort(key=lambda x: x['name'].lower())
+        return ret
+
     def search(self, search_terms, user, search_type=None, keywords=None):
         """
         Return app items based on one or more search terms, user, optional type
@@ -291,117 +388,27 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         """
         irods_backend = get_backend_api('omics_irods')
         results = {}
-
         # Materials
-        def get_materials(materials):
-            ret = []
-            for m in materials:
-                if user.has_perm('samplesheets.view_sheet', m.get_project()):
-                    if m.item_type == 'SAMPLE':
-                        assays = m.get_sample_assays()
-                    else:
-                        assays = [m.assay]
-                    ret.append(
-                        {
-                            'name': m.name,
-                            'type': m.item_type,
-                            'project': m.get_project(),
-                            'study': m.study,
-                            'assays': assays,
-                        }
-                    )
-            return ret
-
-        item_types = ['SOURCE', 'SAMPLE']
-        if search_type in ['source', 'sample']:
-            item_types = [search_type.upper()]
-
-        material_items = get_materials(
-            GenericMaterial.objects.find(
-                search_terms, keywords, item_types=item_types
-            )
-        )
-        results['materials'] = {
-            'title': 'Sources and Samples',
-            'search_types': ['source', 'sample'],
-            'items': material_items,
-        }
-
+        if not search_type or search_type in MATERIAL_SEARCH_TYPES:
+            item_types = ['SOURCE', 'SAMPLE']
+            if search_type in MATERIAL_SEARCH_TYPES:
+                item_types = [search_type.upper()]
+            results['materials'] = {
+                'title': 'Sources and Samples',
+                'search_types': ['source', 'sample'],
+                'items': self._get_search_materials(
+                    search_terms, user, keywords, item_types
+                ),
+            }
         # iRODS files
-        file_items = []
         if irods_backend and (not search_type or search_type == 'file'):
-            try:
-                obj_data = irods_backend.get_objects(
-                    path=irods_backend.get_projects_path(),
-                    name_like=search_terms,
-                    limit=settings.SHEETS_IRODS_LIMIT,
-                )
-            # Skip rest if no data objects were found or iRODS is unreachable
-            except (FileNotFoundError, NetworkException):
-                return results
-
-            projects = {
-                str(p.sodar_uuid): p
-                for p in Project.objects.filter(type=PROJECT_TYPE_PROJECT)
-                if user.has_perm('samplesheets.view_sheet', p)
+            results['files'] = {
+                'title': 'Sample Files in iRODS',
+                'search_types': ['file'],
+                'items': self._get_search_files(
+                    search_terms, user, irods_backend
+                ),
             }
-            studies = {
-                str(s.sodar_uuid): s
-                for s in Study.objects.filter(
-                    investigation__project__in=projects.values()
-                )
-            }
-            assays = {
-                str(a.sodar_uuid): a
-                for a in Assay.objects.filter(study__in=studies.values())
-            }
-
-            for o in obj_data['irods_data']:
-                project_uuid = irods_backend.get_uuid_from_path(
-                    o['path'], obj_type='project'
-                )
-                sample_subpath = '/{}/{}/'.format(
-                    project_uuid, settings.IRODS_SAMPLE_COLL
-                )
-                if sample_subpath not in o['path']:
-                    continue  # Skip files not in sample data repository
-
-                try:
-                    project = projects[project_uuid]
-                    study = studies[
-                        irods_backend.get_uuid_from_path(
-                            o['path'], obj_type='study'
-                        )
-                    ]
-                    assay = assays[
-                        irods_backend.get_uuid_from_path(
-                            o['path'], obj_type='assay'
-                        )
-                    ]
-                except KeyError:
-                    continue  # Skip file if the project/etc is not found
-
-                file_items.append(
-                    {
-                        'name': o['name'],
-                        'type': 'file',
-                        'project': project,
-                        'study': study,
-                        'assays': [assay] if assay else None,
-                        'irods_path': o['path'],
-                    }
-                )
-                if len(file_items) == settings.SHEETS_IRODS_LIMIT:
-                    break
-
-        if file_items:
-            file_items.sort(key=lambda x: x['name'].lower())
-        results['files'] = {
-            'title': 'Sample Files in iRODS',
-            'search_types': ['file'],
-            'items': file_items,
-        }
-
         return results
 
     def get_project_list_value(self, column_id, project, user):

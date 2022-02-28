@@ -17,12 +17,13 @@ Added
     - ``.readthedocs.yaml`` file (#1362)
 - **Samplesheets**
     - ``Investigation.get_assays()`` helper (#1359)
+    - View tests for search (#556)
 
 Changed
 -------
 
 - **General**
-     Upgrade to django-sodar-core v0.10.9 (#1361)
+     Upgrade to django-sodar-core v0.10.10-WIP (#1361, #1376)
 - **Landingzones**
     - Make ``description`` optional in ``_make_landing_zone()`` (#1360)
 - **Samplesheets**
@@ -41,6 +42,8 @@ Fixed
     - ``LandingZone`` objects deleted by API sheet replacing (#1356)
     - Invalid ``Investigation`` timeline object reference for sheet replacing (#1357)
     - ``IrodsStatsBadge`` query error handling (#1371)
+    - Keyword ``type:file`` not limiting search (#1374)
+    - Redundant iRODS connections in search result rendering (#1375)
 
 Removed
 -------
