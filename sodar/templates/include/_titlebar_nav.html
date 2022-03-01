@@ -1,6 +1,10 @@
 {# Manual link #}
+{% load projectroles_common_tags %}
+{% site_version as site_v %}
+
 <li class="nav-item">
-  <a href="/manual/" class="nav-link" id="site-manual-link" target="_blank">
+  <a href="https://sodar-server.readthedocs.io/en/{% if '+' in site_v %}dev{% else %}latest{% endif %}/"
+     class="nav-link" id="site-manual-link" target="_blank">
     <i class="iconify" data-icon="mdi:book-open-page-variant"></i> Manual
   </a>
 </li>

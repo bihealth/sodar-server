@@ -76,13 +76,6 @@ RUN cd /usr/src/app && \
     DATABASE_URL=postgres://sodar:sodar@fake/sodar \
     python manage.py collectstatic --no-input
 
-# Build manual
-RUN cd /usr/src/app/docs_manual && \
-    DJANGO_SECRET_KEY=for-build-only \
-    DJANGO_SETTINGS_MODULE=config.settings.production \
-    DATABASE_URL=postgres://sodar:sodar@fake/sodar \
-    make clean html
-
 # Define the entry point
 COPY docker-entrypoint.sh /usr/local/bin
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh && \
