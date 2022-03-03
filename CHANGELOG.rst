@@ -47,6 +47,7 @@ Fixed
     - ``IrodsStatsBadge`` query error handling (#1371)
     - Keyword ``type:file`` not limiting search (#1374)
     - Redundant iRODS connections in search result rendering (#1375)
+    - Tooltip hide not working in ontology column config (#1379)
 
 Removed
 -------
