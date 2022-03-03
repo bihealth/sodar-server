@@ -39,6 +39,8 @@ Fixed
 
 - **General**
     - Invalid Python version in readthedocs build (#1362)
+- **Landingzones**
+    - Zone list title column layout issues (#1380)
 - **Samplesheets**
     - ``LandingZone`` objects deleted by API sheet replacing (#1356)
     - Invalid ``Investigation`` timeline object reference for sheet replacing (#1357)
