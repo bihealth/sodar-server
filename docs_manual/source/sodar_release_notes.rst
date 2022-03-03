@@ -14,7 +14,10 @@ v0.11.2 (WIP)
 Release for minor updates, maintenance and bug fixes.
 
 - Fix known sample sheet replacing issues
-- Upgrade to SODAR Core v0.10.9
+- Fix iRODS file search issues
+- Minor updates and general bug fixes
+- Upgrade to ag-grid v27
+- Upgrade to SODAR Core v0.10.10
 
 
 v0.11.1 (2022-02-04)

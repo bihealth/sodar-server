@@ -23,7 +23,7 @@ Changed
 -------
 
 - **General**
-    - Upgrade to django-sodar-core v0.10.10-WIP (#1361, #1376)
+    - Upgrade to django-sodar-core v0.10.10 (#1361, #1376)
     - Link manual to readthedocs.io (#1358)
 - **Landingzones**
     - Make ``description`` optional in ``_make_landing_zone()`` (#1360)
