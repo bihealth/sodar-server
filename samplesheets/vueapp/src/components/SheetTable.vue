@@ -52,8 +52,7 @@
             :style="gridStyle"
             :column-defs="columnDefs"
             :row-data="rowData"
-            :grid-options="gridOptions"
-            :framework-components="app.frameworkComponents">
+            :grid-options="gridOptions">
         </ag-grid-vue>
       </ag-grid-drag-select>
     </div>

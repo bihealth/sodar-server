@@ -141,7 +141,6 @@ If iRODS collections have not been created yet, there are no limitations for
 what the contents of the replaced sheets are. However, if iRODS collections
 already exist, we currently enforce the following rules:
 
-- No active landing zones should exist for the project.
 - Studies and assays from the previous versions must remain in the ISA-Tab.
 - New studies, assays, columns and rows **can** be introduced.
 

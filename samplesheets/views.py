@@ -50,6 +50,9 @@ from projectroles.views import (
     CurrentUserFormMixin,
 )
 
+# Landingzones dependency
+from landingzones.models import LandingZone
+
 from samplesheets.forms import (
     SheetImportForm,
     SheetTemplateCreateForm,
@@ -190,8 +193,8 @@ class SheetImportMixin:
         )
 
     def handle_replace(self, investigation, old_inv, tl_event=None):
-        tb = SampleSheetTableBuilder()
         project = investigation.project
+        tb = SampleSheetTableBuilder()
         old_study_uuids = {}
         old_assay_uuids = {}
         old_study_count = old_inv.studies.count()
@@ -232,6 +235,12 @@ class SheetImportMixin:
                 and old_assay_count == new_assay_count
             ):
                 self.replace_configs = False
+
+            # Update unfinished landing zones to point to new assays
+            new_assays = {a.get_name(): a for a in investigation.get_assays()}
+            for zone in LandingZone.objects.filter(project=project):
+                zone.assay = new_assays[zone.assay.get_name()]
+                zone.save()
 
             # Delete old investigation
             old_inv.delete()
@@ -1025,7 +1034,6 @@ class ProjectSheetsView(
         return context
 
 
-# TODO: Prevent access if sheet sync is enabled, add tests
 class SheetImportView(
     LoginRequiredMixin,
     LoggedInPermissionMixin,
@@ -1126,7 +1134,6 @@ class SheetImportView(
         return redirect(redirect_url)
 
 
-# TODO: Prevent access if sheet sync is enabled, add tests
 class SheetTemplateSelectView(
     LoginRequiredMixin,
     LoggedInPermissionMixin,

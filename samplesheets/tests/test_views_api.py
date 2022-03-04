@@ -11,6 +11,10 @@ from projectroles.models import SODAR_CONSTANTS
 from projectroles.tests.test_models import RemoteSiteMixin, RemoteProjectMixin
 from projectroles.tests.test_views_api import TestAPIViewsBase
 
+# Landingzones dependency
+from landingzones.models import LandingZone
+from landingzones.tests.test_models import LandingZoneMixin
+
 from samplesheets.io import SampleSheetIO
 from samplesheets.models import Investigation, Assay, GenericMaterial, ISATab
 from samplesheets.rendering import SampleSheetTableBuilder
@@ -110,7 +114,9 @@ class TestInvestigationRetrieveAPIView(TestSampleSheetAPIBase):
         self.assertEqual(json.loads(response.content), expected)
 
 
-class TestSheetImportAPIView(SheetImportMixin, TestSampleSheetAPIBase):
+class TestSheetImportAPIView(
+    SheetImportMixin, LandingZoneMixin, TestSampleSheetAPIBase
+):
     """Tests for SampleSheetImportAPIView"""
 
     def setUp(self):
@@ -118,7 +124,6 @@ class TestSheetImportAPIView(SheetImportMixin, TestSampleSheetAPIBase):
 
     def test_post_zip(self):
         """Test SampleSheetImportAPIView post() with a zip archive"""
-        # Assert preconditions
         self.assertEqual(
             Investigation.objects.filter(project=self.project).count(), 0
         )
@@ -143,7 +148,6 @@ class TestSheetImportAPIView(SheetImportMixin, TestSampleSheetAPIBase):
 
     def test_post_tsv(self):
         """Test SampleSheetImportAPIView post() with ISA-Tab tsv files"""
-        # Assert preconditions
         self.assertEqual(
             Investigation.objects.filter(project=self.project).count(), 0
         )
@@ -186,7 +190,6 @@ class TestSheetImportAPIView(SheetImportMixin, TestSampleSheetAPIBase):
             project=self.project,
         )
 
-        # Assert preconditions
         self.assertEqual(
             Investigation.objects.filter(project=self.project).count(), 1
         )
@@ -239,7 +242,6 @@ class TestSheetImportAPIView(SheetImportMixin, TestSampleSheetAPIBase):
             user=self.user,
         )
 
-        # Assert preconditions
         self.assertEqual(
             app_settings.get_app_setting(
                 APP_NAME,
@@ -297,7 +299,6 @@ class TestSheetImportAPIView(SheetImportMixin, TestSampleSheetAPIBase):
             user=self.user,
         )
 
-        # Assert preconditions
         self.assertEqual(
             app_settings.get_app_setting(
                 APP_NAME,
@@ -341,7 +342,6 @@ class TestSheetImportAPIView(SheetImportMixin, TestSampleSheetAPIBase):
             project=self.project,
         )
 
-        # Assert preconditions
         self.assertEqual(
             Investigation.objects.filter(project=self.project).count(), 1
         )
@@ -364,14 +364,13 @@ class TestSheetImportAPIView(SheetImportMixin, TestSampleSheetAPIBase):
         self.assertEqual(ISATab.objects.filter(project=self.project).count(), 2)
 
     def test_post_replace_alt_sheet_irods(self):
-        """Test replacing with an alternative sheet and irods_status=True (should fail)"""
+        """Test replacing with alternative sheet and irods (should fail)"""
         self.investigation = self._import_isa_from_file(
             SHEET_PATH, self.project
         )
         self.investigation.irods_status = True  # fake irods status
         self.investigation.save()
 
-        # Assert preconditions
         self.assertEqual(
             Investigation.objects.filter(project=self.project).count(), 1
         )
@@ -392,6 +391,72 @@ class TestSheetImportAPIView(SheetImportMixin, TestSampleSheetAPIBase):
             Investigation.objects.filter(project=self.project).count(), 1
         )
         self.assertEqual(ISATab.objects.filter(project=self.project).count(), 1)
+
+    def test_post_replace_zone(self):
+        """Test replacing sheets with exising landing zone"""
+        self.investigation = self._import_isa_from_file(
+            SHEET_PATH, self.project
+        )
+        self.investigation.irods_status = True
+        self.investigation.save()
+        assay = Assay.objects.filter(
+            study__investigation=self.investigation
+        ).first()
+        zone = self._make_landing_zone(
+            'new_zone',
+            self.project,
+            self.user,
+            assay,
+            status='FAILED',
+        )
+        app_settings.set_app_setting(
+            APP_NAME,
+            'sheet_config',
+            conf_api.get_sheet_config(self.investigation),
+            project=self.project,
+        )
+
+        self.assertEqual(
+            Investigation.objects.filter(project=self.project).count(), 1
+        )
+        self.assertEqual(ISATab.objects.filter(project=self.project).count(), 1)
+        self.assertIsNone(GenericMaterial.objects.filter(name='0816').first())
+        self.assertEqual(LandingZone.objects.filter(assay=assay).count(), 1)
+
+        url = reverse(
+            'samplesheets:api_import',
+            kwargs={'project': self.project.sodar_uuid},
+        )
+        with open(SHEET_PATH_EDITED, 'rb') as file:
+            post_data = {'file': file}
+            response = self.request_knox(
+                url, method='POST', format='multipart', data=post_data
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            Investigation.objects.filter(project=self.project).count(), 1
+        )
+        self.assertEqual(ISATab.objects.filter(project=self.project).count(), 2)
+        self.assertIsNotNone(
+            GenericMaterial.objects.filter(name='0816').first()
+        )
+        self.investigation = Investigation.objects.get(
+            project=self.project, active=True
+        )
+        zone.refresh_from_db()
+        self.assertEqual(
+            LandingZone.objects.get(
+                assay__study__investigation=self.investigation
+            ),
+            zone,
+        )
+        self.assertEqual(
+            zone.assay,
+            Assay.objects.filter(
+                study__investigation=self.investigation
+            ).first(),
+        )
 
     def test_post_no_plugin_assay(self):
         """Test post() with an assay without plugin"""
@@ -474,7 +539,6 @@ class TestSheetISAExportAPIView(TestSampleSheetAPIBase):
 
     def test_get_json(self):
         """Test json export  in SampleSheetISAExportAPIView"""
-        # Import investigation
         self.investigation = self._import_isa_from_file(
             SHEET_PATH, self.project
         )
@@ -495,7 +559,7 @@ class TestSampleDataFileExistsAPIView(TestSampleSheetAPIBase):
 
     @override_settings(ENABLE_IRODS=False)
     def test_get_no_irods(self):
-        """Test getting file existence info with iRODS not enabled (should fail)"""
+        """Test getting file existence info without iRODS (should fail)"""
         url = reverse('samplesheets:api_file_exists')
         response = self.request_knox(url, data={'checksum': IRODS_FILE_MD5})
         self.assertEqual(response.status_code, 500)

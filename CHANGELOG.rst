@@ -7,6 +7,57 @@ Changelog for the SODAR project. Loosely follows the
 Note that the issue IDs here refer to ones in the private CUBI GitLab.
 
 
+v0.11.2 (2022-03-04)
+====================
+
+Added
+-----
+
+- **General**
+    - ``.readthedocs.yaml`` file (#1362)
+- **Samplesheets**
+    - ``Investigation.get_assays()`` helper (#1359)
+    - View tests for search (#556)
+
+Changed
+-------
+
+- **General**
+    - Upgrade to django-sodar-core v0.10.10 (#1361, #1376)
+    - Link manual to readthedocs.io (#1358)
+- **Landingzones**
+    - Make ``description`` optional in ``_make_landing_zone()`` (#1360)
+- **Samplesheets**
+    - Allow replacing sheets if unfinished landing zones exist (#1356)
+    - Update project list file column legend (#1366)
+    - Upgrade Vue app dependencies (#1369)
+    - Upgrade Vue app to ag-grid v27 (#1370)
+    - Improve search results layout (#1373)
+
+Fixed
+-----
+
+- **General**
+    - Invalid Python version in readthedocs build (#1362)
+- **Landingzones**
+    - Zone list title column layout issues (#1380)
+- **Samplesheets**
+    - ``LandingZone`` objects deleted by API sheet replacing (#1356)
+    - Invalid ``Investigation`` timeline object reference for sheet replacing (#1357)
+    - ``IrodsStatsBadge`` query error handling (#1371)
+    - Keyword ``type:file`` not limiting search (#1374)
+    - Redundant iRODS connections in search result rendering (#1375)
+    - Tooltip hide not working in ontology column config (#1379)
+
+Removed
+-------
+
+- **General**
+    - Local manual build (#1358)
+- **Landingzones**
+    - Unused ``sodar-popup-overlay`` elements from ``project_zones.html`` (#1363)
+
+
 v0.11.1 (2022-02-04)
 ====================
 

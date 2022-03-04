@@ -1,9 +1,10 @@
 """Integration tests for views in the samplesheets Django app with taskflow"""
 
 # NOTE: You must supply 'sodar_url': self.live_server_url in taskflow requests!
-from datetime import timedelta
 import irods
 import os
+from datetime import timedelta
+from urllib.parse import urlencode
 
 from django.conf import settings
 from django.contrib import auth
@@ -69,6 +70,8 @@ TEST_FILE_NAME2 = 'test2'
 DUMMY_UUID = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
 PUBLIC_USER_NAME = 'user_no_roles'
 PUBLIC_USER_PASS = 'password'
+SOURCE_ID = '0815'
+SAMPLE_ID = '0815-N1'
 
 
 class SampleSheetTaskflowMixin:
@@ -1969,3 +1972,108 @@ class TestSampleDataPublicAccess(
         self.assertIsNotNone(coll)
         with self.assertRaises(irods.exception.CollectionDoesNotExist):
             self.user_session.collections.get(new_coll_path)
+
+
+@skipIf(not BACKENDS_ENABLED, BACKEND_SKIP_MSG)
+class TestProjectSearchView(
+    SampleSheetIOMixin, SampleSheetTaskflowMixin, TestTaskflowBase
+):
+    """Tests for project search with sample sheet items"""
+
+    def setUp(self):
+        super().setUp()
+        self.irods_backend = get_backend_api('omics_irods')
+        self.irods_session = self.irods_backend.get_session()
+
+        # Make project with owner in Taskflow and Django
+        self.project, self.owner_as = self._make_project_taskflow(
+            title='TestProject',
+            type=PROJECT_TYPE_PROJECT,
+            parent=self.category,
+            owner=self.user,
+            description='description',
+        )
+
+        # Import investigation
+        self.investigation = self._import_isa_from_file(
+            SHEET_PATH, self.project
+        )
+        self.study = self.investigation.studies.first()
+        self.assay = self.study.assays.first()
+
+        # Set up sample collections
+        self._make_irods_colls(self.investigation)
+        self.assay_path = self.irods_backend.get_path(self.assay)
+
+        # Create test file
+        self.file_name = '{}_test.txt'.format(SAMPLE_ID)
+        self.file_path = self.assay_path + '/' + self.file_name
+        self.irods_session.data_objects.create(self.file_path)
+
+    def test_search(self):
+        """Test search without keyword limiting"""
+        with self.login(self.user):
+            response = self.client.get(
+                reverse('projectroles:search')
+                + '?'
+                + urlencode({'s': SAMPLE_ID})
+            )
+        self.assertEqual(response.status_code, 200)
+        data = response.context['app_search_data'][0]
+        self.assertEqual(len(data['results']), 2)
+        self.assertEqual(len(data['results']['materials']['items']), 1)
+        self.assertEqual(
+            data['results']['materials']['items'][0]['name'], SAMPLE_ID
+        )
+        self.assertEqual(len(data['results']['files']['items']), 1)
+        self.assertEqual(
+            data['results']['files']['items'][0]['name'], self.file_name
+        )
+
+    def test_search_limit_source(self):
+        """Test search with source type limit"""
+        with self.login(self.user):
+            response = self.client.get(
+                reverse('projectroles:search')
+                + '?'
+                + urlencode({'s': '{} type:source'.format(SOURCE_ID)})
+            )
+        self.assertEqual(response.status_code, 200)
+        data = response.context['app_search_data'][0]
+        self.assertEqual(len(data['results']), 1)
+        self.assertEqual(len(data['results']['materials']['items']), 1)
+        self.assertEqual(
+            data['results']['materials']['items'][0]['name'], SOURCE_ID
+        )
+
+    def test_search_limit_sample(self):
+        """Test search with sample type limit"""
+        with self.login(self.user):
+            response = self.client.get(
+                reverse('projectroles:search')
+                + '?'
+                + urlencode({'s': '{} type:sample'.format(SAMPLE_ID)})
+            )
+        self.assertEqual(response.status_code, 200)
+        data = response.context['app_search_data'][0]
+        self.assertEqual(len(data['results']), 1)
+        self.assertEqual(len(data['results']['materials']['items']), 1)
+        self.assertEqual(
+            data['results']['materials']['items'][0]['name'], SAMPLE_ID
+        )
+
+    def test_search_limit_file(self):
+        """Test search with file type limit"""
+        with self.login(self.user):
+            response = self.client.get(
+                reverse('projectroles:search')
+                + '?'
+                + urlencode({'s': '{} type:file'.format(SAMPLE_ID)})
+            )
+        self.assertEqual(response.status_code, 200)
+        data = response.context['app_search_data'][0]
+        self.assertEqual(len(data['results']), 1)
+        self.assertEqual(len(data['results']['files']['items']), 1)
+        self.assertEqual(
+            data['results']['files']['items'][0]['name'], self.file_name
+        )

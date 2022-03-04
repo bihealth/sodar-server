@@ -43,7 +43,7 @@
       create sample sheets from a template here</a>.
     {% endif %}
   </div>
-  {% if replace_sheets and irods_status and not zones_exist %}
+  {% if replace_sheets and irods_status %}
     <div class="alert alert-warning">
       <strong>Warning:</strong> Because iRODS collections have already been
       created, replacing the ISA-Tab will only be accepted if studies and assays
@@ -55,6 +55,14 @@
       select <strong>Update iRODS Collections</strong> from the Zone Operations
       menu after replace has completed.
     </div>
+    {% if zones_exist %}
+      <div class="alert alert-warning">
+        <strong>Warning:</strong> Active landing zones currently exist for the
+        project. You will need to manually verify existing collections still match
+        expected collection names in your landing zone. Otherwise, iRODS links in
+        the sample sheets may not work as expected.
+      </div>
+    {% endif %}
     <div class="alert alert-danger">
       <p>
         <strong>Warning:</strong> Please note that at the moment we do not
@@ -71,19 +79,11 @@
         <li>File name of an existing assay</li>
       </ul>
     </div>
-  {% elif replace_sheets and zones_exist %}
-    <div class="alert alert-danger">
-      <strong>Error:</strong> Active landing zones currently exist for the
-      project. Replacing sample sheets is not allowed. Please make sure all
-      landing zones in the project are finished or deleted and try again.
-    </div>
   {% endif %}
 
   <form method="post" enctype="multipart/form-data">
-    {% if not replace_sheets or not zones_exist %}
-      {% csrf_token %}
-      {{ form | crispy }}
-    {% endif %}
+    {% csrf_token %}
+    {{ form | crispy }}
 
     <div class="row">
       <div class="btn-group ml-auto">
@@ -91,11 +91,11 @@
            href="{% url 'samplesheets:project_sheets' project=project.sodar_uuid %}">
           <i class="iconify" data-icon="mdi:arrow-left-circle"></i> Cancel
         </a>
-        {% if replace_sheets and not zones_exist %}
+        {% if replace_sheets %}
           <button type="submit" class="btn btn-primary" id="sodar-ss-btn-import-submit">
             <i class="iconify" data-icon="mdi:refresh"></i> Replace
           </button>
-        {% elif not replace_sheets %}
+        {% else %}
           <button type="submit" class="btn btn-primary" id="sodar-ss-btn-import-submit">
             <i class="iconify" data-icon="mdi:upload"></i> Import
           </button>

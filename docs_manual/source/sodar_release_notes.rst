@@ -8,6 +8,18 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
+v0.11.2 (2022-03-04)
+====================
+
+Release for minor updates, maintenance and bug fixes.
+
+- Fix known sample sheet replacing issues
+- Fix iRODS file search issues
+- Minor updates and general bug fixes
+- Upgrade to ag-grid v27
+- Upgrade to SODAR Core v0.10.10
+
+
 v0.11.1 (2022-02-04)
 ====================
 

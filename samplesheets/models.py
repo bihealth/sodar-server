@@ -255,6 +255,12 @@ class Investigation(BaseSampleSheet):
 
     # Custom row-level functions
 
+    def get_assays(self):
+        """Return assays in the studies of this investigation"""
+        return Assay.objects.filter(study__investigation=self).order_by(
+            'file_name'
+        )
+
     def get_configuration(self):
         """Return used configuration as string if found"""
         # TODO: Do this with a nice regex instead, too tired now

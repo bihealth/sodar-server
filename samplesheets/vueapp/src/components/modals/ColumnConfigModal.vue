@@ -190,7 +190,7 @@
                       title="Clear default ontology terms"
                       @click="onOntologyDefaultDelete()"
                       :disabled="!fieldConfig.default"
-                      v-b-tooltip.hover.left.d300>
+                      v-b-tooltip.hover>
                     <i class="iconify" data-icon="mdi:close-thick"></i>
                   </b-button>
                 </b-input-group-append>
@@ -489,7 +489,7 @@
                   title="Insert ontology"
                   @click="onOntologyInsert"
                   :disabled="!insertOntology"
-                  v-b-tooltip.hover.left.d300>
+                  v-b-tooltip.hover.left>
                 <i class="iconify" data-icon="mdi:plus-thick"></i>
               </b-button>
             </td>
@@ -700,6 +700,9 @@ export default {
     },
     onOntologyDefaultDelete () {
       this.fieldConfig.default = null
+      this.$nextTick(() => {
+        this.$root.$emit('bv::hide::tooltip')
+      })
     },
     onCopySuccess (event) {
       this.$refs.notifyBadge.show('Config Copied', 'success', 1000)

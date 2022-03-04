@@ -32,15 +32,15 @@
       {% if details_card_mode %}
         </a>
       {% endif %}
+      {% if zone.description %}
+        {% get_zone_desc_html zone as zone_desc_html %}
+        {% get_info_link zone_desc_html html=True as info_link %}
+        {{ info_link | safe }}
+      {% endif %}
+      {% if zone.configuration %}
+        <span class="badge badge-pill badge-success">{% get_config_legend zone %}</span>
+      {% endif %}
     </div>
-    {% if zone.description %}
-      {% get_zone_desc_html zone as zone_desc_html %}
-      {% get_info_link zone_desc_html html=True as info_link %}
-      {{ info_link | safe }}
-    {% endif %}
-    {% if zone.configuration %}
-      <span class="badge badge-pill badge-success">{% get_config_legend zone %}</span>
-    {% endif %}
   </td>
   <td class="sodar-lz-zone-status-info">
       <span id="sodar-lz-zone-status-info-{{ zone.sodar_uuid }}">

@@ -15,6 +15,10 @@ from django.utils.timezone import localtime
 
 from test_plus.test import TestCase
 
+# Landingzones dependency
+from landingzones.models import LandingZone
+from landingzones.tests.test_models import LandingZoneMixin
+
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
 from projectroles.models import Role, AppSetting, SODAR_CONSTANTS
@@ -178,7 +182,7 @@ class TestProjectSheetsView(TestViewsBase):
         self.assertNotIn('tables', response.context)
 
 
-class TestSheetImportView(SheetImportMixin, TestViewsBase):
+class TestSheetImportView(SheetImportMixin, LandingZoneMixin, TestViewsBase):
     """Tests for the investigation import view"""
 
     def setUp(self):
@@ -336,6 +340,60 @@ class TestSheetImportView(SheetImportMixin, TestViewsBase):
         self.assertEqual(Investigation.objects.count(), 1)
         new_inv = Investigation.objects.first()
         self.assertEqual(uuid, new_inv.sodar_uuid)  # Should not have changed
+
+    def test_post_replace_zone(self):
+        """Test replacing with existing landing zone"""
+        inv = self._import_isa_from_file(SHEET_PATH, self.project)
+        inv.irods_status = True
+        inv.save()
+        uuid = inv.sodar_uuid
+        app_settings.set_app_setting(
+            'samplesheets',
+            'display_config',
+            {},
+            project=self.project,
+            user=self.user,
+        )
+        conf_api.get_sheet_config(inv)
+        zone = self._make_landing_zone(
+            'new_zone',
+            self.project,
+            self.user,
+            inv.get_assays().first(),
+            status='ACTIVE',
+        )
+
+        self.assertEqual(Investigation.objects.count(), 1)
+        self.assertEqual(ISATab.objects.count(), 1)
+        self.assertEqual(
+            AppSetting.objects.filter(name='display_config').count(), 1
+        )
+
+        with open(SHEET_PATH_INSERTED, 'rb') as file:
+            with self.login(self.user):
+                values = {'file_upload': file}
+                response = self.client.post(
+                    reverse(
+                        'samplesheets:import',
+                        kwargs={'project': self.project.sodar_uuid},
+                    ),
+                    values,
+                )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Investigation.objects.count(), 1)
+        self.assertEqual(uuid, Investigation.objects.first().sodar_uuid)
+        self.assertEqual(ISATab.objects.count(), 2)
+        inv = Investigation.objects.get(project=self.project, active=True)
+        zone.refresh_from_db()
+        self.assertEqual(
+            LandingZone.objects.get(assay__study__investigation=inv),
+            zone,
+        )
+        self.assertEqual(
+            zone.assay,
+            Assay.objects.filter(study__investigation=inv).first(),
+        )
 
     def test_post_critical_warnings(self):
         """Test posting an ISA-Tab which raises critical warnings in altamISA"""

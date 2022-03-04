@@ -44,10 +44,10 @@ SODAR uses the external
 `SODAR Taskflow <https://github.com/bihealth/sodar-taskflow>`_
 service for managing large scale data transactions in the iRODS system.
 
-See `docs_dev <docs_dev>`_ for development documentation.
+For instructions on using the system, see the
+`SODAR Manual <https://sodar-server.readthedocs.io/>`_.
 
-**Note:** This project is under heavy development and all features may not be
-fully tested or documented. Improved documentation is forthcoming.
+See `docs_dev <docs_dev>`_ for development documentation.
 
 **Note:** The project and documentation may refer to practices, services or data
 specific to research work at Berlin Institute of Health, Core Unit

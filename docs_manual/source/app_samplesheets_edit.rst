@@ -94,8 +94,10 @@ There are also special cases for string input and specific columns:
 
 Node Names
     Node names are restricted to basic string editing with no list values or
-    hyperlinks supported. Editing the name cell of an existing node will rename
-    the node.
+    hyperlinks supported. Note that editing the name cell of an existing node
+    will rename the existing node. Changing the row to contain a different
+    existing node in case of splitting/pooling is not currently supported by the
+    editor.
 Contacts
     Contact cells act as string cells with the following expected syntax:
     ``Contact Name <contact@email.org>``. The email can be omitted.

@@ -2,6 +2,11 @@
 import DataCellEditor from '@/components/editors/DataCellEditor'
 import ObjectSelectEditor from '@/components/editors/ObjectSelectEditor'
 import OntologyEditor from '@/components/editors/OntologyEditor'
+import DataCellRenderer from '@/components/renderers/DataCellRenderer'
+import HeaderEditRenderer from '@/components/renderers/HeaderEditRenderer'
+import StudyShortcutsRenderer from '@/components/renderers/StudyShortcutsRenderer'
+import IrodsButtonsRenderer from '@/components/renderers/IrodsButtonsRenderer'
+import RowEditRenderer from '@/components/renderers/RowEditRenderer'
 import sodarContext from './unit/data/sodarContext.json'
 import studyTables from './unit/data/studyTables.json'
 import studyTablesEdit from './unit/data/studyTablesEdit.json'
@@ -20,11 +25,6 @@ export function getAppStub (params = {}) {
     template: '<div />',
     editContext: params.editContext || null,
     editMode: params.editMode || false,
-    frameworkComponents: {
-      dataCellEditor: DataCellEditor,
-      objectSelectEditor: ObjectSelectEditor,
-      ontologyEditor: OntologyEditor
-    },
     projectUuid: projectUuid,
     sodarContext: params.sodarContext,
     unsavedRow: params.unsavedRow || null,
@@ -38,6 +38,20 @@ export function getAppStub (params = {}) {
       dirModalRef: null,
       ontologyEditModal: null
     }
+  }
+}
+
+// Return app components for sheet table
+export function getSheetTableComponents () {
+  return {
+    DataCellRenderer,
+    HeaderEditRenderer,
+    StudyShortcutsRenderer,
+    IrodsButtonsRenderer,
+    RowEditRenderer,
+    DataCellEditor,
+    ObjectSelectEditor,
+    OntologyEditor
   }
 }
 

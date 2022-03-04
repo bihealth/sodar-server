@@ -1,6 +1,7 @@
 import { createLocalVue, mount } from '@vue/test-utils'
 import {
   getAppStub,
+  getSheetTableComponents,
   getSheetTablePropsData,
   waitRAF,
   waitAG,
@@ -30,7 +31,9 @@ describe('IrodsButtonsRenderer.vue', () => {
     }, params)
     retParams.gridOptions = initGridOptions(retParams.app, retParams.editMode)
     return mount(SheetTable, {
-      localVue, propsData: getSheetTablePropsData(retParams)
+      localVue,
+      propsData: getSheetTablePropsData(retParams),
+      components: getSheetTableComponents()
     })
   }
 
@@ -53,6 +56,7 @@ describe('IrodsButtonsRenderer.vue', () => {
     await waitSelector(wrapper, '.sodar-ss-data-links-cell', 2)
 
     expect(wrapper.findAll('.sodar-ss-data-links-cell').length).toBe(2)
+    await waitRAF()
     expect(wrapper.findAll('.sodar-ss-irods-links').length).toBe(2)
   })
 

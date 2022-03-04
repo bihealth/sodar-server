@@ -19,16 +19,14 @@
   <style type="text/css">
     .sodar-lz-table {
         table-layout: fixed;
-        width: 100%;
     }
 
-    .sodar-lz-table thead tr th:nth-child(1),
-    .sodar-lz-table tbody tr td:nth-child(1) {
-      width: 300px;
+    .sodar-lz-table thead tr th:nth-child(1){
+      width: 350px;
     }
 
     .sodar-lz-table tbody tr td:nth-child(2) {
-        word-wrap: break-word;
+      word-wrap: break-word;
     }
 
     .sodar-lz-table thead tr th:nth-child(3),
@@ -61,6 +59,12 @@
       }
     }
 
+    @media screen and (max-width: 1200px) {
+      .table.sodar-lz-table thead tr th:nth-child(1) {
+        width: 250px;
+      }
+    }
+
     @media screen and (max-width: 900px) {
       .table.sodar-lz-table thead tr th:nth-child(2) {
         display: none;
@@ -78,7 +82,6 @@
         display: none;
       }
     }
-
   </style>
 {% endblock css %}
 
@@ -134,9 +137,6 @@
   {% endif %}
 
 </div> {# Main container #}
-
-<span class="sodar-popup-overlay" id="sodar-lz-popup-list" list-url="" zone-title=""></span>
-<span class="sodar-popup-overlay" id="sodar-lz-popup-cmd" irods-path="" zone-title=""></span>
 
 {% endblock projectroles_extend %}
 
