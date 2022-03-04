@@ -68,8 +68,8 @@ class TestPluginsBase(
 class TestGetIrodsContent(TestPluginsBase):
     """Tests for get_irods_content()"""
 
-    def test_get_irod_content(self):
-        """Test get_alt_names() with a typical object name"""
+    def test_get_irods_content(self):
+        """Test get_irods_content()"""
         ret_data = get_irods_content(
             self.investigation, self.study, self.irods_backend, self.ret_data
         )

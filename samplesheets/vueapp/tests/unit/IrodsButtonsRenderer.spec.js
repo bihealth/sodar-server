@@ -56,6 +56,7 @@ describe('IrodsButtonsRenderer.vue', () => {
     await waitSelector(wrapper, '.sodar-ss-data-links-cell', 2)
 
     expect(wrapper.findAll('.sodar-ss-data-links-cell').length).toBe(2)
+    await waitRAF()
     expect(wrapper.findAll('.sodar-ss-irods-links').length).toBe(2)
   })
 

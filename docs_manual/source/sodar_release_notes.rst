@@ -8,8 +8,8 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
-v0.11.2 (WIP)
-=============
+v0.11.2 (2022-03-04)
+====================
 
 Release for minor updates, maintenance and bug fixes.
 
