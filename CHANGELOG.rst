@@ -7,6 +7,16 @@ Changelog for the SODAR project. Loosely follows the
 Note that the issue IDs here refer to ones in the private CUBI GitLab.
 
 
+Unreleased
+==========
+
+Fixed
+-----
+
+- **General**
+    - Minor manual issues (#1386, #1387)
+
+
 v0.11.2 (2022-03-04)
 ====================
 

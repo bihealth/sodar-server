@@ -43,6 +43,10 @@ To enable versioning, add the ``Accept`` header to your request with the
 following media type and version syntax. Replace the version number with your
 expected version.
 
+.. code-block:: console
+
+    Accept: application/vnd.bihealth.sodar+json; version=0.11.2
+
 Specific sections of the SODAR API may require their own accept header. See the
 exact header requirement in the respective documentation on each section of the
 API.
