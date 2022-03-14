@@ -15,6 +15,7 @@ Fixed
 
 - **General**
     - Minor manual issues (#1386, #1387)
+    - ``build-docker.sh`` failing with special characters in tag name (#1385)
 
 
 v0.11.2 (2022-03-04)
