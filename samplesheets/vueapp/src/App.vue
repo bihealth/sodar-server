@@ -194,6 +194,10 @@
         ref="versionSaveModal">
     </version-save-modal>
 
+    <!-- Editing: SAMS Modal -->
+    <sams-modal ref="samsModal">
+    </sams-modal>
+
     <!--<router-view/>-->
   </div>
 </template>
@@ -212,6 +216,7 @@ import EditorHelpModal from './components/modals/EditorHelpModal.vue'
 import WinExportModal from './components/modals/WinExportModal.vue'
 import OntologyEditModal from './components/modals/OntologyEditModal.vue'
 import VersionSaveModal from './components/modals/VersionSaveModal.vue'
+import SamsModal from './components/modals/SamsModal.vue'
 import AssayShortcutCard from './components/AssayShortcutCard.vue'
 import DataCellRenderer from './components/renderers/DataCellRenderer'
 import HeaderEditRenderer from './components/renderers/HeaderEditRenderer'
@@ -295,6 +300,7 @@ export default {
     WinExportModal,
     OntologyEditModal,
     VersionSaveModal,
+    SamsModal,
     AssayShortcutCard,
     /* eslint-disable vue/no-unused-components */
     // NOTE: These ARE used in gridUtils but this confuses eslint
