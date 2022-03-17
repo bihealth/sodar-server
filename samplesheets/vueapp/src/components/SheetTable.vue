@@ -31,6 +31,14 @@
         </b-input-group>
         <b-button
             v-if="app.editMode"
+            variant="danger"
+            class="sodar-header-button mr-2 pull-right"
+            @click="onSamsToggle()"
+            v-b-tooltip.hover>
+          <i class="iconify" data-icon="mdi:window-restore"></i> Test SAMS Modal
+        </b-button>
+        <b-button
+            v-if="app.editMode"
             variant="primary"
             class="sodar-header-button sodar-ss-row-insert-btn mr-2 pull-right"
             :title="getInsertRowTitle()"
@@ -98,6 +106,9 @@ export default {
     onColumnToggle () {
       this.app.$refs.columnToggleModalRef.showModal(
         this.gridUuid, this.assayMode)
+    },
+    onSamsToggle () {
+      this.app.$refs.samsModal.showModal()
     },
     getInsertRowTitle () {
       if (!this.app.unsavedRow) {
