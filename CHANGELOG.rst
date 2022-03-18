@@ -36,6 +36,7 @@ Changed
 - **General**
     - Upgrade to django-sodar-core v0.10.10 (#1361, #1376)
     - Link manual to readthedocs.io (#1358)
+    - Upgrade to python-irodsclient v1.1.2 (#1389)
 - **Landingzones**
     - Make ``description`` optional in ``_make_landing_zone()`` (#1360)
 - **Samplesheets**
