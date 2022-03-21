@@ -1689,7 +1689,7 @@ class TestIrodsRequestRejectView(TestIrodsRequestViewsBase):
             self.assertRedirects(response, reverse('home'))
             self.assertEqual(
                 list(get_messages(response.wsgi_request))[-1].message,
-                'User not authorized for requested action',
+                'User not authorized for requested action.',
             )
             self.assertEqual(IrodsDataRequest.objects.count(), 1)
 
@@ -2019,7 +2019,7 @@ class TestProjectSearchView(
                 + urlencode({'s': SAMPLE_ID})
             )
         self.assertEqual(response.status_code, 200)
-        data = response.context['app_search_data'][0]
+        data = response.context['app_results'][0]
         self.assertEqual(len(data['results']), 2)
         self.assertEqual(len(data['results']['materials']['items']), 1)
         self.assertEqual(
@@ -2039,7 +2039,7 @@ class TestProjectSearchView(
                 + urlencode({'s': '{} type:source'.format(SOURCE_ID)})
             )
         self.assertEqual(response.status_code, 200)
-        data = response.context['app_search_data'][0]
+        data = response.context['app_results'][0]
         self.assertEqual(len(data['results']), 1)
         self.assertEqual(len(data['results']['materials']['items']), 1)
         self.assertEqual(
@@ -2055,7 +2055,7 @@ class TestProjectSearchView(
                 + urlencode({'s': '{} type:sample'.format(SAMPLE_ID)})
             )
         self.assertEqual(response.status_code, 200)
-        data = response.context['app_search_data'][0]
+        data = response.context['app_results'][0]
         self.assertEqual(len(data['results']), 1)
         self.assertEqual(len(data['results']['materials']['items']), 1)
         self.assertEqual(
@@ -2071,7 +2071,7 @@ class TestProjectSearchView(
                 + urlencode({'s': '{} type:file'.format(SAMPLE_ID)})
             )
         self.assertEqual(response.status_code, 200)
-        data = response.context['app_search_data'][0]
+        data = response.context['app_results'][0]
         self.assertEqual(len(data['results']), 1)
         self.assertEqual(len(data['results']['files']['items']), 1)
         self.assertEqual(

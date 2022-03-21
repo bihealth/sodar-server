@@ -10,6 +10,12 @@ Note that the issue IDs here refer to ones in the private CUBI GitLab.
 Unreleased
 ==========
 
+Changed
+-------
+
+- **General**
+    - Upgrade to django-sodar-core v0.10.11-WIP (#1391)
+
 Fixed
 -----
 

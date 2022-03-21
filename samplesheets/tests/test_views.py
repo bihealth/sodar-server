@@ -1145,7 +1145,7 @@ class TestProjectSearchView(TestViewsBase):
     """Tests for the search results view with sample sheet input"""
 
     def _get_items(self, response):
-        return response.context['app_search_data'][0]['results']['materials'][
+        return response.context['app_results'][0]['results']['materials'][
             'items'
         ]
 
