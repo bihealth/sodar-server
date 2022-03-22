@@ -14,7 +14,7 @@ Changed
 -------
 
 - **General**
-    - Upgrade to django-sodar-core v0.10.11-WIP (#1391)
+    - Upgrade to django-sodar-core v0.10.11 (#1391)
 
 Fixed
 -----
