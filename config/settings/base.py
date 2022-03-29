@@ -75,7 +75,6 @@ THIRD_PARTY_APPS = [
     'tokens.apps.TokensConfig',
     'appalerts.apps.AppalertsConfig',
     # Backend apps
-    'taskflowbackend.apps.TaskflowbackendConfig',
     'sodarcache.apps.SodarcacheConfig',
 ]
 
@@ -88,6 +87,7 @@ LOCAL_APPS = [
     'landingzones.apps.LandingzonesConfig',
     # Backend apps
     'irodsbackend.apps.IrodsbackendConfig',
+    'taskflowbackend.apps.TaskflowbackendConfig',
     # General site apps
     'siteinfo.apps.SiteinfoConfig',
     'irodsinfo.apps.IrodsinfoConfig',
