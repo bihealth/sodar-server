@@ -49,6 +49,8 @@ logger = logging.getLogger(__name__)
 
 # SODAR constants
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
+PROJECT_ACTION_CREATE = SODAR_CONSTANTS['PROJECT_ACTION_CREATE']
+PROJECT_ACTION_UPDATE = SODAR_CONSTANTS['PROJECT_ACTION_UPDATE']
 
 # Local constants
 SHEETS_INFO_SETTINGS = [
@@ -485,17 +487,24 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                 )
             )
 
-    def handle_project_update(self, project, old_data):
+    def perform_project_modification(
+        self, project, action, owner, project_settings, request, old_data=None
+    ):
         """
-        Perform actions to handle project update.
+        Perform additional actions to finalize project creation or update.
 
-        :param project: Current project (Project)
-        :param old_data: Old project data prior to update (dict)
+        :param project: Current project object (Project)
+        :param action: Action to perform (CREATE or UPDATE)
+        :param owner: User object of project owner
+        :param project_settings: Dict
+        :param request: Request object for triggering the creation or update
+        :param old_data: Old project data in case of an update (dict or None)
         """
         taskflow = get_backend_api('taskflow')
         irods_backend = get_backend_api('omics_irods')  # Need conn for ticket
 
         # Check for conditions and skip if not met
+        # TODO: Make this a common helper in projectroles?
         def _skip(msg):
             logger.debug(
                 'Skipping project update for "{}" ({}): {}'.format(
@@ -510,7 +519,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                     irods_backend is not None,
                 )
             )
-        if not old_data:
+        if action == PROJECT_ACTION_CREATE:
             return _skip('Project newly created, no Investigation available')
         if project.public_guest_access == old_data.get('public_guest_access'):
             return _skip('Public guest access unchanged')
