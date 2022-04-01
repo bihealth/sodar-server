@@ -14,7 +14,11 @@ from djangoplugins.point import PluginPoint
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
 from projectroles.models import Project, SODAR_CONSTANTS
-from projectroles.plugins import ProjectAppPluginPoint, get_backend_api
+from projectroles.plugins import (
+    ProjectAppPluginPoint,
+    ProjectModifyPluginAPIMixin,
+    get_backend_api,
+)
 from projectroles.utils import build_secret
 
 from samplesheets.models import (
@@ -73,7 +77,7 @@ MATERIAL_SEARCH_TYPES = ['source', 'sample']
 # Samplesheets project app plugin ----------------------------------------------
 
 
-class ProjectAppPlugin(ProjectAppPluginPoint):
+class ProjectAppPlugin(ProjectModifyPluginAPIMixin, ProjectAppPluginPoint):
     """Plugin for registering app with Projectroles"""
 
     #: Name (slug-safe, used in URLs)
@@ -487,7 +491,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                 )
             )
 
-    def perform_project_modification(
+    def perform_project_modify(
         self, project, action, owner, project_settings, request, old_data=None
     ):
         """
@@ -588,6 +592,22 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                     return
 
         logger.info('Public access status updated.')
+
+    def revert_project_modify(
+        self, project, action, owner, project_settings, request, old_data=None
+    ):
+        """
+        Revert project creation or update if errors have occurred in other apps.
+
+        :param project: Current project object (Project)
+        :param action: Action which was performed (CREATE or UPDATE)
+        :param owner: User object of project owner
+        :param project_settings: Dict
+        :param request: Request object for triggering the creation or update
+        :param old_data: Old project data in case of an update (dict or None)
+        """
+        # TODO: Implement this
+        pass
 
     def update_cache(self, name=None, project=None, user=None):
         """

@@ -4,8 +4,8 @@ import logging
 import requests
 
 # Projectroles dependency
-from projectroles.models import Role, SODAR_CONSTANTS
-from projectroles.plugins import BackendPluginPoint
+from projectroles.models import SODAR_CONSTANTS
+from projectroles.plugins import BackendPluginPoint, ProjectModifyPluginAPIMixin
 
 from taskflowbackend.api import TaskflowAPI
 
@@ -19,7 +19,7 @@ PROJECT_ACTION_CREATE = SODAR_CONSTANTS['PROJECT_ACTION_CREATE']
 PROJECT_ACTION_UPDATE = SODAR_CONSTANTS['PROJECT_ACTION_UPDATE']
 
 
-class BackendPlugin(BackendPluginPoint):
+class BackendPlugin(ProjectModifyPluginAPIMixin, BackendPluginPoint):
     """Plugin for registering backend app with Projectroles"""
 
     #: Name (slug-safe, used in URLs)
@@ -38,7 +38,7 @@ class BackendPlugin(BackendPluginPoint):
         """Return API entry point object."""
         return TaskflowAPI()
 
-    def perform_project_modification(
+    def perform_project_modify(
         self, project, action, owner, project_settings, request, old_data=None
     ):
         """
@@ -57,23 +57,13 @@ class BackendPlugin(BackendPluginPoint):
         # if tl_event:
         #     tl_event.set_status('SUBMIT')
         flow_data = {
-            'project_title': project.title,
-            'project_description': project.description,
-            'parent_uuid': str(project.parent.sodar_uuid)
-            if project.parent
-            else '',
-            'public_guest_access': project.public_guest_access,
-            'owner_username': owner.username,
-            'owner_uuid': str(owner.sodar_uuid),
-            'owner_role_pk': Role.objects.get(name=PROJECT_ROLE_OWNER).pk,
+            'project': project,
+            'owner': owner,
             'settings': project_settings,
         }
 
         if action == PROJECT_ACTION_UPDATE:  # Update
-            old_owner = project.get_owner().user
-            flow_data['old_owner_uuid'] = str(old_owner.sodar_uuid)
-            flow_data['old_owner_username'] = old_owner.username
-            flow_data['project_readme'] = project.readme.raw
+            flow_data['old_owner'] = project.get_owner().user
             if old_data.parent:
                 # Get inherited owners for project and its children to add
                 new_roles = taskflow.get_inherited_users(project)
@@ -96,7 +86,7 @@ class BackendPlugin(BackendPluginPoint):
 
         try:
             taskflow.submit(
-                project_uuid=str(project.sodar_uuid),
+                project=project,
                 flow_name='project_{}'.format(action.lower()),
                 flow_data=flow_data,
                 request=request,
@@ -110,7 +100,7 @@ class BackendPlugin(BackendPluginPoint):
             #     tl_event.set_status('FAILED', str(ex))
             raise ex
 
-    def revert_project_modification(
+    def revert_project_modify(
         self, project, action, owner, project_settings, request, old_data=None
     ):
         """
@@ -124,4 +114,60 @@ class BackendPlugin(BackendPluginPoint):
         :param old_data: Old project data in case of an update (dict or None)
         """
         # TODO: Run flow to remove collections and user group if creation failed
+        pass
+
+    def perform_role_modify(self, role_as, action, request, old_role=None):
+        """
+        Perform additional actions to finalize role assignment creation or
+        update.
+
+        :param role_as: RoleAssignment object
+        :param action: Action to perform (CREATE or UPDATE)
+        :param request: Request object for triggering the creation or update
+        :param old_role: Role object for previous role in case of an update
+        """
+        taskflow = self.get_api()
+
+        # TODO: Create separate taskflow event
+        # if tl_event:
+        #     tl_event.set_status('SUBMIT')
+        # TODO: Update flow data
+        flow_data = {
+            'username': role_as.user.username,
+            'user_uuid': str(role_as.user.sodar_uuid),
+            'role_pk': role_as.role.pk,
+        }
+        try:
+            taskflow.submit(
+                project=role_as.project,
+                flow_name='role_update',
+                flow_data=flow_data,
+                request=request,
+            )
+        except taskflow.FlowSubmitException as ex:
+            # if tl_event:
+            #     tl_event.set_status('FAILED', str(ex))
+            raise ex
+
+    def revert_role_modify(self, role_as, action, request, old_role=None):
+        """
+        Revert role assignment creation or update if errors have occurred in
+        other apps.
+
+        :param role_as: RoleAssignment object
+        :param action: Action which was performed (CREATE or UPDATE)
+        :param request: Request object for triggering the creation or update
+        :param old_role: Role object for previous role in case of an update
+        """
+        # TODO: Implement
+        pass
+
+    def perform_role_delete(self, role_as, request):
+        """
+        Perform additional actions to finalize role assignment deletion.
+
+        :param role_as: RoleAssignment object
+        :param request: Request object for triggering the creation or update
+        """
+        # TODO: Implement
         pass
