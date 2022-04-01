@@ -694,7 +694,7 @@ TASKFLOW_BACKEND_HOST = env.str('TASKFLOW_BACKEND_HOST', 'http://127.0.0.1')
 TASKFLOW_BACKEND_PORT = env.int('TASKFLOW_BACKEND_PORT', 5005)
 TASKFLOW_SODAR_SECRET = env.str('TASKFLOW_SODAR_SECRET', 'CHANGE ME!')
 TASKFLOW_TEST_MODE = False  # Important to protect iRODS data
-
+# TODO: Add additional settings formerly in sodar_taskflow project
 
 # Samplesheets and Landingzones link settings
 IRODS_WEBDAV_ENABLED = env.bool('IRODS_WEBDAV_ENABLED', True)

@@ -684,11 +684,13 @@ class IrodsCollsCreateViewMixin:
                 name=investigation.title,
             )
 
+        # TODO: Update flow data
         flow_data = {
             'colls': get_sample_colls(investigation),
             'public_guest_access': project.public_guest_access,
         }
         try:
+            # TODO: Update arguments
             taskflow.submit(
                 project_uuid=project.sodar_uuid,
                 flow_name='sheet_colls_create',
@@ -1503,6 +1505,7 @@ class SheetDeleteView(
             if tl_event:
                 tl_event.set_status('SUBMIT')
             try:
+                # TODO: Update arguments
                 taskflow.submit(
                     project_uuid=project.sodar_uuid,
                     flow_name='sheet_delete',
@@ -2314,6 +2317,7 @@ class IrodsRequestAcceptView(
             )
 
         flow_name = 'data_delete'
+        # TODO: Update flow data
         flow_data = {
             'paths': [obj.path],
         }
@@ -2321,6 +2325,7 @@ class IrodsRequestAcceptView(
             flow_data['paths'].append(obj.path + '.md5')
 
         try:
+            # TODO: Update arguments
             taskflow.submit(
                 project_uuid=project.sodar_uuid,
                 flow_name=flow_name,

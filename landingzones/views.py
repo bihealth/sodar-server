@@ -173,6 +173,7 @@ class ZoneCreateMixin(ZoneConfigPluginMixin):
         logger.debug('Collections to be created: {}'.format(', '.join(colls)))
 
         flow_name = 'landing_zone_create'
+        # TODO: Update flow data
         flow_data = self._get_flow_data(
             zone,
             flow_name,
@@ -191,6 +192,7 @@ class ZoneCreateMixin(ZoneConfigPluginMixin):
         )
 
         try:
+            # TODO: Update arguments
             taskflow.submit(
                 project_uuid=project.sodar_uuid,
                 flow_name=flow_name,
@@ -246,6 +248,7 @@ class ZoneDeleteMixin(ZoneConfigPluginMixin):
 
         # Submit with taskflow
         flow_name = 'landing_zone_delete'
+        # TODO: Update flow data
         flow_data = self._get_flow_data(
             zone,
             flow_name,
@@ -261,6 +264,7 @@ class ZoneDeleteMixin(ZoneConfigPluginMixin):
         )
 
         try:
+            # TODO: Update arguments
             taskflow.submit(
                 project_uuid=project.sodar_uuid,
                 flow_name=flow_name,
@@ -325,6 +329,7 @@ class ZoneMoveMixin(ZoneConfigPluginMixin):
             )
             tl_event.set_status('SUBMIT')
 
+        # TODO: Update flow data
         flow_data = self._get_flow_data(
             zone,
             'landing_zone_move',
@@ -346,6 +351,7 @@ class ZoneMoveMixin(ZoneConfigPluginMixin):
             flow_data['validate_only'] = True
 
         try:
+            # TODO: Update arguments
             taskflow.submit(
                 project_uuid=project.sodar_uuid,
                 flow_name='landing_zone_move',
