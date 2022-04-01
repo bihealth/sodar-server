@@ -15,6 +15,7 @@ Changed
 
 - **General**
     - Upgrade to django-sodar-core v0.10.11 (#1391)
+    - Upgrade to black v22.3.0 (sodar_core#972)
 
 Fixed
 -----
