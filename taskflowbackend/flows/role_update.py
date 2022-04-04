@@ -1,6 +1,5 @@
-from .base_flow import BaseLinearFlow
-from apis.irods_utils import get_project_group_name
-from tasks import sodar_tasks, irods_tasks
+from taskflowbackend.flows.base_flow import BaseLinearFlow
+from taskflowbackend.tasks import sodar_tasks, irods_tasks
 
 
 class Flow(BaseLinearFlow):
@@ -11,16 +10,7 @@ class Flow(BaseLinearFlow):
         return super().validate()
 
     def build(self, force_fail=False):
-
-        ########
-        # Setup
-        ########
-
-        project_group = get_project_group_name(self.project_uuid)
-
-        ##############
-        # iRODS Tasks
-        ##############
+        project_group = self.irods_backend.get_project_group_name(self.project)
 
         self.add_task(
             irods_tasks.CreateUserTask(
@@ -32,7 +22,6 @@ class Flow(BaseLinearFlow):
                 },
             )
         )
-
         self.add_task(
             irods_tasks.AddUserToGroupTask(
                 name='Add user to project user group',
@@ -43,11 +32,6 @@ class Flow(BaseLinearFlow):
                 },
             )
         )
-
-        ##############
-        # SODAR Tasks
-        ##############
-
         self.add_task(
             sodar_tasks.SetRoleTask(
                 name='Set user role',

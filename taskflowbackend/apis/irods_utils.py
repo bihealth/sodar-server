@@ -35,58 +35,6 @@ def cleanup_irods_data(irods, verbose=True):
                 logger.info('Removed user: {}'.format(g[UserGroup.name]))
 
 
-# TODO: Remove after refactoring calls
-def get_project_path(project_uuid):
-    """Return project path"""
-    return '{project_root}/{uuid_prefix}/{uuid}'.format(
-        project_root=PROJECT_ROOT,
-        uuid_prefix=project_uuid[:2],
-        uuid=project_uuid,
-    )
-
-
-# TODO: Remove after refactoring calls
-def get_sample_path(project_uuid, assay_path=None):
-    """Return project sample data path"""
-    ret = '{project_path}/{sample_dir}'.format(
-        project_path=get_project_path(project_uuid),
-        sample_dir=settings.TASKFLOW_SAMPLE_COLL,
-    )
-    if assay_path:
-        ret += '/' + assay_path
-    return ret
-
-
-# TODO: Remove after refactoring calls
-def get_landing_zone_root(project_uuid):
-    """Return project landing zone root"""
-    return '{project_path}/{lz_dir}'.format(
-        project_path=get_project_path(project_uuid),
-        lz_dir=settings.TASKFLOW_LANDING_ZONE_COLL,
-    )
-
-
-def get_landing_zone_path(
-    project_uuid, user_name, assay_path, zone_title, zone_config
-):
-    return (
-        '{project_path}/{lz_dir}/{user_name}/'
-        '{assay}/{zone_title}{zone_config}'.format(
-            project_path=get_project_path(project_uuid),
-            lz_dir=settings.TASKFLOW_LANDING_ZONE_COLL,
-            user_name=user_name,
-            assay=assay_path,
-            zone_title=zone_title,
-            zone_config=('_' + zone_config) if zone_config else '',
-        )
-    )
-
-
-def get_project_group_name(project_uuid):
-    """Return project user group name"""
-    return 'omics_project_{}'.format(project_uuid)
-
-
 def get_trash_path(path, add_rand=False):
     """Return base trash path for an object without a versioning suffix. Adds
     random characters if add_rand is set True (for revert operations)"""

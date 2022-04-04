@@ -1,8 +1,7 @@
-from config import settings
+from django.conf import settings
 
-from .base_flow import BaseLinearFlow
-from apis.irods_utils import get_project_path, get_project_group_name
-from tasks import sodar_tasks, irods_tasks
+from taskflowbackend.flows.base_flow import BaseLinearFlow
+from taskflowbackend.tasks import sodar_tasks, irods_tasks
 
 
 PUBLIC_GROUP = 'public'
@@ -18,18 +17,8 @@ class Flow(BaseLinearFlow):
         return super().validate()
 
     def build(self, force_fail=False):
-
-        ########
-        # Setup
-        ########
-
-        project_path = get_project_path(self.project_uuid)
-        sample_path = project_path + '/' + TASKFLOW_SAMPLE_COLL
-        project_group = get_project_group_name(self.project_uuid)
-
-        ##############
-        # iRODS Tasks
-        ##############
+        sample_path = self.irods_backend.get_sample_path(self.project)
+        project_group = self.irods_backend.get_project_group_name(self.project)
 
         self.add_task(
             irods_tasks.CreateCollectionTask(
@@ -38,7 +27,6 @@ class Flow(BaseLinearFlow):
                 inject={'path': sample_path},
             )
         )
-
         self.add_task(
             irods_tasks.SetInheritanceTask(
                 name='Set inheritance for sample sheet collection {}'.format(
@@ -48,7 +36,6 @@ class Flow(BaseLinearFlow):
                 inject={'path': sample_path, 'inherit': True},
             )
         )
-
         self.add_task(
             irods_tasks.SetAccessTask(
                 name='Set project user group read access for sample sheet '
@@ -61,7 +48,6 @@ class Flow(BaseLinearFlow):
                 },
             )
         )
-
         for c in self.flow_data['colls']:
             coll_path = sample_path + '/' + c
             self.add_task(
@@ -71,7 +57,6 @@ class Flow(BaseLinearFlow):
                     inject={'path': coll_path},
                 )
             )
-
         # If project is public, add public access to sample repository
         if self.flow_data.get('public_guest_access'):
             self.add_task(
@@ -85,11 +70,6 @@ class Flow(BaseLinearFlow):
                     },
                 )
             )
-
-        ##############
-        # SODAR Tasks
-        ##############
-
         self.add_task(
             sodar_tasks.SetIrodsCollStatusTask(
                 name='Set iRODS collection structure status to True',
