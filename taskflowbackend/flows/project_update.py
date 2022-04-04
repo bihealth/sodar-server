@@ -11,12 +11,8 @@ class Flow(BaseLinearFlow):
         return super().validate()
 
     def build(self, force_fail=False):
-        # Setup ----------------------------------------------------------------
-
         project_path = self.irods_backend.get_path(self.project)
-        project_group = get_project_group_name(self.project_uuid)
-
-        # iRODS Tasks ----------------------------------------------------------
+        project_group = self.irods_backend.get_project_group_name(self.project)
 
         self.add_task(
             irods_tasks.SetCollectionMetadataTask(
@@ -87,6 +83,7 @@ class Flow(BaseLinearFlow):
                 )
             )
         for role_add in self.flow_data.get('roles_add', []):
+            # TODO: Update parameter to be project instead of UUID
             project_group = get_project_group_name(role_add['project_uuid'])
             self.add_task(
                 irods_tasks.AddUserToGroupTask(
@@ -102,6 +99,7 @@ class Flow(BaseLinearFlow):
             )
         # Delete old inherited roles
         for role_delete in self.flow_data.get('roles_delete', []):
+            # TODO: Update parameter to be project instead of UUID
             project_group = get_project_group_name(role_delete['project_uuid'])
             self.add_task(
                 irods_tasks.RemoveUserFromGroupTask(

@@ -1,12 +1,5 @@
-from config import settings
-
-from .base_flow import BaseLinearFlow
-from tasks import irods_tasks
-
-
-PROJECT_ROOT = settings.TASKFLOW_IRODS_PROJECT_ROOT
-TASKFLOW_SAMPLE_DIR = settings.TASKFLOW_SAMPLE_COLL
-TASKFLOW_LANDING_ZONE_DIR = settings.TASKFLOW_LANDING_ZONE_COLL
+from taskflowbackend.flows.base_flow import BaseLinearFlow
+from taskflowbackend.tasks import irods_tasks
 
 
 class Flow(BaseLinearFlow):
@@ -18,11 +11,6 @@ class Flow(BaseLinearFlow):
         return super().validate()
 
     def build(self, force_fail=False):
-
-        ##############
-        # iRODS Tasks
-        ##############
-
         for path in self.flow_data['paths']:
             if self.irods.data_objects.exists(path):
                 self.add_task(

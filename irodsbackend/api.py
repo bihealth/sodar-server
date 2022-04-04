@@ -23,10 +23,15 @@ from django.utils import timezone
 from django.utils.http import urlencode
 from django.utils.text import slugify
 
+# Projectroles dependency
+from projectroles.models import SODAR_CONSTANTS
+
 
 logger = logging.getLogger(__name__)
 
 
+# SODAR constants
+PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 # Local constants
 ACCEPTED_PATH_TYPES = [
     'Assay',
@@ -160,6 +165,22 @@ class IrodsAPI:
             response = conn.recv()
         return response
 
+    @classmethod
+    def _validate_project(cls, project):
+        """
+        Validate the project parameter for retrieving a project iRODS path.
+
+        :param project: Project object
+        :raise: ValueError if "project" is not a valid Project object or if the
+                object is of type CATEGORY
+        """
+        if project.__class__.__name__ != 'Project':
+            raise ValueError('Argument "project" is not a Project object')
+        if project.type != PROJECT_TYPE_PROJECT:
+            raise ValueError(
+                'Project type is not {}'.format(PROJECT_TYPE_PROJECT)
+            )
+
     # Helpers ------------------------------------------------------------------
 
     @classmethod
@@ -245,31 +266,26 @@ class IrodsAPI:
             uuid_prefix=str(project.sodar_uuid)[:2],
             uuid=project.sodar_uuid,
         )
-
         # Project
         if obj_class == 'Project':
             return path
-
         # Investigation (sample data root)
         elif obj_class == 'Investigation':
             path += '/{sample_dir}'.format(
                 sample_dir=settings.IRODS_SAMPLE_COLL
             )
-
         # Study (in sample data)
         elif obj_class == 'Study':
             path += '/{sample_dir}/{study}'.format(
                 sample_dir=settings.IRODS_SAMPLE_COLL,
                 study=cls.get_sub_path(obj),
             )
-
         # Assay (in sample data)
         elif obj_class == 'Assay':
             path += '/{sample_dir}/{study_assay}'.format(
                 sample_dir=settings.IRODS_SAMPLE_COLL,
                 study_assay=cls.get_sub_path(obj),
             )
-
         # LandingZone
         elif obj_class == 'LandingZone':
             path += (
@@ -284,7 +300,6 @@ class IrodsAPI:
                     else '',
                 )
             )
-
         return path
 
     @classmethod
@@ -294,11 +309,24 @@ class IrodsAPI:
 
         :param project: Project object
         :return: String
-        :raise: ValueError if "project" is not a valid Project object
+        :raise: ValueError if "project" is not a valid Project object or if the
+                object is of type CATEGORY
         """
-        if project.__class__.__name__ != 'Project':
-            raise ValueError('Argument "project" is not a Project object')
+        cls._validate_project(project)
         return cls.get_path(project) + '/' + settings.IRODS_SAMPLE_COLL
+
+    @classmethod
+    def get_zone_path(cls, project):
+        """
+        Return the iRODS path for project landing zones.
+
+        :param project: Project object
+        :return: String
+        :raise: ValueError if "project" is not a valid Project object or if the
+                object is of type CATEGORY
+        """
+        cls._validate_project(project)
+        return cls.get_path(project) + '/' + settings.IRODS_LANDING_ZONE_COLL
 
     @classmethod
     def get_root_path(cls):
@@ -342,6 +370,17 @@ class IrodsAPI:
         s = re.search(path_regex[obj_type], cls._sanitize_coll_path(path))
         if s:
             return s.group(1)
+
+    @classmethod
+    def get_project_group_name(cls, project):
+        """
+        Return iRODS user group name for project.
+
+        :param project: Project object
+        :return: String
+        """
+        cls._validate_project(project)
+        return 'omics_project_{}'.format(project.sodar_uuid)
 
     # TODO: Add tests
     @classmethod

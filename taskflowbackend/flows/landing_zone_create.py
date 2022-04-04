@@ -1,53 +1,28 @@
-from config import settings
+from django.conf import settings
 
-from .base_flow import BaseLinearFlow
-from apis.irods_utils import (
-    get_landing_zone_root,
-    get_landing_zone_path,
-    get_project_group_name,
-)
-from tasks import sodar_tasks, irods_tasks
+from taskflowbackend.flows.base_flow import BaseLinearFlow
+from taskflowbackend.tasks import sodar_tasks, irods_tasks
 
 
 PROJECT_ROOT = settings.TASKFLOW_IRODS_PROJECT_ROOT
 
 
+# TODO: Refactor in landingzones so that we pass the LandingZone object here
 class Flow(BaseLinearFlow):
     """Flow for creating a landing zone for an assay and a user in iRODS"""
 
     def validate(self):
         self.require_lock = False  # Project lock not required for this flow
         self.supported_modes = ['sync', 'async']
-        self.required_fields = [
-            'zone_title',
-            'zone_uuid',
-            'user_name',
-            'user_uuid',
-            'assay_path',
-            'colls',
-        ]
+        self.required_fields = ['landing_zone', 'colls']
         return super().validate()
 
     def build(self, force_fail=False):
-
-        ########
-        # Setup
-        ########
-
-        project_group = get_project_group_name(self.project_uuid)
-        zone_root = get_landing_zone_root(self.project_uuid)
-        user_path = zone_root + '/' + self.flow_data['user_name']
-        zone_path = get_landing_zone_path(
-            project_uuid=self.project_uuid,
-            user_name=self.flow_data['user_name'],
-            assay_path=self.flow_data['assay_path'],
-            zone_title=self.flow_data['zone_title'],
-            zone_config=self.flow_data['zone_config'],
-        )
-
-        ##############
-        # SODAR Tasks
-        ##############
+        project_group = self.irods_backend.get_project_group_name(self.project)
+        zone_root = self.irods_backend.get_zone_path(self.project)
+        zone = self.flow_data['landing_zone']
+        user_path = zone_root + '/' + zone.user.username
+        zone_path = self.irods_backend.get_path(zone)
 
         self.add_task(
             sodar_tasks.RevertLandingZoneFailTask(
@@ -55,18 +30,13 @@ class Flow(BaseLinearFlow):
                 sodar_api=self.sodar_api,
                 project_uuid=self.project_uuid,
                 inject={
-                    'zone_uuid': self.flow_data['zone_uuid'],
+                    'zone_uuid': str(zone.sodar_uuid),
                     'flow_name': self.flow_name,
                     'info_prefix': 'Failed to create landing zone',
                     'status': 'NOT CREATED',
                 },
             )
         )
-
-        ##############
-        # iRODS Tasks
-        ##############
-
         self.add_task(
             irods_tasks.CreateCollectionTask(
                 name='Create collection for project landing zones',
@@ -74,7 +44,6 @@ class Flow(BaseLinearFlow):
                 inject={'path': zone_root},
             )
         )
-
         self.add_task(
             irods_tasks.SetAccessTask(
                 name='Set project group read access for project landing zones '
@@ -88,18 +57,16 @@ class Flow(BaseLinearFlow):
                 },
             )
         )
-
         self.add_task(
             irods_tasks.CreateUserTask(
                 name='Create user if it does not exist',
                 irods=self.irods,
                 inject={
-                    'user_name': self.flow_data['user_name'],
+                    'user_name': zone.user.username,
                     'user_type': 'rodsuser',
                 },
             )
         )
-
         self.add_task(
             irods_tasks.CreateCollectionTask(
                 name='Create collection for user landing zones in project',
@@ -107,7 +74,6 @@ class Flow(BaseLinearFlow):
                 inject={'path': user_path},
             )
         )
-
         self.add_task(
             irods_tasks.SetAccessTask(
                 name='Set user read access to user collection inside project '
@@ -116,12 +82,11 @@ class Flow(BaseLinearFlow):
                 inject={
                     'access_name': 'read',
                     'path': user_path,
-                    'user_name': self.flow_data['user_name'],
+                    'user_name': zone.user.username,
                     'recursive': False,
                 },
             )
         )
-
         self.add_task(
             irods_tasks.CreateCollectionTask(
                 name='Create collection for landing zone',
@@ -129,7 +94,6 @@ class Flow(BaseLinearFlow):
                 inject={'path': zone_path},
             )
         )
-
         self.add_task(
             irods_tasks.SetInheritanceTask(
                 name='Set inheritance for landing zone collection {}'.format(
@@ -139,7 +103,6 @@ class Flow(BaseLinearFlow):
                 inject={'path': zone_path, 'inherit': True},
             )
         )
-
         self.add_task(
             irods_tasks.SetAccessTask(
                 name='Set user owner access to landing zone',
@@ -147,11 +110,10 @@ class Flow(BaseLinearFlow):
                 inject={
                     'access_name': 'own',
                     'path': zone_path,
-                    'user_name': self.flow_data['user_name'],
+                    'user_name': zone.user.username,
                 },
             )
         )
-
         # If script user is set, add write access
         # NOTE: This will intentionally fail if user has not been created!
         if self.flow_data.get('script_user'):
@@ -167,7 +129,6 @@ class Flow(BaseLinearFlow):
                     },
                 )
             )
-
         if (
             'description' in self.flow_data
             and self.flow_data['description'] != ''
@@ -179,11 +140,10 @@ class Flow(BaseLinearFlow):
                     inject={
                         'path': zone_path,
                         'name': 'description',
-                        'value': self.flow_data['description'],
+                        'value': zone.description,
                     },
                 )
             )
-
         for d in self.flow_data['colls']:
             coll_path = zone_path + '/' + d
             self.add_task(
@@ -193,11 +153,6 @@ class Flow(BaseLinearFlow):
                     inject={'path': coll_path},
                 )
             )
-
-        ##############
-        # SODAR Tasks
-        ##############
-
         # NOTE: Not using zone_uuid here because taskflow doesn't know it yet
         self.add_task(
             sodar_tasks.SetLandingZoneStatusTask(
@@ -205,9 +160,9 @@ class Flow(BaseLinearFlow):
                 sodar_api=self.sodar_api,
                 project_uuid=self.project_uuid,
                 inject={
-                    'zone_uuid': self.flow_data['zone_uuid'],
+                    'zone_uuid': str(zone.sodar_uuid),
                     'flow_name': self.flow_name,
-                    'user_uuid': self.flow_data['user_uuid'],
+                    'user_uuid': zone.user.sodar_uuid,
                     'status': 'ACTIVE',
                     'status_info': 'Available with write access for user',
                 },

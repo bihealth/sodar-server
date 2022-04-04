@@ -19,13 +19,8 @@ class Flow(BaseLinearFlow):
         return super().validate()
 
     def build(self, force_fail=False):
-        # Setup ----------------------------------------------------------------
-
-        # TODO: Replace with project path
         project_path = self.irods_backend.get_path(self.project)
         project_group = get_project_group_name(str(self.project.sodar_uuid))
-
-        # iRODS Tasks ----------------------------------------------------------
 
         self.add_task(
             irods_tasks.CreateCollectionTask(

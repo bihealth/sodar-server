@@ -1,6 +1,5 @@
-from .base_flow import BaseLinearFlow
-from apis.irods_utils import get_project_group_name
-from tasks import irods_tasks
+from taskflowbackend.flows.base_flow import BaseLinearFlow
+from taskflowbackend.tasks import irods_tasks
 
 
 class Flow(BaseLinearFlow):
@@ -11,17 +10,8 @@ class Flow(BaseLinearFlow):
         return super().validate()
 
     def build(self, force_fail=False):
-
-        ########
-        # Setup
-        ########
-
-        group_name = get_project_group_name(self.project_uuid)
+        group_name = self.irods_backend.get_project_group_name(self.project)
         irods_group = self.irods.user_groups.get(name=group_name)
-
-        ##############
-        # iRODS Tasks
-        ##############
 
         for user in [
             user

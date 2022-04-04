@@ -1,6 +1,5 @@
-from .base_flow import BaseLinearFlow
-from apis.irods_utils import get_project_group_name
-from tasks import sodar_tasks, irods_tasks
+from taskflowbackend.flows.base_flow import BaseLinearFlow
+from taskflowbackend.tasks import sodar_tasks, irods_tasks
 
 
 class Flow(BaseLinearFlow):
@@ -11,16 +10,7 @@ class Flow(BaseLinearFlow):
         return super().validate()
 
     def build(self, force_fail=False):
-
-        ########
-        # Setup
-        ########
-
-        existing_group = get_project_group_name(self.project_uuid)
-
-        ##############
-        # iRODS Tasks
-        ##############
+        existing_group = self.irods_backend.get_project_group_name(self.project)
 
         self.add_task(
             irods_tasks.RemoveUserFromGroupTask(
@@ -32,13 +22,7 @@ class Flow(BaseLinearFlow):
                 },
             )
         )
-
         # TODO: TBD: Also e.g. remove landing zone if created?
-
-        ##############
-        # SODAR Tasks
-        ##############
-
         self.add_task(
             sodar_tasks.RemoveRoleTask(
                 name='Remove user role',

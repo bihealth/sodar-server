@@ -1,6 +1,6 @@
-from .base_flow import BaseLinearFlow
-from apis.irods_utils import get_project_group_name
-from tasks import irods_tasks
+from taskflowbackend.flows.base_flow import BaseLinearFlow
+from taskflowbackend.apis.irods_utils import get_project_group_name
+from taskflowbackend.tasks import irods_tasks
 
 
 class Flow(BaseLinearFlow):
@@ -15,17 +15,6 @@ class Flow(BaseLinearFlow):
         return super().validate()
 
     def build(self, force_fail=False):
-
-        ########
-        # Setup
-        ########
-
-        # N/A
-
-        ##############
-        # iRODS Tasks
-        ##############
-
         # Add roles
         for username in set(
             [r['username'] for r in self.flow_data['roles_add']]
@@ -37,10 +26,8 @@ class Flow(BaseLinearFlow):
                     inject={'user_name': username, 'user_type': 'rodsuser'},
                 )
             )
-
         for role_add in self.flow_data['roles_add']:
             project_group = get_project_group_name(role_add['project_uuid'])
-
             self.add_task(
                 irods_tasks.AddUserToGroupTask(
                     name='Add user "{}" to project user group "{}"'.format(
@@ -53,11 +40,9 @@ class Flow(BaseLinearFlow):
                     },
                 )
             )
-
         # Delete roles
         for role_delete in self.flow_data['roles_delete']:
             project_group = get_project_group_name(role_delete['project_uuid'])
-
             self.add_task(
                 irods_tasks.RemoveUserFromGroupTask(
                     name='Remove user "{}" from project user group "{}"'.format(
