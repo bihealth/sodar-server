@@ -1,12 +1,8 @@
-from django.conf import settings
-
 from taskflowbackend.flows.base_flow import BaseLinearFlow
 from taskflowbackend.tasks import sodar_tasks, irods_tasks
 
 
 PUBLIC_GROUP = 'public'
-PROJECT_ROOT = settings.TASKFLOW_IRODS_PROJECT_ROOT
-TASKFLOW_SAMPLE_COLL = settings.TASKFLOW_SAMPLE_COLL
 
 
 class Flow(BaseLinearFlow):

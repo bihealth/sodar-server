@@ -8,8 +8,7 @@ from taskflowbackend.apis.irods_utils import (
 from taskflowbackend.tasks import sodar_tasks, irods_tasks
 
 
-PROJECT_ROOT = settings.TASKFLOW_IRODS_PROJECT_ROOT
-SAMPLE_COLL = settings.TASKFLOW_SAMPLE_COLL
+SAMPLE_COLL = settings.IRODS_SAMPLE_COLL
 
 
 class Flow(BaseLinearFlow):

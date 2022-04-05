@@ -1,5 +1,4 @@
 from taskflowbackend.flows.base_flow import BaseLinearFlow
-from taskflowbackend.apis.irods_utils import get_project_group_name
 from taskflowbackend.tasks import irods_tasks
 
 
@@ -73,7 +72,7 @@ class Flow(BaseLinearFlow):
             )
         # Add new inherited roles
         for username in set(
-            [r['username'] for r in self.flow_data.get('roles_add', [])]
+            [r['user'].username for r in self.flow_data.get('roles_add', [])]
         ):
             self.add_task(
                 irods_tasks.CreateUserTask(
@@ -83,33 +82,35 @@ class Flow(BaseLinearFlow):
                 )
             )
         for role_add in self.flow_data.get('roles_add', []):
-            # TODO: Update parameter to be project instead of UUID
-            project_group = get_project_group_name(role_add['project_uuid'])
+            project_group = self.irods_backend.get_project_group_name(
+                role_add['project']
+            )
             self.add_task(
                 irods_tasks.AddUserToGroupTask(
                     name='Add user "{}" to project user group "{}"'.format(
-                        role_add['username'], project_group
+                        role_add['user'].username, project_group
                     ),
                     irods=self.irods,
                     inject={
                         'group_name': project_group,
-                        'user_name': role_add['username'],
+                        'user_name': role_add['user'].username,
                     },
                 )
             )
         # Delete old inherited roles
         for role_delete in self.flow_data.get('roles_delete', []):
-            # TODO: Update parameter to be project instead of UUID
-            project_group = get_project_group_name(role_delete['project_uuid'])
+            project_group = self.irods_backend.get_project_group_name(
+                role_delete['project']
+            )
             self.add_task(
                 irods_tasks.RemoveUserFromGroupTask(
                     name='Remove user "{}" from project user group "{}"'.format(
-                        role_delete['username'], project_group
+                        role_delete['user'].username, project_group
                     ),
                     irods=self.irods,
                     inject={
                         'group_name': project_group,
-                        'user_name': role_delete['username'],
+                        'user_name': role_delete['user'].username,
                     },
                 )
             )

@@ -1,10 +1,5 @@
-from django.conf import settings
-
 from taskflowbackend.flows.base_flow import BaseLinearFlow
 from taskflowbackend.tasks import sodar_tasks, irods_tasks
-
-
-PROJECT_ROOT = settings.TASKFLOW_IRODS_PROJECT_ROOT
 
 
 class Flow(BaseLinearFlow):
@@ -151,7 +146,6 @@ class Flow(BaseLinearFlow):
                     inject={'path': coll_path},
                 )
             )
-        # NOTE: Not using zone_uuid here because taskflow doesn't know it yet
         self.add_task(
             sodar_tasks.SetLandingZoneStatusTask(
                 name='Set landing zone status to ACTIVE',

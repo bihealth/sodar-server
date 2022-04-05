@@ -1,10 +1,7 @@
-from django.conf import settings
-
 from taskflowbackend.flows.base_flow import BaseLinearFlow
 from taskflowbackend.tasks import irods_tasks
 
 
-PROJECT_ROOT = settings.TASKFLOW_IRODS_PROJECT_ROOT
 PUBLIC_GROUP = 'public'
 
 

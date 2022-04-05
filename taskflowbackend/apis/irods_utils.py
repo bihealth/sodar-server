@@ -7,22 +7,23 @@ from irods.models import UserGroup
 from django.conf import settings
 
 
-logger = logging.getLogger('sodar_taskflow')
+logger = logging.getLogger('__name__')
 
 
-PROJECT_ROOT = settings.TASKFLOW_IRODS_PROJECT_ROOT
 PERMANENT_USERS = settings.TASKFLOW_TEST_PERMANENT_USERS
 
 
-def cleanup_irods_data(irods, verbose=True):
+def cleanup_irods_data(irods_backend, verbose=True):
     """Cleanup data from iRODS. Used in debugging/testing."""
+    irods = irods_backend.get_session()
+    projects_root = irods_backend.get_projects_path()
     # TODO: Remove stuff from user folders
     # TODO: Remove stuff from trash
     # Remove project folders
     try:
-        irods.collections.remove(PROJECT_ROOT, recurse=True, force=True)
+        irods.collections.remove(projects_root, recurse=True, force=True)
         if verbose:
-            logger.info('Removed project root: {}'.format(PROJECT_ROOT))
+            logger.info('Removed projects root: {}'.format(projects_root))
     except Exception:
         pass  # This is OK, the root just wasn't there
     # Remove created user groups and users

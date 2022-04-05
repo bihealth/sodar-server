@@ -1,11 +1,5 @@
-from django.conf import settings
-
-from taskflowbackend.apis.irods_utils import get_project_group_name
 from taskflowbackend.flows.base_flow import BaseLinearFlow
 from taskflowbackend.tasks import irods_tasks
-
-
-PROJECT_ROOT = settings.TASKFLOW_IRODS_PROJECT_ROOT
 
 
 class Flow(BaseLinearFlow):
@@ -20,13 +14,13 @@ class Flow(BaseLinearFlow):
 
     def build(self, force_fail=False):
         project_path = self.irods_backend.get_path(self.project)
-        project_group = get_project_group_name(str(self.project.sodar_uuid))
+        project_group = self.irods_backend.get_project_group_name(self.project)
 
         self.add_task(
             irods_tasks.CreateCollectionTask(
                 name='Create root collection for SODAR projects',
                 irods=self.irods,
-                inject={'path': PROJECT_ROOT},
+                inject={'path': self.irods_backend.get_projects_root()},
             )
         )
         self.add_task(
@@ -111,7 +105,7 @@ class Flow(BaseLinearFlow):
         )
         # Add inherited owners
         for username in set(
-            [r['username'] for r in self.flow_data.get('roles_add', [])]
+            [r['user'].username for r in self.flow_data.get('roles_add', [])]
         ):
             self.add_task(
                 irods_tasks.CreateUserTask(
@@ -121,7 +115,9 @@ class Flow(BaseLinearFlow):
                 )
             )
         for role_add in self.flow_data.get('roles_add', []):
-            project_group = get_project_group_name(role_add['project_uuid'])
+            project_group = self.irods_backend.get_project_group_name(
+                role_add['project']
+            )
             self.add_task(
                 irods_tasks.AddUserToGroupTask(
                     name='Add user "{}" to project user group "{}"'.format(
@@ -130,7 +126,7 @@ class Flow(BaseLinearFlow):
                     irods=self.irods,
                     inject={
                         'group_name': project_group,
-                        'user_name': role_add['username'],
+                        'user_name': role_add['user'].username,
                     },
                 )
             )
