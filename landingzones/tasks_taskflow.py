@@ -79,8 +79,8 @@ the following URL:
 '''.lstrip()
 
 
-class SetLandingZoneStatusTask(SODARBaseTask):
-    """Set LandingZone status"""
+class BaseLandingZoneStatusTask(SODARBaseTask):
+    """Base task class for landing zone status updates"""
 
     @classmethod
     def _add_owner_alert(
@@ -231,16 +231,20 @@ class SetLandingZoneStatusTask(SODARBaseTask):
         )
         send_generic_mail(subject_body, message_body, [member])
 
-    def execute(
-        self,
-        landing_zone,
-        flow_name,
-        status,
-        status_info,
-        extra_data=None,
-        *args,
-        **kwargs
+    @classmethod
+    def set_status(
+        cls, landing_zone, flow_name, status, status_info, extra_data
     ):
+        """
+        Set landing zone status. Notify users by alerts and emails if
+        applicable.
+
+        :param landing_zone: LandingZone object
+        :param flow_name: Name of flow (string)
+        :param status: Zone status (string)
+        :param status_info: Detailed zone status info (string)
+        :param extra_data: Optional extra data (string)
+        """
         app_alerts = get_backend_api('appalerts_backend')
 
         # Truncate status info (fix for #1307)
@@ -267,7 +271,7 @@ class SetLandingZoneStatusTask(SODARBaseTask):
         ):
             if app_alerts:
                 try:
-                    self._add_owner_alert(
+                    cls._add_owner_alert(
                         app_alerts,
                         landing_zone,
                         flow_name,
@@ -285,7 +289,7 @@ class SetLandingZoneStatusTask(SODARBaseTask):
                 and not validate_only
             ):
                 try:
-                    self._send_owner_move_email(landing_zone)
+                    cls._send_owner_move_email(landing_zone)
                 except Exception as ex:  # NOTE: We won't fail/revert here
                     logger.error(
                         'Exception in _send_owner_move_email(): {}'.format(ex)
@@ -308,7 +312,7 @@ class SetLandingZoneStatusTask(SODARBaseTask):
             for member in members:
                 if app_alerts:
                     try:
-                        self._add_member_move_alert(
+                        cls._add_member_move_alert(
                             app_alerts=app_alerts,
                             zone=landing_zone,
                             user=member,
@@ -322,7 +326,7 @@ class SetLandingZoneStatusTask(SODARBaseTask):
                         )
                 if settings.PROJECTROLES_SEND_EMAIL:
                     try:
-                        self._send_member_move_email(
+                        cls._send_member_move_email(
                             member, landing_zone, file_count
                         )
                     except Exception as ex:  # NOTE: We won't fail/revert here
@@ -366,6 +370,23 @@ class SetLandingZoneStatusTask(SODARBaseTask):
                     'Unable to run project cache update task: {}'.format(ex)
                 )
 
+
+class SetLandingZoneStatusTask(BaseLandingZoneStatusTask):
+    """Set LandingZone status"""
+
+    def execute(
+        self,
+        landing_zone,
+        flow_name,
+        status,
+        status_info,
+        extra_data=None,
+        *args,
+        **kwargs
+    ):
+        self.set_status(
+            landing_zone, flow_name, status, status_info, extra_data
+        )
         self.data_modified = True
         super().execute(*args, **kwargs)
 
@@ -382,12 +403,12 @@ class SetLandingZoneStatusTask(SODARBaseTask):
         pass  # Disabled, call RevertLandingZoneStatusTask to revert
 
 
-class RevertLandingZoneFailTask(SODARBaseTask):
+class RevertLandingZoneFailTask(BaseLandingZoneStatusTask):
     """Set LandingZone status in case of failure"""
 
     def execute(
         self,
-        zone_uuid,
+        landing_zone,
         flow_name,
         info_prefix,
         status='FAILED',
@@ -399,7 +420,7 @@ class RevertLandingZoneFailTask(SODARBaseTask):
 
     def revert(
         self,
-        zone_uuid,
+        landing_zone,
         flow_name,
         info_prefix,
         status='FAILED',
@@ -407,23 +428,10 @@ class RevertLandingZoneFailTask(SODARBaseTask):
         *args,
         **kwargs
     ):
-        # TODO: Implement
         status_info = info_prefix
-
         for k, v in kwargs['flow_failures'].items():
             status_info += ': '
             status_info += str(v.exception) if v.exception else 'unknown error'
-
-        set_data = {
-            'zone_uuid': zone_uuid,
-            'status': status,
-            'status_info': status_info,
-            'flow_name': flow_name,
-        }
-        if extra_data:
-            set_data.update(extra_data)
-        '''
-        self.sodar_api.send_request(
-            'landingzones/taskflow/status/set', set_data
+        self.set_status(
+            landing_zone, flow_name, status, status_info, extra_data
         )
-        '''
