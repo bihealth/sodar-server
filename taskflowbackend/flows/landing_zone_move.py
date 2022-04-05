@@ -31,6 +31,8 @@ class Flow(BaseLinearFlow):
         validate_only = self.flow_data.get('validate_only', False)
         zone = self.flow_data['landing_zone']
         # Set zone status in the Django site
+        # TODO: Update
+        '''
         set_data = {
             'zone_uuid': str(zone.sodar_uuid),
             'status': 'PREPARING',
@@ -41,10 +43,10 @@ class Flow(BaseLinearFlow):
         self.sodar_api.send_request(
             'landingzones/taskflow/status/set', set_data
         )
+        '''
 
         # Setup
         project_group = self.irods_backend.get_project_group_name(self.project)
-        zone = self.flow_data['landing_zone']
         assay = zone.assay  # TODO: Kind of redundant..
         sample_path = self.irods_backend.get_path(assay)
         zone_path = self.irods_backend.get_path(zone)
@@ -95,10 +97,9 @@ class Flow(BaseLinearFlow):
             self.add_task(
                 sodar_tasks.RevertLandingZoneFailTask(
                     name='Set landing zone status to FAILED on revert',
-                    sodar_api=self.sodar_api,
-                    project_uuid=self.project_uuid,
+                    project=self.project,
                     inject={
-                        'zone_uuid': str(zone.sodar_uuid),
+                        'landing_zone': zone,
                         'flow_name': self.flow_name,
                         'info_prefix': 'Failed to {} landing zone files'.format(
                             'validate' if validate_only else 'move'
@@ -110,10 +111,9 @@ class Flow(BaseLinearFlow):
         self.add_task(
             sodar_tasks.SetLandingZoneStatusTask(
                 name='Set landing zone status to VALIDATING',
-                sodar_api=self.sodar_api,
-                project_uuid=self.project_uuid,
+                project=self.project,
                 inject={
-                    'zone_uuid': str(zone.sodar_uuid),
+                    'landing_zone': zone,
                     'status': 'VALIDATING',
                     'status_info': 'Validating {} file{}, '
                     'write access disabled'.format(
@@ -153,10 +153,9 @@ class Flow(BaseLinearFlow):
             self.add_task(
                 sodar_tasks.SetLandingZoneStatusTask(
                     name='Set landing zone status to ACTIVE',
-                    sodar_api=self.sodar_api,
-                    project_uuid=self.project_uuid,
+                    project=self.project,
                     inject={
-                        'zone_uuid': str(zone.sodar_uuid),
+                        'landing_zone': zone,
                         'status': 'ACTIVE',
                         'status_info': 'Successfully validated '
                         '{} file{}'.format(
@@ -245,8 +244,7 @@ class Flow(BaseLinearFlow):
         self.add_task(
             sodar_tasks.SetLandingZoneStatusTask(
                 name='Set landing zone status to MOVING',
-                sodar_api=self.sodar_api,
-                project_uuid=self.project_uuid,
+                project=self.project,
                 inject={
                     'zone_uuid': str(zone.sodar_uuid),
                     'status': 'MOVING',
@@ -315,10 +313,9 @@ class Flow(BaseLinearFlow):
         self.add_task(
             sodar_tasks.SetLandingZoneStatusTask(
                 name='Set landing zone status to MOVED',
-                sodar_api=self.sodar_api,
-                project_uuid=self.project_uuid,
+                project=self.project,
                 inject={
-                    'zone_uuid': str(zone.sodar_uuid),
+                    'landing_zone': zone,
                     'status': 'MOVED',
                     'status_info': 'Successfully moved {} file{}, landing zone '
                     'removed'.format(

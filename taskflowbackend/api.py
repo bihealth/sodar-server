@@ -11,7 +11,7 @@ from projectroles.models import RoleAssignment, SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
 
 from taskflowbackend import flows
-from taskflowbackend.apis import lock_api, sodar_api
+from taskflowbackend.apis import lock_api
 
 
 logger = logging.getLogger(__name__)
@@ -138,7 +138,6 @@ class TaskflowAPI:
         project,
         flow_name,
         flow_data,
-        request=None,
         targets=settings.TASKFLOW_TARGETS,
         async_mode=False,
         tl_event=None,
@@ -169,14 +168,9 @@ class TaskflowAPI:
         if not flow_cls:
             raise ValueError('Flow "{}" not supported'.format(flow_name))
 
-        # Init SODAR API
-        # TODO: Remove this entirely?
-        sodar_tf = sodar_api.SODARAPI(sodar_url)
-
         # Create flow
         flow = flow_cls(
             irods_backend=irods_backend,
-            sodar_api=sodar_tf,
             project=project,
             flow_name=flow_name,
             flow_data=flow_data,

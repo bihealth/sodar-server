@@ -2,7 +2,6 @@ from django.conf.urls import url
 
 import samplesheets.views_ajax
 import samplesheets.views_api
-import samplesheets.views_taskflow
 from samplesheets import views
 
 
@@ -275,23 +274,4 @@ urls_ajax = [
     ),
 ]
 
-# Taskflow API views
-urls_taskflow = [
-    url(
-        regex=r'^taskflow/dirs/get$',
-        view=samplesheets.views_taskflow.TaskflowCollStatusGetAPIView.as_view(),
-        name='taskflow_sheet_colls_get',
-    ),
-    url(
-        regex=r'^taskflow/dirs/set$',
-        view=samplesheets.views_taskflow.TaskflowCollStatusSetAPIView.as_view(),
-        name='taskflow_sheet_colls_set',
-    ),
-    url(
-        regex=r'^taskflow/delete$',
-        view=samplesheets.views_taskflow.TaskflowSheetDeleteAPIView.as_view(),
-        name='taskflow_sheet_delete',
-    ),
-]
-
-urlpatterns = urls_ui + urls_api + urls_ajax + urls_taskflow
+urlpatterns = urls_ui + urls_api + urls_ajax

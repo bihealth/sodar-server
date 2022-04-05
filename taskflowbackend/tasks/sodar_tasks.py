@@ -1,37 +1,31 @@
 """SODAR Django site tasks for Taskflow"""
 
-# TODO: Replace with actual code instead of API calls
-
-import json
 import logging
 
+# Projectroles dependency
+from projectroles.plugins import get_backend_api
+
+# Samplesheets dependency
+from samplesheets.models import Investigation
+
 from taskflowbackend.tasks.base_task import BaseTask
-from taskflowbackend.apis.sodar_api import SODARRequestException
 
 
 logger = logging.getLogger('sodar_taskflow')
 
 
 class SODARBaseTask(BaseTask):
-    """Base SODAR Django web UI task"""
+    """Base taskflow SODAR task"""
 
     def __init__(
-        self,
-        name,
-        project_uuid,
-        sodar_api,
-        force_fail=False,
-        inject=None,
-        *args,
-        **kwargs
+        self, name, project, force_fail=False, inject=None, *args, **kwargs
     ):
         super().__init__(
             name, force_fail=force_fail, inject=inject, *args, **kwargs
         )
         self.target = 'sodar'
         self.name = '<SODAR> {} ({})'.format(name, self.__class__.__name__)
-        self.project_uuid = project_uuid
-        self.sodar_api = sodar_api
+        self.project = project
 
     def execute(self, *args, **kwargs):
         # Raise Exception for testing revert()
@@ -50,252 +44,67 @@ class SODARBaseTask(BaseTask):
         logger.error('Reverted: {}'.format(self.name))
 
 
-# TODO: Remove, not used anymore
-class UpdateProjectTask(SODARBaseTask):
-    """Update project title and description"""
-
-    def execute(
-        self,
-        title,
-        description,
-        readme,
-        parent_uuid,
-        public_guest_access,
-        *args,
-        **kwargs
-    ):
-        # Get initial data
-        self.execute_data = self.sodar_api.send_request(
-            'project/taskflow/get', {'project_uuid': self.project_uuid}
-        ).json()
-
-        update_data = {
-            'project_uuid': self.project_uuid,
-            'title': title,
-            'parent_uuid': parent_uuid,
-            'description': description,
-            'readme': readme,
-            'public_guest_access': public_guest_access,
-        }
-
-        self.sodar_api.send_request('project/taskflow/update', update_data)
-
-        super().execute(*args, **kwargs)
-
-    def revert(self, title, description, readme, parent_uuid, *args, **kwargs):
-        if kwargs['result'] is True:
-            self.sodar_api.send_request(
-                'project/taskflow/update', self.execute_data
-            )
-
-
-# TODO: Remove, we won't be setting these from taskflow anymore
-# TODO: Also remove all mentions in flows
-class SetProjectSettingsTask(SODARBaseTask):
-    """Set project settings"""
-
-    def execute(self, settings, *args, **kwargs):
-        # Get initial data
-        self.execute_data = self.sodar_api.send_request(
-            'project/taskflow/settings/get', {'project_uuid': self.project_uuid}
-        ).json()
-
-        update_data = {
-            'project_uuid': self.project_uuid,
-            'settings': json.dumps(settings),
-        }
-
-        self.sodar_api.send_request(
-            'project/taskflow/settings/set', update_data
-        )
-
-        super().execute(*args, **kwargs)
-
-    def revert(self, settings, *args, **kwargs):
-        if kwargs['result'] is True:
-            self.sodar_api.send_request(
-                'project/taskflow/settings/set', self.execute_data
-            )
-
-
-# TODO: Remove, we won't be setting these from taskflow anymore
-# TODO: Also remove all mentions in flows
-class SetRoleTask(SODARBaseTask):
-    """Update user role in a project"""
-
-    def execute(self, user_uuid, role_pk, *args, **kwargs):
-        # Get initial data
-        query_data = {'project_uuid': self.project_uuid, 'user_uuid': user_uuid}
-
-        try:
-            self.execute_data = self.sodar_api.send_request(
-                'project/taskflow/role/get', query_data
-            ).json()
-
-        except Exception:
-            self.execute_data = None
-
-        set_data = {
-            'project_uuid': self.project_uuid,
-            'user_uuid': user_uuid,
-            'role_pk': role_pk,
-        }
-        self.sodar_api.send_request('project/taskflow/role/set', set_data)
-        self.data_modified = True
-
-        super().execute(*args, **kwargs)
-
-    def revert(self, user_uuid, role_pk, *args, **kwargs):
-        if self.data_modified:
-            if self.execute_data:
-                self.sodar_api.send_request(
-                    'project/taskflow/role/set', self.execute_data
-                )
-            else:
-                remove_data = {
-                    'project_uuid': self.project_uuid,
-                    'user_uuid': user_uuid,
-                }
-                self.sodar_api.send_request(
-                    'project/taskflow/role/delete', remove_data
-                )
-
-
-# TODO: Remove, we won't be setting these from taskflow anymore
-# TODO: Also remove all mentions in flows
-class RemoveRoleTask(SODARBaseTask):
-    """Remove user role in a project"""
-
-    def execute(self, user_uuid, role_pk, *args, **kwargs):
-        # Get initial data
-        self.execute_data = {
-            'project_uuid': self.project_uuid,
-            'user_uuid': user_uuid,
-            'role_pk': role_pk,
-        }
-
-        remove_data = {
-            'project_uuid': self.project_uuid,
-            'user_uuid': user_uuid,
-        }
-
-        try:
-            self.sodar_api.send_request(
-                'project/taskflow/role/delete', remove_data
-            )
-            self.data_modified = True
-
-        except SODARRequestException:
-            pass
-
-        super().execute(*args, **kwargs)
-
-    def revert(self, user_uuid, role_pk, *args, **kwargs):
-        if self.data_modified:
-            self.sodar_api.send_request(
-                'project/taskflow/role/set', self.execute_data
-            )
-
-
-# TODO: Replace with code in the old API view
+# TODO: Move into samplesheets?
 class SetIrodsCollStatusTask(SODARBaseTask):
     """Set iRODS collection creation status (True/False) for a sample sheet"""
 
-    def execute(self, dir_status, *args, **kwargs):
+    #: Investigation object for the project
+    investigation = None
+
+    def execute(self, irods_status, *args, **kwargs):
         # Get initial data
-        query_data = {'project_uuid': self.project_uuid}
-        self.execute_data = self.sodar_api.send_request(
-            'samplesheets/taskflow/dirs/get', query_data
-        ).json()
-
-        if self.execute_data['dir_status'] != dir_status:
-            set_data = {
-                'project_uuid': self.project_uuid,
-                'dir_status': dir_status,
-            }
-            self.sodar_api.send_request(
-                'samplesheets/taskflow/dirs/set', set_data
-            )
+        self.investigation = Investigation.objects.get(
+            project=self.project, active=True
+        )
+        self.execute_data = {'irods_status': self.investigation.irods_status}
+        # Update data
+        if self.execute_data['irods_status'] != irods_status:
+            self.investigation.irods_status = irods_status
+            self.investigation.save()
             self.data_modified = True
-
         super().execute(*args, **kwargs)
 
-    def revert(self, dir_status, *args, **kwargs):
+    def revert(self, irods_status, *args, **kwargs):
         if self.data_modified is True:
-            self.sodar_api.send_request(
-                'samplesheets/taskflow/dirs/set', self.execute_data
-            )
+            self.investigation.irods_status = self.execute_data['irods_status']
+            self.investigation.save()
 
 
-# TODO: Check how we even used this
-# TODO: Handle revert (see above), before it this must be called last in flow
-class RemoveSampleSheetTask(SODARBaseTask):
-    """Remove sample sheet from a project"""
+# TODO: Move into samplesheets?
+class RemoveSampleSheetsTask(SODARBaseTask):
+    """Remove sample sheets from a project"""
 
     def execute(self, *args, **kwargs):
-        query_data = {'project_uuid': self.project_uuid}
-
-        try:
-            self.sodar_api.send_request(
-                'samplesheets/taskflow/delete', query_data
-            )
-            self.data_modified = True
-
-        except SODARRequestException:
-            pass
-
+        cache_backend = get_backend_api('sodar_cache')
+        investigation = Investigation.objects.get(
+            project=self.project, active=True
+        )
+        investigation.delete()
+        if cache_backend:
+            cache_backend.delete_cache('samplesheets', self.project)
+        self.data_modified = True
         super().execute(*args, **kwargs)
 
     def revert(self, *args, **kwargs):
         pass  # TODO: How to handle this?
 
 
-# TODO: Replace with site internal functionality
-class CreateLandingZoneTask(SODARBaseTask):
-    """Create LandingZone for a project and user in the SODAR database"""
-
-    def execute(
-        self, zone_title, user_uuid, assay_uuid, description, *args, **kwargs
-    ):
-        create_data = {
-            'project_uuid': self.project_uuid,
-            'assay_uuid': assay_uuid,
-            'title': zone_title,
-            'user_uuid': user_uuid,
-            'description': description,
-        }
-        response = self.sodar_api.send_request(
-            'landingzones/taskflow/create', create_data
-        )
-        self.execute_data = response.json()
-
-        self.data_modified = True
-        super().execute(*args, **kwargs)
-
-    def revert(
-        self, zone_title, user_uuid, assay_uuid, description, *args, **kwargs
-    ):
-        if self.data_modified:
-            remove_data = {'zone_uuid': self.execute_data['zone_uuid']}
-            self.sodar_api.send_request(
-                'landingzones/taskflow/create', remove_data
-            )
-
-
-# TODO: Replace with site internal functionality
+# TODO: Move into landingzones?
 class SetLandingZoneStatusTask(SODARBaseTask):
     """Set LandingZone status"""
 
     def execute(
         self,
+        landing_zone,
+        flow_name,
         status,
         status_info,
-        flow_name=None,
-        zone_uuid=None,
         extra_data=None,
         *args,
         **kwargs
     ):
+        # TODO: Implement TaskflowZoneStatusSetAPIView code here
+        '''
         set_data = {
             'status': status,
             'status_info': status_info,
@@ -307,15 +116,16 @@ class SetLandingZoneStatusTask(SODARBaseTask):
         self.sodar_api.send_request(
             'landingzones/taskflow/status/set', set_data
         )
+        '''
         self.data_modified = True
         super().execute(*args, **kwargs)
 
     def revert(
         self,
+        landing_zone,
+        flow_name,
         status,
         status_info,
-        flow_name,
-        zone_uuid=None,
         extra_data=None,
         *args,
         **kwargs
@@ -323,6 +133,7 @@ class SetLandingZoneStatusTask(SODARBaseTask):
         pass  # Disabled, call RevertLandingZoneStatusTask to revert
 
 
+# TODO: Move into landingzones
 # TODO: Replace with site internal functionality
 class RevertLandingZoneFailTask(SODARBaseTask):
     """Set LandingZone status in case of failure"""
@@ -363,6 +174,8 @@ class RevertLandingZoneFailTask(SODARBaseTask):
         }
         if extra_data:
             set_data.update(extra_data)
+        '''
         self.sodar_api.send_request(
             'landingzones/taskflow/status/set', set_data
         )
+        '''

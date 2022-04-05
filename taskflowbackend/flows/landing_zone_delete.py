@@ -26,7 +26,6 @@ class Flow(BaseLinearFlow):
             self.add_task(
                 sodar_tasks.RevertLandingZoneFailTask(
                     name='Set landing zone status to FAILED on revert',
-                    sodar_api=self.sodar_api,
                     project_uuid=self.project_uuid,
                     inject={
                         'zone_uuid': zone_uuid,
@@ -39,7 +38,6 @@ class Flow(BaseLinearFlow):
         self.add_task(
             sodar_tasks.SetLandingZoneStatusTask(
                 name='Set landing zone status to DELETING',
-                sodar_api=self.sodar_api,
                 project_uuid=self.project_uuid,
                 inject={
                     'zone_uuid': zone_uuid,
@@ -60,10 +58,9 @@ class Flow(BaseLinearFlow):
         self.add_task(
             sodar_tasks.SetLandingZoneStatusTask(
                 name='Set landing zone status to DELETED',
-                sodar_api=self.sodar_api,
-                project_uuid=self.project_uuid,
+                project=self.project,
                 inject={
-                    'zone_uuid': zone_uuid,
+                    'landing_zone': zone,
                     'flow_name': self.flow_name,
                     'status': 'DELETED',
                     'status_info': 'Landing zone deleted',

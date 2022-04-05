@@ -220,7 +220,7 @@ class LandingZoneCreateAPIView(
         create_colls = serializer.validated_data.pop('create_colls')
         super().perform_create(serializer)
         try:
-            self._submit_create(serializer.instance, create_colls)
+            self.submit_create(serializer.instance, create_colls)
         except Exception as ex:
             raise APIException('{}{}'.format(ex_msg, ex))
 

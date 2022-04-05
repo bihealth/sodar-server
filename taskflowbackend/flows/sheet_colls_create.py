@@ -73,8 +73,7 @@ class Flow(BaseLinearFlow):
         self.add_task(
             sodar_tasks.SetIrodsCollStatusTask(
                 name='Set iRODS collection structure status to True',
-                sodar_api=self.sodar_api,
-                project_uuid=self.project_uuid,
+                project=self.project,
                 inject={'dir_status': True},
             )
         )
