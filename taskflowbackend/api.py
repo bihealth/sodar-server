@@ -256,7 +256,6 @@ class TaskflowAPI:
             flow_name, submit_info[:256]
         )
 
-    # TODO: Refactor
     @classmethod
     def get_inherited_roles(cls, project, user, roles=None):
         """
@@ -264,7 +263,7 @@ class TaskflowAPI:
 
         :param project: Project object
         :param user: User object
-        :pram roles: Previously collected roles (optional, list or None)
+        :param roles: Previously collected roles (optional, list or None)
         :return: List of dicts
         """
         if roles is None:
@@ -274,17 +273,13 @@ class TaskflowAPI:
             project.type == PROJECT_TYPE_PROJECT
             and not RoleAssignment.objects.filter(project=project, user=user)
         ):
-            r = {
-                'project_uuid': str(project.sodar_uuid),
-                'username': user.username,
-            }
+            r = {'project': project, 'user': user}
             if r not in roles:  # Avoid unnecessary dupes
                 roles.append(r)
         for child in project.get_children():
             roles = cls.get_inherited_roles(child, user, roles)
         return roles
 
-    # TODO: Refactor
     @classmethod
     def get_inherited_users(cls, project, roles=None):
         """
@@ -292,7 +287,7 @@ class TaskflowAPI:
         be used in taskflow sync.
 
         :param project: Project object
-        :pram roles: Previously collected roles (optional, list or None)
+        :param roles: Previously collected roles (optional, list or None)
         :return: List of dicts
         """
         if roles is None:
@@ -301,12 +296,7 @@ class TaskflowAPI:
             i_owners = [a.user for a in project.get_owners(inherited_only=True)]
             all_users = [a.user for a in project.get_all_roles(inherited=False)]
             for u in [u for u in i_owners if u not in all_users]:
-                roles.append(
-                    {
-                        'project_uuid': str(project.sodar_uuid),
-                        'username': u.username,
-                    }
-                )
+                roles.append({'project': project, 'user': u})
         for child in project.get_children():
             roles = cls.get_inherited_users(child, roles)
         return roles
