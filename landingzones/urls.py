@@ -1,6 +1,6 @@
 from django.conf.urls import url
 
-from landingzones import views, views_api, views_ajax, views_taskflow
+from landingzones import views, views_api, views_ajax
 
 app_name = 'landingzones'
 
@@ -81,18 +81,4 @@ urls_ajax = [
     )
 ]
 
-# Taskflow API views
-urls_taskflow = [
-    url(
-        regex=r'^taskflow/create$',
-        view=views_taskflow.TaskflowZoneCreateAPIView.as_view(),
-        name='taskflow_zone_create',
-    ),
-    url(
-        regex=r'^taskflow/status/set$',
-        view=views_taskflow.TaskflowZoneStatusSetAPIView.as_view(),
-        name='taskflow_zone_status_set',
-    ),
-]
-
-urlpatterns = urls_ui + urls_api + urls_ajax + urls_taskflow
+urlpatterns = urls_ui + urls_api + urls_ajax

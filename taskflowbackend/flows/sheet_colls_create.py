@@ -1,5 +1,8 @@
+# Samplesheets dependency
+from samplesheets import tasks_taskflow as ss_tasks
+
 from taskflowbackend.flows.base_flow import BaseLinearFlow
-from taskflowbackend.tasks import sodar_tasks, irods_tasks
+from taskflowbackend.tasks import irods_tasks
 
 
 PUBLIC_GROUP = 'public'
@@ -67,7 +70,7 @@ class Flow(BaseLinearFlow):
                 )
             )
         self.add_task(
-            sodar_tasks.SetIrodsCollStatusTask(
+            ss_tasks.SetIrodsCollStatusTask(
                 name='Set iRODS collection structure status to True',
                 project=self.project,
                 inject={'dir_status': True},
