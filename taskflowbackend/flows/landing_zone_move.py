@@ -1,11 +1,14 @@
 from django.conf import settings
 
+# Landingzones dependency
+import landingzones.tasks_taskflow as lz_tasks
+
 from taskflowbackend.flows.base_flow import BaseLinearFlow
 from taskflowbackend.apis.irods_utils import (
     get_subcoll_obj_paths,
     get_subcoll_paths,
 )
-from taskflowbackend.tasks import sodar_tasks, irods_tasks
+from taskflowbackend.tasks import irods_tasks
 
 
 SAMPLE_COLL = settings.IRODS_SAMPLE_COLL
@@ -94,7 +97,7 @@ class Flow(BaseLinearFlow):
         # If async, set up task to set landing zone status to failed
         if self.request_mode == 'async':
             self.add_task(
-                sodar_tasks.RevertLandingZoneFailTask(
+                lz_tasks.RevertLandingZoneFailTask(
                     name='Set landing zone status to FAILED on revert',
                     project=self.project,
                     inject={
@@ -108,7 +111,7 @@ class Flow(BaseLinearFlow):
                 )
             )
         self.add_task(
-            sodar_tasks.SetLandingZoneStatusTask(
+            lz_tasks.SetLandingZoneStatusTask(
                 name='Set landing zone status to VALIDATING',
                 project=self.project,
                 inject={
@@ -150,7 +153,7 @@ class Flow(BaseLinearFlow):
                 )
             )
             self.add_task(
-                sodar_tasks.SetLandingZoneStatusTask(
+                lz_tasks.SetLandingZoneStatusTask(
                     name='Set landing zone status to ACTIVE',
                     project=self.project,
                     inject={
@@ -241,7 +244,7 @@ class Flow(BaseLinearFlow):
             )
         )
         self.add_task(
-            sodar_tasks.SetLandingZoneStatusTask(
+            lz_tasks.SetLandingZoneStatusTask(
                 name='Set landing zone status to MOVING',
                 project=self.project,
                 inject={
@@ -310,7 +313,7 @@ class Flow(BaseLinearFlow):
             )
         )
         self.add_task(
-            sodar_tasks.SetLandingZoneStatusTask(
+            lz_tasks.SetLandingZoneStatusTask(
                 name='Set landing zone status to MOVED',
                 project=self.project,
                 inject={

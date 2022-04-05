@@ -1,5 +1,7 @@
 """Integration tests for views in the landingzones Django app with taskflow"""
 
+# TODO: Refactor
+
 # NOTE: You must supply 'sodar_url': self.live_server_url in taskflow requests!
 
 import hashlib

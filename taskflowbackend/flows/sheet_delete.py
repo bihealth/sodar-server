@@ -1,5 +1,8 @@
+# Samplesheets dependency
+from samplesheets import tasks_taskflow as ss_tasks
+
 from taskflowbackend.flows.base_flow import BaseLinearFlow
-from taskflowbackend.tasks import sodar_tasks, irods_tasks
+from taskflowbackend.tasks import irods_tasks
 
 
 class Flow(BaseLinearFlow):
@@ -28,7 +31,7 @@ class Flow(BaseLinearFlow):
             )
         )
         self.add_task(
-            sodar_tasks.RemoveSampleSheetsTask(
+            ss_tasks.RemoveSampleSheetsTask(
                 name='Remove sample sheets',
                 project=self.project,
                 inject={},

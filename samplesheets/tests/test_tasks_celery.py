@@ -22,7 +22,7 @@ from appalerts.models import AppAlert
 from timeline.models import ProjectEvent
 
 from samplesheets.models import ISATab
-from samplesheets.tasks import update_project_cache_task, sheet_sync_task
+from samplesheets.tasks_celery import update_project_cache_task, sheet_sync_task
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 from samplesheets.tests.test_views import TestSheetRemoteSyncBase
 from samplesheets.tests.test_views_taskflow import (

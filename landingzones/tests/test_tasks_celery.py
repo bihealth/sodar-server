@@ -17,7 +17,7 @@ from projectroles.tests.test_views_taskflow import TestTaskflowBase
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 from samplesheets.tests.test_views_taskflow import SampleSheetTaskflowMixin
 
-from landingzones.tasks import TriggerZoneMoveTask
+from landingzones.tasks_celery import TriggerZoneMoveTask
 from landingzones.tests.test_models import LandingZoneMixin
 from landingzones.tests.test_views_taskflow import LandingZoneTaskflowMixin
 
