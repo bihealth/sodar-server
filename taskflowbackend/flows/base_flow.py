@@ -14,7 +14,6 @@ class BaseLinearFlow:
     def __init__(
         self,
         irods_backend,
-        sodar_api,
         project,
         flow_name,
         flow_data,
@@ -24,7 +23,6 @@ class BaseLinearFlow:
     ):
         self.irods_backend = irods_backend
         self.irods = irods_backend.get_session()
-        self.sodar_api = sodar_api
         self.project = project
         self.project_uuid = str(project.sodar_uuid)  # TODO: Remove as redundant
         self.flow_name = flow_name

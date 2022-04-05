@@ -1,5 +1,3 @@
-# TODO: Probably can mostly be removed, see after initial integration
-
 import logging
 import random
 import string
@@ -8,11 +6,12 @@ from irods.models import UserGroup
 
 from django.conf import settings
 
-PROJECT_ROOT = settings.TASKFLOW_IRODS_PROJECT_ROOT
-PERMANENT_USERS = settings.TASKFLOW_TEST_PERMANENT_USERS
-
 
 logger = logging.getLogger('sodar_taskflow')
+
+
+PROJECT_ROOT = settings.TASKFLOW_IRODS_PROJECT_ROOT
+PERMANENT_USERS = settings.TASKFLOW_TEST_PERMANENT_USERS
 
 
 def cleanup_irods_data(irods, verbose=True):
@@ -36,8 +35,10 @@ def cleanup_irods_data(irods, verbose=True):
 
 
 def get_trash_path(path, add_rand=False):
-    """Return base trash path for an object without a versioning suffix. Adds
-    random characters if add_rand is set True (for revert operations)"""
+    """
+    Return base trash path for an object without a versioning suffix. Adds
+    random characters if add_rand is set True (for revert operations).
+    """
     trash_path = (
         '/'
         + path.split('/')[1]
@@ -47,14 +48,16 @@ def get_trash_path(path, add_rand=False):
     if add_rand:
         trash_path += '_' + ''.join(
             random.SystemRandom().choice(string.ascii_lowercase + string.digits)
-            for x in range(16)
+            for _ in range(16)
         )
     return trash_path
 
 
 def get_subcoll_obj_paths(coll):
-    """Return paths to all files within collection and its subcollections
-    recursively"""
+    """
+    Return paths to all files within collection and its subcollections
+    recursively.
+    """
     ret = []
     for sub_coll in coll.subcollections:
         ret += get_subcoll_obj_paths(sub_coll)

@@ -7,7 +7,6 @@ from taskflowbackend.tasks import sodar_tasks, irods_tasks
 PROJECT_ROOT = settings.TASKFLOW_IRODS_PROJECT_ROOT
 
 
-# TODO: Refactor in landingzones so that we pass the LandingZone object here
 class Flow(BaseLinearFlow):
     """Flow for creating a landing zone for an assay and a user in iRODS"""
 
@@ -27,10 +26,9 @@ class Flow(BaseLinearFlow):
         self.add_task(
             sodar_tasks.RevertLandingZoneFailTask(
                 name='Set landing zone status to NOT CREATED on revert',
-                sodar_api=self.sodar_api,
-                project_uuid=self.project_uuid,
+                project=self.project,
                 inject={
-                    'zone_uuid': str(zone.sodar_uuid),
+                    'landing_zone': zone,
                     'flow_name': self.flow_name,
                     'info_prefix': 'Failed to create landing zone',
                     'status': 'NOT CREATED',
@@ -157,12 +155,10 @@ class Flow(BaseLinearFlow):
         self.add_task(
             sodar_tasks.SetLandingZoneStatusTask(
                 name='Set landing zone status to ACTIVE',
-                sodar_api=self.sodar_api,
-                project_uuid=self.project_uuid,
+                project=self.project,
                 inject={
-                    'zone_uuid': str(zone.sodar_uuid),
+                    'landing_zone': zone,
                     'flow_name': self.flow_name,
-                    'user_uuid': zone.user.sodar_uuid,
                     'status': 'ACTIVE',
                     'status_info': 'Available with write access for user',
                 },

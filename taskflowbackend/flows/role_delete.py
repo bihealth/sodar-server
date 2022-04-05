@@ -1,5 +1,5 @@
 from taskflowbackend.flows.base_flow import BaseLinearFlow
-from taskflowbackend.tasks import sodar_tasks, irods_tasks
+from taskflowbackend.tasks import irods_tasks
 
 
 class Flow(BaseLinearFlow):
@@ -19,18 +19,6 @@ class Flow(BaseLinearFlow):
                 inject={
                     'group_name': existing_group,
                     'user_name': self.flow_data['username'],
-                },
-            )
-        )
-        # TODO: TBD: Also e.g. remove landing zone if created?
-        self.add_task(
-            sodar_tasks.RemoveRoleTask(
-                name='Remove user role',
-                sodar_api=self.sodar_api,
-                project_uuid=self.project_uuid,
-                inject={
-                    'user_uuid': self.flow_data['user_uuid'],
-                    'role_pk': self.flow_data['role_pk'],
                 },
             )
         )

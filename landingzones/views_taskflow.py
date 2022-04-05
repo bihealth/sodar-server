@@ -11,12 +11,10 @@ from rest_framework.response import Response
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
 from projectroles.email import send_generic_mail, get_email_user
-from projectroles.models import Project
 from projectroles.plugins import get_backend_api
 from projectroles.views_taskflow import BaseTaskflowAPIView
 
 # Samplesheets dependency
-from samplesheets.models import Assay
 from samplesheets.tasks import update_project_cache_task
 
 from landingzones.models import LandingZone, STATUS_BUSY
@@ -79,29 +77,6 @@ You can browse the assay metadata and related files at
 the following URL:
 {url}
 '''.lstrip()
-
-
-# TODO: Integrate Taskflow API with general SODAR API (see sodar_core#47)
-
-
-class TaskflowZoneCreateAPIView(BaseTaskflowAPIView):
-    def post(self, request):
-        try:
-            user = User.objects.get(sodar_uuid=request.data['user_uuid'])
-            project = Project.objects.get(
-                sodar_uuid=request.data['project_uuid']
-            )
-            assay = Assay.objects.get(sodar_uuid=request.data['assay_uuid'])
-        except (User.DoesNotExist, Project.DoesNotExist, Assay.DoesNotExist):
-            return Response('Not found', status=404)
-        zone = LandingZone.objects.create(
-            assay=assay,
-            title=request.data['title'],
-            project=project,
-            user=user,
-            description=request.data['description'],
-        )
-        return Response({'zone_uuid': zone.sodar_uuid}, status=200)
 
 
 class TaskflowZoneStatusSetAPIView(BaseTaskflowAPIView):
