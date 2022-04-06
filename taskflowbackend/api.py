@@ -1,12 +1,11 @@
 """SODAR Taskflow API for Django apps"""
 
+import json
 import logging
 import requests
 
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
-
-from config.celery import app
 
 # Projectroles dependency
 from projectroles.models import RoleAssignment, SODAR_CONSTANTS
@@ -14,6 +13,7 @@ from projectroles.plugins import get_backend_api
 
 from taskflowbackend import flows
 from taskflowbackend.apis import lock_api
+from taskflowbackend.tasks_celery import submit_flow_task
 
 
 logger = logging.getLogger(__name__)
@@ -42,7 +42,40 @@ class TaskflowAPI:
             getattr(settings, 'TASKFLOW_BACKEND_PORT', ''),
         )
 
-    # TODO: Update to work here
+    @classmethod
+    def _get_flow(
+        cls,
+        irods_backend,
+        project,
+        flow_name,
+        flow_data,
+        targets,
+        async_mode,
+        tl_event,
+    ):
+        # Get flow class
+        flow_cls = flows.get_flow(flow_name)
+        if not flow_cls:
+            raise ValueError('Flow "{}" not supported'.format(flow_name))
+
+        # Create flow
+        flow = flow_cls(
+            irods_backend=irods_backend,
+            project=project,
+            flow_name=flow_name,
+            flow_data=flow_data,
+            targets=targets,
+            async_mode=async_mode,
+            tl_event=tl_event,
+        )
+        try:
+            flow.validate()
+        except TypeError as ex:
+            msg = 'Error validating flow: {}'.format(ex)
+            logger.error(msg)
+            raise ex
+        return flow
+
     @classmethod
     def _run_flow(
         cls,
@@ -62,6 +95,7 @@ class TaskflowAPI:
         :param tl_event: Timeline ProjectEvent object or None
         :return: Response object
         """
+        logger.debug('_run_flow() called')  # DEBUG
         flow_result = None
         ex_msg = None
         coordinator = None
@@ -93,6 +127,7 @@ class TaskflowAPI:
             ex_msg = 'Error building flow: {}'.format(ex)
             # HACK: Fix for building issues with landing zone flows
             # TODO: Generalize to report all building problems
+            '''
             if async_mode and flow.flow_data.get('landing_zone'):
                 # Set zone status
                 zone_status = (
@@ -104,6 +139,7 @@ class TaskflowAPI:
                 # Set timeline status
                 if tl_event:
                     tl_event.set_status('FAILED', ex_msg)
+            '''
 
         # Run flow
         if not ex_msg:
@@ -149,7 +185,8 @@ class TaskflowAPI:
 
         :param project: Project object
         :param flow_name: Name of flow to be executed (string)
-        :param flow_data: Input data for flow execution (dict)
+        :param flow_data: Input data for flow execution (dict, must be JSON
+                          serializable)
         :param targets: Names of backends to sync with (list)
         :param async_mode: Run flow asynchronously (boolean, default False)
         :param tl_event: Corresponding timeline ProjectEvent (optional)
@@ -160,45 +197,38 @@ class TaskflowAPI:
         irods_backend = get_backend_api('omics_irods')
         if not irods_backend:
             raise Exception('Irodsbackend not enabled')
-
-        # Get flow class
-        flow_cls = flows.get_flow(flow_name)
-        if not flow_cls:
-            raise ValueError('Flow "{}" not supported'.format(flow_name))
-
-        # Create flow
-        flow = flow_cls(
-            irods_backend=irods_backend,
-            project=project,
-            flow_name=flow_name,
-            flow_data=flow_data,
-            targets=targets,
-            async_mode=async_mode,
-            tl_event=tl_event,
-        )
         try:
-            flow.validate()
-        except TypeError as ex:
-            msg = 'Error validating flow: {}'.format(ex)
-            logger.error(msg)
+            json.dumps(flow_data)
+        except (TypeError, OverflowError) as ex:
+            logger.error(
+                'Argument flow_data is not JSON serializable: {}'.format(ex)
+            )
             raise ex
 
-        # Build and run flow
-        # TODO: Test
+        # Launch async submit task if async mode is set
+        # TODO: Fix async submitting! (All params must be JSON serializable)
         if async_mode:
+            project_uuid = project.sodar_uuid
+            tl_uuid = tl_event.sodar_uuid if tl_event else None
             submit_flow_task.delay(
-                tf_backend=self,
-                args=(
-                    flow,
-                    project,
-                    force_fail,
-                    async_mode,
-                    tl_event,
-                ),
+                project_uuid,
+                flow_name,
+                flow_data,
+                targets,
+                tl_uuid,
             )
             return None  # TBD: What to return
 
-        # Run synchronously
+        # Else run flow synchronously
+        flow = self._get_flow(
+            irods_backend,
+            project,
+            flow_name,
+            flow_data,
+            targets,
+            async_mode,
+            tl_event,
+        )
         return self._run_flow(
             flow=flow,
             project=project,
@@ -297,9 +327,3 @@ class TaskflowAPI:
         for child in project.get_children():
             roles = cls.get_inherited_users(child, roles)
         return roles
-
-
-# Celery task for flow submitting
-@app.task(bind=True)
-def submit_flow_task(_self, tf_backend, *args):
-    tf_backend._run_flow(*args)

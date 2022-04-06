@@ -1,5 +1,7 @@
 """Taskflow tasks for the landingzones app"""
 
+# TODO: Update extra_data defaults
+
 import logging
 
 from django.conf import settings
@@ -12,7 +14,7 @@ from projectroles.email import send_generic_mail, get_email_user
 from projectroles.plugins import get_backend_api
 
 # Samplesheets dependency
-from samplesheets.tasks_celery import update_project_cache_task
+from samplesheets.tasks import update_project_cache_task
 
 # Taskflowbackend dependency
 from taskflowbackend.tasks.sodar_tasks import SODARBaseTask
@@ -233,7 +235,7 @@ class BaseLandingZoneStatusTask(SODARBaseTask):
 
     @classmethod
     def set_status(
-        cls, landing_zone, flow_name, status, status_info, extra_data
+        cls, landing_zone, flow_name, status, status_info, extra_data={}
     ):
         """
         Set landing zone status. Notify users by alerts and emails if
@@ -243,7 +245,7 @@ class BaseLandingZoneStatusTask(SODARBaseTask):
         :param flow_name: Name of flow (string)
         :param status: Zone status (string)
         :param status_info: Detailed zone status info (string)
-        :param extra_data: Optional extra data (string)
+        :param extra_data: Optional extra data (dict)
         """
         app_alerts = get_backend_api('appalerts_backend')
 
@@ -380,7 +382,7 @@ class SetLandingZoneStatusTask(BaseLandingZoneStatusTask):
         flow_name,
         status,
         status_info,
-        extra_data=None,
+        extra_data={},
         *args,
         **kwargs
     ):
@@ -396,7 +398,7 @@ class SetLandingZoneStatusTask(BaseLandingZoneStatusTask):
         flow_name,
         status,
         status_info,
-        extra_data=None,
+        extra_data={},
         *args,
         **kwargs
     ):
@@ -412,7 +414,7 @@ class RevertLandingZoneFailTask(BaseLandingZoneStatusTask):
         flow_name,
         info_prefix,
         status='FAILED',
-        extra_data=None,
+        extra_data={},
         *args,
         **kwargs
     ):
@@ -424,7 +426,7 @@ class RevertLandingZoneFailTask(BaseLandingZoneStatusTask):
         flow_name,
         info_prefix,
         status='FAILED',
-        extra_data=None,
+        extra_data={},
         *args,
         **kwargs
     ):

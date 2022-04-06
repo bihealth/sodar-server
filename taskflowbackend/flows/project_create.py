@@ -88,7 +88,7 @@ class Flow(BaseLinearFlow):
                 name='Create user for project owner',
                 irods=self.irods,
                 inject={
-                    'user_name': self.flow_data['owner'].username,
+                    'user_name': self.flow_data['owner'],
                     'user_type': 'rodsuser',
                 },
             )
@@ -99,34 +99,34 @@ class Flow(BaseLinearFlow):
                 irods=self.irods,
                 inject={
                     'group_name': project_group,
-                    'user_name': self.flow_data['owner'].username,
+                    'user_name': self.flow_data['owner'],
                 },
             )
         )
         # Add inherited owners
-        for username in set(
-            [r['user'].username for r in self.flow_data.get('roles_add', [])]
+        for user_name in set(
+            [r['user_name'] for r in self.flow_data.get('roles_add', [])]
         ):
             self.add_task(
                 irods_tasks.CreateUserTask(
-                    name='Create user "{}" in irods'.format(username),
+                    name='Create user "{}" in irods'.format(user_name),
                     irods=self.irods,
-                    inject={'user_name': username, 'user_type': 'rodsuser'},
+                    inject={'user_name': user_name, 'user_type': 'rodsuser'},
                 )
             )
         for role_add in self.flow_data.get('roles_add', []):
             project_group = self.irods_backend.get_project_group_name(
-                role_add['project']
+                role_add['project_uuid']
             )
             self.add_task(
                 irods_tasks.AddUserToGroupTask(
                     name='Add user "{}" to project user group "{}"'.format(
-                        role_add['user'].username, project_group
+                        role_add['user_name'], project_group
                     ),
                     irods=self.irods,
                     inject={
                         'group_name': project_group,
-                        'user_name': role_add['user'].username,
+                        'user_name': role_add['user_name'],
                     },
                 )
             )

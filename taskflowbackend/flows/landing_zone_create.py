@@ -1,5 +1,9 @@
 from taskflowbackend.flows.base_flow import BaseLinearFlow
-from taskflowbackend.tasks import sodar_tasks, irods_tasks
+from taskflowbackend.tasks import irods_tasks
+
+# Landingzones dependency
+from landingzones.models import LandingZone
+import landingzones.tasks_taskflow as lz_tasks
 
 
 class Flow(BaseLinearFlow):
@@ -8,18 +12,18 @@ class Flow(BaseLinearFlow):
     def validate(self):
         self.require_lock = False  # Project lock not required for this flow
         self.supported_modes = ['sync', 'async']
-        self.required_fields = ['landing_zone', 'colls']
+        self.required_fields = ['zone_uuid', 'colls']
         return super().validate()
 
     def build(self, force_fail=False):
         project_group = self.irods_backend.get_project_group_name(self.project)
         zone_root = self.irods_backend.get_zone_path(self.project)
-        zone = self.flow_data['landing_zone']
+        zone = LandingZone.objects.get(sodar_uuid=self.flow_data['zone_uuid'])
         user_path = zone_root + '/' + zone.user.username
         zone_path = self.irods_backend.get_path(zone)
 
         self.add_task(
-            sodar_tasks.RevertLandingZoneFailTask(
+            lz_tasks.RevertLandingZoneFailTask(
                 name='Set landing zone status to NOT CREATED on revert',
                 project=self.project,
                 inject={
@@ -147,7 +151,7 @@ class Flow(BaseLinearFlow):
                 )
             )
         self.add_task(
-            sodar_tasks.SetLandingZoneStatusTask(
+            lz_tasks.SetLandingZoneStatusTask(
                 name='Set landing zone status to ACTIVE',
                 project=self.project,
                 inject={
