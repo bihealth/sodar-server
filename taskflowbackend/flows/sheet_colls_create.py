@@ -73,6 +73,6 @@ class Flow(BaseLinearFlow):
             ss_tasks.SetIrodsCollStatusTask(
                 name='Set iRODS collection structure status to True',
                 project=self.project,
-                inject={'dir_status': True},
+                inject={'irods_status': True},
             )
         )

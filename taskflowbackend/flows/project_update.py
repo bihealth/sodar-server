@@ -36,18 +36,15 @@ class Flow(BaseLinearFlow):
             )
         )
         # TODO: Set public access according to public_guest_access (#71)
-        if (
-            self.flow_data['owner'].sodar_uuid
-            != self.flow_data['old_owner'].sodar_uuid
-        ):
+        if self.flow_data['owner'] != self.flow_data['old_owner']:
             self.add_task(
                 irods_tasks.RemoveUserFromGroupTask(
                     name='Remove old owner "{}" from project user '
-                    'group'.format(self.flow_data['owner'].username),
+                    'group'.format(self.flow_data['owner']),
                     irods=self.irods,
                     inject={
                         'group_name': project_group,
-                        'user_name': self.flow_data['old_owner'].username,
+                        'user_name': self.flow_data['old_owner'],
                     },
                 )
             )
@@ -56,7 +53,7 @@ class Flow(BaseLinearFlow):
                     name='Create user for project owner',
                     irods=self.irods,
                     inject={
-                        'user_name': self.flow_data['owner'].username,
+                        'user_name': self.flow_data['owner'],
                         'user_type': 'rodsuser',
                     },
                 )
@@ -64,56 +61,56 @@ class Flow(BaseLinearFlow):
             self.add_task(
                 irods_tasks.AddUserToGroupTask(
                     name='Add new owner "{}" to project user group'.format(
-                        self.flow_data['owner'].username
+                        self.flow_data['owner']
                     ),
                     irods=self.irods,
                     inject={
                         'group_name': project_group,
-                        'user_name': self.flow_data['owner'].username,
+                        'user_name': self.flow_data['owner'],
                     },
                 )
             )
         # Add new inherited roles
-        for username in set(
-            [r['user'].username for r in self.flow_data.get('roles_add', [])]
+        for user_name in set(
+            [r['user_name'] for r in self.flow_data.get('roles_add', [])]
         ):
             self.add_task(
                 irods_tasks.CreateUserTask(
-                    name='Create user "{}" in irods'.format(username),
+                    name='Create user "{}" in irods'.format(user_name),
                     irods=self.irods,
-                    inject={'user_name': username, 'user_type': 'rodsuser'},
+                    inject={'user_name': user_name, 'user_type': 'rodsuser'},
                 )
             )
         for role_add in self.flow_data.get('roles_add', []):
             project_group = self.irods_backend.get_project_group_name(
-                role_add['project']
+                role_add['project_uuid']
             )
             self.add_task(
                 irods_tasks.AddUserToGroupTask(
                     name='Add user "{}" to project user group "{}"'.format(
-                        role_add['user'].username, project_group
+                        role_add['user_name'], project_group
                     ),
                     irods=self.irods,
                     inject={
                         'group_name': project_group,
-                        'user_name': role_add['user'].username,
+                        'user_name': role_add['user_name'],
                     },
                 )
             )
         # Delete old inherited roles
         for role_delete in self.flow_data.get('roles_delete', []):
             project_group = self.irods_backend.get_project_group_name(
-                role_delete['project']
+                role_delete['project_uuid']
             )
             self.add_task(
                 irods_tasks.RemoveUserFromGroupTask(
                     name='Remove user "{}" from project user group "{}"'.format(
-                        role_delete['user'].username, project_group
+                        role_delete['user_name'], project_group
                     ),
                     irods=self.irods,
                     inject={
                         'group_name': project_group,
-                        'user_name': role_delete['user'].username,
+                        'user_name': role_delete['user_name'],
                     },
                 )
             )

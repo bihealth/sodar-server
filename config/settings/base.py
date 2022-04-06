@@ -321,6 +321,7 @@ CELERY_RESULT_SERIALIZER = 'json'
 CELERYD_TASK_TIME_LIMIT = 5 * 60
 # http://docs.celeryproject.org/en/latest/userguide/configuration.html#task-soft-time-limit
 CELERYD_TASK_SOFT_TIME_LIMIT = 60
+CELERY_IMPORTS = ['taskflowbackend.tasks_celery']
 
 
 # Django REST framework default auth classes

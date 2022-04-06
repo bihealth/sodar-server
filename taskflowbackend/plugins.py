@@ -65,26 +65,28 @@ class BackendPlugin(ProjectModifyPluginAPIMixin, BackendPluginPoint):
         # if tl_event:
         #     tl_event.set_status('SUBMIT')
         flow_data = {
-            'project': project,
-            'owner': owner,
+            'owner': owner.username,
             'settings': project_settings,
         }
 
         if action == PROJECT_ACTION_UPDATE:  # Update
-            flow_data['old_owner'] = project.get_owner().user
+            flow_data['old_owner'] = project.get_owner().user.username
             if old_data['parent']:
                 # Get inherited owners for project and its children to add
                 new_roles = taskflow.get_inherited_users(project)
                 flow_data['roles_add'] = new_roles
-                new_users = set([r['user'] for r in new_roles])
+                new_users = set([r['user_name'] for r in new_roles])
                 # Get old inherited owners from previous parent to remove
                 old_roles = taskflow.get_inherited_users(old_data['parent'])
                 flow_data['roles_delete'] = [
-                    r for r in old_roles if r['user'] not in new_users
+                    r for r in old_roles if r['user_name'] not in new_users
                 ]
         else:  # Create
             flow_data['roles_add'] = [
-                {'project': project, 'user': a.user}
+                {
+                    'project_uuid': str(project.sodar_uuid),
+                    'user_name': a.user.username,
+                }
                 for a in project.get_owners(inherited_only=True)
             ]
 
@@ -142,7 +144,6 @@ class BackendPlugin(ProjectModifyPluginAPIMixin, BackendPluginPoint):
         # TODO: Create separate taskflow event
         # if tl_event:
         #     tl_event.set_status('SUBMIT')
-        # TODO: Update flow data
         flow_data = {
             'username': role_as.user.username,
             'user_uuid': str(role_as.user.sodar_uuid),

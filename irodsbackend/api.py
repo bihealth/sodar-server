@@ -371,16 +371,21 @@ class IrodsAPI:
         if s:
             return s.group(1)
 
+    # TODO: Add tests
     @classmethod
     def get_project_group_name(cls, project):
         """
         Return iRODS user group name for project.
 
-        :param project: Project object
+        :param project: Project object or project UUID string
         :return: String
         """
-        cls._validate_project(project)
-        return 'omics_project_{}'.format(project.sodar_uuid)
+        if isinstance(project, str):
+            project_uuid = project
+        else:
+            cls._validate_project(project)
+            project_uuid = project.sodar_uuid
+        return 'omics_project_{}'.format(project_uuid)
 
     # TODO: Add tests
     @classmethod

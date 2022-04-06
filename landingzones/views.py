@@ -177,7 +177,7 @@ class ZoneCreateMixin(ZoneConfigPluginMixin):
             zone,
             flow_name,
             {
-                'landing_zone': zone,
+                'zone_uuid': str(zone.sodar_uuid),
                 'colls': list(set(colls)),
             },
         )
@@ -236,13 +236,12 @@ class ZoneDeleteMixin(ZoneConfigPluginMixin):
 
         # Submit with taskflow
         flow_name = 'landing_zone_delete'
-        # TODO: Update flow data
         flow_data = self.get_flow_data(
             zone,
             flow_name,
             {
                 'zone_title': zone.title,
-                'zone_uuid': zone.sodar_uuid,
+                'zone_uuid': str(zone.sodar_uuid),
                 'zone_config': zone.configuration,
                 'assay_path': irods_backend.get_sub_path(
                     zone.assay, landing_zone=True
@@ -322,7 +321,7 @@ class ZoneMoveMixin(ZoneConfigPluginMixin):
             'landing_zone_move',
             {
                 'zone_title': str(zone.title),
-                'zone_uuid': zone.sodar_uuid,
+                'zone_uuid': str(zone.sodar_uuid),
                 'zone_config': zone.configuration,
                 'assay_path_samples': irods_backend.get_sub_path(
                     zone.assay, landing_zone=False
