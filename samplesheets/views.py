@@ -692,10 +692,9 @@ class IrodsCollsCreateViewMixin:
         try:
             # TODO: Update arguments
             taskflow.submit(
-                project_uuid=project.sodar_uuid,
+                project=project,
                 flow_name='sheet_colls_create',
                 flow_data=flow_data,
-                request=self.request,
             )
         except taskflow.FlowSubmitException as ex:
             if tl_event:
@@ -1505,12 +1504,10 @@ class SheetDeleteView(
             if tl_event:
                 tl_event.set_status('SUBMIT')
             try:
-                # TODO: Update arguments
                 taskflow.submit(
-                    project_uuid=project.sodar_uuid,
+                    project=project,
                     flow_name='sheet_delete',
                     flow_data={},
-                    request=self.request,
                 )
             except taskflow.FlowSubmitException as ex:
                 if tl_event:
@@ -2327,12 +2324,11 @@ class IrodsRequestAcceptView(
         try:
             # TODO: Update arguments
             taskflow.submit(
-                project_uuid=project.sodar_uuid,
+                project=project,
                 flow_name=flow_name,
                 flow_data=flow_data,
-                timeline_uuid=tl_event.sodar_uuid,
-                request_mode='sync',
-                request=self.request,
+                tl_event=tl_event,
+                async_mode=False,
             )
             obj.status = 'ACCEPTED'
             obj.save()

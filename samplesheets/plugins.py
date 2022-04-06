@@ -492,7 +492,14 @@ class ProjectAppPlugin(ProjectModifyPluginAPIMixin, ProjectAppPluginPoint):
             )
 
     def perform_project_modify(
-        self, project, action, owner, project_settings, request, old_data=None
+        self,
+        project,
+        action,
+        owner,
+        project_settings,
+        request,
+        old_data=None,
+        old_settings=None,
     ):
         """
         Perform additional actions to finalize project creation or update.
@@ -500,9 +507,10 @@ class ProjectAppPlugin(ProjectModifyPluginAPIMixin, ProjectAppPluginPoint):
         :param project: Current project object (Project)
         :param action: Action to perform (CREATE or UPDATE)
         :param owner: User object of project owner
-        :param project_settings: Dict
+        :param project_settings: Project app settings (dict)
         :param request: Request object for triggering the creation or update
         :param old_data: Old project data in case of an update (dict or None)
+        :param old_settings: Old app settings in case of update (dict or None)
         """
         taskflow = get_backend_api('taskflow')
         irods_backend = get_backend_api('omics_irods')  # Need conn for ticket
@@ -594,7 +602,14 @@ class ProjectAppPlugin(ProjectModifyPluginAPIMixin, ProjectAppPluginPoint):
         logger.info('Public access status updated.')
 
     def revert_project_modify(
-        self, project, action, owner, project_settings, request, old_data=None
+        self,
+        project,
+        action,
+        owner,
+        project_settings,
+        request,
+        old_data=None,
+        old_settings=None,
     ):
         """
         Revert project creation or update if errors have occurred in other apps.
@@ -602,9 +617,10 @@ class ProjectAppPlugin(ProjectModifyPluginAPIMixin, ProjectAppPluginPoint):
         :param project: Current project object (Project)
         :param action: Action which was performed (CREATE or UPDATE)
         :param owner: User object of project owner
-        :param project_settings: Dict
+        :param project_settings: Project app settings (dict)
         :param request: Request object for triggering the creation or update
-        :param old_data: Old project data in case of an update (dict or None)
+        :param old_data: Old project data in case of update (dict or None)
+        :param old_settings: Old app settings in case of update (dict or None)
         """
         # TODO: Implement this
         pass

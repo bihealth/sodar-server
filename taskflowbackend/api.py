@@ -6,6 +6,8 @@ import requests
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 
+from config.celery import app
+
 # Projectroles dependency
 from projectroles.models import RoleAssignment, SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
@@ -132,7 +134,6 @@ class TaskflowAPI:
             raise cls.FlowSubmitException(ex_msg)
         return flow_result
 
-    # TODO: Update to work here, remove unnecessary complexity, update params
     def submit(
         self,
         project,
@@ -142,7 +143,6 @@ class TaskflowAPI:
         async_mode=False,
         tl_event=None,
         force_fail=False,
-        sodar_url=None,  # TODO: Remove
     ):
         """
         Submit taskflow for SODAR project data modification.
@@ -150,12 +150,10 @@ class TaskflowAPI:
         :param project: Project object
         :param flow_name: Name of flow to be executed (string)
         :param flow_data: Input data for flow execution (dict)
-        :param request: Request object (optional)
         :param targets: Names of backends to sync with (list)
         :param async_mode: Run flow asynchronously (boolean, default False)
         :param tl_event: Corresponding timeline ProjectEvent (optional)
         :param force_fail: Make flow fail on purpose (boolean, default False)
-        :param sodar_url: URL of SODAR server (optional, for testing)
         :return: Boolean
         :raise: FlowSubmitException if submission fails
         """
@@ -186,22 +184,20 @@ class TaskflowAPI:
             raise ex
 
         # Build and run flow
-        # TODO: Run async using celery instead
-        '''
+        # TODO: Test
         if async_mode:
-            p = Process(
-                target=self._run_flow,
+            submit_flow_task.delay(
+                tf_backend=self,
                 args=(
                     flow,
                     project,
                     force_fail,
-                    True,
+                    async_mode,
                     tl_event,
                 ),
             )
-            p.start()
             return None  # TBD: What to return
-        '''
+
         # Run synchronously
         return self._run_flow(
             flow=flow,
@@ -211,7 +207,8 @@ class TaskflowAPI:
             tl_event=tl_event,
         )
 
-    def use_taskflow(self, project):
+    @classmethod
+    def use_taskflow(cls, project):
         """
         Check whether taskflow use is allowed with a project.
 
@@ -300,3 +297,9 @@ class TaskflowAPI:
         for child in project.get_children():
             roles = cls.get_inherited_users(child, roles)
         return roles
+
+
+# Celery task for flow submitting
+@app.task(bind=True)
+def submit_flow_task(_self, tf_backend, *args):
+    tf_backend._run_flow(*args)

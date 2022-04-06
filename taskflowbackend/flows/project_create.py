@@ -20,7 +20,7 @@ class Flow(BaseLinearFlow):
             irods_tasks.CreateCollectionTask(
                 name='Create root collection for SODAR projects',
                 irods=self.irods,
-                inject={'path': self.irods_backend.get_projects_root()},
+                inject={'path': self.irods_backend.get_projects_path()},
             )
         )
         self.add_task(
@@ -121,7 +121,7 @@ class Flow(BaseLinearFlow):
             self.add_task(
                 irods_tasks.AddUserToGroupTask(
                     name='Add user "{}" to project user group "{}"'.format(
-                        role_add['username'], project_group
+                        role_add['user'].username, project_group
                     ),
                     irods=self.irods,
                     inject={

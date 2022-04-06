@@ -161,6 +161,9 @@ DATABASES['default']['ATOMIC_REQUESTS'] = False
 # Set default auto field (for Django 3.2+)
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
+# Default Redis server URL
+REDIS_URL = env.str('REDIS_URL', 'redis://localhost:6379/0')
+
 # GENERAL CONFIGURATION
 # ------------------------------------------------------------------------------
 # Local time zone for this installation. Choices can be found here:
@@ -305,7 +308,7 @@ if USE_TZ:
     # http://docs.celeryproject.org/en/latest/userguide/configuration.html#std:setting-timezone
     CELERY_TIMEZONE = TIME_ZONE
 # http://docs.celeryproject.org/en/latest/userguide/configuration.html#std:setting-broker_url
-CELERY_BROKER_URL = env.str('CELERY_BROKER_URL', 'redis://localhost:6379/0')
+CELERY_BROKER_URL = env.str('CELERY_BROKER_URL', REDIS_URL)
 # http://docs.celeryproject.org/en/latest/userguide/configuration.html#std:setting-result_backend
 CELERY_RESULT_BACKEND = CELERY_BROKER_URL
 # http://docs.celeryproject.org/en/latest/userguide/configuration.html#std:setting-accept_content
@@ -692,9 +695,11 @@ IRODS_CERT_PATH = env.str('IRODS_CERT_PATH', None)
 TASKFLOW_TARGETS = env.list('TASKFLOW_TARGETS', default=['irods', 'sodar'])
 TASKFLOW_BACKEND_HOST = env.str('TASKFLOW_BACKEND_HOST', 'http://127.0.0.1')
 TASKFLOW_BACKEND_PORT = env.int('TASKFLOW_BACKEND_PORT', 5005)
-TASKFLOW_SODAR_SECRET = env.str('TASKFLOW_SODAR_SECRET', 'CHANGE ME!')
+TASKFLOW_REDIS_URL = os.getenv('TASKFLOW_REDIS_URL', REDIS_URL)
+TASKFLOW_LOCK_RETRY_COUNT = 2
+TASKFLOW_LOCK_RETRY_INTERVAL = 3
+TASKFLOW_LOCK_ENABLED = True
 TASKFLOW_TEST_MODE = False  # Important to protect iRODS data
-# TODO: Add additional settings formerly in sodar_taskflow project
 
 # Samplesheets and Landingzones link settings
 IRODS_WEBDAV_ENABLED = env.bool('IRODS_WEBDAV_ENABLED', True)
