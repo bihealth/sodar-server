@@ -19,7 +19,7 @@ class BaseLinearFlow:
         flow_data,
         targets,
         async_mode=False,
-        timeline_uuid=None,
+        tl_event=None,
     ):
         self.irods_backend = irods_backend
         self.irods = irods_backend.get_session()
@@ -29,7 +29,7 @@ class BaseLinearFlow:
         self.flow_data = flow_data
         self.targets = targets
         self.required_fields = []  # For validation
-        self.timeline_uuid = timeline_uuid
+        self.tl_event = tl_event
         # TODO: Refactor sync/async behaviour
         self.request_mode = 'async' if async_mode else 'sync'
         self.supported_modes = [
@@ -64,8 +64,8 @@ class BaseLinearFlow:
         Build linear flow to be executed for one project. Override this in
         the flow implementation.
         """
-        # TODO: Add tasks to self.flow here with self.flow.add()
-        # TODO: Add force_fail=force_fail to last add() for testing rollback
+        # Add tasks to self.flow here with self.flow.add()
+        # Add force_fail=force_fail to last add() for testing rollback
         msg = 'Function build() not implemented!'
         logger.error(msg)
         raise NotImplementedError(msg)

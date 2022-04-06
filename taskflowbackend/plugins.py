@@ -39,7 +39,14 @@ class BackendPlugin(ProjectModifyPluginAPIMixin, BackendPluginPoint):
         return TaskflowAPI()
 
     def perform_project_modify(
-        self, project, action, owner, project_settings, request, old_data=None
+        self,
+        project,
+        action,
+        owner,
+        project_settings,
+        request,
+        old_data=None,
+        old_settings=None,
     ):
         """
         Perform additional actions to finalize project creation or update.
@@ -47,9 +54,10 @@ class BackendPlugin(ProjectModifyPluginAPIMixin, BackendPluginPoint):
         :param project: Current project object (Project)
         :param action: Action to perform (CREATE or UPDATE)
         :param owner: User object of project owner
-        :param project_settings: Dict
+        :param project_settings: Project app settings (dict)
         :param request: Request object for triggering the creation or update
         :param old_data: Old project data in case of an update (dict or None)
+        :param old_settings: Old app settings in case of update (dict or None)
         """
         taskflow = self.get_api()
 
@@ -64,13 +72,13 @@ class BackendPlugin(ProjectModifyPluginAPIMixin, BackendPluginPoint):
 
         if action == PROJECT_ACTION_UPDATE:  # Update
             flow_data['old_owner'] = project.get_owner().user
-            if old_data.parent:
+            if old_data['parent']:
                 # Get inherited owners for project and its children to add
                 new_roles = taskflow.get_inherited_users(project)
                 flow_data['roles_add'] = new_roles
                 new_users = set([r['user'] for r in new_roles])
                 # Get old inherited owners from previous parent to remove
-                old_roles = taskflow.get_inherited_users(old_data.parent)
+                old_roles = taskflow.get_inherited_users(old_data['parent'])
                 flow_data['roles_delete'] = [
                     r for r in old_roles if r['user'] not in new_users
                 ]
@@ -96,7 +104,14 @@ class BackendPlugin(ProjectModifyPluginAPIMixin, BackendPluginPoint):
             raise ex
 
     def revert_project_modify(
-        self, project, action, owner, project_settings, request, old_data=None
+        self,
+        project,
+        action,
+        owner,
+        project_settings,
+        request,
+        old_data=None,
+        old_settings=None,
     ):
         """
         Revert project creation or update if errors have occurred in other apps.
@@ -104,9 +119,10 @@ class BackendPlugin(ProjectModifyPluginAPIMixin, BackendPluginPoint):
         :param project: Current project object (Project)
         :param action: Action which was performed (CREATE or UPDATE)
         :param owner: User object of project owner
-        :param project_settings: Dict
+        :param project_settings: Project app settings (dict)
         :param request: Request object for triggering the creation or update
-        :param old_data: Old project data in case of an update (dict or None)
+        :param old_data: Old project data in case of update (dict or None)
+        :param old_settings: Old app settings in case of update (dict or None)
         """
         # TODO: Run flow to remove collections and user group if creation failed
         pass

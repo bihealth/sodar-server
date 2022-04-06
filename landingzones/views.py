@@ -254,12 +254,11 @@ class ZoneDeleteMixin(ZoneConfigPluginMixin):
         try:
             # TODO: Update arguments
             taskflow.submit(
-                project_uuid=project.sodar_uuid,
+                project=project,
                 flow_name=flow_name,
                 flow_data=flow_data,
-                request=self.request,
-                request_mode='async',
-                timeline_uuid=tl_event.sodar_uuid if tl_event else None,
+                async_mode=True,
+                tl_event=tl_event if tl_event else None,
             )
             self.object = None
 
@@ -341,12 +340,11 @@ class ZoneMoveMixin(ZoneConfigPluginMixin):
         try:
             # TODO: Update arguments
             taskflow.submit(
-                project_uuid=project.sodar_uuid,
+                project=project,
                 flow_name='landing_zone_move',
                 flow_data=flow_data,
-                request=request,
-                request_mode='async',
-                timeline_uuid=tl_event.sodar_uuid,
+                async_mode=True,
+                tl_event=tl_event,
             )
         except taskflow.FlowSubmitException as ex:
             zone.set_status('FAILED', str(ex))

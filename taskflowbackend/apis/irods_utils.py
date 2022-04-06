@@ -10,13 +10,16 @@ from django.conf import settings
 logger = logging.getLogger('__name__')
 
 
-PERMANENT_USERS = settings.TASKFLOW_TEST_PERMANENT_USERS
+DEFAULT_PERMANENT_USERS = ['client_user', 'rods', 'rodsadmin', 'public']
 
 
 def cleanup_irods_data(irods_backend, verbose=True):
     """Cleanup data from iRODS. Used in debugging/testing."""
     irods = irods_backend.get_session()
     projects_root = irods_backend.get_projects_path()
+    permanent_users = getattr(
+        settings, 'TASKFLOW_TEST_PERMANENT_USERS', DEFAULT_PERMANENT_USERS
+    )
     # TODO: Remove stuff from user folders
     # TODO: Remove stuff from trash
     # Remove project folders
@@ -29,7 +32,7 @@ def cleanup_irods_data(irods_backend, verbose=True):
     # Remove created user groups and users
     # NOTE: user_groups.remove does both
     for g in irods.query(UserGroup).all():
-        if g[UserGroup.name] not in PERMANENT_USERS:
+        if g[UserGroup.name] not in permanent_users:
             irods.user_groups.remove(user_name=g[UserGroup.name])
             if verbose:
                 logger.info('Removed user: {}'.format(g[UserGroup.name]))

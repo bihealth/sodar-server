@@ -31,12 +31,15 @@ class Flow(BaseLinearFlow):
                 inject={
                     'path': project_path,
                     'name': 'description',
-                    'value': self.project('description') or '',
+                    'value': self.project.description or '',
                 },
             )
         )
         # TODO: Set public access according to public_guest_access (#71)
-        if self.flow_data['owner_uuid'] != self.flow_data['old_owner_uuid']:
+        if (
+            self.flow_data['owner'].sodar_uuid
+            != self.flow_data['old_owner'].sodar_uuid
+        ):
             self.add_task(
                 irods_tasks.RemoveUserFromGroupTask(
                     name='Remove old owner "{}" from project user '

@@ -32,7 +32,13 @@ IRODS_ZONE = 'omicsZone'
 
 # Taskflow backend settings
 TASKFLOW_TEST_MODE = True
-# TODO: Add additional test settings formerly in sodar_taskflow project
+TASKFLOW_TEST_PERMANENT_USERS = [
+    'client_user',
+    'rods',
+    'rodsadmin',
+    'public',
+    'bih_proteomics_smb',
+]
 
 
 # Samplesheets app settings
