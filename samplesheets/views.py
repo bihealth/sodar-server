@@ -437,7 +437,7 @@ class SheetImportMixin:
             and investigation.irods_status
             and settings.SHEETS_ENABLE_CACHE
         ):
-            from samplesheets.tasks import update_project_cache_task
+            from samplesheets.tasks_celery import update_project_cache_task
 
             update_project_cache_task.delay(
                 project_uuid=str(project.sodar_uuid),
@@ -704,7 +704,7 @@ class IrodsCollsCreateViewMixin:
             tl_event.set_status('OK')
 
         if settings.SHEETS_ENABLE_CACHE:
-            from samplesheets.tasks import update_project_cache_task
+            from samplesheets.tasks_celery import update_project_cache_task
 
             update_project_cache_task.delay(
                 project_uuid=str(project.sodar_uuid),
@@ -973,7 +973,7 @@ class SheetRemoteSyncAPI(SheetImportMixin):
             and investigation.irods_status
             and settings.SHEETS_ENABLE_CACHE
         ):
-            from samplesheets.tasks import update_project_cache_task
+            from samplesheets.tasks_celery import update_project_cache_task
 
             update_project_cache_task(
                 project_uuid=str(project.sodar_uuid),
@@ -1562,7 +1562,7 @@ class SheetCacheUpdateView(
     def get(self, request, *args, **kwargs):
         project = self.get_project()
         if settings.SHEETS_ENABLE_CACHE:
-            from samplesheets.tasks import update_project_cache_task
+            from samplesheets.tasks_celery import update_project_cache_task
 
             update_project_cache_task.delay(
                 project_uuid=str(project.sodar_uuid),
@@ -2341,7 +2341,7 @@ class IrodsRequestAcceptView(
 
         # Update cache
         if settings.SHEETS_ENABLE_CACHE:
-            from samplesheets.tasks import update_project_cache_task
+            from samplesheets.tasks_celery import update_project_cache_task
 
             update_project_cache_task.delay(
                 project_uuid=str(project.sodar_uuid),

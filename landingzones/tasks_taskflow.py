@@ -14,7 +14,7 @@ from projectroles.email import send_generic_mail, get_email_user
 from projectroles.plugins import get_backend_api
 
 # Samplesheets dependency
-from samplesheets.tasks import update_project_cache_task
+from samplesheets.tasks_celery import update_project_cache_task
 
 # Taskflowbackend dependency
 from taskflowbackend.tasks.sodar_tasks import SODARBaseTask

@@ -1,5 +1,4 @@
 """Celery tasks for the taskflowbackend app"""
-# TODO: Rename to tasks_celery.py (see issue #1400)
 
 from config.celery import app
 
