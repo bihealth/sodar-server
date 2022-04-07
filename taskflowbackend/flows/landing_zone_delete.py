@@ -1,5 +1,9 @@
 from taskflowbackend.flows.base_flow import BaseLinearFlow
-from taskflowbackend.tasks import irods_tasks, sodar_tasks
+from taskflowbackend.tasks import irods_tasks
+
+# Landingzones dependency
+import landingzones.tasks_taskflow as lz_tasks
+from landingzones.models import LandingZone
 
 
 class Flow(BaseLinearFlow):
@@ -8,22 +12,22 @@ class Flow(BaseLinearFlow):
     def validate(self):
         self.require_lock = False  # Project lock not required for this flow
         self.supported_modes = ['sync', 'async']
-        self.required_fields = ['landing_zone']
+        self.required_fields = ['zone_uuid']
         return super().validate()
 
     def build(self, force_fail=False):
-        zone = self.flow_data['landing_zone']
+        # Setup
+        zone = LandingZone.objects.get(sodar_uuid=self.flow_data['zone_uuid'])
         zone_path = self.irods_backend.get_path(zone)
-        zone_uuid = str(zone.sodar_uuid)
 
         # If async, set up task to set landing zone status to failed
         if self.request_mode == 'async':
             self.add_task(
-                sodar_tasks.RevertLandingZoneFailTask(
+                lz_tasks.RevertLandingZoneFailTask(
                     name='Set landing zone status to FAILED on revert',
-                    project_uuid=self.project_uuid,
+                    project=self.project,
                     inject={
-                        'zone_uuid': zone_uuid,
+                        'landing_zone': zone,
                         'flow_name': self.flow_name,
                         'info_prefix': 'Failed to delete landing zone',
                     },
@@ -31,11 +35,11 @@ class Flow(BaseLinearFlow):
             )
         # Set zone status to DELETING
         self.add_task(
-            sodar_tasks.SetLandingZoneStatusTask(
+            lz_tasks.SetLandingZoneStatusTask(
                 name='Set landing zone status to DELETING',
-                project_uuid=self.project_uuid,
+                project=self.project,
                 inject={
-                    'zone_uuid': zone_uuid,
+                    'landing_zone': zone,
                     'status': 'DELETING',
                     'status_info': 'Deleting landing zone',
                     'flow_name': self.flow_name,
@@ -51,7 +55,7 @@ class Flow(BaseLinearFlow):
         )
         # Set zone status to DELETING
         self.add_task(
-            sodar_tasks.SetLandingZoneStatusTask(
+            lz_tasks.SetLandingZoneStatusTask(
                 name='Set landing zone status to DELETED',
                 project=self.project,
                 inject={
