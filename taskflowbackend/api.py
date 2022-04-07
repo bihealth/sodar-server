@@ -95,7 +95,6 @@ class TaskflowAPI:
         :param tl_event: Timeline ProjectEvent object or None
         :return: Response object
         """
-        logger.debug('_run_flow() called')  # DEBUG
         flow_result = None
         ex_msg = None
         coordinator = None

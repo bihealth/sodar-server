@@ -1,9 +1,9 @@
 """App plugin and sub-app plugin points for the samplesheets app"""
 
-from copy import deepcopy
 import logging
 import os
 
+from copy import deepcopy
 from irods.exception import NetworkException
 
 from django.conf import settings
@@ -556,7 +556,7 @@ class ProjectAppPlugin(ProjectModifyPluginAPIMixin, ProjectAppPluginPoint):
         }
         try:
             taskflow.submit(
-                project_uuid=project.sodar_uuid,
+                project=project,
                 flow_name='public_access_update',
                 flow_data=flow_data,
             )
