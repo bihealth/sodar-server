@@ -6,7 +6,7 @@ class Flow(BaseLinearFlow):
     """Flow for updating an user's role in project"""
 
     def validate(self):
-        self.required_fields = ['username', 'user_uuid', 'role_pk']
+        self.required_fields = ['username']
         return super().validate()
 
     def build(self, force_fail=False):

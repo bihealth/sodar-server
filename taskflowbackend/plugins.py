@@ -140,14 +140,11 @@ class BackendPlugin(ProjectModifyPluginAPIMixin, BackendPluginPoint):
         :param old_role: Role object for previous role in case of an update
         """
         taskflow = self.get_api()
-
         # TODO: Create separate taskflow event
         # if tl_event:
         #     tl_event.set_status('SUBMIT')
         flow_data = {
             'username': role_as.user.username,
-            'user_uuid': str(role_as.user.sodar_uuid),
-            'role_pk': role_as.role.pk,
         }
         try:
             taskflow.submit(
@@ -180,5 +177,31 @@ class BackendPlugin(ProjectModifyPluginAPIMixin, BackendPluginPoint):
         :param role_as: RoleAssignment object
         :param request: Request object for triggering the creation or update
         """
-        # TODO: Implement
+        taskflow = self.get_api()
+        # TODO: Create separate taskflow event
+        # if tl_event:
+        #     tl_event.set_status('SUBMIT')
+        flow_data = {
+            'username': role_as.user.username,
+        }
+        try:
+            taskflow.submit(
+                project=role_as.project,
+                flow_name='role_delete',
+                flow_data=flow_data,
+            )
+        except taskflow.FlowSubmitException as ex:
+            # if tl_event:
+            #     tl_event.set_status('FAILED', str(ex))
+            raise ex
+
+    def revert_role_delete(self, role_as, request):
+        """
+        Revert role assignment deletion deletion if errors have occurred in
+        other apps.
+
+        :param role_as: RoleAssignment object
+        :param request: Request object for triggering the creation or update
+        """
+        # TODO: Implement this in your app plugin
         pass

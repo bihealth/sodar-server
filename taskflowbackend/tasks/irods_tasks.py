@@ -10,7 +10,10 @@ from irods.access import iRODSAccess
 from irods.exception import UserDoesNotExist, UserGroupDoesNotExist
 from irods.models import Collection
 
-from .base_task import BaseTask
+from taskflowbackend.tasks.base_task import BaseTask
+
+
+logger = logging.getLogger('__name__')
 
 
 # NOTE: Yes, we really need this for the python irods client
@@ -25,9 +28,7 @@ ACCESS_CONVERSION = {
 }
 INHERIT_STRINGS = {True: 'inherit', False: 'noinherit'}
 META_EMPTY_VALUE = 'N/A'
-
-md5_re = re.compile(r'([^\w.])')
-logger = logging.getLogger('sodar_taskflow')
+MD5_RE = re.compile(r'([^\w.])')
 
 
 class IrodsBaseTask(BaseTask):
@@ -509,7 +510,7 @@ class BatchValidateChecksumsTask(IrodsBaseTask):
                 try:
                     md5_file = self.irods.data_objects.open(md5_path, mode='r')
                     file_sum = re.split(
-                        md5_re, md5_file.read().decode('utf-8')
+                        MD5_RE, md5_file.read().decode('utf-8')
                     )[0]
                 except Exception as ex:
                     msg = 'Unable to read checksum file "{}"'.format(
