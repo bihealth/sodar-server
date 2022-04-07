@@ -209,7 +209,6 @@ class ZoneDeleteMixin(ZoneConfigPluginMixin):
         """
         timeline = get_backend_api('timeline_backend')
         taskflow = get_backend_api('taskflow')
-        irods_backend = get_backend_api('omics_irods', conn=False)
         tl_event = None
         project = zone.project
 
@@ -240,13 +239,7 @@ class ZoneDeleteMixin(ZoneConfigPluginMixin):
             zone,
             flow_name,
             {
-                'zone_title': zone.title,
                 'zone_uuid': str(zone.sodar_uuid),
-                'zone_config': zone.configuration,
-                'assay_path': irods_backend.get_sub_path(
-                    zone.assay, landing_zone=True
-                ),
-                'user_name': zone.user.username,
             },
         )
 
@@ -286,7 +279,6 @@ class ZoneMoveMixin(ZoneConfigPluginMixin):
         user = request.user if request else zone.user
         timeline = get_backend_api('timeline_backend')
         taskflow = get_backend_api('taskflow')
-        irods_backend = get_backend_api('omics_irods', conn=False)
         project = zone.project
         tl_event = None
         event_name = 'zone_validate' if validate_only else 'zone_move'
@@ -315,22 +307,10 @@ class ZoneMoveMixin(ZoneConfigPluginMixin):
             )
             tl_event.set_status('SUBMIT')
 
-        # TODO: Update flow data
         flow_data = self.get_flow_data(
             zone,
             'landing_zone_move',
-            {
-                'zone_title': str(zone.title),
-                'zone_uuid': str(zone.sodar_uuid),
-                'zone_config': zone.configuration,
-                'assay_path_samples': irods_backend.get_sub_path(
-                    zone.assay, landing_zone=False
-                ),
-                'assay_path_zone': irods_backend.get_sub_path(
-                    zone.assay, landing_zone=True
-                ),
-                'user_name': str(zone.user.username),
-            },
+            {'zone_uuid': str(zone.sodar_uuid)},
         )
 
         if validate_only:
@@ -534,7 +514,6 @@ class ZoneDeleteView(
         redirect_url = reverse(
             'landingzones:list', kwargs={'project': zone.project.sodar_uuid}
         )
-
         if not taskflow:
             messages.error(
                 self.request, 'Taskflow not enabled, unable to modify zone!'
@@ -554,7 +533,6 @@ class ZoneDeleteView(
             )
         except Exception as ex:
             messages.error(self.request, str(ex))
-
         return redirect(redirect_url)
 
 

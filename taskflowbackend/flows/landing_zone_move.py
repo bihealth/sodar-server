@@ -2,6 +2,7 @@ from django.conf import settings
 
 # Landingzones dependency
 import landingzones.tasks_taskflow as lz_tasks
+from landingzones.models import LandingZone
 
 from taskflowbackend.flows.base_flow import BaseLinearFlow
 from taskflowbackend.apis.irods_utils import (
@@ -22,37 +23,25 @@ class Flow(BaseLinearFlow):
 
     def validate(self):
         self.supported_modes = ['sync', 'async']
-        self.required_fields = [
-            'landing_zone',
-            'assay_path_zone',  # TODO: Required?
-            'assay_path_samples',  # TODO: Required?
-        ]
+        self.required_fields = ['zone_uuid']
         return super().validate()
 
     def build(self, force_fail=False):
-        validate_only = self.flow_data.get('validate_only', False)
-        zone = self.flow_data['landing_zone']
-        # Set zone status in the Django site
-        # TODO: Update
-        '''
-        set_data = {
-            'zone_uuid': str(zone.sodar_uuid),
-            'status': 'PREPARING',
-            'status_info': 'Preparing transaction for validation{}'.format(
-                ' and moving' if not validate_only else ''
-            ),
-        }
-        self.sodar_api.send_request(
-            'landingzones/taskflow/status/set', set_data
-        )
-        '''
-
         # Setup
+        validate_only = self.flow_data.get('validate_only', False)
+        zone = LandingZone.objects.get(sodar_uuid=self.flow_data['zone_uuid'])
         project_group = self.irods_backend.get_project_group_name(self.project)
-        assay = zone.assay  # TODO: Kind of redundant..
-        sample_path = self.irods_backend.get_path(assay)
+        sample_path = self.irods_backend.get_path(zone.assay)
         zone_path = self.irods_backend.get_path(zone)
         admin_name = self.irods.username
+
+        # HACK: Set zone status in the Django site
+        zone.set_status(
+            'PREPARING',
+            'Preparing transaction for validation{}'.format(
+                ' and moving' if not validate_only else ''
+            ),
+        )
 
         # Get landing zone file paths (without .md5 files) from iRODS
         zone_coll = self.irods.collections.get(zone_path)
@@ -248,7 +237,7 @@ class Flow(BaseLinearFlow):
                 name='Set landing zone status to MOVING',
                 project=self.project,
                 inject={
-                    'zone_uuid': str(zone.sodar_uuid),
+                    'landing_zone': zone,
                     'status': 'MOVING',
                     'status_info': 'Validation OK, '
                     'moving {} files into {}'.format(file_count, SAMPLE_COLL),
