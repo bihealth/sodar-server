@@ -81,7 +81,7 @@ class TestLandingZoneAPITaskflowBase(
         self.assay = self.study.assays.first()
 
         # Create collections in iRODS
-        self._make_irods_colls(self.investigation)
+        self.make_irods_colls(self.investigation)
 
 
 @skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
@@ -90,7 +90,6 @@ class TestLandingZoneCreateAPIView(TestLandingZoneAPITaskflowBase):
 
     def test_post(self):
         """Test LandingZoneCreateAPIView post()"""
-        # Assert preconditions
         self.assertEqual(LandingZone.objects.count(), 0)
 
         url = reverse(
@@ -112,7 +111,6 @@ class TestLandingZoneCreateAPIView(TestLandingZoneAPITaskflowBase):
         # Assert status after creation
         self.assertEqual(response.status_code, 201)
         self.assertEqual(LandingZone.objects.count(), 1)
-
         # Assert status after taskflow has finished
         self._wait_for_taskflow(
             zone_uuid=response.data['sodar_uuid'], status='ACTIVE'

@@ -685,10 +685,7 @@ class IrodsCollsCreateViewMixin:
             )
 
         # TODO: Update flow data
-        flow_data = {
-            'colls': get_sample_colls(investigation),
-            'public_guest_access': project.public_guest_access,
-        }
+        flow_data = {'colls': get_sample_colls(investigation)}
         try:
             # TODO: Update arguments
             taskflow.submit(

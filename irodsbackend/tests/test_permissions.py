@@ -9,7 +9,7 @@ from unittest import skipIf
 from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
 from projectroles.tests.test_permissions import TestPermissionMixin
-from projectroles.tests.test_views_taskflow import TestTaskflowBase
+from taskflowbackend.tests.test_project_views import TestTaskflowBase
 
 # Samplesheets dependency
 from samplesheets.tests.test_io import (
@@ -82,7 +82,7 @@ class TestIrodsbackendPermissions(
             SHEET_PATH, self.project
         )
         # Create iRODS collections
-        self._make_irods_colls(self.investigation)
+        self.make_irods_colls(self.investigation)
 
         # Set up irodsbackend
         self.irods_backend = get_backend_api('omics_irods')

@@ -11,7 +11,9 @@ from unittest import skipIf
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
-from projectroles.tests.test_views_taskflow import TestTaskflowBase
+
+# Taskflowbackend dependency
+from taskflowbackend.tests.test_project_views import TestTaskflowBase
 
 # Samplesheets dependency
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
@@ -89,7 +91,7 @@ class TestTriggerZoneMoveTask(
         self.assay = self.study.assays.first()
 
         # Create iRODS collections
-        self._make_irods_colls(self.investigation)
+        self.make_irods_colls(self.investigation)
 
         # Create zone
         self.landing_zone = self._make_landing_zone(

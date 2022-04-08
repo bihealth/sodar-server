@@ -1,9 +1,5 @@
 """Integration tests for views in the landingzones Django app with taskflow"""
 
-# TODO: Refactor
-
-# NOTE: You must supply 'sodar_url': self.live_server_url in taskflow requests!
-
 import hashlib
 from irods.test.helpers import make_object
 from irods.keywords import REG_CHKSUM_KW
@@ -22,7 +18,7 @@ from unittest import skipIf
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
-from projectroles.tests.test_views_taskflow import TestTaskflowBase
+from taskflowbackend.tests.test_project_views import TestTaskflowBase
 
 # Appalerts dependency
 from appalerts.models import AppAlert
@@ -80,7 +76,6 @@ class LandingZoneTaskflowMixin:
         :raise taskflow.FlowSubmitException if submit fails
         """
         timeline = get_backend_api('timeline_backend')
-        irods_backend = get_backend_api('omics_irods')
         user = request.user if request else zone.user
         self.assertEqual(zone.status, 'CREATING')
 
@@ -95,28 +90,16 @@ class LandingZoneTaskflowMixin:
         )
 
         flow_data = {
-            'zone_title': zone.title,
             'zone_uuid': zone.sodar_uuid,
-            'user_name': user.username,
-            'user_uuid': user.sodar_uuid,
-            'assay_path': irods_backend.get_sub_path(
-                zone.assay, landing_zone=True
-            ),
-            'description': zone.description,
-            'zone_config': zone.configuration,
             'colls': [],
         }
         values = {
-            'project_uuid': zone.project.sodar_uuid,
+            'project': zone.project,
             'flow_name': 'landing_zone_create',
             'flow_data': flow_data,
-            'timeline_uuid': tl_event.sodar_uuid,
-            'request_mode': 'async',
-            'request': request,
+            'async_mode': True,
+            'tl_event': tl_event,
         }
-        if not request:
-            values['sodar_url'] = self.live_server_url
-
         self.taskflow.submit(**values)
 
         # HACK: Wait for async stuff to finish
@@ -219,7 +202,7 @@ class TestLandingZoneCreateView(
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
         # Create iRODS collections
-        self._make_irods_colls(self.investigation)
+        self.make_irods_colls(self.investigation)
 
     @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_create_zone(self):
@@ -392,7 +375,7 @@ class TestLandingZoneMoveView(
         self.assay = self.study.assays.first()
 
         # Create iRODS collections
-        self._make_irods_colls(self.investigation)
+        self.make_irods_colls(self.investigation)
 
         # Create zone
         self.landing_zone = self._make_landing_zone(
@@ -705,7 +688,7 @@ class TestLandingZoneDeleteView(
         self.assay = self.study.assays.first()
 
         # Create iRODS collections
-        self._make_irods_colls(self.investigation)
+        self.make_irods_colls(self.investigation)
 
         # Create zone
         self.landing_zone = self._make_landing_zone(

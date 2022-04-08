@@ -13,7 +13,9 @@ from unittest.case import skipIf
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
-from projectroles.tests.test_views_api_taskflow import TestTaskflowAPIBase
+
+# Taskflowbackend dependency
+from taskflowbackend.tests.test_project_api_views import TestTaskflowAPIBase
 
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 from samplesheets.tests.test_views_taskflow import SampleSheetTaskflowMixin
@@ -127,7 +129,6 @@ class TestIrodsCollsCreateAPIView(TestSampleSheetAPITaskflowBase):
 
     def test_post(self):
         """Test post() in IrodsCollsCreateAPIView"""
-        # Assert preconditions
         self.assertEqual(self.investigation.irods_status, False)
         url = reverse(
             'samplesheets:api_irods_colls_create',
@@ -141,8 +142,7 @@ class TestIrodsCollsCreateAPIView(TestSampleSheetAPITaskflowBase):
     def test_post_created(self):
         """Test post() with already created collections (should fail)"""
         # Set up iRODS collections
-        self._make_irods_colls(self.investigation)
-        # Assert preconditions
+        self.make_irods_colls(self.investigation)
         self.assertEqual(self.investigation.irods_status, True)
         url = reverse(
             'samplesheets:api_irods_colls_create',
@@ -158,7 +158,7 @@ class TestSampleDataFileExistsAPIView(TestSampleSheetAPITaskflowBase):
 
     def setUp(self):
         super().setUp()
-        self._make_irods_colls(self.investigation)
+        self.make_irods_colls(self.investigation)
         self.irods_session = self.irods_backend.get_session()
 
     def test_get(self):

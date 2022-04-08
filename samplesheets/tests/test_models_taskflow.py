@@ -11,7 +11,7 @@ from unittest import skipIf
 # Projectroles dependency
 from projectroles.constants import SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
-from projectroles.tests.test_views_taskflow import TestTaskflowBase
+from taskflowbackend.tests.test_project_views import TestTaskflowBase
 
 from samplesheets.models import (
     IRODS_DATA_REQUEST_STATUS_CHOICES,
@@ -77,7 +77,7 @@ class TestIrodsDataRequestBase(
         self.assay = self.study.assays.first()
 
         # Create iRODS collections
-        self._make_irods_colls(self.investigation)
+        self.make_irods_colls(self.investigation)
 
         self.assay_path = self.irods_backend.get_path(self.assay)
         self.path = os.path.join(self.assay_path, TEST_FILE_NAME)
