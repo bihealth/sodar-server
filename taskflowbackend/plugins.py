@@ -5,7 +5,11 @@ import requests
 
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
-from projectroles.plugins import BackendPluginPoint, ProjectModifyPluginAPIMixin
+from projectroles.plugins import (
+    BackendPluginPoint,
+    ProjectModifyPluginAPIMixin,
+    get_backend_api,
+)
 
 from taskflowbackend.api import TaskflowAPI
 
@@ -17,6 +21,10 @@ logger = logging.getLogger(__name__)
 PROJECT_ROLE_OWNER = SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
 PROJECT_ACTION_CREATE = SODAR_CONSTANTS['PROJECT_ACTION_CREATE']
 PROJECT_ACTION_UPDATE = SODAR_CONSTANTS['PROJECT_ACTION_UPDATE']
+
+# Local constants
+APP_NAME = 'taskflowbackend'
+TL_SUBMIT_DESC = 'Job submitted to Taskflow'
 
 
 class BackendPlugin(ProjectModifyPluginAPIMixin, BackendPluginPoint):
@@ -32,7 +40,7 @@ class BackendPlugin(ProjectModifyPluginAPIMixin, BackendPluginPoint):
     icon = 'mdi:database'
 
     #: Description string
-    description = 'SODAR Taskflow backend for data transactions'
+    description = 'SODAR Taskflow backend for iRODS data transactions'
 
     def get_api(self):
         """Return API entry point object."""
@@ -140,9 +148,23 @@ class BackendPlugin(ProjectModifyPluginAPIMixin, BackendPluginPoint):
         :param old_role: Role object for previous role in case of an update
         """
         taskflow = self.get_api()
-        # TODO: Create separate taskflow event
-        # if tl_event:
-        #     tl_event.set_status('SUBMIT')
+
+        timeline = get_backend_api('timeline_backend')
+        tl_event = None
+        if timeline:
+            tl_event = timeline.add_event(
+                project=role_as.project,
+                app_name=APP_NAME,
+                plugin_name='taskflow',
+                user=request.user,
+                event_name='role_update',
+                description='update project iRODS access for user {user}',
+            )
+            tl_event.add_object(
+                obj=role_as.user, label='user', name=role_as.user.username
+            )
+            tl_event.set_status('SUBMIT', TL_SUBMIT_DESC)
+
         flow_data = {
             'username': role_as.user.username,
         }
@@ -151,11 +173,14 @@ class BackendPlugin(ProjectModifyPluginAPIMixin, BackendPluginPoint):
                 project=role_as.project,
                 flow_name='role_update',
                 flow_data=flow_data,
+                tl_event=tl_event,
             )
         except taskflow.FlowSubmitException as ex:
-            # if tl_event:
-            #     tl_event.set_status('FAILED', str(ex))
+            if tl_event:
+                tl_event.set_status('FAILED', str(ex))
             raise ex
+        if tl_event:
+            tl_event.set_status('OK')
 
     def revert_role_modify(self, role_as, action, request, old_role=None):
         """
@@ -178,9 +203,23 @@ class BackendPlugin(ProjectModifyPluginAPIMixin, BackendPluginPoint):
         :param request: Request object for triggering the creation or update
         """
         taskflow = self.get_api()
-        # TODO: Create separate taskflow event
-        # if tl_event:
-        #     tl_event.set_status('SUBMIT')
+
+        timeline = get_backend_api('timeline_backend')
+        tl_event = None
+        if timeline:
+            tl_event = timeline.add_event(
+                project=role_as.project,
+                app_name=APP_NAME,
+                plugin_name='taskflow',
+                user=request.user,
+                event_name='role_delete',
+                description='remove project iRODS access from user {user}',
+            )
+            tl_event.add_object(
+                obj=role_as.user, label='user', name=role_as.user.username
+            )
+            tl_event.set_status('SUBMIT', TL_SUBMIT_DESC)
+
         flow_data = {
             'username': role_as.user.username,
         }
@@ -189,11 +228,14 @@ class BackendPlugin(ProjectModifyPluginAPIMixin, BackendPluginPoint):
                 project=role_as.project,
                 flow_name='role_delete',
                 flow_data=flow_data,
+                tl_event=tl_event,
             )
         except taskflow.FlowSubmitException as ex:
-            # if tl_event:
-            #     tl_event.set_status('FAILED', str(ex))
+            if tl_event:
+                tl_event.set_status('FAILED', str(ex))
             raise ex
+        if tl_event:
+            tl_event.set_status('OK')
 
     def revert_role_delete(self, role_as, request):
         """
