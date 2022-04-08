@@ -155,7 +155,7 @@ class TaskflowAPI:
         elif not flow_result:
             if not ex_msg:
                 ex_msg = UNKNOWN_RUN_ERROR
-            if async_mode and tl_event:  # TODO: Why not for sync events?
+            if async_mode and tl_event:
                 tl_event.set_status('FAILED', ex_msg)
 
         # Release lock if acquired
