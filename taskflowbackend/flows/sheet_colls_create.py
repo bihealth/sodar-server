@@ -57,7 +57,7 @@ class Flow(BaseLinearFlow):
                 )
             )
         # If project is public, add public access to sample repository
-        if self.flow_data.get('public_guest_access'):
+        if self.project.public_guest_access:
             self.add_task(
                 irods_tasks.SetAccessTask(
                     name='Set public access to sample collection',

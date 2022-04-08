@@ -45,7 +45,6 @@ class TestIrodsRequestCreateAjaxView(TestIrodsRequestViewsBase):
             )
 
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
-        # Assert response
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['detail'], 'ok')
         self.assertEqual(response.data['status'], 'ACTIVE')
@@ -76,7 +75,6 @@ class TestIrodsRequestCreateAjaxView(TestIrodsRequestViewsBase):
                 data={'path': self.path},
             )
 
-        # Assert response
         self.assertEqual(response.status_code, 400)
         self.assertEqual(
             response.data['detail'], 'active request for path already exists'
@@ -106,7 +104,6 @@ class TestIrodsRequestCreateAjaxView(TestIrodsRequestViewsBase):
                 data={'path': self.path},
             )
 
-        # Assert response
         self.assertEqual(response.status_code, 400)
         self.assertEqual(
             response.data['detail'], 'active request for path already exists'
@@ -134,7 +131,6 @@ class TestIrodsRequestCreateAjaxView(TestIrodsRequestViewsBase):
                 data={'path': self.path},
             )
 
-        # Assert response
         self.assertEqual(response.status_code, 400)
         self.assertEqual(
             response.data['detail'], 'active request for path already exists'
@@ -205,7 +201,6 @@ class TestIrodsRequestDeleteAjaxView(TestIrodsRequestViewsBase):
             )
 
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
-        # Assert response
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['detail'], 'ok')
         self.assertEqual(response.data['status'], None)
@@ -237,8 +232,6 @@ class TestIrodsRequestDeleteAjaxView(TestIrodsRequestViewsBase):
             )
 
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
-
-        # Assert response
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['detail'], 'ok')
         self.assertEqual(response.data['status'], None)
@@ -268,8 +261,6 @@ class TestIrodsRequestDeleteAjaxView(TestIrodsRequestViewsBase):
             )
 
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
-
-        # Assert response
         self.assertEqual(response.status_code, 403)
         self.assertEqual(
             response.data['detail'], 'User not allowed to delete request'
@@ -289,7 +280,6 @@ class TestIrodsRequestDeleteAjaxView(TestIrodsRequestViewsBase):
                 data={'path': self.path},
             )
 
-        # Assert response
         self.assertEqual(response.status_code, 404)
         self.assertEqual(response.data['detail'], 'Request not found')
 

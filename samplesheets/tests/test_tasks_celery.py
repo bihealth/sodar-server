@@ -10,7 +10,7 @@ from unittest import skipIf
 from projectroles.app_settings import AppSettingAPI
 from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
-from projectroles.tests.test_views_taskflow import TestTaskflowBase
+from taskflowbackend.tests.test_project_views import TestTaskflowBase
 
 # Sodarcache dependency
 from sodarcache.models import JSONCacheItem
@@ -82,7 +82,7 @@ class TestUpdateProjectCacheTask(
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
         self.app_alerts = get_backend_api('appalerts_backend')
-        self._make_irods_colls(self.investigation)
+        self.make_irods_colls(self.investigation)
 
     def test_update_cache(self):
         """Test cache update"""
