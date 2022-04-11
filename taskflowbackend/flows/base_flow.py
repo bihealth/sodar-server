@@ -24,7 +24,8 @@ class BaseLinearFlow:
         self.irods_backend = irods_backend
         self.irods = irods_backend.get_session()
         self.project = project
-        self.project_uuid = str(project.sodar_uuid)  # TODO: Remove as redundant
+        # TODO: Remove project_uuid as redundant?
+        self.project_uuid = str(project.sodar_uuid) if self.project else None
         self.flow_name = flow_name
         self.flow_data = flow_data
         self.targets = targets

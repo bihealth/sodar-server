@@ -18,6 +18,8 @@ logger = logging.getLogger(__name__)
 
 
 # SODAR constants
+PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
+PROJECT_TYPE_CATEGORY = SODAR_CONSTANTS['PROJECT_TYPE_CATEGORY']
 PROJECT_ROLE_OWNER = SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
 PROJECT_ACTION_CREATE = SODAR_CONSTANTS['PROJECT_ACTION_CREATE']
 PROJECT_ACTION_UPDATE = SODAR_CONSTANTS['PROJECT_ACTION_UPDATE']
@@ -25,6 +27,7 @@ PROJECT_ACTION_UPDATE = SODAR_CONSTANTS['PROJECT_ACTION_UPDATE']
 # Local constants
 APP_NAME = 'taskflowbackend'
 TL_SUBMIT_DESC = 'Job submitted to Taskflow'
+IRODS_CAT_SKIP_MSG = 'Categories are not synchronized into iRODS'
 
 
 class BackendPlugin(ProjectModifyPluginAPIMixin, BackendPluginPoint):
@@ -67,16 +70,30 @@ class BackendPlugin(ProjectModifyPluginAPIMixin, BackendPluginPoint):
         :param old_data: Old project data in case of an update (dict or None)
         :param old_settings: Old app settings in case of update (dict or None)
         """
+        # Skip for categories
+        if project.type != PROJECT_TYPE_PROJECT:
+            logger.debug(
+                'Skipping perform_project_modify(): {}'.format(
+                    IRODS_CAT_SKIP_MSG
+                )
+            )
+            return
+
+        timeline = get_backend_api('timeline_backend')
+        tl_event = None
+        if timeline:
+            tl_event = timeline.add_event(
+                project=project,
+                app_name=APP_NAME,
+                plugin_name='taskflow',
+                user=request.user,
+                event_name='role_update',
+                description='{} project in iRODS'.format(action.lower()),
+            )
+            tl_event.set_status('SUBMIT', TL_SUBMIT_DESC)
+
         taskflow = self.get_api()
-
-        # TODO: Create separate timeline event
-        # if tl_event:
-        #     tl_event.set_status('SUBMIT')
-        flow_data = {
-            'owner': owner.username,
-            'settings': project_settings,
-        }
-
+        flow_data = {'owner': owner.username, 'settings': project_settings}
         if action == PROJECT_ACTION_UPDATE:  # Update
             flow_data['old_owner'] = project.get_owner().user.username
             if old_data['parent']:
@@ -108,10 +125,11 @@ class BackendPlugin(ProjectModifyPluginAPIMixin, BackendPluginPoint):
             requests.exceptions.ConnectionError,
             taskflow.FlowSubmitException,
         ) as ex:
-            # TODO: Create timeline event
-            # elif tl_event:  # Update
-            #     tl_event.set_status('FAILED', str(ex))
+            if tl_event:  # Update
+                tl_event.set_status('FAILED', str(ex))
             raise ex
+        if tl_event:
+            tl_event.set_status('OK')
 
     def revert_project_modify(
         self,
@@ -147,7 +165,12 @@ class BackendPlugin(ProjectModifyPluginAPIMixin, BackendPluginPoint):
         :param request: Request object for triggering the creation or update
         :param old_role: Role object for previous role in case of an update
         """
-        taskflow = self.get_api()
+        # Skip for categories
+        if role_as.project.type != PROJECT_TYPE_PROJECT:
+            logger.debug(
+                'Skipping perform_role_modify(): {}'.format(IRODS_CAT_SKIP_MSG)
+            )
+            return
 
         timeline = get_backend_api('timeline_backend')
         tl_event = None
@@ -165,9 +188,8 @@ class BackendPlugin(ProjectModifyPluginAPIMixin, BackendPluginPoint):
             )
             tl_event.set_status('SUBMIT', TL_SUBMIT_DESC)
 
-        flow_data = {
-            'username': role_as.user.username,
-        }
+        taskflow = self.get_api()
+        flow_data = {'username': role_as.user.username}
         try:
             taskflow.submit(
                 project=role_as.project,
@@ -202,8 +224,6 @@ class BackendPlugin(ProjectModifyPluginAPIMixin, BackendPluginPoint):
         :param role_as: RoleAssignment object
         :param request: Request object for triggering the creation or update
         """
-        taskflow = self.get_api()
-
         timeline = get_backend_api('timeline_backend')
         tl_event = None
         if timeline:
@@ -220,9 +240,8 @@ class BackendPlugin(ProjectModifyPluginAPIMixin, BackendPluginPoint):
             )
             tl_event.set_status('SUBMIT', TL_SUBMIT_DESC)
 
-        flow_data = {
-            'username': role_as.user.username,
-        }
+        taskflow = self.get_api()
+        flow_data = {'username': role_as.user.username}
         try:
             taskflow.submit(
                 project=role_as.project,
@@ -244,6 +263,80 @@ class BackendPlugin(ProjectModifyPluginAPIMixin, BackendPluginPoint):
 
         :param role_as: RoleAssignment object
         :param request: Request object for triggering the creation or update
+        """
+        # TODO: Implement this in your app plugin
+        pass
+
+    def perform_owner_transfer(
+        self, project, new_owner, old_owner, old_owner_role, request
+    ):
+        """
+        Perform additional actions to finalize project ownership transfer.
+
+        :param project: Project object
+        :param new_owner: SODARUser object for new owner
+        :param old_owner: SODARUser object for previous owner
+        :param old_owner_role: Role object for new role of previous owner
+        :param request: Request object for triggering the transfer
+        """
+        # Skip for categories
+        if project.type == PROJECT_TYPE_PROJECT:
+            logger.debug(
+                'Skipping perform_owner_transfer(): Only needed for inherited '
+                'roles in categories'
+            )
+            return
+
+        timeline = get_backend_api('timeline_backend')
+        tl_event = None
+        if timeline:
+            tl_event = timeline.add_event(
+                project=project,
+                app_name=APP_NAME,
+                plugin_name='taskflow',
+                user=request.user,
+                event_name='role_owner_transfer',
+                description='update iRODS user access for ownership transfer '
+                'from {old_owner} to {new_owner}',
+            )
+            tl_event.add_object(
+                obj=old_owner, label='old_owner', name=old_owner.username
+            )
+            tl_event.add_object(
+                obj=new_owner, label='new_owner', name=new_owner.username
+            )
+            tl_event.set_status('SUBMIT', TL_SUBMIT_DESC)
+
+        # Handle inherited owner roles for categories
+        taskflow = self.get_api()
+        flow_data = {
+            'roles_add': taskflow.get_inherited_roles(project, new_owner),
+            'roles_delete': taskflow.get_inherited_roles(project, old_owner),
+        }
+        try:
+            taskflow.submit(
+                project=None,  # Batch flow for multiple projects
+                flow_name='role_update_irods_batch',
+                flow_data=flow_data,
+            )
+        except taskflow.FlowSubmitException as ex:
+            if tl_event:
+                tl_event.set_status('FAILED', str(ex))
+            raise ex
+        if tl_event:
+            tl_event.set_status('OK')
+
+    def revert_owner_transfer(
+        self, project, new_owner, old_owner, old_owner_role, request
+    ):
+        """
+        Revert project ownership transfer if errors have occurred in other apps.
+
+        :param project: Project object
+        :param new_owner: SODARUser object for new owner
+        :param old_owner: SODARUser object for previous owner
+        :param old_owner_role: Role object for new role of previous owner
+        :param request: Request object for triggering the transfer
         """
         # TODO: Implement this in your app plugin
         pass
