@@ -14,7 +14,7 @@ DEFAULT_PERMANENT_USERS = ['client_user', 'rods', 'rodsadmin', 'public']
 
 
 def cleanup_irods_data(irods_backend, verbose=True):
-    """Cleanup data from iRODS. Used in debugging/testing."""
+    """Cleanup data from iRODS, used only in testing"""
     irods = irods_backend.get_session()
     projects_root = irods_backend.get_projects_path()
     permanent_users = getattr(
