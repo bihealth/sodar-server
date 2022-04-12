@@ -2,7 +2,6 @@
 
 import json
 import logging
-import requests
 
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
@@ -12,7 +11,7 @@ from projectroles.models import RoleAssignment, SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
 
 from taskflowbackend import flows
-from taskflowbackend.apis import lock_api
+from taskflowbackend.apis import lock_api, irods_utils
 from taskflowbackend.tasks_celery import submit_flow_task
 
 
@@ -32,9 +31,6 @@ class TaskflowAPI:
 
     class FlowSubmitException(Exception):
         """SODAR Taskflow submission exception"""
-
-    class CleanupException(Exception):
-        """SODAR Taskflow cleanup exception"""
 
     def __init__(self):
         self.taskflow_url = '{}:{}'.format(
@@ -252,23 +248,20 @@ class TaskflowAPI:
 
         :return: Boolean
         :raise: ImproperlyConfigured if TASKFLOW_TEST_MODE is not set True
-        :raise: CleanupException if SODAR Taskflow raises an error
+        :raise: Exception if iRODS cleanup fails
         """
         if not settings.TASKFLOW_TEST_MODE:
             raise ImproperlyConfigured(
                 'TASKFLOW_TEST_MODE not True, cleanup command not allowed'
             )
-        # TODO: Simply call cleanup() instead or implement here
-        url = self.taskflow_url + '/cleanup'
-        data = {'test_mode': settings.TASKFLOW_TEST_MODE}
-
-        response = requests.post(url, json=data, headers=HEADERS)
-        if response.status_code == 200:
+        irods_backend = get_backend_api('omics_irods')
+        try:
+            irods_utils.cleanup_irods_data(irods_backend)
             logger.debug('Cleanup OK')
             return True
-        else:
-            logger.debug('Cleanup failed: {}'.format(response.text))
-            raise self.CleanupException(response.text)
+        except Exception as ex:
+            logger.error('Cleanup failed: {}'.format(ex))
+            raise ex
 
     def get_error_msg(self, flow_name, submit_info):
         """
@@ -299,7 +292,10 @@ class TaskflowAPI:
             project.type == PROJECT_TYPE_PROJECT
             and not RoleAssignment.objects.filter(project=project, user=user)
         ):
-            r = {'project': project, 'user': user}
+            r = {
+                'project_uuid': str(project.sodar_uuid),
+                'user_name': user.username,
+            }
             if r not in roles:  # Avoid unnecessary dupes
                 roles.append(r)
         for child in project.get_children():
@@ -322,7 +318,12 @@ class TaskflowAPI:
             i_owners = [a.user for a in project.get_owners(inherited_only=True)]
             all_users = [a.user for a in project.get_all_roles(inherited=False)]
             for u in [u for u in i_owners if u not in all_users]:
-                roles.append({'project': project, 'user': u})
+                roles.append(
+                    {
+                        'project_uuid': str(project.sodar_uuid),
+                        'user_name': u.username,
+                    }
+                )
         for child in project.get_children():
             roles = cls.get_inherited_users(child, roles)
         return roles
