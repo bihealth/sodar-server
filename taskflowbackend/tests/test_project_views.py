@@ -3,6 +3,11 @@
 # TODO: SkipIf both taskflow and irods are not enabled
 # TODO: Test for created things in iRODS
 
+from irods.collection import iRODSCollection
+from irods.exception import CollectionDoesNotExist
+from irods.models import UserGroup
+from irods.user import iRODSUser, iRODSUserGroup
+
 from django.conf import settings
 from django.contrib import auth
 from django.core.exceptions import ImproperlyConfigured
@@ -56,10 +61,15 @@ TASKFLOW_ENABLED = (
 TASKFLOW_SKIP_MSG = 'Taskflow not enabled in settings'
 TASKFLOW_TEST_MODE = getattr(settings, 'TASKFLOW_TEST_MODE', False)
 
+IRODS_ACCESS_READ = 'read object'
+IRODS_ACCESS_WRITE = 'modify object'
+IRODS_ACCESS_NULL = 'null'
+
 
 # Base Classes -----------------------------------------------------------------
 
 
+# TODO: Move base classes into a base module
 class TestTaskflowBase(ProjectMixin, RoleAssignmentMixin, TestCase):
     """Base class for testing UI views with taskflow"""
 
@@ -123,6 +133,24 @@ class TestTaskflowBase(ProjectMixin, RoleAssignmentMixin, TestCase):
             )
         return role_as
 
+    def _assert_access(self, user_name, target, expected):
+        """
+        Return access for a specific user for a target object or collection.
+        Returns None if not found.
+
+        :param user_name: String
+        :param target: iRODSCollection or DataObject
+        :param expected: Expected access (string or None)
+        :return: String or None
+        """
+        access_list = self.irods_session.permissions.get(target=target)
+        access = next(
+            (x for x in access_list if x.user_name == user_name), None
+        )
+        if access:
+            access = access.access_name
+        self.assertEqual(access, expected)
+
     def setUp(self):
         # Ensure TASKFLOW_TEST_MODE is True to avoid data loss
         if not TASKFLOW_TEST_MODE:
@@ -135,6 +163,8 @@ class TestTaskflowBase(ProjectMixin, RoleAssignmentMixin, TestCase):
             name='taskflow', status=0, plugin_type='backend'  # 0 = Enabled
         )
         self.taskflow = get_backend_api('taskflow', force=True)
+        self.irods_backend = get_backend_api('omics_irods')
+        self.irods_session = self.irods_backend.get_session()
 
         # Init roles
         self.role_owner = Role.objects.get_or_create(name=PROJECT_ROLE_OWNER)[0]
@@ -161,9 +191,14 @@ class TestTaskflowBase(ProjectMixin, RoleAssignmentMixin, TestCase):
 
     def tearDown(self):
         self.taskflow.cleanup()
-
-
-# Tests Requiring iRODS --------------------------------------------------------
+        with self.assertRaises(CollectionDoesNotExist):
+            self.irods_session.collections.get(
+                self.irods_backend.get_projects_path()
+            )
+        for user in self.irods_session.query(UserGroup).all():
+            self.assertIn(
+                user[UserGroup.name], settings.TASKFLOW_TEST_PERMANENT_USERS
+            )
 
 
 @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
@@ -172,7 +207,12 @@ class TestProjectCreateView(TestTaskflowBase):
 
     def test_create_project(self):
         """Test Project creation with taskflow"""
-        self.assertEqual(Project.objects.all().count(), 1)
+        self.assertEqual(Project.objects.count(), 1)
+        with self.assertRaises(CollectionDoesNotExist):
+            self.irods_session.collections.get(
+                self.irods_backend.get_projects_path()
+            )
+
         # Make project with owner in Taskflow and Django
         self.project, self.owner_as = self._make_project_taskflow(
             title='TestProject',
@@ -181,8 +221,8 @@ class TestProjectCreateView(TestTaskflowBase):
             owner=self.user,
             description='description',
         )
-        self.assertEqual(Project.objects.all().count(), 2)
-        project = Project.objects.all()[0]
+        self.assertEqual(Project.objects.count(), 2)
+        project = Project.objects.first()
         self.assertIsNotNone(project)
 
         expected = {
@@ -213,6 +253,39 @@ class TestProjectCreateView(TestTaskflowBase):
         }
         self.assertEqual(model_to_dict(owner_as), expected)
 
+        # Assert iRODS collections
+        root_coll = self.irods_session.collections.get(
+            self.irods_backend.get_projects_path()
+        )
+        self.assertIsInstance(root_coll, iRODSCollection)
+        project_coll = self.irods_session.collections.get(
+            self.irods_backend.get_path(self.project)
+        )
+        self.assertIsInstance(project_coll, iRODSCollection)
+        # Assert collection metadata
+        self.assertEqual(
+            project_coll.metadata.get_one('title').value, self.project.title
+        )
+        self.assertEqual(
+            project_coll.metadata.get_one('description').value,
+            self.project.description,
+        )
+        self.assertEqual(
+            project_coll.metadata.get_one('parent_uuid').value,
+            str(self.category.sodar_uuid),
+        )
+        # Assert user group and owner access
+        group_name = self.irods_backend.get_user_group_name(self.project)
+        group = self.irods_session.user_groups.get(group_name)
+        self.assertIsInstance(group, iRODSUserGroup)
+        self._assert_access(group_name, project_coll, IRODS_ACCESS_READ)
+        self.assertIsInstance(
+            self.irods_session.users.get(self.user.username), iRODSUser
+        )
+        self.assertEqual(group.hasmember(self.user.username), True)
+
+    # TODO: Test with inherited roles
+
 
 @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
 class TestProjectUpdateView(TestTaskflowBase):
@@ -231,16 +304,19 @@ class TestProjectUpdateView(TestTaskflowBase):
 
     def test_update_project(self):
         """Test Project updating with taskflow"""
-        self.maxDiff = None
-        self.assertEqual(Project.objects.all().count(), 2)
+        self.assertEqual(Project.objects.count(), 2)
 
         request_data = model_to_dict(self.project)
-        request_data['title'] = 'updated title'
-        request_data['description'] = 'updated description'
-        request_data['owner'] = self.user.sodar_uuid  # NOTE: Must add owner
-        request_data['readme'] = 'updated readme'
-        request_data['parent'] = str(self.category.sodar_uuid)
-        request_data['public_guest_access'] = True
+        request_data.update(
+            {
+                'title': 'updated title',
+                'description': 'updated description',
+                'owner': str(self.user.sodar_uuid),  # NOTE: Must add owner
+                'readme': 'updated readme',
+                'parent': str(self.category.sodar_uuid),
+                'public_guest_access': True,
+            }
+        )
         request_data.update(
             app_settings.get_all_settings(project=self.project, post_safe=True)
         )  # Add default settings
@@ -260,7 +336,7 @@ class TestProjectUpdateView(TestTaskflowBase):
                 ),
             )
 
-        self.assertEqual(Project.objects.all().count(), 2)
+        self.assertEqual(Project.objects.count(), 2)
         self.project.refresh_from_db()
         expected = {
             'id': self.project.pk,
@@ -279,6 +355,21 @@ class TestProjectUpdateView(TestTaskflowBase):
         self.assertEqual(model_dict, expected)
         self.assertEqual(self.project.readme.raw, 'updated readme')
 
+        project_coll = self.irods_session.collections.get(
+            self.irods_backend.get_path(self.project)
+        )
+        self.assertEqual(
+            project_coll.metadata.get_one('title').value, self.project.title
+        )
+        self.assertEqual(
+            project_coll.metadata.get_one('description').value,
+            self.project.description,
+        )
+        self.assertEqual(
+            project_coll.metadata.get_one('parent_uuid').value,
+            str(self.category.sodar_uuid),
+        )
+
 
 @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
 class TestRoleAssignmentCreateView(TestTaskflowBase):
@@ -294,10 +385,16 @@ class TestRoleAssignmentCreateView(TestTaskflowBase):
             description='description',
         )
         self.user_new = self.make_user('guest')
+        self.irods_user_group = self.irods_session.user_groups.get(
+            self.irods_backend.get_user_group_name(self.project)
+        )
 
     def test_create_assignment(self):
         """Test RoleAssignment creation with taskflow"""
-        self.assertEqual(RoleAssignment.objects.all().count(), 2)
+        self.assertEqual(RoleAssignment.objects.count(), 2)
+        self.assertEqual(
+            self.irods_user_group.hasmember(self.user_new.username), False
+        )
 
         request_data = {
             'project': self.project.sodar_uuid,
@@ -320,7 +417,7 @@ class TestRoleAssignmentCreateView(TestTaskflowBase):
                 ),
             )
 
-        self.assertEqual(RoleAssignment.objects.all().count(), 3)
+        self.assertEqual(RoleAssignment.objects.count(), 3)
         role_as = RoleAssignment.objects.get(
             project=self.project, user=self.user_new
         )
@@ -333,6 +430,9 @@ class TestRoleAssignmentCreateView(TestTaskflowBase):
             'sodar_uuid': role_as.sodar_uuid,
         }
         self.assertEqual(model_to_dict(role_as), expected)
+        self.assertEqual(
+            self.irods_user_group.hasmember(self.user_new.username), True
+        )
 
 
 @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
@@ -353,10 +453,16 @@ class TestRoleAssignmentUpdateView(TestTaskflowBase):
         self.role_as = self._make_assignment_taskflow(
             self.project, self.user_new, self.role_guest
         )
+        self.irods_user_group = self.irods_session.user_groups.get(
+            self.irods_backend.get_user_group_name(self.project)
+        )
 
     def test_update_assignment(self):
         """Test RoleAssignment updating with taskflow"""
-        self.assertEqual(RoleAssignment.objects.all().count(), 3)
+        self.assertEqual(RoleAssignment.objects.count(), 3)
+        self.assertEqual(
+            self.irods_user_group.hasmember(self.user_new.username), True
+        )
 
         request_data = {
             'project': self.project.sodar_uuid,
@@ -379,7 +485,7 @@ class TestRoleAssignmentUpdateView(TestTaskflowBase):
                 ),
             )
 
-        self.assertEqual(RoleAssignment.objects.all().count(), 3)
+        self.assertEqual(RoleAssignment.objects.count(), 3)
         role_as = RoleAssignment.objects.get(
             project=self.project, user=self.user_new
         )
@@ -392,6 +498,9 @@ class TestRoleAssignmentUpdateView(TestTaskflowBase):
             'sodar_uuid': role_as.sodar_uuid,
         }
         self.assertEqual(model_to_dict(role_as), expected)
+        self.assertEqual(
+            self.irods_user_group.hasmember(self.user_new.username), True
+        )
 
 
 @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
@@ -408,13 +517,22 @@ class TestRoleAssignmentOwnerTransferView(TestTaskflowBase):
             description='description',
         )
         self.user_new = self.make_user('newuser')
-        self.role_as = self._make_assignment(
+        self.role_as = self._make_assignment_taskflow(
             self.project, self.user_new, self.role_guest
+        )
+        self.irods_user_group = self.irods_session.user_groups.get(
+            self.irods_backend.get_user_group_name(self.project)
         )
 
     def test_transfer_owner(self):
         """Test ownership transfer with taskflow"""
-        self.assertEqual(RoleAssignment.objects.all().count(), 3)
+        self.assertEqual(RoleAssignment.objects.count(), 3)
+        self.assertEqual(
+            self.irods_user_group.hasmember(self.user.username), True
+        )
+        self.assertEqual(
+            self.irods_user_group.hasmember(self.user_new.username), True
+        )
 
         with self.login(self.user):
             self.client.post(
@@ -429,12 +547,19 @@ class TestRoleAssignmentOwnerTransferView(TestTaskflowBase):
                 },
             )
 
-        self.assertEqual(RoleAssignment.objects.all().count(), 3)
+        self.assertEqual(RoleAssignment.objects.count(), 3)
         role_as = RoleAssignment.objects.get(
             project=self.project, user=self.user_new
         )
         self.assertEqual(role_as.role, self.role_owner)
-        # TODO: Test resulting users in iRODS once we do issue #387
+        self.assertEqual(
+            self.irods_user_group.hasmember(self.user.username), True
+        )
+        self.assertEqual(
+            self.irods_user_group.hasmember(self.user_new.username), True
+        )
+
+    # TODO: Test with inherited roles
 
 
 @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
@@ -454,10 +579,17 @@ class TestRoleAssignmentDeleteView(TestTaskflowBase):
         self.role_as = self._make_assignment_taskflow(
             self.project, self.user_new, self.role_guest
         )
+        self.irods_user_group = self.irods_session.user_groups.get(
+            self.irods_backend.get_user_group_name(self.project)
+        )
 
     def test_delete_assignment(self):
         """Test RoleAssignment deleting with taskflow"""
-        self.assertEqual(RoleAssignment.objects.all().count(), 3)
+        self.assertEqual(RoleAssignment.objects.count(), 3)
+        self.assertEqual(
+            self.irods_user_group.hasmember(self.user_new.username), True
+        )
+
         with self.login(self.user):
             response = self.client.post(
                 reverse(
@@ -472,7 +604,11 @@ class TestRoleAssignmentDeleteView(TestTaskflowBase):
                     kwargs={'project': self.project.sodar_uuid},
                 ),
             )
-        self.assertEqual(RoleAssignment.objects.all().count(), 2)
+
+        self.assertEqual(RoleAssignment.objects.count(), 2)
+        self.assertEqual(
+            self.irods_user_group.hasmember(self.user_new.username), False
+        )
 
 
 @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
@@ -489,6 +625,9 @@ class TestProjectInviteAcceptView(ProjectInviteMixin, TestTaskflowBase):
             description='description',
         )
         self.user_new = self.make_user('newuser')
+        self.irods_user_group = self.irods_session.user_groups.get(
+            self.irods_backend.get_user_group_name(self.project)
+        )
 
     @override_settings(PROJECTROLES_ALLOW_LOCAL_USERS=True)
     @override_settings(AUTH_LDAP_USERNAME_DOMAIN='EXAMPLE')
@@ -512,6 +651,9 @@ class TestProjectInviteAcceptView(ProjectInviteMixin, TestTaskflowBase):
                 role=self.role_contributor,
             ).count(),
             0,
+        )
+        self.assertEqual(
+            self.irods_user_group.hasmember(self.user_new.username), False
         )
 
         with self.login(self.user_new):
@@ -541,6 +683,10 @@ class TestProjectInviteAcceptView(ProjectInviteMixin, TestTaskflowBase):
                     ),
                 ],
             )
+
+        self.assertEqual(
+            self.irods_user_group.hasmember(self.user_new.username), True
+        )
 
     @override_settings(PROJECTROLES_ALLOW_LOCAL_USERS=True)
     @override_settings(AUTH_LDAP_USERNAME_DOMAIN='EXAMPLE')

@@ -373,7 +373,7 @@ class IrodsAPI:
 
     # TODO: Add tests
     @classmethod
-    def get_project_group_name(cls, project):
+    def get_user_group_name(cls, project):
         """
         Return iRODS user group name for project.
 

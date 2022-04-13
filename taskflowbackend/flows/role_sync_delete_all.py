@@ -10,7 +10,7 @@ class Flow(BaseLinearFlow):
         return super().validate()
 
     def build(self, force_fail=False):
-        group_name = self.irods_backend.get_project_group_name(self.project)
+        group_name = self.irods_backend.get_user_group_name(self.project)
         irods_group = self.irods.user_groups.get(name=group_name)
 
         for user in [

@@ -26,7 +26,7 @@ class Flow(BaseLinearFlow):
                 )
             )
         for role_add in self.flow_data['roles_add']:
-            project_group = self.irods_backend.get_project_group_name(
+            project_group = self.irods_backend.get_user_group_name(
                 role_add['project']
             )
             self.add_task(
@@ -43,7 +43,7 @@ class Flow(BaseLinearFlow):
             )
         # Delete roles
         for role_delete in self.flow_data['roles_delete']:
-            project_group = self.irods_backend.get_project_group_name(
+            project_group = self.irods_backend.get_user_group_name(
                 role_delete['project']
             )
             self.add_task(
