@@ -14,7 +14,7 @@ class Flow(BaseLinearFlow):
 
     def build(self, force_fail=False):
         project_path = self.irods_backend.get_path(self.project)
-        project_group = self.irods_backend.get_project_group_name(self.project)
+        project_group = self.irods_backend.get_user_group_name(self.project)
 
         self.add_task(
             irods_tasks.CreateCollectionTask(
@@ -115,7 +115,7 @@ class Flow(BaseLinearFlow):
                 )
             )
         for role_add in self.flow_data.get('roles_add', []):
-            project_group = self.irods_backend.get_project_group_name(
+            project_group = self.irods_backend.get_user_group_name(
                 role_add['project_uuid']
             )
             self.add_task(

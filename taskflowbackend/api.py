@@ -201,7 +201,6 @@ class TaskflowAPI:
             raise ex
 
         # Launch async submit task if async mode is set
-        # TODO: Fix async submitting! (All params must be JSON serializable)
         if async_mode:
             project_uuid = project.sodar_uuid
             tl_uuid = tl_event.sodar_uuid if tl_event else None
