@@ -16,7 +16,7 @@ class Flow(BaseLinearFlow):
     def build(self, force_fail=False):
         # Add roles
         for username in set(
-            [r['user'].username for r in self.flow_data['roles_add']]
+            [r['user_name'] for r in self.flow_data['roles_add']]
         ):
             self.add_task(
                 irods_tasks.CreateUserTask(
@@ -27,34 +27,34 @@ class Flow(BaseLinearFlow):
             )
         for role_add in self.flow_data['roles_add']:
             project_group = self.irods_backend.get_user_group_name(
-                role_add['project']
+                role_add['project_uuid']
             )
             self.add_task(
                 irods_tasks.AddUserToGroupTask(
                     name='Add user "{}" to project user group "{}"'.format(
-                        role_add['user'].username, project_group
+                        role_add['user_name'], project_group
                     ),
                     irods=self.irods,
                     inject={
                         'group_name': project_group,
-                        'user_name': role_add['user'].username,
+                        'user_name': role_add['user_name'],
                     },
                 )
             )
         # Delete roles
         for role_delete in self.flow_data['roles_delete']:
             project_group = self.irods_backend.get_user_group_name(
-                role_delete['project']
+                role_delete['project_uuid']
             )
             self.add_task(
                 irods_tasks.RemoveUserFromGroupTask(
                     name='Remove user "{}" from project user group "{}"'.format(
-                        role_delete['user'].username, project_group
+                        role_delete['user_name'], project_group
                     ),
                     irods=self.irods,
                     inject={
                         'group_name': project_group,
-                        'user_name': role_delete['user'].username,
+                        'user_name': role_delete['user_name'],
                     },
                 )
             )

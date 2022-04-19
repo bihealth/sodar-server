@@ -1,8 +1,5 @@
 """Tests for projectroles views with taskflow"""
 
-# TODO: SkipIf both taskflow and irods are not enabled
-# TODO: Test for created things in iRODS
-
 from irods.collection import iRODSCollection
 from irods.exception import CollectionDoesNotExist
 from irods.models import UserGroup
@@ -55,10 +52,12 @@ APP_SETTING_SCOPE_PROJECT = SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT']
 # Local constants
 INVITE_EMAIL = 'test@example.com'
 SECRET = 'rsd886hi8276nypuvw066sbvv0rb2a6x'
-TASKFLOW_ENABLED = (
-    True if 'taskflow' in settings.ENABLED_BACKEND_PLUGINS else False
+BACKENDS_ENABLED = all(
+    _ in settings.ENABLED_BACKEND_PLUGINS for _ in ['omics_irods', 'taskflow']
 )
-TASKFLOW_SKIP_MSG = 'Taskflow not enabled in settings'
+BACKEND_SKIP_MSG = (
+    'Required backends (taskflow, omics_irods) ' 'not enabled in settings'
+)
 TASKFLOW_TEST_MODE = getattr(settings, 'TASKFLOW_TEST_MODE', False)
 
 IRODS_ACCESS_READ = 'read object'
@@ -187,7 +186,9 @@ class TestTaskflowBase(ProjectMixin, RoleAssignmentMixin, TestCase):
         self.category = self._make_project(
             'TestCategory', PROJECT_TYPE_CATEGORY, None
         )
-        self._make_assignment(self.category, self.user_cat, self.role_owner)
+        self.as_cat_owner = self._make_assignment(
+            self.category, self.user_cat, self.role_owner
+        )
 
     def tearDown(self):
         self.taskflow.cleanup()
@@ -201,7 +202,7 @@ class TestTaskflowBase(ProjectMixin, RoleAssignmentMixin, TestCase):
             )
 
 
-@skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
+@skipIf(not BACKENDS_ENABLED, BACKEND_SKIP_MSG)
 class TestProjectCreateView(TestTaskflowBase):
     """Tests for Project creation view with taskflow"""
 
@@ -283,11 +284,14 @@ class TestProjectCreateView(TestTaskflowBase):
             self.irods_session.users.get(self.user.username), iRODSUser
         )
         self.assertEqual(group.hasmember(self.user.username), True)
+        # Assert inherited role updating for category owner
+        self.assertIsInstance(
+            self.irods_session.users.get(self.user_cat.username), iRODSUser
+        )
+        self.assertEqual(group.hasmember(self.user_cat.username), True)
 
-    # TODO: Test with inherited roles
 
-
-@skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
+@skipIf(not BACKENDS_ENABLED, BACKEND_SKIP_MSG)
 class TestProjectUpdateView(TestTaskflowBase):
     """Tests for Project updating view"""
 
@@ -371,7 +375,7 @@ class TestProjectUpdateView(TestTaskflowBase):
         )
 
 
-@skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
+@skipIf(not BACKENDS_ENABLED, BACKEND_SKIP_MSG)
 class TestRoleAssignmentCreateView(TestTaskflowBase):
     """Tests for RoleAssignment creation view"""
 
@@ -435,7 +439,7 @@ class TestRoleAssignmentCreateView(TestTaskflowBase):
         )
 
 
-@skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
+@skipIf(not BACKENDS_ENABLED, BACKEND_SKIP_MSG)
 class TestRoleAssignmentUpdateView(TestTaskflowBase):
     """Tests for RoleAssignment update view with taskflow"""
 
@@ -503,7 +507,7 @@ class TestRoleAssignmentUpdateView(TestTaskflowBase):
         )
 
 
-@skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
+@skipIf(not BACKENDS_ENABLED, BACKEND_SKIP_MSG)
 class TestRoleAssignmentOwnerTransferView(TestTaskflowBase):
     """Tests for ownership transfer view with taskflow"""
 
@@ -533,6 +537,9 @@ class TestRoleAssignmentOwnerTransferView(TestTaskflowBase):
         self.assertEqual(
             self.irods_user_group.hasmember(self.user_new.username), True
         )
+        self.assertEqual(
+            self.irods_user_group.hasmember(self.user_cat.username), True
+        )
 
         with self.login(self.user):
             self.client.post(
@@ -558,11 +565,46 @@ class TestRoleAssignmentOwnerTransferView(TestTaskflowBase):
         self.assertEqual(
             self.irods_user_group.hasmember(self.user_new.username), True
         )
+        self.assertEqual(
+            self.irods_user_group.hasmember(self.user_cat.username), True
+        )
 
-    # TODO: Test with inherited roles
+    def test_transfer_category(self):
+        """Test ownership transfer with category and owner inheritance"""
+        self._make_assignment_taskflow(
+            self.category, self.user, self.role_contributor
+        )
+        self.assertEqual(RoleAssignment.objects.count(), 4)
+        self.assertEqual(
+            self.irods_user_group.hasmember(self.user.username), True
+        )
+        self.assertEqual(
+            self.irods_user_group.hasmember(self.user_cat.username), True
+        )
+
+        with self.login(self.user):
+            self.client.post(
+                reverse(
+                    'projectroles:role_owner_transfer',
+                    kwargs={'project': self.category.sodar_uuid},
+                ),
+                data={
+                    'project': self.category.sodar_uuid,
+                    'old_owner_role': self.role_guest.pk,
+                    'new_owner': self.user.sodar_uuid,
+                },
+            )
+
+        self.assertEqual(RoleAssignment.objects.count(), 4)
+        self.assertEqual(
+            self.irods_user_group.hasmember(self.user.username), True
+        )
+        self.assertEqual(
+            self.irods_user_group.hasmember(self.user_cat.username), False
+        )
 
 
-@skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
+@skipIf(not BACKENDS_ENABLED, BACKEND_SKIP_MSG)
 class TestRoleAssignmentDeleteView(TestTaskflowBase):
     """Tests for RoleAssignment delete view"""
 
@@ -611,7 +653,7 @@ class TestRoleAssignmentDeleteView(TestTaskflowBase):
         )
 
 
-@skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
+@skipIf(not BACKENDS_ENABLED, BACKEND_SKIP_MSG)
 class TestProjectInviteAcceptView(ProjectInviteMixin, TestTaskflowBase):
     """Tests for ProjectInvite accepting view with taskflow"""
 
@@ -768,10 +810,7 @@ class TestProjectInviteAcceptView(ProjectInviteMixin, TestTaskflowBase):
                         ),
                         302,
                     ),
-                    (
-                        reverse('home'),
-                        302,
-                    ),
+                    (reverse('home'), 302),
                 ],
             )
 
@@ -814,10 +853,7 @@ class TestProjectInviteAcceptView(ProjectInviteMixin, TestTaskflowBase):
                         ),
                         302,
                     ),
-                    (
-                        reverse('home'),
-                        302,
-                    ),
+                    (reverse('home'), 302),
                 ],
             )
 
