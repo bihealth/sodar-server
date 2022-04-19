@@ -5,7 +5,7 @@ wheel==0.37.1
 setuptools==59.6.0
 
 # Django
-django==3.2.12
+django==3.2.13
 
 # Configuration
 django-environ==0.8.1
@@ -71,7 +71,7 @@ mistune==2.0.1
 
 # SODAR Core
 # django-sodar-core==0.10.11
--e git+https://github.com/bihealth/sodar-core.git@6334a78c0febf73c1170096dc0d276b49111cc12#egg=django-sodar-core
+-e git+https://github.com/bihealth/sodar-core.git@f8348c50e8fe653f7f9151462a3f03ce63ffbc27#egg=django-sodar-core
 
 # Celery
 celery==5.2.3
