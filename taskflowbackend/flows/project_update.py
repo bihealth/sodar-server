@@ -35,6 +35,19 @@ class Flow(BaseLinearFlow):
                 },
             )
         )
+        self.add_task(
+            irods_tasks.SetCollectionMetadataTask(
+                name='Update parent metadata in project',
+                irods=self.irods,
+                inject={
+                    'path': project_path,
+                    'name': 'parent_uuid',
+                    'value': str(self.project.parent.sodar_uuid)
+                    if self.project.parent
+                    else '',
+                },
+            )
+        )
         # TODO: Set public access according to public_guest_access (#71)
         if self.flow_data['owner'] != self.flow_data['old_owner']:
             self.add_task(

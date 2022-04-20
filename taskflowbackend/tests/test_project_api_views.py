@@ -1,6 +1,7 @@
 """REST API view tests for projectroles with taskflow"""
 
-# TODO: Add checks for iRODS content
+from irods.collection import iRODSCollection
+from irods.user import iRODSUser, iRODSUserGroup
 
 from django.conf import settings
 from django.contrib import auth
@@ -16,7 +17,7 @@ from unittest import skipIf
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
 from projectroles.models import Project, Role, RoleAssignment, SODAR_CONSTANTS
-from projectroles.plugins import get_backend_api, change_plugin_status
+from projectroles.plugins import get_backend_api
 
 # from projectroles.tests.taskflow_testcase import TestCase
 from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
@@ -24,8 +25,10 @@ from projectroles.tests.test_views_api import SODARAPIViewTestMixin
 from projectroles.views_api import CORE_API_MEDIA_TYPE, CORE_API_DEFAULT_VERSION
 
 from taskflowbackend.tests.test_project_views import (
+    TaskflowTestMixin,
     BACKENDS_ENABLED,
     BACKEND_SKIP_MSG,
+    IRODS_ACCESS_READ,
 )
 
 
@@ -64,6 +67,7 @@ class TestTaskflowAPIBase(
     ProjectMixin,
     RoleAssignmentMixin,
     SODARAPIViewTestMixin,
+    TaskflowTestMixin,
     APILiveServerTestCase,
     TestCase,
 ):
@@ -73,17 +77,14 @@ class TestTaskflowAPIBase(
         self, title, type, parent, owner, description='', readme=''
     ):
         """Make Project with taskflow for API view tests."""
-        post_data = dict(self.request_data)
-        post_data.update(
-            {
-                'title': title,
-                'type': type,
-                'parent': parent.sodar_uuid if parent else None,
-                'owner': owner.sodar_uuid,
-                'description': description,
-                'readme': readme,
-            }
-        )
+        post_data = {
+            'title': title,
+            'type': type,
+            'parent': parent.sodar_uuid if parent else None,
+            'owner': owner.sodar_uuid,
+            'description': description,
+            'readme': readme,
+        }
         response = self.request_knox(
             reverse('projectroles:api_project_create'),
             method='POST',
@@ -103,13 +104,11 @@ class TestTaskflowAPIBase(
             'projectroles:api_role_create',
             kwargs={'project': project.sodar_uuid},
         )
-        self.request_data.update(
-            {'role': role.name, 'user': str(user.sodar_uuid)}
-        )
+        request_data = {'role': role.name, 'user': str(user.sodar_uuid)}
         response = self.request_knox(
             url,
             method='POST',
-            data=self.request_data,
+            data=request_data,
             media_type=CORE_API_MEDIA_TYPE,
             version=CORE_API_DEFAULT_VERSION,
         )
@@ -123,15 +122,9 @@ class TestTaskflowAPIBase(
                 'TASKFLOW_TEST_MODE not True, '
                 'testing with SODAR Taskflow disabled'
             )
-
-        # Set up live server URL for requests
-        self.request_data = {'sodar_url': self.live_server_url}
-
-        # Get taskflow plugin (or None if taskflow not enabled)
-        change_plugin_status(
-            name='taskflow', status=0, plugin_type='backend'  # 0 = Enabled
-        )
         self.taskflow = get_backend_api('taskflow', force=True)
+        self.irods_backend = get_backend_api('omics_irods')
+        self.irods_session = self.irods_backend.get_session()
 
         # Init roles
         self.role_owner = Role.objects.get_or_create(name=PROJECT_ROLE_OWNER)[0]
@@ -176,20 +169,39 @@ class TestProjectCreateAPIView(TestCoreTaskflowAPIBase):
     def test_create_project(self):
         """Test project creation"""
         self.assertEqual(Project.objects.all().count(), 1)
+
         url = reverse('projectroles:api_project_create')
-        self.request_data.update(
-            {
-                'title': NEW_PROJECT_TITLE,
-                'type': PROJECT_TYPE_PROJECT,
-                'parent': str(self.category.sodar_uuid),
-                'description': 'description',
-                'readme': 'readme',
-                'owner': str(self.user.sodar_uuid),
-            }
-        )
-        response = self.request_knox(url, method='POST', data=self.request_data)
+        request_data = {
+            'title': NEW_PROJECT_TITLE,
+            'type': PROJECT_TYPE_PROJECT,
+            'parent': str(self.category.sodar_uuid),
+            'description': 'description',
+            'readme': 'readme',
+            'owner': str(self.user.sodar_uuid),
+        }
+        response = self.request_knox(url, method='POST', data=request_data)
+        project = Project.objects.filter(type=PROJECT_TYPE_PROJECT).first()
+
         self.assertEqual(response.status_code, 201, msg=response.content)
         self.assertEqual(Project.objects.all().count(), 2)
+        # Assert iRODS collections
+        root_coll = self.irods_session.collections.get(
+            self.irods_backend.get_projects_path()
+        )
+        self.assertIsInstance(root_coll, iRODSCollection)
+        project_coll = self.irods_session.collections.get(
+            self.irods_backend.get_path(project)
+        )
+        self.assertIsInstance(project_coll, iRODSCollection)
+        # Assert user group and owner access
+        group_name = self.irods_backend.get_user_group_name(project)
+        group = self.irods_session.user_groups.get(group_name)
+        self.assertIsInstance(group, iRODSUserGroup)
+        self.assert_irods_access(group_name, project_coll, IRODS_ACCESS_READ)
+        self.assertIsInstance(
+            self.irods_session.users.get(self.user.username), iRODSUser
+        )
+        self.assert_group_member(project, self.user, True)
 
 
 @skipIf(not BACKENDS_ENABLED, BACKEND_SKIP_MSG)
@@ -216,17 +228,15 @@ class TestProjectUpdateAPIView(TestCoreTaskflowAPIBase):
             'projectroles:api_project_update',
             kwargs={'project': self.category.sodar_uuid},
         )
-        self.request_data.update(
-            {
-                'title': UPDATED_TITLE,
-                'type': PROJECT_TYPE_CATEGORY,
-                'parent': '',
-                'description': UPDATED_DESC,
-                'readme': UPDATED_README,
-                'owner': str(new_owner.sodar_uuid),
-            }
-        )
-        response = self.request_knox(url, method='PUT', data=self.request_data)
+        request_data = {
+            'title': UPDATED_TITLE,
+            'type': PROJECT_TYPE_CATEGORY,
+            'parent': '',
+            'description': UPDATED_DESC,
+            'readme': UPDATED_README,
+            'owner': str(new_owner.sodar_uuid),
+        }
+        response = self.request_knox(url, method='PUT', data=request_data)
 
         self.assertEqual(response.status_code, 200, msg=response.content)
         self.assertEqual(Project.objects.count(), 2)
@@ -263,18 +273,16 @@ class TestProjectUpdateAPIView(TestCoreTaskflowAPIBase):
             'projectroles:api_project_update',
             kwargs={'project': self.project.sodar_uuid},
         )
-        self.request_data.update(
-            {
-                'title': UPDATED_TITLE,
-                'type': PROJECT_TYPE_PROJECT,
-                'parent': str(self.category.sodar_uuid),
-                'description': UPDATED_DESC,
-                'readme': UPDATED_README,
-                'public_guest_access': True,
-                'owner': str(new_owner.sodar_uuid),
-            }
-        )
-        response = self.request_knox(url, method='PUT', data=self.request_data)
+        request_data = {
+            'title': UPDATED_TITLE,
+            'type': PROJECT_TYPE_PROJECT,
+            'parent': str(self.category.sodar_uuid),
+            'description': UPDATED_DESC,
+            'readme': UPDATED_README,
+            'public_guest_access': True,
+            'owner': str(new_owner.sodar_uuid),
+        }
+        response = self.request_knox(url, method='PUT', data=request_data)
 
         self.assertEqual(response.status_code, 200, msg=response.content)
         self.assertEqual(Project.objects.count(), 2)
@@ -302,6 +310,17 @@ class TestProjectUpdateAPIView(TestCoreTaskflowAPIBase):
         )
         self.assertEqual(self.project.get_owner().user, new_owner)
 
+        project_coll = self.irods_session.collections.get(
+            self.irods_backend.get_path(self.project)
+        )
+        self.assertEqual(
+            project_coll.metadata.get_one('title').value, UPDATED_TITLE
+        )
+        self.assertEqual(
+            project_coll.metadata.get_one('description').value,
+            UPDATED_DESC,
+        )
+
     def test_patch_category(self):
         """Test patch() for updating category metadata"""
         self.assertEqual(Project.objects.count(), 2)
@@ -310,16 +329,12 @@ class TestProjectUpdateAPIView(TestCoreTaskflowAPIBase):
             'projectroles:api_project_update',
             kwargs={'project': self.category.sodar_uuid},
         )
-        self.request_data.update(
-            {
-                'title': UPDATED_TITLE,
-                'description': UPDATED_DESC,
-                'readme': UPDATED_README,
-            }
-        )
-        response = self.request_knox(
-            url, method='PATCH', data=self.request_data
-        )
+        request_data = {
+            'title': UPDATED_TITLE,
+            'description': UPDATED_DESC,
+            'readme': UPDATED_README,
+        }
+        response = self.request_knox(url, method='PATCH', data=request_data)
 
         self.assertEqual(response.status_code, 200, msg=response.content)
         self.assertEqual(Project.objects.count(), 2)
@@ -352,16 +367,12 @@ class TestProjectUpdateAPIView(TestCoreTaskflowAPIBase):
             'projectroles:api_project_update',
             kwargs={'project': self.project.sodar_uuid},
         )
-        self.request_data.update(
-            {
-                'title': UPDATED_TITLE,
-                'description': UPDATED_DESC,
-                'readme': UPDATED_README,
-            }
-        )
-        response = self.request_knox(
-            url, method='PATCH', data=self.request_data
-        )
+        request_data = {
+            'title': UPDATED_TITLE,
+            'description': UPDATED_DESC,
+            'readme': UPDATED_README,
+        }
+        response = self.request_knox(url, method='PATCH', data=request_data)
 
         self.assertEqual(response.status_code, 200, msg=response.content)
         self.assertEqual(Project.objects.count(), 2)
@@ -386,6 +397,17 @@ class TestProjectUpdateAPIView(TestCoreTaskflowAPIBase):
 
         self.assertEqual(self.project.get_owner().user, self.user)
 
+        project_coll = self.irods_session.collections.get(
+            self.irods_backend.get_path(self.project)
+        )
+        self.assertEqual(
+            project_coll.metadata.get_one('title').value, self.project.title
+        )
+        self.assertEqual(
+            project_coll.metadata.get_one('description').value,
+            self.project.description,
+        )
+
     def test_patch_project_move(self):
         """Test patch() for moving project under a different category"""
         new_category = self._make_project(
@@ -397,16 +419,22 @@ class TestProjectUpdateAPIView(TestCoreTaskflowAPIBase):
             'projectroles:api_project_update',
             kwargs={'project': self.project.sodar_uuid},
         )
-        self.request_data.update({'parent': str(new_category.sodar_uuid)})
-        response = self.request_knox(
-            url, method='PATCH', data=self.request_data
-        )
+        request_data = {'parent': str(new_category.sodar_uuid)}
+        response = self.request_knox(url, method='PATCH', data=request_data)
 
         self.assertEqual(response.status_code, 200, msg=response.content)
         self.project.refresh_from_db()
         model_dict = model_to_dict(self.project)
         self.assertEqual(model_dict['parent'], new_category.pk)
         self.assertEqual(self.project.get_owner().user, self.user)
+
+        project_coll = self.irods_session.collections.get(
+            self.irods_backend.get_path(self.project)
+        )
+        self.assertEqual(
+            project_coll.metadata.get_one('parent_uuid').value,
+            str(new_category.sodar_uuid),
+        )
 
 
 @skipIf(not BACKENDS_ENABLED, BACKEND_SKIP_MSG)
@@ -433,15 +461,14 @@ class TestRoleAssignmentCreateAPIView(TestCoreTaskflowAPIBase):
             'projectroles:api_role_create',
             kwargs={'project': self.project.sodar_uuid},
         )
-        self.request_data.update(
-            {
-                'role': PROJECT_ROLE_CONTRIBUTOR,
-                'user': str(self.assign_user.sodar_uuid),
-            }
-        )
-        response = self.request_knox(url, method='POST', data=self.request_data)
+        request_data = {
+            'role': PROJECT_ROLE_CONTRIBUTOR,
+            'user': str(self.assign_user.sodar_uuid),
+        }
+        response = self.request_knox(url, method='POST', data=request_data)
         self.assertEqual(response.status_code, 201, msg=response.content)
         self.assertEqual(RoleAssignment.objects.all().count(), 3)
+        self.assert_group_member(self.project, self.assign_user, True)
 
 
 @skipIf(not BACKENDS_ENABLED, BACKEND_SKIP_MSG)
@@ -450,7 +477,6 @@ class TestRoleAssignmentUpdateAPIView(TestCoreTaskflowAPIBase):
 
     def setUp(self):
         super().setUp()
-        # Make project with owner in Taskflow and Django
         self.project, self.owner_as = self._make_project_taskflow(
             title='TestProject',
             type=PROJECT_TYPE_PROJECT,
@@ -458,7 +484,6 @@ class TestRoleAssignmentUpdateAPIView(TestCoreTaskflowAPIBase):
             owner=self.user,
             description='description',
         )
-        # Create user for assignments
         self.assign_user = self.make_user('assign_user')
         # Make extra assignment with Taskflow
         self.update_as = self._make_assignment_taskflow(
@@ -470,33 +495,33 @@ class TestRoleAssignmentUpdateAPIView(TestCoreTaskflowAPIBase):
     def test_put_role(self):
         """Test put() for role assignment updating"""
         self.assertEqual(RoleAssignment.objects.all().count(), 3)
+        self.assert_group_member(self.project, self.assign_user, True)
         url = reverse(
             'projectroles:api_role_update',
             kwargs={'roleassignment': self.update_as.sodar_uuid},
         )
-        self.request_data.update(
-            {
-                'role': PROJECT_ROLE_GUEST,
-                'user': str(self.assign_user.sodar_uuid),
-            }
-        )
-        response = self.request_knox(url, method='PUT', data=self.request_data)
+        request_data = {
+            'role': PROJECT_ROLE_GUEST,
+            'user': str(self.assign_user.sodar_uuid),
+        }
+        response = self.request_knox(url, method='PUT', data=request_data)
         self.assertEqual(response.status_code, 200, msg=response.content)
         self.assertEqual(RoleAssignment.objects.all().count(), 3)
+        self.assert_group_member(self.project, self.assign_user, True)
 
     def test_patch_role(self):
         """Test patch() for role assignment updating"""
         self.assertEqual(RoleAssignment.objects.all().count(), 3)
+        self.assert_group_member(self.project, self.assign_user, True)
         url = reverse(
             'projectroles:api_role_update',
             kwargs={'roleassignment': self.update_as.sodar_uuid},
         )
-        self.request_data.update({'role': PROJECT_ROLE_GUEST})
-        response = self.request_knox(
-            url, method='PATCH', data=self.request_data
-        )
+        request_data = {'role': PROJECT_ROLE_GUEST}
+        response = self.request_knox(url, method='PATCH', data=request_data)
         self.assertEqual(response.status_code, 200, msg=response.content)
         self.assertEqual(RoleAssignment.objects.all().count(), 3)
+        self.assert_group_member(self.project, self.assign_user, True)
 
 
 @skipIf(not BACKENDS_ENABLED, BACKEND_SKIP_MSG)
@@ -505,7 +530,6 @@ class TestRoleAssignmentDestroyAPIView(TestCoreTaskflowAPIBase):
 
     def setUp(self):
         super().setUp()
-        # Make project with owner in Taskflow and Django
         self.project, self.owner_as = self._make_project_taskflow(
             title='TestProject',
             type=PROJECT_TYPE_PROJECT,
@@ -513,9 +537,7 @@ class TestRoleAssignmentDestroyAPIView(TestCoreTaskflowAPIBase):
             owner=self.user,
             description='description',
         )
-        # Create user for assignments
         self.assign_user = self.make_user('assign_user')
-        # Make extra assignment with Taskflow
         self.update_as = self._make_assignment_taskflow(
             project=self.project,
             user=self.assign_user,
@@ -525,15 +547,15 @@ class TestRoleAssignmentDestroyAPIView(TestCoreTaskflowAPIBase):
     def test_delete_role(self):
         """Test delete() for role assignment deletion"""
         self.assertEqual(RoleAssignment.objects.all().count(), 3)
+        self.assert_group_member(self.project, self.assign_user, True)
         url = reverse(
             'projectroles:api_role_destroy',
             kwargs={'roleassignment': self.update_as.sodar_uuid},
         )
-        response = self.request_knox(
-            url, method='DELETE', data=self.request_data
-        )
+        response = self.request_knox(url, method='DELETE')
         self.assertEqual(response.status_code, 204, msg=response.content)
         self.assertEqual(RoleAssignment.objects.all().count(), 2)
+        self.assert_group_member(self.project, self.assign_user, False)
 
 
 @skipIf(not BACKENDS_ENABLED, BACKEND_SKIP_MSG)
@@ -542,7 +564,6 @@ class TestRoleAssignmentOwnerTransferAPIView(TestCoreTaskflowAPIBase):
 
     def setUp(self):
         super().setUp()
-        # Make project with owner in Taskflow and Django
         self.user_owner = self.make_user('user_owner')
         self.project, self.owner_as = self._make_project_taskflow(
             title='TestProject',
@@ -551,7 +572,6 @@ class TestRoleAssignmentOwnerTransferAPIView(TestCoreTaskflowAPIBase):
             owner=self.user_owner,
             description='description',
         )
-        # Create user for assignments
         self.assign_user = self.make_user('assign_user')
 
     def test_transfer_owner(self):
@@ -563,16 +583,18 @@ class TestRoleAssignmentOwnerTransferAPIView(TestCoreTaskflowAPIBase):
             role=self.role_contributor,
         )
         self.assertEqual(self.project.get_owner().user, self.user_owner)
+        self.assert_group_member(self.project, self.user_owner, True)
+        self.assert_group_member(self.project, self.assign_user, True)
 
         url = reverse(
             'projectroles:api_role_owner_transfer',
             kwargs={'project': self.project.sodar_uuid},
         )
-        post_data = {
+        request_data = {
             'new_owner': self.assign_user.username,
             'old_owner_role': self.role_contributor.name,
         }
-        response = self.request_knox(url, method='POST', data=post_data)
+        response = self.request_knox(url, method='POST', data=request_data)
 
         self.assertEqual(response.status_code, 200, msg=response.content)
         self.assertEqual(self.project.get_owner().user, self.assign_user)
@@ -582,6 +604,8 @@ class TestRoleAssignmentOwnerTransferAPIView(TestCoreTaskflowAPIBase):
             ).role,
             self.role_contributor,
         )
+        self.assert_group_member(self.project, self.user_owner, True)
+        self.assert_group_member(self.project, self.assign_user, True)
 
     def test_transfer_owner_category(self):
         """Test transferring ownership for a category"""
@@ -591,19 +615,23 @@ class TestRoleAssignmentOwnerTransferAPIView(TestCoreTaskflowAPIBase):
             role=self.role_contributor,
         )
         self.assertEqual(self.category.get_owner().user, self.user)
+        self.assert_group_member(self.project, self.user_owner, True)
+        self.assert_group_member(self.project, self.assign_user, False)
 
         url = reverse(
             'projectroles:api_role_owner_transfer',
             kwargs={'project': self.category.sodar_uuid},
         )
-        post_data = {
+        request_data = {
             'new_owner': self.assign_user.username,
             'old_owner_role': self.role_contributor.name,
         }
-        response = self.request_knox(url, method='POST', data=post_data)
+        response = self.request_knox(url, method='POST', data=request_data)
 
         self.assertEqual(response.status_code, 200, msg=response.content)
         self.assertEqual(self.category.get_owner().user, self.assign_user)
+        self.assert_group_member(self.project, self.user_owner, True)
+        self.assert_group_member(self.project, self.assign_user, True)
 
     def test_transfer_owner_inherit(self):
         """Test transferring ownership to an inherited owner"""
@@ -613,16 +641,19 @@ class TestRoleAssignmentOwnerTransferAPIView(TestCoreTaskflowAPIBase):
             role=self.role_contributor,
         )
         self.assertEqual(self.project.get_owner().user, self.user_owner)
+        self.assert_group_member(self.project, self.user_owner, True)
+        self.assert_group_member(self.project, self.assign_user, True)
+        self.assert_group_member(self.project, self.user, True)
 
         url = reverse(
             'projectroles:api_role_owner_transfer',
             kwargs={'project': self.project.sodar_uuid},
         )
-        post_data = {
+        request_data = {
             'new_owner': self.user.username,  # self.user = category owner
             'old_owner_role': self.role_contributor.name,
         }
-        response = self.request_knox(url, method='POST', data=post_data)
+        response = self.request_knox(url, method='POST', data=request_data)
 
         self.assertEqual(response.status_code, 200, msg=response.content)
         self.assertEqual(self.project.get_owner().user, self.user)
@@ -632,3 +663,6 @@ class TestRoleAssignmentOwnerTransferAPIView(TestCoreTaskflowAPIBase):
             ).role,
             self.role_contributor,
         )
+        self.assert_group_member(self.project, self.user_owner, True)
+        self.assert_group_member(self.project, self.assign_user, True)
+        self.assert_group_member(self.project, self.user, True)
