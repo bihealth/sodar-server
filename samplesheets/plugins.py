@@ -175,6 +175,22 @@ class ProjectAppPlugin(
             'access, used with projects allowing public guest access',
             'user_modifiable': False,
         },
+        'id_service_enable': {
+            'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT'],
+            'type': 'BOOLEAN',
+            'default': False,
+            'label': 'Enable ID service checks',
+            'description': 'Enable verifying IDs with an ID service API',
+            'user_modifiable': True,
+        },
+        'id_service_config': {
+            'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT'],
+            'type': 'JSON',
+            'label': 'ID check configuration',
+            'description': 'ID service authorization and API server'
+            'configuration',
+            'user_modifiable': True,
+        },
     }
 
     #: Iconify icon

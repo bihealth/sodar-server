@@ -1,0 +1,31 @@
+[flake8]
+max-line-length = 80
+<<<<<<< HEAD
+exclude = .tox,.git,*/migrations/*,*/static/CACHE/*,docs_manual,
+          node_modules,src/*,config/*,versioneer.py,env/*,.venv,_version.py
+=======
+exclude = .tox,.git,*/migrations/*,*/static/CACHE/*,docs_dev,docs_manual,
+          node_modules,src/*,config/*,versioneer.py,env/*,.venv,_version.py,
+          treuhandstelle-sdk-python/*
+>>>>>>> add ths proof-of-concept
+ignore = E203, E266, E501, W503, W504, C901
+max-complexity = 18
+select = B,C,E,F,W,T4,B9
+
+[pycodestyle]
+max-line-length = 80
+<<<<<<< HEAD
+exclude = .tox,.git,*/migrations/*,*/static/CACHE/*,docs_manual,
+          node_modules,src/*,config/*,versioneer.py,env/*
+=======
+exclude = .tox,.git,*/migrations/*,*/static/CACHE/*,docs_dev,docs_manual,
+          node_modules,src/*,config/*,versioneer.py,env/*,
+          treuhandstelle-sdk-python/*
+>>>>>>> add ths proof-of-concept
+
+[versioneer]
+VCS = git
+style = pep440
+versionfile_source = sodar/_version.py
+versionfile_build = sodar/_version.py
+tag_prefix = v
