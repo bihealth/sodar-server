@@ -28,6 +28,7 @@ from django.db import transaction
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
 
+from samplesheets.id_api import IDServiceAPI
 from samplesheets.models import (
     Investigation,
     Study,
@@ -90,6 +91,7 @@ class SampleSheetIO:
         :param warn: Handle warnings in import/export (bool)
         :param allow_critical: Allow critical warnings in import (bool)
         """
+        self.id_api = None
         self._warn = warn
         self._allow_critical = allow_critical
         self._warnings = self._init_warnings()
@@ -378,8 +380,7 @@ class SampleSheetIO:
             for v in contacts
         ]
 
-    @classmethod
-    def _import_materials(cls, materials, db_parent, obj_lookup):
+    def _import_materials(self, materials, db_parent, obj_lookup):
         """
         Create material objects in Django database.
 
@@ -388,7 +389,7 @@ class SampleSheetIO:
         :param obj_lookup: Dictionary for in-memory lookup
         """
         material_vals = []
-        study = cls._get_study(db_parent)
+        study = self._get_study(db_parent)
 
         # Fail if attempting to import an empty table
         if len(materials.values()) == 0:
@@ -401,12 +402,28 @@ class SampleSheetIO:
 
         for m in materials.values():
             item_type = MATERIAL_TYPE_MAP[m.type]
+            name = m.name.strip()
+
+            # Check ID with ID service API if enabled
+            if item_type == 'SOURCE' and self.id_api:
+                try:
+                    self.id_api.check_id(name)
+                except Exception as ex:
+                    logger.error(
+                        'Exception in check_id() for ID "{}": {}'.format(
+                            name, ex
+                        )
+                    )
+                    raise SampleSheetImportException(
+                        'ID check failed: {}'.format(name)
+                    )
+
             # Common values
             values = {
                 'item_type': item_type,
                 'material_type': m.type,
-                'extra_material_type': cls._import_multi_val(m.material_type),
-                'name': m.name.strip(),
+                'extra_material_type': self._import_multi_val(m.material_type),
+                'name': name,
                 'unique_name': m.unique_name,
                 'alt_names': get_alt_names(m.name),
                 'study': study,
@@ -416,16 +433,18 @@ class SampleSheetIO:
                 values['assay'] = db_parent
             # NOTE: Extract label stored as JSON since altamISA 0.1 update
             if m.extract_label:
-                values['extract_label'] = cls._import_multi_val(m.extract_label)
+                values['extract_label'] = self._import_multi_val(
+                    m.extract_label
+                )
             if m.characteristics:
-                values['characteristics'] = cls._import_ontology_vals(
+                values['characteristics'] = self._import_ontology_vals(
                     m.characteristics
                 )
             if m.factor_values:
-                values['factor_values'] = cls._import_ontology_vals(
+                values['factor_values'] = self._import_ontology_vals(
                     m.factor_values
                 )
-            values['comments'] = cls._import_comments(m.comments)
+            values['comments'] = self._import_comments(m.comments)
             material_vals.append(values)
 
         materials = GenericMaterial.objects.bulk_create(
@@ -549,6 +568,20 @@ class SampleSheetIO:
                 else ''
             )
         )
+
+        # Init Treuhandstelle
+        if app_settings.get_app_setting(APP_NAME, 'id_service_enable', project):
+            # TODO: Should actually get a backend plugin here
+            try:
+                self.id_api = IDServiceAPI(
+                    app_settings.get_app_setting(
+                        APP_NAME, 'id_service_config', project
+                    )
+                )
+            except Exception as ex:
+                raise SampleSheetImportException(
+                    'Exception in ID service API initialization: {}'.format(ex)
+                )
 
         input_name = isa_data['investigation']['path'].split('/')[-1]
         input_file = io.StringIO(isa_data['investigation']['tsv'])

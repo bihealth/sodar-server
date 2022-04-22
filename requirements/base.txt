@@ -104,3 +104,7 @@ pronto==2.4.4  # For OWL conversion
 # CUBI-TK for sheet templates
 # cython==0.29.30
 -e git+https://github.com/bihealth/cubi-tk.git@396431af970ba8bf51b1f7c4cf4335b061601e04#egg=cubi-tk
+
+# THS requirements
+# TODO: No pip install for THS
+# -e treuhandstelle-sdk-python
