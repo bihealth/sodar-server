@@ -22,6 +22,7 @@ from projectroles.views_ajax import SODARBaseProjectAjaxView
 # Irodsbackend dependency
 from irodsbackend.views import BaseIrodsAjaxView
 
+from samplesheets.id_api import IDServiceAPI
 from samplesheets.io import SampleSheetIO
 from samplesheets.models import (
     Investigation,
@@ -749,6 +750,29 @@ class SheetCellEditAjaxView(BaseSheetEditAjaxView):
         elif header_type == 'name':
             if len(cell['value']) == 0 and cell.get('item_type') != 'DATA':
                 self._raise_ex('Empty name not allowed for non-data node')
+            # Check ID if enabled
+            project = self.get_project()
+            if app_settings.get_app_setting(
+                APP_NAME, 'id_service_enable', project
+            ):
+                try:
+                    id_api = IDServiceAPI(
+                        app_settings.get_app_setting(
+                            APP_NAME, 'id_service_config', project
+                        )
+                    )
+                except Exception as ex:
+                    self._raise_ex(
+                        'Exception in ID service API initialization: {}'.format(
+                            ex
+                        )
+                    )
+                try:
+                    id_api.check_id(cell['value'])
+                except Exception as ex:
+                    self._raise_ex(
+                        'ID check failed for "{}": {}'.format(cell['value'], ex)
+                    )
             node_obj.name = cell['value']
             # TODO: Update unique name here if needed
             ok_msg = 'Edited node name: {}'.format(cell['value'])
