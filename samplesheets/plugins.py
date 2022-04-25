@@ -187,7 +187,7 @@ class ProjectAppPlugin(
             'scope': SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT'],
             'type': 'JSON',
             'label': 'ID check configuration',
-            'description': 'ID service authorization and API server'
+            'description': 'ID service authorization and API server '
             'configuration',
             'user_modifiable': True,
         },
