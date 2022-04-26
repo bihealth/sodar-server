@@ -43,7 +43,7 @@ The SODAR data workflow involves the following elements:
     projects under it.
 :ref:`Sample Sheets <app_samplesheets>`
     Sample sheets contain the sample, process and material metadata for project
-    studies. They are modeled in the `ISA Framework <https://isa-tools.org/>`_
+    studies. They are modeled in the `ISA Model <https://isa-tools.org/>`_
     standard as *investigations*, *studies* and *assays*. One SODAR project can
     contain one investigation with one or more studies.
 :ref:`Large Scale Data Storage <data_transfer_irods>`
