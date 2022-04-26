@@ -24,6 +24,13 @@ Fixed
     - Minor manual issues (#1386, #1387)
     - ``build-docker.sh`` failing with special characters in tag name (#1385)
 
+Removed
+-------
+
+- **General**
+    - Login page user domain autofill (#1409)
+    - Custom login template (#1409)
+
 
 v0.11.2 (2022-03-04)
 ====================
