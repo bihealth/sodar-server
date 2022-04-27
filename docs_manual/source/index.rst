@@ -124,6 +124,7 @@ Table of Contents
     :name: admin
 
     admin_overview
+    admin_install
     admin_user
     admin_ui
     admin_ontologyaccess

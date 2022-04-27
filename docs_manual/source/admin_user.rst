@@ -3,6 +3,15 @@
 Admin Users
 ^^^^^^^^^^^
 
+The following extra features are available for SODAR administrators:
+
+- Full access to all projects (Note: iRODS access must be separately granted)
+- Ability to create categories on the root level
+- Additional site-wide administrative applications
+- Access to Django admin UI
+- SODAR management commands (Note: shell access to SODAR server required)
+- SODAR site settings (Note: server deployment access required)
+
 SODAR admin users are expected to have the Django ``superuser`` status. To
 create a new superuser, you need to do it either in the SODAR server shell by
 Django management commands or in the Django admin web UI.
