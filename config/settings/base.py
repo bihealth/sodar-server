@@ -786,7 +786,6 @@ ONTOLOGYACCESS_QUERY_LIMIT = env.int('ONTOLOGYACCESS_QUERY_LIMIT', 250)
 
 # Settings for HTTP AuthBasic
 BASICAUTH_REALM = env.str(
-    'BASICAUTH_REALM',
-    'Login with user@CHARITE or user@MDC-BERLIN and your password.',
+    'BASICAUTH_REALM', 'Log in with your SODAR user name and password.'
 )
 BASICAUTH_DISABLE = env.bool('BASICAUTH_DISABLE', False)
