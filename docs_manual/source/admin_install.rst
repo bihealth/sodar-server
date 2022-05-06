@@ -260,3 +260,11 @@ self-signed certificates.
   NB: if you make your site reachable from the internet then you should be aware
   of the implications. SODAR is MIT licensed software which means that it comes
   "without any warranty of any kind". See the ``LICENSE`` file for details.
+
+General Remarks
+---------------
+
+When running the environment for the first time, it may take time for the system
+to start up due to e.g. iRODS installation. If you set up deployment with e.g.
+Ansible, it is recommended to add wait conditions and checks for the environment
+to be ready before proceeding with further tasks.
