@@ -17,7 +17,7 @@ urlpatterns = [
         name='list',
     ),
     url(
-        regex=r'^api/auth',
+        regex=r'^api/auth$',
         view=views.LocalAuthAPIView.as_view(),
         name='api_auth',
     ),

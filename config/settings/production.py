@@ -41,7 +41,7 @@ SESSION_COOKIE_HTTPONLY = True
 SECURE_SSL_REDIRECT = env.bool('DJANGO_SECURE_SSL_REDIRECT', default=True)
 SECURE_REDIRECT_EXEMPT = env.list(
     'DJANGO_SECURE_REDIRECT_EXEMPT',
-    default=['/taskflow/', '/irodsbackend/api/auth'],
+    default=['/taskflow/', r'^irodsbackend/api/auth$'],
 )
 CSRF_COOKIE_SECURE = True
 CSRF_COOKIE_HTTPONLY = True
