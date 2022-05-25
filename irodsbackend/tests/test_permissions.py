@@ -27,7 +27,7 @@ SHEET_NAME = 'i_small.zip'
 SHEET_PATH = SHEET_DIR + SHEET_NAME
 TEST_COLL_NAME = 'test_coll'
 TEST_FILE_NAME = 'test1'
-NON_PROJECT_PATH = '/omicsZone/projects'
+NON_PROJECT_PATH = '/sodarZone/projects'
 BACKENDS_ENABLED = all(
     _ in settings.ENABLED_BACKEND_PLUGINS for _ in ['omics_irods', 'taskflow']
 )

@@ -14,7 +14,7 @@ describe('IrodsStatsBadge.vue', () => {
     return {
       projectUuid: projectUuid,
       irodsStatus: true,
-      irodsPath: '/omicsZone/projects/00/00000000-0000-0000-0000-000000000000' +
+      irodsPath: '/sodarZone/projects/00/00000000-0000-0000-0000-000000000000' +
                  '/sample_data/study_11111111-1111-1111-1111-111111111111'
     }
   }

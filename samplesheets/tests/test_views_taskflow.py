@@ -97,7 +97,7 @@ class SampleSheetTaskflowMixin:
             'request': request,
         }
         if not request:
-            values['sodar_url'] = self.live_server_url
+            values['sodar_url'] = self.get_sodar_url()
         self.taskflow.submit(**values)
         investigation.refresh_from_db()
         self.assertEqual(investigation.irods_status, True)
@@ -169,9 +169,7 @@ class TestIrodsCollsCreateView(
         self.assertEqual(self.investigation.irods_status, False)
 
         # Issue POST request
-        values = {
-            'sodar_url': self.live_server_url
-        }  # HACK: Override callback URL
+        values = {'sodar_url': self.get_sodar_url()}
         with self.login(self.user):
             response = self.client.post(
                 reverse(
@@ -217,9 +215,7 @@ class TestIrodsCollsCreateView(
         )
 
         # Issue POST request
-        values = {
-            'sodar_url': self.live_server_url
-        }  # HACK: Override callback URL
+        values = {'sodar_url': self.get_sodar_url()}
         with self.login(self.user):
             response = self.client.post(
                 reverse(
@@ -286,7 +282,7 @@ class TestSampleSheetDeleteView(
         # Issue POST request
         values = {
             'delete_host_confirm': 'testserver',
-            'sodar_url': self.live_server_url,
+            'sodar_url': self.get_sodar_url(),
         }
         with self.login(self.user):
             response = self.client.post(
@@ -328,7 +324,7 @@ class TestSampleSheetDeleteView(
         # Issue POST request
         values = {
             'delete_host_confirm': 'testserver',
-            'sodar_url': self.live_server_url,
+            'sodar_url': self.get_sodar_url(),
         }
         with self.login(self.user):
             response = self.client.post(
@@ -379,7 +375,7 @@ class TestSampleSheetDeleteView(
         # Issue POST request
         values = {
             'delete_host_confirm': 'testserver',
-            'sodar_url': self.live_server_url,
+            'sodar_url': self.get_sodar_url(),
         }
         with self.login(user_contributor):
             response = self.client.post(
@@ -928,7 +924,7 @@ class TestIrodsRequestViewsBase(
         self.post_data = {'path': self.path, 'description': 'bla'}
 
     def tearDown(self):
-        self.irods_session.collections.get('/omicsZone/projects').remove(
+        self.irods_session.collections.get('/sodarZone/projects').remove(
             force=True
         )
 

@@ -36,7 +36,7 @@ serve: sync_taskflow
 else
 serve:
 endif
-	$(MANAGE) runserver --settings=config.settings.local
+	$(MANAGE) runserver 0.0.0.0:8000 --settings=config.settings.local
 
 
 .PHONY: celery

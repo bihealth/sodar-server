@@ -349,7 +349,6 @@ class TestLandingZoneSubmitMoveAPIView(TestLandingZoneAPITaskflowBase):
 
     def setUp(self):
         super().setUp()
-
         # Create zone
         self.landing_zone = self._make_landing_zone(
             title=ZONE_TITLE,
@@ -360,7 +359,6 @@ class TestLandingZoneSubmitMoveAPIView(TestLandingZoneAPITaskflowBase):
             configuration=None,
             config_data={},
         )
-
         # Create zone in taskflow
         self._make_zone_taskflow(self.landing_zone)
 

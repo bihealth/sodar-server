@@ -78,7 +78,7 @@ class TestIrodsConfigView(TestIrodsinfoViewBase):
             'attachment; filename={}'.format('irods_config.zip'),
         )
         zip_file = zipfile.ZipFile(io.BytesIO(response.content))
-        self.assertEqual(len(zip_file.infolist()), 1)
+        self.assertNotEqual(len(zip_file.infolist()), 0)
         env_data = json.loads(
             zip_file.read(zip_file.infolist()[0]).decode('utf8')
         )
@@ -96,7 +96,7 @@ class TestIrodsConfigView(TestIrodsinfoViewBase):
             'attachment; filename={}'.format('irods_config.zip'),
         )
         zip_file = zipfile.ZipFile(io.BytesIO(response.content))
-        self.assertEqual(len(zip_file.infolist()), 1)
+        self.assertNotEqual(len(zip_file.infolist()), 0)
         env_data = json.loads(
             zip_file.read(zip_file.infolist()[0]).decode('utf8')
         )

@@ -18,7 +18,7 @@ describe('IrodsButtons.vue', () => {
       irodsBackendEnabled: true,
       irodsStatus: true,
       irodsWebdavUrl: 'http://davrods.local',
-      irodsPath: '/omicsZone/projects/11/' + studyUuid,
+      irodsPath: '/sodarZone/projects/11/' + studyUuid,
       showFileList: false,
       modalComponent: null,
       enabled: null,
@@ -130,7 +130,7 @@ describe('IrodsButtons.vue', () => {
   it('renders extra links', () => {
     propsData.showFileList = true
     propsData.extraLinks = [{
-      url: 'https://ticket:xzy123@0.0.0.0/omicsZone/projects/00/' +
+      url: 'https://ticket:xzy123@0.0.0.0/sodarZone/projects/00/' +
            '00000000-0000-0000-0000-000000000000/sample_data/' +
            'study_11111111-1111-1111-1111-111111111111/' +
            'assay_22222222-2222-2222-2222-222222222222/TrackHubs/track1',
