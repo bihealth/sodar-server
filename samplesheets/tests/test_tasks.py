@@ -164,11 +164,8 @@ class TestSheetRemoteSyncTask(TestSheetRemoteSyncBase):
         self.p_id_source = 'p{}'.format(self.project_source.pk)
         self.p_id_target = 'p{}'.format(self.project_target.pk)
 
-    # TODO: Fix (see issue #1419)
-    '''
     def test_sync_task(self):
         """Test sync"""
-        self.maxDiff = None
         sheet_sync_task()
 
         self.assertEqual(self.project_source.investigations.count(), 1)
@@ -200,7 +197,6 @@ class TestSheetRemoteSyncTask(TestSheetRemoteSyncBase):
             investigation_uuid=self.inv_source.sodar_uuid
         ).data
         self.assertEqual(data_target, data_source)
-    '''
 
     def test_sync_existing_source_newer(self):
         """Test sync with existing sheet and changes in source sheet"""

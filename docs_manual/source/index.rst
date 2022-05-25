@@ -133,6 +133,14 @@ Table of Contents
 
 .. toctree::
     :maxdepth: 1
+    :caption: SODAR Development
+    :name: dev
+
+    dev_overview
+    dev_install
+
+.. toctree::
+    :maxdepth: 1
     :caption: SODAR History
     :name: sodar_history
 
