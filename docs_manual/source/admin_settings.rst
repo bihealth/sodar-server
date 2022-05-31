@@ -1,7 +1,7 @@
 .. _admin_settings:
 
-Site Settings
-^^^^^^^^^^^^^
+SODAR Settings
+^^^^^^^^^^^^^^
 
 SODAR contains a number of site-wide backend settings, which greatly affect the
 provided features and user experience. The settings are provided to the server
@@ -18,6 +18,11 @@ deployment framework.
     navigate to the
     `Site Info <https://sodar-core.readthedocs.io/en/latest/app_siteinfo.html#usage>`_
     admin application and select the :guilabel:`Settings` tab.
+
+.. note::
+
+    In ``sodar-docker-compose`` environments, internal SODAR settings may be
+    prefixed as ``SODAR_*``.
 
 
 SODAR Core Settings

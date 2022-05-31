@@ -7,9 +7,9 @@ This section guides you through installing and running SODAR for local
 development.
 
 Unlike :ref:`installation for evaluation or deployment <admin_install>`, you
-will need to install and run the SODAR web server and related first party
-components locally on your development workstation. Third party services such as
-iRODS and database servers can still be run in a Docker Compose network.
+will need to run the SODAR Django server and related components locally on your
+development workstation. Third party services such as iRODS and database servers
+can still be run in a Docker Compose network.
 
 
 Prerequisites
@@ -17,36 +17,152 @@ Prerequisites
 
 System requirements for SODAR development are as follows:
 
-- Ubuntu 20.04 Focal
-    - Recommended: other distributions and versions may work but are not
+- Ubuntu 20.04
+    - Other Ubuntu versions and Linux distributions may work but are not
       supported. The instructions in this section assume the use of Ubuntu
       20.04.
 - Python 3.8, 3.9 or 3.10
     - 3.8 recommended.
+- `Docker <https://docs.docker.com/get-docker/>`_
+- `Docker Compose <https://docs.docker.com/compose/install/>`_
+- `OpenSSL <https://www.openssl.org/>`_
 
 
-Install SODAR
-=============
+SODAR Docker Compose Setup
+==========================
 
-Set Up the Repository
+In addition to the ``sodar-server`` repository, the following components are
+required for SODAR development:
+
+- PostgreSQL
+- Redis
+- Main iRODS server
+- Test iRODS server
+- SODAR Taskflow
+
+The recommended method to set up the environment required for development is
+cloning the
+`sodar-docker-compose <https://github.com/bihealth/sodar-docker-compose>`_
+repository and running it in development mode.
+
+The environment is the same used for evaluation and deployment as described
+in the :ref:`administration section <admin_install>`. In this case, we will use
+it to only provide the aforementioned services in a Docker Compose network. The
+Django server, Vue.js app and Celery workers will be run locally for development
+and debugging.
+
+.. note::
+
+    You can also run these components outside of the Docker Compose network if
+    needed. In this case, you will need to modify the related server addresses
+    and ports in SODAR configurations, as well as initialize the required
+    services and databases manually.
+
+1. Clone the Repository
+-----------------------
+
+Clone the ``sodar-docker-compose`` repository. It is recommended to clone it
+into a specific directory so you can still easily run the evaluation version of
+the environment in a separate Docker Compose network if needed.
+
+.. code-block:: bash
+
+    $ git clone https://github.com/bihealth/sodar-docker-compose.git sodar-docker-compose-dev
+    $ cd sodar-docker-compose-dev
+
+2. Initialize Volumes
 ---------------------
 
-First, clone the ``sodar-server`` repository and install the OS dependencies
-along with Python. Make sure to checkout the ``dev`` branch, as that is the
-bleeding edge branch used as a base for development.
+Use the provided ``init.sh`` script to create required configuration and volume
+directories.
 
-.. code-block:: console
+.. code-block:: bash
+
+    $ ./init.sh
+
+3. Provide Certificate and DH Parameters
+----------------------------------------
+
+Similar to evaluating SODAR, you will need to provide self-signed TLS/SSL
+certificates and Diffie-Hellman key exchange parameters to enable full SODAR
+functionality.
+
+For instructions on how to generate certificates with OpenSSL in Ubuntu, see
+`here <https://ubuntu.com/server/docs/security-certificates>`_. If using a
+different Linux distribution, consult the relevant documentation.
+
+Once generated, ensure your ``.crt`` and ``.key`` files are placed under the
+``config/traefik/tls`` directory.
+
+.. code-block:: bash
+
+    $ cp yourcert.crt config/traefik/tls/server.crt
+    $ cp yourcert.key config/traefik/tls/server.key
+
+To generate the ``dhparams.pem`` file for Diffie-Hellman key exchange, you can
+use OpenSSL as demonstrated below. Ensure the file is placed under
+``config/irods/etc``.
+
+.. code-block:: bash
+
+    $ openssl dhparam -2 -out config/irods/etc/dhparams.pem 2048
+
+4. Configure the Environment
+----------------------------
+
+Copy the file ``env.example.dev`` into ``.env`` to use the default
+``sodar-docker-compose`` configuration for development.
+
+.. code-block:: bash
+
+    $ cp env.example.dev .env
+
+In the case of the development setup, this environment only includes variables
+available to the external SODAR components. The ``sodar-server`` settings will
+be set up in a local ``.env`` file we will describe further on in this document.
+
+5. Bring up the Environment
+---------------------------
+
+To run the environment in the development configuration, use the following
+helper script:
+
+.. code-block:: bash
+
+    $ ./run_dev.sh
+
+You will see a real-time output of the environment. To shut down the network,
+press ``Ctrl-C``.
+
+
+SODAR Server Setup
+==================
+
+With the required external components running in Docker, you can set up and run
+the SODAR Django server and other local components.
+
+1. Set Up the Repository
+------------------------
+
+First, clone the ``sodar-server`` repository and install the OS dependencies
+along with Python. Make sure to check out the ``dev`` branch, as it is used as
+the base for all development.
+
+.. code-block:: bash
 
     $ git clone https://github.com/bihealth/sodar-server.git
-    $ cd sodar
+    $ cd sodar-server
     $ git checkout dev
     $ sudo utility/install_os_dependencies.sh
     $ sudo utility/install_python.sh
 
-Next, setup and activate a virtual environment. Once in the environment, install
-the Python dependencies for the project:
+2. Install Python Dependencies
+------------------------------
 
-.. code-block:: console
+Next, create and activate a virtual environment. Once in the environment,
+install the Python dependencies for the project:
+
+.. code-block:: bash
 
     $ python3 -m venv .venv
     $ source .venv/bin/activate
@@ -55,87 +171,26 @@ the Python dependencies for the project:
 It is also possible to use other virtual environments such as pipenv or conda,
 but those are not supported.
 
-Set Up External Components
---------------------------
+3. Copy the Environment File
+----------------------------
 
-In addition to this ``sodar-server`` repository, the following components are
-required for SODAR development:
+Next, copy the supplied ``env.example`` file into ``.env``. This contains the
+settings for running the SODAR server with the default development
+configuration.
 
-- SODAR Taskflow
-    - To be removed in SODAR v0.12.0.
-- PostgreSQL v9.6+
-    - v11 recommended.
-- Redis
-- Main iRODS server
-    - Persistent storage for development.
-- Test iRODS server
-    - Only used in testing, storage wiped out after each test run.
+.. code-block:: bash
 
-**TODO:** Describe running setup with sodar-docker-compose: requires new Docker
-Compose file and must be tested first.
-
-- Set up port forwarding in dev compose file
-    * TBD: Forward non-default ports to avoid conflicts?
-- Update all env vars in docker compose env and SODAR env.example
-- Test!
-
-**TODO:** Mention it is also possible to run these locally if needed.
-
-**TODO:** Describe setting up ``.env`` file for SODAR and updating these values
-accordingly (provide an example?)
+    $ cp env.example .env
 
 To ensure the file gets read by Django, ensure ``DJANGO_READ_DOT_ENV_FILE=1`` is
 set in your environment variables.
 
-Database Setup (Optional)
--------------------------
+4. Install the Vue.js Application
+---------------------------------
 
-If you set up PostgreSQL using the SODAR Docker Compose network, you can skip
-this step.
-
-If manually running a PostgreSQL server instead, you will need to create a user
-and a database for the SODAR server. In the example, we use ``sodar`` for the
-database, user name and password. Make sure to give the user the permission to
-create further PostgreSQL databases, which will be used for testing.
-
-Alternatively, you can use the ``utility/setup_database.sh`` script and follow
-the command line prompt.
-
-.. code-block:: console
-
-    $ sudo su - postgres
-    $ psql
-    $ CREATE DATABASE sodar;
-    $ CREATE USER sodar WITH PASSWORD 'sodar';
-    $ GRANT ALL PRIVILEGES ON DATABASE sodar to sodar;
-    $ ALTER USER sodar CREATEDB;
-    $ \q
-
-You have to add the credentials in the environment variable ``DATABASE_URL``.
-
-Example in .env file:
-
-.. code-block:: bash
-
-    DATABASE_URL=postgres://sodar:sodar@127.0.0.1/sodar
-
-LDAP Setup (Optional)
----------------------
-
-If you will be using LDAP/AD auth on your site, make sure to also run:
-
-.. code-block:: bash
-
-    $ sudo utility/install_ldap_dependencies.sh
-    $ pip install -r requirements/ldap.txt
-
-**TODO:** Update
-
-Sample Sheets Vue.js App Installation
--------------------------------------
-
-You need to install the Vue.js app prerequisites with NPM. First install the
-prerequisites using the following command:
+To enable the Sample Sheets Vue.js app in development, you need to install its
+prerequisites using NPM. First install the NPM dependencies using the following
+command:
 
 .. code-block:: bash
 
@@ -148,93 +203,88 @@ Once NPM has been set up, install the app requirements:
     $ cd samplesheets/vueapp
     $ npm install
 
-Final Setup
------------
-
-Initialize the database (this will also synchronize django-plugins):
-
-.. code-block:: bash
-
-    $ ./manage.py migrate
-
-Create a Django superuser for the SODAR site:
-
-.. code-block:: bash
-
-    $ ./manage.py createsuperuser
-
-
-Prerequisites / Docker Environment
-----------------------------------
-
-The easiest way to get the dependencies up is to clone and run the SODAR docker
-environment in
-`sodar-docker-env <https://github.com/bihealth/sodar-docker-env>`_.
-
-If you want to set up an iRODS server locally, you must have ``MD5`` set as the
-default hash scheme in ``server_config.json``. In the Docker environment setup
-CUBI Ansible playbooks this is already pre-configured.
-
-SODAR Taskflow
+5. Final Setup
 --------------
 
-For development it is recommend to run sodar_taskflow locally.
+The SODAR database needs to be initialized and migrated to run the server
+locally. This will also synchronize the app plugins for the server.
 
-First, clone the `Sodar Taskflow <https://github.com/bihealth/sodar-taskflow>`_
-repository.
+.. code-block:: bash
 
-Follow the installation instructions in the ``README.rst`` file. Make sure to
-configure environment variables to point to the Redis and iRODS servers you are
-using.
+    $ cd sodar-server
+    $ ./manage.py migrate
 
-Configure SODAR Components
---------------------------
+Next, run commands to retrieve the Iconify icons and collect static files.
 
-In the SODAR environment variables (preferably in the ``.env`` file), set up
-iRODS and Taskflow variables to point to your server. The default values in
-``config/settings/base.py`` point to the sodar-docker-env and sodar-taskflow
-defaults. If using the Docker environment and local Taskflow service, no changes
-should thus be required.
+.. code-block:: bash
 
-Similar configuration also needs to be done to SODAR Taskflow, see instructions
-in its respective project repository.
+    $ ./manage.py geticons
+    $ ./manage.py collectstatic
+
+Finally, you should create a Django superuser for the SODAR site. Use the user
+name ``admin`` if you do not wish to edit your configuration files. Run the
+following command and follow the command line prompt.
+
+.. code-block:: bash
+
+    $ ./manage.py createsuperuser --skip-checks --username admin
+
+LDAP Setup (Optional)
+---------------------
+
+If you will be developing features using LDAP/AD authentication, make sure to
+also run:
+
+.. code-block:: bash
+
+    $ sudo utility/install_ldap_dependencies.sh
+    $ pip install -r requirements/ldap.txt
+
+Furthermore, update your LDAP settings in the ``.env`` file.
 
 
-Run the Components
-==================
+Run SODAR for Development
+=========================
 
-For best results, start the required components in the order presented here.
+With both the Docker environment and the SODAR server set up, you can now run
+all the component to have a local SODAR environment for development. It is
+recommended to run the components in the order presented here.
 
-1. SODAR Docker Environment
----------------------------
+.. note::
 
-Make sure Redis and iRODS iCAT server(s) are running. If you have set up and
-launched the sodar_docker_env environment, they all should be available as
-Docker containers.
+    This will require running multiple services which remain active in their
+    respective terminals. Thus multiple terminal tabs or windows will be
+    required.
 
-Run the ``sodar-docker-env`` Docker environment as follows:
+1. SODAR Docker Compose
+-----------------------
 
-.. code-block:: console
+During first time setup, you should also have the environment running at this
+point. If not, run it with the following commands:
 
-    $ utility/env_restart.sh
+.. code-block:: bash
 
-**NOTE:** It can take a bit of time for the iRODS server to initialize.
+    $ cd sodar-docker-compose-dev
+    $ ./run_dev.sh
 
-2. SODAR Taskflow
------------------
+2. SODAR Django Server
+----------------------
 
-In the ``sodar-taskflow`` repository, start the SODAR Taskflow service:
+In a separate terminal tab, run the SODAR Django server. Make sure to activate
+your virtual environment.
 
-.. code-block:: console
+.. code-block:: bash
 
-    $ utility/run_dev.sh
+    $ cd sodar-server
+    $ source .venv/bin/activate
+    $ make serve
 
 3. Sample Sheets Vue App
 ------------------------
 
-The Sample Sheets Vue app must be run in a separate process using NPM. The
-easiest way is to use the shortcut script in the SODAR project, which will
-serve the development version with hot reload in ``http://127.0.0.1:8080``.
+Open a new terminal tab and run the Sample Sheets Vue.js app with the following
+command. This will serve the development version with hot reloading in
+``http://127.0.0.1:8080``.
 
 .. code-block::
 
@@ -243,40 +293,24 @@ serve the development version with hot reload in ``http://127.0.0.1:8080``.
 4. SODAR Celery Processes
 -------------------------
 
-For asynchronous tasks, run the SODAR celery process in debug mode using the
-following command:
+For asynchronous tasks, run the SODAR celery process in debug mode. First, open
+a new terminal tab, make sure to activate your virtual environment and run
+Celery with Celerybeat using the following command:
 
-.. code-block:: console
+.. code-block:: bash
 
+    $ source .venv/bin/activate
     $ make celery
 
-Note that the Celery process needs to access correct Django settings. Make sure
-the variable ``DJANGO_READ_DOT_ENV=1`` is set in your environment when running
-this process! This will also start the Celery beat scheduler.
+.. note::
 
-5. SODAR Django Site
---------------------
+    The Celery process needs to access correct Django settings. Make sure the
+    variable ``DJANGO_READ_DOT_ENV_FILE=1`` is set in your environment when
+    running this process.
 
-Finally, we can start up the actual SODAR Django Site. In the SODAR root
-directory, start the site in debug mode with ``local`` settings.
+Navigate to SODAR
+-----------------
 
-.. code-block:: console
-
-    $ make serve
-
-**NOTE:** If existing data on your development iRODS server has been wiped out
-due to e.g. rebooting the Docker environment project metadata and collections
-(but not data objects) can be synced with the following command:
-
-.. code-block:: console
-
-    $ ./manage.py synctaskflow
-
-There is also a shortcut for syncing iRODS data and starting the server:
-
-.. code-block:: console
-
-    $ make serve arg=sync
-
-Now you should be able to browse to http://127.0.0.1:8000 and see your site.
-iRODS and Taskflow functionalities should also be available.
+Now you should have all the required components running for developing SODAR.
+Use your web browser to open http://127.0.0.1:8000 and you should see your local
+SODAR development site.

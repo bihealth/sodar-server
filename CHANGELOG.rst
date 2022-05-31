@@ -19,6 +19,7 @@ Changed
     - Default ``BASICAUTH_REALM`` message (#1410)
     - Add ``LocalAuthAPIView`` URL to ``SECURE_REDIRECT_EXEMPT`` (#1411)
     - Rename default iRODS zone into ``sodarZone`` (#1417)
+    - Manual updates (#1386, #1387, #1408)
 
 Fixed
 -----

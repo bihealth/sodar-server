@@ -104,6 +104,10 @@ required. SODAR Docker Compose uses `Traefik <https://traefik.io/>`_ as a
 reverse proxy for the web-based SODAR services. iRODS must also be able to
 access certificate files directly.
 
+For instructions on how to generate certificates with OpenSSL in Ubuntu, see
+`here <https://ubuntu.com/server/docs/security-certificates>`_. If using a
+different Linux distribution, consult the relevant documentation.
+
 Place your certificates under ``config/traefik/tls/`` as ``server.crt`` and
 ``server.key``. If you need to use different filenames or path, make sure to
 edit the ``.env`` and ensure Traefik, iRODS and Davrods can all access the
@@ -116,8 +120,7 @@ certificates can be used for evaluation and testing.
     $ cp yourcert.key config/traefik/tls/server.key
 
 iRODS also excepts a ``dhparams.pem`` file for Diffie-Hellman key exchange. You
-can generate the file using OpenSSL as demonstrated below. This will take some
-time.
+can generate the file using OpenSSL as demonstrated below.
 
 .. code-block:: bash
 
@@ -128,6 +131,10 @@ time.
 
 Copy the included ``env.example`` file into a new file called ``.env`` and
 adjust the default settings if needed.
+
+.. code-block:: bash
+
+    $ cp env.example .env
 
 See :ref:`admin_settings` for detailed descriptions of SODAR web server
 settings. Note that in the Docker Compose environment, settings specific to the
@@ -150,14 +157,19 @@ following command:
 
 .. code-block:: bash
 
+    $ ./run.sh
+
+If you have the need to modify the default configuration, you can alternatively
+launch the network with the ``docker-compose up`` command with appropriate
+parameters:
+
+.. code-block:: bash
+
     $ docker-compose -f docker-compose.yml \
         -f docker-compose.override.yml.irods \
         -f docker-compose.override.yml.davrods \
         -f docker-compose.override.yml.provided-cert \
         up
-
-The aforementioned command is also included in the repository as the ``run.sh``
-helper script.
 
 As the main entrypoint to the system, this will run the SODAR web server which
 listens on ports 80 and 443. Make sure that these ports are open. The console
@@ -188,7 +200,7 @@ features. For more information, see :ref:`admin_install_advanced_config`.
 ---------------------------
 
 To gain access to the SODAR web UI, you must first create a superuser account.
-The user name should be given as ``root``, otherwise you will need to edit the
+The user name should be given as ``admin``, otherwise you will need to edit the
 ``.env`` file. Open a new terminal tab, enter the following and follow the
 prompt:
 
@@ -196,7 +208,7 @@ prompt:
 
     $ docker exec -it sodar-docker-compose_sodar-web_1 \
         python /usr/src/app/manage.py createsuperuser \
-        --skip-checks --username root
+        --skip-checks --username admin
 
 7. Use SODAR
 ------------
