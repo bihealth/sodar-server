@@ -151,7 +151,7 @@ class TestInactiveZones(TestCommandBase):
         )
 
     def tearDown(self):
-        self.irods_session.collections.get('/omicsZone/projects').remove(
+        self.irods_session.collections.get('/sodarZone/projects').remove(
             force=True
         )
 

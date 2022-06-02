@@ -128,7 +128,7 @@ class TestTriggerZoneMoveTask(
         # Create file and fake request
         self._make_object(self.zone_coll, settings.LANDINGZONES_TRIGGER_FILE)
         request = self.req_factory.post(
-            '/', data={'sodar_url': self.live_server_url}
+            '/', data={'sodar_url': self.get_sodar_url()}
         )
         request.user = self.user
 

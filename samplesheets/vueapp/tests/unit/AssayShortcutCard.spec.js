@@ -53,7 +53,7 @@ describe('AssayShortcutCard.vue', () => {
     propsData.assayShortcuts.push({
       id: 'plugin_shortcut',
       label: 'Plugin Shortcut',
-      path: '/omicsZone/projects/00/00000000-0000-0000-0000-000000000000/' +
+      path: '/sodarZone/projects/00/00000000-0000-0000-0000-000000000000/' +
             'sample_data/study_11111111-1111-1111-1111-111111111111/' +
             'assay_22222222-2222-2222-2222-222222222222/PluginShortcut',
       icon: 'mdi:puzzle',

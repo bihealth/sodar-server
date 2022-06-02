@@ -28,13 +28,13 @@
       "files": [
         {
           "label": "A001-N1-DNA1-WGS1",
-          "url": "http://davrods.local/omicsZone/projects/00/00000000-0000-0000-0000-000000000000/sample_data/study_11111111-1111-1111-1111-111111111111/assay_22222222-2222-2222-2222-222222222222/A001-N1-DNA1-WGS1/test1.bam",
+          "url": "http://davrods.local/sodarZone/projects/00/00000000-0000-0000-0000-000000000000/sample_data/study_11111111-1111-1111-1111-111111111111/assay_22222222-2222-2222-2222-222222222222/A001-N1-DNA1-WGS1/test1.bam",
           "title": "Download BAM file",
           "extra_links": [
             {
               "label": "Add BAM file to IGV",
               "icon": "plus",
-              "url": "http://127.0.0.1:60151/load?merge=true&file=http://davrods.local/omicsZone/projects/00/00000000-0000-0000-0000-000000000000/sample_data/study_11111111-1111-1111-1111-111111111111/assay_22222222-2222-2222-2222-222222222222/A001-N1-DNA1-WGS1/test1.bam"
+              "url": "http://127.0.0.1:60151/load?merge=true&file=http://davrods.local/sodarZone/projects/00/00000000-0000-0000-0000-000000000000/sample_data/study_11111111-1111-1111-1111-111111111111/assay_22222222-2222-2222-2222-222222222222/A001-N1-DNA1-WGS1/test1.bam"
             }
           ]
         }
@@ -45,13 +45,13 @@
       "files": [
         {
           "label": "A001-N1-DNA1-WGS1",
-          "url": "http://davrods.local/omicsZone/projects/00/00000000-0000-0000-0000-000000000000/sample_data/study_11111111-1111-1111-1111-111111111111/assay_22222222-2222-2222-2222-222222222222/A001-N1-DNA1-WGS1/test1.vcf.gz",
+          "url": "http://davrods.local/sodarZone/projects/00/00000000-0000-0000-0000-000000000000/sample_data/study_11111111-1111-1111-1111-111111111111/assay_22222222-2222-2222-2222-222222222222/A001-N1-DNA1-WGS1/test1.vcf.gz",
           "title": "Download VCF file",
           "extra_links": [
             {
               "label": "Add VCF file to IGV",
               "icon": "plus",
-              "url": "http://127.0.0.1:60151/load?merge=true&file=http://davrods.local/omicsZone/projects/00/00000000-0000-0000-0000-000000000000/sample_data/study_11111111-1111-1111-1111-111111111111/assay_22222222-2222-2222-2222-222222222222/A001-N1-DNA1-WGS1/test1.vcf.gz"
+              "url": "http://127.0.0.1:60151/load?merge=true&file=http://davrods.local/sodarZone/projects/00/00000000-0000-0000-0000-000000000000/sample_data/study_11111111-1111-1111-1111-111111111111/assay_22222222-2222-2222-2222-222222222222/A001-N1-DNA1-WGS1/test1.vcf.gz"
             }
           ]
         }
