@@ -205,3 +205,30 @@ Ontology Access Settings
     Bulk term creation limit for ontology import (integer).
 ``ONTOLOGYACCESS_QUERY_LIMIT``
     Term query limit (integer).
+
+
+SODAR Docker Compose Settings
+=============================
+
+Settings specific to the
+`sodar-docker-compose <https://github.com/bihealth/sodar-docker-compose>`_
+repository are described here.
+
+``SODAR_SERVER_VERSION``
+    Version of the SODAR server. Should be the latest release tag (e.g.
+    ``0.11.3-0``) or the latest development version ``dev-0``. For production it
+    is strongly recommended to use the latest tagged release.
+``SODAR_TASKFLOW_VERSION``
+    Version of SODAR Taskflow to be used. This will be removed in SODAR v0.12.0.
+``IRODS_VERSION``
+    Version of the CUBI
+    `irods-docker <https://github.com/bihealth/irods-docker>`_ image to use.
+    Corresponds to the iRODS package version, e.g. ``4.2.11-1``.
+``SSSD_VERSION``
+    SSSD version if using LDAP logins.
+``IRODS_SSSD_AUTH``
+    Enable SSSD-based logins for iRODS.
+``IRODS_SODAR_AUTH``
+    Enable PAM logins via the SODAR server for iRODS.
+``IRODS_SODAR_API_HOST``
+    SODAR server host for iRODS in case the previous setting is set true.
