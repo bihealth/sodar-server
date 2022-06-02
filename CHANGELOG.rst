@@ -27,6 +27,8 @@ Fixed
 
 - **General**
     - ``build-docker.sh`` failing with special characters in tag name (#1385)
+- **Irodsinfo**
+    - Info page title (#1416)
 - **Samplesheets**
     - Unset study protocol export ordering (#1419)
 
