@@ -14,17 +14,21 @@ Changed
 -------
 
 - **General**
-    - Upgrade to django-sodar-core v0.10.12 (#1391, #1406)
+    - Upgrade to django-sodar-core v0.10.13-WIP (#1391, #1406, #1418)
     - Upgrade to black v22.3.0 (sodar_core#972)
     - Default ``BASICAUTH_REALM`` message (#1410)
     - Add ``LocalAuthAPIView`` URL to ``SECURE_REDIRECT_EXEMPT`` (#1411)
+    - Rename default iRODS zone into ``sodarZone`` (#1417)
+    - Manual updates (#1386, #1387, #1408)
+    - Combine development documentation into manual (#1345)
 
 Fixed
 -----
 
 - **General**
-    - Minor manual issues (#1386, #1387)
     - ``build-docker.sh`` failing with special characters in tag name (#1385)
+- **Samplesheets**
+    - Unset study protocol export ordering (#1419)
 
 Removed
 -------
@@ -32,6 +36,7 @@ Removed
 - **General**
     - Login page user domain autofill (#1409)
     - Custom login template (#1409)
+    - Separate development documentation (#1345)
 
 
 v0.11.2 (2022-03-04)
