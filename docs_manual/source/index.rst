@@ -138,6 +138,9 @@ Table of Contents
 
     dev_overview
     dev_install
+    dev_issues
+    dev_guide
+    dev_apps
 
 .. toctree::
     :maxdepth: 1

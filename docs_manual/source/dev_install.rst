@@ -141,7 +141,7 @@ SODAR Server Setup
 With the required external components running in Docker, you can set up and run
 the SODAR Django server and other local components.
 
-1. Set Up the Repository
+1. Set up the Repository
 ------------------------
 
 First, clone the ``sodar-server`` repository and install the OS dependencies

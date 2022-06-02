@@ -20,6 +20,7 @@ Changed
     - Add ``LocalAuthAPIView`` URL to ``SECURE_REDIRECT_EXEMPT`` (#1411)
     - Rename default iRODS zone into ``sodarZone`` (#1417)
     - Manual updates (#1386, #1387, #1408)
+    - Combine development documentation into manual (#1345)
 
 Fixed
 -----
@@ -35,6 +36,7 @@ Removed
 - **General**
     - Login page user domain autofill (#1409)
     - Custom login template (#1409)
+    - Separate development documentation (#1345)
 
 
 v0.11.2 (2022-03-04)
