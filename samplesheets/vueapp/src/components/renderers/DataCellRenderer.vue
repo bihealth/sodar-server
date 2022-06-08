@@ -14,8 +14,7 @@
         <b-button
             class="btn sodar-list-btn mr-1 sodar-ss-hpo-copy-btn"
             title="Copy HPO term IDs to clipboard"
-            @click="onCopyHpoTerms"
-            v-b-tooltip.hover.d300>
+            @click="onCopyHpoTerms">
           <i class="iconify" data-icon="mdi:clipboard-text-multiple"></i>
         </b-button>
       </span>
@@ -23,7 +22,6 @@
         <span v-if="!params.app.editMode">
           <a :href="term.accession"
              :title="term.ontology_name"
-             v-b-tooltip.hover.d300
              target="_blank">{{ term.name }}</a><span v-if="termIndex + 1 < value.value.length">; </span>
         </span>
         <span v-else>
@@ -40,7 +38,6 @@
       <span v-for="(idRef, index) in renderData.extIds"
             class="badge-group"
             :key="index"
-            v-b-tooltip.hover.d300
             :title="idRef.key">
         <span class="badge badge-secondary">ID</span><span class="badge badge-info">{{ idRef.id }}</span>
       </span>
@@ -50,7 +47,6 @@
       <span v-if="renderData.url">
         <a :href="renderData.url"
            :title="getTooltip()"
-           v-b-tooltip.hover.d300
            target="_blank">{{ renderData.value }}</a>
       </span>
       <span v-else :class="getEmptyFileClass()">

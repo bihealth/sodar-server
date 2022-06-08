@@ -8,8 +8,7 @@
          :class="getClasses()"
          :title="schemaItem.title"
          :disabled="getEnabledState(schemaId)"
-         :href="value[schemaId].url"
-         v-b-tooltip.hover.d300>
+         :href="value[schemaId].url">
        <i class="iconify" :data-icon="schemaItem.icon"></i>
      </b-button>
      <b-button
@@ -18,8 +17,7 @@
          :class="getClasses() + ' sodar-ss-popup-list-btn'"
          :title="schemaItem.title"
          :disabled="getEnabledState(schemaId)"
-         @click="onModalClick(schemaId)"
-         v-b-tooltip.hover.d300>
+         @click="onModalClick(schemaId)">
        <i class="iconify" :data-icon="schemaItem.icon"></i>
      </b-button>
    </span>

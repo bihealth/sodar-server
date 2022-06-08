@@ -21,6 +21,8 @@ Changed
     - Rename default iRODS zone into ``sodarZone`` (#1417)
     - Manual updates (#1386, #1387, #1408)
     - Combine development documentation into manual (#1345)
+- **Samplesheets**
+    - Update Vue app browserslist (#1424)
 
 Fixed
 -----
@@ -31,6 +33,7 @@ Fixed
     - Info page title (#1416)
 - **Samplesheets**
     - Unset study protocol export ordering (#1419)
+    - Bootstrap tooltip issues in sheet tables (#1415)
 
 Removed
 -------
