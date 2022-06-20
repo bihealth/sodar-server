@@ -1,14 +1,14 @@
 SODAR
 =====
 
-.. image:: https://github.com/bihealth/sodar-server/workflows/build/badge.svg
-    :target: https://github.com/bihealth/sodar-server/actions?query=workflow%3Abuild
+.. image:: https://github.com/bihealth/sodar-server/actions/workflows/build.yml/badge.svg
+    :target: https://github.com/bihealth/sodar-server/actions/workflows/build.yml
 
-.. image:: https://app.codacy.com/project/badge/Grade/ef513382baa845b9a0fecfe182e3ad2f
-    :target: https://www.codacy.com/gh/bihealth/sodar-server/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=bihealth/sodar-server&amp;utm_campaign=Badge_Grade
+.. image:: https://app.codacy.com/project/badge/Grade/061ef313e0b64bebb46549d6deac0317
+    :target: https://www.codacy.com/gh/bihealth/sodar-server/dashboard
 
-.. image:: https://app.codacy.com/project/badge/Coverage/ef513382baa845b9a0fecfe182e3ad2f
-    :target: https://www.codacy.com/gh/bihealth/sodar-server/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=bihealth/sodar-server&amp;utm_campaign=Badge_Coverage
+.. image:: https://app.codacy.com/project/badge/Coverage/061ef313e0b64bebb46549d6deac0317
+    :target: https://www.codacy.com/gh/bihealth/sodar-server/dashboard
 
 .. image:: https://img.shields.io/badge/License-MIT-green.svg
     :target: https://opensource.org/licenses/MIT

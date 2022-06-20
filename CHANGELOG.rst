@@ -21,6 +21,7 @@ Changed
     - Rename default iRODS zone into ``sodarZone`` (#1417)
     - Manual updates (#1386, #1387, #1408)
     - Combine development documentation into manual (#1345)
+    - Update ``README`` badges for recreated GitHub repository (#1428)
 - **Samplesheets**
     - Update Vue app browserslist (#1424)
 
