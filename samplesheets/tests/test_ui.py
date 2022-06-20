@@ -1,12 +1,12 @@
 """UI tests for the samplesheets app"""
 
 import json
+from unittest import skipIf
 
 from django.conf import settings
 from django.urls import reverse
 from django.utils.http import urlencode
 
-from unittest import skipIf
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait

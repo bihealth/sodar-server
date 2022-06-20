@@ -3,19 +3,19 @@
 # NOTE: You must supply sodar_url in taskflow requests!
 
 import hashlib
-from irods.test.helpers import make_object
-from irods.keywords import REG_CHKSUM_KW
 import os
 import random
 import string
 import time
+from unittest import skipIf
+
+from irods.keywords import REG_CHKSUM_KW
+from irods.test.helpers import make_object
 
 from django.conf import settings
 from django.contrib import auth
 from django.core import mail
 from django.urls import reverse
-
-from unittest import skipIf
 
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS

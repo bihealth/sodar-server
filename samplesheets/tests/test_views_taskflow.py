@@ -1,10 +1,11 @@
 """Integration tests for views in the samplesheets Django app with taskflow"""
 
 # NOTE: You must supply 'sodar_url': self.live_server_url in taskflow requests!
-import irods
 import os
 from datetime import timedelta
 from urllib.parse import urlencode
+
+import irods
 
 from django.conf import settings
 from django.contrib import auth

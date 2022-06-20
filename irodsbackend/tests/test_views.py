@@ -1,6 +1,7 @@
 """Tests for views in the irodsbackend app"""
 
 import base64
+from unittest import skipIf
 
 from irods.test.helpers import make_object
 
@@ -9,7 +10,6 @@ from django.test import RequestFactory, override_settings
 from django.urls import reverse
 
 from test_plus.test import TestCase
-from unittest import skipIf
 
 # Projectroles dependency
 from projectroles.models import Role, SODAR_CONSTANTS

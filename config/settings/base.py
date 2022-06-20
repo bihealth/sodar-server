@@ -8,9 +8,10 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 
-import environ
 import os
 import re
+
+import environ
 
 from samplesheets.constants import DEFAULT_EXTERNAL_LINK_LABELS
 

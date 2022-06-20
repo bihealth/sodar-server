@@ -12,7 +12,6 @@ Local settings
 from .base import *  # noqa
 
 import socket
-import os
 
 
 # DEBUG

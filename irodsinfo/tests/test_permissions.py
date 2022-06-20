@@ -1,9 +1,9 @@
 """Tests for UI view permissions in the irodsinfo app"""
 
+from unittest import skipIf
+
 from django.conf import settings
 from django.urls import reverse
-
-from unittest import skipIf
 
 # Projectroles dependency
 from projectroles.tests.test_permissions import TestPermissionBase

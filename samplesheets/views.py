@@ -5,12 +5,12 @@ import io
 import json
 import logging
 import os
-import pytz
 import requests
 import zipfile
-
-from cubi_tk.isa_tpl import _TEMPLATES as TK_TEMPLATES
 from packaging import version
+
+import pytz
+from cubi_tk.isa_tpl import _TEMPLATES as TK_TEMPLATES
 
 from django.conf import settings
 from django.contrib import messages

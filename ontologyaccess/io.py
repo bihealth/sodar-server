@@ -1,14 +1,15 @@
 """Import and export utilities for the ontologyaccess app"""
 
 import csv
-import fastobo.header as fh
-from fastobo.term import TermFrame
-from importlib import import_module
 import io
 import logging
-import pronto
 import sys
 import urllib
+from importlib import import_module
+
+import fastobo.header as fh
+import pronto
+from fastobo.term import TermFrame
 
 from django.conf import settings
 from django.db import transaction

@@ -5,8 +5,6 @@ Production Configurations
 - Use Redis for cache
 """
 
-import logging
-
 from .base import *  # noqa
 
 

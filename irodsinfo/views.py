@@ -1,10 +1,11 @@
 """Views for the irodsinfo app"""
 
 import io
-from irods.exception import NetworkException, CAT_INVALID_AUTHENTICATION
 import json
 import logging
 import zipfile
+
+from irods.exception import NetworkException, CAT_INVALID_AUTHENTICATION
 
 from django.conf import settings
 from django.contrib import messages

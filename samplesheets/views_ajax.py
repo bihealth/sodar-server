@@ -1,10 +1,10 @@
 """Ajax API views for the samplesheets app"""
 
 import json
-
-from altamisa.constants import table_headers as th
 from datetime import datetime as dt
 from packaging import version
+
+from altamisa.constants import table_headers as th
 
 from django.conf import settings
 from django.db import transaction

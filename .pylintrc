@@ -2,10 +2,10 @@
 load-plugins=pylint_common, pylint_django
 
 [FORMAT]
-max-line-length=120
+max-line-length=80
 
 [MESSAGES CONTROL]
-disable=missing-docstring,invalid-name
+disable=C0103,C0111,C0116,C0330,R0903,R0904,W0703,W1202
 
 [DESIGN]
 max-parents=13

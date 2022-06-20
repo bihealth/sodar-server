@@ -3,10 +3,9 @@ Tests for REST API views in the landingzones app with SODAR Taskflow enabled
 """
 
 import json
+from unittest import skipIf
 
 from django.urls import reverse
-
-from unittest import skipIf
 
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS

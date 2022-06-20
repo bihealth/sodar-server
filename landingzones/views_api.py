@@ -21,9 +21,6 @@ from projectroles.views_api import (
     SODARAPIGenericProjectMixin,
 )
 
-# Local helper for authenticating with auth basic
-from sodar.users.auth import fallback_to_auth_basic
-
 from landingzones.models import (
     LandingZone,
     STATUS_ALLOW_UPDATE,
@@ -36,6 +33,9 @@ from landingzones.views import (
     ZoneDeleteMixin,
     ZoneMoveMixin,
 )
+
+# Local helper for authenticating with auth basic
+from sodar.users.auth import fallback_to_auth_basic
 
 
 # Get logger
