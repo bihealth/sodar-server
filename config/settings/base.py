@@ -753,8 +753,10 @@ SHEETS_ENABLED_TEMPLATES = [
     'bulk_rnaseq',
     'generic',
     'germline',
+    'microarray',
     'ms_meta_biocrates',
     'single_cell_rnaseq',
+    'tumor_normal_triplets',
 ]
 
 # Remote sample sheet sync interval in minutes

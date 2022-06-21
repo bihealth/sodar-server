@@ -15,7 +15,9 @@ Added
 
 - **Samplesheets**
     - Enable ``bulk_rnaseq`` ISA-Tab template (#1430)
+    - Enable ``microarray`` ISA-Tab template (#1430)
     - Enable ``single_cell_rnaseq`` ISA-Tab template (#1430)
+    - Enable ``tumor_normal_triplets`` ISA-Tab template (#1430)
 
 Changed
 -------

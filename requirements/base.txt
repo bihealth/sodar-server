@@ -102,4 +102,4 @@ fastobo==0.11.1
 pronto==2.4.4  # For OWL conversion
 
 # CUBI-TK for sheet templates
--e git+https://github.com/bihealth/cubi-tk.git@1a76f08b2c81e1f418faf60f1ee487fbea2285a5#egg=cubi-tk
+-e git+https://github.com/bihealth/cubi-tk.git@0c0250cdfd546eaac1e0364df62213ad3c97ef7c#egg=cubi-tk
