@@ -32,6 +32,7 @@ Changed
     - Update ``.pylintrc`` (#1429)
     - General code cleanup (#1429)
     - Upgrade cubi-tk (#1430)
+    - Upgrade to python-irodsclient v1.1.3 (#1431)
 - **Samplesheets**
     - Update Vue app browserslist (#1424)
 
