@@ -750,9 +750,11 @@ SHEETS_EXTERNAL_LINK_LABELS = env.dict('', default=DEFAULT_EXTERNAL_LINK_LABELS)
 
 # HACK: Supported cubi-tk templates, excluding ones which altamISA cannot parse
 SHEETS_ENABLED_TEMPLATES = [
+    'bulk_rnaseq',
     'generic',
     'germline',
     'ms_meta_biocrates',
+    'single_cell_rnaseq',
 ]
 
 # Remote sample sheet sync interval in minutes

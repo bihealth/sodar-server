@@ -10,6 +10,13 @@ Note that the issue IDs here refer to ones in the private CUBI GitLab.
 Unreleased
 ==========
 
+Added
+-----
+
+- **Samplesheets**
+    - Enable ``bulk_rnaseq`` ISA-Tab template (#1430)
+    - Enable ``single_cell_rnaseq`` ISA-Tab template (#1430)
+
 Changed
 -------
 
@@ -24,6 +31,7 @@ Changed
     - Update ``README`` badges for recreated GitHub repository (#1428)
     - Update ``.pylintrc`` (#1429)
     - General code cleanup (#1429)
+    - Upgrade cubi-tk (#1430)
 - **Samplesheets**
     - Update Vue app browserslist (#1424)
 
