@@ -35,6 +35,7 @@ Changed
     - General code cleanup (#1429)
     - Upgrade cubi-tk (#1430)
     - Upgrade to python-irodsclient v1.1.3 (#1431)
+    - Update ``env.example`` for ``sodar-docker-compose`` dev environment
 - **Samplesheets**
     - Update Vue app browserslist (#1424)
 
