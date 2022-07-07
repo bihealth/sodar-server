@@ -46,6 +46,8 @@ Fixed
     - ``build-docker.sh`` failing with special characters in tag name (#1385)
 - **Irodsinfo**
     - Info page title (#1416)
+- **Ontologyaccess**
+    - Redundant file info in import logging (#1436)
 - **Samplesheets**
     - Unset study protocol export ordering (#1419)
     - Bootstrap tooltip issues in sheet tables (#1415)

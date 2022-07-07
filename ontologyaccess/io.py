@@ -108,7 +108,7 @@ class OBOFormatOntologyIO:
         )
         o_kwargs = {
             'name': name,
-            'file': file,
+            'file': str(file),
             'term_url': term_url or DEFAULT_TERM_URL,
             'sodar_version': site.__version__,
         }
@@ -135,12 +135,10 @@ class OBOFormatOntologyIO:
         if not o_kwargs.get('ontology_id'):
             logger.debug('Ontology ID missing, using name')
             o_kwargs['ontology_id'] = name
-
         if not o_kwargs.get('title'):
             logger.debug('Title missing, using ontology ID')
             o_kwargs['title'] = o_kwargs['ontology_id']
 
-        logger.debug('Ontology kwargs: {}'.format(o_kwargs))
         obo_obj = OBOFormatOntology.objects.create(**o_kwargs)
         logger.debug(
             'OBOFormatOntology created: {} (UUID={})'.format(
