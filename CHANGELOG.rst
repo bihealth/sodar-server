@@ -46,6 +46,7 @@ Fixed
     - ``build-docker.sh`` failing with special characters in tag name (#1385)
 - **Irodsinfo**
     - Info page title (#1416)
+    - Manual link pointing to expired URL (#1442)
 - **Ontologyaccess**
     - Redundant file info in import logging (#1436)
 - **Samplesheets**
