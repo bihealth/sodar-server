@@ -365,7 +365,7 @@ export default Vue.extend({
       if (this.headerInfo.header_type === 'process_name') {
         namedProcess = true
         const groupId = this.params.column.originalParent.groupId
-        const cols = this.gridOptions.columnApi.getAllColumns()
+        const cols = this.gridOptions.columnApi.getColumns()
         for (let i = 1; i < cols.length - 1; i++) {
           if (cols[i].originalParent.groupId === groupId &&
               cols[i].colDef.cellEditorParams.headerInfo.header_type === 'protocol') {

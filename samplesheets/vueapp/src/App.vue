@@ -730,7 +730,7 @@ export default {
     enableNextNodes (rowNode, gridOptions, gridUuid, startIdx) {
       // Enable editing for the next node(s) when inserting a new row
       // NOTE: Can't access cellEditorParams here as they are set dynamically
-      const cols = gridOptions.columnApi.getAllColumns()
+      const cols = gridOptions.columnApi.getColumns()
       // console.log('enableNextNodes() called at: ' + cols[startIdx].colId) // DEBUG
 
       // Only enable node(s) if they are in newInit mode
@@ -863,7 +863,7 @@ export default {
       if (assayMode && column.originalParent.colGroupDef.headerName === 'Sample') {
         const studyOptions = this.getGridOptionsByUuid(this.currentStudyUuid)
         const studyApi = studyOptions.api
-        const studyCols = studyOptions.columnApi.getAllColumns()
+        const studyCols = studyOptions.columnApi.getColumns()
         let studyCopyRow = null
         const sampleColId = this.sampleColId
 
@@ -889,7 +889,7 @@ export default {
 
       // Find other cells within the same node to be updated
       const nodeCols = []
-      const cols = columnApi.getAllColumns()
+      const cols = columnApi.getColumns()
       let nextNodeStartIdx = null
       // Since we split the source group we have to apply some trickery
       const parent = column.originalParent
@@ -955,7 +955,7 @@ export default {
 
       // Insert empty row
       const row = { rowNum: 'NEW' }
-      const cols = gridOptions.columnApi.getAllColumns()
+      const cols = gridOptions.columnApi.getColumns()
       const emptyData = {
         value: null,
         uuid: null,
@@ -1010,7 +1010,7 @@ export default {
         .then(
           data => {
             if (data.detail === 'ok') {
-              const cols = gridOptions.columnApi.getAllColumns()
+              const cols = gridOptions.columnApi.getColumns()
               let nodeIdx = 0
               let sampleUuid
               let sampleName

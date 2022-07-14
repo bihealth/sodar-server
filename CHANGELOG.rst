@@ -38,6 +38,7 @@ Changed
     - Update ``env.example`` for ``sodar-docker-compose`` dev environment
 - **Samplesheets**
     - Update Vue app browserslist (#1424)
+    - Upgrade Vue app to ag-grid v28 (#1447)
 
 Fixed
 -----
@@ -55,6 +56,7 @@ Fixed
     - ``cubi-tk`` install failure due to missing ``libbz2-dev`` (#1425)
     - ``OntologyEditModal`` warning message for missing ontologies (#1444)
     - ``OntologyEditModal`` search input not trimmed (#1446)
+    - Sheet table horizontal scrolling on Firefox (#1445)
 
 Removed
 -------

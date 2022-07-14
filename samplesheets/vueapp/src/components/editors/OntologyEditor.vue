@@ -77,7 +77,7 @@ export default Vue.extend({
     // Get nodeName for modal
     // TODO: Make this a common helper function
     // console.dir(this.params) // DEBUG
-    const cols = this.gridOptions.columnApi.getAllColumns()
+    const cols = this.gridOptions.columnApi.getColumns()
     const parent = this.params.column.originalParent
     const isSourceNode = parent.colGroupDef.headerName === ''
 

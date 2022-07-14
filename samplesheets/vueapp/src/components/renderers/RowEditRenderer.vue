@@ -76,7 +76,7 @@ export default Vue.extend({
       const currentRowNode = this.rowNode
       const getNodeNames = this.getNodeNames
       // Get node IDs for existing nodes
-      const cols = this.gridOptions.columnApi.getAllColumns()
+      const cols = this.gridOptions.columnApi.getColumns()
       this.gridOptions.api.forEachNode(function (r) {
         if (r.id !== currentRowNode.id) {
           oldRowNodes.push(getNodeNames(r, cols))
@@ -114,7 +114,7 @@ export default Vue.extend({
         }
 
         let currentNodeUuid = null
-        const cols = this.gridOptions.columnApi.getAllColumns()
+        const cols = this.gridOptions.columnApi.getColumns()
         let startIdx = 1
         if (this.assayMode) {
           startIdx = this.app.sampleIdx
@@ -154,7 +154,7 @@ export default Vue.extend({
         this.app.unsavedRow.id === this.rowNode.id
     },
     enableSave () {
-      const cols = this.gridOptions.columnApi.getAllColumns()
+      const cols = this.gridOptions.columnApi.getColumns()
       // NOTE: This assumes we have to fill all nodes in a column
       for (let i = 1; i < cols.length - 1; i++) {
         if (!this.rowNode.data[cols[i].colId] ||
@@ -250,7 +250,7 @@ export default Vue.extend({
     },
     getNewRowData () {
       // TODO: Simplify (there must be a better way to iterate through this..)
-      const cols = this.gridOptions.columnApi.getAllColumns()
+      const cols = this.gridOptions.columnApi.getColumns()
       const newRowData = {
         study: this.app.currentStudyUuid,
         assay: this.assayMode ? this.gridUuid : null,
