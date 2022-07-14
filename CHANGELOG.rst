@@ -53,6 +53,8 @@ Fixed
     - Unset study protocol export ordering (#1419)
     - Bootstrap tooltip issues in sheet tables (#1415)
     - ``cubi-tk`` install failure due to missing ``libbz2-dev`` (#1425)
+    - ``OntologyEditModal`` warning message for missing ontologies (#1444)
+    - ``OntologyEditModal`` search input not trimmed (#1446)
 
 Removed
 -------
