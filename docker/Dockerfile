@@ -38,7 +38,7 @@ RUN cd /usr/src/app && \
     pip install --no-cache-dir -r requirements/local.txt
 
 # Install modern nodejs
-RUN curl -sL https://deb.nodesource.com/setup_12.x | bash - && \
+RUN curl -sL https://deb.nodesource.com/setup_16.x | bash - && \
     apt install nodejs
 
 # Install npm dependencies
