@@ -23,7 +23,7 @@ Changed
 -------
 
 - **General**
-    - Upgrade to django-sodar-core v0.10.13-WIP (#1391, #1406, #1418)
+    - Upgrade to django-sodar-core v0.10.13 (#1391, #1406, #1418)
     - Upgrade to black v22.3.0 (sodar_core#972)
     - Default ``BASICAUTH_REALM`` message (#1410)
     - Add ``LocalAuthAPIView`` URL to ``SECURE_REDIRECT_EXEMPT`` (#1411)
