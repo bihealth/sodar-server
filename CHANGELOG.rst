@@ -36,7 +36,7 @@ Changed
     - Upgrade cubi-tk (#1430)
     - Upgrade to python-irodsclient v1.1.3 (#1431)
     - Update ``env.example`` for ``sodar-docker-compose`` dev environment
-    - Upgrade to Node v16 (#1432)
+    - Upgrade to Node v16 (#1432, #1448)
 - **Samplesheets**
     - Update Vue app browserslist (#1424)
     - Upgrade Vue app to ag-grid v28 (#1447)

@@ -44,7 +44,7 @@ RUN curl -sL https://deb.nodesource.com/setup_16.x | bash - && \
 # Install npm dependencies
 RUN cd /usr/src/app/samplesheets/vueapp && \
     mkdir -p /usr/src/app/samplesheets/vueapp/dist && \
-    npm ci && \
+    npm ci --legacy-peer-deps && \
     npm run build
 
 # Download files from CDN
