@@ -13,6 +13,8 @@ Unreleased
 Added
 -----
 
+- **General**
+    - GitHub issue templates (#1441)
 - **Samplesheets**
     - Enable ``bulk_rnaseq`` ISA-Tab template (#1430)
     - Enable ``microarray`` ISA-Tab template (#1430)
