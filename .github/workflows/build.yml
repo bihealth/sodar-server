@@ -51,7 +51,7 @@ jobs:
           node-version: 16.x
       - name: Build and run Vue app
         run: |
-          npm ci --legacy-peer-deps --prefix samplesheets/vueapp
+          npm ci --prefix samplesheets/vueapp
           nohup npm run -prefix samplesheets/vueapp serve &
       - name: Download icons
         run: python manage.py geticons

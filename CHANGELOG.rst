@@ -40,6 +40,7 @@ Changed
 - **Samplesheets**
     - Update Vue app browserslist (#1424)
     - Upgrade Vue app to ag-grid v28 (#1447)
+    - Upgrade general Vue app dependencies (#1330, #1448)
 
 Fixed
 -----
