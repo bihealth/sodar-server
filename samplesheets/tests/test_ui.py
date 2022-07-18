@@ -3,6 +3,8 @@
 import json
 from unittest import skipIf
 
+from cubi_tk.isa_tpl import _TEMPLATES as TK_TEMPLATES
+
 from django.conf import settings
 from django.urls import reverse
 from django.utils.http import urlencode
@@ -17,6 +19,7 @@ from projectroles.app_settings import AppSettingAPI
 from projectroles.plugins import get_backend_api
 from projectroles.tests.test_ui import TestUIBase
 
+from samplesheets.constants import HIDDEN_SHEET_TEMPLATE_FIELDS
 from samplesheets.models import (
     ISATab,
     IrodsDataRequest,
@@ -275,7 +278,30 @@ class TestProjectSheetsView(TestProjectSheetsVueAppBase):
     # NOTE: For further vue app tests, see samplesheets/vueapp/tests
 
 
-class TestSampleSheetVersionListView(TestProjectSheetsVueAppBase):
+class TestSheetTemplateCreateFormView(TestProjectSheetsVueAppBase):
+    """Tests for the sheet template creation view UI"""
+
+    def test_render_hidden_fields(self):
+        """Test rendering hidden fields in the sheet template form"""
+        for t in TK_TEMPLATES:
+            url = (
+                reverse(
+                    'samplesheets:template_create',
+                    kwargs={'project': self.project.sodar_uuid},
+                )
+                + '?sheet_tpl='
+                + t.name
+            )
+            self.login_and_redirect(self.superuser, url)
+            for f in HIDDEN_SHEET_TEMPLATE_FIELDS:
+                try:
+                    elem = self.selenium.find_element(By.ID, f)
+                    self.assertEqual(elem.get_attribute('type'), 'hidden')
+                except NoSuchElementException:
+                    pass  # This is ok
+
+
+class TestSheetVersionListView(TestProjectSheetsVueAppBase):
     """Tests for the sheet version list view UI"""
 
     def setUp(self):

@@ -41,6 +41,7 @@ Changed
     - Update Vue app browserslist (#1424)
     - Upgrade Vue app to ag-grid v28 (#1447)
     - Upgrade general Vue app dependencies (#1330, #1448)
+    - Hide sheet template fields not meant to be edited (#1443)
 
 Fixed
 -----
