@@ -286,7 +286,7 @@ Open a new terminal tab and run the Sample Sheets Vue.js app with the following
 command. This will serve the development version with hot reloading in
 ``http://127.0.0.1:8080``.
 
-.. code-block::
+.. code-block:: bash
 
     $ make samplesheets_vue
 

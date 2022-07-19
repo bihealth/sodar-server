@@ -4,11 +4,9 @@ SODAR Changelog
 Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
-Note that the issue IDs here refer to ones in the private CUBI GitLab.
 
-
-Unreleased
-==========
+v0.11.3 (2022-07-20)
+====================
 
 Added
 -----

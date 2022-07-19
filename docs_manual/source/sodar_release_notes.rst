@@ -8,6 +8,19 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
+v0.11.3 (2022-07-20)
+====================
+
+Release for minor updates, maintenance and bug fixes.
+
+- Support for additional sample sheet templates
+- Hide uneditable sheet template fields in forms
+- Minor updates and general bug fixes
+- Upgrade Vue app dependencies
+- Upgrade to SODAR Core v0.10.13
+- Update manual and remove separate dev docs
+
+
 v0.11.2 (2022-03-04)
 ====================
 

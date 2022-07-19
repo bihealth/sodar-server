@@ -22,15 +22,8 @@ RUN git clone --depth $app_git_depth --branch $app_git_tag $app_git_url /usr/src
 
 # Install system dependencies
 RUN apt-get update && \
-    apt-get install -y \
-        apt-utils \
-        gcc \
-        ldap-utils \
-        libldap2-dev \
-        libsasl2-dev \
-        make \
-        postgresql-client \
-        wget
+    apt-get install -y apt-utils gcc ldap-utils libldap2-dev libsasl2-dev \
+        make postgresql-client wget
 
 # Install Python dependencies
 RUN cd /usr/src/app && \
@@ -39,7 +32,7 @@ RUN cd /usr/src/app && \
 
 # Install modern nodejs
 RUN curl -sL https://deb.nodesource.com/setup_16.x | bash - && \
-    apt install nodejs
+    apt-get install nodejs
 
 # Install npm dependencies
 RUN cd /usr/src/app/samplesheets/vueapp && \

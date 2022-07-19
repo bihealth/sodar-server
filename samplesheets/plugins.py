@@ -690,17 +690,6 @@ class SampleSheetStudyPluginPoint(PluginPoint):
     # TODO: TBD: Do we need this?
     permission = None
 
-    def update_cache(self, name=None, project=None, user=None):
-        """
-        Update cached data for this app, limitable to item ID and/or project.
-
-        :param name: Item name to limit update to (string, optional)
-        :param project: Project object to limit update to (optional)
-        :param user: User object to denote user triggering the update (optional)
-        """
-        # TODO: Implement this in your app plugin
-        return None
-
     def get_shortcut_column(self, study, study_tables):
         """
         Return structure containing links for an extra study table links column.
@@ -720,6 +709,17 @@ class SampleSheetStudyPluginPoint(PluginPoint):
         :param study_tables: Rendered study tables (dict)
         :return: Dict
         """
+        return None
+
+    def update_cache(self, name=None, project=None, user=None):
+        """
+        Update cached data for this app, limitable to item ID and/or project.
+
+        :param name: Item name to limit update to (string, optional)
+        :param project: Project object to limit update to (optional)
+        :param user: User object to denote user triggering the update (optional)
+        """
+        # TODO: Implement this in your app plugin
         return None
 
 
