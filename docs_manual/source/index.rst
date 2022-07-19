@@ -137,10 +137,12 @@ Table of Contents
     :name: dev
 
     dev_overview
+    contributing
+    code_of_conduct
     dev_install
-    dev_issues
-    dev_guide
+    Development Guidelines <dev_guide>
     dev_apps
+    dev_resource
 
 .. toctree::
     :maxdepth: 1

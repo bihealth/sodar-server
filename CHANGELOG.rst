@@ -15,6 +15,7 @@ Added
 
 - **General**
     - GitHub issue templates (#1441)
+    - Contributing and code of conduct docs (#1426)
 - **Samplesheets**
     - Enable ``bulk_rnaseq`` ISA-Tab template (#1430)
     - Enable ``microarray`` ISA-Tab template (#1430)
