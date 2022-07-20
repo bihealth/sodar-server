@@ -1,9 +1,10 @@
 """Models for the samplesheets app"""
 
-from altamisa.constants import table_headers as th
 import logging
 import os
 import uuid
+
+from altamisa.constants import table_headers as th
 
 from django.conf import settings
 from django.contrib.postgres.fields import ArrayField

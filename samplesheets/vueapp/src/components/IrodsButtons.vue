@@ -7,8 +7,7 @@
         :class="'sodar-list-btn sodar-ss-irods-btn ' + extraLink.class"
         :title="extraLink.title"
         :href="extraLink.url"
-        :disabled="!(getEnabledState() && extraLink.enabled)"
-        v-b-tooltip.hover.d300.window>
+        :disabled="!(getEnabledState() && extraLink.enabled)">
       <i class="iconify" :data-icon="extraLink.icon"></i>
     </b-button>
     <b-button
@@ -19,8 +18,7 @@
         class="sodar-list-btn sodar-ss-irods-btn sodar-ss-popup-list-btn"
         title="List files"
         :disabled="!getEnabledState()"
-        @click="onDirListClick"
-        v-b-tooltip.hover.d300.window>
+        @click="onDirListClick">
       <i class="iconify" data-icon="mdi:folder-open-outline"></i>
     </b-button>
     <b-button
@@ -30,8 +28,7 @@
         title="Copy iRODS path into clipboard"
         v-clipboard="irodsPath"
         @click="onCopyBtnClick"
-        :disabled="!getEnabledState()"
-        v-b-tooltip.hover.d300.window>
+        :disabled="!getEnabledState()">
       <i class="iconify" data-icon="mdi:console-line"></i>
     </b-button>
     <b-button
@@ -41,8 +38,7 @@
         title="Copy WebDAV URL into clipboard"
         v-clipboard:copy="irodsWebdavUrl + irodsPath"
         v-clipboard:success="onCopyBtnClick"
-        :disabled="!getEnabledState()"
-        v-b-tooltip.hover.d300.window>
+        :disabled="!getEnabledState()">
       <i class="iconify" data-icon="mdi:clipboard-text-multiple"></i>
     </b-button>
     <b-button
@@ -51,8 +47,7 @@
                sodar-irods-dav-btn"
         title="Browse Files in WebDAV"
         :href="irodsWebdavUrl + irodsPath"
-        :disabled="!getEnabledState()"
-        v-b-tooltip.hover.d300.window>
+        :disabled="!getEnabledState()">
       <i class="iconify" data-icon="mdi:open-in-new"></i>
     </b-button>
   </span>

@@ -838,7 +838,7 @@ describe('OntologyEditModal.vue', () => {
     wrapper.vm.showModal(ontologyEditParamsMulti, jest.fn())
     await waitNT(wrapper.vm)
     await waitRAF()
-    await wrapper.find('#sodar-ss-ontology-order-check').trigger('click')
+    wrapper.setData({ queryOntologyOrder: true })
     expect(wrapper.vm.getQueryUrl(queryString)).toBe(url)
   })
 

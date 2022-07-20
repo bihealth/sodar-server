@@ -1,10 +1,9 @@
 """Plugin tests for the cancer study app"""
 
 import os
+from unittest import skipIf
 
 from django.conf import settings
-
-from unittest import skipIf
 
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS

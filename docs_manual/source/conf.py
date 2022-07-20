@@ -10,9 +10,10 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-import django
 import os
 import sys
+import django
+
 sys.path.insert(0, os.path.abspath('../../'))
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings.production')
 django.setup()
@@ -21,11 +22,11 @@ django.setup()
 # -- Project information -----------------------------------------------------
 
 project = 'SODAR'
-copyright = '2021, BIH Core Unit Bioinformatics'
+copyright = '2018-2022, BIH Core Unit Bioinformatics'
 author = 'BIH Core Unit Bioinformatics'
 
 # The full version, including alpha/beta/rc tags
-release = '0.11.2'
+release = '0.11.3'
 
 
 # -- General configuration ---------------------------------------------------

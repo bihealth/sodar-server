@@ -1,9 +1,10 @@
 """Tests for utility functions in the samplesheets app"""
 
+from unittest import skipIf
+
 from django.conf import settings
 
 from test_plus.test import TestCase
-from unittest import skipIf
 
 # Projectroles dependency
 from projectroles.models import Role, SODAR_CONSTANTS

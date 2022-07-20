@@ -1,12 +1,11 @@
 """Tests for models in the samplesheets app"""
 
 import os
+from unittest import skipIf
 
 from django.conf import settings
 from django.forms.models import model_to_dict
 from django.utils.timezone import localtime
-
-from unittest import skipIf
 
 # Projectroles dependency
 from projectroles.constants import SODAR_CONSTANTS
@@ -121,7 +120,7 @@ class TestIrodsDataRequestBase(
         )
 
     def tearDown(self):
-        self.irods_session.collections.get('/omicsZone/projects').remove(
+        self.irods_session.collections.get('/sodarZone/projects').remove(
             force=True
         )
 

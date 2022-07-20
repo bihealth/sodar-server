@@ -7,7 +7,7 @@ cd $DIR
 
 GIT_DESCRIBE=$(git describe --tags | cut -d - -f 1)
 GIT_TAG=${GIT_TAG-$GIT_DESCRIBE}
-DOCKER_VERSION=$(echo $GIT_TAG | sed -e 's/^v//')-$BUILD_NO
+DOCKER_VERSION=$(echo $GIT_TAG | sed -e 's/^v//' | sed -e 's/[^a-zA-Z0-9-]/-/')-$BUILD_NO
 GIT_DEPTH=$(($(git rev-list HEAD ^$(git describe --abbrev=0 --tags) --count) + 1))
 GIT_URL=${GIT_URL-https://github.com/bihealth/sodar-server.git}
 

@@ -8,9 +8,10 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 
-import environ
 import os
 import re
+
+import environ
 
 from samplesheets.constants import DEFAULT_EXTERNAL_LINK_LABELS
 
@@ -576,7 +577,7 @@ SITE_INSTANCE_TITLE = env.str('SITE_INSTANCE_TITLE', 'CUBI SODAR')
 
 
 # General API settings
-SODAR_API_DEFAULT_VERSION = '0.11.2'
+SODAR_API_DEFAULT_VERSION = '0.11.3'
 SODAR_API_ALLOWED_VERSIONS = [
     '0.7.0',
     '0.7.1',
@@ -587,6 +588,7 @@ SODAR_API_ALLOWED_VERSIONS = [
     '0.11.0',
     '0.11.1',
     '0.11.2',
+    '0.11.3',
 ]
 SODAR_API_MEDIA_TYPE = 'application/vnd.bihealth.sodar+json'
 SODAR_API_DEFAULT_HOST = env.url(
@@ -665,7 +667,7 @@ ENABLE_IRODS = env.bool('ENABLE_IRODS', True)
 IRODS_HOST = env.str('IRODS_HOST', '127.0.0.1')
 IRODS_HOST_FQDN = env.str('IRODS_HOST_FQDN', IRODS_HOST)
 IRODS_PORT = env.int('IRODS_PORT', 4477)
-IRODS_ZONE = env.str('IRODS_ZONE', 'omicsZone')
+IRODS_ZONE = env.str('IRODS_ZONE', 'sodarZone')
 IRODS_ROOT_PATH = env.str('IRODS_ROOT_PATH', None)
 IRODS_USER = env.str('IRODS_USER', 'rods')
 IRODS_PASS = env.str('IRODS_PASS', 'rods')
@@ -749,9 +751,13 @@ SHEETS_EXTERNAL_LINK_LABELS = env.dict('', default=DEFAULT_EXTERNAL_LINK_LABELS)
 
 # HACK: Supported cubi-tk templates, excluding ones which altamISA cannot parse
 SHEETS_ENABLED_TEMPLATES = [
+    'bulk_rnaseq',
     'generic',
     'germline',
+    'microarray',
     'ms_meta_biocrates',
+    'single_cell_rnaseq',
+    'tumor_normal_triplets',
 ]
 
 # Remote sample sheet sync interval in minutes
@@ -786,7 +792,6 @@ ONTOLOGYACCESS_QUERY_LIMIT = env.int('ONTOLOGYACCESS_QUERY_LIMIT', 250)
 
 # Settings for HTTP AuthBasic
 BASICAUTH_REALM = env.str(
-    'BASICAUTH_REALM',
-    'Login with user@CHARITE or user@MDC-BERLIN and your password.',
+    'BASICAUTH_REALM', 'Log in with your SODAR user name and password.'
 )
 BASICAUTH_DISABLE = env.bool('BASICAUTH_DISABLE', False)

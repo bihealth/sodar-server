@@ -106,9 +106,9 @@
         <div v-else
              class="alert alert-warning"
              id="sodar-ss-ontology-no-imports">
-          No imported ontologies found! Only manual ontology value entry is
-          available. Ontologies can be imported using the
-          <code>ontologyaccess</code> app.
+          No valid imported ontologies for this column found! Only manual
+          ontology value entry is available. Ontologies can be imported using
+          the <code>ontologyaccess</code> app.
         </div>
         <div
             v-if="responseDetail"
@@ -399,6 +399,7 @@ export default {
       this.$nextTick(() => { this.pasteData = '' })
     },
     onSearchUpdate () {
+      this.searchValue = this.searchValue.trim()
       if (!this.querying &&
           this.searchValue.length >= minSearchLength &&
           this.searchValue !== this.prevSearchValue) {

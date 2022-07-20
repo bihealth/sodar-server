@@ -2,10 +2,11 @@
 
 # NOTE: Retraction and sharing data not yet tested, to be implemented
 # TODO: Test validation rules and uniqueness constraints
-import altamisa
-from datetime import timedelta
 import pytz
 import re
+from datetime import timedelta
+
+import altamisa
 
 from django.conf import settings
 from django.forms.models import model_to_dict

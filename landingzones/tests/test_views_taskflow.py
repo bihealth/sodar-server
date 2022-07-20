@@ -1,21 +1,21 @@
 """Integration tests for views in the landingzones Django app with taskflow"""
 
-# NOTE: You must supply 'sodar_url': self.live_server_url in taskflow requests!
+# NOTE: You must supply sodar_url in taskflow requests!
 
 import hashlib
-from irods.test.helpers import make_object
-from irods.keywords import REG_CHKSUM_KW
 import os
 import random
 import string
 import time
+from unittest import skipIf
+
+from irods.keywords import REG_CHKSUM_KW
+from irods.test.helpers import make_object
 
 from django.conf import settings
 from django.contrib import auth
 from django.core import mail
 from django.urls import reverse
-
-from unittest import skipIf
 
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
@@ -113,7 +113,7 @@ class LandingZoneTaskflowMixin:
             'request': request,
         }
         if not request:
-            values['sodar_url'] = self.live_server_url
+            values['sodar_url'] = self.get_sodar_url()
 
         self.taskflow.submit(**values)
 
@@ -231,7 +231,7 @@ class TestLandingZoneCreateView(
             'title_suffix': ZONE_SUFFIX,
             'description': ZONE_DESC,
             'configuration': '',
-            'sodar_url': self.live_server_url,
+            'sodar_url': self.get_sodar_url(),
         }
         with self.login(self.user):
             response = self.client.post(
@@ -271,7 +271,7 @@ class TestLandingZoneCreateView(
             'description': ZONE_DESC,
             'create_colls': True,
             'configuration': '',
-            'sodar_url': self.live_server_url,
+            'sodar_url': self.get_sodar_url(),
         }
         with self.login(self.user):
             response = self.client.post(
@@ -323,7 +323,7 @@ class TestLandingZoneCreateView(
             'description': ZONE_DESC,
             'create_colls': True,
             'configuration': '',
-            'sodar_url': self.live_server_url,
+            'sodar_url': self.get_sodar_url(),
         }
         with self.login(self.user):
             response = self.client.post(
@@ -427,7 +427,7 @@ class TestLandingZoneMoveView(
             AppAlert.objects.filter(alert_name='zone_move').count(), 0
         )
 
-        values = {'sodar_url': self.live_server_url}
+        values = {'sodar_url': self.get_sodar_url()}
         with self.login(self.user):
             response = self.client.post(
                 reverse(
@@ -470,7 +470,7 @@ class TestLandingZoneMoveView(
             AppAlert.objects.filter(alert_name='zone_move').count(), 0
         )
 
-        values = {'sodar_url': self.live_server_url}
+        values = {'sodar_url': self.get_sodar_url()}
         with self.login(self.user):
             response = self.client.post(
                 reverse(
@@ -510,7 +510,7 @@ class TestLandingZoneMoveView(
             AppAlert.objects.filter(alert_name='zone_move').count(), 0
         )
 
-        values = {'sodar_url': self.live_server_url}
+        values = {'sodar_url': self.get_sodar_url()}
         with self.login(self.user):
             response = self.client.post(
                 reverse(
@@ -550,7 +550,7 @@ class TestLandingZoneMoveView(
             AppAlert.objects.filter(alert_name='zone_validate').count(), 0
         )
 
-        values = {'sodar_url': self.live_server_url}
+        values = {'sodar_url': self.get_sodar_url()}
         with self.login(self.user):
             response = self.client.post(
                 reverse(
@@ -593,7 +593,7 @@ class TestLandingZoneMoveView(
             AppAlert.objects.filter(alert_name='zone_validate').count(), 0
         )
 
-        values = {'sodar_url': self.live_server_url}
+        values = {'sodar_url': self.get_sodar_url()}
         with self.login(self.user):
             self.client.post(
                 reverse(
@@ -625,7 +625,7 @@ class TestLandingZoneMoveView(
         self.assertEqual(len(self.zone_coll.data_objects), 1)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
 
-        values = {'sodar_url': self.live_server_url}
+        values = {'sodar_url': self.get_sodar_url()}
         with self.login(self.user):
             self.client.post(
                 reverse(
@@ -654,7 +654,7 @@ class TestLandingZoneMoveView(
         self.assertEqual(len(self.zone_coll.data_objects), 1)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
 
-        values = {'sodar_url': self.live_server_url}
+        values = {'sodar_url': self.get_sodar_url()}
         with self.login(self.user):
             self.client.post(
                 reverse(
@@ -727,7 +727,7 @@ class TestLandingZoneDeleteView(
             AppAlert.objects.filter(alert_name='zone_delete').count(), 0
         )
 
-        values = {'sodar_url': self.live_server_url}
+        values = {'sodar_url': self.get_sodar_url()}
         with self.login(self.user):
             response = self.client.post(
                 reverse(

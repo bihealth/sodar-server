@@ -16,13 +16,11 @@ and changes to the sample sheets. The activity is displayed as a list of events.
 For each event the following details are available:
 
 Timestamp
-    Time of the event's creation. This doubles as a link to a popup which
+    Time of the event's creation. This doubles as a link to a modal which
     displays the event status history. This can be useful information e.g. in
     case of asynchronous background events.
-App
-    SODAR application in which the event was created.
 Event
-    Type of the event.
+    Type of the event along with the SODAR application which created the event.
 User
     User initiating the event.
 Description

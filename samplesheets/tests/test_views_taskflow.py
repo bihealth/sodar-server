@@ -1,10 +1,11 @@
 """Integration tests for views in the samplesheets Django app with taskflow"""
 
 # NOTE: You must supply 'sodar_url': self.live_server_url in taskflow requests!
-import irods
 import os
 from datetime import timedelta
 from urllib.parse import urlencode
+
+import irods
 
 from django.conf import settings
 from django.contrib import auth
@@ -97,7 +98,7 @@ class SampleSheetTaskflowMixin:
             'request': request,
         }
         if not request:
-            values['sodar_url'] = self.live_server_url
+            values['sodar_url'] = self.get_sodar_url()
         self.taskflow.submit(**values)
         investigation.refresh_from_db()
         self.assertEqual(investigation.irods_status, True)
@@ -169,9 +170,7 @@ class TestIrodsCollsCreateView(
         self.assertEqual(self.investigation.irods_status, False)
 
         # Issue POST request
-        values = {
-            'sodar_url': self.live_server_url
-        }  # HACK: Override callback URL
+        values = {'sodar_url': self.get_sodar_url()}
         with self.login(self.user):
             response = self.client.post(
                 reverse(
@@ -217,9 +216,7 @@ class TestIrodsCollsCreateView(
         )
 
         # Issue POST request
-        values = {
-            'sodar_url': self.live_server_url
-        }  # HACK: Override callback URL
+        values = {'sodar_url': self.get_sodar_url()}
         with self.login(self.user):
             response = self.client.post(
                 reverse(
@@ -286,7 +283,7 @@ class TestSampleSheetDeleteView(
         # Issue POST request
         values = {
             'delete_host_confirm': 'testserver',
-            'sodar_url': self.live_server_url,
+            'sodar_url': self.get_sodar_url(),
         }
         with self.login(self.user):
             response = self.client.post(
@@ -328,7 +325,7 @@ class TestSampleSheetDeleteView(
         # Issue POST request
         values = {
             'delete_host_confirm': 'testserver',
-            'sodar_url': self.live_server_url,
+            'sodar_url': self.get_sodar_url(),
         }
         with self.login(self.user):
             response = self.client.post(
@@ -379,7 +376,7 @@ class TestSampleSheetDeleteView(
         # Issue POST request
         values = {
             'delete_host_confirm': 'testserver',
-            'sodar_url': self.live_server_url,
+            'sodar_url': self.get_sodar_url(),
         }
         with self.login(user_contributor):
             response = self.client.post(
@@ -928,7 +925,7 @@ class TestIrodsRequestViewsBase(
         self.post_data = {'path': self.path, 'description': 'bla'}
 
     def tearDown(self):
-        self.irods_session.collections.get('/omicsZone/projects').remove(
+        self.irods_session.collections.get('/sodarZone/projects').remove(
             force=True
         )
 
@@ -1689,7 +1686,7 @@ class TestIrodsRequestRejectView(TestIrodsRequestViewsBase):
             self.assertRedirects(response, reverse('home'))
             self.assertEqual(
                 list(get_messages(response.wsgi_request))[-1].message,
-                'User not authorized for requested action',
+                'User not authorized for requested action.',
             )
             self.assertEqual(IrodsDataRequest.objects.count(), 1)
 
@@ -2019,7 +2016,7 @@ class TestProjectSearchView(
                 + urlencode({'s': SAMPLE_ID})
             )
         self.assertEqual(response.status_code, 200)
-        data = response.context['app_search_data'][0]
+        data = response.context['app_results'][0]
         self.assertEqual(len(data['results']), 2)
         self.assertEqual(len(data['results']['materials']['items']), 1)
         self.assertEqual(
@@ -2039,7 +2036,7 @@ class TestProjectSearchView(
                 + urlencode({'s': '{} type:source'.format(SOURCE_ID)})
             )
         self.assertEqual(response.status_code, 200)
-        data = response.context['app_search_data'][0]
+        data = response.context['app_results'][0]
         self.assertEqual(len(data['results']), 1)
         self.assertEqual(len(data['results']['materials']['items']), 1)
         self.assertEqual(
@@ -2055,7 +2052,7 @@ class TestProjectSearchView(
                 + urlencode({'s': '{} type:sample'.format(SAMPLE_ID)})
             )
         self.assertEqual(response.status_code, 200)
-        data = response.context['app_search_data'][0]
+        data = response.context['app_results'][0]
         self.assertEqual(len(data['results']), 1)
         self.assertEqual(len(data['results']['materials']['items']), 1)
         self.assertEqual(
@@ -2071,7 +2068,7 @@ class TestProjectSearchView(
                 + urlencode({'s': '{} type:file'.format(SAMPLE_ID)})
             )
         self.assertEqual(response.status_code, 200)
-        data = response.context['app_search_data'][0]
+        data = response.context['app_results'][0]
         self.assertEqual(len(data['results']), 1)
         self.assertEqual(len(data['results']['files']['items']), 1)
         self.assertEqual(

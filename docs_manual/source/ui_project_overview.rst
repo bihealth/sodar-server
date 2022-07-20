@@ -22,10 +22,11 @@ set of information and sidebar links, while still following the same general
 structure.
 
 
-Project Overview
+Overview Section
 ================
 
-The project overview consists of the following sections:
+The project overview section on the right hand side of the view consists of the
+following elements:
 
 ReadMe
     An optional description for the project in MarkDown notation. Can be updated

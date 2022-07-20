@@ -1,9 +1,9 @@
 """Management command importobo for the ontologyaccess app"""
 
-import fastobo
 import sys
-
 from urllib.request import urlopen
+
+import fastobo
 
 from django.core.management.base import BaseCommand
 

@@ -2,10 +2,11 @@
 
 import logging
 import math
-import pytz
 import random
 import re
 import string
+
+import pytz
 
 from irods.api_number import api_number
 from irods.collection import iRODSCollection

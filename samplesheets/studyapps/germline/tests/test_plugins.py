@@ -1,8 +1,8 @@
 """Plugin tests for the the germline study app"""
 
-from django.conf import settings
-
 from unittest import skipIf
+
+from django.conf import settings
 
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS

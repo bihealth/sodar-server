@@ -3,13 +3,13 @@
 import functools
 import itertools
 import logging
-from packaging import version
 import re
 import time
+from datetime import date
+from packaging import version
 
 from altamisa.constants import table_headers as th
 from altamisa.isatab.write_assay_study import RefTableBuilder
-from datetime import date
 
 from django.conf import settings
 

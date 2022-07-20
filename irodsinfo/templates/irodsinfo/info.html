@@ -4,11 +4,12 @@
 {# Projectroles dependency #}
 {% load projectroles_common_tags %}
 
-{% block title %}iRODS Help{% endblock title %}
+{% block title %}iRODS Info{% endblock title %}
 
 {% block projectroles %}
 
 {% has_perm 'irodsinfo.get_config' request.user as can_get_config %}
+{% site_version as site_v %}
 
 <div class="row sodar-subtitle-container bg-white sticky-top">
   <h2><i class="iconify" data-icon="mdi:lifebuoy"></i> iRODS Info</h2>
@@ -26,7 +27,8 @@
   {# Guide #}
   <div class="alert alert-info">
     The iRODS connecting guide has been moved into the
-    <a href="/manual">SODAR user manual</a>.
+    <a href="https://sodar-server.readthedocs.io/en/{% if '+' in site_v %}dev{% else %}latest{% endif %}/">
+      SODAR Manual</a>.
   </div>
 
   {# Server info #}

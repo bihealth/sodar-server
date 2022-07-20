@@ -6,7 +6,6 @@ module.exports = {
   outputDir: './dist/',
   assetsDir: 'samplesheets-vue/',
   devServer: {
-    public: 'localhost:8080',
     headers: {
       'Access-Control-Allow-Origin': '*'
     }

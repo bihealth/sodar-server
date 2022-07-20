@@ -1,12 +1,15 @@
 """Import and export utilities for the samplesheets app"""
 
-import altamisa
 import attr
 import io
 import logging
 import time
 import warnings
+from fnmatch import fnmatch
+from zipfile import ZipFile
 
+import altamisa
+from altamisa.exceptions import CriticalIsaValidationWarning
 from altamisa.isatab import (
     InvestigationReader,
     StudyReader,
@@ -19,9 +22,6 @@ from altamisa.isatab import (
     AssayWriter,
     models as isa_models,
 )
-from altamisa.exceptions import CriticalIsaValidationWarning
-from fnmatch import fnmatch
-from zipfile import ZipFile
 
 from django.db import transaction
 
@@ -1258,7 +1258,7 @@ class SampleSheetIO:
             # Create protocols for study
             isa_protocols = {}
 
-            for protocol in study.protocols.all():
+            for protocol in study.protocols.all().order_by('pk'):
                 isa_protocols[protocol.name] = isa_models.ProtocolInfo(
                     name=protocol.name,
                     type=self._export_val(protocol.protocol_type),

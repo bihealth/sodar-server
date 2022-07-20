@@ -1,12 +1,13 @@
 .. _manual-main:
 
-SODAR User Manual
-^^^^^^^^^^^^^^^^^
+SODAR Manual
+^^^^^^^^^^^^
 
-This is the user manual for SODAR, the System for Omics Data Access and
-Retrieval. The manual contains guides and reference information for the system's
-graphical user interface, programmatic APIs and data modeling and ingestion
-conventions.
+This is the manual for SODAR, the System for Omics Data Access and Retrieval.
+The manual contains guides and reference information for the system's graphical
+user interface, programmatic APIs and data modeling and ingestion conventions.
+The manual is intended for users, administrators as well as developers of the
+SODAR server software.
 
 If you are new to SODAR, we recommend starting out with the
 :ref:`Introduction <introduction>` section.
@@ -123,11 +124,25 @@ Table of Contents
     :name: admin
 
     admin_overview
+    admin_install
     admin_user
     admin_ui
     admin_ontologyaccess
     admin_commands
     admin_settings
+
+.. toctree::
+    :maxdepth: 1
+    :caption: SODAR Development
+    :name: dev
+
+    dev_overview
+    contributing
+    code_of_conduct
+    dev_install
+    Development Guidelines <dev_guide>
+    dev_apps
+    dev_resource
 
 .. toctree::
     :maxdepth: 1

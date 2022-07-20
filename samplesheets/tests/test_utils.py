@@ -1,11 +1,12 @@
 """Tests for utility functions in the samplesheets app"""
 
+from unittest import skipIf
+
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from django.test import override_settings
 
 from test_plus.test import TestCase
-from unittest import skipIf
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI

@@ -32,14 +32,14 @@
         "Study Grant Number": "",
         "Study Funding Agency": ""
       },
-      "irods_path": "/omicsZone/projects/00/00000000-0000-0000-0000-000000000000/sample_data/study_11111111-1111-1111-1111-111111111111",
+      "irods_path": "/sodarZone/projects/00/00000000-0000-0000-0000-000000000000/sample_data/study_11111111-1111-1111-1111-111111111111",
       "table_url": "http://0.0.0.0:8000/samplesheets/ajax/study/tables/11111111-1111-1111-1111-111111111111",
       "plugin": null,
       "assays": {
         "22222222-2222-2222-2222-222222222222": {
           "name": "small",
           "display_name": "Small",
-          "irods_path": "/omicsZone/projects/00/00000000-0000-0000-0000-000000000000/sample_data/study_11111111-1111-1111-1111-111111111111/assay_22222222-2222-2222-2222-222222222222",
+          "irods_path": "/sodarZone/projects/00/00000000-0000-0000-0000-000000000000/sample_data/study_11111111-1111-1111-1111-111111111111/assay_22222222-2222-2222-2222-222222222222",
           "display_row_links": true,
           "plugin": null
         }

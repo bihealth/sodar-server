@@ -33,14 +33,15 @@ information.
     time of writing. For workarounds,
     `see this discussion <https://github.com/irods/irods/issues/4883>`_.
 
-To configure your iCommands connection, go to the `iRODS Info </irods/info>`_
-application. In the app, click on "Download Configuration" to receive a
-configuration file archive. This archive contains the ``irods_environment.json``
-file pre-configured for your user account. A server certificate file for secure
-connections is also included.
+To configure your iCommands connection, open the
+:ref:`ui_irods_info` application. In the app, click the
+:guilabel:`Download Configuration` button to download a configuration file
+archive. This archive contains the ``irods_environment.json`` file
+pre-configured for your user account. A server certificate file for secure
+connections is also included, if applicable.
 
-Enter the directory where you saved the downloaded archive and enter
-the following commands:
+Enter the directory where you saved the downloaded archive and enter the
+following commands:
 
 .. code-block:: console
 

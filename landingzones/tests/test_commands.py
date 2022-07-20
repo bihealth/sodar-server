@@ -3,13 +3,13 @@
 import io
 
 from datetime import timedelta
+from unittest import mock, skipIf
 
 from django.conf import settings
 from django.core.management import call_command
 from django.utils.timezone import localtime
 
 from test_plus.test import TestCase
-from unittest import mock, skipIf
 
 # Projectroles dependency
 from projectroles.constants import SODAR_CONSTANTS
@@ -151,7 +151,7 @@ class TestInactiveZones(TestCommandBase):
         )
 
     def tearDown(self):
-        self.irods_session.collections.get('/omicsZone/projects').remove(
+        self.irods_session.collections.get('/sodarZone/projects').remove(
             force=True
         )
 

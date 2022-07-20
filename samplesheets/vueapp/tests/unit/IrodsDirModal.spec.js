@@ -16,7 +16,7 @@ const fetchMock = require('fetch-mock-jest')
 let propsData
 let objList
 const rootIrodsPath = (
-  '/omicsZone/projects/00/00000000-0000-0000-0000-000000000000/sample_data/' +
+  '/sodarZone/projects/00/00000000-0000-0000-0000-000000000000/sample_data/' +
   'study_11111111-1111-1111-1111-111111111111/' +
   'assay_22222222-2222-2222-2222-222222222222/0815-N1-DNA1'
 )
@@ -151,7 +151,7 @@ describe('IrodsDirModal.vue', () => {
   it('returns relative path to data object on getRelativePath()', () => {
     fetchMock.mock(listAjaxUrl, objList)
     const subCollPath = (
-      '/omicsZone/projects/00/00000000-0000-0000-0000-000000000000/' +
+      '/sodarZone/projects/00/00000000-0000-0000-0000-000000000000/' +
       'sample_data/study_11111111-1111-1111-1111-111111111111/' +
       'assay_22222222-2222-2222-2222-222222222222/0815-N1-DNA1/subcoll/test2.txt'
     )

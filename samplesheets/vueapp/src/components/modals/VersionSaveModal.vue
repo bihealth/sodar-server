@@ -26,13 +26,13 @@
         <b-button
             variant="secondary"
             id="sodar-ss-btn-cancel"
-            @click="hideModal(false)">
+            @click="hideModal()">
           <i class="iconify" data-icon="mdi:close-thick"></i> Cancel
         </b-button>
         <b-button
             variant="primary"
             id="sodar-ss-btn-save"
-            @click="hideModal(true)"
+            @click="hideModal()"
             ref="updateBtn">
           <i class="iconify" data-icon="mdi:check-bold"></i> Save
         </b-button>
@@ -78,7 +78,7 @@ export default {
       // Show element
       this.$refs.versionSaveModal.show()
     },
-    hideModal (save) {
+    hideModal () {
       this.postSave()
       this.$refs.versionSaveModal.hide()
     }

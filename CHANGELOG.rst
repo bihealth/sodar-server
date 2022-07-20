@@ -4,7 +4,71 @@ SODAR Changelog
 Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
-Note that the issue IDs here refer to ones in the private CUBI GitLab.
+
+v0.11.3 (2022-07-20)
+====================
+
+Added
+-----
+
+- **General**
+    - GitHub issue templates (#1441)
+    - Contributing and code of conduct docs (#1426)
+- **Samplesheets**
+    - Enable ``bulk_rnaseq`` ISA-Tab template (#1430)
+    - Enable ``microarray`` ISA-Tab template (#1430)
+    - Enable ``single_cell_rnaseq`` ISA-Tab template (#1430)
+    - Enable ``tumor_normal_triplets`` ISA-Tab template (#1430)
+
+Changed
+-------
+
+- **General**
+    - Upgrade to django-sodar-core v0.10.13 (#1391, #1406, #1418)
+    - Upgrade to black v22.3.0 (sodar_core#972)
+    - Default ``BASICAUTH_REALM`` message (#1410)
+    - Add ``LocalAuthAPIView`` URL to ``SECURE_REDIRECT_EXEMPT`` (#1411)
+    - Rename default iRODS zone into ``sodarZone`` (#1417)
+    - Manual updates (#1386, #1387, #1408)
+    - Combine development documentation into manual (#1345)
+    - Update ``README`` badges for recreated GitHub repository (#1428)
+    - Update ``.pylintrc`` (#1429)
+    - General code cleanup (#1429)
+    - Upgrade cubi-tk (#1430)
+    - Upgrade to python-irodsclient v1.1.3 (#1431)
+    - Update ``env.example`` for ``sodar-docker-compose`` dev environment
+    - Upgrade to Node v16 (#1432, #1448)
+- **Samplesheets**
+    - Update Vue app browserslist (#1424)
+    - Upgrade Vue app to ag-grid v28 (#1447)
+    - Upgrade general Vue app dependencies (#1330, #1448)
+    - Hide sheet template fields not meant to be edited (#1443)
+
+Fixed
+-----
+
+- **General**
+    - ``build-docker.sh`` failing with special characters in tag name (#1385)
+- **Irodsinfo**
+    - Info page title (#1416)
+    - Manual link pointing to expired URL (#1442)
+- **Ontologyaccess**
+    - Redundant file info in import logging (#1436)
+- **Samplesheets**
+    - Unset study protocol export ordering (#1419)
+    - Bootstrap tooltip issues in sheet tables (#1415)
+    - ``cubi-tk`` install failure due to missing ``libbz2-dev`` (#1425)
+    - ``OntologyEditModal`` warning message for missing ontologies (#1444)
+    - ``OntologyEditModal`` search input not trimmed (#1446)
+    - Sheet table horizontal scrolling on Firefox (#1445)
+
+Removed
+-------
+
+- **General**
+    - Login page user domain autofill (#1409)
+    - Custom login template (#1409)
+    - Separate development documentation (#1345)
 
 
 v0.11.2 (2022-03-04)
@@ -25,6 +89,7 @@ Changed
 - **General**
     - Upgrade to django-sodar-core v0.10.10 (#1361, #1376)
     - Link manual to readthedocs.io (#1358)
+    - Upgrade to python-irodsclient v1.1.2 (#1389)
 - **Landingzones**
     - Make ``description`` optional in ``_make_landing_zone()`` (#1360)
 - **Samplesheets**

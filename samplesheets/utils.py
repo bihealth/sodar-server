@@ -1,10 +1,11 @@
 """Utilities for the samplesheets app"""
 
-from openpyxl import Workbook
-from openpyxl.workbook.child import INVALID_TITLE_REGEX
 import random
 import re
 import string
+
+from openpyxl import Workbook
+from openpyxl.workbook.child import INVALID_TITLE_REGEX
 
 from django.conf import settings
 from django.db.models import QuerySet

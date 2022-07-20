@@ -9,12 +9,12 @@ from rest_framework.exceptions import NotAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from sodar.users.auth import fallback_to_auth_basic
-
 # Projectroles dependency
 from projectroles.models import RoleAssignment, SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
 from projectroles.views_ajax import SODARBaseProjectAjaxView
+
+from sodar.users.auth import fallback_to_auth_basic
 
 
 logger = logging.getLogger(__name__)

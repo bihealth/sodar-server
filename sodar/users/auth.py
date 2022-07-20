@@ -1,5 +1,6 @@
-"""Module for using HTTP Auth Basic login if user is not already authenticated
-via Django session.
+"""
+Module for using HTTP Auth Basic login if user is not already authenticated via
+Django session.
 """
 
 import base64
@@ -13,8 +14,9 @@ from django.utils.deprecation import MiddlewareMixin
 
 
 class FallbackToAuthBasicMiddleware(MiddlewareMixin):
-    """Authentication middleware that allows users to use HTTP Auth Basic
-    instead of requiring the user to be in the session.
+    """
+    Authentication middleware that allows users to use HTTP Auth Basic instead
+    of requiring the user to be in the session.
     """
 
     def process_request(self, request):
@@ -22,17 +24,15 @@ class FallbackToAuthBasicMiddleware(MiddlewareMixin):
         assert hasattr(
             request, 'user'
         ), 'AuthenticationMiddleware must be active'
-
         # We are already done if the user is already authenticated.
         if request.user.is_authenticated:
             return
-
         # Allow disabling of basic auth alltogether in configuration.
         if getattr(settings, 'BASICAUTH_DISABLE', False):
             return
 
-        # When user is not logged in, try to login via ``HTTP_AUTHORIZATION``
-        # header.  If this header is not set, send the response to ask for
+        # When user is not logged in, try to login via HTTP_AUTHORIZATION
+        # header. If this header is not set, send the response to ask for
         # Auth Basic.
         if 'HTTP_AUTHORIZATION' in request.META:
             auth = request.META['HTTP_AUTHORIZATION'].split()
@@ -52,7 +52,7 @@ class FallbackToAuthBasicMiddleware(MiddlewareMixin):
 
 
 def cbv_decorator_from_middleware(middleware):
-    """A variant for ``decorator_from_middleware`` for class-based views."""
+    """A variant for decorator_from_middleware for class-based views."""
 
     def decorator(cls):
         dispatch = cls.dispatch
@@ -68,7 +68,7 @@ def cbv_decorator_from_middleware(middleware):
     return decorator
 
 
-#: Decorator for ``FallbackToAuthBasicMiddleware``
+# Decorator for FallbackToAuthBasicMiddleware
 fallback_to_auth_basic = cbv_decorator_from_middleware(
     FallbackToAuthBasicMiddleware
 )

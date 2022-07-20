@@ -1,16 +1,17 @@
 """Tests for samplesheets.io"""
 
+import csv
+import io
+import os
+import warnings
+from zipfile import ZipFile
+
 from altamisa.isatab import (
     InvestigationReader,
     StudyReader,
     AssayReader,
     models as isa_models,
 )
-import csv
-import io
-import os
-import warnings
-from zipfile import ZipFile
 
 from test_plus.test import TestCase
 

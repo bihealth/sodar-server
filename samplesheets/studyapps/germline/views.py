@@ -21,10 +21,10 @@ from samplesheets.rendering import SampleSheetTableBuilder
 from samplesheets.utils import get_sheets_url
 from samplesheets.studyapps.utils import get_igv_xml
 
+from samplesheets.studyapps.germline.utils import get_pedigree_file_path
+
 # Local helper for authenticating with auth basic
 from sodar.users.auth import fallback_to_auth_basic
-
-from samplesheets.studyapps.germline.utils import get_pedigree_file_path
 
 
 class BaseGermlineConfigView(

@@ -42,3 +42,8 @@ echo "Installing lxml dependencies"
 echo "***********************************************"
 apt-get -y install libxml2-dev
 apt-get -y install libxslt-dev
+
+echo "***********************************************"
+echo "Installing cubi-tk dependencies"
+echo "***********************************************"
+apt-get -y install libbz2-dev

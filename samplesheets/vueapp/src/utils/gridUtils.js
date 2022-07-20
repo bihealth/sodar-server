@@ -9,6 +9,7 @@ export function initGridOptions (app, editMode) {
     rowSelection: 'single',
     suppressMovableColumns: true,
     suppressColumnMoveAnimation: true,
+    suppressRowClickSelection: true,
     singleClickEdit: false,
     headerHeight: 38,
     rowHeight: 38,

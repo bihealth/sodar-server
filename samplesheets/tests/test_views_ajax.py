@@ -1,15 +1,14 @@
 """Tests for Ajax API views in the samplesheets app"""
 
-import fastobo
 import json
 import os
+from unittest.case import skipIf
 
+import fastobo
 from altamisa.constants import table_headers as th
 
 from django.conf import settings
 from django.urls import reverse
-
-from unittest.case import skipIf
 
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS

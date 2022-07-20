@@ -2,13 +2,13 @@
 Tests for REST API views in the samplesheets app with SODAR Taskflow enabled
 """
 
-from irods.keywords import REG_CHKSUM_KW
 import json
 import os
+from unittest.case import skipIf
+
+from irods.keywords import REG_CHKSUM_KW
 
 from django.urls import reverse
-
-from unittest.case import skipIf
 
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
