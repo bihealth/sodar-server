@@ -5,6 +5,37 @@ Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+Unreleased
+==========
+
+Added
+-----
+
+- **Irodsbackend**
+    - ``get_zone_path()`` helper (#1399)
+    - ``get_user_group_name()`` helper (#1397)
+- **Taskflowbackend**
+    - Add app from SODAR Core (#691)
+    - Add Taskflow functionality from SODAR Taskflow (#691)
+
+Changed
+-------
+
+- **General**
+    - Refactor Taskflow functionality for integrated code (#691, #1397)
+    - Use general ``REDIS_URL`` Django setting (#1396)
+- **Landingzones**
+    - Move Celery tasks into ``tasks_celery`` (#1400)
+- **Samplesheets**
+    - Move Celery tasks into ``tasks_celery`` (#1400)
+
+Removed
+-------
+
+- **Samplesheets**
+    - Taskflow API views (#691, #1397)
+
+
 v0.11.3 (2022-07-20)
 ====================
 

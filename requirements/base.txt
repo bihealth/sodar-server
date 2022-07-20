@@ -103,3 +103,7 @@ pronto==2.4.4  # For OWL conversion
 
 # CUBI-TK for sheet templates
 -e git+https://github.com/bihealth/cubi-tk.git@0c0250cdfd546eaac1e0364df62213ad3c97ef7c#egg=cubi-tk
+
+# Taskflow requirements
+tooz==2.10.1
+taskflow==4.6.4
