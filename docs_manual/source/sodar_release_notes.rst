@@ -8,7 +8,7 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
-v0.11.0 (WIP)
+v0.12.0 (WIP)
 =============
 
 Release for integrating SODAR Taskflow with SODAR.
