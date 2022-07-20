@@ -38,6 +38,7 @@ Changed
     - Upgrade to python-irodsclient v1.1.3 (#1431)
     - Update ``env.example`` for ``sodar-docker-compose`` dev environment
     - Upgrade to Node v16 (#1432, #1448)
+    - Upgrade to lxml v4.9.1 (#1450)
 - **Samplesheets**
     - Update Vue app browserslist (#1424)
     - Upgrade Vue app to ag-grid v28 (#1447)
