@@ -21,7 +21,8 @@ IRODS_BACKEND_ENABLED = (
 )
 IRODS_BACKEND_SKIP_MSG = 'iRODS backend not enabled in settings'
 PLUGINS_DISABLE_IRODS = settings.ENABLED_BACKEND_PLUGINS.copy()
-PLUGINS_DISABLE_IRODS.remove('omics_irods')
+if 'omics_irods' in PLUGINS_DISABLE_IRODS:
+    PLUGINS_DISABLE_IRODS.remove('omics_irods')
 
 
 class TestIrodsinfoViewBase(TestCase):
