@@ -1,4 +1,4 @@
-"""Tests for utility functions in the samplesheets app"""
+"""Tests for plugins in the samplesheets app"""
 
 from unittest import skipIf
 

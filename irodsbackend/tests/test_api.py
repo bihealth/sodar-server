@@ -16,7 +16,7 @@ from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 # Landingzones dependency
 from landingzones.tests.test_models import LandingZoneMixin
 
-from irodsbackend.api import IrodsAPI
+from irodsbackend.api import IrodsAPI, USER_GROUP_PREFIX
 
 
 # Global constants
@@ -294,3 +294,26 @@ class TestIrodsbackendAPI(
         path = self.irods_backend.get_path(self.assay)
         uuid = self.irods_backend.get_uuid_from_path(path, 'assay')
         self.assertEqual(uuid, str(self.assay.sodar_uuid))
+
+    def test_get_user_group_name(self):
+        """Test get_user_group_name() with a Project object"""
+        self.assertEqual(
+            self.irods_backend.get_user_group_name(self.project),
+            '{}{}'.format(USER_GROUP_PREFIX, self.project.sodar_uuid),
+        )
+
+    def test_get_user_group_name_uuid(self):
+        """Test get_user_group_name() with an UUID object"""
+        self.assertEqual(
+            self.irods_backend.get_user_group_name(self.project.sodar_uuid),
+            '{}{}'.format(USER_GROUP_PREFIX, self.project.sodar_uuid),
+        )
+
+    def test_get_user_group_name_uuid_str(self):
+        """Test get_user_group_name() with an UUID string"""
+        self.assertEqual(
+            self.irods_backend.get_user_group_name(
+                str(self.project.sodar_uuid)
+            ),
+            '{}{}'.format(USER_GROUP_PREFIX, self.project.sodar_uuid),
+        )

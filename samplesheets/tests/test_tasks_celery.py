@@ -10,7 +10,7 @@ from unittest import skipIf
 from projectroles.app_settings import AppSettingAPI
 from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
-from projectroles.tests.test_views_taskflow import TestTaskflowBase
+from taskflowbackend.tests.test_project_views import TestTaskflowBase
 
 # Sodarcache dependency
 from sodarcache.models import JSONCacheItem
@@ -22,7 +22,7 @@ from appalerts.models import AppAlert
 from timeline.models import ProjectEvent
 
 from samplesheets.models import ISATab
-from samplesheets.tasks import update_project_cache_task, sheet_sync_task
+from samplesheets.tasks_celery import update_project_cache_task, sheet_sync_task
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 from samplesheets.tests.test_views import TestSheetRemoteSyncBase
 from samplesheets.tests.test_views_taskflow import (
@@ -69,7 +69,7 @@ class TestUpdateProjectCacheTask(
 
     def setUp(self):
         super().setUp()
-        self.project, self.owner_as = self._make_project_taskflow(
+        self.project, self.owner_as = self.make_project_taskflow(
             title='TestProject',
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
@@ -82,7 +82,7 @@ class TestUpdateProjectCacheTask(
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
         self.app_alerts = get_backend_api('appalerts_backend')
-        self._make_irods_colls(self.investigation)
+        self.make_irods_colls(self.investigation)
 
     def test_update_cache(self):
         """Test cache update"""
@@ -90,7 +90,7 @@ class TestUpdateProjectCacheTask(
             JSONCacheItem.objects.filter(project=self.project).count(), 0
         )
         self.assertEqual(AppAlert.objects.count(), 1)
-        self.assertEqual(ProjectEvent.objects.count(), 1)
+        self.assertEqual(ProjectEvent.objects.count(), 2)
 
         update_project_cache_task(
             self.project.sodar_uuid,
@@ -118,7 +118,7 @@ class TestUpdateProjectCacheTask(
         self.assertEqual(AppAlert.objects.count(), 2)
         alert = AppAlert.objects.order_by('-pk').first()
         self.assertTrue(alert.message.endswith(CACHE_ALERT_MESSAGE))
-        self.assertEqual(ProjectEvent.objects.count(), 2)
+        self.assertEqual(ProjectEvent.objects.count(), 3)
 
     def test_update_cache_no_alert(self):
         """Test cache update with app alert disabled"""
@@ -126,7 +126,7 @@ class TestUpdateProjectCacheTask(
             JSONCacheItem.objects.filter(project=self.project).count(), 0
         )
         self.assertEqual(AppAlert.objects.count(), 1)
-        self.assertEqual(ProjectEvent.objects.count(), 1)
+        self.assertEqual(ProjectEvent.objects.count(), 2)
 
         update_project_cache_task(
             self.project.sodar_uuid, self.user.sodar_uuid, add_alert=False
@@ -136,7 +136,7 @@ class TestUpdateProjectCacheTask(
             JSONCacheItem.objects.filter(project=self.project).count(), 1
         )
         self.assertEqual(AppAlert.objects.count(), 1)
-        self.assertEqual(ProjectEvent.objects.count(), 2)
+        self.assertEqual(ProjectEvent.objects.count(), 3)
 
     def test_update_cache_no_user(self):
         """Test cache update with no user"""
@@ -144,7 +144,7 @@ class TestUpdateProjectCacheTask(
             JSONCacheItem.objects.filter(project=self.project).count(), 0
         )
         self.assertEqual(AppAlert.objects.count(), 1)
-        self.assertEqual(ProjectEvent.objects.count(), 1)
+        self.assertEqual(ProjectEvent.objects.count(), 2)
 
         update_project_cache_task(self.project.sodar_uuid, None, add_alert=True)
 
@@ -152,7 +152,7 @@ class TestUpdateProjectCacheTask(
             JSONCacheItem.objects.filter(project=self.project).count(), 1
         )
         self.assertEqual(AppAlert.objects.count(), 1)
-        self.assertEqual(ProjectEvent.objects.count(), 2)
+        self.assertEqual(ProjectEvent.objects.count(), 3)
 
 
 @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)

@@ -1,26 +1,22 @@
 """Integration tests for views in the landingzones Django app with taskflow"""
 
-# NOTE: You must supply sodar_url in taskflow requests!
-
 import hashlib
-import os
-import random
-import string
-import time
-from unittest import skipIf
-
-from irods.keywords import REG_CHKSUM_KW
 from irods.test.helpers import make_object
+from irods.keywords import REG_CHKSUM_KW
+import os
+import time
 
 from django.conf import settings
 from django.contrib import auth
 from django.core import mail
 from django.urls import reverse
 
+from unittest import skipIf
+
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
-from projectroles.tests.test_views_taskflow import TestTaskflowBase
+from taskflowbackend.tests.test_project_views import TestTaskflowBase
 
 # Appalerts dependency
 from appalerts.models import AppAlert
@@ -30,9 +26,8 @@ from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 from samplesheets.tests.test_views_taskflow import SampleSheetTaskflowMixin
 from samplesheets.views import RESULTS_COLL, MISC_FILES_COLL, TRACK_HUBS_COLL
 
-from landingzones.models import LandingZone, DEFAULT_STATUS_INFO
+from landingzones.models import LandingZone
 from landingzones.tests.test_models import LandingZoneMixin
-from landingzones.tests.test_views import TestViewsBase
 
 
 User = auth.get_user_model()
@@ -69,16 +64,16 @@ INVALID_MD5 = '11111111111111111111111111111111'
 class LandingZoneTaskflowMixin:
     """Taskflow helpers for landingzones tests"""
 
-    def _make_zone_taskflow(self, zone, request=None):
+    def make_zone_taskflow(self, zone, request=None):
         """
-        Create landing zone in iRODS using omics_taskflow.
+        Create landing zone in iRODS using taskflowbackend.
 
         :param zone: LandingZone object
         :param request: HTTP request object (optional, default=None)
+        :return: Updated LandingZone object
         :raise taskflow.FlowSubmitException if submit fails
         """
         timeline = get_backend_api('timeline_backend')
-        irods_backend = get_backend_api('omics_irods')
         user = request.user if request else zone.user
         self.assertEqual(zone.status, 'CREATING')
 
@@ -93,36 +88,22 @@ class LandingZoneTaskflowMixin:
         )
 
         flow_data = {
-            'zone_title': zone.title,
-            'zone_uuid': zone.sodar_uuid,
-            'user_name': user.username,
-            'user_uuid': user.sodar_uuid,
-            'assay_path': irods_backend.get_sub_path(
-                zone.assay, landing_zone=True
-            ),
-            'description': zone.description,
-            'zone_config': zone.configuration,
+            'zone_uuid': str(zone.sodar_uuid),
             'colls': [],
         }
         values = {
-            'project_uuid': zone.project.sodar_uuid,
+            'project': zone.project,
             'flow_name': 'landing_zone_create',
             'flow_data': flow_data,
-            'timeline_uuid': tl_event.sodar_uuid,
-            'request_mode': 'async',
-            'request': request,
+            'async_mode': True,
+            'tl_event': tl_event,
         }
-        if not request:
-            values['sodar_url'] = self.get_sodar_url()
-
         self.taskflow.submit(**values)
 
-        # HACK: Wait for async stuff to finish
-        time.sleep(ASYNC_WAIT_SECONDS)
-        zone.refresh_from_db()
-        self.assertEqual(zone.status, 'ACTIVE')
+        self.assert_zone_status(zone, 'ACTIVE')
+        return zone
 
-    def _make_object(self, coll, obj_name, content=None, content_length=1024):
+    def make_object(self, coll, obj_name, content=None, content_length=1024):
         """
         Create and put a data object into iRODS.
 
@@ -139,7 +120,7 @@ class LandingZoneTaskflowMixin:
             self.irods_session, obj_path, content, **{REG_CHKSUM_KW: ''}
         )
 
-    def _make_md5_object(self, obj):
+    def make_md5_object(self, obj):
         """
         Create and put an MD5 checksum object for an existing object in iRODS.
 
@@ -147,40 +128,41 @@ class LandingZoneTaskflowMixin:
         :return: iRODSDataObject
         """
         md5_path = obj.path + '.md5'
-        md5_content = ''
         with obj.open() as obj_fp:
             md5_content = hashlib.md5(obj_fp.read()).hexdigest()
         return make_object(self.irods_session, md5_path, md5_content)
 
-    def _wait_for_taskflow(self, zone_uuid=None, status=None, count=None):
+    def assert_zone_status(self, zone, status='ACTIVE'):
         """
-        Wait for async taskflow operation on a LandingZone to finish.
-
-        :param zone_uuid: LandingZone sodar_uuid to check for
-        :param status: Zone status to wait for
-        :param count: Zone count to wait for (doesn't require UUID)
-        """
-        for i in range(0, ASYNC_RETRY_COUNT):
-            time.sleep(ASYNC_WAIT_SECONDS)
-            if count and LandingZone.objects.count() == count:
-                break
-            if zone_uuid and status:
-                zone = LandingZone.objects.get(sodar_uuid=zone_uuid)
-                if zone.status == status:
-                    break
-
-    def _assert_zone_coll(self, zone, sub_path=None, expected=True):
-        """
-        Assert existence of a collection below a landing zone.
+        Assert status of landing zone(s) after waiting for async taskflow
+        operation to finish.
 
         :param zone: LandingZone object
-        :param sub_path: Subpath below zone (optional)
-        :param expected: Boolean (optional, default=True)
+        :param status: Zone status to wait for (string, default=ACTIVE)
         """
-        path = self.irods_backend.get_path(zone)
-        if sub_path:
-            path += '/' + sub_path
-        self.assertEqual(self.irods_session.collections.exists(path), expected)
+        for i in range(0, ASYNC_RETRY_COUNT):
+            zone.refresh_from_db()
+            if zone.status == status:
+                return True
+            time.sleep(ASYNC_WAIT_SECONDS)
+        raise AssertionError(
+            'Timed out waiting for zone status "{}"'.format(status)
+        )
+
+    def assert_zone_count(self, count):
+        """
+        Assert landing zone count after waiting for async taskflow
+        operation to finish.
+
+        :param count: Expected zone count
+        """
+        for i in range(0, ASYNC_RETRY_COUNT):
+            if LandingZone.objects.count() == count:
+                return True
+            time.sleep(ASYNC_WAIT_SECONDS)
+        raise AssertionError(
+            'Timed out waiting for zone count of {}'.format(count)
+        )
 
 
 class TestLandingZoneCreateView(
@@ -202,7 +184,7 @@ class TestLandingZoneCreateView(
 
         # Init project
         # Make project with owner in Taskflow and Django
-        self.project, self.owner_as = self._make_project_taskflow(
+        self.project, self.owner_as = self.make_project_taskflow(
             title='TestProject',
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
@@ -217,7 +199,7 @@ class TestLandingZoneCreateView(
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
         # Create iRODS collections
-        self._make_irods_colls(self.investigation)
+        self.make_irods_colls(self.investigation)
 
     @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_create_zone(self):
@@ -231,7 +213,6 @@ class TestLandingZoneCreateView(
             'title_suffix': ZONE_SUFFIX,
             'description': ZONE_DESC,
             'configuration': '',
-            'sodar_url': self.get_sodar_url(),
         }
         with self.login(self.user):
             response = self.client.post(
@@ -249,14 +230,13 @@ class TestLandingZoneCreateView(
                 ),
             )
 
-        self._wait_for_taskflow(count=1)
-        self.assertEqual(LandingZone.objects.count(), 1)
+        self.assert_zone_count(1)
         zone = LandingZone.objects.first()
-        self.assertEqual(zone.status, 'ACTIVE')
-        self._assert_zone_coll(zone)
-        self._assert_zone_coll(zone, MISC_FILES_COLL, False)
-        self._assert_zone_coll(zone, RESULTS_COLL, False)
-        self._assert_zone_coll(zone, TRACK_HUBS_COLL, False)
+        self.assert_zone_status(zone, 'ACTIVE')
+        self.assert_irods_coll(zone)
+        self.assert_irods_coll(zone, MISC_FILES_COLL, False)
+        self.assert_irods_coll(zone, RESULTS_COLL, False)
+        self.assert_irods_coll(zone, TRACK_HUBS_COLL, False)
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(AppAlert.objects.count(), 1)
 
@@ -271,7 +251,6 @@ class TestLandingZoneCreateView(
             'description': ZONE_DESC,
             'create_colls': True,
             'configuration': '',
-            'sodar_url': self.get_sodar_url(),
         }
         with self.login(self.user):
             response = self.client.post(
@@ -289,16 +268,15 @@ class TestLandingZoneCreateView(
                 ),
             )
 
-        self._wait_for_taskflow(count=1)
-        self.assertEqual(LandingZone.objects.count(), 1)
+        self.assert_zone_count(1)
         zone = LandingZone.objects.first()
-        self.assertEqual(zone.status, 'ACTIVE')
-        self._assert_zone_coll(zone)
-        self._assert_zone_coll(zone, MISC_FILES_COLL, True)
-        self._assert_zone_coll(zone, RESULTS_COLL, True)
-        self._assert_zone_coll(zone, TRACK_HUBS_COLL, True)
-        self._assert_zone_coll(zone, '0815-N1-DNA1', False)  # Plugin collection
-        self._assert_zone_coll(zone, '0815-T1-DNA1', False)  # Plugin collection
+        self.assert_zone_status(zone, 'ACTIVE')
+        self.assert_irods_coll(zone)
+        self.assert_irods_coll(zone, MISC_FILES_COLL, True)
+        self.assert_irods_coll(zone, RESULTS_COLL, True)
+        self.assert_irods_coll(zone, TRACK_HUBS_COLL, True)
+        self.assert_irods_coll(zone, '0815-N1-DNA1', False)  # Plugin collection
+        self.assert_irods_coll(zone, '0815-T1-DNA1', False)  # Plugin collection
 
     @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_create_zone_colls_plugin(self):
@@ -323,7 +301,6 @@ class TestLandingZoneCreateView(
             'description': ZONE_DESC,
             'create_colls': True,
             'configuration': '',
-            'sodar_url': self.get_sodar_url(),
         }
         with self.login(self.user):
             response = self.client.post(
@@ -341,16 +318,15 @@ class TestLandingZoneCreateView(
                 ),
             )
 
-        self._wait_for_taskflow(count=1)
-        self.assertEqual(LandingZone.objects.count(), 1)
+        self.assert_zone_count(1)
         zone = LandingZone.objects.first()
-        self.assertEqual(zone.status, 'ACTIVE')
-        self._assert_zone_coll(zone)
-        self._assert_zone_coll(zone, MISC_FILES_COLL, True)
-        self._assert_zone_coll(zone, RESULTS_COLL, True)
-        self._assert_zone_coll(zone, TRACK_HUBS_COLL, True)
-        self._assert_zone_coll(zone, '0815-N1-DNA1', True)
-        self._assert_zone_coll(zone, '0815-T1-DNA1', True)
+        self.assert_zone_status(zone, 'ACTIVE')
+        self.assert_irods_coll(zone)
+        self.assert_irods_coll(zone, MISC_FILES_COLL, True)
+        self.assert_irods_coll(zone, RESULTS_COLL, True)
+        self.assert_irods_coll(zone, TRACK_HUBS_COLL, True)
+        self.assert_irods_coll(zone, '0815-N1-DNA1', True)
+        self.assert_irods_coll(zone, '0815-T1-DNA1', True)
 
     # TODO: Test without sodarcache (see issue #1157)
 
@@ -374,7 +350,7 @@ class TestLandingZoneMoveView(
 
         # Init project
         # Make project with owner in Taskflow and Django
-        self.project, self.owner_as = self._make_project_taskflow(
+        self.project, self.owner_as = self.make_project_taskflow(
             title='TestProject',
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
@@ -388,9 +364,8 @@ class TestLandingZoneMoveView(
         )
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
-
         # Create iRODS collections
-        self._make_irods_colls(self.investigation)
+        self.make_irods_colls(self.investigation)
 
         # Create zone
         self.landing_zone = self._make_landing_zone(
@@ -404,8 +379,7 @@ class TestLandingZoneMoveView(
         )
 
         # Create zone in taskflow
-        self._make_zone_taskflow(self.landing_zone)
-
+        self.make_zone_taskflow(self.landing_zone)
         # Get collections
         self.zone_coll = self.irods_session.collections.get(
             self.irods_backend.get_path(self.landing_zone)
@@ -417,9 +391,10 @@ class TestLandingZoneMoveView(
     @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_move(self):
         """Test validating and moving a landing zone with objects"""
-        self.irods_obj = self._make_object(self.zone_coll, TEST_OBJ_NAME)
-        self.md5_obj = self._make_md5_object(self.irods_obj)
-        self.assertEqual(LandingZone.objects.first().status, 'ACTIVE')
+        self.irods_obj = self.make_object(self.zone_coll, TEST_OBJ_NAME)
+        self.md5_obj = self.make_md5_object(self.irods_obj)
+        zone = LandingZone.objects.first()
+        self.assertEqual(zone.status, 'ACTIVE')
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         self.assertEqual(len(mail.outbox), 1)
@@ -427,14 +402,12 @@ class TestLandingZoneMoveView(
             AppAlert.objects.filter(alert_name='zone_move').count(), 0
         )
 
-        values = {'sodar_url': self.get_sodar_url()}
         with self.login(self.user):
             response = self.client.post(
                 reverse(
                     'landingzones:move',
                     kwargs={'landingzone': self.landing_zone.sodar_uuid},
                 ),
-                values,
             )
             self.assertRedirects(
                 response,
@@ -444,10 +417,7 @@ class TestLandingZoneMoveView(
                 ),
             )
 
-        self._wait_for_taskflow(
-            zone_uuid=LandingZone.objects.first().sodar_uuid, status='MOVED'
-        )
-        self.assertEqual(LandingZone.objects.first().status, 'MOVED')
+        self.assert_zone_status(zone, 'MOVED')
         self.assertEqual(len(self.zone_coll.data_objects), 0)
         self.assertEqual(len(self.assay_coll.data_objects), 2)
         self.assertEqual(len(mail.outbox), 3)  # Mails to owner & category owner
@@ -458,11 +428,12 @@ class TestLandingZoneMoveView(
     @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_move_invalid_md5(self):
         """Test validating and moving with invalid checksum (should fail)"""
-        self.irods_obj = self._make_object(self.zone_coll, TEST_OBJ_NAME)
+        self.irods_obj = self.make_object(self.zone_coll, TEST_OBJ_NAME)
         self.md5_obj = make_object(
             self.irods_session, self.irods_obj.path + '.md5', INVALID_MD5
         )
-        self.assertEqual(LandingZone.objects.first().status, 'ACTIVE')
+        zone = LandingZone.objects.first()
+        self.assertEqual(zone.status, 'ACTIVE')
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         self.assertEqual(len(mail.outbox), 1)
@@ -470,14 +441,12 @@ class TestLandingZoneMoveView(
             AppAlert.objects.filter(alert_name='zone_move').count(), 0
         )
 
-        values = {'sodar_url': self.get_sodar_url()}
         with self.login(self.user):
             response = self.client.post(
                 reverse(
                     'landingzones:move',
                     kwargs={'landingzone': self.landing_zone.sodar_uuid},
                 ),
-                values,
             )
             self.assertRedirects(
                 response,
@@ -487,10 +456,7 @@ class TestLandingZoneMoveView(
                 ),
             )
 
-        self._wait_for_taskflow(
-            zone_uuid=LandingZone.objects.first().sodar_uuid, status='FAILED'
-        )
-        self.assertEqual(LandingZone.objects.first().status, 'FAILED')
+        self.assert_zone_status(zone, 'FAILED')
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         self.assertEqual(len(mail.outbox), 2)
@@ -501,23 +467,22 @@ class TestLandingZoneMoveView(
     @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_move_no_md5(self):
         """Test validating and moving without checksum (should fail)"""
-        self.irods_obj = self._make_object(self.zone_coll, TEST_OBJ_NAME)
+        self.irods_obj = self.make_object(self.zone_coll, TEST_OBJ_NAME)
         # No md5
-        self.assertEqual(LandingZone.objects.first().status, 'ACTIVE')
+        zone = LandingZone.objects.first()
+        self.assertEqual(zone.status, 'ACTIVE')
         self.assertEqual(len(self.zone_coll.data_objects), 1)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         self.assertEqual(
             AppAlert.objects.filter(alert_name='zone_move').count(), 0
         )
 
-        values = {'sodar_url': self.get_sodar_url()}
         with self.login(self.user):
             response = self.client.post(
                 reverse(
                     'landingzones:move',
                     kwargs={'landingzone': self.landing_zone.sodar_uuid},
                 ),
-                values,
             )
             self.assertRedirects(
                 response,
@@ -527,10 +492,7 @@ class TestLandingZoneMoveView(
                 ),
             )
 
-        self._wait_for_taskflow(
-            zone_uuid=LandingZone.objects.first().sodar_uuid, status='FAILED'
-        )
-        self.assertEqual(LandingZone.objects.first().status, 'FAILED')
+        self.assert_zone_status(zone, 'FAILED')
         self.assertEqual(len(self.zone_coll.data_objects), 1)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         self.assertEqual(
@@ -540,9 +502,10 @@ class TestLandingZoneMoveView(
     @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_validate(self):
         """Test validating a landing zone with objects without moving"""
-        self.irods_obj = self._make_object(self.zone_coll, TEST_OBJ_NAME)
-        self.md5_obj = self._make_md5_object(self.irods_obj)
-        self.assertEqual(LandingZone.objects.first().status, 'ACTIVE')
+        self.irods_obj = self.make_object(self.zone_coll, TEST_OBJ_NAME)
+        self.md5_obj = self.make_md5_object(self.irods_obj)
+        zone = LandingZone.objects.first()
+        self.assertEqual(zone.status, 'ACTIVE')
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         self.assertEqual(len(mail.outbox), 1)
@@ -550,14 +513,12 @@ class TestLandingZoneMoveView(
             AppAlert.objects.filter(alert_name='zone_validate').count(), 0
         )
 
-        values = {'sodar_url': self.get_sodar_url()}
         with self.login(self.user):
             response = self.client.post(
                 reverse(
                     'landingzones:validate',
                     kwargs={'landingzone': self.landing_zone.sodar_uuid},
                 ),
-                values,
             )
             self.assertRedirects(
                 response,
@@ -567,10 +528,7 @@ class TestLandingZoneMoveView(
                 ),
             )
 
-        self._wait_for_taskflow(
-            zone_uuid=LandingZone.objects.first().sodar_uuid, status='ACTIVE'
-        )
-        self.assertEqual(LandingZone.objects.first().status, 'ACTIVE')
+        self.assert_zone_status(zone, 'ACTIVE')
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         self.assertEqual(len(mail.outbox), 1)
@@ -581,11 +539,12 @@ class TestLandingZoneMoveView(
     @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_validate_invalid_md5(self):
         """Test validating a landing zone without checksum (should fail)"""
-        self.irods_obj = self._make_object(self.zone_coll, TEST_OBJ_NAME)
+        self.irods_obj = self.make_object(self.zone_coll, TEST_OBJ_NAME)
         self.md5_obj = make_object(
             self.irods_session, self.irods_obj.path + '.md5', INVALID_MD5
         )
-        self.assertEqual(LandingZone.objects.first().status, 'ACTIVE')
+        zone = LandingZone.objects.first()
+        self.assertEqual(zone.status, 'ACTIVE')
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
         self.assertEqual(len(mail.outbox), 1)
@@ -593,21 +552,15 @@ class TestLandingZoneMoveView(
             AppAlert.objects.filter(alert_name='zone_validate').count(), 0
         )
 
-        values = {'sodar_url': self.get_sodar_url()}
         with self.login(self.user):
             self.client.post(
                 reverse(
                     'landingzones:validate',
                     kwargs={'landingzone': self.landing_zone.sodar_uuid},
                 ),
-                values,
             )
 
-        self._wait_for_taskflow(
-            zone_uuid=LandingZone.objects.first().sodar_uuid, status='FAILED'
-        )
-        zone = LandingZone.objects.first()
-        self.assertEqual(zone.status, 'FAILED')
+        self.assert_zone_status(zone, 'FAILED')
         self.assertTrue('BatchValidateChecksumsTask' in zone.status_info)
         self.assertEqual(len(self.zone_coll.data_objects), 2)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
@@ -619,27 +572,22 @@ class TestLandingZoneMoveView(
     @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_validate_no_md5(self):
         """Test validating a landing zone without checksum (should fail)"""
-        self.irods_obj = self._make_object(self.zone_coll, TEST_OBJ_NAME)
+        self.irods_obj = self.make_object(self.zone_coll, TEST_OBJ_NAME)
         # No md5
-        self.assertEqual(LandingZone.objects.first().status, 'ACTIVE')
+        zone = LandingZone.objects.first()
+        self.assertEqual(zone.status, 'ACTIVE')
         self.assertEqual(len(self.zone_coll.data_objects), 1)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
 
-        values = {'sodar_url': self.get_sodar_url()}
         with self.login(self.user):
             self.client.post(
                 reverse(
                     'landingzones:validate',
                     kwargs={'landingzone': self.landing_zone.sodar_uuid},
                 ),
-                values,
             )
 
-        self._wait_for_taskflow(
-            zone_uuid=LandingZone.objects.first().sodar_uuid, status='FAILED'
-        )
-        zone = LandingZone.objects.first()
-        self.assertEqual(zone.status, 'FAILED')
+        self.assert_zone_status(zone, 'FAILED')
         self.assertTrue('BatchCheckFilesTask' in zone.status_info)
         self.assertEqual(len(self.zone_coll.data_objects), 1)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
@@ -647,28 +595,23 @@ class TestLandingZoneMoveView(
     @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_validate_md5_only(self):
         """Test validating zone with no file for MD5 file (should fail)"""
-        self.irods_obj = self._make_object(self.zone_coll, TEST_OBJ_NAME)
-        self.md5_obj = self._make_md5_object(self.irods_obj)
+        self.irods_obj = self.make_object(self.zone_coll, TEST_OBJ_NAME)
+        self.md5_obj = self.make_md5_object(self.irods_obj)
         self.irods_obj.unlink(force=True)
-        self.assertEqual(LandingZone.objects.first().status, 'ACTIVE')
+        zone = LandingZone.objects.first()
+        self.assertEqual(zone.status, 'ACTIVE')
         self.assertEqual(len(self.zone_coll.data_objects), 1)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
 
-        values = {'sodar_url': self.get_sodar_url()}
         with self.login(self.user):
             self.client.post(
                 reverse(
                     'landingzones:validate',
                     kwargs={'landingzone': self.landing_zone.sodar_uuid},
                 ),
-                values,
             )
 
-        self._wait_for_taskflow(
-            zone_uuid=LandingZone.objects.first().sodar_uuid, status='FAILED'
-        )
-        zone = LandingZone.objects.first()
-        self.assertEqual(zone.status, 'FAILED')
+        self.assert_zone_status(zone, 'FAILED')
         self.assertTrue('BatchCheckFilesTask' in zone.status_info)
         self.assertEqual(len(self.zone_coll.data_objects), 1)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
@@ -687,7 +630,7 @@ class TestLandingZoneDeleteView(
         super().setUp()
 
         # Make project with owner in Taskflow and Django
-        self.project, self.owner_as = self._make_project_taskflow(
+        self.project, self.owner_as = self.make_project_taskflow(
             title='TestProject',
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
@@ -703,7 +646,7 @@ class TestLandingZoneDeleteView(
         self.assay = self.study.assays.first()
 
         # Create iRODS collections
-        self._make_irods_colls(self.investigation)
+        self.make_irods_colls(self.investigation)
 
         # Create zone
         self.landing_zone = self._make_landing_zone(
@@ -717,7 +660,7 @@ class TestLandingZoneDeleteView(
         )
 
         # Create zone in taskflow
-        self._make_zone_taskflow(self.landing_zone)
+        self.make_zone_taskflow(self.landing_zone)
 
     @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_delete_zone(self):
@@ -727,14 +670,12 @@ class TestLandingZoneDeleteView(
             AppAlert.objects.filter(alert_name='zone_delete').count(), 0
         )
 
-        values = {'sodar_url': self.get_sodar_url()}
         with self.login(self.user):
             response = self.client.post(
                 reverse(
                     'landingzones:delete',
                     kwargs={'landingzone': self.landing_zone.sodar_uuid},
                 ),
-                values,
             )
             self.assertRedirects(
                 response,
@@ -744,98 +685,10 @@ class TestLandingZoneDeleteView(
                 ),
             )
 
-        self._wait_for_taskflow(
-            zone_uuid=LandingZone.objects.first().sodar_uuid, status='DELETED'
-        )
-        self.assertEqual(LandingZone.objects.count(), 1)
-        self.assertEqual(LandingZone.objects.first().status, 'DELETED')
+        self.assert_zone_count(1)
+        zone = LandingZone.objects.first()
+        self.assert_zone_status(zone, 'DELETED')
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(
             AppAlert.objects.filter(alert_name='zone_delete').count(), 1
         )
-
-
-# NOTE: Taskflow initialization not required for this view, hence TestViewsBase
-@skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
-class TestLandingZoneStatusSetAPIView(TestViewsBase):
-    """Tests for the landing zone status setting API view"""
-
-    def test_post_status_active(self):
-        """Test POST request for setting a landing zone status into ACTIVE"""
-        self.assertEqual(AppAlert.objects.count(), 0)
-        values = {
-            'zone_uuid': str(self.landing_zone.sodar_uuid),
-            'flow_name': 'landing_zone_create',
-            'status': 'ACTIVE',
-            'status_info': DEFAULT_STATUS_INFO['ACTIVE'],
-            'sodar_secret': settings.TASKFLOW_SODAR_SECRET,
-        }
-        with self.login(self.user):
-            response = self.client.post(
-                reverse('landingzones:taskflow_zone_status_set'), values
-            )
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(mail.outbox), 0)  # No mail sent for ACTIVE
-        self.assertEqual(AppAlert.objects.count(), 0)
-
-    def test_post_status_active_long_status(self):
-        """Test setting a landing zone status with long status_info"""
-        values = {
-            'zone_uuid': str(self.landing_zone.sodar_uuid),
-            'flow_name': 'landing_zone_create',
-            'status': 'ACTIVE',
-            'status_info': ''.join(
-                random.choices(string.ascii_lowercase, k=2048)
-            ),
-            'sodar_secret': settings.TASKFLOW_SODAR_SECRET,
-        }
-        with self.login(self.user):
-            response = self.client.post(
-                reverse('landingzones:taskflow_zone_status_set'), values
-            )
-        self.assertEqual(response.status_code, 200)
-        self.landing_zone.refresh_from_db()
-        self.assertEqual(self.landing_zone.status, 'ACTIVE')
-        self.assertEqual(len(self.landing_zone.status_info), 1024)
-
-    def test_post_status_moved(self):
-        """Test setting a landing zone status into MOVED"""
-        self.assertEqual(AppAlert.objects.count(), 0)
-        values = {
-            'zone_uuid': str(self.landing_zone.sodar_uuid),
-            'flow_name': 'landing_zone_move',
-            'status': 'MOVED',
-            'status_info': DEFAULT_STATUS_INFO['MOVED'],
-            'file_count': '1',
-            'sodar_secret': settings.TASKFLOW_SODAR_SECRET,
-        }
-        with self.login(self.user):
-            response = self.client.post(
-                reverse('landingzones:taskflow_zone_status_set'), values
-            )
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(mail.outbox), 2)  # Mails for zone owner AND user
-        self.assertEqual(
-            AppAlert.objects.filter(alert_name='zone_move').count(), 1
-        )
-        self.assertEqual(
-            AppAlert.objects.filter(alert_name='zone_move_member').count(), 1
-        )
-
-    def test_post_status_failed(self):
-        """Test setting a landing zone status into FAILED"""
-        self.assertEqual(AppAlert.objects.count(), 0)
-        values = {
-            'zone_uuid': str(self.landing_zone.sodar_uuid),
-            'flow_name': 'landing_zone_move',
-            'status': 'FAILED',
-            'status_info': DEFAULT_STATUS_INFO['FAILED'],
-            'sodar_secret': settings.TASKFLOW_SODAR_SECRET,
-        }
-        with self.login(self.user):
-            response = self.client.post(
-                reverse('landingzones:taskflow_zone_status_set'), values
-            )
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(mail.outbox), 1)  # Mail for zone owner
-        self.assertEqual(AppAlert.objects.count(), 1)

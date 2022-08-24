@@ -66,6 +66,13 @@ LOGGING_LEVEL = env.str('LOGGING_LEVEL', 'CRITICAL')
 LOGGING = set_logging(LOGGING_LEVEL)
 
 
+# Celery settings
+# ------------------------------------------------------------------------------
+
+CELERY_TASK_ALWAYS_EAGER = True
+CELERY_TASK_EAGER_PROPAGATES = True
+
+
 # Local App Settings
 # ------------------------------------------------------------------------------
 
@@ -84,6 +91,9 @@ ENABLED_BACKEND_PLUGINS = [
 PROJECTROLES_SEND_EMAIL = True
 PROJECTROLES_SEARCH_PAGINATION = 10  # Workaround for #360
 PROJECTROLES_ALLOW_ANONYMOUS = False
+
+PROJECTROLES_ENABLE_MODIFY_API = False
+PROJECTROLES_MODIFY_API_APPS = []
 
 # Samplesheets app settings
 SHEETS_ENABLE_CACHE = False  # Temporarily disabled to fix CI, see issue #556

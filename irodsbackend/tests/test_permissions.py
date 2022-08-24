@@ -9,7 +9,7 @@ from unittest import skipIf
 from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
 from projectroles.tests.test_permissions import TestPermissionMixin
-from projectroles.tests.test_views_taskflow import TestTaskflowBase
+from taskflowbackend.tests.test_project_views import TestTaskflowBase
 
 # Samplesheets dependency
 from samplesheets.tests.test_io import (
@@ -58,7 +58,7 @@ class TestIrodsbackendPermissions(
         self.user_no_roles = self.make_user('user_no_roles')
 
         # Set up project with taskflow
-        self.project, self.as_owner = self._make_project_taskflow(
+        self.project, self.as_owner = self.make_project_taskflow(
             title='TestProject',
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
@@ -67,13 +67,13 @@ class TestIrodsbackendPermissions(
         )
 
         # Set up assignments with taskflow
-        self.as_delegate = self._make_assignment_taskflow(
+        self.as_delegate = self.make_assignment_taskflow(
             self.project, self.user_delegate, self.role_delegate
         )
-        self.as_contributor = self._make_assignment_taskflow(
+        self.as_contributor = self.make_assignment_taskflow(
             self.project, self.user_contributor, self.role_contributor
         )
-        self.as_guest = self._make_assignment_taskflow(
+        self.as_guest = self.make_assignment_taskflow(
             self.project, self.user_guest, self.role_guest
         )
 
@@ -82,7 +82,7 @@ class TestIrodsbackendPermissions(
             SHEET_PATH, self.project
         )
         # Create iRODS collections
-        self._make_irods_colls(self.investigation)
+        self.make_irods_colls(self.investigation)
 
         # Set up irodsbackend
         self.irods_backend = get_backend_api('omics_irods')

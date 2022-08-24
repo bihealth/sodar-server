@@ -1,16 +1,28 @@
+"""Plugins for the landingzones app"""
+
+import logging
+
 from django.urls import reverse
 
 from djangoplugins.point import PluginPoint
 
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
-from projectroles.plugins import ProjectAppPluginPoint, get_backend_api
+from projectroles.plugins import (
+    ProjectAppPluginPoint,
+    ProjectModifyPluginAPIMixin,
+    get_backend_api,
+)
 
 # Samplesheets dependency
 from samplesheets.models import Investigation, Assay
 
-from landingzones.models import LandingZone
+from landingzones.models import LandingZone, STATUS_ALLOW_UPDATE
 from landingzones.urls import urlpatterns
+from landingzones.views import ZoneCreateMixin
+
+
+logger = logging.getLogger(__name__)
 
 
 # Local constants
@@ -24,7 +36,9 @@ LANDINGZONES_INFO_SETTINGS = [
 # Landingzones project app plugin ----------------------------------------------
 
 
-class ProjectAppPlugin(ProjectAppPluginPoint):
+class ProjectAppPlugin(
+    ZoneCreateMixin, ProjectModifyPluginAPIMixin, ProjectAppPluginPoint
+):
     """Plugin for registering app with Projectroles"""
 
     # Properties required by django-plugins ------------------------------
@@ -97,47 +111,6 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
 
     #: Names of plugin specific Django settings to display in siteinfo
     info_settings = LANDINGZONES_INFO_SETTINGS
-
-    def get_taskflow_sync_data(self):
-        """
-        Return data for syncing taskflow operations.
-
-        :return: List of dicts or None.
-        """
-        sync_flows = []
-        irods_backend = get_backend_api('omics_irods', conn=False)
-        if not irods_backend:
-            return sync_flows
-
-        # Only sync flows which are not yet moved
-        for zone in LandingZone.objects.all().exclude(status='MOVED'):
-            flow_name = 'landing_zone_create'
-            flow_data = {
-                'zone_title': zone.title,
-                'zone_uuid': zone.sodar_uuid,
-                'user_name': zone.user.username,
-                'user_uuid': str(zone.user.sodar_uuid),
-                'assay_path': irods_backend.get_sub_path(
-                    zone.assay, landing_zone=True
-                ),
-                'description': zone.description,
-                'zone_config': zone.configuration,
-                'colls': [],
-            }
-            config_plugin = get_zone_config_plugin(zone)
-            if config_plugin:
-                flow_data = {
-                    **flow_data,
-                    **config_plugin.get_extra_flow_data(zone, flow_name),
-                }
-            flow = {
-                'flow_name': flow_name,
-                'project_uuid': str(zone.project.sodar_uuid),
-                'flow_data': flow_data,
-            }
-            sync_flows.append(flow)
-
-        return sync_flows
 
     def get_object_link(self, model_str, uuid):
         """
@@ -233,6 +206,35 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                 'title="No available landing zones"></i>'
                 # 'data-toggle="tooltip" data-placement="top"></i>'
             )
+
+    def perform_project_sync(self, project):
+        """
+        Synchronize existing projects to ensure related data exists when the
+        syncmodifyapi management comment is called. Should mostly be used in
+        development when the development databases have been e.g. modified or
+        recreated.
+
+        :param project: Current project object (Project)
+        """
+        zones = LandingZone.objects.filter(
+            project=project, status__in=STATUS_ALLOW_UPDATE
+        )
+        if zones.count() == 0:
+            logger.debug('Skipping: No active zones found')
+            return
+
+        irods_backend = get_backend_api('omics_irods')
+        taskflow = get_backend_api('taskflow')
+        if not irods_backend or not taskflow:
+            logger.debug('Skipping: Required backend plugins not active')
+            return
+
+        irods_session = irods_backend.get_session()
+        for zone in zones:
+            zone_path = irods_backend.get_path(zone)
+            if irods_session.collections.exists(zone_path):
+                continue  # Skip if already there
+            self.submit_create(zone, False)
 
 
 # Landingzones configuration sub-app plugin ------------------------------------

@@ -10,7 +10,7 @@ from django.utils.timezone import localtime
 # Projectroles dependency
 from projectroles.constants import SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
-from projectroles.tests.test_views_taskflow import TestTaskflowBase
+from taskflowbackend.tests.test_project_views import TestTaskflowBase
 
 from samplesheets.models import (
     IRODS_DATA_REQUEST_STATUS_CHOICES,
@@ -60,7 +60,7 @@ class TestIrodsDataRequestBase(
         self.irods_backend = get_backend_api('omics_irods')
         self.irods_session = self.irods_backend.get_session()
 
-        self.project, self.owner_as = self._make_project_taskflow(
+        self.project, self.owner_as = self.make_project_taskflow(
             title='TestProject',
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
@@ -76,7 +76,7 @@ class TestIrodsDataRequestBase(
         self.assay = self.study.assays.first()
 
         # Create iRODS collections
-        self._make_irods_colls(self.investigation)
+        self.make_irods_colls(self.investigation)
 
         self.assay_path = self.irods_backend.get_path(self.assay)
         self.path = os.path.join(self.assay_path, TEST_FILE_NAME)
@@ -94,16 +94,16 @@ class TestIrodsDataRequestBase(
         self.user_contrib2 = self.make_user('user_contrib2')
         self.user_guest = self.make_user('user_guest')
 
-        self._make_assignment_taskflow(
+        self.make_assignment_taskflow(
             self.project, self.user_delegate, self.role_delegate
         )
-        self._make_assignment_taskflow(
+        self.make_assignment_taskflow(
             self.project, self.user_contrib, self.role_contributor
         )
-        self._make_assignment_taskflow(
+        self.make_assignment_taskflow(
             self.project, self.user_contrib2, self.role_contributor
         )
-        self._make_assignment_taskflow(
+        self.make_assignment_taskflow(
             self.project, self.user_guest, self.role_guest
         )
 

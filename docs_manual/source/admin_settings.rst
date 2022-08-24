@@ -56,9 +56,7 @@ follows:
     Enable the
     `SODAR Cache <https://sodar-core.readthedocs.io/en/latest/app_sodarcache_usage.html>`_.
 ``taskflow``
-    Enable use of the
-    `SODAR Taskflow <https://github.com/bihealth/sodar-taskflow/>`_ service for
-    iRODS transactions.
+    Provide complex iRODS transactions for project data.
 ``timeline_backend``
     Creation events for the :ref:`project timeline <ui_project_timeline>`.
 
@@ -113,15 +111,12 @@ iRODS Settings
 Taskflow Backend Settings
 -------------------------
 
-``TASKFLOW_BACKEND_HOST``
-    SODAR Taskflow service host (string).
-``TASKFLOW_BACKEND_PORT``
-    SODAR Taskflow service port (integer).
-``TASKFLOW_SODAR_SECRET``
-    Shared secret between SODAR and SODAR Taskflow (string).
-``TASKFLOW_TEST_MODE``
-    Run SODAR Tasflow in test mode. Should always be set false unless running
-    tests in development (boolean).
+``TASKFLOW_LOCK_RETRY_COUNT``
+    Retry count for project lock retrieval for Taskflow operations (int,
+    default: 2)
+``TASKFLOW_LOCK_RETRY_INTERVAL``
+    Retry interval for project lock retrieval for Taskflow operations (int,
+    default: 3)
 
 iRODS WebDAV Settings
 ---------------------

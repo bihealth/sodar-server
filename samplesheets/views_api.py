@@ -123,7 +123,7 @@ class IrodsCollsCreateAPIView(
             )
 
         try:
-            self._create_colls(investigation)
+            self.create_colls(investigation, request)
         except Exception as ex:
             raise APIException('{}{}'.format(ex_msg, ex))
 

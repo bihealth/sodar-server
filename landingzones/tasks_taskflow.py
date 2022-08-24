@@ -1,4 +1,4 @@
-"""Taskflow API views for the landingzones app"""
+"""Taskflow tasks for the landingzones app"""
 
 import logging
 
@@ -6,20 +6,18 @@ from django.conf import settings
 from django.contrib import auth
 from django.urls import reverse
 
-from rest_framework.response import Response
-
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
 from projectroles.email import send_generic_mail, get_email_user
-from projectroles.models import Project
 from projectroles.plugins import get_backend_api
-from projectroles.views_taskflow import BaseTaskflowAPIView
 
 # Samplesheets dependency
-from samplesheets.models import Assay
-from samplesheets.tasks import update_project_cache_task
+from samplesheets.tasks_celery import update_project_cache_task
 
-from landingzones.models import LandingZone, STATUS_BUSY
+# Taskflowbackend dependency
+from taskflowbackend.tasks.sodar_tasks import SODARBaseTask
+
+from landingzones.models import STATUS_BUSY
 
 
 User = auth.get_user_model()
@@ -81,31 +79,8 @@ the following URL:
 '''.lstrip()
 
 
-# TODO: Integrate Taskflow API with general SODAR API (see sodar_core#47)
-
-
-class TaskflowZoneCreateAPIView(BaseTaskflowAPIView):
-    def post(self, request):
-        try:
-            user = User.objects.get(sodar_uuid=request.data['user_uuid'])
-            project = Project.objects.get(
-                sodar_uuid=request.data['project_uuid']
-            )
-            assay = Assay.objects.get(sodar_uuid=request.data['assay_uuid'])
-        except (User.DoesNotExist, Project.DoesNotExist, Assay.DoesNotExist):
-            return Response('Not found', status=404)
-        zone = LandingZone.objects.create(
-            assay=assay,
-            title=request.data['title'],
-            project=project,
-            user=user,
-            description=request.data['description'],
-        )
-        return Response({'zone_uuid': zone.sodar_uuid}, status=200)
-
-
-class TaskflowZoneStatusSetAPIView(BaseTaskflowAPIView):
-    """API view for setting landing zone status after taskflow operation"""
+class BaseLandingZoneStatusTask(SODARBaseTask):
+    """Base task class for landing zone status updates"""
 
     @classmethod
     def _add_owner_alert(
@@ -186,7 +161,7 @@ class TaskflowZoneStatusSetAPIView(BaseTaskflowAPIView):
         )
 
     @classmethod
-    def _send_owner_move_email(cls, zone, request):
+    def _send_owner_move_email(cls, zone):
         """Send email to zone owner on zone move/validate"""
         server_host = settings.SODAR_API_DEFAULT_HOST.geturl()
         subject_body = 'Landing zone {}: {} / {}'.format(
@@ -225,10 +200,10 @@ class TaskflowZoneStatusSetAPIView(BaseTaskflowAPIView):
             status_info=zone.status_info,
             url=email_url,
         )
-        send_generic_mail(subject_body, message_body, [zone.user], request)
+        send_generic_mail(subject_body, message_body, [zone.user])
 
     @classmethod
-    def _send_member_move_email(cls, member, zone, request, file_count):
+    def _send_member_move_email(cls, member, zone, file_count):
         """Send member email on landing zone move"""
         server_host = settings.SODAR_API_DEFAULT_HOST.geturl()
         subject_body = 'Files uploaded in project "{}" by {}'.format(
@@ -254,35 +229,38 @@ class TaskflowZoneStatusSetAPIView(BaseTaskflowAPIView):
             user_message=zone.user_message or 'N/A',
             url=email_url,
         )
-        send_generic_mail(subject_body, message_body, [member], request)
+        send_generic_mail(subject_body, message_body, [member])
 
-    def post(self, request):
+    @classmethod
+    def set_status(cls, zone, flow_name, status, status_info, extra_data=None):
+        """
+        Set landing zone status. Notify users by alerts and emails if
+        applicable.
+
+        :param zone: LandingZone object
+        :param flow_name: Name of flow (string)
+        :param status: Zone status (string)
+        :param status_info: Detailed zone status info (string)
+        :param extra_data: Optional extra data (dict)
+        """
         app_alerts = get_backend_api('appalerts_backend')
-        try:
-            zone = LandingZone.objects.get(sodar_uuid=request.data['zone_uuid'])
-        except LandingZone.DoesNotExist:
-            return Response('LandingZone not found', status=404)
-        try:
-            status_info = request.data['status_info']
-            # Truncate status info (fix for #1307)
-            if len(status_info) >= STATUS_INFO_LEN - len(STATUS_TRUNCATE_MSG):
-                status_info = (
-                    status_info[: STATUS_INFO_LEN - len(STATUS_TRUNCATE_MSG)]
-                    + STATUS_TRUNCATE_MSG
-                )
-            zone.set_status(
-                status=request.data['status'],
-                status_info=status_info if status_info else None,
-            )
-        except TypeError:
-            return Response('Invalid status type', status=400)
-        except Exception as ex:
-            return Response('Internal server error: {}'.format(ex), status=500)
 
+        # Truncate status info (fix for #1307)
+        if len(status_info) >= STATUS_INFO_LEN - len(STATUS_TRUNCATE_MSG):
+            status_info = (
+                status_info[: STATUS_INFO_LEN - len(STATUS_TRUNCATE_MSG)]
+                + STATUS_TRUNCATE_MSG
+            )
+        zone.set_status(
+            status=status,
+            status_info=status_info if status_info else None,
+        )
         zone.refresh_from_db()
-        flow_name = request.data.get('flow_name')
-        file_count = int(request.data.get('file_count', 0))
-        validate_only = bool(int(request.data.get('validate_only', '0')))
+
+        if not extra_data:
+            extra_data = {}
+        file_count = extra_data.get('file_count', 0)
+        validate_only = extra_data.get('validate_only', False)
 
         # Create alert and send email for zone owner for finished actions
         # NOTE: Create is excluded as this should be virtually instantaneous
@@ -292,16 +270,30 @@ class TaskflowZoneStatusSetAPIView(BaseTaskflowAPIView):
             and (file_count > 0 or zone.status != 'MOVED')
         ):
             if app_alerts:
-                self._add_owner_alert(
-                    app_alerts, zone, flow_name, file_count, validate_only
-                )
+                try:
+                    cls._add_owner_alert(
+                        app_alerts,
+                        zone,
+                        flow_name,
+                        file_count,
+                        validate_only,
+                    )
+                except Exception as ex:  # NOTE: We won't fail/revert here
+                    logger.error(
+                        'Exception in _add_owner_alert(): {}'.format(ex)
+                    )
             # NOTE: We only send email on move
             if (
                 settings.PROJECTROLES_SEND_EMAIL
                 and flow_name == 'landing_zone_move'
                 and not validate_only
             ):
-                self._send_owner_move_email(zone, request)
+                try:
+                    cls._send_owner_move_email(zone)
+                except Exception as ex:  # NOTE: We won't fail/revert here
+                    logger.error(
+                        'Exception in _send_owner_move_email(): {}'.format(ex)
+                    )
 
         # Create alerts and send emails to other project members on move
         member_notify = app_settings.get_app_setting(
@@ -319,19 +311,32 @@ class TaskflowZoneStatusSetAPIView(BaseTaskflowAPIView):
             )
             for member in members:
                 if app_alerts:
-                    self._add_member_move_alert(
-                        app_alerts=app_alerts,
-                        zone=zone,
-                        user=member,
-                        file_count=file_count,
-                    )
+                    try:
+                        cls._add_member_move_alert(
+                            app_alerts=app_alerts,
+                            zone=zone,
+                            user=member,
+                            file_count=file_count,
+                        )
+                    except Exception as ex:
+                        logger.error(
+                            'Exception in _add_member_move_alert(): {}'.format(
+                                ex
+                            )
+                        )
                 if settings.PROJECTROLES_SEND_EMAIL:
-                    self._send_member_move_email(
-                        member, zone, request, file_count
-                    )
+                    try:
+                        cls._send_member_move_email(member, zone, file_count)
+                    except Exception as ex:  # NOTE: We won't fail/revert here
+                        logger.error(
+                            'Exception in _send_member_move_email(): {}'.format(
+                                ex
+                            )
+                        )
 
         # If zone is removed by moving or deletion, call plugin function
-        if request.data['status'] in ['MOVED', 'DELETED']:
+        # TODO: TBD: Move into separate task?
+        if status in ['MOVED', 'DELETED']:
             from .plugins import get_zone_config_plugin  # See issue #269
 
             config_plugin = get_zone_config_plugin(zone)
@@ -345,7 +350,8 @@ class TaskflowZoneStatusSetAPIView(BaseTaskflowAPIView):
                     )
 
         # Update cache
-        if request.data['status'] == 'MOVED' and settings.SHEETS_ENABLE_CACHE:
+        # TODO: TBD: Move into separate task?
+        if status == 'MOVED' and settings.SHEETS_ENABLE_CACHE:
             try:
                 update_project_cache_task.delay(
                     project_uuid=str(zone.project.sodar_uuid),
@@ -358,4 +364,68 @@ class TaskflowZoneStatusSetAPIView(BaseTaskflowAPIView):
                     'Unable to run project cache update task: {}'.format(ex)
                 )
 
-        return Response('ok', status=200)
+
+class SetLandingZoneStatusTask(BaseLandingZoneStatusTask):
+    """Set LandingZone status"""
+
+    def execute(
+        self,
+        landing_zone,
+        flow_name,
+        status,
+        status_info,
+        extra_data=None,
+        *args,
+        **kwargs
+    ):
+        self.set_status(
+            landing_zone, flow_name, status, status_info, extra_data
+        )
+        self.data_modified = True
+        super().execute(*args, **kwargs)
+
+    def revert(
+        self,
+        landing_zone,
+        flow_name,
+        status,
+        status_info,
+        extra_data=None,
+        *args,
+        **kwargs
+    ):
+        pass  # Disabled, call RevertLandingZoneStatusTask to revert
+
+
+class RevertLandingZoneFailTask(BaseLandingZoneStatusTask):
+    """Set LandingZone status in case of failure"""
+
+    def execute(
+        self,
+        landing_zone,
+        flow_name,
+        info_prefix,
+        status='FAILED',
+        extra_data=None,
+        *args,
+        **kwargs
+    ):
+        super().execute(*args, **kwargs)
+
+    def revert(
+        self,
+        landing_zone,
+        flow_name,
+        info_prefix,
+        status='FAILED',
+        extra_data=None,
+        *args,
+        **kwargs
+    ):
+        status_info = info_prefix
+        for k, v in kwargs['flow_failures'].items():
+            status_info += ': '
+            status_info += str(v.exception) if v.exception else 'unknown error'
+        self.set_status(
+            landing_zone, flow_name, status, status_info, extra_data
+        )

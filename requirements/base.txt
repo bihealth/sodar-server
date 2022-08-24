@@ -71,8 +71,8 @@ mistune==2.0.1
 -e git+https://github.com/mikkonie/django-plugins.git@42e86e7904e5c09f1da32173862b26843eda5dd8#egg=django-plugins
 
 # SODAR Core
-django-sodar-core==0.10.13
-# -e git+https://github.com/bihealth/sodar-core.git@fbbe4050f57b0695199d1418e3a31b3870269389#egg=django-sodar-core
+# django-sodar-core==0.10.13
+-e git+https://github.com/bihealth/sodar-core.git@63cff70954cc9a2e1cfe4bd4c06f4f7599afee75#egg=django-sodar-core
 
 # Celery
 celery==5.2.3
@@ -103,3 +103,7 @@ pronto==2.4.4  # For OWL conversion
 
 # CUBI-TK for sheet templates
 -e git+https://github.com/bihealth/cubi-tk.git@0c0250cdfd546eaac1e0364df62213ad3c97ef7c#egg=cubi-tk
+
+# Taskflow requirements
+tooz==2.10.1
+taskflow==4.6.4

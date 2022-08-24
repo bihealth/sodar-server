@@ -1,11 +1,11 @@
-"""Integration tests for views in the samplesheets Django app with taskflow"""
-
-# NOTE: You must supply 'sodar_url': self.live_server_url in taskflow requests!
-import os
-from datetime import timedelta
-from urllib.parse import urlencode
+"""View tests in the samplesheets Django app with taskflow"""
 
 import irods
+import os
+
+from datetime import timedelta
+from unittest import skipIf
+from urllib.parse import urlencode
 
 from django.conf import settings
 from django.contrib import auth
@@ -14,13 +14,13 @@ from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
 
-from unittest import skipIf
-
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
 from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
-from projectroles.tests.test_views_taskflow import TestTaskflowBase
+
+# Taskflowbackend dependency
+from taskflowbackend.tests.test_project_views import TestTaskflowBase
 
 from samplesheets.forms import ERROR_MSG_INVALID_PATH
 from samplesheets.models import (
@@ -78,7 +78,7 @@ SAMPLE_ID = '0815-N1'
 class SampleSheetTaskflowMixin:
     """Taskflow helpers for samplesheets tests"""
 
-    def _make_irods_colls(self, investigation, request=None):
+    def make_irods_colls(self, investigation, request=None):
         """
         Create iRODS collection structure for investigation.
 
@@ -89,23 +89,22 @@ class SampleSheetTaskflowMixin:
         self.assertEqual(investigation.irods_status, False)
         project = investigation.project
         values = {
-            'project_uuid': project.sodar_uuid,
+            'project': project,
             'flow_name': 'sheet_colls_create',
-            'flow_data': {
-                'colls': get_sample_colls(investigation),
-                'public_guest_access': project.public_guest_access,
-            },
-            'request': request,
+            'flow_data': {'colls': get_sample_colls(investigation)},
         }
-        if not request:
-            values['sodar_url'] = self.get_sodar_url()
         self.taskflow.submit(**values)
         investigation.refresh_from_db()
         self.assertEqual(investigation.irods_status, True)
 
-    def _make_track_hub_coll(self, session, assay_path, name):
+    def make_track_hub_coll(self, session, assay_path, name):
         """
         Create iRODS collection for a track hub under assay collection.
+
+        :param session: iRODS session object
+        :param assay_path: Full assay path (string)
+        :param name: Track hub collection name (string)
+        :return: Path to track hub (string)
         """
         track_hubs_path = assay_path + '/TrackHubs'
         try:
@@ -148,40 +147,32 @@ class TestIrodsCollsCreateView(
 
     def setUp(self):
         super().setUp()
-
         # Make project with owner in Taskflow and Django
-        self.project, self.owner_as = self._make_project_taskflow(
+        self.project, self.owner_as = self.make_project_taskflow(
             title='TestProject',
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
             description='description',
         )
-
         # Import investigation
         self.investigation = self._import_isa_from_file(
             SHEET_PATH, self.project
         )
         self.study = self.investigation.studies.first()
+        self.assay = self.study.assays.first()
 
     def test_create_colls(self):
         """Test collection structure creation with taskflow"""
-        # Assert precondition
         self.assertEqual(self.investigation.irods_status, False)
 
-        # Issue POST request
-        values = {'sodar_url': self.get_sodar_url()}
         with self.login(self.user):
             response = self.client.post(
                 reverse(
                     'samplesheets:collections',
                     kwargs={'project': self.project.sodar_uuid},
                 ),
-                values,
             )
-
-        # Assert redirect
-        with self.login(self.user):
             self.assertRedirects(
                 response,
                 reverse(
@@ -193,6 +184,10 @@ class TestIrodsCollsCreateView(
         # Assert sample sheet collection structure state after creation
         self.investigation.refresh_from_db()
         self.assertEqual(self.investigation.irods_status, True)
+        # Assert iRODS collection status
+        self.assert_irods_coll(self.irods_backend.get_sample_path(self.project))
+        self.assert_irods_coll(self.study)
+        self.assert_irods_coll(self.assay)
         # Assert app setting status (should be unset)
         self.assertEqual(
             app_settings.get_app_setting(
@@ -205,8 +200,6 @@ class TestIrodsCollsCreateView(
     def test_create_colls_anon(self):
         """Test collection structure creation with anonymous project access"""
         self.set_public_access(True)
-
-        # Assert preconditions
         self.assertEqual(self.investigation.irods_status, False)
         self.assertEqual(
             app_settings.get_app_setting(
@@ -215,19 +208,13 @@ class TestIrodsCollsCreateView(
             '',
         )
 
-        # Issue POST request
-        values = {'sodar_url': self.get_sodar_url()}
         with self.login(self.user):
             response = self.client.post(
                 reverse(
                     'samplesheets:collections',
                     kwargs={'project': self.project.sodar_uuid},
                 ),
-                values,
             )
-
-        # Assert redirect
-        with self.login(self.user):
             self.assertRedirects(
                 response,
                 reverse(
@@ -236,9 +223,11 @@ class TestIrodsCollsCreateView(
                 ),
             )
 
-        # Assert sample sheet collection structure state after creation
         self.investigation.refresh_from_db()
         self.assertEqual(self.investigation.irods_status, True)
+        self.assert_irods_coll(self.irods_backend.get_sample_path(self.project))
+        self.assert_irods_coll(self.study)
+        self.assert_irods_coll(self.assay)
         # Assert app setting status (should be set)
         self.assertNotEqual(
             app_settings.get_app_setting(
@@ -256,18 +245,15 @@ class TestSampleSheetDeleteView(
 
     def setUp(self):
         super().setUp()
-
         self.irods_backend = get_backend_api('omics_irods')
-
         # Make project with owner in Taskflow and Django
-        self.project, self.owner_as = self._make_project_taskflow(
+        self.project, self.owner_as = self.make_project_taskflow(
             title='TestProject',
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
             description='description',
         )
-
         # Import investigation
         self.investigation = self._import_isa_from_file(
             SHEET_PATH, self.project
@@ -277,14 +263,9 @@ class TestSampleSheetDeleteView(
 
     def test_delete(self):
         """Test sample sheet deleting with taskflow"""
-        # Assert precondition
         self.assertIsNotNone(self.investigation)
 
-        # Issue POST request
-        values = {
-            'delete_host_confirm': 'testserver',
-            'sodar_url': self.get_sodar_url(),
-        }
+        values = {'delete_host_confirm': 'testserver'}
         with self.login(self.user):
             response = self.client.post(
                 reverse(
@@ -293,40 +274,35 @@ class TestSampleSheetDeleteView(
                 ),
                 values,
             )
-
-        # Assert sample sheet dir structure state after creation
-        with self.assertRaises(Investigation.DoesNotExist):
-            Investigation.objects.get(
-                project__sodar_uuid=self.project.sodar_uuid
-            )
-
-        # Assert redirect
-        with self.login(self.user):
             self.assertRedirects(
                 response,
                 reverse(
                     'samplesheets:project_sheets',
                     kwargs={'project': self.project.sodar_uuid},
                 ),
+            )
+
+        # Assert investigation status
+        with self.assertRaises(Investigation.DoesNotExist):
+            Investigation.objects.get(
+                project__sodar_uuid=self.project.sodar_uuid
             )
 
     def test_delete_files_owner(self):
-        """Test sample sheet deleting with files in irods as owner"""
+        """Test sample sheet deleting with files in iRODS as owner"""
         # Create collections and file in iRODS
-        self._make_irods_colls(self.investigation)
+        self.make_irods_colls(self.investigation)
+        self.assert_irods_coll(self.irods_backend.get_sample_path(self.project))
+        self.assert_irods_coll(self.study)
+        self.assert_irods_coll(self.assay)
+
         irods = self.irods_backend.get_session()
         assay_path = self.irods_backend.get_path(self.assay)
         file_path = assay_path + '/' + TEST_FILE_NAME
         irods.data_objects.create(file_path)
-
-        # Assert precondition
         self.assertEqual(irods.data_objects.exists(file_path), True)
 
-        # Issue POST request
-        values = {
-            'delete_host_confirm': 'testserver',
-            'sodar_url': self.get_sodar_url(),
-        }
+        values = {'delete_host_confirm': 'testserver'}
         with self.login(self.user):
             response = self.client.post(
                 reverse(
@@ -335,18 +311,6 @@ class TestSampleSheetDeleteView(
                 ),
                 values,
             )
-
-        # Assert sample sheet dir structure state after creation
-        with self.assertRaises(Investigation.DoesNotExist):
-            Investigation.objects.get(
-                project__sodar_uuid=self.project.sodar_uuid
-            )
-
-        # Assert file status
-        self.assertEqual(irods.data_objects.exists(file_path), False)
-
-        # Assert redirect
-        with self.login(self.user):
             self.assertRedirects(
                 response,
                 reverse(
@@ -355,29 +319,39 @@ class TestSampleSheetDeleteView(
                 ),
             )
 
+        with self.assertRaises(Investigation.DoesNotExist):
+            Investigation.objects.get(
+                project__sodar_uuid=self.project.sodar_uuid
+            )
+        # Assert file status
+        self.assertEqual(irods.data_objects.exists(file_path), False)
+        # Assert collection status
+        self.assert_irods_coll(
+            self.irods_backend.get_sample_path(self.project), expected=False
+        )
+        self.assert_irods_coll(self.study, expected=False)
+        self.assert_irods_coll(self.assay, expected=False)
+
     def test_delete_files_contributor(self):
-        """Test sample sheet deleting with files in irods as contributor"""
+        """Test sample sheet deleting with files in iRODS as contributor"""
         # Create contributor user
         user_contributor = self.make_user('user_contributor')
-        self._make_assignment_taskflow(
+        self.make_assignment_taskflow(
             self.project, user_contributor, self.role_contributor
         )
 
-        # Create collections and file in iRODS
-        self._make_irods_colls(self.investigation)
+        self.make_irods_colls(self.investigation)
+        self.assert_irods_coll(self.irods_backend.get_sample_path(self.project))
+        self.assert_irods_coll(self.study)
+        self.assert_irods_coll(self.assay)
+
         irods = self.irods_backend.get_session()
         assay_path = self.irods_backend.get_path(self.assay)
         file_path = assay_path + '/' + TEST_FILE_NAME
         irods.data_objects.create(file_path)
-
-        # Assert precondition
         self.assertEqual(irods.data_objects.exists(file_path), True)
 
-        # Issue POST request
-        values = {
-            'delete_host_confirm': 'testserver',
-            'sodar_url': self.get_sodar_url(),
-        }
+        values = {'delete_host_confirm': 'testserver'}
         with self.login(user_contributor):
             response = self.client.post(
                 reverse(
@@ -386,19 +360,6 @@ class TestSampleSheetDeleteView(
                 ),
                 values,
             )
-
-        # Assert sample sheet state after creation (should be there)
-        self.assertIsNotNone(
-            Investigation.objects.filter(
-                project__sodar_uuid=self.project.sodar_uuid
-            ).first()
-        )
-
-        # Assert file status (operation should fail)
-        self.assertEqual(irods.data_objects.exists(file_path), True)
-
-        # Assert redirect
-        with self.login(self.user):
             self.assertRedirects(
                 response,
                 reverse(
@@ -407,18 +368,30 @@ class TestSampleSheetDeleteView(
                 ),
             )
 
+        # Assert investigation state after creation (should be there)
+        self.assertIsNotNone(
+            Investigation.objects.filter(
+                project__sodar_uuid=self.project.sodar_uuid
+            ).first()
+        )
+        # Assert collection and file status (operation should fail)
+        self.assert_irods_coll(self.irods_backend.get_sample_path(self.project))
+        self.assert_irods_coll(self.study)
+        self.assert_irods_coll(self.assay)
+        self.assertEqual(irods.data_objects.exists(file_path), True)
+
 
 @skipIf(not BACKENDS_ENABLED, BACKEND_SKIP_MSG)
 class TestIrodsAccessTicketListView(
     SampleSheetTaskflowMixin, SampleSheetIOMixin, TestTaskflowBase
 ):
-    """Tests for the irods access ticket list view"""
+    """Tests for the iRODS access ticket list view"""
 
     def setUp(self):
         super().setUp()
 
         # Make project with owner in Taskflow and Django
-        self.project, self.owner_as = self._make_project_taskflow(
+        self.project, self.owner_as = self.make_project_taskflow(
             title='TestProject',
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
@@ -433,7 +406,7 @@ class TestIrodsAccessTicketListView(
         self.assay = self.study.assays.first()
 
         # Create iRODS collections
-        self._make_irods_colls(self.investigation)
+        self.make_irods_colls(self.investigation)
 
         self.irods_backend = get_backend_api('omics_irods')
         self.assertIsNotNone(self.irods_backend)
@@ -441,15 +414,15 @@ class TestIrodsAccessTicketListView(
 
         # Create iRODS track hub collections
         assay_path = self.irods_backend.get_path(self.assay)
-        self._make_track_hub_coll(self.irods_session, assay_path, 'track1')
-        self._make_track_hub_coll(self.irods_session, assay_path, 'track2')
+        self.make_track_hub_coll(self.irods_session, assay_path, 'track1')
+        self.make_track_hub_coll(self.irods_session, assay_path, 'track2')
 
         # Create iRODS track hub collections
         assay_path = self.irods_backend.get_path(self.assay)
-        self.track_hub1 = self._make_track_hub_coll(
+        self.track_hub1 = self.make_track_hub_coll(
             self.irods_session, assay_path, 'track1'
         )
-        self.track_hub2 = self._make_track_hub_coll(
+        self.track_hub2 = self.make_track_hub_coll(
             self.irods_session, assay_path, 'track2'
         )
 
@@ -463,7 +436,6 @@ class TestIrodsAccessTicketListView(
                 )
             )
         self.assertEqual(response.status_code, 200)
-        # Assert context data
         self.assertEqual(response.context['object_list'].count(), 0)
 
     def test_render(self):
@@ -499,13 +471,13 @@ class TestIrodsAccessTicketListView(
 class TestIrodsAccessTicketCreateView(
     SampleSheetTaskflowMixin, SampleSheetIOMixin, TestTaskflowBase
 ):
-    """Tests for the irods access ticket list view"""
+    """Tests for the iRODS access ticket list view"""
 
     def setUp(self):
         super().setUp()
 
         # Make project with owner in Taskflow and Django
-        self.project, self.owner_as = self._make_project_taskflow(
+        self.project, self.owner_as = self.make_project_taskflow(
             title='TestProject',
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
@@ -518,25 +490,22 @@ class TestIrodsAccessTicketCreateView(
         )
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
-
-        # Create iRODS collections
-        self._make_irods_colls(self.investigation)
+        self.make_irods_colls(self.investigation)
 
         self.irods_backend = get_backend_api('omics_irods')
         self.assertIsNotNone(self.irods_backend)
         self.irods_session = self.irods_backend.get_session()
 
-        # Create iRODS track hub collections
         assay_path = self.irods_backend.get_path(self.assay)
-        self.track_hub1 = self._make_track_hub_coll(
+        self.track_hub1 = self.make_track_hub_coll(
             self.irods_session, assay_path, 'track1'
         )
-        self.track_hub2 = self._make_track_hub_coll(
+        self.track_hub2 = self.make_track_hub_coll(
             self.irods_session, assay_path, 'track2'
         )
 
     def test_render(self):
-        """Test rendering the irods access ticket create view"""
+        """Test rendering the iRODS access ticket create view"""
         with self.login(self.user):
             response = self.client.get(
                 reverse(
@@ -544,47 +513,45 @@ class TestIrodsAccessTicketCreateView(
                     kwargs={'project': self.project.sodar_uuid},
                 )
             )
-            self.assertEqual(response.status_code, 200)
-            self.assertEqual(len(response.context['form'].fields), 3)
-            self.assertIsNotNone(
-                response.context['form'].fields.get('date_expires')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['form'].fields), 3)
+        self.assertIsNotNone(
+            response.context['form'].fields.get('date_expires')
+        )
+        self.assertIsNotNone(response.context['form'].fields.get('label'))
+        self.assertIsNotNone(response.context['form'].fields.get('path'))
+        self.assertEqual(
+            len(response.context['form'].fields['path'].widget.choices), 2
+        )
+        expected = [
+            (
+                track_hub.path,
+                "{} / {}".format(self.assay.get_display_name(), track_hub.name),
             )
-            self.assertIsNotNone(response.context['form'].fields.get('label'))
-            self.assertIsNotNone(response.context['form'].fields.get('path'))
-            self.assertEqual(
-                len(response.context['form'].fields['path'].widget.choices), 2
-            )
-            expected = [
-                (
-                    track_hub.path,
-                    "{} / {}".format(
-                        self.assay.get_display_name(), track_hub.name
-                    ),
+            for track_hub in (
+                self.irods_backend.get_child_colls_by_path(
+                    self.irods_backend.get_path(self.assay)
+                    + '/'
+                    + TRACK_HUBS_COLL
                 )
-                for track_hub in (
-                    self.irods_backend.get_child_colls_by_path(
-                        self.irods_backend.get_path(self.assay)
-                        + '/'
-                        + TRACK_HUBS_COLL
-                    )
-                )
-            ]
-            self.assertListEqual(
-                response.context['form'].fields['path'].widget.choices, expected
             )
+        ]
+        self.assertListEqual(
+            response.context['form'].fields['path'].widget.choices, expected
+        )
 
     def test_post(self):
-        """Test posting the irods access ticket form"""
-        with self.login(self.user):
-            self.assertEqual(IrodsAccessTicket.objects.count(), 0)
+        """Test posting the iRODS access ticket form"""
+        self.assertEqual(IrodsAccessTicket.objects.count(), 0)
 
-            post_data = {
-                'path': self.track_hub1,
-                'date_expires': (
-                    timezone.localtime() + timedelta(days=1)
-                ).strftime('%Y-%m-%d'),
-                'label': 'TestTicket',
-            }
+        post_data = {
+            'path': self.track_hub1,
+            'date_expires': (timezone.localtime() + timedelta(days=1)).strftime(
+                '%Y-%m-%d'
+            ),
+            'label': 'TestTicket',
+        }
+        with self.login(self.user):
             response = self.client.post(
                 reverse(
                     'samplesheets:irods_ticket_create',
@@ -592,7 +559,6 @@ class TestIrodsAccessTicketCreateView(
                 ),
                 post_data,
             )
-
             self.assertRedirects(
                 response,
                 reverse(
@@ -601,30 +567,30 @@ class TestIrodsAccessTicketCreateView(
                 ),
             )
 
-            self.assertEqual(IrodsAccessTicket.objects.count(), 1)
-            ticket = IrodsAccessTicket.objects.first()
-            self.assertEqual(
-                str(list(get_messages(response.wsgi_request))[0]),
-                'iRODS access ticket "%s" created.' % ticket.get_display_name(),
-            )
-            self.assertEqual(
-                ticket.get_date_expires(), post_data['date_expires']
-            )
-            self.assertEqual(ticket.label, post_data['label'])
-            self.assertEqual(ticket.path, post_data['path'])
+        self.assertEqual(IrodsAccessTicket.objects.count(), 1)
+        ticket = IrodsAccessTicket.objects.first()
+        self.assertEqual(
+            str(list(get_messages(response.wsgi_request))[0]),
+            'iRODS access ticket "{}" created.'.format(
+                ticket.get_display_name()
+            ),
+        )
+        self.assertEqual(ticket.get_date_expires(), post_data['date_expires'])
+        self.assertEqual(ticket.label, post_data['label'])
+        self.assertEqual(ticket.path, post_data['path'])
 
 
 @skipIf(not BACKENDS_ENABLED, BACKEND_SKIP_MSG)
 class TestIrodsAccessTicketUpdateView(
     SampleSheetTaskflowMixin, SampleSheetIOMixin, TestTaskflowBase
 ):
-    """Tests for the irods access ticket list view"""
+    """Tests for the iRODS access ticket list view"""
 
     def setUp(self):
         super().setUp()
 
         # Make project with owner in Taskflow and Django
-        self.project, self.owner_as = self._make_project_taskflow(
+        self.project, self.owner_as = self.make_project_taskflow(
             title='TestProject',
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
@@ -637,35 +603,32 @@ class TestIrodsAccessTicketUpdateView(
         )
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
-
-        # Create iRODS collections
-        self._make_irods_colls(self.investigation)
+        self.make_irods_colls(self.investigation)
 
         self.irods_backend = get_backend_api('omics_irods')
         self.assertIsNotNone(self.irods_backend)
         self.irods_session = self.irods_backend.get_session()
 
-        # Create iRODS track hub collections
         assay_path = self.irods_backend.get_path(self.assay)
-        self.track_hub1 = self._make_track_hub_coll(
+        self.track_hub1 = self.make_track_hub_coll(
             self.irods_session, assay_path, 'track1'
         )
-        self.track_hub2 = self._make_track_hub_coll(
+        self.track_hub2 = self.make_track_hub_coll(
             self.irods_session, assay_path, 'track2'
         )
 
     def test_render(self):
-        """Test render the irods access ticket update form"""
-        with self.login(self.user):
-            self.assertEqual(IrodsAccessTicket.objects.count(), 0)
+        """Test render the iRODS access ticket update form"""
+        self.assertEqual(IrodsAccessTicket.objects.count(), 0)
 
-            post_data = {
-                'path': self.track_hub1,
-                'date_expires': (
-                    timezone.localtime() + timedelta(days=1)
-                ).strftime('%Y-%m-%d'),
-                'label': 'TestTicket',
-            }
+        post_data = {
+            'path': self.track_hub1,
+            'date_expires': (timezone.localtime() + timedelta(days=1)).strftime(
+                '%Y-%m-%d'
+            ),
+            'label': 'TestTicket',
+        }
+        with self.login(self.user):
             self.client.post(
                 reverse(
                     'samplesheets:irods_ticket_create',
@@ -674,9 +637,10 @@ class TestIrodsAccessTicketUpdateView(
                 post_data,
             )
 
-            self.assertEqual(IrodsAccessTicket.objects.count(), 1)
-            ticket = IrodsAccessTicket.objects.first()
+        self.assertEqual(IrodsAccessTicket.objects.count(), 1)
+        ticket = IrodsAccessTicket.objects.first()
 
+        with self.login(self.user):
             response = self.client.get(
                 reverse(
                     'samplesheets:irods_ticket_update',
@@ -684,29 +648,28 @@ class TestIrodsAccessTicketUpdateView(
                 )
             )
 
-            self.assertEqual(
-                response.context['form'].initial['date_expires'],
-                ticket.date_expires,
-            )
-            self.assertEqual(
-                response.context['form'].initial['label'], ticket.label
-            )
-            self.assertEqual(
-                response.context['form'].initial['path'], ticket.path
-            )
+        self.assertEqual(
+            response.context['form'].initial['date_expires'],
+            ticket.date_expires,
+        )
+        self.assertEqual(
+            response.context['form'].initial['label'], ticket.label
+        )
+        self.assertEqual(response.context['form'].initial['path'], ticket.path)
 
     def test_post(self):
-        """Test posting the irods access ticket update form"""
-        with self.login(self.user):
-            self.assertEqual(IrodsAccessTicket.objects.count(), 0)
+        """Test posting the iRODS access ticket update form"""
+        self.assertEqual(IrodsAccessTicket.objects.count(), 0)
 
-            post_data = {
-                'path': self.track_hub1,
-                'date_expires': (
-                    timezone.localtime() + timedelta(days=1)
-                ).strftime('%Y-%m-%d'),
-                'label': 'TestTicket',
-            }
+        post_data = {
+            'path': self.track_hub1,
+            'date_expires': (timezone.localtime() + timedelta(days=1)).strftime(
+                '%Y-%m-%d'
+            ),
+            'label': 'TestTicket',
+        }
+
+        with self.login(self.user):
             self.client.post(
                 reverse(
                     'samplesheets:irods_ticket_create',
@@ -715,14 +678,15 @@ class TestIrodsAccessTicketUpdateView(
                 post_data,
             )
 
-            self.assertEqual(IrodsAccessTicket.objects.count(), 1)
-            ticket = IrodsAccessTicket.objects.first()
+        self.assertEqual(IrodsAccessTicket.objects.count(), 1)
+        ticket = IrodsAccessTicket.objects.first()
 
-            update_data = {
-                **post_data,
-                'label': 'TestTicketAltered',
-                'date_expires': '',
-            }
+        update_data = {
+            **post_data,
+            'label': 'TestTicketAltered',
+            'date_expires': '',
+        }
+        with self.login(self.user):
             response = self.client.post(
                 reverse(
                     'samplesheets:irods_ticket_update',
@@ -730,7 +694,6 @@ class TestIrodsAccessTicketUpdateView(
                 ),
                 update_data,
             )
-
             self.assertRedirects(
                 response,
                 reverse(
@@ -739,30 +702,28 @@ class TestIrodsAccessTicketUpdateView(
                 ),
             )
 
-            self.assertEqual(IrodsAccessTicket.objects.count(), 1)
-            ticket = IrodsAccessTicket.objects.first()
-
-            self.assertEqual(
-                str(list(get_messages(response.wsgi_request))[1]),
-                'iRODS access ticket "%s" updated.' % ticket.get_display_name(),
-            )
-
-            self.assertIsNone(ticket.get_date_expires())
-            self.assertEqual(ticket.label, update_data['label'])
-            self.assertEqual(ticket.path, update_data['path'])
+        self.assertEqual(IrodsAccessTicket.objects.count(), 1)
+        ticket = IrodsAccessTicket.objects.first()
+        self.assertEqual(
+            str(list(get_messages(response.wsgi_request))[0]),
+            'iRODS access ticket "%s" updated.' % ticket.get_display_name(),
+        )
+        self.assertIsNone(ticket.get_date_expires())
+        self.assertEqual(ticket.label, update_data['label'])
+        self.assertEqual(ticket.path, update_data['path'])
 
 
 @skipIf(not BACKENDS_ENABLED, BACKEND_SKIP_MSG)
 class TestIrodsAccessTicketDeleteView(
     SampleSheetTaskflowMixin, SampleSheetIOMixin, TestTaskflowBase
 ):
-    """Tests for the irods access ticket delete view"""
+    """Tests for the iRODS access ticket delete view"""
 
     def setUp(self):
         super().setUp()
 
         # Make project with owner in Taskflow and Django
-        self.project, self.owner_as = self._make_project_taskflow(
+        self.project, self.owner_as = self.make_project_taskflow(
             title='TestProject',
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
@@ -777,7 +738,7 @@ class TestIrodsAccessTicketDeleteView(
         self.assay = self.study.assays.first()
 
         # Create iRODS collections
-        self._make_irods_colls(self.investigation)
+        self.make_irods_colls(self.investigation)
 
         self.irods_backend = get_backend_api('omics_irods')
         self.assertIsNotNone(self.irods_backend)
@@ -785,18 +746,18 @@ class TestIrodsAccessTicketDeleteView(
 
         # Create iRODS track hub collections
         assay_path = self.irods_backend.get_path(self.assay)
-        self.track_hub1 = self._make_track_hub_coll(
+        self.track_hub1 = self.make_track_hub_coll(
             self.irods_session, assay_path, 'track1'
         )
-        self.track_hub2 = self._make_track_hub_coll(
+        self.track_hub2 = self.make_track_hub_coll(
             self.irods_session, assay_path, 'track2'
         )
 
     def test_delete(self):
-        """Test render the irods access ticket update form"""
-        with self.login(self.user):
-            self.assertEqual(IrodsAccessTicket.objects.count(), 0)
+        """Test render the iRODS access ticket update form"""
+        self.assertEqual(IrodsAccessTicket.objects.count(), 0)
 
+        with self.login(self.user):
             post_data = {
                 'path': self.track_hub1,
                 'date_expires': (
@@ -811,7 +772,6 @@ class TestIrodsAccessTicketDeleteView(
                 ),
                 post_data,
             )
-
             self.client.post(
                 reverse(
                     'samplesheets:irods_ticket_create',
@@ -820,16 +780,16 @@ class TestIrodsAccessTicketDeleteView(
                 {**post_data, 'path': self.track_hub2},
             )
 
-            self.assertEqual(IrodsAccessTicket.objects.count(), 2)
-            ticket = IrodsAccessTicket.objects.first()
+        self.assertEqual(IrodsAccessTicket.objects.count(), 2)
+        ticket = IrodsAccessTicket.objects.first()
 
+        with self.login(self.user):
             response = self.client.post(
                 reverse(
                     'samplesheets:irods_ticket_delete',
                     kwargs={'irodsaccessticket': str(ticket.sodar_uuid)},
                 ),
             )
-
             self.assertRedirects(
                 response,
                 reverse(
@@ -837,11 +797,12 @@ class TestIrodsAccessTicketDeleteView(
                     kwargs={'project': self.project.sodar_uuid},
                 ),
             )
-            self.assertEqual(IrodsAccessTicket.objects.count(), 1)
-            self.assertEqual(
-                str(list(get_messages(response.wsgi_request))[2]),
-                'iRODS access ticket "%s" deleted.' % ticket.get_display_name(),
-            )
+
+        self.assertEqual(IrodsAccessTicket.objects.count(), 1)
+        self.assertEqual(
+            str(list(get_messages(response.wsgi_request))[0]),
+            'iRODS access ticket "%s" deleted.' % ticket.get_display_name(),
+        )
 
 
 class TestIrodsRequestViewsBase(
@@ -870,11 +831,10 @@ class TestIrodsRequestViewsBase(
 
     def setUp(self):
         super().setUp()
-
         self.irods_backend = get_backend_api('omics_irods')
         self.irods_session = self.irods_backend.get_session()
 
-        self.project, self.owner_as = self._make_project_taskflow(
+        self.project, self.owner_as = self.make_project_taskflow(
             title='TestProject',
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
@@ -890,7 +850,7 @@ class TestIrodsRequestViewsBase(
         self.assay = self.study.assays.first()
 
         # Set up iRODS data
-        self._make_irods_colls(self.investigation)
+        self.make_irods_colls(self.investigation)
         self.assay_path = self.irods_backend.get_path(self.assay)
         self.path = os.path.join(self.assay_path, TEST_FILE_NAME)
         self.path_md5 = os.path.join(self.assay_path, f'{TEST_FILE_NAME}.md5')
@@ -904,16 +864,16 @@ class TestIrodsRequestViewsBase(
         self.user_contrib2 = self.make_user('user_contrib2')
         self.user_guest = self.make_user('user_guest')
 
-        self._make_assignment_taskflow(
+        self.make_assignment_taskflow(
             self.project, self.user_delegate, self.role_delegate
         )
-        self._make_assignment_taskflow(
+        self.make_assignment_taskflow(
             self.project, self.user_contrib, self.role_contributor
         )
-        self._make_assignment_taskflow(
+        self.make_assignment_taskflow(
             self.project, self.user_contrib2, self.role_contributor
         )
-        self._make_assignment_taskflow(
+        self.make_assignment_taskflow(
             self.project, self.user_guest, self.role_guest
         )
 
@@ -1034,11 +994,11 @@ class TestIrodsRequestCreateView(TestIrodsRequestViewsBase):
                 ),
                 post_data,
             )
-            self.assertEqual(
-                response.context['form'].errors['path'][0],
-                ERROR_MSG_INVALID_PATH,
-            )
 
+        self.assertEqual(
+            response.context['form'].errors['path'][0],
+            ERROR_MSG_INVALID_PATH,
+        )
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
 
     def test_create_multiple(self):
@@ -1076,7 +1036,7 @@ class TestIrodsRequestCreateView(TestIrodsRequestViewsBase):
 
 @skipIf(not BACKENDS_ENABLED, BACKEND_SKIP_MSG)
 class TestIrodsRequestUpdateView(TestIrodsRequestViewsBase):
-    """Test IrodsRequestUpdateView"""
+    """Tests for IrodsRequestUpdateView"""
 
     def test_update(self):
         """Test POST request for updating a delete request"""
@@ -1147,7 +1107,7 @@ class TestIrodsRequestUpdateView(TestIrodsRequestViewsBase):
 
 @skipIf(not BACKENDS_ENABLED, BACKEND_SKIP_MSG)
 class TestIrodsRequestDeleteView(TestIrodsRequestViewsBase):
-    """Test IrodsRequestUpdateView"""
+    """Tests for IrodsRequestUpdateView"""
 
     def test_get_contributor(self):
         """Test GET request for deleting a request"""
@@ -1232,7 +1192,6 @@ class TestIrodsRequestDeleteView(TestIrodsRequestViewsBase):
         path2_md5 = os.path.join(self.assay_path, TEST_FILE_NAME2 + '.md5')
         self.irods_session.data_objects.create(path2)
         self.irods_session.data_objects.create(path2_md5)
-
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
 
         with self.login(self.user_contrib):
@@ -1243,7 +1202,6 @@ class TestIrodsRequestDeleteView(TestIrodsRequestViewsBase):
                 ),
                 self.post_data,
             )
-
             self.post_data['path'] = path2
             self.client.post(
                 reverse(
@@ -1277,7 +1235,7 @@ class TestIrodsRequestDeleteView(TestIrodsRequestViewsBase):
 
 @skipIf(not BACKENDS_ENABLED, BACKEND_SKIP_MSG)
 class TestIrodsRequestAcceptView(TestIrodsRequestViewsBase):
-    """Test IrodsRequestAcceptView"""
+    """Tests for IrodsRequestAcceptView"""
 
     def test_accept_request_doesnt_exist(self):
         """Test accepting a delete request that doesn't exist"""
@@ -1295,7 +1253,7 @@ class TestIrodsRequestAcceptView(TestIrodsRequestViewsBase):
 
     def test_accept(self):
         """Test accepting a delete request"""
-        self.assertEqual(IrodsDataRequest.objects.count(), 0)
+        self.assert_irods_obj(self.path)
 
         with self.login(self.user_contrib):
             self.client.post(
@@ -1333,14 +1291,15 @@ class TestIrodsRequestAcceptView(TestIrodsRequestViewsBase):
                 ),
             )
 
-        obj = IrodsDataRequest.objects.first()
+        obj.refresh_from_db()
         self.assertEqual(obj.status, 'ACCEPTED')
         self.assertEqual(self._get_create_alert_count(self.user), 0)
         self.assertEqual(self._get_create_alert_count(self.user_delegate), 0)
+        self.assert_irods_obj(self.path, False)
 
     def test_accept_invalid_form_data(self):
         """Test accepting a delete request with invalid form data"""
-        self.assertEqual(IrodsDataRequest.objects.count(), 0)
+        self.assert_irods_obj(self.path)
 
         with self.login(self.user_contrib):
             self.client.post(
@@ -1371,10 +1330,11 @@ class TestIrodsRequestAcceptView(TestIrodsRequestViewsBase):
 
         self.assertEqual(self._get_create_alert_count(self.user), 1)
         self.assertEqual(self._get_create_alert_count(self.user_delegate), 1)
+        self.assert_irods_obj(self.path)
 
     def test_accept_owner(self):
         """Test accepting a delete request as owner"""
-        self.assertEqual(IrodsDataRequest.objects.count(), 0)
+        self.assert_irods_obj(self.path)
 
         with self.login(self.user_contrib):
             self.client.post(
@@ -1405,15 +1365,18 @@ class TestIrodsRequestAcceptView(TestIrodsRequestViewsBase):
             )
             self.assertEqual(
                 list(get_messages(response.wsgi_request))[-1].message,
-                f'iRODS data request "{obj.get_display_name()}" accepted.',
+                'iRODS data request "{}" accepted.'.format(
+                    obj.get_display_name()
+                ),
             )
 
-        obj = IrodsDataRequest.objects.first()
+        obj.refresh_from_db()
         self.assertEqual(obj.status, 'ACCEPTED')
+        self.assert_irods_obj(self.path, False)
 
     def test_accept_delegate(self):
         """Test accepting a delete request as delegate"""
-        self.assertEqual(IrodsDataRequest.objects.count(), 0)
+        self.assert_irods_obj(self.path)
 
         with self.login(self.user_contrib):
             self.client.post(
@@ -1444,15 +1407,18 @@ class TestIrodsRequestAcceptView(TestIrodsRequestViewsBase):
             )
             self.assertEqual(
                 list(get_messages(response.wsgi_request))[-1].message,
-                f'iRODS data request "{obj.get_display_name()}" accepted.',
+                'iRODS data request "{}" accepted.'.format(
+                    obj.get_display_name()
+                ),
             )
 
-        obj = IrodsDataRequest.objects.first()
+        obj.refresh_from_db()
         self.assertEqual(obj.status, 'ACCEPTED')
+        self.assert_irods_obj(self.path, False)
 
     def test_accept_contributor(self):
         """Test accepting a delete request as contributor"""
-        self.assertEqual(IrodsDataRequest.objects.count(), 0)
+        self.assert_irods_obj(self.path)
 
         with self.login(self.user_contrib):
             self.client.post(
@@ -1462,10 +1428,8 @@ class TestIrodsRequestAcceptView(TestIrodsRequestViewsBase):
                 ),
                 self.post_data,
             )
-
             self.assertEqual(IrodsDataRequest.objects.count(), 1)
             obj = IrodsDataRequest.objects.first()
-
             response = self.client.post(
                 reverse(
                     'samplesheets:irods_request_accept',
@@ -1473,9 +1437,10 @@ class TestIrodsRequestAcceptView(TestIrodsRequestViewsBase):
                 ),
                 {'confirm': True},
             )
-
             self.assertRedirects(response, reverse('home'))
-            self.assertEqual(IrodsDataRequest.objects.count(), 1)
+
+        self.assertEqual(IrodsDataRequest.objects.count(), 1)
+        self.assert_irods_obj(self.path)
 
     def test_accept_one_of_multiple(self):
         """Test accepting one of multiple requests"""
@@ -1527,7 +1492,7 @@ class TestIrodsRequestAcceptView(TestIrodsRequestViewsBase):
 
 @skipIf(not BACKENDS_ENABLED, BACKEND_SKIP_MSG)
 class TestIrodsRequestRejectView(TestIrodsRequestViewsBase):
-    """Test IrodsRequestRejectView"""
+    """Tests for IrodsRequestRejectView"""
 
     def test_reject_request_doesnt_exist(self):
         """Test GET request for rejecting a delete request that doesn't exist"""
@@ -1572,14 +1537,13 @@ class TestIrodsRequestRejectView(TestIrodsRequestViewsBase):
                     kwargs={'project': self.project.sodar_uuid},
                 ),
             )
-            self.assertEqual(
-                list(get_messages(response.wsgi_request))[-1].message,
-                'iRODS data request "{}" rejected.'.format(
-                    obj.get_display_name()
-                ),
-            )
-            obj.refresh_from_db()
-            self.assertEqual(obj.status, 'REJECTED')
+
+        self.assertEqual(
+            list(get_messages(response.wsgi_request))[-1].message,
+            'iRODS data request "{}" rejected.'.format(obj.get_display_name()),
+        )
+        obj.refresh_from_db()
+        self.assertEqual(obj.status, 'REJECTED')
 
     def test_reject_owner(self):
         """Test GET request for rejecting a delete request as owner"""
@@ -1611,11 +1575,11 @@ class TestIrodsRequestRejectView(TestIrodsRequestViewsBase):
                     kwargs={'project': self.project.sodar_uuid},
                 ),
             )
-            self.assertEqual(
-                list(get_messages(response.wsgi_request))[-1].message,
-                f'iRODS data request "{obj.get_display_name()}" rejected.',
-            )
 
+        self.assertEqual(
+            list(get_messages(response.wsgi_request))[-1].message,
+            'iRODS data request "{}" rejected.'.format(obj.get_display_name()),
+        )
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
         obj.refresh_from_db()
         self.assertEqual(obj.status, 'REJECTED')
@@ -1650,13 +1614,11 @@ class TestIrodsRequestRejectView(TestIrodsRequestViewsBase):
                     kwargs={'project': self.project.sodar_uuid},
                 ),
             )
-            self.assertEqual(
-                list(get_messages(response.wsgi_request))[-1].message,
-                'iRODS data request "{}" rejected.'.format(
-                    obj.get_display_name()
-                ),
-            )
 
+        self.assertEqual(
+            list(get_messages(response.wsgi_request))[-1].message,
+            'iRODS data request "{}" rejected.'.format(obj.get_display_name()),
+        )
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
         obj.refresh_from_db()
         self.assertEqual(obj.status, 'REJECTED')
@@ -1696,7 +1658,6 @@ class TestIrodsRequestRejectView(TestIrodsRequestViewsBase):
         path2_md5 = os.path.join(self.assay_path, TEST_FILE_NAME2 + '.md5')
         self.irods_session.data_objects.create(path2)
         self.irods_session.data_objects.create(path2_md5)
-
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
 
         with self.login(self.user_contrib):
@@ -1740,7 +1701,7 @@ class TestIrodsRequestRejectView(TestIrodsRequestViewsBase):
 
 @skipIf(not BACKENDS_ENABLED, BACKEND_SKIP_MSG)
 class TestIrodsRequestListView(TestIrodsRequestViewsBase):
-    """Test IrodsRequestListView"""
+    """Tests for IrodsRequestListView"""
 
     def test_list(self):
         """Test GET request for listing delete requests"""
@@ -1872,7 +1833,6 @@ class TestSampleDataPublicAccess(
 
     def setUp(self):
         super().setUp()
-
         # Get iRODS session for rods user
         self.irods_backend = get_backend_api('omics_irods')
         self.irods = self.irods_backend.get_session()
@@ -1899,7 +1859,7 @@ class TestSampleDataPublicAccess(
         ).get_session()
 
         # Make publicly accessible project
-        self.project, self.owner_as = self._make_project_taskflow(
+        self.project, self.owner_as = self.make_project_taskflow(
             title='TestProject',
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
@@ -1912,7 +1872,7 @@ class TestSampleDataPublicAccess(
         self.investigation = self._import_isa_from_file(
             SHEET_PATH, self.project
         )
-        self._make_irods_colls(self.investigation)
+        self.make_irods_colls(self.investigation)
         self.project_path = self.irods_backend.get_path(self.project)
         self.sample_path = self.irods_backend.get_sample_path(self.project)
 
@@ -1983,7 +1943,7 @@ class TestProjectSearchView(
         self.irods_session = self.irods_backend.get_session()
 
         # Make project with owner in Taskflow and Django
-        self.project, self.owner_as = self._make_project_taskflow(
+        self.project, self.owner_as = self.make_project_taskflow(
             title='TestProject',
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
@@ -1999,7 +1959,7 @@ class TestProjectSearchView(
         self.assay = self.study.assays.first()
 
         # Set up sample collections
-        self._make_irods_colls(self.investigation)
+        self.make_irods_colls(self.investigation)
         self.assay_path = self.irods_backend.get_path(self.assay)
 
         # Create test file

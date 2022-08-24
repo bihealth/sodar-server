@@ -38,7 +38,6 @@ required for SODAR development:
 - Redis
 - Main iRODS server
 - Test iRODS server
-- SODAR Taskflow
 
 The recommended method to set up the environment required for development is
 cloning the

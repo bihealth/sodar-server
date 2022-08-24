@@ -1,9 +1,9 @@
 """App plugin and sub-app plugin points for the samplesheets app"""
 
-from copy import deepcopy
 import logging
 import os
 
+from copy import deepcopy
 from irods.exception import NetworkException
 
 from django.conf import settings
@@ -14,7 +14,11 @@ from djangoplugins.point import PluginPoint
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
 from projectroles.models import Project, SODAR_CONSTANTS
-from projectroles.plugins import ProjectAppPluginPoint, get_backend_api
+from projectroles.plugins import (
+    ProjectAppPluginPoint,
+    ProjectModifyPluginAPIMixin,
+    get_backend_api,
+)
 from projectroles.utils import build_secret
 
 from samplesheets.models import (
@@ -29,11 +33,11 @@ from samplesheets.models import (
 from samplesheets.rendering import SampleSheetTableBuilder
 from samplesheets.urls import urlpatterns
 from samplesheets.utils import (
-    get_sample_colls,
     get_isa_field_name,
     get_sheets_url,
 )
 from samplesheets.views import (
+    IrodsCollsCreateViewMixin,
     RESULTS_COLL,
     MISC_FILES_COLL,
     TRACK_HUBS_COLL,
@@ -49,6 +53,8 @@ logger = logging.getLogger(__name__)
 
 # SODAR constants
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
+PROJECT_ACTION_CREATE = SODAR_CONSTANTS['PROJECT_ACTION_CREATE']
+PROJECT_ACTION_UPDATE = SODAR_CONSTANTS['PROJECT_ACTION_UPDATE']
 
 # Local constants
 SHEETS_INFO_SETTINGS = [
@@ -71,7 +77,11 @@ MATERIAL_SEARCH_TYPES = ['source', 'sample']
 # Samplesheets project app plugin ----------------------------------------------
 
 
-class ProjectAppPlugin(ProjectAppPluginPoint):
+class ProjectAppPlugin(
+    IrodsCollsCreateViewMixin,
+    ProjectModifyPluginAPIMixin,
+    ProjectAppPluginPoint,
+):
     """Plugin for registering app with Projectroles"""
 
     #: Name (slug-safe, used in URLs)
@@ -223,26 +233,6 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
 
     #: Names of plugin specific Django settings to display in siteinfo
     info_settings = SHEETS_INFO_SETTINGS
-
-    def get_taskflow_sync_data(self):
-        """
-        Return data for syncing taskflow operations.
-
-        :return: List of dicts or None
-        """
-        sync_flows = []
-        # NOTE: This only syncs previously created collections
-        for investigation in Investigation.objects.filter(irods_status=True):
-            flow = {
-                'flow_name': 'sheet_colls_create',
-                'project_uuid': investigation.project.sodar_uuid,
-                'flow_data': {
-                    'colls': get_sample_colls(investigation),
-                    'public_guest_access': investigation.project.public_guest_access,
-                },
-            }
-            sync_flows.append(flow)
-        return sync_flows
 
     def get_object_link(self, model_str, uuid):
         """
@@ -485,23 +475,31 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                 )
             )
 
-    def handle_project_update(self, project, old_data):
+    def perform_project_modify(
+        self,
+        project,
+        action,
+        project_settings,
+        old_data=None,
+        old_settings=None,
+        request=None,
+    ):
         """
-        Perform actions to handle project update.
+        Perform additional actions to finalize project creation or update.
 
-        :param project: Current project (Project)
-        :param old_data: Old project data prior to update (dict)
+        :param project: Current project object (Project)
+        :param action: Action to perform (CREATE or UPDATE)
+        :param project_settings: Project app settings (dict)
+        :param old_data: Old project data in case of an update (dict or None)
+        :param old_settings: Old app settings in case of update (dict or None)
+        :param request: Request object or None
         """
         taskflow = get_backend_api('taskflow')
         irods_backend = get_backend_api('omics_irods')  # Need conn for ticket
 
         # Check for conditions and skip if not met
         def _skip(msg):
-            logger.debug(
-                'Skipping project update for "{}" ({}): {}'.format(
-                    project.title, project.sodar_uuid, msg
-                )
-            )
+            logger.debug('Skipping: {}'.format(msg))
 
         if not taskflow or not irods_backend:
             return _skip(
@@ -510,7 +508,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                     irods_backend is not None,
                 )
             )
-        if not old_data:
+        if action == PROJECT_ACTION_CREATE:
             return _skip('Project newly created, no Investigation available')
         if project.public_guest_access == old_data.get('public_guest_access'):
             return _skip('Public guest access unchanged')
@@ -535,7 +533,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         }
         try:
             taskflow.submit(
-                project_uuid=project.sodar_uuid,
+                project=project,
                 flow_name='public_access_update',
                 flow_data=flow_data,
             )
@@ -546,39 +544,104 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
             return
 
         # Create/delete iRODS access ticket for anonymous access if allowed
-        if settings.PROJECTROLES_ALLOW_ANONYMOUS:
-            if project.public_guest_access:
-                try:
-                    ticket = irods_backend.issue_ticket(
-                        'read', sample_path, ticket_str=build_secret(16)
-                    )
-                    app_settings.set_app_setting(
-                        APP_NAME,
-                        'public_access_ticket',
-                        ticket.ticket,
-                        project=project,
-                    )
-                except Exception as ex:
-                    logger.error('Ticket issuing failed: {}'.format(ex))
-                    if settings.DEBUG:
-                        raise ex
-                    return
-            else:
-                ticket_val = app_settings.get_app_setting(
+        if (
+            project.public_guest_access
+            and settings.PROJECTROLES_ALLOW_ANONYMOUS
+        ):
+            try:
+                ticket = irods_backend.issue_ticket(
+                    'read', sample_path, ticket_str=build_secret(16)
+                )
+                app_settings.set_app_setting(
+                    APP_NAME,
+                    'public_access_ticket',
+                    ticket.ticket,
+                    project=project,
+                )
+                logger.debug('Ticket issued')
+            except Exception as ex:
+                logger.error('Ticket issuing failed: {}'.format(ex))
+                if settings.DEBUG:
+                    raise ex
+                return
+        else:  # Delete ticket and revoke access
+            ticket_str = None
+            if (
+                project.public_guest_access
+                and not settings.PROJECTROLES_ALLOW_ANONYMOUS
+            ):
+                ticket_str = app_settings.get_app_setting(
                     APP_NAME, 'public_access_ticket', project=project
                 )
+            elif (
+                not project.public_guest_access
+                and settings.PROJECTROLES_ALLOW_ANONYMOUS
+            ):
+                ticket_str = old_settings.get(
+                    'settings.samplesheets.public_access_ticket'
+                )
+            if ticket_str:
                 try:
-                    irods_backend.delete_ticket(ticket_val)
+                    irods_backend.delete_ticket(ticket_str)
                     app_settings.delete_setting(
                         APP_NAME, 'public_access_ticket', project=project
                     )
+                    logger.debug('Ticket deleted')
                 except Exception as ex:
                     logger.error('Ticket deletion failed: {}'.format(ex))
                     if settings.DEBUG:
                         raise ex
                     return
 
-        logger.info('Public access status updated.')
+        logger.info('Public access status updated')
+
+    # NOTE: No reverting from API needed as this always gets called last
+
+    def perform_project_sync(self, project):
+        """
+        Synchronize existing projects to ensure related data exists when the
+        syncmodifyapi management comment is called. Should mostly be used in
+        development when the development databases have been e.g. modified or
+        recreated.
+
+        :param project: Current project object (Project)
+        """
+        # Set up investigation collections
+        investigation = Investigation.objects.filter(
+            project=project, active=True
+        ).first()
+        if not investigation:
+            logger.debug('Skipping: No investigation for project')
+            return
+        if investigation.irods_status:
+            logger.info('Creating iRODS collections..')
+            self.create_colls(investigation)
+
+        # Sync public guest access
+        ticket_str = app_settings.get_app_setting(
+            APP_NAME, 'public_access_ticket', project=project
+        )
+        if not ticket_str:
+            return
+        irods_backend = get_backend_api('omics_irods')
+        sample_path = irods_backend.get_sample_path(project)
+        ticket = irods_backend.get_ticket(ticket_str)
+        if (
+            settings.PROJECTROLES_ALLOW_ANONYMOUS
+            and project.public_guest_access
+            and not ticket
+        ):
+            logger.info('Issuing public access ticket..')
+            irods_backend.issue_ticket('read', sample_path, ticket_str)
+        elif (
+            not settings.PROJECTROLES_ALLOW_ANONYMOUS
+            or not project.public_guest_access
+        ) and ticket:
+            logger.info('Deleting public access ticket..')
+            irods_backend.delete_ticket(ticket_str)
+            app_settings.set_app_setting(
+                APP_NAME, 'public_access_ticket', '', project
+            )
 
     def update_cache(self, name=None, project=None, user=None):
         """
