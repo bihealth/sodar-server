@@ -10,7 +10,7 @@ from projectroles.app_settings import AppSettingAPI
 from projectroles.models import RoleAssignment, SODAR_CONSTANTS
 from projectroles.plugins import (
     BackendPluginPoint,
-    ProjectModifyPluginAPIMixin,
+    ProjectModifyPluginMixin,
     get_backend_api,
 )
 
@@ -34,7 +34,7 @@ TL_SUBMIT_DESC = 'Job submitted to Taskflow'
 IRODS_CAT_SKIP_MSG = 'Categories are not synchronized into iRODS'
 
 
-class BackendPlugin(ProjectModifyPluginAPIMixin, BackendPluginPoint):
+class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
     """Plugin for registering backend app with Projectroles"""
 
     #: Name (slug-safe, used in URLs)

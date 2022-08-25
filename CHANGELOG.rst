@@ -26,6 +26,7 @@ Changed
     - Refactor Taskflow functionality for integrated code (#691, #1397)
     - Use general ``REDIS_URL`` Django setting (#1396)
     - Replace ``get_taskflow_sync_data()`` methods with modify API calls (#1397)
+    - Upgrade to django-sodar-core v0.11.0 (#1459)
 - **Landingzones**
     - Move Celery tasks into ``tasks_celery`` (#1400)
 - **Samplesheets**

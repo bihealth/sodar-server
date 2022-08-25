@@ -16,7 +16,7 @@ from projectroles.app_settings import AppSettingAPI
 from projectroles.models import Project, SODAR_CONSTANTS
 from projectroles.plugins import (
     ProjectAppPluginPoint,
-    ProjectModifyPluginAPIMixin,
+    ProjectModifyPluginMixin,
     get_backend_api,
 )
 from projectroles.utils import build_secret
@@ -79,7 +79,7 @@ MATERIAL_SEARCH_TYPES = ['source', 'sample']
 
 class ProjectAppPlugin(
     IrodsCollsCreateViewMixin,
-    ProjectModifyPluginAPIMixin,
+    ProjectModifyPluginMixin,
     ProjectAppPluginPoint,
 ):
     """Plugin for registering app with Projectroles"""

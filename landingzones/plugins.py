@@ -10,7 +10,7 @@ from djangoplugins.point import PluginPoint
 from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import (
     ProjectAppPluginPoint,
-    ProjectModifyPluginAPIMixin,
+    ProjectModifyPluginMixin,
     get_backend_api,
 )
 
@@ -37,7 +37,7 @@ LANDINGZONES_INFO_SETTINGS = [
 
 
 class ProjectAppPlugin(
-    ZoneCreateMixin, ProjectModifyPluginAPIMixin, ProjectAppPluginPoint
+    ZoneCreateMixin, ProjectModifyPluginMixin, ProjectAppPluginPoint
 ):
     """Plugin for registering app with Projectroles"""
 

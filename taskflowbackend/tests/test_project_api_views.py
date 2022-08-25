@@ -44,11 +44,6 @@ PROJECT_ROLE_CONTRIBUTOR = SODAR_CONSTANTS['PROJECT_ROLE_CONTRIBUTOR']
 PROJECT_ROLE_GUEST = SODAR_CONSTANTS['PROJECT_ROLE_GUEST']
 PROJECT_TYPE_CATEGORY = SODAR_CONSTANTS['PROJECT_TYPE_CATEGORY']
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
-SUBMIT_STATUS_OK = SODAR_CONSTANTS['SUBMIT_STATUS_OK']
-SUBMIT_STATUS_PENDING = SODAR_CONSTANTS['SUBMIT_STATUS_PENDING']
-SUBMIT_STATUS_PENDING_TASKFLOW = SODAR_CONSTANTS[
-    'SUBMIT_STATUS_PENDING_TASKFLOW'
-]
 APP_SETTING_SCOPE_PROJECT = SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT']
 
 # Local constants
@@ -222,7 +217,6 @@ class TestProjectUpdateAPIView(TestCoreTaskflowAPIBase):
 
     def test_put_category(self):
         """Test put() for category updating"""
-        new_owner = self.make_user('new_owner')
         self.assertEqual(Project.objects.count(), 2)
 
         url = reverse(
@@ -235,7 +229,6 @@ class TestProjectUpdateAPIView(TestCoreTaskflowAPIBase):
             'parent': '',
             'description': UPDATED_DESC,
             'readme': UPDATED_README,
-            'owner': str(new_owner.sodar_uuid),
         }
         response = self.request_knox(url, method='PUT', data=request_data)
 
@@ -253,7 +246,6 @@ class TestProjectUpdateAPIView(TestCoreTaskflowAPIBase):
             'description': UPDATED_DESC,
             'readme': UPDATED_README,
             'public_guest_access': False,
-            'submit_status': SODAR_CONSTANTS['SUBMIT_STATUS_OK'],
             'full_title': UPDATED_TITLE,
             'has_public_children': False,
             'sodar_uuid': self.category.sodar_uuid,
@@ -263,11 +255,10 @@ class TestProjectUpdateAPIView(TestCoreTaskflowAPIBase):
         self.assertEqual(
             RoleAssignment.objects.filter(project=self.category).count(), 1
         )
-        self.assertEqual(self.category.get_owner().user, new_owner)
+        self.assertEqual(self.category.get_owner().user, self.user)
 
     def test_put_project(self):
         """Test put() for project updating"""
-        new_owner = self.make_user('new_owner')
         self.assertEqual(Project.objects.count(), 2)
 
         url = reverse(
@@ -281,7 +272,6 @@ class TestProjectUpdateAPIView(TestCoreTaskflowAPIBase):
             'description': UPDATED_DESC,
             'readme': UPDATED_README,
             'public_guest_access': True,
-            'owner': str(new_owner.sodar_uuid),
         }
         response = self.request_knox(url, method='PUT', data=request_data)
 
@@ -299,7 +289,6 @@ class TestProjectUpdateAPIView(TestCoreTaskflowAPIBase):
             'description': UPDATED_DESC,
             'readme': UPDATED_README,
             'public_guest_access': True,
-            'submit_status': SODAR_CONSTANTS['SUBMIT_STATUS_OK'],
             'full_title': self.category.title + ' / ' + UPDATED_TITLE,
             'has_public_children': False,
             'sodar_uuid': self.project.sodar_uuid,
@@ -309,7 +298,7 @@ class TestProjectUpdateAPIView(TestCoreTaskflowAPIBase):
         self.assertEqual(
             RoleAssignment.objects.filter(project=self.project).count(), 1
         )
-        self.assertEqual(self.project.get_owner().user, new_owner)
+        self.assertEqual(self.project.get_owner().user, self.user)
 
         project_coll = self.irods_session.collections.get(
             self.irods_backend.get_path(self.project)
@@ -351,7 +340,6 @@ class TestProjectUpdateAPIView(TestCoreTaskflowAPIBase):
             'description': UPDATED_DESC,
             'readme': UPDATED_README,
             'public_guest_access': False,
-            'submit_status': SODAR_CONSTANTS['SUBMIT_STATUS_OK'],
             'full_title': UPDATED_TITLE,
             'has_public_children': False,
             'sodar_uuid': self.category.sodar_uuid,
@@ -388,7 +376,6 @@ class TestProjectUpdateAPIView(TestCoreTaskflowAPIBase):
             'description': UPDATED_DESC,
             'readme': UPDATED_README,
             'public_guest_access': False,
-            'submit_status': SODAR_CONSTANTS['SUBMIT_STATUS_OK'],
             'full_title': self.category.title + ' / ' + UPDATED_TITLE,
             'has_public_children': False,
             'sodar_uuid': self.project.sodar_uuid,

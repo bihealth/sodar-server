@@ -42,11 +42,6 @@ PROJECT_ROLE_CONTRIBUTOR = SODAR_CONSTANTS['PROJECT_ROLE_CONTRIBUTOR']
 PROJECT_ROLE_GUEST = SODAR_CONSTANTS['PROJECT_ROLE_GUEST']
 PROJECT_TYPE_CATEGORY = SODAR_CONSTANTS['PROJECT_TYPE_CATEGORY']
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
-SUBMIT_STATUS_OK = SODAR_CONSTANTS['SUBMIT_STATUS_OK']
-SUBMIT_STATUS_PENDING = SODAR_CONSTANTS['SUBMIT_STATUS_PENDING']
-SUBMIT_STATUS_PENDING_TASKFLOW = SODAR_CONSTANTS[
-    'SUBMIT_STATUS_PENDING_TASKFLOW'
-]
 APP_SETTING_SCOPE_PROJECT = SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT']
 
 # Local constants
@@ -292,7 +287,6 @@ class TestProjectCreateView(TestTaskflowBase):
             'title': 'TestProject',
             'type': PROJECT_TYPE_PROJECT,
             'parent': self.category.pk,
-            'submit_status': SUBMIT_STATUS_OK,
             'description': 'description',
             'public_guest_access': False,
             'full_title': self.category.title + ' / TestProject',
@@ -408,7 +402,6 @@ class TestProjectUpdateView(TestTaskflowBase):
             'title': 'updated title',
             'type': PROJECT_TYPE_PROJECT,
             'parent': self.category.pk,
-            'submit_status': SUBMIT_STATUS_OK,
             'description': 'updated description',
             'public_guest_access': True,
             'full_title': self.category.title + ' / updated title',
