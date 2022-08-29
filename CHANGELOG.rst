@@ -27,6 +27,8 @@ Changed
     - Use general ``REDIS_URL`` Django setting (#1396)
     - Replace ``get_taskflow_sync_data()`` methods with modify API calls (#1397)
     - Upgrade to django-sodar-core v0.11.0 (#1459)
+    - Upgrade general Python dependencies (#1453)
+    - Upgrade minimum PostgreSQL version to v11 (bihealth/sodar-core#303)
 - **Landingzones**
     - Move Celery tasks into ``tasks_celery`` (#1400)
 - **Samplesheets**

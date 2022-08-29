@@ -101,9 +101,7 @@ class TestPerformProjectModify(TestModifyAPIBase):
             event_name='project_create',
         )
         self.assertEqual(tl_events.count(), 1)
-        self.assertEqual(
-            tl_events.first().get_current_status().status_type, 'OK'
-        )
+        self.assertEqual(tl_events.first().get_status().status_type, 'OK')
 
     def test_create_category(self):
         """Test category creation in iRODS (should not be created)"""
@@ -222,9 +220,7 @@ class TestRevertProjectModify(TestModifyAPIBase):
             event_name='project_create_revert',
         )
         self.assertEqual(tl_events.count(), 1)
-        self.assertEqual(
-            tl_events.first().get_current_status().status_type, 'OK'
-        )
+        self.assertEqual(tl_events.first().get_status().status_type, 'OK')
 
 
 @skipIf(not BACKENDS_ENABLED, BACKEND_SKIP_MSG)
@@ -264,9 +260,7 @@ class TestPerformRoleModify(TestModifyAPIBase):
             event_name='role_update',
         )
         self.assertEqual(tl_events.count(), 1)
-        self.assertEqual(
-            tl_events.first().get_current_status().status_type, 'OK'
-        )
+        self.assertEqual(tl_events.first().get_status().status_type, 'OK')
 
     def test_update(self):
         """Test updating a role assignment in iRODS (should do nothing)"""
@@ -316,9 +310,7 @@ class TestPerformRoleModify(TestModifyAPIBase):
             event_name='role_update_revert',
         )
         self.assertEqual(tl_events.count(), 1)
-        self.assertEqual(
-            tl_events.first().get_current_status().status_type, 'OK'
-        )
+        self.assertEqual(tl_events.first().get_status().status_type, 'OK')
 
     def test_revert_update(self):
         """Test reverting role update in iRODS (should do nothing)"""
@@ -382,9 +374,7 @@ class TestPerformRoleDelete(TestModifyAPIBase):
             event_name='role_delete',
         )
         self.assertEqual(tl_events.count(), 1)
-        self.assertEqual(
-            tl_events.first().get_current_status().status_type, 'OK'
-        )
+        self.assertEqual(tl_events.first().get_status().status_type, 'OK')
 
     def test_revert(self):
         """Test reverting role assignment deletion in iRODS"""
@@ -406,9 +396,7 @@ class TestPerformRoleDelete(TestModifyAPIBase):
             event_name='role_delete_revert',
         )
         self.assertEqual(tl_events.count(), 1)
-        self.assertEqual(
-            tl_events.first().get_current_status().status_type, 'OK'
-        )
+        self.assertEqual(tl_events.first().get_status().status_type, 'OK')
 
 
 @skipIf(not BACKENDS_ENABLED, BACKEND_SKIP_MSG)
@@ -454,9 +442,7 @@ class TestPerformOwnerTransfer(TestModifyAPIBase):
             event_name='role_owner_transfer',
         )
         self.assertEqual(tl_events.count(), 1)
-        self.assertEqual(
-            tl_events.first().get_current_status().status_type, 'OK'
-        )
+        self.assertEqual(tl_events.first().get_status().status_type, 'OK')
 
     def test_transfer_category_child(self):
         """Test owner transfer in iRODS with child category and project"""
@@ -565,9 +551,7 @@ class TestPerformProjectSync(TestModifyAPIBase):
             event_name='project_create',
         )
         self.assertEqual(tl_events.count(), 1)
-        self.assertEqual(
-            tl_events.first().get_current_status().status_type, 'OK'
-        )
+        self.assertEqual(tl_events.first().get_status().status_type, 'OK')
 
     def test_sync_existing(self):
         """Test sync for existing iRODS project (should not affect anything)"""
@@ -610,6 +594,4 @@ class TestPerformProjectSync(TestModifyAPIBase):
             event_name='project_create',
         )
         self.assertEqual(tl_events.count(), 1)
-        self.assertEqual(
-            tl_events.first().get_current_status().status_type, 'OK'
-        )
+        self.assertEqual(tl_events.first().get_status().status_type, 'OK')

@@ -12,7 +12,7 @@ jobs:
           - '3.10'
     services:
       postgres:
-        image: postgres:9.6
+        image: postgres:11
         env:
           POSTGRES_DB: sodar
           POSTGRES_USER: sodar

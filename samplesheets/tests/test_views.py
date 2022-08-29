@@ -409,7 +409,7 @@ class TestSheetImportView(SheetImportMixin, LandingZoneMixin, TestViewsBase):
         tl_event = self.timeline.get_project_events(self.project).order_by(
             '-pk'
         )[0]
-        tl_status = tl_event.get_current_status()
+        tl_status = tl_event.get_status()
         self.assertIsNotNone(tl_status.extra_data['warnings'])
 
     @override_settings(SHEETS_ALLOW_CRITICAL=True)
@@ -434,7 +434,7 @@ class TestSheetImportView(SheetImportMixin, LandingZoneMixin, TestViewsBase):
         tl_event = self.timeline.get_project_events(self.project).order_by(
             '-pk'
         )[0]
-        tl_status = tl_event.get_current_status()
+        tl_status = tl_event.get_status()
         self.assertIsNotNone(tl_status.extra_data['warnings'])
 
     def test_post_multiple(self):
@@ -755,7 +755,7 @@ class TestSheetISAExportView(TestViewsBase):
         tl_event = self.timeline.get_project_events(
             self.project, classified=True
         ).order_by('-pk')[0]
-        tl_status = tl_event.get_current_status()
+        tl_status = tl_event.get_status()
         self.assertIsNotNone(tl_status.extra_data['warnings'])
 
     def test_get_no_investigation(self):
