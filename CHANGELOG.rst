@@ -29,6 +29,8 @@ Changed
     - Upgrade to django-sodar-core v0.11.0 (#1459)
     - Upgrade general Python dependencies (#1453)
     - Upgrade minimum PostgreSQL version to v11 (bihealth/sodar-core#303)
+- **Irodsbackend**
+    - Disable iRODS environment debug logging (#1455)
 - **Landingzones**
     - Move Celery tasks into ``tasks_celery`` (#1400)
 - **Samplesheets**

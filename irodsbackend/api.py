@@ -79,7 +79,7 @@ class IrodsAPI:
         irods_env.update(dict(settings.IRODS_ENV_BACKEND))
         # HACK: Clean up environment to avoid python-irodsclient crash
         irods_env = self.format_env(irods_env)
-        logger.debug('iRODS environment: {}'.format(irods_env))
+        # logger.debug('iRODS environment: {}'.format(irods_env))
 
         try:
             self.irods = iRODSSession(
