@@ -41,6 +41,8 @@ Changed
 Fixed
 -----
 
+- **General**
+    - Docker build tagging failing for release tags (#1451)
 - **Landingzones**
     - iRODS file status displayed for zones with unsuitable status (#1401)
 
