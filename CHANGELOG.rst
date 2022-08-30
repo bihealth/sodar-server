@@ -15,6 +15,8 @@ Added
     - ``get_zone_path()`` helper (#1399)
     - ``get_user_group_name()`` helper (#1397)
     - ``get_ticket()`` method
+- **Landingzones***
+    - ``LandingZone.can_display_files()`` helper (#1401)
 - **Taskflowbackend**
     - Add app from SODAR Core (#691)
     - Add Taskflow functionality from SODAR Taskflow (#691)
@@ -35,6 +37,12 @@ Changed
     - Move Celery tasks into ``tasks_celery`` (#1400)
 - **Samplesheets**
     - Move Celery tasks into ``tasks_celery`` (#1400)
+
+Fixed
+-----
+
+- **Landingzones**
+    - iRODS file status displayed for zones with unsuitable status (#1401)
 
 Removed
 -------

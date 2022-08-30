@@ -402,7 +402,7 @@ class TestSheetImportAPIView(
         assay = Assay.objects.filter(
             study__investigation=self.investigation
         ).first()
-        zone = self._make_landing_zone(
+        zone = self.make_landing_zone(
             'new_zone',
             self.project,
             self.user,

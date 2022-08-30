@@ -350,7 +350,7 @@ class TestSheetImportView(SheetImportMixin, LandingZoneMixin, TestViewsBase):
             user=self.user,
         )
         conf_api.get_sheet_config(inv)
-        zone = self._make_landing_zone(
+        zone = self.make_landing_zone(
             'new_zone',
             self.project,
             self.user,

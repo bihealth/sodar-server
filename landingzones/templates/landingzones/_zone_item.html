@@ -12,9 +12,9 @@
 
 <tr class="{% get_zone_row_class zone %}"
     id="{{ zone.sodar_uuid }}"
-    zone-uuid="{{ zone.sodar_uuid }}"
-    sample-url="{% get_zone_samples_url zone %}"
-    status-url="{% url 'landingzones:ajax_status' landingzone=zone.sodar_uuid %}">
+    data-zone-uuid="{{ zone.sodar_uuid }}"
+    data-sample-url="{% get_zone_samples_url zone %}"
+    data-status-url="{% url 'landingzones:ajax_status' landingzone=zone.sodar_uuid %}">
   <td class="sodar-lz-zone-title">
     <div class="sodar-overflow-container">
       <span title="{{ zone.assay.get_display_name }}"
@@ -43,27 +43,29 @@
     </div>
   </td>
   <td class="sodar-lz-zone-status-info">
-      <span id="sodar-lz-zone-status-info-{{ zone.sodar_uuid }}">
-        {{ zone.status_info }}
-      </span>
-      <span id="sodar-lz-zone-status-moved-{{ zone.sodar_uuid }}">
-      {% if zone.status == 'MOVED' %}
-        <p class="mb-0">
-          <a href="{% get_zone_samples_url zone %}">
-            <i class="iconify" data-icon="mdi:arrow-right-circle"></i>
-            Browse files in sample sheets
-          </a>
-        </p>
-      </span>
-      {% endif %}
-      {% if zone_enabled and irods_backend_enabled %}
-        <p class="mb-0" id="sodar-lz-zone-stats-container-{{ zone.sodar_uuid }}">
-          {% get_irods_path zone as zone_irods_path %}
-          {% autoescape off %}
-            {% get_stats_html zone_irods_path project %}
-          {% endautoescape %}
-        </p>
-      {% endif %}
+    <span id="sodar-lz-zone-status-info-{{ zone.sodar_uuid }}">
+      {{ zone.status_info }}
+    </span>
+    <span id="sodar-lz-zone-status-moved-{{ zone.sodar_uuid }}">
+    {% if zone.status == 'MOVED' %}
+      <p class="mb-0">
+        <a href="{% get_zone_samples_url zone %}">
+          <i class="iconify" data-icon="mdi:arrow-right-circle"></i>
+          Browse files in sample sheets
+        </a>
+      </p>
+    </span>
+    {% endif %}
+    {% if zone_enabled and irods_backend_enabled %}
+      <p class="mb-0"
+         id="sodar-lz-zone-stats-container-{{ zone.sodar_uuid }}"
+         {% if not zone.can_display_files %}style="display: none;"{% endif %}>
+        {% get_irods_path zone as zone_irods_path %}
+        {% autoescape off %}
+          {% get_stats_html zone_irods_path project %}
+        {% endautoescape %}
+      </p>
+    {% endif %}
   </td>
   <td id="sodar-lz-zone-status-{{ zone.sodar_uuid }}"
       class="sodar-lz-zone-status text-white {% get_status_style zone %}">

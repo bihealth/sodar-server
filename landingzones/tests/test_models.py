@@ -38,7 +38,7 @@ class LandingZoneMixin:
     """
 
     @classmethod
-    def _make_landing_zone(
+    def make_landing_zone(
         cls,
         title,
         project,
@@ -96,7 +96,7 @@ class TestLandingZoneBase(
         self.assay = self.study.assays.first()
 
         # Create LandingZone
-        self.landing_zone = self._make_landing_zone(
+        self.landing_zone = self.make_landing_zone(
             title=ZONE_TITLE,
             project=self.project,
             user=self.user_owner,
@@ -195,5 +195,14 @@ class TestLandingZone(TestLandingZoneBase):
     def test_is_locked_true(self):
         """Test is_locked() with MOVING status"""
         self.landing_zone.status = 'MOVING'
-        self.landing_zone.save()
         self.assertEqual(self.landing_zone.is_locked(), True)
+
+    def test_can_display_files_true(self):
+        """Test can_display_files() with a valid zone status"""
+        self.landing_zone.status = 'ACTIVE'
+        self.assertEqual(self.landing_zone.can_display_files(), True)
+
+    def test_can_display_files_false(self):
+        """Test display_files() with an invalid zone status"""
+        self.landing_zone.status = 'CREATING'
+        self.assertEqual(self.landing_zone.can_display_files(), False)

@@ -80,7 +80,7 @@ class TestPerformProjectSync(
 
     def test_create_zone(self):
         """Test creating a landing zone collection in iRODS"""
-        zone = self._make_landing_zone(
+        zone = self.make_landing_zone(
             title=ZONE_TITLE,
             project=self.project,
             user=self.user,
@@ -97,7 +97,7 @@ class TestPerformProjectSync(
 
     def test_create_zone_moved(self):
         """Test creating a MOVED zone (should not be created)"""
-        zone = self._make_landing_zone(
+        zone = self.make_landing_zone(
             title=ZONE_TITLE,
             project=self.project,
             user=self.user,
@@ -115,7 +115,7 @@ class TestPerformProjectSync(
 
     def test_create_zone_existing(self):
         """Test creating an already existing zone (should not crash)"""
-        zone = self._make_landing_zone(
+        zone = self.make_landing_zone(
             title=ZONE_TITLE,
             project=self.project,
             user=self.user,

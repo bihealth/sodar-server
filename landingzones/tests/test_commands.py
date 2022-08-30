@@ -90,7 +90,7 @@ class TestInactiveZones(TestCommandBase):
             mock_now.return_value = testtime1
 
             # Create landing zone 1 from 3 weeks ago
-            self.zone = self._make_landing_zone(
+            self.zone = self.make_landing_zone(
                 title=ZONE1_TITLE,
                 project=self.project,
                 user=self.as_owner.user,
@@ -100,7 +100,7 @@ class TestInactiveZones(TestCommandBase):
                 config_data={},
             )
             # Create landing zone 3 from 3 weeks ago but status MOVED
-            self.zone3 = self._make_landing_zone(
+            self.zone3 = self.make_landing_zone(
                 title=ZONE3_TITLE,
                 project=self.project,
                 user=self.as_owner.user,
@@ -111,7 +111,7 @@ class TestInactiveZones(TestCommandBase):
                 status='MOVED',
             )
             # Create landing zone 3 from 3 weeks ago but status DELETED
-            self.zone4 = self._make_landing_zone(
+            self.zone4 = self.make_landing_zone(
                 title=ZONE4_TITLE,
                 project=self.project,
                 user=self.as_owner.user,
@@ -123,7 +123,7 @@ class TestInactiveZones(TestCommandBase):
             )
             mock_now.return_value = testtime2
             # Create landing zone 2 from 1 week ago
-            self.zone2 = self._make_landing_zone(
+            self.zone2 = self.make_landing_zone(
                 title=ZONE2_TITLE,
                 project=self.project,
                 user=self.as_owner.user,
@@ -197,7 +197,7 @@ class TestBusyZones(TestCommandBase):
         super().setUp()
 
         # Create LandingZone 1 from 3 weeks ago
-        self.zone = self._make_landing_zone(
+        self.zone = self.make_landing_zone(
             title=ZONE1_TITLE,
             project=self.project,
             user=self.as_owner.user,
@@ -208,7 +208,7 @@ class TestBusyZones(TestCommandBase):
             status='ACTIVE',
         )
 
-        self.zone2 = self._make_landing_zone(
+        self.zone2 = self.make_landing_zone(
             title=ZONE2_TITLE,
             project=self.project,
             user=self.as_owner.user,

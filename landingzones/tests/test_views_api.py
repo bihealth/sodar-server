@@ -40,9 +40,6 @@ ZONE_STATUS_INFO = 'Testing'
 INVALID_UUID = '11111111-1111-1111-1111-111111111111'
 
 
-# Base Views and Classes -------------------------------------------------------
-
-
 class TestLandingZoneAPIViewsBase(
     LandingZoneMixin, SampleSheetIOMixin, TestAPIViewsBase
 ):
@@ -65,7 +62,7 @@ class TestLandingZoneAPIViewsBase(
         self.assay = self.study.assays.first()
 
         # Create LandingZone
-        self.landing_zone = self._make_landing_zone(
+        self.landing_zone = self.make_landing_zone(
             title=ZONE_TITLE,
             project=self.project,
             user=self.owner_as.user,
@@ -123,7 +120,7 @@ class TestLandingZoneListAPIView(TestLandingZoneAPIViewsBase):
 
     def test_get_finished_default(self):
         """Test get() with a finished zone and no finished parameter"""
-        self._make_landing_zone(
+        self.make_landing_zone(
             title=ZONE_TITLE + '_moved',
             project=self.project,
             user=self.owner_as.user,
@@ -144,7 +141,7 @@ class TestLandingZoneListAPIView(TestLandingZoneAPIViewsBase):
 
     def test_get_finished_false(self):
         """Test get() with a finished zone and finished=0"""
-        self._make_landing_zone(
+        self.make_landing_zone(
             title=ZONE_TITLE + '_moved',
             project=self.project,
             user=self.owner_as.user,
@@ -169,7 +166,7 @@ class TestLandingZoneListAPIView(TestLandingZoneAPIViewsBase):
 
     def test_get_finished_true(self):
         """Test get() with a finished zone and finished=1"""
-        self._make_landing_zone(
+        self.make_landing_zone(
             title=ZONE_TITLE + '_moved',
             project=self.project,
             user=self.owner_as.user,

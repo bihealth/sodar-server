@@ -86,7 +86,7 @@ class TestViewsBase(
         self.assay = self.study.assays.first()
 
         # Create LandingZone
-        self.landing_zone = self._make_landing_zone(
+        self.landing_zone = self.make_landing_zone(
             title=ZONE_TITLE,
             project=self.project,
             user=self.as_owner.user,

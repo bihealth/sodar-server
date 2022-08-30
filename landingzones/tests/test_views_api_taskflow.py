@@ -264,7 +264,7 @@ class TestLandingZoneSubmitDeleteAPIView(TestLandingZoneAPITaskflowBase):
     def setUp(self):
         super().setUp()
         # Create zone
-        self.landing_zone = self._make_landing_zone(
+        self.landing_zone = self.make_landing_zone(
             title=ZONE_TITLE,
             project=self.project,
             user=self.user,
@@ -322,7 +322,7 @@ class TestLandingZoneSubmitMoveAPIView(TestLandingZoneAPITaskflowBase):
 
     def setUp(self):
         super().setUp()
-        self.landing_zone = self._make_landing_zone(
+        self.landing_zone = self.make_landing_zone(
             title=ZONE_TITLE,
             project=self.project,
             user=self.user,

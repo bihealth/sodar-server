@@ -363,7 +363,7 @@ class TestLandingZoneMoveView(
         self.make_irods_colls(self.investigation)
 
         # Create zone
-        self.landing_zone = self._make_landing_zone(
+        self.landing_zone = self.make_landing_zone(
             title=ZONE_TITLE,
             project=self.project,
             user=self.user,
@@ -644,7 +644,7 @@ class TestLandingZoneDeleteView(
         self.make_irods_colls(self.investigation)
 
         # Create zone
-        self.landing_zone = self._make_landing_zone(
+        self.landing_zone = self.make_landing_zone(
             title=ZONE_TITLE,
             project=self.project,
             user=self.user,

@@ -2,16 +2,16 @@
  Zone status updating function
  *****************************/
 var updateZoneStatus = function() {
-    $('.sodar-lz-zone-tr-existing').each(function(){
+    $('.sodar-lz-zone-tr-existing').each(function() {
         var trId = $(this).attr('id');
         var zoneTr = $('#' + trId);
-        var zoneUuid = $(this).attr('zone-uuid');
-        var sampleUrl = $(this).attr('sample-url');
+        var zoneUuid = $(this).attr('data-zone-uuid');
+        var sampleUrl = $(this).attr('data-sample-url');
         var statusTd = zoneTr.find('td#sodar-lz-zone-status-' + zoneUuid);
 
         if (statusTd.text() !== 'MOVED' && statusTd.text() !== 'DELETED') {
             $.ajax({
-                url: $(this).attr('status-url'),
+                url: $(this).attr('data-status-url'),
                 method: 'GET',
                 dataType: 'json'
             }).done(function (data) {
@@ -42,7 +42,7 @@ var updateZoneStatus = function() {
                             '<span class="pull-right"><i class="iconify" data-icon="mdi:lock"></i></span>')
                     }
 
-                    if (data['status'] === 'MOVED' || data['status'] === 'DELETED') {
+                    if (['CREATING', 'NOT CREATED', 'MOVED', 'DELETED'].includes(data['status'])) {
                         zoneTr.find('p#sodar-lz-zone-stats-container-' + zoneUuid).hide();
 
                         if (data['status'] === 'MOVED') {
@@ -71,7 +71,6 @@ var updateZoneStatus = function() {
                         });
                         zoneTr.find('.sodar-list-dropdown').addClass('disabled');
                     }
-
                     else {
                         zoneTr.find('td.sodar-lz-zone-title').removeClass('text-muted');
                         zoneTr.find('td.sodar-lz-zone-assay').removeClass('text-muted');
