@@ -63,6 +63,7 @@ describe('IrodsDirModal.vue', () => {
     expect(wrapper.find('#sodar-ss-irods-wait').exists()).toBe(false)
     expect(wrapper.findAll('.sodar-ss-request-delete-btn').length).toBe(1)
     expect(wrapper.findAll('.sodar-ss-request-cancel-btn').length).toBe(1)
+    expect(wrapper.find('.sodar-ss-irods-stats').isVisible()).toBe(true)
   })
 
   it('renders modal with empty object list', async () => {
@@ -80,6 +81,7 @@ describe('IrodsDirModal.vue', () => {
     expect(wrapper.find('#sodar-ss-irods-empty').exists()).toBe(true)
     expect(wrapper.find('#sodar-ss-irods-message').exists()).toBe(false)
     expect(wrapper.find('#sodar-ss-irods-wait').exists()).toBe(false)
+    expect(wrapper.find('.sodar-ss-irods-stats').exists()).toBe(false)
   })
 
   it('renders modal with a returned message', async () => {
