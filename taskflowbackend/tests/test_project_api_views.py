@@ -1,36 +1,22 @@
 """REST API view tests for projectroles with taskflow"""
 
-from unittest import skipIf
-
 from irods.collection import iRODSCollection
 from irods.user import iRODSUser, iRODSUserGroup
 
 from django.conf import settings
 from django.contrib import auth
-from django.core.exceptions import ImproperlyConfigured
 from django.forms.models import model_to_dict
 from django.urls import reverse
 
-from rest_framework.test import APILiveServerTestCase
-
-from test_plus.test import TestCase
-
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
-from projectroles.models import Project, Role, RoleAssignment, SODAR_CONSTANTS
-from projectroles.plugins import get_backend_api
+from projectroles.models import Project, RoleAssignment, SODAR_CONSTANTS
 
 # from projectroles.tests.taskflow_testcase import TestCase
-from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
-from projectroles.tests.test_views_api import SODARAPIViewTestMixin
 from projectroles.views_api import CORE_API_MEDIA_TYPE, CORE_API_DEFAULT_VERSION
 
-from taskflowbackend.tests.test_project_views import (
-    TaskflowTestMixin,
-    BACKENDS_ENABLED,
-    BACKEND_SKIP_MSG,
-    IRODS_ACCESS_READ,
-)
+from taskflowbackend.tests.base import TestTaskflowAPIBase
+from taskflowbackend.tests.test_project_views import IRODS_ACCESS_READ
 
 
 app_settings = AppSettingAPI()
@@ -59,98 +45,6 @@ UPDATED_README = 'Updated readme'
 # Tests with Taskflow ----------------------------------------------------------
 
 
-class TestTaskflowAPIBase(
-    ProjectMixin,
-    RoleAssignmentMixin,
-    SODARAPIViewTestMixin,
-    TaskflowTestMixin,
-    APILiveServerTestCase,
-    TestCase,
-):
-    """Base class for testing API views with taskflow"""
-
-    def _make_project_taskflow(
-        self, title, type, parent, owner, description='', readme=''
-    ):
-        """Make Project with taskflow for API view tests."""
-        post_data = {
-            'title': title,
-            'type': type,
-            'parent': parent.sodar_uuid if parent else None,
-            'owner': owner.sodar_uuid,
-            'description': description,
-            'readme': readme,
-        }
-        response = self.request_knox(
-            reverse('projectroles:api_project_create'),
-            method='POST',
-            data=post_data,
-            media_type=CORE_API_MEDIA_TYPE,
-            version=CORE_API_DEFAULT_VERSION,
-        )
-
-        # Assert response and object status
-        self.assertEqual(response.status_code, 201, msg=response.content)
-        project = Project.objects.get(title=title)
-        return project, project.get_owner()
-
-    def _make_assignment_taskflow(self, project, user, role):
-        """Make RoleAssignment with taskflow for API view tests."""
-        url = reverse(
-            'projectroles:api_role_create',
-            kwargs={'project': project.sodar_uuid},
-        )
-        request_data = {'role': role.name, 'user': str(user.sodar_uuid)}
-        response = self.request_knox(
-            url,
-            method='POST',
-            data=request_data,
-            media_type=CORE_API_MEDIA_TYPE,
-            version=CORE_API_DEFAULT_VERSION,
-        )
-        self.assertEqual(response.status_code, 201, msg=response.content)
-        return RoleAssignment.objects.get(project=project, user=user, role=role)
-
-    def setUp(self):
-        # Ensure TASKFLOW_TEST_MODE is True to avoid data loss
-        if not TASKFLOW_TEST_MODE:
-            raise ImproperlyConfigured(
-                'TASKFLOW_TEST_MODE not True, '
-                'testing with SODAR Taskflow disabled'
-            )
-        self.taskflow = get_backend_api('taskflow', force=True)
-        self.irods_backend = get_backend_api('omics_irods')
-        self.irods_session = self.irods_backend.get_session()
-
-        # Init roles
-        self.role_owner = Role.objects.get_or_create(name=PROJECT_ROLE_OWNER)[0]
-        self.role_delegate = Role.objects.get_or_create(
-            name=PROJECT_ROLE_DELEGATE
-        )[0]
-        self.role_contributor = Role.objects.get_or_create(
-            name=PROJECT_ROLE_CONTRIBUTOR
-        )[0]
-        self.role_guest = Role.objects.get_or_create(name=PROJECT_ROLE_GUEST)[0]
-
-        # Init user
-        self.user = self.make_user('superuser')
-        self.user.is_staff = True
-        self.user.is_superuser = True
-        self.user.save()
-
-        # Create category locally (categories are not handled with taskflow)
-        self.category = self._make_project(
-            'TestCategory', PROJECT_TYPE_CATEGORY, None
-        )
-        self._make_assignment(self.category, self.user, self.role_owner)
-
-        # Get knox token for self.user
-        self.knox_token = self.get_token(self.user)
-
-    def tearDown(self):
-        self.taskflow.cleanup()
-
-
 class TestCoreTaskflowAPIBase(TestTaskflowAPIBase):
     """Override of TestTaskflowAPIBase for SODAR Core API views"""
 
@@ -158,7 +52,6 @@ class TestCoreTaskflowAPIBase(TestTaskflowAPIBase):
     api_version = CORE_API_DEFAULT_VERSION
 
 
-@skipIf(not BACKENDS_ENABLED, BACKEND_SKIP_MSG)
 class TestProjectCreateAPIView(TestCoreTaskflowAPIBase):
     """Tests for ProjectCreateAPIView with taskflow"""
 
@@ -200,7 +93,6 @@ class TestProjectCreateAPIView(TestCoreTaskflowAPIBase):
         self.assert_group_member(project, self.user, True)
 
 
-@skipIf(not BACKENDS_ENABLED, BACKEND_SKIP_MSG)
 class TestProjectUpdateAPIView(TestCoreTaskflowAPIBase):
     """Tests for ProjectUpdateAPIView with taskflow"""
 
@@ -422,7 +314,6 @@ class TestProjectUpdateAPIView(TestCoreTaskflowAPIBase):
         )
 
 
-@skipIf(not BACKENDS_ENABLED, BACKEND_SKIP_MSG)
 class TestRoleAssignmentCreateAPIView(TestCoreTaskflowAPIBase):
     """Tests for RoleAssignmentCreateAPIView with taskflow"""
 
@@ -456,7 +347,6 @@ class TestRoleAssignmentCreateAPIView(TestCoreTaskflowAPIBase):
         self.assert_group_member(self.project, self.assign_user, True)
 
 
-@skipIf(not BACKENDS_ENABLED, BACKEND_SKIP_MSG)
 class TestRoleAssignmentUpdateAPIView(TestCoreTaskflowAPIBase):
     """Tests for RoleAssignmentUpdateAPIView with taskflow"""
 
@@ -509,7 +399,6 @@ class TestRoleAssignmentUpdateAPIView(TestCoreTaskflowAPIBase):
         self.assert_group_member(self.project, self.assign_user, True)
 
 
-@skipIf(not BACKENDS_ENABLED, BACKEND_SKIP_MSG)
 class TestRoleAssignmentDestroyAPIView(TestCoreTaskflowAPIBase):
     """Tests for RoleAssignmentDestroyAPIView with taskflow"""
 
@@ -543,7 +432,6 @@ class TestRoleAssignmentDestroyAPIView(TestCoreTaskflowAPIBase):
         self.assert_group_member(self.project, self.assign_user, False)
 
 
-@skipIf(not BACKENDS_ENABLED, BACKEND_SKIP_MSG)
 class TestRoleAssignmentOwnerTransferAPIView(TestCoreTaskflowAPIBase):
     """Tests for RoleAssignmentOwnerTransferAPIView"""
 

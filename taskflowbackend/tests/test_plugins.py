@@ -1,7 +1,5 @@
 """Plugin tests for the taskflowbackend app"""
 
-from unittest import skipIf
-
 from irods.user import iRODSUser, iRODSUserGroup
 from irods.exception import UserGroupDoesNotExist
 
@@ -15,15 +13,13 @@ from projectroles.plugins import BackendPluginPoint
 # Irodsbackend dependency
 from irodsbackend.api import USER_GROUP_PREFIX
 
-from taskflowbackend.tests.test_project_views import (
-    TestTaskflowBase,
-    BACKENDS_ENABLED,
-    BACKEND_SKIP_MSG,
-    IRODS_ACCESS_READ,
-)
-
 # Timeline dependency
 from timeline.models import ProjectEvent
+
+from taskflowbackend.tests.base import (
+    TaskflowbackendTestBase,
+    IRODS_ACCESS_READ,
+)
 
 
 app_settings = AppSettingAPI()
@@ -36,7 +32,7 @@ PROJECT_ACTION_CREATE = SODAR_CONSTANTS['PROJECT_ACTION_CREATE']
 PROJECT_ACTION_UPDATE = SODAR_CONSTANTS['PROJECT_ACTION_UPDATE']
 
 
-class TestModifyAPIBase(TestTaskflowBase):
+class TestModifyAPIBase(TaskflowbackendTestBase):
     """Base class for project modify API tests"""
 
     def setUp(self):
@@ -48,7 +44,6 @@ class TestModifyAPIBase(TestTaskflowBase):
         self.request.user = self.user
 
 
-@skipIf(not BACKENDS_ENABLED, BACKEND_SKIP_MSG)
 class TestPerformProjectModify(TestModifyAPIBase):
     """Tests for perform_project_modify()"""
 
@@ -182,7 +177,6 @@ class TestPerformProjectModify(TestModifyAPIBase):
         )
 
 
-@skipIf(not BACKENDS_ENABLED, BACKEND_SKIP_MSG)
 class TestRevertProjectModify(TestModifyAPIBase):
     """Tests for revert_project_modify()"""
 
@@ -223,7 +217,6 @@ class TestRevertProjectModify(TestModifyAPIBase):
         self.assertEqual(tl_events.first().get_status().status_type, 'OK')
 
 
-@skipIf(not BACKENDS_ENABLED, BACKEND_SKIP_MSG)
 class TestPerformRoleModify(TestModifyAPIBase):
     """Tests for perform_role_modify() and revert_role_modify()"""
 
@@ -339,7 +332,6 @@ class TestPerformRoleModify(TestModifyAPIBase):
         )
 
 
-@skipIf(not BACKENDS_ENABLED, BACKEND_SKIP_MSG)
 class TestPerformRoleDelete(TestModifyAPIBase):
     """Tests for perform_role_delete() and revert_role_delete()"""
 
@@ -399,7 +391,6 @@ class TestPerformRoleDelete(TestModifyAPIBase):
         self.assertEqual(tl_events.first().get_status().status_type, 'OK')
 
 
-@skipIf(not BACKENDS_ENABLED, BACKEND_SKIP_MSG)
 class TestPerformOwnerTransfer(TestModifyAPIBase):
     """Tests for perform_owner_transfer()"""
 
@@ -498,7 +489,6 @@ class TestPerformOwnerTransfer(TestModifyAPIBase):
         )
 
 
-@skipIf(not BACKENDS_ENABLED, BACKEND_SKIP_MSG)
 class TestPerformProjectSync(TestModifyAPIBase):
     """Tests for perform_project_sync()"""
 

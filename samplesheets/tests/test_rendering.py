@@ -42,9 +42,7 @@ class TestRenderingBase(
         )
 
         # Import investigation
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
 
         self.tb = SampleSheetTableBuilder()
@@ -116,7 +114,7 @@ class TestTableBuilder(TestRenderingBase):
 
     def test_get_headers_compare_row(self):
         """Test comparing get_headers() results for inserted rows"""
-        investigation2 = self._import_isa_from_file(
+        investigation2 = self.import_isa_from_file(
             SHEET_PATH_INSERTED, self.project
         )
         h1 = self.tb.get_headers(self.investigation)
@@ -126,9 +124,7 @@ class TestTableBuilder(TestRenderingBase):
 
     def test_get_headers_compare_col(self):
         """Test comparing get_headers() for different columns (should fail)"""
-        investigation2 = self._import_isa_from_file(
-            SHEET_PATH_ALT, self.project
-        )
+        investigation2 = self.import_isa_from_file(SHEET_PATH_ALT, self.project)
         h1 = self.tb.get_headers(self.investigation)
         h2 = self.tb.get_headers(investigation2)
         self.assertIsNotNone(h2)

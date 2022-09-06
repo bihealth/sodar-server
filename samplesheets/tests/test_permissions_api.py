@@ -30,9 +30,7 @@ class TestInvestigationRetrieveAPIView(
 
     def setUp(self):
         super().setUp()
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
 
@@ -182,9 +180,7 @@ class TestSampleSheetISAExportAPIView(
 
     def setUp(self):
         super().setUp()
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
 
@@ -251,9 +247,7 @@ class TestRemoteSheetGetAPIView(
 
     def setUp(self):
         super().setUp()
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
 

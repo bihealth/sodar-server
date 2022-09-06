@@ -31,9 +31,7 @@ class TestSampleSheetsAjaxPermissions(
 
     def setUp(self):
         super().setUp()
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
 

@@ -112,7 +112,7 @@ class Flow(BaseLinearFlow):
                     inject={'user_name': user_name, 'user_type': 'rodsuser'},
                 )
             )
-        for user_name in self.flow_data.get('users_add'):
+        for user_name in self.flow_data.get('users_add', []):
             self.add_task(
                 irods_tasks.AddUserToGroupTask(
                     name='Add user "{}" to project user group "{}"'.format(

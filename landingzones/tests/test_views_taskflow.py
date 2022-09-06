@@ -1,22 +1,19 @@
 """Integration tests for views in the landingzones Django app with taskflow"""
 
 import hashlib
-from irods.test.helpers import make_object
-from irods.keywords import REG_CHKSUM_KW
 import os
 import time
 
-from django.conf import settings
+from irods.test.helpers import make_object
+from irods.keywords import REG_CHKSUM_KW
+
 from django.contrib import auth
 from django.core import mail
 from django.urls import reverse
 
-from unittest import skipIf
-
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
-from taskflowbackend.tests.test_project_views import TestTaskflowBase
 
 # Appalerts dependency
 from appalerts.models import AppAlert
@@ -25,6 +22,9 @@ from appalerts.models import AppAlert
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 from samplesheets.tests.test_views_taskflow import SampleSheetTaskflowMixin
 from samplesheets.views import RESULTS_COLL, MISC_FILES_COLL, TRACK_HUBS_COLL
+
+# Taskflowbackend dependency
+from taskflowbackend.tests.base import TaskflowbackendTestBase
 
 from landingzones.models import LandingZone
 from landingzones.tests.test_models import LandingZoneMixin
@@ -43,10 +43,6 @@ PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 
 # Local constants
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
-TASKFLOW_ENABLED = (
-    True if 'taskflow' in settings.ENABLED_BACKEND_PLUGINS else False
-)
-TASKFLOW_SKIP_MSG = 'Taskflow not enabled in settings'
 ZONE_TITLE = '20190703_172456'
 ZONE_SUFFIX = 'Test Zone'
 ZONE_DESC = 'description'
@@ -165,7 +161,7 @@ class TestLandingZoneCreateView(
     LandingZoneMixin,
     SampleSheetTaskflowMixin,
     LandingZoneTaskflowMixin,
-    TestTaskflowBase,
+    TaskflowbackendTestBase,
 ):
     """Tests for the landingzones create view with Taskflow and iRODS"""
 
@@ -188,15 +184,12 @@ class TestLandingZoneCreateView(
         )
 
         # Import investigation
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
         # Create iRODS collections
         self.make_irods_colls(self.investigation)
 
-    @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_create_zone(self):
         """Test landingzones creation with taskflow"""
         self.assertEqual(LandingZone.objects.count(), 0)
@@ -235,7 +228,6 @@ class TestLandingZoneCreateView(
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(AppAlert.objects.count(), 1)
 
-    @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_create_zone_colls(self):
         """Test landingzones creation with default collections"""
         self.assertEqual(LandingZone.objects.count(), 0)
@@ -273,7 +265,6 @@ class TestLandingZoneCreateView(
         self.assert_irods_coll(zone, '0815-N1-DNA1', False)  # Plugin collection
         self.assert_irods_coll(zone, '0815-T1-DNA1', False)  # Plugin collection
 
-    @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_create_zone_colls_plugin(self):
         """Test landingzones creation with plugin collections"""
         self.assertEqual(LandingZone.objects.count(), 0)
@@ -331,7 +322,7 @@ class TestLandingZoneMoveView(
     LandingZoneMixin,
     LandingZoneTaskflowMixin,
     SampleSheetTaskflowMixin,
-    TestTaskflowBase,
+    TaskflowbackendTestBase,
 ):
     """Tests for the landingzones move/validate view with Taskflow and iRODS"""
 
@@ -354,9 +345,7 @@ class TestLandingZoneMoveView(
         )
 
         # Import investigation
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
         # Create iRODS collections
@@ -383,7 +372,6 @@ class TestLandingZoneMoveView(
             self.irods_backend.get_path(self.assay)
         )
 
-    @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_move(self):
         """Test validating and moving a landing zone with objects"""
         self.irods_obj = self.make_object(self.zone_coll, TEST_OBJ_NAME)
@@ -420,7 +408,6 @@ class TestLandingZoneMoveView(
             AppAlert.objects.filter(alert_name='zone_move').count(), 1
         )
 
-    @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_move_invalid_md5(self):
         """Test validating and moving with invalid checksum (should fail)"""
         self.irods_obj = self.make_object(self.zone_coll, TEST_OBJ_NAME)
@@ -459,7 +446,6 @@ class TestLandingZoneMoveView(
             AppAlert.objects.filter(alert_name='zone_move').count(), 1
         )
 
-    @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_move_no_md5(self):
         """Test validating and moving without checksum (should fail)"""
         self.irods_obj = self.make_object(self.zone_coll, TEST_OBJ_NAME)
@@ -494,7 +480,6 @@ class TestLandingZoneMoveView(
             AppAlert.objects.filter(alert_name='zone_move').count(), 1
         )
 
-    @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_validate(self):
         """Test validating a landing zone with objects without moving"""
         self.irods_obj = self.make_object(self.zone_coll, TEST_OBJ_NAME)
@@ -531,7 +516,6 @@ class TestLandingZoneMoveView(
             AppAlert.objects.filter(alert_name='zone_validate').count(), 1
         )
 
-    @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_validate_invalid_md5(self):
         """Test validating a landing zone without checksum (should fail)"""
         self.irods_obj = self.make_object(self.zone_coll, TEST_OBJ_NAME)
@@ -564,7 +548,6 @@ class TestLandingZoneMoveView(
             AppAlert.objects.filter(alert_name='zone_validate').count(), 1
         )
 
-    @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_validate_no_md5(self):
         """Test validating a landing zone without checksum (should fail)"""
         self.irods_obj = self.make_object(self.zone_coll, TEST_OBJ_NAME)
@@ -587,7 +570,6 @@ class TestLandingZoneMoveView(
         self.assertEqual(len(self.zone_coll.data_objects), 1)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
 
-    @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_validate_md5_only(self):
         """Test validating zone with no file for MD5 file (should fail)"""
         self.irods_obj = self.make_object(self.zone_coll, TEST_OBJ_NAME)
@@ -617,7 +599,7 @@ class TestLandingZoneDeleteView(
     LandingZoneMixin,
     LandingZoneTaskflowMixin,
     SampleSheetTaskflowMixin,
-    TestTaskflowBase,
+    TaskflowbackendTestBase,
 ):
     """Tests for the landingzones delete view with Taskflow and iRODS"""
 
@@ -634,9 +616,7 @@ class TestLandingZoneDeleteView(
         )
 
         # Import investigation
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
 
@@ -657,7 +637,6 @@ class TestLandingZoneDeleteView(
         # Create zone in taskflow
         self.make_zone_taskflow(self.landing_zone)
 
-    @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_delete_zone(self):
         """Test landingzones deletion with taskflow"""
         self.assertEqual(LandingZone.objects.count(), 1)

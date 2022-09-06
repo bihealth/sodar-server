@@ -1,9 +1,5 @@
 """Tests for plugins in the samplesheets app"""
 
-from unittest import skipIf
-
-from django.conf import settings
-
 from test_plus.test import TestCase
 
 # Projectroles dependency
@@ -21,10 +17,6 @@ from samplesheets.tests.test_io import (
 
 # Local constants
 SHEET_PATH_SMALL2 = SHEET_DIR + 'i_small2.zip'
-IRODS_BACKEND_ENABLED = (
-    True if 'omics_irods' in settings.ENABLED_BACKEND_PLUGINS else False
-)
-IRODS_BACKEND_SKIP_MSG = 'iRODS backend not enabled in settings'
 
 
 class TestPluginsBase(
@@ -48,7 +40,7 @@ class TestPluginsBase(
         )
 
         # Import investigation
-        self.investigation = self._import_isa_from_file(
+        self.investigation = self.import_isa_from_file(
             SHEET_PATH_SMALL2, self.project
         )
         self.investigation.irods_status = True
@@ -65,7 +57,6 @@ class TestPluginsBase(
         self.irods_backend = get_backend_api('omics_irods')
 
 
-@skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
 class TestGetIrodsContent(TestPluginsBase):
     """Tests for get_irods_content()"""
 

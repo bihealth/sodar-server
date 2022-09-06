@@ -1,18 +1,9 @@
 """Tests for plugins in the landingzones app with Taskflow enabled"""
 
-from unittest import skipIf
-
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
 from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import ProjectAppPluginPoint
-
-# Taskflowbackend dependency
-from taskflowbackend.tests.test_project_views import (
-    TestTaskflowBase,
-    BACKENDS_ENABLED,
-    BACKEND_SKIP_MSG,
-)
 
 # Samplesheets dependency
 from samplesheets.tests.test_io import (
@@ -23,6 +14,9 @@ from samplesheets.tests.test_views_taskflow import (
     SampleSheetPublicAccessMixin,
     SampleSheetTaskflowMixin,
 )
+
+# Taskflowbackend dependency
+from taskflowbackend.tests.base import TaskflowbackendTestBase
 
 from landingzones.tests.test_models import LandingZoneMixin
 from landingzones.tests.test_views_taskflow import LandingZoneTaskflowMixin
@@ -44,14 +38,13 @@ ZONE_TITLE = '20190703_172456'
 ZONE_SUFFIX = 'Test Zone'
 
 
-@skipIf(not BACKENDS_ENABLED, BACKEND_SKIP_MSG)
 class TestPerformProjectSync(
     LandingZoneMixin,
     LandingZoneTaskflowMixin,
     SampleSheetIOMixin,
     SampleSheetPublicAccessMixin,
     SampleSheetTaskflowMixin,
-    TestTaskflowBase,
+    TaskflowbackendTestBase,
 ):
     """Tests for perform_project_modify()"""
 
@@ -70,9 +63,7 @@ class TestPerformProjectSync(
         )
         self.project_path = self.irods_backend.get_sample_path(self.project)
         # Import investigation
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
         # Create iRODS collections

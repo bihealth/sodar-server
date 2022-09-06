@@ -45,9 +45,7 @@ class TestSyncnamesCommand(
         )
 
         # Import investigation
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
 
         # Clear alt names from imported materials

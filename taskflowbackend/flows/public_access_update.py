@@ -24,5 +24,6 @@ class Flow(BaseLinearFlow):
                     'path': self.flow_data['path'],
                     'user_name': PUBLIC_GROUP,
                 },
+                force_fail=force_fail,
             )
         )

@@ -3,7 +3,6 @@ Tests for REST API views in the landingzones app with SODAR Taskflow enabled
 """
 
 import json
-from unittest import skipIf
 
 from django.urls import reverse
 
@@ -18,14 +17,10 @@ from samplesheets.tests.test_views_taskflow import SampleSheetTaskflowMixin
 from samplesheets.views import RESULTS_COLL, MISC_FILES_COLL, TRACK_HUBS_COLL
 
 # Taskflowbackend dependency
-from taskflowbackend.tests.test_project_api_views import TestTaskflowAPIBase
+from taskflowbackend.tests.base import TestTaskflowAPIBase
 
 from landingzones.models import LandingZone, DEFAULT_STATUS_INFO
 from landingzones.tests.test_models import LandingZoneMixin
-from landingzones.tests.test_views import (
-    IRODS_BACKEND_ENABLED,
-    IRODS_BACKEND_SKIP_MSG,
-)
 from landingzones.tests.test_views_taskflow import (
     LandingZoneTaskflowMixin,
     ZONE_TITLE,
@@ -75,9 +70,7 @@ class TestLandingZoneAPITaskflowBase(
         )
 
         # Import investigation
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
 
@@ -85,7 +78,6 @@ class TestLandingZoneAPITaskflowBase(
         self.make_irods_colls(self.investigation)
 
 
-@skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
 class TestLandingZoneCreateAPIView(TestLandingZoneAPITaskflowBase):
     """Tests for LandingZoneCreateAPIView"""
 
@@ -257,7 +249,6 @@ class TestLandingZoneCreateAPIView(TestLandingZoneAPITaskflowBase):
         self.assertEqual(LandingZone.objects.count(), 0)
 
 
-@skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
 class TestLandingZoneSubmitDeleteAPIView(TestLandingZoneAPITaskflowBase):
     """Tests for LandingZoneSubmitDeleteAPIView"""
 
@@ -316,7 +307,6 @@ class TestLandingZoneSubmitDeleteAPIView(TestLandingZoneAPITaskflowBase):
         self.assertEqual(LandingZone.objects.count(), 1)
 
 
-@skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
 class TestLandingZoneSubmitMoveAPIView(TestLandingZoneAPITaskflowBase):
     """Tests for TestLandingZoneSubmitMoveAPIView"""
 

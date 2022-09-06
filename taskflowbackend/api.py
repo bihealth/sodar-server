@@ -12,6 +12,9 @@ from django.core.exceptions import ImproperlyConfigured
 from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
 
+# Landingzones dependency
+from landingzones.models import LandingZone
+
 from taskflowbackend import flows
 from taskflowbackend.lock_api import ProjectLockAPI
 from taskflowbackend.tasks_celery import submit_flow_task
@@ -48,8 +51,8 @@ class TaskflowAPI:
         project,
         flow_name,
         flow_data,
-        async_mode,
-        tl_event,
+        async_mode=False,
+        tl_event=None,
     ):
         """
         Get and create a taskflow.
@@ -59,7 +62,7 @@ class TaskflowAPI:
         :param flow_name: Name of flow (string)
         :param flow_data: Flow parameters (dict)
         :param async_mode: Set up flow asynchronously if True (boolean)
-        :param tl_event: ProjectEvent object for timeline updating
+        :param tl_event: ProjectEvent object for timeline updating or None
         """
         flow_cls = flows.get_flow(flow_name)
         if not flow_cls:
@@ -85,7 +88,7 @@ class TaskflowAPI:
         cls,
         flow,
         project,
-        force_fail,
+        force_fail=False,
         async_mode=False,
         tl_event=None,
     ):
@@ -97,7 +100,7 @@ class TaskflowAPI:
         :param force_fail: Force failure (boolean, for testing)
         :param async_mode: Submit in async mode (boolean, default=False)
         :param tl_event: Timeline ProjectEvent object or None
-        :return: Response object
+        :return: Dict
         """
         flow_result = None
         ex_msg = None
@@ -129,14 +132,18 @@ class TaskflowAPI:
         except Exception as ex:
             ex_msg = 'Error building flow: {}'.format(ex)
             # HACK: Fix for building issues with landing zone flows
-            if async_mode and flow.flow_data.get('landing_zone'):
+            # TODO: Replace with proper implementation (see issue #1466)
+            if async_mode and flow.flow_data.get('zone_uuid'):
+                zone = LandingZone.objects.filter(
+                    sodar_uuid=flow.flow_data['zone_uuid']
+                )
                 # Set zone status
-                zone_status = (
+                zone.set_status(
                     'NOT CREATED'
                     if flow.flow_name == 'landing_zone_create'
-                    else 'FAILED'
+                    else 'FAILED',
+                    ex_msg,
                 )
-                flow.flow_data['landing_zone'].set_status(zone_status, ex_msg)
             # Set timeline status
             if tl_event:
                 tl_event.set_status('FAILED', ex_msg)
@@ -213,7 +220,7 @@ class TaskflowAPI:
                 flow_data,
                 tl_uuid,
             )
-            return None  # TBD: What to return
+            return None
 
         # Else run flow synchronously
         flow = self.get_flow(

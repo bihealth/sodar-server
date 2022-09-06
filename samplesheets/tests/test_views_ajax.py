@@ -2,7 +2,6 @@
 
 import json
 import os
-from unittest.case import skipIf
 
 import fastobo
 from altamisa.constants import table_headers as th
@@ -38,8 +37,6 @@ from samplesheets.tests.test_sheet_config import (
     CONFIG_STUDY_UUID,
 )
 from samplesheets.tests.test_views import (
-    IRODS_BACKEND_ENABLED,
-    IRODS_BACKEND_SKIP_MSG,
     TestViewsBase,
     SHEET_DIR_SPECIAL,
     SHEET_PATH,
@@ -179,7 +176,6 @@ class IrodsAccessTicketMixin:
         return obj
 
 
-@skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
 class TestContextAjaxView(TestViewsBase):
     """Tests for SheetContextAjaxView"""
 
@@ -191,9 +187,7 @@ class TestContextAjaxView(TestViewsBase):
         self.irods_backend = get_backend_api('omics_irods')
 
         # Import investigation
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
 
@@ -405,9 +399,7 @@ class TestStudyTablesAjaxView(IrodsAccessTicketMixin, TestViewsBase):
         super().setUp()
 
         # Import investigation
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
 
@@ -498,9 +490,7 @@ class TestStudyLinksAjaxView(TestViewsBase):
         super().setUp()
 
         # Import investigation
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
 
@@ -524,9 +514,7 @@ class TestSheetWarningsAjaxView(TestViewsBase):
     def setUp(self):
         super().setUp()
         # Import investigation
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
 
     def test_get(self):
         """Test study tables retrieval"""
@@ -565,9 +553,7 @@ class TestSheetCellEditAjaxView(TestViewsBase):
         super().setUp()
 
         # Import investigation
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
 
         # Set up POST data
@@ -1122,7 +1108,7 @@ class TestSheetCellEditAjaxViewSpecial(TestViewsBase):
         super().setUp()
 
         # Import investigation
-        self.investigation = self._import_isa_from_file(
+        self.investigation = self.import_isa_from_file(
             SHEET_PATH_SMALL2, self.project
         )
         self.study = self.investigation.studies.first()
@@ -1170,9 +1156,7 @@ class TestSheetRowInsertAjaxView(RowEditMixin, SheetConfigMixin, TestViewsBase):
         super().setUp()
 
         # Import investigation
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         # Set up UUIDs and default config
         self._update_uuids(self.investigation, CONFIG_DATA_DEFAULT)
         app_settings.set_app_setting(
@@ -1370,7 +1354,7 @@ class TestSheetRowDeleteAjaxView(RowEditMixin, SheetConfigMixin, TestViewsBase):
         super().setUp()
 
         # Import investigation where extra rows have been inserted
-        self.investigation = self._import_isa_from_file(
+        self.investigation = self.import_isa_from_file(
             SHEET_PATH_INSERTED, self.project
         )
         # Set up UUIDs and default config
@@ -1473,9 +1457,7 @@ class TestSheetVersionSaveAjaxView(TestViewsBase):
 
     def setUp(self):
         super().setUp()
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
 
     def test_post(self):
@@ -1501,9 +1483,7 @@ class TestSheetEditFinishAjaxView(TestViewsBase):
 
     def setUp(self):
         super().setUp()
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
 
     def test_post(self):
@@ -1561,9 +1541,7 @@ class TestSheetEditConfigAjaxView(SheetConfigMixin, TestViewsBase):
         super().setUp()
 
         # Import investigation
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         # Set up UUIDs and default config
         self._update_uuids(self.investigation, CONFIG_DATA_DEFAULT)
         app_settings.set_app_setting(
@@ -1747,9 +1725,7 @@ class TestStudyDisplayConfigAjaxView(TestViewsBase):
         super().setUp()
 
         # Import investigation
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.s_uuid = str(self.investigation.studies.first().sodar_uuid)
         self.a_uuid = str(
@@ -1869,7 +1845,7 @@ class TestSheetVersionCompareAjaxView(SheetImportMixin, TestViewsBase):
 
     def setUp(self):
         super().setUp()
-        self._import_isa_from_file(SHEET_PATH_SMALL2, self.project)
+        self.import_isa_from_file(SHEET_PATH_SMALL2, self.project)
 
         with open(SHEET_PATH_SMALL2_ALT, 'rb') as file, self.login(self.user):
             values = {'file_upload': file}

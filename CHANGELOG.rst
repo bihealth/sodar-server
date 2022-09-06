@@ -21,7 +21,7 @@ Added
     - Statistics badge in iRODS dir modal (#1434)
 - **Taskflowbackend**
     - Add app from SODAR Core (#691)
-    - Add Taskflow functionality from SODAR Taskflow (#691)
+    - Add Taskflow functionality from SODAR Taskflow (#691, #1464)
 
 Changed
 -------
@@ -33,6 +33,7 @@ Changed
     - Upgrade to django-sodar-core v0.11.0 (#1459)
     - Upgrade general Python dependencies (#1453)
     - Upgrade minimum PostgreSQL version to v11 (bihealth/sodar-core#303)
+    - Enable all tests in GitHub Actions CI (#1168)
 - **Irodsbackend**
     - Disable iRODS environment debug logging (#1455)
 - **Landingzones**
@@ -55,6 +56,8 @@ Removed
 
 - **General**
     - ``get_taskflow_sync_data()`` methods (#1397)
+    - GitLab CI support (#1168)
+    - ``test_local`` settings file (#1395)
 - **Samplesheets**
     - Taskflow API views (#691, #1397)
 

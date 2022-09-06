@@ -4,7 +4,6 @@ Tests for REST API views in the samplesheets app with SODAR Taskflow enabled
 
 import json
 import os
-from unittest.case import skipIf
 
 from irods.keywords import REG_CHKSUM_KW
 
@@ -15,14 +14,10 @@ from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
 
 # Taskflowbackend dependency
-from taskflowbackend.tests.test_project_api_views import TestTaskflowAPIBase
+from taskflowbackend.tests.base import TestTaskflowAPIBase
 
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 from samplesheets.tests.test_views_taskflow import SampleSheetTaskflowMixin
-from samplesheets.tests.test_views import (
-    IRODS_BACKEND_ENABLED,
-    IRODS_BACKEND_SKIP_MSG,
-)
 
 
 # SODAR constants
@@ -59,14 +54,11 @@ class TestSampleSheetAPITaskflowBase(
         )
 
         # Import investigation
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
 
 
-@skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
 class TestInvestigationRetrieveAPIView(TestSampleSheetAPITaskflowBase):
     """Tests for InvestigationRetrieveAPIView"""
 
@@ -121,7 +113,6 @@ class TestInvestigationRetrieveAPIView(TestSampleSheetAPITaskflowBase):
         self.assertEqual(json.loads(response.content), expected)
 
 
-@skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
 class TestIrodsCollsCreateAPIView(TestSampleSheetAPITaskflowBase):
     """Tests for IrodsCollsCreateAPIView"""
 
@@ -153,7 +144,6 @@ class TestIrodsCollsCreateAPIView(TestSampleSheetAPITaskflowBase):
         self.assertEqual(response.status_code, 400)
 
 
-@skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
 class TestSampleDataFileExistsAPIView(TestSampleSheetAPITaskflowBase):
     """Tests for SampleDataFileExistsAPIView"""
 

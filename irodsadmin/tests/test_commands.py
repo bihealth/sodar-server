@@ -1,36 +1,38 @@
+"""Management command tests for the irodsadmin app"""
+
 import io
 import os
 import uuid
-from unittest import skipIf
 
-from django.conf import settings
 from django.core.management import call_command
+
+from test_plus.test import TestCase
+
+# Projectroles dependency
 from projectroles.constants import SODAR_CONSTANTS
 from projectroles.models import Role
 from projectroles.plugins import get_backend_api
 from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
-from test_plus.test import TestCase
 
-
-from irodsadmin.management.commands import irodsorphans
+# Landingzones dependency
 from landingzones.tests.test_models import LandingZoneMixin
+
+# Samplesheets dependency
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 
+from irodsadmin.management.commands import irodsorphans
+
+
+# SODAR constants
 PROJECT_ROLE_OWNER = SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 
+# Local constants
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
-
 ZONE_TITLE = '20180503_172456_test_zone'
 ZONE_DESC = 'description'
 
-IRODS_BACKEND_ENABLED = (
-    True if 'omics_irods' in settings.ENABLED_BACKEND_PLUGINS else False
-)
-IRODS_BACKEND_SKIP_MSG = 'iRODS backend not enabled in settings'
 
-
-@skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
 class TestIrodsOrphans(
     ProjectMixin,
     SampleSheetIOMixin,
@@ -60,9 +62,7 @@ class TestIrodsOrphans(
             self.project, self.user, self.role_owner
         )
 
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.investigation.irods_status = True
         self.investigation.save()
         self.study = self.investigation.studies.first()

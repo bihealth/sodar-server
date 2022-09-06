@@ -83,22 +83,21 @@ class Flow(BaseLinearFlow):
         # print('zone_object_colls: {}'.format(zone_object_colls))    # DEBUG
         # print('sample_colls: {}'.format(sample_colls))              # DEBUG
 
-        # If async, set up task to set landing zone status to failed
-        if self.request_mode == 'async':
-            self.add_task(
-                lz_tasks.RevertLandingZoneFailTask(
-                    name='Set landing zone status to FAILED on revert',
-                    project=self.project,
-                    inject={
-                        'landing_zone': zone,
-                        'flow_name': self.flow_name,
-                        'info_prefix': 'Failed to {} landing zone files'.format(
-                            'validate' if validate_only else 'move'
-                        ),
-                        'extra_data': {'validate_only': int(validate_only)},
-                    },
-                )
+        # Set up task to set landing zone status to failed
+        self.add_task(
+            lz_tasks.RevertLandingZoneFailTask(
+                name='Set landing zone status to FAILED on revert',
+                project=self.project,
+                inject={
+                    'landing_zone': zone,
+                    'flow_name': self.flow_name,
+                    'info_prefix': 'Failed to {} landing zone files'.format(
+                        'validate' if validate_only else 'move'
+                    ),
+                    'extra_data': {'validate_only': int(validate_only)},
+                },
             )
+        )
         self.add_task(
             lz_tasks.SetLandingZoneStatusTask(
                 name='Set landing zone status to VALIDATING',
@@ -315,5 +314,6 @@ class Flow(BaseLinearFlow):
                     'flow_name': self.flow_name,
                     'extra_data': {'file_count': file_count},
                 },
+                force_fail=force_fail,
             )
         )

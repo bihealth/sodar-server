@@ -1,7 +1,6 @@
 """Tests for plugins in the samplesheets app with Taskflow enabled"""
 
 from irods.ticket import Ticket
-from unittest import skipIf
 
 from django.test import RequestFactory, override_settings
 
@@ -11,11 +10,7 @@ from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import ProjectAppPluginPoint
 
 # Taskflowbackend dependency
-from taskflowbackend.tests.test_project_views import (
-    TestTaskflowBase,
-    BACKENDS_ENABLED,
-    BACKEND_SKIP_MSG,
-)
+from taskflowbackend.tests.base import TaskflowbackendTestBase
 
 from samplesheets.tests.test_io import (
     SampleSheetIOMixin,
@@ -68,13 +63,12 @@ class TestSamplesheetsModifyAPIMixin:
             self.assertIsNone(ticket)
 
 
-@skipIf(not BACKENDS_ENABLED, BACKEND_SKIP_MSG)
 class TestPerformProjectModify(
     TestSamplesheetsModifyAPIMixin,
     SampleSheetIOMixin,
     SampleSheetPublicAccessMixin,
     SampleSheetTaskflowMixin,
-    TestTaskflowBase,
+    TaskflowbackendTestBase,
 ):
     """Tests for perform_project_modify()"""
 
@@ -93,9 +87,7 @@ class TestPerformProjectModify(
         )
         self.project_path = self.irods_backend.get_sample_path(self.project)
         # Import investigation
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
         # Create iRODS collections
@@ -198,13 +190,12 @@ class TestPerformProjectModify(
         self.assert_ticket_access(self.project, False, ticket_str)
 
 
-@skipIf(not BACKENDS_ENABLED, BACKEND_SKIP_MSG)
 class TestPerformProjectSync(
     TestSamplesheetsModifyAPIMixin,
     SampleSheetIOMixin,
     SampleSheetPublicAccessMixin,
     SampleSheetTaskflowMixin,
-    TestTaskflowBase,
+    TaskflowbackendTestBase,
 ):
     """Tests for perform_project_sync()"""
 
@@ -256,7 +247,7 @@ class TestPerformProjectSync(
         )
 
         # Import investigation and sync
-        investigation = self._import_isa_from_file(SHEET_PATH, self.project)
+        investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         investigation.irods_status = True
         investigation.save()
         self.plugin.perform_project_sync(self.project)
@@ -280,7 +271,7 @@ class TestPerformProjectSync(
             '',
         )
 
-        investigation = self._import_isa_from_file(SHEET_PATH, self.project)
+        investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.make_irods_colls(investigation)
         self.plugin.perform_project_sync(self.project)
 
@@ -304,7 +295,7 @@ class TestPerformProjectSync(
             '',
         )
 
-        investigation = self._import_isa_from_file(SHEET_PATH, self.project)
+        investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.make_irods_colls(investigation)
         self.project.public_guest_access = True
         self.project.save()
@@ -329,7 +320,7 @@ class TestPerformProjectSync(
             '',
         )
 
-        investigation = self._import_isa_from_file(SHEET_PATH, self.project)
+        investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.make_irods_colls(investigation)
         # NOTE: Project.public_guest_access = False
         ticket_new = self.irods_backend.issue_ticket('read', self.project_path)

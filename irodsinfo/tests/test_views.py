@@ -10,16 +10,11 @@ from django.test import override_settings
 from django.urls import reverse
 
 from test_plus.test import TestCase
-from unittest import skipIf
 
 
 # Local constants
 CERT_PATH = os.path.dirname(__file__) + '/data/irods_server_crt.txt'
 IRODS_ENV = {'test': 1}
-IRODS_BACKEND_ENABLED = (
-    True if 'omics_irods' in settings.ENABLED_BACKEND_PLUGINS else False
-)
-IRODS_BACKEND_SKIP_MSG = 'iRODS backend not enabled in settings'
 PLUGINS_DISABLE_IRODS = settings.ENABLED_BACKEND_PLUGINS.copy()
 if 'omics_irods' in PLUGINS_DISABLE_IRODS:
     PLUGINS_DISABLE_IRODS.remove('omics_irods')
@@ -40,7 +35,6 @@ class TestIrodsinfoViewBase(TestCase):
         self.anonymous = None
 
 
-@skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
 class TestIrodsInfoView(TestIrodsinfoViewBase):
     """Tests for IrodsInfoView"""
 
@@ -60,7 +54,6 @@ class TestIrodsInfoView(TestIrodsinfoViewBase):
         self.assertFalse(response.context['irods_backend_enabled'])
 
 
-@skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
 class TestIrodsConfigView(TestIrodsinfoViewBase):
     """Tests for IrodsConfigView"""
 

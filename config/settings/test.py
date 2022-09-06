@@ -83,25 +83,37 @@ ENABLED_BACKEND_PLUGINS = [
     'appalerts_backend',
     'sodar_cache',
     'ontologyaccess_backend',
-    # 'taskflow',
-    # 'omics_irods',
+    'taskflow',
+    'omics_irods',
 ]
 
 # Projectroles app settings
+PROJECTROLES_ENABLE_MODIFY_API = True
+PROJECTROLES_MODIFY_API_APPS = ['taskflow', 'samplesheets', 'landingzones']
 PROJECTROLES_SEND_EMAIL = True
 PROJECTROLES_SEARCH_PAGINATION = 10  # Workaround for #360
 PROJECTROLES_ALLOW_ANONYMOUS = False
-
-PROJECTROLES_ENABLE_MODIFY_API = False
-PROJECTROLES_MODIFY_API_APPS = []
+PROJECTROLES_ALLOW_LOCAL_USERS = True
 
 # Samplesheets app settings
 SHEETS_ENABLE_CACHE = False  # Temporarily disabled to fix CI, see issue #556
 
 # iRODS settings shared by iRODS using apps
-ENABLE_IRODS = False
+ENABLE_IRODS = True
+IRODS_HOST = '127.0.0.1'
+IRODS_PORT = 4488
 IRODS_WEBDAV_ENABLED = True
 IRODS_SODAR_AUTH = True
+
+# Taskflow backend settings
+TASKFLOW_TEST_MODE = True
+TASKFLOW_TEST_PERMANENT_USERS = [
+    'client_user',
+    'rods',
+    'rodsadmin',
+    'public',
+    'bih_proteomics_smb',
+]
 
 # UI test settings
 PROJECTROLES_TEST_UI_CHROME_OPTIONS = [

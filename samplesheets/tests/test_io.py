@@ -34,7 +34,7 @@ class SampleSheetIOMixin:
     """Helper functions for sample sheet i/o"""
 
     @classmethod
-    def _import_isa_from_file(cls, path, project, user=None):
+    def import_isa_from_file(cls, path, project, user=None):
         """
         Import ISA from a zip file.
 
@@ -56,7 +56,7 @@ class SampleSheetIOMixin:
         return investigation
 
     @classmethod
-    def _read_isa(cls, path, project):
+    def read_isa(cls, path, project):
         """
         Read ISA-Tab into the altamISA API
 
@@ -128,7 +128,7 @@ class SampleSheetIOMixin:
         return isa_inv, isa_studies, isa_assays
 
     @classmethod
-    def _get_isatab_files(cls):
+    def get_isatab_files(cls):
         """
         Return all test ISA-Tab files.
 
@@ -142,7 +142,7 @@ class SampleSheetIOMixin:
             )
         }
 
-    def _fail_isa(self, zip_name, ex):
+    def fail_isa(self, zip_name, ex):
         """Fail with exception message and ISA-Tab zip file name"""
         self.fail('Exception in {}: {}'.format(zip_name, ex))
 
@@ -188,15 +188,15 @@ class TestSampleSheetIOBatch(TestSampleSheetIOBase):
         self.assertEqual(Investigation.objects.count(), 0)
         self.assertEqual(ISATab.objects.count(), 0)
 
-        for zip_name, zip_file in self._get_isatab_files().items():
+        for zip_name, zip_file in self.get_isatab_files().items():
             msg = 'file={}'.format(zip_name)
 
             try:
-                investigation = self._import_isa_from_file(
+                investigation = self.import_isa_from_file(
                     zip_file.path, self.project
                 )
             except Exception as ex:
-                return self._fail_isa(zip_name, ex)
+                return self.fail_isa(zip_name, ex)
 
             self.assertEqual(Investigation.objects.count(), 1, msg=msg)
             self.assertEqual(ISATab.objects.count(), 1, msg=msg)
@@ -210,8 +210,8 @@ class TestSampleSheetIOBatch(TestSampleSheetIOBase):
         """Test ISA-Tab export in batch"""
         sheet_io = SampleSheetIO(warn=False, allow_critical=True)
 
-        for zip_name, zip_file in self._get_isatab_files().items():
-            investigation = self._import_isa_from_file(
+        for zip_name, zip_file in self.get_isatab_files().items():
+            investigation = self.import_isa_from_file(
                 zip_file.path, self.project
             )
 
@@ -220,7 +220,7 @@ class TestSampleSheetIOBatch(TestSampleSheetIOBase):
                     sheet_io.export_isa(investigation)
                 )
             except Exception as ex:
-                return self._fail_isa(zip_name, ex)
+                return self.fail_isa(zip_name, ex)
 
             zf = ZipFile(zip_file.path, 'r')
 
@@ -291,13 +291,13 @@ class TestSampleSheetIOBatch(TestSampleSheetIOBase):
 
     def test_isa_saving_batch(self):
         """Test original ISA-Tab saving in batch"""
-        for zip_name, zip_file in self._get_isatab_files().items():
+        for zip_name, zip_file in self.get_isatab_files().items():
             try:
-                investigation = self._import_isa_from_file(
+                investigation = self.import_isa_from_file(
                     zip_file.path, self.project
                 )
             except Exception as ex:
-                return self._fail_isa(zip_name, ex)
+                return self.fail_isa(zip_name, ex)
 
             saved_isatab = ISATab.objects.first()
             zf = ZipFile(zip_file.path)
@@ -334,7 +334,7 @@ class TestSampleSheetIOImport(TestSampleSheetIOBase):
     def setUp(self):
         super().setUp()
         self.sheet_io = SampleSheetIO(warn=False, allow_critical=True)
-        (self.isa_inv, self.isa_studies, self.isa_assays) = self._read_isa(
+        (self.isa_inv, self.isa_studies, self.isa_assays) = self.read_isa(
             SHEET_PATH, self.project
         )
         self.p_id = 'p{}'.format(self.project.pk)
@@ -474,9 +474,7 @@ class TestSampleSheetIOExport(TestSampleSheetIOBase):
     def setUp(self):
         super().setUp()
         self.sheet_io = SampleSheetIO(warn=False, allow_critical=True)
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.p_id = 'p{}'.format(self.project.pk)
 
     def test_export_value(self):

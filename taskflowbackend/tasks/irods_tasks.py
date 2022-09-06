@@ -7,7 +7,11 @@ import re
 import string
 
 from irods.access import iRODSAccess
-from irods.exception import UserDoesNotExist, UserGroupDoesNotExist
+from irods.exception import (
+    UserDoesNotExist,
+    UserGroupDoesNotExist,
+    CAT_SUCCESS_BUT_WITH_NO_INFO,
+)
 from irods.models import Collection
 
 from taskflowbackend.tasks.base_task import BaseTask
@@ -217,18 +221,22 @@ class SetCollectionMetadataTask(IrodsBaseTask):
         super().execute(*args, **kwargs)
 
     def revert(self, path, name, value, units=None, *args, **kwargs):
-        if self.data_modified:
-            coll = self.irods.collections.get(path)
-            if self.execute_data:
-                meta_item = coll.metadata.get_one(name)
-                meta_item.value = str(self.execute_data['value'])
-                meta_item.units = str(self.execute_data['units'])
+        if not self.data_modified:
+            return
+        coll = self.irods.collections.get(path)
+        if self.execute_data:
+            meta_item = coll.metadata.get_one(name)
+            meta_item.value = str(self.execute_data['value'])
+            meta_item.units = str(self.execute_data['units'])
 
-                self.irods.metadata.set(
-                    model_cls=Collection, path=path, meta=meta_item
-                )
-            else:
+            self.irods.metadata.set(
+                model_cls=Collection, path=path, meta=meta_item
+            )
+        else:
+            try:
                 coll.metadata.remove(name, str(value), units)
+            except CAT_SUCCESS_BUT_WITH_NO_INFO:
+                pass
 
 
 class CreateUserGroupTask(IrodsBaseTask):

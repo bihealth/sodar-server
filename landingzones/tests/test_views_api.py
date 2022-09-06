@@ -2,8 +2,6 @@
 
 import json
 
-from unittest import skipIf
-
 from django.urls import reverse
 
 # Projectroles dependency
@@ -15,10 +13,6 @@ from projectroles.tests.test_views_api import TestAPIViewsBase
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 
 from landingzones.tests.test_models import LandingZoneMixin
-from landingzones.tests.test_views import (
-    IRODS_BACKEND_ENABLED,
-    IRODS_BACKEND_SKIP_MSG,
-)
 from landingzones.tests.test_views_taskflow import (
     ZONE_TITLE,
     ZONE_DESC,
@@ -55,9 +49,7 @@ class TestLandingZoneAPIViewsBase(
         )
 
         # Import investigation
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
 
@@ -72,7 +64,6 @@ class TestLandingZoneAPIViewsBase(
         )
 
 
-@skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
 class TestLandingZoneListAPIView(TestLandingZoneAPIViewsBase):
     """Tests for LandingZoneListAPIView"""
 
@@ -186,7 +177,6 @@ class TestLandingZoneListAPIView(TestLandingZoneAPIViewsBase):
         self.assertEqual(len(response.data), 2)
 
 
-@skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
 class TestLandingZoneRetrieveAPIView(TestLandingZoneAPIViewsBase):
     """Tests for LandingZoneRetrieveAPIView"""
 

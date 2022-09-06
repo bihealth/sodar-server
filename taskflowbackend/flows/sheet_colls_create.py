@@ -1,3 +1,5 @@
+import os
+
 # Samplesheets dependency
 from samplesheets import tasks_taskflow as ss_tasks
 
@@ -48,7 +50,7 @@ class Flow(BaseLinearFlow):
             )
         )
         for c in self.flow_data['colls']:
-            coll_path = sample_path + '/' + c
+            coll_path = os.path.join(sample_path, c)
             self.add_task(
                 irods_tasks.CreateCollectionTask(
                     name='Create collection {}'.format(coll_path),
@@ -74,5 +76,6 @@ class Flow(BaseLinearFlow):
                 name='Set iRODS collection structure status to True',
                 project=self.project,
                 inject={'irods_status': True},
-            )
+                force_fail=force_fail,
+            ),
         )

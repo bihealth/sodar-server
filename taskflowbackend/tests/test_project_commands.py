@@ -3,8 +3,6 @@
 import os
 from tempfile import NamedTemporaryFile
 
-from unittest import skipIf
-
 # Projectroles dependency
 from projectroles.management.commands.batchupdateroles import (
     Command as BatchUpdateRolesCommand,
@@ -17,11 +15,8 @@ from projectroles.models import (
 from projectroles.tests.test_commands import BatchUpdateRolesMixin
 
 # Taskflowbackend dependency
-from taskflowbackend.tests.test_project_views import (
-    TestTaskflowBase,
-    TASKFLOW_ENABLED,
-    TASKFLOW_SKIP_MSG,
-)
+from taskflowbackend.tests.base import TaskflowbackendTestBase
+
 
 # SODAR constants
 PROJECT_ROLE_OWNER = SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
@@ -35,8 +30,7 @@ PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 # TODO: Add tests for syncmodifyapi
 
 
-@skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
-class TestBatchUpdateRoles(BatchUpdateRolesMixin, TestTaskflowBase):
+class TestBatchUpdateRoles(BatchUpdateRolesMixin, TaskflowbackendTestBase):
     """Tests for batchupdateroles command"""
 
     def setUp(self):

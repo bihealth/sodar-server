@@ -2,32 +2,29 @@
 
 from irods.collection import iRODSCollection
 from irods.exception import CollectionDoesNotExist
-from irods.models import UserGroup
 from irods.user import iRODSUser, iRODSUserGroup
 
 from django.conf import settings
 from django.contrib import auth
-from django.core.exceptions import ImproperlyConfigured
 from django.forms.models import model_to_dict
 from django.test import override_settings
 from django.urls import reverse
 
-from unittest import skipIf
-
+# Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
 from projectroles.models import (
     Project,
-    Role,
     RoleAssignment,
     ProjectInvite,
     SODAR_CONSTANTS,
 )
-from projectroles.plugins import get_backend_api
-from projectroles.tests.taskflow_testcase import TestCase
 from projectroles.tests.test_models import (
     ProjectInviteMixin,
-    ProjectMixin,
-    RoleAssignmentMixin,
+)
+
+from taskflowbackend.tests.base import (
+    TaskflowbackendTestBase,
+    IRODS_ACCESS_READ,
 )
 
 
@@ -44,222 +41,17 @@ PROJECT_TYPE_CATEGORY = SODAR_CONSTANTS['PROJECT_TYPE_CATEGORY']
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 APP_SETTING_SCOPE_PROJECT = SODAR_CONSTANTS['APP_SETTING_SCOPE_PROJECT']
 
+
 # Local constants
 INVITE_EMAIL = 'test@example.com'
 SECRET = 'rsd886hi8276nypuvw066sbvv0rb2a6x'
-TASKFLOW_ENABLED = (
-    True if 'taskflow' in settings.ENABLED_BACKEND_PLUGINS else False
-)
-TASKFLOW_SKIP_MSG = 'Taskflow not enabled in settings'
-BACKENDS_ENABLED = all(
-    _ in settings.ENABLED_BACKEND_PLUGINS for _ in ['omics_irods', 'taskflow']
-)
-BACKEND_SKIP_MSG = (
-    'Required backends (taskflow, omics_irods) ' 'not enabled in settings'
-)
 TASKFLOW_TEST_MODE = getattr(settings, 'TASKFLOW_TEST_MODE', False)
-
-IRODS_ACCESS_READ = 'read object'
-IRODS_ACCESS_WRITE = 'modify object'
-IRODS_ACCESS_NULL = 'null'
 
 
 # Base Classes -----------------------------------------------------------------
 
 
-class TaskflowTestMixin:
-    """Helpers for taskflow tests"""
-
-    #: iRODS backend object
-    irods_backend = None
-    #: iRODS session object
-    irods_session = None
-
-    def assert_irods_access(self, user_name, target, expected):
-        """
-        Assert access for a specific user for a target object or collection.
-
-        :param user_name: String
-        :param target: iRODSCollection, DataObject or iRODS path as string
-        :param expected: Expected access (string or None)
-        :return: String or None
-        """
-        if isinstance(target, str):
-            try:
-                target = self.irods_session.collections.get(target)
-            except CollectionDoesNotExist:
-                target = self.irods_session.data_objects.get(target)
-        access_list = self.irods_session.permissions.get(target=target)
-        access = next(
-            (x for x in access_list if x.user_name == user_name), None
-        )
-        if access:
-            access = access.access_name
-        self.assertEqual(access, expected)
-
-    def assert_group_member(self, project, user, status=True):
-        """
-        Assert user membership in iRODS project group. Requires irods_backend
-        and irods_session to be present in the class.
-
-        :param project: Project object
-        :param user: SODARUser object
-        :param status: Expected membership status (boolean)
-        """
-        user_group = self.irods_session.user_groups.get(
-            self.irods_backend.get_user_group_name(project)
-        )
-        self.assertEqual(user_group.hasmember(user.username), status)
-
-    def assert_irods_coll(self, target, sub_path=None, expected=True):
-        """
-        Assert the existence of iRODS collection by object or path. Requires
-        irods_backend and irods_session to be present in the class.
-
-        :param target: Object supported by irodsbackend or full path as string
-        :param sub_path: Subpath below object path (string, optional)
-        :param expected: Expected state of existence (boolean)
-        """
-        if isinstance(target, str):
-            path = target
-        else:
-            path = self.irods_backend.get_path(target)
-        if sub_path:
-            path += '/' + sub_path
-        self.assertEqual(self.irods_session.collections.exists(path), expected)
-
-    def assert_irods_obj(self, path, expected=True):
-        """
-        Assert the existence of an iRODS data object. Requires irods_session to
-        be present in the class.
-
-        :param path: Full iRODS path to data object (string)
-        :param expected: Expected state of existence (boolean)
-        """
-        self.assertEqual(self.irods_session.data_objects.exists(path), expected)
-
-
-class TestTaskflowBase(
-    ProjectMixin, RoleAssignmentMixin, TaskflowTestMixin, TestCase
-):
-    """Base class for testing UI views with taskflow"""
-
-    def make_project_taskflow(
-        self,
-        title,
-        type,
-        parent,
-        owner,
-        description='',
-        public_guest_access=False,
-    ):
-        """Make Project with taskflow for UI view tests"""
-        post_data = {
-            'title': title,
-            'type': type,
-            'parent': parent.sodar_uuid if parent else None,
-            'owner': owner.sodar_uuid,
-            'description': description,
-            'public_guest_access': public_guest_access,
-        }
-        post_data.update(
-            app_settings.get_all_defaults(
-                APP_SETTING_SCOPE_PROJECT, post_safe=True
-            )
-        )  # Add default settings
-        post_kwargs = {'project': parent.sodar_uuid} if parent else {}
-
-        with self.login(self.user):
-            response = self.client.post(
-                reverse('projectroles:create', kwargs=post_kwargs), post_data
-            )
-            self.assertEqual(response.status_code, 302)
-            project = Project.objects.get(title=title)
-            self.assertRedirects(
-                response,
-                reverse(
-                    'projectroles:detail',
-                    kwargs={'project': project.sodar_uuid},
-                ),
-            )
-
-        owner_as = project.get_owner()
-        return project, owner_as
-
-    def make_assignment_taskflow(self, project, user, role):
-        """Make RoleAssignment with taskflow for UI view tests"""
-        post_data = {
-            'project': project.sodar_uuid,
-            'user': user.sodar_uuid,
-            'role': role.pk,
-        }
-        with self.login(self.user):
-            response = self.client.post(
-                reverse(
-                    'projectroles:role_create',
-                    kwargs={'project': project.sodar_uuid},
-                ),
-                post_data,
-            )
-            role_as = RoleAssignment.objects.get(project=project, user=user)
-            self.assertRedirects(
-                response,
-                reverse(
-                    'projectroles:roles', kwargs={'project': project.sodar_uuid}
-                ),
-            )
-        return role_as
-
-    def setUp(self):
-        # Ensure TASKFLOW_TEST_MODE is True to avoid data loss
-        if not TASKFLOW_TEST_MODE:
-            raise ImproperlyConfigured(
-                'TASKFLOW_TEST_MODE not True, testing with SODAR Taskflow '
-                'disabled'
-            )
-        self.taskflow = get_backend_api('taskflow', force=True)
-        self.irods_backend = get_backend_api('omics_irods')
-        self.irods_session = self.irods_backend.get_session()
-
-        # Init roles
-        self.role_owner = Role.objects.get_or_create(name=PROJECT_ROLE_OWNER)[0]
-        self.role_delegate = Role.objects.get_or_create(
-            name=PROJECT_ROLE_DELEGATE
-        )[0]
-        self.role_contributor = Role.objects.get_or_create(
-            name=PROJECT_ROLE_CONTRIBUTOR
-        )[0]
-        self.role_guest = Role.objects.get_or_create(name=PROJECT_ROLE_GUEST)[0]
-
-        # Init users
-        self.user_cat = self.make_user('user_cat')
-        self.user = self.make_user('superuser')
-        self.user.is_staff = True
-        self.user.is_superuser = True
-        self.user.save()
-
-        # Create category locally
-        self.category = self._make_project(
-            'TestCategory', PROJECT_TYPE_CATEGORY, None
-        )
-        self.as_cat_owner = self._make_assignment(
-            self.category, self.user_cat, self.role_owner
-        )
-
-    def tearDown(self):
-        self.taskflow.cleanup()
-        with self.assertRaises(CollectionDoesNotExist):
-            self.irods_session.collections.get(
-                self.irods_backend.get_projects_path()
-            )
-        for user in self.irods_session.query(UserGroup).all():
-            self.assertIn(
-                user[UserGroup.name], settings.TASKFLOW_TEST_PERMANENT_USERS
-            )
-
-
-@skipIf(not BACKENDS_ENABLED, BACKEND_SKIP_MSG)
-class TestProjectCreateView(TestTaskflowBase):
+class TestProjectCreateView(TaskflowbackendTestBase):
     """Tests for Project creation view with taskflow"""
 
     def test_create_project(self):
@@ -346,8 +138,7 @@ class TestProjectCreateView(TestTaskflowBase):
         self.assertEqual(group.hasmember(self.user_cat.username), True)
 
 
-@skipIf(not BACKENDS_ENABLED, BACKEND_SKIP_MSG)
-class TestProjectUpdateView(TestTaskflowBase):
+class TestProjectUpdateView(TaskflowbackendTestBase):
     """Tests for Project updating view"""
 
     def setUp(self):
@@ -478,8 +269,7 @@ class TestProjectUpdateView(TestTaskflowBase):
         )
 
 
-@skipIf(not BACKENDS_ENABLED, BACKEND_SKIP_MSG)
-class TestRoleAssignmentCreateView(TestTaskflowBase):
+class TestRoleAssignmentCreateView(TaskflowbackendTestBase):
     """Tests for RoleAssignment creation view"""
 
     def setUp(self):
@@ -538,8 +328,7 @@ class TestRoleAssignmentCreateView(TestTaskflowBase):
         self.assert_group_member(self.project, self.user_new, True)
 
 
-@skipIf(not BACKENDS_ENABLED, BACKEND_SKIP_MSG)
-class TestRoleAssignmentUpdateView(TestTaskflowBase):
+class TestRoleAssignmentUpdateView(TaskflowbackendTestBase):
     """Tests for RoleAssignment update view with taskflow"""
 
     def setUp(self):
@@ -599,8 +388,7 @@ class TestRoleAssignmentUpdateView(TestTaskflowBase):
         self.assert_group_member(self.project, self.user_new, True)
 
 
-@skipIf(not BACKENDS_ENABLED, BACKEND_SKIP_MSG)
-class TestRoleAssignmentOwnerTransferView(TestTaskflowBase):
+class TestRoleAssignmentOwnerTransferView(TaskflowbackendTestBase):
     """Tests for ownership transfer view with taskflow"""
 
     def setUp(self):
@@ -673,8 +461,7 @@ class TestRoleAssignmentOwnerTransferView(TestTaskflowBase):
         self.assert_group_member(self.project, self.user_cat, False)
 
 
-@skipIf(not BACKENDS_ENABLED, BACKEND_SKIP_MSG)
-class TestRoleAssignmentDeleteView(TestTaskflowBase):
+class TestRoleAssignmentDeleteView(TaskflowbackendTestBase):
     """Tests for RoleAssignment delete view"""
 
     def setUp(self):
@@ -715,8 +502,7 @@ class TestRoleAssignmentDeleteView(TestTaskflowBase):
         self.assert_group_member(self.project, self.user_new, False)
 
 
-@skipIf(not BACKENDS_ENABLED, BACKEND_SKIP_MSG)
-class TestProjectInviteAcceptView(ProjectInviteMixin, TestTaskflowBase):
+class TestProjectInviteAcceptView(ProjectInviteMixin, TaskflowbackendTestBase):
     """Tests for ProjectInvite accepting view with taskflow"""
 
     def setUp(self):

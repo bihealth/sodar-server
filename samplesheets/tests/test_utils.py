@@ -1,7 +1,5 @@
 """Tests for utility functions in the samplesheets app"""
 
-from unittest import skipIf
-
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from django.test import override_settings
@@ -47,10 +45,6 @@ CONFIG_PROTOCOL_UUIDS = [
     '22222222-2222-2222-bbbb-000000000000',
 ]
 IRODS_TICKET_STR = 'ooChaa1t'
-IRODS_BACKEND_ENABLED = (
-    True if 'omics_irods' in settings.ENABLED_BACKEND_PLUGINS else False
-)
-IRODS_BACKEND_SKIP_MSG = 'iRODS backend not enabled in settings'
 
 
 class TestUtilsBase(
@@ -74,12 +68,11 @@ class TestUtilsBase(
         )
 
         # Import investigation
-        self.investigation = self._import_isa_from_file(
+        self.investigation = self.import_isa_from_file(
             SHEET_PATH_SMALL2, self.project
         )
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
-
         self.tb = SampleSheetTableBuilder()
 
 
@@ -98,7 +91,6 @@ class TestGetAltNames(TestUtilsBase):
         )
 
 
-@skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
 class TestGetSampleColls(TestUtilsBase):
     """Tests for get_sample_colls()"""
 
@@ -120,26 +112,26 @@ class TestCompareInvReplace(TestUtilsBase):
 
     def test_inserted_rows(self):
         """Test comparison with inserted rows"""
-        inv1 = self._import_isa_from_file(SHEET_PATH, project=self.project)
-        inv2 = self._import_isa_from_file(
+        inv1 = self.import_isa_from_file(SHEET_PATH, project=self.project)
+        inv2 = self.import_isa_from_file(
             SHEET_PATH_INSERTED, project=self.project
         )
         self.assertTrue(compare_inv_replace(inv1, inv2))
 
     def test_modified_sheet(self):
         """Test comparison with modified studies/assays (should fail)"""
-        inv1 = self._import_isa_from_file(
+        inv1 = self.import_isa_from_file(
             SHEET_PATH_SMALL2, project=self.project
         )
-        inv2 = self._import_isa_from_file(
+        inv2 = self.import_isa_from_file(
             SHEET_PATH_SMALL2_ALT, project=self.project
         )
         self.assertFalse(compare_inv_replace(inv1, inv2))
 
     def test_different_sheet(self):
         """Test comparison with a different sheet (should fail)"""
-        inv1 = self._import_isa_from_file(SHEET_PATH, project=self.project)
-        inv2 = self._import_isa_from_file(
+        inv1 = self.import_isa_from_file(SHEET_PATH, project=self.project)
+        inv2 = self.import_isa_from_file(
             SHEET_PATH_SMALL2, project=self.project
         )
         self.assertFalse(compare_inv_replace(inv1, inv2))
@@ -218,7 +210,6 @@ class TestGetLastMaterialName(TestUtilsBase):
         )
 
 
-@skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
 class TestGetWebdavUrl(TestUtilsBase):
     """Tests for get_webdav_url()"""
 

@@ -1,3 +1,5 @@
+import os
+
 from taskflowbackend.flows.base_flow import BaseLinearFlow
 from taskflowbackend.tasks import irods_tasks
 
@@ -11,15 +13,15 @@ class Flow(BaseLinearFlow):
 
     def validate(self):
         self.require_lock = False  # Project lock not required for this flow
-        self.supported_modes = ['sync', 'async']
         self.required_fields = ['zone_uuid', 'colls']
+        self.supported_modes = ['sync', 'async']
         return super().validate()
 
     def build(self, force_fail=False):
         project_group = self.irods_backend.get_user_group_name(self.project)
         zone_root = self.irods_backend.get_zone_path(self.project)
         zone = LandingZone.objects.get(sodar_uuid=self.flow_data['zone_uuid'])
-        user_path = zone_root + '/' + zone.user.username
+        user_path = os.path.join(zone_root, zone.user.username)
         zone_path = self.irods_backend.get_path(zone)
 
         self.add_task(
@@ -126,10 +128,7 @@ class Flow(BaseLinearFlow):
                     },
                 )
             )
-        if (
-            'description' in self.flow_data
-            and self.flow_data['description'] != ''
-        ):
+        if zone.description:
             self.add_task(
                 irods_tasks.SetCollectionMetadataTask(
                     name='Add description metadata to landing zone collection',
@@ -142,7 +141,7 @@ class Flow(BaseLinearFlow):
                 )
             )
         for d in self.flow_data['colls']:
-            coll_path = zone_path + '/' + d
+            coll_path = os.path.join(zone_path, d)
             self.add_task(
                 irods_tasks.CreateCollectionTask(
                     name='Create collection {}'.format(coll_path),
@@ -160,5 +159,6 @@ class Flow(BaseLinearFlow):
                     'status': 'ACTIVE',
                     'status_info': 'Available with write access for user',
                 },
+                force_fail=force_fail,
             )
         )

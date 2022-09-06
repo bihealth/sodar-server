@@ -4,7 +4,6 @@ import irods
 import os
 
 from datetime import timedelta
-from unittest import skipIf
 from urllib.parse import urlencode
 
 from django.conf import settings
@@ -20,7 +19,7 @@ from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
 
 # Taskflowbackend dependency
-from taskflowbackend.tests.test_project_views import TestTaskflowBase
+from taskflowbackend.tests.base import TaskflowbackendTestBase
 
 from samplesheets.forms import ERROR_MSG_INVALID_PATH
 from samplesheets.models import (
@@ -51,16 +50,6 @@ PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 # Local constants
 APP_NAME = 'samplesheets'
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
-TASKFLOW_ENABLED = (
-    True if 'taskflow' in settings.ENABLED_BACKEND_PLUGINS else False
-)
-TASKFLOW_SKIP_MSG = 'Taskflow not enabled in settings'
-BACKENDS_ENABLED = all(
-    _ in settings.ENABLED_BACKEND_PLUGINS for _ in ['omics_irods', 'taskflow']
-)
-BACKEND_SKIP_MSG = (
-    'Required backends (taskflow, omics_irods) ' 'not enabled in settings'
-)
 TEST_FILE_NAME = 'test1'
 TEST_FILE_NAME2 = 'test2'
 DUMMY_UUID = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
@@ -134,9 +123,8 @@ class SampleSheetPublicAccessMixin:
         self.assertEqual(self.project.public_guest_access, access)
 
 
-@skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
 class TestIrodsCollsCreateView(
-    SampleSheetIOMixin, SampleSheetPublicAccessMixin, TestTaskflowBase
+    SampleSheetIOMixin, SampleSheetPublicAccessMixin, TaskflowbackendTestBase
 ):
     """Tests for iRODS collection structure creation view with taskflow"""
 
@@ -151,9 +139,7 @@ class TestIrodsCollsCreateView(
             description='description',
         )
         # Import investigation
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
 
@@ -232,9 +218,8 @@ class TestIrodsCollsCreateView(
         )
 
 
-@skipIf(not BACKENDS_ENABLED, BACKEND_SKIP_MSG)
 class TestSampleSheetDeleteView(
-    SampleSheetIOMixin, SampleSheetTaskflowMixin, TestTaskflowBase
+    SampleSheetIOMixin, SampleSheetTaskflowMixin, TaskflowbackendTestBase
 ):
     """Tests for sample sheet deletion with taskflow"""
 
@@ -250,9 +235,7 @@ class TestSampleSheetDeleteView(
             description='description',
         )
         # Import investigation
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
 
@@ -376,9 +359,8 @@ class TestSampleSheetDeleteView(
         self.assertEqual(irods.data_objects.exists(file_path), True)
 
 
-@skipIf(not BACKENDS_ENABLED, BACKEND_SKIP_MSG)
 class TestIrodsAccessTicketListView(
-    SampleSheetTaskflowMixin, SampleSheetIOMixin, TestTaskflowBase
+    SampleSheetTaskflowMixin, SampleSheetIOMixin, TaskflowbackendTestBase
 ):
     """Tests for the iRODS access ticket list view"""
 
@@ -394,9 +376,7 @@ class TestIrodsAccessTicketListView(
             description='description',
         )
 
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
 
@@ -462,9 +442,8 @@ class TestIrodsAccessTicketListView(
         self.assertEqual(obj.path, post_data['path'])
 
 
-@skipIf(not BACKENDS_ENABLED, BACKEND_SKIP_MSG)
 class TestIrodsAccessTicketCreateView(
-    SampleSheetTaskflowMixin, SampleSheetIOMixin, TestTaskflowBase
+    SampleSheetTaskflowMixin, SampleSheetIOMixin, TaskflowbackendTestBase
 ):
     """Tests for the iRODS access ticket list view"""
 
@@ -480,9 +459,7 @@ class TestIrodsAccessTicketCreateView(
             description='description',
         )
 
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
         self.make_irods_colls(self.investigation)
@@ -575,9 +552,8 @@ class TestIrodsAccessTicketCreateView(
         self.assertEqual(ticket.path, post_data['path'])
 
 
-@skipIf(not BACKENDS_ENABLED, BACKEND_SKIP_MSG)
 class TestIrodsAccessTicketUpdateView(
-    SampleSheetTaskflowMixin, SampleSheetIOMixin, TestTaskflowBase
+    SampleSheetTaskflowMixin, SampleSheetIOMixin, TaskflowbackendTestBase
 ):
     """Tests for the iRODS access ticket list view"""
 
@@ -593,9 +569,7 @@ class TestIrodsAccessTicketUpdateView(
             description='description',
         )
 
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
         self.make_irods_colls(self.investigation)
@@ -708,9 +682,8 @@ class TestIrodsAccessTicketUpdateView(
         self.assertEqual(ticket.path, update_data['path'])
 
 
-@skipIf(not BACKENDS_ENABLED, BACKEND_SKIP_MSG)
 class TestIrodsAccessTicketDeleteView(
-    SampleSheetTaskflowMixin, SampleSheetIOMixin, TestTaskflowBase
+    SampleSheetTaskflowMixin, SampleSheetIOMixin, TaskflowbackendTestBase
 ):
     """Tests for the iRODS access ticket delete view"""
 
@@ -726,9 +699,7 @@ class TestIrodsAccessTicketDeleteView(
             description='description',
         )
 
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
 
@@ -803,7 +774,7 @@ class TestIrodsAccessTicketDeleteView(
 class TestIrodsRequestViewsBase(
     SampleSheetIOMixin,
     SampleSheetTaskflowMixin,
-    TestTaskflowBase,
+    TaskflowbackendTestBase,
 ):
     """Base test class for iRODS delete requests"""
 
@@ -838,9 +809,7 @@ class TestIrodsRequestViewsBase(
         )
 
         # Import investigation
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
 
@@ -885,7 +854,6 @@ class TestIrodsRequestViewsBase(
         )
 
 
-@skipIf(not BACKENDS_ENABLED, BACKEND_SKIP_MSG)
 class TestIrodsRequestCreateView(TestIrodsRequestViewsBase):
     """Test IrodsRequestCreateView"""
 
@@ -1029,7 +997,6 @@ class TestIrodsRequestCreateView(TestIrodsRequestViewsBase):
         self.assertEqual(self._get_create_alert_count(self.user_delegate), 1)
 
 
-@skipIf(not BACKENDS_ENABLED, BACKEND_SKIP_MSG)
 class TestIrodsRequestUpdateView(TestIrodsRequestViewsBase):
     """Tests for IrodsRequestUpdateView"""
 
@@ -1100,7 +1067,6 @@ class TestIrodsRequestUpdateView(TestIrodsRequestViewsBase):
             )
 
 
-@skipIf(not BACKENDS_ENABLED, BACKEND_SKIP_MSG)
 class TestIrodsRequestDeleteView(TestIrodsRequestViewsBase):
     """Tests for IrodsRequestUpdateView"""
 
@@ -1228,7 +1194,6 @@ class TestIrodsRequestDeleteView(TestIrodsRequestViewsBase):
             )
 
 
-@skipIf(not BACKENDS_ENABLED, BACKEND_SKIP_MSG)
 class TestIrodsRequestAcceptView(TestIrodsRequestViewsBase):
     """Tests for IrodsRequestAcceptView"""
 
@@ -1485,7 +1450,6 @@ class TestIrodsRequestAcceptView(TestIrodsRequestViewsBase):
         self.assertEqual(self._get_create_alert_count(self.user_delegate), 1)
 
 
-@skipIf(not BACKENDS_ENABLED, BACKEND_SKIP_MSG)
 class TestIrodsRequestRejectView(TestIrodsRequestViewsBase):
     """Tests for IrodsRequestRejectView"""
 
@@ -1694,7 +1658,6 @@ class TestIrodsRequestRejectView(TestIrodsRequestViewsBase):
         self.assertEqual(self._get_create_alert_count(self.user_delegate), 1)
 
 
-@skipIf(not BACKENDS_ENABLED, BACKEND_SKIP_MSG)
 class TestIrodsRequestListView(TestIrodsRequestViewsBase):
     """Tests for IrodsRequestListView"""
 
@@ -1817,12 +1780,11 @@ class TestIrodsRequestListView(TestIrodsRequestViewsBase):
         self.assertEqual(len(response.context['object_list']), 0)
 
 
-@skipIf(not BACKENDS_ENABLED, BACKEND_SKIP_MSG)
 class TestSampleDataPublicAccess(
     SampleSheetIOMixin,
     SampleSheetTaskflowMixin,
     SampleSheetPublicAccessMixin,
-    TestTaskflowBase,
+    TaskflowbackendTestBase,
 ):
     """Tests for granting/revoking public guest access for projects"""
 
@@ -1864,9 +1826,7 @@ class TestSampleDataPublicAccess(
         )
 
         # Import investigation and create collections
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.make_irods_colls(self.investigation)
         self.project_path = self.irods_backend.get_path(self.project)
         self.sample_path = self.irods_backend.get_sample_path(self.project)
@@ -1926,9 +1886,8 @@ class TestSampleDataPublicAccess(
             self.user_session.collections.get(new_coll_path)
 
 
-@skipIf(not BACKENDS_ENABLED, BACKEND_SKIP_MSG)
 class TestProjectSearchView(
-    SampleSheetIOMixin, SampleSheetTaskflowMixin, TestTaskflowBase
+    SampleSheetIOMixin, SampleSheetTaskflowMixin, TaskflowbackendTestBase
 ):
     """Tests for project search with sample sheet items"""
 
@@ -1947,9 +1906,7 @@ class TestProjectSearchView(
         )
 
         # Import investigation
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
 

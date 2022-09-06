@@ -1,16 +1,16 @@
 """Tests for models in the samplesheets app"""
 
 import os
-from unittest import skipIf
 
-from django.conf import settings
 from django.forms.models import model_to_dict
 from django.utils.timezone import localtime
 
 # Projectroles dependency
 from projectroles.constants import SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
-from taskflowbackend.tests.test_project_views import TestTaskflowBase
+
+# Taskflowbackend dependency
+from taskflowbackend.tests.base import TaskflowbackendTestBase
 
 from samplesheets.models import (
     IRODS_DATA_REQUEST_STATUS_CHOICES,
@@ -31,12 +31,6 @@ PROJECT_TYPE_CATEGORY = SODAR_CONSTANTS['PROJECT_TYPE_CATEGORY']
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 
 # Local constants
-BACKENDS_ENABLED = all(
-    _ in settings.ENABLED_BACKEND_PLUGINS for _ in ['omics_irods', 'taskflow']
-)
-BACKEND_SKIP_MSG = (
-    'Required backends (taskflow, omics_irods) ' 'not enabled in settings'
-)
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
 TEST_FILE_NAME = 'test1'
 TEST_COLL_NAME = 'coll1'
@@ -45,7 +39,7 @@ TEST_COLL_NAME = 'coll1'
 class TestIrodsDataRequestBase(
     SampleSheetIOMixin,
     SampleSheetTaskflowMixin,
-    TestTaskflowBase,
+    TaskflowbackendTestBase,
 ):
     """Base test class for iRODS delete requests"""
 
@@ -64,9 +58,7 @@ class TestIrodsDataRequestBase(
         )
 
         # Import investigation
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
 
@@ -147,7 +139,6 @@ class TestIrodsDataRequestBase(
         return obj
 
 
-@skipIf(not BACKENDS_ENABLED, BACKEND_SKIP_MSG)
 class TestIrodsDataRequest(TestIrodsDataRequestBase):
     """Tests for the IrodsAccessTicket model"""
 

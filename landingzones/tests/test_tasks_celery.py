@@ -4,18 +4,16 @@ from django.conf import settings
 from django.contrib import auth
 from django.test import RequestFactory
 
-from unittest import skipIf
-
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
 
-# Taskflowbackend dependency
-from taskflowbackend.tests.test_project_views import TestTaskflowBase
-
 # Samplesheets dependency
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 from samplesheets.tests.test_views_taskflow import SampleSheetTaskflowMixin
+
+# Taskflowbackend dependency
+from taskflowbackend.tests.base import TaskflowbackendTestBase
 
 from landingzones.tasks_celery import TriggerZoneMoveTask
 from landingzones.tests.test_models import LandingZoneMixin
@@ -35,10 +33,6 @@ PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 
 # Local constants
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
-TASKFLOW_ENABLED = (
-    True if 'taskflow' in settings.ENABLED_BACKEND_PLUGINS else False
-)
-TASKFLOW_SKIP_MSG = 'Taskflow not enabled in settings'
 ZONE_TITLE = '20190703_172456'
 ZONE_SUFFIX = 'Test Zone'
 ZONE_DESC = 'description'
@@ -47,13 +41,12 @@ ASYNC_WAIT_SECONDS = 5
 ASYNC_RETRY_COUNT = 3
 
 
-@skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
 class TestTriggerZoneMoveTask(
     SampleSheetIOMixin,
     LandingZoneMixin,
     LandingZoneTaskflowMixin,
     SampleSheetTaskflowMixin,
-    TestTaskflowBase,
+    TaskflowbackendTestBase,
 ):
     """Tests for the automated zone move triggering task"""
 
@@ -76,9 +69,7 @@ class TestTriggerZoneMoveTask(
         )
 
         # Import investigation
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
         # Create iRODS collections

@@ -61,12 +61,12 @@ collectstatic:
 
 .PHONY: test
 test: collectstatic
-	$(MANAGE) test -v 2 --settings=config.settings.test_local $(arg)
+	$(MANAGE) test -v 2 --settings=config.settings.test $(arg)
 
 
 .PHONY: test_coverage
 test_coverage: collectstatic
-	coverage run --source="." manage.py test -v 2 --settings=config.settings.test_local
+	coverage run --source="." manage.py test -v 2 --settings=config.settings.test
 	coverage report
 	coverage html
 
