@@ -475,6 +475,33 @@ class ProjectAppPlugin(
                 )
             )
 
+    # Project Modify API Implementation ----------------------------------------
+
+    @classmethod
+    def _update_public_access(cls, project, sample_path, taskflow):
+        """
+        Update project public access.
+
+        :param project: Project object
+        :param sample_path: iRODS sample path (string)
+        :param taskflow: Taskflowbackend API object
+        :raise: Exception if DEBUG==True and a taskflow error is encountered
+        """
+        flow_data = {
+            'access': project.public_guest_access,
+            'path': sample_path,
+        }
+        try:
+            taskflow.submit(
+                project=project,
+                flow_name='public_access_update',
+                flow_data=flow_data,
+            )
+        except Exception as ex:
+            logger.error('Public status update taskflow failed: {}'.format(ex))
+            if settings.DEBUG:
+                raise ex
+
     def perform_project_modify(
         self,
         project,
@@ -527,21 +554,7 @@ class ProjectAppPlugin(
             )
         )
         sample_path = irods_backend.get_sample_path(project)
-        flow_data = {
-            'access': project.public_guest_access,
-            'path': sample_path,
-        }
-        try:
-            taskflow.submit(
-                project=project,
-                flow_name='public_access_update',
-                flow_data=flow_data,
-            )
-        except Exception as ex:
-            logger.error('Public status update taskflow failed: {}'.format(ex))
-            if settings.DEBUG:
-                raise ex
-            return
+        self._update_public_access(project, sample_path, taskflow)
 
         # Create/delete iRODS access ticket for anonymous access if allowed
         if (
@@ -606,6 +619,9 @@ class ProjectAppPlugin(
 
         :param project: Current project object (Project)
         """
+        taskflow = get_backend_api('taskflow')
+        irods_backend = get_backend_api('omics_irods')
+
         # Set up investigation collections
         investigation = Investigation.objects.filter(
             project=project, active=True
@@ -618,13 +634,16 @@ class ProjectAppPlugin(
             self.create_colls(investigation)
 
         # Sync public guest access
+        sample_path = irods_backend.get_sample_path(project)
+        self._update_public_access(project, sample_path, taskflow)
+
+        # Set anonymous access ticket
+        # TODO: Move into taskflow? (see issue #1469)
         ticket_str = app_settings.get_app_setting(
             APP_NAME, 'public_access_ticket', project=project
         )
         if not ticket_str:
             return
-        irods_backend = get_backend_api('omics_irods')
-        sample_path = irods_backend.get_sample_path(project)
         ticket = irods_backend.get_ticket(ticket_str)
         if (
             settings.PROJECTROLES_ALLOW_ANONYMOUS

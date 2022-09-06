@@ -10,7 +10,11 @@ from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import ProjectAppPluginPoint
 
 # Taskflowbackend dependency
-from taskflowbackend.tests.base import TaskflowbackendTestBase
+from taskflowbackend.tests.base import (
+    TaskflowbackendTestBase,
+    IRODS_ACCESS_READ,
+    IRODS_GROUP_PUBLIC,
+)
 
 from samplesheets.tests.test_io import (
     SampleSheetIOMixin,
@@ -85,7 +89,7 @@ class TestPerformProjectModify(
             description='description',
             public_guest_access=False,
         )
-        self.project_path = self.irods_backend.get_sample_path(self.project)
+        self.sample_path = self.irods_backend.get_sample_path(self.project)
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
@@ -101,6 +105,7 @@ class TestPerformProjectModify(
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_grant_public_access_anon(self):
         """Test enabling anonymous guest access to project in iRODS"""
+        self.assert_irods_access(IRODS_GROUP_PUBLIC, self.sample_path, None)
         self.assert_ticket_access(self.project, False)
         self.project.public_guest_access = True
         self.project.save()
@@ -111,10 +116,14 @@ class TestPerformProjectModify(
             old_data={'parent': self.category},
             request=self.request,
         )
+        self.assert_irods_access(
+            IRODS_GROUP_PUBLIC, self.sample_path, IRODS_ACCESS_READ
+        )
         self.assert_ticket_access(self.project, True)
 
     def test_grant_public_access_no_anon(self):
         """Test enabling guest access in iRODS without anon accesss"""
+        self.assert_irods_access(IRODS_GROUP_PUBLIC, self.sample_path, None)
         self.assert_ticket_access(self.project, False)
         self.project.public_guest_access = True
         self.project.save()
@@ -124,6 +133,9 @@ class TestPerformProjectModify(
             project_settings=app_settings.get_all_settings(self.project),
             old_data={'parent': self.category},
             request=self.request,
+        )
+        self.assert_irods_access(
+            IRODS_GROUP_PUBLIC, self.sample_path, IRODS_ACCESS_READ
         )
         # Access should not be granted
         self.assert_ticket_access(self.project, False)
@@ -139,6 +151,9 @@ class TestPerformProjectModify(
             project_settings=app_settings.get_all_settings(self.project),
             old_data={'parent': self.category},
             request=self.request,
+        )
+        self.assert_irods_access(
+            IRODS_GROUP_PUBLIC, self.sample_path, IRODS_ACCESS_READ
         )
         self.assert_ticket_access(self.project, True)
         ticket_str = app_settings.get_app_setting(
@@ -157,6 +172,7 @@ class TestPerformProjectModify(
             },
             request=self.request,
         )
+        self.assert_irods_access(IRODS_GROUP_PUBLIC, self.sample_path, None)
         self.assert_ticket_access(self.project, False, ticket_str)
 
     def test_revoke_anon_access(self):
@@ -172,6 +188,9 @@ class TestPerformProjectModify(
                 old_data={'parent': self.category},
                 request=self.request,
             )
+        self.assert_irods_access(
+            IRODS_GROUP_PUBLIC, self.sample_path, IRODS_ACCESS_READ
+        )
         self.assert_ticket_access(self.project, True)
         ticket_str = app_settings.get_app_setting(
             APP_NAME, 'public_access_ticket', project=self.project
@@ -186,6 +205,9 @@ class TestPerformProjectModify(
                 'settings.samplesheets.public_access_ticket': ticket_str
             },
             request=self.request,
+        )
+        self.assert_irods_access(
+            IRODS_GROUP_PUBLIC, self.sample_path, IRODS_ACCESS_READ
         )
         self.assert_ticket_access(self.project, False, ticket_str)
 
@@ -210,12 +232,12 @@ class TestPerformProjectSync(
             description='description',
             public_guest_access=False,
         )
-        self.project_path = self.irods_backend.get_sample_path(self.project)
+        self.sample_path = self.irods_backend.get_sample_path(self.project)
 
     def test_sync(self):
         """Test perform_project_sync()"""
         self.assertEqual(
-            self.irods_session.collections.exists(self.project_path), False
+            self.irods_session.collections.exists(self.sample_path), False
         )
         self.assertEqual(
             app_settings.get_app_setting(
@@ -225,7 +247,7 @@ class TestPerformProjectSync(
         )
         self.plugin.perform_project_sync(self.project)
         self.assertEqual(
-            self.irods_session.collections.exists(self.project_path), False
+            self.irods_session.collections.exists(self.sample_path), False
         )
         self.assertEqual(
             app_settings.get_app_setting(
@@ -237,7 +259,7 @@ class TestPerformProjectSync(
     def test_sync_colls(self):
         """Test perform_project_sync() with iRODS collections"""
         self.assertEqual(
-            self.irods_session.collections.exists(self.project_path), False
+            self.irods_session.collections.exists(self.sample_path), False
         )
         self.assertEqual(
             app_settings.get_app_setting(
@@ -253,7 +275,7 @@ class TestPerformProjectSync(
         self.plugin.perform_project_sync(self.project)
 
         self.assertEqual(
-            self.irods_session.collections.exists(self.project_path), True
+            self.irods_session.collections.exists(self.sample_path), True
         )
         self.assertEqual(
             app_settings.get_app_setting(
@@ -264,6 +286,8 @@ class TestPerformProjectSync(
 
     def test_sync_public_access(self):
         """Test sync with public access and anon site access disabled"""
+        self.project.public_guest_access = True
+        self.project.save()
         self.assertEqual(
             app_settings.get_app_setting(
                 APP_NAME, 'public_access_ticket', self.project
@@ -276,7 +300,10 @@ class TestPerformProjectSync(
         self.plugin.perform_project_sync(self.project)
 
         self.assertEqual(
-            self.irods_session.collections.exists(self.project_path), True
+            self.irods_session.collections.exists(self.sample_path), True
+        )
+        self.assert_irods_access(
+            IRODS_GROUP_PUBLIC, self.sample_path, IRODS_ACCESS_READ
         )
         self.assertEqual(
             app_settings.get_app_setting(
@@ -302,7 +329,10 @@ class TestPerformProjectSync(
         self.plugin.perform_project_sync(self.project)
 
         self.assertEqual(
-            self.irods_session.collections.exists(self.project_path), True
+            self.irods_session.collections.exists(self.sample_path), True
+        )
+        self.assert_irods_access(
+            IRODS_GROUP_PUBLIC, self.sample_path, IRODS_ACCESS_READ
         )
         ticket_str = app_settings.get_app_setting(
             APP_NAME, 'public_access_ticket', self.project
@@ -323,13 +353,14 @@ class TestPerformProjectSync(
         investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.make_irods_colls(investigation)
         # NOTE: Project.public_guest_access = False
-        ticket_new = self.irods_backend.issue_ticket('read', self.project_path)
+        ticket_new = self.irods_backend.issue_ticket('read', self.sample_path)
         ticket_str = ticket_new.string
         app_settings.set_app_setting(
             APP_NAME, 'public_access_ticket', ticket_str, self.project
         )
         self.plugin.perform_project_sync(self.project)
 
+        self.assert_irods_access(IRODS_GROUP_PUBLIC, self.sample_path, None)
         self.assertEqual(
             app_settings.get_app_setting(
                 APP_NAME, 'public_access_ticket', self.project
