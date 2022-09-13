@@ -107,3 +107,6 @@ pronto==2.5.0  # For OWL conversion
 # Taskflow requirements
 tooz==3.0.0
 taskflow==5.0.0
+
+# THS requirements
+python-keycloak==2.5.0
