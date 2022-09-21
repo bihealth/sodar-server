@@ -685,12 +685,32 @@ class IrodsCollsCreateViewMixin:
                 name=investigation.title,
             )
 
-        flow_data = {'colls': get_sample_colls(investigation)}
+        # NOTE: Getting ticket setting in case of perform_project_sync()
+        ticket_str = app_settings.get_app_setting(
+            APP_NAME, 'public_access_ticket', project
+        )
+        if (
+            not ticket_str
+            and project.public_guest_access
+            and settings.PROJECTROLES_ALLOW_ANONYMOUS
+        ):
+            ticket_str = build_secret(16)
+
+        flow_data = {
+            'colls': get_sample_colls(investigation),
+            'ticket_str': ticket_str,
+        }
         try:
             taskflow.submit(
                 project=project,
                 flow_name='sheet_colls_create',
                 flow_data=flow_data,
+            )
+            app_settings.set_app_setting(
+                APP_NAME,
+                'public_access_ticket',
+                ticket_str,
+                project=project,
             )
         except taskflow.FlowSubmitException as ex:
             if tl_event:
@@ -708,25 +728,6 @@ class IrodsCollsCreateViewMixin:
                 add_alert=True,
                 alert_msg='iRODS collection {}'.format(action),
             )
-
-        # If public guest access and anonymous allowed, add ticket access
-        if project.public_guest_access:
-            irods_backend = get_backend_api('omics_irods')
-            try:
-                ticket = irods_backend.issue_ticket(
-                    'read', irods_backend.get_sample_path(project)
-                )
-                app_settings.set_app_setting(
-                    APP_NAME,
-                    'public_access_ticket',
-                    ticket.ticket,
-                    project=project,
-                )
-            except Exception as ex:
-                logger.error('Ticket issuing failed: {}'.format(ex))
-                if settings.DEBUG:
-                    raise ex
-                return
 
 
 class IrodsRequestModifyMixin:

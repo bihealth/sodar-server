@@ -62,11 +62,12 @@ SAMPLE_ID = '0815-N1'
 class SampleSheetTaskflowMixin:
     """Taskflow helpers for samplesheets tests"""
 
-    def make_irods_colls(self, investigation, request=None):
+    def make_irods_colls(self, investigation, ticket_str=None, request=None):
         """
         Create iRODS collection structure for investigation.
 
         :param investigation: Investigation object
+        :param ticket_str: Access ticket string or None
         :param request: HTTP request object (optional, default=None)
         :raise taskflow.FlowSubmitException if submit fails
         """
@@ -75,7 +76,10 @@ class SampleSheetTaskflowMixin:
         values = {
             'project': project,
             'flow_name': 'sheet_colls_create',
-            'flow_data': {'colls': get_sample_colls(investigation)},
+            'flow_data': {
+                'colls': get_sample_colls(investigation),
+                'ticket_str': ticket_str,
+            },
         }
         self.taskflow.submit(**values)
         investigation.refresh_from_db()

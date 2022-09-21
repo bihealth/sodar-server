@@ -59,8 +59,9 @@ class IrodsBaseTask(BaseTask):
 
 
 class CreateCollectionTask(IrodsBaseTask):
-    """Create collection and its parent collections if they doesn't exist
-    (imkdir)"""
+    """
+    Create collection and its parent collections if they doesn't exist (imkdir)
+    """
 
     def execute(self, path, *args, **kwargs):
         # Create parent collections if they don't exist
@@ -285,8 +286,10 @@ class SetInheritanceTask(IrodsBaseTask):
 
 
 class SetAccessTask(IrodsBaseTask):
-    """Set user/group access to target (ichmod). If the target is a data object
-    (obj_target=True), the recursive argument will be ignored."""
+    """
+    Set user/group access to target (ichmod). If the target is a data object
+    (obj_target=True), the recursive argument will be ignored.
+    """
 
     def execute(
         self,
@@ -357,6 +360,49 @@ class SetAccessTask(IrodsBaseTask):
             )
             recursive = False if obj_target else recursive
             self.irods.permissions.set(acl, recursive=recursive)
+
+
+class IssueTicketTask(IrodsBaseTask):
+    """Create access ticket to a collection if not yet available"""
+
+    def execute(
+        self, access_name, path, ticket_str, irods_backend, *args, **kwargs
+    ):
+        if not irods_backend.get_ticket(ticket_str):
+            try:
+                irods_backend.issue_ticket(access_name, path, ticket_str)
+                self.data_modified = True
+            except Exception as ex:
+                self._raise_irods_exception(ex)
+        super().execute(*args, **kwargs)
+
+    def revert(
+        self, access_name, path, ticket_str, irods_backend, *args, **kwargs
+    ):
+        if self.data_modified:
+            irods_backend.delete_ticket(ticket_str)
+
+
+class DeleteTicketTask(IrodsBaseTask):
+    """Delete access ticket if it exists"""
+
+    def execute(
+        self, access_name, path, ticket_str, irods_backend, *args, **kwargs
+    ):
+        ticket = irods_backend.get_ticket(ticket_str)
+        if ticket:
+            try:
+                irods_backend.delete_ticket(ticket_str)
+                self.data_modified = True
+            except Exception as ex:
+                self._raise_irods_exception(ex)
+        super().execute(*args, **kwargs)
+
+    def revert(
+        self, access_name, path, ticket_str, irods_backend, *args, **kwargs
+    ):
+        if self.data_modified:
+            irods_backend.issue_ticket(access_name, path, ticket_str)
 
 
 class CreateUserTask(IrodsBaseTask):

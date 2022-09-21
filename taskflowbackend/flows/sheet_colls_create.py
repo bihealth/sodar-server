@@ -1,5 +1,7 @@
 import os
 
+from django.conf import settings
+
 # Samplesheets dependency
 from samplesheets import tasks_taskflow as ss_tasks
 
@@ -68,6 +70,26 @@ class Flow(BaseLinearFlow):
                         'access_name': 'read',
                         'path': sample_path,
                         'user_name': PUBLIC_GROUP,
+                    },
+                )
+            )
+        # Create access ticket depending on anonymous accesss
+        if (
+            self.project.public_guest_access
+            and settings.PROJECTROLES_ALLOW_ANONYMOUS
+            and self.flow_data.get('ticket_str')
+        ):
+            self.add_task(
+                irods_tasks.IssueTicketTask(
+                    name='Issue access ticket "{}" for collection'.format(
+                        self.flow_data['ticket_str']
+                    ),
+                    irods=self.irods,
+                    inject={
+                        'access_name': 'read',
+                        'path': sample_path,
+                        'ticket_str': self.flow_data['ticket_str'],
+                        'irods_backend': self.irods_backend,
                     },
                 )
             )

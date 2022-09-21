@@ -478,18 +478,30 @@ class ProjectAppPlugin(
     # Project Modify API Implementation ----------------------------------------
 
     @classmethod
-    def _update_public_access(cls, project, sample_path, taskflow):
+    def _update_public_access(cls, project, taskflow, irods_backend):
         """
         Update project public access.
 
         :param project: Project object
-        :param sample_path: iRODS sample path (string)
         :param taskflow: Taskflowbackend API object
+        :param irods_backend: Irodsbackend API object
         :raise: Exception if DEBUG==True and a taskflow error is encountered
         """
+        sample_path = irods_backend.get_sample_path(project)
+        ticket_str = app_settings.get_app_setting(
+            APP_NAME, 'public_access_ticket', project=project
+        )
+        if (
+            not ticket_str
+            and project.public_guest_access
+            and settings.PROJECTROLES_ALLOW_ANONYMOUS
+        ):
+            ticket_str = build_secret(16)
+
         flow_data = {
             'access': project.public_guest_access,
             'path': sample_path,
+            'ticket_str': ticket_str,
         }
         try:
             taskflow.submit(
@@ -501,6 +513,22 @@ class ProjectAppPlugin(
             logger.error('Public status update taskflow failed: {}'.format(ex))
             if settings.DEBUG:
                 raise ex
+
+        # Update/delete ticket in project settings
+        if (
+            project.public_guest_access
+            and settings.PROJECTROLES_ALLOW_ANONYMOUS
+        ):
+            app_settings.set_app_setting(
+                APP_NAME,
+                'public_access_ticket',
+                ticket_str,
+                project=project,
+            )
+        else:
+            app_settings.delete_setting(
+                APP_NAME, 'public_access_ticket', project=project
+            )
 
     def perform_project_modify(
         self,
@@ -553,59 +581,7 @@ class ProjectAppPlugin(
                 project.title, project.sodar_uuid, project.public_guest_access
             )
         )
-        sample_path = irods_backend.get_sample_path(project)
-        self._update_public_access(project, sample_path, taskflow)
-
-        # Create/delete iRODS access ticket for anonymous access if allowed
-        if (
-            project.public_guest_access
-            and settings.PROJECTROLES_ALLOW_ANONYMOUS
-        ):
-            try:
-                ticket = irods_backend.issue_ticket(
-                    'read', sample_path, ticket_str=build_secret(16)
-                )
-                app_settings.set_app_setting(
-                    APP_NAME,
-                    'public_access_ticket',
-                    ticket.ticket,
-                    project=project,
-                )
-                logger.debug('Ticket issued')
-            except Exception as ex:
-                logger.error('Ticket issuing failed: {}'.format(ex))
-                if settings.DEBUG:
-                    raise ex
-                return
-        else:  # Delete ticket and revoke access
-            ticket_str = None
-            if (
-                project.public_guest_access
-                and not settings.PROJECTROLES_ALLOW_ANONYMOUS
-            ):
-                ticket_str = app_settings.get_app_setting(
-                    APP_NAME, 'public_access_ticket', project=project
-                )
-            elif (
-                not project.public_guest_access
-                and settings.PROJECTROLES_ALLOW_ANONYMOUS
-            ):
-                ticket_str = old_settings.get(
-                    'settings.samplesheets.public_access_ticket'
-                )
-            if ticket_str:
-                try:
-                    irods_backend.delete_ticket(ticket_str)
-                    app_settings.delete_setting(
-                        APP_NAME, 'public_access_ticket', project=project
-                    )
-                    logger.debug('Ticket deleted')
-                except Exception as ex:
-                    logger.error('Ticket deletion failed: {}'.format(ex))
-                    if settings.DEBUG:
-                        raise ex
-                    return
-
+        self._update_public_access(project, taskflow, irods_backend)
         logger.info('Public access status updated')
 
     # NOTE: No reverting from API needed as this always gets called last
@@ -634,33 +610,7 @@ class ProjectAppPlugin(
             self.create_colls(investigation)
 
         # Sync public guest access
-        sample_path = irods_backend.get_sample_path(project)
-        self._update_public_access(project, sample_path, taskflow)
-
-        # Set anonymous access ticket
-        # TODO: Move into taskflow? (see issue #1469)
-        ticket_str = app_settings.get_app_setting(
-            APP_NAME, 'public_access_ticket', project=project
-        )
-        if not ticket_str:
-            return
-        ticket = irods_backend.get_ticket(ticket_str)
-        if (
-            settings.PROJECTROLES_ALLOW_ANONYMOUS
-            and project.public_guest_access
-            and not ticket
-        ):
-            logger.info('Issuing public access ticket..')
-            irods_backend.issue_ticket('read', sample_path, ticket_str)
-        elif (
-            not settings.PROJECTROLES_ALLOW_ANONYMOUS
-            or not project.public_guest_access
-        ) and ticket:
-            logger.info('Deleting public access ticket..')
-            irods_backend.delete_ticket(ticket_str)
-            app_settings.set_app_setting(
-                APP_NAME, 'public_access_ticket', '', project
-            )
+        self._update_public_access(project, taskflow, irods_backend)
 
     def update_cache(self, name=None, project=None, user=None):
         """

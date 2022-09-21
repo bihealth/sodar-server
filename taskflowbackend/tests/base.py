@@ -41,6 +41,7 @@ IRODS_ACCESS_OWN = 'own'
 IRODS_ACCESS_WRITE = 'modify object'
 IRODS_ACCESS_NULL = 'null'
 IRODS_GROUP_PUBLIC = 'public'
+TICKET_STR = 'ei8iomuDoazeiD2z'
 
 
 class TaskflowTestMixin:

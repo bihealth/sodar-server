@@ -6,9 +6,11 @@ from irods.exception import (
     UserDoesNotExist,
     UserGroupDoesNotExist,
 )
+from irods.ticket import Ticket
 from irods.user import iRODSUser, iRODSUserGroup
 
 from django.conf import settings
+from django.test import override_settings
 
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
@@ -52,6 +54,7 @@ from taskflowbackend.tests.base import (
     IRODS_ACCESS_READ,
     IRODS_ACCESS_OWN,
     IRODS_ACCESS_WRITE,
+    TICKET_STR,
 )
 
 
@@ -1046,6 +1049,80 @@ class TestPublicAccessUpdate(
         )
         self.assert_irods_access(PUBLIC_GROUP, self.sample_path, None)
 
+    def test_enable_access_anon(self):
+        """Test enabling public access with anonymous access enabled"""
+        self.make_irods_colls(self.investigation)
+        self.assertEqual(
+            self.irods_session.collections.exists(self.sample_path), True
+        )
+        self.assert_irods_access(
+            self.group_name, self.sample_path, IRODS_ACCESS_READ
+        )
+        self.assert_irods_access(PUBLIC_GROUP, self.sample_path, None)
+        self.assertIsNone(self.irods_backend.get_ticket(TICKET_STR))
+
+        flow_data = {
+            'path': self.sample_path,
+            'access': True,
+            'ticket_str': TICKET_STR,
+        }
+        flow = self.taskflow.get_flow(
+            irods_backend=self.irods_backend,
+            project=self.project,
+            flow_name='public_access_update',
+            flow_data=flow_data,
+        )
+        self.assertEqual(type(flow), PublicAccessUpdateFlow)
+        with override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True):
+            flow.build()
+            flow.run()
+
+        self.assert_irods_access(
+            self.group_name, self.sample_path, IRODS_ACCESS_READ
+        )
+        self.assert_irods_access(
+            PUBLIC_GROUP, self.sample_path, IRODS_ACCESS_READ
+        )
+        self.assertIsInstance(self.irods_backend.get_ticket(TICKET_STR), Ticket)
+
+    @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
+    def test_disable_access_anon(self):
+        """Test disabling public access with anonymous access enabled"""
+        self.project.public_guest_access = True
+        self.project.save()
+        # Create iRODS collections
+        self.make_irods_colls(self.investigation, ticket_str=TICKET_STR)
+        self.assertEqual(
+            self.irods_session.collections.exists(self.sample_path), True
+        )
+        self.assert_irods_access(
+            self.group_name, self.sample_path, IRODS_ACCESS_READ
+        )
+        self.assert_irods_access(
+            PUBLIC_GROUP, self.sample_path, IRODS_ACCESS_READ
+        )
+        self.assertIsInstance(self.irods_backend.get_ticket(TICKET_STR), Ticket)
+
+        flow_data = {
+            'path': self.sample_path,
+            'access': False,
+            'ticket_str': TICKET_STR,
+        }
+        flow = self.taskflow.get_flow(
+            irods_backend=self.irods_backend,
+            project=self.project,
+            flow_name='public_access_update',
+            flow_data=flow_data,
+        )
+        flow.build()
+        flow.run()
+
+        self.assert_irods_access(
+            self.group_name, self.sample_path, IRODS_ACCESS_READ
+        )
+        self.assert_irods_access(PUBLIC_GROUP, self.sample_path, None)
+        self.assertIsNone(self.irods_backend.get_ticket(TICKET_STR))
+
 
 class TestRoleDelete(TaskflowbackendTestBase):
     """Tests for the role_delete flow"""
@@ -1193,6 +1270,40 @@ class TestSheetCollsCreate(
             PUBLIC_GROUP, self.sample_path, IRODS_ACCESS_READ
         )
 
+    @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
+    def test_create_anon(self):
+        """Test creating colls with public guest access and anonymous access"""
+        self.project.public_guest_access = True
+        self.project.save()
+        self.assertEqual(
+            self.irods_session.collections.exists(self.sample_path), False
+        )
+        self.assertIsNone(self.irods_backend.get_ticket(TICKET_STR))
+
+        flow_data = {
+            'colls': [RESULTS_COLL, MISC_FILES_COLL],
+            'ticket_str': TICKET_STR,
+        }
+        flow = self.taskflow.get_flow(
+            irods_backend=self.irods_backend,
+            project=self.project,
+            flow_name='sheet_colls_create',
+            flow_data=flow_data,
+        )
+        flow.build()
+        flow.run()
+
+        self.assertEqual(
+            self.irods_session.collections.exists(self.sample_path), True
+        )
+        self.assert_irods_access(
+            self.group_name, self.sample_path, IRODS_ACCESS_READ
+        )
+        self.assert_irods_access(
+            PUBLIC_GROUP, self.sample_path, IRODS_ACCESS_READ
+        )
+        self.assertIsInstance(self.irods_backend.get_ticket(TICKET_STR), Ticket)
+
     def test_revert(self):
         """Test reverting sheet_colls_create"""
         self.assertEqual(self.investigation.irods_status, False)
@@ -1215,6 +1326,35 @@ class TestSheetCollsCreate(
         self.assertEqual(
             self.irods_session.collections.exists(self.sample_path), False
         )
+
+    @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
+    def test_revert_anon(self):
+        """Test reverting with anonymous access"""
+        self.assertEqual(self.investigation.irods_status, False)
+        self.assertEqual(
+            self.irods_session.collections.exists(self.sample_path), False
+        )
+        self.assertIsNone(self.irods_backend.get_ticket(TICKET_STR))
+
+        flow_data = {
+            'colls': [RESULTS_COLL, MISC_FILES_COLL],
+            'ticket_str': TICKET_STR,
+        }
+        flow = self.taskflow.get_flow(
+            irods_backend=self.irods_backend,
+            project=self.project,
+            flow_name='sheet_colls_create',
+            flow_data=flow_data,
+        )
+        flow.build(force_fail=True)
+        flow.run()
+
+        self.investigation.refresh_from_db()
+        self.assertEqual(self.investigation.irods_status, False)
+        self.assertEqual(
+            self.irods_session.collections.exists(self.sample_path), False
+        )
+        self.assertIsNone(self.irods_backend.get_ticket(TICKET_STR))
 
 
 class TestSheetDelete(
