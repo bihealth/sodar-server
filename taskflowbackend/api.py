@@ -12,9 +12,6 @@ from django.core.exceptions import ImproperlyConfigured
 from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
 
-# Landingzones dependency
-from landingzones.models import LandingZone
-
 from taskflowbackend import flows
 from taskflowbackend.lock_api import ProjectLockAPI
 from taskflowbackend.tasks_celery import submit_flow_task
@@ -131,19 +128,6 @@ class TaskflowAPI:
             flow.build(force_fail)
         except Exception as ex:
             ex_msg = 'Error building flow: {}'.format(ex)
-            # HACK: Fix for building issues with landing zone flows
-            # TODO: Replace with proper implementation (see issue #1466)
-            if async_mode and flow.flow_data.get('zone_uuid'):
-                zone = LandingZone.objects.filter(
-                    sodar_uuid=flow.flow_data['zone_uuid']
-                )
-                # Set zone status
-                zone.set_status(
-                    'NOT CREATED'
-                    if flow.flow_name == 'landing_zone_create'
-                    else 'FAILED',
-                    ex_msg,
-                )
             # Set timeline status
             if tl_event:
                 tl_event.set_status('FAILED', ex_msg)

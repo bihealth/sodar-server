@@ -27,7 +27,7 @@ Changed
 -------
 
 - **General**
-    - Refactor Taskflow functionality for integrated code (#691, #1397, #1469, #1480)
+    - Refactor Taskflow functionality for integrated code (#691, #1397, #1466, #1469, #1480)
     - Use general ``REDIS_URL`` Django setting (#1396)
     - Replace ``get_taskflow_sync_data()`` methods with modify API calls (#1397)
     - Upgrade to django-sodar-core v0.11.0 (#1459)
