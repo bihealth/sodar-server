@@ -72,7 +72,7 @@
 import Vue from 'vue'
 
 const contactRegex = /(.+?)(?:[<[])(.+?)(?=[>\]])/
-const simpleLinkRegex = /([^<>]+)\s<(https?:\/\/[^<>]+)>/
+const simpleLinkRegex = /([^<>\s]+)\s*<(https?:\/\/[^<>]+)>/
 
 export default Vue.extend({
   data () {

@@ -42,6 +42,7 @@ Changed
     - Move Celery tasks into ``tasks_celery`` (#1400)
 - **Samplesheets**
     - Move Celery tasks into ``tasks_celery`` (#1400)
+    - Ignore whitespace in simple link regex (#1474)
 
 Fixed
 -----
