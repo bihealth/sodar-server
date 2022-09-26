@@ -81,7 +81,7 @@ jobs:
       - name: Run Django tests
         run: |
           coverage run --rcfile=.coveragerc manage.py test -v 2 --settings=config.settings.test
-          coverage xml
+          coverage lcov
           coverage report
       - name: Run Vue app tests
         run: make test_samplesheets_vue
@@ -90,9 +90,9 @@ jobs:
         run: flake8 .
       - name: Check Python formatting
         run: make black arg=--check
-      - name: Run Codacy coverage reporter
-        uses: codacy/codacy-coverage-reporter-action@master
+      - name: Report coverage with Coveralls
+        uses: coverallsapp/github-action@master
         with:
-          project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
-          coverage-reports: coverage.xml
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path-to-lcov: './coverage.lcov'
         if: ${{ matrix.python-version == '3.8' }}

@@ -11,6 +11,8 @@ Unreleased
 Added
 -----
 
+- **General**
+    - Coverage reporting with Coveralls (#1471)
 - **Irodsbackend**
     - ``get_zone_path()`` helper (#1399)
     - ``get_user_group_name()`` helper (#1397)
@@ -47,6 +49,7 @@ Fixed
 - **General**
     - Docker build tagging failing for release tags (#1451)
     - URL config entrypoint for nonexistent ``about.html`` (#1481)
+    - Codacy support (#1471)
 - **Landingzones**
     - iRODS file status displayed for zones with unsuitable status (#1401)
 - **Samplesheets**

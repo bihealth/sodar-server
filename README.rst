@@ -4,11 +4,8 @@ SODAR
 .. image:: https://github.com/bihealth/sodar-server/actions/workflows/build.yml/badge.svg
     :target: https://github.com/bihealth/sodar-server/actions/workflows/build.yml
 
-.. image:: https://app.codacy.com/project/badge/Grade/061ef313e0b64bebb46549d6deac0317
-    :target: https://www.codacy.com/gh/bihealth/sodar-server/dashboard
-
-.. image:: https://app.codacy.com/project/badge/Coverage/061ef313e0b64bebb46549d6deac0317
-    :target: https://www.codacy.com/gh/bihealth/sodar-server/dashboard
+.. image:: https://coveralls.io/repos/github/bihealth/sodar-server/badge.svg?branch=main
+    :target: https://coveralls.io/github/bihealth/sodar-server?branch=main
 
 .. image:: https://img.shields.io/badge/License-MIT-green.svg
     :target: https://opensource.org/licenses/MIT
