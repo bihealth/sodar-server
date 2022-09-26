@@ -25,11 +25,6 @@ if settings.ENABLE_SENTRY and not settings.DEBUG:
 
 urlpatterns = [
     url(r'^$', HomeView.as_view(), name='home'),
-    url(
-        r'^about/$',
-        TemplateView.as_view(template_name='pages/about.html'),
-        name='about',
-    ),
     # Django Admin, use {% url 'admin:index' %}
     url(settings.ADMIN_URL, admin.site.urls),
     # Login and logout
