@@ -59,7 +59,7 @@
     </span>
     <!-- Simple links for string columns -->
     <span v-else-if="testSimpleLink()">
-      <a :href="simpleLink[2]" target="_blank">{{ simpleLink[1] }}</a>
+      <a :href="simpleLink[2]" target="_blank">{{ simpleLink[1].trim() }}</a>
     </span>
     <!-- Plain/numeric/empty/undetected value -->
     <span v-else>
@@ -72,7 +72,7 @@
 import Vue from 'vue'
 
 const contactRegex = /(.+?)(?:[<[])(.+?)(?=[>\]])/
-const simpleLinkRegex = /([^<>\s]+)\s*<(https?:\/\/[^<>]+)>/
+const simpleLinkRegex = /([^<>]+)\s*<(https?:\/\/[^<>]+)>/
 
 export default Vue.extend({
   data () {
