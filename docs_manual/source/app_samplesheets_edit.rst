@@ -180,6 +180,11 @@ following syntax: ``id_type:id;id_type:id``
 
     External links cell editing
 
+If configured on the server side for a specific key, the badges will link out to
+the ID on the appropriate external web service. This has to be configured by an
+administrator in the ``SHEETS_EXTERNAL_LINK_LABELS`` variable. For more
+information, see :ref:`admin_settings`.
+
 
 Row Editing
 ===========

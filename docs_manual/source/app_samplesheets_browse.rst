@@ -113,7 +113,8 @@ HPO Terms
     displayed in the cell for users.
 External Links
     The "external links" columns are a special case where key-value pairs are
-    displayed as badges.
+    displayed as badges. If configured on the server side for a specific key,
+    the badges will link out to the ID on the appropriate service.
 Simple Links
     Generic text cells may also contain arbitrary hyperlinks which can target
     either internal or external resources.

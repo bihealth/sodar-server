@@ -1433,6 +1433,10 @@ div.sodar-ss-data-hover {
   width: 26px !important; /* Quick HACK for uniform button size */
 }
 
+a.sodar-ss-data-ext-link {
+  color: #ffffff;
+}
+
 /* Common editor styles */
 
 .sodar-ss-data-cell-popup {

@@ -16,6 +16,7 @@ Release for integrating SODAR Taskflow with SODAR.
 - Add Taskflowbackend app from SODAR Core
 - Add Taskflow functionality from SODAR Taskflow v0.6.2
 - Implement SODAR Core v0.11 project modify API
+- Add hyperlink support for "external links" sample sheet columns
 
 
 v0.11.3 (2022-07-20)

@@ -21,6 +21,7 @@ Added
     - ``LandingZone.can_display_files()`` helper (#1401)
 - **Samplesheets**
     - Statistics badge in iRODS dir modal (#1434)
+    - External links column hyperlink support (#1475, #1476)
 - **Taskflowbackend**
     - Add app from SODAR Core (#691)
     - Add Taskflow functionality from SODAR Taskflow (#691, #1464)

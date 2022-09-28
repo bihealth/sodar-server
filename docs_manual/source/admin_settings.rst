@@ -172,7 +172,11 @@ Sample Sheets Settings
     Skip URL template modification if substring is found in the ``accession``
     attribute (list).
 ``SHEETS_EXTERNAL_LINK_LABELS``
-    Labels for external link columns (dict).
+    Labels for external link columns (dict). Each item the dict should contain
+    an ID descriptor such as ``x-generic-remote`` as its key. The item should
+    contain a ``label`` parameter containing a display-friendly description of
+    the ID. If linking out to an external resource is needed, add a ``url``
+    parameter containing a URL pattern in form of ``https://example.com/{id}``.
 ``SHEETS_SYNC_INTERVAL``
     Interval for remote sheet synchronization in minutes (integer).
 

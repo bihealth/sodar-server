@@ -38,8 +38,12 @@
       <span v-for="(idRef, index) in renderData.extIds"
             class="badge-group"
             :key="index"
-            :title="idRef.key">
-        <span class="badge badge-secondary">ID</span><span class="badge badge-info">{{ idRef.id }}</span>
+            :title="idRef.label">
+        <span class="badge badge-secondary">ID</span>
+        <span v-if="idRef.url" class="badge badge-info">
+          <a :href="idRef.url" target="_blank" class="sodar-ss-data-ext-link">{{ idRef.id }}</a>
+        </span>
+        <span v-else class="badge badge-info">{{ idRef.id }}</span>
       </span>
     </span>
     <!-- File link -->
@@ -73,6 +77,7 @@ import Vue from 'vue'
 
 const contactRegex = /(.+?)(?:[<[])(.+?)(?=[>\]])/
 const simpleLinkRegex = /([^<>]+)\s*<(https?:\/\/[^<>]+)>/
+const extLinkId = '{id}'
 
 export default Vue.extend({
   data () {
@@ -133,9 +138,19 @@ export default Vue.extend({
         const extId = this.value.value[i]
         const splitId = extId.split(':')
         if (splitId.length > 1 && splitId[1] != null) {
-          let key = splitId[0]
-          if (key in linkLabels) key = linkLabels[key]
-          ret.push({ key: key, id: splitId[1] })
+          const key = splitId[0]
+          let label = key
+          let url = null
+          if (key in linkLabels) {
+            label = linkLabels[key].label
+            if ('url' in linkLabels[key] &&
+                linkLabels[key].url !== null &&
+                linkLabels[key].url.includes(extLinkId)) {
+              url = linkLabels[key].url.replace(
+                extLinkId, encodeURIComponent(splitId[1]))
+            }
+          }
+          ret.push({ label: label, id: splitId[1], url: url })
         }
       }
       return { extIds: ret }
