@@ -51,7 +51,7 @@ Fixed
 - **General**
     - Docker build tagging failing for release tags (#1451)
     - URL config entrypoint for nonexistent ``about.html`` (#1481)
-    - Codacy support (#1471)
+    - Postgres role errors in CI (#1465)
 - **Landingzones**
     - iRODS file status displayed for zones with unsuitable status (#1401)
 - **Samplesheets**
@@ -65,6 +65,7 @@ Removed
     - ``get_taskflow_sync_data()`` methods (#1397)
     - GitLab CI support (#1168)
     - ``test_local`` settings file (#1395)
+    - Codacy support (#1471)
 - **Samplesheets**
     - Taskflow API views (#691, #1397)
 
