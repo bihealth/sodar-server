@@ -1435,6 +1435,11 @@ div.sodar-ss-data-hover {
 
 a.sodar-ss-data-ext-link {
   color: #ffffff;
+  text-decoration: underline;
+}
+
+a.sodar-ss-data-ext-link:hover {
+  text-decoration: none;
 }
 
 /* Common editor styles */

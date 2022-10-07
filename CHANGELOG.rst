@@ -22,6 +22,9 @@ Added
 - **Samplesheets**
     - Statistics badge in iRODS dir modal (#1434)
     - External links column hyperlink support (#1475, #1476)
+    - ``SHEETS_EXTERNAL_LINK_PATH`` Django setting (#1477)
+    - ``get_ext_link_labels()`` helper (#1477)
+    - ``samplesheets/config`` directory for config files (#1477)
 - **Taskflowbackend**
     - Add app from SODAR Core (#691)
     - Add Taskflow functionality from SODAR Taskflow (#691, #1464)
@@ -44,6 +47,8 @@ Changed
 - **Samplesheets**
     - Move Celery tasks into ``tasks_celery`` (#1400)
     - Ignore whitespace in simple link regex (#1474)
+    - Read external link labels from JSON file (#1477)
+    - Do not provide ``external_link_labels`` to UI without investigation
 
 Fixed
 -----
@@ -68,6 +73,8 @@ Removed
     - Codacy support (#1471)
 - **Samplesheets**
     - Taskflow API views (#691, #1397)
+    - BIH specific hardcoded external link labels (#1477)
+    - ``SHEETS_EXTERNAL_LINK_LABELS`` Django setting (#1477)
 
 
 v0.11.3 (2022-07-20)

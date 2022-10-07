@@ -8,6 +8,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 
+import json
 import os
 import re
 
@@ -757,8 +758,14 @@ SHEETS_ONTOLOGY_URL_SKIP = env.list(
     'SHEETS_ONTOLOGY_URL_SKIP', default=['bioontology.org']
 )
 
-# Labels for external link columns
-SHEETS_EXTERNAL_LINK_LABELS = env.dict('', default=DEFAULT_EXTERNAL_LINK_LABELS)
+# Labels and URL patterns for external link columns
+# Provide custom labels via a JSON file via SHEETS_EXTERNAL_LINK_PATH.
+# Each entry should have a "label" and an optional "url".
+# The URL should be a pattern containing "{id}" for the ID.
+SHEETS_EXTERNAL_LINK_PATH = env.str(
+    'SHEETS_EXTERNAL_LINK_PATH',
+    os.path.join(ROOT_DIR, 'samplesheets/config/ext_links.json'),
+)
 
 # HACK: Supported cubi-tk templates, excluding ones which altamISA cannot parse
 SHEETS_ENABLED_TEMPLATES = [

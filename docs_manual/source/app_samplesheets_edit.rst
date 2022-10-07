@@ -182,8 +182,9 @@ following syntax: ``id_type:id;id_type:id``
 
 If configured on the server side for a specific key, the badges will link out to
 the ID on the appropriate external web service. This has to be configured by an
-administrator in the ``SHEETS_EXTERNAL_LINK_LABELS`` variable. For more
-information, see :ref:`admin_settings`.
+administrator in a JSON file accessed via a path set in the
+``SHEETS_EXTERNAL_LINK_PATH`` variable. For more information, see
+:ref:`admin_settings`.
 
 
 Row Editing

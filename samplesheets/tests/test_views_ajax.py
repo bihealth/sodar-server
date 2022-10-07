@@ -46,7 +46,7 @@ from samplesheets.tests.test_views import (
     CONFIG_DATA_DEFAULT,
     SHEET_PATH_SMALL2_ALT,
 )
-from samplesheets.utils import get_node_obj
+from samplesheets.utils import get_node_obj, get_ext_link_labels
 from samplesheets.views import SheetImportMixin
 from samplesheets.views_ajax import ALERT_ACTIVE_REQS
 
@@ -185,14 +185,13 @@ class TestContextAjaxView(TestViewsBase):
         super().setUp()
         self.maxDiff = None
         self.irods_backend = get_backend_api('omics_irods')
-
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
 
     def test_get(self):
-        """Test GET for context retrieval with example sheet"""
+        """Test GET for context retrieval with sample sheets"""
         with self.login(self.user):
             response = self.client.get(
                 reverse(
@@ -200,23 +199,22 @@ class TestContextAjaxView(TestViewsBase):
                     kwargs={'project': self.project.sodar_uuid},
                 )
             )
-
         self.assertEqual(response.status_code, 200)
+
         response_data = json.loads(response.data)
         response_data.pop('csrf_token')  # HACK
-
         expected = {
             'configuration': self.investigation.get_configuration(),
             'inv_file_name': self.investigation.file_name.split('/')[-1],
             'irods_status': False,
-            'parser_version': self.investigation.parser_version,
             'irods_backend_enabled': True if self.irods_backend else False,
+            'parser_version': self.investigation.parser_version,
             'parser_warnings': True
             if self.investigation.parser_warnings
             else False,
             'irods_webdav_enabled': settings.IRODS_WEBDAV_ENABLED,
             'irods_webdav_url': settings.IRODS_WEBDAV_URL,
-            'external_link_labels': settings.SHEETS_EXTERNAL_LINK_LABELS,
+            'external_link_labels': get_ext_link_labels(),
             'table_height': settings.SHEETS_TABLE_HEIGHT,
             'min_col_width': settings.SHEETS_MIN_COLUMN_WIDTH,
             'max_col_width': settings.SHEETS_MAX_COLUMN_WIDTH,
@@ -291,6 +289,59 @@ class TestContextAjaxView(TestViewsBase):
                 'sample_count': self.investigation.get_material_count('SAMPLE'),
                 'data_count': self.investigation.get_material_count('DATA'),
             },
+        }
+        self.assertEqual(response_data, expected)
+
+    def test_get_no_sheets(self):
+        """Test GET for context retrieval without sample sheets"""
+        self.investigation.active = False
+        self.investigation.save()
+
+        with self.login(self.user):
+            response = self.client.get(
+                reverse(
+                    'samplesheets:ajax_context',
+                    kwargs={'project': self.project.sodar_uuid},
+                )
+            )
+        self.assertEqual(response.status_code, 200)
+
+        response_data = json.loads(response.data)
+        response_data.pop('csrf_token')  # HACK
+        expected = {
+            'configuration': None,
+            'inv_file_name': None,
+            'irods_status': None,
+            'irods_backend_enabled': True if self.irods_backend else False,
+            'parser_version': None,
+            'parser_warnings': False,
+            'irods_webdav_enabled': settings.IRODS_WEBDAV_ENABLED,
+            'irods_webdav_url': settings.IRODS_WEBDAV_URL,
+            'external_link_labels': None,
+            'table_height': settings.SHEETS_TABLE_HEIGHT,
+            'min_col_width': settings.SHEETS_MIN_COLUMN_WIDTH,
+            'max_col_width': settings.SHEETS_MAX_COLUMN_WIDTH,
+            'allow_editing': app_settings.get_default_setting(
+                APP_NAME, 'allow_editing'
+            ),
+            'sheet_sync_enabled': app_settings.get_default_setting(
+                APP_NAME, 'sheet_sync_enable'
+            ),
+            'alerts': [],
+            'investigation': {},
+            'user_uuid': str(self.user.sodar_uuid),
+            'studies': {},
+            'perms': {
+                'edit_sheet': True,
+                'manage_sheet': True,
+                'create_colls': True,
+                'export_sheet': True,
+                'delete_sheet': True,
+                'view_versions': True,
+                'edit_config': True,
+                'is_superuser': True,
+            },
+            'sheet_stats': {},
         }
         self.assertEqual(response_data, expected)
 

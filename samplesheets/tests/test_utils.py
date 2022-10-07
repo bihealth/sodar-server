@@ -12,6 +12,7 @@ from projectroles.models import Role, SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
 from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
 
+from samplesheets.constants import DEFAULT_EXTERNAL_LINK_LABELS
 from samplesheets.models import GenericMaterial, Process
 from samplesheets.rendering import SampleSheetTableBuilder
 from samplesheets.utils import (
@@ -21,6 +22,7 @@ from samplesheets.utils import (
     get_last_material_name,
     compare_inv_replace,
     get_webdav_url,
+    get_ext_link_labels,
 )
 from samplesheets.tests.test_io import (
     SampleSheetIOMixin,
@@ -45,6 +47,7 @@ CONFIG_PROTOCOL_UUIDS = [
     '22222222-2222-2222-bbbb-000000000000',
 ]
 IRODS_TICKET_STR = 'ooChaa1t'
+EXT_LINK_PATH_INVALID = '/tmp/NON_EXISTING_EXT_LINK_FILE.json'
 
 
 class TestUtilsBase(
@@ -264,3 +267,27 @@ class TestGetWebdavUrl(TestUtilsBase):
     def test_webdav_disabled(self):
         """Test get_webdav_url() with disabled WebDAV"""
         self.assertIsNone(get_webdav_url(self.project, self.user_owner))
+
+
+class TestGetExtLinkLabels(TestUtilsBase):
+    """Tests for get_ext_link_labels()"""
+
+    def test_get(self):
+        """Test retrieving labels from default test JSON file"""
+        labels = get_ext_link_labels()
+        expected = {
+            'x-generic-remote': {'label': 'External ID'},
+            'x-sodar-example': {'label': 'Example ID', 'url': None},
+            'x-sodar-example-link': {
+                'label': 'Example ID with hyperlink',
+                'url': 'https://example.com/{id}',
+            },
+        }
+        self.assertEqual(labels, expected)
+        self.assertNotEqual(labels, DEFAULT_EXTERNAL_LINK_LABELS)
+
+    @override_settings(SHEETS_EXTERNAL_LINK_PATH=EXT_LINK_PATH_INVALID)
+    def test_get_default(self):
+        """Test retrievint default labels"""
+        labels = get_ext_link_labels()
+        self.assertEqual(labels, DEFAULT_EXTERNAL_LINK_LABELS)

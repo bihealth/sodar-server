@@ -113,3 +113,6 @@ static-local
 # Icons
 */static/iconify/*.json
 */static/iconify/json/*.json
+
+# Samplesheets configuration file directory
+samplesheets/config/*.json

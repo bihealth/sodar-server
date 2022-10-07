@@ -1,5 +1,7 @@
 """Utilities for the samplesheets app"""
 
+import json
+import os
 import random
 import re
 import string
@@ -15,6 +17,8 @@ from django.urls import reverse
 from projectroles.app_settings import AppSettingAPI
 from projectroles.models import Project
 from projectroles.plugins import get_backend_api
+
+from samplesheets.constants import DEFAULT_EXTERNAL_LINK_LABELS
 
 
 # Local constants
@@ -387,3 +391,17 @@ def get_webdav_url(project, user):
         return settings.IRODS_WEBDAV_URL_ANON_TMPL.format(
             user=settings.IRODS_WEBDAV_USER_ANON, ticket=ticket, path=''
         )
+
+
+def get_ext_link_labels():
+    """
+    Return external link labels and URLs. Retrieve from config file set in
+    SHEETS_EXTERNAL_LINK_PATH or default values.
+
+    :return: Dict
+    """
+    ext_path = settings.SHEETS_EXTERNAL_LINK_PATH
+    if ext_path and os.path.exists(ext_path):
+        with open(ext_path, 'r') as f:
+            return json.load(f)
+    return DEFAULT_EXTERNAL_LINK_LABELS

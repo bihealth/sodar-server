@@ -1,10 +1,10 @@
 """Ajax API views for the samplesheets app"""
 
 import json
-from datetime import datetime as dt
-from packaging import version
 
 from altamisa.constants import table_headers as th
+from datetime import datetime as dt
+from packaging import version
 
 from django.conf import settings
 from django.db import transaction
@@ -43,6 +43,7 @@ from samplesheets.utils import (
     get_unique_name,
     get_node_obj,
     get_webdav_url,
+    get_ext_link_labels,
 )
 from samplesheets.views import (
     IrodsRequestModifyMixin,
@@ -300,12 +301,12 @@ class SheetContextAjaxView(EditConfigMixin, SODARBaseProjectAjaxView):
             'configuration': None,
             'inv_file_name': None,
             'irods_status': None,
-            'irods_backend_enabled': (True if irods_backend else False),
+            'irods_backend_enabled': True if irods_backend else False,
             'parser_version': None,
             'parser_warnings': False,
             'irods_webdav_enabled': settings.IRODS_WEBDAV_ENABLED,
             'irods_webdav_url': get_webdav_url(project, request.user),
-            'external_link_labels': settings.SHEETS_EXTERNAL_LINK_LABELS,
+            'external_link_labels': None,
             'table_height': settings.SHEETS_TABLE_HEIGHT,
             'min_col_width': settings.SHEETS_MIN_COLUMN_WIDTH,
             'max_col_width': settings.SHEETS_MAX_COLUMN_WIDTH,
@@ -324,6 +325,7 @@ class SheetContextAjaxView(EditConfigMixin, SODARBaseProjectAjaxView):
         }
 
         if inv:
+            ret_data.update({'external_link_labels': get_ext_link_labels()})
             inv_data = {
                 'configuration': inv.get_configuration(),
                 'inv_file_name': inv.file_name.split('/')[-1],
