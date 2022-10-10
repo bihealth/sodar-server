@@ -1,0 +1,6 @@
+{# Place extended login view content into this template #}
+<div class="col-md-4 mx-auto mt-5">
+  <div class="alert alert-info">
+    Extended login view content goes here.
+  </div>
+</div>
