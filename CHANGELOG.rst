@@ -40,6 +40,7 @@ Changed
     - Upgrade general Python dependencies (#1453)
     - Upgrade minimum PostgreSQL version to v11 (bihealth/sodar-core#303)
     - Enable all tests in GitHub Actions CI (#1168)
+    - Replace hardcoded include templates with examples (#1462)
 - **Irodsbackend**
     - Disable iRODS environment debug logging (#1455)
 - **Landingzones**
@@ -71,6 +72,7 @@ Removed
     - GitLab CI support (#1168)
     - ``test_local`` settings file (#1395)
     - Codacy support (#1471)
+    - Legacy docs URL in ``urls.py`` (#1489)
 - **Samplesheets**
     - Taskflow API views (#691, #1397)
     - BIH specific hardcoded external link labels (#1477)

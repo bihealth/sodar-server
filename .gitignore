@@ -114,5 +114,8 @@ static-local
 */static/iconify/*.json
 */static/iconify/json/*.json
 
+# Site template include directory
+sodar/templates/include/*.html
+
 # Samplesheets configuration file directory
 samplesheets/config/*.json

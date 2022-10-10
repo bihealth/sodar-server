@@ -130,6 +130,7 @@ Table of Contents
     admin_ontologyaccess
     admin_commands
     admin_settings
+    admin_custom
 
 .. toctree::
     :maxdepth: 1
