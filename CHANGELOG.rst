@@ -15,6 +15,7 @@ Added
     - Coverage reporting with Coveralls (#1471)
     - ``_login_extend.html`` example (#1462)
     - Overview video link in docs and ``README`` (#1452)
+    - Sentry JS include for production (#1393)
 - **Irodsbackend**
     - ``get_zone_path()`` helper (#1399)
     - ``get_user_group_name()`` helper (#1397)
