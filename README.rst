@@ -27,6 +27,10 @@ The main features of SODAR:
 - Validation of file uploads
 - Various tools for aiding in data management
 
+See the
+`SODAR Overview video on YouTube <https://www.youtube.com/watch?v=LQ8foUpjnqs>`_
+for an introduction to the system and its features.
+
 Getting Started
 ---------------
 

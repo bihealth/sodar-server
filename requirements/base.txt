@@ -43,6 +43,7 @@ docutils==0.17.1
 Sphinx==5.1.1
 django-docs==0.3.1
 sphinx-rtd-theme==1.0.0
+sphinxcontrib-youtube==1.2.0
 
 #####################
 # SODAR Core imports
