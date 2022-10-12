@@ -53,20 +53,14 @@ management software.
 
 Django apps provided by SODAR:
 
-``samplesheets``
-    Modeling of study metadata in the ISA-Tab format
-``landingzones``
-    Management of file validation and uploads into iRODS
-``irodsadmin``
-    iRODS data administration helpers
-``irodsbackend``
-    Backend app for iRODS queries and operations
-``irodsinfo``
-    Display iRODS server information and create user configurations
-``Ontologyaccess``
-    Parse, store and serve ontologies for local lookup
-``Taskflowbackend``
-    Run iRODS transactions with full rollback for project and file operations
+- **Samplesheets**: Modeling of study metadata in the ISA-Tab format
+- **Landingzones**: Management of file validation and uploads into iRODS
+- **Irodsadmin**: iRODS data administration helpers
+- **Irodsbackend**: Backend app for iRODS queries and operations
+- **Irodsinfo**: Display iRODS server information and create user configurations
+- **Ontologyaccess**: Parse, store and serve ontologies for local lookup
+- **Taskflowbackend**: Run iRODS transactions with full rollback for project and
+  file operations
 
 The project is built on the `SODAR Core <https://github.com/bihealth/sodar-core>`_
 framework, which provides the base functionalities for project management, user
