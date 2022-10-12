@@ -30,12 +30,13 @@ These commands originate in SODAR Core. More information can be found in the
     Synchronize the SODAR Cache.
 ``syncgroups``
     Synchronize user groups.
+``syncmodifyapi``
+    Submit missing project metadata to iRODS. Generally should only be used in
+    development.
 ``syncremote``
     Synchronize project and user data from a remote site if remote project sync
     is enabled.
-``synctaskflow``
-    Submit missing project metadata to iRODS. Generally should only be used in
-    development.
+
 
 SODAR Commands
 ==============

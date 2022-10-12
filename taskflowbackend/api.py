@@ -35,12 +35,6 @@ class TaskflowAPI:
     class FlowSubmitException(Exception):
         """SODAR Taskflow submission exception"""
 
-    def __init__(self):
-        self.taskflow_url = '{}:{}'.format(
-            getattr(settings, 'TASKFLOW_BACKEND_HOST', ''),
-            getattr(settings, 'TASKFLOW_BACKEND_PORT', ''),
-        )
-
     @classmethod
     def get_flow(
         cls,

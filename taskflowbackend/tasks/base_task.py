@@ -17,7 +17,6 @@ class BaseTask(task.Task):
     ):
         super().__init__(name, inject=inject)
         self.name = name
-        self.target = None  # TODO: Set this when inheriting task
         self.force_fail = force_fail
         self.verbose = verbose
         self.data_modified = False

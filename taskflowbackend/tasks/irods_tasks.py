@@ -42,7 +42,6 @@ class IrodsBaseTask(BaseTask):
         super().__init__(
             name, force_fail=force_fail, inject=inject, *args, **kwargs
         )
-        self.target = 'irods'
         self.name = '<iRODS> {} ({})'.format(name, self.__class__.__name__)
         self.irods = kwargs['irods']
 

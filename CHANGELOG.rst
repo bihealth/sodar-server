@@ -102,7 +102,7 @@ Changed
 
 - **General**
     - Upgrade to django-sodar-core v0.10.13 (#1391, #1406, #1418)
-    - Upgrade to black v22.3.0 (sodar_core#972)
+    - Upgrade to black v22.3.0 (bihealth/sodar-core#972)
     - Default ``BASICAUTH_REALM`` message (#1410)
     - Add ``LocalAuthAPIView`` URL to ``SECURE_REDIRECT_EXEMPT`` (#1411)
     - Rename default iRODS zone into ``sodarZone`` (#1417)
@@ -218,10 +218,10 @@ Changed
 -------
 
 - **General**
-    - Upgrade minimum Python version to v3.8, add v3.10 support (sodar_core#885)
+    - Upgrade minimum Python version to v3.8, add v3.10 support (bihealth/sodar-core#885)
     - Upgrade to django-sodar-core v0.10.8 (#1337)
-    - Upgrade Python dependencies (#673, #1337, #1348, sodar_core#884, sodar_core#901, sodar_core#902)
-    - Upgrade to Chromedriver v97 (sodar_core#905)
+    - Upgrade Python dependencies (#673, #1337, #1348, bihealth/sodar-core#884, bihealth/sodar-core#901, bihealth/sodar-core#902)
+    - Upgrade to Chromedriver v97 (bihealth/sodar-core#905)
 - **Samplesheets**
     - Upgrade Vue app dependencies (#1330)
 
@@ -244,7 +244,7 @@ Added
 
 - **General**
     - Siteinfo app in default ``LOGGING_APPS`` value (#1219)
-    - ``LOGGING_LEVEL`` setting (sodar_core#822)
+    - ``LOGGING_LEVEL`` setting (bihealth/sodar-core#822)
     - ``PROJECTROLES_EMAIL_HEADER`` and ``PROJECTROLES_EMAIL_FOOTER`` settings (#1231)
     - Codacy coverage reporting (#1169)
 - **Irodsbackend**
@@ -287,7 +287,7 @@ Changed
 - **General**
     - Upgrade to django-sodar-core v0.10.7 (#1217, #1220, #1243, #1272, #1332)
     - Upgrade to python-irodsclient v1.0.0 (#1223)
-    - Upgrade to Chromedriver v96 (sodar_core#772, #1254, sodar_core#847, sodar_core#852)
+    - Upgrade to Chromedriver v96 (bihealth/sodar-core#772, #1254, bihealth/sodar-core#847, bihealth/sodar-core#852)
     - Upgrade to Node v12
     - Improve production logging (#1257)
     - Upgrade to django-webpack-loader v1.4.1 (#1198)
@@ -298,7 +298,7 @@ Changed
     - Enable setting ``SECURE_REDIRECT_EXEMPT`` in env vars (#1331)
 - **Irodsbackend**
     - Retrieve iRODS config from ``IRODS_ENV_BACKEND`` setting (#1221)
-    - Use data attributes in templates (sodar_core#530)
+    - Use data attributes in templates (bihealth/sodar-core#530)
     - Rename ``data_objects`` to ``irods_data`` in return data (#1156)
     - Get default iRODS environment values from default env (#1260)
 - **Irodsinfo**
@@ -343,7 +343,7 @@ Fixed
 - **General**
     - API version settings not updated (#1218)
     - Disable cache as workaround for Docker build issues (#1225)
-    - Github Actions CI failure by old package version (sodar_core#821)
+    - Github Actions CI failure by old package version (bihealth/sodar-core#821)
     - Build warning in ``docs_dev`` (#1182)
 - **Irodsadmin**
     - Missing cleanup in command test ``tearDown()`` (#1244)
@@ -482,7 +482,7 @@ Changed
     - Upgrade to Python v3.8 and Django v3.2 (#1113)
     - Update project icons (#1113, #1125, #1154)
     - Unify ISA-Tab naming (#1082)
-    - Upgrade to Chromedriver v90 (sodar_core#731)
+    - Upgrade to Chromedriver v90 (bihealth/sodar-core#731)
     - Upgrade to altamISA v0.2.9 (#1099, #1106)
     - Upgrade versioneer
     - Upgrade general python dependencies (#1112)
@@ -690,7 +690,7 @@ Changed
 - **General**
     - Upgrade to django-sodar-core v0.8.3-WIP
     - Move ISAtab export functionality to ``SampleSheetISAExportMixin`` (#849)
-    - Upgrade to Chromedriver v85 (sodar_core#569)
+    - Upgrade to Chromedriver v85 (bihealth/sodar-core#569)
 - **Irodsbackend**
     - Improve connection error logging
 - **Irodsinfo**
@@ -733,7 +733,7 @@ Removed
 -------
 
 - **General**
-    - Unused ``Pillow`` dependency (sodar_core#575)
+    - Unused ``Pillow`` dependency (bihealth/sodar-core#575)
 
 
 v0.7.1 (2020-04-27)
@@ -795,7 +795,7 @@ Fixed
     - Crashes caused by sheet config not correctly updated on sheet replace (#829)
     - Sample sheet version saved for unsuccessful replace (#838)
     - Editor select box padding for Firefox and Chrome (#726)
-    - CSS issue with ``sodar-list-btn`` and Chrome (#844, sodar_core#529)
+    - CSS issue with ``sodar-list-btn`` and Chrome (#844, bihealth/sodar-core#529)
 
 Removed
 -------
@@ -989,7 +989,7 @@ Changed
     - Include backend Javascript and CSS as implemented in django-sodar-core v0.7.0 (#533)
     - Upgrade to Chromedriver v77
 - **Samplesheets**
-    - Color potentially dangerous links (sodar_core#64)
+    - Color potentially dangerous links (bihealth/sodar-core#64)
     - Refactor sheet cell data access and sorting (#597)
     - Upgrade Vue.js app dependencies (#580)
     - Update ISAtab importing to support altamISA v0.2+ (#617)
@@ -1015,7 +1015,7 @@ Fixed
 -----
 
 - **General**
-    - Missing .venv ignore in Flake8 config (sodar_core#300)
+    - Missing .venv ignore in Flake8 config (bihealth/sodar-core#300)
     - Installation document omissions (#606)
     - Columns with integer and float values sorted lexicographically (#596)
 - **Samplesheets**
@@ -1073,7 +1073,7 @@ Changed
     - Update ``setup.py`` (#551)
 - **Samplesheets**
     - Update project iRODS cache when replacing sheets (#554)
-    - Use ``delete_cache()`` in ``TaskflowSheetDeleteAPIView`` (sodar_core#257)
+    - Use ``delete_cache()`` in ``TaskflowSheetDeleteAPIView`` (bihealth/sodar-core#257)
     - Upgrade to CUBI altamISA parser v0.1 (#527)
     - Update ISAtab importing for altamISA v0.1 (#527)
     - Update models for altamISA v0.1 (#527)
@@ -1163,10 +1163,10 @@ Changed
     - Always return JSON from API views (#457)
     - Update title and description in plugin
     - Rename ``get_subdir()`` into ``get_sub_path()`` (#495)
-    - Disable loading backend javascript for each page (#532, sodar_core#261)
+    - Disable loading backend javascript for each page (#532, bihealth/sodar-core#261)
 - **Landingzones**
     - Use ``get_info_link()`` for zone descriptions (#501)
-    - Temporarily load ``irodsbackend.js`` by a manual include (#532, sodar_core#261)
+    - Temporarily load ``irodsbackend.js`` by a manual include (#532, bihealth/sodar-core#261)
 - **Samplesheets**
     - Update and refactor server side rendering for client-side sheet UI (#426)
     - URL patterns for ``samplesheets:project_sheet`` updated for Vue.js routes (#426)
@@ -1179,7 +1179,7 @@ Changed
     - Do not display shortcuts in cancer study app for mass spectrometry assays (workaround for #482)
     - Move ``get_material_count()`` from views into Investigation model
     - Disable sheet replacing if active landing zones exist in the project (#525)
-    - Temporarily load ``irodsbackend.js`` by a manual include in details card (#532, sodar_core#261)
+    - Temporarily load ``irodsbackend.js`` by a manual include in details card (#532, bihealth/sodar-core#261)
     - Move TSV table generation into ``utils.write_csv_table()`` (#523)
 
 Fixed
@@ -1225,7 +1225,7 @@ Changed
 
 - **General**
     - Upgrade site to django-sodar-core v0.5.1 (#480)
-    - Upgrade to ChromeDriver v74 (sodar_core#221)
+    - Upgrade to ChromeDriver v74 (bihealth/sodar-core#221)
 - **Samplesheets**
     - Identify studies in investigation replacing by identifier instead of title (#483)
 
@@ -1315,13 +1315,13 @@ Fixed
     - General iRODS button status only updated once per page load (#429)
     - Performance issues in iRODS stats querying with large data (#432)
     - iRDOS buttons not disabled if iRODS collections not created (#445)
-    - ISAtab upload wiget error not displayed without Bootstrap 4 workarounds (sodar_core#164)
+    - ISAtab upload wiget error not displayed without Bootstrap 4 workarounds (bihealth/sodar-core#164)
 
 Removed
 -------
 
 - **General**
-    - Old Bootstrap 4 workarounds for django-crispy-forms (sodar_core#157)
+    - Old Bootstrap 4 workarounds for django-crispy-forms (bihealth/sodar-core#157)
 - **Samplesheets**
     - iRODS wait icon from study apps and assay tables (#430)
 
@@ -1350,23 +1350,23 @@ Changed
 -------
 
 - **General**
-    - Upgrade minimum Python version requirement to 3.6 (sodar_core#102)
-    - Update and cleanup Gitlab-CI setup (sodar_core#85)
+    - Upgrade minimum Python version requirement to 3.6 (bihealth/sodar-core#102)
+    - Update and cleanup Gitlab-CI setup (bihealth/sodar-core#85)
     - Update Chrome Driver for UI tests
     - Cleanup Chrome setup
-    - Update ``login.html`` override to add site messages (sodar_core#105)
-    - Update site dependency utilities to match django-sodar-core v0.4.1+ (sodar_core#90)
+    - Update ``login.html`` override to add site messages (bihealth/sodar-core#105)
+    - Update site dependency utilities to match django-sodar-core v0.4.1+ (bihealth/sodar-core#90)
     - Upgrade to django-sodar-core v0.4.3
     - Upgrade dependencies to match django-sodar-core v0.4.2+ (#420)
-    - Disable ``USE_I18N`` (sodar_core#117)
+    - Disable ``USE_I18N`` (bihealth/sodar-core#117)
     - Changed ``CONTRIBUTORS.txt`` into ``AUTHORS.rst``
 - **Irodsbackend**
     - Refactor Ajax API views (#416)
     - Limit the amount of iRODS queries (#414)
 - **Landingzones**
-    - Rename Taskflow specific API views (sodar_core#104)
+    - Rename Taskflow specific API views (bihealth/sodar-core#104)
 - **Samplesheets**
-    - Rename Taskflow specific API views (sodar_core#104)
+    - Rename Taskflow specific API views (bihealth/sodar-core#104)
     - Only allow superuser or project owner to delete sheet with iRODS data (#424)
 
 Fixed
@@ -1374,7 +1374,7 @@ Fixed
 
 - **General**
     - Login URL was not set to ``sodar/users/login.html``
-    - Django docs references (sodar_core#131)
+    - Django docs references (bihealth/sodar-core#131)
     - ``ProjectAccessMixin.get_project()`` calls
 - **Samplesheets**
     - DataTables scrolling issue with Bootstrap 4.2.1 (#421)
@@ -1387,12 +1387,12 @@ Removed
     - Unused templates in ``sodar/pages``
     - Unused URL mapping to ``about.html``
     - Local JS/CSS includes for JQuery, Bootstrap and other JS helpers (#379, #420)
-    - Legacy Python2 ``super()`` calls (sodar_core#118)
-    - Redundant ``is_superuser`` predicates from rules (sodar_core#138)
+    - Legacy Python2 ``super()`` calls (bihealth/sodar-core#118)
+    - Redundant ``is_superuser`` predicates from rules (bihealth/sodar-core#138)
 - **Irodsbackend**
     - Unused module ``admin.py``
 - **Samplesheets**
-    - Unused dropup app buttons mode in templates (sodar_core#108)
+    - Unused dropup app buttons mode in templates (bihealth/sodar-core#108)
 
 
 v0.4.1 (2018-12-19)
@@ -1402,7 +1402,7 @@ Added
 -----
 
 - **General**
-    - ``TASKFLOW_TEST_MODE`` setting for test iRODS server support (sodar_core#67)
+    - ``TASKFLOW_TEST_MODE`` setting for test iRODS server support (bihealth/sodar-core#67)
     - Missing LDAP dev setup script (#385)
 - **Irodsbackend**
     - Project UUID parsing support for ``get_uuid_from_path()``
@@ -1413,7 +1413,7 @@ Changed
 - **General**
     - Update list button and dropdown classes (#381)
     - Upgrade to django-sodar-core v0.4.0
-    - Use ``TASKFLOW_SODAR_SECRET`` for securing Taskflow API views (sodar_core#46)
+    - Use ``TASKFLOW_SODAR_SECRET`` for securing Taskflow API views (bihealth/sodar-core#46)
 - **Filesfolders**
     - Import app from django-sodar-core v0.4.0 (#403)
 - **Landingzones**
@@ -1432,7 +1432,7 @@ Fixed
 -----
 
 - **General**
-    - Potential inheritance issues in test classes (sodar_core#74)
+    - Potential inheritance issues in test classes (bihealth/sodar-core#74)
 - **Irodsbackend**
     - ``TypeError`` in ``get_path()`` not correctly raised with invalid object class name (#404)
     - iRODS connections not properly cleaned up in Ajax API views (#413)

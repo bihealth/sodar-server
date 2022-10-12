@@ -219,8 +219,6 @@ repository are described here.
     Version of the SODAR server. Should be the latest release tag (e.g.
     ``0.11.3-0``) or the latest development version ``dev-0``. For production it
     is strongly recommended to use the latest tagged release.
-``SODAR_TASKFLOW_VERSION``
-    Version of SODAR Taskflow to be used. This will be removed in SODAR v0.12.0.
 ``IRODS_VERSION``
     Version of the CUBI
     `irods-docker <https://github.com/bihealth/irods-docker>`_ image to use.

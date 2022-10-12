@@ -40,8 +40,10 @@
       {% if server_info %}
         <dl class="row">
           <dt class="col-md-2">Status</dt>
-          <dd class="col-md-10 {% if server_info.server_ok %}text-success{% else %}text-danger{% endif %}">
-            {{ server_info.server_status }}
+          <dd class="col-md-10">
+            <span class="badge badge-pill badge-{% if server_info.server_ok %}success{% else %}danger{% endif %}">
+              {{ server_info.server_status }}
+            </span>
           </dd>
           <dt class="col-md-2">Host</dt>
           <dd class="col-md-10">{{ server_info.server_host }}</dd>

@@ -369,8 +369,10 @@ class SampleDataFileExistsAPIView(SODARAPIBaseMixin, APIView):
 
 # TODO: Temporary HACK, should be replaced by proper API view
 class RemoteSheetGetAPIView(APIView):
-    """Temporary API view for retrieving the sample sheet as JSON by a target
-    site, either as rendered tables or the original ISA-Tab"""
+    """
+    Temporary API view for retrieving the sample sheet as JSON by a target
+    site, either as rendered tables or the original ISA-Tab.
+    """
 
     permission_classes = (AllowAny,)  # We check the secret in get()/post()
 
