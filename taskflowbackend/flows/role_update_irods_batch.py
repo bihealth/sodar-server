@@ -3,10 +3,7 @@ from taskflowbackend.tasks import irods_tasks
 
 
 class Flow(BaseLinearFlow):
-    """
-    Flow for batch updating user roles in iRODS.
-    NOTE: Will NOT update roles in SODAR!
-    """
+    """Flow for batch updating user roles in iRODS"""
 
     def validate(self):
         self.require_lock = False  # Project lock not required for this flow
