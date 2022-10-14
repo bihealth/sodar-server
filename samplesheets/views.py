@@ -437,7 +437,7 @@ class SheetImportMixin:
             and investigation.irods_status
             and settings.SHEETS_ENABLE_CACHE
         ):
-            from samplesheets.tasks import update_project_cache_task
+            from samplesheets.tasks_celery import update_project_cache_task
 
             update_project_cache_task.delay(
                 project_uuid=str(project.sodar_uuid),
@@ -652,13 +652,14 @@ class SheetCreateImportAccessMixin:
 class IrodsCollsCreateViewMixin:
     """Mixin to be used in iRODS collections creation UI / API views"""
 
-    def _create_colls(self, investigation):
+    def create_colls(self, investigation, request=None):
         """
         Handle iRODS collection creation via Taskflow.
 
         NOTE: Unlike many other Taskflow operations, this action is synchronous.
 
         :param investigation: Investigation object
+        :param request: HTTPRequest object or None
         :raise: taskflow.FlowSubmitException if taskflow submit fails
         """
         timeline = get_backend_api('timeline_backend')
@@ -672,7 +673,7 @@ class IrodsCollsCreateViewMixin:
             tl_event = timeline.add_event(
                 project=project,
                 app_name=APP_NAME,
-                user=self.request.user,
+                user=request.user if request else None,
                 event_name='sheet_colls_' + action,
                 description=action + ' irods collection structure for '
                 '{investigation}',
@@ -684,16 +685,32 @@ class IrodsCollsCreateViewMixin:
                 name=investigation.title,
             )
 
+        # NOTE: Getting ticket setting in case of perform_project_sync()
+        ticket_str = app_settings.get_app_setting(
+            APP_NAME, 'public_access_ticket', project
+        )
+        if (
+            not ticket_str
+            and project.public_guest_access
+            and settings.PROJECTROLES_ALLOW_ANONYMOUS
+        ):
+            ticket_str = build_secret(16)
+
         flow_data = {
             'colls': get_sample_colls(investigation),
-            'public_guest_access': project.public_guest_access,
+            'ticket_str': ticket_str,
         }
         try:
             taskflow.submit(
-                project_uuid=project.sodar_uuid,
+                project=project,
                 flow_name='sheet_colls_create',
                 flow_data=flow_data,
-                request=self.request,
+            )
+            app_settings.set_app_setting(
+                APP_NAME,
+                'public_access_ticket',
+                ticket_str,
+                project=project,
             )
         except taskflow.FlowSubmitException as ex:
             if tl_event:
@@ -703,33 +720,14 @@ class IrodsCollsCreateViewMixin:
             tl_event.set_status('OK')
 
         if settings.SHEETS_ENABLE_CACHE:
-            from samplesheets.tasks import update_project_cache_task
+            from samplesheets.tasks_celery import update_project_cache_task
 
             update_project_cache_task.delay(
                 project_uuid=str(project.sodar_uuid),
-                user_uuid=str(self.request.user.sodar_uuid),
+                user_uuid=str(request.user.sodar_uuid) if request else None,
                 add_alert=True,
                 alert_msg='iRODS collection {}'.format(action),
             )
-
-        # If public guest access and anonymous allowed, add ticket access
-        if project.public_guest_access:
-            irods_backend = get_backend_api('omics_irods')
-            try:
-                ticket = irods_backend.issue_ticket(
-                    'read', irods_backend.get_sample_path(project)
-                )
-                app_settings.set_app_setting(
-                    APP_NAME,
-                    'public_access_ticket',
-                    ticket.ticket,
-                    project=project,
-                )
-            except Exception as ex:
-                logger.error('Ticket issuing failed: {}'.format(ex))
-                if settings.DEBUG:
-                    raise ex
-                return
 
 
 class IrodsRequestModifyMixin:
@@ -972,7 +970,7 @@ class SheetRemoteSyncAPI(SheetImportMixin):
             and investigation.irods_status
             and settings.SHEETS_ENABLE_CACHE
         ):
-            from samplesheets.tasks import update_project_cache_task
+            from samplesheets.tasks_celery import update_project_cache_task
 
             update_project_cache_task(
                 project_uuid=str(project.sodar_uuid),
@@ -1504,10 +1502,9 @@ class SheetDeleteView(
                 tl_event.set_status('SUBMIT')
             try:
                 taskflow.submit(
-                    project_uuid=project.sodar_uuid,
+                    project=project,
                     flow_name='sheet_delete',
                     flow_data={},
-                    request=self.request,
                 )
             except taskflow.FlowSubmitException as ex:
                 if tl_event:
@@ -1562,7 +1559,7 @@ class SheetCacheUpdateView(
     def get(self, request, *args, **kwargs):
         project = self.get_project()
         if settings.SHEETS_ENABLE_CACHE:
-            from samplesheets.tasks import update_project_cache_task
+            from samplesheets.tasks_celery import update_project_cache_task
 
             update_project_cache_task.delay(
                 project_uuid=str(project.sodar_uuid),
@@ -1621,7 +1618,7 @@ class IrodsCollsCreateView(
 
         # Else go on with the creation
         try:
-            self._create_colls(investigation)
+            self.create_colls(investigation, request)
             success_msg = (
                 'Collection structure for sample data '
                 '{}d in iRODS'.format(action)
@@ -2314,20 +2311,17 @@ class IrodsRequestAcceptView(
             )
 
         flow_name = 'data_delete'
-        flow_data = {
-            'paths': [obj.path],
-        }
+        flow_data = {'paths': [obj.path]}
         if obj.is_data_object():
             flow_data['paths'].append(obj.path + '.md5')
 
         try:
             taskflow.submit(
-                project_uuid=project.sodar_uuid,
+                project=project,
                 flow_name=flow_name,
                 flow_data=flow_data,
-                timeline_uuid=tl_event.sodar_uuid,
-                request_mode='sync',
-                request=self.request,
+                tl_event=tl_event,
+                async_mode=False,
             )
             obj.status = 'ACCEPTED'
             obj.save()
@@ -2340,7 +2334,7 @@ class IrodsRequestAcceptView(
 
         # Update cache
         if settings.SHEETS_ENABLE_CACHE:
-            from samplesheets.tasks import update_project_cache_task
+            from samplesheets.tasks_celery import update_project_cache_task
 
             update_project_cache_task.delay(
                 project_uuid=str(project.sodar_uuid),

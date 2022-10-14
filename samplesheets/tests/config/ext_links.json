@@ -1,0 +1,8 @@
+{
+    "x-generic-remote": {"label": "External ID"},
+    "x-sodar-example": {"label": "Example ID", "url": null},
+    "x-sodar-example-link": {
+        "label": "Example ID with hyperlink",
+        "url": "https://example.com/{id}"
+    }
+}

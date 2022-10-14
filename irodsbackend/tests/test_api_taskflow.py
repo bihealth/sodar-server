@@ -2,29 +2,28 @@
 
 import random
 import string
-from unittest import skipIf
+
+from irods.ticket import Ticket
 
 from django.conf import settings
 
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
-from projectroles.tests.test_views_taskflow import (
-    TestTaskflowBase,
-    TASKFLOW_ENABLED,
-    TASKFLOW_SKIP_MSG,
-)
+
+# Landingzones dependency
+from landingzones.tests.test_models import LandingZoneMixin
 
 # Samplesheets dependency
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 from samplesheets.tests.test_views_taskflow import SampleSheetTaskflowMixin
 
-# Landingzones dependency
-from landingzones.tests.test_models import LandingZoneMixin
+# Taskflowbackend dependency
+from taskflowbackend.tests.base import TaskflowbackendTestBase
 
 from irodsbackend.api import IrodsAPI
 
 
-# Global constants
+# SODAR constants
 PROJECT_ROLE_OWNER = SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
 PROJECT_ROLE_DELEGATE = SODAR_CONSTANTS['PROJECT_ROLE_DELEGATE']
 PROJECT_ROLE_CONTRIBUTOR = SODAR_CONSTANTS['PROJECT_ROLE_CONTRIBUTOR']
@@ -39,45 +38,38 @@ IRODS_ZONE = settings.IRODS_ZONE
 SAMPLE_COLL = settings.IRODS_SAMPLE_COLL
 LANDING_ZONE_COLL = settings.IRODS_LANDING_ZONE_COLL
 SERVER_AVAILABLE = 'Available'
-
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
 ZONE_TITLE = '20180503_172456_test_zone'
 ZONE_DESC = 'description'
 TEST_FILE_NAME = 'test1'
 TEST_FILE_NAME2 = 'test2'
+TICKET_STR = 'Ahn1kah9Lai2hies'
 
 
 class TestIrodsBackendAPITaskflow(
     SampleSheetIOMixin,
     LandingZoneMixin,
     SampleSheetTaskflowMixin,
-    TestTaskflowBase,
+    TaskflowbackendTestBase,
 ):
     """Tests for the API in the irodsbackend app with Taskflow and iRODS"""
 
     def setUp(self):
         super().setUp()
-
-        # Init project
         # Make project with owner in Taskflow and Django
-        self.project, self.owner_as = self._make_project_taskflow(
+        self.project, self.owner_as = self.make_project_taskflow(
             title='TestProject',
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
             description='description',
         )
-
         # Import investigation
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
-
         self.irods_backend = IrodsAPI()
 
-    @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_get_info(self):
         """Test get_info()"""
         info = self.irods_backend.get_info()
@@ -89,11 +81,10 @@ class TestIrodsBackendAPITaskflow(
         self.assertEqual(info['server_zone'], IRODS_ZONE)
         self.assertIsNotNone(info['server_version'])
 
-    @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_get_objects(self):
         """Test get_objects() with files in a sample collection"""
         # Create iRODS collections
-        self._make_irods_colls(self.investigation)
+        self.make_irods_colls(self.investigation)
         path = self.irods_backend.get_path(self.assay)
 
         # Create objects
@@ -116,10 +107,9 @@ class TestIrodsBackendAPITaskflow(
         }
         self.assertEqual(obj, expected)
 
-    @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_get_objects_with_colls(self):
         """Test get_objects() with collections included"""
-        self._make_irods_colls(self.investigation)
+        self.make_irods_colls(self.investigation)
         path = self.irods_backend.get_path(self.assay)
         irods = self.irods_backend.get_session()
         irods.data_objects.create(path + '/' + TEST_FILE_NAME)
@@ -148,10 +138,9 @@ class TestIrodsBackendAPITaskflow(
         ]
         self.assertEqual(obj_list['irods_data'], expected)
 
-    @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_get_objects_multi(self):
         """Test get_objects() with multiple search terms"""
-        self._make_irods_colls(self.investigation)
+        self.make_irods_colls(self.investigation)
         path = self.irods_backend.get_path(self.assay)
         irods = self.irods_backend.get_session()
         irods.data_objects.create(path + '/' + TEST_FILE_NAME)
@@ -184,10 +173,9 @@ class TestIrodsBackendAPITaskflow(
         ]
         self.assertEqual(obj_list['irods_data'], expected)
 
-    @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_get_objects_long_query(self):
         """Test get_objects() with a long query"""
-        self._make_irods_colls(self.investigation)
+        self.make_irods_colls(self.investigation)
         path = self.irods_backend.get_path(self.assay)
         irods = self.irods_backend.get_session()
         irods.data_objects.create(path + '/' + TEST_FILE_NAME)
@@ -234,26 +222,23 @@ class TestIrodsBackendAPITaskflow(
         ]
         self.assertEqual(obj_list['irods_data'], expected)
 
-    @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_get_objects_empty_coll(self):
         """Test get_objects() with an empty sample collection"""
-        self._make_irods_colls(self.investigation)
+        self.make_irods_colls(self.investigation)
         path = self.irods_backend.get_path(self.project) + '/' + SAMPLE_COLL
         obj_list = self.irods_backend.get_objects(path)
         self.assertIsNotNone(obj_list)
         self.assertEqual(len(obj_list['irods_data']), 0)
 
-    @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_get_objects_no_coll(self):
         """Test get_objects() with no created collections"""
         path = self.irods_backend.get_path(self.project) + '/' + SAMPLE_COLL
         with self.assertRaises(FileNotFoundError):
             self.irods_backend.get_objects(path)
 
-    @skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
     def test_get_objects_limit(self):
         """Test get_objects() with a limit applied"""
-        self._make_irods_colls(self.investigation)
+        self.make_irods_colls(self.investigation)
         path = self.irods_backend.get_path(self.assay)
         irods = self.irods_backend.get_session()
         irods.data_objects.create(path + '/' + TEST_FILE_NAME)
@@ -263,3 +248,24 @@ class TestIrodsBackendAPITaskflow(
         )
         self.assertIsNotNone(obj_list)
         self.assertEqual(len(obj_list['irods_data']), 1)  # Limited to 1
+
+    def test_issue_ticket(self):
+        """Test issue_ticket()"""
+        self.make_irods_colls(self.investigation)
+        ticket = self.irods_backend.issue_ticket(
+            'read', self.irods_backend.get_sample_path(self.project), TICKET_STR
+        )
+        self.assertEqual(type(ticket), Ticket)
+        self.assertEqual(ticket.string, TICKET_STR)
+
+    def test_get_delete_ticket(self):
+        """Test get_ticket() and delete_ticket()"""
+        self.make_irods_colls(self.investigation)
+        orig_ticket = self.irods_backend.issue_ticket(
+            'read', self.irods_backend.get_sample_path(self.project)
+        )
+        retr_ticket = self.irods_backend.get_ticket(orig_ticket.string)
+        self.assertEqual(type(retr_ticket), Ticket)
+        self.irods_backend.delete_ticket(orig_ticket.string)
+        retr_ticket = self.irods_backend.get_ticket(orig_ticket.string)
+        self.assertIsNone(retr_ticket)

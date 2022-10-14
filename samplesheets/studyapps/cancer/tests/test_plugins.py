@@ -1,7 +1,6 @@
 """Plugin tests for the cancer study app"""
 
 import os
-from unittest import skipIf
 
 from django.conf import settings
 
@@ -27,24 +26,17 @@ PLUGIN_NAME_GERMLINE = 'samplesheets_study_germline'
 PLUGIN_TITLE_GERMLINE = 'Sample Sheets Germline Study Plugin'
 SHEET_DIR = os.path.dirname(__file__) + '/../../tests/isatab/'
 SHEET_PATH = SHEET_DIR + 'i_small2.zip'
-IRODS_BACKEND_ENABLED = (
-    True if 'omics_irods' in settings.ENABLED_BACKEND_PLUGINS else False
-)
-IRODS_BACKEND_SKIP_MSG = 'iRODS backend not enabled in settings'
 
 
-@skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
 class TestCancerPlugins(TestSampleSheetBase):
     """Class for testing the cancer studyapp plugins"""
 
     def setUp(self):
         super().setUp()
-
         # Init admin user
         self.admin_user = self.make_user(settings.PROJECTROLES_DEFAULT_ADMIN)
         self.admin_user.is_staff = True
         self.admin_user.is_superuser = True
-
         # HACK: Set configuration
         self.investigation = self._set_configuration(
             self.investigation, 'bih_cancer'

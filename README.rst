@@ -4,11 +4,8 @@ SODAR
 .. image:: https://github.com/bihealth/sodar-server/actions/workflows/build.yml/badge.svg
     :target: https://github.com/bihealth/sodar-server/actions/workflows/build.yml
 
-.. image:: https://app.codacy.com/project/badge/Grade/061ef313e0b64bebb46549d6deac0317
-    :target: https://www.codacy.com/gh/bihealth/sodar-server/dashboard
-
-.. image:: https://app.codacy.com/project/badge/Coverage/061ef313e0b64bebb46549d6deac0317
-    :target: https://www.codacy.com/gh/bihealth/sodar-server/dashboard
+.. image:: https://coveralls.io/repos/github/bihealth/sodar-server/badge.svg?branch=main
+    :target: https://coveralls.io/github/bihealth/sodar-server?branch=main
 
 .. image:: https://img.shields.io/badge/License-MIT-green.svg
     :target: https://opensource.org/licenses/MIT
@@ -29,6 +26,10 @@ The main features of SODAR:
 - Linking files to metadata
 - Validation of file uploads
 - Various tools for aiding in data management
+
+See the
+`SODAR Overview video on YouTube <https://www.youtube.com/watch?v=LQ8foUpjnqs>`_
+for an introduction to the system and its features.
 
 Getting Started
 ---------------
@@ -58,14 +59,12 @@ Django apps provided by SODAR:
 - **Irodsbackend**: Backend app for iRODS queries and operations
 - **Irodsinfo**: Display iRODS server information and create user configurations
 - **Ontologyaccess**: Parse, store and serve ontologies for local lookup
+- **Taskflowbackend**: Run iRODS transactions with full rollback for project and
+  file operations
 
 The project is built on the `SODAR Core <https://github.com/bihealth/sodar-core>`_
 framework, which provides the base functionalities for project management, user
 interfaces and dynamic app content inclusion.
-
-SODAR uses the external
-`SODAR Taskflow <https://github.com/bihealth/sodar-taskflow>`_
-service for managing large scale data transactions in the iRODS system.
 
 **Note:** The project and documentation may refer to practices, services or data
 specific to research work at Berlin Institute of Health, Core Unit

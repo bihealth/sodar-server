@@ -60,5 +60,5 @@ Hints for testing the Sample Sheets Vue.js app can be found below.
     * ``wrapper.find('#id').vm.$emit('input')``
 - Beware of using ``.not`` in your tests
     * If used on e.g. an attribute of an element, this may return ``true`` even
-      ff the element itself does not exist at all!
+      if the element itself does not exist at all!
     * Better to check for the exact value of the attribute/property instead.

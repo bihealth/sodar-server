@@ -8,6 +8,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 
+import json
 import os
 import re
 
@@ -76,7 +77,6 @@ THIRD_PARTY_APPS = [
     'tokens.apps.TokensConfig',
     'appalerts.apps.AppalertsConfig',
     # Backend apps
-    'taskflowbackend.apps.TaskflowbackendConfig',
     'sodarcache.apps.SodarcacheConfig',
 ]
 
@@ -89,6 +89,7 @@ LOCAL_APPS = [
     'landingzones.apps.LandingzonesConfig',
     # Backend apps
     'irodsbackend.apps.IrodsbackendConfig',
+    'taskflowbackend.apps.TaskflowbackendConfig',
     # General site apps
     'siteinfo.apps.SiteinfoConfig',
     'irodsinfo.apps.IrodsinfoConfig',
@@ -161,6 +162,9 @@ DATABASES['default']['ATOMIC_REQUESTS'] = False
 
 # Set default auto field (for Django 3.2+)
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
+
+# Default Redis server URL
+REDIS_URL = env.str('REDIS_URL', 'redis://localhost:6379/0')
 
 # GENERAL CONFIGURATION
 # ------------------------------------------------------------------------------
@@ -306,7 +310,7 @@ if USE_TZ:
     # http://docs.celeryproject.org/en/latest/userguide/configuration.html#std:setting-timezone
     CELERY_TIMEZONE = TIME_ZONE
 # http://docs.celeryproject.org/en/latest/userguide/configuration.html#std:setting-broker_url
-CELERY_BROKER_URL = env.str('CELERY_BROKER_URL', 'redis://localhost:6379/0')
+CELERY_BROKER_URL = env.str('CELERY_BROKER_URL', REDIS_URL)
 # http://docs.celeryproject.org/en/latest/userguide/configuration.html#std:setting-result_backend
 CELERY_RESULT_BACKEND = CELERY_BROKER_URL
 # http://docs.celeryproject.org/en/latest/userguide/configuration.html#std:setting-accept_content
@@ -319,6 +323,11 @@ CELERY_RESULT_SERIALIZER = 'json'
 CELERYD_TASK_TIME_LIMIT = 5 * 60
 # http://docs.celeryproject.org/en/latest/userguide/configuration.html#task-soft-time-limit
 CELERYD_TASK_SOFT_TIME_LIMIT = 60
+CELERY_IMPORTS = [
+    'landingzones.tasks_celery',
+    'samplesheets.tasks_celery',
+    'taskflowbackend.tasks_celery',
+]
 
 
 # Django REST framework default auth classes
@@ -577,7 +586,7 @@ SITE_INSTANCE_TITLE = env.str('SITE_INSTANCE_TITLE', 'CUBI SODAR')
 
 
 # General API settings
-SODAR_API_DEFAULT_VERSION = '0.11.3'
+SODAR_API_DEFAULT_VERSION = '0.12.0'
 SODAR_API_ALLOWED_VERSIONS = [
     '0.7.0',
     '0.7.1',
@@ -589,6 +598,7 @@ SODAR_API_ALLOWED_VERSIONS = [
     '0.11.1',
     '0.11.2',
     '0.11.3',
+    '0.12.0',
 ]
 SODAR_API_MEDIA_TYPE = 'application/vnd.bihealth.sodar+json'
 SODAR_API_DEFAULT_HOST = env.url(
@@ -617,6 +627,11 @@ PROJECTROLES_ALLOW_LOCAL_USERS = env.bool(
     'PROJECTROLES_ALLOW_LOCAL_USERS', False
 )
 PROJECTROLES_ALLOW_ANONYMOUS = env.bool('PROJECTROLES_ALLOW_ANONYMOUS', False)
+
+
+PROJECTROLES_ENABLE_MODIFY_API = False
+PROJECTROLES_MODIFY_API_APPS = []
+
 PROJECTROLES_DISABLE_CATEGORIES = env.bool(
     'PROJECTROLES_DISABLE_CATEGORIES', False
 )
@@ -691,12 +706,10 @@ IRODS_CERT_PATH = env.str('IRODS_CERT_PATH', None)
 
 
 # Taskflow backend settings
-TASKFLOW_TARGETS = env.list('TASKFLOW_TARGETS', default=['irods', 'sodar'])
-TASKFLOW_BACKEND_HOST = env.str('TASKFLOW_BACKEND_HOST', 'http://127.0.0.1')
-TASKFLOW_BACKEND_PORT = env.int('TASKFLOW_BACKEND_PORT', 5005)
-TASKFLOW_SODAR_SECRET = env.str('TASKFLOW_SODAR_SECRET', 'CHANGE ME!')
+TASKFLOW_LOCK_RETRY_COUNT = env.int('TASKFLOW_LOCK_RETRY_COUNT', 2)
+TASKFLOW_LOCK_RETRY_INTERVAL = env.int('TASKFLOW_LOCK_RETRY_INTERVAL', 3)
+TASKFLOW_LOCK_ENABLED = True
 TASKFLOW_TEST_MODE = False  # Important to protect iRODS data
-
 
 # Samplesheets and Landingzones link settings
 IRODS_WEBDAV_ENABLED = env.bool('IRODS_WEBDAV_ENABLED', True)
@@ -746,8 +759,14 @@ SHEETS_ONTOLOGY_URL_SKIP = env.list(
     'SHEETS_ONTOLOGY_URL_SKIP', default=['bioontology.org']
 )
 
-# Labels for external link columns
-SHEETS_EXTERNAL_LINK_LABELS = env.dict('', default=DEFAULT_EXTERNAL_LINK_LABELS)
+# Labels and URL patterns for external link columns
+# Provide custom labels via a JSON file via SHEETS_EXTERNAL_LINK_PATH.
+# Each entry should have a "label" and an optional "url".
+# The URL should be a pattern containing "{id}" for the ID.
+SHEETS_EXTERNAL_LINK_PATH = env.str(
+    'SHEETS_EXTERNAL_LINK_PATH',
+    os.path.join(ROOT_DIR, 'samplesheets/config/ext_links.json'),
+)
 
 # HACK: Supported cubi-tk templates, excluding ones which altamISA cannot parse
 SHEETS_ENABLED_TEMPLATES = [

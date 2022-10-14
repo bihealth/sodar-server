@@ -2,11 +2,8 @@
 
 from urllib.parse import urlencode
 
-from django.conf import settings
 from django.test import override_settings
 from django.urls import reverse
-
-from unittest import skipIf
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
@@ -28,10 +25,6 @@ REMOTE_SITE_NAME = 'Test site'
 REMOTE_SITE_URL = 'https://sodar.bihealth.org'
 REMOTE_SITE_SECRET = build_secret()
 INVALID_SECRET = build_secret()
-IRODS_ENABLED = (
-    True if 'omics_irods' in settings.ENABLED_BACKEND_PLUGINS else False
-)
-IRODS_SKIP_MSG = 'Irodsbackend not enabled in settings'
 
 
 class TestSampleSheetsPermissions(
@@ -41,9 +34,7 @@ class TestSampleSheetsPermissions(
 
     def setUp(self):
         super().setUp()
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
         self.ticket = self.make_ticket(
@@ -616,7 +607,6 @@ class TestSampleSheetsPermissions(
         self.project.set_public()
         self.assert_response(url, self.anonymous, 302, method='POST', data=data)
 
-    @skipIf(not IRODS_ENABLED, IRODS_SKIP_MSG)
     def test_ticket_list(self):
         """Test ticket list view"""
         url = reverse(
@@ -635,7 +625,6 @@ class TestSampleSheetsPermissions(
         self.project.set_public()
         self.assert_response(url, bad_users, 302)
 
-    @skipIf(not IRODS_ENABLED, IRODS_SKIP_MSG)
     @override_settings(PROJECTROLES_ALLOW_ANONYMOUS=True)
     def test_ticket_list_anon(self):
         """Test ticket list view with anonymous guest access"""

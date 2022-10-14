@@ -64,6 +64,14 @@ TEMPLATES[0]['OPTIONS']['loaders'] = [
 
 LOGGING_LEVEL = env.str('LOGGING_LEVEL', 'CRITICAL')
 LOGGING = set_logging(LOGGING_LEVEL)
+LOGGING_DISABLE_CMD_OUTPUT = True
+
+
+# Celery settings
+# ------------------------------------------------------------------------------
+
+CELERY_TASK_ALWAYS_EAGER = True
+CELERY_TASK_EAGER_PROPAGATES = True
 
 
 # Local App Settings
@@ -76,22 +84,41 @@ ENABLED_BACKEND_PLUGINS = [
     'appalerts_backend',
     'sodar_cache',
     'ontologyaccess_backend',
-    # 'taskflow',
-    # 'omics_irods',
+    'taskflow',
+    'omics_irods',
 ]
 
 # Projectroles app settings
+PROJECTROLES_ENABLE_MODIFY_API = True
+PROJECTROLES_MODIFY_API_APPS = ['taskflow', 'samplesheets', 'landingzones']
 PROJECTROLES_SEND_EMAIL = True
 PROJECTROLES_SEARCH_PAGINATION = 10  # Workaround for #360
 PROJECTROLES_ALLOW_ANONYMOUS = False
+PROJECTROLES_ALLOW_LOCAL_USERS = True
 
 # Samplesheets app settings
 SHEETS_ENABLE_CACHE = False  # Temporarily disabled to fix CI, see issue #556
+SHEETS_EXTERNAL_LINK_PATH = os.path.join(
+    ROOT_DIR, 'samplesheets/tests/config/ext_links.json'
+)
+
 
 # iRODS settings shared by iRODS using apps
-ENABLE_IRODS = False
+ENABLE_IRODS = True
+IRODS_HOST = '127.0.0.1'
+IRODS_PORT = 4488
 IRODS_WEBDAV_ENABLED = True
 IRODS_SODAR_AUTH = True
+
+# Taskflow backend settings
+TASKFLOW_TEST_MODE = True
+TASKFLOW_TEST_PERMANENT_USERS = [
+    'client_user',
+    'rods',
+    'rodsadmin',
+    'public',
+    'bih_proteomics_smb',
+]
 
 # UI test settings
 PROJECTROLES_TEST_UI_CHROME_OPTIONS = [

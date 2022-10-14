@@ -6,6 +6,11 @@
       :static="true">
     <template slot="modal-header">
       <h5 class="modal-title text-nowrap mr-5">{{ title }}</h5>
+      <span v-if="fileCount > 0"
+            class="badge badge-pill badge-info sodar-ss-irods-stats mr-3 mt-2">
+        {{ fileCount }} file<span v-if="fileCount !== 1">s</span>
+        ({{ fileSize | prettyBytes }})
+      </span>
       <b-input
           id="sodar-ss-irods-filter"
           size="sm"
@@ -100,6 +105,7 @@
 
 <script>
 
+const objListUrl = '/samplesheets/ajax/irods/objects/'
 const issueDeleteRequestUrl = '/samplesheets/ajax/irods/request/create/'
 const cancelDeleteRequestUrl = '/samplesheets/ajax/irods/request/delete/'
 
@@ -117,7 +123,9 @@ export default {
       empty: false,
       message: null,
       dirPath: null,
-      dirPathLength: null
+      dirPathLength: null,
+      fileCount: 0,
+      fileSize: 0
     }
   },
   methods: {
@@ -161,12 +169,14 @@ export default {
       if ('irods_data' in response) {
         if (response.irods_data.length > 0) {
           this.objectList = response.irods_data
+          this.fileCount = response.irods_data.length
 
           for (let i = 0; i < this.objectList.length; i++) {
             this.objectList[i].visibleInList = true
             this.objectList[i].displayPath =
               this.getRelativePath(this.objectList[i].path) +
                 this.objectList[i].name
+            this.fileSize += this.objectList[i].size
           }
         } else {
           this.message = 'Empty collection'
@@ -177,8 +187,8 @@ export default {
       }
     },
     getObjList (path) {
-      const listUrl = '/samplesheets/ajax/irods/objects/' +
-      this.projectUuid + '?path=' + encodeURIComponent(path)
+      const listUrl = objListUrl + this.projectUuid + '?path=' +
+          encodeURIComponent(path)
 
       fetch(listUrl, { credentials: 'same-origin' })
         .then(response => response.json())
@@ -211,7 +221,7 @@ export default {
           .then(response => {
             this.handleDeleteRequestResponse(response, index)
           }).catch(function (error) {
-            this.mesage = 'Error issuing iRODS delete request: ' + error.detail
+            this.message = 'Error issuing iRODS delete request: ' + error.detail
           })
       }
     },
@@ -229,7 +239,7 @@ export default {
         .then(response => {
           this.handleDeleteRequestResponse(response, index)
         }).catch(function (error) {
-          this.mesage = 'Error canceling iRODS delete request: ' + error.detail
+          this.message = 'Error canceling iRODS delete request: ' + error.detail
         })
     },
     showModal (path) {
@@ -241,6 +251,8 @@ export default {
       this.objectList = null
       this.dirPath = path
       this.dirPathLength = this.dirPath.split('/').length
+      this.fileCount = 0
+      this.fileSize = 0
 
       this.getObjList(path)
       modalElement.show()

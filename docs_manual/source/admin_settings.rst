@@ -56,9 +56,7 @@ follows:
     Enable the
     `SODAR Cache <https://sodar-core.readthedocs.io/en/latest/app_sodarcache_usage.html>`_.
 ``taskflow``
-    Enable use of the
-    `SODAR Taskflow <https://github.com/bihealth/sodar-taskflow/>`_ service for
-    iRODS transactions.
+    Provide complex iRODS transactions for project data.
 ``timeline_backend``
     Creation events for the :ref:`project timeline <ui_project_timeline>`.
 
@@ -113,15 +111,12 @@ iRODS Settings
 Taskflow Backend Settings
 -------------------------
 
-``TASKFLOW_BACKEND_HOST``
-    SODAR Taskflow service host (string).
-``TASKFLOW_BACKEND_PORT``
-    SODAR Taskflow service port (integer).
-``TASKFLOW_SODAR_SECRET``
-    Shared secret between SODAR and SODAR Taskflow (string).
-``TASKFLOW_TEST_MODE``
-    Run SODAR Tasflow in test mode. Should always be set false unless running
-    tests in development (boolean).
+``TASKFLOW_LOCK_RETRY_COUNT``
+    Retry count for project lock retrieval for Taskflow operations (int,
+    default: 2)
+``TASKFLOW_LOCK_RETRY_INTERVAL``
+    Retry interval for project lock retrieval for Taskflow operations (int,
+    default: 3)
 
 iRODS WebDAV Settings
 ---------------------
@@ -176,8 +171,14 @@ Sample Sheets Settings
 ``SHEETS_ONTOLOGY_URL_SKIP``
     Skip URL template modification if substring is found in the ``accession``
     attribute (list).
-``SHEETS_EXTERNAL_LINK_LABELS``
-    Labels for external link columns (dict).
+``SHEETS_EXTERNAL_LINK_PATH``
+    Path for JSON file containing labels and other metadata for external link
+    columns (dict, default={PROJECT_ROOT}/samplesheets/config/ext_links.json).
+    Each item the JSON dictionary should contain an ID descriptor such as
+    ``x-generic-remote`` as its key. The item should contain a ``label``
+    parameter containing a display-friendly description of the ID. If linking
+    out to an external resource is needed, add a ``url`` parameter containing a
+    URL pattern in form of ``https://example.com/{id}``.
 ``SHEETS_SYNC_INTERVAL``
     Interval for remote sheet synchronization in minutes (integer).
 
@@ -216,10 +217,8 @@ repository are described here.
 
 ``SODAR_SERVER_VERSION``
     Version of the SODAR server. Should be the latest release tag (e.g.
-    ``0.11.3-0``) or the latest development version ``dev-0``. For production it
+    ``0.12.0-0``) or the latest development version ``dev-0``. For production it
     is strongly recommended to use the latest tagged release.
-``SODAR_TASKFLOW_VERSION``
-    Version of SODAR Taskflow to be used. This will be removed in SODAR v0.12.0.
 ``IRODS_VERSION``
     Version of the CUBI
     `irods-docker <https://github.com/bihealth/irods-docker>`_ image to use.

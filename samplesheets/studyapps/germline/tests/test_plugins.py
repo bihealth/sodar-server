@@ -1,7 +1,5 @@
 """Plugin tests for the the germline study app"""
 
-from unittest import skipIf
-
 from django.conf import settings
 
 # Projectroles dependency
@@ -26,24 +24,17 @@ PLUGIN_NAME_CANCER = 'samplesheets_study_cancer'
 PLUGIN_TITLE_CANCER = 'Sample Sheets Cancer Study Plugin'
 PLUGIN_NAME_GERMLINE = 'samplesheets_study_germline'
 PLUGIN_TITLE_GERMLINE = 'Sample Sheets Germline Study Plugin'
-IRODS_BACKEND_ENABLED = (
-    True if 'omics_irods' in settings.ENABLED_BACKEND_PLUGINS else False
-)
-IRODS_BACKEND_SKIP_MSG = 'iRODS backend not enabled in settings'
 
 
-@skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
 class TestGermlinePlugins(SampleSheetModelMixin, TestRenderingBase):
     """Class for testing the germline studyapp plugins"""
 
     def setUp(self):
         super().setUp()
-
         # Init admin user
         self.admin_user = self.make_user(settings.PROJECTROLES_DEFAULT_ADMIN)
         self.admin_user.is_staff = True
         self.admin_user.is_superuser = True
-
         # HACK: Set configuration
         self.investigation = self._set_configuration(
             self.investigation, 'bih_germline'

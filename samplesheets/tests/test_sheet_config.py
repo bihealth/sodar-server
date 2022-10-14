@@ -161,9 +161,7 @@ class TestSheetConfig(
         )
 
         # Build investigation
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         # Update UUIDs to match JSON file
         self._update_uuids(self.investigation, CONFIG_DATA_DEFAULT)
 
@@ -175,15 +173,15 @@ class TestSheetConfig(
     # TODO: Test fields once we are finished with the notation
     def test_build_sheet_config_batch(self):
         """Test build_sheet_config() in batch"""
-        for zip_name, zip_file in self._get_isatab_files().items():
+        for zip_name, zip_file in self.get_isatab_files().items():
             msg = 'file={}'.format(zip_name)
 
             try:
-                investigation = self._import_isa_from_file(
+                investigation = self.import_isa_from_file(
                     zip_file.path, self.project
                 )
             except Exception as ex:
-                return self._fail_isa(zip_name, ex)
+                return self.fail_isa(zip_name, ex)
 
             sc = conf_api.build_sheet_config(investigation)
             self.assertEqual(
@@ -313,15 +311,15 @@ class TestDisplayConfig(
 
     def test_build_config_batch(self):
         """Test building default display configs for example ISA-Tabs"""
-        for zip_name, zip_file in self._get_isatab_files().items():
+        for zip_name, zip_file in self.get_isatab_files().items():
             msg = 'file={}'.format(zip_name)
 
             try:
-                investigation = self._import_isa_from_file(
+                investigation = self.import_isa_from_file(
                     zip_file.path, self.project
                 )
             except Exception as ex:
-                return self._fail_isa(zip_name, ex)
+                return self.fail_isa(zip_name, ex)
 
             sc = conf_api.build_sheet_config(investigation)
             s_uuid = str(investigation.studies.first().sodar_uuid)

@@ -1,7 +1,5 @@
 """Tests for utility functions in the samplesheets app"""
 
-from unittest import skipIf
-
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from django.test import override_settings
@@ -14,6 +12,7 @@ from projectroles.models import Role, SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
 from projectroles.tests.test_models import ProjectMixin, RoleAssignmentMixin
 
+from samplesheets.constants import DEFAULT_EXTERNAL_LINK_LABELS
 from samplesheets.models import GenericMaterial, Process
 from samplesheets.rendering import SampleSheetTableBuilder
 from samplesheets.utils import (
@@ -23,6 +22,7 @@ from samplesheets.utils import (
     get_last_material_name,
     compare_inv_replace,
     get_webdav_url,
+    get_ext_link_labels,
 )
 from samplesheets.tests.test_io import (
     SampleSheetIOMixin,
@@ -47,10 +47,7 @@ CONFIG_PROTOCOL_UUIDS = [
     '22222222-2222-2222-bbbb-000000000000',
 ]
 IRODS_TICKET_STR = 'ooChaa1t'
-IRODS_BACKEND_ENABLED = (
-    True if 'omics_irods' in settings.ENABLED_BACKEND_PLUGINS else False
-)
-IRODS_BACKEND_SKIP_MSG = 'iRODS backend not enabled in settings'
+EXT_LINK_PATH_INVALID = '/tmp/NON_EXISTING_EXT_LINK_FILE.json'
 
 
 class TestUtilsBase(
@@ -74,12 +71,11 @@ class TestUtilsBase(
         )
 
         # Import investigation
-        self.investigation = self._import_isa_from_file(
+        self.investigation = self.import_isa_from_file(
             SHEET_PATH_SMALL2, self.project
         )
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
-
         self.tb = SampleSheetTableBuilder()
 
 
@@ -98,7 +94,6 @@ class TestGetAltNames(TestUtilsBase):
         )
 
 
-@skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
 class TestGetSampleColls(TestUtilsBase):
     """Tests for get_sample_colls()"""
 
@@ -120,26 +115,26 @@ class TestCompareInvReplace(TestUtilsBase):
 
     def test_inserted_rows(self):
         """Test comparison with inserted rows"""
-        inv1 = self._import_isa_from_file(SHEET_PATH, project=self.project)
-        inv2 = self._import_isa_from_file(
+        inv1 = self.import_isa_from_file(SHEET_PATH, project=self.project)
+        inv2 = self.import_isa_from_file(
             SHEET_PATH_INSERTED, project=self.project
         )
         self.assertTrue(compare_inv_replace(inv1, inv2))
 
     def test_modified_sheet(self):
         """Test comparison with modified studies/assays (should fail)"""
-        inv1 = self._import_isa_from_file(
+        inv1 = self.import_isa_from_file(
             SHEET_PATH_SMALL2, project=self.project
         )
-        inv2 = self._import_isa_from_file(
+        inv2 = self.import_isa_from_file(
             SHEET_PATH_SMALL2_ALT, project=self.project
         )
         self.assertFalse(compare_inv_replace(inv1, inv2))
 
     def test_different_sheet(self):
         """Test comparison with a different sheet (should fail)"""
-        inv1 = self._import_isa_from_file(SHEET_PATH, project=self.project)
-        inv2 = self._import_isa_from_file(
+        inv1 = self.import_isa_from_file(SHEET_PATH, project=self.project)
+        inv2 = self.import_isa_from_file(
             SHEET_PATH_SMALL2, project=self.project
         )
         self.assertFalse(compare_inv_replace(inv1, inv2))
@@ -218,7 +213,6 @@ class TestGetLastMaterialName(TestUtilsBase):
         )
 
 
-@skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
 class TestGetWebdavUrl(TestUtilsBase):
     """Tests for get_webdav_url()"""
 
@@ -273,3 +267,27 @@ class TestGetWebdavUrl(TestUtilsBase):
     def test_webdav_disabled(self):
         """Test get_webdav_url() with disabled WebDAV"""
         self.assertIsNone(get_webdav_url(self.project, self.user_owner))
+
+
+class TestGetExtLinkLabels(TestUtilsBase):
+    """Tests for get_ext_link_labels()"""
+
+    def test_get(self):
+        """Test retrieving labels from default test JSON file"""
+        labels = get_ext_link_labels()
+        expected = {
+            'x-generic-remote': {'label': 'External ID'},
+            'x-sodar-example': {'label': 'Example ID', 'url': None},
+            'x-sodar-example-link': {
+                'label': 'Example ID with hyperlink',
+                'url': 'https://example.com/{id}',
+            },
+        }
+        self.assertEqual(labels, expected)
+        self.assertNotEqual(labels, DEFAULT_EXTERNAL_LINK_LABELS)
+
+    @override_settings(SHEETS_EXTERNAL_LINK_PATH=EXT_LINK_PATH_INVALID)
+    def test_get_default(self):
+        """Test retrievint default labels"""
+        labels = get_ext_link_labels()
+        self.assertEqual(labels, DEFAULT_EXTERNAL_LINK_LABELS)

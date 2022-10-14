@@ -21,7 +21,6 @@ Docker Compose network if e.g. you already have a separate iRODS server running.
     - ``sodar-web``: The SODAR web server for main program logic and UIs.
     - ``sodar-celeryd-default``: Celery daemon for background jobs.
     - ``sodar-celerybeat``: Celery service for periodic tasks.
-    - ``sodar-taskflow``: SODAR transaction engine for iRODS operations.
 - Database Servers
     - ``postgres``: PostgreSQL server for SODAR and iRODS databases.
     - ``redis``: In-memory database for Celery jobs and caching.

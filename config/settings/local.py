@@ -95,3 +95,6 @@ ENABLED_BACKEND_PLUGINS = [
     'omics_irods',
     'sodar_cache',
 ]
+
+PROJECTROLES_ENABLE_MODIFY_API = True
+PROJECTROLES_MODIFY_API_APPS = ['taskflow', 'samplesheets', 'landingzones']

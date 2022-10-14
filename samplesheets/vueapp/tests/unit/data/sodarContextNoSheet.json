@@ -7,9 +7,7 @@
   "parser_warnings": false,
   "irods_webdav_enabled": true,
   "irods_webdav_url": "http://davrods.local",
-  "external_link_labels": {
-    "x-generic-remote": "External ID"
-  },
+  "external_link_labels": null,
   "table_height": 400,
   "min_col_width": 100,
   "max_col_width": 300,

@@ -53,7 +53,8 @@ RUN mkdir -p /usr/src/app/local-static/local/css && \
         https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.bundle.min.js \
         https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.4/js/tether.js \
         https://cdnjs.cloudflare.com/ajax/libs/shepherd/1.8.1/js/shepherd.min.js \
-        https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.0/clipboard.min.js
+        https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.0/clipboard.min.js \
+        https://browser.sentry-cdn.com/7.15.0/bundle.tracing.min.js
 
 # Get icons
 RUN cd /usr/src/app && \

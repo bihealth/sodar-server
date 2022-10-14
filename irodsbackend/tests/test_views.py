@@ -1,7 +1,6 @@
 """Tests for views in the irodsbackend app"""
 
 import base64
-from unittest import skipIf
 
 from irods.test.helpers import make_object
 
@@ -35,10 +34,6 @@ IRODS_NON_PROJECT_PATH = (
     '/' + settings.IRODS_ZONE + '/home/' + settings.IRODS_USER
 )
 IRODS_FAIL_COLL = 'xeiJ1Vie'
-IRODS_BACKEND_ENABLED = (
-    True if 'omics_irods' in settings.ENABLED_BACKEND_PLUGINS else False
-)
-IRODS_BACKEND_SKIP_MSG = 'iRODS backend not enabled in settings'
 LOCAL_USER_NAME = 'local_user'
 LOCAL_USER_PASS = 'password'
 
@@ -48,11 +43,9 @@ class TestViewsBase(ProjectMixin, RoleAssignmentMixin, TestCase):
 
     def setUp(self):
         self.req_factory = RequestFactory()
-
         # Get iRODS backend
         self.irods_backend = get_backend_api('omics_irods')
         self.assertIsNotNone(self.irods_backend)
-
         # Get iRODS session
         self.irods_session = self.irods_backend.get_session()
 
@@ -83,7 +76,6 @@ class TestViewsBase(ProjectMixin, RoleAssignmentMixin, TestCase):
         # Build path for test collection
         self.project_path = self.irods_backend.get_path(self.project)
         self.irods_path = self.project_path + '/' + IRODS_TEMP_COLL
-
         # Create test collection in iRODS
         self.irods_coll = self.irods_session.collections.create(self.irods_path)
 
@@ -94,7 +86,6 @@ class TestViewsBase(ProjectMixin, RoleAssignmentMixin, TestCase):
             )
 
 
-@skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
 class TestIrodsStatisticsAjaxView(TestViewsBase):
     """Tests for the landing zone collection statistics Ajax view"""
 
@@ -194,7 +185,6 @@ class TestIrodsStatisticsAjaxView(TestViewsBase):
         self.assertEqual(response.status_code, 403)
 
 
-@skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
 class TestIrodsObjectListAjaxView(TestViewsBase):
     """Tests for the landing zone data object listing Ajax view"""
 
@@ -342,7 +332,6 @@ class TestIrodsObjectListAjaxView(TestViewsBase):
         self.assertEqual(response.status_code, 403)
 
 
-@skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
 class TestIrodsBatchStatisticsAjaxView(TestViewsBase):
     """Tests for the batch statistics Ajax view"""
 

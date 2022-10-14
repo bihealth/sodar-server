@@ -63,11 +63,6 @@ PROJECT_ROLE_CONTRIBUTOR = SODAR_CONSTANTS['PROJECT_ROLE_CONTRIBUTOR']
 PROJECT_ROLE_GUEST = SODAR_CONSTANTS['PROJECT_ROLE_GUEST']
 PROJECT_TYPE_CATEGORY = SODAR_CONSTANTS['PROJECT_TYPE_CATEGORY']
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
-SUBMIT_STATUS_OK = SODAR_CONSTANTS['SUBMIT_STATUS_OK']
-SUBMIT_STATUS_PENDING = SODAR_CONSTANTS['SUBMIT_STATUS_PENDING']
-SUBMIT_STATUS_PENDING_TASKFLOW = SODAR_CONSTANTS[
-    'SUBMIT_STATUS_PENDING_TASKFLOW'
-]
 
 # Local constants
 APP_NAME = 'samplesheets'
@@ -158,9 +153,7 @@ class TestProjectSheetsView(TestViewsBase):
     def setUp(self):
         super().setUp()
         # Import investigation
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
 
     def test_render_no_sheets(self):
@@ -226,7 +219,7 @@ class TestSheetImportView(SheetImportMixin, LandingZoneMixin, TestViewsBase):
 
     def test_post_replace(self):
         """Test replacing an existing investigation by posting"""
-        inv = self._import_isa_from_file(SHEET_PATH, self.project)
+        inv = self.import_isa_from_file(SHEET_PATH, self.project)
         uuid = inv.sodar_uuid
         app_settings.set_app_setting(
             'samplesheets',
@@ -272,7 +265,7 @@ class TestSheetImportView(SheetImportMixin, LandingZoneMixin, TestViewsBase):
 
     def test_post_replace_config_keep(self):
         """Test keeping configs when replacing"""
-        inv = self._import_isa_from_file(SHEET_PATH, self.project)
+        inv = self.import_isa_from_file(SHEET_PATH, self.project)
         s_uuid = str(inv.studies.first().sodar_uuid)
         # Get and update config
         edited_field = {
@@ -319,7 +312,7 @@ class TestSheetImportView(SheetImportMixin, LandingZoneMixin, TestViewsBase):
 
     def test_post_replace_not_allowed(self):
         """Test replacing an iRODS-enabled investigation with missing data"""
-        inv = self._import_isa_from_file(SHEET_PATH, self.project)
+        inv = self.import_isa_from_file(SHEET_PATH, self.project)
         inv.irods_status = True
         inv.save()
         uuid = inv.sodar_uuid
@@ -343,7 +336,7 @@ class TestSheetImportView(SheetImportMixin, LandingZoneMixin, TestViewsBase):
 
     def test_post_replace_zone(self):
         """Test replacing with existing landing zone"""
-        inv = self._import_isa_from_file(SHEET_PATH, self.project)
+        inv = self.import_isa_from_file(SHEET_PATH, self.project)
         inv.irods_status = True
         inv.save()
         uuid = inv.sodar_uuid
@@ -355,7 +348,7 @@ class TestSheetImportView(SheetImportMixin, LandingZoneMixin, TestViewsBase):
             user=self.user,
         )
         conf_api.get_sheet_config(inv)
-        zone = self._make_landing_zone(
+        zone = self.make_landing_zone(
             'new_zone',
             self.project,
             self.user,
@@ -414,7 +407,7 @@ class TestSheetImportView(SheetImportMixin, LandingZoneMixin, TestViewsBase):
         tl_event = self.timeline.get_project_events(self.project).order_by(
             '-pk'
         )[0]
-        tl_status = tl_event.get_current_status()
+        tl_status = tl_event.get_status()
         self.assertIsNotNone(tl_status.extra_data['warnings'])
 
     @override_settings(SHEETS_ALLOW_CRITICAL=True)
@@ -439,7 +432,7 @@ class TestSheetImportView(SheetImportMixin, LandingZoneMixin, TestViewsBase):
         tl_event = self.timeline.get_project_events(self.project).order_by(
             '-pk'
         )[0]
-        tl_status = tl_event.get_current_status()
+        tl_status = tl_event.get_status()
         self.assertIsNotNone(tl_status.extra_data['warnings'])
 
     def test_post_multiple(self):
@@ -576,7 +569,7 @@ class TestSheetTemplateSelectView(TestViewsBase):
 
     def test_render_with_sheets(self):
         """Test rendering with sheets in project (should fail)"""
-        self._import_isa_from_file(SHEET_PATH, self.project)
+        self.import_isa_from_file(SHEET_PATH, self.project)
         with self.login(self.user):
             response = self.client.get(
                 reverse(
@@ -691,9 +684,7 @@ class TestSheetExcelExportView(TestViewsBase):
     def setUp(self):
         super().setUp()
         # Import investigation
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
         self.timeline = get_backend_api('timeline_backend')
@@ -737,9 +728,7 @@ class TestSheetISAExportView(TestViewsBase):
     def setUp(self):
         super().setUp()
         # Import investigation
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.timeline = get_backend_api('timeline_backend')
 
     def test_get(self):
@@ -760,7 +749,7 @@ class TestSheetISAExportView(TestViewsBase):
         tl_event = self.timeline.get_project_events(
             self.project, classified=True
         ).order_by('-pk')[0]
-        tl_status = tl_event.get_current_status()
+        tl_status = tl_event.get_status()
         self.assertIsNotNone(tl_status.extra_data['warnings'])
 
     def test_get_no_investigation(self):
@@ -806,9 +795,7 @@ class TestSheetDeleteView(TestViewsBase):
     def setUp(self):
         super().setUp()
         # Import investigation
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
 
     def test_render(self):
@@ -891,9 +878,7 @@ class TestSheetVersionListView(TestViewsBase):
 
     def test_render(self):
         """Test rendering the sheet version list view"""
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
 
         with self.login(self.user):
@@ -937,9 +922,7 @@ class TestSheetVersionRestoreView(TestViewsBase):
     def setUp(self):
         super().setUp()
         # Import investigation
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.isatab = ISATab.objects.get(
             investigation_uuid=self.investigation.sodar_uuid
@@ -991,9 +974,7 @@ class TestSheetVersionUpdateView(TestViewsBase):
     def setUp(self):
         super().setUp()
         # Import investigation
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.isatab = ISATab.objects.get(
             investigation_uuid=self.investigation.sodar_uuid
@@ -1038,9 +1019,7 @@ class TestSheetVersionDeleteView(TestViewsBase):
     def setUp(self):
         super().setUp()
         # Import investigation
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.isatab = ISATab.objects.get(
             investigation_uuid=self.investigation.sodar_uuid
@@ -1078,9 +1057,7 @@ class TestSheetVersionDeleteBatchView(SampleSheetModelMixin, TestViewsBase):
     def setUp(self):
         super().setUp()
         # Import investigation
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.isatab = ISATab.objects.get(
             investigation_uuid=self.investigation.sodar_uuid
@@ -1152,9 +1129,7 @@ class TestProjectSearchView(TestViewsBase):
     def setUp(self):
         super().setUp()
         # Import investigation
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.source = self.study.materials.filter(item_type='SOURCE').first()
         self.sample = (
@@ -1257,7 +1232,7 @@ class TestSheetVersionCompareView(TestViewsBase):
 
     def setUp(self):
         super().setUp()
-        self._import_isa_from_file(SHEET_PATH_SMALL2, self.project)
+        self.import_isa_from_file(SHEET_PATH_SMALL2, self.project)
 
         with open(SHEET_PATH_SMALL2_ALT, 'rb') as file, self.login(self.user):
             values = {'file_upload': file}
@@ -1318,7 +1293,7 @@ class TestSheetVersionCompareFileView(TestViewsBase):
 
     def setUp(self):
         super().setUp()
-        self._import_isa_from_file(SHEET_PATH_SMALL2, self.project)
+        self.import_isa_from_file(SHEET_PATH_SMALL2, self.project)
 
         with open(SHEET_PATH_SMALL2_ALT, 'rb') as file, self.login(self.user):
             values = {'file_upload': file}
@@ -1422,7 +1397,7 @@ class TestSheetRemoteSyncBase(
         )
 
         # Import investigation
-        self.inv_source = self._import_isa_from_file(
+        self.inv_source = self.import_isa_from_file(
             SHEET_PATH, self.project_source
         )
 

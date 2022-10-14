@@ -3,6 +3,11 @@
 SODAR Introduction
 ^^^^^^^^^^^^^^^^^^
 
+.. youtube:: LQ8foUpjnqs
+    :align: center
+
+____________________
+
 SODAR stands for the System for Omics Data Access and Retrieval. It is a
 centralized system for providing access to raw data, results, and metadata in
 omics research projects. SODAR is targeted for researchers and project owners

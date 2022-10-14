@@ -62,9 +62,7 @@ class TestInvestigationRetrieveAPIView(TestSampleSheetAPIBase):
         super().setUp()
 
         # Import investigation
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
 
@@ -180,9 +178,7 @@ class TestSheetImportAPIView(
 
     def test_post_replace(self):
         """Test replacing sheets"""
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         app_settings.set_app_setting(
             APP_NAME,
             'sheet_config',
@@ -218,9 +214,7 @@ class TestSheetImportAPIView(
 
     def test_post_replace_display_config_keep(self):
         """Test replacing sheets and ensure user display configs are kept"""
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         sheet_config = conf_api.build_sheet_config(self.investigation)
         app_settings.set_app_setting(
             APP_NAME, 'sheet_config', sheet_config, project=self.project
@@ -275,9 +269,7 @@ class TestSheetImportAPIView(
 
     def test_post_replace_display_config_delete(self):
         """Test replacing sheets and ensure user display configs are deleted"""
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         sheet_config = conf_api.build_sheet_config(self.investigation)
         app_settings.set_app_setting(
             APP_NAME, 'sheet_config', sheet_config, project=self.project
@@ -332,9 +324,7 @@ class TestSheetImportAPIView(
 
     def test_post_replace_alt_sheet(self):
         """Test replacing with an alternative sheet and irods_status=False"""
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         app_settings.set_app_setting(
             APP_NAME,
             'sheet_config',
@@ -365,9 +355,7 @@ class TestSheetImportAPIView(
 
     def test_post_replace_alt_sheet_irods(self):
         """Test replacing with alternative sheet and irods (should fail)"""
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.investigation.irods_status = True  # fake irods status
         self.investigation.save()
 
@@ -394,15 +382,13 @@ class TestSheetImportAPIView(
 
     def test_post_replace_zone(self):
         """Test replacing sheets with exising landing zone"""
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.investigation.irods_status = True
         self.investigation.save()
         assay = Assay.objects.filter(
             study__investigation=self.investigation
         ).first()
-        zone = self._make_landing_zone(
+        zone = self.make_landing_zone(
             'new_zone',
             self.project,
             self.user,
@@ -517,9 +503,7 @@ class TestSheetISAExportAPIView(TestSampleSheetAPIBase):
     def test_get_zip(self):
         """Test zip export in SampleSheetISAExportAPIView"""
         # Import investigation
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         url = reverse(
             'samplesheets:api_export_zip',
             kwargs={'project': self.project.sodar_uuid},
@@ -539,9 +523,7 @@ class TestSheetISAExportAPIView(TestSampleSheetAPIBase):
 
     def test_get_json(self):
         """Test json export  in SampleSheetISAExportAPIView"""
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         url = reverse(
             'samplesheets:api_export_json',
             kwargs={'project': self.project.sodar_uuid},
@@ -591,9 +573,7 @@ class TestRemoteSheetGetAPIView(
         )
 
         # Import investigation
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
 
     def test_get_tables(self):

@@ -79,7 +79,7 @@ class ZoneConfigPluginMixin:
     """Landing zone configuration plugin operations"""
 
     @classmethod
-    def _get_flow_data(cls, zone, flow_name, data):
+    def get_flow_data(cls, zone, flow_name, data):
         """
         Update flow data parameters according to config.
 
@@ -103,13 +103,14 @@ class ZoneConfigPluginMixin:
 class ZoneCreateMixin(ZoneConfigPluginMixin):
     """Mixin to be used in zone creation in UI and REST API views"""
 
-    def _submit_create(self, zone, create_colls=False):
+    def submit_create(self, zone, create_colls=False, request=None):
         """
         Handle timeline updating and taskflow initialization after a LandingZone
         object has been created.
 
         :param zone: LandingZone object
         :param create_colls: Auto-create expected collections (boolean)
+        :param request: HTTPRequest object or None
         :raise: taskflow.FlowSubmitException if taskflow submit fails
         """
         taskflow = get_backend_api('taskflow')
@@ -128,7 +129,7 @@ class ZoneCreateMixin(ZoneConfigPluginMixin):
             tl_event = timeline.add_event(
                 project=project,
                 app_name=APP_NAME,
-                user=self.request.user,
+                user=request.user if request else None,
                 event_name='zone_create',
                 description='create landing zone {{{}}}{} for {{{}}} in '
                 '{{{}}}'.format('zone', config_str, 'user', 'assay'),
@@ -136,9 +137,9 @@ class ZoneCreateMixin(ZoneConfigPluginMixin):
             )
             tl_event.add_object(obj=zone, label='zone', name=zone.title)
             tl_event.add_object(
-                obj=self.request.user,
+                obj=zone.user,
                 label='user',
-                name=self.request.user.username,
+                name=zone.user.username,
             )
             tl_event.add_object(
                 obj=zone.assay, label='assay', name=zone.assay.get_name()
@@ -173,31 +174,21 @@ class ZoneCreateMixin(ZoneConfigPluginMixin):
         logger.debug('Collections to be created: {}'.format(', '.join(colls)))
 
         flow_name = 'landing_zone_create'
-        flow_data = self._get_flow_data(
+        flow_data = self.get_flow_data(
             zone,
             flow_name,
             {
-                'zone_title': zone.title,
-                'zone_uuid': zone.sodar_uuid,
-                'user_name': self.request.user.username,
-                'user_uuid': self.request.user.sodar_uuid,
-                'assay_path': irods_backend.get_sub_path(
-                    zone.assay, landing_zone=True
-                ),
-                'description': zone.description,
-                'zone_config': zone.configuration,
+                'zone_uuid': str(zone.sodar_uuid),
                 'colls': list(set(colls)),
             },
         )
-
         try:
             taskflow.submit(
-                project_uuid=project.sodar_uuid,
+                project=project,
                 flow_name=flow_name,
                 flow_data=flow_data,
-                timeline_uuid=tl_event.sodar_uuid,
-                request_mode='async',
-                request=self.request,
+                async_mode=True,
+                tl_event=tl_event,
             )
         except taskflow.FlowSubmitException as ex:
             if tl_event:
@@ -219,7 +210,6 @@ class ZoneDeleteMixin(ZoneConfigPluginMixin):
         """
         timeline = get_backend_api('timeline_backend')
         taskflow = get_backend_api('taskflow')
-        irods_backend = get_backend_api('omics_irods', conn=False)
         tl_event = None
         project = zone.project
 
@@ -246,28 +236,21 @@ class ZoneDeleteMixin(ZoneConfigPluginMixin):
 
         # Submit with taskflow
         flow_name = 'landing_zone_delete'
-        flow_data = self._get_flow_data(
+        flow_data = self.get_flow_data(
             zone,
             flow_name,
             {
-                'zone_title': zone.title,
-                'zone_uuid': zone.sodar_uuid,
-                'zone_config': zone.configuration,
-                'assay_path': irods_backend.get_sub_path(
-                    zone.assay, landing_zone=True
-                ),
-                'user_name': zone.user.username,
+                'zone_uuid': str(zone.sodar_uuid),
             },
         )
 
         try:
             taskflow.submit(
-                project_uuid=project.sodar_uuid,
+                project=project,
                 flow_name=flow_name,
                 flow_data=flow_data,
-                request=self.request,
-                request_mode='async',
-                timeline_uuid=tl_event.sodar_uuid if tl_event else None,
+                async_mode=True,
+                tl_event=tl_event if tl_event else None,
             )
             self.object = None
 
@@ -296,7 +279,6 @@ class ZoneMoveMixin(ZoneConfigPluginMixin):
         user = request.user if request else zone.user
         timeline = get_backend_api('timeline_backend')
         taskflow = get_backend_api('taskflow')
-        irods_backend = get_backend_api('omics_irods', conn=False)
         project = zone.project
         tl_event = None
         event_name = 'zone_validate' if validate_only else 'zone_move'
@@ -325,21 +307,10 @@ class ZoneMoveMixin(ZoneConfigPluginMixin):
             )
             tl_event.set_status('SUBMIT')
 
-        flow_data = self._get_flow_data(
+        flow_data = self.get_flow_data(
             zone,
             'landing_zone_move',
-            {
-                'zone_title': str(zone.title),
-                'zone_uuid': zone.sodar_uuid,
-                'zone_config': zone.configuration,
-                'assay_path_samples': irods_backend.get_sub_path(
-                    zone.assay, landing_zone=False
-                ),
-                'assay_path_zone': irods_backend.get_sub_path(
-                    zone.assay, landing_zone=True
-                ),
-                'user_name': str(zone.user.username),
-            },
+            {'zone_uuid': str(zone.sodar_uuid)},
         )
 
         if validate_only:
@@ -347,12 +318,11 @@ class ZoneMoveMixin(ZoneConfigPluginMixin):
 
         try:
             taskflow.submit(
-                project_uuid=project.sodar_uuid,
+                project=project,
                 flow_name='landing_zone_move',
                 flow_data=flow_data,
-                request=request,
-                request_mode='async',
-                timeline_uuid=tl_event.sodar_uuid,
+                async_mode=True,
+                tl_event=tl_event,
             )
         except taskflow.FlowSubmitException as ex:
             zone.set_status('FAILED', str(ex))
@@ -470,7 +440,9 @@ class ZoneCreateView(
 
         try:
             # Create timeline event and initialize taskflow
-            self._submit_create(zone, form.cleaned_data.get('create_colls'))
+            self.submit_create(
+                zone, form.cleaned_data.get('create_colls'), self.request
+            )
             config_str = (
                 ' with configuration "{}"'.format(zone.configuration)
                 if zone.configuration
@@ -543,7 +515,6 @@ class ZoneDeleteView(
         redirect_url = reverse(
             'landingzones:list', kwargs={'project': zone.project.sodar_uuid}
         )
-
         if not taskflow:
             messages.error(
                 self.request, 'Taskflow not enabled, unable to modify zone!'
@@ -563,7 +534,6 @@ class ZoneDeleteView(
             )
         except Exception as ex:
             messages.error(self.request, str(ex))
-
         return redirect(redirect_url)
 
 

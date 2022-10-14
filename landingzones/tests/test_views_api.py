@@ -2,8 +2,6 @@
 
 import json
 
-from unittest import skipIf
-
 from django.urls import reverse
 
 # Projectroles dependency
@@ -15,10 +13,6 @@ from projectroles.tests.test_views_api import TestAPIViewsBase
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 
 from landingzones.tests.test_models import LandingZoneMixin
-from landingzones.tests.test_views import (
-    IRODS_BACKEND_ENABLED,
-    IRODS_BACKEND_SKIP_MSG,
-)
 from landingzones.tests.test_views_taskflow import (
     ZONE_TITLE,
     ZONE_DESC,
@@ -40,9 +34,6 @@ ZONE_STATUS_INFO = 'Testing'
 INVALID_UUID = '11111111-1111-1111-1111-111111111111'
 
 
-# Base Views and Classes -------------------------------------------------------
-
-
 class TestLandingZoneAPIViewsBase(
     LandingZoneMixin, SampleSheetIOMixin, TestAPIViewsBase
 ):
@@ -58,14 +49,12 @@ class TestLandingZoneAPIViewsBase(
         )
 
         # Import investigation
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
 
         # Create LandingZone
-        self.landing_zone = self._make_landing_zone(
+        self.landing_zone = self.make_landing_zone(
             title=ZONE_TITLE,
             project=self.project,
             user=self.owner_as.user,
@@ -75,7 +64,6 @@ class TestLandingZoneAPIViewsBase(
         )
 
 
-@skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
 class TestLandingZoneListAPIView(TestLandingZoneAPIViewsBase):
     """Tests for LandingZoneListAPIView"""
 
@@ -123,7 +111,7 @@ class TestLandingZoneListAPIView(TestLandingZoneAPIViewsBase):
 
     def test_get_finished_default(self):
         """Test get() with a finished zone and no finished parameter"""
-        self._make_landing_zone(
+        self.make_landing_zone(
             title=ZONE_TITLE + '_moved',
             project=self.project,
             user=self.owner_as.user,
@@ -144,7 +132,7 @@ class TestLandingZoneListAPIView(TestLandingZoneAPIViewsBase):
 
     def test_get_finished_false(self):
         """Test get() with a finished zone and finished=0"""
-        self._make_landing_zone(
+        self.make_landing_zone(
             title=ZONE_TITLE + '_moved',
             project=self.project,
             user=self.owner_as.user,
@@ -169,7 +157,7 @@ class TestLandingZoneListAPIView(TestLandingZoneAPIViewsBase):
 
     def test_get_finished_true(self):
         """Test get() with a finished zone and finished=1"""
-        self._make_landing_zone(
+        self.make_landing_zone(
             title=ZONE_TITLE + '_moved',
             project=self.project,
             user=self.owner_as.user,
@@ -189,7 +177,6 @@ class TestLandingZoneListAPIView(TestLandingZoneAPIViewsBase):
         self.assertEqual(len(response.data), 2)
 
 
-@skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
 class TestLandingZoneRetrieveAPIView(TestLandingZoneAPIViewsBase):
     """Tests for LandingZoneRetrieveAPIView"""
 

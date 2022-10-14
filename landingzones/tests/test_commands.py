@@ -3,7 +3,7 @@
 import io
 
 from datetime import timedelta
-from unittest import mock, skipIf
+from unittest import mock
 
 from django.conf import settings
 from django.core.management import call_command
@@ -60,7 +60,6 @@ class TestCommandBase(
 
         # Init roles
         self.role_owner = Role.objects.get_or_create(name=PROJECT_ROLE_OWNER)[0]
-
         # Init project with owner
         self.project = self._make_project(
             'TestProject', PROJECT_TYPE_PROJECT, None
@@ -69,14 +68,11 @@ class TestCommandBase(
             self.project, self.user, self.role_owner
         )
 
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
 
 
-@skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
 class TestInactiveZones(TestCommandBase):
     """Tests for the inactivezones command"""
 
@@ -88,9 +84,8 @@ class TestInactiveZones(TestCommandBase):
 
         with mock.patch('django.utils.timezone.now') as mock_now:
             mock_now.return_value = testtime1
-
             # Create landing zone 1 from 3 weeks ago
-            self.zone = self._make_landing_zone(
+            self.zone = self.make_landing_zone(
                 title=ZONE1_TITLE,
                 project=self.project,
                 user=self.as_owner.user,
@@ -100,7 +95,7 @@ class TestInactiveZones(TestCommandBase):
                 config_data={},
             )
             # Create landing zone 3 from 3 weeks ago but status MOVED
-            self.zone3 = self._make_landing_zone(
+            self.zone3 = self.make_landing_zone(
                 title=ZONE3_TITLE,
                 project=self.project,
                 user=self.as_owner.user,
@@ -111,7 +106,7 @@ class TestInactiveZones(TestCommandBase):
                 status='MOVED',
             )
             # Create landing zone 3 from 3 weeks ago but status DELETED
-            self.zone4 = self._make_landing_zone(
+            self.zone4 = self.make_landing_zone(
                 title=ZONE4_TITLE,
                 project=self.project,
                 user=self.as_owner.user,
@@ -123,7 +118,7 @@ class TestInactiveZones(TestCommandBase):
             )
             mock_now.return_value = testtime2
             # Create landing zone 2 from 1 week ago
-            self.zone2 = self._make_landing_zone(
+            self.zone2 = self.make_landing_zone(
                 title=ZONE2_TITLE,
                 project=self.project,
                 user=self.as_owner.user,
@@ -197,7 +192,7 @@ class TestBusyZones(TestCommandBase):
         super().setUp()
 
         # Create LandingZone 1 from 3 weeks ago
-        self.zone = self._make_landing_zone(
+        self.zone = self.make_landing_zone(
             title=ZONE1_TITLE,
             project=self.project,
             user=self.as_owner.user,
@@ -207,8 +202,7 @@ class TestBusyZones(TestCommandBase):
             config_data={},
             status='ACTIVE',
         )
-
-        self.zone2 = self._make_landing_zone(
+        self.zone2 = self.make_landing_zone(
             title=ZONE2_TITLE,
             project=self.project,
             user=self.as_owner.user,

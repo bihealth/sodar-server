@@ -37,14 +37,12 @@ class TestLandingZonePermissions(
         super().setUp()
 
         # Import investigation
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
 
         # Create LandingZone for project owner
-        self.landing_zone = self._make_landing_zone(
+        self.landing_zone = self.make_landing_zone(
             title=ZONE_TITLE,
             project=self.project,
             user=self.owner_as.user,

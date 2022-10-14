@@ -5,13 +5,7 @@ import os
 from django.conf import settings
 from django.urls import reverse
 
-from unittest.case import skipIf
-
 from samplesheets.models import IrodsDataRequest
-from samplesheets.tests.test_views import (
-    IRODS_BACKEND_ENABLED,
-    IRODS_BACKEND_SKIP_MSG,
-)
 from samplesheets.tests.test_views_taskflow import (
     TestIrodsRequestViewsBase,
     TEST_FILE_NAME2,
@@ -25,7 +19,6 @@ IRODS_NON_PROJECT_PATH = (
 IRODS_FAIL_COLL = 'xeiJ1Vie'
 
 
-@skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
 class TestIrodsRequestCreateAjaxView(TestIrodsRequestViewsBase):
     """Tests for IrodsRequestCreateAjaxView"""
 
@@ -45,7 +38,6 @@ class TestIrodsRequestCreateAjaxView(TestIrodsRequestViewsBase):
             )
 
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
-        # Assert response
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['detail'], 'ok')
         self.assertEqual(response.data['status'], 'ACTIVE')
@@ -76,7 +68,6 @@ class TestIrodsRequestCreateAjaxView(TestIrodsRequestViewsBase):
                 data={'path': self.path},
             )
 
-        # Assert response
         self.assertEqual(response.status_code, 400)
         self.assertEqual(
             response.data['detail'], 'active request for path already exists'
@@ -106,7 +97,6 @@ class TestIrodsRequestCreateAjaxView(TestIrodsRequestViewsBase):
                 data={'path': self.path},
             )
 
-        # Assert response
         self.assertEqual(response.status_code, 400)
         self.assertEqual(
             response.data['detail'], 'active request for path already exists'
@@ -134,7 +124,6 @@ class TestIrodsRequestCreateAjaxView(TestIrodsRequestViewsBase):
                 data={'path': self.path},
             )
 
-        # Assert response
         self.assertEqual(response.status_code, 400)
         self.assertEqual(
             response.data['detail'], 'active request for path already exists'
@@ -174,7 +163,6 @@ class TestIrodsRequestCreateAjaxView(TestIrodsRequestViewsBase):
         self.assertEqual(self._get_create_alert_count(self.user_delegate), 1)
 
 
-@skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
 class TestIrodsRequestDeleteAjaxView(TestIrodsRequestViewsBase):
     """Tests for IrodsRequestDeleteAjaxView"""
 
@@ -205,7 +193,6 @@ class TestIrodsRequestDeleteAjaxView(TestIrodsRequestViewsBase):
             )
 
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
-        # Assert response
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['detail'], 'ok')
         self.assertEqual(response.data['status'], None)
@@ -237,8 +224,6 @@ class TestIrodsRequestDeleteAjaxView(TestIrodsRequestViewsBase):
             )
 
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
-
-        # Assert response
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['detail'], 'ok')
         self.assertEqual(response.data['status'], None)
@@ -268,8 +253,6 @@ class TestIrodsRequestDeleteAjaxView(TestIrodsRequestViewsBase):
             )
 
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
-
-        # Assert response
         self.assertEqual(response.status_code, 403)
         self.assertEqual(
             response.data['detail'], 'User not allowed to delete request'
@@ -289,7 +272,6 @@ class TestIrodsRequestDeleteAjaxView(TestIrodsRequestViewsBase):
                 data={'path': self.path},
             )
 
-        # Assert response
         self.assertEqual(response.status_code, 404)
         self.assertEqual(response.data['detail'], 'Request not found')
 
@@ -341,7 +323,6 @@ class TestIrodsRequestDeleteAjaxView(TestIrodsRequestViewsBase):
             )
 
 
-@skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
 class TestIrodsObjectListAjaxView(TestIrodsRequestViewsBase):
     """Tests for IrodsObjectListAjaxView"""
 

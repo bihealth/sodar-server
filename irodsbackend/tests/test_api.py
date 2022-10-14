@@ -4,7 +4,6 @@ from django.conf import settings
 from django.test import override_settings
 
 from test_plus.test import TestCase
-from unittest import skipIf
 
 # Projectroles dependency
 from projectroles.models import Role, SODAR_CONSTANTS
@@ -16,7 +15,7 @@ from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 # Landingzones dependency
 from landingzones.tests.test_models import LandingZoneMixin
 
-from irodsbackend.api import IrodsAPI
+from irodsbackend.api import IrodsAPI, USER_GROUP_PREFIX
 
 
 # Global constants
@@ -40,10 +39,6 @@ IRODS_ENV = {
     "irods_encryption_num_hash_rounds": 16,
     "irods_encryption_salt_size": 8,
 }
-IRODS_BACKEND_ENABLED = (
-    True if 'omics_irods' in settings.ENABLED_BACKEND_PLUGINS else False
-)
-IRODS_BACKEND_SKIP_MSG = 'iRODS backend not enabled in settings'
 
 
 class TestIrodsbackendAPIInit(
@@ -55,19 +50,16 @@ class TestIrodsbackendAPIInit(
 ):
     """Tests for initializing the irodsbackend app"""
 
-    @skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
     def test_init(self):
         """Test initialization valid settings"""
         self.assertIsInstance(IrodsAPI(), IrodsAPI)
 
-    @skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
     @override_settings(IRODS_PASS='Iequ4QueOchai2ro')
     def test_init_no_auth(self):
         """Test initialization with invalid authentication"""
         with self.assertRaises(Exception):
             IrodsAPI()
 
-    @skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
     @override_settings(IRODS_ENV_BACKEND=IRODS_ENV)
     def test_init_env(self):
         """Test initialization with an iRODS environment file"""
@@ -112,14 +104,12 @@ class TestIrodsbackendAPI(
         )
 
         # Import investigation
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
 
         # Create LandingZone
-        self.landing_zone = self._make_landing_zone(
+        self.landing_zone = self.make_landing_zone(
             title=ZONE_TITLE,
             project=self.project,
             user=self.as_owner.user,
@@ -294,3 +284,26 @@ class TestIrodsbackendAPI(
         path = self.irods_backend.get_path(self.assay)
         uuid = self.irods_backend.get_uuid_from_path(path, 'assay')
         self.assertEqual(uuid, str(self.assay.sodar_uuid))
+
+    def test_get_user_group_name(self):
+        """Test get_user_group_name() with a Project object"""
+        self.assertEqual(
+            self.irods_backend.get_user_group_name(self.project),
+            '{}{}'.format(USER_GROUP_PREFIX, self.project.sodar_uuid),
+        )
+
+    def test_get_user_group_name_uuid(self):
+        """Test get_user_group_name() with an UUID object"""
+        self.assertEqual(
+            self.irods_backend.get_user_group_name(self.project.sodar_uuid),
+            '{}{}'.format(USER_GROUP_PREFIX, self.project.sodar_uuid),
+        )
+
+    def test_get_user_group_name_uuid_str(self):
+        """Test get_user_group_name() with an UUID string"""
+        self.assertEqual(
+            self.irods_backend.get_user_group_name(
+                str(self.project.sodar_uuid)
+            ),
+            '{}{}'.format(USER_GROUP_PREFIX, self.project.sodar_uuid),
+        )

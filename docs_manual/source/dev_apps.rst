@@ -54,7 +54,7 @@ rendering
     tables, for UI rendering and mapping iRODS collections to table rows.
 sheet_config
     Management of sample sheet editing and display configurations.
-tasks
+tasks_celery
     Celery tasks for asynchronous actions.
 
 The Django app provides the standard framework for views and backend
@@ -306,7 +306,7 @@ Methods:
 ``cleanup_zone()``
     Perform custom actions before landing zone deletion (optional).
 ``get_extra_flow_data()``
-    Return custom parameters for SODAR Taskflow (optional).
+    Return custom parameters for taskflowbackend (optional).
 
 
 Irodsadmin
@@ -372,8 +372,29 @@ into a dummy OBO-compatible format.
 Taskflowbackend
 ===============
 
-This application currently acts as the backend for SODAR Taskflow transactions
-between SODAR and iRODS. SODAR Taskflow will be merged into SODAR in v0.12.0,
-after which this application will contain the entire SODAR Taskflow
-functionality. Further documentation is forthcoming.
+This backend application handles project data specific transactions in the iRODS
+data management system, with rollback capability on errors. It is based on the
+formerly separate SODAR Taskflow repository. The Taskflow backend is invoked as
+follows:
 
+.. code-block:: python
+
+    taskflow = get_backend_api('taskflowbackend')
+
+Jobs are submitted using the ``submit()`` method similar to the following
+example:
+
+.. code-block:: python
+
+    taskflow.submit(
+        project=project,
+        flow_name='sheet_colls_create',
+        flow_data=flow_data,
+    )
+
+Taskflowbackend uses the project modify API introduced in SODAR Core v0.11 to
+set up project data in iRODS according to project and role assignment changes.
+
+The ``syncmodifyapi`` management command can be used to sync all projects into
+iRODS. This should only be used in development when there is need to e.g.
+recreate a local iRODS database.

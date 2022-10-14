@@ -39,6 +39,7 @@
     {% block head_javascript %}
       <!-- Critical Javascript includes -->
       {# NOTE: The rest are included under the "javascript" block at the end #}
+      {% get_django_setting 'ENABLE_SENTRY' as enable_sentry %}
 
       <!-- Iconify SVG icons -->
       <script type="text/javascript" src="{% url 'config.js' %}"></script>
@@ -62,12 +63,24 @@
 
         <!-- Clipboard helper -->
         <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.0/clipboard.min.js"></script>
+
+        {% if enable_sentry %}
+          <!-- Sentry -->
+          <script type="text/javascript"
+                  src="https://browser.sentry-cdn.com/7.15.0/bundle.tracing.min.js"
+                  integrity="sha384-skDdPkdiECE8otf9rbWXqVqnroCJqPpFKjcjwdnnHD03cyVgxJxW9nJKq7uFEpld"
+                  crossorigin="anonymous"></script>
+        {% endif %}
       {% endif %}
 
       {# Custom Javascript includes #}
       {% for js_inc in custom_js_includes %}
         <script type="text/javascript" src="{{ js_inc }}"></script>
       {% endfor %}
+      {% if enable_sentry %}
+        <!-- Sentry -->
+        <script type="text/javascript" src="/static/local/js/bundle.tracing.min.js"></script>
+      {% endif %}
     {% endblock head_javascript %}
 
     {% block css %}

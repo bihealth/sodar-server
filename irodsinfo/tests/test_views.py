@@ -10,19 +10,14 @@ from django.test import override_settings
 from django.urls import reverse
 
 from test_plus.test import TestCase
-from unittest import skipIf
-
-# Projectroles depedency
-from projectroles.plugins import get_backend_api, change_plugin_status
 
 
 # Local constants
 CERT_PATH = os.path.dirname(__file__) + '/data/irods_server_crt.txt'
 IRODS_ENV = {'test': 1}
-IRODS_BACKEND_ENABLED = (
-    True if 'omics_irods' in settings.ENABLED_BACKEND_PLUGINS else False
-)
-IRODS_BACKEND_SKIP_MSG = 'iRODS backend not enabled in settings'
+PLUGINS_DISABLE_IRODS = settings.ENABLED_BACKEND_PLUGINS.copy()
+if 'omics_irods' in PLUGINS_DISABLE_IRODS:
+    PLUGINS_DISABLE_IRODS.remove('omics_irods')
 
 
 class TestIrodsinfoViewBase(TestCase):
@@ -40,7 +35,6 @@ class TestIrodsinfoViewBase(TestCase):
         self.anonymous = None
 
 
-@skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
 class TestIrodsInfoView(TestIrodsinfoViewBase):
     """Tests for IrodsInfoView"""
 
@@ -51,19 +45,15 @@ class TestIrodsInfoView(TestIrodsinfoViewBase):
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.context['irods_backend_enabled'])
 
+    @override_settings(ENABLED_BACKEND_PLUGINS=PLUGINS_DISABLE_IRODS)
     def test_render_no_backend(self):
         """Test rendering irods info view without irodsbackend"""
-        if get_backend_api('omics_irods'):
-            change_plugin_status(
-                name='omics_irods', status=1, plugin_type='backend'
-            )
         with self.login(self.regular_user):
             response = self.client.get(reverse('irodsinfo:info'))
         self.assertEqual(response.status_code, 200)
         self.assertFalse(response.context['irods_backend_enabled'])
 
 
-@skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
 class TestIrodsConfigView(TestIrodsinfoViewBase):
     """Tests for IrodsConfigView"""
 

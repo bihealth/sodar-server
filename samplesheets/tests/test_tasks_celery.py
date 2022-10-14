@@ -1,28 +1,27 @@
 """Tests for Celery tasks for the samplesheets app"""
 
-from django.conf import settings
 from django.contrib import auth
 from django.urls import reverse
-
-from unittest import skipIf
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
 from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
-from projectroles.tests.test_views_taskflow import TestTaskflowBase
+
+# Appalerts dependency
+from appalerts.models import AppAlert
 
 # Sodarcache dependency
 from sodarcache.models import JSONCacheItem
 
-# Appalerts dependency
-from appalerts.models import AppAlert
+# Taskflowbackend dependency
+from taskflowbackend.tests.base import TaskflowbackendTestBase
 
 # Timeline dependency
 from timeline.models import ProjectEvent
 
 from samplesheets.models import ISATab
-from samplesheets.tasks import update_project_cache_task, sheet_sync_task
+from samplesheets.tasks_celery import update_project_cache_task, sheet_sync_task
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 from samplesheets.tests.test_views import TestSheetRemoteSyncBase
 from samplesheets.tests.test_views_taskflow import (
@@ -41,48 +40,32 @@ PROJECT_ROLE_CONTRIBUTOR = SODAR_CONSTANTS['PROJECT_ROLE_CONTRIBUTOR']
 PROJECT_ROLE_GUEST = SODAR_CONSTANTS['PROJECT_ROLE_GUEST']
 PROJECT_TYPE_CATEGORY = SODAR_CONSTANTS['PROJECT_TYPE_CATEGORY']
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
-SUBMIT_STATUS_OK = SODAR_CONSTANTS['SUBMIT_STATUS_OK']
-SUBMIT_STATUS_PENDING = SODAR_CONSTANTS['SUBMIT_STATUS_PENDING']
-SUBMIT_STATUS_PENDING_TASKFLOW = SODAR_CONSTANTS[
-    'SUBMIT_STATUS_PENDING_TASKFLOW'
-]
 
 # Local constants
 APP_NAME = 'samplesheets'
 SHEET_PATH = SHEET_DIR + 'i_small.zip'
 CACHE_ALERT_MESSAGE = 'Testing'
-TASKFLOW_ENABLED = (
-    True if 'taskflow' in settings.ENABLED_BACKEND_PLUGINS else False
-)
-TASKFLOW_SKIP_MSG = 'Taskflow not enabled in settings'
-IRODS_BACKEND_ENABLED = (
-    True if 'omics_irods' in settings.ENABLED_BACKEND_PLUGINS else False
-)
-IRODS_BACKEND_SKIP_MSG = 'iRODS backend not enabled in settings'
 
 
-@skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
 class TestUpdateProjectCacheTask(
-    SampleSheetIOMixin, SampleSheetTaskflowMixin, TestTaskflowBase
+    SampleSheetIOMixin, SampleSheetTaskflowMixin, TaskflowbackendTestBase
 ):
     """Tests for project cache update task"""
 
     def setUp(self):
         super().setUp()
-        self.project, self.owner_as = self._make_project_taskflow(
+        self.project, self.owner_as = self.make_project_taskflow(
             title='TestProject',
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
             owner=self.user,
             description='description',
         )
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
         self.app_alerts = get_backend_api('appalerts_backend')
-        self._make_irods_colls(self.investigation)
+        self.make_irods_colls(self.investigation)
 
     def test_update_cache(self):
         """Test cache update"""
@@ -90,7 +73,7 @@ class TestUpdateProjectCacheTask(
             JSONCacheItem.objects.filter(project=self.project).count(), 0
         )
         self.assertEqual(AppAlert.objects.count(), 1)
-        self.assertEqual(ProjectEvent.objects.count(), 1)
+        self.assertEqual(ProjectEvent.objects.count(), 2)
 
         update_project_cache_task(
             self.project.sodar_uuid,
@@ -118,7 +101,7 @@ class TestUpdateProjectCacheTask(
         self.assertEqual(AppAlert.objects.count(), 2)
         alert = AppAlert.objects.order_by('-pk').first()
         self.assertTrue(alert.message.endswith(CACHE_ALERT_MESSAGE))
-        self.assertEqual(ProjectEvent.objects.count(), 2)
+        self.assertEqual(ProjectEvent.objects.count(), 3)
 
     def test_update_cache_no_alert(self):
         """Test cache update with app alert disabled"""
@@ -126,7 +109,7 @@ class TestUpdateProjectCacheTask(
             JSONCacheItem.objects.filter(project=self.project).count(), 0
         )
         self.assertEqual(AppAlert.objects.count(), 1)
-        self.assertEqual(ProjectEvent.objects.count(), 1)
+        self.assertEqual(ProjectEvent.objects.count(), 2)
 
         update_project_cache_task(
             self.project.sodar_uuid, self.user.sodar_uuid, add_alert=False
@@ -136,7 +119,7 @@ class TestUpdateProjectCacheTask(
             JSONCacheItem.objects.filter(project=self.project).count(), 1
         )
         self.assertEqual(AppAlert.objects.count(), 1)
-        self.assertEqual(ProjectEvent.objects.count(), 2)
+        self.assertEqual(ProjectEvent.objects.count(), 3)
 
     def test_update_cache_no_user(self):
         """Test cache update with no user"""
@@ -144,7 +127,7 @@ class TestUpdateProjectCacheTask(
             JSONCacheItem.objects.filter(project=self.project).count(), 0
         )
         self.assertEqual(AppAlert.objects.count(), 1)
-        self.assertEqual(ProjectEvent.objects.count(), 1)
+        self.assertEqual(ProjectEvent.objects.count(), 2)
 
         update_project_cache_task(self.project.sodar_uuid, None, add_alert=True)
 
@@ -152,10 +135,9 @@ class TestUpdateProjectCacheTask(
             JSONCacheItem.objects.filter(project=self.project).count(), 1
         )
         self.assertEqual(AppAlert.objects.count(), 1)
-        self.assertEqual(ProjectEvent.objects.count(), 2)
+        self.assertEqual(ProjectEvent.objects.count(), 3)
 
 
-@skipIf(not TASKFLOW_ENABLED, TASKFLOW_SKIP_MSG)
 class TestSheetRemoteSyncTask(TestSheetRemoteSyncBase):
     """Tests for periodic sample sheet sync task"""
 
@@ -201,7 +183,7 @@ class TestSheetRemoteSyncTask(TestSheetRemoteSyncBase):
     def test_sync_existing_source_newer(self):
         """Test sync with existing sheet and changes in source sheet"""
         # Create investigation for target project
-        self._import_isa_from_file(SHEET_PATH, self.project_target)
+        self.import_isa_from_file(SHEET_PATH, self.project_target)
         # Update source investigation
         material = self.inv_source.studies.first().materials.get(
             unique_name=f'{self.p_id_source}-s0-source-0817'
@@ -251,7 +233,7 @@ class TestSheetRemoteSyncTask(TestSheetRemoteSyncBase):
 
     def test_sync_existing_target_newer(self):
         """Test sync with existing sheet and changes in target sheet"""
-        inv_target = self._import_isa_from_file(SHEET_PATH, self.project_target)
+        inv_target = self.import_isa_from_file(SHEET_PATH, self.project_target)
         material = inv_target.studies.first().materials.get(
             unique_name=f'{self.p_id_target}-s0-source-0817'
         )

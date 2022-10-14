@@ -64,6 +64,9 @@ STATUS_LOCKING = ['PREPARING', 'VALIDATING', 'MOVING']
 # Status types for busy landing zones
 STATUS_BUSY = ['CREATING', 'PREPARING', 'VALIDATING', 'MOVING', 'DELETING']
 
+# Status types during which file lists and stats should be displayed
+STATUS_DISPLAY_FILES = ['ACTIVE', 'PREPARING', 'VALIDATING', 'MOVING', 'FAILED']
+
 
 class LandingZone(models.Model):
     """Class representing an user's iRODS landing zone for an assay"""
@@ -193,4 +196,10 @@ class LandingZone(models.Model):
         Return True/False depending whether write access to zone is currently
         locked.
         """
-        return True if self.status in STATUS_LOCKING else False
+        return self.status in STATUS_LOCKING
+
+    def can_display_files(self):
+        """
+        Return True/False depending whether file info should be displayed.
+        """
+        return self.status in STATUS_DISPLAY_FILES

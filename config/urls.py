@@ -25,11 +25,6 @@ if settings.ENABLE_SENTRY and not settings.DEBUG:
 
 urlpatterns = [
     url(r'^$', HomeView.as_view(), name='home'),
-    url(
-        r'^about/$',
-        TemplateView.as_view(template_name='pages/about.html'),
-        name='about',
-    ),
     # Django Admin, use {% url 'admin:index' %}
     url(settings.ADMIN_URL, admin.site.urls),
     # Login and logout
@@ -78,8 +73,6 @@ urlpatterns = [
     ),
     # Sodarcache URLs
     url(r'^cache/', include('sodarcache.urls')),
-    # The rendered Sphinx-based manual.
-    url(r'^manual/', include('docs.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 if settings.DEBUG:

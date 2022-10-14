@@ -4,7 +4,6 @@ Tests for REST API views in the samplesheets app with SODAR Taskflow enabled
 
 import json
 import os
-from unittest.case import skipIf
 
 from irods.keywords import REG_CHKSUM_KW
 
@@ -13,14 +12,12 @@ from django.urls import reverse
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
-from projectroles.tests.test_views_api_taskflow import TestTaskflowAPIBase
+
+# Taskflowbackend dependency
+from taskflowbackend.tests.base import TestTaskflowAPIBase
 
 from samplesheets.tests.test_io import SampleSheetIOMixin, SHEET_DIR
 from samplesheets.tests.test_views_taskflow import SampleSheetTaskflowMixin
-from samplesheets.tests.test_views import (
-    IRODS_BACKEND_ENABLED,
-    IRODS_BACKEND_SKIP_MSG,
-)
 
 
 # SODAR constants
@@ -46,9 +43,7 @@ class TestSampleSheetAPITaskflowBase(
         # Get iRODS backend for session access
         self.irods_backend = get_backend_api('omics_irods')
         self.assertIsNotNone(self.irods_backend)
-        # self.irods_session = self.irods_backend.get_session()
 
-        # Init project
         # Make project with owner in Taskflow and Django
         self.project, self.owner_as = self._make_project_taskflow(
             title='TestProject',
@@ -59,14 +54,11 @@ class TestSampleSheetAPITaskflowBase(
         )
 
         # Import investigation
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
 
 
-@skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
 class TestInvestigationRetrieveAPIView(TestSampleSheetAPITaskflowBase):
     """Tests for InvestigationRetrieveAPIView"""
 
@@ -121,44 +113,43 @@ class TestInvestigationRetrieveAPIView(TestSampleSheetAPITaskflowBase):
         self.assertEqual(json.loads(response.content), expected)
 
 
-@skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
 class TestIrodsCollsCreateAPIView(TestSampleSheetAPITaskflowBase):
     """Tests for IrodsCollsCreateAPIView"""
 
     def test_post(self):
         """Test post() in IrodsCollsCreateAPIView"""
-        # Assert preconditions
         self.assertEqual(self.investigation.irods_status, False)
         url = reverse(
             'samplesheets:api_irods_colls_create',
             kwargs={'project': self.project.sodar_uuid},
         )
-        response = self.request_knox(url, method='POST', data=self.request_data)
+        response = self.request_knox(url, method='POST')
         self.assertEqual(response.status_code, 200)
         self.investigation.refresh_from_db()
         self.assertEqual(self.investigation.irods_status, True)
+        self.assert_irods_coll(self.irods_backend.get_sample_path(self.project))
+        self.assert_irods_coll(self.study)
+        self.assert_irods_coll(self.assay)
 
     def test_post_created(self):
         """Test post() with already created collections (should fail)"""
         # Set up iRODS collections
-        self._make_irods_colls(self.investigation)
-        # Assert preconditions
+        self.make_irods_colls(self.investigation)
         self.assertEqual(self.investigation.irods_status, True)
         url = reverse(
             'samplesheets:api_irods_colls_create',
             kwargs={'project': self.project.sodar_uuid},
         )
-        response = self.request_knox(url, method='POST', data=self.request_data)
+        response = self.request_knox(url, method='POST')
         self.assertEqual(response.status_code, 400)
 
 
-@skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
 class TestSampleDataFileExistsAPIView(TestSampleSheetAPITaskflowBase):
     """Tests for SampleDataFileExistsAPIView"""
 
     def setUp(self):
         super().setUp()
-        self._make_irods_colls(self.investigation)
+        self.make_irods_colls(self.investigation)
         self.irods_session = self.irods_backend.get_session()
 
     def test_get(self):

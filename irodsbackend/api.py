@@ -5,6 +5,7 @@ import math
 import random
 import re
 import string
+import uuid
 
 import pytz
 
@@ -13,7 +14,7 @@ from irods.collection import iRODSCollection
 from irods.column import Criterion
 from irods.exception import CollectionDoesNotExist, CAT_NO_ROWS_FOUND
 from irods.message import TicketAdminRequest, iRODSMessage
-from irods.models import Collection, DataObject
+from irods.models import Collection, DataObject, TicketQuery
 from irods.query import SpecificQuery
 from irods.session import iRODSSession
 from irods.ticket import Ticket
@@ -24,10 +25,15 @@ from django.utils import timezone
 from django.utils.http import urlencode
 from django.utils.text import slugify
 
+# Projectroles dependency
+from projectroles.models import SODAR_CONSTANTS
+
 
 logger = logging.getLogger(__name__)
 
 
+# SODAR constants
+PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 # Local constants
 ACCEPTED_PATH_TYPES = [
     'Assay',
@@ -44,6 +50,7 @@ ENV_INT_PARAMS = [
     'irods_encryption_salt_size',
     'irods_port',
 ]
+USER_GROUP_PREFIX = 'omics_project_'
 
 
 class IrodsAPI:
@@ -72,7 +79,7 @@ class IrodsAPI:
         irods_env.update(dict(settings.IRODS_ENV_BACKEND))
         # HACK: Clean up environment to avoid python-irodsclient crash
         irods_env = self.format_env(irods_env)
-        logger.debug('iRODS environment: {}'.format(irods_env))
+        # logger.debug('iRODS environment: {}'.format(irods_env))
 
         try:
             self.irods = iRODSSession(
@@ -161,6 +168,22 @@ class IrodsAPI:
             response = conn.recv()
         return response
 
+    @classmethod
+    def _validate_project(cls, project):
+        """
+        Validate the project parameter for retrieving a project iRODS path.
+
+        :param project: Project object
+        :raise: ValueError if "project" is not a valid Project object or if the
+                object is of type CATEGORY
+        """
+        if project.__class__.__name__ != 'Project':
+            raise ValueError('Argument "project" is not a Project object')
+        if project.type != PROJECT_TYPE_PROJECT:
+            raise ValueError(
+                'Project type is not {}'.format(PROJECT_TYPE_PROJECT)
+            )
+
     # Helpers ------------------------------------------------------------------
 
     @classmethod
@@ -246,31 +269,26 @@ class IrodsAPI:
             uuid_prefix=str(project.sodar_uuid)[:2],
             uuid=project.sodar_uuid,
         )
-
         # Project
         if obj_class == 'Project':
             return path
-
         # Investigation (sample data root)
         elif obj_class == 'Investigation':
             path += '/{sample_dir}'.format(
                 sample_dir=settings.IRODS_SAMPLE_COLL
             )
-
         # Study (in sample data)
         elif obj_class == 'Study':
             path += '/{sample_dir}/{study}'.format(
                 sample_dir=settings.IRODS_SAMPLE_COLL,
                 study=cls.get_sub_path(obj),
             )
-
         # Assay (in sample data)
         elif obj_class == 'Assay':
             path += '/{sample_dir}/{study_assay}'.format(
                 sample_dir=settings.IRODS_SAMPLE_COLL,
                 study_assay=cls.get_sub_path(obj),
             )
-
         # LandingZone
         elif obj_class == 'LandingZone':
             path += (
@@ -285,7 +303,6 @@ class IrodsAPI:
                     else '',
                 )
             )
-
         return path
 
     @classmethod
@@ -295,11 +312,24 @@ class IrodsAPI:
 
         :param project: Project object
         :return: String
-        :raise: ValueError if "project" is not a valid Project object
+        :raise: ValueError if "project" is not a valid Project object or if the
+                object is of type CATEGORY
         """
-        if project.__class__.__name__ != 'Project':
-            raise ValueError('Argument "project" is not a Project object')
+        cls._validate_project(project)
         return cls.get_path(project) + '/' + settings.IRODS_SAMPLE_COLL
+
+    @classmethod
+    def get_zone_path(cls, project):
+        """
+        Return the iRODS path for project landing zones.
+
+        :param project: Project object
+        :return: String
+        :raise: ValueError if "project" is not a valid Project object or if the
+                object is of type CATEGORY
+        """
+        cls._validate_project(project)
+        return cls.get_path(project) + '/' + settings.IRODS_LANDING_ZONE_COLL
 
     @classmethod
     def get_root_path(cls):
@@ -343,6 +373,21 @@ class IrodsAPI:
         s = re.search(path_regex[obj_type], cls._sanitize_coll_path(path))
         if s:
             return s.group(1)
+
+    @classmethod
+    def get_user_group_name(cls, project):
+        """
+        Return iRODS user group name for project.
+
+        :param project: Project object or project UUID
+        :return: String
+        """
+        if isinstance(project, (uuid.UUID, str)):
+            project_uuid = project
+        else:
+            cls._validate_project(project)
+            project_uuid = project.sodar_uuid
+        return '{}{}'.format(USER_GROUP_PREFIX, project_uuid)
 
     # TODO: Add tests
     @classmethod
@@ -674,8 +719,6 @@ class IrodsAPI:
             query.register()
         return query
 
-    # TODO: Fork python-irodsclient and implement ticket functionality there
-
     def issue_ticket(self, mode, path, ticket_str=None, expiry_date=None):
         """
         Issue ticket for a specific iRODS collection.
@@ -700,6 +743,21 @@ class IrodsAPI:
             )
         return ticket
 
+    def get_ticket(self, ticket_str):
+        """
+        Get ticket from iRODS.
+
+        :param ticket_str: String
+        :return: Ticket object or None
+        """
+        ticket_query = self.irods.query(TicketQuery.Ticket).filter(
+            TicketQuery.Ticket.string == ticket_str
+        )
+        ticket_res = list(ticket_query)
+        if len(ticket_res) == 1:
+            return Ticket(ticket_res[0])
+        return None
+
     def delete_ticket(self, ticket_str):
         """
         Delete ticket.
@@ -709,4 +767,6 @@ class IrodsAPI:
         try:
             self._send_request('TICKET_ADMIN_AN', 'delete', ticket_str)
         except Exception:
-            raise Exception('Failed to delete iRODS ticket %s' % ticket_str)
+            raise Exception(
+                'Failed to delete iRODS ticket {}'.format(ticket_str)
+            )

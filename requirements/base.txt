@@ -3,16 +3,16 @@
 wheel==0.37.1
 
 # Setuptools
-setuptools==59.6.0
+setuptools==65.3.0
 
 # Django
-django==3.2.14
+django==3.2.15
 
 # Configuration
-django-environ==0.8.1
+django-environ==0.9.0
 
 # Forms
-django-crispy-forms==1.13.0
+django-crispy-forms==1.14.0
 
 # Models
 django-model-utils==4.2.0
@@ -27,29 +27,30 @@ psycopg2-binary==2.9.3
 awesome-slugify==1.6.5
 
 # Time zones support
-pytz==2021.3
+pytz==2022.2.1
 
 # Redis support
-redis==3.5.3
+redis==4.3.4
 
 # Profiling
 django-cprofile-middleware==1.0.5
 
 # Versioning
-versioneer==0.21
+versioneer==0.23
 
 # Online documentation via django-docs
 docutils==0.17.1
-Sphinx==4.3.2
+Sphinx==5.1.1
 django-docs==0.3.1
 sphinx-rtd-theme==1.0.0
+sphinxcontrib-youtube==1.2.0
 
 #####################
 # SODAR Core imports
 #####################
 
 # Rules for permissions
-rules==3.0
+rules==3.3
 
 # REST framework
 djangorestframework==3.13.1
@@ -59,23 +60,23 @@ djangorestframework==3.13.1
 -e git+https://github.com/mikkonie/drf-keyed-list.git@b03607b866c5706b0e1ea46a7eeaab6527030734#egg=drf-keyed-list
 
 # Token authentication
-django-rest-knox==4.1.0
+django-rest-knox==4.2.0
 
 # Markdown field support
-markdown==3.3.4
+markdown==3.4.1
 django-markupfield==2.0.1
 django-pagedown==2.2.1
-mistune==2.0.1
+mistune==2.0.4
 
 # Django-plugins (with Django v3.0+ support)
 -e git+https://github.com/mikkonie/django-plugins.git@42e86e7904e5c09f1da32173862b26843eda5dd8#egg=django-plugins
 
 # SODAR Core
-django-sodar-core==0.10.13
-# -e git+https://github.com/bihealth/sodar-core.git@fbbe4050f57b0695199d1418e3a31b3870269389#egg=django-sodar-core
+django-sodar-core==0.11.0
+# -e git+https://github.com/bihealth/sodar-core.git@888d594d342984ab430e5e2d624c0cfda68d2eaa#egg=django-sodar-core
 
 # Celery
-celery==5.2.3
+celery==5.2.7
 
 ####################
 # SODAR app imports
@@ -92,14 +93,18 @@ python-irodsclient==1.1.3
 lxml==4.9.1
 
 # Excel file generating
-openpyxl==3.0.9
+openpyxl==3.0.10
 
 # Webpack loader for Vue.js
-django-webpack-loader==1.4.1
+django-webpack-loader==1.6.0
 
 # OBO ontology file parsing
-fastobo==0.11.1
-pronto==2.4.4  # For OWL conversion
+fastobo==0.12.1
+pronto==2.5.0  # For OWL conversion
 
 # CUBI-TK for sheet templates
 -e git+https://github.com/bihealth/cubi-tk.git@0c0250cdfd546eaac1e0364df62213ad3c97ef7c#egg=cubi-tk
+
+# Taskflow requirements
+tooz==3.0.0
+taskflow==5.0.0

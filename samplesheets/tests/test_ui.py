@@ -1,11 +1,9 @@
 """UI tests for the samplesheets app"""
 
 import json
-from unittest import skipIf
 
 from cubi_tk.isa_tpl import _TEMPLATES as TK_TEMPLATES
 
-from django.conf import settings
 from django.urls import reverse
 from django.utils.http import urlencode
 
@@ -49,10 +47,6 @@ with open(CONFIG_PATH_DEFAULT) as fp:
     CONFIG_DATA_DEFAULT = json.load(fp)
 with open(CONFIG_PATH_UPDATED) as fp:
     CONFIG_DATA_UPDATED = json.load(fp)
-IRODS_BACKEND_ENABLED = (
-    True if 'omics_irods' in settings.ENABLED_BACKEND_PLUGINS else False
-)
-IRODS_BACKEND_SKIP_MSG = 'Irodsbackend not enabled in settings'
 
 
 class TestProjectSheetsVueAppBase(
@@ -60,13 +54,9 @@ class TestProjectSheetsVueAppBase(
 ):
     """Base view for the project sheets vue app UI"""
 
-    # Helper functions ---------------------------------------------------------
-
     def _setup_investigation(self, config_data=None):
         """Setup Investigation, Study and Assay"""
-        self.investigation = self._import_isa_from_file(
-            SHEET_PATH, self.project
-        )
+        self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         if config_data:
             # Set up UUIDs and default config
             self._update_uuids(self.investigation, config_data)
@@ -165,8 +155,6 @@ class TestProjectSheetsVueAppBase(
         obj.save()
         return obj
 
-    # Setup --------------------------------------------------------------------
-
     def setUp(self):
         super().setUp()
         self.default_user = self.contributor_as.user
@@ -191,7 +179,6 @@ class TestProjectSheetsView(TestProjectSheetsVueAppBase):
 
         for user in users:
             self._login_and_render(user=user, wait_elem='sodar-ss-grid-study')
-
             # Ensure assay grid is found (we already know study is there)
             self.assertIsNotNone(
                 self.selenium.find_element(
@@ -216,7 +203,6 @@ class TestProjectSheetsView(TestProjectSheetsVueAppBase):
 
         for user in users:
             self._login_and_render(user)
-
             # Ensure alert is shown
             self.assertIsNotNone(
                 self.selenium.find_element(By.ID, 'sodar-ss-alert-empty')
@@ -228,7 +214,6 @@ class TestProjectSheetsView(TestProjectSheetsVueAppBase):
                     'sodar-ss-grid-assay-{}'.format(self.assay.sodar_uuid),
                 )
 
-    @skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
     def test_render_alert(self):
         """Test rendering an alert retrieved from SODAR context"""
         # NOTE: Testing here as we don't (yet) have vue tests for entire app
@@ -422,7 +407,6 @@ class TestIrodsRequestDeleteView(TestProjectSheetsVueAppBase):
         )
 
 
-@skipIf(not IRODS_BACKEND_ENABLED, IRODS_BACKEND_SKIP_MSG)
 class TestIrodsRequestAcceptView(TestProjectSheetsVueAppBase):
     """Tests for irods request accept view UI"""
 
@@ -489,14 +473,11 @@ class TestSheetVersionCompareView(
 
     def setUp(self):
         super().setUp()
-        self._import_isa_from_file(SHEET_PATH_SMALL2, self.project)
-
-        # Assert preconditions
+        self.import_isa_from_file(SHEET_PATH_SMALL2, self.project)
         self.assertEqual(Investigation.objects.count(), 1)
         self.assertEqual(ISATab.objects.count(), 1)
 
         self.isa1 = ISATab.objects.first()
-
         self.url = '{}?source={}&target={}'.format(
             reverse(
                 'samplesheets:version_compare',
@@ -531,9 +512,7 @@ class TestSheetVersionCompareFileView(
 
     def setUp(self):
         super().setUp()
-        self._import_isa_from_file(SHEET_PATH_SMALL2, self.project)
-
-        # Assert preconditions
+        self.import_isa_from_file(SHEET_PATH_SMALL2, self.project)
         self.assertEqual(Investigation.objects.count(), 1)
         self.assertEqual(ISATab.objects.count(), 1)
 

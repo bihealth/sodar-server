@@ -226,6 +226,42 @@ describe('DataCellRenderer.vue', () => {
     expect(cell.classes()).not.toContain('text-muted')
   })
 
+  it('renders basic text cell with simple link and no whitespace', async () => {
+    const table = copy(studyTablesOneCol).tables.study
+    table.field_header[0] = studyTables.tables.study.field_header[4]
+    table.table_data[0][0] = studyTables.tables.study.table_data[0][4]
+    table.table_data[0][0].value = 'Link<https://bihealth.org>'
+    const wrapper = mountSheetTable({ table: table })
+    await waitAG(wrapper)
+    await waitRAF()
+
+    const cell = wrapper.find('.sodar-ss-data-cell')
+    const cellData = cell.find('.sodar-ss-data')
+    const cellLink = cellData.find('a')
+    expect(cellData.text()).toBe('Link')
+    expect(cellLink.attributes().href).toBe('https://bihealth.org')
+    expect(cell.classes()).not.toContain('text-right')
+    expect(cell.classes()).not.toContain('text-muted')
+  })
+
+  it('renders basic text cell with simple link with spaces in label', async () => {
+    const table = copy(studyTablesOneCol).tables.study
+    table.field_header[0] = studyTables.tables.study.field_header[4]
+    table.table_data[0][0] = studyTables.tables.study.table_data[0][4]
+    table.table_data[0][0].value = 'Multi Word Link <https://bihealth.org>'
+    const wrapper = mountSheetTable({ table: table })
+    await waitAG(wrapper)
+    await waitRAF()
+
+    const cell = wrapper.find('.sodar-ss-data-cell')
+    const cellData = cell.find('.sodar-ss-data')
+    const cellLink = cellData.find('a')
+    expect(cellData.text()).toBe('Multi Word Link')
+    expect(cellLink.attributes().href).toBe('https://bihealth.org')
+    expect(cell.classes()).not.toContain('text-right')
+    expect(cell.classes()).not.toContain('text-muted')
+  })
+
   it('renders contact cell with plain text value', async () => {
     const table = copy(studyTablesOneCol).tables.study
     table.field_header[0] = studyTables.tables.study.field_header[5]
@@ -345,7 +381,38 @@ describe('DataCellRenderer.vue', () => {
     const cellData = cell.find('.sodar-ss-data')
     expect(cellData.findAll('.badge-group').length).toBe(2)
     expect(cellData.text()).toBe(
-      'ID' + value[0].split(':')[1] + 'ID' + value[1].split(':')[1])
+      'ID ' + value[0].split(':')[1] + 'ID ' + value[1].split(':')[1])
+    expect(cellData.find('.sodar-ss-data-ext-link').exists()).toBe(false)
+    expect(cell.classes()).not.toContain('text-right')
+    expect(cell.classes()).not.toContain('text-muted')
+  })
+
+  it('renders external links cell with a link', async () => {
+    const table = copy(studyTablesOneCol).tables.study
+    table.field_header[0] = {
+      value: 'External Links',
+      name: 'External links',
+      obj_cls: 'GenericMaterial',
+      item_type: 'SOURCE',
+      num_col: false,
+      config_set: false,
+      col_type: 'EXTERNAL_LINKS',
+      max_value_len: 2
+    }
+    const value = ['x-sodar-example:ID-123', 'x-sodar-example-link:ID-XYZ']
+    table.table_data[0][0].value = value
+    const wrapper = mountSheetTable({ table: table })
+    await waitAG(wrapper)
+    await waitRAF()
+
+    const cell = wrapper.find('.sodar-ss-data-cell')
+    const cellData = cell.find('.sodar-ss-data')
+    expect(cellData.findAll('.badge-group').length).toBe(2)
+    expect(cellData.text()).toBe(
+      'ID ' + value[0].split(':')[1] + 'ID ' + value[1].split(':')[1])
+    expect(cellData.find('.sodar-ss-data-ext-link').exists()).toBe(true)
+    expect(cellData.find('.sodar-ss-data-ext-link').attributes().href).toBe(
+      'https://example.com/ID-XYZ')
     expect(cell.classes()).not.toContain('text-right')
     expect(cell.classes()).not.toContain('text-muted')
   })

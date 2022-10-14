@@ -26,7 +26,7 @@ copyright = '2018-2022, BIH Core Unit Bioinformatics'
 author = 'BIH Core Unit Bioinformatics'
 
 # The full version, including alpha/beta/rc tags
-release = '0.11.3'
+release = '0.12.0'
 
 
 # -- General configuration ---------------------------------------------------
@@ -34,7 +34,9 @@ release = '0.11.3'
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.viewcode']
+extensions = [
+    'sphinx.ext.autodoc', 'sphinx.ext.viewcode', 'sphinxcontrib.youtube'
+]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
