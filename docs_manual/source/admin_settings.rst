@@ -217,7 +217,7 @@ repository are described here.
 
 ``SODAR_SERVER_VERSION``
     Version of the SODAR server. Should be the latest release tag (e.g.
-    ``0.11.3-0``) or the latest development version ``dev-0``. For production it
+    ``0.12.0-0``) or the latest development version ``dev-0``. For production it
     is strongly recommended to use the latest tagged release.
 ``IRODS_VERSION``
     Version of the CUBI
