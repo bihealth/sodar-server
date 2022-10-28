@@ -8,6 +8,14 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
+v0.12.1 (WIP)
+=============
+
+Maintenance and bug fix release.
+
+- Fix Tooz and Redis connection issue handling
+
+
 v0.12.0 (2022-10-14)
 ====================
 

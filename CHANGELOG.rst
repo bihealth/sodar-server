@@ -5,6 +5,16 @@ Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+Unreleased
+==========
+
+Fixed
+-----
+
+- **General**
+    - Invalid  ``REDIS_URL`` default value (#1497)
+
+
 v0.12.0 (2022-10-14)
 ====================
 

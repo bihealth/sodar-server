@@ -164,7 +164,7 @@ DATABASES['default']['ATOMIC_REQUESTS'] = False
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
 # Default Redis server URL
-REDIS_URL = env.str('REDIS_URL', 'redis://localhost:6379/0')
+REDIS_URL = env.str('REDIS_URL', 'redis://127.0.0.1:6379/0')
 
 # GENERAL CONFIGURATION
 # ------------------------------------------------------------------------------
