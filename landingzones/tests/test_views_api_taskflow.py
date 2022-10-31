@@ -4,6 +4,7 @@ Tests for REST API views in the landingzones app with SODAR Taskflow enabled
 
 import json
 
+from django.test import override_settings
 from django.urls import reverse
 
 # Projectroles dependency
@@ -25,6 +26,7 @@ from landingzones.tests.test_views_taskflow import (
     LandingZoneTaskflowMixin,
     ZONE_TITLE,
     ZONE_DESC,
+    INVALID_REDIS_URL,
 )
 
 
@@ -391,3 +393,17 @@ class TestLandingZoneSubmitMoveAPIView(TestLandingZoneAPITaskflowBase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(LandingZone.objects.count(), 1)
         self.assertEqual(LandingZone.objects.first().status, 'DELETED')
+
+    @override_settings(REDIS_URL=INVALID_REDIS_URL)
+    def test_post_move_lock_failure(self):
+        """Test post() for moving with project lock failure"""
+        url = reverse(
+            'landingzones:api_submit_move',
+            kwargs={'landingzone': self.landing_zone.sodar_uuid},
+        )
+        response = self.request_knox(url, method='POST')
+
+        self.assertEqual(response.status_code, 500)
+        self.assertEqual(LandingZone.objects.count(), 1)
+        zone = LandingZone.objects.first()
+        self.assert_zone_status(zone, 'FAILED')

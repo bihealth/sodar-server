@@ -9,6 +9,7 @@ from irods.keywords import REG_CHKSUM_KW
 
 from django.contrib import auth
 from django.core import mail
+from django.test import override_settings
 from django.urls import reverse
 
 # Projectroles dependency
@@ -25,6 +26,9 @@ from samplesheets.views import RESULTS_COLL, MISC_FILES_COLL, TRACK_HUBS_COLL
 
 # Taskflowbackend dependency
 from taskflowbackend.tests.base import TaskflowbackendTestBase
+
+# Timeline dependency
+from timeline.models import ProjectEvent
 
 from landingzones.models import LandingZone
 from landingzones.tests.test_models import LandingZoneMixin
@@ -50,6 +54,7 @@ TEST_OBJ_NAME = 'test1.txt'
 ASYNC_WAIT_SECONDS = 5
 ASYNC_RETRY_COUNT = 3
 INVALID_MD5 = '11111111111111111111111111111111'
+INVALID_REDIS_URL = 'redis://127.0.0.1:6666/0'
 
 
 class LandingZoneTaskflowMixin:
@@ -592,6 +597,50 @@ class TestLandingZoneMoveView(
         self.assertTrue('BatchCheckFilesTask' in zone.status_info)
         self.assertEqual(len(self.zone_coll.data_objects), 1)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
+
+    @override_settings(REDIS_URL=INVALID_REDIS_URL)
+    def test_move_lock_failure(self):
+        """Test validating and moving with project lock failure"""
+        self.irods_obj = self.make_object(self.zone_coll, TEST_OBJ_NAME)
+        self.md5_obj = self.make_md5_object(self.irods_obj)
+        zone = LandingZone.objects.first()
+        self.assertEqual(zone.status, 'ACTIVE')
+        self.assertEqual(len(self.zone_coll.data_objects), 2)
+        self.assertEqual(len(self.assay_coll.data_objects), 0)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(
+            ProjectEvent.objects.filter(event_name='zone_move').count(), 0
+        )
+        self.assertEqual(
+            AppAlert.objects.filter(alert_name='zone_move').count(), 0
+        )
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'landingzones:move',
+                    kwargs={'landingzone': self.landing_zone.sodar_uuid},
+                ),
+            )
+            self.assertRedirects(
+                response,
+                reverse(
+                    'landingzones:list',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+            )
+
+        self.assert_zone_status(zone, 'FAILED')
+        self.assertEqual(len(self.zone_coll.data_objects), 2)
+        self.assertEqual(len(self.assay_coll.data_objects), 0)
+        self.assertEqual(len(mail.outbox), 1)  # TODO: Should this send email?
+        tl_event = ProjectEvent.objects.filter(event_name='zone_move').first()
+        self.assertIsInstance(tl_event, ProjectEvent)
+        self.assertEqual(tl_event.get_status().status_type, 'FAILED')
+        # TODO: Create app alerts for async failures (see #1499)
+        self.assertEqual(
+            AppAlert.objects.filter(alert_name='zone_move').count(), 0
+        )
 
 
 class TestLandingZoneDeleteView(

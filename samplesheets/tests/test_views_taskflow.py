@@ -57,6 +57,7 @@ PUBLIC_USER_NAME = 'user_no_roles'
 PUBLIC_USER_PASS = 'password'
 SOURCE_ID = '0815'
 SAMPLE_ID = '0815-N1'
+INVALID_REDIS_URL = 'redis://127.0.0.1:6666/0'
 
 
 class SampleSheetTaskflowMixin:
@@ -1452,6 +1453,47 @@ class TestIrodsRequestAcceptView(TestIrodsRequestViewsBase):
         )
         self.assertEqual(self._get_create_alert_count(self.user), 1)
         self.assertEqual(self._get_create_alert_count(self.user_delegate), 1)
+
+    @override_settings(REDIS_URL=INVALID_REDIS_URL)
+    def test_accept_lock_failure(self):
+        """Test accepting a delete request with project lock failure"""
+        self.assert_irods_obj(self.path)
+
+        with self.login(self.user_contrib):
+            self.client.post(
+                reverse(
+                    'samplesheets:irods_request_create',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                self.post_data,
+            )
+
+        self.assertEqual(IrodsDataRequest.objects.count(), 1)
+        obj = IrodsDataRequest.objects.first()
+        self.assertEqual(self._get_create_alert_count(self.user), 1)
+        self.assertEqual(self._get_create_alert_count(self.user_delegate), 1)
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'samplesheets:irods_request_accept',
+                    kwargs={'irodsdatarequest': obj.sodar_uuid},
+                ),
+                {'confirm': True},
+            )
+            self.assertRedirects(
+                response,
+                reverse(
+                    'samplesheets:irods_requests',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+            )
+
+        obj.refresh_from_db()
+        self.assertEqual(obj.status, 'FAILED')
+        self.assertEqual(self._get_create_alert_count(self.user), 1)
+        self.assertEqual(self._get_create_alert_count(self.user_delegate), 1)
+        self.assert_irods_obj(self.path, True)
 
 
 class TestIrodsRequestRejectView(TestIrodsRequestViewsBase):

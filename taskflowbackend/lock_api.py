@@ -12,7 +12,6 @@ from django.conf import settings
 LOCK_ENABLED = settings.TASKFLOW_LOCK_ENABLED
 LOCK_RETRY_COUNT = settings.TASKFLOW_LOCK_RETRY_COUNT
 LOCK_RETRY_INTERVAL = settings.TASKFLOW_LOCK_RETRY_INTERVAL
-REDIS_URL = settings.REDIS_URL
 
 
 logger = logging.getLogger('__name__')
@@ -40,7 +39,9 @@ class ProjectLockAPI:
         host_id = 'sodar_{}'.format(uuid.uuid4())
         try:
             coordinator = coordination.get_coordinator(
-                backend_url=REDIS_URL, member_id=host_id, socket_keepalive=True
+                backend_url=settings.REDIS_URL,
+                member_id=host_id,
+                socket_keepalive=True,
             )
             if coordinator:
                 coordinator.start(start_heart=True)
@@ -78,7 +79,7 @@ class ProjectLockAPI:
                     return True
                 time.sleep(retry_interval)
         cls._log_status(lock, unlock=False, failed=True)
-        raise LockAcquireException('Unable to acquire project lock')
+        raise LockAcquireException('Project is locked by another operation')
 
     @classmethod
     def release(cls, lock):

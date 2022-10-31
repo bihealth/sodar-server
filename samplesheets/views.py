@@ -2278,6 +2278,10 @@ class IrodsRequestAcceptView(
         app_alerts = get_backend_api('appalerts_backend')
         project = self.get_project()
         tl_event = None
+        redirect_url = reverse(
+            'samplesheets:irods_requests',
+            kwargs={'project': project.sodar_uuid},
+        )
 
         try:
             obj = IrodsDataRequest.objects.get(
@@ -2330,7 +2334,15 @@ class IrodsRequestAcceptView(
                 tl_event.set_status('FAILED', str(ex))
             obj.status = 'FAILED'
             obj.save()
-            raise ex
+            if settings.DEBUG:
+                raise ex
+            messages.error(
+                self.request,
+                'Accepting iRODS data request "{}" failed: {}'.format(
+                    obj.get_display_name(), ex
+                ),
+            )
+            return redirect(redirect_url)
 
         # Update cache
         if settings.SHEETS_ENABLE_CACHE:
@@ -2377,12 +2389,7 @@ class IrodsRequestAcceptView(
             self.request,
             'iRODS data request "{}" accepted.'.format(obj.get_display_name()),
         )
-        return redirect(
-            reverse(
-                'samplesheets:irods_requests',
-                kwargs={'project': project.sodar_uuid},
-            )
-        )
+        return redirect(redirect_url)
 
 
 class IrodsRequestRejectView(

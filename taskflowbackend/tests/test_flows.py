@@ -523,11 +523,14 @@ class TestLandingZoneMove(
         )
         empty_coll_path = os.path.join(self.zone_path, COLL_NAME)
         self.irods_session.collections.create(empty_coll_path)
-        obj_coll_path = os.path.join(self.sample_path, OBJ_COLL_NAME)
+        obj_coll_path = os.path.join(self.zone_path, OBJ_COLL_NAME)
         obj_coll = self.irods_session.collections.create(obj_coll_path)
         obj = self.make_object(obj_coll, OBJ_NAME)
         self.make_md5_object(obj)
         obj_path = os.path.join(obj_coll_path, OBJ_NAME)
+        sample_obj_path = os.path.join(
+            self.sample_path, OBJ_COLL_NAME, OBJ_NAME
+        )
 
         self.assertEqual(
             self.irods_session.collections.exists(empty_coll_path), True
@@ -538,6 +541,13 @@ class TestLandingZoneMove(
         self.assertEqual(self.irods_session.data_objects.exists(obj_path), True)
         self.assertEqual(
             self.irods_session.data_objects.exists(obj_path + '.md5'), True
+        )
+        self.assertEqual(
+            self.irods_session.data_objects.exists(sample_obj_path), False
+        )
+        self.assertEqual(
+            self.irods_session.data_objects.exists(sample_obj_path + '.md5'),
+            False,
         )
 
         flow_data = {'zone_uuid': str(self.zone.sodar_uuid)}
@@ -560,9 +570,6 @@ class TestLandingZoneMove(
         # An empty collection should not be created by moving
         self.assertEqual(
             self.irods_session.collections.exists(sample_empty_path), False
-        )
-        sample_obj_path = os.path.join(
-            self.sample_path, OBJ_COLL_NAME, OBJ_NAME
         )
         self.assertEqual(
             self.irods_session.data_objects.exists(sample_obj_path), True

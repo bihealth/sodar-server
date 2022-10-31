@@ -15,6 +15,7 @@ Maintenance and bug fix release.
 
 - Fix incorrect project modify API settings in production
 - Fix Tooz and Redis connection issue handling
+- Fix unhandled project locking errors
 
 
 v0.12.0 (2022-10-14)

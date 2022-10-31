@@ -14,12 +14,24 @@ Added
 - **Landingzones**
     - ``LANDINGZONES_TRIGGER_ENABLE`` Django setting (#1508)
 
+Changed
+-------
+
+- **Taskflowbackend**
+    - Improve project lock error messages (#1496, #1500, #1511)
+
 Fixed
 -----
 
 - **General**
     - Invalid  ``REDIS_URL`` default value (#1497)
     - Invalid modify API settings in production config (#1503)
+- **Samplesheets**
+    - Uncaught project lock exceptions in iRODS delete request accepting (#1495)
+    - Missing CSS classes for failed iRODS delete requests (#1513)
+- **Taskflowbackend**
+    - Unhandled project lock exceptions (#1496, #1500, #1511)
+    - Landing zone status not updated on flow lock/build errors (#1498)
 
 
 v0.12.0 (2022-10-14)
