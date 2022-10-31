@@ -13,6 +13,7 @@ v0.12.1 (WIP)
 
 Maintenance and bug fix release.
 
+- Fix incorrect project modify API settings in production
 - Fix Tooz and Redis connection issue handling
 
 

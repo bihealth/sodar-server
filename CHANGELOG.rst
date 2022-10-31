@@ -13,6 +13,7 @@ Fixed
 
 - **General**
     - Invalid  ``REDIS_URL`` default value (#1497)
+    - Invalid modify API settings in production config (#1503)
 
 
 v0.12.0 (2022-10-14)
