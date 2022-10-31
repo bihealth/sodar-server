@@ -187,6 +187,8 @@ Landing Zones Settings
 
 ``LANDINGZONES_STATUS_INTERVAL``
     Zone status query interval in seconds (integer).
+``LANDINGZONES_TRIGGER_ENABLE``
+    Enable automated move triggering (boolean).
 ``LANDINGZONES_TRIGGER_MOVE_INVERVAL``
     Automated move file check interval in seconds (integer).
 ``LANDINGZONES_TRIGGER_FILE``

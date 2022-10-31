@@ -8,6 +8,12 @@ Changelog for the SODAR project. Loosely follows the
 Unreleased
 ==========
 
+Added
+-----
+
+- **Landingzones**
+    - ``LANDINGZONES_TRIGGER_ENABLE`` Django setting (#1508)
+
 Fixed
 -----
 

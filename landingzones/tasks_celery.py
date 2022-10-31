@@ -21,9 +21,10 @@ APP_NAME = 'landingzones'
 
 @app.on_after_finalize.connect
 def setup_periodic_tasks(sender, **kwargs):
-    sender.add_periodic_task(
-        settings.LANDINGZONES_TRIGGER_MOVE_INVERVAL, trigger_zone_move
-    )
+    if settings.LANDINGZONES_TRIGGER_ENABLE:
+        sender.add_periodic_task(
+            settings.LANDINGZONES_TRIGGER_MOVE_INVERVAL, trigger_zone_move
+        )
 
 
 @app.task

@@ -102,6 +102,9 @@ SHEETS_EXTERNAL_LINK_PATH = os.path.join(
     ROOT_DIR, 'samplesheets/tests/config/ext_links.json'
 )
 
+# Landingzones app settings
+LANDINGZONES_TRIGGER_ENABLE = True
+
 
 # iRODS settings shared by iRODS using apps
 ENABLE_IRODS = True
