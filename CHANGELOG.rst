@@ -19,6 +19,8 @@ Changed
 
 - **General**
     - Upgrade to Django v3.2.16+ (#1515)
+- **Samplesheets**
+    - Upgrade Vue app dependencies (#1518)
 - **Taskflowbackend**
     - Improve project lock error messages (#1496, #1500, #1511)
 
