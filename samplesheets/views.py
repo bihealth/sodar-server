@@ -700,22 +700,17 @@ class IrodsCollsCreateViewMixin:
             'colls': get_sample_colls(investigation),
             'ticket_str': ticket_str,
         }
-        try:
-            taskflow.submit(
-                project=project,
-                flow_name='sheet_colls_create',
-                flow_data=flow_data,
-            )
-            app_settings.set_app_setting(
-                APP_NAME,
-                'public_access_ticket',
-                ticket_str,
-                project=project,
-            )
-        except taskflow.FlowSubmitException as ex:
-            if tl_event:
-                tl_event.set_status('FAILED', str(ex))
-            raise ex
+        taskflow.submit(
+            project=project,
+            flow_name='sheet_colls_create',
+            flow_data=flow_data,
+        )
+        app_settings.set_app_setting(
+            APP_NAME,
+            'public_access_ticket',
+            ticket_str,
+            project=project,
+        )
         if tl_event:
             tl_event.set_status('OK')
 
@@ -1507,14 +1502,11 @@ class SheetDeleteView(
                     flow_data={},
                 )
             except taskflow.FlowSubmitException as ex:
-                if tl_event:
-                    tl_event.set_status('FAILED', str(ex))
                 delete_success = False
                 messages.error(
                     self.request,
                     'Failed to delete sample sheets: {}'.format(ex),
                 )
-
         else:
             investigation.delete()
             tl_event.set_status('OK')
@@ -2330,8 +2322,6 @@ class IrodsRequestAcceptView(
             obj.status = 'ACCEPTED'
             obj.save()
         except taskflow.FlowSubmitException as ex:
-            if tl_event:
-                tl_event.set_status('FAILED', str(ex))
             obj.status = 'FAILED'
             obj.save()
             if settings.DEBUG:

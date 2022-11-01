@@ -15,7 +15,7 @@ class Flow(BaseLinearFlow):
         self.required_fields = ['zone_uuid']
         return super().validate()
 
-    def _build(self, force_fail):
+    def build(self, force_fail=False):
         # Setup
         zone = LandingZone.objects.get(sodar_uuid=self.flow_data['zone_uuid'])
         zone_path = self.irods_backend.get_path(zone)
@@ -67,12 +67,3 @@ class Flow(BaseLinearFlow):
             )
         )
 
-    def build(self, force_fail=False):
-        try:
-            self._build(force_fail)
-        except Exception as ex:
-            zone = LandingZone.objects.get(
-                sodar_uuid=self.flow_data['zone_uuid']
-            )
-            zone.set_status('FAILED', str(ex))
-            raise ex

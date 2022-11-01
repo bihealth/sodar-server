@@ -172,7 +172,6 @@ class ZoneCreateMixin(ZoneConfigPluginMixin):
                 pass  # TODO: Build tables, get rows directly from plugin?
 
         logger.debug('Collections to be created: {}'.format(', '.join(colls)))
-
         flow_name = 'landing_zone_create'
         flow_data = self.get_flow_data(
             zone,
@@ -191,8 +190,6 @@ class ZoneCreateMixin(ZoneConfigPluginMixin):
                 tl_event=tl_event,
             )
         except taskflow.FlowSubmitException as ex:
-            if tl_event:
-                tl_event.set_status('FAILED', str(ex))
             zone.delete()
             raise ex
 
@@ -243,21 +240,14 @@ class ZoneDeleteMixin(ZoneConfigPluginMixin):
                 'zone_uuid': str(zone.sodar_uuid),
             },
         )
-
-        try:
-            taskflow.submit(
-                project=project,
-                flow_name=flow_name,
-                flow_data=flow_data,
-                async_mode=True,
-                tl_event=tl_event if tl_event else None,
-            )
-            self.object = None
-
-        except taskflow.FlowSubmitException as ex:
-            if tl_event:
-                tl_event.set_status('FAILED', str(ex))
-            raise ex
+        taskflow.submit(
+            project=project,
+            flow_name=flow_name,
+            flow_data=flow_data,
+            async_mode=True,
+            tl_event=tl_event if tl_event else None,
+        )
+        self.object = None
 
 
 class ZoneMoveMixin(ZoneConfigPluginMixin):
@@ -275,7 +265,6 @@ class ZoneMoveMixin(ZoneConfigPluginMixin):
         """
         if not request and hasattr(self, 'request'):
             request = self.request
-
         user = request.user if request else zone.user
         timeline = get_backend_api('timeline_backend')
         taskflow = get_backend_api('taskflow')
@@ -312,23 +301,15 @@ class ZoneMoveMixin(ZoneConfigPluginMixin):
             'landing_zone_move',
             {'zone_uuid': str(zone.sodar_uuid)},
         )
-
         if validate_only:
             flow_data['validate_only'] = True
-
-        try:
-            taskflow.submit(
-                project=project,
-                flow_name='landing_zone_move',
-                flow_data=flow_data,
-                async_mode=True,
-                tl_event=tl_event,
-            )
-        except taskflow.FlowSubmitException as ex:
-            zone.set_status('FAILED', str(ex))
-            if tl_event:
-                tl_event.set_status('FAILED', str(ex))
-            raise ex
+        taskflow.submit(
+            project=project,
+            flow_name='landing_zone_move',
+            flow_data=flow_data,
+            async_mode=True,
+            tl_event=tl_event,
+        )
 
 
 # UI Views ---------------------------------------------------------------------
@@ -348,7 +329,6 @@ class ProjectZoneView(
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
-
         # Add flag for taskflow
         context['taskflow_enabled'] = (
             True if get_backend_api('taskflow') else False
@@ -361,7 +341,6 @@ class ProjectZoneView(
         context['irods_webdav_enabled'] = int(settings.IRODS_WEBDAV_ENABLED)
         if settings.IRODS_WEBDAV_ENABLED:
             context['irods_webdav_url'] = settings.IRODS_WEBDAV_URL.rstrip('/')
-
         # User zones
         context['zones_own'] = (
             LandingZone.objects.filter(
@@ -370,7 +349,6 @@ class ProjectZoneView(
             .exclude(status__in=STATUS_FINISHED)
             .order_by('title')
         )
-
         # Other zones
         # TODO: Add individual zone perm check if/when we implement issue #57
         if self.request.user.has_perm(
@@ -382,7 +360,6 @@ class ProjectZoneView(
                 .exclude(status__in=STATUS_FINISHED)
                 .order_by('user__username', 'title')
             )
-
         # Status query interval
         context['zone_status_interval'] = settings.LANDINGZONES_STATUS_INTERVAL
         return context
@@ -462,7 +439,6 @@ class ZoneCreateView(
             messages.warning(self.request, msg)
         except taskflow.FlowSubmitException as ex:
             messages.error(self.request, str(ex))
-
         return redirect(
             reverse('landingzones:list', kwargs={'project': project.sodar_uuid})
         )

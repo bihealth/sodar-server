@@ -42,13 +42,12 @@ class TaskflowAPI:
     @classmethod
     def _raise_flow_exception(cls, ex_msg, tl_event=None, zone=None):
         """
-        Handle and raise exception with flow building or execution. Updates an
-        associated timeline event if present and flow is in async mode. Also
-        updates landing zone status if zone is provided.
+        Handle and raise exception with flow building or execution. Updates the
+        status of timeline event and/or landing zone if provided.
 
         :param ex_msg: Exception message (string)
         :param tl_event: Timeline event or None
-        :zone: LandingZone object or None
+        :param zone: LandingZone object or None
         :raise: FlowSubmitException
         """
         if tl_event:
@@ -115,7 +114,7 @@ class TaskflowAPI:
         :param force_fail: Force failure (boolean, for testing)
         :param async_mode: Submit in async mode (boolean, default=False)
         :param tl_event: Timeline ProjectEvent object or None. Event status will
-                         be updated if the flow is run in async mode.
+                         be updated if the flow is run in async mode
         :return: Dict
         """
         flow_result = None
@@ -123,12 +122,11 @@ class TaskflowAPI:
         coordinator = None
         lock = None
         # Get zone if present in flow
-        zone_uuid = flow.flow_data.get('zone_uuid')
         zone = None
-        if zone_uuid:
-            zone = LandingZone.objects.filter(sodar_uuid=zone_uuid).first()
-        # Provide tl_event for exceptions only if async mode
-        tl_event_ex = tl_event if async_mode else None
+        if flow.flow_data.get('zone_uuid'):
+            zone = LandingZone.objects.filter(
+                sodar_uuid=flow.flow_data['zone_uuid']
+            ).first()
 
         # Acquire lock if needed
         if flow.require_lock:
@@ -137,7 +135,7 @@ class TaskflowAPI:
             if not coordinator:
                 cls._raise_flow_exception(
                     LOCK_FAIL_MSG + ': Failed to retrieve lock coordinator',
-                    tl_event_ex,
+                    tl_event,
                     zone,
                 )
             else:
@@ -147,7 +145,9 @@ class TaskflowAPI:
                     lock_api.acquire(lock)
                 except Exception as ex:
                     cls._raise_flow_exception(
-                        LOCK_FAIL_MSG + ': {}'.format(ex), tl_event_ex, zone
+                        LOCK_FAIL_MSG + ': {}'.format(ex),
+                        tl_event,
+                        zone,
                     )
         else:
             logger.info('Lock not required (flow.require_lock=False)')
@@ -183,8 +183,7 @@ class TaskflowAPI:
         if ex_msg:
             logger.error(ex_msg)  # TODO: Isn't this redundant?
             # NOTE: Not providing zone here since it's handled by flow
-            # TODO: Replace RevertLandingZoneFailTask with a call here?
-            cls._raise_flow_exception(ex_msg, tl_event_ex, None)
+            cls._raise_flow_exception(ex_msg, tl_event, None)
         return flow_result
 
     def submit(
