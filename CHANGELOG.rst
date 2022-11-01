@@ -17,6 +17,8 @@ Added
 Changed
 -------
 
+- **General**
+    - Upgrade to Django v3.2.16+ (#1515)
 - **Taskflowbackend**
     - Improve project lock error messages (#1496, #1500, #1511)
 
