@@ -10,6 +10,7 @@ from samplesheets.tests.test_views_taskflow import (
     TestIrodsRequestViewsBase,
     TEST_FILE_NAME2,
 )
+from samplesheets.views import IRODS_REQ_CREATE_ALERT as CREATE_ALERT
 
 
 # Local constants
@@ -25,8 +26,8 @@ class TestIrodsRequestCreateAjaxView(TestIrodsRequestViewsBase):
     def test_create_request(self):
         """Test creating a delete request on a data object"""
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
-        self.assertEqual(self._get_create_alert_count(self.user), 0)
-        self.assertEqual(self._get_create_alert_count(self.user_delegate), 0)
+        self._assert_alert_count(CREATE_ALERT, self.user, 0)
+        self._assert_alert_count(CREATE_ALERT, self.user_delegate, 0)
 
         with self.login(self.user):
             response = self.client.post(
@@ -41,8 +42,8 @@ class TestIrodsRequestCreateAjaxView(TestIrodsRequestViewsBase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['detail'], 'ok')
         self.assertEqual(response.data['status'], 'ACTIVE')
-        self.assertEqual(self._get_create_alert_count(self.user), 1)
-        self.assertEqual(self._get_create_alert_count(self.user_delegate), 1)
+        self._assert_alert_count(CREATE_ALERT, self.user, 0)
+        self._assert_alert_count(CREATE_ALERT, self.user_delegate, 1)
 
     def test_create_exists_same_user(self):
         """Test creating delete request if request for same user exists"""
@@ -56,8 +57,8 @@ class TestIrodsRequestCreateAjaxView(TestIrodsRequestViewsBase):
             )
 
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
-        self.assertEqual(self._get_create_alert_count(self.user), 1)
-        self.assertEqual(self._get_create_alert_count(self.user_delegate), 1)
+        self._assert_alert_count(CREATE_ALERT, self.user, 1)
+        self._assert_alert_count(CREATE_ALERT, self.user_delegate, 1)
 
         with self.login(self.user_contrib):
             response = self.client.post(
@@ -72,8 +73,8 @@ class TestIrodsRequestCreateAjaxView(TestIrodsRequestViewsBase):
         self.assertEqual(
             response.data['detail'], 'active request for path already exists'
         )
-        self.assertEqual(self._get_create_alert_count(self.user), 1)
-        self.assertEqual(self._get_create_alert_count(self.user_delegate), 1)
+        self._assert_alert_count(CREATE_ALERT, self.user, 1)
+        self._assert_alert_count(CREATE_ALERT, self.user_delegate, 1)
 
     def test_create_exists_as_admin_by_contributor(self):
         """Test creating request as admin if request from contributor exists"""
@@ -103,7 +104,7 @@ class TestIrodsRequestCreateAjaxView(TestIrodsRequestViewsBase):
         )
 
     def test_create_exists_as_contributor_by_contributor2(self):
-        """Test creating request as contributor if request by contributor2 exists"""
+        """Test creating as contributor if request by contributor2 exists"""
         with self.login(self.user_contrib):
             self.client.post(
                 reverse(
@@ -137,8 +138,8 @@ class TestIrodsRequestCreateAjaxView(TestIrodsRequestViewsBase):
         self.irods_session.data_objects.create(path2_md5)
 
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
-        self.assertEqual(self._get_create_alert_count(self.user), 0)
-        self.assertEqual(self._get_create_alert_count(self.user_delegate), 0)
+        self._assert_alert_count(CREATE_ALERT, self.user, 0)
+        self._assert_alert_count(CREATE_ALERT, self.user_delegate, 0)
 
         with self.login(self.user):
             self.client.post(
@@ -159,8 +160,8 @@ class TestIrodsRequestCreateAjaxView(TestIrodsRequestViewsBase):
             )
 
         self.assertEqual(IrodsDataRequest.objects.count(), 2)
-        self.assertEqual(self._get_create_alert_count(self.user), 1)
-        self.assertEqual(self._get_create_alert_count(self.user_delegate), 1)
+        self._assert_alert_count(CREATE_ALERT, self.user, 0)
+        self._assert_alert_count(CREATE_ALERT, self.user_delegate, 1)
 
 
 class TestIrodsRequestDeleteAjaxView(TestIrodsRequestViewsBase):
@@ -179,8 +180,8 @@ class TestIrodsRequestDeleteAjaxView(TestIrodsRequestViewsBase):
             )
 
         self.assertEqual(IrodsDataRequest.objects.count(), 1)
-        self.assertEqual(self._get_create_alert_count(self.user), 1)
-        self.assertEqual(self._get_create_alert_count(self.user_delegate), 1)
+        self._assert_alert_count(CREATE_ALERT, self.user, 1)
+        self._assert_alert_count(CREATE_ALERT, self.user_delegate, 1)
 
         # Delete request
         with self.login(self.user_contrib):
@@ -196,12 +197,11 @@ class TestIrodsRequestDeleteAjaxView(TestIrodsRequestViewsBase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['detail'], 'ok')
         self.assertEqual(response.data['status'], None)
-        self.assertEqual(self._get_create_alert_count(self.user), 0)
-        self.assertEqual(self._get_create_alert_count(self.user_delegate), 0)
+        self._assert_alert_count(CREATE_ALERT, self.user, 0)
+        self._assert_alert_count(CREATE_ALERT, self.user_delegate, 0)
 
     def test_delete_request_as_admin_by_contributor(self):
         """Test deleting an existing delete request"""
-        # Create request
         with self.login(self.user_contrib):
             self.client.post(
                 reverse(
@@ -230,7 +230,6 @@ class TestIrodsRequestDeleteAjaxView(TestIrodsRequestViewsBase):
 
     def test_delete_request_as_contributor_by_contributor2(self):
         """Test GET request for deleting an existing delete request"""
-        # Create request
         with self.login(self.user_contrib):
             self.client.post(
                 reverse(
@@ -258,11 +257,10 @@ class TestIrodsRequestDeleteAjaxView(TestIrodsRequestViewsBase):
             response.data['detail'], 'User not allowed to delete request'
         )
 
-    def test_delete_request_doesnt_exist(self):
+    def test_delete_no_request(self):
         """Test deleting a delete request that doesn't exist"""
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
 
-        # Delete request
         with self.login(self.user):
             response = self.client.post(
                 reverse(
@@ -283,8 +281,8 @@ class TestIrodsRequestDeleteAjaxView(TestIrodsRequestViewsBase):
         self.irods_session.data_objects.create(path2_md5)
 
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
-        self.assertEqual(self._get_create_alert_count(self.user), 0)
-        self.assertEqual(self._get_create_alert_count(self.user_delegate), 0)
+        self._assert_alert_count(CREATE_ALERT, self.user, 0)
+        self._assert_alert_count(CREATE_ALERT, self.user_delegate, 0)
 
         with self.login(self.user_contrib):
             self.client.post(
@@ -303,10 +301,8 @@ class TestIrodsRequestDeleteAjaxView(TestIrodsRequestViewsBase):
             )
 
             self.assertEqual(IrodsDataRequest.objects.count(), 2)
-            self.assertEqual(self._get_create_alert_count(self.user), 1)
-            self.assertEqual(
-                self._get_create_alert_count(self.user_delegate), 1
-            )
+            self._assert_alert_count(CREATE_ALERT, self.user, 1)
+            self._assert_alert_count(CREATE_ALERT, self.user_delegate, 1)
 
             self.client.post(
                 reverse(
@@ -317,10 +313,8 @@ class TestIrodsRequestDeleteAjaxView(TestIrodsRequestViewsBase):
             )
 
             self.assertEqual(IrodsDataRequest.objects.count(), 1)
-            self.assertEqual(self._get_create_alert_count(self.user), 1)
-            self.assertEqual(
-                self._get_create_alert_count(self.user_delegate), 1
-            )
+            self._assert_alert_count(CREATE_ALERT, self.user, 1)
+            self._assert_alert_count(CREATE_ALERT, self.user_delegate, 1)
 
 
 class TestIrodsObjectListAjaxView(TestIrodsRequestViewsBase):

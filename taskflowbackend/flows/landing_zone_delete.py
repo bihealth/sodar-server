@@ -66,4 +66,3 @@ class Flow(BaseLinearFlow):
                 },
             )
         )
-

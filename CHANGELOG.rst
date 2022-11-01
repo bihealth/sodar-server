@@ -31,6 +31,7 @@ Fixed
 - **Samplesheets**
     - Uncaught project lock exceptions in iRODS delete request accepting (#1495)
     - Missing CSS classes for failed iRODS delete requests (#1513)
+    - User alerts/emails sent for own iRODS data requests (#1502)
 - **Taskflowbackend**
     - Unhandled project lock exceptions (#1496, #1500, #1511)
     - Landing zone status not updated on flow lock/build errors (#1498)
