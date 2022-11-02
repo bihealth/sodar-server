@@ -45,6 +45,7 @@ logger = logging.getLogger(__name__)
 # Local constants
 APP_NAME = 'landingzones'
 SAMPLESHEETS_APP_NAME = 'samplesheets'
+ZONE_MOVE_INVALID_STATUS = 'Zone not in active state, unable to trigger action.'
 
 
 # Mixins -----------------------------------------------------------------------
@@ -572,8 +573,11 @@ class ZoneMoveView(
             messages.error(
                 self.request,
                 'Required backends (Taskflow/Irodsbackend) not enabled, '
-                'unable to modify zone!',
+                'unable to modify zone.',
             )
+            return redirect(redirect_url)
+        if zone.status not in STATUS_ALLOW_UPDATE:
+            messages.error(self.request, ZONE_MOVE_INVALID_STATUS)
             return redirect(redirect_url)
 
         # Validate/move or validate only
@@ -582,7 +586,6 @@ class ZoneMoveView(
             'landingzones:validate', kwargs={'landingzone': zone.sodar_uuid}
         ):
             validate_only = True
-
         try:
             self._submit_validate_move(zone, validate_only)
             messages.warning(
@@ -592,5 +595,4 @@ class ZoneMoveView(
             )
         except Exception as ex:
             messages.error(self.request, str(ex))
-
         return redirect(redirect_url)

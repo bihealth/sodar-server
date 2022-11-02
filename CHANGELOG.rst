@@ -30,6 +30,8 @@ Fixed
 - **General**
     - Invalid  ``REDIS_URL`` default value (#1497)
     - Invalid modify API settings in production config (#1503)
+- **Landingzones**
+    - Missing zone status check in ``ZoneMoveView`` (#1520)
 - **Samplesheets**
     - Uncaught project lock exceptions in iRODS delete request accepting (#1495)
     - Missing CSS classes for failed iRODS delete requests (#1513)
