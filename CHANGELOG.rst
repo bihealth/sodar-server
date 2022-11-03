@@ -19,6 +19,7 @@ Changed
 
 - **General**
     - Upgrade to Django v3.2.16+ (#1515)
+    - Move include examples to ``include_examples`` (#1493)
 - **Samplesheets**
     - Upgrade Vue app dependencies (#1518)
 - **Taskflowbackend**
@@ -40,6 +41,12 @@ Fixed
     - Unhandled project lock exceptions (#1496, #1500, #1511)
     - Landing zone status not updated on flow lock/build errors (#1498)
     - Role deletion failing for categories (#1521)
+
+Removed
+-------
+
+- **Samplesheets**
+    - ``.gitkeep`` for ``config`` directory (#1493)
 
 
 v0.12.0 (2022-10-14)
