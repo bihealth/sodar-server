@@ -14,8 +14,11 @@ v0.12.1 (WIP)
 Maintenance and bug fix release.
 
 - Fix incorrect project modify API settings in production
+- Fix category member role removal
 - Fix Tooz and Redis connection issue handling
 - Fix unhandled project locking errors
+- Upgrade Vue app dependencies
+- Minor updates and bug fixes
 
 
 v0.12.0 (2022-10-14)

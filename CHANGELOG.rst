@@ -39,6 +39,7 @@ Fixed
 - **Taskflowbackend**
     - Unhandled project lock exceptions (#1496, #1500, #1511)
     - Landing zone status not updated on flow lock/build errors (#1498)
+    - Role deletion failing for categories (#1521)
 
 
 v0.12.0 (2022-10-14)

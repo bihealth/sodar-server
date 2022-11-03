@@ -187,8 +187,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
         if role_as.project.type != PROJECT_TYPE_PROJECT:
             logger.debug('Skipping: {}'.format(IRODS_CAT_SKIP_MSG))
             return
-
-        # Skip for update (bo action needed)
+        # Skip for update (no action needed)
         if action == PROJECT_ACTION_UPDATE:
             logger.debug('Skipping: User already has iRODS access')
             return
@@ -274,6 +273,11 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
         :param role_as: RoleAssignment object
         :param request: Request object or None
         """
+        # Skip for categories
+        if role_as.project.type != PROJECT_TYPE_PROJECT:
+            logger.debug('Skipping: {}'.format(IRODS_CAT_SKIP_MSG))
+            return
+
         timeline = get_backend_api('timeline_backend')
         tl_event = None
         if timeline:

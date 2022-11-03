@@ -474,20 +474,19 @@ class TestRoleAssignmentDeleteView(TaskflowbackendTestBase):
             description='description',
         )
         self.user_new = self.make_user('newuser')
-        self.role_as = self.make_assignment_taskflow(
+
+    def test_delete_role(self):
+        """Test RoleAssignment deleting with taskflow"""
+        role_as = self.make_assignment_taskflow(
             self.project, self.user_new, self.role_guest
         )
-
-    def test_delete_assignment(self):
-        """Test RoleAssignment deleting with taskflow"""
         self.assertEqual(RoleAssignment.objects.count(), 3)
         self.assert_group_member(self.project, self.user_new, True)
-
         with self.login(self.user):
             response = self.client.post(
                 reverse(
                     'projectroles:role_delete',
-                    kwargs={'roleassignment': self.role_as.sodar_uuid},
+                    kwargs={'roleassignment': role_as.sodar_uuid},
                 ),
             )
             self.assertRedirects(
@@ -497,9 +496,30 @@ class TestRoleAssignmentDeleteView(TaskflowbackendTestBase):
                     kwargs={'project': self.project.sodar_uuid},
                 ),
             )
-
         self.assertEqual(RoleAssignment.objects.count(), 2)
         self.assert_group_member(self.project, self.user_new, False)
+
+    def test_delete_role_category(self):
+        """Test RoleAssignment deleting with taskflow and category"""
+        role_as = self.make_assignment_taskflow(
+            self.category, self.user_new, self.role_guest
+        )
+        self.assertEqual(RoleAssignment.objects.count(), 3)
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'projectroles:role_delete',
+                    kwargs={'roleassignment': role_as.sodar_uuid},
+                ),
+            )
+            self.assertRedirects(
+                response,
+                reverse(
+                    'projectroles:roles',
+                    kwargs={'project': self.category.sodar_uuid},
+                ),
+            )
+        self.assertEqual(RoleAssignment.objects.count(), 2)
 
 
 class TestProjectInviteAcceptView(ProjectInviteMixin, TaskflowbackendTestBase):

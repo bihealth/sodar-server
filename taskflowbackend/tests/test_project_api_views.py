@@ -412,24 +412,40 @@ class TestRoleAssignmentDestroyAPIView(TestCoreTaskflowAPIBase):
             description='description',
         )
         self.assign_user = self.make_user('assign_user')
-        self.update_as = self._make_assignment_taskflow(
+
+    def test_delete_role(self):
+        """Test delete() for role assignment deletion"""
+        update_as = self._make_assignment_taskflow(
             project=self.project,
             user=self.assign_user,
             role=self.role_contributor,
         )
-
-    def test_delete_role(self):
-        """Test delete() for role assignment deletion"""
         self.assertEqual(RoleAssignment.objects.all().count(), 3)
         self.assert_group_member(self.project, self.assign_user, True)
         url = reverse(
             'projectroles:api_role_destroy',
-            kwargs={'roleassignment': self.update_as.sodar_uuid},
+            kwargs={'roleassignment': update_as.sodar_uuid},
         )
         response = self.request_knox(url, method='DELETE')
         self.assertEqual(response.status_code, 204, msg=response.content)
         self.assertEqual(RoleAssignment.objects.all().count(), 2)
         self.assert_group_member(self.project, self.assign_user, False)
+
+    def test_delete_role_category(self):
+        """Test delete() for role assignment deletion with category"""
+        update_as = self._make_assignment_taskflow(
+            project=self.category,
+            user=self.assign_user,
+            role=self.role_contributor,
+        )
+        self.assertEqual(RoleAssignment.objects.all().count(), 3)
+        url = reverse(
+            'projectroles:api_role_destroy',
+            kwargs={'roleassignment': update_as.sodar_uuid},
+        )
+        response = self.request_knox(url, method='DELETE')
+        self.assertEqual(response.status_code, 204, msg=response.content)
+        self.assertEqual(RoleAssignment.objects.all().count(), 2)
 
 
 class TestRoleAssignmentOwnerTransferAPIView(TestCoreTaskflowAPIBase):
