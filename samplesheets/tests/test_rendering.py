@@ -29,7 +29,6 @@ class TestRenderingBase(
     def setUp(self):
         # Make owner user
         self.user_owner = self.make_user('owner')
-
         # Init project, role and assignment
         self.project = self._make_project(
             'TestProject', SODAR_CONSTANTS['PROJECT_TYPE_PROJECT'], None
@@ -40,11 +39,9 @@ class TestRenderingBase(
         self.assignment_owner = self._make_assignment(
             self.project, self.user_owner, self.role_owner
         )
-
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
-
         self.tb = SampleSheetTableBuilder()
 
 

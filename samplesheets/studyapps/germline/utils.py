@@ -1,11 +1,11 @@
-""" Utilities for the germline study app"""
+"""Utilities for the germline study app"""
 
 # Projectroles dependency
 from projectroles.plugins import get_backend_api
 
 from samplesheets.models import GenericMaterial
-from samplesheets.utils import get_index_by_header
 from samplesheets.studyapps.utils import FILE_TYPE_SUFFIXES
+from samplesheets.utils import get_index_by_header
 
 
 def get_pedigree_file_path(file_type, source, study_tables):
@@ -114,7 +114,6 @@ def get_families(study):
             )
         )
     )
-
     if not ret or not ret[0]:
         ret = (
             GenericMaterial.objects.filter(study=study, item_type='SOURCE')

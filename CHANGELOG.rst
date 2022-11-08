@@ -22,6 +22,9 @@ Changed
     - Move include examples to ``include_examples`` (#1493)
 - **Samplesheets**
     - Upgrade Vue app dependencies (#1518)
+    - Improve study app logging (#1507)
+    - Optimize germline study app ``get_shortcut_column()`` (#1519)
+    - Add study app tests (#1523)
 - **Taskflowbackend**
     - Improve project lock error messages (#1496, #1500, #1511)
 

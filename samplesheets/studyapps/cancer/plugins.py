@@ -1,5 +1,7 @@
 """BIH cancer config study app plugin for samplesheets"""
 
+import logging
+
 from django.conf import settings
 from django.contrib import auth
 from django.urls import reverse
@@ -11,17 +13,16 @@ from projectroles.plugins import get_backend_api
 from samplesheets.models import Investigation, Study, GenericMaterial
 from samplesheets.plugins import SampleSheetStudyPluginPoint
 from samplesheets.rendering import SampleSheetTableBuilder
+from samplesheets.studyapps.cancer.utils import get_library_file_path
+from samplesheets.studyapps.utils import get_igv_session_url, get_igv_irods_url
 from samplesheets.utils import (
     get_sample_libraries,
     get_study_libraries,
     get_isa_field_name,
 )
 
-from samplesheets.studyapps.utils import get_igv_session_url, get_igv_irods_url
 
-from samplesheets.studyapps.cancer.utils import get_library_file_path
-
-
+logger = logging.getLogger(__name__)
 User = auth.get_user_model()
 
 
@@ -59,6 +60,19 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                 return False
         return True
 
+    @classmethod
+    def _source_files_exist(cls, cache, prefix, item_type):
+        """Return true if source files exist"""
+        files = [
+            v
+            for k, v in cache.data[item_type].items()
+            if prefix in k and k.index(prefix) == 0
+        ]
+        vals = list(set(files))
+        if len(vals) == 0 or (len(vals) == 1 and not vals[0]):
+            return False
+        return True
+
     def get_shortcut_column(self, study, study_tables):
         """
         Return structure containing links for an extra study table links column.
@@ -69,6 +83,7 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
         """
         # Omit for mass spectrometry studies (workaround for issue #482)
         if self._has_only_ms_assays(study):
+            logger.debug('Skipping for MS-only study')
             return None
 
         # Get iRODS URLs from cache if it's available
@@ -102,24 +117,10 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
         for source in study.get_sources():
             igv_urls[source.name] = get_igv_session_url(source, APP_NAME)
         if not igv_urls:
+            logger.debug('No IGV urls generated')
             return ret
 
-        # NOTE: Not fool proof but better than assay search for lib id:s
-        # TODO: Better way to do this? Tired now so this may be silly
-        def _source_files_exist(cache, prefix, item_type):
-            vals = list(
-                set(
-                    [
-                        v
-                        for k, v in cache.data[item_type].items()
-                        if prefix in k and k.index(prefix) == 0
-                    ]
-                )
-            )
-            if len(vals) == 0 or (len(vals) == 1 and not vals[0]):
-                return False
-            return True
-
+        logger.debug('Set shortcut column data..')
         for row in study_tables['study']['table_data']:
             source_id = row[0]['value']
             source_prefix = source_id + '-'
@@ -127,8 +128,12 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
             # Set initial state based on cache
             if (
                 cache_item
-                and not _source_files_exist(cache_item, source_prefix, 'bam')
-                and not _source_files_exist(cache_item, source_prefix, 'vcf')
+                and not self._source_files_exist(
+                    cache_item, source_prefix, 'bam'
+                )
+                and not self._source_files_exist(
+                    cache_item, source_prefix, 'vcf'
+                )
             ):
                 enabled = False
             ret['data'].append(
@@ -140,7 +145,6 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                     },
                 }
             )
-
         return ret
 
     def get_shortcut_links(self, study, study_tables, **kwargs):
@@ -185,7 +189,6 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                 path = get_library_file_path(
                     file_type=file_type, library=library
                 )
-
             if path:
                 ret['data'][file_type]['files'].append(
                     {
@@ -247,7 +250,6 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                     ],
                 }
             )
-
         return ret
 
     def update_cache(self, name=None, project=None, user=None):
@@ -258,6 +260,7 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
         :param project: Project object to limit update to (optional)
         :param user: User object to denote user triggering the update (optional)
         """
+        # Expected name: "irods/{study_uuid}"
         # Omit for mass spectrometry studies (workaround for issue #482)
         if name and name.split('/')[0] != 'irods':
             return
@@ -279,7 +282,6 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                 )
             except Investigation.DoesNotExist:
                 continue
-
             # Only apply for investigations with the correct configuration
             if investigation.get_configuration() != self.config_name:
                 continue
@@ -294,14 +296,12 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
             for study in studies:
                 if self._has_only_ms_assays(study):
                     continue
-
                 item_name = 'irods/{}'.format(study.sodar_uuid)
                 bam_paths = {}
                 vcf_paths = {}
 
                 # Build render table
                 study_tables = tb.build_study_tables(study, ui=False)
-
                 for library in get_study_libraries(study, study_tables):
                     if not library.assay:
                         continue

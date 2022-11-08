@@ -2,6 +2,7 @@
 
 import logging
 import os
+import time
 
 from copy import deepcopy
 from irods.exception import NetworkException
@@ -980,18 +981,26 @@ def get_irods_content(inv, study, irods_backend, ret_data):
     ret_data = deepcopy(ret_data)
     if not (inv.irods_status and irods_backend):
         return ret_data
+    logger.debug('Retrieving iRODS content..')
+    time_start = time.time()
 
-    # Get study plugin for shortcut data
+    # Get study content if plugin is found
     study_plugin = study.get_plugin()
     if study_plugin:
+        logger.debug(
+            'Retrieving study shortcuts for study "{}" (plugin={})..'.format(
+                study.get_display_name(), study_plugin.name
+            )
+        )
         shortcuts = study_plugin.get_shortcut_column(study, ret_data['tables'])
         ret_data['tables']['study']['shortcuts'] = shortcuts
+    else:
+        logger.debug('Study plugin not found')
 
     # Get assay content if corresponding assay plugin exists
     for a_uuid, a_data in ret_data['tables']['assays'].items():
         assay = Assay.objects.filter(sodar_uuid=a_uuid).first()
         assay_path = irods_backend.get_path(assay)
-        assay_plugin = assay.get_plugin()
         a_data['irods_paths'] = []
         # Default shortcuts
         a_data['shortcuts'] = [
@@ -1009,7 +1018,14 @@ def get_irods_content(inv, study, irods_backend, ret_data):
             },
         ]
 
+        assay_plugin = assay.get_plugin()
         if assay_plugin:
+            logger.debug(
+                'Retrieving assay shortcuts for assay "{}" '
+                '(plugin={})..'.format(
+                    assay.get_display_name(), assay_plugin.name
+                )
+            )
             cache_item = cache_backend.get_cache_item(
                 name='irods/rows/{}'.format(a_uuid),
                 app_name=assay_plugin.app_name,
@@ -1034,16 +1050,16 @@ def get_irods_content(inv, study, irods_backend, ret_data):
                 # Update row links
                 assay_plugin.update_row(row, a_data, assay)
 
-            assay_shortcuts = assay_plugin.get_shortcuts(assay) or []
-
             # Add visual notification to all shortcuts coming from assay plugin
+            assay_shortcuts = assay_plugin.get_shortcuts(assay) or []
             for a in assay_shortcuts:
                 a['icon'] = 'mdi:puzzle'
                 a['title'] = 'Defined in assay plugin'
                 a['assay_plugin'] = True
-
             # Add extra table if available
             a_data['shortcuts'].extend(assay_shortcuts)
+        else:
+            logger.debug('Assay plugin not found')
 
         # Check assay shortcut cache and set initial enabled value
         cache_item = cache_backend.get_cache_item(
@@ -1053,10 +1069,10 @@ def get_irods_content(inv, study, irods_backend, ret_data):
         )
 
         # Add track hub shortcuts
+        logger.debug('Setting up track hub shortcuts..')
         track_hubs = (
             cache_item and cache_item.data['shortcuts'].get('track_hubs')
         ) or []
-
         for i, track_hub in enumerate(track_hubs):
             tickets = IrodsAccessTicket.active_objects.filter(
                 path=track_hub
@@ -1084,7 +1100,6 @@ def get_irods_content(inv, study, irods_backend, ret_data):
                     else [],
                 }
             )
-
         for i in range(len(a_data['shortcuts'])):
             if cache_item:
                 a_data['shortcuts'][i]['enabled'] = cache_item.data[
@@ -1092,5 +1107,7 @@ def get_irods_content(inv, study, irods_backend, ret_data):
                 ].get(a_data['shortcuts'][i]['id'])
             else:
                 a_data['shortcuts'][i]['enabled'] = True
-
+    logger.debug(
+        'iRODS content retrieved ({:.1f}s)'.format(time.time() - time_start)
+    )
     return ret_data

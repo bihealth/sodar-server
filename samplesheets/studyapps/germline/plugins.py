@@ -1,5 +1,7 @@
 """BIH germline config study app plugin for samplesheets"""
 
+import logging
+
 from django.conf import settings
 from django.contrib import auth
 from django.urls import reverse
@@ -11,11 +13,17 @@ from projectroles.plugins import get_backend_api
 from samplesheets.models import Investigation, Study, GenericMaterial
 from samplesheets.plugins import SampleSheetStudyPluginPoint
 from samplesheets.rendering import SampleSheetTableBuilder
+from samplesheets.studyapps.utils import get_igv_session_url, get_igv_irods_url
 from samplesheets.utils import get_index_by_header
 
-from samplesheets.studyapps.utils import get_igv_session_url, get_igv_irods_url
+from samplesheets.studyapps.germline.utils import (
+    get_pedigree_file_path,
+    get_families,
+    get_family_sources,
+)
 
-from .utils import get_pedigree_file_path, get_families, get_family_sources
+logger = logging.getLogger(__name__)
+User = auth.get_user_model()
 
 
 # SODAR constants
@@ -23,8 +31,6 @@ PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 
 # Local constants
 APP_NAME = 'samplesheets.studyapps.germline'
-
-User = auth.get_user_model()
 
 
 class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
@@ -55,7 +61,6 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
         """
         cache_backend = get_backend_api('sodar_cache')
         cache_item = None
-
         # Get iRODS URLs from cache if it's available
         if cache_backend:
             cache_item = cache_backend.get_cache_item(
@@ -86,34 +91,40 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
         igv_urls = {}
         id_idx = 0  # Default is the source name
         query_key = 'source'  # Default is source
-
+        study_sources = study.get_sources()
         # Group by family
         if family_idx and study_tables['study']['col_values'][family_idx] == 1:
+            logger.debug('Grouping by family')
             id_idx = family_idx
             query_key = 'family'
-
+            source_lookup = {}
+            for source in study_sources:
+                family = None
+                if source.characteristics.get(
+                    'Family'
+                ) and source.characteristics['Family'].get('value'):
+                    family = source.characteristics['Family']['value']
+                if family and family not in source_lookup:
+                    source_lookup[family] = source
             for family in get_families(study):
-                sources = get_family_sources(study, family)
                 igv_urls[family] = get_igv_session_url(
-                    sources.first(), APP_NAME
+                    source_lookup[family], APP_NAME
                 )
-
         # Else group by source
         else:
-            for source in study.get_sources():
+            logger.debug('Grouping by source')
+            for source in study_sources:
                 igv_urls[source.name] = get_igv_session_url(source, APP_NAME)
-
         if not igv_urls:
             return ret  # Nothing else to do
 
+        logger.debug('Set shortcut column data..')
         for row in study_tables['study']['table_data']:
             ped_id = row[id_idx]['value']
             source_id = row[0]['value']
             enabled = True
-
             # Fix potential crash due to pedigree mapping failure (issue #589)
             igv_url = igv_urls[ped_id] if ped_id in igv_urls else None
-
             # Set initial state based on URL and cache
             if not igv_url or (
                 cache_item
@@ -123,7 +134,6 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                 and not cache_item.data['vcf'][ped_id]
             ):
                 enabled = False
-
             ret['data'].append(
                 {
                     'igv': {
@@ -136,7 +146,6 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                     },
                 }
             )
-
         return ret
 
     def get_shortcut_links(self, study, study_tables, **kwargs):
@@ -280,9 +289,9 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
         :param project: Project object to limit update to (optional)
         :param user: User object to denote user triggering the update (optional)
         """
+        # Expected name: "irods/{study_uuid}"
         if name and name.split('/')[0] != 'irods':
             return
-
         cache_backend = get_backend_api('sodar_cache')
         tb = SampleSheetTableBuilder()
         projects = (
@@ -328,7 +337,6 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                         study_tables=study_tables,
                     )
                     bam_paths[source.name.strip()] = bam_path
-
                     # Get family ID
                     if (
                         'Family' in source.characteristics
@@ -337,7 +345,6 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                         query_id = source.characteristics['Family']['value']
                     else:
                         query_id = source.name.strip()
-
                     # One VCF path for each family (or source if no family)
                     if (
                         query_id != prev_query_id
@@ -349,7 +356,6 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                             study_tables=study_tables,
                         )
                         vcf_paths[query_id] = vcf_path
-
                     prev_query_id = query_id
 
                 # Update data
