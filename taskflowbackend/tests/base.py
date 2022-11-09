@@ -50,7 +50,7 @@ class TaskflowTestMixin:
     #: iRODS backend object
     irods_backend = None
     #: iRODS session object
-    irods_session = None
+    irods = None
 
     def assert_irods_access(self, user_name, target, expected):
         """
@@ -62,10 +62,10 @@ class TaskflowTestMixin:
         """
         if isinstance(target, str):
             try:
-                target = self.irods_session.collections.get(target)
+                target = self.irods.collections.get(target)
             except CollectionDoesNotExist:
-                target = self.irods_session.data_objects.get(target)
-        access_list = self.irods_session.permissions.get(target=target)
+                target = self.irods.data_objects.get(target)
+        access_list = self.irods.permissions.get(target=target)
         access = next(
             (x for x in access_list if x.user_name == user_name), None
         )
@@ -82,7 +82,7 @@ class TaskflowTestMixin:
         :param user: SODARUser object
         :param status: Expected membership status (boolean)
         """
-        user_group = self.irods_session.user_groups.get(
+        user_group = self.irods.user_groups.get(
             self.irods_backend.get_user_group_name(project)
         )
         self.assertEqual(user_group.hasmember(user.username), status)
@@ -90,7 +90,7 @@ class TaskflowTestMixin:
     def assert_irods_coll(self, target, sub_path=None, expected=True):
         """
         Assert the existence of iRODS collection by object or path. Requires
-        irods_backend and irods_session to be present in the class.
+        irods_backend and irods to be present in the class.
 
         :param target: Object supported by irodsbackend or full path as string
         :param sub_path: Subpath below object path (string, optional)
@@ -102,17 +102,17 @@ class TaskflowTestMixin:
             path = self.irods_backend.get_path(target)
         if sub_path:
             path += '/' + sub_path
-        self.assertEqual(self.irods_session.collections.exists(path), expected)
+        self.assertEqual(self.irods.collections.exists(path), expected)
 
     def assert_irods_obj(self, path, expected=True):
         """
-        Assert the existence of an iRODS data object. Requires irods_session to
-        be present in the class.
+        Assert the existence of an iRODS data object. Requires irods to be
+        present in the class.
 
         :param path: Full iRODS path to data object (string)
         :param expected: Expected state of existence (boolean)
         """
-        self.assertEqual(self.irods_session.data_objects.exists(path), expected)
+        self.assertEqual(self.irods.data_objects.exists(path), expected)
 
 
 class TaskflowbackendTestBase(
@@ -195,7 +195,7 @@ class TaskflowbackendTestBase(
             )
         self.taskflow = get_backend_api('taskflow', force=True)
         self.irods_backend = get_backend_api('omics_irods')
-        self.irods_session = self.irods_backend.get_session()
+        self.irods = self.irods_backend.get_session()
 
         # Init roles
         self.role_owner = Role.objects.get_or_create(name=PROJECT_ROLE_OWNER)[0]
@@ -225,10 +225,8 @@ class TaskflowbackendTestBase(
     def tearDown(self):
         self.taskflow.cleanup()
         with self.assertRaises(CollectionDoesNotExist):
-            self.irods_session.collections.get(
-                self.irods_backend.get_projects_path()
-            )
-        for user in self.irods_session.query(UserGroup).all():
+            self.irods.collections.get(self.irods_backend.get_projects_path())
+        for user in self.irods.query(UserGroup).all():
             self.assertIn(
                 user[UserGroup.name], settings.TASKFLOW_TEST_PERMANENT_USERS
             )
@@ -244,7 +242,7 @@ class TestTaskflowAPIBase(
 ):
     """Base class for testing API views with taskflow"""
 
-    def _make_project_taskflow(
+    def make_project_taskflow(
         self, title, type, parent, owner, description='', readme=''
     ):
         """Make Project with taskflow for API view tests."""
@@ -269,7 +267,7 @@ class TestTaskflowAPIBase(
         project = Project.objects.get(title=title)
         return project, project.get_owner()
 
-    def _make_assignment_taskflow(self, project, user, role):
+    def make_assignment_taskflow(self, project, user, role):
         """Make RoleAssignment with taskflow for API view tests."""
         url = reverse(
             'projectroles:api_role_create',
@@ -295,7 +293,7 @@ class TestTaskflowAPIBase(
             )
         self.taskflow = get_backend_api('taskflow', force=True)
         self.irods_backend = get_backend_api('omics_irods')
-        self.irods_session = self.irods_backend.get_session()
+        self.irods = self.irods_backend.get_session()
 
         # Init roles
         self.role_owner = Role.objects.get_or_create(name=PROJECT_ROLE_OWNER)[0]

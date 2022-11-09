@@ -47,7 +47,7 @@ class TestIrodsDataRequestBase(
         super().setUp()
 
         self.irods_backend = get_backend_api('omics_irods')
-        self.irods_session = self.irods_backend.get_session()
+        self.irods = self.irods_backend.get_session()
 
         self.project, self.owner_as = self.make_project_taskflow(
             title='TestProject',
@@ -71,9 +71,9 @@ class TestIrodsDataRequestBase(
         self.path_md5 = os.path.join(self.assay_path, f'{TEST_FILE_NAME}.md5')
 
         # Create objects
-        self.file_obj = self.irods_session.data_objects.create(self.path)
-        self.coll = self.irods_session.collections.create(self.path_coll)
-        self.md5_obj = self.irods_session.data_objects.create(self.path_md5)
+        self.file_obj = self.irods.data_objects.create(self.path)
+        self.coll = self.irods.collections.create(self.path_coll)
+        self.md5_obj = self.irods.data_objects.create(self.path_md5)
 
         # Init users (owner = user_cat, superuser = user)
         self.user_delegate = self.make_user('user_delegate')
@@ -107,9 +107,7 @@ class TestIrodsDataRequestBase(
         )
 
     def tearDown(self):
-        self.irods_session.collections.get('/sodarZone/projects').remove(
-            force=True
-        )
+        self.irods.collections.get('/sodarZone/projects').remove(force=True)
 
     @classmethod
     def _make_irods_data_request(

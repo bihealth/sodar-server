@@ -118,15 +118,15 @@ class TestCancerPlugin(
 
     def test_get_shortcut_column_files(self):
         """Test get_shortcut_column() with files in iRODS"""
-        self.irods_session.collections.create(self.source_path)
+        self.irods.collections.create(self.source_path)
         bam_path = os.path.join(
             self.source_path, '{}_test.bam'.format(SAMPLE_ID_NORMAL)
         )
         vcf_path = os.path.join(
             self.source_path, '{}_test.vcf.gz'.format(SAMPLE_ID_NORMAL)
         )
-        self.irods_session.data_objects.create(bam_path)
-        self.irods_session.data_objects.create(vcf_path)
+        self.irods.data_objects.create(bam_path)
+        self.irods.data_objects.create(vcf_path)
 
         self.plugin.update_cache(self.cache_name, self.project)
         study_tables = self.tb.build_study_tables(self.study)
@@ -163,15 +163,15 @@ class TestCancerPlugin(
 
     def test_get_shortcut_links_files(self):
         """Test get_shortcut_links() with files in iRODS"""
-        self.irods_session.collections.create(self.source_path)
+        self.irods.collections.create(self.source_path)
         bam_path = os.path.join(
             self.source_path, '{}_test.bam'.format(SAMPLE_ID_NORMAL)
         )
         vcf_path = os.path.join(
             self.source_path, '{}_test.vcf.gz'.format(SAMPLE_ID_NORMAL)
         )
-        self.irods_session.data_objects.create(bam_path)
-        self.irods_session.data_objects.create(vcf_path)
+        self.irods.data_objects.create(bam_path)
+        self.irods.data_objects.create(vcf_path)
 
         self.plugin.update_cache(self.cache_name, self.project)
         study_tables = self.tb.build_study_tables(self.study)
@@ -202,7 +202,7 @@ class TestCancerPlugin(
 
     def test_get_shortcut_links_multiple(self):
         """Test get_shortcut_links() with multiple BAM/VCF files"""
-        self.irods_session.collections.create(self.source_path)
+        self.irods.collections.create(self.source_path)
         bam_path = os.path.join(
             self.source_path, '{}_test_2022-11-06.bam'.format(SAMPLE_ID_NORMAL)
         )
@@ -217,10 +217,10 @@ class TestCancerPlugin(
             self.source_path,
             '{}_test.vcf_2022-11-07.vcf.gz'.format(SAMPLE_ID_NORMAL),
         )
-        self.irods_session.data_objects.create(bam_path)
-        self.irods_session.data_objects.create(bam_path2)
-        self.irods_session.data_objects.create(vcf_path)
-        self.irods_session.data_objects.create(vcf_path2)
+        self.irods.data_objects.create(bam_path)
+        self.irods.data_objects.create(bam_path2)
+        self.irods.data_objects.create(vcf_path)
+        self.irods.data_objects.create(vcf_path2)
 
         self.plugin.update_cache(self.cache_name, self.project)
         study_tables = self.tb.build_study_tables(self.study)
@@ -241,11 +241,11 @@ class TestCancerPlugin(
 
     def test_get_shortcut_links_bam(self):
         """Test get_shortcut_links() with BAM file only"""
-        self.irods_session.collections.create(self.source_path)
+        self.irods.collections.create(self.source_path)
         bam_path = os.path.join(
             self.source_path, '{}_test.bam'.format(SAMPLE_ID_NORMAL)
         )
-        self.irods_session.data_objects.create(bam_path)
+        self.irods.data_objects.create(bam_path)
         self.plugin.update_cache(self.cache_name, self.project)
         study_tables = self.tb.build_study_tables(self.study)
         sl = self.plugin.get_shortcut_links(
@@ -257,11 +257,11 @@ class TestCancerPlugin(
 
     def test_get_shortcut_links_vcf(self):
         """Test get_shortcut_links() with VCF file only"""
-        self.irods_session.collections.create(self.source_path)
+        self.irods.collections.create(self.source_path)
         vcf_path = os.path.join(
             self.source_path, '{}_test.vcf.gz'.format(SAMPLE_ID_NORMAL)
         )
-        self.irods_session.data_objects.create(vcf_path)
+        self.irods.data_objects.create(vcf_path)
         self.plugin.update_cache(self.cache_name, self.project)
         study_tables = self.tb.build_study_tables(self.study)
         sl = self.plugin.get_shortcut_links(
@@ -273,11 +273,11 @@ class TestCancerPlugin(
 
     def test_get_shortcut_links_invalid(self):
         """Test get_shortcut_links() with a non-BAM/VCF file"""
-        self.irods_session.collections.create(self.source_path)
+        self.irods.collections.create(self.source_path)
         bam_path = os.path.join(
             self.source_path, '{}_test.txt'.format(SAMPLE_ID_NORMAL)
         )
-        self.irods_session.data_objects.create(bam_path)
+        self.irods.data_objects.create(bam_path)
         self.plugin.update_cache(self.cache_name, self.project)
         study_tables = self.tb.build_study_tables(self.study)
         sl = self.plugin.get_shortcut_links(
@@ -300,15 +300,15 @@ class TestCancerPlugin(
 
     def test_update_cache_files(self):
         """Test update_cache() with files in iRODS"""
-        self.irods_session.collections.create(self.source_path)
+        self.irods.collections.create(self.source_path)
         bam_path = os.path.join(
             self.source_path, '{}_test.bam'.format(SAMPLE_ID_NORMAL)
         )
         vcf_path = os.path.join(
             self.source_path, '{}_test.vcf.gz'.format(SAMPLE_ID_NORMAL)
         )
-        self.irods_session.data_objects.create(bam_path)
-        self.irods_session.data_objects.create(vcf_path)
+        self.irods.data_objects.create(bam_path)
+        self.irods.data_objects.create(vcf_path)
         self.plugin.update_cache(self.cache_name, self.project)
         ci = self.cache_backend.get_cache_item(
             APP_NAME, self.cache_name, self.project

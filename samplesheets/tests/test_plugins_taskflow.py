@@ -236,9 +236,7 @@ class TestPerformProjectSync(
 
     def test_sync(self):
         """Test perform_project_sync()"""
-        self.assertEqual(
-            self.irods_session.collections.exists(self.sample_path), False
-        )
+        self.assertEqual(self.irods.collections.exists(self.sample_path), False)
         self.assertEqual(
             app_settings.get_app_setting(
                 APP_NAME, 'public_access_ticket', self.project
@@ -246,9 +244,7 @@ class TestPerformProjectSync(
             '',
         )
         self.plugin.perform_project_sync(self.project)
-        self.assertEqual(
-            self.irods_session.collections.exists(self.sample_path), False
-        )
+        self.assertEqual(self.irods.collections.exists(self.sample_path), False)
         self.assertEqual(
             app_settings.get_app_setting(
                 APP_NAME, 'public_access_ticket', self.project
@@ -258,9 +254,7 @@ class TestPerformProjectSync(
 
     def test_sync_colls(self):
         """Test perform_project_sync() with iRODS collections"""
-        self.assertEqual(
-            self.irods_session.collections.exists(self.sample_path), False
-        )
+        self.assertEqual(self.irods.collections.exists(self.sample_path), False)
         self.assertEqual(
             app_settings.get_app_setting(
                 APP_NAME, 'public_access_ticket', self.project
@@ -274,9 +268,7 @@ class TestPerformProjectSync(
         investigation.save()
         self.plugin.perform_project_sync(self.project)
 
-        self.assertEqual(
-            self.irods_session.collections.exists(self.sample_path), True
-        )
+        self.assertEqual(self.irods.collections.exists(self.sample_path), True)
         self.assertEqual(
             app_settings.get_app_setting(
                 APP_NAME, 'public_access_ticket', self.project
@@ -299,9 +291,7 @@ class TestPerformProjectSync(
         self.make_irods_colls(investigation)
         self.plugin.perform_project_sync(self.project)
 
-        self.assertEqual(
-            self.irods_session.collections.exists(self.sample_path), True
-        )
+        self.assertEqual(self.irods.collections.exists(self.sample_path), True)
         self.assert_irods_access(
             IRODS_GROUP_PUBLIC, self.sample_path, IRODS_ACCESS_READ
         )
@@ -328,9 +318,7 @@ class TestPerformProjectSync(
         self.project.save()
         self.plugin.perform_project_sync(self.project)
 
-        self.assertEqual(
-            self.irods_session.collections.exists(self.sample_path), True
-        )
+        self.assertEqual(self.irods.collections.exists(self.sample_path), True)
         self.assert_irods_access(
             IRODS_GROUP_PUBLIC, self.sample_path, IRODS_ACCESS_READ
         )

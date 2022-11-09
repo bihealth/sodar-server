@@ -5,8 +5,8 @@ Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
-Unreleased
-==========
+v0.12.1 (2022-11-09)
+====================
 
 Added
 -----
@@ -26,6 +26,7 @@ Changed
     - Optimize germline study app ``get_shortcut_column()`` (#1519)
     - Add study app tests (#1523)
     - Optimize germline study app cache updating (#1506)
+    - Improve default IGV BAM track colour (#1514)
 - **Taskflowbackend**
     - Improve project lock error messages (#1496, #1500, #1511)
 
@@ -40,7 +41,7 @@ Fixed
 - **Samplesheets**
     - Uncaught project lock exceptions in iRODS delete request accepting (#1495)
     - Missing CSS classes for failed iRODS delete requests (#1513)
-    - User alerts/emails sent for own iRODS data requests (#1502)
+    - User alerts/emails sent for own iRODS delete requests (#1502)
 - **Taskflowbackend**
     - Unhandled project lock exceptions (#1496, #1500, #1511)
     - Landing zone status not updated on flow lock/build errors (#1498)

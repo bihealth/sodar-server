@@ -129,26 +129,16 @@ class TestInactiveZones(TestCommandBase):
             )
 
         self.irods_backend = get_backend_api('omics_irods')
-        self.irods_session = self.irods_backend.get_session()
+        self.irods = self.irods_backend.get_session()
 
         # Create the irods collections
-        self.irods_session.collections.create(
-            self.irods_backend.get_path(self.zone)
-        )
-        self.irods_session.collections.create(
-            self.irods_backend.get_path(self.zone2)
-        )
-        self.irods_session.collections.create(
-            self.irods_backend.get_path(self.zone3)
-        )
-        self.irods_session.collections.create(
-            self.irods_backend.get_path(self.zone4)
-        )
+        self.irods.collections.create(self.irods_backend.get_path(self.zone))
+        self.irods.collections.create(self.irods_backend.get_path(self.zone2))
+        self.irods.collections.create(self.irods_backend.get_path(self.zone3))
+        self.irods.collections.create(self.irods_backend.get_path(self.zone4))
 
     def tearDown(self):
-        self.irods_session.collections.get('/sodarZone/projects').remove(
-            force=True
-        )
+        self.irods.collections.get('/sodarZone/projects').remove(force=True)
 
     def test_get_inactive_zones(self):
         """Test get_inactive_zones()"""

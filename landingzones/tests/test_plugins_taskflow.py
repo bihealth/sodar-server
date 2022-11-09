@@ -79,11 +79,9 @@ class TestPerformProjectSync(
             status='ACTIVE',
         )
         zone_path = self.irods_backend.get_path(zone)
-        self.assertEqual(
-            self.irods_session.collections.exists(zone_path), False
-        )
+        self.assertEqual(self.irods.collections.exists(zone_path), False)
         self.plugin.perform_project_sync(self.project)
-        self.assertEqual(self.irods_session.collections.exists(zone_path), True)
+        self.assertEqual(self.irods.collections.exists(zone_path), True)
         self.assert_irods_access(self.user.username, zone_path, 'own')
 
     def test_create_zone_moved(self):
@@ -96,13 +94,9 @@ class TestPerformProjectSync(
             status='MOVED',
         )
         zone_path = self.irods_backend.get_path(zone)
-        self.assertEqual(
-            self.irods_session.collections.exists(zone_path), False
-        )
+        self.assertEqual(self.irods.collections.exists(zone_path), False)
         self.plugin.perform_project_sync(self.project)
-        self.assertEqual(
-            self.irods_session.collections.exists(zone_path), False
-        )
+        self.assertEqual(self.irods.collections.exists(zone_path), False)
 
     def test_create_zone_existing(self):
         """Test creating an already existing zone (should not crash)"""
@@ -114,8 +108,8 @@ class TestPerformProjectSync(
         )
         zone = self.make_zone_taskflow(zone)
         zone_path = self.irods_backend.get_path(zone)
-        self.assertEqual(self.irods_session.collections.exists(zone_path), True)
+        self.assertEqual(self.irods.collections.exists(zone_path), True)
         self.assert_irods_access(self.user.username, zone_path, 'own')
         self.plugin.perform_project_sync(self.project)
-        self.assertEqual(self.irods_session.collections.exists(zone_path), True)
+        self.assertEqual(self.irods.collections.exists(zone_path), True)
         self.assert_irods_access(self.user.username, zone_path, 'own')

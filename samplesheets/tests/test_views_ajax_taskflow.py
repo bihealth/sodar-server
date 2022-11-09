@@ -134,8 +134,8 @@ class TestIrodsRequestCreateAjaxView(TestIrodsRequestViewsBase):
         """Test creating multiple delete requests"""
         path2 = os.path.join(self.assay_path, TEST_FILE_NAME2)
         path2_md5 = os.path.join(self.assay_path, TEST_FILE_NAME2 + '.md5')
-        self.irods_session.data_objects.create(path2)
-        self.irods_session.data_objects.create(path2_md5)
+        self.irods.data_objects.create(path2)
+        self.irods.data_objects.create(path2_md5)
 
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
         self._assert_alert_count(CREATE_ALERT, self.user, 0)
@@ -277,8 +277,8 @@ class TestIrodsRequestDeleteAjaxView(TestIrodsRequestViewsBase):
         """Test deleting one of multiple requests"""
         path2 = os.path.join(self.assay_path, TEST_FILE_NAME2)
         path2_md5 = os.path.join(self.assay_path, TEST_FILE_NAME2 + '.md5')
-        self.irods_session.data_objects.create(path2)
-        self.irods_session.data_objects.create(path2_md5)
+        self.irods.data_objects.create(path2)
+        self.irods.data_objects.create(path2_md5)
 
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
         self._assert_alert_count(CREATE_ALERT, self.user, 0)
@@ -353,8 +353,8 @@ class TestIrodsObjectListAjaxView(TestIrodsRequestViewsBase):
 
     def test_get_empty_coll(self):
         """Test GET request for listing an empty collection in iRODS"""
-        self.irods_session.data_objects.get(self.path).unlink(force=True)
-        self.irods_session.data_objects.get(self.path_md5).unlink(force=True)
+        self.irods.data_objects.get(self.path).unlink(force=True)
+        self.irods.data_objects.get(self.path_md5).unlink(force=True)
 
         with self.login(self.user):
             response = self.client.get(
@@ -388,9 +388,7 @@ class TestIrodsObjectListAjaxView(TestIrodsRequestViewsBase):
     def test_get_coll_not_found(self):
         """Test GET request for listing a collection which doesn't exist"""
         fail_path = self.assay_path + '/' + IRODS_FAIL_COLL
-        self.assertEqual(
-            self.irods_session.collections.exists(fail_path), False
-        )
+        self.assertEqual(self.irods.collections.exists(fail_path), False)
         with self.login(self.user):
             response = self.client.get(
                 reverse(
@@ -404,7 +402,7 @@ class TestIrodsObjectListAjaxView(TestIrodsRequestViewsBase):
     def test_get_coll_not_in_project(self):
         """Test GET request for listing a collection not belonging to project"""
         self.assertEqual(
-            self.irods_session.collections.exists(IRODS_NON_PROJECT_PATH), True
+            self.irods.collections.exists(IRODS_NON_PROJECT_PATH), True
         )
         with self.login(self.user):
             response = self.client.get(

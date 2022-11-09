@@ -392,20 +392,20 @@ class TestIrodsAccessTicketListView(
 
         self.irods_backend = get_backend_api('omics_irods')
         self.assertIsNotNone(self.irods_backend)
-        self.irods_session = self.irods_backend.get_session()
+        self.irods = self.irods_backend.get_session()
 
         # Create iRODS track hub collections
         assay_path = self.irods_backend.get_path(self.assay)
-        self.make_track_hub_coll(self.irods_session, assay_path, 'track1')
-        self.make_track_hub_coll(self.irods_session, assay_path, 'track2')
+        self.make_track_hub_coll(self.irods, assay_path, 'track1')
+        self.make_track_hub_coll(self.irods, assay_path, 'track2')
 
         # Create iRODS track hub collections
         assay_path = self.irods_backend.get_path(self.assay)
         self.track_hub1 = self.make_track_hub_coll(
-            self.irods_session, assay_path, 'track1'
+            self.irods, assay_path, 'track1'
         )
         self.track_hub2 = self.make_track_hub_coll(
-            self.irods_session, assay_path, 'track2'
+            self.irods, assay_path, 'track2'
         )
 
     def test_render_empty(self):
@@ -473,14 +473,14 @@ class TestIrodsAccessTicketCreateView(
 
         self.irods_backend = get_backend_api('omics_irods')
         self.assertIsNotNone(self.irods_backend)
-        self.irods_session = self.irods_backend.get_session()
+        self.irods = self.irods_backend.get_session()
 
         assay_path = self.irods_backend.get_path(self.assay)
         self.track_hub1 = self.make_track_hub_coll(
-            self.irods_session, assay_path, 'track1'
+            self.irods, assay_path, 'track1'
         )
         self.track_hub2 = self.make_track_hub_coll(
-            self.irods_session, assay_path, 'track2'
+            self.irods, assay_path, 'track2'
         )
 
     def test_render(self):
@@ -583,14 +583,14 @@ class TestIrodsAccessTicketUpdateView(
 
         self.irods_backend = get_backend_api('omics_irods')
         self.assertIsNotNone(self.irods_backend)
-        self.irods_session = self.irods_backend.get_session()
+        self.irods = self.irods_backend.get_session()
 
         assay_path = self.irods_backend.get_path(self.assay)
         self.track_hub1 = self.make_track_hub_coll(
-            self.irods_session, assay_path, 'track1'
+            self.irods, assay_path, 'track1'
         )
         self.track_hub2 = self.make_track_hub_coll(
-            self.irods_session, assay_path, 'track2'
+            self.irods, assay_path, 'track2'
         )
 
     def test_render(self):
@@ -715,15 +715,15 @@ class TestIrodsAccessTicketDeleteView(
 
         self.irods_backend = get_backend_api('omics_irods')
         self.assertIsNotNone(self.irods_backend)
-        self.irods_session = self.irods_backend.get_session()
+        self.irods = self.irods_backend.get_session()
 
         # Create iRODS track hub collections
         assay_path = self.irods_backend.get_path(self.assay)
         self.track_hub1 = self.make_track_hub_coll(
-            self.irods_session, assay_path, 'track1'
+            self.irods, assay_path, 'track1'
         )
         self.track_hub2 = self.make_track_hub_coll(
-            self.irods_session, assay_path, 'track2'
+            self.irods, assay_path, 'track2'
         )
 
     def test_delete(self):
@@ -810,7 +810,7 @@ class TestIrodsRequestViewsBase(
     def setUp(self):
         super().setUp()
         self.irods_backend = get_backend_api('omics_irods')
-        self.irods_session = self.irods_backend.get_session()
+        self.irods = self.irods_backend.get_session()
 
         self.project, self.owner_as = self.make_project_taskflow(
             title='TestProject',
@@ -831,8 +831,8 @@ class TestIrodsRequestViewsBase(
         self.path = os.path.join(self.assay_path, TEST_FILE_NAME)
         self.path_md5 = os.path.join(self.assay_path, f'{TEST_FILE_NAME}.md5')
         # Create objects
-        self.file_obj = self.irods_session.data_objects.create(self.path)
-        self.md5_obj = self.irods_session.data_objects.create(self.path_md5)
+        self.file_obj = self.irods.data_objects.create(self.path)
+        self.md5_obj = self.irods.data_objects.create(self.path_md5)
 
         # Init users (owner = user_cat, superuser = user)
         self.user_delegate = self.make_user('user_delegate')
@@ -861,9 +861,7 @@ class TestIrodsRequestViewsBase(
         self.post_data = {'path': self.path, 'description': 'bla'}
 
     def tearDown(self):
-        self.irods_session.collections.get('/sodarZone/projects').remove(
-            force=True
-        )
+        self.irods.collections.get('/sodarZone/projects').remove(force=True)
 
 
 class TestIrodsRequestCreateView(TestIrodsRequestViewsBase):
@@ -980,8 +978,8 @@ class TestIrodsRequestCreateView(TestIrodsRequestViewsBase):
         """Test creating multiple_requests"""
         path2 = os.path.join(self.assay_path, TEST_FILE_NAME2)
         path2_md5 = os.path.join(self.assay_path, TEST_FILE_NAME2 + '.md5')
-        self.irods_session.data_objects.create(path2)
-        self.irods_session.data_objects.create(path2_md5)
+        self.irods.data_objects.create(path2)
+        self.irods.data_objects.create(path2_md5)
 
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
         self._assert_alert_count(CREATE_ALERT, self.user, 0)
@@ -1156,8 +1154,8 @@ class TestIrodsRequestDeleteView(TestIrodsRequestViewsBase):
         """Test deleting one of multiple requests"""
         path2 = os.path.join(self.assay_path, TEST_FILE_NAME2)
         path2_md5 = os.path.join(self.assay_path, TEST_FILE_NAME2 + '.md5')
-        self.irods_session.data_objects.create(path2)
-        self.irods_session.data_objects.create(path2_md5)
+        self.irods.data_objects.create(path2)
+        self.irods.data_objects.create(path2_md5)
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
 
         with self.login(self.user_contrib):
@@ -1435,8 +1433,8 @@ class TestIrodsRequestAcceptView(TestIrodsRequestViewsBase):
         """Test accepting one of multiple requests"""
         path2 = os.path.join(self.assay_path, TEST_FILE_NAME2)
         path2_md5 = os.path.join(self.assay_path, TEST_FILE_NAME2 + '.md5')
-        self.irods_session.data_objects.create(path2)
-        self.irods_session.data_objects.create(path2_md5)
+        self.irods.data_objects.create(path2)
+        self.irods.data_objects.create(path2_md5)
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
 
         with self.login(self.user_contrib):
@@ -1688,8 +1686,8 @@ class TestIrodsRequestRejectView(TestIrodsRequestViewsBase):
         """Test rejecting one of multiple requests"""
         path2 = os.path.join(self.assay_path, TEST_FILE_NAME2)
         path2_md5 = os.path.join(self.assay_path, TEST_FILE_NAME2 + '.md5')
-        self.irods_session.data_objects.create(path2)
-        self.irods_session.data_objects.create(path2_md5)
+        self.irods.data_objects.create(path2)
+        self.irods.data_objects.create(path2_md5)
         self.assertEqual(IrodsDataRequest.objects.count(), 0)
 
         with self.login(self.user_contrib):
@@ -1983,7 +1981,7 @@ class TestProjectSearchView(
     def setUp(self):
         super().setUp()
         self.irods_backend = get_backend_api('omics_irods')
-        self.irods_session = self.irods_backend.get_session()
+        self.irods = self.irods_backend.get_session()
 
         # Make project with owner in Taskflow and Django
         self.project, self.owner_as = self.make_project_taskflow(
@@ -2006,7 +2004,7 @@ class TestProjectSearchView(
         # Create test file
         self.file_name = '{}_test.txt'.format(SAMPLE_ID)
         self.file_path = self.assay_path + '/' + self.file_name
-        self.irods_session.data_objects.create(self.file_path)
+        self.irods.data_objects.create(self.file_path)
 
     def test_search(self):
         """Test search without keyword limiting"""

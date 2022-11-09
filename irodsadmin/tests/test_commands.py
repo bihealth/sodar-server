@@ -82,13 +82,11 @@ class TestIrodsOrphans(
             config_data={},
         )
         self.irods_backend = get_backend_api('omics_irods')
-        self.irods_session = self.irods_backend.get_session()
+        self.irods = self.irods_backend.get_session()
 
         # Create the actual assay, study and landing zone in the irods session
-        self.irods_session.collections.create(
-            self.irods_backend.get_path(self.assay)
-        )
-        self.irods_session.collections.create(
+        self.irods.collections.create(self.irods_backend.get_path(self.assay))
+        self.irods.collections.create(
             self.irods_backend.get_path(self.landing_zone)
         )
 
@@ -107,10 +105,10 @@ class TestIrodsOrphans(
         )
 
     def tearDown(self):
-        self.irods_session.collections.get(
+        self.irods.collections.get(
             self.irods_backend.get_projects_path()
         ).remove(force=True)
-        self.irods_session.cleanup()
+        self.irods.cleanup()
 
     def test_get_assay_collections(self):
         """Test get_assay_collections()"""
@@ -162,42 +160,42 @@ class TestIrodsOrphans(
 
     def test_is_zone(self):
         """Test is_zone()"""
-        collection = self.irods_session.collections.get(
+        collection = self.irods.collections.get(
             self.irods_backend.get_path(self.landing_zone)
         )
         self.assertTrue(irodsorphans.is_zone(collection))
 
     def test_is_assay_or_study_with_assay(self):
         """Test is_assay_or_study() with assay"""
-        collection = self.irods_session.collections.get(
+        collection = self.irods.collections.get(
             self.irods_backend.get_path(self.assay)
         )
         self.assertTrue(irodsorphans.is_assay_or_study(collection))
 
     def test_is_assay_or_study_with_study(self):
         """Test is_assay_or_study() with study"""
-        collection = self.irods_session.collections.get(
+        collection = self.irods.collections.get(
             self.irods_backend.get_path(self.study)
         )
         self.assertTrue(irodsorphans.is_assay_or_study(collection))
 
     def test_is_project(self):
         """Test is_project()"""
-        collection = self.irods_session.collections.get(
+        collection = self.irods.collections.get(
             self.irods_backend.get_path(self.project)
         )
         self.assertTrue(irodsorphans.is_project(collection))
 
     def test_is_zone_invalid(self):
         """Test is_zone() with a non-landingzone collection"""
-        collection = self.irods_session.collections.get(
+        collection = self.irods.collections.get(
             self.irods_backend.get_path(self.project)
         )
         self.assertFalse(irodsorphans.is_zone(collection))
 
     def test_is_assay_or_study_invalid(self):
         """Test is_assay_or_study() with non-assay/study collection"""
-        collection = self.irods_session.collections.get(
+        collection = self.irods.collections.get(
             self.irods_backend.get_path(self.project)
         )
         self.assertFalse(irodsorphans.is_assay_or_study(collection))
@@ -206,7 +204,7 @@ class TestIrodsOrphans(
         """Test get_orphans() with no orphans available"""
         self.assertListEqual(
             irodsorphans.get_orphans(
-                self.irods_session,
+                self.irods,
                 self.irods_backend,
                 self.expected_collections,
                 [self.assay],
@@ -219,10 +217,10 @@ class TestIrodsOrphans(
         orphan_path = '{}/assay_{}'.format(
             self.irods_backend.get_path(self.study), str(uuid.uuid4())
         )
-        self.irods_session.collections.create(orphan_path)
+        self.irods.collections.create(orphan_path)
         self.assertListEqual(
             irodsorphans.get_orphans(
-                self.irods_session,
+                self.irods,
                 self.irods_backend,
                 self.expected_collections,
                 [self.assay],
@@ -235,10 +233,10 @@ class TestIrodsOrphans(
         orphan_path = '{}/sample_data/study_{}'.format(
             self.irods_backend.get_path(self.project), str(uuid.uuid4())
         )
-        self.irods_session.collections.create(orphan_path)
+        self.irods.collections.create(orphan_path)
         self.assertListEqual(
             irodsorphans.get_orphans(
-                self.irods_session,
+                self.irods,
                 self.irods_backend,
                 self.expected_collections,
                 [self.assay],
@@ -255,10 +253,10 @@ class TestIrodsOrphans(
             self.study.get_display_name().replace(' ', '_').lower(),
             collection,
         )
-        self.irods_session.collections.create(orphan_path)
+        self.irods.collections.create(orphan_path)
         self.assertListEqual(
             irodsorphans.get_orphans(
-                self.irods_session,
+                self.irods,
                 self.irods_backend,
                 self.expected_collections,
                 [self.assay],
@@ -275,10 +273,10 @@ class TestIrodsOrphans(
             ),
             collection,
         )
-        self.irods_session.collections.create(orphan_path)
+        self.irods.collections.create(orphan_path)
         self.assertListEqual(
             irodsorphans.get_orphans(
-                self.irods_session,
+                self.irods,
                 self.irods_backend,
                 self.expected_collections,
                 [self.assay],
@@ -292,10 +290,10 @@ class TestIrodsOrphans(
         orphan_path = '{}/{}'.format(
             self.irods_backend.get_path(self.assay), collection
         )
-        self.irods_session.collections.create(orphan_path)
+        self.irods.collections.create(orphan_path)
         self.assertListEqual(
             irodsorphans.get_orphans(
-                self.irods_session,
+                self.irods,
                 self.irods_backend,
                 self.expected_collections,
                 [self.assay],
@@ -308,9 +306,9 @@ class TestIrodsOrphans(
         orphan_path = '{}/assay_{}'.format(
             self.irods_backend.get_path(self.study), str(uuid.uuid4())
         )
-        self.irods_session.collections.create(orphan_path)
+        self.irods.collections.create(orphan_path)
         orphans = irodsorphans.get_orphans(
-            self.irods_session,
+            self.irods,
             self.irods_backend,
             self.expected_collections,
             [self.assay],
@@ -336,10 +334,10 @@ class TestIrodsOrphans(
             ),
             collection,
         )
-        self.irods_session.collections.create(orphan_path)
+        self.irods.collections.create(orphan_path)
 
         orphans = irodsorphans.get_orphans(
-            self.irods_session,
+            self.irods,
             self.irods_backend,
             self.expected_collections,
             [self.assay],
@@ -365,7 +363,7 @@ class TestIrodsOrphans(
         orphan_path = '{}/assay_{}'.format(
             self.irods_backend.get_path(self.study), str(uuid.uuid4())
         )
-        self.irods_session.collections.create(orphan_path)
+        self.irods.collections.create(orphan_path)
         out = io.StringIO()
         call_command('irodsorphans', stdout=out)
         expected = '{};{};{};0;0 bytes\n'.format(
@@ -380,7 +378,7 @@ class TestIrodsOrphans(
         orphan_path = '{}/sample_data/study_{}'.format(
             self.irods_backend.get_path(self.project), str(uuid.uuid4())
         )
-        self.irods_session.collections.create(orphan_path)
+        self.irods.collections.create(orphan_path)
         out = io.StringIO()
         call_command('irodsorphans', stdout=out)
         expected = '{};{};{};0;0 bytes\n'.format(
@@ -399,7 +397,7 @@ class TestIrodsOrphans(
             self.study.get_display_name().replace(' ', '_').lower(),
             collection,
         )
-        self.irods_session.collections.create(orphan_path)
+        self.irods.collections.create(orphan_path)
         out = io.StringIO()
         call_command('irodsorphans', stdout=out)
         expected = '{};{};{};0;0 bytes\n'.format(
@@ -419,7 +417,7 @@ class TestIrodsOrphans(
             ),
             collection,
         )
-        self.irods_session.collections.create(orphan_path)
+        self.irods.collections.create(orphan_path)
         out = io.StringIO()
         call_command('irodsorphans', stdout=out)
         expected = '{};<DELETED>;{};0;0 bytes\n'.format(
@@ -433,7 +431,7 @@ class TestIrodsOrphans(
         orphan_path = '{}/{}'.format(
             self.irods_backend.get_path(self.assay), collection
         )
-        self.irods_session.collections.create(orphan_path)
+        self.irods.collections.create(orphan_path)
         out = io.StringIO()
         call_command('irodsorphans', stdout=out)
         expected = '{};{};{};0;0 bytes\n'.format(
@@ -448,7 +446,7 @@ class TestIrodsOrphans(
         orphan_path = '{}/sample_data/study_{}'.format(
             self.irods_backend.get_path(self.project), str(uuid.uuid4())
         )
-        self.irods_session.collections.create(orphan_path)
+        self.irods.collections.create(orphan_path)
         collection = '20201031_123456'
         orphan_path2 = '{}/landing_zones/{}/{}/{}'.format(
             self.irods_backend.get_path(self.project),
@@ -456,7 +454,7 @@ class TestIrodsOrphans(
             self.study.get_display_name().replace(' ', '_').lower(),
             collection,
         )
-        self.irods_session.collections.create(orphan_path2)
+        self.irods.collections.create(orphan_path2)
         out = io.StringIO()
         call_command('irodsorphans', stdout=out)
         expected = '{};{};{};0;0 bytes\n'.format(

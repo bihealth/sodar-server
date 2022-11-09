@@ -115,15 +115,15 @@ class TestGermlinePlugin(
 
     def test_get_shortcut_column_files(self):
         """Test get_shortcut_column() with cache item and files in iRODS"""
-        self.irods_session.collections.create(self.source_path)
+        self.irods.collections.create(self.source_path)
         bam_path = os.path.join(
             self.source_path, '{}_test.bam'.format(SAMPLE_ID)
         )
         vcf_path = os.path.join(
             self.source_path, '{}_test.vcf.gz'.format(FAMILY_ID)
         )
-        self.irods_session.data_objects.create(bam_path)
-        self.irods_session.data_objects.create(vcf_path)
+        self.irods.data_objects.create(bam_path)
+        self.irods.data_objects.create(vcf_path)
 
         self.plugin.update_cache(self.cache_name, self.project)
         study_tables = self.tb.build_study_tables(self.study)
@@ -138,11 +138,11 @@ class TestGermlinePlugin(
 
     def test_get_shortcut_column_parent_vcf(self):
         """Test get_shortcut_column() with VCF file in a parent's collection"""
-        self.irods_session.collections.create(self.parent_path)
+        self.irods.collections.create(self.parent_path)
         vcf_path = os.path.join(
             self.parent_path, '{}_test.vcf.gz'.format(FAMILY_ID)
         )
-        self.irods_session.data_objects.create(vcf_path)
+        self.irods.data_objects.create(vcf_path)
 
         self.plugin.update_cache(self.cache_name, self.project)
         study_tables = self.tb.build_study_tables(self.study)
@@ -160,11 +160,11 @@ class TestGermlinePlugin(
         for s in self.study.get_sources():
             s.characteristics['Family']['value'] = ''
             s.save()
-        self.irods_session.collections.create(self.source_path)
+        self.irods.collections.create(self.source_path)
         vcf_path = os.path.join(
             self.source_path, '{}_test.vcf.gz'.format(SAMPLE_ID)
         )
-        self.irods_session.data_objects.create(vcf_path)
+        self.irods.data_objects.create(vcf_path)
 
         self.plugin.update_cache(self.cache_name, self.project)
         study_tables = self.tb.build_study_tables(self.study)
@@ -182,11 +182,11 @@ class TestGermlinePlugin(
             s.characteristics['Family']['value'] = ''
             s.save()
 
-        self.irods_session.collections.create(self.parent_path)
+        self.irods.collections.create(self.parent_path)
         vcf_path = os.path.join(
             self.parent_path, '{}_test.vcf.gz'.format(FAMILY_ID)
         )
-        self.irods_session.data_objects.create(vcf_path)
+        self.irods.data_objects.create(vcf_path)
 
         self.plugin.update_cache(self.cache_name, self.project)
         study_tables = self.tb.build_study_tables(self.study)
@@ -225,15 +225,15 @@ class TestGermlinePlugin(
 
     def test_get_shortcut_links_files(self):
         """Test get_shortcut_links() with files in iRODS"""
-        self.irods_session.collections.create(self.source_path)
+        self.irods.collections.create(self.source_path)
         bam_path = os.path.join(
             self.source_path, '{}_test.bam'.format(SAMPLE_ID)
         )
         vcf_path = os.path.join(
             self.source_path, '{}_test.vcf.gz'.format(FAMILY_ID)
         )
-        self.irods_session.data_objects.create(bam_path)
-        self.irods_session.data_objects.create(vcf_path)
+        self.irods.data_objects.create(bam_path)
+        self.irods.data_objects.create(vcf_path)
 
         self.plugin.update_cache(self.cache_name, self.project)
         study_tables = self.tb.build_study_tables(self.study)
@@ -264,7 +264,7 @@ class TestGermlinePlugin(
 
     def test_get_shortcut_links_multiple(self):
         """Test get_shortcut_links() with multiple BAM/VCF files"""
-        self.irods_session.collections.create(self.source_path)
+        self.irods.collections.create(self.source_path)
         bam_path = os.path.join(
             self.source_path, '{}_test_2022-11-06.bam'.format(SAMPLE_ID)
         )
@@ -277,10 +277,10 @@ class TestGermlinePlugin(
         vcf_path2 = os.path.join(
             self.source_path, '{}_test.vcf_2022-11-07.vcf.gz'.format(FAMILY_ID)
         )
-        self.irods_session.data_objects.create(bam_path)
-        self.irods_session.data_objects.create(bam_path2)
-        self.irods_session.data_objects.create(vcf_path)
-        self.irods_session.data_objects.create(vcf_path2)
+        self.irods.data_objects.create(bam_path)
+        self.irods.data_objects.create(bam_path2)
+        self.irods.data_objects.create(vcf_path)
+        self.irods.data_objects.create(vcf_path2)
 
         self.plugin.update_cache(self.cache_name, self.project)
         study_tables = self.tb.build_study_tables(self.study)
@@ -301,11 +301,11 @@ class TestGermlinePlugin(
 
     def test_get_shortcut_links_bam(self):
         """Test get_shortcut_links() with BAM file only"""
-        self.irods_session.collections.create(self.source_path)
+        self.irods.collections.create(self.source_path)
         bam_path = os.path.join(
             self.source_path, '{}_test.bam'.format(SAMPLE_ID)
         )
-        self.irods_session.data_objects.create(bam_path)
+        self.irods.data_objects.create(bam_path)
         self.plugin.update_cache(self.cache_name, self.project)
         study_tables = self.tb.build_study_tables(self.study)
         sl = self.plugin.get_shortcut_links(
@@ -317,11 +317,11 @@ class TestGermlinePlugin(
 
     def test_get_shortcut_links_vcf(self):
         """Test get_shortcut_links() with VCF file only"""
-        self.irods_session.collections.create(self.source_path)
+        self.irods.collections.create(self.source_path)
         vcf_path = os.path.join(
             self.source_path, '{}_test.vcf.gz'.format(FAMILY_ID)
         )
-        self.irods_session.data_objects.create(vcf_path)
+        self.irods.data_objects.create(vcf_path)
         self.plugin.update_cache(self.cache_name, self.project)
         study_tables = self.tb.build_study_tables(self.study)
         sl = self.plugin.get_shortcut_links(
@@ -333,11 +333,11 @@ class TestGermlinePlugin(
 
     def test_get_shortcut_links_invalid(self):
         """Test get_shortcut_links() with a non-BAM/VCF file"""
-        self.irods_session.collections.create(self.source_path)
+        self.irods.collections.create(self.source_path)
         bam_path = os.path.join(
             self.source_path, '{}_test.txt'.format(SAMPLE_ID)
         )
-        self.irods_session.data_objects.create(bam_path)
+        self.irods.data_objects.create(bam_path)
         self.plugin.update_cache(self.cache_name, self.project)
         study_tables = self.tb.build_study_tables(self.study)
         sl = self.plugin.get_shortcut_links(
@@ -361,15 +361,15 @@ class TestGermlinePlugin(
 
     def test_update_cache_files(self):
         """Test update_cache() with files in iRODS"""
-        self.irods_session.collections.create(self.source_path)
+        self.irods.collections.create(self.source_path)
         bam_path = os.path.join(
             self.source_path, '{}_test.bam'.format(SAMPLE_ID)
         )
         vcf_path = os.path.join(
             self.source_path, '{}_test.vcf.gz'.format(FAMILY_ID)
         )
-        self.irods_session.data_objects.create(bam_path)
-        self.irods_session.data_objects.create(vcf_path)
+        self.irods.data_objects.create(bam_path)
+        self.irods.data_objects.create(vcf_path)
         self.plugin.update_cache(self.cache_name, self.project)
         ci = self.cache_backend.get_cache_item(
             APP_NAME, self.cache_name, self.project

@@ -56,7 +56,7 @@ class TestTriggerZoneMoveTask(
         # Get iRODS backend for session access
         self.irods_backend = get_backend_api('omics_irods')
         self.assertIsNotNone(self.irods_backend)
-        self.irods_session = self.irods_backend.get_session()
+        self.irods = self.irods_backend.get_session()
 
         # Init project
         # Make project with owner in Taskflow and Django
@@ -88,10 +88,10 @@ class TestTriggerZoneMoveTask(
         # Create zone in taskflow
         self.make_zone_taskflow(self.landing_zone)
         # Get collections
-        self.zone_coll = self.irods_session.collections.get(
+        self.zone_coll = self.irods.collections.get(
             self.irods_backend.get_path(self.landing_zone)
         )
-        self.assay_coll = self.irods_session.collections.get(
+        self.assay_coll = self.irods.collections.get(
             self.irods_backend.get_path(self.assay)
         )
 
@@ -99,7 +99,7 @@ class TestTriggerZoneMoveTask(
         self.task = TriggerZoneMoveTask()
 
     def tearDown(self):
-        self.irods_session.cleanup()
+        self.irods.cleanup()
         super().tearDown()
 
     def test_trigger(self):
