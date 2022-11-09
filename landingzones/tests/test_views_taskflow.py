@@ -8,7 +8,9 @@ from irods.test.helpers import make_object
 from irods.keywords import REG_CHKSUM_KW
 
 from django.contrib import auth
+from django.contrib.messages import get_messages
 from django.core import mail
+from django.test import override_settings
 from django.urls import reverse
 
 # Projectroles dependency
@@ -26,8 +28,12 @@ from samplesheets.views import RESULTS_COLL, MISC_FILES_COLL, TRACK_HUBS_COLL
 # Taskflowbackend dependency
 from taskflowbackend.tests.base import TaskflowbackendTestBase
 
+# Timeline dependency
+from timeline.models import ProjectEvent
+
 from landingzones.models import LandingZone
 from landingzones.tests.test_models import LandingZoneMixin
+from landingzones.views import ZONE_MOVE_INVALID_STATUS
 
 
 User = auth.get_user_model()
@@ -50,6 +56,7 @@ TEST_OBJ_NAME = 'test1.txt'
 ASYNC_WAIT_SECONDS = 5
 ASYNC_RETRY_COUNT = 3
 INVALID_MD5 = '11111111111111111111111111111111'
+INVALID_REDIS_URL = 'redis://127.0.0.1:6666/0'
 
 
 class LandingZoneTaskflowMixin:
@@ -107,9 +114,7 @@ class LandingZoneTaskflowMixin:
         if not content:
             content = ''.join('x' for _ in range(content_length))
         obj_path = os.path.join(coll.path, obj_name)
-        return make_object(
-            self.irods_session, obj_path, content, **{REG_CHKSUM_KW: ''}
-        )
+        return make_object(self.irods, obj_path, content, **{REG_CHKSUM_KW: ''})
 
     def make_md5_object(self, obj):
         """
@@ -121,7 +126,7 @@ class LandingZoneTaskflowMixin:
         md5_path = obj.path + '.md5'
         with obj.open() as obj_fp:
             md5_content = hashlib.md5(obj_fp.read()).hexdigest()
-        return make_object(self.irods_session, md5_path, md5_content)
+        return make_object(self.irods, md5_path, md5_content)
 
     def assert_zone_status(self, zone, status='ACTIVE'):
         """
@@ -171,7 +176,7 @@ class TestLandingZoneCreateView(
         # Get iRODS backend for session access
         self.irods_backend = get_backend_api('omics_irods')
         self.assertIsNotNone(self.irods_backend)
-        self.irods_session = self.irods_backend.get_session()
+        self.irods = self.irods_backend.get_session()
 
         # Init project
         # Make project with owner in Taskflow and Django
@@ -328,13 +333,11 @@ class TestLandingZoneMoveView(
 
     def setUp(self):
         super().setUp()
-
         # Get iRODS backend for session access
         self.irods_backend = get_backend_api('omics_irods')
         self.assertIsNotNone(self.irods_backend)
-        self.irods_session = self.irods_backend.get_session()
+        self.irods = self.irods_backend.get_session()
 
-        # Init project
         # Make project with owner in Taskflow and Django
         self.project, self.owner_as = self.make_project_taskflow(
             title='TestProject',
@@ -361,14 +364,13 @@ class TestLandingZoneMoveView(
             configuration=None,
             config_data={},
         )
-
         # Create zone in taskflow
         self.make_zone_taskflow(self.landing_zone)
         # Get collections
-        self.zone_coll = self.irods_session.collections.get(
+        self.zone_coll = self.irods.collections.get(
             self.irods_backend.get_path(self.landing_zone)
         )
-        self.assay_coll = self.irods_session.collections.get(
+        self.assay_coll = self.irods.collections.get(
             self.irods_backend.get_path(self.assay)
         )
 
@@ -412,7 +414,7 @@ class TestLandingZoneMoveView(
         """Test validating and moving with invalid checksum (should fail)"""
         self.irods_obj = self.make_object(self.zone_coll, TEST_OBJ_NAME)
         self.md5_obj = make_object(
-            self.irods_session, self.irods_obj.path + '.md5', INVALID_MD5
+            self.irods, self.irods_obj.path + '.md5', INVALID_MD5
         )
         zone = LandingZone.objects.first()
         self.assertEqual(zone.status, 'ACTIVE')
@@ -520,7 +522,7 @@ class TestLandingZoneMoveView(
         """Test validating a landing zone without checksum (should fail)"""
         self.irods_obj = self.make_object(self.zone_coll, TEST_OBJ_NAME)
         self.md5_obj = make_object(
-            self.irods_session, self.irods_obj.path + '.md5', INVALID_MD5
+            self.irods, self.irods_obj.path + '.md5', INVALID_MD5
         )
         zone = LandingZone.objects.first()
         self.assertEqual(zone.status, 'ACTIVE')
@@ -592,6 +594,96 @@ class TestLandingZoneMoveView(
         self.assertTrue('BatchCheckFilesTask' in zone.status_info)
         self.assertEqual(len(self.zone_coll.data_objects), 1)
         self.assertEqual(len(self.assay_coll.data_objects), 0)
+
+    def test_move_invalid_status(self):
+        """Test validating and moving with invalid zone status (should fail)"""
+        self.irods_obj = self.make_object(self.zone_coll, TEST_OBJ_NAME)
+        self.md5_obj = self.make_md5_object(self.irods_obj)
+        zone = LandingZone.objects.first()
+        zone.status = 'VALIDATING'
+        zone.save()
+        self.assertEqual(len(self.zone_coll.data_objects), 2)
+        self.assertEqual(len(self.assay_coll.data_objects), 0)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(
+            ProjectEvent.objects.filter(event_name='zone_move').count(), 0
+        )
+        self.assertEqual(
+            AppAlert.objects.filter(alert_name='zone_move').count(), 0
+        )
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'landingzones:move',
+                    kwargs={'landingzone': self.landing_zone.sodar_uuid},
+                ),
+            )
+            self.assertRedirects(
+                response,
+                reverse(
+                    'landingzones:list',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+            )
+
+        self.assertEqual(
+            str(list(get_messages(response.wsgi_request))[0]),
+            ZONE_MOVE_INVALID_STATUS,
+        )
+        self.assert_zone_status(zone, 'VALIDATING')
+        self.assertEqual(len(self.zone_coll.data_objects), 2)
+        self.assertEqual(len(self.assay_coll.data_objects), 0)
+        self.assertEqual(len(mail.outbox), 1)
+        tl_event = ProjectEvent.objects.filter(event_name='zone_move').first()
+        self.assertIsNone(tl_event)
+        self.assertEqual(
+            AppAlert.objects.filter(alert_name='zone_move').count(), 0
+        )
+
+    @override_settings(REDIS_URL=INVALID_REDIS_URL)
+    def test_move_lock_failure(self):
+        """Test validating and moving with project lock failure"""
+        self.irods_obj = self.make_object(self.zone_coll, TEST_OBJ_NAME)
+        self.md5_obj = self.make_md5_object(self.irods_obj)
+        zone = LandingZone.objects.first()
+        self.assertEqual(zone.status, 'ACTIVE')
+        self.assertEqual(len(self.zone_coll.data_objects), 2)
+        self.assertEqual(len(self.assay_coll.data_objects), 0)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(
+            ProjectEvent.objects.filter(event_name='zone_move').count(), 0
+        )
+        self.assertEqual(
+            AppAlert.objects.filter(alert_name='zone_move').count(), 0
+        )
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'landingzones:move',
+                    kwargs={'landingzone': self.landing_zone.sodar_uuid},
+                ),
+            )
+            self.assertRedirects(
+                response,
+                reverse(
+                    'landingzones:list',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+            )
+
+        self.assert_zone_status(zone, 'FAILED')
+        self.assertEqual(len(self.zone_coll.data_objects), 2)
+        self.assertEqual(len(self.assay_coll.data_objects), 0)
+        self.assertEqual(len(mail.outbox), 1)  # TODO: Should this send email?
+        tl_event = ProjectEvent.objects.filter(event_name='zone_move').first()
+        self.assertIsInstance(tl_event, ProjectEvent)
+        self.assertEqual(tl_event.get_status().status_type, 'FAILED')
+        # TODO: Create app alerts for async failures (see #1499)
+        self.assertEqual(
+            AppAlert.objects.filter(alert_name='zone_move').count(), 0
+        )
 
 
 class TestLandingZoneDeleteView(

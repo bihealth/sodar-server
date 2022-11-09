@@ -1,7 +1,6 @@
 """Plugins for the taskflowbackend app"""
 
 import logging
-import requests
 
 from irods.exception import UserGroupDoesNotExist
 
@@ -113,19 +112,11 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
         else:  # Create
             flow_data['users_add'] = inh_owners
 
-        try:
-            taskflow.submit(
-                project=project,
-                flow_name='project_{}'.format(action.lower()),
-                flow_data=flow_data,
-            )
-        except (
-            requests.exceptions.ConnectionError,
-            taskflow.FlowSubmitException,
-        ) as ex:
-            if tl_event:  # Update
-                tl_event.set_status('FAILED', str(ex))
-            raise ex
+        taskflow.submit(
+            project=project,
+            flow_name='project_{}'.format(action.lower()),
+            flow_data=flow_data,
+        )
         if tl_event:
             tl_event.set_status('OK')
 
@@ -196,8 +187,7 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
         if role_as.project.type != PROJECT_TYPE_PROJECT:
             logger.debug('Skipping: {}'.format(IRODS_CAT_SKIP_MSG))
             return
-
-        # Skip for update (bo action needed)
+        # Skip for update (no action needed)
         if action == PROJECT_ACTION_UPDATE:
             logger.debug('Skipping: User already has iRODS access')
             return
@@ -220,18 +210,12 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
 
         taskflow = self.get_api()
         flow_data = {'username': role_as.user.username}
-        try:
-            taskflow.submit(
-                project=role_as.project,
-                flow_name='role_update',
-                flow_data=flow_data,
-                tl_event=tl_event,
-            )
-        except taskflow.FlowSubmitException as ex:
-            if tl_event:
-                tl_event.set_status('FAILED', str(ex))
-            raise ex
-
+        taskflow.submit(
+            project=role_as.project,
+            flow_name='role_update',
+            flow_data=flow_data,
+            tl_event=tl_event,
+        )
         if tl_event:
             tl_event.set_status('OK')
 
@@ -289,6 +273,11 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
         :param role_as: RoleAssignment object
         :param request: Request object or None
         """
+        # Skip for categories
+        if role_as.project.type != PROJECT_TYPE_PROJECT:
+            logger.debug('Skipping: {}'.format(IRODS_CAT_SKIP_MSG))
+            return
+
         timeline = get_backend_api('timeline_backend')
         tl_event = None
         if timeline:
@@ -307,17 +296,12 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
 
         taskflow = self.get_api()
         flow_data = {'username': role_as.user.username}
-        try:
-            taskflow.submit(
-                project=role_as.project,
-                flow_name='role_delete',
-                flow_data=flow_data,
-                tl_event=tl_event,
-            )
-        except taskflow.FlowSubmitException as ex:
-            if tl_event:
-                tl_event.set_status('FAILED', str(ex))
-            raise ex
+        taskflow.submit(
+            project=role_as.project,
+            flow_name='role_delete',
+            flow_data=flow_data,
+            tl_event=tl_event,
+        )
         if tl_event:
             tl_event.set_status('OK')
 
@@ -425,16 +409,11 @@ class BackendPlugin(ProjectModifyPluginMixin, BackendPluginPoint):
             'roles_add': _get_inherited_roles(project, new_owner),
             'roles_delete': _get_inherited_roles(project, old_owner),
         }
-        try:
-            taskflow.submit(
-                project=None,  # Batch flow for multiple projects
-                flow_name='role_update_irods_batch',
-                flow_data=flow_data,
-            )
-        except taskflow.FlowSubmitException as ex:
-            if tl_event:
-                tl_event.set_status('FAILED', str(ex))
-            raise ex
+        taskflow.submit(
+            project=None,  # Batch flow for multiple projects
+            flow_name='role_update_irods_batch',
+            flow_data=flow_data,
+        )
         if tl_event:
             tl_event.set_status('OK')
 

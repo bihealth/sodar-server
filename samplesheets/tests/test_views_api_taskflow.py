@@ -45,7 +45,7 @@ class TestSampleSheetAPITaskflowBase(
         self.assertIsNotNone(self.irods_backend)
 
         # Make project with owner in Taskflow and Django
-        self.project, self.owner_as = self._make_project_taskflow(
+        self.project, self.owner_as = self.make_project_taskflow(
             title='TestProject',
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
@@ -150,7 +150,7 @@ class TestSampleDataFileExistsAPIView(TestSampleSheetAPITaskflowBase):
     def setUp(self):
         super().setUp()
         self.make_irods_colls(self.investigation)
-        self.irods_session = self.irods_backend.get_session()
+        self.irods = self.irods_backend.get_session()
 
     def test_get(self):
         """Test getting file existence info with no file uploaded"""
@@ -162,7 +162,7 @@ class TestSampleDataFileExistsAPIView(TestSampleSheetAPITaskflowBase):
     def test_get_file(self):
         """Test getting file existence info with an uploaded file"""
         coll_path = self.irods_backend.get_sample_path(self.project) + '/'
-        self.irods_session.data_objects.put(
+        self.irods.data_objects.put(
             IRODS_FILE_PATH, coll_path, **{REG_CHKSUM_KW: ''}
         )
         url = reverse('samplesheets:api_file_exists')
@@ -173,8 +173,8 @@ class TestSampleDataFileExistsAPIView(TestSampleSheetAPITaskflowBase):
     def test_get_file_sub_coll(self):
         """Test getting file existence info in a sub collection"""
         coll_path = self.irods_backend.get_sample_path(self.project) + '/sub'
-        self.irods_session.collections.create(coll_path)
-        self.irods_session.data_objects.put(
+        self.irods.collections.create(coll_path)
+        self.irods.data_objects.put(
             IRODS_FILE_PATH, coll_path + '/', **{REG_CHKSUM_KW: ''}
         )
         url = reverse('samplesheets:api_file_exists')

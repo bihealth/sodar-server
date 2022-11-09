@@ -115,7 +115,9 @@ static-local
 */static/iconify/json/*.json
 
 # Site template include directory
-sodar/templates/include/*.html
+# TODO: Remove ignore once files are moved outside of the repo in docker env
+sodar/templates/include/*
 
 # Samplesheets configuration file directory
-samplesheets/config/*.json
+# TODO: Remove ignore once files are moved outside of the repo in docker env
+samplesheets/config/*

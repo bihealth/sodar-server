@@ -25,6 +25,7 @@ TAG_COLORS = {
 DEFAULT_TAG_COLOR = 'secondary'
 REQUEST_STATUS_CLASSES = {
     'ACTIVE': 'bg-info text-white',
+    'FAILED': 'bg-danger text-white',
     'ACCEPTED': 'bg-success text-white',
     'REJECTED': 'bg-danger text-white',
 }

@@ -26,7 +26,7 @@ class Flow(BaseLinearFlow):
         self.required_fields = ['zone_uuid']
         return super().validate()
 
-    def _build(self, force_fail):
+    def build(self, force_fail=False):
         # Setup
         validate_only = self.flow_data.get('validate_only', False)
         zone = LandingZone.objects.get(sodar_uuid=self.flow_data['zone_uuid'])
@@ -317,13 +317,3 @@ class Flow(BaseLinearFlow):
                 force_fail=force_fail,
             )
         )
-
-    def build(self, force_fail=False):
-        try:
-            self._build(force_fail)
-        except Exception as ex:
-            zone = LandingZone.objects.get(
-                sodar_uuid=self.flow_data['zone_uuid']
-            )
-            zone.set_status('FAILED', str(ex))
-            raise ex

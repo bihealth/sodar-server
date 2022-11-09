@@ -58,9 +58,7 @@ class TestProjectCreateView(TaskflowbackendTestBase):
         """Test Project creation with taskflow"""
         self.assertEqual(Project.objects.count(), 1)
         with self.assertRaises(CollectionDoesNotExist):
-            self.irods_session.collections.get(
-                self.irods_backend.get_projects_path()
-            )
+            self.irods.collections.get(self.irods_backend.get_projects_path())
 
         # Make project with owner in Taskflow and Django
         self.project, self.owner_as = self.make_project_taskflow(
@@ -102,11 +100,11 @@ class TestProjectCreateView(TaskflowbackendTestBase):
         self.assertEqual(model_to_dict(owner_as), expected)
 
         # Assert iRODS collections
-        root_coll = self.irods_session.collections.get(
+        root_coll = self.irods.collections.get(
             self.irods_backend.get_projects_path()
         )
         self.assertIsInstance(root_coll, iRODSCollection)
-        project_coll = self.irods_session.collections.get(
+        project_coll = self.irods.collections.get(
             self.irods_backend.get_path(self.project)
         )
         self.assertIsInstance(project_coll, iRODSCollection)
@@ -124,16 +122,16 @@ class TestProjectCreateView(TaskflowbackendTestBase):
         )
         # Assert user group and owner access
         group_name = self.irods_backend.get_user_group_name(self.project)
-        group = self.irods_session.user_groups.get(group_name)
+        group = self.irods.user_groups.get(group_name)
         self.assertIsInstance(group, iRODSUserGroup)
         self.assert_irods_access(group_name, project_coll, IRODS_ACCESS_READ)
         self.assertIsInstance(
-            self.irods_session.users.get(self.user.username), iRODSUser
+            self.irods.users.get(self.user.username), iRODSUser
         )
         self.assertEqual(group.hasmember(self.user.username), True)
         # Assert inherited role updating for category owner
         self.assertIsInstance(
-            self.irods_session.users.get(self.user_cat.username), iRODSUser
+            self.irods.users.get(self.user_cat.username), iRODSUser
         )
         self.assertEqual(group.hasmember(self.user_cat.username), True)
 
@@ -204,7 +202,7 @@ class TestProjectUpdateView(TaskflowbackendTestBase):
         self.assertEqual(model_dict, expected)
         self.assertEqual(self.project.readme.raw, 'updated readme')
 
-        project_coll = self.irods_session.collections.get(
+        project_coll = self.irods.collections.get(
             self.irods_backend.get_path(self.project)
         )
         self.assertEqual(
@@ -260,7 +258,7 @@ class TestProjectUpdateView(TaskflowbackendTestBase):
         self.assertEqual(Project.objects.count(), 3)
         self.project.refresh_from_db()
         self.assertEqual(self.project.parent, new_category)
-        project_coll = self.irods_session.collections.get(
+        project_coll = self.irods.collections.get(
             self.irods_backend.get_path(self.project)
         )
         self.assertEqual(
@@ -282,7 +280,7 @@ class TestRoleAssignmentCreateView(TaskflowbackendTestBase):
             description='description',
         )
         self.user_new = self.make_user('guest')
-        self.irods_user_group = self.irods_session.user_groups.get(
+        self.irods_user_group = self.irods.user_groups.get(
             self.irods_backend.get_user_group_name(self.project)
         )
 
@@ -474,20 +472,19 @@ class TestRoleAssignmentDeleteView(TaskflowbackendTestBase):
             description='description',
         )
         self.user_new = self.make_user('newuser')
-        self.role_as = self.make_assignment_taskflow(
+
+    def test_delete_role(self):
+        """Test RoleAssignment deleting with taskflow"""
+        role_as = self.make_assignment_taskflow(
             self.project, self.user_new, self.role_guest
         )
-
-    def test_delete_assignment(self):
-        """Test RoleAssignment deleting with taskflow"""
         self.assertEqual(RoleAssignment.objects.count(), 3)
         self.assert_group_member(self.project, self.user_new, True)
-
         with self.login(self.user):
             response = self.client.post(
                 reverse(
                     'projectroles:role_delete',
-                    kwargs={'roleassignment': self.role_as.sodar_uuid},
+                    kwargs={'roleassignment': role_as.sodar_uuid},
                 ),
             )
             self.assertRedirects(
@@ -497,9 +494,30 @@ class TestRoleAssignmentDeleteView(TaskflowbackendTestBase):
                     kwargs={'project': self.project.sodar_uuid},
                 ),
             )
-
         self.assertEqual(RoleAssignment.objects.count(), 2)
         self.assert_group_member(self.project, self.user_new, False)
+
+    def test_delete_role_category(self):
+        """Test RoleAssignment deleting with taskflow and category"""
+        role_as = self.make_assignment_taskflow(
+            self.category, self.user_new, self.role_guest
+        )
+        self.assertEqual(RoleAssignment.objects.count(), 3)
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'projectroles:role_delete',
+                    kwargs={'roleassignment': role_as.sodar_uuid},
+                ),
+            )
+            self.assertRedirects(
+                response,
+                reverse(
+                    'projectroles:roles',
+                    kwargs={'project': self.category.sodar_uuid},
+                ),
+            )
+        self.assertEqual(RoleAssignment.objects.count(), 2)
 
 
 class TestProjectInviteAcceptView(ProjectInviteMixin, TaskflowbackendTestBase):

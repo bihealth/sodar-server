@@ -74,21 +74,21 @@ class TestProjectCreateAPIView(TestCoreTaskflowAPIBase):
         self.assertEqual(response.status_code, 201, msg=response.content)
         self.assertEqual(Project.objects.all().count(), 2)
         # Assert iRODS collections
-        root_coll = self.irods_session.collections.get(
+        root_coll = self.irods.collections.get(
             self.irods_backend.get_projects_path()
         )
         self.assertIsInstance(root_coll, iRODSCollection)
-        project_coll = self.irods_session.collections.get(
+        project_coll = self.irods.collections.get(
             self.irods_backend.get_path(project)
         )
         self.assertIsInstance(project_coll, iRODSCollection)
         # Assert user group and owner access
         group_name = self.irods_backend.get_user_group_name(project)
-        group = self.irods_session.user_groups.get(group_name)
+        group = self.irods.user_groups.get(group_name)
         self.assertIsInstance(group, iRODSUserGroup)
         self.assert_irods_access(group_name, project_coll, IRODS_ACCESS_READ)
         self.assertIsInstance(
-            self.irods_session.users.get(self.user.username), iRODSUser
+            self.irods.users.get(self.user.username), iRODSUser
         )
         self.assert_group_member(project, self.user, True)
 
@@ -99,7 +99,7 @@ class TestProjectUpdateAPIView(TestCoreTaskflowAPIBase):
     def setUp(self):
         super().setUp()
         # Make project with owner in Taskflow and Django
-        self.project, self.owner_as = self._make_project_taskflow(
+        self.project, self.owner_as = self.make_project_taskflow(
             title='TestProject',
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
@@ -192,7 +192,7 @@ class TestProjectUpdateAPIView(TestCoreTaskflowAPIBase):
         )
         self.assertEqual(self.project.get_owner().user, self.user)
 
-        project_coll = self.irods_session.collections.get(
+        project_coll = self.irods.collections.get(
             self.irods_backend.get_path(self.project)
         )
         self.assertEqual(
@@ -274,7 +274,7 @@ class TestProjectUpdateAPIView(TestCoreTaskflowAPIBase):
         }
         self.assertEqual(model_dict, expected)
         self.assertEqual(self.project.get_owner().user, self.user)
-        project_coll = self.irods_session.collections.get(
+        project_coll = self.irods.collections.get(
             self.irods_backend.get_path(self.project)
         )
         self.assertEqual(
@@ -305,7 +305,7 @@ class TestProjectUpdateAPIView(TestCoreTaskflowAPIBase):
         self.assertEqual(model_dict['parent'], new_category.pk)
         self.assertEqual(self.project.get_owner().user, self.user)
 
-        project_coll = self.irods_session.collections.get(
+        project_coll = self.irods.collections.get(
             self.irods_backend.get_path(self.project)
         )
         self.assertEqual(
@@ -320,7 +320,7 @@ class TestRoleAssignmentCreateAPIView(TestCoreTaskflowAPIBase):
     def setUp(self):
         super().setUp()
         # Make project with owner in Taskflow and Django
-        self.project, self.owner_as = self._make_project_taskflow(
+        self.project, self.owner_as = self.make_project_taskflow(
             title='TestProject',
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
@@ -352,7 +352,7 @@ class TestRoleAssignmentUpdateAPIView(TestCoreTaskflowAPIBase):
 
     def setUp(self):
         super().setUp()
-        self.project, self.owner_as = self._make_project_taskflow(
+        self.project, self.owner_as = self.make_project_taskflow(
             title='TestProject',
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
@@ -361,7 +361,7 @@ class TestRoleAssignmentUpdateAPIView(TestCoreTaskflowAPIBase):
         )
         self.assign_user = self.make_user('assign_user')
         # Make extra assignment with Taskflow
-        self.update_as = self._make_assignment_taskflow(
+        self.update_as = self.make_assignment_taskflow(
             project=self.project,
             user=self.assign_user,
             role=self.role_contributor,
@@ -404,7 +404,7 @@ class TestRoleAssignmentDestroyAPIView(TestCoreTaskflowAPIBase):
 
     def setUp(self):
         super().setUp()
-        self.project, self.owner_as = self._make_project_taskflow(
+        self.project, self.owner_as = self.make_project_taskflow(
             title='TestProject',
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
@@ -412,24 +412,40 @@ class TestRoleAssignmentDestroyAPIView(TestCoreTaskflowAPIBase):
             description='description',
         )
         self.assign_user = self.make_user('assign_user')
-        self.update_as = self._make_assignment_taskflow(
+
+    def test_delete_role(self):
+        """Test delete() for role assignment deletion"""
+        update_as = self.make_assignment_taskflow(
             project=self.project,
             user=self.assign_user,
             role=self.role_contributor,
         )
-
-    def test_delete_role(self):
-        """Test delete() for role assignment deletion"""
         self.assertEqual(RoleAssignment.objects.all().count(), 3)
         self.assert_group_member(self.project, self.assign_user, True)
         url = reverse(
             'projectroles:api_role_destroy',
-            kwargs={'roleassignment': self.update_as.sodar_uuid},
+            kwargs={'roleassignment': update_as.sodar_uuid},
         )
         response = self.request_knox(url, method='DELETE')
         self.assertEqual(response.status_code, 204, msg=response.content)
         self.assertEqual(RoleAssignment.objects.all().count(), 2)
         self.assert_group_member(self.project, self.assign_user, False)
+
+    def test_delete_role_category(self):
+        """Test delete() for role assignment deletion with category"""
+        update_as = self.make_assignment_taskflow(
+            project=self.category,
+            user=self.assign_user,
+            role=self.role_contributor,
+        )
+        self.assertEqual(RoleAssignment.objects.all().count(), 3)
+        url = reverse(
+            'projectroles:api_role_destroy',
+            kwargs={'roleassignment': update_as.sodar_uuid},
+        )
+        response = self.request_knox(url, method='DELETE')
+        self.assertEqual(response.status_code, 204, msg=response.content)
+        self.assertEqual(RoleAssignment.objects.all().count(), 2)
 
 
 class TestRoleAssignmentOwnerTransferAPIView(TestCoreTaskflowAPIBase):
@@ -438,7 +454,7 @@ class TestRoleAssignmentOwnerTransferAPIView(TestCoreTaskflowAPIBase):
     def setUp(self):
         super().setUp()
         self.user_owner = self.make_user('user_owner')
-        self.project, self.owner_as = self._make_project_taskflow(
+        self.project, self.owner_as = self.make_project_taskflow(
             title='TestProject',
             type=PROJECT_TYPE_PROJECT,
             parent=self.category,
@@ -450,7 +466,7 @@ class TestRoleAssignmentOwnerTransferAPIView(TestCoreTaskflowAPIBase):
     def test_transfer_owner(self):
         """Test transferring ownership for a project"""
         # Make extra assignment with Taskflow
-        self._make_assignment_taskflow(
+        self.make_assignment_taskflow(
             project=self.project,
             user=self.assign_user,
             role=self.role_contributor,
@@ -482,7 +498,7 @@ class TestRoleAssignmentOwnerTransferAPIView(TestCoreTaskflowAPIBase):
 
     def test_transfer_owner_category(self):
         """Test transferring ownership for a category"""
-        self._make_assignment_taskflow(
+        self.make_assignment_taskflow(
             project=self.category,
             user=self.assign_user,
             role=self.role_contributor,
@@ -508,7 +524,7 @@ class TestRoleAssignmentOwnerTransferAPIView(TestCoreTaskflowAPIBase):
 
     def test_transfer_owner_inherit(self):
         """Test transferring ownership to an inherited owner"""
-        self._make_assignment_taskflow(
+        self.make_assignment_taskflow(
             project=self.project,
             user=self.assign_user,
             role=self.role_contributor,

@@ -5,6 +5,55 @@ Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+v0.12.1 (2022-11-09)
+====================
+
+Added
+-----
+
+- **Landingzones**
+    - ``LANDINGZONES_TRIGGER_ENABLE`` Django setting (#1508)
+
+Changed
+-------
+
+- **General**
+    - Upgrade to Django v3.2.16+ (#1515)
+    - Move include examples to ``include_examples`` (#1493)
+- **Samplesheets**
+    - Upgrade Vue app dependencies (#1518)
+    - Improve study app logging (#1507)
+    - Optimize germline study app ``get_shortcut_column()`` (#1519)
+    - Add study app tests (#1523)
+    - Optimize germline study app cache updating (#1506)
+    - Improve default IGV BAM track colour (#1514)
+- **Taskflowbackend**
+    - Improve project lock error messages (#1496, #1500, #1511)
+
+Fixed
+-----
+
+- **General**
+    - Invalid  ``REDIS_URL`` default value (#1497)
+    - Invalid modify API settings in production config (#1503)
+- **Landingzones**
+    - Missing zone status check in ``ZoneMoveView`` (#1520)
+- **Samplesheets**
+    - Uncaught project lock exceptions in iRODS delete request accepting (#1495)
+    - Missing CSS classes for failed iRODS delete requests (#1513)
+    - User alerts/emails sent for own iRODS delete requests (#1502)
+- **Taskflowbackend**
+    - Unhandled project lock exceptions (#1496, #1500, #1511)
+    - Landing zone status not updated on flow lock/build errors (#1498)
+    - Role deletion failing for categories (#1521)
+
+Removed
+-------
+
+- **Samplesheets**
+    - ``.gitkeep`` for ``config`` directory (#1493)
+
+
 v0.12.0 (2022-10-14)
 ====================
 

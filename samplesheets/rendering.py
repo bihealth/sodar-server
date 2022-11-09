@@ -796,8 +796,8 @@ class SampleSheetTableBuilder:
         """
         s_start = time.time()
         logger.debug(
-            'Building study "{}" (pk={}, edit={})..'.format(
-                study.get_name(), study.pk, edit
+            'Building study "{}" (UUID={}, edit={})..'.format(
+                study.get_name(), study.sodar_uuid, edit
             )
         )
 
@@ -860,8 +860,8 @@ class SampleSheetTableBuilder:
         for assay in study.assays.all().order_by('pk'):
             a_start = time.time()
             logger.debug(
-                'Building assay "{}" (pk={}, edit={})..'.format(
-                    assay.get_name(), assay.pk, edit
+                'Building assay "{}" (UUID={}, edit={})..'.format(
+                    assay.get_name(), assay.sodar_uuid, edit
                 )
             )
             assay_refs = self.get_assay_refs(all_refs, assay_id, sample_idx)

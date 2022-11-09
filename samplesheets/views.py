@@ -104,9 +104,9 @@ MISC_FILES_COLL = 'MiscFiles'
 TRACK_HUBS_COLL = 'TrackHubs'
 RESULTS_COLL_ID = 'results_reports'
 RESULTS_COLL = 'ResultsReports'
-IRODS_REQ_CREATE_ALERT_NAME = 'irods_request_create'
-IRODS_REQ_ACCEPT_ALERT_NAME = 'irods_request_accept'
-IRODS_REQ_REJECT_ALERT_NAME = 'irods_request_reject'
+IRODS_REQ_CREATE_ALERT = 'irods_request_create'
+IRODS_REQ_ACCEPT_ALERT = 'irods_request_accept'
+IRODS_REQ_REJECT_ALERT = 'irods_request_reject'
 SYNC_SUCCESS_MSG = 'Sample sheet sync successful'
 SYNC_FAIL_DISABLED = 'Sample sheet sync disabled'
 SYNC_FAIL_PREFIX = 'Sample sheet sync failed'
@@ -700,22 +700,17 @@ class IrodsCollsCreateViewMixin:
             'colls': get_sample_colls(investigation),
             'ticket_str': ticket_str,
         }
-        try:
-            taskflow.submit(
-                project=project,
-                flow_name='sheet_colls_create',
-                flow_data=flow_data,
-            )
-            app_settings.set_app_setting(
-                APP_NAME,
-                'public_access_ticket',
-                ticket_str,
-                project=project,
-            )
-        except taskflow.FlowSubmitException as ex:
-            if tl_event:
-                tl_event.set_status('FAILED', str(ex))
-            raise ex
+        taskflow.submit(
+            project=project,
+            flow_name='sheet_colls_create',
+            flow_data=flow_data,
+        )
+        app_settings.set_app_setting(
+            APP_NAME,
+            'public_access_ticket',
+            ticket_str,
+            project=project,
+        )
         if tl_event:
             tl_event.set_status('OK')
 
@@ -785,8 +780,7 @@ class IrodsRequestModifyMixin:
 
     # App Alert Helpers --------------------------------------------------------
 
-    @classmethod
-    def add_alerts_create(cls, project, app_alerts=None):
+    def add_alerts_create(self, project, app_alerts=None):
         """
         Add app alerts for project owners/delegates on request creation. Will
         not create new alerts if the user already has a similar active alert
@@ -808,10 +802,12 @@ class IrodsRequestModifyMixin:
         )
         # logger.debug('od_users={}'.format(od_users))  # DEBUG
         for u in od_users:
+            if u == self.request.user:
+                continue  # Skip triggering user
             alert_count = AppAlert.objects.filter(
                 project=project,
                 user=u,
-                alert_name=IRODS_REQ_CREATE_ALERT_NAME,
+                alert_name=IRODS_REQ_CREATE_ALERT,
                 active=True,
             ).count()
             if alert_count > 0:
@@ -819,7 +815,7 @@ class IrodsRequestModifyMixin:
                 continue  # Only have one active alert per user/project
             app_alerts.add_alert(
                 app_name=APP_NAME,
-                alert_name=IRODS_REQ_CREATE_ALERT_NAME,
+                alert_name=IRODS_REQ_CREATE_ALERT,
                 user=u,
                 message='iRODS delete requests require attention in '
                 'project "{}"'.format(project.title),
@@ -856,7 +852,7 @@ class IrodsRequestModifyMixin:
         )
         if req_count == 0:
             alerts = AppAlert.objects.filter(
-                alert_name=IRODS_REQ_CREATE_ALERT_NAME,
+                alert_name=IRODS_REQ_CREATE_ALERT,
                 project=irods_request.project,
                 active=True,
             )
@@ -1507,14 +1503,11 @@ class SheetDeleteView(
                     flow_data={},
                 )
             except taskflow.FlowSubmitException as ex:
-                if tl_event:
-                    tl_event.set_status('FAILED', str(ex))
                 delete_success = False
                 messages.error(
                     self.request,
                     'Failed to delete sample sheets: {}'.format(ex),
                 )
-
         else:
             investigation.delete()
             tl_event.set_status('OK')
@@ -2278,6 +2271,10 @@ class IrodsRequestAcceptView(
         app_alerts = get_backend_api('appalerts_backend')
         project = self.get_project()
         tl_event = None
+        redirect_url = reverse(
+            'samplesheets:irods_requests',
+            kwargs={'project': project.sodar_uuid},
+        )
 
         try:
             obj = IrodsDataRequest.objects.get(
@@ -2326,11 +2323,17 @@ class IrodsRequestAcceptView(
             obj.status = 'ACCEPTED'
             obj.save()
         except taskflow.FlowSubmitException as ex:
-            if tl_event:
-                tl_event.set_status('FAILED', str(ex))
             obj.status = 'FAILED'
             obj.save()
-            raise ex
+            if settings.DEBUG:
+                raise ex
+            messages.error(
+                self.request,
+                'Accepting iRODS data request "{}" failed: {}'.format(
+                    obj.get_display_name(), ex
+                ),
+            )
+            return redirect(redirect_url)
 
         # Update cache
         if settings.SHEETS_ENABLE_CACHE:
@@ -2342,7 +2345,7 @@ class IrodsRequestAcceptView(
             )
 
         # Prepare and send notification email
-        if settings.PROJECTROLES_SEND_EMAIL:
+        if settings.PROJECTROLES_SEND_EMAIL and obj.user != self.request.user:
             subject_body = 'iRODS delete request accepted'
             message_body = EMAIL_DELETE_REQUEST_ACCEPT.format(
                 project=obj.project.title,
@@ -2355,10 +2358,10 @@ class IrodsRequestAcceptView(
             )
 
         # Create app alert
-        if app_alerts:
+        if app_alerts and obj.user != self.request.user:
             app_alerts.add_alert(
                 app_name=APP_NAME,
-                alert_name=IRODS_REQ_ACCEPT_ALERT_NAME,
+                alert_name=IRODS_REQ_ACCEPT_ALERT,
                 user=obj.user,
                 message='iRODS delete request accepted by {}: "{}"'.format(
                     self.request.user.username, obj.get_short_path()
@@ -2377,12 +2380,7 @@ class IrodsRequestAcceptView(
             self.request,
             'iRODS data request "{}" accepted.'.format(obj.get_display_name()),
         )
-        return redirect(
-            reverse(
-                'samplesheets:irods_requests',
-                kwargs={'project': project.sodar_uuid},
-            )
-        )
+        return redirect(redirect_url)
 
 
 class IrodsRequestRejectView(
@@ -2440,7 +2438,7 @@ class IrodsRequestRejectView(
         )
 
         # Prepare and send notification email
-        if settings.PROJECTROLES_SEND_EMAIL:
+        if settings.PROJECTROLES_SEND_EMAIL and obj.user != self.request.user:
             subject_body = 'iRODS delete request rejected'
             message_body = EMAIL_DELETE_REQUEST_REJECT.format(
                 project=obj.project.title,
@@ -2453,10 +2451,10 @@ class IrodsRequestRejectView(
             )
 
         # Create app alert
-        if app_alerts:
+        if app_alerts and obj.user != self.request.user:
             app_alerts.add_alert(
                 app_name=APP_NAME,
-                alert_name=IRODS_REQ_REJECT_ALERT_NAME,
+                alert_name=IRODS_REQ_REJECT_ALERT,
                 user=obj.user,
                 message='iRODS delete request rejected by {}: "{}"'.format(
                     self.request.user.username, obj.get_short_path()

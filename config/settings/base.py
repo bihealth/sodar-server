@@ -8,13 +8,10 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 
-import json
 import os
 import re
 
 import environ
-
-from samplesheets.constants import DEFAULT_EXTERNAL_LINK_LABELS
 
 
 SITE_PACKAGE = 'sodar'
@@ -164,7 +161,7 @@ DATABASES['default']['ATOMIC_REQUESTS'] = False
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
 # Default Redis server URL
-REDIS_URL = env.str('REDIS_URL', 'redis://localhost:6379/0')
+REDIS_URL = env.str('REDIS_URL', 'redis://127.0.0.1:6379/0')
 
 # GENERAL CONFIGURATION
 # ------------------------------------------------------------------------------
@@ -586,7 +583,7 @@ SITE_INSTANCE_TITLE = env.str('SITE_INSTANCE_TITLE', 'CUBI SODAR')
 
 
 # General API settings
-SODAR_API_DEFAULT_VERSION = '0.12.0'
+SODAR_API_DEFAULT_VERSION = '0.12.1'
 SODAR_API_ALLOWED_VERSIONS = [
     '0.7.0',
     '0.7.1',
@@ -599,6 +596,7 @@ SODAR_API_ALLOWED_VERSIONS = [
     '0.11.2',
     '0.11.3',
     '0.12.0',
+    '0.12.1',
 ]
 SODAR_API_MEDIA_TYPE = 'application/vnd.bihealth.sodar+json'
 SODAR_API_DEFAULT_HOST = env.url(
@@ -629,8 +627,8 @@ PROJECTROLES_ALLOW_LOCAL_USERS = env.bool(
 PROJECTROLES_ALLOW_ANONYMOUS = env.bool('PROJECTROLES_ALLOW_ANONYMOUS', False)
 
 
-PROJECTROLES_ENABLE_MODIFY_API = False
-PROJECTROLES_MODIFY_API_APPS = []
+PROJECTROLES_ENABLE_MODIFY_API = True
+PROJECTROLES_MODIFY_API_APPS = ['taskflow', 'samplesheets', 'landingzones']
 
 PROJECTROLES_DISABLE_CATEGORIES = env.bool(
     'PROJECTROLES_DISABLE_CATEGORIES', False
@@ -786,10 +784,13 @@ SHEETS_SYNC_INTERVAL = env.int('SHEETS_SYNC_INTERVAL', 5)
 # Landingzones app settings
 # Status query interval in seconds
 LANDINGZONES_STATUS_INTERVAL = env.int('LANDINGZONES_STATUS_INTERVAL', 3)
+# Enable automated move triggering based on touched file
+LANDINGZONES_TRIGGER_ENABLE = env.bool('LANDINGZONES_TRIGGER_ENABLE', True)
 # Automatic move triggering check interval in seconds
 LANDINGZONES_TRIGGER_MOVE_INVERVAL = env.int(
     'LANDINGZONES_TRIGGER_MOVE_INTERVAL', 30
 )
+# File name for automated move triggering
 LANDINGZONES_TRIGGER_FILE = env.str(
     'LANDINGZONES_TRIGGER_FILE', '.sodar_validate_and_move'
 )

@@ -47,7 +47,7 @@ class TestViewsBase(ProjectMixin, RoleAssignmentMixin, TestCase):
         self.irods_backend = get_backend_api('omics_irods')
         self.assertIsNotNone(self.irods_backend)
         # Get iRODS session
-        self.irods_session = self.irods_backend.get_session()
+        self.irods = self.irods_backend.get_session()
 
         # Init roles
         self.role_owner = Role.objects.get_or_create(name=PROJECT_ROLE_OWNER)[0]
@@ -77,13 +77,11 @@ class TestViewsBase(ProjectMixin, RoleAssignmentMixin, TestCase):
         self.project_path = self.irods_backend.get_path(self.project)
         self.irods_path = self.project_path + '/' + IRODS_TEMP_COLL
         # Create test collection in iRODS
-        self.irods_coll = self.irods_session.collections.create(self.irods_path)
+        self.irods_coll = self.irods.collections.create(self.irods_path)
 
     def tearDown(self):
-        if self.irods_session.collections.exists(self.project_path):
-            self.irods_session.collections.get(self.project_path).remove(
-                force=True
-            )
+        if self.irods.collections.exists(self.project_path):
+            self.irods.collections.get(self.project_path).remove(force=True)
 
 
 class TestIrodsStatisticsAjaxView(TestViewsBase):
@@ -105,7 +103,7 @@ class TestIrodsStatisticsAjaxView(TestViewsBase):
         """Test GET for stats on a collection with a data object"""
         # Put data object in iRODS
         obj_path = self.irods_path + '/' + IRODS_OBJ_NAME
-        make_object(self.irods_session, obj_path, IRODS_OBJ_CONTENT)
+        make_object(self.irods, obj_path, IRODS_OBJ_CONTENT)
 
         with self.login(self.user):
             response = self.client.get(
@@ -121,12 +119,10 @@ class TestIrodsStatisticsAjaxView(TestViewsBase):
         """Test GET for stats on a collection with a data object and md5"""
         # Put data object in iRODS
         obj_path = self.irods_path + '/' + IRODS_OBJ_NAME
-        make_object(self.irods_session, obj_path, IRODS_OBJ_CONTENT)
+        make_object(self.irods, obj_path, IRODS_OBJ_CONTENT)
         # Put MD5 data object in iRODS
         md5_path = self.irods_path + '/' + IRODS_MD5_NAME
-        make_object(
-            self.irods_session, md5_path, IRODS_OBJ_CONTENT
-        )  # Not actual md5
+        make_object(self.irods, md5_path, IRODS_OBJ_CONTENT)  # Not actual md5
 
         with self.login(self.user):
             response = self.client.get(
@@ -141,9 +137,7 @@ class TestIrodsStatisticsAjaxView(TestViewsBase):
     def test_get_coll_not_found(self):
         """Test GET for stats on a collection which doesn't exist"""
         fail_path = self.irods_path + '/' + IRODS_FAIL_COLL
-        self.assertEqual(
-            self.irods_session.collections.exists(fail_path), False
-        )
+        self.assertEqual(self.irods.collections.exists(fail_path), False)
 
         with self.login(self.user):
             response = self.client.get(
@@ -156,7 +150,7 @@ class TestIrodsStatisticsAjaxView(TestViewsBase):
     def test_get_coll_not_in_project(self):
         """Test GET for stats on a collection not belonging to project"""
         self.assertEqual(
-            self.irods_session.collections.exists(IRODS_NON_PROJECT_PATH), True
+            self.irods.collections.exists(IRODS_NON_PROJECT_PATH), True
         )
 
         with self.login(self.user):
@@ -197,7 +191,7 @@ class TestIrodsObjectListAjaxView(TestViewsBase):
         )
 
         # Create test collection in iRODS
-        self.irods_coll = self.irods_session.collections.create(self.irods_path)
+        self.irods_coll = self.irods.collections.create(self.irods_path)
 
     def test_get_empty_coll(self):
         """Test GET for listing an empty collection in iRODS"""
@@ -218,7 +212,7 @@ class TestIrodsObjectListAjaxView(TestViewsBase):
 
         # Put data object in iRODS
         obj_path = self.irods_path + '/' + IRODS_OBJ_NAME
-        data_obj = make_object(self.irods_session, obj_path, IRODS_OBJ_CONTENT)
+        data_obj = make_object(self.irods, obj_path, IRODS_OBJ_CONTENT)
 
         with self.login(self.user):
             response = self.client.get(
@@ -242,12 +236,10 @@ class TestIrodsObjectListAjaxView(TestViewsBase):
         """Test GET for listing a collection with a data object and md5"""
         # Put data object in iRODS
         obj_path = self.irods_path + '/' + IRODS_OBJ_NAME
-        make_object(self.irods_session, obj_path, IRODS_OBJ_CONTENT)
+        make_object(self.irods, obj_path, IRODS_OBJ_CONTENT)
         # Put MD5 data object in iRODS
         md5_path = self.irods_path + '/' + IRODS_MD5_NAME
-        make_object(
-            self.irods_session, md5_path, IRODS_OBJ_CONTENT
-        )  # Not actual md5
+        make_object(self.irods, md5_path, IRODS_OBJ_CONTENT)  # Not actual md5
 
         with self.login(self.user):
             response = self.client.get(
@@ -266,7 +258,7 @@ class TestIrodsObjectListAjaxView(TestViewsBase):
         """Test GET with md5 set True but no md5 file"""
         # Put data object in iRODS
         obj_path = self.irods_path + '/' + IRODS_OBJ_NAME
-        make_object(self.irods_session, obj_path, IRODS_OBJ_CONTENT)
+        make_object(self.irods, obj_path, IRODS_OBJ_CONTENT)
 
         with self.login(self.user):
             response = self.client.get(
@@ -284,9 +276,7 @@ class TestIrodsObjectListAjaxView(TestViewsBase):
     def test_get_coll_not_found(self):
         """Test GET for listing a collection which doesn't exist"""
         fail_path = self.irods_path + '/' + IRODS_FAIL_COLL
-        self.assertEqual(
-            self.irods_session.collections.exists(fail_path), False
-        )
+        self.assertEqual(self.irods.collections.exists(fail_path), False)
 
         with self.login(self.user):
             response = self.client.get(
@@ -299,7 +289,7 @@ class TestIrodsObjectListAjaxView(TestViewsBase):
     def test_get_coll_not_in_project(self):
         """Test GET for listing a collection not belonging to project"""
         self.assertEqual(
-            self.irods_session.collections.exists(IRODS_NON_PROJECT_PATH), True
+            self.irods.collections.exists(IRODS_NON_PROJECT_PATH), True
         )
 
         with self.login(self.user):
@@ -363,7 +353,7 @@ class TestIrodsBatchStatisticsAjaxView(TestViewsBase):
         """Test POST for batch stats on collections with a data object"""
         # Put data object in iRODS
         obj_path = self.irods_path + '/' + IRODS_OBJ_NAME
-        make_object(self.irods_session, obj_path, IRODS_OBJ_CONTENT)
+        make_object(self.irods, obj_path, IRODS_OBJ_CONTENT)
         post_data = {
             'paths': [self.irods_path, self.irods_path],
             'md5': ['0', '0'],
@@ -391,12 +381,10 @@ class TestIrodsBatchStatisticsAjaxView(TestViewsBase):
         """Test POST for batch stats on collections with a data object and md5"""
         # Put data object in iRODS
         obj_path = self.irods_path + '/' + IRODS_OBJ_NAME
-        make_object(self.irods_session, obj_path, IRODS_OBJ_CONTENT)
+        make_object(self.irods, obj_path, IRODS_OBJ_CONTENT)
         # Put MD5 data object in iRODS
         md5_path = self.irods_path + '/' + IRODS_MD5_NAME
-        make_object(
-            self.irods_session, md5_path, IRODS_OBJ_CONTENT
-        )  # Not actual md5
+        make_object(self.irods, md5_path, IRODS_OBJ_CONTENT)  # Not actual md5
         post_data = {
             'paths': [self.irods_path, self.irods_path],
             'md5': ['1', '1'],
@@ -423,9 +411,7 @@ class TestIrodsBatchStatisticsAjaxView(TestViewsBase):
     def test_post_coll_not_found(self):
         """Test POST for stats on collections which don't exist"""
         fail_path = self.irods_path + '/' + IRODS_FAIL_COLL
-        self.assertEqual(
-            self.irods_session.collections.exists(fail_path), False
-        )
+        self.assertEqual(self.irods.collections.exists(fail_path), False)
         post_data = {'paths': [fail_path, fail_path], 'md5': ['0', '0']}
 
         with self.login(self.user):
@@ -443,7 +429,7 @@ class TestIrodsBatchStatisticsAjaxView(TestViewsBase):
     def test_post_coll_not_in_project(self):
         """Test POST for stats on collections not belonging to project"""
         self.assertEqual(
-            self.irods_session.collections.exists(IRODS_NON_PROJECT_PATH), True
+            self.irods.collections.exists(IRODS_NON_PROJECT_PATH), True
         )
         post_data = {
             'paths': [IRODS_NON_PROJECT_PATH, IRODS_NON_PROJECT_PATH],

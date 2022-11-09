@@ -594,6 +594,7 @@ class StudyTablesAjaxView(SODARBaseProjectAjaxView):
 
         # Get iRODS content if NOT editing and collections have been created
         if not edit:
+            logger.debug('Retrieving iRODS content for study..')
             ret_data = get_irods_content(inv, study, irods_backend, ret_data)
 
         # Get/build sheet config

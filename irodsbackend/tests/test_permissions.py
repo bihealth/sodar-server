@@ -76,15 +76,15 @@ class TestIrodsbackendPermissions(
 
         # Set up irodsbackend
         self.irods_backend = get_backend_api('omics_irods')
-        self.irods_session = self.irods_backend.get_session()
+        self.irods = self.irods_backend.get_session()
 
         # Set up test paths
         self.project_path = self.irods_backend.get_path(self.project)
         self.sample_path = self.irods_backend.get_sample_path(self.project)
 
     def tearDown(self):
-        if self.irods_session:
-            self.irods_session.cleanup()
+        if self.irods:
+            self.irods.cleanup()
         super().tearDown()
 
     def test_stats_get(self):
@@ -143,7 +143,7 @@ class TestIrodsbackendPermissions(
     def test_stats_get_no_perms(self):
         """Test stats API view GET without collection perms"""
         test_path = self.project_path + '/' + TEST_COLL_NAME
-        self.irods_session.collections.create(test_path)  # NOTE: No perms given
+        self.irods.collections.create(test_path)  # NOTE: No perms given
 
         url = self.irods_backend.get_url(
             view='stats', project=self.project, path=test_path
@@ -237,7 +237,7 @@ class TestIrodsbackendPermissions(
     def test_list_get_no_perms(self):
         """Test object list GET without collection perms"""
         test_path = self.project_path + '/' + TEST_COLL_NAME
-        self.irods_session.collections.create(test_path)  # NOTE: No perms given
+        self.irods.collections.create(test_path)  # NOTE: No perms given
 
         url = self.irods_backend.get_url(
             view='list', project=self.project, path=test_path, md5=0

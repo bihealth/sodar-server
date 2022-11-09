@@ -8,6 +8,9 @@ from irods.models import TicketQuery, UserGroup
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 
+# Landingzones dependency
+from landingzones.models import LandingZone
+
 # Projectroles dependency
 from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import get_backend_api
@@ -27,6 +30,7 @@ PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 # Local constants
 DEFAULT_PERMANENT_USERS = ['client_user', 'rods', 'rodsadmin', 'public']
 UNKNOWN_RUN_ERROR = 'Running flow failed: unknown error, see server log'
+LOCK_FAIL_MSG = 'Unable to acquire project lock'
 
 
 class TaskflowAPI:
@@ -34,6 +38,25 @@ class TaskflowAPI:
 
     class FlowSubmitException(Exception):
         """SODAR Taskflow submission exception"""
+
+    @classmethod
+    def _raise_flow_exception(cls, ex_msg, tl_event=None, zone=None):
+        """
+        Handle and raise exception with flow building or execution. Updates the
+        status of timeline event and/or landing zone if provided.
+
+        :param ex_msg: Exception message (string)
+        :param tl_event: Timeline event or None
+        :param zone: LandingZone object or None
+        :raise: FlowSubmitException
+        """
+        if tl_event:
+            tl_event.set_status('FAILED', ex_msg)
+        # Update landing zone
+        if zone:
+            zone.set_status('FAILED', ex_msg)
+        # TODO: Create app alert for failure if async (see #1499)
+        raise cls.FlowSubmitException(ex_msg)
 
     @classmethod
     def get_flow(
@@ -90,28 +113,41 @@ class TaskflowAPI:
         :param project: Project object
         :param force_fail: Force failure (boolean, for testing)
         :param async_mode: Submit in async mode (boolean, default=False)
-        :param tl_event: Timeline ProjectEvent object or None
+        :param tl_event: Timeline ProjectEvent object or None. Event status will
+                         be updated if the flow is run in async mode
         :return: Dict
         """
         flow_result = None
         ex_msg = None
         coordinator = None
         lock = None
+        # Get zone if present in flow
+        zone = None
+        if flow.flow_data.get('zone_uuid'):
+            zone = LandingZone.objects.filter(
+                sodar_uuid=flow.flow_data['zone_uuid']
+            ).first()
 
         # Acquire lock if needed
         if flow.require_lock:
             # Acquire lock
             coordinator = lock_api.get_coordinator()
             if not coordinator:
-                raise Exception('Unable to retrieve lock coordinator')
+                cls._raise_flow_exception(
+                    LOCK_FAIL_MSG + ': Failed to retrieve lock coordinator',
+                    tl_event,
+                    zone,
+                )
             else:
                 lock_id = str(project.sodar_uuid)
                 lock = coordinator.get_lock(lock_id)
                 try:
                     lock_api.acquire(lock)
                 except Exception as ex:
-                    raise Exception(
-                        'Unable to acquire project lock: {}'.format(ex)
+                    cls._raise_flow_exception(
+                        LOCK_FAIL_MSG + ': {}'.format(ex),
+                        tl_event,
+                        zone,
                     )
         else:
             logger.info('Lock not required (flow.require_lock=False)')
@@ -122,9 +158,6 @@ class TaskflowAPI:
             flow.build(force_fail)
         except Exception as ex:
             ex_msg = 'Error building flow: {}'.format(ex)
-            # Set timeline status
-            if tl_event:
-                tl_event.set_status('FAILED', ex_msg)
 
         # Run flow
         if not ex_msg:
@@ -138,11 +171,8 @@ class TaskflowAPI:
         if flow_result and tl_event and async_mode:
             tl_event.set_status('OK', 'Async submit OK')
         # Exception/failure
-        elif not flow_result:
-            if not ex_msg:
-                ex_msg = UNKNOWN_RUN_ERROR
-            if async_mode and tl_event:
-                tl_event.set_status('FAILED', ex_msg)
+        elif not flow_result and not ex_msg:
+            ex_msg = UNKNOWN_RUN_ERROR
 
         # Release lock if acquired
         if flow.require_lock and lock:
@@ -151,8 +181,9 @@ class TaskflowAPI:
 
         # Raise exception if failed, otherwise return result
         if ex_msg:
-            logger.error(ex_msg)
-            raise cls.FlowSubmitException(ex_msg)
+            logger.error(ex_msg)  # TODO: Isn't this redundant?
+            # NOTE: Not providing zone here since it's handled by flow
+            cls._raise_flow_exception(ex_msg, tl_event, None)
         return flow_result
 
     def submit(

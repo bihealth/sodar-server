@@ -58,7 +58,7 @@ class TestPerformProjectModify(TestModifyAPIBase):
 
         self.assert_irods_coll(project, expected=False)
         with self.assertRaises(UserGroupDoesNotExist):
-            self.irods_session.user_groups.get(group_name)
+            self.irods.user_groups.get(group_name)
 
         self.plugin.perform_project_modify(
             project=project,
@@ -68,16 +68,16 @@ class TestPerformProjectModify(TestModifyAPIBase):
         )
 
         self.assert_irods_coll(project, expected=True)
-        group = self.irods_session.user_groups.get(group_name)
+        group = self.irods.user_groups.get(group_name)
         self.assertIsInstance(group, iRODSUserGroup)
         self.assert_irods_access(
             group_name, self.irods_backend.get_path(project), IRODS_ACCESS_READ
         )
         self.assertIsInstance(
-            self.irods_session.users.get(self.user.username), iRODSUser
+            self.irods.users.get(self.user.username), iRODSUser
         )
         self.assert_group_member(project, self.user, True)
-        project_coll = self.irods_session.collections.get(
+        project_coll = self.irods.collections.get(
             self.irods_backend.get_path(project)
         )
         self.assertEqual(
@@ -86,7 +86,7 @@ class TestPerformProjectModify(TestModifyAPIBase):
         )
         # Assert inherited category owner status
         self.assertIsInstance(
-            self.irods_session.users.get(self.user_cat.username), iRODSUser
+            self.irods.users.get(self.user_cat.username), iRODSUser
         )
         self.assert_group_member(project, self.user_cat, True)
         tl_events = ProjectEvent.objects.filter(
@@ -108,7 +108,7 @@ class TestPerformProjectModify(TestModifyAPIBase):
 
         self.assert_irods_coll(category, expected=False)
         with self.assertRaises(UserGroupDoesNotExist):
-            self.irods_session.user_groups.get(group_name)
+            self.irods.user_groups.get(group_name)
 
         self.plugin.perform_project_modify(
             project=category,
@@ -119,7 +119,7 @@ class TestPerformProjectModify(TestModifyAPIBase):
 
         self.assert_irods_coll(category, expected=False)
         with self.assertRaises(UserGroupDoesNotExist):
-            self.irods_session.user_groups.get(group_name)
+            self.irods.user_groups.get(group_name)
         self.assertEqual(
             ProjectEvent.objects.filter(
                 project=category,
@@ -146,7 +146,7 @@ class TestPerformProjectModify(TestModifyAPIBase):
         self.assert_group_member(project, self.user_cat, True)
         self.assert_group_member(project, user_contrib, True)
         self.assert_group_member(project, user_cat_new, False)
-        project_coll = self.irods_session.collections.get(project_path)
+        project_coll = self.irods.collections.get(project_path)
         self.assertEqual(
             project_coll.metadata.get_one('parent_uuid').value,
             str(self.category.sodar_uuid),
@@ -170,7 +170,7 @@ class TestPerformProjectModify(TestModifyAPIBase):
         self.assert_group_member(project, self.user_cat, False)
         self.assert_group_member(project, user_contrib, True)
         self.assert_group_member(project, user_cat_new, True)
-        project_coll = self.irods_session.collections.get(project_path)
+        project_coll = self.irods.collections.get(project_path)
         self.assertEqual(
             project_coll.metadata.get_one('parent_uuid').value,
             str(new_category.sodar_uuid),
@@ -206,7 +206,7 @@ class TestRevertProjectModify(TestModifyAPIBase):
 
         self.assert_irods_coll(self.project, expected=False)
         with self.assertRaises(UserGroupDoesNotExist):
-            self.irods_session.user_groups.get(self.group_name)
+            self.irods.user_groups.get(self.group_name)
         tl_events = ProjectEvent.objects.filter(
             project=self.project,
             plugin='taskflow',
@@ -503,7 +503,7 @@ class TestPerformProjectSync(TestModifyAPIBase):
 
         self.assert_irods_coll(project, expected=False)
         with self.assertRaises(UserGroupDoesNotExist):
-            self.irods_session.user_groups.get(group_name)
+            self.irods.user_groups.get(group_name)
 
         self.plugin.perform_project_modify(
             project=project,
@@ -513,16 +513,16 @@ class TestPerformProjectSync(TestModifyAPIBase):
         )
 
         self.assert_irods_coll(project, expected=True)
-        group = self.irods_session.user_groups.get(group_name)
+        group = self.irods.user_groups.get(group_name)
         self.assertIsInstance(group, iRODSUserGroup)
         self.assert_irods_access(
             group_name, self.irods_backend.get_path(project), IRODS_ACCESS_READ
         )
         self.assertIsInstance(
-            self.irods_session.users.get(self.user.username), iRODSUser
+            self.irods.users.get(self.user.username), iRODSUser
         )
         self.assert_group_member(project, self.user, True)
-        project_coll = self.irods_session.collections.get(
+        project_coll = self.irods.collections.get(
             self.irods_backend.get_path(project)
         )
         self.assertEqual(
@@ -531,7 +531,7 @@ class TestPerformProjectSync(TestModifyAPIBase):
         )
         # Assert inherited category owner status
         self.assertIsInstance(
-            self.irods_session.users.get(self.user_cat.username), iRODSUser
+            self.irods.users.get(self.user_cat.username), iRODSUser
         )
         self.assert_group_member(project, self.user_cat, True)
         tl_events = ProjectEvent.objects.filter(
@@ -551,13 +551,13 @@ class TestPerformProjectSync(TestModifyAPIBase):
         group_name = self.irods_backend.get_user_group_name(project)
 
         self.assert_irods_coll(project, expected=True)
-        group = self.irods_session.user_groups.get(group_name)
+        group = self.irods.user_groups.get(group_name)
         self.assertIsInstance(group, iRODSUserGroup)
         self.assert_irods_access(
             group_name, self.irods_backend.get_path(project), IRODS_ACCESS_READ
         )
         self.assertIsInstance(
-            self.irods_session.users.get(self.user.username), iRODSUser
+            self.irods.users.get(self.user.username), iRODSUser
         )
         self.assert_group_member(project, self.user, True)
 
@@ -574,7 +574,7 @@ class TestPerformProjectSync(TestModifyAPIBase):
         )
         self.assert_group_member(project, self.user, True)
         self.assertIsInstance(
-            self.irods_session.users.get(self.user_cat.username), iRODSUser
+            self.irods.users.get(self.user_cat.username), iRODSUser
         )
         self.assert_group_member(project, self.user_cat, True)
         tl_events = ProjectEvent.objects.filter(

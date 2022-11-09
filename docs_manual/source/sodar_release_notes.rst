@@ -8,6 +8,20 @@ list of changes in current and previous releases, see the
 :ref:`full changelog<sodar_changelog>`.
 
 
+v0.12.1 (2022-11-09)
+====================
+
+Maintenance and bug fix release.
+
+- Fix incorrect project modify API settings in production
+- Fix category member role removal
+- Fix Tooz and Redis connection issue handling
+- Fix unhandled project locking errors
+- Optimize germline study rendering and cache updating
+- Upgrade Vue app dependencies
+- Minor updates and bug fixes
+
+
 v0.12.0 (2022-10-14)
 ====================
 

@@ -170,7 +170,7 @@ def get_igv_xml(bam_urls, vcf_urls, vcf_title, request):
             attrib={
                 'altColor': '0,0,178',
                 'autoScale': 'false',
-                'color': '0,0,178',
+                'color': '175,175,175',
                 'displayMode': 'SQUISHED',
                 'featureVisibilityWindow': '-1',
                 'fontSize': '10',
