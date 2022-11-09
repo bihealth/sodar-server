@@ -17,6 +17,7 @@ Maintenance and bug fix release.
 - Fix category member role removal
 - Fix Tooz and Redis connection issue handling
 - Fix unhandled project locking errors
+- Optimize germline study rendering and cache updating
 - Upgrade Vue app dependencies
 - Minor updates and bug fixes
 

@@ -25,6 +25,7 @@ Changed
     - Improve study app logging (#1507)
     - Optimize germline study app ``get_shortcut_column()`` (#1519)
     - Add study app tests (#1523)
+    - Optimize germline study app cache updating (#1506)
 - **Taskflowbackend**
     - Improve project lock error messages (#1496, #1500, #1511)
 

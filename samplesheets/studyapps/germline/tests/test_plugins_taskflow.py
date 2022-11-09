@@ -370,17 +370,10 @@ class TestGermlinePlugin(
         )
         self.irods_session.data_objects.create(bam_path)
         self.irods_session.data_objects.create(vcf_path)
-        study_tables = self.tb.build_study_tables(self.study)
         self.plugin.update_cache(self.cache_name, self.project)
         ci = self.cache_backend.get_cache_item(
             APP_NAME, self.cache_name, self.project
         ).data
-        self.assertEqual(
-            ci['bam'][self.source.name],
-            get_pedigree_file_path('bam', self.source, study_tables),
-        )
-        self.assertEqual(
-            ci['vcf'][FAMILY_ID],
-            get_pedigree_file_path('vcf', self.source, study_tables),
-        )
+        self.assertEqual(ci['bam'][self.source.name], bam_path)
+        self.assertEqual(ci['vcf'][FAMILY_ID], vcf_path)
         self.assertIsNone(ci['vcf'][FAMILY_ID2])

@@ -309,16 +309,12 @@ class TestCancerPlugin(
         )
         self.irods_session.data_objects.create(bam_path)
         self.irods_session.data_objects.create(vcf_path)
-        study_tables = self.tb.build_study_tables(self.study)
         self.plugin.update_cache(self.cache_name, self.project)
         ci = self.cache_backend.get_cache_item(
             APP_NAME, self.cache_name, self.project
         ).data
-        self.assertEqual(
-            ci['bam'][CASE_IDS[0]],
-            get_pedigree_file_path('bam', self.source, study_tables),
-        )
-        self.assertEqual(
-            ci['vcf'][CASE_IDS[0]],
-            get_pedigree_file_path('vcf', self.source, study_tables),
-        )
+        self.assertEqual(ci['bam'][CASE_IDS[0]], bam_path)
+        self.assertEqual(ci['vcf'][CASE_IDS[0]], vcf_path)
+        for i in range(1, len(CASE_IDS) - 1):
+            self.assertEqual(ci['bam'][CASE_IDS[i]], None)
+            self.assertEqual(ci['vcf'][CASE_IDS[i]], None)

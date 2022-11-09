@@ -1,11 +1,16 @@
 """Utilities for the germline study app"""
 
+import logging
+
 # Projectroles dependency
 from projectroles.plugins import get_backend_api
 
 from samplesheets.models import GenericMaterial
 from samplesheets.studyapps.utils import FILE_TYPE_SUFFIXES
 from samplesheets.utils import get_index_by_header
+
+
+logger = logging.getLogger(__name__)
 
 
 def get_pedigree_file_path(file_type, source, study_tables):
@@ -23,68 +28,60 @@ def get_pedigree_file_path(file_type, source, study_tables):
         raise Exception('iRODS Backend not available')
 
     query_paths = []
-    sample_names = []
 
     def _get_val_by_index(row, idx):
         return row[idx]['value'] if idx else None
 
     for assay in source.study.assays.all():
-        assay_table = study_tables['assays'][str(assay.sodar_uuid)]
         assay_plugin = assay.get_plugin()
+        if not assay_plugin:
+            logger.warning(
+                'No plugin for assay, skipping pedigree file path search: '
+                '"{}" ({})'.format(assay.get_display_name(), assay.sodar_uuid)
+            )
+            continue
+        assay_table = study_tables['assays'][str(assay.sodar_uuid)]
         assay_path = irods_backend.get_path(assay)
         source_fam = None
         if 'Family' in source.characteristics:
             source_fam = source.characteristics['Family']['value']
         # Get family index
         fam_idx = get_index_by_header(assay_table, 'family')
-        # Get sample index
-        sample_idx = get_index_by_header(
-            assay_table, 'name', obj_cls=GenericMaterial, item_type='SAMPLE'
-        )
 
         for row in assay_table['table_data']:
-            row_name = row[0]['value']
+            source_name = row[0]['value']
             row_fam = _get_val_by_index(row, fam_idx)
-
             # For VCF files, also search through other samples in family
             vcf_search = False
             if file_type == 'vcf' and source_fam and row_fam == source_fam:
                 vcf_search = True
-
-            # Add sample names for source
-            if row_name == source.name or vcf_search:
-                sn = row[sample_idx]['value']
-                if sn not in sample_names:
-                    sample_names.append(sn)
-
             # Get query path from assay_plugin
-            if assay_plugin:
-                if row_name == source.name or vcf_search:
-                    path = assay_plugin.get_row_path(
-                        row, assay_table, assay, assay_path
-                    )
-                    if path not in query_paths:
-                        query_paths.append(path)
-
-        # If not assay_plugin, just search from assay path
-        if not assay_plugin:
-            path = assay_path
-            if path not in query_paths:
-                query_paths.append(path)
+            if source_name == source.name or vcf_search:
+                path = assay_plugin.get_row_path(
+                    row, assay_table, assay, assay_path
+                )
+                if path not in query_paths:
+                    query_paths.append(path)
+        if not query_paths:
+            return None
 
     # Get paths to relevant files
     file_paths = []
-
-    for query_path in query_paths:
-        try:
-            obj_list = irods_backend.get_objects(query_path)
+    try:
+        obj_list = irods_backend.get_objects(
+            irods_backend.get_path(source.study)
+        )
+    except FileNotFoundError:
+        obj_list = None
+    if obj_list:
+        for query_path in query_paths:
             for obj in obj_list['irods_data']:
                 # NOTE: We no longer expect the SAMPLE name in filenames
-                if obj['name'].lower().endswith(FILE_TYPE_SUFFIXES[file_type]):
+                if obj['path'].startswith(query_path + '/') and obj[
+                    'name'
+                ].lower().endswith(FILE_TYPE_SUFFIXES[file_type]):
                     file_paths.append(obj['path'])
-        except FileNotFoundError:
-            pass
-
+                    logger.debug('Added path: {}'.format(obj['path']))
     if not file_paths:
         return None
     # Return the last file of type by file name

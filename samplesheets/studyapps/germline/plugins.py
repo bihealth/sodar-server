@@ -278,8 +278,109 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
                     ],
                 }
             )
-
         return ret
+
+    @classmethod
+    def _update_study_cache(cls, study, user, cache_backend, irods_backend):
+        """
+        Update germline study app cache for a single study.
+
+        :param study: Study object
+        :param user: User object or None
+        :param cache_backend: Sodarcache backend object
+        :param irods_backend: Irodsbackend object
+        """
+        item_name = 'irods/{}'.format(study.sodar_uuid)
+        bam_paths = {}
+        vcf_paths = {}
+        # Build render table
+        tb = SampleSheetTableBuilder()
+        study_tables = tb.build_study_tables(study, ui=False)
+
+        # Pre-fetch study objects to eliminate redundant queries
+        obj_len = 0
+        try:
+            logger.debug('Querying for study objects in iRODS..')
+            study_objs = irods_backend.get_objects(
+                irods_backend.get_path(study)
+            )
+            obj_len = len(study_objs['irods_data'])
+            logger.debug(
+                'Query returned {} data object{}'.format(
+                    obj_len, 's' if obj_len != 1 else ''
+                )
+            )
+        except FileNotFoundError:
+            study_objs = None
+            logger.debug('No data objects found')
+
+        for assay in study.assays.all():
+            assay_plugin = assay.get_plugin()
+            if not assay_plugin:
+                logger.warning(
+                    'No plugin for assay, skipping pedigree file path search: '
+                    '"{}" ({})'.format(
+                        assay.get_display_name(), assay.sodar_uuid
+                    )
+                )
+                continue
+            assay_table = study_tables['assays'][str(assay.sodar_uuid)]
+            assay_path = irods_backend.get_path(assay)
+            fam_idx = get_index_by_header(assay_table, 'family')
+            for row in assay_table['table_data']:
+                source_name = row[0]['value']
+                if source_name not in bam_paths:
+                    bam_paths[source_name] = []
+                # Add BAM objects
+                path = assay_plugin.get_row_path(
+                    row, assay_table, assay, assay_path
+                )
+                if obj_len > 0 and path not in bam_paths[source_name]:
+                    bam_paths[source_name] += [
+                        o['path']
+                        for o in study_objs['irods_data']
+                        if o['path'].startswith(path + '/')
+                        and o['name'].lower().endswith('bam')
+                    ]
+                row_fam = row[fam_idx]['value']
+                # Add VCF objects
+                if row_fam:
+                    vcf_query_id = row_fam
+                else:
+                    vcf_query_id = source_name
+                if vcf_query_id not in vcf_paths:
+                    vcf_paths[vcf_query_id] = []
+                if obj_len > 0 and path not in vcf_paths[vcf_query_id]:
+                    vcf_paths[vcf_query_id] += [
+                        o['path']
+                        for o in study_objs['irods_data']
+                        if o['path'].startswith(path + '/')
+                        and o['name'].lower().endswith('vcf.gz')
+                    ]
+
+        # Update data
+        # NOTE: We get the last file name, assuming files are named by date
+        updated_data = {
+            'bam': {
+                k: sorted(v, key=lambda x: x.split('/')[-1], reverse=True)[0]
+                if v and len(v) > 0
+                else None
+                for k, v in bam_paths.items()
+            },
+            'vcf': {
+                k: sorted(v, key=lambda x: x.split('/')[-1], reverse=True)[0]
+                if v and len(v) > 0
+                else None
+                for k, v in vcf_paths.items()
+            },
+        }
+        cache_backend.set_cache_item(
+            name=item_name,
+            app_name=APP_NAME,
+            user=user,
+            data=updated_data,
+            project=study.investigation.project,
+        )
 
     def update_cache(self, name=None, project=None, user=None):
         """
@@ -291,9 +392,10 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
         """
         # Expected name: "irods/{study_uuid}"
         if name and name.split('/')[0] != 'irods':
+            logger.debug('Unknown cache item name "{}", skipping'.format(name))
             return
         cache_backend = get_backend_api('sodar_cache')
-        tb = SampleSheetTableBuilder()
+        irods_backend = get_backend_api('omics_irods')
         projects = (
             [project]
             if project
@@ -309,61 +411,23 @@ class SampleSheetStudyPlugin(SampleSheetStudyPluginPoint):
             # Only apply for investigations with the correct configuration
             if investigation.get_configuration() != self.config_name:
                 continue
-
+            logger.debug(
+                'Updating cache for project "{}" ({})..'.format(
+                    project.title, project.sodar_uuid
+                )
+            )
             # If a name is given, only update that specific CacheItem
             if name:
                 study_uuid = name.split('/')[-1]
                 studies = Study.objects.filter(sodar_uuid=study_uuid)
             else:
                 studies = Study.objects.filter(investigation=investigation)
-
             for study in studies:
-                # Get paths for all latest bam files for all sources in family
-                item_name = 'irods/{}'.format(study.sodar_uuid)
-                bam_paths = {}
-                vcf_paths = {}
-                prev_query_id = None
-                # Build render table
-                study_tables = tb.build_study_tables(study, ui=False)
-                sources = GenericMaterial.objects.filter(
-                    study=study, item_type='SOURCE'
-                )
-
-                for source in sources:
-                    # BAM path for each source
-                    bam_path = get_pedigree_file_path(
-                        file_type='bam',
-                        source=source,
-                        study_tables=study_tables,
+                logger.debug(
+                    'Updating cache for study "{}" ({})..'.format(
+                        study.get_display_name(), study.sodar_uuid
                     )
-                    bam_paths[source.name.strip()] = bam_path
-                    # Get family ID
-                    if (
-                        'Family' in source.characteristics
-                        and source.characteristics['Family']['value']
-                    ):
-                        query_id = source.characteristics['Family']['value']
-                    else:
-                        query_id = source.name.strip()
-                    # One VCF path for each family (or source if no family)
-                    if (
-                        query_id != prev_query_id
-                        or query_id == source.name.strip()
-                    ):
-                        vcf_path = get_pedigree_file_path(
-                            file_type='vcf',
-                            source=source,
-                            study_tables=study_tables,
-                        )
-                        vcf_paths[query_id] = vcf_path
-                    prev_query_id = query_id
-
-                # Update data
-                updated_data = {'bam': bam_paths, 'vcf': vcf_paths}
-                cache_backend.set_cache_item(
-                    name=item_name,
-                    app_name=APP_NAME,
-                    user=user,
-                    data=updated_data,
-                    project=project,
+                )
+                self._update_study_cache(
+                    study, user, cache_backend, irods_backend
                 )
