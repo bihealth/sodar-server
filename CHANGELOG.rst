@@ -5,6 +5,16 @@ Changelog for the SODAR project. Loosely follows the
 `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+Unreleased
+==========
+
+Changed
+-------
+
+- **Samplesheets**
+    - Upgrade ``loader-utils`` in Vue app (#1527)
+
+
 v0.12.1 (2022-11-09)
 ====================
 
