@@ -177,6 +177,7 @@ class TestLandingZoneCreate(
         flow_data = {
             'zone_uuid': str(self.zone.sodar_uuid),
             'colls': [],
+            'restrict_colls': False,
         }
         flow = self.taskflow.get_flow(
             irods_backend=self.irods_backend,
@@ -208,6 +209,7 @@ class TestLandingZoneCreate(
         flow_data = {
             'zone_uuid': str(self.zone.sodar_uuid),
             'colls': [],
+            'restrict_colls': False,
         }
         flow = self.taskflow.get_flow(
             irods_backend=self.irods_backend,
@@ -233,6 +235,7 @@ class TestLandingZoneCreate(
         flow_data = {
             'zone_uuid': str(self.zone.sodar_uuid),
             'colls': [RESULTS_COLL, MISC_FILES_COLL],
+            'restrict_colls': False,
         }
         flow = self.taskflow.get_flow(
             irods_backend=self.irods_backend,
@@ -250,9 +253,77 @@ class TestLandingZoneCreate(
         self.assertEqual(self.irods.collections.exists(results_path), True)
         self.assertEqual(self.irods.collections.exists(misc_path), True)
         self.assert_irods_access(
+            self.user.username, self.zone_path, IRODS_ACCESS_OWN
+        )
+        self.assert_irods_access(
             self.user.username, results_path, IRODS_ACCESS_OWN
         )
         self.assert_irods_access(self.group_name, results_path, None)
+
+    def test_create_colls_restrict(self):
+        """Test landing_zone_create with restricted collections"""
+        results_path = os.path.join(self.zone_path, RESULTS_COLL)
+        misc_path = os.path.join(self.zone_path, MISC_FILES_COLL)
+        self.assertEqual(self.irods.collections.exists(results_path), False)
+        self.assertEqual(self.irods.collections.exists(misc_path), False)
+
+        flow_data = {
+            'zone_uuid': str(self.zone.sodar_uuid),
+            'colls': [RESULTS_COLL, MISC_FILES_COLL],
+            'restrict_colls': True,
+        }
+        flow = self.taskflow.get_flow(
+            irods_backend=self.irods_backend,
+            project=self.project,
+            flow_name='landing_zone_create',
+            flow_data=flow_data,
+        )
+        self.assertEqual(type(flow), LandingZoneCreateFlow)
+        flow.build()
+        flow.run()
+
+        self.zone.refresh_from_db()
+        self.assertEqual(self.zone.status, 'ACTIVE')
+        self.assertEqual(self.irods.collections.exists(self.zone_path), True)
+        self.assertEqual(self.irods.collections.exists(results_path), True)
+        self.assertEqual(self.irods.collections.exists(misc_path), True)
+        self.assert_irods_access(self.user.username, self.zone_path, None)
+        self.assert_irods_access(
+            self.user.username, results_path, IRODS_ACCESS_OWN
+        )
+        self.assert_irods_access(self.group_name, results_path, None)
+        new_root_path = os.path.join(self.zone_path, 'new_root_path')
+        self.irods.collections.create(new_root_path)
+        self.assert_irods_access(self.user.username, new_root_path, None)
+        new_sub_path = os.path.join(results_path, 'new_sub_path')
+        self.irods.collections.create(new_sub_path)
+        self.assert_irods_access(
+            self.user.username, new_sub_path, IRODS_ACCESS_OWN
+        )
+
+    def test_create_colls_restrict_revert(self):
+        """Test reverting creation with created and restricted collections"""
+        self.assertEqual(self.irods.collections.exists(self.zone_path), False)
+        self.assertEqual(self.zone.status, 'CREATING')
+
+        flow_data = {
+            'zone_uuid': str(self.zone.sodar_uuid),
+            'colls': [RESULTS_COLL, MISC_FILES_COLL],
+            'restrict_colls': True,
+        }
+        flow = self.taskflow.get_flow(
+            irods_backend=self.irods_backend,
+            project=self.project,
+            flow_name='landing_zone_create',
+            flow_data=flow_data,
+        )
+        self.assertEqual(type(flow), LandingZoneCreateFlow)
+        flow.build(force_fail=True)
+        flow.run()
+
+        self.zone.refresh_from_db()
+        self.assertEqual(self.zone.status, 'NOT CREATED')
+        self.assertEqual(self.irods.collections.exists(self.zone_path), False)
 
     def test_create_script_user(self):
         """Test landing_zone_create with script user"""
@@ -266,6 +337,7 @@ class TestLandingZoneCreate(
         flow_data = {
             'zone_uuid': str(self.zone.sodar_uuid),
             'colls': [],
+            'restrict_colls': False,
             'script_user': SCRIPT_USER_NAME,
         }
         flow = self.taskflow.get_flow(
@@ -298,6 +370,7 @@ class TestLandingZoneCreate(
         flow_data = {
             'zone_uuid': str(self.zone.sodar_uuid),
             'colls': [],
+            'restrict_colls': False,
             'script_user': SCRIPT_USER_NAME,
         }
         flow = self.taskflow.get_flow(
@@ -328,6 +401,7 @@ class TestLandingZoneCreate(
         flow_data = {
             'zone_uuid': str(self.zone.sodar_uuid),
             'colls': [],
+            'restrict_colls': False,
             'script_user': SCRIPT_USER_NAME,
         }
         flow = self.taskflow.get_flow(
@@ -367,8 +441,10 @@ class TestLandingZoneDelete(
         self.assay = self.study.assays.first()
         # Create iRODS collections
         self.make_irods_colls(self.investigation)
-        # Create landing zone
-        self.zone = self.make_landing_zone(
+
+    def test_delete(self):
+        """Test landing_zone_delete with an empty landing zone"""
+        zone = self.make_landing_zone(
             title=ZONE_TITLE,
             project=self.project,
             user=self.as_owner.user,
@@ -376,15 +452,12 @@ class TestLandingZoneDelete(
             description=ZONE_DESC,
             status='CREATING',
         )
-        self.make_zone_taskflow(self.zone)
-        self.zone_path = self.irods_backend.get_path(self.zone)
+        self.make_zone_taskflow(zone)
+        zone_path = self.irods_backend.get_path(zone)
+        self.assertEqual(zone.status, 'ACTIVE')
+        self.assertEqual(self.irods.collections.exists(zone_path), True)
 
-    def test_delete(self):
-        """Test landing_zone_delete with an empty landing zone"""
-        self.assertEqual(self.zone.status, 'ACTIVE')
-        self.assertEqual(self.irods.collections.exists(self.zone_path), True)
-
-        flow_data = {'zone_uuid': str(self.zone.sodar_uuid)}
+        flow_data = {'zone_uuid': str(zone.sodar_uuid)}
         flow = self.taskflow.get_flow(
             irods_backend=self.irods_backend,
             project=self.project,
@@ -395,22 +468,32 @@ class TestLandingZoneDelete(
         flow.build()
         flow.run()
 
-        self.zone.refresh_from_db()
-        self.assertEqual(self.zone.status, 'DELETED')
-        self.assertEqual(self.irods.collections.exists(self.zone_path), False)
+        zone.refresh_from_db()
+        self.assertEqual(zone.status, 'DELETED')
+        self.assertEqual(self.irods.collections.exists(zone_path), False)
 
-    def test_delete_content(self):
-        """Test landing_zone_delete with zone content"""
-        self.assertEqual(self.zone.status, 'ACTIVE')
-        self.assertEqual(self.irods.collections.exists(self.zone_path), True)
-        coll_path = os.path.join(self.zone_path, COLL_NAME)
+    def test_delete_files(self):
+        """Test landing_zone_delete with files"""
+        zone = self.make_landing_zone(
+            title=ZONE_TITLE,
+            project=self.project,
+            user=self.as_owner.user,
+            assay=self.assay,
+            description=ZONE_DESC,
+            status='CREATING',
+        )
+        self.make_zone_taskflow(zone)
+        zone_path = self.irods_backend.get_path(zone)
+        self.assertEqual(zone.status, 'ACTIVE')
+        self.assertEqual(self.irods.collections.exists(zone_path), True)
+        coll_path = os.path.join(zone_path, COLL_NAME)
         self.irods.collections.create(coll_path)
-        obj_path = os.path.join(self.zone_path, OBJ_NAME)
+        obj_path = os.path.join(zone_path, OBJ_NAME)
         self.irods.data_objects.create(obj_path)
         self.assertEqual(self.irods.collections.exists(coll_path), True)
         self.assertEqual(self.irods.data_objects.exists(obj_path), True)
 
-        flow_data = {'zone_uuid': str(self.zone.sodar_uuid)}
+        flow_data = {'zone_uuid': str(zone.sodar_uuid)}
         flow = self.taskflow.get_flow(
             irods_backend=self.irods_backend,
             project=self.project,
@@ -420,11 +503,55 @@ class TestLandingZoneDelete(
         flow.build()
         flow.run()
 
-        self.zone.refresh_from_db()
-        self.assertEqual(self.zone.status, 'DELETED')
+        zone.refresh_from_db()
+        self.assertEqual(zone.status, 'DELETED')
         self.assertEqual(self.irods.collections.exists(coll_path), False)
         self.assertEqual(self.irods.data_objects.exists(obj_path), False)
-        self.assertEqual(self.irods.collections.exists(self.zone_path), False)
+        self.assertEqual(self.irods.collections.exists(zone_path), False)
+
+    def test_delete_files_restrict(self):
+        """Test landing_zone_delete with files and restricted collections"""
+        zone = self.make_landing_zone(
+            title=ZONE_TITLE,
+            project=self.project,
+            user=self.as_owner.user,
+            assay=self.assay,
+            description=ZONE_DESC,
+            status='CREATING',
+        )
+        self.make_zone_taskflow(
+            zone=zone,
+            colls=[MISC_FILES_COLL, RESULTS_COLL],
+            restrict_colls=True,
+        )
+        zone_path = self.irods_backend.get_path(zone)
+        self.assertEqual(zone.status, 'ACTIVE')
+        self.assertEqual(self.irods.collections.exists(zone_path), True)
+        results_path = os.path.join(zone_path, RESULTS_COLL)
+        self.assertEqual(self.irods.collections.exists(results_path), True)
+
+        coll_path = os.path.join(results_path, COLL_NAME)
+        self.irods.collections.create(coll_path)
+        obj_path = os.path.join(results_path, OBJ_NAME)
+        self.irods.data_objects.create(obj_path)
+        self.assertEqual(self.irods.collections.exists(coll_path), True)
+        self.assertEqual(self.irods.data_objects.exists(obj_path), True)
+
+        flow_data = {'zone_uuid': str(zone.sodar_uuid)}
+        flow = self.taskflow.get_flow(
+            irods_backend=self.irods_backend,
+            project=self.project,
+            flow_name='landing_zone_delete',
+            flow_data=flow_data,
+        )
+        flow.build()
+        flow.run()
+
+        zone.refresh_from_db()
+        self.assertEqual(zone.status, 'DELETED')
+        self.assertEqual(self.irods.collections.exists(coll_path), False)
+        self.assertEqual(self.irods.data_objects.exists(obj_path), False)
+        self.assertEqual(self.irods.collections.exists(zone_path), False)
 
 
 class TestLandingZoneMove(
@@ -449,7 +576,7 @@ class TestLandingZoneMove(
         self.assay = self.study.assays.first()
         # Create iRODS collections
         self.make_irods_colls(self.investigation)
-        # Create zone without taskflow
+        # Create zone
         self.zone = self.make_landing_zone(
             title=ZONE_TITLE,
             project=self.project,
@@ -709,6 +836,87 @@ class TestLandingZoneMove(
         )
         self.assert_irods_access(
             self.user.username, zone_coll, IRODS_ACCESS_OWN
+        )
+
+    def test_move_restrict(self):
+        """Test landing_zone_move with created and restricted collections"""
+        # Create new zone with restricted collections
+        new_zone = self.make_landing_zone(
+            title=ZONE_TITLE + '_new',
+            project=self.project,
+            user=self.as_owner.user,
+            assay=self.assay,
+            description=ZONE_DESC,
+            status='CREATING',
+        )
+        self.make_zone_taskflow(
+            zone=new_zone,
+            colls=[MISC_FILES_COLL, RESULTS_COLL],
+            restrict_colls=True,
+        )
+        new_zone_path = self.irods_backend.get_path(new_zone)
+        self.assertEqual(new_zone.status, 'ACTIVE')
+        self.assertEqual(self.irods.collections.exists(new_zone_path), True)
+        results_path = os.path.join(new_zone_path, RESULTS_COLL)
+        self.assertEqual(self.irods.collections.exists(results_path), True)
+
+        empty_coll_path = os.path.join(results_path, COLL_NAME)
+        self.irods.collections.create(empty_coll_path)
+        obj_coll_path = os.path.join(results_path, OBJ_COLL_NAME)
+        obj_coll = self.irods.collections.create(obj_coll_path)
+        obj = self.make_object(obj_coll, OBJ_NAME)
+        self.make_md5_object(obj)
+        obj_path = os.path.join(obj_coll_path, OBJ_NAME)
+        sample_obj_path = os.path.join(
+            self.sample_path, RESULTS_COLL, OBJ_COLL_NAME, OBJ_NAME
+        )
+
+        self.assertEqual(self.irods.collections.exists(empty_coll_path), True)
+        self.assertEqual(self.irods.collections.exists(obj_coll_path), True)
+        self.assertEqual(self.irods.data_objects.exists(obj_path), True)
+        self.assertEqual(
+            self.irods.data_objects.exists(obj_path + '.md5'), True
+        )
+        self.assertEqual(self.irods.data_objects.exists(sample_obj_path), False)
+        self.assertEqual(
+            self.irods.data_objects.exists(sample_obj_path + '.md5'),
+            False,
+        )
+
+        flow_data = {'zone_uuid': str(new_zone.sodar_uuid)}
+        flow = self.taskflow.get_flow(
+            irods_backend=self.irods_backend,
+            project=self.project,
+            flow_name='landing_zone_move',
+            flow_data=flow_data,
+        )
+        flow.build()
+        flow.run()
+
+        new_zone.refresh_from_db()
+        self.assertEqual(new_zone.status, 'MOVED')
+        self.assertEqual(self.irods.collections.exists(new_zone_path), False)
+        sample_empty_path = os.path.join(
+            self.sample_path, RESULTS_COLL, COLL_NAME
+        )
+        # An empty collection should not be created by moving
+        self.assertEqual(
+            self.irods.collections.exists(sample_empty_path), False
+        )
+        self.assertEqual(self.irods.data_objects.exists(sample_obj_path), True)
+        self.assertEqual(
+            self.irods.data_objects.exists(sample_obj_path + '.md5'),
+            True,
+        )
+        self.assert_irods_access(
+            self.group_name,
+            sample_obj_path,
+            IRODS_ACCESS_READ,
+        )
+        self.assert_irods_access(
+            self.group_name,
+            sample_obj_path + '.md5',
+            IRODS_ACCESS_READ,
         )
 
 

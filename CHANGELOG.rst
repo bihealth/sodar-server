@@ -8,6 +8,12 @@ Changelog for the SODAR project. Loosely follows the
 Unreleased
 ==========
 
+Added
+-----
+
+- **Landingzones**
+    - Optional zone write access restriction to created collections (#1050)
+
 Changed
 -------
 

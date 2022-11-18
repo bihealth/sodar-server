@@ -1,4 +1,4 @@
-"""Integration tests for views in the landingzones Django app with taskflow"""
+"""View tests in the landingzones app with taskflow"""
 
 import hashlib
 import os
@@ -26,7 +26,11 @@ from samplesheets.tests.test_views_taskflow import SampleSheetTaskflowMixin
 from samplesheets.views import RESULTS_COLL, MISC_FILES_COLL, TRACK_HUBS_COLL
 
 # Taskflowbackend dependency
-from taskflowbackend.tests.base import TaskflowbackendTestBase
+from taskflowbackend.tests.base import (
+    TaskflowbackendTestBase,
+    IRODS_ACCESS_READ,
+    IRODS_ACCESS_OWN,
+)
 
 # Timeline dependency
 from timeline.models import ProjectEvent
@@ -57,16 +61,23 @@ ASYNC_WAIT_SECONDS = 5
 ASYNC_RETRY_COUNT = 3
 INVALID_MD5 = '11111111111111111111111111111111'
 INVALID_REDIS_URL = 'redis://127.0.0.1:6666/0'
+ZONE_BASE_COLLS = [MISC_FILES_COLL, RESULTS_COLL, TRACK_HUBS_COLL]
+ZONE_PLUGIN_COLLS = ['0815-N1-DNA1', '0815-T1-DNA1']
+ZONE_ALL_COLLS = ZONE_BASE_COLLS + ZONE_PLUGIN_COLLS
 
 
 class LandingZoneTaskflowMixin:
     """Taskflow helpers for landingzones tests"""
 
-    def make_zone_taskflow(self, zone, request=None):
+    def make_zone_taskflow(
+        self, zone, colls=None, restrict_colls=False, request=None
+    ):
         """
         Create landing zone in iRODS using taskflowbackend.
 
         :param zone: LandingZone object
+        :param colls: Collections to be created (optional, default=[])
+        :param restrict_colls: Restrict access to created collections (optional)
         :param request: HTTP request object (optional, default=None)
         :return: Updated LandingZone object
         :raise taskflow.FlowSubmitException if submit fails
@@ -87,7 +98,8 @@ class LandingZoneTaskflowMixin:
 
         flow_data = {
             'zone_uuid': str(zone.sodar_uuid),
-            'colls': [],
+            'colls': colls or [],
+            'restrict_colls': restrict_colls,
         }
         values = {
             'project': zone.project,
@@ -172,13 +184,9 @@ class TestLandingZoneCreateView(
 
     def setUp(self):
         super().setUp()
-
-        # Get iRODS backend for session access
         self.irods_backend = get_backend_api('omics_irods')
         self.assertIsNotNone(self.irods_backend)
         self.irods = self.irods_backend.get_session()
-
-        # Init project
         # Make project with owner in Taskflow and Django
         self.project, self.owner_as = self.make_project_taskflow(
             title='TestProject',
@@ -187,7 +195,6 @@ class TestLandingZoneCreateView(
             owner=self.user,
             description='description',
         )
-
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
@@ -206,6 +213,8 @@ class TestLandingZoneCreateView(
             'title_suffix': ZONE_SUFFIX,
             'description': ZONE_DESC,
             'configuration': '',
+            'create_colls': False,
+            'restrict_colls': False,
         }
         with self.login(self.user):
             response = self.client.post(
@@ -227,11 +236,15 @@ class TestLandingZoneCreateView(
         zone = LandingZone.objects.first()
         self.assert_zone_status(zone, 'ACTIVE')
         self.assert_irods_coll(zone)
-        self.assert_irods_coll(zone, MISC_FILES_COLL, False)
-        self.assert_irods_coll(zone, RESULTS_COLL, False)
-        self.assert_irods_coll(zone, TRACK_HUBS_COLL, False)
+        for c in ZONE_BASE_COLLS:
+            self.assert_irods_coll(zone, c, False)
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(AppAlert.objects.count(), 1)
+        zone_path = self.irods_backend.get_path(zone)
+        zone_coll = self.irods.collections.get(zone_path)
+        self.assert_irods_access(
+            self.user.username, zone_coll, IRODS_ACCESS_OWN
+        )
 
     def test_create_zone_colls(self):
         """Test landingzones creation with default collections"""
@@ -242,6 +255,7 @@ class TestLandingZoneCreateView(
             'title_suffix': ZONE_SUFFIX,
             'description': ZONE_DESC,
             'create_colls': True,
+            'restrict_colls': False,
             'configuration': '',
         }
         with self.login(self.user):
@@ -264,11 +278,18 @@ class TestLandingZoneCreateView(
         zone = LandingZone.objects.first()
         self.assert_zone_status(zone, 'ACTIVE')
         self.assert_irods_coll(zone)
-        self.assert_irods_coll(zone, MISC_FILES_COLL, True)
-        self.assert_irods_coll(zone, RESULTS_COLL, True)
-        self.assert_irods_coll(zone, TRACK_HUBS_COLL, True)
-        self.assert_irods_coll(zone, '0815-N1-DNA1', False)  # Plugin collection
-        self.assert_irods_coll(zone, '0815-T1-DNA1', False)  # Plugin collection
+        for c in ZONE_BASE_COLLS:
+            self.assert_irods_coll(zone, c, True)
+        for c in ZONE_PLUGIN_COLLS:
+            self.assert_irods_coll(zone, c, False)
+        zone_path = self.irods_backend.get_path(zone)
+        self.assert_irods_access(
+            self.user.username, zone_path, IRODS_ACCESS_OWN
+        )
+        for c in ZONE_BASE_COLLS:
+            self.assert_irods_access(
+                self.user.username, os.path.join(zone_path, c), IRODS_ACCESS_OWN
+            )
 
     def test_create_zone_colls_plugin(self):
         """Test landingzones creation with plugin collections"""
@@ -291,6 +312,7 @@ class TestLandingZoneCreateView(
             'title_suffix': ZONE_SUFFIX,
             'description': ZONE_DESC,
             'create_colls': True,
+            'restrict_colls': False,
             'configuration': '',
         }
         with self.login(self.user):
@@ -313,13 +335,70 @@ class TestLandingZoneCreateView(
         zone = LandingZone.objects.first()
         self.assert_zone_status(zone, 'ACTIVE')
         self.assert_irods_coll(zone)
-        self.assert_irods_coll(zone, MISC_FILES_COLL, True)
-        self.assert_irods_coll(zone, RESULTS_COLL, True)
-        self.assert_irods_coll(zone, TRACK_HUBS_COLL, True)
-        self.assert_irods_coll(zone, '0815-N1-DNA1', True)
-        self.assert_irods_coll(zone, '0815-T1-DNA1', True)
+        for c in ZONE_ALL_COLLS:
+            self.assert_irods_coll(zone, c, True)
+        zone_path = self.irods_backend.get_path(zone)
+        self.assert_irods_access(
+            self.user.username, zone_path, IRODS_ACCESS_OWN
+        )
+        for c in ZONE_ALL_COLLS:
+            self.assert_irods_access(
+                self.user.username, os.path.join(zone_path, c), IRODS_ACCESS_OWN
+            )
 
     # TODO: Test without sodarcache (see issue #1157)
+
+    def test_create_zone_colls_plugin_restrict(self):
+        """Test landingzones creation with plugin collections and restriction"""
+        self.assertEqual(LandingZone.objects.count(), 0)
+        # Mock assay configuration
+        self.assay.measurement_type = {'name': 'genome sequencing'}
+        self.assay.technology_type = {'name': 'nucleotide sequencing'}
+        self.assay.save()
+        # Update row cache
+        plugin = self.assay.get_plugin()
+        self.assertIsNotNone(plugin)
+        plugin.update_cache(
+            'irods/rows/{}'.format(self.assay.sodar_uuid),
+            self.project,
+            self.user,
+        )
+
+        values = {
+            'assay': str(self.assay.sodar_uuid),
+            'title_suffix': ZONE_SUFFIX,
+            'description': ZONE_DESC,
+            'create_colls': True,
+            'restrict_colls': True,
+            'configuration': '',
+        }
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'landingzones:create',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                values,
+            )
+            self.assertRedirects(
+                response,
+                reverse(
+                    'landingzones:list',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+            )
+
+        self.assert_zone_count(1)
+        zone = LandingZone.objects.first()
+        self.assert_zone_status(zone, 'ACTIVE')
+        self.assert_irods_coll(zone)
+        zone_path = self.irods_backend.get_path(zone)
+        # No access to root path
+        self.assert_irods_access(self.user.username, zone_path, None)
+        for c in ZONE_ALL_COLLS:
+            self.assert_irods_access(
+                self.user.username, os.path.join(zone_path, c), IRODS_ACCESS_OWN
+            )
 
 
 class TestLandingZoneMoveView(
@@ -333,11 +412,9 @@ class TestLandingZoneMoveView(
 
     def setUp(self):
         super().setUp()
-        # Get iRODS backend for session access
         self.irods_backend = get_backend_api('omics_irods')
         self.assertIsNotNone(self.irods_backend)
         self.irods = self.irods_backend.get_session()
-
         # Make project with owner in Taskflow and Django
         self.project, self.owner_as = self.make_project_taskflow(
             title='TestProject',
@@ -346,14 +423,12 @@ class TestLandingZoneMoveView(
             owner=self.user,
             description='description',
         )
-
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
         # Create iRODS collections
         self.make_irods_colls(self.investigation)
-
         # Create zone
         self.landing_zone = self.make_landing_zone(
             title=ZONE_TITLE,
@@ -373,11 +448,13 @@ class TestLandingZoneMoveView(
         self.assay_coll = self.irods.collections.get(
             self.irods_backend.get_path(self.assay)
         )
+        self.sample_path = self.irods_backend.get_path(self.assay)
+        self.group_name = self.irods_backend.get_user_group_name(self.project)
 
     def test_move(self):
         """Test validating and moving a landing zone with objects"""
-        self.irods_obj = self.make_object(self.zone_coll, TEST_OBJ_NAME)
-        self.md5_obj = self.make_md5_object(self.irods_obj)
+        irods_obj = self.make_object(self.zone_coll, TEST_OBJ_NAME)
+        self.make_md5_object(irods_obj)
         zone = LandingZone.objects.first()
         self.assertEqual(zone.status, 'ACTIVE')
         self.assertEqual(len(self.zone_coll.data_objects), 2)
@@ -412,10 +489,8 @@ class TestLandingZoneMoveView(
 
     def test_move_invalid_md5(self):
         """Test validating and moving with invalid checksum (should fail)"""
-        self.irods_obj = self.make_object(self.zone_coll, TEST_OBJ_NAME)
-        self.md5_obj = make_object(
-            self.irods, self.irods_obj.path + '.md5', INVALID_MD5
-        )
+        irods_obj = self.make_object(self.zone_coll, TEST_OBJ_NAME)
+        make_object(self.irods, irods_obj.path + '.md5', INVALID_MD5)
         zone = LandingZone.objects.first()
         self.assertEqual(zone.status, 'ACTIVE')
         self.assertEqual(len(self.zone_coll.data_objects), 2)
@@ -450,7 +525,7 @@ class TestLandingZoneMoveView(
 
     def test_move_no_md5(self):
         """Test validating and moving without checksum (should fail)"""
-        self.irods_obj = self.make_object(self.zone_coll, TEST_OBJ_NAME)
+        self.make_object(self.zone_coll, TEST_OBJ_NAME)
         # No md5
         zone = LandingZone.objects.first()
         self.assertEqual(zone.status, 'ACTIVE')
@@ -484,8 +559,8 @@ class TestLandingZoneMoveView(
 
     def test_validate(self):
         """Test validating a landing zone with objects without moving"""
-        self.irods_obj = self.make_object(self.zone_coll, TEST_OBJ_NAME)
-        self.md5_obj = self.make_md5_object(self.irods_obj)
+        irods_obj = self.make_object(self.zone_coll, TEST_OBJ_NAME)
+        self.make_md5_object(irods_obj)
         zone = LandingZone.objects.first()
         self.assertEqual(zone.status, 'ACTIVE')
         self.assertEqual(len(self.zone_coll.data_objects), 2)
@@ -520,10 +595,8 @@ class TestLandingZoneMoveView(
 
     def test_validate_invalid_md5(self):
         """Test validating a landing zone without checksum (should fail)"""
-        self.irods_obj = self.make_object(self.zone_coll, TEST_OBJ_NAME)
-        self.md5_obj = make_object(
-            self.irods, self.irods_obj.path + '.md5', INVALID_MD5
-        )
+        irods_obj = self.make_object(self.zone_coll, TEST_OBJ_NAME)
+        make_object(self.irods, irods_obj.path + '.md5', INVALID_MD5)
         zone = LandingZone.objects.first()
         self.assertEqual(zone.status, 'ACTIVE')
         self.assertEqual(len(self.zone_coll.data_objects), 2)
@@ -552,7 +625,7 @@ class TestLandingZoneMoveView(
 
     def test_validate_no_md5(self):
         """Test validating a landing zone without checksum (should fail)"""
-        self.irods_obj = self.make_object(self.zone_coll, TEST_OBJ_NAME)
+        self.make_object(self.zone_coll, TEST_OBJ_NAME)
         # No md5
         zone = LandingZone.objects.first()
         self.assertEqual(zone.status, 'ACTIVE')
@@ -574,9 +647,9 @@ class TestLandingZoneMoveView(
 
     def test_validate_md5_only(self):
         """Test validating zone with no file for MD5 file (should fail)"""
-        self.irods_obj = self.make_object(self.zone_coll, TEST_OBJ_NAME)
-        self.md5_obj = self.make_md5_object(self.irods_obj)
-        self.irods_obj.unlink(force=True)
+        irods_obj = self.make_object(self.zone_coll, TEST_OBJ_NAME)
+        self.md5_obj = self.make_md5_object(irods_obj)
+        irods_obj.unlink(force=True)
         zone = LandingZone.objects.first()
         self.assertEqual(zone.status, 'ACTIVE')
         self.assertEqual(len(self.zone_coll.data_objects), 1)
@@ -597,8 +670,8 @@ class TestLandingZoneMoveView(
 
     def test_move_invalid_status(self):
         """Test validating and moving with invalid zone status (should fail)"""
-        self.irods_obj = self.make_object(self.zone_coll, TEST_OBJ_NAME)
-        self.md5_obj = self.make_md5_object(self.irods_obj)
+        irods_obj = self.make_object(self.zone_coll, TEST_OBJ_NAME)
+        self.make_md5_object(irods_obj)
         zone = LandingZone.objects.first()
         zone.status = 'VALIDATING'
         zone.save()
@@ -644,8 +717,8 @@ class TestLandingZoneMoveView(
     @override_settings(REDIS_URL=INVALID_REDIS_URL)
     def test_move_lock_failure(self):
         """Test validating and moving with project lock failure"""
-        self.irods_obj = self.make_object(self.zone_coll, TEST_OBJ_NAME)
-        self.md5_obj = self.make_md5_object(self.irods_obj)
+        irods_obj = self.make_object(self.zone_coll, TEST_OBJ_NAME)
+        self.make_md5_object(irods_obj)
         zone = LandingZone.objects.first()
         self.assertEqual(zone.status, 'ACTIVE')
         self.assertEqual(len(self.zone_coll.data_objects), 2)
@@ -685,6 +758,72 @@ class TestLandingZoneMoveView(
             AppAlert.objects.filter(alert_name='zone_move').count(), 0
         )
 
+    def test_move_restrict(self):
+        """Test validating and moving with restricted collections"""
+        # Create new zone with restricted collections
+        zone = self.make_landing_zone(
+            title=ZONE_TITLE + '_new',
+            project=self.project,
+            user=self.owner_as.user,
+            assay=self.assay,
+            description=ZONE_DESC,
+            status='CREATING',
+        )
+        self.make_zone_taskflow(
+            zone=zone,
+            colls=[MISC_FILES_COLL, RESULTS_COLL],
+            restrict_colls=True,
+        )
+        new_zone_path = self.irods_backend.get_path(zone)
+        zone_results_coll = self.irods.collections.get(
+            os.path.join(new_zone_path, RESULTS_COLL)
+        )
+        irods_obj = self.make_object(zone_results_coll, TEST_OBJ_NAME)
+        self.make_md5_object(irods_obj)
+        self.assertEqual(zone.status, 'ACTIVE')
+        self.assertEqual(len(zone_results_coll.data_objects), 2)
+        self.assertEqual(len(self.assay_coll.data_objects), 0)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(
+            AppAlert.objects.filter(alert_name='zone_move').count(), 0
+        )
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'landingzones:move',
+                    kwargs={'landingzone': zone.sodar_uuid},
+                ),
+            )
+            self.assertRedirects(
+                response,
+                reverse(
+                    'landingzones:list',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+            )
+
+        self.assert_zone_status(zone, 'MOVED')
+        self.assertEqual(len(zone_results_coll.data_objects), 0)
+        assay_results_path = os.path.join(self.sample_path, RESULTS_COLL)
+        assay_results_coll = self.irods.collections.get(assay_results_path)
+        self.assertEqual(len(assay_results_coll.data_objects), 2)
+        self.assertEqual(len(mail.outbox), 3)  # Mails to owner & category owner
+        self.assertEqual(
+            AppAlert.objects.filter(alert_name='zone_move').count(), 1
+        )
+        sample_obj_path = os.path.join(assay_results_path, TEST_OBJ_NAME)
+        self.assert_irods_access(
+            self.group_name,
+            sample_obj_path,
+            IRODS_ACCESS_READ,
+        )
+        self.assert_irods_access(
+            self.group_name,
+            sample_obj_path + '.md5',
+            IRODS_ACCESS_READ,
+        )
+
 
 class TestLandingZoneDeleteView(
     SampleSheetIOMixin,
@@ -697,7 +836,6 @@ class TestLandingZoneDeleteView(
 
     def setUp(self):
         super().setUp()
-
         # Make project with owner in Taskflow and Django
         self.project, self.owner_as = self.make_project_taskflow(
             title='TestProject',
@@ -706,17 +844,17 @@ class TestLandingZoneDeleteView(
             owner=self.user,
             description='description',
         )
-
         # Import investigation
         self.investigation = self.import_isa_from_file(SHEET_PATH, self.project)
         self.study = self.investigation.studies.first()
         self.assay = self.study.assays.first()
-
         # Create iRODS collections
         self.make_irods_colls(self.investigation)
 
+    def test_delete_zone(self):
+        """Test landingzones deletion with taskflow"""
         # Create zone
-        self.landing_zone = self.make_landing_zone(
+        zone = self.make_landing_zone(
             title=ZONE_TITLE,
             project=self.project,
             user=self.user,
@@ -725,12 +863,7 @@ class TestLandingZoneDeleteView(
             configuration=None,
             config_data={},
         )
-
-        # Create zone in taskflow
-        self.make_zone_taskflow(self.landing_zone)
-
-    def test_delete_zone(self):
-        """Test landingzones deletion with taskflow"""
+        self.make_zone_taskflow(zone)
         self.assertEqual(LandingZone.objects.count(), 1)
         self.assertEqual(
             AppAlert.objects.filter(alert_name='zone_delete').count(), 0
@@ -740,7 +873,7 @@ class TestLandingZoneDeleteView(
             response = self.client.post(
                 reverse(
                     'landingzones:delete',
-                    kwargs={'landingzone': self.landing_zone.sodar_uuid},
+                    kwargs={'landingzone': zone.sodar_uuid},
                 ),
             )
             self.assertRedirects(
@@ -752,7 +885,51 @@ class TestLandingZoneDeleteView(
             )
 
         self.assert_zone_count(1)
-        zone = LandingZone.objects.first()
+        zone.refresh_from_db()
+        self.assert_zone_status(zone, 'DELETED')
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(
+            AppAlert.objects.filter(alert_name='zone_delete').count(), 1
+        )
+
+    def test_delete_zone_restrict(self):
+        """Test landingzones deletion with restricted collections"""
+        zone = self.make_landing_zone(
+            title=ZONE_TITLE,
+            project=self.project,
+            user=self.user,
+            assay=self.assay,
+            description=ZONE_DESC,
+            configuration=None,
+            config_data={},
+        )
+        self.make_zone_taskflow(
+            zone=zone,
+            colls=[MISC_FILES_COLL, RESULTS_COLL],
+            restrict_colls=True,
+        )
+        self.assertEqual(LandingZone.objects.count(), 1)
+        self.assertEqual(
+            AppAlert.objects.filter(alert_name='zone_delete').count(), 0
+        )
+
+        with self.login(self.user):
+            response = self.client.post(
+                reverse(
+                    'landingzones:delete',
+                    kwargs={'landingzone': zone.sodar_uuid},
+                ),
+            )
+            self.assertRedirects(
+                response,
+                reverse(
+                    'landingzones:list',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+            )
+
+        self.assert_zone_count(1)
+        zone.refresh_from_db()
         self.assert_zone_status(zone, 'DELETED')
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(

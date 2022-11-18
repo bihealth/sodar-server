@@ -11,7 +11,9 @@ list of changes in current and previous releases, see the
 v0.13.0 (WIP)
 =============
 
-TODO
+Major feature update.
+
+- Add optional landing zone write access restriction to created collections
 
 
 v0.12.1 (2022-11-09)

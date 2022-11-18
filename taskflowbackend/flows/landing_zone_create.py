@@ -13,7 +13,7 @@ class Flow(BaseLinearFlow):
 
     def validate(self):
         self.require_lock = False  # Project lock not required for this flow
-        self.required_fields = ['zone_uuid', 'colls']
+        self.required_fields = ['zone_uuid', 'colls', 'restrict_colls']
         self.supported_modes = ['sync', 'async']
         return super().validate()
 
@@ -95,24 +95,25 @@ class Flow(BaseLinearFlow):
         )
         self.add_task(
             irods_tasks.SetInheritanceTask(
-                name='Set inheritance for landing zone collection {}'.format(
-                    zone_path
-                ),
+                name='Set inheritance for landing zone collection '
+                '{}'.format(zone_path),
                 irods=self.irods,
                 inject={'path': zone_path, 'inherit': True},
             )
         )
-        self.add_task(
-            irods_tasks.SetAccessTask(
-                name='Set user owner access to landing zone',
-                irods=self.irods,
-                inject={
-                    'access_name': 'own',
-                    'path': zone_path,
-                    'user_name': zone.user.username,
-                },
+        # Only set own access to root zone collection if not enforcing colls
+        if not self.flow_data['restrict_colls']:
+            self.add_task(
+                irods_tasks.SetAccessTask(
+                    name='Set user owner access to landing zone',
+                    irods=self.irods,
+                    inject={
+                        'access_name': 'own',
+                        'path': zone_path,
+                        'user_name': zone.user.username,
+                    },
+                )
             )
-        )
         # If script user is set, add write access
         # NOTE: This will intentionally fail if user has not been created!
         if self.flow_data.get('script_user'):
@@ -140,6 +141,7 @@ class Flow(BaseLinearFlow):
                     },
                 )
             )
+        # Create collections
         for d in self.flow_data['colls']:
             coll_path = os.path.join(zone_path, d)
             self.add_task(
@@ -149,6 +151,21 @@ class Flow(BaseLinearFlow):
                     inject={'path': coll_path},
                 )
             )
+            # Enforce collection access if set
+            if self.flow_data['restrict_colls']:
+                self.add_task(
+                    irods_tasks.SetAccessTask(
+                        name='Set user owner access to collection {}'.format(
+                            coll_path
+                        ),
+                        irods=self.irods,
+                        inject={
+                            'access_name': 'own',
+                            'path': coll_path,
+                            'user_name': zone.user.username,
+                        },
+                    )
+                )
         self.add_task(
             lz_tasks.SetLandingZoneStatusTask(
                 name='Set landing zone status to ACTIVE',

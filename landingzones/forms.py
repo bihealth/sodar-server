@@ -27,6 +27,14 @@ class LandingZoneForm(forms.ModelForm):
         help_text='Create empty collections as defined by assay plugin',
     )
 
+    #: Limit write access to created collectionss
+    restrict_colls = forms.BooleanField(
+        initial=True,
+        required=False,
+        label='Restrict collections',
+        help_text='Restrict write access to created collections (recommended)',
+    )
+
     class Meta:
         model = LandingZone
         fields = [
@@ -35,6 +43,7 @@ class LandingZoneForm(forms.ModelForm):
             'description',
             'user_message',
             'create_colls',
+            'restrict_colls',
             'configuration',
         ]
 
@@ -101,6 +110,7 @@ class LandingZoneForm(forms.ModelForm):
             # Don't allow modifying certain fields
             self.fields['title_suffix'].disabled = True
             self.fields['create_colls'].disabled = True
+            self.fields['restrict_colls'].disabled = True
             # TODO: Don't allow modifying the assay
 
     def clean(self):
@@ -116,7 +126,6 @@ class LandingZoneForm(forms.ModelForm):
         """Override of form saving function"""
         obj = super().save(commit=False)
         obj.title = self.cleaned_data['title']
-
         # Updating
         if self.instance.pk:
             obj.user = self.instance.user
@@ -125,6 +134,5 @@ class LandingZoneForm(forms.ModelForm):
         else:
             obj.user = self.current_user
             obj.project = self.project
-
         obj.save()
         return obj

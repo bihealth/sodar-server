@@ -104,13 +104,16 @@ class ZoneConfigPluginMixin:
 class ZoneCreateMixin(ZoneConfigPluginMixin):
     """Mixin to be used in zone creation in UI and REST API views"""
 
-    def submit_create(self, zone, create_colls=False, request=None):
+    def submit_create(
+        self, zone, create_colls=False, restrict_colls=False, request=None
+    ):
         """
         Handle timeline updating and taskflow initialization after a LandingZone
         object has been created.
 
         :param zone: LandingZone object
         :param create_colls: Auto-create expected collections (boolean)
+        :param restrict_colls: Restrict access to created collections (boolean)
         :param request: HTTPRequest object or None
         :raise: taskflow.FlowSubmitException if taskflow submit fails
         """
@@ -180,6 +183,7 @@ class ZoneCreateMixin(ZoneConfigPluginMixin):
             {
                 'zone_uuid': str(zone.sodar_uuid),
                 'colls': list(set(colls)),
+                'restrict_colls': restrict_colls,
             },
         )
         try:
@@ -419,7 +423,10 @@ class ZoneCreateView(
         try:
             # Create timeline event and initialize taskflow
             self.submit_create(
-                zone, form.cleaned_data.get('create_colls'), self.request
+                zone=zone,
+                create_colls=form.cleaned_data.get('create_colls'),
+                restrict_colls=form.cleaned_data.get('restrict_colls'),
+                request=self.request,
             )
             config_str = (
                 ' with configuration "{}"'.format(zone.configuration)

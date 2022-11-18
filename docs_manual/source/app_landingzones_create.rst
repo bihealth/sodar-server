@@ -52,6 +52,15 @@ Create Collections
     collection names for libraries and avoid errors such as typos. Creation is
     enabled by default. When moving files from the landing zone, empty
     collections will not be created in the sample repository.
+Restrict Collections
+    If set true and "create collections" is enabled, user write access is
+    restricted to the automatically created collections. Subcollections can be
+    freely created under existing collections, but the user has no permission
+    to create new collections in the landing zone root. This will prevent
+    accidental uploads to collections with names not corresponding to paths
+    expected in the related sample sheets. If there is need to e.g. upload data
+    corresponding to libraries not yet in the sample sheets, this option can be
+    set false.
 Configuration
     Selection for special configurations of landing zones with extra features.
     In most use cases this should be left blank.

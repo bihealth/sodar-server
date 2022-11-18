@@ -182,6 +182,7 @@ class LandingZoneCreateAPIView(
     - ``user_message``: Message displayed to users on successful moving of zone (string, optional)
     - ``title``: Suffix for the zone title (string, optional)
     - ``create_colls``: Create expected collections (boolean, optional)
+    - ``restrict_colls``: Restrict access to created collections (boolean, optional)
 
     **Returns:** Landing zone details (see ``LandingZoneRetrieveAPIView``)
     """
@@ -218,9 +219,15 @@ class LandingZoneCreateAPIView(
 
         # If all is OK, go forward with object creation and taskflow submission
         create_colls = serializer.validated_data.pop('create_colls')
+        restrict_colls = serializer.validated_data.pop('restrict_colls')
         super().perform_create(serializer)
         try:
-            self.submit_create(serializer.instance, create_colls, self.request)
+            self.submit_create(
+                zone=serializer.instance,
+                create_colls=create_colls,
+                restrict_colls=restrict_colls,
+                request=self.request,
+            )
         except Exception as ex:
             raise APIException('{}{}'.format(ex_msg, ex))
 
