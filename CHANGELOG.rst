@@ -22,6 +22,12 @@ Changed
 - **Samplesheets**
     - Upgrade ``loader-utils`` in Vue app (#1527)
 
+Fixed
+-----
+
+- **Irodsbackend**
+    - Unhandled backend init exception in ``IrodsStatisticsAjaxView`` (#1539)
+
 
 v0.12.1 (2022-11-09)
 ====================

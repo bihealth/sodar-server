@@ -37,6 +37,8 @@ ERROR_NO_BACKEND = (
 class BaseIrodsAjaxView(SODARBaseProjectAjaxView):
     """Base iRODS Ajax API View"""
 
+    irods_backend = None
+    irods_session = None
     permission_required = 'irodsbackend.view_stats'  # Default perm
 
     def __init__(self, *args, **kwargs):
@@ -54,27 +56,24 @@ class BaseIrodsAjaxView(SODARBaseProjectAjaxView):
         """
         return {'detail': str(msg)}
 
-    def _check_collection_perm(self, path, user, irods_backend):
+    def _check_collection_perm(self, path, user):
         """
         Check if request user has any perms for iRODS collection by path.
 
         :param path: Full path to iRODS collection
         :param user: User object
-        :param irods_backend: IrodsAPI object
         :return: Boolean
         """
         # Just in case this was called with superuser..
         if user and user.is_superuser:
             return True
-
-        irods_session = irods_backend.get_session()
         try:
-            coll = irods_session.collections.get(path)
+            coll = self.irods_session.collections.get(path)
         except Exception:
             return False
 
         # Project users
-        perms = irods_session.permissions.get(coll)
+        perms = self.irods_session.permissions.get(coll)
         owner_or_delegate = False
         user_as = RoleAssignment.objects.get_assignment(user, self.project)
         if user_as and user_as.role.name in [
@@ -89,49 +88,44 @@ class BaseIrodsAjaxView(SODARBaseProjectAjaxView):
         if (
             self.project.public_guest_access
             and (user.is_authenticated or settings.PROJECTROLES_ALLOW_ANONYMOUS)
-            and irods_backend.get_sample_path(self.project) in path
+            and self.irods_backend.get_sample_path(self.project) in path
         ):
             return True
-
         return False
 
     def dispatch(self, request, *args, **kwargs):
         """Perform required checks before processing a request"""
-        self.project = self.get_project()
-
         path = request.GET.get('path') if request.method == 'GET' else None
         if request.method == 'GET' and not path:
             return JsonResponse(self._get_detail('Path not set'), status=400)
-
         try:
-            irods_backend = get_backend_api('omics_irods')
+            self.irods_backend = get_backend_api('omics_irods')
         except Exception as ex:
             return JsonResponse(self._get_detail(ex), status=500)
-        if not irods_backend:
+        if not self.irods_backend:
             return JsonResponse(self._get_detail(ERROR_NO_BACKEND), status=500)
+        self.irods_session = self.irods_backend.get_session()
 
         # Collection checks
         # NOTE: If supplying multiple paths via POST, implement these in request
+        self.project = self.get_project()
         if path:
             if (
                 self.project
-                and irods_backend.get_path(self.project) not in path
+                and self.irods_backend.get_path(self.project) not in path
             ):
                 return JsonResponse(
                     self._get_detail(ERROR_NOT_IN_PROJECT), status=400
                 )
-            if not irods_backend.collection_exists(path):
+            if not self.irods_backend.collection_exists(path):
                 return JsonResponse(
                     self._get_detail(ERROR_NOT_FOUND), status=404
                 )
             if (
                 not request.user.is_superuser
-                and not self._check_collection_perm(
-                    path, request.user, irods_backend
-                )
+                and not self._check_collection_perm(path, request.user)
             ):
                 return JsonResponse(self._get_detail(ERROR_NO_AUTH), status=403)
-
         self.path = path
         return super().dispatch(request, *args, **kwargs)
 
@@ -141,38 +135,34 @@ class IrodsStatisticsAjaxView(BaseIrodsAjaxView):
 
     def get(self, *args, **kwargs):
         try:
-            irods_backend = get_backend_api('omics_irods')
-            stats = irods_backend.get_object_stats(self.path)
+            stats = self.irods_backend.get_object_stats(self.path)
             return Response(stats, status=200)
         except Exception as ex:
             return Response(self._get_detail(ex), status=500)
 
     def post(self, request, *args, **kwargs):
-        irods_backend = get_backend_api('omics_irods')
         data = {'coll_objects': []}
         q_dict = request.POST
+        project_path = self.irods_backend.get_path(self.project)
 
         for path in q_dict.getlist('paths'):
-            if irods_backend.get_path(self.project) not in path:
+            if project_path not in path:
                 data['coll_objects'].append(
                     {'path': path, 'status': '400', 'stats': {}}
                 )
                 break
-            if not self._check_collection_perm(
-                path, request.user, irods_backend
-            ):
+            if not self._check_collection_perm(path, request.user):
                 data['coll_objects'].append(
                     {'path': path, 'status': '403', 'stats': {}}
                 )
                 break
-
             try:
-                if not irods_backend.collection_exists(path):
+                if not self.irods_backend.collection_exists(path):
                     data['coll_objects'].append(
                         {'path': path, 'status': '404', 'stats': {}}
                     )
                 else:
-                    ret_data = irods_backend.get_object_stats(path)
+                    ret_data = self.irods_backend.get_object_stats(path)
                     data['coll_objects'].append(
                         {'path': path, 'status': '200', 'stats': ret_data}
                     )
@@ -180,7 +170,6 @@ class IrodsStatisticsAjaxView(BaseIrodsAjaxView):
                 data['coll_objects'].append(
                     {'path': path, 'status': '500', 'stats': {}}
                 )
-
         return Response(data, status=200)
 
 
@@ -190,17 +179,11 @@ class IrodsObjectListAjaxView(BaseIrodsAjaxView):
     permission_required = 'irodsbackend.view_files'
 
     def get(self, request, *args, **kwargs):
-        try:
-            irods_backend = get_backend_api('omics_irods')
-        except Exception as ex:
-            return Response(self._get_detail(ex), status=500)
-
         md5 = request.GET.get('md5')
         colls = request.GET.get('colls')
-
         # Get files
         try:
-            ret_data = irods_backend.get_objects(
+            ret_data = self.irods_backend.get_objects(
                 self.path,
                 check_md5=bool(int(md5)),
                 include_colls=bool(int(colls)),
