@@ -13,6 +13,8 @@ Added
 
 - **Landingzones**
     - Optional zone write access restriction to created collections (#1050)
+- **Samplesheets**
+    - Mac keyboard shortcut support for multi-cell copying (#1531)
 
 Changed
 -------

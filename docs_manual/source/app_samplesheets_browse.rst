@@ -95,8 +95,9 @@ Row Filtering
     For filtering rows, a string can be entered into the *Filter* text input in
     the table header.
 Drag Selection
-    Multiple cells can be selected and copied into the clipboard by holding down
-    the left mouse button and "painting" cells.
+    Multiple cells can be selected by holding down the left mouse button and
+    "painting" cells. They can be copied into the clipboard with ``Ctrl+C``,
+    ``Meta+C`` or ``Cmd+C``.
 
 In SODAR certain cells offer special notation of data:
 
