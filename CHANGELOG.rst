@@ -19,6 +19,8 @@ Added
 Changed
 -------
 
+- **General**
+    - Use default Gunicorn worker class in production (#1536)
 - **Samplesheets**
     - Upgrade ``loader-utils`` in Vue app (#1527)
 
