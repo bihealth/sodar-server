@@ -206,7 +206,6 @@ class TestLandingZoneCreateView(
         """Test landingzones creation with taskflow"""
         self.assertEqual(LandingZone.objects.count(), 0)
         self.assertEqual(len(mail.outbox), 1)
-        self.assertEqual(AppAlert.objects.count(), 1)
 
         values = {
             'assay': str(self.assay.sodar_uuid),
@@ -239,7 +238,6 @@ class TestLandingZoneCreateView(
         for c in ZONE_BASE_COLLS:
             self.assert_irods_coll(zone, c, False)
         self.assertEqual(len(mail.outbox), 1)
-        self.assertEqual(AppAlert.objects.count(), 1)
         zone_path = self.irods_backend.get_path(zone)
         zone_coll = self.irods.collections.get(zone_path)
         self.assert_irods_access(

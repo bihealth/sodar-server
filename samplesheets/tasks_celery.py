@@ -20,8 +20,11 @@ logger = logging.getLogger(__name__)
 User = auth.get_user_model()
 
 
+# SODAR constants
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
+# Local constants
 APP_NAME = 'samplesheets'
+CACHE_UPDATE_EVENT = 'sheet_cache_update'
 
 
 @app.task(bind=True)
@@ -50,7 +53,7 @@ def update_project_cache_task(
             project=project,
             app_name=APP_NAME,
             user=user,
-            event_name='sheet_cache_update',
+            event_name=CACHE_UPDATE_EVENT,
             description='update cache for project sheets',
             status_type='SUBMIT',
             status_desc='Asynchronous update started',
@@ -96,7 +99,7 @@ def update_project_cache_task(
         if app_alerts:
             app_alerts.add_alert(
                 app_name=APP_NAME,
-                alert_name='sheet_cache_update',
+                alert_name=CACHE_UPDATE_EVENT,
                 user=user,
                 message=app_msg,
                 level=app_level,
