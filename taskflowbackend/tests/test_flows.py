@@ -287,14 +287,18 @@ class TestLandingZoneCreate(
         self.assertEqual(self.irods.collections.exists(self.zone_path), True)
         self.assertEqual(self.irods.collections.exists(results_path), True)
         self.assertEqual(self.irods.collections.exists(misc_path), True)
-        self.assert_irods_access(self.user.username, self.zone_path, None)
+        self.assert_irods_access(
+            self.user.username, self.zone_path, IRODS_ACCESS_READ
+        )
         self.assert_irods_access(
             self.user.username, results_path, IRODS_ACCESS_OWN
         )
         self.assert_irods_access(self.group_name, results_path, None)
         new_root_path = os.path.join(self.zone_path, 'new_root_path')
         self.irods.collections.create(new_root_path)
-        self.assert_irods_access(self.user.username, new_root_path, None)
+        self.assert_irods_access(
+            self.user.username, new_root_path, IRODS_ACCESS_READ
+        )
         new_sub_path = os.path.join(results_path, 'new_sub_path')
         self.irods.collections.create(new_sub_path)
         self.assert_irods_access(

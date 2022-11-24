@@ -271,8 +271,10 @@ class TestLandingZoneCreateAPIView(TestLandingZoneAPITaskflowBase):
         for c in ZONE_ALL_COLLS:
             self.assert_irods_coll(zone, c, True)
         zone_path = self.irods_backend.get_path(zone)
-        # No access to root path
-        self.assert_irods_access(self.user.username, zone_path, None)
+        # Read access to root path
+        self.assert_irods_access(
+            self.user.username, zone_path, IRODS_ACCESS_READ
+        )
         for c in ZONE_ALL_COLLS:
             self.assert_irods_access(
                 self.user.username, os.path.join(zone_path, c), IRODS_ACCESS_OWN

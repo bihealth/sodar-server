@@ -23,6 +23,7 @@ class Flow(BaseLinearFlow):
         zone = LandingZone.objects.get(sodar_uuid=self.flow_data['zone_uuid'])
         user_path = os.path.join(zone_root, zone.user.username)
         zone_path = self.irods_backend.get_path(zone)
+        root_access = 'read' if self.flow_data['restrict_colls'] else 'own'
 
         self.add_task(
             lz_tasks.RevertLandingZoneFailTask(
@@ -102,18 +103,19 @@ class Flow(BaseLinearFlow):
             )
         )
         # Only set own access to root zone collection if not enforcing colls
-        if not self.flow_data['restrict_colls']:
-            self.add_task(
-                irods_tasks.SetAccessTask(
-                    name='Set user owner access to landing zone',
-                    irods=self.irods,
-                    inject={
-                        'access_name': 'own',
-                        'path': zone_path,
-                        'user_name': zone.user.username,
-                    },
-                )
+        self.add_task(
+            irods_tasks.SetAccessTask(
+                name='Set user {} access to landing zone root'.format(
+                    root_access
+                ),
+                irods=self.irods,
+                inject={
+                    'access_name': root_access,
+                    'path': zone_path,
+                    'user_name': zone.user.username,
+                },
             )
+        )
         # If script user is set, add write access
         # NOTE: This will intentionally fail if user has not been created!
         if self.flow_data.get('script_user'):
