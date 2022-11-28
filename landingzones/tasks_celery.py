@@ -23,7 +23,7 @@ APP_NAME = 'landingzones'
 def setup_periodic_tasks(sender, **kwargs):
     if settings.LANDINGZONES_TRIGGER_ENABLE:
         sender.add_periodic_task(
-            settings.LANDINGZONES_TRIGGER_MOVE_INVERVAL, trigger_zone_move
+            settings.LANDINGZONES_TRIGGER_MOVE_INTERVAL, trigger_zone_move
         )
 
 

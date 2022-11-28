@@ -31,6 +31,8 @@ Fixed
 
 - **Irodsbackend**
     - Unhandled backend init exception in ``IrodsStatisticsAjaxView`` (#1539)
+- **Landingzones**
+    - Typo in ``LANDINGZONES_TRIGGER_MOVE_INTERVAL`` (#1541)
 
 
 v0.12.1 (2022-11-09)

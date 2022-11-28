@@ -787,7 +787,7 @@ LANDINGZONES_STATUS_INTERVAL = env.int('LANDINGZONES_STATUS_INTERVAL', 3)
 # Enable automated move triggering based on touched file
 LANDINGZONES_TRIGGER_ENABLE = env.bool('LANDINGZONES_TRIGGER_ENABLE', True)
 # Automatic move triggering check interval in seconds
-LANDINGZONES_TRIGGER_MOVE_INVERVAL = env.int(
+LANDINGZONES_TRIGGER_MOVE_INTERVAL = env.int(
     'LANDINGZONES_TRIGGER_MOVE_INTERVAL', 30
 )
 # File name for automated move triggering
